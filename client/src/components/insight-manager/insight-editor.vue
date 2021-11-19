@@ -36,7 +36,7 @@ export default defineComponent({
       this.$emit('edit');
     },
     removeInsight() {
-      this.$emit('delete');
+      this.$emit('remove');
     }
   }
 });

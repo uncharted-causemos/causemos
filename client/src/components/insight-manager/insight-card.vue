@@ -41,7 +41,7 @@
           <insight-editor
             v-if="activeInsight === insight.id"
             @edit="editInsight()"
-            @delete="removeInsight()"
+            @remove="removeInsight()"
           />
         </div>
       </div>
