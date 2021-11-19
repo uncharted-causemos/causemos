@@ -1,5 +1,5 @@
-import { DatacubeFeature, Model, Indicator, Datacube } from '@/types/Datacube';
-import { AggregationOption, DatacubeType } from '@/types/Enums';
+import { DatacubeFeature, Model, Indicator, Datacube, ModelParameter, DimensionInfo } from '@/types/Datacube';
+import { AggregationOption, DatacubeGenericAttributeVariableType, DatacubeGeoAttributeVariableType, DatacubeType, ModelParameterDataType } from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
 
 export const DEFAULT_DATE_RANGE_DELIMETER = '__';
@@ -181,6 +181,14 @@ export function isVideo(url: string) {
 export function getAggregationKey(spatial: AggregationOption, temporal: AggregationOption) {
   return `s_${spatial}_t_${temporal}`;
 }
+
+export const isGeoParameter = (type: string) => {
+  return type === DatacubeGenericAttributeVariableType.Geo || (Object.values(DatacubeGeoAttributeVariableType) as Array<string>).includes(type);
+};
+export const isCategoricalAxis = (name: string, dimensions: DimensionInfo[]) => {
+  const dim = dimensions.find(d => d.name === name) as ModelParameter;
+  return dim.type.startsWith('str') || isGeoParameter(dim.type) || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
+};
 
 export default {
   CODE_TABLE,
