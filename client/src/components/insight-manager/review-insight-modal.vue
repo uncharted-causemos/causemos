@@ -5,6 +5,20 @@
       :nav-back-label="newMode ? 'Close' : 'All Insights'"
       @close="closeInsightReview"
     >
+      <div v-if="isEditingInsight" style="display: flex; align-items: center">
+        <button
+          type="button"
+          class="btn btn-primary"
+          @click="annotateImage">
+          Annotate
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          @click="cropImage">
+          Crop
+        </button>
+      </div>
       <div class="header">
         <div class="control-buttons">
           <div style="display: flex; align-items: center">
@@ -112,9 +126,9 @@
               class="form-control"
               placeholder="Untitled insight description" />
             <div class="image-preview-and-metadata">
-              <div v-if="imagePreview !== null || newImagePreview !== null" class="preview">
-                <img v-if="newImagePreview !== null" :src="newImagePreview">
-                <img v-if="imagePreview !== null" :src="imagePreview">
+              <div v-if="imagePreview !== null" class="preview">
+                <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview">
+                <div v-if="showCropInfoMessage" style="align-self: center">Annotations are still there, but not shown when the image is being cropped!</div>
               </div>
               <disclaimer
                 v-else
@@ -160,7 +174,7 @@
 
 <script lang="ts">
 import {
-  defineComponent
+  defineComponent, nextTick
 } from 'vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
@@ -176,8 +190,11 @@ import useToaster from '@/services/composables/useToaster';
 import html2canvas from 'html2canvas';
 import _ from 'lodash';
 import { ProjectType } from '@/types/Enums';
+import { MarkerArea, MarkerAreaState } from 'markerjs2';
+import { CropArea, CropAreaState } from 'cropro';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
+const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
 
 const METDATA_DRILLDOWN_TABS = [
   {
@@ -221,13 +238,22 @@ export default defineComponent({
     isEditingInsight: false,
     insightTitle: '',
     insightDesc: '',
-    newImagePreview: null as string | null,
-    hasError: false // true when insight name is invalid
+    imagePreview: null as string | null,
+    hasError: false, // true when insight name is invalid
+    //
+    markerAreaState: undefined as MarkerAreaState | undefined,
+    markerArea: undefined as MarkerArea | undefined,
+    cropArea: undefined as CropArea | undefined,
+    cropState: undefined as CropAreaState | undefined,
+    originalImagePreview: '',
+    lastCroppedImage: '',
+    lastAnnotatedImage: '',
+    showCropInfoMessage: false
   }),
   watch: {
     insightTitle: {
       handler(n) {
-        if (n.length === 0) {
+        if (n.length === 0 || n === LBL_EMPTY_INSIGHT_NAME) {
           this.hasError = true;
         } else {
           this.hasError = false;
@@ -249,6 +275,40 @@ export default defineComponent({
         // capture the image
       },
       immediate: true
+    },
+    imagePreview() {
+      if (this.imagePreview !== null) {
+        // apply previously saved annotation, if any
+        if (this.annotation) {
+          this.originalImagePreview = this.annotation.imagePreview;
+          if (this.annotation.markerAreaState || this.annotation.cropAreaState) {
+            this.markerAreaState = this.annotation.markerAreaState;
+            this.cropState = this.annotation.cropAreaState;
+            // FIXME: we should call cropImage() or annotateImage based on which state we have saved before
+            //        noting that if both markerAreaState and cropState exist, then it is enough to call cropImage or apply annotation first
+            nextTick(() => {
+              const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
+              refAnnotatedImage.src = this.originalImagePreview;
+              this.annotateImage();
+              (this.markerArea as MarkerArea).startRenderAndClose();
+            });
+          }
+        } else {
+          this.originalImagePreview = this.imagePreview;
+        }
+      } else {
+        this.originalImagePreview = '';
+      }
+    },
+    updatedInsight() {
+      if (this.updatedInsight) {
+        // every time the user navigates to a new insight (or removes the current insight), re-fetch the image
+        // NOTE: imagePreview ideally could be a computed prop, but when in newMode the image is fetched differently
+        //       plus once imagePreview is assigned its watch will apply-annotation insight if any
+        this.imagePreview = this.updatedInsight.thumbnail;
+      } else {
+        this.imagePreview = null;
+      }
     }
   },
   computed: {
@@ -267,12 +327,6 @@ export default defineComponent({
       countInsights: 'insightPanel/countInsights',
       filters: 'dataSearch/filters'
     }),
-    imagePreview(): string | null {
-      if (this.updatedInsight) {
-        return this.updatedInsight.thumbnail;
-      }
-      return null;
-    },
     nextInsight(): Insight | null {
       if (this.updatedInsight) {
         // start with the index of the current insight
@@ -297,11 +351,11 @@ export default defineComponent({
       return InsightUtil.getFormattedFilterString(this.filters);
     },
     metadataDetails(): MetadataSummary[] {
-      const dState = this.newMode ? this.dataState : this.updatedInsight.data_state;
+      const dState = this.newMode || this.updatedInsight === null ? this.dataState : this.updatedInsight.data_state;
       return InsightUtil.parseMetadataDetails(dState, this.projectMetadata, this.formattedFilterString, this.currentView);
     },
     previewInsightTitle(): string {
-      return this.updatedInsight && this.updatedInsight.name.length > 0 ? this.updatedInsight.name : '<Insight title missing...>';
+      return this.updatedInsight && this.updatedInsight.name.length > 0 ? this.updatedInsight.name : LBL_EMPTY_INSIGHT_NAME;
     },
     previewInsightDesc(): string {
       return this.updatedInsight && this.updatedInsight.description.length > 0 ? this.updatedInsight.description : '<Insight description missing...>';
@@ -317,12 +371,19 @@ export default defineComponent({
       //  (the latter is currently supported via a special route named dataPreview)
       // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
       return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+    },
+    annotation(): any {
+      return this.updatedInsight ? this.updatedInsight.annotation_state : undefined;
     }
   },
   async mounted() {
     if (this.newMode) {
-      this.newImagePreview = await this.takeSnapshot();
+      this.imagePreview = await this.takeSnapshot();
       this.editInsight();
+    } else {
+      if (this.updatedInsight) {
+        this.imagePreview = this.updatedInsight.thumbnail;
+      }
     }
   },
   methods: {
@@ -347,7 +408,9 @@ export default defineComponent({
         this.hideInsightPanel();
         this.setCurrentPane('');
       } else {
-        this.cancelInsightEdit();
+        if (this.updatedInsight) {
+          this.cancelInsightEdit();
+        }
         this.showInsightPanel();
         this.setCurrentPane('list-insights');
       }
@@ -359,6 +422,9 @@ export default defineComponent({
       // remove the insight from the server
       InsightUtil.removeInsight(this.updatedInsight.id, this.store);
 
+      // close editing before deleting insight (this will ensure annotation/crop mode is cleaned up)
+      this.cancelInsightEdit();
+
       // remove this insight from the local insight list
       const filteredInsightList: Insight[] = this.insightList.filter((ins: Insight) => ins.id !== this.updatedInsight.id);
       this.setInsightList(filteredInsightList);
@@ -367,6 +433,7 @@ export default defineComponent({
       //  if no more insights, exit this gallery view
       if (filteredInsightList.length === 0) {
         this.setUpdatedInsight(null);
+        this.showMetadataPanel = false;
       } else {
         const updatedIndx = Math.min(indx, filteredInsightList.length - 1);
         this.setUpdatedInsight(filteredInsightList[updatedIndx]);
@@ -392,7 +459,9 @@ export default defineComponent({
     },
     cancelInsightEdit() {
       this.isEditingInsight = false;
-      if (this.newMode) {
+      this.insightTitle = '';
+      this.revertImage();
+      if (this.newMode || this.updatedInsight === null) {
         this.closeInsightReview();
       }
     },
@@ -401,11 +470,12 @@ export default defineComponent({
       // save the updated insight in the backend
       this.saveInsight();
     },
-    getAnnotatedState(eventData: any) {
-      return !eventData ? undefined : {
-        markerAreaState: eventData.markerAreaState,
-        cropAreaState: eventData.cropState,
-        imagePreview: eventData.croppedNonAnnotatedImagePreview
+    getAnnotatedState(stateData: any) {
+      return !stateData ? undefined : {
+        markerAreaState: stateData.markerAreaState,
+        cropAreaState: stateData.cropState,
+        imagePreview: stateData.croppedNonAnnotatedImagePreview,
+        originalImagePreview: stateData.originalImagePreview
       };
     },
     closeContextInsightPanel() {
@@ -415,9 +485,22 @@ export default defineComponent({
     saveInsight() {
       if (this.hasError || this.insightTitle.trim().length === 0) return;
 
+      // FIXME: we should maintain the original non-cropped image for future crop edits
+      const refFinalImage = this.$refs.finalImagePreview as HTMLImageElement;
+      const annotateCropSaveObj = {
+        annotatedImagePreview: refFinalImage.src,
+        croppedNonAnnotatedImagePreview: this.lastCroppedImage !== '' ? this.lastCroppedImage : this.originalImagePreview,
+        originalImagePreview: this.originalImagePreview,
+        markerAreaState: this.markerAreaState,
+        cropState: this.cropState
+      };
+      const insightThumbnail = annotateCropSaveObj.annotatedImagePreview;
+      const annotationAndCropState = this.getAnnotatedState(annotateCropSaveObj);
+
       if (this.newMode) {
         // saving a new insight
         const url = this.$route.fullPath;
+
         const newInsight: Insight = {
           name: this.insightTitle,
           description: this.insightDesc,
@@ -430,8 +513,8 @@ export default defineComponent({
           post_actions: null,
           is_default: true,
           analytical_question: [],
-          thumbnail: this.newImagePreview as string,
-          annotation_state: undefined, // this.getAnnotatedState(eventData),
+          thumbnail: insightThumbnail,
+          annotation_state: annotationAndCropState,
           view_state: this.viewState,
           data_state: this.dataState
         };
@@ -454,12 +537,12 @@ export default defineComponent({
         this.closeContextInsightPanel();
       } else {
         // saving an existing insight
-        if (!this.updatedInsight) {
+        if (this.updatedInsight) {
           const updatedInsight = this.updatedInsight;
           updatedInsight.name = this.insightTitle;
           updatedInsight.description = this.insightDesc;
-          // updatedInsight.thumbnail = eventData ? eventData.annotatedImagePreview : updatedInsight.thumbnail;
-          // updatedInsight.annotation_state = this.getAnnotatedState(eventData);
+          updatedInsight.thumbnail = insightThumbnail;
+          updatedInsight.annotation_state = annotationAndCropState;
           updateInsight(this.updatedInsight.id, updatedInsight)
             .then((result) => {
               if (result.updated === 'success') {
@@ -496,6 +579,174 @@ export default defineComponent({
           break;
         default:
           break;
+      }
+    },
+    revertImage() {
+      if (this.markerArea?.isOpen) {
+        this.markerArea.close();
+      }
+
+      if (this.cropArea?.isOpen) {
+        this.cropArea.close();
+      }
+
+      this.markerAreaState = undefined;
+      this.cropState = undefined;
+      this.lastCroppedImage = '';
+      this.showCropInfoMessage = false;
+
+      // revert img reference to the original image
+      if (this.originalImagePreview && this.originalImagePreview !== '') {
+        const refFinalImage = this.$refs.finalImagePreview as HTMLImageElement;
+        refFinalImage.src = this.originalImagePreview;
+      }
+    },
+    annotateImage() {
+      if (this.cropArea?.isOpen) {
+        this.cropArea.close();
+      }
+
+      if (this.markerArea?.isOpen) {
+        return;
+      }
+
+      const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
+
+      // save the content of the annotated image to restore if the user cancels the annotation
+      this.lastAnnotatedImage = refAnnotatedImage.src;
+
+      // copy the cropped, non-annotated, image as the source of the annotation
+      refAnnotatedImage.src = this.lastCroppedImage !== '' ? this.lastCroppedImage : this.originalImagePreview;
+
+      // create an instance of MarkerArea and pass the target image reference as a parameter
+      this.markerArea = new MarkerArea(refAnnotatedImage);
+
+      // attach the annotation UI to the parent of the image
+      this.markerArea.targetRoot = refAnnotatedImage.parentElement as HTMLElement;
+      this.markerArea.renderAtNaturalSize = true;
+
+      let annotationSaved = false;
+
+      // register an event listener for when user clicks Close in the marker.js UI
+      // NOTE: this event is also called when the user clicks OK/save in the marker.js UI
+      this.markerArea.addCloseEventListener(() => {
+        if (!annotationSaved) {
+          refAnnotatedImage.src = this.lastAnnotatedImage;
+        }
+        annotationSaved = false;
+      });
+
+      // register an event listener for when user clicks OK/save in the marker.js UI
+      this.markerArea.addRenderEventListener((dataUrl, state) => {
+        annotationSaved = true;
+
+        // we are setting the markup result to replace our original image on the page
+        // but you can set a different image or upload it to your server
+        refAnnotatedImage.src = dataUrl;
+
+        // save state
+        this.markerAreaState = state;
+      });
+
+      // finally, call the show() method and marker.js UI opens
+      this.markerArea.show();
+
+      // if previous state is present - restore it
+      if (this.markerAreaState) {
+        this.markerArea.restoreState(this.markerAreaState);
+      }
+    },
+    cropImage() {
+      if (this.markerArea?.isOpen) {
+        this.markerArea.close();
+      }
+      if (this.cropArea?.isOpen) {
+        return;
+      }
+
+      this.showCropInfoMessage = true;
+
+      const refCroppedImage = this.$refs.finalImagePreview as HTMLImageElement;
+
+      // create an instance of CropArea and pass the target image reference as a parameter
+      this.cropArea = new CropArea(refCroppedImage);
+      this.cropArea.renderAtNaturalSize = true;
+
+      // before beginning the crop mode,
+      //  we must ensure the full image is shown as the crop source
+      // @LIMITATION: we are not able to leverage a good preview of the full original image with annotations applied unless we invoke the annotate-tool and wait until it is done
+      refCroppedImage.src = this.originalImagePreview;
+
+      // attach the crop UI to the parent of the image
+      this.cropArea.targetRoot = refCroppedImage.parentElement as HTMLElement;
+
+      // ensure the whole image is visible all the time
+      this.cropArea.zoomToCropEnabled = false;
+
+      // do not allow rotation and image flipping
+      this.cropArea.styles.settings.hideBottomToolbar = true;
+
+      // hide alignment grid
+      this.cropArea.isGridVisible = false;
+
+      let croppedSaved = false;
+
+      // register an event listener for when user clicks Close in the marker.js UI
+      // NOTE: this event is also called when the user clicks OK/save in the marker.js UI
+      this.cropArea.addCloseEventListener(() => {
+        if (!croppedSaved) {
+          refCroppedImage.src = this.lastCroppedImage;
+
+          // hide the info message regarding the crop preview and the visibility of annotations
+          this.showCropInfoMessage = false;
+
+          // apply existing annotations, if any, after cancelling the image crop
+          nextTick(() => {
+            // note that this close event may be called if the user clicks Annotate while the crop mode was open
+            // so we should not request re-annotation (in the next tick)
+            //  or otherwise it would cancel the annotation mode that is being initiated
+            if (!this.markerArea?.isOpen) {
+              this.annotateImage();
+              (this.markerArea as MarkerArea).startRenderAndClose();
+            }
+          });
+        }
+        croppedSaved = false;
+      });
+
+      // register an event listener for when user clicks OK/save in the CROPRO UI
+      this.cropArea.addRenderEventListener((dataUrl, state) => {
+        // we are setting the cropping result to replace our original image on the page
+        // but you can set a different image or upload it to your server
+        refCroppedImage.src = dataUrl;
+
+        // save the cropped image (which would be used as the source of the annotation later on)
+        this.lastCroppedImage = dataUrl;
+
+        // hide the info message regarding the crop preview and the visibility of annotations
+        this.showCropInfoMessage = false;
+
+        // save state
+        this.cropState = state;
+
+        // apply existing annotations, if any, after cropping the image
+        nextTick(() => {
+          this.annotateImage();
+          (this.markerArea as MarkerArea).startRenderAndClose();
+        });
+      });
+
+      // finally, call the show() method and CROPRO UI opens
+      this.cropArea.show();
+
+      // handle previous state if present
+      if (this.cropState) {
+        //
+        // Do not restore the state and crop the image
+        // Instead, show the original image and the crop rect
+        //
+        const cropAreaTemp = this.cropArea as any;
+        cropAreaTemp.cropLayer.setCropRectangle(this.cropState.cropRect);
       }
     }
   }
