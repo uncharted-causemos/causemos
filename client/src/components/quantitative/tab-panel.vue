@@ -3,7 +3,7 @@
     <div class="tab-nav-bar">
       <slot name="action-bar" />
     </div>
-    <div class="tab-content insight-capture">
+    <div class="tab-content">
       <cag-side-panel
         class="side-panel"
         :is-experiment-download-visible="true"
@@ -14,7 +14,7 @@
           <cag-comments-button :model-summary="modelSummary" />
         </template>
       </cag-side-panel>
-      <main>
+      <main class="insight-capture">
         <div
           v-if="activeTab === 'flow' && scenarioData && graphData"
           class="model-graph-layout-container">
