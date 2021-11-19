@@ -217,6 +217,7 @@ import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
 import ProjectionHistograms from '@/components/node-drilldown/projection-histograms.vue';
+import moment from 'moment';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -602,6 +603,7 @@ export default defineComponent({
       if (!parameter) {
         return null;
       } else {
+        // FIXME: last available clamp position can be derived from time_scale
         const projections = selectedNodeScenarioData.value?.projections || [];
         let max = Number.NEGATIVE_INFINITY;
         for (let i = 0; i < projections.length; i++) {
@@ -613,7 +615,12 @@ export default defineComponent({
         }
         // FIXME: default viewing extent should be equal to whatever is
         //  displayed on the graph view
-        return [parameter.projection_start, max];
+        const historicalMonthsToDisplay = 5 * 12;
+        const historyStart = moment
+          .utc(parameter.projection_start)
+          .subtract(historicalMonthsToDisplay, 'months')
+          .valueOf();
+        return [historyStart, max];
       }
     });
 
