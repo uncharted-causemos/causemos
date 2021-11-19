@@ -7,7 +7,7 @@ export interface ModelRunParameter {
 
 export interface ModelRunOutputAggregate {
   name: string;
-  value: string;
+  [key: string]: number;
 }
 
 export interface ModelRunRuntimeStage {
