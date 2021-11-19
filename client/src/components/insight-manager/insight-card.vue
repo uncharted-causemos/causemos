@@ -41,7 +41,7 @@
           <insight-editor
             v-if="activeInsight === insight.id"
             @edit="editInsight()"
-            @delete="deleteInsight()"
+            @remove="removeInsight()"
           />
         </div>
       </div>
@@ -85,7 +85,7 @@ export default defineComponent({
       default: false
     }
   },
-  emits: ['delete-insight', 'edit-insight', 'open-editor', 'select-insight', 'update-curation'],
+  emits: ['remove-insight', 'edit-insight', 'open-editor', 'select-insight', 'update-curation'],
   methods: {
     dateFormatter,
     stringFormatter,
@@ -93,8 +93,8 @@ export default defineComponent({
     editInsight() {
       this.$emit('edit-insight');
     },
-    deleteInsight() {
-      this.$emit('delete-insight');
+    removeInsight() {
+      this.$emit('remove-insight');
     },
     openEditor() {
       this.$emit('open-editor');
