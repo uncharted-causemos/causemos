@@ -76,13 +76,13 @@ export default defineComponent({
       const isAbstractNode = this.indicatorId === null;
       return this.projections
         .filter(projection => projection.values.length > 0)
-        .map(projection => {
-          return convertTimeseriesDistributionToHistograms(
+        .map(projection =>
+          convertTimeseriesDistributionToHistograms(
             this.modelSummary.parameter.time_scale,
             isAbstractNode ? [] : this.historicalTimeseries,
             projection.values
-          );
-        });
+          )
+        );
     }
   }
 });
