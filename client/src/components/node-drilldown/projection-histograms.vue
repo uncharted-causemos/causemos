@@ -77,13 +77,9 @@ export default defineComponent({
       return this.projections
         .filter(projection => projection.values.length > 0)
         .map(projection => {
-          const clampAtProjectionStart = projection.constraints?.find(
-            constraint => constraint.step === 0
-          );
           return convertTimeseriesDistributionToHistograms(
             this.modelSummary.parameter.time_scale,
             isAbstractNode ? [] : this.historicalTimeseries,
-            clampAtProjectionStart?.value ?? null,
             projection.values
           );
         });

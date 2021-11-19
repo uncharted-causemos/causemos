@@ -187,9 +187,6 @@ function renderScenarioProjections(
   }
   const historicalTimeseries = nodeScenarioData.indicator_time_series;
   const isAbstractNode = nodeScenarioData.indicator_id === null;
-  const clampAtProjectionStart = projection.constraints?.find(
-    constraint => constraint.step === 0
-  );
   const projectionValues = projection.result?.values ?? [];
   if (projectionValues.length === 0) {
     return;
@@ -199,7 +196,6 @@ function renderScenarioProjections(
   const histograms = convertTimeseriesDistributionToHistograms(
     nodeScenarioData.time_scale,
     isAbstractNode ? [] : historicalTimeseries,
-    clampAtProjectionStart?.value ?? null,
     projectionValues
   );
 

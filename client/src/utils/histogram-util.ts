@@ -104,7 +104,6 @@ const isAbstractNode = (historicalData: TimeseriesPoint[]) => {
 
 export const computeProjectionBins = (
   historicalData: TimeseriesPoint[],
-  clampValueAtNow: number | null,
   monthsElapsedSinceNow: number,
   projectionStartMonth: number
 ): [number, number, number, number] => {
@@ -113,10 +112,8 @@ export const computeProjectionBins = (
     //  buckets between 0 and 1
     return ABSTRACT_NODE_BINS;
   }
-  // If there's a scenario clamp at "now", use that as the "now" value,
-  //  otherwise use the last historical value
-  const nowValue =
-    clampValueAtNow ?? historicalData[historicalData.length - 1].value;
+  // Use the last historical value as the value for "now"
+  const nowValue = historicalData[historicalData.length - 1].value;
   const differences = extractRelevantHistoricalChanges(
     historicalData,
     monthsElapsedSinceNow,
@@ -205,7 +202,6 @@ export const computeProjectionBins = (
 export const convertTimeseriesDistributionToHistograms = (
   timeScale: TimeScale,
   historicalData: TimeseriesPoint[],
-  clampValueAtNow: number | null,
   projection: TimeseriesDistributionPoint[]
 ): ProjectionHistograms => {
   // 1. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
@@ -218,7 +214,6 @@ export const convertTimeseriesDistributionToHistograms = (
     // 2. Get bins from historical data using computeProjectionBins()
     const bins = computeProjectionBins(
       historicalData,
-      clampValueAtNow,
       monthIndex,
       projectionStartMonth
     );
