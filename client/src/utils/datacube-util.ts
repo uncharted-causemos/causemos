@@ -1,5 +1,5 @@
 import { DatacubeFeature, Model, Indicator, Datacube } from '@/types/Datacube';
-import { DatacubeType } from '@/types/Enums';
+import { AggregationOption, DatacubeType } from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
 
 export const DEFAULT_DATE_RANGE_DELIMETER = '__';
@@ -176,6 +176,10 @@ export function isImage(url: string) {
 }
 export function isVideo(url: string) {
   return url.endsWith('.mp4');
+}
+
+export function getAggregationKey(spatial: AggregationOption, temporal: AggregationOption) {
+  return `s_${spatial}_t_${temporal}`;
 }
 
 export default {

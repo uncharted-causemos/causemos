@@ -402,7 +402,6 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
     const concept = nodeData.concept;
 
     const graphData: NodeScenarioData = {
-      initial_value: indicatorData.initial_value,
       indicator_name: indicatorData.name || '',
       indicator_time_series: indicatorData.timeseries || [],
       indicator_time_series_range: {

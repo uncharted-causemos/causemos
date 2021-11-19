@@ -87,6 +87,7 @@ export default defineComponent({
   },
   methods: {
     refresh() {
+      if (this.chartRef === null) return;
       const el = d3.select(this.chartRef);
       const renderOptions = {
         margin: {
@@ -104,8 +105,7 @@ export default defineComponent({
       };
 
       renderHistoricalProjectionsChart(el, this.nodeChartData, renderOptions, {
-        selectedScenarioId: this.selectedScenarioId,
-        miniGraph: true
+        selectedScenarioId: this.selectedScenarioId
       });
     }
   }
@@ -129,7 +129,6 @@ $border-width: 1px;
 }
 
 header {
-  background: #eee;
   padding: 1px 3px;
   border-radius: 2px 2px 0 0;
 }
