@@ -38,7 +38,8 @@ function render(
   nodeScenarioData: NodeScenarioData,
   runOptions: { selectedScenarioId: string }
 ) {
-  const selectedScenario = nodeScenarioData.scenarios.find(
+  const { scenarios, indicator_time_series, min, max } = nodeScenarioData;
+  const selectedScenario = scenarios.find(
     s => s.id === runOptions.selectedScenarioId
   );
   if (selectedScenario === undefined) {
@@ -59,12 +60,25 @@ function render(
   const historyEnd = projection_start;
 
   // Filter out timeseries points that aren't within the range we're displaying
-  const filteredTimeSeries = nodeScenarioData.indicator_time_series.filter(
+  const filteredTimeSeries = indicator_time_series.filter(
     d => d.timestamp >= historyStart && d.timestamp <= historyEnd
   );
 
-  // TODO: choose yExtent so that "now" value is centered
-  const yExtent = [nodeScenarioData.min, nodeScenarioData.max];
+  // Choose yExtent so that mostRecentHistoricalValue value is centered
+  let yExtentMin = min;
+  let yExtentMax = max;
+  const mostRecentHistoricalValue =
+    indicator_time_series[indicator_time_series.length - 1].value;
+  const currentCenterOfRange = (yExtentMin + yExtentMax) / 2;
+  const diffToCenterOfRange = mostRecentHistoricalValue - currentCenterOfRange;
+  if (mostRecentHistoricalValue > currentCenterOfRange) {
+    // Raise max so that mostRecentHistoricalValue is centered
+    yExtentMax += 2 * diffToCenterOfRange;
+  } else {
+    // Lower min so that mostRecentHistoricalValue is centered
+    yExtentMin += 2 * diffToCenterOfRange;
+  }
+  const yExtent = [yExtentMin, yExtentMax];
 
   // Chart dimensions
   const height = chart.y2 - chart.y1;
