@@ -280,18 +280,21 @@ export default defineComponent({
       if (this.imagePreview !== null) {
         // apply previously saved annotation, if any
         if (this.annotation) {
-          this.originalImagePreview = this.annotation.imagePreview;
+          this.originalImagePreview = this.annotation.originalImagePreview;
+          // this.lastCroppedImage = this.annotation.previewImage;
           if (this.annotation.markerAreaState || this.annotation.cropAreaState) {
             this.markerAreaState = this.annotation.markerAreaState;
             this.cropState = this.annotation.cropAreaState;
-            // FIXME: we should call cropImage() or annotateImage based on which state we have saved before
-            //        noting that if both markerAreaState and cropState exist, then it is enough to call cropImage or apply annotation first
-            nextTick(() => {
-              const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
-              refAnnotatedImage.src = this.originalImagePreview;
-              this.annotateImage();
-              (this.markerArea as MarkerArea).startRenderAndClose();
-            });
+            // NOTE: REVIEW: FIXME:
+            //  restoring both annotation and/or cropping is tricky since each one calls the other
+            if (this.markerAreaState) {
+              nextTick(() => {
+                const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
+                refAnnotatedImage.src = this.originalImagePreview;
+                this.annotateImage();
+                (this.markerArea as MarkerArea).startRenderAndClose();
+              });
+            }
           }
         } else {
           this.originalImagePreview = this.imagePreview;
@@ -460,13 +463,23 @@ export default defineComponent({
     cancelInsightEdit() {
       this.isEditingInsight = false;
       this.insightTitle = '';
-      this.revertImage();
+
+      // if annotation/cropping was enabled, we need to apply them
+      // this.revertImage();
+      if (this.markerArea?.isOpen) {
+        this.markerArea.close();
+      }
+      if (this.cropArea?.isOpen) {
+        this.cropArea.close();
+      }
+
       if (this.newMode || this.updatedInsight === null) {
         this.closeInsightReview();
       }
     },
     confirmInsightEdit() {
       this.isEditingInsight = false;
+
       // save the updated insight in the backend
       this.saveInsight();
     },
