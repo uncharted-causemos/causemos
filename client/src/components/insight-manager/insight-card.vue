@@ -85,7 +85,7 @@ export default defineComponent({
       default: false
     }
   },
-  emits: ['delete-insight', 'edit-insight', 'open-editor', 'select-insight', 'update-curation'],
+  emits: ['remove-insight', 'edit-insight', 'open-editor', 'select-insight', 'update-curation'],
   methods: {
     dateFormatter,
     stringFormatter,
@@ -94,7 +94,7 @@ export default defineComponent({
       this.$emit('edit-insight');
     },
     removeInsight() {
-      this.$emit('delete-insight');
+      this.$emit('remove-insight');
     },
     openEditor() {
       this.$emit('open-editor');

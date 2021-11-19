@@ -54,7 +54,7 @@
               :curated="isCuratedInsight(insight.id)"
               :key="insight.id"
               :insight="insight"
-              @delete-insight="removeInsight(insight.id)"
+              @remove-insight="removeInsight(insight.id)"
               @edit-insight="editInsight(insight)"
               @open-editor="openEditor(insight.id)"
               @select-insight="reviewInsight(insight)"
@@ -90,7 +90,7 @@
                 :insight="insight"
                 :show-description="true"
                 :show-question="false"
-                @delete-insight="removeInsight(insight.id)"
+                @remove-insight="removeInsight(insight.id)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
               />

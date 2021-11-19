@@ -222,7 +222,6 @@ export default defineComponent({
       default: false
     }
   },
-  emits: ['cancel', 'delete-insight'],
   setup() {
     const store = useStore();
     const toaster = useToaster();
