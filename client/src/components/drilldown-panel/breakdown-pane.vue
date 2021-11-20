@@ -12,9 +12,10 @@
       :items="breakdownOptions"
       :selectedItem="selectedBreakdownOption"
       :is-dropdown-left-aligned="true"
-      @item-selected="emitBreakdownOptionSelection"
+      @item-selected="emitBreakdownOptionSelection($event); scrollToQualifier($event)"
     />
     <aggregation-checklist-pane
+      ref="region_ref"
       v-if="isRegionalDataValid"
       class="checklist-section"
       :aggregation-level-count="availableAdminLevelTitles.length"
@@ -56,6 +57,7 @@
     <aggregation-checklist-pane
       class="checklist-section"
       v-for="qualifierVariable in qualifierBreakdownData"
+      :ref="qualifierVariable.id + '_ref'"
       :key="qualifierVariable.id"
       :aggregation-level-count="1"
       :aggregation-level="0"
@@ -96,6 +98,7 @@
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
       v-if="isTemporalBreakdownDataValid"
+      ref="year_ref"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
       :aggregation-level="0"
@@ -316,6 +319,18 @@ export default defineComponent({
       SpatialAggregationLevel,
       TemporalAggregationLevel
     };
+  },
+  methods: {
+    scrollToQualifier (newValue: string | null) {
+      const reference = newValue + '_ref';
+      if (newValue) {
+        const element = (this.$refs[reference] as any).$el;
+        const container = document.getElementById('panel-content-container');
+        if (container) {
+          container.scrollTop = element.offsetTop - 45;
+        }
+      }
+    }
   }
 });
 </script>
