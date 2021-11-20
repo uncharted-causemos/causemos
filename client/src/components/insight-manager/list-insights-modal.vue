@@ -7,21 +7,6 @@
     >
     </full-screen-modal-header>
 
-    <modal-confirmation
-      v-if="showModal"
-      :autofocus-confirm="false"
-      @confirm="redirectToAnalysisInsight"
-      @close="showModal = false"
-    >
-      <template #title>Applying Analysis Insight</template>
-      <template #message>
-        <p>Are you sure you want to redirect to the relevant analysis project and apply the insight?</p>
-        <message-display
-          :message="'Warning: This action will take you out of the current flow.'"
-          :message-type="'alert-warning'"
-        />
-      </template>
-    </modal-confirmation>
     <div class="body flex">
       <analytical-questions-panel />
 
@@ -36,33 +21,13 @@
             @tab-click="switchTab"
           />
           <div class="export">
-            <button
-              type="button"
-              class="btn btn-primary"
-              @click="toggleExportMenu"
-            >
-              <span class="lbl">Export</span>
-              <i
-                class="fa fa-fw"
-                :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
-              />
-            </button>
-            <dropdown-control v-if="exportActive" class="below">
-              <template #content>
-                <div
-                  class="dropdown-option"
-                  @click="exportPPTX"
-                >
-                  Powerpoint
-                </div>
-                <div
-                  class="dropdown-option"
-                  @click="exportDOCX"
-                >
-                  Word
-                </div>
-              </template>
-            </dropdown-control>
+            <dropdown-button
+              :inner-button-label="'Export insight(s)'"
+              :is-dropdown-left-aligned="true"
+              :items="['Powerpoint', 'Word']"
+              class="export-dropdown"
+              @item-selected="exportSelectedInsights"
+            />
           </div>
         </div>
         <div
@@ -89,10 +54,10 @@
               :curated="isCuratedInsight(insight.id)"
               :key="insight.id"
               :insight="insight"
-              @delete-insight="removeInsight(insight.id)"
+              @remove-insight="removeInsight(insight.id)"
               @edit-insight="editInsight(insight)"
               @open-editor="openEditor(insight.id)"
-              @select-insight="selectInsight(insight)"
+              @select-insight="reviewInsight(insight)"
               @update-curation="updateCuration(insight.id)"
               draggable='true'
               @dragstart="startDrag($event, insight)"
@@ -125,7 +90,7 @@
                 :insight="insight"
                 :show-description="true"
                 :show-question="false"
-                @delete-insight="removeInsight(insight.id)"
+                @remove-insight="removeInsight(insight.id)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
               />
@@ -143,31 +108,22 @@
 </template>
 
 <script>
-import pptxgen from 'pptxgenjs';
-import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
-import { saveAs } from 'file-saver';
 import { mapGetters, mapActions, useStore } from 'vuex';
 
 import { INSIGHTS } from '@/utils/messages-util';
 
 import InsightCard from '@/components/insight-manager/insight-card';
-import DropdownControl from '@/components/dropdown-control';
 import TabBar from '@/components/widgets/tab-bar';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
+import DropdownButton from '@/components/dropdown-button.vue';
 
-import dateFormatter from '@/formatters/date-formatter';
-import stringFormatter from '@/formatters/string-formatter';
 import router from '@/router';
-import { deleteInsight } from '@/services/insight-service';
 import { computed } from 'vue';
 
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
 import useInsightsData from '@/services/composables/useInsightsData';
-import { ProjectType } from '@/types/Enums';
-import ModalConfirmation from '@/components/modals/modal-confirmation';
 import MessageDisplay from '@/components/widgets/message-display';
 import InsightUtil from '@/utils/insight-util';
-import _ from 'lodash';
 
 const INSIGHT_TABS = [
   {
@@ -183,11 +139,10 @@ const INSIGHT_TABS = [
 export default {
   name: 'ListInsightsModal',
   components: {
-    DropdownControl,
+    DropdownButton,
     FullScreenModalHeader,
     InsightCard,
     MessageDisplay,
-    ModalConfirmation,
     TabBar,
     AnalyticalQuestionsPanel
   },
@@ -195,13 +150,10 @@ export default {
     activeInsight: null,
     activeTabId: INSIGHT_TABS[0].id,
     curatedInsights: [],
-    exportActive: false,
     messageNoData: INSIGHTS.NO_DATA,
     search: '',
     selectedInsight: null,
-    tabs: INSIGHT_TABS,
-    showModal: false,
-    redirectInsightUrl: ''
+    tabs: INSIGHT_TABS
   }),
   setup() {
     const store = useStore();
@@ -213,21 +165,15 @@ export default {
       listInsights,
       questions,
       getInsightsByIDs,
-      reFetchInsights
+      reFetchInsights,
+      store
     };
   },
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countInsights: 'insightPanel/countInsights',
-      projectType: 'app/projectType'
+      countInsights: 'insightPanel/countInsights'
     }),
-    metadataSummary() {
-      const projectCreatedDate = new Date(this.projectMetadata.created_at);
-      const projectModifiedDate = new Date(this.projectMetadata.modified_at);
-      return `Project: ${this.projectMetadata.name} - Created: ${projectCreatedDate.toLocaleString()} - ` +
-        `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${this.projectMetadata.corpus_id}`;
-    },
     searchedInsights() {
       if (this.search.length > 0) {
         const result = this.listInsights.filter((insight) => {
@@ -255,21 +201,13 @@ export default {
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
       setCurrentPane: 'insightPanel/setCurrentPane',
-      setUpdatedInsight: 'insightPanel/setUpdatedInsight'
+      setUpdatedInsight: 'insightPanel/setUpdatedInsight',
+      setInsightList: 'insightPanel/setInsightList'
     }),
-    dateFormatter,
-    stringFormatter,
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsight = null;
       this.selectedInsight = null;
-    },
-    redirectToAnalysisInsight() {
-      if (this.redirectInsightUrl !== '') {
-        this.$router.push(this.redirectInsightUrl);
-      }
-      this.showModal = false;
-      this.redirectInsightUrl = '';
     },
     startDrag(evt, insight) {
       evt.currentTarget.style.border = '3px dashed black';
@@ -303,236 +241,28 @@ export default {
     },
     editInsight(insight) {
       this.setUpdatedInsight(insight);
-      this.setCurrentPane('edit-insight');
+      this.setInsightList(this.searchedInsights);
+      // open the preview in the edit mode
+      this.setCurrentPane('review-edit-insight');
     },
     removeInsight(id) {
-      deleteInsight(id).then(result => {
-        const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
-        if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
-          this.toaster(message, 'success', false);
-          const count = this.countInsights - 1;
-          this.setCountInsights(count);
-          this.removeCuration(id);
-          // refresh the latest list from the server
-          this.reFetchInsights();
-          this.toaster(message, 'error', true);
-        }
-      });
-      // FIXME: delete any reference to this insight from its list of analytical_questions
+      // remove the insight from the server
+      InsightUtil.removeInsight(id, this.store);
+      this.removeCuration(id);
+      // refresh the latest list from the server
+      this.reFetchInsights();
     },
-    getInsightSet() {
-      if (this.curatedInsights.length > 0) {
-        const curatedSet = this.listInsights.filter(i => this.curatedInsights.find(e => e === i.id));
-        return curatedSet;
-      } else {
-        return this.listInsights;
+    exportSelectedInsights(item) {
+      switch (item) {
+        case 'Word':
+          InsightUtil.exportDOCX(this.searchedInsights, this.projectMetadata);
+          break;
+        case 'Powerpoint':
+          InsightUtil.exportPPTX(this.searchedInsights, this.projectMetadata);
+          break;
+        default:
+          break;
       }
-    },
-    exportDOCX() {
-      // 72dpi * 8.5 inches width, as word perplexingly uses pixels
-      // same height as width so that we can attempt to be consistent with the layout.
-      const docxMaxImageSize = 612;
-      const insightSet = this.selectedInsights;
-      const sections = insightSet.map((i) => {
-        const datacubeId = _.first(i.context_id);
-        const imageSize = this.scaleImage(i.thumbnail, docxMaxImageSize, docxMaxImageSize);
-        const insightDate = dateFormatter(i.modified_at);
-        return {
-          footers: {
-            default: new Footer({
-              children: [
-                new Paragraph({
-                  alignment: AlignmentType.CENTER,
-                  children: [
-                    new TextRun({
-                      size: 14,
-                      text: this.metadataSummary
-                    })
-                  ]
-                })
-              ]
-            })
-          },
-          properties: {
-            type: SectionType.NEXT_PAGE
-          },
-          children: [
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              heading: HeadingLevel.HEADING_2,
-              text: `${i.name}`
-            }),
-            new Paragraph({
-              break: 1,
-              alignment: AlignmentType.CENTER,
-              children: [
-                new ImageRun({
-                  data: i.thumbnail,
-                  transformation: {
-                    height: imageSize.height,
-                    width: imageSize.width
-                  }
-                })
-              ]
-            }),
-            new Paragraph({
-              alignment: AlignmentType.LEFT,
-              children: [
-                new TextRun({
-                  break: 1,
-                  bold: true,
-                  size: 24,
-                  text: 'Description: '
-                }),
-                new TextRun({
-                  size: 24,
-                  text: `${i.description}`
-                }),
-                new TextRun({
-                  bold: true,
-                  break: 1,
-                  size: 24,
-                  text: 'Metadata: '
-                }),
-                new TextRun({
-                  size: 24,
-                  text: `Captured on: ${insightDate} - ${this.metadataSummary} - `
-                }),
-                new ExternalHyperlink({
-                  child: new TextRun({
-                    size: 24,
-                    text: '(View Source on Causemos)',
-                    underline: {
-                      type: UnderlineType.SINGLE
-                    }
-                  }),
-                  link: this.slideURL(InsightUtil.getSourceUrlForExport(i.url, i.id, datacubeId))
-                })
-              ]
-            })
-          ]
-        };
-      });
-
-      const doc = new Document({
-        sections,
-        title: this.projectMetadata.name,
-        description: this.metadataSummary
-      });
-
-      Packer.toBlob(doc).then(blob => {
-        saveAs(blob, `${this.getFileName()}.docx`);
-      });
-      this.exportActive = false;
-    },
-    exportPPTX() {
-      // some PPTX consts as powerpoint does everything in inches & has hard boundaries
-      const widthLimitImage = 10;
-      const heightLimitImage = 4.75;
-      const Pptxgen = pptxgen;
-      const pres = new Pptxgen();
-
-      // so we can add the project metadata in the footer with basic numbering while we're at it.
-      pres.defineSlideMaster({
-        title: 'MASTER_SLIDE',
-        margin: [0.5, 0.25, 1.00, 0.25],
-        background: { fill: 'FFFFFF' },
-        slideNumber: { x: 9.75, y: 5.375, color: '000000', fontSize: 8, align: pres.AlignH.right }
-      });
-      const insightSet = this.selectedInsights;
-      insightSet.forEach((i) => {
-        const datacubeId = _.first(i.context_id);
-        const imageSize = this.scaleImage(i.thumbnail, widthLimitImage, heightLimitImage);
-        const insightDate = dateFormatter(i.modified_at);
-        const slide = pres.addSlide();
-        const notes = `Title: ${i.name}\nDescription: ${i.description}\nCaptured on: ${insightDate}\n${this.metadataSummary}`;
-
-        /*
-          PPTXGEN BUG WORKAROUND - library level function slide.addNotes(notes) doesn't insert notes
-          correctly at the moment, placing an object array doesn't get parse back out to a string
-          so we manually push a SlideObject representing a note in this slides' _slideObject array,
-          so that only a string is set.
-        */
-        slide._slideObjects.push({
-          _type: 'notes',
-          text: notes
-        });
-
-        slide.addImage({
-          data: i.thumbnail,
-          // centering image code for x & y limited by consts for max content size
-          // plus base offsets needed to stay clear of other elements
-          x: (widthLimitImage - imageSize.width) / 2,
-          y: (heightLimitImage - imageSize.height) / 2,
-          w: imageSize.width,
-          h: imageSize.height
-        });
-        slide.addText([
-          {
-            text: `${i.name}: `,
-            options: {
-              bold: true,
-              color: '000088',
-              hyperlink: {
-                url: this.slideURL(InsightUtil.getSourceUrlForExport(i.url, i.id, datacubeId))
-              }
-            }
-          },
-          {
-            text: `${i.description} `,
-            options: {
-              break: false
-            }
-          },
-          {
-            text: `\n(Captured on: ${insightDate} - ${this.metadataSummary} `,
-            options: {
-              break: false
-            }
-          },
-          {
-            text: 'View On Causemos',
-            options: {
-              break: false,
-              color: '000088',
-              hyperlink: {
-                url: this.slideURL(InsightUtil.getSourceUrlForExport(i.url, i.id, datacubeId))
-              }
-            }
-          },
-          {
-            text: '.)',
-            options: {
-              break: false
-            }
-          }
-        ], {
-          x: 0,
-          y: 4.75,
-          w: 10,
-          h: 0.75,
-          color: '363636',
-          fontSize: 10,
-          align: pres.AlignH.left
-        });
-      });
-      pres.writeFile({
-        fileName: this.getFileName()
-      });
-      this.exportActive = false;
-    },
-    getFileName() {
-      const date = new Date();
-      const formattedDate = dateFormatter(date, 'YYYY-MM-DD hh:mm:ss a');
-      return `Causemos ${this.projectMetadata.name} ${formattedDate}`;
-    },
-    getPngDimensionsInPixels(base64png) {
-      const header = atob(base64png.slice(22, 72)).slice(16, 24);
-      const uint8 = Uint8Array.from(header, c => c.charCodeAt(0));
-      const dataView = new DataView(uint8.buffer);
-      const width = dataView.getInt32(0);
-      const height = dataView.getInt32(4);
-      return { height, width };
     },
     isCuratedInsight(id) {
       return this.curatedInsights.reduce((res, ci) => {
@@ -547,26 +277,14 @@ export default {
       }
       this.activeInsight = id;
     },
-    openExport() {
-      this.exportActive = true;
-    },
     removeCuration(id) {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
     },
-    scaleImage(base64png, widthLimit, heightLimit) {
-      const imageSize = this.getPngDimensionsInPixels(base64png);
-      let scaledWidth = widthLimit;
-      let scaledHeight = imageSize.height * scaledWidth / imageSize.width;
-
-      if (scaledHeight > heightLimit) {
-        scaledHeight = heightLimit;
-        scaledWidth = imageSize.width * scaledHeight / imageSize.height;
-      }
-
-      return {
-        width: scaledWidth,
-        height: scaledHeight
-      };
+    reviewInsight(insight) {
+      // open review modal (i.e., insight gallery view)
+      this.setUpdatedInsight(insight);
+      this.setInsightList(this.searchedInsights);
+      this.setCurrentPane('review-insight');
     },
     selectInsight(insight) {
       if (insight === this.selectedInsight) {
@@ -574,41 +292,20 @@ export default {
         return;
       }
       this.selectedInsight = insight;
+
       const savedURL = insight.url;
       const currentURL = this.$route.fullPath;
+      const finalURL = InsightUtil.jumpToInsightContext(insight, currentURL);
       if (savedURL !== currentURL) {
-        // FIXME: applying (private) insights that belong to analyses that no longer exist
-        // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
-
-        // add 'insight_id' as a URL param so that the target page can apply it
-        // /data/ will be in the url if we are in the datacube drilldown page in which case datacube_id should be in the route.
-        const finalURL = InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id, _.first(this.selectedInsight.context_id));
-
-        // special case
-        if (this.projectType !== ProjectType.Analysis && this.selectedInsight.visibility === 'private') {
-          // this is a private insight created by an analyst:
-          // when applying this insight from within a domain project, it will redirect to the relevant analysis project
-          // so show a warning before leaving
-          this.redirectInsightUrl = finalURL;
-          this.showWarningModal();
-          return;
-        }
-
         this.$router.push(finalURL);
       } else {
         router.push({
           query: {
-            insight_id: this.selectedInsight.id
+            insight_id: insight.id
           }
         }).catch(() => {});
       }
       this.closeInsightPanel();
-    },
-    showWarningModal() {
-      this.showModal = true;
-    },
-    slideURL(slideURL) {
-      return `${window.location.protocol}//${window.location.host}/#${slideURL}`;
     },
     switchTab(id) {
       this.activeInsight = null;
@@ -616,9 +313,6 @@ export default {
       this.activeTabId = id;
 
       // FIXME: reload insights since questions most recent question stuff may not be up to date
-    },
-    toggleExportMenu() {
-      this.exportActive = !this.exportActive;
     },
     updateCuration(id) {
       if (this.isCuratedInsight(id)) {
@@ -633,6 +327,34 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
+
+.export-dropdown {
+  ::v-deep(.dropdown-btn) {
+    padding-bottom: 10px;
+    margin-right: 4px;
+    background-color: lightgray;
+    padding: 3px 6px;
+    font-size: larger;
+    &:hover {
+      background-color: gray;
+    }
+  }
+  ::v-deep(.dropdown-container) {
+    position: absolute;
+    right: 1rem;
+    padding: 0;
+    width: auto;
+    height: fit-content;
+    text-align: left;
+    // Clip children overflowing the border-radius at the corners
+    overflow: hidden;
+
+    &.below {
+      top: 96px;
+    }
+  }
+}
+
 .list-insights-modal-container {
   display: flex;
   flex-direction: column;
@@ -649,18 +371,7 @@ export default {
       padding: 0.75rem 0 0 ;
       flex: 0 0 auto;
       .dropdown-container {
-        position: absolute;
-        right: 1rem;
-        padding: 0;
-        width: auto;
-        height: fit-content;
-        text-align: left;
-        // Clip children overflowing the border-radius at the corners
-        overflow: hidden;
 
-        &.below {
-          top: 96px;
-        }
       }
     }
   }

@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const { v4: uuid } = require('uuid');
+const moment = require('moment');
 const Logger = rootRequire('/config/logger');
 
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
@@ -11,6 +12,11 @@ const modelUtil = rootRequire('/util/model-util');
 
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
 const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;
+
+const HISTORY_START_DATE = '2015-01-01';
+const HISTORY_END_DATE = '2020-12-01';
+const PROJECTION_START_DATE = '2021-01-01';
+const DEFAULT_NUM_STEPS = 12;
 
 
 // Get model with no thumbnail
@@ -189,6 +195,11 @@ const deleteComponents = async(modelId, resource, components) => {
 const createCAG = async (modelFields, edges, nodes) => {
   const CAGId = uuid();
   Logger.info('Creating CAG entry: ' + CAGId);
+
+  const defaultTimeSeriesStart = moment.utc(HISTORY_START_DATE).valueOf();
+  const defaultTimeSeriesEnd = moment.utc(HISTORY_END_DATE).valueOf();
+  const defaultProjectionStartDate = moment.utc(PROJECTION_START_DATE).valueOf();
+
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const keyFn = (doc) => {
     return doc.id;
@@ -200,6 +211,16 @@ const createCAG = async (modelFields, edges, nodes) => {
     is_stale: false,
     status: MODEL_STATUS.NOT_REGISTERED,
     engine_status: RESET_ALL_ENGINE_STATUS,
+    parameter: {
+      indicator_time_series_range: {
+        start: defaultTimeSeriesStart,
+        end: defaultTimeSeriesEnd
+      },
+      num_steps: DEFAULT_NUM_STEPS,
+      projection_start: defaultProjectionStartDate,
+      engine: 'dyse',
+      time_scale: undefined // Will be set when CAG first load in the application
+    },
     created_at: now,
     modified_at: now
   }, keyFn);

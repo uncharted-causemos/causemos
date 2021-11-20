@@ -44,6 +44,7 @@ export default defineComponent({
   components: {
     Modal
   },
+  emits: ['search', 'close'],
   props: {
     numberOfRelationsAdded: {
       type: Number,

@@ -6,17 +6,17 @@
     <dropdown-control v-if="isDropdownOpen" class="analysis-options-dropdown">
       <template #content>
         <div class="dropdown-option" @click="showRenameModal">
-          Rename
+          <i class="fa fa-fw fa-edit" /> Rename
         </div>
         <div
           class="dropdown-option"
           :class="{ disabled: idToDuplicate === null }"
           @click="showDuplicateModal"
         >
-          Duplicate
+          <i class="fa fa-fw fa-copy" /> Duplicate
         </div>
-        <div class="dropdown-option" @click="onDelete">
-          Delete
+        <div class="dropdown-option destructive" @click="onDelete">
+          <i class="fa fa-fw fa-trash" /> Delete
         </div>
       </template>
     </dropdown-control>
@@ -130,7 +130,10 @@ button {
 .analysis-options-dropdown {
   position: absolute;
   margin-top: 5px;
-  width: 100px;
+  width: 110px;
   right: 0;
+}
+.destructive {
+  color: $negative;
 }
 </style>

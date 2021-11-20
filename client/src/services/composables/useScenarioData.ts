@@ -1,8 +1,8 @@
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { getModelRunMetadata } from '@/services/new-datacube-service';
-import { isImage, isVideo, TAGS } from '@/utils/datacube-util';
-import { DatacubeGenericAttributeVariableType, ModelRunStatus } from '@/types/Enums';
+import { getAggregationKey, isImage, isVideo, TAGS } from '@/utils/datacube-util';
+import { AggregationOption, DatacubeGenericAttributeVariableType, ModelRunStatus } from '@/types/Enums';
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
 
@@ -58,7 +58,10 @@ export default function useScenarioData(
               // this is an output filter
               //  we need to search the array of v.output_agg_values
               // note: this will always be a numeric range
-              const runOutputValue = v.output_agg_values[0].value;
+              // TODO: This needs to depend on the selected aggregation functions
+              const aggKey = getAggregationKey(AggregationOption.Mean, AggregationOption.Mean);
+              const outputValue = v.output_agg_values.find(val => val.name === filterField);
+              const runOutputValue = (outputValue && outputValue[aggKey]) ?? NaN;
               const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
               return runOutputValue >= filterRange[0] && runOutputValue <= filterRange[1];
             }
