@@ -1,41 +1,36 @@
 <template>
-  <div class="add-reference-box">
+  <div class="reference-series-list">
     <h5 class="header">Add Reference</h5>
     <div
-      v-for="referenceCheckbox in referenceCheckboxes"
-      v-bind:key="referenceCheckbox.id"
+      v-for="r in referenceSeries"
+      v-bind:key="r.id"
     >
       <input
-        v-model="referenceCheckbox.checked"
+        v-model="r.checked"
         type="checkbox"
-        @change="handleToggle"
+        @change="handleToggle(r.id)"
       >
-      <span>{{ referenceCheckbox.displayName }}</span>
+      <span>{{ r.displayName }}</span>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 
-import { defineComponent, PropType, toRefs } from 'vue';
+import { defineComponent, PropType } from 'vue';
 import { ModelRunReference } from '@/types/ModelRunReference';
 
 export default defineComponent({
-  name: 'AddReferenceBox',
+  name: 'reference-series-list',
   props: {
-    referenceCheckboxes: {
+    referenceSeries: {
       type: Array as PropType<ModelRunReference[]>,
       required: true
     }
   },
   setup(props, { emit }) {
-    const {
-      referenceCheckboxes
-    } = toRefs(props);
-    console.log(referenceCheckboxes);
     const handleToggle = (value: string) => {
-      console.log(value);
-      emit('toggle-reference-box', value);
+      emit('toggle-reference-series', value);
     };
     return {
       handleToggle
@@ -47,7 +42,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 
-.add-reference-box {
+.reference-series-list {
   background: #F0F0F0;
   padding: 1px 10px;
   h5 {

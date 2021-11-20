@@ -22,12 +22,10 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
-    <add-reference-box
+    <reference-series-list
       v-if="showReferences"
-      :reference-checkboxes="[
-        {id: 'sample', displayName: 'Sample', checked: true},
-        {id: 'sample2', displayName: 'Sample2', checked: true}
-        ]"
+      :reference-series="referenceSeries"
+      @toggle-reference-series="updateSelectedReferences"
     />
     <div class="sort-selection">
       <span>Sort by</span>
@@ -81,9 +79,10 @@
 <script lang="ts">
 import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
-import AddReferenceBox from '@/components/drilldown-panel/add-reference-box.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
+import ReferenceSeriesList from '@/components/drilldown-panel/reference-series-list.vue';
 import { BreakdownData } from '@/types/Datacubes';
+import { ModelRunReference } from '@/types/ModelRunReference';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
   defineComponent,
@@ -276,9 +275,9 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
 export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
-    AddReferenceBox,
     AggregationChecklistItem,
-    RadioButtonGroup
+    RadioButtonGroup,
+    ReferenceSeriesList
   },
   props: {
     aggregationLevelCount: {
@@ -327,9 +326,13 @@ export default defineComponent({
     checkboxType: {
       type: String as PropType<'checkbox' | 'radio' | null>,
       default: null
+    },
+    referenceSeries: {
+      type: Array as PropType<ModelRunReference[]>,
+      default: []
     }
   },
-  emits: ['aggregation-level-change', 'toggle-is-item-selected'],
+  emits: ['aggregation-level-change', 'toggle-is-item-selected', 'toggle-reference-series'],
   setup(props, { emit }) {
     const {
       rawData,
@@ -504,6 +507,8 @@ export default defineComponent({
       emit('toggle-is-item-selected', aggregationLevel, itemId);
     };
 
+
+
     const setAllChecked = () => {
       // ASSUMPTION: the "All" option is only showed when "radio button" mode
       //  is active, meaning there is no more than one item
@@ -571,6 +576,9 @@ export default defineComponent({
       if (isStatefulDataNode(currentNode)) {
         currentNode.isExpanded = !currentNode.isExpanded;
       }
+    },
+    updateSelectedReferences(value: string) {
+      this.$emit('toggle-reference-series', value);
     }
   }
 });

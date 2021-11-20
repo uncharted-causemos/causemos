@@ -427,10 +427,12 @@
                   :selected-breakdown-option="breakdownOption"
                   :selected-timeseries-points="selectedTimeseriesPoints"
                   :selected-years="selectedYears"
+                  :reference-series="referenceSeries"
                   :unit="unit"
                   @toggle-is-region-selected="toggleIsRegionSelected"
                   @toggle-is-qualifier-selected="toggleIsQualifierSelected"
                   @toggle-is-year-selected="toggleIsYearSelected"
+                  @toggle-reference-series="toggleReferenceSeries"
                   @set-selected-admin-level="setSelectedAdminLevel"
                   @set-breakdown-option="setBreakdownOption"
                 />
@@ -549,6 +551,7 @@ import {
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
+import { ModelRunReference } from '@/types/ModelRunReference';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 
 import { colorFromIndex, ColorScaleType, COLOR_SCHEMES, COLOR_SWATCH_SIZE } from '@/utils/colors-util';
@@ -658,6 +661,7 @@ export default defineComponent({
     const toaster = useToaster();
 
     const activeDrilldownTab = ref<string|null>('breakdown');
+    const activeReferenceSeries = ref([] as string[]);
     const activeVizOptionsTab = ref<string|null>(null);
     const currentTabView = ref<string>('description');
     const potentialScenarioCount = ref<number|null>(0);
@@ -1607,6 +1611,42 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
+
+    // draft code for the reference series now that all of the front end events and props are moving up and down the components.
+    // from here, we can start to handle the math when we actually have active references series to revtrive and calculate
+    const referenceSeries = computed(() => {
+      let currentReferenceSeries = [] as ModelRunReference[];
+      if (breakdownOption.value === SpatialAggregationLevel.Region) {
+        currentReferenceSeries = [
+          { id: 'allRegions', displayName: 'Average All Regions', checked: true },
+          { id: 'selectedRegions', displayName: 'Average Selected Regions', checked: true }
+          // add in the individual parent regions for reference
+        ];
+      } else if (breakdownOption.value === TemporalAggregationLevel.Year) {
+        currentReferenceSeries = [
+          { id: 'allYears', displayName: 'Average All Years', checked: true },
+          { id: 'selectedYears', displayName: 'Average Selected Years', checked: true }
+        ];
+      }
+
+      return currentReferenceSeries.map((c) => {
+        return {
+          id: c.id,
+          displayName: c.displayName,
+          checked: activeReferenceSeries.value.includes(c.id)
+        };
+      });
+    });
+
+    const toggleReferenceSeries = (value: string) => {
+      if (activeReferenceSeries.value.includes(value)) {
+        activeReferenceSeries.value = activeReferenceSeries.value.filter((r) => r !== value);
+      } else {
+        activeReferenceSeries.value.push(value);
+      }
+      console.log(activeReferenceSeries.value);
+    };
+
     return {
       addNewTag,
       allModelRunData,
@@ -1678,6 +1718,7 @@ export default defineComponent({
       selectedColorScaleType,
       setNumberOfColorBins,
       numberOfColorBins,
+      referenceSeries,
       selectedDataLayer,
       selectedPreGenDataItem,
       selectedQualifierValues,
@@ -1717,6 +1758,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsYearSelected,
       toggleNewRunsMode,
+      toggleReferenceSeries,
       unit,
       updatePotentialScenarioDates,
       updateStateFromInsight,
