@@ -97,8 +97,8 @@
       </template>
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
-      v-if="isTemporalBreakdownDataValid"
       ref="year_ref"
+      v-if="isTemporalBreakdownDataValid"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
       :aggregation-level="0"
@@ -128,7 +128,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, defineComponent, PropType, toRefs, nextTick } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
@@ -321,15 +321,17 @@ export default defineComponent({
     };
   },
   methods: {
-    scrollToQualifier (newValue: string | null) {
-      const reference = newValue + '_ref';
-      if (newValue) {
-        const element = (this.$refs[reference] as any).$el;
-        const container = document.getElementById('panel-content-container');
-        if (container) {
-          container.scrollTop = element.offsetTop - 45;
+    async scrollToQualifier (newValue: string | null) {
+      nextTick(() => {
+        const reference = newValue + '_ref';
+        if (newValue) {
+          const element = (this.$refs[reference] as any).$el;
+          const container = document.getElementById('panel-content-container');
+          if (container) {
+            container.scrollTop = element.offsetTop - 45;
+          }
         }
-      }
+      });
     }
   }
 });
