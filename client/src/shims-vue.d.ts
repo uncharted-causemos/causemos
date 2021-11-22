@@ -10,3 +10,5 @@ declare module 'vue3-resize';
 declare module 'v-tooltip';
 
 declare module 'vsup';
+
+declare module 'file-saver';

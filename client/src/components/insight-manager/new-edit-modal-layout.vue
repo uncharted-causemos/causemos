@@ -89,7 +89,6 @@
         </div>
 
         <drilldown-panel
-          class="metadata-drilldown-panel"
           is-open
           :tabs="drilldownTabs"
           :activeTabId="drilldownTabs[0].id"
@@ -251,6 +250,7 @@ export default defineComponent({
 
       // attach the annotation UI to the parent of the image
       this.markerArea.targetRoot = refAnnotatedImage.parentElement as HTMLElement;
+      this.markerArea.renderAtNaturalSize = true;
 
       let annotationSaved = false;
 
@@ -297,6 +297,7 @@ export default defineComponent({
 
       // create an instance of CropArea and pass the target image reference as a parameter
       this.cropArea = new CropArea(refCroppedImage);
+      this.cropArea.renderAtNaturalSize = true;
 
       // before beginning the crop mode,
       //  we must ensure the full image is shown as the crop source
@@ -435,8 +436,6 @@ export default defineComponent({
         height: 100%;
         .preview {
           flex: 1 1 auto;
-          margin: 0 0 2rem 0;
-          padding-top: 5rem;
           overflow: auto;
           align-self: center;
           img {

@@ -236,7 +236,7 @@ $axis-line-height: $font-size-large;
 
 .histogram-row {
   display: flex;
-  background: #efefef;
+  background: #f3f3f3;
   width: 50px;
 }
 
