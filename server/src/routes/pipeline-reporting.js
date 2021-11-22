@@ -26,11 +26,4 @@ router.put('/queue-runtime', asyncHandler(async (req, res) => {
   await respondUsingCode(req, res, pipelineReportingService.setRuntimeQueued);
 }));
 
-/**
- * Model run summary endpoint sets the output aggregate fields for a list of documents.
- */
-router.put('/pipeline-results', asyncHandler(async (req, res) => {
-  await respondUsingCode(req, res, pipelineReportingService.setPipelineResults);
-}));
-
 module.exports = router;

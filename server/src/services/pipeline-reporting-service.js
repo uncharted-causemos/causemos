@@ -1,12 +1,17 @@
 const maasService = rootRequire('/services/external/maas-service');
 const datacubeService = rootRequire('/services/datacube-service');
+const requestAsPromise = rootRequire('/util/request-as-promise');
 
 /**
  * Update a set of documents so that their status is now `READY`
  */
 const setProcessingSucceeded = async(metadata) => {
+  const dataId = metadata.data_id;
+  const runId = metadata.run_id;
   const docIds = metadata.doc_ids;
   const isIndicator = metadata.is_indicator;
+
+  const results = await fetchPipelineResults(dataId, runId);
 
   const updateDelta = docIds.map(docId => {
     return {
@@ -17,7 +22,8 @@ const setProcessingSucceeded = async(metadata) => {
           end_time: metadata.end_time,
           start_time: metadata.start_time
         }
-      }
+      },
+      ...results
     };
   });
   return await updateDocuments(updateDelta, isIndicator);
@@ -60,26 +66,6 @@ const setRuntimeQueued = async(metadata) => {
   return await updateDocuments(updateDelta, isIndicator);
 };
 
-/**
- * Update documents with results from the pipeline (i.e. output_agg_values and data_info)
- */
-const setPipelineResults = async(metadata) => {
-  const docIds = metadata.doc_ids;
-  const isIndicator = metadata.is_indicator;
-
-  const updateDelta = docIds.map(docId => {
-    const delta = { id: docId };
-    if (metadata.output_agg_values) {
-      delta.output_agg_values = metadata.output_agg_values;
-    }
-    if (metadata.data_info) {
-      delta.data_info = metadata.data_info;
-    }
-    return delta;
-  });
-  return await updateDocuments(updateDelta, isIndicator);
-};
-
 const updateDocuments = async(updateDelta, isIndicator) => {
   if (isIndicator) {
     await datacubeService.updateDatacubes(updateDelta);
@@ -90,9 +76,25 @@ const updateDocuments = async(updateDelta, isIndicator) => {
   }
 };
 
+const fetchPipelineResults = async(dataId, runId) => {
+  const options = {
+    method: 'GET',
+    url: process.env.WM_GO_URL + '/maas/output/pipeline-results',
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {
+      data_id: dataId,
+      run_id: runId
+    }
+  };
+  const response = await requestAsPromise(options);
+  return response;
+};
+
 module.exports = {
   setProcessingFailed,
   setProcessingSucceeded,
-  setRuntimeQueued,
-  setPipelineResults
+  setRuntimeQueued
 };
