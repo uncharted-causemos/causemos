@@ -1,23 +1,30 @@
-import _ from 'lodash';
 import * as d3 from 'd3';
 import moment from 'moment';
 
 import initialize from '@/charts/initialize';
-import { timeseriesLine } from '@/utils/svg-util';
+import { timeseriesLine, translate } from '@/utils/svg-util';
 import { chartValueFormatter } from '@/utils/string-util';
-import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
+import { D3GElementSelection, D3Selection } from '@/types/D3';
 import { Chart } from '@/types/Chart';
 import { NodeScenarioData } from '@/types/CAG';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
+import { convertTimeseriesDistributionToHistograms } from '@/utils/histogram-util';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_LINE_COLOR = '#999';
+const SPACE_BETWEEN_HISTOGRAMS = 2;
+const SPACE_BETWEEN_HISTOGRAM_BARS = 1;
+const HISTOGRAM_BACKGROUND_COLOR = HISTORY_BACKGROUND_COLOR;
+const HISTOGRAM_FOREGROUND_COLOR = HISTORY_LINE_COLOR;
+// How much of the node is taken up by the history chart
+// TODO: If all projections are hidden, this will expand to take the full width
+const HISTORY_WIDTH_PERCENTAGE = 0.5;
 
 export default function(
   selection: D3Selection,
   nodeScenarioData: NodeScenarioData,
   renderOptions: any,
-  runOptions: any
+  runOptions: { selectedScenarioId: string }
 ) {
   const chart: Chart = initialize(selection, renderOptions);
   render(chart, nodeScenarioData, runOptions);
@@ -29,10 +36,10 @@ export default function(
 function render(
   chart: Chart,
   nodeScenarioData: NodeScenarioData,
-  // TODO: better type for runOptions
-  runOptions: any
+  runOptions: { selectedScenarioId: string }
 ) {
-  const selectedScenario = nodeScenarioData.scenarios.find(
+  const { scenarios, indicator_time_series, min, max } = nodeScenarioData;
+  const selectedScenario = scenarios.find(
     s => s.id === runOptions.selectedScenarioId
   );
   if (selectedScenario === undefined) {
@@ -42,65 +49,47 @@ function render(
     return;
   }
 
-  // Figure out the [start, end] ranges
-  let globalStart = Number.POSITIVE_INFINITY;
-  let globalEnd = Number.NEGATIVE_INFINITY;
-  nodeScenarioData.scenarios.forEach(scenario => {
-    const {
-      indicator_time_series_range,
-      projection_start,
-      num_steps
-    } = scenario.parameter;
-    const start = indicator_time_series_range.start;
-    const end = moment
-      .utc(projection_start)
-      .add(num_steps, 'months')
-      .valueOf();
-    if (start < globalStart) globalStart = start;
-    if (end > globalEnd) globalEnd = end;
-  });
+  // Calculate timestamp of the earliest historical time to display
+  const { projection_start } = selectedScenario.parameter;
+  // TODO: should this be a constant? based on time_scale? based on how many columns are hidden?
+  const historicalMonthsToDisplay = 5 * 12;
+  const historyStart = moment
+    .utc(projection_start)
+    .subtract(historicalMonthsToDisplay, 'months')
+    .valueOf();
+  const historyEnd = projection_start;
 
-  // Portion of time series relating to current scenario
-  const historyRange = selectedScenario.parameter.indicator_time_series_range;
-  const filteredTimeSeries = nodeScenarioData.indicator_time_series.filter(
-    d => d.timestamp >= historyRange.start && d.timestamp <= historyRange.end
+  // Filter out timeseries points that aren't within the range we're displaying
+  const filteredTimeSeries = indicator_time_series.filter(
+    d => d.timestamp >= historyStart && d.timestamp <= historyEnd
   );
 
-  // Chart params
+  // Choose yExtent so that mostRecentHistoricalValue value is centered
+  let yExtentMin = min;
+  let yExtentMax = max;
+  const mostRecentHistoricalValue =
+    indicator_time_series[indicator_time_series.length - 1].value;
+  const currentCenterOfRange = (yExtentMin + yExtentMax) / 2;
+  const diffToCenterOfRange = mostRecentHistoricalValue - currentCenterOfRange;
+  if (mostRecentHistoricalValue > currentCenterOfRange) {
+    // Raise max so that mostRecentHistoricalValue is centered
+    yExtentMax += 2 * diffToCenterOfRange;
+  } else {
+    // Lower min so that mostRecentHistoricalValue is centered
+    yExtentMin += 2 * diffToCenterOfRange;
+  }
+  const yExtent = [yExtentMin, yExtentMax];
+
+  // Chart dimensions
   const height = chart.y2 - chart.y1;
   const width = chart.x2 - chart.x1;
-  let xExtent = null;
-  let yExtent = null;
-
-  xExtent = [globalStart, globalEnd];
-  if (_.isEmpty(filteredTimeSeries)) {
-    yExtent = [0, 0];
-  } else {
-    // Safe to assume yExtent is not [undefined, undefined] since
-    //  filteredTimeSeries is not empty
-    yExtent = d3.extent(filteredTimeSeries.map(d => d.value)) as [
-      number,
-      number
-    ];
-  }
-  if (yExtent[1] === yExtent[0] && yExtent[0] === 0) {
-    yExtent = [0, 1];
-  } else if (yExtent[1] === yExtent[0] && yExtent[0] !== 0) {
-    // if flat-line around non-zero, range becomes 0 and twice the value  (ex. 5.5 => [0,11]  -5.5 => [-11,0])
-    yExtent = [
-      yExtent[0] - Math.abs(yExtent[0]),
-      yExtent[0] + Math.abs(yExtent[0])
-    ];
-  }
-
-  yExtent = [nodeScenarioData.min, nodeScenarioData.max];
 
   const formatter = chartValueFormatter(...yExtent);
-  const xscale = d3
+  const historyChartXScale = d3
     .scaleLinear()
-    .domain(xExtent)
-    .range([0, width]);
-  const yscale = d3
+    .domain([historyStart, historyEnd])
+    .range([0, width * HISTORY_WIDTH_PERCENTAGE]);
+  const historyChartYScale = d3
     .scaleLinear()
     .domain(yExtent)
     .range([height, 0])
@@ -113,13 +102,11 @@ function render(
   svgGroup
     .append('rect')
     .classed('historical-rect', true)
+    .attr('x', historyChartXScale(historyStart))
     .attr('y', 0)
-    .attr('x', xscale(historyRange.start))
     .attr('height', height)
-    .attr('width', xscale(historyRange.end))
-    .attr('stroke', 'none')
-    .attr('fill', HISTORY_BACKGROUND_COLOR)
-    .attr('fill-opacity', 0.6);
+    .attr('width', historyChartXScale(historyEnd))
+    .attr('fill', HISTORY_BACKGROUND_COLOR);
 
   const historicG = svgGroup.append('g');
   historicG
@@ -130,8 +117,8 @@ function render(
       // FIXME: TypeScript shenanigans are necessary because timeseriesLine()
       //  is in a JS file. See svg-util.js for more details.
       timeseriesLine(
-        xscale,
-        yscale
+        historyChartXScale,
+        historyChartYScale
       )((filteredTimeSeries as any) as [number, number][]) as string
     )
     .style('stroke', HISTORY_LINE_COLOR)
@@ -141,28 +128,34 @@ function render(
 
   renderScenarioProjections(
     svgGroup,
+    width * HISTORY_WIDTH_PERCENTAGE,
+    width * (1 - HISTORY_WIDTH_PERCENTAGE),
+    height,
     nodeScenarioData,
-    runOptions,
-    xscale,
-    yscale
+    runOptions
   );
 
   // Axes
-  const yaxis = d3
-    .axisRight(yscale)
-    .tickValues(calculateGenericTicks(yscale.domain()[0], yscale.domain()[1]))
+  const yAxis = d3
+    .axisRight(historyChartYScale)
+    .tickValues(
+      calculateGenericTicks(
+        historyChartYScale.domain()[0],
+        historyChartYScale.domain()[1]
+      )
+    )
     .tickSize(0)
     // The type of formatter can't be more specific than `any`
     //  because under the hood d3.tickFormat requires d3.NumberType.
     // It correctly converts, but its TypeScript definitions don't
     //  seem to reflect that.
     .tickFormat(formatter as any);
-
+  // Render Y axis and hide domain line
   const yAxisElement = svgGroup
     .append('g')
     .classed('yaxis', true)
     .style('pointer-events', 'none')
-    .call(yaxis)
+    .call(yAxis)
     .style('font-size', '5px')
     .style('color', HISTORY_LINE_COLOR);
   yAxisElement.select('.domain').attr('stroke-width', 0);
@@ -171,21 +164,75 @@ function render(
 
 function renderScenarioProjections(
   svgGroup: D3GElementSelection,
+  xOffset: number,
+  width: number,
+  height: number,
   nodeScenarioData: NodeScenarioData,
-  runOptions: any,
-  xScale: D3ScaleLinear,
-  yScale: D3ScaleLinear
-  // FIXME: render constraints
-  // constraints
+  runOptions: { selectedScenarioId: string }
 ) {
-  svgGroup.selectAll('.scenario').remove();
-  console.log(yScale.range());
+  // Collect/extract all the pieces of data needed to convert projections into
+  //  histogram format.
+  const { selectedScenarioId } = runOptions;
+  const projection = nodeScenarioData.scenarios.find(
+    scenario => scenario.id === selectedScenarioId
+  );
+  if (projection === undefined) {
+    console.error(
+      'Scenario renderer is unable to find selected scenario with ID',
+      selectedScenarioId,
+      'in scenarios list',
+      nodeScenarioData.scenarios
+    );
+    return;
+  }
+  const historicalTimeseries = nodeScenarioData.indicator_time_series;
+  const isAbstractNode = nodeScenarioData.indicator_id === null;
+  const projectionValues = projection.result?.values ?? [];
+  if (projectionValues.length === 0) {
+    return;
+  }
 
-  // FIXME: render histograms instead of line charts
-  // convertTimeseriesDistributionToHistograms(
-  //   this.modelSummary,
-  //   isAbstractNode ? [] : this.historicalTimeseries,
-  //   null, // TODO: clampedNowValue
-  //   projection.values
-  // )
+  // Convert projections into histogram format.
+  const histograms = convertTimeseriesDistributionToHistograms(
+    nodeScenarioData.time_scale,
+    isAbstractNode ? [] : historicalTimeseries,
+    projectionValues
+  );
+
+  // Render one histogram for each selected time slice
+  // FIXME: only render some slices depending on which ones are selected
+  // FIXME: we should exit much earlier if no slices are selected
+  const widthPerHistogram = width / histograms.length;
+  const heightPerHistogramBar = height / histograms[0].length;
+  const histogramElements = svgGroup
+    .selectAll('.histogram')
+    .data(histograms)
+    .join('g')
+    .classed('histogram', true)
+    .attr('transform', (d, i) => translate(xOffset + i * widthPerHistogram, 0));
+  const histogramBarElements = histogramElements
+    .selectAll('.histogram-bar')
+    .data(d => d)
+    .join('g')
+    .classed('histogram-bar', true);
+  histogramBarElements
+    .append('rect')
+    .attr('width', widthPerHistogram - SPACE_BETWEEN_HISTOGRAMS)
+    .attr('height', heightPerHistogramBar - SPACE_BETWEEN_HISTOGRAM_BARS)
+    .attr('fill', HISTOGRAM_BACKGROUND_COLOR)
+    .attr('transform', (d, j) =>
+      translate(SPACE_BETWEEN_HISTOGRAMS, j * heightPerHistogramBar)
+    );
+  histogramBarElements
+    .append('rect')
+    .attr(
+      'width',
+      d => (d / 100) * (widthPerHistogram - SPACE_BETWEEN_HISTOGRAMS)
+    )
+    .attr('height', heightPerHistogramBar - SPACE_BETWEEN_HISTOGRAM_BARS)
+    .attr('fill', HISTOGRAM_FOREGROUND_COLOR)
+    .attr('transform', (d, j) =>
+      translate(SPACE_BETWEEN_HISTOGRAMS, j * heightPerHistogramBar)
+    );
+  // TODO: render constraints
 }

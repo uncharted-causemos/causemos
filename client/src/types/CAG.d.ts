@@ -57,7 +57,8 @@ export interface Scenario {
 }
 
 export interface NodeScenarioData {
-  indicator_name?: string;
+  indicator_name: string;
+  indicator_id: string | null;
   indicator_time_series: TimeseriesPoint[];
   indicator_time_series_range: {
     start: number;
@@ -66,6 +67,7 @@ export interface NodeScenarioData {
   min: number;
   max: number;
   projection_start: number;
+  time_scale: TimeScale;
   scenarios: {
     id: string;
     is_baseline: boolean;
