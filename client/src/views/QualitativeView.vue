@@ -153,6 +153,7 @@
     </main>
     <modal-time-scale
       v-if="showModalTimeScale"
+      :initially-selected-time-scale="modelSummary?.parameter?.time_scale"
       @save-time-scale="saveTimeScale"
       @close="showModalTimeScale = false"
     />
