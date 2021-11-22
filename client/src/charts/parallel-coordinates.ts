@@ -94,7 +94,14 @@ const axisOutputLabelFontSize = '10px';
 // brushing
 const brushHeight = 8;
 
-const numberIntegerFormat = d3.format('~s');
+const numberIntegerFormat = (n: number | { valueOf(): number}) => {
+  const numDigits = n.toString().length;
+  if (numDigits > 4) {
+    return d3.format('~s')(n); // The ~ option trims insignificant trailing zeros across all format types
+  } else {
+    return n.toString();
+  }
+};
 const numberFloatFormat = d3.format(',.2f');
 
 //
@@ -300,6 +307,8 @@ function renderParallelCoordinates(
         //
         // get the corresponding label for this value if suitable
         val = findLabelForValue(p, val);
+        // re-evaluate the xPos since the output val may be different from the input val
+        xPos = scaleX(val as any) as number;
         const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), val.toString());
         if (options.newRunsMode) {
           // special case when rendering potential scenario lines in the new-runs mode
@@ -1749,6 +1758,13 @@ function findLabelForValue(dim: DimensionInfo, value: string | number) {
       }
     }
   }
+  // special case for geo parameters: map their defualt-value to the default-label-value
+  if (isGeoParameter(dim.type)) {
+    const dimAsModelParam = (dim as ModelParameter);
+    if (value as string === dimAsModelParam.default && dimAsModelParam.additional_options && dimAsModelParam.additional_options.default_value_label) {
+      labelValue = dimAsModelParam.additional_options.default_value_label;
+    }
+  }
   return labelValue;
 }
 
@@ -2007,7 +2023,7 @@ const createScales = (
       dataExtent = dim?.choices_labels ? dim?.choices_labels : (dim?.choices ?? dim?.choices ?? []);
     }
 
-    const dataChoices = data.map(function(p) { return p[name]; }); // note this will return an array of values for all runs
+    const dataChoices = data.map(function(p) { return p[name]; }); // return an array of values for all runs
     if (dataExtent.length === 0) {
       dataExtent = dataChoices;
     }
@@ -2017,8 +2033,14 @@ const createScales = (
     // ensure that dataExtent and dataChoices are merged as one list (including the default value)
     const outputVarName = getOutputDimension(dimensions).name;
     if (outputVarName !== name) {
-      dataChoices.push((dim as ModelParameter).default);
-      isFreeformParam = (dim as ModelParameter).data_type === ModelParameterDataType.Freeform;
+      const dimAsModelParam = (dim as ModelParameter);
+      // sometimes, a geo param may have a default formatted in a less-human-readable way
+      if (isGeoParameter(dimAsModelParam.type) && dimAsModelParam.additional_options && dimAsModelParam.additional_options.default_value_label) {
+        dataChoices.push(dimAsModelParam.additional_options.default_value_label);
+      }
+      dataChoices.push(dimAsModelParam.default);
+
+      isFreeformParam = dimAsModelParam.data_type === ModelParameterDataType.Freeform;
     }
     if (isFreeformParam) {
       // only freeform params can have combined list of choices.

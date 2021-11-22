@@ -1705,6 +1705,20 @@ export default defineComponent({
           // ensure that both choices and labels exist
           const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
           const updatedChoicesLabels = updatedModelParam.choices_labels === undefined || updatedModelParam.choices_labels.length === 0 ? _.clone(updatedModelParam.choices) as Array<string> : _.clone(updatedModelParam.choices_labels) as Array<string>;
+          const getFormattedBBox = (bbox: any) => {
+            // NOTE: bbox is coming as input string formatted as
+            //       [ [{left}, {top}], [{right}, {bottom}] ]
+            const targetBBoxFormat = updatedModelParam.additional_options.geo_bbox_format;
+            if (!targetBBoxFormat) {
+              return bbox; // user has not defined a bbox format, so return the default one
+            }
+            let finalBBox = _.clone(targetBBoxFormat);
+            finalBBox = finalBBox.replace('{left}', bbox[0][0]);
+            finalBBox = finalBBox.replace('{top}', bbox[0][1]);
+            finalBBox = finalBBox.replace('{right}', bbox[1][0]);
+            finalBBox = finalBBox.replace('{bottom}', bbox[1][1]);
+            return finalBBox;
+          };
           const formattedRegion = (region: GeoRegionDetail) => {
             const validSelectedRegion = region.path;
             switch (updatedModelParam.additional_options.geo_region_format) {
@@ -1714,7 +1728,7 @@ export default defineComponent({
               case GeoAttributeFormat.GADM_Code:
                 return region.code;
               case GeoAttributeFormat.Bounding_Box:
-                return region.bbox;
+                return getFormattedBBox(region.bbox);
             }
           };
           selectedRegions.forEach(sr => {
