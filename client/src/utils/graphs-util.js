@@ -13,6 +13,81 @@ export const highlightOptions = {
   color: SELECTED_COLOR
 };
 
+class Graph {
+  constructor(cag) {
+    const adjacent_vertices = {};
+    cag.edges.forEach(e => {
+      if (!(e.source in adjacent_vertices)) {
+        adjacent_vertices[e.source] = [];
+      }
+
+      adjacent_vertices[e.source].push(e.target);
+    });
+    this.cycle_count = 0;
+    this.adjacent_vertices = adjacent_vertices;
+  }
+
+  dfs(node, parent, color_tracker, cycle_tracker, parent_tracker) {
+    if (color_tracker[node] === 2) {
+      return;
+    }
+
+    if (color_tracker[node] === 1) {
+      // We just hit a node that we are currently processing i.e. a loop
+      this.cycle_count += 1;
+
+      cycle_tracker[this.cycle_count.toString()] = [];
+      cycle_tracker[this.cycle_count.toString()].push(node);
+
+      // Mark all the nodes in the cycle as part of the same loop
+      let curr_node = parent;
+      while (curr_node !== node) {
+        cycle_tracker[this.cycle_count.toString()].push(curr_node);
+        curr_node = parent_tracker[curr_node];
+      }
+
+      return;
+    }
+
+    color_tracker[node] = 1;
+    parent_tracker[node] = parent;
+
+    for (const ind in this.adjacent_vertices[node]) {
+      this.dfs(this.adjacent_vertices[node][ind], node, color_tracker, cycle_tracker, parent_tracker);
+    }
+
+    color_tracker[node] = 2;
+  }
+}
+
+export function getCircularPaths(cag) {
+  if (cag.edges.length === 0) { return; }
+
+  const g = new Graph(cag);
+  const parent = null;
+  const color_tracker = {};
+  const cycle_tracker = {};
+  const parent_tracker = {};
+
+  const nodes = new Set();
+  cag.edges.forEach(e => {
+    nodes.add(e.source);
+    nodes.add(e.target);
+  });
+  for (const n of nodes) {
+    g.dfs(n, parent, color_tracker, cycle_tracker, parent_tracker);
+  }
+
+  for (const c in cycle_tracker) {
+    cycle_tracker[c].reverse();
+  }
+
+  // FIXME: Remove after testing
+  console.log(cycle_tracker);
+
+  return cycle_tracker;
+}
+
 export function calculateNeighborhood(graph, node) {
   const neighborEdges = graph.edges.filter(edge => {
     return edge.target === node || edge.source === node;
