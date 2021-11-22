@@ -118,6 +118,16 @@ const brushes: Array<BrushType> = [];
 let currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
 
+const getHoverIdFromValue = (hoverValue: string) => {
+  // remove dots/spaces from the string since it will conflict with the d3 selected later on
+  let hoverValueNoDots = hoverValue.split('.').join('');
+  hoverValueNoDots = hoverValueNoDots.split(',').join('');
+  hoverValueNoDots = hoverValueNoDots.split('[').join('');
+  hoverValueNoDots = hoverValueNoDots.split(']').join('');
+  hoverValueNoDots = hoverValueNoDots.split('-').join('');
+  return hoverValueNoDots.split(' ').join('');
+};
+
 const isGeoParameter = (type: string) => {
   return type === DatacubeGenericAttributeVariableType.Geo || (Object.values(DatacubeGeoAttributeVariableType) as Array<string>).includes(type);
 };
@@ -1154,8 +1164,7 @@ function renderParallelCoordinates(
               const xLoc = segmentData.x + ((max - min) / 2);
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverValueNoDots = hoverValue.split('.').join('');
-              const hoverId = hoverValueNoDots.split(' ').join('');
+              const hoverId = getHoverIdFromValue(hoverValue);
 
               // Specify where to put label of text
               gElement.append('text')
@@ -1173,8 +1182,7 @@ function renderParallelCoordinates(
               const hoverValue: string = segmentData.start.toString();
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverValueNoDots = hoverValue.split('.').join('');
-              const hoverId = hoverValueNoDots.split(' ').join('');
+              const hoverId = getHoverIdFromValue(hoverValue);
 
               // Select text by id and then remove
               gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
@@ -1283,8 +1291,7 @@ function renderParallelCoordinates(
               const xLoc = x + ((max - min) / 2);
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverValueNoDots = hoverValue.split('.').join('');
-              const hoverId = hoverValueNoDots.split(' ').join('');
+              const hoverId = getHoverIdFromValue(hoverValue);
 
               // Specify where to put label of text
               gElement.append('text')
@@ -1304,8 +1311,7 @@ function renderParallelCoordinates(
               const hoverValue: string = d3.select(this).attr('start').toString();
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverValueNoDots = hoverValue.split('.').join('');
-              const hoverId = hoverValueNoDots.split(' ').join('');
+              const hoverId = getHoverIdFromValue(hoverValue);
 
               // Select text by id and then remove
               gElement.select('#h' + '-' + hoverId).remove(); // Remove text location

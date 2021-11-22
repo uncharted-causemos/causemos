@@ -83,7 +83,7 @@
         </div>
 
         <div v-if="updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.Bounding_Box" class="row date-option-container">
-          <label class="col-md-6">bounding box format</label>
+          <label class="col-md-6">Bounding box format</label>
           <input
             v-model="updatedParameter.additional_options.geo_bbox_format"
             :style="{ width: (updatedParameter.additional_options.geo_bbox_format.length * 0.75) + 'ch' }"
