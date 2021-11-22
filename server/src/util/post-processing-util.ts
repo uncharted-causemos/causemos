@@ -16,6 +16,7 @@ const removeUnwantedData = (metadata) => {
 
 const processFilteredData = (metadata) => {
   metadata.family_name = metadata.family_name || metadata.name;
+  metadata.qualifier_outputs = metadata.qualifier_outputs ?? [];
 };
 
 module.exports = {

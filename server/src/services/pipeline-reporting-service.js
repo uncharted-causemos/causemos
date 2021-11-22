@@ -7,32 +7,20 @@ const datacubeService = rootRequire('/services/datacube-service');
 const setProcessingSucceeded = async(metadata) => {
   const docIds = metadata.doc_ids;
   const isIndicator = metadata.is_indicator;
-  const newStatus = 'READY';
-  if (isIndicator) {
-    const metadataDelta = docIds.map(docId => {
-      return {
-        id: docId,
-        status: newStatus
-      };
-    });
-    await datacubeService.updateDatacubes(metadataDelta);
-    return { result: { message: 'Datacube updated' }, code: 200 };
-  } else {
-    const modelRun = docIds.map(docId => {
-      return {
-        id: docId,
-        status: newStatus,
-        runtimes: {
-          post_processing: {
-            end_time: metadata.end_time,
-            start_time: metadata.start_time
-          }
+
+  const updateDelta = docIds.map(docId => {
+    return {
+      id: docId,
+      status: 'READY',
+      runtimes: {
+        post_processing: {
+          end_time: metadata.end_time,
+          start_time: metadata.start_time
         }
-      };
-    });
-    await maasService.updateModelRun(modelRun);
-    return { result: { message: 'Model run updated' }, code: 200 };
-  }
+      }
+    };
+  });
+  return await updateDocuments(updateDelta, isIndicator);
 };
 
 /**
@@ -41,67 +29,70 @@ const setProcessingSucceeded = async(metadata) => {
 const setProcessingFailed = async(metadata) => {
   const docIds = metadata.doc_ids;
   const isIndicator = metadata.is_indicator;
-  const newStatus = 'PROCESSING FAILED';
-  if (isIndicator) {
-    const metadataDelta = docIds.map(docId => {
-      return {
-        id: docId,
-        status: newStatus
-      };
-    });
-    await datacubeService.updateDatacubes(metadataDelta);
-    return { result: { message: 'Datacube updated' }, code: 200 };
-  } else {
-    const modelRun = docIds.map(docId => {
-      return {
-        id: docId,
-        status: newStatus
-      };
-    });
-    await maasService.updateModelRun(modelRun);
-    return { result: { message: 'Model run updated' }, code: 200 };
-  }
+
+  const updateDelta = docIds.map(docId => {
+    return {
+      id: docId,
+      status: 'PROCESSING FAILED'
+    };
+  });
+  return await updateDocuments(updateDelta, isIndicator);
 };
 
 /**
  * Sets the runtimes.queued status for some documents
  */
 const setRuntimeQueued = async(metadata) => {
-  if (metadata.is_indicator) {
-    return { result: { error: 'Metadata is an indicator' }, code: 500 };
-  } else {
-    const docIds = metadata.doc_ids;
-    const modelRun = docIds.map(docId => {
-      return {
-        id: docId,
-        runtimes: {
-          queued: {
-            end_time: metadata.end_time,
-            start_time: metadata.start_time
-          }
+  const docIds = metadata.doc_ids;
+  const isIndicator = metadata.is_indicator;
+
+  const updateDelta = docIds.map(docId => {
+    return {
+      id: docId,
+      runtimes: {
+        queued: {
+          end_time: metadata.end_time,
+          start_time: metadata.start_time
         }
-      };
-    });
-    await maasService.updateModelRun(modelRun);
-    return { result: { message: 'Model run updated' }, code: 200 };
-  }
+      }
+    };
+  });
+  return await updateDocuments(updateDelta, isIndicator);
 };
 
 /**
- * Sets the output aggregate values fields for a list of documents
+ * Update documents with results from the pipeline (i.e. output_agg_values and data_info)
  */
-const setOutputAggregateValues = async(metadata) => {
-  const modelRun = {
-    id: metadata.run_id,
-    output_agg_values: metadata.summary
-  };
-  await maasService.updateModelRun(modelRun);
-  return { result: { message: 'Model run updated' }, code: 200 };
+const setPipelineResults = async(metadata) => {
+  const docIds = metadata.doc_ids;
+  const isIndicator = metadata.is_indicator;
+
+  const updateDelta = docIds.map(docId => {
+    const delta = { id: docId };
+    if (metadata.output_agg_values) {
+      delta.output_agg_values = metadata.output_agg_values;
+    }
+    if (metadata.data_info) {
+      delta.data_info = metadata.data_info;
+    }
+    return delta;
+  });
+  return await updateDocuments(updateDelta, isIndicator);
+};
+
+const updateDocuments = async(updateDelta, isIndicator) => {
+  if (isIndicator) {
+    await datacubeService.updateDatacubes(updateDelta);
+    return { result: { message: 'Datacube updated' }, code: 200 };
+  } else {
+    await maasService.updateModelRun(updateDelta);
+    return { result: { message: 'Model run updated' }, code: 200 };
+  }
 };
 
 module.exports = {
   setProcessingFailed,
   setProcessingSucceeded,
   setRuntimeQueued,
-  setOutputAggregateValues
+  setPipelineResults
 };

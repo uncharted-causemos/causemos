@@ -11,6 +11,9 @@ const datacubeService = rootRequire('/services/datacube-service');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
 const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
+const QUALIFIER_MAX_COUNT = 10000;
+const QUALIFIER_TIMESERIES_MAX_COUNT = 100;
+const QUALIFIER_TIMESERIES_MAX_LEVEL = 1;
 
 /**
  * Submit a new model run to Jataware and store information about it in ES.
@@ -160,7 +163,12 @@ const startModelOutputPostProcessing = async (metadata) => {
     doc_ids: docIds,
     data_paths: metadata.data_paths,
     qualifier_map: qualifierMap,
-    compute_tiles: true
+    compute_tiles: true,
+    qualifier_thresholds: {
+      max_count: QUALIFIER_MAX_COUNT,
+      regional_timeseries_count: QUALIFIER_TIMESERIES_MAX_COUNT,
+      regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL
+    }
   };
   try {
     await sendToPipeline(flowParameters);
@@ -359,7 +367,12 @@ const startIndicatorPostProcessing = async (metadata) => {
     data_paths: metadata.data_paths,
     temporal_resolution: resolutions[highestRes],
     qualifier_map: qualifierMap,
-    is_indicator: true
+    is_indicator: true,
+    qualifier_thresholds: {
+      max_count: QUALIFIER_MAX_COUNT,
+      regional_timeseries_count: QUALIFIER_TIMESERIES_MAX_COUNT,
+      regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL
+    }
   };
   try {
     await sendToPipeline(flowParameters);
