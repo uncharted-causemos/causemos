@@ -128,21 +128,21 @@ const deprecateDatacube = async(oldDatacubeId, newDatacubeId) => {
   }, { includes: ['id'] });
 
   const updateDeltas = [];
-  idsToDeprecate.forEach(id => {
+  idsToDeprecate.forEach(doc => {
     updateDeltas.push({
-      id: id,
+      id: doc.id,
       status: 'DEPRECATED',
       new_version_data_id: newDatacubeId
     });
   });
-  deprecatedIdsToUpdate.forEach(id => {
+  deprecatedIdsToUpdate.forEach(doc => {
     updateDeltas.push({
-      id: id,
+      id: doc.id,
       new_version_data_id: newDatacubeId
     });
   });
 
-  return await connection.update([updateDeltas]);
+  return await connection.update(updateDeltas);
 };
 
 /**
