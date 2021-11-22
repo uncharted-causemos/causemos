@@ -434,50 +434,22 @@ describe('HistogramUtil', () => {
   describe('.computeProjectionBins()', () => {
     const janToJanResult = computeProjectionBins(
       ETHIOPIA_MONTHLY_RAINFALL,
-      null,
       12,
       0
     );
     const janToJuneResult = computeProjectionBins(
       ETHIOPIA_MONTHLY_RAINFALL,
-      null,
       6,
       0
     );
     const julyToJanResult = computeProjectionBins(
       ETHIOPIA_MONTHLY_RAINFALL,
-      null,
       6,
       6
     );
     it('returns ABSTRACT_NODE_BINS when historicalData is empty', () => {
-      const result = computeProjectionBins([], 0, 12, 0);
+      const result = computeProjectionBins([], 12, 0);
       expect(result).to.equal(ABSTRACT_NODE_BINS);
-    });
-    describe('when t0 is clamped', () => {
-      const t0ClampValue1 = 100;
-      const janToJanClampedT0Result1 = computeProjectionBins(
-        ETHIOPIA_MONTHLY_RAINFALL,
-        t0ClampValue1,
-        12,
-        0
-      );
-      const t0ClampValue2 = 200;
-      const janToJanClampedT0Result2 = computeProjectionBins(
-        ETHIOPIA_MONTHLY_RAINFALL,
-        t0ClampValue2,
-        12,
-        0
-      );
-      it('returns the same bin size, offset by the difference in clamped value', () => {
-        const withOffsetRemoved = janToJanClampedT0Result2.map(
-          value => value + (t0ClampValue1 - t0ClampValue2)
-        );
-        // Check that they're only approximately equal due to JS float rounding errors
-        withOffsetRemoved.forEach((binBoundary, index) => {
-          expect(binBoundary).to.be.approximately(janToJanClampedT0Result1[index], 0.001);
-        });
-      });
     });
     it("produces wider bins when interval is Jan to June than when it's Jan to Jan", () => {
       const janToJuneRange = janToJuneResult[3] - janToJuneResult[0];
@@ -505,9 +477,8 @@ describe('HistogramUtil', () => {
         [
           { timestamp: 662688000000, value: 11.6000003815 },
           { timestamp: 665366400000, value: 22.2999992371 },
-          { timestamp: 667785600000, value: 61.7000007629 }
+          { timestamp: 667785600000, value: 100 }
         ],
-        100,
         12,
         0
       );
