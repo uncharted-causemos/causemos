@@ -58,11 +58,6 @@
           @button-clicked="setBaseLayerSelection"
         />
       </div>
-
-      <div class="config-sub-group">
-        <label class="header-secondary">Blending into base layer:</label>
-      </div>
-
       <div class="config-sub-group">
         <label class="header-secondary">Show data as</label>
         <radio-button-group
