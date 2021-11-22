@@ -78,9 +78,8 @@ export default defineComponent({
         .filter(projection => projection.values.length > 0)
         .map(projection =>
           convertTimeseriesDistributionToHistograms(
-            this.modelSummary,
+            this.modelSummary.parameter.time_scale,
             isAbstractNode ? [] : this.historicalTimeseries,
-            null, // TODO: clampedNowValue
             projection.values
           )
         );
