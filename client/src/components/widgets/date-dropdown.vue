@@ -64,6 +64,7 @@ export default defineComponent({
       default: () => (0) // timestamp in millis
     }
   },
+  emits: ['updated'],
   data: () => ({
     selectedMonth: 0, // January by default
     selectedYear: MAX_YEAR
