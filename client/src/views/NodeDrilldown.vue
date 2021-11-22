@@ -217,6 +217,7 @@ import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
 import ProjectionHistograms from '@/components/node-drilldown/projection-histograms.vue';
+import moment from 'moment';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -323,7 +324,7 @@ export default defineComponent({
       });
 
       return {
-        indicatorName: selectedNodeScenarioData.indicator_name ?? 'Missing indicator name',
+        indicatorName: selectedNodeScenarioData.indicator_name,
         historicalTimeseries: selectedNodeScenarioData.indicator_time_series ?? [],
         historicalConstraints: [],
         projections
@@ -602,6 +603,7 @@ export default defineComponent({
       if (!parameter) {
         return null;
       } else {
+        // FIXME: last available clamp position can be derived from time_scale
         const projections = selectedNodeScenarioData.value?.projections || [];
         let max = Number.NEGATIVE_INFINITY;
         for (let i = 0; i < projections.length; i++) {
@@ -611,10 +613,14 @@ export default defineComponent({
             }
           }
         }
-        return [
-          Math.min(parameter.indicator_time_series_range.start, parameter.projection_start),
-          Math.max(parameter.indicator_time_series_range.end, max)
-        ];
+        // FIXME: default viewing extent should be equal to whatever is
+        //  displayed on the graph view
+        const historicalMonthsToDisplay = 5 * 12;
+        const historyStart = moment
+          .utc(parameter.projection_start)
+          .subtract(historicalMonthsToDisplay, 'months')
+          .valueOf();
+        return [historyStart, max];
       }
     });
 
