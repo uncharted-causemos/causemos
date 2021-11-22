@@ -20,6 +20,11 @@ const FIELDS = Object.freeze({
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
+  succeededBy: {
+    fields: ['succeeded_by_data_id'],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.DATACUBE
+  },
   keyword: { // For search only
     fields: ['name', 'description', 'family_name', 'category',
       'maintainer.name', 'maintainer.organization', 'tags',
