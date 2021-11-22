@@ -720,7 +720,7 @@ export default defineComponent({
     const dateModelParam = computed(() => {
       const modelMetadata = metadata.value;
       if (modelMetadata === null || !isModel(modelMetadata)) return null;
-      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
+      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange || dim.type === DatacubeGenericAttributeVariableType.Date);
       return dateParams.length > 0 ? dateParams[0] : null;
     });
 
