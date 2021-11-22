@@ -568,14 +568,6 @@ const DRILLDOWN_TABS = [
   }
 ];
 
-const VIZ_OPTIONS_TABS = [
-  {
-    name: 'Edit datacube configuration',
-    id: 'vizoptions',
-    icon: 'fa-gear'
-  }
-];
-
 export default defineComponent({
   name: 'DatacubeCard',
   emits: [
@@ -1549,7 +1541,6 @@ export default defineComponent({
       defaultRunButtonCaption,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
-      vizOptionsTabs: VIZ_OPTIONS_TABS,
       fetchData,
       filteredRunData,
       geoModelParam,
