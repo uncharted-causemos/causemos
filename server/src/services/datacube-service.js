@@ -123,7 +123,7 @@ const deprecateDatacube = async(oldDatacubeId, newDatacubeId) => {
   // In order to deprecate 'v2' with 'v3', we much update 'v1' and 'v1.1' as well as 'v2'
   const deprecatedIdsToUpdate = await getDatacubes({
     clauses: [
-      { field: 'succeededBy', operand: 'or', isNot: false, values: [oldDatacubeId] }
+      { field: 'newVersionId', operand: 'or', isNot: false, values: [oldDatacubeId] }
     ]
   }, { includes: ['id'] });
 
@@ -132,13 +132,13 @@ const deprecateDatacube = async(oldDatacubeId, newDatacubeId) => {
     updateDeltas.push({
       id: id,
       status: 'DEPRECATED',
-      succeeded_by_data_id: newDatacubeId
+      new_version_data_id: newDatacubeId
     });
   });
   deprecatedIdsToUpdate.forEach(id => {
     updateDeltas.push({
       id: id,
-      succeeded_by_data_id: newDatacubeId
+      new_version_data_id: newDatacubeId
     });
   });
 

@@ -20,8 +20,8 @@ const FIELDS = Object.freeze({
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
-  succeededBy: {
-    fields: ['succeeded_by_data_id'],
+  newVersionId: {
+    fields: ['new_version_data_id'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
