@@ -675,8 +675,8 @@ export const hasMergeConflictEdges = (currentCAG: CAGGraph, importCAGs: CAGGraph
 };
 
 export const ENGINE_OPTIONS = [
-  { key: 'dyse', value: 'DySE', maxSteps: 72 },
-  { key: 'delphi', value: 'Delphi', maxSteps: 36 }
+  { key: 'dyse', value: 'DySE' },
+  { key: 'delphi', value: 'Delphi' }
 ];
 
 // Cleanse constraint payload
