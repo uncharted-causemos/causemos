@@ -14,6 +14,7 @@
       >
         <small-icon-button
           v-if="isScenarioComparisonActive && index !== 0"
+          class="time-slice-arrow-button"
           @click="selectedTimeSliceIndex--"
         >
           <i class="fa fa-fw fa-caret-left" />
@@ -23,6 +24,7 @@
           v-if="
             isScenarioComparisonActive && index !== timeSliceLabels.length - 1
           "
+          class="time-slice-arrow-button right"
           @click="selectedTimeSliceIndex++"
         >
           <i class="fa fa-fw fa-caret-right" />
@@ -252,6 +254,20 @@ h3 {
   }
   h3 {
     color: $label-color;
+    position: relative;
+
+    .time-slice-arrow-button {
+      position: absolute;
+      right: calc(100% + 5ch);
+      top: 0;
+
+      &.right {
+        right: auto;
+        // The h3 element stretches to take up the hidden 3rd column, so we
+        //  need to hardcode how far to the right to move the right arrow.
+        left: 25ch;
+      }
+    }
   }
   margin-bottom: 20px;
 }
