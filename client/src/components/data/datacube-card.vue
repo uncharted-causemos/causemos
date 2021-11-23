@@ -207,8 +207,8 @@
                   </dropdown-control>
                 </div>
                 <button
-                  class="btn btn-default toggle-viz-button"
-                  :class="{ 'toggle-viz-button-pressed': activeVizOptionsTab !== null }"
+                  class="btn btn-default"
+                  :class="{ 'viz-option-invalid': someVizOptionsInvalid }"
                   title="Toggle visualization options"
                   :onClick="() => activeVizOptionsTab = (activeVizOptionsTab === null ? 'vizoptions' : null)"
                 >
@@ -1057,10 +1057,11 @@ export default defineComponent({
     };
 
     const onTabClick = (value: string) => {
-      if (value === 'description' && isModelMetadata.value) {
+      if (value === 'description') {
         setSelectedScenarioIds([]); // this will update the 'currentTabView'
+      } else {
+        clickData(value);
       }
-      clickData(value);
     };
 
     const requestNewModelRuns = () => {
@@ -1243,6 +1244,12 @@ export default defineComponent({
         mainModelOutput.value.unit !== ''
         ? mainModelOutput.value.unit
         : null
+    );
+
+    const someVizOptionsInvalid = computed(() =>
+      isPublishing.value && (selectedSpatialAggregation.value === AggregationOption.None ||
+          selectedTemporalAggregation.value === AggregationOption.None ||
+          selectedTemporalResolution.value === TemporalResolutionOption.None)
     );
 
     const setSelectedTimestamp = (timestamp: number | null) => {
@@ -1635,7 +1642,8 @@ export default defineComponent({
       updateMapCurSyncedZoom,
       updateScenarioSelection,
       visibleTimeseriesData,
-      showPercentChange
+      showPercentChange,
+      someVizOptionsInvalid
     };
   },
   watch: {
@@ -1789,6 +1797,14 @@ export default defineComponent({
 
 $cardSpacing: 10px;
 
+.viz-option-invalid {
+  border-color: red;
+  border-style: solid;
+  &:hover {
+    border-color: red;
+    border-style: solid;
+  }
+}
 
 .breakdown-button {
   margin: 0 1rem;
