@@ -79,15 +79,13 @@ const updateDocuments = async(updateDelta, isIndicator) => {
 const fetchPipelineResults = async(dataId, runId) => {
   const options = {
     method: 'GET',
-    url: process.env.WM_GO_URL + '/maas/output/pipeline-results',
+    url: process.env.WM_GO_URL +
+      `/maas/output/pipeline-results?data_id=${encodeURI(dataId)}&run_id=${encodeURI(runId)}`,
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
     },
-    json: {
-      data_id: dataId,
-      run_id: runId
-    }
+    json: {}
   };
   const response = await requestAsPromise(options);
   return response;
