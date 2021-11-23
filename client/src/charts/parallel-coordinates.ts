@@ -129,15 +129,6 @@ const getHoverIdFromValue = (hoverValue: string) => {
   return hoverValueNoDots.split(' ').join('');
 };
 
-const isGeoParameter = (type: string) => {
-  return type === DatacubeGenericAttributeVariableType.Geo || (Object.values(DatacubeGeoAttributeVariableType) as Array<string>).includes(type);
-};
-
-const isCategoricalAxis = (name: string) => {
-  const dim = dimensions.find(d => d.name === name) as ModelParameter;
-  return dim.type.startsWith('str') || isGeoParameter(dim.type) || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
-};
-
 function getLineWidth(datum: any) {
   return datum.is_default_run === 0 ? lineStrokeWidthNormal : lineStrokeWidthDefault;
 }
