@@ -6,21 +6,21 @@ const pipelineReportingService = rootRequire('/services/pipeline-reporting-servi
 const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
 
 /**
- * Processing failed endpoint sets the status of the relevant ES documents to `PROCESSING FAILED`.
+ * Sets the status of the relevant ES documents to `PROCESSING FAILED`.
  */
 router.put('/processing-failed', asyncHandler(async (req, res) => {
   await respondUsingCode(req, res, pipelineReportingService.setProcessingFailed);
 }));
 
 /**
- * Processing succeeded endpoint sets the status of the relevant ES documents to `READY`.
+ * Updates the relevant ES documents with results from the pipeline and marks them as `READY`.
  */
 router.put('/processing-succeeded', asyncHandler(async (req, res) => {
   await respondUsingCode(req, res, pipelineReportingService.setProcessingSucceeded);
 }));
 
 /**
- * Queue runtime endpoint sets the runtimes.queued fields for a model run.
+ * Sets the queued time for a model run or indicator.
  */
 router.put('/queue-runtime', asyncHandler(async (req, res) => {
   await respondUsingCode(req, res, pipelineReportingService.setRuntimeQueued);

@@ -3,7 +3,9 @@ const datacubeService = rootRequire('/services/datacube-service');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 
 /**
- * Update a set of documents so that their status is now `READY`
+ * Update a set of documents after the data has successfully finished.
+ * The status is set to 'READY', the runtime of the pipeline is recorded,
+ * and the pipeline results file is read from wm-go and added to the metadata.
  */
 const setProcessingSucceeded = async(metadata) => {
   const dataId = metadata.data_id;
@@ -46,7 +48,7 @@ const setProcessingFailed = async(metadata) => {
 };
 
 /**
- * Sets the runtimes.queued status for some documents
+ * Sets the runtimes.queued timestamps for some documents
  */
 const setRuntimeQueued = async(metadata) => {
   const docIds = metadata.doc_ids;
@@ -66,6 +68,9 @@ const setRuntimeQueued = async(metadata) => {
   return await updateDocuments(updateDelta, isIndicator);
 };
 
+/**
+ * Update either the model run or the datacube ES index depending on whether this is an indicator
+ */
 const updateDocuments = async(updateDelta, isIndicator) => {
   if (isIndicator) {
     await datacubeService.updateDatacubes(updateDelta);
@@ -76,6 +81,9 @@ const updateDocuments = async(updateDelta, isIndicator) => {
   }
 };
 
+/**
+ * Fetch the pipeline results for this run/indicator from wm-go
+ */
 const fetchPipelineResults = async(dataId, runId) => {
   const options = {
     method: 'GET',
