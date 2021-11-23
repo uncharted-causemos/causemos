@@ -5,10 +5,11 @@ import {
   AggregationOption,
   TemporalResolutionOption,
   SpatialAggregationLevel,
-  TemporalAggregationLevel
+  TemporalAggregationLevel,
+  ReferenceSeriesOption
 } from '@/types/Enums';
 import { ModelRun } from '@/types/ModelRun';
-import { QualifierTimeseriesResponse, Timeseries } from '@/types/Timeseries';
+import { QualifierTimeseriesResponse, Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
@@ -73,10 +74,12 @@ export default function useTimeseriesData(
   selectedQualifierValues: Ref<Set<string>>,
   initialSelectedYears: Ref<string[]>,
   showPercentChange: Ref<boolean>,
-  modelRuns?: Ref<ModelRun[]>
+  modelRuns?: Ref<ModelRun[]>,
+  referenceSeries?: Ref<string[]>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
+  const referenceTimeSeries = ref<Timeseries[]>([]);
 
   watchEffect(onInvalidate => {
     console.log('Parameters changed');
@@ -415,6 +418,48 @@ export default function useTimeseriesData(
     }
   });
 
+  watchEffect(() => {
+    if (!referenceSeries || timeseriesData.value.length < 1) return;
+    if (breakdownOption.value === TemporalAggregationLevel.Year) {
+      if (referenceSeries.value.includes(ReferenceSeriesOption.AllYears)) {
+        console.log('agg all years');
+      } else {
+        referenceTimeSeries.value = referenceTimeSeries.value.filter((rts) => rts.id === ReferenceSeriesOption.AllYears);
+      }
+
+      if (referenceSeries.value.includes(ReferenceSeriesOption.SelectYears)) {
+        const aggregratedRefSeries = timeseriesData.value.reduce((acc: Timeseries, ts: Timeseries, ind: number) => {
+          if (ind === 0) {
+            acc.points = new Array<TimeseriesPoint>(12).fill({} as TimeseriesPoint).map((p, i) => {
+              return {
+                timestamp: i,
+                value: 0
+              } as TimeseriesPoint;
+            });
+          }
+          ts.points.forEach((p) => {
+            acc.points[p.timestamp].value = acc.points[p.timestamp].value + p.value;
+          });
+          return acc;
+        }, {} as Timeseries);
+        aggregratedRefSeries.points.forEach((p) => {
+          p.value = p.value / timeseriesData.value.length;
+        });
+
+        aggregratedRefSeries.id = ReferenceSeriesOption.SelectYears;
+        aggregratedRefSeries.isDefaultRun = false;
+        aggregratedRefSeries.name = 'Select Years';
+        aggregratedRefSeries.color = '#888';
+
+        referenceTimeSeries.value.push(aggregratedRefSeries);
+      } else {
+        referenceTimeSeries.value = referenceTimeSeries.value.filter((rts) => rts.id === ReferenceSeriesOption.SelectYears);
+      }
+
+      console.log('agg selected years', referenceTimeSeries.value, timeseriesData.value);
+    }
+  });
+
   return {
     timeseriesData,
     visibleTimeseriesData: computed(() =>
@@ -429,6 +474,7 @@ export default function useTimeseriesData(
     setRelativeTo,
     temporalBreakdownData,
     selectedYears,
-    toggleIsYearSelected
+    toggleIsYearSelected,
+    referenceTimeSeries
   };
 }

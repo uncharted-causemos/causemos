@@ -315,7 +315,7 @@
                 v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 class="timeseries-chart"
                 :key="activeDrilldownTab"
-                :timeseries-data="timeseriesData"
+                :timeseries-data="timeseriesData.concat(referenceTimeSeries)"
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
@@ -546,7 +546,8 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption,
   GeoAttributeFormat,
-  DatacubeGenericAttributeVariableType
+  DatacubeGenericAttributeVariableType,
+  ReferenceSeriesOption
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -1431,7 +1432,8 @@ export default defineComponent({
       setRelativeTo,
       temporalBreakdownData,
       selectedYears,
-      toggleIsYearSelected
+      toggleIsYearSelected,
+      referenceTimeSeries
     } = useTimeseriesData(
       metadata,
       selectedScenarioIds,
@@ -1445,7 +1447,8 @@ export default defineComponent({
       selectedQualifierValues,
       initialSelectedYears,
       showPercentChange,
-      selectedScenarios
+      selectedScenarios,
+      activeReferenceSeries
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -1615,26 +1618,26 @@ export default defineComponent({
     // draft code for the reference series now that all of the front end events and props are moving up and down the components.
     // from here, we can start to handle the math when we actually have active references series to revtrive and calculate
     const referenceSeries = computed(() => {
-      let currentReferenceSeries = [] as ModelRunReference[];
-      if (breakdownOption.value === SpatialAggregationLevel.Region) {
+      let currentReferenceSeries = [] as any;
+      if (breakdownOption.value === TemporalAggregationLevel.Year) {
         currentReferenceSeries = [
-          { id: 'allRegions', displayName: 'Average All Regions', checked: true },
-          { id: 'selectedRegions', displayName: 'Average Selected Regions', checked: true }
-          // add in the individual parent regions for reference
+          { id: ReferenceSeriesOption.AllYears, displayName: 'Average All Years' },
+          { id: ReferenceSeriesOption.SelectYears, displayName: 'Average Selected Years' }
         ];
-      } else if (breakdownOption.value === TemporalAggregationLevel.Year) {
+      } else if (breakdownOption.value === SpatialAggregationLevel.Region) {
         currentReferenceSeries = [
-          { id: 'allYears', displayName: 'Average All Years', checked: true },
-          { id: 'selectedYears', displayName: 'Average Selected Years', checked: true }
+          { id: ReferenceSeriesOption.AllRegions, displayName: 'Average All Regions' },
+          { id: ReferenceSeriesOption.SelectRegions, displayName: 'Average Selected Regions' }
+          // add in the individual parent regions for reference
         ];
       }
 
-      return currentReferenceSeries.map((c) => {
+      return currentReferenceSeries.map((c: any) => {
         return {
           id: c.id,
           displayName: c.displayName,
           checked: activeReferenceSeries.value.includes(c.id)
-        };
+        } as ModelRunReference;
       });
     });
 
@@ -1719,6 +1722,7 @@ export default defineComponent({
       setNumberOfColorBins,
       numberOfColorBins,
       referenceSeries,
+      referenceTimeSeries,
       selectedDataLayer,
       selectedPreGenDataItem,
       selectedQualifierValues,

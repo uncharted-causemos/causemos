@@ -113,3 +113,10 @@ export enum TimeScale {
   Years = 'YEARS',
   Decades = 'DECADES'
 }
+
+export enum ReferenceSeriesOption {
+  AllYears = 'allYears',
+  SelectYears = 'selectYears',
+  AllRegions = 'allRegions',
+  SelectRegions = 'selectRegions'
+}
