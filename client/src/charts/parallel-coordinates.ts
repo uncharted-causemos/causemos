@@ -2021,7 +2021,7 @@ const createScales = (
       dataExtent = dim?.choices_labels ? dim?.choices_labels : (dim?.choices ?? dim?.choices ?? []);
     }
 
-    const dataChoices = data.map(function(p) { return p[name]; }); // return an array of values for all runs
+    let dataChoices = data.map(function(p) { return p[name]; }); // return an array of values for all runs
     if (dataExtent.length === 0) {
       dataExtent = dataChoices;
     }
@@ -2035,8 +2035,11 @@ const createScales = (
       // sometimes, a geo param may have a default formatted in a less-human-readable way
       if (isGeoParameter(dimAsModelParam.type) && dimAsModelParam.additional_options && dimAsModelParam.additional_options.default_value_label) {
         dataChoices.push(dimAsModelParam.additional_options.default_value_label);
+        dataChoices = dataChoices.filter(val => val !== dimAsModelParam.default);
+        dataExtent = dataExtent.filter(val => val !== dimAsModelParam.default);
+      } else {
+        dataChoices.push(dimAsModelParam.default);
       }
-      dataChoices.push(dimAsModelParam.default);
 
       isFreeformParam = dimAsModelParam.data_type === ModelParameterDataType.Freeform;
     }
@@ -2059,7 +2062,7 @@ const createScales = (
         // NOTE: these are mostly string-based axes but not with valid choices, i.e., freeform axes --> should have been annotated as such
         const dim = dimensions.find(d => d.name === name) as ModelParameter;
         const defValue = dim.default;
-        if (!dataExtent.includes(defValue)) {
+        if (!isGeoParameter(dim.type) && !dataExtent.includes(defValue)) {
           dataExtent.push(defValue);
         }
       } else {

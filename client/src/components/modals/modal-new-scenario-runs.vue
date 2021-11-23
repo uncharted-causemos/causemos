@@ -66,6 +66,7 @@ import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
+import { isGeoParameter } from '@/utils/datacube-util';
 import datacubeService from '@/services/new-datacube-service';
 
 // allow the user to review potential mode runs before kicking off execution
@@ -131,15 +132,24 @@ export default defineComponent({
 
       //
       // ensure that any choice label is mapped back to its underlying value
+      // ensure that default value label is mapped back to default value
       //
       this.selectedDimensions.forEach(d => {
-        if (d.choices_labels && d.choices !== undefined && d.is_visible) {
-          // update all generatedLines accordingly
-          this.potentialRuns.forEach(gl => {
-            const currLabelValue = (gl[d.name]).toString();
-            const labelIndex = d.choices_labels?.findIndex(l => l === currLabelValue) ?? 0;
-            if (d.choices !== undefined) {
-              gl[d.name] = d.choices[labelIndex] ?? currLabelValue;
+        if (d.is_visible) {
+          this.potentialRuns.forEach(newRun => {
+            if (d.choices_labels && d.choices !== undefined) {
+              const currLabelValue = (newRun[d.name]).toString();
+              const labelIndex = d.choices_labels?.findIndex(l => l === currLabelValue) ?? 0;
+              if (d.choices !== undefined) {
+                newRun[d.name] = d.choices[labelIndex] ?? currLabelValue;
+              }
+            }
+            if (isGeoParameter(d.type)) {
+              const currLabelValue = (newRun[d.name]).toString();
+              const dimAsModelParam = (d as ModelParameter);
+              if (currLabelValue === dimAsModelParam.additional_options.default_value_label) {
+                newRun[d.name] = dimAsModelParam.default;
+              }
             }
           });
         }
