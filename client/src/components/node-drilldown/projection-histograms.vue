@@ -32,7 +32,6 @@ import {
   ProjectionHistograms
 } from '@/utils/histogram-util';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
-import _ from 'lodash';
 
 export interface ComparisonHistogramData {
   base: HistogramData;
@@ -102,7 +101,7 @@ export default defineComponent({
       const timeScale = this.modelSummary.parameter.time_scale;
       const timeSlices = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
       return (
-        timeSlices?.map(({ label }) => _.capitalize(label)) ?? ['', '', '']
+        timeSlices?.map(({ label }) => `In ${label}`) ?? ['', '', '']
       );
     },
     binnedResults(): ProjectionHistograms[] {
