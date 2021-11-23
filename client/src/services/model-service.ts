@@ -52,26 +52,6 @@ const toHistogramFormat = (result: any) => {
   });
   return result2;
 };
-const fromHistogramFormat = (result: any) => {
-  const result2 = _.cloneDeep(result);
-  result2.forEach((r: any) => {
-    r.confidenceInterval = { upper: [], lower: [] };
-    r.valuesTmp = [];
-    for (let i = 0; i < r.values.length; i++) {
-      const t = r.values[i].timestamp;
-      const val = r.values[i].values[0];
-      const upper = r.values[i].values[1];
-      const lower = r.values[i].values[2];
-      r.valuesTmp.push({ timestamp: t, value: val });
-      r.confidenceInterval.upper.push({ timestamp: t, value: upper });
-      r.confidenceInterval.lower.push({ timestamp: t, value: lower });
-    }
-    r.values = r.valuesTmp;
-    delete r.valuesTmp;
-  });
-  return result2;
-};
-
 
 /**
  * Get basic model information without underyling data
@@ -763,8 +743,6 @@ export default {
 
   cleanConstraints,
 
-  // temp
-  fromHistogramFormat,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,
