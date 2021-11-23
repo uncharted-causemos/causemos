@@ -167,8 +167,6 @@ export default defineComponent({
         );
     },
     rowsToDisplay(): HistogramRow[] {
-      // Note that the "comparison baseline scenario" may not be the scenario
-      //  without clamps (also referred to as the "baseline scenario")
       if (!this.isScenarioComparisonActive) {
         return this.projections.map((projection, index) => ({
           scenarioName: projection.scenarioName,
@@ -181,6 +179,8 @@ export default defineComponent({
       }
       // Scenario comparison is active.
       // Display the comparison baseline scenario first
+      // Note that the "comparison baseline scenario" may not be the scenario
+      //  without clamps (also referred to as the "baseline scenario")
       const baselineIndex = this.projections.findIndex(
         ({ scenarioId }) => scenarioId === this.comparisonBaselineId
       );
