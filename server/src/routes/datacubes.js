@@ -24,6 +24,16 @@ router.put('/:datacubeId', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Deprecate a model or indicator and add information about the new version
+ */
+router.put('/:datacubeId/deprecate', asyncHandler(async (req, res) => {
+  const oldDatacubeId = req.params.datacubeId;
+  const newVersionId = req.body.new_version_id;
+  const result = await datacubeService.deprecateDatacube(oldDatacubeId, newVersionId);
+  res.json(result);
+}));
+
+/**
  * Return all datacubes (models and indicators) that match the provided filter.
  */
 router.get('/', asyncHandler(async (req, res) => {
