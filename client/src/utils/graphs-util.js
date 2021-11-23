@@ -20,9 +20,9 @@ class Graph {
   }
 
   /**
-   * Uses depth first traveral so traverse the graph, starting from `node`.
-   * During the traversal, if a node in the processing state is encountered,
-   * we know that a loop exists.
+   * Uses depth first traveral to traverse the graph, starting from `node`.
+   * Before traversing the children of a node, we set the current node's state to PROCESSING.
+   * If a node in the PROCESSING state is encountered during our traversal, we know that a loop exists.
    * We then use the parentTracker to backtrack through our traversal and
    * add each of the nodes in the cycle to our cycleTracker.
   */
