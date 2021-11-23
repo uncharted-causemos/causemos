@@ -99,7 +99,8 @@ function compareHistograms(
       const difference = barValue - baselineValue;
       // This entry in the "base" array will be the same as the result bar,
       //  but subtract any positive change. This is because the green
-      //  "change" bar can be thought of as a part of the grey "base" bar.
+      //  "change" bar can be thought of as a part of scenario result, but the
+      //  pink bar represents runs that are missing from the scenario result.
       base.push(barValue - (difference > 0 ? difference : 0));
       // This entry in the "change" array will be equal to the difference.
       change.push(difference);
