@@ -11,6 +11,7 @@ import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
 import { DatacubeGeoAttributeVariableType, DatacubeGenericAttributeVariableType, ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
+import { isCategoricalAxis, isGeoParameter } from '@/utils/datacube-util';
 
 import { colorFromIndex } from '@/utils/colors-util';
 
@@ -310,7 +311,7 @@ function renderParallelCoordinates(
       const scaleX = getXScaleFromMap(dimName);
       let val = d[dimName];
       let xPos = scaleX(val as any) as number;
-      if (isCategoricalAxis(dimName)) {
+      if (isCategoricalAxis(dimName, dimensions)) {
         // ordinal axis, so instead of mapping to one position in this segment,
         // lets attempt to distribute the values randomly on the segment
         // with the goal of improving lines visibility and reducing overlap
@@ -512,7 +513,7 @@ function renderParallelCoordinates(
         const b = d3.select(this);
         const dimName = b.attr('id');
         let selection: [number | string, number | string] | undefined;
-        if (!isCategoricalAxis(dimName)) { // different axes types (e.g., ordinal) have different brushing techniques
+        if (!isCategoricalAxis(dimName, dimensions)) { // different axes types (e.g., ordinal) have different brushing techniques
           selection = d3.brushSelection(this) as [number, number];
         } else {
           // find any selection on this ordinal axis
@@ -529,7 +530,7 @@ function renderParallelCoordinates(
           let end;
           let brushLabel;
           const skip = false;
-          if (!isCategoricalAxis(dimName)) {
+          if (!isCategoricalAxis(dimName, dimensions)) {
             start = (xScale as D3ScaleLinear).invert(selection[0] as number).toFixed(2);
             end = (xScale as D3ScaleLinear).invert(selection[1] as number).toFixed(2);
           } else {
@@ -577,7 +578,7 @@ function renderParallelCoordinates(
 
         for (const b of brushes) {
           // if line falls outside of this brush, then it is de-selected
-          if (!isCategoricalAxis(b.dimName)) {
+          if (!isCategoricalAxis(b.dimName, dimensions)) {
             // @FIXME: comparing (floating point) numbers, should use a reasonable tolerance
             //  for now, convert all numbers as 2 fixed floating point and compare
             const lineDataValue = +(+lineData[b.dimName]).toFixed(2);
@@ -645,7 +646,7 @@ function renderParallelCoordinates(
         const b = d3.select(this);
         const dimName = b.attr('id');
         let validBrushSelection;
-        if (!isCategoricalAxis(dimName)) {
+        if (!isCategoricalAxis(dimName, dimensions)) {
           validBrushSelection = d3.brushSelection(this) !== null;
         } else {
           const selectedBrush = b.select('.selection');
@@ -733,7 +734,7 @@ function renderParallelCoordinates(
         const dimName = d.name;
         const value = selectedLineData[dimName];
         let formattedValue = value;
-        if (!isCategoricalAxis(dimName)) {
+        if (!isCategoricalAxis(dimName, dimensions)) {
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         } else {
@@ -807,7 +808,7 @@ function renderParallelCoordinates(
         const segmentsY = -brushHeight;
         const segmentsHeight = brushHeight * 2;
 
-        if (!isCategoricalAxis(dimName)) {
+        if (!isCategoricalAxis(dimName, dimensions)) {
           //
           // markers on numerical axes
           //
@@ -1202,7 +1203,7 @@ function renderParallelCoordinates(
       .attr('id', function(d) { return d.name; })
       .each(function(d) {
         const dimName = d.name;
-        if (!isCategoricalAxis(dimName)) {
+        if (!isCategoricalAxis(dimName, dimensions)) {
           // a standard continuous brush
           d3.select(this).call(
             d3.brushX()
@@ -1365,7 +1366,7 @@ function renderBaselineMarkers() {
       const dimName = d.name;
       const scaleX = getXScaleFromMap(dimName);
       let xPos: number = scaleX(axisDefault as any) as number;
-      if (isCategoricalAxis(dimName)) {
+      if (isCategoricalAxis(dimName, dimensions)) {
         let axisDefaultStr = axisDefault.toString();
         // get the corresponding label for this value if suitable
         axisDefaultStr = findLabelForValue(d, axisDefaultStr) as string;
@@ -1393,7 +1394,7 @@ function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionIn
       const dimName = d.name;
       const scale = getXScaleFromMap(dimName);
       let xAxis;
-      if (!isCategoricalAxis(dimName)) {
+      if (!isCategoricalAxis(dimName, dimensions)) {
         //
         // numeric axes are built automatically utilizing d3 .call() function
         //
@@ -1687,7 +1688,7 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
         value = findLabelForValue(d, value);
 
         formattedValue = value;
-        if (!isCategoricalAxis(dimName)) {
+        if (!isCategoricalAxis(dimName, dimensions)) {
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         }
@@ -1980,7 +1981,7 @@ const createScales = (
 
     if (useAxisRangeFromData && outputVarName !== name) {
       // this is only valid for input variables
-      if (isCategoricalAxis(name)) {
+      if (isCategoricalAxis(name, dimensions)) {
         // a categorical dimension (i.e., discrete-based axis)
         //  can have a list of choices as numbers or strings
         if (!dim?.type.startsWith('str')) {

@@ -5,13 +5,16 @@ export enum ModelRunStatus {
   Submitted = 'SUBMITTED',
   Processing = 'PROCESSING',
   ExecutionFailed = 'EXECUTION FAILED',
-  Test = 'TEST'
+  ProcessingFailed = 'PROCESSING FAILED',
+  Test = 'TEST',
 }
 
 export enum DatacubeStatus {
   Ready = 'READY',
   Processing = 'PROCESSING',
-  Registered = 'REGISTERED'
+  Registered = 'REGISTERED',
+  ProcessingFailed = 'PROCESSING FAILED',
+  Deprecated = 'DEPRECATED',
 }
 
 export enum DatacubeType {
