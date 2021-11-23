@@ -19,12 +19,19 @@ class Graph {
     this.adjacentVertices = adjacentVertices;
   }
 
-  findCycles(node, parent, colorTracker, cycleTracker, parentTracker) {
-    if (colorTracker[node] === this.PROCESSED) {
+  /**
+   * Uses depth first traveral so traverse the graph, starting from `node`.
+   * During the traversal, if a node in the processing state is encountered,
+   * we know that a loop exists.
+   * We then use the parentTracker to backtrack through our traversal and
+   * add each of the nodes in the cycle to our cycleTracker.
+  */
+  findCycles(node, parent, stateTracker, cycleTracker, parentTracker) {
+    if (stateTracker[node] === this.PROCESSED) {
       return;
     }
 
-    if (colorTracker[node] === this.PROCESSING) {
+    if (stateTracker[node] === this.PROCESSING) {
       // We just hit a node that we are currently processing i.e. a loop
       this.cycleCount += 1;
 
@@ -41,14 +48,14 @@ class Graph {
       return;
     }
 
-    colorTracker[node] = this.PROCESSING;
+    stateTracker[node] = this.PROCESSING;
     parentTracker[node] = parent;
 
     for (const ind in this.adjacentVertices[node]) {
-      this.findCycles(this.adjacentVertices[node][ind], node, colorTracker, cycleTracker, parentTracker);
+      this.findCycles(this.adjacentVertices[node][ind], node, stateTracker, cycleTracker, parentTracker);
     }
 
-    colorTracker[node] = this.PROCESSED;
+    stateTracker[node] = this.PROCESSED;
   }
 }
 
@@ -61,7 +68,7 @@ export function findCycles(edges) {
 
   const g = new Graph(edges);
   const parent = null;
-  const colorTracker = {};
+  const stateTracker = {};
   const cycleTracker = {};
   const parentTracker = {};
 
@@ -71,7 +78,7 @@ export function findCycles(edges) {
     nodes.add(e.target);
   });
   for (const n of nodes) {
-    g.findCycles(n, parent, colorTracker, cycleTracker, parentTracker);
+    g.findCycles(n, parent, stateTracker, cycleTracker, parentTracker);
   }
 
   for (const c in cycleTracker) {
