@@ -128,7 +128,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, defineComponent, nextTick, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
@@ -321,17 +321,18 @@ export default defineComponent({
     };
   },
   methods: {
-    async scrollToQualifier (newValue: string | null) {
+    async scrollToQualifier(newValue: string | null) {
       const reference = newValue + '_ref';
       if (newValue) {
-        while (!this.$refs[reference]) { // if the element we want to scroll to hasn't been rendered, wait for it
-          await new Promise(resolve => setTimeout(resolve, 250)); // there has got to be a better/more vue way to do this, open to suggestions
-        }
-        const element = (this.$refs[reference] as any).$el;
-        const container = document.getElementById('panel-content-container');
-        if (container) {
-          container.scrollTop = element.offsetTop - 45; // set scroll height to slightly above relevant qualifier
-        }
+        // Wait for any conditional elements to be rendered
+        nextTick(() => {
+          const element = (this.$refs[reference] as any).$el;
+          const container = document.getElementById('panel-content-container');
+          if (container) {
+            // set scroll height to slightly above relevant qualifier
+            container.scrollTop = element.offsetTop - 45;
+          }
+        });
       }
     }
   }
