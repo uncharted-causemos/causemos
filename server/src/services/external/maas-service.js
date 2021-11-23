@@ -368,6 +368,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     temporal_resolution: resolutions[highestRes],
     qualifier_map: qualifierMap,
     is_indicator: true,
+    compute_tiles: true,
     qualifier_thresholds: {
       max_count: QUALIFIER_MAX_COUNT,
       regional_timeseries_count: QUALIFIER_TIMESERIES_MAX_COUNT,
