@@ -2,6 +2,88 @@ import _ from 'lodash';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 
+class Graph {
+  PROCESSING = 1
+  PROCESSED = 2
+
+  constructor(edges) {
+    const adjacentVertices = {};
+    edges.forEach(e => {
+      if (!(e.source in adjacentVertices)) {
+        adjacentVertices[e.source] = [];
+      }
+
+      adjacentVertices[e.source].push(e.target);
+    });
+    this.cycleCount = 0;
+    this.adjacentVertices = adjacentVertices;
+  }
+
+  findCycles(node, parent, colorTracker, cycleTracker, parentTracker) {
+    if (colorTracker[node] === this.PROCESSED) {
+      return;
+    }
+
+    if (colorTracker[node] === this.PROCESSING) {
+      // We just hit a node that we are currently processing i.e. a loop
+      this.cycleCount += 1;
+
+      cycleTracker[this.cycleCount.toString()] = [];
+      cycleTracker[this.cycleCount.toString()].push(node);
+
+      // Mark all the nodes in the cycle as part of the same loop
+      let currNode = parent;
+      while (currNode !== node) {
+        cycleTracker[this.cycleCount.toString()].push(currNode);
+        currNode = parentTracker[currNode];
+      }
+
+      return;
+    }
+
+    colorTracker[node] = this.PROCESSING;
+    parentTracker[node] = parent;
+
+    for (const ind in this.adjacentVertices[node]) {
+      this.findCycles(this.adjacentVertices[node][ind], node, colorTracker, cycleTracker, parentTracker);
+    }
+
+    colorTracker[node] = this.PROCESSED;
+  }
+}
+
+/**
+ * Get all the cycles in the graph
+ * @returns A list of lists, where the inner lists are cycles in the graph
+ */
+export function findCycles(edges) {
+  if (edges.length === 0) { return; }
+
+  const g = new Graph(edges);
+  const parent = null;
+  const colorTracker = {};
+  const cycleTracker = {};
+  const parentTracker = {};
+
+  const nodes = new Set();
+  edges.forEach(e => {
+    nodes.add(e.source);
+    nodes.add(e.target);
+  });
+  for (const n of nodes) {
+    g.findCycles(n, parent, colorTracker, cycleTracker, parentTracker);
+  }
+
+  for (const c in cycleTracker) {
+    cycleTracker[c].reverse();
+  }
+
+  // FIXME: Remove after testing
+  console.log(Object.values(cycleTracker));
+
+  return Object.values(cycleTracker);
+}
+
 /**
  * Get the neighborhood graph for a selected node
  * @param {object} graph - an object of nodes/edges arrays
@@ -12,81 +94,6 @@ export const highlightOptions = {
   duration: 4000,
   color: SELECTED_COLOR
 };
-
-class Graph {
-  constructor(cag) {
-    const adjacent_vertices = {};
-    cag.edges.forEach(e => {
-      if (!(e.source in adjacent_vertices)) {
-        adjacent_vertices[e.source] = [];
-      }
-
-      adjacent_vertices[e.source].push(e.target);
-    });
-    this.cycle_count = 0;
-    this.adjacent_vertices = adjacent_vertices;
-  }
-
-  dfs(node, parent, color_tracker, cycle_tracker, parent_tracker) {
-    if (color_tracker[node] === 2) {
-      return;
-    }
-
-    if (color_tracker[node] === 1) {
-      // We just hit a node that we are currently processing i.e. a loop
-      this.cycle_count += 1;
-
-      cycle_tracker[this.cycle_count.toString()] = [];
-      cycle_tracker[this.cycle_count.toString()].push(node);
-
-      // Mark all the nodes in the cycle as part of the same loop
-      let curr_node = parent;
-      while (curr_node !== node) {
-        cycle_tracker[this.cycle_count.toString()].push(curr_node);
-        curr_node = parent_tracker[curr_node];
-      }
-
-      return;
-    }
-
-    color_tracker[node] = 1;
-    parent_tracker[node] = parent;
-
-    for (const ind in this.adjacent_vertices[node]) {
-      this.dfs(this.adjacent_vertices[node][ind], node, color_tracker, cycle_tracker, parent_tracker);
-    }
-
-    color_tracker[node] = 2;
-  }
-}
-
-export function getCircularPaths(cag) {
-  if (cag.edges.length === 0) { return; }
-
-  const g = new Graph(cag);
-  const parent = null;
-  const color_tracker = {};
-  const cycle_tracker = {};
-  const parent_tracker = {};
-
-  const nodes = new Set();
-  cag.edges.forEach(e => {
-    nodes.add(e.source);
-    nodes.add(e.target);
-  });
-  for (const n of nodes) {
-    g.dfs(n, parent, color_tracker, cycle_tracker, parent_tracker);
-  }
-
-  for (const c in cycle_tracker) {
-    cycle_tracker[c].reverse();
-  }
-
-  // FIXME: Remove after testing
-  console.log(cycle_tracker);
-
-  return cycle_tracker;
-}
 
 export function calculateNeighborhood(graph, node) {
   const neighborEdges = graph.edges.filter(edge => {
