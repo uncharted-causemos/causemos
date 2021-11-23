@@ -1,9 +1,32 @@
 <template>
   <div class="projection-histograms-container">
-    <h4 class="x-axis-label">Change in value</h4>
+    <div
+      class="grid-row slice-labels x-axis-label"
+      :class="{ 'left-aligned': !isScenarioComparisonActive }"
+    >
+      <h4>Change in value</h4>
+    </div>
     <div class="grid-row slice-labels">
-      <h3 v-for="(timeSliceLabel, index) in timeSliceLabels" :key="index">
+      <h3
+        v-for="(timeSliceLabel, index) in timeSliceLabels"
+        :key="index"
+        :class="{ hidden: isHiddenTimeSlice(index) }"
+      >
+        <small-icon-button
+          v-if="isScenarioComparisonActive && index !== 0"
+          @click="selectedTimeSliceIndex--"
+        >
+          <i class="fa fa-fw fa-caret-left" />
+        </small-icon-button>
         {{ timeSliceLabel }}
+        <small-icon-button
+          v-if="
+            isScenarioComparisonActive && index !== timeSliceLabels.length - 1
+          "
+          @click="selectedTimeSliceIndex++"
+        >
+          <i class="fa fa-fw fa-caret-right" />
+        </small-icon-button>
       </h3>
     </div>
     <div
@@ -14,6 +37,8 @@
       <h3>{{ row.scenarioName }}</h3>
       <histogram
         v-for="(histogramData, timeSliceIndex) of row.histograms"
+        class="histogram"
+        :class="{ hidden: isHiddenTimeSlice(timeSliceIndex) }"
         :key="timeSliceIndex"
         :bin-values="histogramData"
       />
@@ -32,6 +57,7 @@ import {
   ProjectionHistograms
 } from '@/utils/histogram-util';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 
 export interface ComparisonHistogramData {
   base: HistogramData;
@@ -72,7 +98,7 @@ function compareHistograms(
 }
 
 export default defineComponent({
-  components: { Histogram },
+  components: { Histogram, SmallIconButton },
   name: 'ProjectionHistograms',
   props: {
     modelSummary: {
@@ -96,13 +122,18 @@ export default defineComponent({
       default: null
     }
   },
+  data: () => ({
+    // Select middle time slice by default
+    selectedTimeSliceIndex: 1
+  }),
   computed: {
+    isScenarioComparisonActive(): boolean {
+      return this.comparisonBaselineId !== null;
+    },
     timeSliceLabels(): string[] {
       const timeScale = this.modelSummary.parameter.time_scale;
       const timeSlices = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
-      return (
-        timeSlices?.map(({ label }) => `In ${label}`) ?? ['', '', '']
-      );
+      return timeSlices?.map(({ label }) => `In ${label}`) ?? ['', '', ''];
     },
     binnedResults(): ProjectionHistograms[] {
       // Filter out the scenarios that haven't been run yet (typically just
@@ -125,7 +156,7 @@ export default defineComponent({
     rowsToDisplay(): HistogramRow[] {
       // Note that the "comparison baseline scenario" may not be the scenario
       //  without clamps (also referred to as the "baseline scenario")
-      if (this.comparisonBaselineId === null) {
+      if (!this.isScenarioComparisonActive) {
         return this.projections.map((projection, index) => ({
           scenarioName: projection.scenarioName,
           scenarioId: projection.scenarioId,
@@ -171,6 +202,14 @@ export default defineComponent({
       });
       return [baselineRow, ...otherRows];
     }
+  },
+  methods: {
+    isHiddenTimeSlice(timeSliceIndex: number): boolean {
+      return (
+        this.isScenarioComparisonActive &&
+        timeSliceIndex !== this.selectedTimeSliceIndex
+      );
+    }
   }
 });
 </script>
@@ -182,13 +221,6 @@ export default defineComponent({
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-}
-
-.x-axis-label {
-  @include header-secondary;
-  // There is 1 half width column and 3 full-width columns
-  //  We want to align with the first full column, so add a left margin of 1/7th
-  margin-left: calc(100% / 7);
 }
 
 h3,
@@ -222,6 +254,22 @@ h3 {
     color: $label-color;
   }
   margin-bottom: 20px;
+}
+
+.x-axis-label {
+  margin-bottom: 0;
+
+  // If scenario comparison is not active, add two extra columns to the right
+  &.left-aligned::after {
+    display: block;
+    content: '';
+    flex: 4;
+    min-width: 0;
+  }
+
+  h4 {
+    @include header-secondary;
+  }
 }
 
 .scenario-row {
