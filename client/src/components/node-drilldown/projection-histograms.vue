@@ -7,15 +7,15 @@
       </h3>
     </div>
     <div
-      v-for="(scenario, index) of projections"
-      :key="scenario.scenarioId"
+      v-for="row of rowsToDisplay"
+      :key="row.scenarioId"
       class="grid-row scenario-row"
     >
-      <h3>{{ scenario.scenarioName }}</h3>
+      <h3>{{ row.scenarioName }}</h3>
       <histogram
-        v-for="(histogramData, timeSliceIndex) of binnedResults[index]"
+        v-for="(histogramData, timeSliceIndex) of row.histograms"
         :key="timeSliceIndex"
-        :bin-values="{ base: histogramData, change: null }"
+        :bin-values="histogramData"
       />
     </div>
   </div>
@@ -28,10 +28,49 @@ import { defineComponent, PropType } from 'vue';
 import Histogram from '@/components/widgets/charts/histogram.vue';
 import {
   convertTimeseriesDistributionToHistograms,
+  HistogramData,
   ProjectionHistograms
 } from '@/utils/histogram-util';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import _ from 'lodash';
+
+export interface ComparisonHistogramData {
+  base: HistogramData;
+  // If change is null, these histograms are not in "scenario comparison" mode.
+  //  No pink or green change bars will be shown.
+  change: HistogramData | null;
+}
+
+interface HistogramRow {
+  scenarioName: string;
+  scenarioId: string;
+  histograms: ComparisonHistogramData[];
+}
+
+function compareHistograms(
+  baseline: ProjectionHistograms,
+  result: ProjectionHistograms
+): ComparisonHistogramData[] {
+  // For each histogram
+  return result.map((histogramData, timeSliceIndex) => {
+    const base: number[] = [];
+    const change: number[] = [];
+    // For each bar
+    histogramData.forEach((barValue, barIndex) => {
+      // Calculate the difference from the baseline value to the result value
+      const baselineValue = baseline[timeSliceIndex][barIndex];
+      const difference = barValue - baselineValue;
+      // This entry in the "base" array will be the same as the result bar,
+      //  but subtract any positive change. This is because the green
+      //  "change" bar can be thought of as a part of the grey "base" bar.
+      base.push(barValue - (difference > 0 ? difference : 0));
+      // This entry in the "change" array will be equal to the difference.
+      change.push(difference);
+    });
+    // Assert that there are still 5 elements in each array
+    return { base: base as HistogramData, change: change as HistogramData };
+  });
+}
 
 export default defineComponent({
   components: { Histogram },
@@ -83,6 +122,55 @@ export default defineComponent({
             projection.values
           )
         );
+    },
+    rowsToDisplay(): HistogramRow[] {
+      // Note that the "comparison baseline scenario" may not be the scenario
+      //  without clamps (also referred to as the "baseline scenario")
+      if (this.comparisonBaselineId === null) {
+        return this.projections.map((projection, index) => ({
+          scenarioName: projection.scenarioName,
+          scenarioId: projection.scenarioId,
+          histograms: this.binnedResults[index].map(histogramData => ({
+            base: histogramData,
+            change: null
+          }))
+        }));
+      }
+      // Scenario comparison is active.
+      // Display the comparison baseline scenario first
+      const baselineIndex = this.projections.findIndex(
+        ({ scenarioId }) => scenarioId === this.comparisonBaselineId
+      );
+      if (baselineIndex === -1) {
+        console.error(
+          'Unable to find projection data for scenario ' +
+            this.comparisonBaselineId
+        );
+        return [];
+      }
+      const baselineScenario = this.projections[baselineIndex];
+      const baselineResult = this.binnedResults[baselineIndex];
+      const baselineRow = {
+        scenarioName: baselineScenario.scenarioName,
+        scenarioId: baselineScenario.scenarioId,
+        histograms: baselineResult.map(histogramData => ({
+          base: histogramData,
+          change: null
+        }))
+      };
+      // Then display each other scenario, after calculating the histogram diff
+      const otherRows: HistogramRow[] = [];
+      this.projections.forEach(({ scenarioName, scenarioId }, index) => {
+        if (index !== baselineIndex) {
+          const result = this.binnedResults[index];
+          otherRows.push({
+            scenarioName,
+            scenarioId,
+            histograms: compareHistograms(baselineResult, result)
+          });
+        }
+      });
+      return [baselineRow, ...otherRows];
     }
   }
 });

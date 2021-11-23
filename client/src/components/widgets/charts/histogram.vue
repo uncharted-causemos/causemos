@@ -85,6 +85,7 @@ import {
   summarizeRelativeChange
 } from '@/utils/histogram-util';
 import HistogramArrow from './histogram-arrow.vue';
+import { ComparisonHistogramData } from '@/components/node-drilldown/projection-histograms.vue';
 
 /**
  * `base`: these values represent the grey part of each histogram bar.
@@ -98,10 +99,6 @@ import HistogramArrow from './histogram-arrow.vue';
  * combined they represent the total distribution of the run that is being
  * compared to the baseline
  */
-interface BinValues {
-  base: HistogramData;
-  change: HistogramData | null;
-}
 
 const BIN_LABELS = [
   'Much higher',
@@ -116,7 +113,7 @@ export default defineComponent({
   name: 'Histogram',
   props: {
     binValues: {
-      type: Object as PropType<BinValues>,
+      type: Object as PropType<ComparisonHistogramData>,
       required: true
     }
   },
