@@ -95,7 +95,14 @@ const axisOutputLabelFontSize = '10px';
 // brushing
 const brushHeight = 8;
 
-const numberIntegerFormat = d3.format('~s');
+const numberIntegerFormat = (n: number | { valueOf(): number}) => {
+  const numDigits = n.toString().length;
+  if (numDigits > 4) {
+    return d3.format('~s')(n); // The ~ option trims insignificant trailing zeros across all format types
+  } else {
+    return n.toString();
+  }
+};
 const numberFloatFormat = d3.format(',.2f');
 
 //
@@ -111,6 +118,16 @@ const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
 let currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
+
+const getHoverIdFromValue = (hoverValue: string) => {
+  // remove dots/spaces from the string since it will conflict with the d3 selected later on
+  let hoverValueNoDots = hoverValue.split('.').join('');
+  hoverValueNoDots = hoverValueNoDots.split(',').join('');
+  hoverValueNoDots = hoverValueNoDots.split('[').join('');
+  hoverValueNoDots = hoverValueNoDots.split(']').join('');
+  hoverValueNoDots = hoverValueNoDots.split('-').join('');
+  return hoverValueNoDots.split(' ').join('');
+};
 
 function getLineWidth(datum: any) {
   return datum.is_default_run === 0 ? lineStrokeWidthNormal : lineStrokeWidthDefault;
@@ -292,6 +309,8 @@ function renderParallelCoordinates(
         //
         // get the corresponding label for this value if suitable
         val = findLabelForValue(p, val);
+        // re-evaluate the xPos since the output val may be different from the input val
+        xPos = scaleX(val as any) as number;
         const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), val.toString());
         if (options.newRunsMode) {
           // special case when rendering potential scenario lines in the new-runs mode
@@ -1137,8 +1156,7 @@ function renderParallelCoordinates(
               const xLoc = segmentData.x + ((max - min) / 2);
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverValueNoDots = hoverValue.split('.').join('');
-              const hoverId = hoverValueNoDots.split(' ').join('');
+              const hoverId = getHoverIdFromValue(hoverValue);
 
               // Specify where to put label of text
               gElement.append('text')
@@ -1156,8 +1174,7 @@ function renderParallelCoordinates(
               const hoverValue: string = segmentData.start.toString();
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverValueNoDots = hoverValue.split('.').join('');
-              const hoverId = hoverValueNoDots.split(' ').join('');
+              const hoverId = getHoverIdFromValue(hoverValue);
 
               // Select text by id and then remove
               gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
@@ -1266,8 +1283,7 @@ function renderParallelCoordinates(
               const xLoc = x + ((max - min) / 2);
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverValueNoDots = hoverValue.split('.').join('');
-              const hoverId = hoverValueNoDots.split(' ').join('');
+              const hoverId = getHoverIdFromValue(hoverValue);
 
               // Specify where to put label of text
               gElement.append('text')
@@ -1287,8 +1303,7 @@ function renderParallelCoordinates(
               const hoverValue: string = d3.select(this).attr('start').toString();
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverValueNoDots = hoverValue.split('.').join('');
-              const hoverId = hoverValueNoDots.split(' ').join('');
+              const hoverId = getHoverIdFromValue(hoverValue);
 
               // Select text by id and then remove
               gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
@@ -1741,6 +1756,13 @@ function findLabelForValue(dim: DimensionInfo, value: string | number) {
       }
     }
   }
+  // special case for geo parameters: map their defualt-value to the default-label-value
+  if (isGeoParameter(dim.type)) {
+    const dimAsModelParam = (dim as ModelParameter);
+    if (value as string === dimAsModelParam.default && dimAsModelParam.additional_options && dimAsModelParam.additional_options.default_value_label) {
+      labelValue = dimAsModelParam.additional_options.default_value_label;
+    }
+  }
   return labelValue;
 }
 
@@ -1999,7 +2021,7 @@ const createScales = (
       dataExtent = dim?.choices_labels ? dim?.choices_labels : (dim?.choices ?? dim?.choices ?? []);
     }
 
-    const dataChoices = data.map(function(p) { return p[name]; }); // note this will return an array of values for all runs
+    let dataChoices = data.map(function(p) { return p[name]; }); // return an array of values for all runs
     if (dataExtent.length === 0) {
       dataExtent = dataChoices;
     }
@@ -2009,8 +2031,17 @@ const createScales = (
     // ensure that dataExtent and dataChoices are merged as one list (including the default value)
     const outputVarName = getOutputDimension(dimensions).name;
     if (outputVarName !== name) {
-      dataChoices.push((dim as ModelParameter).default);
-      isFreeformParam = (dim as ModelParameter).data_type === ModelParameterDataType.Freeform;
+      const dimAsModelParam = (dim as ModelParameter);
+      // sometimes, a geo param may have a default formatted in a less-human-readable way
+      if (isGeoParameter(dimAsModelParam.type) && dimAsModelParam.additional_options && dimAsModelParam.additional_options.default_value_label) {
+        dataChoices.push(dimAsModelParam.additional_options.default_value_label);
+        dataChoices = dataChoices.filter(val => val !== dimAsModelParam.default);
+        dataExtent = dataExtent.filter(val => val !== dimAsModelParam.default);
+      } else {
+        dataChoices.push(dimAsModelParam.default);
+      }
+
+      isFreeformParam = dimAsModelParam.data_type === ModelParameterDataType.Freeform;
     }
     if (isFreeformParam) {
       // only freeform params can have combined list of choices.
@@ -2031,7 +2062,7 @@ const createScales = (
         // NOTE: these are mostly string-based axes but not with valid choices, i.e., freeform axes --> should have been annotated as such
         const dim = dimensions.find(d => d.name === name) as ModelParameter;
         const defValue = dim.default;
-        if (!dataExtent.includes(defValue)) {
+        if (!isGeoParameter(dim.type) && !dataExtent.includes(defValue)) {
           dataExtent.push(defValue);
         }
       } else {
