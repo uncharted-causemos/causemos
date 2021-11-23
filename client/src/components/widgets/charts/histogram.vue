@@ -87,19 +87,6 @@ import {
 import HistogramArrow from './histogram-arrow.vue';
 import { ComparisonHistogramData } from '@/components/node-drilldown/projection-histograms.vue';
 
-/**
- * `base`: these values represent the grey part of each histogram bar.
- * `change`: null means that 'relative to' comparison is not active.
- * Positive values will be drawn as green bars, negative values will be drawn
- * as striped magenta bars.
- *
- * Assumptions:
- * - the sum of `change` should be 0 whenever it isn't null
- * - the green and grey bars should add up to 100% of run values, since
- * combined they represent the total distribution of the run that is being
- * compared to the baseline
- */
-
 const BIN_LABELS = [
   'Much higher',
   'Higher',
