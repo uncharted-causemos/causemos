@@ -68,6 +68,7 @@ import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import { isGeoParameter } from '@/utils/datacube-util';
 import datacubeService from '@/services/new-datacube-service';
+import useToaster from '@/services/composables/useToaster';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -106,6 +107,11 @@ export default defineComponent({
   data: () => ({
     potentialRuns: [] as Array<ScenarioData>
   }),
+  setup() {
+    return {
+      toaster: useToaster()
+    };
+  },
   mounted() {
     // potentialScenarios won't have values for the invisible input knobs
     //  so we need to add them to explicitly highlight ALL potential run values
@@ -124,9 +130,6 @@ export default defineComponent({
   },
   methods: {
     async startExecution() {
-      // FIXME: cast to 'any' since typescript cannot see mixins yet!
-      (this as any).toaster('New runs requested\nPlease check back later!');
-
       const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
       const drilldownParams = this.metadata.parameters.filter(d => d.is_drilldown);
 
@@ -174,12 +177,18 @@ export default defineComponent({
             value: p.default
           });
         });
-        datacubeService.createModelRun(this.metadata.data_id, this.metadata?.name, paramArray);
+        return datacubeService.createModelRun(this.metadata.data_id, this.metadata?.name, paramArray);
       });
       // wait until all promises are resolved
-      await Promise.all(promises);
-
-      this.close(false);
+      const allResponses = await Promise.all(promises);
+      const allResults = allResponses.flatMap((res: any) => res.data.run_id);
+      if (allResults.length > 0 && this.potentialRuns.length === allResults.length) {
+        this.toaster('New run(s) requested\nPlease check back later!', 'success');
+        this.close(false);
+      } else {
+        this.toaster('Some issue occured while requesting new model runs!', 'error');
+        this.close(true);
+      }
     },
     close(cancel = true) {
       this.$emit('close', { cancel });
