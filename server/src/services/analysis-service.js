@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const { v4: uuid } = require('uuid');
-const { get, set } = rootRequire('/cache/node-lru-cache');
+const { getCache, setCache } = rootRequire('/cache/node-lru-cache');
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 
 const find = async (simpleFilters, size, from, sort) => {
@@ -31,9 +31,9 @@ const createAnalysis = async (payload) => {
 
   // Update count cache
   const projectId = payload.project_id;
-  const projectCache = get(projectId);
+  const projectCache = getCache(projectId);
   projectCache.stat.data_analysis_count += 1;
-  set(projectId, projectCache);
+  setCache(projectId, projectCache);
 
   return { id: newId };
 };
@@ -59,9 +59,9 @@ const deleteAnalysis = async (id) => {
   // Update count cache
   const analysis = await connection.findOne([{ field: 'id', value: id }], {});
   const projectId = analysis.project_id;
-  const projectCache = get(projectId);
+  const projectCache = getCache(projectId);
   projectCache.stat.data_analysis_count -= 1;
-  set(projectId, projectCache);
+  setCache(projectId, projectCache);
 
   const results = await connection.remove([{ field: 'id', value: id }]);
   if (!results.deleted) {

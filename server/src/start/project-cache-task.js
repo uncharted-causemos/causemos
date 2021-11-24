@@ -1,4 +1,4 @@
-const { set } = rootRequire('/cache/node-lru-cache');
+const { setCache } = rootRequire('/cache/node-lru-cache');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
 const projectService = rootRequire('/services/project-service');
 const Logger = rootRequire('/config/logger');
@@ -36,7 +36,7 @@ const refreshProjectCache = async () => {
       ontologyMap[o.label] = o;
     });
 
-    set(project.id, {
+    setCache(project.id, {
       ...project,
       ontologyMap,
       stat: {

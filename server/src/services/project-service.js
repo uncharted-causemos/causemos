@@ -17,7 +17,7 @@ const {
   formatNodeAggregation,
   formatEdgeAggregation
 } = rootRequire('adapters/es/graph-query-util');
-const { set, del, get } = rootRequire('/cache/node-lru-cache');
+const { setCache, delCache, getCache } = rootRequire('/cache/node-lru-cache');
 
 const MAX_NUMBER_PROJECTS = 100;
 
@@ -101,7 +101,7 @@ const createProject = async (kbId, name, description) => {
   });
 
   Logger.info(`Caching Project data for ${projectId}`);
-  set(projectId, {
+  setCache(projectId, {
     ...projectData,
     ontologyMap,
     stat: {
@@ -231,7 +231,7 @@ const deleteProject = async (projectId) => {
   Logger.info(JSON.stringify(response));
 
   // Remove deleted project from cache
-  del(projectId);
+  delCache(projectId);
 };
 
 
@@ -660,11 +660,11 @@ const _graphKey = (projectId) => 'graph-' + projectId;
  */
 const searchPath = async (projectId, sourceConcept, targetConcept, hops) => {
   let promise = null;
-  promise = get(_graphKey(projectId));
+  promise = getCache(_graphKey(projectId));
 
   if (!promise) {
     promise = getProjectEdges(projectId, null);
-    set(_graphKey(projectId), promise);
+    setCache(_graphKey(projectId), promise);
   }
   const g = await promise;
   return graphUtil.normalPath(g, [sourceConcept, targetConcept], hops);
@@ -678,11 +678,11 @@ const searchPath = async (projectId, sourceConcept, targetConcept, hops) => {
  */
 const groupSearchPath = async (projectId, sourceConcepts, targetConcepts, hops) => {
   let promise = null;
-  promise = get(_graphKey(projectId));
+  promise = getCache(_graphKey(projectId));
 
   if (!promise) {
     promise = getProjectEdges(projectId, null);
-    set(_graphKey(projectId), promise);
+    setCache(_graphKey(projectId), promise);
   }
   const g = await promise;
   return graphUtil.groupPath(g, sourceConcepts, targetConcepts, hops);
@@ -691,7 +691,7 @@ const groupSearchPath = async (projectId, sourceConcepts, targetConcepts, hops) 
 const bustProjectGraphCache = async (projectId) => {
   Logger.info(`Busting/reset project ${projectId} graph cache`);
   const promise = getProjectEdges(projectId, null);
-  set(_graphKey(projectId), promise);
+  setCache(_graphKey(projectId), promise);
 };
 
 

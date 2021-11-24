@@ -6,7 +6,7 @@ const asyncHandler = require('express-async-handler');
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 // const requestAsPromise = rootRequire('/util/request-as-promise');
 
-const { get } = rootRequire('/cache/node-lru-cache');
+const { getCache } = rootRequire('/cache/node-lru-cache');
 const Logger = rootRequire('/config/logger');
 const indraService = rootRequire('/services/external/indra-service');
 const filtersUtil = rootRequire('/util/filters-util');
@@ -21,7 +21,7 @@ router.get('/', asyncHandler(async (req, res) => {
 
   // copy stats from the LRU cache
   projects.forEach(project => {
-    const cached = get(project.id) || {
+    const cached = getCache(project.id) || {
       // show `--` when cache is not available
       stat: {
         model_count: '--',
@@ -50,7 +50,7 @@ router.get('/:projectId', asyncHandler(async (req, res) => {
   const result = await projectService.findProject(projectId);
 
   // copy stats from the LRU cache
-  const cached = get(projectId) || {
+  const cached = getCache(projectId) || {
     stat: {
       // show `--` when cache is not available
       model_count: '--',
@@ -241,7 +241,7 @@ router.get('/:projectId/ontology-definitions', asyncHandler(async (req, res) => 
 router.post('/:projectId/update-belief-score', asyncHandler(async (req, res) => {
   const modifiedAt = Date.now();
   const projectId = req.params.projectId;
-  const project = get(projectId);
+  const project = getCache(projectId);
   const corpusId = project.corpus_id;
   const results = await indraService.recalculateBeliefScore(corpusId, projectId);
   await updateService.updateAllBeliefScores(projectId, results);

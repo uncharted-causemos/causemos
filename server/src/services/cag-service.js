@@ -6,7 +6,7 @@ const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { client } = rootRequire('/adapters/es/client');
 
-const { get, set } = rootRequire('/cache/node-lru-cache');
+const { getCache, setCache } = rootRequire('/cache/node-lru-cache');
 
 const modelUtil = rootRequire('/util/model-util');
 
@@ -235,9 +235,9 @@ const createCAG = async (modelFields, edges, nodes) => {
 
   // Update CAG/model count in cache
   const projectId = modelFields.project_id;
-  const projectCache = get(projectId);
+  const projectCache = getCache(projectId);
   projectCache.stat.model_count += 1;
-  set(projectId, projectCache);
+  setCache(projectId, projectCache);
 
   // Acknowledge success
   return {
@@ -446,9 +446,9 @@ const deleteCAG = async(modelId) => {
   // Update CAG/model count in cache
   const model = await _getModel(modelId);
   const projectId = model.project_id;
-  const projectCache = get(projectId);
+  const projectCache = getCache(projectId);
   projectCache.stat.model_count -= 1;
-  set(projectId, projectCache);
+  setCache(projectId, projectCache);
 
   // Delete CAG
   const CAGConnection = Adapter.get(RESOURCE.CAG);
