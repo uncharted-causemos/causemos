@@ -2,7 +2,7 @@ import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 import { getDatacubeById } from '@/services/new-datacube-service';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
-import { ModelParameterDataType } from '@/types/Enums';
+import { DatacubeGeoAttributeVariableType, ModelParameterDataType } from '@/types/Enums';
 import _ from 'lodash';
 
 /**
@@ -80,6 +80,13 @@ export default function useModelMetadata(
             }
           }
         });
+      }
+
+      if (isModel(rawMetadata) && rawMetadata.name === 'MaxHop') {
+        // force its country input param to be of type geo
+        const p = rawMetadata.parameters.filter(p => p.name === DatacubeGeoAttributeVariableType.Country)[0];
+        p.type = DatacubeGeoAttributeVariableType.Country;
+        p.data_type = ModelParameterDataType.Freeform;
       }
 
       metadata.value = rawMetadata;

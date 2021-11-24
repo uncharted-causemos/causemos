@@ -29,6 +29,7 @@
         <modal-geo-selection
           v-if="showGeoSelectionModal === true"
           :model-param="geoModelParam"
+          :metadata="metadata"
           @close="onGeoSelectionModalClose" />
         <rename-modal
           v-if="showTagNameModal"
