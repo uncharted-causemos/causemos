@@ -12,7 +12,7 @@
       :items="breakdownOptions"
       :selectedItem="selectedBreakdownOption"
       :is-dropdown-left-aligned="true"
-      @item-selected="emitBreakdownOptionSelection($event); scrollToQualifier($event)"
+      @item-selected="emitBreakdownOptionSelection($event); scrollToBreakdown($event)"
     />
     <aggregation-checklist-pane
       ref="region_ref"
@@ -321,7 +321,7 @@ export default defineComponent({
     };
   },
   methods: {
-    async scrollToQualifier(newValue: string | null) {
+    async scrollToBreakdown(newValue: string | null) {
       const reference = newValue + '_ref';
       if (newValue) {
         // Wait for any conditional elements to be rendered
