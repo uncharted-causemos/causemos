@@ -326,12 +326,14 @@ export default defineComponent({
       if (newValue) {
         // Wait for any conditional elements to be rendered
         nextTick(() => {
-          const element = (this.$refs[reference] as any).$el;
-          const container = document.getElementById('panel-content-container');
-          if (container) {
-            // set scroll height to slightly above relevant qualifier
-            container.scrollTop = element.offsetTop - 45;
-          }
+          nextTick(() => {
+            const element = (this.$refs[reference] as any).$el;
+            const container = document.getElementById('panel-content-container');
+            if (container) {
+              // set scroll height to slightly above relevant qualifier
+              container.scrollTop = element.offsetTop - 45;
+            }
+          });
         });
       }
     }
