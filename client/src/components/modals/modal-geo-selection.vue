@@ -189,24 +189,26 @@ export default defineComponent({
       });
       // allBBox is an array of bbox values for each country of the model geography
       //  calculate the union bbox by merging all bbox into a global one
-      const finalBBox: number[][] = allBBox[0];
-      allBBox.forEach((bbox: number[][]) => {
-        // [[minLon, maxLat], [maxLon, minLat]]:
-        if (bbox[0][0] < finalBBox[0][0]) {
-          finalBBox[0][0] = bbox[0][0];
-        }
-        if (bbox[0][1] > finalBBox[0][1]) {
-          finalBBox[0][1] = bbox[0][1];
-        }
-        if (bbox[1][0] > finalBBox[1][0]) {
-          finalBBox[1][0] = bbox[1][0];
-        }
-        if (bbox[1][1] < finalBBox[1][1]) {
-          finalBBox[1][1] = bbox[1][1];
-        }
-      });
-      // ask the map to fit the final, global, bbox
-      this.mapBounds = finalBBox;
+      if (allBBox.length > 0) {
+        const finalBBox: number[][] = allBBox[0];
+        allBBox.forEach((bbox: number[][]) => {
+          // [[minLon, maxLat], [maxLon, minLat]]:
+          if (bbox[0][0] < finalBBox[0][0]) {
+            finalBBox[0][0] = bbox[0][0];
+          }
+          if (bbox[0][1] > finalBBox[0][1]) {
+            finalBBox[0][1] = bbox[0][1];
+          }
+          if (bbox[1][0] > finalBBox[1][0]) {
+            finalBBox[1][0] = bbox[1][0];
+          }
+          if (bbox[1][1] < finalBBox[1][1]) {
+            finalBBox[1][1] = bbox[1][1];
+          }
+        });
+        // ask the map to fit the final, global, bbox
+        this.mapBounds = finalBBox;
+      }
     }
   },
   methods: {
