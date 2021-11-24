@@ -1,8 +1,8 @@
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { getModelRunMetadata } from '@/services/new-datacube-service';
-import { getAggregationKey, isImage, isVideo, TAGS } from '@/utils/datacube-util';
-import { AggregationOption, DatacubeGenericAttributeVariableType, ModelRunStatus } from '@/types/Enums';
+import { getAggregationKey, isImage, isVideo, TAGS, isCategoricalAxis } from '@/utils/datacube-util';
+import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
 
@@ -30,8 +30,9 @@ export default function useScenarioData(
     if (_.isEmpty(searchFilters.value) || searchFilters.value.clauses.length === 0) {
       // do nothing; since we need to cancel existing filters, if any
     } else {
+      // a map that indicates whether each param is categorical or not
       const dimTypeMap: { [key: string]: string } = dimensions.value.reduce(
-        (obj, item) => Object.assign(obj, { [item.name]: item.type }), {});
+        (obj, item) => Object.assign(obj, { [item.name]: isCategoricalAxis(item.name, dimensions.value) }), {});
       const clauses = searchFilters.value.clauses;
       clauses.forEach((c: any) => {
         const filterField: string = c.field; // the field to filter on
@@ -48,7 +49,7 @@ export default function useScenarioData(
               // this is a param filter
               // so we can search this parameters array directly
               //  depending on the param type, we could have range (e.g., rainful multiplier range) or a set of values (e.g., one or more selected countries)
-              if (dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Int || dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Float) {
+              if (!dimTypeMap[filterField]) {
                 const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
                 return paramsMatchingFilterField.value >= filterRange[0] && paramsMatchingFilterField.value <= filterRange[1];
               } else {

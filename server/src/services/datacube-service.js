@@ -106,6 +106,46 @@ const updateDatacubes = async(metadataDeltas) => {
 };
 
 /**
+ * Deprecate a datacube and update any references to it from previously deprecated datacubes
+ */
+const deprecateDatacube = async(oldDatacubeId, newDatacubeId) => {
+  const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+
+  // Search by data_id so that this works for indicators as well
+  const idsToDeprecate = await getDatacubes({
+    clauses: [
+      { field: 'dataId', operand: 'or', isNot: false, values: [oldDatacubeId] }
+    ]
+  }, { includes: ['id'] });
+
+  // Search for all datacubes that reference the one we're about to deprecate
+  // Ex. If we have deprecated datacubes 'v1' and 'v1.1' which are succeeded by 'v2'
+  // In order to deprecate 'v2' with 'v3', we much update 'v1' and 'v1.1' as well as 'v2'
+  const deprecatedIdsToUpdate = await getDatacubes({
+    clauses: [
+      { field: 'newVersionId', operand: 'or', isNot: false, values: [oldDatacubeId] }
+    ]
+  }, { includes: ['id'] });
+
+  const updateDeltas = [];
+  idsToDeprecate.forEach(doc => {
+    updateDeltas.push({
+      id: doc.id,
+      status: 'DEPRECATED',
+      new_version_data_id: newDatacubeId
+    });
+  });
+  deprecatedIdsToUpdate.forEach(doc => {
+    updateDeltas.push({
+      id: doc.id,
+      new_version_data_id: newDatacubeId
+    });
+  });
+
+  return await connection.update(updateDeltas);
+};
+
+/**
  * Returns field aggregations
  *
  * @param {object} filters
@@ -136,6 +176,7 @@ module.exports = {
   insertDatacube,
   updateDatacube,
   updateDatacubes,
+  deprecateDatacube,
 
   facets,
   searchFields
