@@ -1,36 +1,44 @@
 <template>
-  <div @click="isEdgeTypeOpen = false; isEdgeWeightOpen = false; isEdgePolarityOpen = false">
-    <span
-      class="clickable-dropdown"
-      @click.stop="openEdgeTypeDropdown()">
-      <i class="fa fa-fw fa-bolt" />
-      The presence of
-      <i class="fa fa-fw fa-caret-down" />
-    </span>
-    <dropdown-control
-      v-if="isEdgeTypeOpen"
-      class="edge-type-dropdown">
-      <template #content>
-        <div class="dropdown-option">The presence of</div>
-        <div class="dropdown-option">An increase of</div>
-      </template>
-    </dropdown-control>
-    {{ ontologyFormatter(selectedRelationship.source) }}
-    leads to a
+  <div @click="closeAll()">
+    <div
+      v-if="selectedRelationship.parameter"
+      style="display: inline-block">
+      <span
+        class="clickable-dropdown"
+        @click.stop="openEdgeTypeDropdown()">
+        <i class="fa fa-fw fa-bolt" />
+        {{ edgeType }}
+        <i class="fa fa-fw fa-caret-down" />
+      </span>
+      <dropdown-control
+        v-if="isEdgeTypeOpen"
+        class="edge-type-dropdown">
+        <template #content>
+          <div class="dropdown-option" @click="setType('level')">The presence of</div>
+          <div class="dropdown-option" @click="setType('trend')">An increase of</div>
+        </template>
+      </dropdown-control>
+    </div>
     <div style="display: inline-block">
+      {{ ontologyFormatter(selectedRelationship.source) }}
+      leads to
+    </div>
+    <div
+      v-if="selectedRelationship.parameter"
+      style="display: inline-block">
       <span
         class="clickable-dropdown"
         @click.stop="openEdgeWeightDropdown()">
-        small
+        {{ edgeWeight }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
       <dropdown-control
         v-if="isEdgeWeightOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option"> small </div>
-          <div class="dropdown-option"> medium </div>
-          <div class="dropdown-option"> large </div>
+          <div class="dropdown-option" @click="setWeight(0.1)">a small </div>
+          <div class="dropdown-option" @click="setWeight(0.5)">a medium </div>
+          <div class="dropdown-option" @click="setWeight(0.9)">a large </div>
         </template>
       </dropdown-control>
     </div>
@@ -38,18 +46,17 @@
       <span
         class="clickable-dropdown"
         @click.stop="openEdgePolarityDropdown()">
-        increase
+        &nbsp;{{ polarityLabel }} &nbsp;
         <i class="fa fa-fw fa-caret-down" />
       </span>
       <dropdown-control
         v-if="isEdgePolarityOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option"> increase </div>
-          <div class="dropdown-option"> decrease </div>
+          <div class="dropdown-option" @click="setPolarity(1)"> increase </div>
+          <div class="dropdown-option" @click="setPolarity(-1)"> decrease </div>
         </template>
       </dropdown-control>
-
     </div>
     <div style="display: inline-block">
       in {{ ontologyFormatter(selectedRelationship.target) }}
@@ -94,7 +101,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
-import { STATEMENT_POLARITY, STATEMENT_POLARITY_MAP, polarityClass, statementPolarityColor } from '@/utils/polarity-util';
+import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 export default defineComponent({
@@ -131,17 +138,39 @@ export default defineComponent({
     polarity(): number {
       return this.selectedRelationship.polarity;
     },
-    polarityClass(): string {
-      return polarityClass(this.polarity);
-    },
     polarityColor(): { color: string } {
       return statementPolarityColor(this.polarity);
     },
     polarityLabel(): string {
-      return STATEMENT_POLARITY_MAP[this.polarity];
+      if (this.polarity === 1) return 'increase';
+      if (this.polarity === -1) return 'decrease';
+      return 'unknown';
+    },
+    edgeType(): string {
+      const param = this.selectedRelationship.parameter;
+      if (param) {
+        return param.weights[0] > 0 ? 'The presence of' : 'An increase of';
+      }
+      return '';
+    },
+    edgeWeight(): string {
+      const param = this.selectedRelationship.parameter;
+      // FIXME: Need better init
+      if (param) {
+        const w = param.weights[0] > 0 ? param.weights[0] : param.weights[1];
+        if (w > 0.7) return 'a large';
+        if (w > 0.3) return 'a medium';
+        return 'a small';
+      }
+      return '';
     }
   },
   methods: {
+    closeAll() {
+      this.isEdgeTypeOpen = false;
+      this.isEdgeWeightOpen = false;
+      this.isEdgePolarityOpen = false;
+    },
     openEdgeTypeDropdown() {
       this.isEdgeTypeOpen = true;
       this.isEdgeWeightOpen = false;
@@ -157,14 +186,18 @@ export default defineComponent({
       this.isEdgeWeightOpen = false;
       this.isEdgePolarityOpen = true;
     },
+    setPolarity(v: number) {
+      this.$emit('edge-set-user-polarity', this.selectedRelationship, v);
+    },
+    setWeight(v: number) {
+      console.log(v);
+    },
+    setType(v: string) {
+      console.log(v);
+    },
     togglePolarityDropdown() {
       this.isPolarityDropdownOpen = !this.isPolarityDropdownOpen;
-    },
-    async onSelectEdgeUserPolarity(polarity: number) {
-      this.isPolarityDropdownOpen = false;
-      this.$emit('edge-set-user-polarity', this.selectedRelationship, polarity);
     }
-
   }
 });
 </script>
