@@ -20,7 +20,9 @@
         </span>
       </button>
     </div>
-    <dropdown-control class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
+    <dropdown-control
+      v-if="userInput !== ''"
+      class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
         <div style="display: flex; flex-direction: row">
           <div class="left-column">
@@ -190,7 +192,7 @@ export default {
       const cagContainerBoundingBox = this.$refs.newNodeContainer.parentNode.getBoundingClientRect();
 
       const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
-      const dropdownHeight = 36 * 8; // FIXME, this is a hack: ~dropdownEntryHeight * usualNumDropdownItems
+      const dropdownHeight = 290; // Match CSS
 
       if (inputBoundingBox.left + dropdownWidth > cagContainerBoundingBox.right) {
         this.dropdownLeftOffset = -dropdownWidth + inputBoundingBox.width;
@@ -272,11 +274,15 @@ export default {
 
 .left-column {
   min-width: 280px;
+  height: 290px;
+  overflow-y: scroll;
 }
 .right-column {
   flex-grow: 1;
   padding: 8px;
   border-left: 1px solid #DDD;
+  height: 290px;
+  overflow-y: scroll;
 }
 
 </style>
