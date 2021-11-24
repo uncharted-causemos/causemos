@@ -1760,13 +1760,18 @@ export default defineComponent({
       const modelRun = this.getModelRunById(runId);
       if (modelRun) {
         const response = createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters, modelRun.is_default_run);
-        response.then((res: any) => {
-          if (res.data && res.data.run_id && res.data.run_id.length > 0) {
-            this.toaster('Retrying model run\nPlease check back later!', 'success');
-          } else {
+        response
+          .then((res: any) => {
+            if (res.data && res.data.run_id && res.data.run_id.length > 0) {
+              this.toaster('Retrying model run\nPlease check back later!', 'success');
+            } else {
+              this.toaster('Some issue occured while retrying model run!', 'error');
+            }
+          })
+          .catch((error) => {
+            console.warn(error);
             this.toaster('Some issue occured while retrying model run!', 'error');
-          }
-        });
+          });
       }
       await this.deleteWithRun(modelRun);
     },

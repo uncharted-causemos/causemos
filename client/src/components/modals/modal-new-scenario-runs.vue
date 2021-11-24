@@ -180,12 +180,18 @@ export default defineComponent({
         return datacubeService.createModelRun(this.metadata.data_id, this.metadata?.name, paramArray);
       });
       // wait until all promises are resolved
-      const allResponses = await Promise.all(promises);
-      const allResults = allResponses.flatMap((res: any) => res.data.run_id);
-      if (allResults.length > 0 && this.potentialRuns.length === allResults.length) {
-        this.toaster('New run(s) requested\nPlease check back later!', 'success');
-        this.close(false);
-      } else {
+      try {
+        const allResponses = await Promise.all(promises);
+        const allResults = allResponses.flatMap((res: any) => res.data.run_id);
+        if (allResults.length > 0 && this.potentialRuns.length === allResults.length) {
+          this.toaster('New run(s) requested\nPlease check back later!', 'success');
+          this.close(false);
+        } else {
+          this.toaster('Some issue occured while requesting new model runs!', 'error');
+          this.close(true);
+        }
+      } catch (error) {
+        console.warn(error);
         this.toaster('Some issue occured while requesting new model runs!', 'error');
         this.close(true);
       }
