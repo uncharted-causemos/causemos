@@ -113,7 +113,7 @@ export default defineComponent({
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
 
     // apply initial view config for this datacube
-    if (initialViewConfig.value !== null && !_.isEmpty(initialViewConfig)) {
+    if (initialViewConfig.value !== null) {
       if (initialViewConfig.value.selectedOutputIndex !== undefined) {
         const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
         defaultOutputMap[datacubeId] = initialViewConfig.value.selectedOutputIndex;
