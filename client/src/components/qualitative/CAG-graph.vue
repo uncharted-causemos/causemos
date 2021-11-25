@@ -22,8 +22,6 @@
       @close="showCustomConcept = false"
       @save-custom-concept="saveCustomConcept"
     />
-    <color-legend
-      :show-cag-encodings="true" />
   </div>
 </template>
 
@@ -44,7 +42,6 @@ import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util
 import { calculateNeighborhood, hasBackingEvidence, highlightOptions, overlap } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
-import ColorLegend from '@/components/graph/color-legend';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 import GraphSearch from '@/components/widgets/graph-search.vue';
 
@@ -657,7 +654,6 @@ export default {
   name: 'CAGGraph',
   components: {
     NewNodeConceptSelect,
-    ColorLegend,
     ModalCustomConcept,
     GraphSearch
   },
