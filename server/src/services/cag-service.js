@@ -6,8 +6,6 @@ const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { client } = rootRequire('/adapters/es/client');
 
-const { getCache, setCache } = rootRequire('/cache/node-lru-cache');
-
 const modelUtil = rootRequire('/util/model-util');
 
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
@@ -233,12 +231,6 @@ const createCAG = async (modelFields, edges, nodes) => {
   await resolveComponents(CAGId, RESOURCE.EDGE_PARAMETER, edges);
   await resolveComponents(CAGId, RESOURCE.NODE_PARAMETER, nodes);
 
-  // Update CAG/model count in cache
-  const projectId = modelFields.project_id;
-  const projectCache = getCache(projectId);
-  projectCache.stat.model_count += 1;
-  setCache(projectId, projectCache);
-
   // Acknowledge success
   return {
     id: CAGId
@@ -442,13 +434,6 @@ const pruneCAG = async(modelId, edges, nodes) => {
  */
 const deleteCAG = async(modelId) => {
   Logger.info('Deleting CAG: ' + modelId);
-
-  // Update CAG/model count in cache
-  const model = await _getModel(modelId);
-  const projectId = model.project_id;
-  const projectCache = getCache(projectId);
-  projectCache.stat.model_count -= 1;
-  setCache(projectId, projectCache);
 
   // Delete CAG
   const CAGConnection = Adapter.get(RESOURCE.CAG);
