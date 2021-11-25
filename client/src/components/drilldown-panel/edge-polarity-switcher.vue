@@ -7,15 +7,15 @@
         class="clickable-dropdown"
         @click.stop="openEdgeTypeDropdown()">
         <i class="fa fa-fw fa-bolt" />
-        {{ edgeType }}
+        {{ weightTypeString(currentEdgeType) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
       <dropdown-control
         v-if="isEdgeTypeOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option" @click="setType('level')">The presence of</div>
-          <div class="dropdown-option" @click="setType('trend')">An increase of</div>
+          <div class="dropdown-option" @click="setType('level')">{{ weightTypeString('level') }}</div>
+          <div class="dropdown-option" @click="setType('trend')">{{ weightTypeString('trend') }}</div>
         </template>
       </dropdown-control>
     </div>
@@ -29,16 +29,16 @@
       <span
         class="clickable-dropdown"
         @click.stop="openEdgeWeightDropdown()">
-        {{ edgeWeight }}
+        {{ weightValueString(currentEdgeWeight) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
       <dropdown-control
         v-if="isEdgeWeightOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option" @click="setWeight(0.1)">a small </div>
-          <div class="dropdown-option" @click="setWeight(0.5)">a medium </div>
-          <div class="dropdown-option" @click="setWeight(0.9)">a large </div>
+          <div class="dropdown-option" @click="setWeight(0.1)">{{ weightValueString(0.1) }}</div>
+          <div class="dropdown-option" @click="setWeight(0.5)">{{ weightValueString(0.5) }}</div>
+          <div class="dropdown-option" @click="setWeight(0.9)">{{ weightValueString(0.9) }}</div>
         </template>
       </dropdown-control>
     </div>
@@ -46,15 +46,15 @@
       <span
         class="clickable-dropdown"
         @click.stop="openEdgePolarityDropdown()">
-        &nbsp;{{ polarityLabel }} &nbsp;
+        {{ polarityLabel }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
       <dropdown-control
         v-if="isEdgePolarityOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option" @click="setPolarity(1)"> increase </div>
-          <div class="dropdown-option" @click="setPolarity(-1)"> decrease </div>
+          <div class="dropdown-option" @click="setPolarity(1)">increase</div>
+          <div class="dropdown-option" @click="setPolarity(-1)">decrease</div>
         </template>
       </dropdown-control>
     </div>
@@ -103,6 +103,33 @@ import { defineComponent, ref } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import { EdgeParameter } from '@/types/CAG';
+
+const EDGE_TYPE_LEVEL = 'level';
+const EDGE_TYPE_TREND = 'trend';
+
+const getEdgeTypeString = (edge: EdgeParameter): string => {
+  const param = edge.parameter;
+  if (param) {
+    return param.weights[0] > 0 ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
+  }
+  return '';
+};
+
+
+// FIXME: Need better init
+const getEdgeWeight = (edge: EdgeParameter): number => {
+  const type = getEdgeTypeString(edge);
+  const param = edge.parameter;
+  if (param) {
+    const w = type === EDGE_TYPE_TREND ? param.weights[0] : param.weights[1];
+    if (w > 0.7) return 0.9;
+    if (w > 0.3) return 0.5;
+    return 0.1;
+  }
+  return 0;
+};
+
 
 export default defineComponent({
   name: 'EdgePolaritySwitcher',
@@ -116,7 +143,7 @@ export default defineComponent({
       required: true
     }
   },
-  setup() {
+  setup(props) {
     const isPolarityDropdownOpen = ref(false);
     const ontologyFormatter = useOntologyFormatter();
 
@@ -124,12 +151,18 @@ export default defineComponent({
     const isEdgeWeightOpen = ref(false);
     const isEdgePolarityOpen = ref(false);
 
+    const currentEdgeType = ref(getEdgeTypeString(props.selectedRelationship as EdgeParameter));
+    const currentEdgeWeight = ref(getEdgeWeight(props.selectedRelationship as EdgeParameter));
+
     return {
       ontologyFormatter,
       isPolarityDropdownOpen,
       isEdgeTypeOpen,
       isEdgeWeightOpen,
       isEdgePolarityOpen,
+
+      currentEdgeType,
+      currentEdgeWeight,
 
       STATEMENT_POLARITY
     };
@@ -145,24 +178,6 @@ export default defineComponent({
       if (this.polarity === 1) return 'increase';
       if (this.polarity === -1) return 'decrease';
       return 'unknown';
-    },
-    edgeType(): string {
-      const param = this.selectedRelationship.parameter;
-      if (param) {
-        return param.weights[0] > 0 ? 'The presence of' : 'An increase of';
-      }
-      return '';
-    },
-    edgeWeight(): string {
-      const param = this.selectedRelationship.parameter;
-      // FIXME: Need better init
-      if (param) {
-        const w = param.weights[0] > 0 ? param.weights[0] : param.weights[1];
-        if (w > 0.7) return 'a large';
-        if (w > 0.3) return 'a medium';
-        return 'a small';
-      }
-      return '';
     }
   },
   methods: {
@@ -186,14 +201,37 @@ export default defineComponent({
       this.isEdgeWeightOpen = false;
       this.isEdgePolarityOpen = true;
     },
+    weightValueString(v: number): string {
+      if (v === 0.9) return 'a large';
+      if (v === 0.5) return 'a medium';
+      return 'a small';
+    },
+    weightTypeString(v: string): string {
+      if (v === EDGE_TYPE_LEVEL) return 'The presence of';
+      return 'An increase of';
+    },
     setPolarity(v: number) {
       this.$emit('edge-set-user-polarity', this.selectedRelationship, v);
     },
     setWeight(v: number) {
-      console.log(v);
+      let weights: number[];
+      if (this.currentEdgeType === EDGE_TYPE_LEVEL) {
+        weights = [v, 0];
+      } else {
+        weights = [0, v];
+      }
+      this.currentEdgeWeight = v;
+      console.log(weights);
     },
     setType(v: string) {
-      console.log(v);
+      let weights: number[];
+      if (v === 'level') {
+        weights = [this.currentEdgeWeight, 0];
+      } else {
+        weights = [0, this.currentEdgeWeight];
+      }
+      this.currentEdgeType = v;
+      console.log(weights);
     },
     togglePolarityDropdown() {
       this.isPolarityDropdownOpen = !this.isPolarityDropdownOpen;
