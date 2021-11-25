@@ -48,7 +48,7 @@ import { getAnalysis } from '@/services/analysis-service';
 import filtersUtil from '@/utils/filters-util';
 import { FACET_FIELDS } from '@/utils/datacube-util';
 import { ANALYSIS } from '@/utils/messages-util';
-import { ProjectType } from '@/types/Enums';
+import { ProjectType, DatacubeStatus } from '@/types/Enums';
 
 export default {
   name: 'DataExplorer',
@@ -119,6 +119,12 @@ export default {
         size: this.pageSize
       };
       this.filteredDatacubes = await getDatacubes(this.filters, options);
+
+      this.filteredDatacubes.forEach(datacube => {
+        datacube.status = DatacubeStatus.Deprecated;
+        datacube.new_version_data_id = datacube.data_id;
+      });
+
       this.filteredDatacubes.forEach(item => (item.isAvailable = true));
       this.disableOverlay();
     },

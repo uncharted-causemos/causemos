@@ -49,6 +49,12 @@
                         Not Published
                       </button>
                       <button
+                        v-if="isDeprecated(d)"
+                        class="not-ready-label"
+                      >
+                        Deprecated
+                      </button>
+                      <button
                         v-if="isProcessing(d)"
                         class="not-ready-label"
                       >
@@ -130,13 +136,16 @@ export default {
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
     isDisabled(datacube) {
-      return datacube.status !== DatacubeStatus.Ready && isModel(datacube);
+      return isModel(datacube) && (datacube.status !== DatacubeStatus.Ready || datacube.status === DatacubeStatus.Deprecated);
     },
     isProcessing(datacube) {
       return datacube.status === DatacubeStatus.Processing && isIndicator(datacube);
     },
     isNotPublished(datacube) {
       return datacube.status === DatacubeStatus.Registered && isModel(datacube);
+    },
+    isDeprecated(datacube) {
+      return datacube.status === DatacubeStatus.Deprecated && isModel(datacube);
     },
     isExpanded(datacube) {
       return this.expandedRowId === datacube.id;

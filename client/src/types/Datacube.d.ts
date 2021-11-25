@@ -97,6 +97,7 @@ export interface Datacube {
   //  or use null and make the field required
   qualifier_outputs?: FeatureQualifier[] | null;
   default_view: any; // object that will contain various default view configurations such as default aggregations
+  new_version_data_id?: string;
 }
 
 export interface Model extends Datacube {

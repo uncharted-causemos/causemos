@@ -2,7 +2,7 @@ import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 import { getDatacubeById } from '@/services/new-datacube-service';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
-import { DatacubeGeoAttributeVariableType, ModelParameterDataType } from '@/types/Enums';
+import { DatacubeGeoAttributeVariableType, DatacubeStatus, ModelParameterDataType } from '@/types/Enums';
 import _ from 'lodash';
 
 /**
@@ -87,6 +87,9 @@ export default function useModelMetadata(
         const p = rawMetadata.parameters.filter(p => p.name === DatacubeGeoAttributeVariableType.Country)[0];
         p.type = DatacubeGeoAttributeVariableType.Country;
         p.data_type = ModelParameterDataType.Freeform;
+
+        rawMetadata.status = DatacubeStatus.Deprecated;
+        rawMetadata.new_version_data_id = rawMetadata.data_id;
       }
 
       metadata.value = rawMetadata;
