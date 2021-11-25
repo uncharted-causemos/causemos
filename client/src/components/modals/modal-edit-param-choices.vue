@@ -50,14 +50,6 @@
         <label>
           <b>Geo Options:</b>
         </label>
-        <div class="row date-option-container">
-          <label class="col-md-6">Region format:</label>
-          <dropdown-button
-            :selected-item="updatedParameter.additional_options.geo_region_format"
-            :items="acceptableGeoFormats"
-            @item-selected="updateAcceptableGeoFormat"
-          />
-        </div>
         <div class="date-option-container" style="display: flex; flex-direction: column; align-items: baseline">
           <label>Acceptable admin levels:</label>
           <div>
@@ -73,6 +65,41 @@
               </label>
             </div>
           </div>
+        </div>
+        <div class="row date-option-container">
+          <label class="col-md-6">Default value label</label>
+          <input
+            v-model="updatedParameter.additional_options.default_value_label"
+            type="text"
+          >
+        </div>
+        <div class="row date-option-container">
+          <label class="col-md-6">Region format:</label>
+          <dropdown-button
+            :selected-item="updatedParameter.additional_options.geo_region_format"
+            :items="acceptableGeoFormats"
+            @item-selected="updateAcceptableGeoFormat"
+          />
+        </div>
+
+        <div v-if="updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.Bounding_Box" class="row date-option-container">
+          <label class="col-md-6">Bounding box format</label>
+          <input
+            v-model="updatedParameter.additional_options.geo_bbox_format"
+            :style="{ width: (updatedParameter.additional_options.geo_bbox_format.length * 0.75) + 'ch' }"
+            type="text"
+          >
+          <button
+            type="button"
+            class="btn"
+            style="margin-left: 2px; padding: 2px 4px"
+            @click.stop="resetBBoxFormat()">
+              Reset
+          </button>
+        </div>
+        <div class="row date-option-container">
+          <label class="col-md-6" style="font-style: italic; margin-left: 1rem;">example</label>
+          <label style="font-style: italic">{{geoFormatExample}}</label>
         </div>
     </div>
       <!-- choices -->
@@ -124,6 +151,8 @@ import { DatacubeGenericAttributeVariableType, DatacubeGeoAttributeVariableType,
 import flatpickr from 'flatpickr';
 import { DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import DropdownButton from '@/components/dropdown-button.vue';
+import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 export default defineComponent({
   name: 'ModalEditParamChoices',
@@ -164,10 +193,33 @@ export default defineComponent({
     },
     allGeoLevels(): string[] {
       return Object.values(DatacubeGeoAttributeVariableType); // TODO: consider more human-readable labels
+    },
+    geoFormatExample(): string {
+      if (!this.updatedParameter || this.updatedParameter.additional_options.geo_bbox_format === undefined) return '';
+      // show some format example
+      let formatStr = this.updatedParameter.additional_options.geo_bbox_format;
+      if (this.updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.Bounding_Box) {
+        formatStr = formatStr.replace('{left}', ETHIOPIA_BOUNDING_BOX.LEFT.toString());
+        formatStr = formatStr.replace('{top}', ETHIOPIA_BOUNDING_BOX.TOP.toString());
+        formatStr = formatStr.replace('{right}', ETHIOPIA_BOUNDING_BOX.RIGHT.toString());
+        formatStr = formatStr.replace('{bottom}', ETHIOPIA_BOUNDING_BOX.BOTTOM.toString());
+        return formatStr;
+      }
+      if (this.updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.Full_GADM_PATH) {
+        // example gadm path: country__admin1__admin2__admin3
+        const allGeoLevels = Object.values(DatacubeGeoAttributeVariableType) as string[];
+        return allGeoLevels.join(REGION_ID_DELIMETER);
+      }
+      if (this.updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.GADM_Code) {
+        return 'ETH.7_1'; // example geo-code
+      }
+      return '';
     }
   },
   data: () => ({
-    updatedParameter: undefined as ModelParameter | undefined
+    updatedParameter: undefined as ModelParameter | undefined,
+    GeoAttributeFormat,
+    defaultBBoxFormat: '[ [{left}, {top}], [{right}, {bottom}] ]'
   }),
   mounted() {
     this.updatedParameter = _.cloneDeep(this.selectedParameter);
@@ -190,12 +242,18 @@ export default defineComponent({
     if (!this.updatedParameter.additional_options) {
       this.updatedParameter.additional_options = {};
     }
+    if (!this.updatedParameter.additional_options.default_value_label) {
+      this.updatedParameter.additional_options.default_value_label = this.updatedParameter.default;
+    }
     if (this.isGeoParam) {
       if (!this.updatedParameter.additional_options.geo_region_format) {
         this.updatedParameter.additional_options.geo_region_format = GeoAttributeFormat.Full_GADM_PATH;
       }
       if (!this.updatedParameter.additional_options.geo_acceptable_levels) {
         this.updatedParameter.additional_options.geo_acceptable_levels = this.allGeoLevels;
+      }
+      if (!this.updatedParameter.additional_options.geo_bbox_format) {
+        this.resetBBoxFormat();
       }
     }
     if (this.isDateRangeParam || this.isDateParam) {
@@ -211,6 +269,11 @@ export default defineComponent({
     }
   },
   methods: {
+    resetBBoxFormat() {
+      if (this.updatedParameter) {
+        this.updatedParameter.additional_options.geo_bbox_format = this.defaultBBoxFormat;
+      }
+    },
     updateAcceptableGeoFormat(val: GeoAttributeFormat) {
       if (this.updatedParameter) {
         this.updatedParameter.additional_options.geo_region_format = val;
@@ -265,7 +328,7 @@ export default defineComponent({
   max-width: 80vw;
   .modal-body {
     height: 300px;
-    width: 40vw;
+    width: 50vw;
     overflow-y: scroll;
   }
 }
@@ -300,6 +363,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
   margin-bottom: 4px;
+  // width: 100%;
 }
 
 .checkbox {

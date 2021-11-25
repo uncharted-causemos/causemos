@@ -10,11 +10,11 @@ export enum BASE_LAYER {
 }
 
 export enum BASE_LAYER_TRANSPARENCY {
-  '0% Transparency' = '0',
-  '25% Transparency' = '0.25',
-  '50% Transparency' = '0.5',
-  '75% Transparency' = '0.75',
-  '100% Transparency' = '1'
+  '0%' = '0',
+  '25%' = '0.25',
+  '50%' = '0.5',
+  '75%' = '0.75',
+  '100%' = '1'
 }
 
 export enum DATA_LAYER {
