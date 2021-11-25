@@ -48,7 +48,7 @@ import { getAnalysis } from '@/services/analysis-service';
 import filtersUtil from '@/utils/filters-util';
 import { FACET_FIELDS } from '@/utils/datacube-util';
 import { ANALYSIS } from '@/utils/messages-util';
-import { ProjectType, DatacubeStatus } from '@/types/Enums';
+import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'DataExplorer',
