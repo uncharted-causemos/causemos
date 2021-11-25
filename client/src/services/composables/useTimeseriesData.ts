@@ -457,6 +457,9 @@ export default function useTimeseriesData(
       const month = monthCounts.find((mc) => mc.timestamp === p.timestamp);
       month && (p.value = p.value / month.value);
     });
+    aggregratedRefSeries.points.sort((a, b) => {
+      return a.timestamp - b.timestamp;
+    });
     return aggregratedRefSeries;
   };
 
@@ -508,6 +511,7 @@ export default function useTimeseriesData(
       }
       referenceTimeSeries.value = referenceTimeSeries.value.filter((rts) => referenceSeries.value.includes(rts.id));
     }
+    console.log('rts', referenceTimeSeries.value);
   });
 
   return {
