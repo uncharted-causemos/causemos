@@ -119,12 +119,6 @@ export default {
         size: this.pageSize
       };
       this.filteredDatacubes = await getDatacubes(this.filters, options);
-
-      this.filteredDatacubes.forEach(datacube => {
-        datacube.status = DatacubeStatus.Deprecated;
-        datacube.new_version_data_id = datacube.data_id;
-      });
-
       this.filteredDatacubes.forEach(item => (item.isAvailable = true));
       this.disableOverlay();
     },

@@ -82,16 +82,6 @@ export default function useModelMetadata(
         });
       }
 
-      if (isModel(rawMetadata) && rawMetadata.name === 'MaxHop') {
-        // force its country input param to be of type geo
-        const p = rawMetadata.parameters.filter(p => p.name === DatacubeGeoAttributeVariableType.Country)[0];
-        p.type = DatacubeGeoAttributeVariableType.Country;
-        p.data_type = ModelParameterDataType.Freeform;
-
-        rawMetadata.status = DatacubeStatus.Deprecated;
-        rawMetadata.new_version_data_id = rawMetadata.data_id;
-      }
-
       metadata.value = rawMetadata;
     }
     onInvalidate(() => {

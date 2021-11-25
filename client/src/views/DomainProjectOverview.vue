@@ -222,12 +222,6 @@ export default {
       filtersUtil.addSearchTerm(newFilters, 'type', this.projectMetadata.type, 'and', false);
       this.datacubeInstances = await getDatacubes(newFilters);
 
-      // TEST CODE
-      this.datacubeInstances.forEach(datacube => {
-        datacube.status = DatacubeStatus.Deprecated;
-        datacube.new_version_data_id = datacube.data_id;
-      });
-
       // set context id as the current family name
       if (this.datacubeInstances.length > 0) {
         // context-id should be an array to fetch insights for each and every model instance
