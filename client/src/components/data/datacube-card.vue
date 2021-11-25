@@ -1635,7 +1635,6 @@ export default defineComponent({
       } else {
         activeReferenceSeries.value.push(value);
       }
-      console.log(activeReferenceSeries.value);
     };
 
     return {

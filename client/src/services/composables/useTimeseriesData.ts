@@ -511,7 +511,6 @@ export default function useTimeseriesData(
       }
       referenceTimeSeries.value = referenceTimeSeries.value.filter((rts) => referenceSeries.value.includes(rts.id));
     }
-    console.log('rts', referenceTimeSeries.value);
   });
 
   return {
