@@ -2,7 +2,7 @@ import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 import { getDatacubeById } from '@/services/new-datacube-service';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
-import { DatacubeGeoAttributeVariableType, DatacubeStatus, ModelParameterDataType } from '@/types/Enums';
+import { ModelParameterDataType } from '@/types/Enums';
 import _ from 'lodash';
 
 /**
