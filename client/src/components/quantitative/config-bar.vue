@@ -10,10 +10,7 @@
     />
     engine, project over a period of
     <strong>{{ timeScaleLabel }}</strong>
-    <button
-      class="btn btn-sm btn-default"
-      @click="showModalTimeScale = true"
-    >
+    <button class="btn btn-sm btn-default" @click="showModalTimeScale = true">
       <i class="fa fa-fw fa-pencil" />
     </button>
     starting in
@@ -102,7 +99,9 @@ export default defineComponent({
       this.$emit('model-parameter-changed');
     },
     async saveTimeScale(newTimeScale: TimeScale) {
-      const newParameter: Partial<CAGModelParameter> = { time_scale: newTimeScale };
+      const newParameter: Partial<CAGModelParameter> = {
+        time_scale: newTimeScale
+      };
       this.showModalTimeScale = false;
       await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.$emit('model-parameter-changed');
