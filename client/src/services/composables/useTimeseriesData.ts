@@ -420,30 +420,42 @@ export default function useTimeseriesData(
   });
 
   const aggregateRefTemporalTimeseries = (temporalTimeseries: Timeseries[]): Timeseries => {
+    // because we can have data with missing months, we need to count up instances of each month
+    // across however many years on are in the time series
+    const monthCounts = temporalTimeseries.reduce((acc: TimeseriesPoint[], year: Timeseries): TimeseriesPoint[] => {
+      year.points.forEach((p) => {
+        const month = acc.find((mc) => mc.timestamp === p.timestamp);
+        if (month) {
+          month.value++;
+        } else {
+          acc.push({
+            timestamp: p.timestamp,
+            value: 1
+          });
+        }
+      });
+      return acc;
+    }, new Array<TimeseriesPoint>());
+
     const aggregratedRefSeries = temporalTimeseries.reduce((acc: Timeseries, ts: Timeseries, ind: number) => {
       if (ind === 0) {
-        acc.points = new Array<TimeseriesPoint>(12).fill({} as TimeseriesPoint).map((p, i) => {
+        acc.points = monthCounts.map((p) => {
           return {
-            timestamp: i,
+            timestamp: p.timestamp,
             value: 0
           } as TimeseriesPoint;
         });
       }
       ts.points.forEach((p) => {
-        acc.points[p.timestamp].value = acc.points[p.timestamp].value + p.value;
+        const accMonth = acc.points.find(ap => ap.timestamp === p.timestamp);
+        accMonth && (accMonth.value = accMonth.value + p.value);
       });
       return acc;
     }, {} as Timeseries);
 
-    // because we can have data with missing months, we need to count up instances of each month
-    // across however many years on are in the tieme series
-    const monthCounts = temporalTimeseries.reduce((acc: number[], year: Timeseries): number[] => {
-      year.points.forEach((p) => acc[p.timestamp]++);
-      return acc;
-    }, new Array(12).fill(0));
-
     aggregratedRefSeries.points.forEach((p) => {
-      p.value = p.value / monthCounts[p.timestamp];
+      const month = monthCounts.find((mc) => mc.timestamp === p.timestamp);
+      month && (p.value = p.value / month.value);
     });
     return aggregratedRefSeries;
   };
