@@ -9,13 +9,25 @@
       @item-selected="setEngine"
     />
     engine, project over a period of
-    <strong>Years</strong>
+    <strong>{{ timeScaleLabel }}</strong>
+    <button
+      class="btn btn-sm btn-default"
+      @click="showModalTimeScale = true"
+    >
+      <i class="fa fa-fw fa-pencil" />
+    </button>
     starting in
     <date-dropdown
       :data="projectionStartDate"
       @updated="setProjectionStartDate"
     />
     .
+    <modal-time-scale
+      v-if="showModalTimeScale"
+      :initially-selected-time-scale="modelSummary?.parameter?.time_scale"
+      @save-time-scale="saveTimeScale"
+      @close="showModalTimeScale = false"
+    />
   </div>
 </template>
 
@@ -25,11 +37,13 @@ import { defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
 import modelService, { ENGINE_OPTIONS } from '@/services/model-service';
 import dropdownButton, { DropdownItem } from '../dropdown-button.vue';
 import DateDropdown from '@/components/widgets/date-dropdown.vue';
-import { CAGModelSummary } from '@/types/CAG';
+import { CAGModelParameter, CAGModelSummary } from '@/types/CAG';
 import { mapGetters } from 'vuex';
+import { TimeScale } from '@/types/Enums';
+import ModalTimeScale from '../qualitative/modal-time-scale.vue';
 
 export default defineComponent({
-  components: { dropdownButton, DateDropdown },
+  components: { dropdownButton, DateDropdown, ModalTimeScale },
   name: 'QuantitativeConfigBar',
   props: {
     modelSummary: {
@@ -54,7 +68,8 @@ export default defineComponent({
     return {
       selectedEngine,
       selectedTimeScale,
-      projectionStartDate
+      projectionStartDate,
+      showModalTimeScale: ref(false)
     };
   },
   computed: {
@@ -84,6 +99,12 @@ export default defineComponent({
       await modelService.updateModelParameter(this.currentCAG, {
         projection_start: newStartDate
       });
+      this.$emit('model-parameter-changed');
+    },
+    async saveTimeScale(newTimeScale: TimeScale) {
+      const newParameter: Partial<CAGModelParameter> = { time_scale: newTimeScale };
+      this.showModalTimeScale = false;
+      await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.$emit('model-parameter-changed');
     }
   }
