@@ -29,6 +29,7 @@
         <modal-geo-selection
           v-if="showGeoSelectionModal === true"
           :model-param="geoModelParam"
+          :metadata="metadata"
           @close="onGeoSelectionModalClose" />
         <rename-modal
           v-if="showTagNameModal"
@@ -145,7 +146,7 @@
               Check execution status
             </button>
           </div>
-          <div class="column">
+          <div class="column center-column">
             <div class="button-row">
               <div class="button-row-group">
                 <radio-button-group
@@ -439,18 +440,14 @@
               </template>
             </drilldown-panel>
             <!-- viz options if visible will always be on top of the breakdown panel -->
-            <drilldown-panel
-              class="drilldown"
-              style="top: 0"
-              :style="{ position: activeDrilldownTab !== null ? 'absolute' : 'relative' }"
-              :active-tab-id="activeVizOptionsTab"
-              :has-transition="false"
-              :hide-close="true"
-              :is-open="activeVizOptionsTab !== null"
-              :tabs="vizOptionsTabs"
-              @close="() => { activeVizOptionsTab = null }"
+            <div class="viz-options-modal-mask"
+              v-if="activeVizOptionsTab !== null"
+              @click="activeVizOptionsTab = null"
             >
-              <template #content>
+              <!-- Catch click events and stop propagation to avoid closing
+              the modal every time an interaction occurs within it -->
+              <div class="viz-options-modal" @click.stop="">
+                <h4>Configuration</h4>
                 <viz-options-pane
                   :metadata="metadata"
                   :aggregation-options="aggregationOptions"
@@ -475,8 +472,8 @@
                   @set-color-scale-type="setColorScaleType"
                   @set-number-color-bins="setNumberOfColorBins"
                 />
-              </template>
-            </drilldown-panel>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -577,15 +574,6 @@ const DRILLDOWN_TABS = [
   }
 ];
 
-const VIZ_OPTIONS_TABS = [
-  {
-    name: 'Viz Options',
-    id: 'vizoptions',
-    // TODO: our version of FA doesn't include fa-chart
-    icon: 'fa-gear'
-  }
-];
-
 export default defineComponent({
   name: 'DatacubeCard',
   emits: [
@@ -680,7 +668,7 @@ export default defineComponent({
     const breakdownOption = ref<string | null>(null);
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
-    const selectedBaseLayerTransparency = ref(BASE_LAYER_TRANSPARENCY['50% Transparency']);
+    const selectedBaseLayerTransparency = ref(BASE_LAYER_TRANSPARENCY['50%']);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
@@ -725,7 +713,7 @@ export default defineComponent({
     const dateModelParam = computed(() => {
       const modelMetadata = metadata.value;
       if (modelMetadata === null || !isModel(modelMetadata)) return null;
-      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
+      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange || dim.type === DatacubeGenericAttributeVariableType.Date);
       return dateParams.length > 0 ? dateParams[0] : null;
     });
 
@@ -1668,7 +1656,6 @@ export default defineComponent({
       defaultRunButtonCaption,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
-      vizOptionsTabs: VIZ_OPTIONS_TABS,
       fetchData,
       filteredRunData,
       geoModelParam,
@@ -1825,6 +1812,20 @@ export default defineComponent({
           // ensure that both choices and labels exist
           const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
           const updatedChoicesLabels = updatedModelParam.choices_labels === undefined || updatedModelParam.choices_labels.length === 0 ? _.clone(updatedModelParam.choices) as Array<string> : _.clone(updatedModelParam.choices_labels) as Array<string>;
+          const getFormattedBBox = (bbox: any) => {
+            // NOTE: bbox is coming as input string formatted as
+            //       [ [{left}, {top}], [{right}, {bottom}] ]
+            const targetBBoxFormat = updatedModelParam.additional_options.geo_bbox_format;
+            if (!targetBBoxFormat) {
+              return bbox; // user has not defined a bbox format, so return the default one
+            }
+            let finalBBox = _.clone(targetBBoxFormat);
+            finalBBox = finalBBox.replace('{left}', bbox[0][0]);
+            finalBBox = finalBBox.replace('{top}', bbox[0][1]);
+            finalBBox = finalBBox.replace('{right}', bbox[1][0]);
+            finalBBox = finalBBox.replace('{bottom}', bbox[1][1]);
+            return finalBBox;
+          };
           const formattedRegion = (region: GeoRegionDetail) => {
             const validSelectedRegion = region.path;
             switch (updatedModelParam.additional_options.geo_region_format) {
@@ -1834,7 +1835,7 @@ export default defineComponent({
               case GeoAttributeFormat.GADM_Code:
                 return region.code;
               case GeoAttributeFormat.Bounding_Box:
-                return region.bbox;
+                return getFormattedBBox(region.bbox);
             }
           };
           selectedRegions.forEach(sr => {
@@ -1922,7 +1923,8 @@ export default defineComponent({
 @import '~styles/variables';
 @import '~flatpickr/dist/flatpickr.css';
 
-$fullscreenTransition: all 0.5s ease-in-out;
+$cardSpacing: 10px;
+
 
 .breakdown-button {
   margin: 0 1rem;
@@ -1948,24 +1950,13 @@ $fullscreenTransition: all 0.5s ease-in-out;
 
 
 .drilldown {
-  margin-left: 1rem;
   height: 100%;
-}
-
-.toggle-viz-button {
-  background-color: lightgray;
-  margin: 0 1px;
-  padding: 2px 4px;
-}
-.toggle-viz-button-pressed {
-  background-color: darkgray;
-  &:hover, &:active, &:focus {
-    background-color: darkgray;
-  }
+  box-shadow: none;
 }
 
 .capture-box {
-  padding: 10px;
+  padding-top: $cardSpacing;
+  padding-left: $cardSpacing;
   display: flex;
   width: 100%;
   flex-direction: column;
@@ -1980,6 +1971,7 @@ $fullscreenTransition: all 0.5s ease-in-out;
 header {
   display: flex;
   align-items: center;
+  margin-right: $cardSpacing;
 
   h5 {
     display: inline-block;
@@ -1998,9 +1990,14 @@ header {
 
 .scenario-selector {
   width: 25%;
-  margin-right: 10px;
   display: flex;
   flex-direction: column;
+}
+
+.center-column,
+.scenario-selector {
+  margin-bottom: $cardSpacing;
+  margin-right: $cardSpacing;
 }
 
 .pc-chart {
@@ -2147,7 +2144,6 @@ $marginSize: 5px;
     padding-bottom: 5px;
     height: 0;
     opacity: 0;
-    transition: $fullscreenTransition;
 
     &.isVisible {
       opacity: 1;
@@ -2207,6 +2203,38 @@ $marginSize: 5px;
   .date-picker-buttons {
       padding: 4px 8px;
     }
+}
+
+.viz-options-modal-mask {
+  isolation: isolate;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, .25);
+  // Render above map attribution text
+  z-index: 3;
+}
+
+$drilldownWidth: 25vw;
+.viz-options-modal {
+  background: $background-light-1;
+  width: calc(#{$drilldownWidth} + 20px);
+  position: absolute;
+  right: 0;
+  top: calc(calc(#{$navbar-outer-height} * 2) + 10px);
+  bottom: 10px;
+  overflow-y: auto;
+  padding: 10px;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+
+  h4 {
+    @include header-secondary;
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
 }
 
 </style>
