@@ -53,7 +53,20 @@
     </div>
     <div class="checklist-container">
       <aggregation-checklist-item
-        v-for="(row, rowIndex) of visibleRows"
+        v-for="(row, rowIndex) of rowsWithData"
+        :key="rowIndex"
+        :histogram-visible="shouldShowDeselectedBars || row.isChecked"
+        :item-data="row"
+        :max-visible-bar-value="maxVisibleBarValue"
+        :min-visible-bar-value="minVisibleBarValue"
+        :selected-timeseries-points="selectedTimeseriesPoints"
+        :checkbox-type="checkboxType"
+        @toggle-expanded="toggleExpanded(row.path)"
+        @toggle-checked="toggleChecked(row.path)"
+      />
+      {{rowsWithoutData.length}} more without data
+      <aggregation-checklist-item
+        v-for="(row, rowIndex) of rowsWithoutData"
         :key="rowIndex"
         :histogram-visible="shouldShowDeselectedBars || row.isChecked"
         :item-data="row"
@@ -469,7 +482,7 @@ export default defineComponent({
       );
     });
 
-    const visibleRows = computed(() => {
+    const possibleRows = computed(() => {
       if (_.isNil(statefulData.value)) return [];
       return extractVisibleRows(
         statefulData.value,
@@ -479,6 +492,14 @@ export default defineComponent({
         orderedAggregationLevelKeys.value
       );
     });
+
+    const rowsWithData = computed(() => {
+      return possibleRows.value.filter(row => row.bars.length);
+    });
+    const rowsWithoutData = computed(() => {
+      return possibleRows.value.filter(row => !row.bars.length);
+    });
+    console.log(rowsWithData.value);
 
     const isAllSelected = computed(() => {
       return selectedItemIds.value.length === 0;
@@ -511,7 +532,9 @@ export default defineComponent({
       statefulData,
       maxVisibleBarValue,
       minVisibleBarValue,
-      visibleRows,
+      possibleRows,
+      rowsWithData,
+      rowsWithoutData,
       isAllSelected,
       toggleChecked,
       setAllChecked,
