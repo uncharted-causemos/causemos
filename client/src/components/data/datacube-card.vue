@@ -1530,12 +1530,6 @@ export default defineComponent({
       subregionSelectedYears,
       subregionToggleIsYearSelected
     };
-    const myProcessedTimeseries = ref({});
-    watchEffect(() => {
-      myProcessedTimeseries.value = regionsToTimeseries;
-      console.log('Processed time series inside watch effect');
-      console.log(myProcessedTimeseries.value);
-    });
 
     const {
       onSyncMapBounds,
@@ -1602,8 +1596,6 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-
-    // draft code for the reference series now that all of the front end events and props are moving up and down the components.
     // from here, we can start to handle the math when we actually have active references series to revtrive and calculate
     const referenceSeries = computed(() => {
       let currentReferenceSeries = [] as any;
@@ -1670,7 +1662,6 @@ export default defineComponent({
       mapReady,
       mapSelectedLayer,
       modelRunsSearchData,
-      myProcessedTimeseries,
       newRunsMode,
       onMapLoad,
       onModelRunsFiltersUpdated,
