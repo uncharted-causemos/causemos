@@ -128,7 +128,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, nextTick, PropType, toRefs } from 'vue';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
@@ -322,19 +322,19 @@ export default defineComponent({
   },
   methods: {
     async scrollToBreakdown(newValue: string | null) {
-      const reference = newValue + '_ref';
       if (newValue) {
-        // Wait for any conditional elements to be rendered
-        nextTick(() => {
-          nextTick(() => {
-            const element = (this.$refs[reference] as any).$el;
+        const reference = newValue + '_ref';
+        setTimeout(() => { // HACK: wait for element to be mounted, year_ref gets unmounted in certain cases so we need to wait before we try and scroll to it
+          try { // in the future we should look into preventing the mount/unmount behavior
+            const element = (this.$refs[reference] as any).$el; // this will throw an error if element hasn't been rendered (it's ref wont exist)
             const container = document.getElementById('panel-content-container');
             if (container) {
-              // set scroll height to slightly above relevant qualifier
-              container.scrollTop = element.offsetTop - 45;
+              container.scrollTop = element.offsetTop - 45; // set scroll height to slightly above relevant qualifier
             }
-          });
-        });
+          } catch (e) {
+            console.error('could not scroll to element: ', e);
+          }
+        }, 250);
       }
     }
   }
