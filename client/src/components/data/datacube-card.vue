@@ -1596,7 +1596,6 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    // from here, we can start to handle the math when we actually have active references series to revtrive and calculate
     const referenceSeries = computed(() => {
       let currentReferenceSeries = [] as any;
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
@@ -1604,11 +1603,12 @@ export default defineComponent({
           { id: ReferenceSeriesOption.AllYears, displayName: 'Average All Years' },
           { id: ReferenceSeriesOption.SelectYears, displayName: 'Average Selected Years' }
         ];
+      // to be handled in separate PR for initial reference region series later
       } else if (breakdownOption.value === SpatialAggregationLevel.Region) {
         currentReferenceSeries = [
-          { id: ReferenceSeriesOption.AllRegions, displayName: 'Average All Regions' },
-          { id: ReferenceSeriesOption.SelectRegions, displayName: 'Average Selected Regions' }
-          // add in the individual parent regions for reference
+          // { id: ReferenceSeriesOption.AllRegions, displayName: 'Average All Regions' },
+          // { id: ReferenceSeriesOption.SelectRegions, displayName: 'Average Selected Regions' }
+          // add in the individual parent regions for reference as well in future PR
         ];
       }
 
