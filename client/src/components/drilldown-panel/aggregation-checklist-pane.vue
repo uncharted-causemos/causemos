@@ -65,6 +65,7 @@
         @toggle-checked="toggleChecked(row.path)"
       />
       <collapsible-item
+        v-if="rowsWithoutData.length"
         :override="true">
         <template #title>{{rowsWithoutData.length}} more without data</template>
         <template #content>
