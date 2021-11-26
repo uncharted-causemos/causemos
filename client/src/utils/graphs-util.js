@@ -2,21 +2,82 @@ import _ from 'lodash';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 
+class Vertex {
+  constructor(name) {
+    this.name = name;
+    this.index = null;
+    this.lowestNode = null;
+    this.inStack = false;
+  }
+}
 class Graph {
   PROCESSING = 1
   PROCESSED = 2
 
   constructor(edges) {
+    const vertices = new Set();
     const adjacentVertices = {};
     edges.forEach(e => {
-      if (!(e.source in adjacentVertices)) {
-        adjacentVertices[e.source] = [];
+      const sourceVertex = Vertex(e.source);
+      const targetVertex = Vertex(e.target);
+
+      if (!(sourceVertex.name in adjacentVertices)) {
+        adjacentVertices[sourceVertex.name] = [];
       }
 
-      adjacentVertices[e.source].push(e.target);
+      adjacentVertices[sourceVertex.name].push(targetVertex);
+      vertices.add(sourceVertex);
+      vertices.add(targetVertex);
     });
+
     this.cycleCount = 0;
     this.adjacentVertices = adjacentVertices;
+    this.vertices = vertices;
+  }
+
+  /**
+   * Finds all strongly connected components in a graph using Tarjan's algorithm
+   */
+  findSCC() {
+    this.stronglyConnectedComponents = [];
+    const index = 0;
+    const stack = [];
+
+    for (const v of this.vertices) {
+      if (v.index === null) {
+        this.findSCCRecurse(v, index, stack);
+      }
+    }
+  }
+
+  findSCCRecurse(node, index, stack) {
+    node.index = index;
+    node.lowestNode = index;
+    stack.push(node);
+    node.inStack = true;
+    index += 1;
+
+    for (const v of this.adjacentVertices[node.name]) {
+      if (v.index === null) {
+        this.findSCCRecurse(v, index, stack);
+        node.lowestNode = Math.min(node.lowestNode, v.lowestNode);
+      } else if (v.inStack) {
+        // We've hit a loop, and lowestNode only tracks the lowestNode in the subtree.
+        // So here we take the min of node.lowestNode and the index of the child node
+        node.lowestNode = Math.min(node.lowestNode, v.index);
+      }
+    }
+
+    if (node.index === node.lowestNode) {
+      // This means we're at the root of the recursive call
+      const scc = new Set();
+      while (stack.length > 0) {
+        const w = stack.pop();
+        w.onStack = false;
+        scc.add(w);
+      }
+      this.stronglyConnectedComponents.push(scc);
+    }
   }
 
   /**
@@ -77,8 +138,11 @@ export function findCycles(edges) {
     nodes.add(e.source);
     nodes.add(e.target);
   });
-  for (const n of nodes) {
-    g.findCycles(n, parent, stateTracker, cycleTracker, parentTracker);
+
+  for (const node of nodes) {
+    if (!(node in stateTracker)) {
+      g.findCycles(node, parent, stateTracker, cycleTracker, parentTracker);
+    }
   }
 
   for (const c in cycleTracker) {
