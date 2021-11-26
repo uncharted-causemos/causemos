@@ -507,8 +507,6 @@ export default defineComponent({
       emit('toggle-is-item-selected', aggregationLevel, itemId);
     };
 
-
-
     const setAllChecked = () => {
       // ASSUMPTION: the "All" option is only showed when "radio button" mode
       //  is active, meaning there is no more than one item
