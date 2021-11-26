@@ -605,7 +605,7 @@ h5 {
   margin-top: 10px;
   margin-bottom: 10px;
   span {
-    padding-right: 20px;
+    margin-right: 5px;
   }
 }
 

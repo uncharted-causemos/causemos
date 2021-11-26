@@ -5,7 +5,7 @@
       :key="button.value"
       :disabled="button.value === selectedButtonValue"
       v-tooltip.top-center="button.tooltip ?? button.label"
-      class="btn btn-default"
+      class="btn btn-sm btn-default"
       @click="emitButtonClicked(button.value)"
     >
       <i v-if="button.icon !== undefined" class="fa" :class="[button.icon]" />
