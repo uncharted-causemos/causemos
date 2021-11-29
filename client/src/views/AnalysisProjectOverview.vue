@@ -11,27 +11,22 @@
       <div class="metadata-column">
         <h3>{{ projectMetadata.name }}</h3>
         <div class="description">
-          <div v-if="!isEditingDesc">
-            {{ projectMetadata.description }}
-          </div>
           <textarea
-            v-else
+            v-if="isEditingDesc"
             v-model="projectMetadata.description"
             type="text"
             class="model-attribute-desc"
           />
-          <div
-            v-if="!isEditingDesc"
-            class="edit-model-desc"
-          >
-            <i
-              class="fa fa-edit"
-              @click="editDesc"
-              v-tooltip.top-center="'Edit description'"
-            />
+          <div v-else-if="projectMetadata.description">
+            {{ projectMetadata.description }}
           </div>
           <div
             v-else
+            class="description-hint-text">
+            Add a description
+          </div>
+          <div
+            v-if="isEditingDesc"
             class="edit-model-desc"
           >
             <i
@@ -43,6 +38,16 @@
               class="fa fa-close"
               @click="discardDesc"
               v-tooltip.top-center="'Discard changes'"
+            />
+          </div>
+          <div
+            v-else
+            class="edit-model-desc"
+          >
+            <i
+              class="fa fa-edit"
+              @click="editDesc"
+              v-tooltip.top-center="'Edit description'"
             />
           </div>
         </div>
@@ -493,6 +498,11 @@ export default {
   display: flex;
   flex-direction: column;
   height: $content-full-height;
+}
+
+.description-hint-text {
+  font-style: italic;
+  color: $label-color;
 }
 
 header {
