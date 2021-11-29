@@ -29,6 +29,14 @@
     <div>
       <b>
       {{datacube.name}}: <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+      <span
+        v-if="newVersionLink"
+        @click="edit(newVersionLink)"
+        rel="noopener noreferrer"
+        class="deprecated-datacube"
+      >
+        Link to new version
+      </span>
       </b>
     </div>
 
@@ -96,6 +104,7 @@
         v-tooltip.top-center="'Edit the metadata and visualization'"
         type="button"
         class="btn btn-primary btn-call-for-action"
+        :disabled="datacube.status === DatacubeStatus.Deprecated"
         @click="edit(datacube.data_id)"
       >
         <i class="fa fa-edit" />
@@ -105,8 +114,8 @@
         v-tooltip.top-center="'Unpublish the datacube instance'"
         type="button"
         class="remove-button"
-        :class="{ 'disabled': datacube.status === DatacubeStatus.Registered}"
-        :disabled="datacube.status === DatacubeStatus.Registered"
+        :class="{ 'disabled': datacube.status === DatacubeStatus.Registered || datacube.status === DatacubeStatus.Deprecated}"
+        :disabled="datacube.status === DatacubeStatus.Registered || datacube.status === DatacubeStatus.Deprecated"
         @click.stop="showUnpublishModal = true"
       >
         <i class="fa fa-trash" />
@@ -118,16 +127,17 @@
 
 <script lang="ts">
 
-import { defineComponent, ref, PropType } from 'vue';
+import { defineComponent, ref, PropType, toRefs } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { Datacube, Model } from '@/types/Datacube';
+import { Indicator, Model } from '@/types/Datacube';
 import { DatacubeStatus } from '@/types/Enums';
 import { getValidatedOutputs, isIndicator } from '@/utils/datacube-util';
+import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 
 /**
  * A card-styled widget to view project summary
@@ -141,7 +151,7 @@ export default defineComponent({
   emits: ['unpublish'],
   props: {
     datacube: {
-      type: Object as PropType<Datacube>,
+      type: Object as PropType<Model | Indicator>,
       default: () => ({})
     }
   },
@@ -161,36 +171,27 @@ export default defineComponent({
     validatedOutputs(): any[] {
       return getValidatedOutputs(this.datacube.outputs);
     },
-    statusColor(): string {
-      let color = '';
-      switch (this.datacube.status) {
-        case DatacubeStatus.Ready:
-          color = 'lightgreen';
-          break;
-        case DatacubeStatus.Registered:
-          color = 'lightgray';
-          break;
-        default:
-          color = 'red';
+    newVersionLink(): string | null {
+      if (this.datacube.status === DatacubeStatus.Deprecated && this.datacube.new_version_data_id !== undefined) {
+        return this.datacube.new_version_data_id;
       }
-      return color;
-    },
-    statusLabel(): string {
-      if (this.datacube && this.datacube.status) {
-        const label = this.datacube.status === DatacubeStatus.Ready ? 'Published' : this.datacube.status.toLowerCase();
-        return label.charAt(0).toUpperCase() + label.slice(1);
-      }
-      return '';
+      return null;
     }
   },
-  setup() {
+  setup(props) {
+    const { datacube } = toRefs(props);
+
     const showUnpublishModal = ref(false);
     const showEditInDojoModal = ref(false);
+
+    const { statusColor, statusLabel } = useDatacubeVersioning(datacube);
 
     return {
       showUnpublishModal,
       showEditInDojoModal,
-      DatacubeStatus
+      DatacubeStatus,
+      statusColor,
+      statusLabel
     };
   },
   methods: {
@@ -243,6 +244,15 @@ export default defineComponent({
 
 <style scoped lang="scss">
 @import "~styles/variables";
+
+.deprecated-datacube {
+  color: blue;
+  padding-left: 4px;
+  &:hover {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+}
 
 .project-card-container {
   background: white;

@@ -3,6 +3,7 @@
     <model-publishing-checklist
       :publishingSteps="publishingSteps"
       :currentPublishStep="currentPublishStep"
+      :metadata="metadata"
       @navigate-to-publishing-step="showPublishingStep"
       @publish-model="publishModel"
     />

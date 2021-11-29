@@ -19,20 +19,24 @@
             >{{ step.text }}</span>
         </div>
       </div>
-      <button
-        class="btn btn-primary btn-call-for-action"
-        :class="{ 'disabled': allStepsCompleted === false}"
-        style="padding: 6px 10px; border-radius: 4px;"
-        @click="publishModel()">
-          Publish model
-      </button>
+      <div style="display: flex; align-items: center">
+        <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+        <button
+          class="btn btn-primary btn-call-for-action"
+          :class="{ 'disabled': allStepsCompleted === false || metadata.status === DatacubeStatus.Deprecated}"
+          style="padding: 6px 10px; border-radius: 4px;"
+          @click="publishModel()">
+            Publish model
+        </button>
+      </div>
     </div>
 </template>
 
 <script lang="ts">
-import { ModelPublishingStepID } from '@/types/Enums';
-import { ModelPublishingStep } from '@/types/Datacube';
-import { defineComponent, PropType } from 'vue';
+import { DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
+import { Model, ModelPublishingStep } from '@/types/Datacube';
+import { defineComponent, PropType, toRefs } from 'vue';
+import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 
 export default defineComponent({
   name: 'ModelPublishingChecklist',
@@ -43,11 +47,26 @@ export default defineComponent({
     },
     currentPublishStep: {
       default: ModelPublishingStepID.Enrich_Description
+    },
+    metadata: {
+      type: Object as PropType<Model | null>,
+      default: null
     }
   },
   emits: [
     'publish-model', 'navigate-to-publishing-step'
   ],
+  setup(props) {
+    const { metadata } = toRefs(props);
+
+    const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
+
+    return {
+      DatacubeStatus,
+      statusColor,
+      statusLabel
+    };
+  },
   computed: {
     allStepsCompleted(): boolean {
       return this.publishingSteps.every(s => s.completed);
