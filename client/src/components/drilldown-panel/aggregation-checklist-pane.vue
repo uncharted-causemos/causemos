@@ -53,7 +53,7 @@
     </div>
     <div class="checklist-container">
       <aggregation-checklist-item
-        v-for="(row, rowIndex) of visibleRows"
+        v-for="(row, rowIndex) of rowsWithData"
         :key="rowIndex"
         :histogram-visible="shouldShowDeselectedBars || row.isChecked"
         :item-data="row"
@@ -64,6 +64,25 @@
         @toggle-expanded="toggleExpanded(row.path)"
         @toggle-checked="toggleChecked(row.path)"
       />
+      <collapsible-item
+        v-if="rowsWithoutData.length"
+        :override="true">
+        <template #title>{{rowsWithoutData.length}} more without data</template>
+        <template #content>
+          <aggregation-checklist-item
+            v-for="(row, rowIndex) of rowsWithoutData"
+            :key="rowIndex"
+            :histogram-visible="shouldShowDeselectedBars || row.isChecked"
+            :item-data="row"
+            :max-visible-bar-value="maxVisibleBarValue"
+            :min-visible-bar-value="minVisibleBarValue"
+            :selected-timeseries-points="selectedTimeseriesPoints"
+            :checkbox-type="checkboxType"
+            @toggle-expanded="toggleExpanded(row.path)"
+            @toggle-checked="toggleChecked(row.path)"
+          />
+        </template>
+      </collapsible-item>
     </div>
     <div class="aggregation-description">
       <slot name="aggregation-description" />
@@ -74,6 +93,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
+import CollapsibleItem from '@/components/drilldown-panel/collapsible-item.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BreakdownData } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
@@ -139,7 +159,7 @@ interface ChecklistRowData {
  *
  * @return {Array} An array of objects with all info necessary to render the associated list item.
  */
-const extractVisibleRows = (
+const extractPossibleRows = (
   metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
   selectedLevel: number,
@@ -161,7 +181,7 @@ const extractVisibleRows = (
   const children = metadataNode.children.reduce((accumulator, child) => {
     return [
       ...accumulator,
-      ...extractVisibleRows(
+      ...extractPossibleRows(
         child,
         _hiddenAncestorNames,
         selectedLevel,
@@ -269,6 +289,7 @@ export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
     AggregationChecklistItem,
+    CollapsibleItem,
     RadioButtonGroup
   },
   props: {
@@ -469,15 +490,19 @@ export default defineComponent({
       );
     });
 
-    const visibleRows = computed(() => {
-      if (_.isNil(statefulData.value)) return [];
-      return extractVisibleRows(
-        statefulData.value,
-        [],
-        aggregationLevel.value,
-        selectedItemIds.value,
-        orderedAggregationLevelKeys.value
-      );
+    const possibleRows = _.isNil(statefulData.value) ? [] : extractPossibleRows(
+      statefulData.value,
+      [],
+      aggregationLevel.value,
+      selectedItemIds.value,
+      orderedAggregationLevelKeys.value
+    );
+
+    const rowsWithData = computed(() => {
+      return possibleRows.filter(row => row.bars.length);
+    });
+    const rowsWithoutData = computed(() => {
+      return possibleRows.filter(row => !row.bars.length);
     });
 
     const isAllSelected = computed(() => {
@@ -511,7 +536,8 @@ export default defineComponent({
       statefulData,
       maxVisibleBarValue,
       minVisibleBarValue,
-      visibleRows,
+      rowsWithData,
+      rowsWithoutData,
       isAllSelected,
       toggleChecked,
       setAllChecked,
