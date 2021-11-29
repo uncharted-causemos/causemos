@@ -490,19 +490,22 @@ export default defineComponent({
       );
     });
 
-    const possibleRows = _.isNil(statefulData.value) ? [] : extractPossibleRows(
-      statefulData.value,
-      [],
-      aggregationLevel.value,
-      selectedItemIds.value,
-      orderedAggregationLevelKeys.value
-    );
+    const possibleRows = computed(() => {
+      if (_.isNil(statefulData.value)) return [];
+      return extractPossibleRows(
+        statefulData.value,
+        [],
+        aggregationLevel.value,
+        selectedItemIds.value,
+        orderedAggregationLevelKeys.value
+      );
+    });
 
     const rowsWithData = computed(() => {
-      return possibleRows.filter(row => row.bars.length);
+      return possibleRows.value.filter(row => row.bars.length);
     });
     const rowsWithoutData = computed(() => {
-      return possibleRows.filter(row => !row.bars.length);
+      return possibleRows.value.filter(row => !row.bars.length);
     });
 
     const isAllSelected = computed(() => {
