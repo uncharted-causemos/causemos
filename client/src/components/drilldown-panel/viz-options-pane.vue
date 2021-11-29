@@ -22,6 +22,7 @@
         />
         <dropdown-button
           class="dropdown-button"
+          :class="{ 'invalid-option': selectedAggregation === AggregationOption.None}"
           :is-dropdown-left-aligned="true"
           :inner-button-label="'Aggregated by'"
           :items="aggregationOptions"
@@ -39,7 +40,12 @@
     <div class="config-group">
       <label class="label-header">Timeseries</label>
       <div class="config-sub-group">
-        <label class="header-secondary">Aggregated up to</label>
+        <label
+          class="header-secondary"
+          :class="{ 'invalid-option': selectedResolution === TemporalResolutionOption.None}"
+        >
+          Aggregated up to
+        </label>
         <radio-button-group
           :selected-button-value="selectedResolution"
           :buttons="resolutionGroupButtons"
@@ -271,7 +277,9 @@ export default defineComponent({
       colorSchemes,
       ColorScaleType,
       baseLayerTransparencyOptions,
-      unitOptions
+      unitOptions,
+      TemporalResolutionOption,
+      AggregationOption
     };
   },
   watch: {
@@ -372,6 +380,10 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import '~styles/variables';
+
+.invalid-option {
+  color: red !important;
+}
 
 .breakdown-pane-container {
   margin-bottom: 40px;

@@ -8,6 +8,7 @@
       >
         <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}} - {{ selectedRegionIdsDisplay }}</span>
         <span class="datacube-name">{{metadata.name}}</span>
+        <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin-left: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
         <i class="fa fa-fw fa-expand drilldown-btn" />
       </h5>
 
@@ -55,7 +56,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType, DatacubeStatus } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -65,6 +66,7 @@ import router from '@/router';
 import _ from 'lodash';
 import { DataState, ViewState } from '@/types/Insight';
 import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
+import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 
 export default defineComponent({
   name: 'DatacubeComparativeCard',
@@ -247,6 +249,8 @@ export default defineComponent({
       return selectedRegionIds.join('/');
     });
 
+    const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
+
     return {
       activeDrilldownTab: 'breakdown',
       selectedTemporalResolution,
@@ -271,7 +275,10 @@ export default defineComponent({
       project,
       analysisId,
       props,
-      store
+      store,
+      DatacubeStatus,
+      statusColor,
+      statusLabel
     };
   },
   methods: {

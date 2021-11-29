@@ -372,6 +372,7 @@ header {
 
 .column-title {
   font-size: x-large;
+  padding-right: 4px;
 }
 
 main {

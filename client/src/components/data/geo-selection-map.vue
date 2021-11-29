@@ -74,16 +74,19 @@ export default {
     bbox: {
       type: Array,
       default: () => []
+    },
+    mapBounds: { // initial map bounds; default bounds to the bbox of the model country/countries
+      type: Array,
+      default: () => [
+        [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
+        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
+      ]
     }
   },
   data: () => ({
     baseLayer: undefined,
     map: undefined,
-    extent: undefined,
-    mapBounds: [ // Default bounds to Ethiopia
-      [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-      [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
-    ]
+    extent: undefined
   }),
   computed: {
     mapFixedOptions() {
@@ -124,14 +127,12 @@ export default {
     },
     bbox() {
       if (!this.bbox || this.bbox.length === 0) return;
-      const p1 = this.bbox[0];
-      const p2 = this.bbox[1];
-      const center = [p1[0] + (p2[0] - p1[0]) / 2, p1[1] + (p2[1] - p1[1]) / 2];
-      this.map.flyTo({
-        speed: 0.5,
-        center: center,
+      const cameraOptions = {
+        padding: 20, // pixels
+        duration: 1000, // milliseconds
         essential: true // this animation is considered essential with respect to prefers-reduced-motion
-      });
+      };
+      this.map.fitBounds(this.bbox, cameraOptions);
     }
   },
   created() {
