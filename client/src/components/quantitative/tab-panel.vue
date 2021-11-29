@@ -28,6 +28,11 @@
           />
           <color-legend
             :show-cag-encodings="true" />
+          <config-bar
+            class="config-bar"
+            :model-summary="modelSummary"
+            @model-parameter-changed="$emit('model-parameter-changed')"
+          />
         </div>
         <sensitivity-analysis
           v-if="activeTab === 'matrix'"
@@ -65,11 +70,6 @@
         </template>
       </drilldown-panel>
     </div>
-    <config-bar
-      class="config-bar"
-      :model-summary="modelSummary"
-      @edit-parameters="showModelParameters"
-    />
   </div>
 </template>
 
@@ -159,7 +159,11 @@ export default {
     }
   },
   emits: [
-    'background-click', 'show-model-parameters', 'refresh-model', 'set-sensitivity-analysis-type', 'tab-click'
+    'background-click',
+    'refresh-model',
+    'set-sensitivity-analysis-type',
+    'tab-click',
+    'model-parameter-changed'
   ],
   data: () => ({
     graphData: {},
@@ -234,9 +238,6 @@ export default {
     },
     closeDrilldown() {
       this.isDrilldownOpen = false;
-    },
-    showModelParameters() {
-      this.$emit('show-model-parameters');
     },
     showRelation(edgeData) {
       this.isFetchingStatements = true;
@@ -354,14 +355,15 @@ main {
     }
   }
 }
+// FIXME: hideable legend contains its own absolute positioning styles.
+//  Refactor it so that its parent determines its positioning, then put both
+//  the legend and the config bar in a flexbox so we don't need hardcoded
+//  positions like we have here.
+$legendWidth: 200px;
 
 .config-bar {
   position: absolute;
-  // FIXME: hideable legend contains its own absolute positioning styles.
-  //  Refactor it so that its parent determines its positioning, then put both
-  //  the legend and the config bar in a flexbox so we don't need hardcoded
-  //  positions like we have here.
-  left: 210px;
-  bottom: 0;
+  left: calc(calc(#{$legendWidth} - #{$navbar-outer-height}) + 10px);
+  bottom: 5px;
 }
 </style>

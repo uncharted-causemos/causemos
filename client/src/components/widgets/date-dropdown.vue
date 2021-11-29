@@ -1,81 +1,70 @@
 <template>
   <div class="date-dropdown-container">
     <!-- Month -->
-    <div class="date-dropdown-selector">
-      <select
-        v-model="selectedMonth"
-        class="form-control input-sm"
-        @change="update">
-        <option
-          v-for="(month, index) in months"
-          :key="month"
-          :value="index">
-          {{ month }}
-        </option>
-      </select>
-    </div>
+    <dropdown-button
+      :items="MONTHS"
+      :selected-item="selectedMonth"
+      :is-dropdown-above="true"
+      :is-dropdown-left-aligned="true"
+      @item-selected="setSelectedMonth"
+    />
 
     <!-- Year -->
-    <div class="date-dropdown-selector">
-      <select
-        v-model="selectedYear"
-        class="form-control input-sm"
-        @change="update">
-        <option
-          v-for="(year, index) in years"
-          :key="index"
-          :value="year">
-          {{ year }}
-        </option>
-      </select>
-    </div>
+    <dropdown-button
+      :items="years"
+      :selected-item="selectedYear"
+      :is-dropdown-above="true"
+      :is-dropdown-left-aligned="true"
+      @item-selected="setSelectedYear"
+    />
   </div>
 </template>
-
 
 <script lang="ts">
 import moment from 'moment';
 import _ from 'lodash';
 import { defineComponent } from 'vue';
+import dropdownButton, { DropdownItem } from '../dropdown-button.vue';
 
-const DEFAULT_MONTHS = {
-  0: 'Jan',
-  1: 'Feb',
-  2: 'Mar',
-  3: 'Apr',
-  4: 'May',
-  5: 'Jun',
-  6: 'Jul',
-  7: 'Aug',
-  8: 'Sep',
-  9: 'Oct',
-  10: 'Nov',
-  11: 'Dec'
-};
+const MONTHS: DropdownItem[] = [
+  { value: 0, displayName: 'Jan' },
+  { value: 1, displayName: 'Feb' },
+  { value: 2, displayName: 'Mar' },
+  { value: 3, displayName: 'Apr' },
+  { value: 4, displayName: 'May' },
+  { value: 5, displayName: 'Jun' },
+  { value: 6, displayName: 'Jul' },
+  { value: 7, displayName: 'Aug' },
+  { value: 8, displayName: 'Sep' },
+  { value: 9, displayName: 'Oct' },
+  { value: 10, displayName: 'Nov' },
+  { value: 11, displayName: 'Dec' }
+];
 
 const MIN_YEAR = 1990;
 const MAX_YEAR = 2021;
 
 export default defineComponent({
+  components: { dropdownButton },
   name: 'DateDropdown',
   props: {
     data: {
       type: Number,
-      default: () => (0) // timestamp in millis
+      default: () => 0 // timestamp in millis
     }
   },
+  emits: ['date-updated'],
   data: () => ({
     selectedMonth: 0, // January by default
-    selectedYear: MAX_YEAR
+    selectedYear: MAX_YEAR,
+    MONTHS
   }),
   computed: {
-    // Computes a list of month.
-    months() {
-      return Object.values(DEFAULT_MONTHS);
-    },
-    // Computes a list of years.
-    years() {
-      return _.range(MAX_YEAR, MIN_YEAR);
+    years(): DropdownItem[] {
+      return _.range(MAX_YEAR, MIN_YEAR).map(year => ({
+        displayName: year.toString(),
+        value: year
+      }));
     }
   },
   mounted() {
@@ -84,9 +73,19 @@ export default defineComponent({
     this.selectedYear = m.year();
   },
   methods: {
+    setSelectedMonth(month: number) {
+      this.selectedMonth = month;
+      this.update();
+    },
+    setSelectedYear(year: number) {
+      this.selectedYear = year;
+      this.update();
+    },
     update() {
-      const timestamp = moment.utc({ y: this.selectedYear, M: this.selectedMonth }).valueOf();
-      this.$emit('updated', timestamp);
+      const timestamp = moment
+        .utc({ y: this.selectedYear, M: this.selectedMonth })
+        .valueOf();
+      this.$emit('date-updated', timestamp);
     }
   }
 });
@@ -95,9 +94,6 @@ export default defineComponent({
 <style scoped>
 .date-dropdown-container {
   display: flex;
-}
-.date-dropdown-selector {
-  display: flex;
-  margin-right: 5px;
+  gap: 5px;
 }
 </style>

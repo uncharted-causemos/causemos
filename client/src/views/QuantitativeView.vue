@@ -16,9 +16,9 @@
       :scenarios="scenarios"
       :current-engine="currentEngine"
       :reset-layout-token='resetLayoutToken'
-      @show-model-parameters="showModelParameters"
       @set-sensitivity-analysis-type="setSensitivityAnalysisType"
       @refresh-model="refreshModelAndScenarios"
+      @model-parameter-changed="refresh"
     >
       <template #action-bar>
         <action-bar
@@ -34,12 +34,6 @@
         />
       </template>
     </tab-panel>
-    <modal-edit-parameters
-      v-if="isModelParametersOpen"
-      :model-summary="modelSummary"
-      @close="closeModelParameters"
-      @save="saveModelParameter"
-    />
   </div>
 </template>
 
@@ -50,12 +44,11 @@ import TabPanel from '@/components/quantitative/tab-panel.vue';
 import modelService from '@/services/model-service';
 import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar.vue';
-import ModalEditParameters from '@/components/modals/modal-edit-parameters.vue';
 import { getInsightById } from '@/services/insight-service';
 import { defineComponent } from '@vue/runtime-core';
 import useToaster from '@/services/composables/useToaster';
 import { CsrMatrix } from '@/types/CsrMatrix';
-import { CAGGraph, CAGModelSummary, CAGModelParameter, Scenario } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
@@ -69,7 +62,6 @@ export default defineComponent({
   components: {
     TabPanel,
     ActionBar,
-    ModalEditParameters,
     CagAnalysisOptionsButton
   },
   setup() {
@@ -82,7 +74,6 @@ export default defineComponent({
     // States
     isEditIndicatorModalOpen: false,
     isEditConstraintsOpen: false,
-    isModelParametersOpen: false,
 
     // Data for drilldown
     selectedStatements: [],
@@ -449,17 +440,6 @@ export default defineComponent({
     },
     closeEditIndicatorModal() {
       this.isEditIndicatorModalOpen = false;
-    },
-    showModelParameters() {
-      this.isModelParametersOpen = true;
-    },
-    async saveModelParameter(newParameter: Partial<CAGModelParameter>) {
-      this.isModelParametersOpen = false;
-      await modelService.updateModelParameter(this.currentCAG, newParameter);
-      this.refresh();
-    },
-    closeModelParameters() {
-      this.isModelParametersOpen = false;
     },
     async saveDraft({ concept, values }: { concept: string; values: any[] }) {
       this.isEditConstraintsOpen = false;
