@@ -536,7 +536,6 @@ export default defineComponent({
       statefulData,
       maxVisibleBarValue,
       minVisibleBarValue,
-      possibleRows,
       rowsWithData,
       rowsWithoutData,
       isAllSelected,
