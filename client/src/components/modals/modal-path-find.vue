@@ -1,6 +1,5 @@
 <template>
   <modal
-    :use-green-header="true"
     @close="close()">
     <template #header>
       <h4> Path suggestions </h4>

@@ -1,6 +1,5 @@
 <template>
   <modal
-    :use-green-header="true"
     @close="close()">
     <template #header>
       <h4> <div>Retain existing parameterisation</div> </h4>

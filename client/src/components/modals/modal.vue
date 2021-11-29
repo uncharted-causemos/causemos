@@ -17,7 +17,6 @@
         >
           <div
             class="modal-header"
-            :class="{ 'modal-header-green': useGreenHeader }"
           >
             <slot name="header" />
             <close-button
@@ -55,10 +54,6 @@ export default defineComponent({
   },
   props: {
     showCloseButton: {
-      type: Boolean,
-      default: false
-    },
-    useGreenHeader: {
       type: Boolean,
       default: false
     }
