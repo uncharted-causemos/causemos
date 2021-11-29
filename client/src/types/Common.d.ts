@@ -69,7 +69,7 @@ export interface GeoRegionDetail {
   label: string;
   path: string;
   code: string; // unique GADM code
-  bbox?: any;
+  bbox?: any; // mostly an array of arrays reflecting region bbox as [ [{left}, {top}], [{right}, {bottom}] ]
 }
 
 export interface DatacubePeriod {

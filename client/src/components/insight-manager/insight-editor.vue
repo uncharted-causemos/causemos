@@ -12,7 +12,7 @@
       </div>
       <div
         class="dropdown-option"
-        @click="deleteInsight"
+        @click="removeInsight"
       >
         <i class="fa fa-trash" />
         Delete
@@ -35,8 +35,8 @@ export default defineComponent({
     editInsight() {
       this.$emit('edit');
     },
-    deleteInsight() {
-      this.$emit('delete');
+    removeInsight() {
+      this.$emit('remove');
     }
   }
 });

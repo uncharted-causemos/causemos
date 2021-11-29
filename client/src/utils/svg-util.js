@@ -98,6 +98,11 @@ export const wrapText = (text, width) => {
  * @param {function} xscale - scaling transform function
  * @param {function} yscale - scaling transform function
  */
+// FIXME: each of these d3.line() calls should use TimeSeriesPoint as the
+//  generic parameter, like so:
+//    d3.line<TimeSeriesPoint>()
+//  but can't since this is a JS file. Once it's converted to TS, clean up the
+//  places where timeseriesLine is used
 export const timeseriesLine = (xscale, yscale, curve = undefined) => {
   if (curve) {
     return d3.line()

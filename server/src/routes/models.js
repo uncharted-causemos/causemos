@@ -18,60 +18,21 @@ const delphiService = rootRequire('/services/external/delphi-service');
 const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 const modelUtil = rootRequire('util/model-util');
 
-const HISTORY_START_DATE = '2015-01-01';
-const HISTORY_END_DATE = '2020-12-01';
-const PROJECTION_START_DATE = '2021-01-01';
-const DEFAULT_NUM_STEPS = 12;
-const DEFAULT_TIME_SCALE = 'MONTHS';
-
 
 const DYSE = 'dyse';
 const DELPHI = 'delphi';
 
 // const esLock = {};
 
-// FIXME: This is a bit confusing with the regsiter endpoint because they kind of operate along the
-// same lines (you can't really have a quantified model without also having it registered). Should
-// consider merging.
-router.post('/:modelId', asyncHandler(async (req, res) => {
+/**
+ * Set node quantifications
+ */
+router.post('/:modelId/quantify-nodes', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
-  Logger.info(`initializing model with id ${modelId}`);
+  Logger.info(`Quantifying model ${modelId} nodes`);
 
-  const model = await modelService.findOne(modelId);
-
-  // if (model.is_stale === false) {
-  //   Logger.info(`Model is alraedy initialized ${modelId}`);
-  //   res.status(200).send({ updateToken: moment().valueOf() });
-  //   return;
-  // }
-
-
-  const modelFields = {};
-  if (_.isEmpty(model.parameter) || _.isEmpty(model.parameter.num_steps)) {
-    // initialize model parameters
-    const defaultTimeSeriesStart = moment.utc(HISTORY_START_DATE).valueOf();
-    const defaultTimeSeriesEnd = moment.utc(HISTORY_END_DATE).valueOf();
-    const defaultProjectionStartDate = moment.utc(PROJECTION_START_DATE).valueOf();
-
-    // FIXME: handle this more gracefully
-    const timeScale = _.get(model.parameter, 'time_scale', DEFAULT_TIME_SCALE);
-
-    modelFields.parameter = {
-      indicator_time_series_range: {
-        start: defaultTimeSeriesStart,
-        end: defaultTimeSeriesEnd
-      },
-      num_steps: DEFAULT_NUM_STEPS,
-      projection_start: defaultProjectionStartDate,
-      engine: 'dyse',
-      time_scale: timeScale
-    };
-  }
-  await cagService.updateCAGMetadata(modelId, modelFields);
-
-  // Set initial time series
+  // Set indicator to node groundings
   await indicatorService.setDefaultIndicators(modelId);
-
   res.status(200).send({ updateToken: moment().valueOf() });
 }));
 

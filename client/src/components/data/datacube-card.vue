@@ -29,6 +29,7 @@
         <modal-geo-selection
           v-if="showGeoSelectionModal === true"
           :model-param="geoModelParam"
+          :metadata="metadata"
           @close="onGeoSelectionModalClose" />
         <rename-modal
           v-if="showTagNameModal"
@@ -145,7 +146,7 @@
               Check execution status
             </button>
           </div>
-          <div class="column">
+          <div class="column center-column">
             <div class="button-row">
               <div class="button-row-group">
                 <radio-button-group
@@ -159,51 +160,61 @@
                   @click="showDatasets = true"
                 />
               </div>
-              <div
-                v-if="currentTabView === 'data' && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
-                class="relative-box"
-              >
-                <div class="checkbox" v-if="relativeTo">
-                  <label
-                    @click="showPercentChange = !showPercentChange"
-                    style="cursor: pointer; color: black;">
-                    <i
-                      class="fa fa-lg fa-fw"
-                      :class="{ 'fa-check-square-o': showPercentChange, 'fa-square-o': !showPercentChange }"
-                    />
-                    Use % Change
-                  </label>
+              <div style="display: flex">
+                <div
+                  v-if="currentTabView === 'data' && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
+                  class="relative-box"
+                >
+                  <div class="checkbox" v-if="relativeTo">
+                    <label
+                      @click="showPercentChange = !showPercentChange"
+                      style="cursor: pointer; color: black;">
+                      <i
+                        class="fa fa-lg fa-fw"
+                        :class="{ 'fa-check-square-o': showPercentChange, 'fa-square-o': !showPercentChange }"
+                      />
+                      Use % Change
+                    </label>
+                  </div>
+                  Relative to
+                  <button
+                    class="btn btn-default"
+                    @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
+                    :style="{ color: baselineMetadata?.color ?? 'black' }"
+                  >
+                    {{baselineMetadata?.name ?? 'none'}}</button
+                  >
+                  <dropdown-control
+                    v-if="isRelativeDropdownOpen"
+                    class="relative-dropdown">
+                    <template #content>
+                      <div
+                        v-if="relativeTo !== null"
+                        class="dropdown-option"
+                        @click="setRelativeTo(null); isRelativeDropdownOpen = false;"
+                      >
+                        none
+                      </div>
+                      <div
+                        v-for="(timeseries, index) in visibleTimeseriesData"
+                        class="dropdown-option"
+                        :style="{ color: timeseries.color }"
+                        :key="index"
+                        @click="setRelativeTo(timeseries.id); isRelativeDropdownOpen = false;"
+                      >
+                        {{timeseries.name}}
+                      </div>
+                    </template>
+                  </dropdown-control>
                 </div>
-                Relative to
                 <button
                   class="btn btn-default"
-                  @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
-                  :style="{ color: baselineMetadata?.color ?? 'black' }"
+                  :class="{ 'viz-option-invalid': someVizOptionsInvalid }"
+                  title="Toggle visualization options"
+                  :onClick="() => activeVizOptionsTab = (activeVizOptionsTab === null ? 'vizoptions' : null)"
                 >
-                  {{baselineMetadata?.name ?? 'none'}}</button
-                >
-                <dropdown-control
-                  v-if="isRelativeDropdownOpen"
-                  class="relative-dropdown">
-                  <template #content>
-                    <div
-                      v-if="relativeTo !== null"
-                      class="dropdown-option"
-                      @click="setRelativeTo(null); isRelativeDropdownOpen = false;"
-                    >
-                      none
-                    </div>
-                    <div
-                      v-for="(timeseries, index) in visibleTimeseriesData"
-                      class="dropdown-option"
-                      :style="{ color: timeseries.color }"
-                      :key="index"
-                      @click="setRelativeTo(timeseries.id); isRelativeDropdownOpen = false;"
-                    >
-                      {{timeseries.name}}
-                    </div>
-                  </template>
-                </dropdown-control>
+                  <i class="fa fa-gear"></i>
+                </button>
               </div>
             </div>
 
@@ -301,41 +312,9 @@
 
             <!-- Data tab content -->
             <div v-if="currentTabView === 'data'" class="column">
-              <div
-                class="dropdown-row"
-                v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
-              >
-                <dropdown-button
-                  v-if="aggregationOptions.length > 0"
-                  class="dropdown-config tour-agg-dropdown-config"
-                  :class="{ 'attribute-invalid': selectedTemporalAggregation === '' || selectedSpatialAggregation === '' }"
-                  :inner-button-label="'Aggregated by'"
-                  :items="aggregationOptions"
-                  :selected-item="selectedSpatialAggregation"
-                  @item-selected="setAggregationSelection"
-                />
-                <dropdown-button
-                  v-if="temporalResolutionOptions.length > 0"
-                  class="dropdown-config"
-                  :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
-                  :inner-button-label="'Temporal Resolution'"
-                  :items="temporalResolutionOptions"
-                  :selected-item="selectedTemporalResolution"
-                  @item-selected="setTemporalResolutionSelection"
-                />
-                <map-dropdown
-                  v-if="mapReady && regionalData !== null && outputSpecs.length > 0"
-                  class="dropdown-config"
-                  :selectedBaseLayer="selectedBaseLayer"
-                  :selectedDataLayer="selectedDataLayer"
-                  @set-base-layer="setBaseLayer"
-                  @set-data-layer="setDataLayer"
-                />
-              </div>
               <timeseries-chart
                 v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 class="timeseries-chart"
-                :key="activeDrilldownTab"
                 :timeseries-data="timeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
@@ -398,6 +377,7 @@
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
+                      :selected-color-scheme="finalColorScheme"
                       :show-percent-change="showPercentChange"
                       @sync-bounds="onSyncMapBounds"
                       @on-map-load="onMapLoad"
@@ -420,41 +400,78 @@
               </div>
             </div>
           </div>
-          <drilldown-panel
-            class="drilldown"
-            :active-tab-id="activeDrilldownTab"
-            :has-transition="false"
-            :hide-close="true"
-            :is-open="activeDrilldownTab !== null"
-            :tabs="drilldownTabs"
-            @close="() => { activeDrilldownTab = null }"
-          >
-            <template #content>
-              <breakdown-pane
-                v-if="activeDrilldownTab ==='breakdown'"
-                :selected-admin-level="selectedAdminLevel"
-                :qualifier-breakdown-data="qualifierBreakdownData"
-                :regional-data="regionalData"
-                :temporal-breakdown-data="temporalBreakdownData"
-                :selected-spatial-aggregation="selectedSpatialAggregation"
-                :selected-temporal-aggregation="selectedTemporalAggregation"
-                :selected-temporal-resolution="selectedTemporalResolution"
-                :selected-timestamp="selectedTimestamp"
-                :selected-scenario-ids="selectedScenarioIds"
-                :selected-region-ids="selectedRegionIds"
-                :selected-qualifier-values="selectedQualifierValues"
-                :selected-breakdown-option="breakdownOption"
-                :selected-timeseries-points="selectedTimeseriesPoints"
-                :selected-years="selectedYears"
-                :unit="unit"
-                @toggle-is-region-selected="toggleIsRegionSelected"
-                @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-                @toggle-is-year-selected="toggleIsYearSelected"
-                @set-selected-admin-level="setSelectedAdminLevel"
-                @set-breakdown-option="setBreakdownOption"
-              />
-            </template>
-          </drilldown-panel>
+          <div style="position: relative">
+            <drilldown-panel
+              class="drilldown"
+              :active-tab-id="activeDrilldownTab"
+              :has-transition="false"
+              :hide-close="true"
+              :is-open="activeDrilldownTab !== null"
+              :tabs="drilldownTabs"
+              @close="() => { activeDrilldownTab = null }"
+            >
+              <template #content>
+                <breakdown-pane
+                  v-if="activeDrilldownTab ==='breakdown'"
+                  :selected-admin-level="selectedAdminLevel"
+                  :qualifier-breakdown-data="qualifierBreakdownData"
+                  :regional-data="regionalData"
+                  :temporal-breakdown-data="temporalBreakdownData"
+                  :selected-spatial-aggregation="selectedSpatialAggregation"
+                  :selected-temporal-aggregation="selectedTemporalAggregation"
+                  :selected-temporal-resolution="selectedTemporalResolution"
+                  :selected-timestamp="selectedTimestamp"
+                  :selected-scenario-ids="selectedScenarioIds"
+                  :selected-region-ids="selectedRegionIds"
+                  :selected-qualifier-values="selectedQualifierValues"
+                  :selected-breakdown-option="breakdownOption"
+                  :selected-timeseries-points="selectedTimeseriesPoints"
+                  :selected-years="selectedYears"
+                  :unit="unit"
+                  @toggle-is-region-selected="toggleIsRegionSelected"
+                  @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+                  @toggle-is-year-selected="toggleIsYearSelected"
+                  @set-selected-admin-level="setSelectedAdminLevel"
+                  @set-breakdown-option="setBreakdownOption"
+                />
+              </template>
+            </drilldown-panel>
+            <!-- viz options if visible will always be on top of the breakdown panel -->
+            <div class="viz-options-modal-mask"
+              v-if="activeVizOptionsTab !== null"
+              @click="activeVizOptionsTab = null"
+            >
+              <!-- Catch click events and stop propagation to avoid closing
+              the modal every time an interaction occurs within it -->
+              <div class="viz-options-modal" @click.stop="">
+                <h4>Configuration</h4>
+                <viz-options-pane
+                  :metadata="metadata"
+                  :aggregation-options="aggregationOptions"
+                  :selected-aggregation="selectedSpatialAggregation"
+                  :selected-unit="unit"
+                  :selected-resolution="selectedTemporalResolution"
+                  :selected-base-layer="selectedBaseLayer"
+                  :selected-base-layer-transparency="selectedBaseLayerTransparency"
+                  :selected-data-layer="selectedDataLayer"
+                  :color-scheme-reversed="colorSchemeReversed"
+                  :selected-color-scheme-name="selectedColorSchemeName"
+                  :selected-color-scale-type="selectedColorScaleType"
+                  :number-of-color-bins="numberOfColorBins"
+                  :selected-color-scheme="finalColorScheme"
+                  @set-aggregation-selection="setAggregationSelection"
+                  @set-resolution-selection="setTemporalResolutionSelection"
+                  @set-base-layer-selection="setBaseLayer"
+                  @set-base-layer-transparency-selection="setBaseLayerTransparency"
+                  @set-data-layer-selection="setDataLayer"
+                  @set-color-scheme-reversed="setColorSchemeReversed"
+                  @set-color-scheme-name="setColorSchemeName"
+                  @set-color-scale-type="setColorScaleType"
+                  @set-number-color-bins="setNumberOfColorBins"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -481,12 +498,11 @@ import router from '@/router';
 import flatpickr from 'flatpickr';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
+import VizOptionsPane from '@/components/drilldown-panel/viz-options-pane.vue';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import DropdownButton from '@/components/dropdown-button.vue';
-import MapDropdown from '@/components/data/map-dropdown.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import Modal from '@/components/modals/modal.vue';
@@ -531,15 +547,16 @@ import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
 
-import { colorFromIndex } from '@/utils/colors-util';
+import { colorFromIndex, ColorScaleType, COLOR_SCHEMES, COLOR_SWATCH_SIZE } from '@/utils/colors-util';
 import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
-import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 
 import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
+import * as d3 from 'd3';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -590,12 +607,11 @@ export default defineComponent({
   },
   components: {
     BreakdownPane,
+    VizOptionsPane,
     DataAnalysisMap,
     DatacubeScenarioHeader,
     DrilldownPanel,
-    DropdownButton,
     DropdownControl,
-    MapDropdown,
     MapLegend,
     MessageDisplay,
     Modal,
@@ -629,6 +645,7 @@ export default defineComponent({
     const toaster = useToaster();
 
     const activeDrilldownTab = ref<string|null>('breakdown');
+    const activeVizOptionsTab = ref<string|null>(null);
     const currentTabView = ref<string>('description');
     const potentialScenarioCount = ref<number|null>(0);
     const potentialScenarios = ref<ScenarioData[]>([]);
@@ -645,12 +662,21 @@ export default defineComponent({
     const breakdownOption = ref<string | null>(null);
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+    const selectedBaseLayerTransparency = ref(BASE_LAYER_TRANSPARENCY['50%']);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
     const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+
+    //
+    // color scheme options
+    //
+    const colorSchemeReversed = ref(false);
+    const selectedColorSchemeName = ref(Object.keys(COLOR_SCHEMES)[0]); // DEFAULT
+    const selectedColorScaleType = ref(ColorScaleType.Discrete);
+    const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
 
     const showTagNameModal = ref<boolean>(false);
     const showScenarioTagsModal = ref<boolean>(false);
@@ -681,7 +707,7 @@ export default defineComponent({
     const dateModelParam = computed(() => {
       const modelMetadata = metadata.value;
       if (modelMetadata === null || !isModel(modelMetadata)) return null;
-      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
+      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange || dim.type === DatacubeGenericAttributeVariableType.Date);
       return dateParams.length > 0 ? dateParams[0] : null;
     });
 
@@ -769,6 +795,10 @@ export default defineComponent({
       selectedBaseLayer.value = val;
     };
 
+    const setBaseLayerTransparency = (val: BASE_LAYER_TRANSPARENCY) => {
+      selectedBaseLayerTransparency.value = val;
+    };
+
     const setDataLayer = (val: DATA_LAYER) => {
       selectedDataLayer.value = val;
     };
@@ -789,6 +819,57 @@ export default defineComponent({
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
+
+    const setColorSchemeReversed = (reversed: boolean) => {
+      colorSchemeReversed.value = reversed;
+    };
+
+    const setColorSchemeName = (schemeName: string) => {
+      selectedColorSchemeName.value = schemeName;
+    };
+
+    const setColorScaleType = (scaleType: ColorScaleType) => {
+      selectedColorScaleType.value = scaleType;
+    };
+
+    const setNumberOfColorBins = (numBins: number) => {
+      numberOfColorBins.value = numBins;
+    };
+
+    // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
+    // however, the map/legend may ignore the generated final color list and instead use the color-related viz options to generate a slightly different color array that can be used when rendering the map/legend
+    const finalColorScheme = computed(() => {
+      // Note: should/can not reverse the original array. Instead, clone and reverse
+      const rawScheme = _.clone((COLOR_SCHEMES as any)[selectedColorSchemeName.value]);
+      const scheme: string[] = colorSchemeReversed.value ? rawScheme.reverse() : rawScheme;
+      const n = scheme.length * COLOR_SWATCH_SIZE;
+
+      const getColorScale = () => {
+        if (selectedColorScaleType.value === ColorScaleType.Log) {
+          return d3.scaleLog<string>()
+            .domain([1 / n, 1])
+            .range([scheme[0], scheme[scheme.length - 1]]);
+        }
+        // NOTE: The following 3 ways are the same when creating the color scale
+        // return d3.scaleSequential([scheme[0], scheme[scheme.length - 1]]);
+        // return d3.interpolateRgb(scheme[0], scheme[scheme.length - 1]);
+        return d3.scaleLinear<string>().range([scheme[0], scheme[scheme.length - 1]]);
+      };
+
+      const colorScale = getColorScale();
+
+      // limit the availabe scheme colors to the user selected number of bins, if needed
+      const numColors = selectedColorScaleType.value === ColorScaleType.Discrete ? numberOfColorBins.value : n;
+
+      // re-create the color scheme with the final list of colors
+      scheme.length = 0;
+      for (let i = 0; i < numColors; ++i) {
+        const color: string = colorScale ? colorScale(i / (numColors - 1)) : 'black';
+        scheme.push(d3.color(color)?.formatHex() ?? '');
+      }
+
+      return scheme;
+    });
 
     const updateTabView = (val: string) => {
       currentTabView.value = val;
@@ -821,6 +902,23 @@ export default defineComponent({
         if (initialViewConfig.value.selectedAdminLevel !== undefined) {
           selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
         }
+        if (initialViewConfig.value.baseLayerTransparency !== undefined) {
+          selectedBaseLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
+        }
+        if (initialViewConfig.value.colorSchemeReversed !== undefined) {
+          colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
+        }
+        if (initialViewConfig.value.colorSchemeName !== undefined) {
+          selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
+        }
+        if (initialViewConfig.value.colorScaleType !== undefined) {
+          selectedColorScaleType.value = initialViewConfig.value.colorScaleType;
+        }
+        if (initialViewConfig.value.numberOfColorBins !== undefined) {
+          numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
+        }
+        // FIXME: although we have restored the color palette/scale/options,
+        //  none of those will look applied since the final color list is only generated when the viz-option is opened
       }
     });
 
@@ -960,10 +1058,11 @@ export default defineComponent({
     };
 
     const onTabClick = (value: string) => {
-      if (value === 'description' && isModelMetadata.value) {
+      if (value === 'description') {
         setSelectedScenarioIds([]); // this will update the 'currentTabView'
+      } else {
+        clickData(value);
       }
-      clickData(value);
     };
 
     const requestNewModelRuns = () => {
@@ -1148,6 +1247,12 @@ export default defineComponent({
         : null
     );
 
+    const someVizOptionsInvalid = computed(() =>
+      isPublishing.value && (selectedSpatialAggregation.value === AggregationOption.None ||
+          selectedTemporalAggregation.value === AggregationOption.None ||
+          selectedTemporalResolution.value === TemporalResolutionOption.None)
+    );
+
     const setSelectedTimestamp = (timestamp: number | null) => {
       if (selectedTimestamp.value === timestamp) return;
       selectedTimestamp.value = timestamp;
@@ -1249,6 +1354,21 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
           setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+        if (loadedInsight.view_state?.baseLayerTransparency !== undefined) {
+          setBaseLayerTransparency(loadedInsight.view_state?.baseLayerTransparency);
+        }
+        if (loadedInsight.view_state?.colorSchemeReversed !== undefined) {
+          setColorSchemeReversed(loadedInsight.view_state?.colorSchemeReversed);
+        }
+        if (loadedInsight.view_state?.colorSchemeName !== undefined) {
+          setColorSchemeName(loadedInsight.view_state?.colorSchemeName);
+        }
+        if (loadedInsight.view_state?.colorScaleType !== undefined) {
+          setColorScaleType(loadedInsight.view_state?.colorScaleType);
+        }
+        if (loadedInsight.view_state?.numberOfColorBins !== undefined) {
+          setNumberOfColorBins(loadedInsight.view_state?.numberOfColorBins);
         }
         // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
@@ -1355,7 +1475,7 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange);
+    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange, finalColorScheme);
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
@@ -1385,7 +1505,12 @@ export default defineComponent({
         selectedDataLayer,
         selectedSpatialAggregation,
         selectedTemporalAggregation,
-        selectedTemporalResolution
+        selectedTemporalResolution,
+        selectedBaseLayerTransparency,
+        colorSchemeReversed,
+        selectedColorSchemeName,
+        selectedColorScaleType,
+        numberOfColorBins
       );
       store.dispatch('insightPanel/setViewState', viewState);
 
@@ -1410,6 +1535,7 @@ export default defineComponent({
       addNewTag,
       allModelRunData,
       activeDrilldownTab,
+      activeVizOptionsTab,
       adminLayerStats,
       baselineMetadata,
       breakdownOption,
@@ -1462,6 +1588,16 @@ export default defineComponent({
       searchFilters,
       selectedAdminLevel,
       selectedBaseLayer,
+      selectedBaseLayerTransparency,
+      finalColorScheme,
+      setColorSchemeReversed,
+      colorSchemeReversed,
+      setColorSchemeName,
+      selectedColorSchemeName,
+      setColorScaleType,
+      selectedColorScaleType,
+      setNumberOfColorBins,
+      numberOfColorBins,
       selectedDataLayer,
       selectedPreGenDataItem,
       selectedQualifierValues,
@@ -1477,6 +1613,7 @@ export default defineComponent({
       setSelectedAdminLevel,
       setBreakdownOption,
       setBaseLayer,
+      setBaseLayerTransparency,
       setDataLayer,
       setRelativeTo,
       setSelectedTimestamp,
@@ -1506,7 +1643,8 @@ export default defineComponent({
       updateMapCurSyncedZoom,
       updateScenarioSelection,
       visibleTimeseriesData,
-      showPercentChange
+      showPercentChange,
+      someVizOptionsInvalid
     };
   },
   watch: {
@@ -1561,6 +1699,20 @@ export default defineComponent({
           // ensure that both choices and labels exist
           const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
           const updatedChoicesLabels = updatedModelParam.choices_labels === undefined || updatedModelParam.choices_labels.length === 0 ? _.clone(updatedModelParam.choices) as Array<string> : _.clone(updatedModelParam.choices_labels) as Array<string>;
+          const getFormattedBBox = (bbox: any) => {
+            // NOTE: bbox is coming as input string formatted as
+            //       [ [{left}, {top}], [{right}, {bottom}] ]
+            const targetBBoxFormat = updatedModelParam.additional_options.geo_bbox_format;
+            if (!targetBBoxFormat) {
+              return bbox; // user has not defined a bbox format, so return the default one
+            }
+            let finalBBox = _.clone(targetBBoxFormat);
+            finalBBox = finalBBox.replace('{left}', bbox[0][0]);
+            finalBBox = finalBBox.replace('{top}', bbox[0][1]);
+            finalBBox = finalBBox.replace('{right}', bbox[1][0]);
+            finalBBox = finalBBox.replace('{bottom}', bbox[1][1]);
+            return finalBBox;
+          };
           const formattedRegion = (region: GeoRegionDetail) => {
             const validSelectedRegion = region.path;
             switch (updatedModelParam.additional_options.geo_region_format) {
@@ -1570,7 +1722,7 @@ export default defineComponent({
               case GeoAttributeFormat.GADM_Code:
                 return region.code;
               case GeoAttributeFormat.Bounding_Box:
-                return region.bbox;
+                return getFormattedBBox(region.bbox);
             }
           };
           selectedRegions.forEach(sr => {
@@ -1616,7 +1768,19 @@ export default defineComponent({
     async retryRun(runId: string) {
       const modelRun = this.getModelRunById(runId);
       if (modelRun) {
-        createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters, modelRun.is_default_run);
+        const response = createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters, modelRun.is_default_run);
+        response
+          .then((res: any) => {
+            if (res.data && res.data.run_id && res.data.run_id.length > 0) {
+              this.toaster('Retrying model run\nPlease check back later!', 'success');
+            } else {
+              this.toaster('Some issue occured while retrying model run!', 'error');
+            }
+          })
+          .catch((error) => {
+            console.warn(error);
+            this.toaster('Some issue occured while retrying model run!', 'error');
+          });
       }
       await this.deleteWithRun(modelRun);
     },
@@ -1658,7 +1822,16 @@ export default defineComponent({
 @import '~styles/variables';
 @import '~flatpickr/dist/flatpickr.css';
 
-$fullscreenTransition: all 0.5s ease-in-out;
+$cardSpacing: 10px;
+
+.viz-option-invalid {
+  border-color: red;
+  border-style: solid;
+  &:hover {
+    border-color: red;
+    border-style: solid;
+  }
+}
 
 .breakdown-button {
   margin: 0 1rem;
@@ -1684,11 +1857,13 @@ $fullscreenTransition: all 0.5s ease-in-out;
 
 
 .drilldown {
-  margin-left: 1rem;
+  height: 100%;
+  box-shadow: none;
 }
 
 .capture-box {
-  padding: 10px;
+  padding-top: $cardSpacing;
+  padding-left: $cardSpacing;
   display: flex;
   width: 100%;
   flex-direction: column;
@@ -1703,6 +1878,7 @@ $fullscreenTransition: all 0.5s ease-in-out;
 header {
   display: flex;
   align-items: center;
+  margin-right: $cardSpacing;
 
   h5 {
     display: inline-block;
@@ -1721,9 +1897,14 @@ header {
 
 .scenario-selector {
   width: 25%;
-  margin-right: 10px;
   display: flex;
   flex-direction: column;
+}
+
+.center-column,
+.scenario-selector {
+  margin-bottom: $cardSpacing;
+  margin-right: $cardSpacing;
 }
 
 .pc-chart {
@@ -1870,7 +2051,6 @@ $marginSize: 5px;
     padding-bottom: 5px;
     height: 0;
     opacity: 0;
-    transition: $fullscreenTransition;
 
     &.isVisible {
       opacity: 1;
@@ -1930,6 +2110,38 @@ $marginSize: 5px;
   .date-picker-buttons {
       padding: 4px 8px;
     }
+}
+
+.viz-options-modal-mask {
+  isolation: isolate;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, .25);
+  // Render above map attribution text
+  z-index: 3;
+}
+
+$drilldownWidth: 25vw;
+.viz-options-modal {
+  background: $background-light-1;
+  width: calc(#{$drilldownWidth} + 20px);
+  position: absolute;
+  right: 0;
+  top: calc(calc(#{$navbar-outer-height} * 2) + 10px);
+  bottom: 10px;
+  overflow-y: auto;
+  padding: 10px;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+
+  h4 {
+    @include header-secondary;
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
 }
 
 </style>

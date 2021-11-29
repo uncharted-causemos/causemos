@@ -52,26 +52,6 @@ const toHistogramFormat = (result: any) => {
   });
   return result2;
 };
-const fromHistogramFormat = (result: any) => {
-  const result2 = _.cloneDeep(result);
-  result2.forEach((r: any) => {
-    r.confidenceInterval = { upper: [], lower: [] };
-    r.valuesTmp = [];
-    for (let i = 0; i < r.values.length; i++) {
-      const t = r.values[i].timestamp;
-      const val = r.values[i].values[0];
-      const upper = r.values[i].values[1];
-      const lower = r.values[i].values[2];
-      r.valuesTmp.push({ timestamp: t, value: val });
-      r.confidenceInterval.upper.push({ timestamp: t, value: upper });
-      r.confidenceInterval.lower.push({ timestamp: t, value: lower });
-    }
-    r.values = r.valuesTmp;
-    delete r.valuesTmp;
-  });
-  return result2;
-};
-
 
 /**
  * Get basic model information without underyling data
@@ -222,7 +202,7 @@ const newModel = async (projectId: string, name = 'untitled') => {
 
 // This sets the default indicators for each node in the model
 const quantifyModelNodes = async (modelId: string) => {
-  const result = await API.post(`models/${modelId}`);
+  const result = await API.post(`models/${modelId}/quantify-nodes`);
   return result.data;
 };
 
@@ -402,14 +382,15 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
     const concept = nodeData.concept;
 
     const graphData: NodeScenarioData = {
-      initial_value: indicatorData.initial_value,
       indicator_name: indicatorData.name || '',
+      indicator_id: indicatorData.id ?? null,
       indicator_time_series: indicatorData.timeseries || [],
       indicator_time_series_range: {
         start: modelParameter.indicator_time_series_range.start,
         end: modelParameter.indicator_time_series_range.end
       },
       projection_start: modelParameter.projection_start,
+      time_scale: modelParameter.time_scale,
       min: indicatorData.min,
       max: indicatorData.max,
       scenarios: []
@@ -762,8 +743,6 @@ export default {
 
   cleanConstraints,
 
-  // temp
-  fromHistogramFormat,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,

@@ -39,7 +39,7 @@ export interface NewScenario {
   description: string;
   model_id: string;
   is_baseline: boolean;
-  parameter?: ScenarioParameter;
+  parameter: ScenarioParameter;
 }
 
 export interface Scenario {
@@ -51,15 +51,15 @@ export interface Scenario {
   engine: string;
   is_valid: boolean;
   is_baseline: boolean;
-  parameter?: ScenarioParameter;
+  parameter: ScenarioParameter;
   result?: ScenarioResult[]; // FIXME: technically result is not a part of scenario in ES datastore
   experiment_id?: string;
 }
 
 export interface NodeScenarioData {
-  initial_value: number;
-  indicator_name?: string;
-  indicator_time_series?: TimeseriesPoint[];
+  indicator_name: string;
+  indicator_id: string | null;
+  indicator_time_series: TimeseriesPoint[];
   indicator_time_series_range: {
     start: number;
     end: number;
@@ -67,12 +67,13 @@ export interface NodeScenarioData {
   min: number;
   max: number;
   projection_start: number;
+  time_scale: TimeScale;
   scenarios: {
     id: string;
     is_baseline: boolean;
     is_valid: boolean;
     name: string;
-    parameter?: ScenarioParameter;
+    parameter: ScenarioParameter;
     // A list of constraints for this one node in this one scenario
     constraints?: { step: number; value: number }[];
     result?: {

@@ -2,8 +2,9 @@ import { Indicator, Model } from '../../types/Datacube';
 import { computed, Ref } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
-import { ModelRunStatus } from '@/types/Enums';
+import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import { useStore } from 'vuex';
+import { getAggregationKey } from '@/utils/datacube-util';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -36,10 +37,11 @@ export default function useParallelCoordinatesData(
         status: runStatus ?? ModelRunStatus.Ready
       };
       if (run.status === ModelRunStatus.Ready) {
-        const currRunData = modelRun;
-        const outputValue = currRunData.output_agg_values.find(val => val.name === outputParameterName);
-        if (outputValue) {
-          run[outputParameterName] = outputValue.value;
+        // TODO: This needs to depend on the selected aggregation functions
+        const aggKey = getAggregationKey(AggregationOption.Mean, AggregationOption.Mean);
+        const outputValue = modelRun.output_agg_values.find(val => val.name === outputParameterName);
+        if (outputValue && outputValue[aggKey]) {
+          run[outputParameterName] = outputValue[aggKey];
         } else {
           console.warn('Missing output value for run: ' + run_id);
         }

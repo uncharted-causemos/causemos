@@ -1,6 +1,6 @@
 <template>
-  <div class="new-node-container" :style="{left: placement.x + 'px', top: placement.y + 'px' }">
-    <div class="new-node-top">
+  <div class="new-node-container" ref="newNodeContainer" :style="{left: placement.x + 'px', top: placement.y + 'px' }">
+    <div class="new-node-top" ref="newNodeTop">
       <input
         ref="input"
         v-model="userInput"
@@ -20,7 +20,9 @@
         </span>
       </button>
     </div>
-    <dropdown-control class="suggestion-dropdown">
+    <dropdown-control
+      v-if="userInput !== ''"
+      class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
         <div style="display: flex; flex-direction: row">
           <div class="left-column">
@@ -100,7 +102,9 @@ export default {
     userInput: '',
     suggestions: [],
     focusedSuggestionIndex: 0,
-    mouseOverIndex: -1
+    mouseOverIndex: -1,
+    dropdownLeftOffset: 0,
+    dropdownTopOffset: 4 // prevent overlap with input box
   }),
   computed: {
     ...mapGetters({
@@ -113,6 +117,9 @@ export default {
       }
       return null;
     }
+  },
+  mounted() {
+    this.calculateDropdownOffset();
   },
   watch: {
     userInput() {
@@ -179,6 +186,21 @@ export default {
     conceptNotInCag(concept) {
       return this.conceptsInCag.indexOf(concept.concept) === -1;
     },
+    calculateDropdownOffset() {
+      // calculate if dropdown will collide with edge of screen and then translate if required
+      const inputBoundingBox = this.$refs.newNodeTop.getBoundingClientRect();
+      const cagContainerBoundingBox = this.$refs.newNodeContainer.parentNode.getBoundingClientRect();
+
+      const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
+      const dropdownHeight = 290; // Match CSS
+
+      if (inputBoundingBox.left + dropdownWidth > cagContainerBoundingBox.right) {
+        this.dropdownLeftOffset = -dropdownWidth + inputBoundingBox.width;
+      }
+      if (inputBoundingBox.bottom + dropdownHeight > cagContainerBoundingBox.bottom) {
+        this.dropdownTopOffset = -dropdownHeight - (inputBoundingBox.height + 4); // +4 to prevent overlap with input box
+      }
+    },
     getSuggestions: _.throttle(async function() {
       if (_.isEmpty(this.userInput)) {
         this.suggestions = [];
@@ -219,7 +241,6 @@ export default {
 }
 
 .suggestion-dropdown {
-  top: 3px; /* Don't overlap border */
   width: 45vw;
 }
 
@@ -252,12 +273,16 @@ export default {
 }
 
 .left-column {
-  min-width: 320px;
+  min-width: 280px;
+  height: 290px;
+  overflow-y: scroll;
 }
 .right-column {
   flex-grow: 1;
   padding: 8px;
   border-left: 1px solid #DDD;
+  height: 290px;
+  overflow-y: scroll;
 }
 
 </style>
