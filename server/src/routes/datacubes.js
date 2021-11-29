@@ -29,7 +29,7 @@ router.put('/:datacubeId', asyncHandler(async (req, res) => {
 router.put('/:datacubeId/deprecate', asyncHandler(async (req, res) => {
   const oldDatacubeId = req.params.datacubeId;
   const newVersionId = req.body.new_version_id;
-  const result = await datacubeService.deprecateDatacube(oldDatacubeId, newVersionId);
+  const result = await datacubeService.deprecateDatacubes(newVersionId, [oldDatacubeId]);
   res.json(result);
 }));
 
