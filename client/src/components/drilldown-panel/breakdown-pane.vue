@@ -12,9 +12,10 @@
       :items="breakdownOptions"
       :selectedItem="selectedBreakdownOption"
       :is-dropdown-left-aligned="true"
-      @item-selected="emitBreakdownOptionSelection"
+      @item-selected="emitBreakdownOptionSelection($event); scrollToBreakdown($event)"
     />
     <aggregation-checklist-pane
+      ref="region_ref"
       v-if="isRegionalDataValid"
       class="checklist-section"
       :aggregation-level-count="availableAdminLevelTitles.length"
@@ -56,6 +57,7 @@
     <aggregation-checklist-pane
       class="checklist-section"
       v-for="qualifierVariable in qualifierBreakdownData"
+      :ref="qualifierVariable.id + '_ref'"
       :key="qualifierVariable.id"
       :aggregation-level-count="1"
       :aggregation-level="0"
@@ -95,6 +97,7 @@
       </template>
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
+      ref="year_ref"
       v-if="isTemporalBreakdownDataValid"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
@@ -316,6 +319,24 @@ export default defineComponent({
       SpatialAggregationLevel,
       TemporalAggregationLevel
     };
+  },
+  methods: {
+    async scrollToBreakdown(newValue: string | null) {
+      if (newValue) {
+        const reference = newValue + '_ref';
+        setTimeout(() => { // HACK: wait for element to be mounted, year_ref gets unmounted in certain cases so we need to wait before we try and scroll to it
+          try { // in the future we should look into preventing the mount/unmount behavior
+            const element = (this.$refs[reference] as any).$el; // this will throw an error if element hasn't been rendered (it's ref wont exist)
+            const container = document.getElementById('panel-content-container');
+            if (container) {
+              container.scrollTop = element.offsetTop - 45; // set scroll height to slightly above relevant qualifier
+            }
+          } catch (e) {
+            console.error('could not scroll to element: ', e);
+          }
+        }, 250);
+      }
+    }
   }
 });
 </script>
