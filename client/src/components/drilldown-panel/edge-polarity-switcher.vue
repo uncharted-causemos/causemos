@@ -136,7 +136,7 @@ export default defineComponent({
   components: {
     DropdownControl
   },
-  emits: ['edge-set-user-polarity'],
+  emits: ['edge-set-user-polarity', 'edge-set-weights'],
   props: {
     selectedRelationship: {
       type: Object,
@@ -221,7 +221,7 @@ export default defineComponent({
         weights = [0, v];
       }
       this.currentEdgeWeight = v;
-      console.log(weights);
+      this.$emit('edge-set-weights', this.selectedRelationship, weights);
     },
     setType(v: string) {
       let weights: number[];
@@ -231,7 +231,7 @@ export default defineComponent({
         weights = [0, this.currentEdgeWeight];
       }
       this.currentEdgeType = v;
-      console.log(weights);
+      this.$emit('edge-set-weights', this.selectedRelationship, weights);
     },
     togglePolarityDropdown() {
       this.isPolarityDropdownOpen = !this.isPolarityDropdownOpen;

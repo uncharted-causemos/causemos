@@ -56,7 +56,9 @@
             :should-confirm-curations="true">
             <edge-polarity-switcher
               :selected-relationship="selectedEdge"
-              @edge-set-user-polarity="setEdgeUserPolarity" />
+              @edge-set-user-polarity="setEdgeUserPolarity"
+              @edge-set-weights="setEdgeWeights"
+            />
             <!--
             <edge-weight-slider
               v-if="showComponent"
@@ -261,8 +263,17 @@ export default {
       this.closeDrilldown();
       this.$emit('refresh-model');
     },
-    async setEdgeWeights(edgeData) {
-      await modelService.updateEdgeParameter(this.currentCAG, edgeData);
+    async setEdgeWeights(edgeData, weights) {
+      const payload = {
+        id: edgeData.id,
+        source: edgeData.source,
+        target: edgeData.target,
+        polarity: edgeData.polarity,
+        parameter: {
+          weights
+        }
+      };
+      await modelService.updateEdgeParameter(this.currentCAG, payload);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
       this.$emit('refresh-model');
     },

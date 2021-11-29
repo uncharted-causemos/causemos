@@ -84,6 +84,7 @@
               <edge-polarity-switcher
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity"
+                @edge-set-weights="setEdgeWeights"
               />
               <button
                 style="margin-left: 5px; font-weight: normal"
@@ -722,6 +723,16 @@ export default defineComponent({
         this.selectedEdge.user_polarity = polarity;
       }
       this.refresh();
+    },
+    async setEdgeWeights(_edge: EdgeParameter, weights: number[]) {
+      if (this.selectedEdge) {
+        const edge = this.selectedEdge;
+        if (edge.parameter) {
+          edge.parameter.weights = weights;
+          await modelService.updateEdgeParameter(this.currentCAG, edge);
+          this.refresh();
+        }
+      }
     },
     onBackgroundClick() {
       this.deselectNodeAndEdge();
