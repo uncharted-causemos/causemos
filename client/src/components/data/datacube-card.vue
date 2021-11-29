@@ -1713,6 +1713,13 @@ export default defineComponent({
             finalBBox = finalBBox.replace('{bottom}', bbox[1][1]);
             return finalBBox;
           };
+          const getFormattedCode = (code: string) => {
+            if (updatedModelParam.additional_options.geo_omit_gadm_code_version) {
+              return code.substring(0, code.lastIndexOf('_'));
+            } else {
+              return code;
+            }
+          };
           const formattedRegion = (region: GeoRegionDetail) => {
             const validSelectedRegion = region.path;
             switch (updatedModelParam.additional_options.geo_region_format) {
@@ -1720,7 +1727,7 @@ export default defineComponent({
               case GeoAttributeFormat.Full_GADM_PATH:
                 return validSelectedRegion;
               case GeoAttributeFormat.GADM_Code:
-                return region.code;
+                return getFormattedCode(region.code);
               case GeoAttributeFormat.Bounding_Box:
                 return getFormattedBBox(region.bbox);
             }
