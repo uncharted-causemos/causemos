@@ -136,7 +136,7 @@ export default {
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
     isDisabled(datacube) {
-      return isModel(datacube) && (datacube.status !== DatacubeStatus.Ready || datacube.status === DatacubeStatus.Deprecated);
+      return datacube.status === DatacubeStatus.Deprecated || (isModel(datacube) && datacube.status !== DatacubeStatus.Ready);
     },
     isProcessing(datacube) {
       return datacube.status === DatacubeStatus.Processing && isIndicator(datacube);
@@ -145,7 +145,7 @@ export default {
       return datacube.status === DatacubeStatus.Registered && isModel(datacube);
     },
     isDeprecated(datacube) {
-      return datacube.status === DatacubeStatus.Deprecated && isModel(datacube);
+      return datacube.status === DatacubeStatus.Deprecated;
     },
     isExpanded(datacube) {
       return this.expandedRowId === datacube.id;
