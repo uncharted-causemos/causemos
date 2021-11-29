@@ -237,9 +237,9 @@ const postProcess = (layout) => {
       }
     }
 
-    console.log(`${sourceNode.id}-${targetNode.id} Source in target ${sourceInTarget}, Target in source ${targetInSource}`);
-    console.log('\tsource-chaing', sourceChain);
-    console.log('\ttarget-chaing', targetChain);
+    // console.log(`${sourceNode.id}-${targetNode.id} Source in target ${sourceInTarget}, Target in source ${targetInSource}`);
+    // console.log('\tsource-chaing', sourceChain);
+    // console.log('\ttarget-chaing', targetChain);
 
     if (sourceNode.id === targetNode.id) {
       const p = parentMap.get(sourceNode.id);
