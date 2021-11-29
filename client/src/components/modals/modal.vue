@@ -3,7 +3,7 @@
     <div class="modal-mask">
       <div
         class="modal-wrapper"
-        @click.stop="close()">
+        @click.stop="sticky ? {} : close()">
 
         <!--
           click.stop is needed in modal-container so the event doesn't
@@ -54,6 +54,10 @@ export default defineComponent({
   },
   props: {
     showCloseButton: {
+      type: Boolean,
+      default: false
+    },
+    sticky: {
       type: Boolean,
       default: false
     }
