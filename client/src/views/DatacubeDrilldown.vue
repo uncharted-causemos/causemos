@@ -91,9 +91,14 @@ export default defineComponent({
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeId = route.query.datacube_id as any;
-    const initialViewConfig = analysisItems.value[0].viewConfig;
-    const initialDataConfig = analysisItems.value[0].dataConfig;
     const selectedModelId = ref(datacubeId);
+    const datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === selectedModelId.value);
+    const initialViewConfig = ref<ViewState | null>(null);
+    const initialDataConfig = ref<DataState | null>(null);
+    if (datacubeAnalysisItem) {
+      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
+      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
+    }
     const metadata = useModelMetadata(selectedModelId);
     const project = computed(() => store.getters['app/project']);
     const projectType = computed(() => store.getters['app/projectType']);
@@ -108,10 +113,10 @@ export default defineComponent({
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
 
     // apply initial view config for this datacube
-    if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
-      if (initialViewConfig.selectedOutputIndex !== undefined) {
+    if (initialViewConfig.value !== null) {
+      if (initialViewConfig.value.selectedOutputIndex !== undefined) {
         const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-        defaultOutputMap[datacubeId] = initialViewConfig.selectedOutputIndex;
+        defaultOutputMap[datacubeId] = initialViewConfig.value.selectedOutputIndex;
         setDatacubeCurrentOutputsMap(defaultOutputMap);
       }
     }
