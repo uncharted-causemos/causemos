@@ -53,7 +53,7 @@ export default defineComponent({
       default: () => 0 // timestamp in millis
     }
   },
-  emits: ['updated'],
+  emits: ['date-updated'],
   data: () => ({
     selectedMonth: 0, // January by default
     selectedYear: MAX_YEAR,
@@ -85,7 +85,7 @@ export default defineComponent({
       const timestamp = moment
         .utc({ y: this.selectedYear, M: this.selectedMonth })
         .valueOf();
-      this.$emit('updated', timestamp);
+      this.$emit('date-updated', timestamp);
     }
   }
 });

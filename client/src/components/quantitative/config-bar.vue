@@ -16,7 +16,7 @@
     starting in
     <date-dropdown
       :data="projectionStartDate"
-      @updated="setProjectionStartDate"
+      @date-updated="setProjectionStartDate"
     />
     .
     <modal-time-scale
@@ -92,7 +92,6 @@ export default defineComponent({
       this.$emit('model-parameter-changed');
     },
     async setProjectionStartDate(newStartDate: number) {
-      console.log('start date', newStartDate);
       await modelService.updateModelParameter(this.currentCAG, {
         projection_start: newStartDate
       });
