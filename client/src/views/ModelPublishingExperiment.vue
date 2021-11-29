@@ -3,6 +3,7 @@
     <model-publishing-checklist
       :publishingSteps="publishingSteps"
       :currentPublishStep="currentPublishStep"
+      :metadata="metadata"
       @navigate-to-publishing-step="showPublishingStep"
       @publish-model="publishModel"
     />
@@ -30,6 +31,7 @@
             <model-description
               :metadata="metadata"
               @refresh-metadata="refreshMetadata"
+              @check-model-metadata-validity="updateModelMetadataValidity"
             />
           </template>
         </datacube-card>
@@ -116,9 +118,9 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = computed(() => dataState.value.selectedScenarioIds);
-    const selectedSpatialAggregation = computed(() => viewState.value.selectedSpatialAggregation);
-    const selectedTemporalAggregation = computed(() => viewState.value.selectedTemporalAggregation);
-    const selectedTemporalResolution = computed(() => viewState.value.selectedTemporalResolution);
+    const selectedSpatialAggregation = computed(() => viewState.value.spatialAggregation);
+    const selectedTemporalAggregation = computed(() => viewState.value.temporalAggregation);
+    const selectedTemporalResolution = computed(() => viewState.value.temporalResolution);
 
     watchEffect(() => {
       if (metadata.value) {
@@ -243,11 +245,13 @@ export default defineComponent({
     };
 
     watchEffect(() => {
-      // mark this step as complete
-      updatePublishingStep(
-        selectedSpatialAggregation.value !== AggregationOption.None &&
-        selectedTemporalAggregation.value !== AggregationOption.None &&
-        selectedTemporalResolution.value !== TemporalResolutionOption.None);
+      // mark the second step as complete
+      if (currentPublishStep.value === ModelPublishingStepID.Tweak_Visualization) {
+        updatePublishingStep(
+          selectedSpatialAggregation.value !== AggregationOption.None &&
+          selectedTemporalAggregation.value !== AggregationOption.None &&
+          selectedTemporalResolution.value !== TemporalResolutionOption.None);
+      }
 
       if (selectedScenarioIds?.value?.length > 0) {
         if (currentPublishStep.value === ModelPublishingStepID.Enrich_Description) {
@@ -271,6 +275,12 @@ export default defineComponent({
       }
     };
 
+    const updateModelMetadataValidity = (info: any) => {
+      if (currentPublishStep.value === ModelPublishingStepID.Enrich_Description) {
+        updatePublishingStep(info.valid);
+      }
+    };
+
     return {
       AggregationOption,
       currentPublishStep,
@@ -286,7 +296,8 @@ export default defineComponent({
       TemporalResolutionOption,
       initialDataConfig,
       initialViewConfig,
-      onModelParamUpdated
+      onModelParamUpdated,
+      updateModelMetadataValidity
     };
   },
   watch: {
