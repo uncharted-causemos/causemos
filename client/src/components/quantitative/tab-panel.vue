@@ -59,12 +59,6 @@
               @edge-set-user-polarity="setEdgeUserPolarity"
               @edge-set-weights="setEdgeWeights"
             />
-            <!--
-            <edge-weight-slider
-              v-if="showComponent"
-              :selected-relationship="selectedEdge"
-              @set-edge-weights="setEdgeWeights" />
-            -->
           </evidence-pane>
         </template>
       </drilldown-panel>
@@ -86,7 +80,6 @@ import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis'
 import ModelGraph from '@/components/quantitative/model-graph';
 import modelService from '@/services/model-service';
 import ColorLegend from '@/components/graph/color-legend';
-// import EdgeWeightSlider from '@/components/drilldown-panel/edge-weight-slider';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
@@ -127,7 +120,6 @@ export default {
     ColorLegend,
     DrilldownPanel,
     EdgePolaritySwitcher,
-    // EdgeWeightSlider,
     EvidencePane,
     CagSidePanel,
     CagCommentsButton

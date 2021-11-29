@@ -62,40 +62,6 @@
       in {{ ontologyFormatter(selectedRelationship.target) }}
     </div>
   </div>
-  <!--
-  <br>
-  <div>
-    <button
-      class="btn polarity-button"
-      @click="togglePolarityDropdown">
-      <i
-        :class="polarityClass"
-        :style="polarityColor"
-      />
-      <span class="polarity-label">Polarity: {{ polarityLabel }}</span>
-      <i
-        class="fa"
-        :class="{'fa-angle-down': !isPolarityDropdownOpen, 'fa-angle-up': isPolarityDropdownOpen}"
-      />
-    </button>
-    <dropdown-control
-      v-if="isPolarityDropdownOpen"
-      class="polarity-dropdown">
-      <template #content>
-        <div
-          class="dropdown-option"
-          @click="onSelectEdgeUserPolarity(STATEMENT_POLARITY.SAME)">
-          <span class="polarity-same">Same</span>
-        </div>
-        <div
-          class="dropdown-option"
-          @click="onSelectEdgeUserPolarity(STATEMENT_POLARITY.OPPOSITE)">
-          <span class="polarity-opposite">Opposite</span>
-        </div>
-      </template>
-    </dropdown-control>
-  </div>
-  -->
 </template>
 
 <script lang="ts">
@@ -117,7 +83,7 @@ const getEdgeTypeString = (edge: EdgeParameter): string => {
 };
 
 
-// FIXME: Need better init
+// FIXME: Need better init heuristic because engine numbers are not discrete??
 const getEdgeWeight = (edge: EdgeParameter): number => {
   const type = getEdgeTypeString(edge);
   const param = edge.parameter;
