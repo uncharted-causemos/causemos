@@ -264,8 +264,7 @@ export default defineComponent({
         } else {
           this.hasError = false;
         }
-      },
-      immediate: true
+      }
     },
     editMode: {
       handler(/* newValue, oldValue */) {
