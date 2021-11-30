@@ -14,24 +14,29 @@
       <div class="body-main-content flex-col">
 
         <div class="tab-controls">
-          <tab-bar
-            class="tabs"
-            :active-tab-id="activeTabId"
-            :tabs="tabs"
-            @tab-click="switchTab"
+          <radio-button-group
+            :buttons="VIEW_OPTIONS"
+            :selected-button-value="activeTabId"
+            @button-clicked="switchTab"
           />
           <div class="export">
-            <dropdown-button
-              :inner-button-label="'Export insight(s)'"
-              :is-dropdown-left-aligned="true"
-              :items="['Powerpoint', 'Word']"
-              class="export-dropdown"
-              @item-selected="exportSelectedInsights"
-            />
+            <span>Export insight{{ searchedInsights.length !== 1 ? 's' : '' }} as</span>
+            <button
+              class="btn btn-sm btn-default"
+              @click="() => exportSelectedInsights('Powerpoint')"
+            >
+              PowerPoint
+            </button>
+            <button
+              class="btn btn-sm btn-default"
+              @click="() => exportSelectedInsights('Word')"
+            >
+              Word
+            </button>
           </div>
         </div>
         <div
-          v-if="activeTabId === tabs[0].id"
+          v-if="activeTabId === VIEW_OPTIONS[0].value"
           class="cards"
         >
           <div class="search">
@@ -72,7 +77,7 @@
         </div>
 
         <div
-          v-else-if="activeTabId === tabs[1].id"
+          v-else-if="activeTabId === VIEW_OPTIONS[1].value"
           class="list"
         >
           <div
@@ -113,9 +118,7 @@ import { mapGetters, mapActions, useStore } from 'vuex';
 import { INSIGHTS } from '@/utils/messages-util';
 
 import InsightCard from '@/components/insight-manager/insight-card';
-import TabBar from '@/components/widgets/tab-bar';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
-import DropdownButton from '@/components/dropdown-button.vue';
 
 import router from '@/router';
 import { computed } from 'vue';
@@ -125,14 +128,15 @@ import useInsightsData from '@/services/composables/useInsightsData';
 import MessageDisplay from '@/components/widgets/message-display';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
+import RadioButtonGroup from '../widgets/radio-button-group.vue';
 
-const INSIGHT_TABS = [
+const VIEW_OPTIONS = [
   {
-    id: 'cards',
-    name: 'Cards'
+    value: 'cards',
+    label: 'Cards'
   }, {
-    id: 'list',
-    name: 'List'
+    value: 'list',
+    label: 'List'
   }
 ];
 
@@ -140,21 +144,20 @@ const INSIGHT_TABS = [
 export default {
   name: 'ListInsightsModal',
   components: {
-    DropdownButton,
     FullScreenModalHeader,
     InsightCard,
     MessageDisplay,
-    TabBar,
-    AnalyticalQuestionsPanel
+    AnalyticalQuestionsPanel,
+    RadioButtonGroup
   },
   data: () => ({
     activeInsight: null,
-    activeTabId: INSIGHT_TABS[0].id,
+    activeTabId: VIEW_OPTIONS[0].value,
     curatedInsights: [],
     messageNoData: INSIGHTS.NO_DATA,
     search: '',
     selectedInsight: null,
-    tabs: INSIGHT_TABS
+    VIEW_OPTIONS
   }),
   setup() {
     const store = useStore();
@@ -344,99 +347,72 @@ export default {
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-.export-dropdown {
-  ::v-deep(.dropdown-btn) {
-    padding-bottom: 10px;
-    margin-right: 4px;
-    background-color: lightgray;
-    padding: 3px 6px;
-    font-size: larger;
-    &:hover {
-      background-color: gray;
-    }
-  }
-  ::v-deep(.dropdown-container) {
-    position: absolute;
-    right: 1rem;
-    padding: 0;
-    width: auto;
-    height: fit-content;
-    text-align: left;
-    // Clip children overflowing the border-radius at the corners
-    overflow: hidden;
-
-    &.below {
-      top: 96px;
-    }
-  }
-}
-
 .list-insights-modal-container {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   height: 100vh;
-  .tab-controls {
+}
+
+.tab-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.export {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.cards {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  .search {
     display: flex;
-    flex: 0 0 auto;
-    padding: 0 1rem;
-    .tabs {
+    padding: 0 0 1rem;
+    .form-control {
       flex: 1 1 auto;
     }
-    .export {
-      padding: 0.75rem 0 0 ;
-      flex: 0 0 auto;
-      .dropdown-container {
-
-      }
-    }
   }
-  .cards {
-    background-color: $background-light-2;
-    flex: 1;
-    min-height: 0;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    .search {
-      display: flex;
-      padding: 0 0 1rem;
-      .form-control {
-        flex: 1 1 auto;
-      }
-    }
-    .pane-content {
-      overflow: auto;
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-    }
-  }
-  .list {
-    background-color: $background-light-2;
-    display: inline-block;
-    height: 100%;
+  .pane-content {
     overflow: auto;
-    padding: 1rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 }
+.list {
+  background-color: $background-light-2;
+  display: inline-block;
+  height: 100%;
+  overflow: auto;
+}
+
 
 .body {
   flex: 1;
   min-height: 0;
-  background: $background-light-3;
+  background: $background-light-2;
+}
 
-  .body-main-content {
-    flex: 1;
-    min-width: 0;
-    isolation: isolate;
+.body-main-content {
+  flex: 1;
+  min-width: 0;
+  isolation: isolate;
+  gap: 10px;
+  margin: 10px;
+  margin-left: 0;
 
-    .analysis-question {
-      padding: 5px 5px 10px;
-      border: 1px solid #e5e5e5;
-      margin: 0px 1rem 1rem 0px;
-      background-color: white;
-    }
+  .analysis-question {
+    padding: 5px 5px 10px;
+    border: 1px solid #e5e5e5;
+    margin: 0px 1rem 1rem 0px;
+    background-color: white;
   }
 }
 
