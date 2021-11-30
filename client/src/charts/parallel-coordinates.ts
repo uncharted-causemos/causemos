@@ -2034,9 +2034,15 @@ const createScales = (
       const dimAsModelParam = (dim as ModelParameter);
       // sometimes, a geo param may have a default formatted in a less-human-readable way
       if (isGeoParameter(dimAsModelParam.type) && dimAsModelParam.additional_options && dimAsModelParam.additional_options.default_value_label) {
+        // add the default value label
         dataChoices.push(dimAsModelParam.additional_options.default_value_label);
-        dataChoices = dataChoices.filter(val => val !== dimAsModelParam.default);
-        dataExtent = dataExtent.filter(val => val !== dimAsModelParam.default);
+        // remove the default-value from the list of choices
+        //  since the default-value-label has been just added
+        //  and only do so if the default-value and label are different
+        if (dimAsModelParam.default !== dimAsModelParam.additional_options.default_value_label) {
+          dataChoices = dataChoices.filter(val => val !== dimAsModelParam.default);
+          dataExtent = dataExtent.filter(val => val !== dimAsModelParam.default);
+        }
       } else {
         dataChoices.push(dimAsModelParam.default);
       }
