@@ -34,6 +34,12 @@
         />
       </template>
     </tab-panel>
+    <div v-if="!ready && modelSummary">
+      <h4 style="margin-left: 15px">
+        Model is currently training on the {{currentEngine}} engine, you can switch to
+        <button class="btn btn-primary btn-sm" @click="switchEngine('dyse')">DySE</button> to continue running experiments.
+      </h4>
+    </div>
   </div>
 </template>
 
@@ -260,7 +266,6 @@ export default defineComponent({
       }
 
       // 3. Check if we have scenarios, if not generate one
-
       await this.refreshModel();
 
       if (scenarios.length === 0) {
@@ -678,6 +683,12 @@ export default defineComponent({
     },
     resetCAGLayout() {
       this.resetLayoutToken = Date.now();
+    },
+    async switchEngine(engine: string) {
+      await modelService.updateModelParameter(this.currentCAG, {
+        engine: engine
+      });
+      this.refresh();
     }
   }
 });
