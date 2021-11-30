@@ -149,6 +149,8 @@ export default function useTimeseriesData(
         // Breakdown by qualifier
         // ASSUMPTION: we'll only need to fetch the qualifier timeseries when
         //  exactly one model run is selected
+        const regionId =
+          regionIds.value.length > 0 ? regionIds.value[0] : undefined;
         promises = [
           getQualifierTimeseries(
             dataId,
@@ -158,7 +160,8 @@ export default function useTimeseriesData(
             temporalAgg,
             spatialAgg,
             breakdownOption.value,
-            Array.from(selectedQualifierValues.value)
+            Array.from(selectedQualifierValues.value),
+            regionId
           )
         ];
       }
