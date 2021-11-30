@@ -32,26 +32,6 @@ const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSu
   return result.data;
 };
 
-// FIXME: Hack until engines are ready with new format - DC Nov 2021
-const toHistogramFormat = (result: any) => {
-  const result2 = _.cloneDeep(result);
-  result2.forEach((r: any) => {
-    r.timeseries = [];
-    for (let i = 0; i < r.values.length; i++) {
-      const val = r.values[i];
-      const upper = r.confidenceInterval.upper[i];
-      const lower = r.confidenceInterval.lower[i];
-
-      r.timeseries.push({
-        timestamp: val.timestamp,
-        values: [val.value, upper.value, lower.value]
-      });
-    }
-    delete r.values;
-    delete r.confidenceInterval;
-  });
-  return result2;
-};
 
 /**
  * Get basic model information without underyling data
@@ -119,7 +99,6 @@ const getScenarios = async (modelId: string, engine: string) => {
     }
   });
 
-  console.log('combining scenarios + scenario-results', scenarios);
   return scenarios;
 };
 
@@ -332,8 +311,17 @@ const runProjectionExperiment = async (
 const getExperimentResult = async (modelId: string, experimentId: string, threshold = 30, progressFn: (Function | null) = null) => {
   const model = await getSummary(modelId);
   const taskFn = async () => {
-    const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: model.parameter.engine, experiment_id: experimentId } });
-    return _.isEmpty(data.results) ? [false, null] : [true, data];
+    try {
+      const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: model.parameter.engine, experiment_id: experimentId } });
+      return _.isEmpty(data.results) ? [false, null] : [true, data];
+    } catch (err) {
+      // Delphi seems to randomly error out ??
+      if (model.parameter.engine === 'delphi') {
+        console.log('Ignoring Delphi error getting experiment');
+        return [false, null];
+      }
+      throw new Error(err);
+    }
   };
 
   return startPolling(taskFn, progressFn, {
@@ -482,7 +470,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
   const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
   try {
     const experimentId = await runProjectionExperiment(modelId, numSteps, cleanConstraints([]));
-    const result: any = await getExperimentResult(modelId, experimentId, 30);
+    const experiment: any = await getExperimentResult(modelId, experimentId, 30);
 
     const scenario: NewScenario = {
       model_id: modelId,
@@ -498,7 +486,15 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
     };
     const { id } = await createScenario(scenario);
 
-    await createScenarioResult(modelId, id, modelSummary.parameter.engine, experimentId, result.results.data);
+    // FIXME: Delphi uses .results, DySE uses .results.data
+    let r = [];
+    if (!_.isEmpty(experiment.results.data)) {
+      r = experiment.results.data;
+    } else {
+      r = experiment.results;
+    }
+
+    await createScenarioResult(modelId, id, modelSummary.parameter.engine, experimentId, r);
   } catch (error) {
     console.log(error);
     throw new Error(`Failed creating baseline scenario ${modelSummary.parameter.engine}`);
@@ -692,7 +688,7 @@ const createScenarioResult = async (
     scenario_id: scenarioId,
     engine: engine,
     experiment_id: experimentId,
-    result: engine === 'dyse' ? result : toHistogramFormat(result) // FIXME: waiting for engines to comply with format
+    result: result
   });
 };
 

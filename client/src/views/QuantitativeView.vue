@@ -235,9 +235,9 @@ export default defineComponent({
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
           this.disableOverlay();
-          if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
-            this.enableOverlay(errors[0]);
-          }
+          // if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
+          //   this.enableOverlay(errors[0]);
+          // }
           this.toaster(errors[0], 'error', true);
           console.error(errors);
           return;
@@ -253,7 +253,7 @@ export default defineComponent({
         );
         // FIXME: use status code
         if (r.status === 'training') {
-          this.enableOverlay(MODEL_MSGS.MODEL_TRAINING);
+          // this.enableOverlay(MODEL_MSGS.MODEL_TRAINING);
           this.toaster(MODEL_MSGS.MODEL_TRAINING, 'error', true);
           return;
         }
@@ -562,8 +562,13 @@ export default defineComponent({
             modelService.cleanConstraints(scenario.parameter?.constraints ?? [])
           );
 
-          const result = await modelService.getExperimentResult(this.currentCAG, experimentId);
-          scenario.result = (result as any).results.data;
+          const experiment: any = await modelService.getExperimentResult(this.currentCAG, experimentId);
+          // FIXME: Delphi uses .results, DySE uses .results.data
+          if (!_.isEmpty(experiment.results.data)) {
+            scenario.result = experiment.results.data;
+          } else {
+            scenario.result = experiment.results;
+          }
           scenario.experiment_id = experimentId;
           scenario.is_valid = true;
           updateList.push(scenario);
