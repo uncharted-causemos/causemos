@@ -5,6 +5,9 @@ import { calculateDiff } from '@/utils/value-util';
 import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { getGADMSuggestions } from '@/services/suggestion-service';
 
+// only allow fetching a maximum number of bbox for of a list of countries
+const MAX_NUMBER_BBOX_COUNTRIES = 10;
+
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
   DEFAULT = 'default'
@@ -121,11 +124,16 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
   };
 }
 
-export async function computeMapBoundsForCountries(countries: string[]) {
+export async function computeMapBoundsForCountries(countryList: string[]) {
   //
   // calculate the map bounds covering the geography covered by the input list of countries
   //
-  if (countries.length > 0) {
+  if (countryList.length > 0) {
+    let countries = countryList;
+    if (countries.length > MAX_NUMBER_BBOX_COUNTRIES) {
+      countries = countries.slice(0, MAX_NUMBER_BBOX_COUNTRIES);
+    }
+
     const allBBox: any = [];
     // fetch the bbox for country of the input geography
     const promises = countries.map(country => {
