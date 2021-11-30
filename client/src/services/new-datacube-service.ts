@@ -116,21 +116,68 @@ export const getSuggestions = async (field: string, queryString: string) => {
 };
 
 /**
- * Fetches the hierarchy for a given model or indicator
+ * Fetches the lists of regions for the specified model runs or indicator.
+ * For multiple model runs, the regions are combined into one list per admin level.
+ * @param dataId indicator or model ID
+ * @param runIds the IDs of the model runs. If this is an indicator, should be ['indicator']
+ * @param feature the output feature
+ */
+export const getRegionLists = async (
+  dataId: string,
+  runIds: string[],
+  feature: string
+) => {
+  const { data } = await API.get('maas/output/region-lists', {
+    params: {
+      data_id: dataId,
+      run_ids: runIds,
+      feature
+    }
+  });
+  return data;
+};
+
+/**
+ * Fetches the number of values in each qualifier for a given model run or indicator.
+ * Also returns the limits used then computing the data.
  * @param dataId indicator or model ID
  * @param runId the ID of the model run. If this is an indicator, should be 'indicator'
  * @param feature the output feature
  */
-export const getHierarchy = async (
+export const getQualifierCounts = async (
   dataId: string,
   runId: string,
   feature: string
 ) => {
-  const { data } = await API.get('maas/output/hierarchy', {
+  const { data } = await API.get('maas/output/qualifier-counts', {
     params: {
       data_id: dataId,
       run_id: runId,
       feature
+    }
+  });
+  return data;
+};
+
+/**
+ * Fetches the lists of all qualifier values for the specified qualifiers in the model run or indicator.
+ * @param dataId indicator or model ID
+ * @param runId the ID of the model run. If this is an indicator, should be ['indicator']
+ * @param feature the output feature
+ * @param qualifiers the qualifier names
+ */
+export const getQualifierLists = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  qualifiers: string[]
+) => {
+  const { data } = await API.get('maas/output/qualifier-lists', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature,
+      qlf: qualifiers
     }
   });
   return data;
@@ -144,7 +191,8 @@ export const getQualifierTimeseries = async (
   temporalAggregation: string,
   spatialAggregation: string,
   qualifierVariableId: string,
-  qualifierOptions: string[]
+  qualifierOptions: string[],
+  regionId?: string
 ) => {
   return await API.get('maas/output/qualifier-timeseries', {
     params: {
@@ -154,6 +202,7 @@ export const getQualifierTimeseries = async (
       resolution: temporalResolution,
       temporal_agg: temporalAggregation,
       spatial_agg: spatialAggregation,
+      region_id: regionId,
       qualifier: qualifierVariableId,
       q_opt: qualifierOptions
     }
