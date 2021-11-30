@@ -1,6 +1,9 @@
 import { DatacubeFeature, Model, Indicator, Datacube, ModelParameter, DimensionInfo } from '@/types/Datacube';
-import { AggregationOption, DatacubeGenericAttributeVariableType, DatacubeGeoAttributeVariableType, DatacubeType, ModelParameterDataType } from '@/types/Enums';
+import { AggregationOption, DatacubeGenericAttributeVariableType, DatacubeGeoAttributeVariableType, DatacubeStatus, DatacubeType, ModelParameterDataType } from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
+import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service';
+import domainProjectService from '@/services/domain-project-service';
+import { DomainProject } from '@/types/Common';
 
 export const DEFAULT_DATE_RANGE_DELIMETER = '__';
 
@@ -190,11 +193,44 @@ export const isCategoricalAxis = (name: string, dimensions: DimensionInfo[]) => 
   return dim.type.startsWith('str') || isGeoParameter(dim.type) || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
 };
 
+export const unpublishDatacube = async (datacubeId: string, projectId: string) => {
+  const rawMetadata = await getDatacubeById(datacubeId);
+  if (rawMetadata) {
+    await unpublishDatacubeInstance(rawMetadata, projectId);
+  }
+};
+
+export const unpublishDatacubeInstance = async (instance: Model, projectId: string) => {
+  // unpublish the datacube instance
+  instance.status = DatacubeStatus.Registered;
+  await updateDatacube(instance.id, instance);
+
+  // also, update the project stats count
+  const domainProject: DomainProject = await domainProjectService.getProject(projectId);
+  // add the instance to list of draft instances
+  const updatedDraftInstances = domainProject.draft_instances;
+  if (!updatedDraftInstances.includes(instance.name)) {
+    updatedDraftInstances.push(instance.name);
+  }
+  // remove the instance from the list of ready/published instances
+  const updatedReadyInstances = domainProject.ready_instances.filter(n => n !== instance.name);
+  // update the project doc at the server
+  await domainProjectService.updateDomainProject(
+    projectId,
+    {
+      draft_instances: updatedDraftInstances,
+      ready_instances: updatedReadyInstances
+    }
+  );
+};
+
 export default {
   CODE_TABLE,
   SUGGESTION_CODE_TABLE,
   DISPLAY_NAMES,
   FACET_FIELDS,
   NODE_FACET_FIELDS,
-  getValidatedOutputs
+  getValidatedOutputs,
+  unpublishDatacube,
+  unpublishDatacubeInstance
 };

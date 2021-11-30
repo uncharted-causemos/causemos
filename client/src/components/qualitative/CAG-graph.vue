@@ -671,7 +671,8 @@ export default {
     'delete', 'refresh',
     'new-edge', 'node-click', 'edge-click', 'background-click', 'background-dbl-click',
     'rename-node',
-    'merge-nodes'
+    'merge-nodes',
+    'suggestion-selected', 'suggestion-duplicated'
   ],
   data: () => ({
     selectedNode: '',
@@ -989,6 +990,11 @@ export default {
       this.renderer.highlight({ nodes, edges }, highlightOptions);
     },
     onSuggestionSelected(suggestion) {
+      if (this.data.nodes.filter(node => node.concept === suggestion.concept).length > 0) {
+        this.$emit('suggestion-duplicated', suggestion);
+        return;
+      }
+
       // HACK This is leveraing the svg-flowgraph internals.
       //
       // We inject the node-blueprint into the DOM with createNewNode, then when the

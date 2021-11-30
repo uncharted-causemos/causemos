@@ -124,9 +124,10 @@ const startModelOutputPostProcessing = async (metadata) => {
   const qualifierMap = {};
   if (modelMetadata.qualifier_outputs) {
     modelMetadata.outputs.forEach(output => {
-      qualifierMap[output.name] = modelMetadata.qualifier_outputs.filter(
-        q => !IMPLICIT_QUALIFIERS.includes(q.name)
-      ).map(q => q.name);
+      qualifierMap[output.name] = modelMetadata.qualifier_outputs
+        .filter(q => !IMPLICIT_QUALIFIERS.includes(q.name))
+        .filter(qualifier => qualifier.related_features.includes(output.name))
+        .map(q => q.name);
     });
   }
 
@@ -268,6 +269,9 @@ const startIndicatorPostProcessing = async (metadata) => {
     Logger.error(err);
     return { result: { error: err }, code: 400 };
   }
+
+  // Allow deprecation of indicators while registering a new one. Field removed via `removeUnwantedData`
+  const deprecatedIds = metadata.deprecatesIDs;
   processFilteredData(metadata);
   removeUnwantedData(metadata);
   metadata.type = 'indicator';
@@ -380,11 +384,13 @@ const startIndicatorPostProcessing = async (metadata) => {
   } catch (err) {
     return { result: { error: err }, code: 500 };
   }
+
+  let response = { result: { message: 'No documents added' }, code: 202 }; // Fallback value
   if (newIndicatorMetadata.length > 0) {
     try {
       const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
       const result = await connection.insert(newIndicatorMetadata, d => d.id);
-      return {
+      response = {
         result:
           {
             es_response: result,
@@ -398,7 +404,10 @@ const startIndicatorPostProcessing = async (metadata) => {
       return { result: { error: err }, code: 500 };
     }
   }
-  return { result: { message: 'No documents added' }, code: 202 };
+  if (deprecatedIds) {
+    await datacubeService.deprecateDatacubes(metadata.id, deprecatedIds);
+  }
+  return response;
 };
 
 /**

@@ -54,7 +54,7 @@
               :curated="isCuratedInsight(insight.id)"
               :key="insight.id"
               :insight="insight"
-              @remove-insight="removeInsight(insight.id)"
+              @remove-insight="removeInsight(insight)"
               @edit-insight="editInsight(insight)"
               @open-editor="openEditor(insight.id)"
               @select-insight="reviewInsight(insight)"
@@ -90,7 +90,7 @@
                 :insight="insight"
                 :show-description="true"
                 :show-question="false"
-                @remove-insight="removeInsight(insight.id)"
+                @remove-insight="removeInsight(insight)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
               />
@@ -124,6 +124,7 @@ import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytic
 import useInsightsData from '@/services/composables/useInsightsData';
 import MessageDisplay from '@/components/widgets/message-display';
 import InsightUtil from '@/utils/insight-util';
+import { unpublishDatacube } from '@/utils/datacube-util';
 
 const INSIGHT_TABS = [
   {
@@ -172,7 +173,8 @@ export default {
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countInsights: 'insightPanel/countInsights'
+      countInsights: 'insightPanel/countInsights',
+      projectId: 'app/project'
     }),
     searchedInsights() {
       if (this.search.length > 0) {
@@ -202,7 +204,8 @@ export default {
       setCountInsights: 'insightPanel/setCountInsights',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightList: 'insightPanel/setInsightList'
+      setInsightList: 'insightPanel/setInsightList',
+      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
     }),
     closeInsightPanel() {
       this.hideInsightPanel();
@@ -245,7 +248,20 @@ export default {
       // open the preview in the edit mode
       this.setCurrentPane('review-edit-insight');
     },
-    removeInsight(id) {
+    async removeInsight(insight) {
+      // are removing a public insight?
+      if (insight.visibility === 'public' && Array.isArray(insight.context_id) && insight.context_id.length > 0) {
+        // is this the last public insight for the relevant dataube?
+        //  if so, unpublish the model datacube
+        const datacubeId = insight.context_id[0];
+        const publicInsights = await InsightUtil.getPublicInsights(datacubeId, this.projectId);
+        if (publicInsights.length === 1) {
+          await unpublishDatacube(datacubeId, this.projectId);
+          this.setRefreshDatacubes(true);
+        }
+      }
+
+      const id = insight.id;
       // remove the insight from the server
       InsightUtil.removeInsight(id, this.store);
       this.removeCuration(id);

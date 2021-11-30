@@ -20,10 +20,10 @@
         </div>
       </div>
       <div style="display: flex; align-items: center">
-        <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+        <span v-if="metadata && metadata.status === DatacubeStatus.Deprecated" style="margin: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
         <button
           class="btn btn-primary btn-call-for-action"
-          :class="{ 'disabled': allStepsCompleted === false || metadata.status === DatacubeStatus.Deprecated}"
+          :class="{ 'disabled': allStepsCompleted === false || (metadata && metadata.status === DatacubeStatus.Deprecated)}"
           style="padding: 6px 10px; border-radius: 4px;"
           @click="publishModel()">
             Publish model
