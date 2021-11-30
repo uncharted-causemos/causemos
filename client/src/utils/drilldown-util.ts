@@ -5,7 +5,7 @@ import { DataState, ViewState } from '@/types/Insight';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { BASE_LAYER, DATA_LAYER, BASE_LAYER_TRANSPARENCY } from './map-util-new';
 import { Timeseries } from '@/types/Timeseries';
-import { ColorScaleType } from '@/utils/colors-util';
+import { COLOR, ColorScaleType } from '@/utils/colors-util';
 
 export const aggregationOptionFiltered = Object.values(AggregationOption).filter(ao => AggregationOption.None as string !== ao);
 export const temporalResolutionOptionFiltered = Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.None as string !== tro);
@@ -53,7 +53,7 @@ export function initViewStateFromRefs (
   selectedTemporalResolution: Ref<TemporalResolutionOption>,
   baseLayerTransparency: Ref<BASE_LAYER_TRANSPARENCY>,
   colorSchemeReversed: Ref<boolean>,
-  colorSchemeName: Ref<string>,
+  colorSchemeName: Ref<COLOR>,
   colorScaleType: Ref<ColorScaleType>,
   numberOfColorBins: Ref<number>
 ): ViewState {

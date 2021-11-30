@@ -56,7 +56,7 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import { WmMap, WmMapVector, WmMapImage, WmMapPopup } from '@/wm-map';
-import { COLOR_SCHEME, COLOR_SCHEMES } from '@/utils/colors-util';
+import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
   createHeatmapLayerStyle,
@@ -208,7 +208,7 @@ export default {
     },
     selectedColorScheme: {
       type: Array,
-      default: () => COLOR_SCHEMES.DEFAULT
+      default: () => COLOR_SCHEME.DEFAULT
     }
   },
   data: () => ({

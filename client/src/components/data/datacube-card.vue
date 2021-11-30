@@ -546,7 +546,7 @@ import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
 
-import { colorFromIndex, ColorScaleType, COLOR_SCHEMES, COLOR_SWATCH_SIZE } from '@/utils/colors-util';
+import { colorFromIndex, ColorScaleType, getColors, COLOR } from '@/utils/colors-util';
 import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
@@ -555,7 +555,6 @@ import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } f
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
-import * as d3 from 'd3';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -673,7 +672,7 @@ export default defineComponent({
     // color scheme options
     //
     const colorSchemeReversed = ref(false);
-    const selectedColorSchemeName = ref(Object.keys(COLOR_SCHEMES)[0]); // DEFAULT
+    const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
     const selectedColorScaleType = ref(ColorScaleType.Discrete);
     const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
 
@@ -823,7 +822,7 @@ export default defineComponent({
       colorSchemeReversed.value = reversed;
     };
 
-    const setColorSchemeName = (schemeName: string) => {
+    const setColorSchemeName = (schemeName: COLOR) => {
       selectedColorSchemeName.value = schemeName;
     };
 
@@ -838,36 +837,9 @@ export default defineComponent({
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
     // however, the map/legend may ignore the generated final color list and instead use the color-related viz options to generate a slightly different color array that can be used when rendering the map/legend
     const finalColorScheme = computed(() => {
-      // Note: should/can not reverse the original array. Instead, clone and reverse
-      const rawScheme = _.clone((COLOR_SCHEMES as any)[selectedColorSchemeName.value]);
-      const scheme: string[] = colorSchemeReversed.value ? rawScheme.reverse() : rawScheme;
-      const n = scheme.length * COLOR_SWATCH_SIZE;
-
-      const getColorScale = () => {
-        if (selectedColorScaleType.value === ColorScaleType.Log) {
-          return d3.scaleLog<string>()
-            .domain([1 / n, 1])
-            .range([scheme[0], scheme[scheme.length - 1]]);
-        }
-        // NOTE: The following 3 ways are the same when creating the color scale
-        // return d3.scaleSequential([scheme[0], scheme[scheme.length - 1]]);
-        // return d3.interpolateRgb(scheme[0], scheme[scheme.length - 1]);
-        return d3.scaleLinear<string>().range([scheme[0], scheme[scheme.length - 1]]);
-      };
-
-      const colorScale = getColorScale();
-
-      // limit the availabe scheme colors to the user selected number of bins, if needed
-      const numColors = selectedColorScaleType.value === ColorScaleType.Discrete ? numberOfColorBins.value : n;
-
-      // re-create the color scheme with the final list of colors
-      scheme.length = 0;
-      for (let i = 0; i < numColors; ++i) {
-        const color: string = colorScale ? colorScale(i / (numColors - 1)) : 'black';
-        scheme.push(d3.color(color)?.formatHex() ?? '');
-      }
-
-      return scheme;
+      const numColors = selectedColorScaleType.value === ColorScaleType.Discrete ? numberOfColorBins.value : 256;
+      const scheme = getColors(selectedColorSchemeName.value, numColors);
+      return colorSchemeReversed.value ? scheme.reverse() : scheme;
     });
 
     const updateTabView = (val: string) => {

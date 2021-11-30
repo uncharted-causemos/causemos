@@ -1,6 +1,6 @@
 import { Timeseries } from '@/types/Timeseries';
 import { BASE_LAYER, DATA_LAYER, BASE_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
-import { ColorScaleType } from '@/utils/colors-util';
+import { COLOR, ColorScaleType } from '@/utils/colors-util';
 
 // @base/abstract type
 export interface Snapshot {
@@ -66,7 +66,7 @@ export interface ViewState {
   breakdownOption?: string | null;
   baseLayerTransparency?: BASE_LAYER_TRANSPARENCY;
   colorSchemeReversed?: boolean;
-  colorSchemeName?: string;
+  colorSchemeName?: COLOR;
   colorScaleType?: ColorScaleType;
   numberOfColorBins?: number;
 

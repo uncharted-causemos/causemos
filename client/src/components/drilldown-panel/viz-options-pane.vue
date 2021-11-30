@@ -130,6 +130,8 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
+import * as d3 from 'd3';
 import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
@@ -137,8 +139,9 @@ import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
-import { COLOR_SCHEMES, ColorScaleType, COLOR_SWATCH_SIZE } from '@/utils/colors-util';
-import * as d3 from 'd3';
+import { COLOR_SCHEME, ColorScaleType, COLOR_SWATCH_SIZE, COLOR } from '@/utils/colors-util';
+
+const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.OTHER]);
 
 export default defineComponent({
   components: {
@@ -181,7 +184,7 @@ export default defineComponent({
     },
     selectedColorSchemeName: {
       type: String,
-      default: Object.keys(COLOR_SCHEMES)[0]
+      default: COLOR.DEFAULT
     },
     selectedColorScaleType: {
       type: String,
