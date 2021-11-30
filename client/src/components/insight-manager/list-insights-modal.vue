@@ -39,15 +39,13 @@
           v-if="activeTabId === VIEW_OPTIONS[0].value"
           class="cards"
         >
-          <div class="search">
-            <input
-              v-model="search"
-              v-focus
-              type="text"
-              class="form-control"
-              placeholder="Search insights"
-            >
-          </div>
+          <input
+            v-model="search"
+            v-focus
+            type="text"
+            class="search form-control"
+            placeholder="Search insights"
+          >
           <div
             v-if="searchedInsights.length > 0"
             class="pane-content"
@@ -373,11 +371,7 @@ export default {
   display: flex;
   flex-direction: column;
   .search {
-    display: flex;
-    padding: 0 0 1rem;
-    .form-control {
-      flex: 1 1 auto;
-    }
+    margin-bottom: 10px;
   }
   .pane-content {
     overflow: auto;
