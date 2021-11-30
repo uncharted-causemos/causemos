@@ -1496,12 +1496,6 @@ export default defineComponent({
       }
     });
 
-    watch(
-      () => mainModelOutput.value,
-      () => {
-        // searchFilters.value = {};
-      });
-
     watchEffect(() => {
       // If more than one run is selected, make sure "split by" is set to none.
       if (selectedScenarioIds.value.length > 1) {
