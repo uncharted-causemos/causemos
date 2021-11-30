@@ -1511,7 +1511,6 @@ export default defineComponent({
       }
       return toSubregionFiltered;
     });
-    */
 
     const {
       timeseriesData: subregionTimeseriesData,
@@ -1548,6 +1547,7 @@ export default defineComponent({
       subregionSelectedYears,
       subregionToggleIsYearSelected
     };
+    */
 
     const {
       onSyncMapBounds,
@@ -1708,7 +1708,7 @@ export default defineComponent({
       recalculateGridMapDiffStats,
       regionalData,
       // regionsToSubregions,
-      regionsToTimeseries,
+      // regionsToTimeseries,
       relativeTo,
       requestNewModelRuns,
       runningDefaultRun,
