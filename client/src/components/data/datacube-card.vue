@@ -316,7 +316,7 @@
                 v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 class="timeseries-chart"
                 :key="activeDrilldownTab"
-                :timeseries-data="timeseriesData.concat(referenceTimeSeries)"
+                :timeseries-data="allTimeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
@@ -1614,6 +1614,15 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
+
+    watch(breakdownOption,
+      (curr, prev) => {
+        if (curr !== prev) {
+          activeReferenceSeries.value = [];
+          referenceTimeSeries.value = [];
+        }
+      });
+
     const referenceSeries = computed(() => {
       let currentReferenceSeries = [] as any;
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
@@ -1646,10 +1655,12 @@ export default defineComponent({
         activeReferenceSeries.value.push(value);
       }
     };
+    const allTimeseriesData = computed(() => timeseriesData.value.concat(referenceTimeSeries.value));
 
     return {
       addNewTag,
       allModelRunData,
+      allTimeseriesData,
       activeDrilldownTab,
       activeVizOptionsTab,
       adminLayerStats,
