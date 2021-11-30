@@ -86,11 +86,11 @@ export default function useTimeseriesData(
   initialSelectedYears: Ref<string[]>,
   showPercentChange: Ref<boolean>,
   modelRuns?: Ref<ModelRun[]>,
-  referenceSeries?: Ref<string[]>
+  referenceOptions?: Ref<string[]>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
-  const referenceTimeSeries = ref<Timeseries[]>([]);
+  const referenceTimeseries = ref<Timeseries[]>([]);
 
   watchEffect(onInvalidate => {
     const datacubeMetadata = metadata.value;
@@ -455,7 +455,9 @@ export default function useTimeseriesData(
 
     aggregratedRefSeries.points.forEach((p) => {
       const month = monthCounts.find((mc) => mc.timestamp === p.timestamp);
-      month && (p.value = p.value / month.value);
+      if (month) {
+        p.value = p.value / month.value;
+      }
     });
     aggregratedRefSeries.points.sort((a, b) => {
       return a.timestamp - b.timestamp;
@@ -464,9 +466,12 @@ export default function useTimeseriesData(
   };
 
   watchEffect(() => {
-    if (!referenceSeries) return;
+    if (referenceOptions === undefined || referenceOptions === null || referenceOptions.value.length === 0) {
+      referenceTimeseries.value = [];
+      return;
+    }
     if (breakdownOption.value === TemporalAggregationLevel.Year) {
-      if (referenceSeries.value.includes(ReferenceSeriesOption.AllYears)) {
+      if (referenceOptions.value.includes(ReferenceSeriesOption.AllYears)) {
         const brokenDownByYear = breakdownByYear(rawTimeseriesData.value);
         const allYearsFormattedTimeseries = Object.keys(brokenDownByYear).map((year) => {
           const points = brokenDownByYear[year];
@@ -479,41 +484,44 @@ export default function useTimeseriesData(
         });
 
         const aggregratedRefSeries = aggregateRefTemporalTimeseries(allYearsFormattedTimeseries);
-        const existingReferenceTimeSeries = referenceTimeSeries.value.find((rts) => rts.id === ReferenceSeriesOption.AllYears);
+        const existingReferenceTimeseries = referenceTimeseries.value.find((rts) => rts.id === ReferenceSeriesOption.AllYears);
 
-        if (existingReferenceTimeSeries) {
-          existingReferenceTimeSeries.points = aggregratedRefSeries.points;
+        if (existingReferenceTimeseries) {
+          existingReferenceTimeseries.points = aggregratedRefSeries.points;
         } else {
           aggregratedRefSeries.id = ReferenceSeriesOption.AllYears;
           aggregratedRefSeries.isDefaultRun = false;
           aggregratedRefSeries.name = 'All Years';
           aggregratedRefSeries.color = '#555';
-          referenceTimeSeries.value.push(aggregratedRefSeries);
+          referenceTimeseries.value.push(aggregratedRefSeries);
         }
       }
 
       if (
-        referenceSeries.value.includes(ReferenceSeriesOption.SelectYears) &&
+        referenceOptions.value.includes(ReferenceSeriesOption.SelectYears) &&
         timeseriesData.value.length > 0
       ) {
         const aggregratedRefSeries = aggregateRefTemporalTimeseries(timeseriesData.value);
-        const existingReferenceTimeSeries = referenceTimeSeries.value.find((rts) => rts.id === ReferenceSeriesOption.SelectYears);
+        const existingreferenceTimeseries = referenceTimeseries.value.find((rts) => rts.id === ReferenceSeriesOption.SelectYears);
 
-        if (existingReferenceTimeSeries) {
-          existingReferenceTimeSeries.points = aggregratedRefSeries.points;
+        if (existingreferenceTimeseries) {
+          existingreferenceTimeseries.points = aggregratedRefSeries.points;
         } else {
           aggregratedRefSeries.id = ReferenceSeriesOption.SelectYears;
           aggregratedRefSeries.isDefaultRun = false;
           aggregratedRefSeries.name = 'Select Years';
           aggregratedRefSeries.color = '#888';
-          referenceTimeSeries.value.push(aggregratedRefSeries);
+          referenceTimeseries.value.push(aggregratedRefSeries);
         }
       }
-      referenceTimeSeries.value = referenceTimeSeries.value.filter((rts) => referenceSeries.value.includes(rts.id));
+      referenceTimeseries.value = referenceTimeseries.value.filter((rts) => referenceOptions.value.includes(rts.id));
     }
   });
 
   return {
+    allTimeseriesData: computed(() => {
+      return timeseriesData.value.concat(referenceTimeseries.value);
+    }),
     timeseriesData,
     visibleTimeseriesData: computed(() =>
       timeseriesData.value.filter(
@@ -527,7 +535,6 @@ export default function useTimeseriesData(
     setRelativeTo,
     temporalBreakdownData,
     selectedYears,
-    toggleIsYearSelected,
-    referenceTimeSeries
+    toggleIsYearSelected
   };
 }

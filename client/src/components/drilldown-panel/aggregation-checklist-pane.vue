@@ -22,10 +22,10 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
-    <reference-series-list
+    <reference-options-list
       v-if="showReferences"
-      :reference-series="referenceSeries"
-      @toggle-reference-series="updateSelectedReferences"
+      :reference-options="referenceOptions"
+      @toggle-reference-options="updateSelectedReferences"
     />
     <div class="sort-selection">
       <span>Sort by</span>
@@ -100,7 +100,7 @@ import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
-import ReferenceSeriesList from '@/components/drilldown-panel/reference-series-list.vue';
+import ReferenceOptionsList from '@/components/drilldown-panel/reference-options-list.vue';
 import { BreakdownData } from '@/types/Datacubes';
 import { ModelRunReference } from '@/types/ModelRunReference';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
@@ -298,7 +298,7 @@ export default defineComponent({
     AggregationChecklistItem,
     CollapsibleItem,
     RadioButtonGroup,
-    ReferenceSeriesList
+    ReferenceOptionsList
   },
   props: {
     aggregationLevelCount: {
@@ -348,12 +348,12 @@ export default defineComponent({
       type: String as PropType<'checkbox' | 'radio' | null>,
       default: null
     },
-    referenceSeries: {
+    referenceOptions: {
       type: Array as PropType<ModelRunReference[]>,
       default: []
     }
   },
-  emits: ['aggregation-level-change', 'toggle-is-item-selected', 'toggle-reference-series'],
+  emits: ['aggregation-level-change', 'toggle-is-item-selected', 'toggle-reference-options'],
   setup(props, { emit }) {
     const {
       rawData,
@@ -605,7 +605,7 @@ export default defineComponent({
       }
     },
     updateSelectedReferences(value: string) {
-      this.$emit('toggle-reference-series', value);
+      this.$emit('toggle-reference-options', value);
     }
   }
 });

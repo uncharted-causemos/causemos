@@ -427,12 +427,12 @@
                   :selected-breakdown-option="breakdownOption"
                   :selected-timeseries-points="selectedTimeseriesPoints"
                   :selected-years="selectedYears"
-                  :reference-series="referenceSeries"
+                  :reference-options="referenceOptions"
                   :unit="unit"
                   @toggle-is-region-selected="toggleIsRegionSelected"
                   @toggle-is-qualifier-selected="toggleIsQualifierSelected"
                   @toggle-is-year-selected="toggleIsYearSelected"
-                  @toggle-reference-series="toggleReferenceSeries"
+                  @toggle-reference-options="toggleReferenceOptions"
                   @set-selected-admin-level="setSelectedAdminLevel"
                   @set-breakdown-option="setBreakdownOption"
                 />
@@ -657,7 +657,7 @@ export default defineComponent({
     const toaster = useToaster();
 
     const activeDrilldownTab = ref<string|null>('breakdown');
-    const activeReferenceSeries = ref([] as string[]);
+    const activeReferenceOptions = ref([] as string[]);
     const activeVizOptionsTab = ref<string|null>(null);
     const currentTabView = ref<string>('description');
     const potentialScenarioCount = ref<number|null>(0);
@@ -831,6 +831,7 @@ export default defineComponent({
 
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
+      activeReferenceOptions.value = [];
     };
 
     const setColorSchemeReversed = (reversed: boolean) => {
@@ -1427,6 +1428,7 @@ export default defineComponent({
     );
 
     const {
+      allTimeseriesData,
       timeseriesData,
       visibleTimeseriesData,
       relativeTo,
@@ -1434,8 +1436,7 @@ export default defineComponent({
       setRelativeTo,
       temporalBreakdownData,
       selectedYears,
-      toggleIsYearSelected,
-      referenceTimeSeries
+      toggleIsYearSelected
     } = useTimeseriesData(
       metadata,
       selectedScenarioIds,
@@ -1450,7 +1451,7 @@ export default defineComponent({
       initialSelectedYears,
       showPercentChange,
       selectedScenarios,
-      activeReferenceSeries
+      activeReferenceOptions
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -1613,16 +1614,7 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-
-    watch(breakdownOption,
-      (curr, prev) => {
-        if (curr !== prev) {
-          activeReferenceSeries.value = [];
-          referenceTimeSeries.value = [];
-        }
-      });
-
-    const referenceSeries = computed(() => {
+    const referenceOptions = computed(() => {
       let currentReferenceSeries = [] as any;
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
         currentReferenceSeries = [
@@ -1642,19 +1634,18 @@ export default defineComponent({
         return {
           id: c.id,
           displayName: c.displayName,
-          checked: activeReferenceSeries.value.includes(c.id)
+          checked: activeReferenceOptions.value.includes(c.id)
         } as ModelRunReference;
       });
     });
 
-    const toggleReferenceSeries = (value: string) => {
-      if (activeReferenceSeries.value.includes(value)) {
-        activeReferenceSeries.value = activeReferenceSeries.value.filter((r) => r !== value);
+    const toggleReferenceOptions = (value: string) => {
+      if (activeReferenceOptions.value.includes(value)) {
+        activeReferenceOptions.value = activeReferenceOptions.value.filter((r) => r !== value);
       } else {
-        activeReferenceSeries.value.push(value);
+        activeReferenceOptions.value.push(value);
       }
     };
-    const allTimeseriesData = computed(() => timeseriesData.value.concat(referenceTimeSeries.value));
 
     return {
       addNewTag,
@@ -1726,8 +1717,7 @@ export default defineComponent({
       selectedColorScaleType,
       setNumberOfColorBins,
       numberOfColorBins,
-      referenceSeries,
-      referenceTimeSeries,
+      referenceOptions,
       selectedDataLayer,
       selectedPreGenDataItem,
       selectedQualifierValues,
@@ -1767,7 +1757,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsYearSelected,
       toggleNewRunsMode,
-      toggleReferenceSeries,
+      toggleReferenceOptions,
       unit,
       updatePotentialScenarioDates,
       updateStateFromInsight,

@@ -1,8 +1,8 @@
 <template>
-  <div class="reference-series-list">
+  <div class="reference-options-list">
     <h5 class="header">Add Reference</h5>
     <div
-      v-for="r in referenceSeries"
+      v-for="r in referenceOptions"
       v-bind:key="r.id"
     >
       <input
@@ -21,16 +21,16 @@ import { defineComponent, PropType } from 'vue';
 import { ModelRunReference } from '@/types/ModelRunReference';
 
 export default defineComponent({
-  name: 'reference-series-list',
+  name: 'reference-options-list',
   props: {
-    referenceSeries: {
+    referenceOptions: {
       type: Array as PropType<ModelRunReference[]>,
       required: true
     }
   },
   setup(props, { emit }) {
     const handleToggle = (value: string) => {
-      emit('toggle-reference-series', value);
+      emit('toggle-reference-options', value);
     };
     return {
       handleToggle
@@ -42,7 +42,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 
-.reference-series-list {
+.reference-options-list {
   background: #F0F0F0;
   padding: 1px 10px;
   h5 {

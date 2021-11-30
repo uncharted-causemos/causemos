@@ -28,8 +28,8 @@
       :selected-item-ids="selectedRegionIds"
       :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
       :show-references="selectedBreakdownOption === SpatialAggregationLevel.Region"
-      :reference-series="referenceSeries"
-      @toggle-reference-series="toggleReferenceSeries"
+      :reference-options="referenceOptions"
+      @toggle-reference-options="toggleReferenceOptions"
       :checkbox-type="
         selectedBreakdownOption === SpatialAggregationLevel.Region
           ? 'checkbox'
@@ -112,7 +112,7 @@
       :units="unit"
       :should-show-deselected-bars="selectedBreakdownOption !== TemporalAggregationLevel.Year"
       :show-references="selectedBreakdownOption === TemporalAggregationLevel.Year"
-      :reference-series="referenceSeries"
+      :reference-options="referenceOptions"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :checkbox-type="
         selectedBreakdownOption === TemporalAggregationLevel.Year
@@ -121,7 +121,7 @@
       "
       :selected-item-ids="Array.from(selectedYears)"
       @toggle-is-item-selected="toggleIsYearSelected"
-      @toggle-reference-series="toggleReferenceSeries"
+      @toggle-reference-options="toggleReferenceOptions"
     >
       <template #aggregation-description>
         <p class="aggregation-description">
@@ -218,7 +218,7 @@ export default defineComponent({
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
     },
-    referenceSeries: {
+    referenceOptions: {
       type: Array as PropType<ModelRunReference[]>,
       default: []
     }
@@ -228,7 +228,7 @@ export default defineComponent({
     'toggle-is-region-selected',
     'toggle-is-qualifier-selected',
     'toggle-is-year-selected',
-    'toggle-reference-series',
+    'toggle-reference-options',
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
@@ -258,8 +258,8 @@ export default defineComponent({
       emit('toggle-is-year-selected', year);
     };
 
-    const toggleReferenceSeries = (value: string) => {
-      emit('toggle-reference-series', value);
+    const toggleReferenceOptions = (value: string) => {
+      emit('toggle-reference-options', value);
     };
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
@@ -325,7 +325,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsQualifierSelected,
       toggleIsYearSelected,
-      toggleReferenceSeries,
+      toggleReferenceOptions,
       availableAdminLevelTitles,
       timestampFormatter,
       ADMIN_LEVEL_KEYS,
