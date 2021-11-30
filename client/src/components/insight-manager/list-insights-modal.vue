@@ -85,8 +85,13 @@
             <div
               v-for="questionItem in questions"
               :key="questionItem.id"
-              style="margin-bottom: 5rem;">
-              <h3 class="analysis-question">{{questionItem.question}}</h3>
+              class="list-question-group">
+              <h3 class="analysis-question">{{ questionItem.question }}</h3>
+              <message-display
+                class="pane-content"
+                v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
+                :message="'No insights assigned to this question.'"
+              />
               <insight-card
                 v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
                 :key="insight.id"
@@ -102,7 +107,7 @@
           <message-display
             class="pane-content"
             v-else
-            :message="messageNoData"
+            :message="'Add a new question to see a list of insights, organized by question.'"
           />
         </div>
       </div>
@@ -401,13 +406,15 @@ export default {
   gap: 10px;
   margin: 10px;
   margin-left: 0;
+}
 
-  .analysis-question {
-    padding: 5px 5px 10px;
-    border: 1px solid #e5e5e5;
-    margin: 0px 1rem 1rem 0px;
-    background-color: white;
-  }
+.analysis-question {
+  margin: 0;
+  margin-bottom: 10px;
+}
+
+.list-question-group {
+  margin-bottom: 20px;
 }
 
 </style>
