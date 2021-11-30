@@ -371,6 +371,7 @@
                       :show-tooltip="true"
                       :selected-layer-id="mapSelectedLayer"
                       :map-bounds="mapBounds"
+                      :camera-options="mapCameraOptions"
                       :region-data="regionalData"
                       :selected-region-ids="selectedRegionIds"
                       :admin-layer-stats="adminLayerStats"
@@ -518,6 +519,7 @@ import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import TemporalFacet from '@/components/facets/temporal-facet.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
+import useMapBounds from '@/services/composables/useMapBounds';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
@@ -1467,8 +1469,6 @@ export default defineComponent({
     );
 
     const {
-      onSyncMapBounds,
-      mapBounds,
       updateMapCurSyncedZoom,
       recalculateGridMapDiffStats,
       adminLayerStats,
@@ -1476,6 +1476,25 @@ export default defineComponent({
       mapLegendData,
       mapSelectedLayer
     } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange, finalColorScheme);
+
+    const {
+      onSyncMapBounds,
+      mapBounds
+    } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIds);
+
+    const mapCameraOptions = computed(() => {
+      const cameraOptions = {
+        padding: 20, // pixels
+        duration: 1000, // milliseconds
+        essential: true // this animation is considered essential with respect to prefers-reduced-motion
+      };
+      if (outputSpecs.value.length > 1) {
+        // if more than one map is shown, e.g., when relativeTo is active
+        //  disable animation since the multiple maps are supposed to sync together on move
+        cameraOptions.duration = 0;
+      }
+      return cameraOptions;
+    });
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
@@ -1560,6 +1579,7 @@ export default defineComponent({
       isRelativeDropdownOpen,
       mainModelOutput,
       mapBounds,
+      mapCameraOptions,
       mapLegendData,
       mapReady,
       mapSelectedLayer,
