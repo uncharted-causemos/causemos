@@ -2,7 +2,7 @@ const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
 const { client, searchAndHighlight, queryStringBuilder } = rootRequire('/adapters/es/client');
 const { RESOURCE } = rootRequire('/adapters/es/adapter');
-const { get: getCache } = rootRequire('/cache/node-lru-cache');
+const { getCache } = rootRequire('/cache/node-lru-cache');
 
 // Remove unneeded fields from compositional ontology
 const formatOntologyDoc = (d) => {
