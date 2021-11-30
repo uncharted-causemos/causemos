@@ -130,11 +130,16 @@
                 <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview">
                 <div v-if="showCropInfoMessage" style="align-self: center">Annotations are still there, but not shown when the image is being cropped!</div>
               </div>
-              <disclaimer
-                v-else
-                style="text-align: center; color: black"
-                :message="updatedInsight === null ? 'No more insights available to preview!' : 'No image preview!'"
-              />
+              <div v-else style="width: 100%;">
+                <div v-if="loadingImage" style="text-align: center; font-size: x-large">
+                  <i class="fa fa-spin fa-spinner" /> Loading image ...
+                </div>
+                <disclaimer
+                  v-else
+                  style="text-align: center; color: black"
+                  :message="updatedInsight === null ? 'No more insights available to preview!' : 'No image preview!'"
+                />
+              </div>
               <drilldown-panel
                 v-if="showMetadataPanel"
                 is-open
@@ -248,7 +253,8 @@ export default defineComponent({
     originalImagePreview: '',
     lastCroppedImage: '',
     lastAnnotatedImage: '',
-    showCropInfoMessage: false
+    showCropInfoMessage: false,
+    loadingImage: false
   }),
   watch: {
     insightTitle: {
@@ -358,9 +364,11 @@ export default defineComponent({
       return InsightUtil.parseMetadataDetails(dState, this.projectMetadata, this.formattedFilterString, this.currentView);
     },
     previewInsightTitle(): string {
+      if (this.loadingImage) return '';
       return this.updatedInsight && this.updatedInsight.name.length > 0 ? this.updatedInsight.name : LBL_EMPTY_INSIGHT_NAME;
     },
     previewInsightDesc(): string {
+      if (this.loadingImage) return '';
       return this.updatedInsight && this.updatedInsight.description.length > 0 ? this.updatedInsight.description : '<Insight description missing...>';
     },
     insightVisibility(): string {
@@ -381,7 +389,10 @@ export default defineComponent({
   },
   async mounted() {
     if (this.newMode) {
+      this.loadingImage = true;
       this.imagePreview = await this.takeSnapshot();
+      this.loadingImage = false;
+      this.showMetadataPanel = true;
       this.editInsight();
     } else {
       if (this.updatedInsight) {
@@ -876,6 +887,7 @@ export default defineComponent({
               align-self: flex-start;
               height: 100%;
               width: 100%;
+              padding-right: 1rem;
               img {
                 max-height: 100%;
                 max-width: 100%;
