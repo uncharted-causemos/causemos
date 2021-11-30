@@ -984,6 +984,14 @@ export default defineComponent({
           result[dim.name].values = _.uniq(Array.from(dim.choices));
         }
       });
+      // since the data used to initialize the lex bar has changed,
+      //  we may need to reset filters
+      if (!_.isEmpty(modelRunsSearchData.value) && Object.keys(modelRunsSearchData.value).length > 1 && dimensions.value.length > 0) {
+        const outputDim = dimensions.value[dimensions.value.length - 1];
+        if (modelRunsSearchData.value[outputDim.name] === undefined) {
+          searchFilters.value = {};
+        }
+      }
       modelRunsSearchData.value = result;
     });
 
