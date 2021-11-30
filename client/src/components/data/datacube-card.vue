@@ -543,19 +543,27 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption,
   GeoAttributeFormat,
-  DatacubeGenericAttributeVariableType,
-  ReferenceSeriesOption
+  ReferenceSeriesOption,
+  DatacubeGenericAttributeVariableType
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import {
+  // RegionalAggregations,
+  OutputSpecWithId
+} from '@/types/Runoutput';
 
 import { colorFromIndex, ColorScaleType, COLOR_SCHEMES, COLOR_SWATCH_SIZE } from '@/utils/colors-util';
 import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
-import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER, adminLevelToString } from '@/utils/map-util-new';
+import {
+  // adminLevelToString,
+  BASE_LAYER,
+  BASE_LAYER_TRANSPARENCY,
+  DATA_LAYER
+} from '@/utils/map-util-new';
 
 import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
@@ -1475,7 +1483,8 @@ export default defineComponent({
       relativeTo
     );
 
-    const regionsToSubregions = computed(() => {
+    /*
+      const regionsToSubregions = computed(() => {
       const regionsToSubregionInternal: any = {};
       referenceRegions.value.forEach(regionId => { regionsToSubregionInternal[regionId] = []; });
       if (regionalData.value) {
@@ -1502,6 +1511,7 @@ export default defineComponent({
       }
       return toSubregionFiltered;
     });
+    */
 
     const {
       timeseriesData: subregionTimeseriesData,
@@ -1521,7 +1531,8 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      ref<string[]>(Object.values(regionsToSubregions.value).flat()),
+      // ref<string[]>(Object.values(regionsToSubregions.value).flat()),
+      ref<string[]>([]),
       selectedQualifierValues,
       initialSelectedYears,
       showPercentChange,
@@ -1685,7 +1696,7 @@ export default defineComponent({
       qualifierBreakdownData,
       recalculateGridMapDiffStats,
       regionalData,
-      regionsToSubregions,
+      // regionsToSubregions,
       regionsToTimeseries,
       relativeTo,
       requestNewModelRuns,

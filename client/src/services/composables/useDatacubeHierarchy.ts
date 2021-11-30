@@ -176,9 +176,8 @@ export default function useDatacubeHierarchy(
   });
 
   const referenceRegions = computed(() => {
-    const delimiter = '__';
     return new Set(selectedRegionIds.value
-      .map(regionId => regionId.split(delimiter).slice(0, -1).join(delimiter))
+      .map(regionId => regionId.split(REGION_ID_DELIMETER).slice(0, -1).join(REGION_ID_DELIMETER))
       .filter(regionId => regionId !== '')
     );
   });
