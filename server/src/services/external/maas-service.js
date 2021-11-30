@@ -124,9 +124,10 @@ const startModelOutputPostProcessing = async (metadata) => {
   const qualifierMap = {};
   if (modelMetadata.qualifier_outputs) {
     modelMetadata.outputs.forEach(output => {
-      qualifierMap[output.name] = modelMetadata.qualifier_outputs.filter(
-        q => !IMPLICIT_QUALIFIERS.includes(q.name)
-      ).map(q => q.name);
+      qualifierMap[output.name] = modelMetadata.qualifier_outputs
+        .filter(q => !IMPLICIT_QUALIFIERS.includes(q.name))
+        .filter(qualifier => qualifier.related_features.includes(output.name))
+        .map(q => q.name);
     });
   }
 

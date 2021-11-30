@@ -137,7 +137,7 @@ export default defineComponent({
       this.$emit('close');
     },
     dojoExecutionLink(runId: string) {
-      return `https://dojo-test.com/runs/${runId}/logs`;
+      return `https://phantom.dojo-test.com/runlogs/${runId}`;
     },
     timeSinceExecutionFormatted(run: ModelRun) {
       return `${DurationFormatter(this.timeSinceExecution(run))} ago`;
