@@ -27,6 +27,9 @@
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
       :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
+      :show-references="selectedBreakdownOption === SpatialAggregationLevel.Region"
+      :reference-options="referenceOptions"
+      @toggle-reference-options="toggleReferenceOptions"
       :checkbox-type="
         selectedBreakdownOption === SpatialAggregationLevel.Region
           ? 'checkbox'
@@ -66,6 +69,7 @@
       :raw-data="qualifierVariable.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :should-show-deselected-bars="selectedBreakdownOption === SpatialAggregationLevel.Region || selectedBreakdownOption === TemporalAggregationLevel.Year || selectedBreakdownOption === null"
+      :show-references="false"
       :units="unit"
       :checkbox-type="
         selectedBreakdownOption === qualifierVariable.id ? 'checkbox' : null
@@ -107,6 +111,8 @@
       :raw-data="temporalBreakdownData"
       :units="unit"
       :should-show-deselected-bars="selectedBreakdownOption !== TemporalAggregationLevel.Year"
+      :show-references="selectedBreakdownOption === TemporalAggregationLevel.Year"
+      :reference-options="referenceOptions"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :checkbox-type="
         selectedBreakdownOption === TemporalAggregationLevel.Year
@@ -115,6 +121,7 @@
       "
       :selected-item-ids="Array.from(selectedYears)"
       @toggle-is-item-selected="toggleIsYearSelected"
+      @toggle-reference-options="toggleReferenceOptions"
     >
       <template #aggregation-description>
         <p class="aggregation-description">
@@ -130,10 +137,11 @@
 <script lang="ts">
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
+import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { ModelRunReference } from '@/types/ModelRunReference';
 import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
-import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import {
   AggregationOption,
   TemporalAggregationLevel,
@@ -209,6 +217,10 @@ export default defineComponent({
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
+    },
+    referenceOptions: {
+      type: Array as PropType<ModelRunReference[]>,
+      default: []
     }
   },
   emits: [
@@ -216,6 +228,7 @@ export default defineComponent({
     'toggle-is-region-selected',
     'toggle-is-qualifier-selected',
     'toggle-is-year-selected',
+    'toggle-reference-options',
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
@@ -243,6 +256,10 @@ export default defineComponent({
 
     const toggleIsYearSelected = (title: string, year: string) => {
       emit('toggle-is-year-selected', year);
+    };
+
+    const toggleReferenceOptions = (value: string) => {
+      emit('toggle-reference-options', value);
     };
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
@@ -308,6 +325,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsQualifierSelected,
       toggleIsYearSelected,
+      toggleReferenceOptions,
       availableAdminLevelTitles,
       timestampFormatter,
       ADMIN_LEVEL_KEYS,

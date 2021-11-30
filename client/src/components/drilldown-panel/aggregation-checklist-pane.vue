@@ -22,6 +22,11 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
+    <reference-options-list
+      v-if="showReferences"
+      :reference-options="referenceOptions"
+      @toggle-reference-options="updateSelectedReferences"
+    />
     <div class="sort-selection">
       <span>Sort by</span>
       <radio-button-group
@@ -95,7 +100,9 @@ import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
+import ReferenceOptionsList from '@/components/drilldown-panel/reference-options-list.vue';
 import { BreakdownData } from '@/types/Datacubes';
+import { ModelRunReference } from '@/types/ModelRunReference';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
   defineComponent,
@@ -290,7 +297,8 @@ export default defineComponent({
   components: {
     AggregationChecklistItem,
     CollapsibleItem,
-    RadioButtonGroup
+    RadioButtonGroup,
+    ReferenceOptionsList
   },
   props: {
     aggregationLevelCount: {
@@ -332,12 +340,20 @@ export default defineComponent({
       type: Boolean,
       required: true
     },
+    showReferences: {
+      type: Boolean,
+      required: true
+    },
     checkboxType: {
       type: String as PropType<'checkbox' | 'radio' | null>,
       default: null
+    },
+    referenceOptions: {
+      type: Array as PropType<ModelRunReference[]>,
+      default: []
     }
   },
-  emits: ['aggregation-level-change', 'toggle-is-item-selected'],
+  emits: ['aggregation-level-change', 'toggle-is-item-selected', 'toggle-reference-options'],
   setup(props, { emit }) {
     const {
       rawData,
@@ -587,6 +603,9 @@ export default defineComponent({
       if (isStatefulDataNode(currentNode)) {
         currentNode.isExpanded = !currentNode.isExpanded;
       }
+    },
+    updateSelectedReferences(value: string) {
+      this.$emit('toggle-reference-options', value);
     }
   }
 });

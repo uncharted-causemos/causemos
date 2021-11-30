@@ -179,9 +179,17 @@ export default function useDatacubeHierarchy(
     return selectedRegionsAtSelectedLevel.slice(0, 10); // FIXME: Quick guard to make sure we don't blow up
   });
 
+  const referenceRegions = computed(() => {
+    return new Set(selectedRegionIds.value
+      .map(regionId => regionId.split(REGION_ID_DELIMETER).slice(0, -1).join(REGION_ID_DELIMETER))
+      .filter(regionId => regionId !== '')
+    );
+  });
+
   return {
     datacubeHierarchy,
     selectedRegionIds,
+    referenceRegions,
     toggleIsRegionSelected
   };
 }
