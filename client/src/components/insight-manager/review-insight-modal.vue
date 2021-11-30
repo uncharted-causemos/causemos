@@ -872,7 +872,7 @@ export default defineComponent({
           }
           .desc {
             font-size: large;
-            color: darkgray;
+            color: rgb(61, 61, 61);
             align-self: flex-start;
             font-style: italic;
           }
