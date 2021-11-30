@@ -39,6 +39,7 @@
           @delete="onDelete"
           @edge-set-user-polarity="setEdgeUserPolarity"
           @suggestion-selected="onSuggestionSelected"
+          @suggestion-duplicated="onSuggestionDuplicated"
           @rename-node="openRenameModal"
           @merge-nodes="mergeNodes"
         />
@@ -608,6 +609,9 @@ export default defineComponent({
     onSuggestionSelected(suggestion: Suggestion) {
       this.addNodeToGraph(suggestion);
       this.setNewNodeVisible(false);
+    },
+    onSuggestionDuplicated(suggestion: Suggestion) {
+      this.showConceptExistsToaster(suggestion.label);
     },
     addNodeToGraph(suggestion: Suggestion) {
       if (this.isConceptInCag(suggestion.concept)) {
