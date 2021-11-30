@@ -94,11 +94,11 @@
     <div class="pane-wrapper">
       <div class="pane-row">
         <button
-          :disabled="nextInsight === null"
+          :disabled="prevInsight === null"
           type="button"
           class="btn btn-primary nav-button col-md-2"
           v-tooltip="'Previous insight'"
-          @click="goToNextInsight"
+          @click="goToPreviousInsight"
           >
           <i class="fa fa-chevron-left" />
         </button>
@@ -141,6 +141,7 @@
                 :tabs="drilldownTabs"
                 :activeTabId="drilldownTabs[0].id"
                 only-display-icons
+                @close="showMetadataPanel=false"
               >
                 <template #content>
                   <div>
@@ -159,11 +160,11 @@
         </div>
 
         <button
-          :disabled="prevInsight === null"
+          :disabled="nextInsight === null"
           type="button"
           class="btn btn-primary nav-button col-md-2"
           v-tooltip="'Next insight'"
-          @click="goToPreviousInsight"
+          @click="goToNextInsight"
           >
           <i class="fa fa-chevron-right" />
         </button>
@@ -233,7 +234,7 @@ export default defineComponent({
   data: () => ({
     errorMsg: MSG_EMPTY_INSIGHT_NAME,
     drilldownTabs: METDATA_DRILLDOWN_TABS,
-    showMetadataPanel: true,
+    showMetadataPanel: false,
     isEditingInsight: false,
     insightTitle: '',
     insightDesc: '',

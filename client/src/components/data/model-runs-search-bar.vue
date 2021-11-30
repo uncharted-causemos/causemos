@@ -47,93 +47,100 @@ export default {
       if (filtersUtil.isEqual(n, o)) return;
       this.$emit('filters-updated', this.filters);
       this.setQuery();
+    },
+    data: function dataChanged() {
+      this.clearSearch();
+      this.initLexBar();
     }
   },
   mounted() {
-    // Generates lex pills from select datacube columns
-    const keys = Object.keys(this.data);
-    const basicPills = keys.map(k => {
-      const keyData = this.data[k];
-      const dcField = {
-        field: k,
-        searchDisplay: keyData.display_name,
-        searchable: true
-      };
-      if (k === TAGS) {
-        return new DynamicValuePill(
-          dcField,
-          async () => {
-            return this.data && this.data[TAGS] ? this.data[TAGS].values : [];
-          },
-          'Select one or more tags to filter model runs',
-          true,
-          SingleRelationState);
-      }
-      if (keyData.values && keyData.values.length > 0) {
-        // suggestions are provided for this field
-        const dcOptions = keyData.values;
-        return new ValuePill(dcField, dcOptions);
-      } else {
-        return (keyData.type === DatacubeGenericAttributeVariableType.Int || keyData.type === DatacubeGenericAttributeVariableType.Float)
-          ? new RangePill(dcField) : new TextPill(dcField);
-      }
-    });
-
-    // Defines a list of searchable fields for LEX
-    this.pills = [
-      ...basicPills // searchable fields such as country, each would provide list of suggested values
-    ];
-
-    const filtersClauses = this.filters ? this.filters.clauses : undefined;
-    const filteredPills = _.reject(this.pills, (pill) => _.find(filtersClauses, { field: pill.searchKey }));
-    const suggestions = filteredPills.map(pill =>
-      pill.makeOption()
-    );
-
-    const language = Lex.from('field', ValueState, {
-      name: 'Choose a field to search',
-      suggestions,
-      suggestionLimit: suggestions.length,
-      autoAdvanceDefault: true,
-      defaultValue: filteredPills[0].makeOption(),
-      icon: v => {
-        if (_.isNil(v)) return '<i class="fa fa-search"></i>';
-        const pill = this.pills.find(
-          pill => pill.searchKey === v.meta.searchKey
-        );
-        return pill.makeIcon();
-      }
-    }).branch(...this.pills.map(pill => pill.makeBranch()));
-
-    this.lexRef = new Lex({
-      language: language,
-      placeholder: 'Filter runs',
-      tokenXIcon: '<i class="fa fa-remove"></i>'
-    });
-
-    this.lexRef.on('query changed', (...args) => {
-      const model = args[0];
-      const newFilters = filtersUtil.newFilters();
-
-      model.forEach(item => {
-        const pill = this.pills.find(
-          pill => pill.searchKey === item.field.meta.searchKey
-        );
-        if (!_.isNil(pill)) {
-          pill.lex2Filters(item, newFilters);
+    this.initLexBar();
+  },
+  methods: {
+    initLexBar() {
+      // Generates lex pills from select datacube columns
+      const keys = Object.keys(this.data);
+      const basicPills = keys.map(k => {
+        const keyData = this.data[k];
+        const dcField = {
+          field: k,
+          searchDisplay: keyData.display_name,
+          searchable: true
+        };
+        if (k === TAGS) {
+          return new DynamicValuePill(
+            dcField,
+            async () => {
+              return this.data && this.data[TAGS] ? this.data[TAGS].values : [];
+            },
+            'Select one or more tags to filter model runs',
+            true,
+            SingleRelationState);
+        }
+        if (keyData.values && keyData.values.length > 0) {
+          // suggestions are provided for this field
+          const dcOptions = keyData.values;
+          return new ValuePill(dcField, dcOptions);
+        } else {
+          return (keyData.type === DatacubeGenericAttributeVariableType.Int || keyData.type === DatacubeGenericAttributeVariableType.Float)
+            ? new RangePill(dcField) : new TextPill(dcField);
         }
       });
 
-      if (filtersUtil.isEqual(this.filters, newFilters) === false) {
-        // emit the filters so that the relevant components may react
-        this.$emit('filters-updated', newFilters);
-      }
-    });
+      // Defines a list of searchable fields for LEX
+      this.pills = [
+        ...basicPills // searchable fields such as country, each would provide list of suggested values
+      ];
 
-    this.lexRef.render(this.$refs.lexContainer);
-    this.setQuery();
-  },
-  methods: {
+      const filtersClauses = this.filters ? this.filters.clauses : undefined;
+      const filteredPills = _.reject(this.pills, (pill) => _.find(filtersClauses, { field: pill.searchKey }));
+      const suggestions = filteredPills.map(pill =>
+        pill.makeOption()
+      );
+
+      const language = Lex.from('field', ValueState, {
+        name: 'Choose a field to search',
+        suggestions,
+        suggestionLimit: suggestions.length,
+        autoAdvanceDefault: true,
+        defaultValue: filteredPills[0].makeOption(),
+        icon: v => {
+          if (_.isNil(v)) return '<i class="fa fa-search"></i>';
+          const pill = this.pills.find(
+            pill => pill.searchKey === v.meta.searchKey
+          );
+          return pill.makeIcon();
+        }
+      }).branch(...this.pills.map(pill => pill.makeBranch()));
+
+      this.lexRef = new Lex({
+        language: language,
+        placeholder: 'Filter runs',
+        tokenXIcon: '<i class="fa fa-remove"></i>'
+      });
+
+      this.lexRef.on('query changed', (...args) => {
+        const model = args[0];
+        const newFilters = filtersUtil.newFilters();
+
+        model.forEach(item => {
+          const pill = this.pills.find(
+            pill => pill.searchKey === item.field.meta.searchKey
+          );
+          if (!_.isNil(pill)) {
+            pill.lex2Filters(item, newFilters);
+          }
+        });
+
+        if (filtersUtil.isEqual(this.filters, newFilters) === false) {
+          // emit the filters so that the relevant components may react
+          this.$emit('filters-updated', newFilters);
+        }
+      });
+
+      this.lexRef.render(this.$refs.lexContainer);
+      this.setQuery();
+    },
     setQuery() {
       if (!this.lexRef) return;
       const lexQuery = [];
