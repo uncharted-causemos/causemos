@@ -102,12 +102,16 @@ export default function useDatacubeHierarchy(
 
     const emptyRegionSets = _.clone(EMPTY_ADMIN_REGION_SETS) as any;
 
-    if (initialSelectedRegionIds.value !== undefined && initialSelectedRegionIds.value.length > 0) {
+    if (initialSelectedRegionIds.value !== undefined) {
       const adminLevel: string = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
 
-      initialSelectedRegionIds.value.forEach(regionId => {
-        emptyRegionSets[adminLevel].add(regionId);
-      });
+      if (initialSelectedRegionIds.value.length > 0) {
+        initialSelectedRegionIds.value.forEach(regionId => {
+          emptyRegionSets[adminLevel].add(regionId);
+        });
+      } else {
+        emptyRegionSets[adminLevel] = new Set();
+      }
     }
 
     selectedRegionIdsAtAllLevels.value = emptyRegionSets;
