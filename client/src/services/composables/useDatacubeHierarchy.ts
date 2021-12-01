@@ -4,7 +4,7 @@ import { AdminRegionSets } from '@/types/Datacubes';
 import _ from 'lodash';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import { getRegionLists } from '../new-datacube-service';
-import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
