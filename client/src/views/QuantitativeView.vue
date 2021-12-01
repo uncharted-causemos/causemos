@@ -7,7 +7,7 @@
       />
     </teleport>
     <tab-panel
-      v-if="ready"
+      v-if="ready && isTraining === false"
       class="graph-container"
       :model-summary="modelSummary"
       :model-components="modelComponents"
@@ -34,7 +34,7 @@
         />
       </template>
     </tab-panel>
-    <div v-if="!ready && modelSummary">
+    <div v-if="isTraining === true">
       <h4 style="margin-left: 15px">
         Model is currently training on the {{currentEngine}} engine, you can switch to
         <button class="btn btn-primary btn-sm" @click="switchEngine('dyse')">DySE</button> to continue running experiments.
@@ -45,19 +45,20 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { mapGetters, mapActions } from 'vuex';
-import TabPanel from '@/components/quantitative/tab-panel.vue';
-import modelService from '@/services/model-service';
-import csrUtil from '@/utils/csr-util';
-import ActionBar from '@/components/quantitative/action-bar.vue';
-import { getInsightById } from '@/services/insight-service';
 import { defineComponent } from '@vue/runtime-core';
+import { mapGetters, mapActions } from 'vuex';
+
+import ActionBar from '@/components/quantitative/action-bar.vue';
+import TabPanel from '@/components/quantitative/tab-panel.vue';
+import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
+import modelService from '@/services/model-service';
+import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
+import csrUtil from '@/utils/csr-util';
 import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
-import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -96,7 +97,8 @@ export default defineComponent({
     // Tracking draft scenario
     previousScenarioId: null,
 
-    resetLayoutToken: 0
+    resetLayoutToken: 0,
+    isTraining: false
   }),
   computed: {
     ...mapGetters({
@@ -214,6 +216,7 @@ export default defineComponent({
       }
     },
     async refresh() {
+      this.isTraining = false;
       this.enableOverlay('Loading');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
 
@@ -241,9 +244,9 @@ export default defineComponent({
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
           this.disableOverlay();
-          // if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
-          //   this.enableOverlay(errors[0]);
-          // }
+          if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
+            this.isTraining = true;
+          }
           this.toaster(errors[0], 'error', true);
           console.error(errors);
           return;
@@ -259,8 +262,8 @@ export default defineComponent({
         );
         // FIXME: use status code
         if (r.status === 'training') {
-          // this.enableOverlay(MODEL_MSGS.MODEL_TRAINING);
           this.toaster(MODEL_MSGS.MODEL_TRAINING, 'error', true);
+          this.isTraining = true;
           return;
         }
       }
@@ -526,6 +529,7 @@ export default defineComponent({
         return [];
       }
 
+      this.isTraining = false;
       const engineStatus = this.modelSummary.engine_status[this.currentEngine];
 
       // 0. Refresh, probably not needed ...
@@ -535,7 +539,7 @@ export default defineComponent({
         if (errors.length) {
           this.disableOverlay();
           if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
-            this.enableOverlay(errors[0]);
+            this.isTraining = true;
           }
           this.toaster(errors[0], 'error', true);
           console.error(errors);
