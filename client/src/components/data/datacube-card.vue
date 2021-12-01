@@ -1599,7 +1599,7 @@ export default defineComponent({
       if (outputSpecs.value.length > 1) {
         // if more than one map is shown, e.g., when relativeTo is active
         //  disable animation since the multiple maps are supposed to sync together on move
-        cameraOptions.duration = 0;
+        return { duration: 0 };
       }
       return cameraOptions;
     });
