@@ -39,11 +39,13 @@ const createModel = async (payload) => {
       acc[key] = {};
     }
     const w = edge.weights.map(parseFloat);
+    acc[key].weights = w.map(v => Math.abs(v));
+
     // FIXME: getting weird weights from Jataware translation layer, as far as we are concerned
     // weights should be positive.
-    if (w[0] !== 0) {
-      acc[key].weights = w.map(v => Math.abs(v));
-    }
+    // if (w[0] !== 0) {
+    //   acc[key].weights = w.map(v => Math.abs(v));
+    // }
     return acc;
   }, {});
   return { nodes, edges, status: result.status };
