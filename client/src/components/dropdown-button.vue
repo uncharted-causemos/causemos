@@ -2,7 +2,7 @@
   <div class="dropdown-button-container" ref="containerElement">
     <button
       type="button"
-      class="btn dropdown-btn"
+      class="btn btn-default dropdown-btn"
       @click="isDropdownOpen = !isDropdownOpen"
     >
       <span>
@@ -168,6 +168,5 @@ export default defineComponent({
   align-items: center;
   font-weight: normal;
   padding: 5px;
-  border: 1px solid gray;
 }
 </style>
