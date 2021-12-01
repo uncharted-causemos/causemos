@@ -5,175 +5,159 @@
       :nav-back-label="newMode ? 'Close' : 'All Insights'"
       @close="closeInsightReview"
     >
-      <div v-if="isEditingInsight" style="display: flex; align-items: center">
-        <button
-          type="button"
-          class="btn btn-primary"
-          @click="annotateImage">
+      <button
+        v-if="updatedInsight !== null && !isEditingInsight"
+        type="button"
+        class="btn btn-primary btn-call-for-action"
+        @click="editInsight"
+        >
+        <i class="fa fa-pencil" />
+        Edit
+      </button>
+      <div v-else class="insight-edit-controls">
+        <button type="button" class="btn btn-default" @click="annotateImage">
           Annotate
         </button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          @click="cropImage">
+        <button type="button" class="btn btn-default" @click="cropImage">
           Crop
         </button>
+        <button class="btn btn-default btn-extra-margin" @click="cancelInsightEdit">
+          Cancel
+        </button>
+        <button
+          :disabled="hasError"
+          type="button"
+          class="btn btn-primary btn-call-for-action"
+          v-tooltip="'Save insight'"
+          @click="confirmInsightEdit"
+        >
+          Done
+        </button>
       </div>
-      <div class="header">
-        <div class="control-buttons">
-          <div style="display: flex; align-items: center">
-            <button
-              v-if="updatedInsight !== null && !isEditingInsight"
-              type="button"
-              class="btn btn-primary header-button"
-              v-tooltip="'Edit insight'"
-              @click="editInsight"
-              >
-              <i class="fa fa-edit" />
-            </button>
-            <div v-else class="insight-edit-controls">
-              <button
-                type="button"
-                class="btn btn-primary header-button"
-                v-tooltip="'Cancel editing!'"
-                @click="cancelInsightEdit"
-              >
-                Cancel
-              </button>
-              <button
-                :disabled="hasError"
-                type="button"
-                class="btn btn-primary header-button"
-                v-tooltip="'Save insight'"
-                @click="confirmInsightEdit"
-              >
-                Done
-              </button>
-            </div>
-            <button
-              v-if="updatedInsight !== null"
-              type="button"
-              class="btn btn-primary header-button"
-              v-tooltip="'Toggle metadata'"
-              @click="showMetadataPanel=!showMetadataPanel"
-              >
-              <i class="fa fa-info" />
-            </button>
-            <button
-              v-if="updatedInsight !== null"
-              type="button"
-              class="btn btn-primary header-button"
-              v-tooltip="'Jump to live context'"
-              @click="selectInsight"
-              >
-              <i class="fa fa-level-up" />
-            </button>
-            <dropdown-button
-              v-if="updatedInsight !== null"
-              v-tooltip="'Export insight'"
-              :inner-button-label="'Export'"
-              :is-dropdown-left-aligned="true"
-              :items="['Powerpoint', 'Word']"
-              class="header-button-export"
-              @item-selected="exportInsight"
-            />
-          </div>
+      <button
+        v-if="updatedInsight !== null"
+        class="btn btn-default btn-delete"
+        @click="removeInsight"
+      >
+        <i class="fa fa-trash" />
+        Delete
+      </button>
+      <template #trailing>
+        <div class="trailing">
           <button
             v-if="updatedInsight !== null"
             type="button"
-            class="btn btn-primary header-button"
-            style="backgroundColor: red; color: white"
-            v-tooltip="'Delete insight'"
-            @click="removeInsight"
+            class="btn btn-default"
+            v-tooltip="'Toggle metadata'"
+            @click="showMetadataPanel=!showMetadataPanel"
             >
-            <i class="fa fa-trash" />
+            <i class="fa fa-info" />
           </button>
-        </div>
-      </div>
-    </full-screen-modal-header>
-    <div class="pane-wrapper">
-      <div class="pane-row">
-        <button
-          :disabled="prevInsight === null"
-          type="button"
-          class="btn btn-primary nav-button col-md-2"
-          v-tooltip="'Previous insight'"
-          @click="goToPreviousInsight"
-          >
-          <i class="fa fa-chevron-left" />
-        </button>
-        <div class="content">
-          <div class="fields">
-            <div v-if="!isEditingInsight" class="title">{{previewInsightTitle}}</div>
-            <input
-              v-else
-              v-model="insightTitle"
-              v-focus
-              type="text"
-              class="form-control"
-              placeholder="Untitled insight name"
-            />
-            <div
-              v-if="isEditingInsight && hasError"
-              class="error-msg">
-              {{ errorMsg }}
-            </div>
-            <div v-if="!isEditingInsight" class="desc">{{previewInsightDesc}}</div>
-            <textarea
-              v-else
-              v-model="insightDesc"
-              rows="2"
-              class="form-control"
-              placeholder="Untitled insight description" />
-            <div class="image-preview-and-metadata">
-              <div v-if="imagePreview !== null" class="preview">
-                <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview">
-                <div v-if="showCropInfoMessage" style="align-self: center">Annotations are still there, but not shown when the image is being cropped!</div>
-              </div>
-              <div v-else style="width: 100%;">
-                <div v-if="loadingImage" style="text-align: center; font-size: x-large">
-                  <i class="fa fa-spin fa-spinner" /> Loading image ...
-                </div>
-                <disclaimer
-                  v-else
-                  style="text-align: center; color: black"
-                  :message="updatedInsight === null ? 'No more insights available to preview!' : 'No image preview!'"
-                />
-              </div>
-              <drilldown-panel
-                v-if="showMetadataPanel"
-                is-open
-                :tabs="drilldownTabs"
-                :activeTabId="drilldownTabs[0].id"
-                only-display-icons
-                @close="showMetadataPanel=false"
-              >
-                <template #content>
-                  <div>
-                    <ul>
-                      <li
-                        v-for="metadataAttr in metadataDetails"
-                        :key="metadataAttr.key">
-                        <b>{{metadataAttr.key}}</b> {{ metadataAttr.value }}
-                      </li>
-                    </ul>
-                  </div>
-                </template>
-              </drilldown-panel>
-            </div>
+          <button
+            v-if="updatedInsight !== null"
+            type="button"
+            class="btn btn-default"
+            v-tooltip="'Jump to live context'"
+            @click="selectInsight"
+            >
+            <i class="fa fa-level-up" />
+          </button>
+          <div class="export" v-if="updatedInsight !== null">
+            <span>Export insight as</span>
+            <button
+              class="btn btn-default"
+              @click="() => exportInsight('Powerpoint')"
+            >
+              PowerPoint
+            </button>
+            <button class="btn btn-default" @click="() => exportInsight('Word')">
+              Word
+            </button>
           </div>
         </div>
-
-        <button
-          :disabled="nextInsight === null"
-          type="button"
-          class="btn btn-primary nav-button col-md-2"
-          v-tooltip="'Next insight'"
-          @click="goToNextInsight"
-          >
-          <i class="fa fa-chevron-right" />
-        </button>
+      </template>
+    </full-screen-modal-header>
+    <div class="pane-row">
+      <button
+        :disabled="prevInsight === null"
+        type="button"
+        class="btn btn-default"
+        v-tooltip="'Previous insight'"
+        @click="goToPreviousInsight"
+        >
+        <i class="fa fa-chevron-left" />
+      </button>
+      <div class="content">
+        <div class="fields">
+          <div v-if="!isEditingInsight" class="title">{{previewInsightTitle}}</div>
+          <input
+            v-else
+            v-model="insightTitle"
+            v-focus
+            type="text"
+            class="form-control"
+            placeholder="Untitled insight name"
+          />
+          <div
+            v-if="isEditingInsight && hasError"
+            class="error-msg">
+            {{ errorMsg }}
+          </div>
+          <div v-if="!isEditingInsight" class="desc">{{previewInsightDesc}}</div>
+          <textarea
+            v-else
+            v-model="insightDesc"
+            :rows="2"
+            class="form-control"
+            placeholder="Untitled insight description" />
+          <div class="image-preview-and-metadata">
+            <div v-if="imagePreview !== null" class="preview">
+              <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview">
+              <div v-if="showCropInfoMessage" style="align-self: center">Annotations are still there, but not shown when the image is being cropped!</div>
+            </div>
+            <div v-else style="width: 100%;">
+              <div v-if="loadingImage" style="text-align: center; font-size: x-large">
+                <i class="fa fa-spin fa-spinner" /> Loading image ...
+              </div>
+              <disclaimer
+                v-else
+                style="text-align: center; color: black"
+                :message="updatedInsight === null ? 'No more insights available to preview!' : 'No image preview!'"
+              />
+            </div>
+            <drilldown-panel
+              v-if="showMetadataPanel"
+              is-open
+              :tabs="drilldownTabs"
+              :activeTabId="drilldownTabs[0].id"
+              only-display-icons
+              @close="showMetadataPanel=false"
+            >
+              <template #content>
+                <div>
+                  <ul>
+                    <li
+                      v-for="metadataAttr in metadataDetails"
+                      :key="metadataAttr.key">
+                      <b>{{metadataAttr.key}}</b> {{ metadataAttr.value }}
+                    </li>
+                  </ul>
+                </div>
+              </template>
+            </drilldown-panel>
+          </div>
+        </div>
       </div>
+
+      <button
+        :disabled="nextInsight === null"
+        type="button"
+        class="btn btn-default"
+        v-tooltip="'Next insight'"
+        @click="goToNextInsight"
+        >
+        <i class="fa fa-chevron-right" />
+      </button>
     </div>
   </div>
 </template>
@@ -188,7 +172,6 @@ import { mapActions, mapGetters, useStore } from 'vuex';
 import InsightUtil, { MetadataSummary } from '@/utils/insight-util';
 import { Insight } from '@/types/Insight';
 import router from '@/router';
-import DropdownButton from '@/components/dropdown-button.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { addInsight, updateInsight } from '@/services/insight-service';
 import { INSIGHTS } from '@/utils/messages-util';
@@ -215,7 +198,6 @@ export default defineComponent({
   components: {
     FullScreenModalHeader,
     Disclaimer,
-    DropdownButton,
     DrilldownPanel
   },
   props: {
@@ -779,53 +761,36 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-.header-button {
-  margin-right: 4px;
-  background-color: royalblue;
-  padding: 3px 6px;
-  font-size: larger;
-  min-width: 30px;
-  &:hover {
-    background-color: dodgerblue;
-  }
-}
-
-.header-button-export {
-  ::v-deep(.dropdown-btn) {
-    padding-bottom: 10px;
-    margin-right: 4px;
-    background-color: royalblue;
-    padding: 3px 6px;
-    font-size: larger;
-    &:hover {
-      background-color: dodgerblue;
-    }
-  }
-  ::v-deep(.dropdown-control) {
-    top: 100%;
-  }
-}
-
-.nav-button {
-  height: fit-content;
-  margin: 1rem;
-  width: auto;
-}
-
-.header {
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
-
-  .control-buttons {
-    width: 50%;
-    display: flex;
-    justify-content: space-around;
-  }
-}
-
 .insight-edit-controls {
-  padding-right: 2rem;
+  display: flex;
+  gap: 5px;
+}
+
+.btn-extra-margin {
+  margin-left: 5px;
+}
+
+.btn-delete {
+  margin-left: 10px;
+  &, &:hover {
+    color: red;
+  }
+}
+
+.export {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+
+  > span {
+    color: white;
+  }
+}
+
+.trailing {
+  display: flex;
+  gap: 10px;
+  margin-right: 10px;
 }
 
 .new-insight-modal-container {
@@ -837,64 +802,56 @@ export default defineComponent({
   align-items: stretch;
   height: 100vh;
   overflow: hidden;
+}
 
-  .pane-wrapper {
-    flex: 1 1 auto;
+.pane-row {
+  margin-top: 10px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.content {
+  justify-content: center;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  .fields {
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
-    overflow-y: hidden;
-    padding: 1em 0 0;
-    .pane-row {
-      flex: 1 1 auto;
+    overflow: hidden;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 1rem;
+    height: 100%;
+    .title {
+      font-size: $font-size-extra-large;
+      color: black;
+      font-weight: bold;
+    }
+    .desc {
+      font-size: $font-size-large;
+      color: $text-color-dark;
+      font-style: italic;
+    }
+    .image-preview-and-metadata {
       display: flex;
-      flex-direction: row;
+      overflow: auto;
       height: 100%;
-      align-items: center;
-      .content {
-        justify-content: center;
-        display: flex;
+      padding-top: 5px;
+      .preview {
+        overflow: auto;
+        align-self: flex-start;
         height: 100%;
         width: 100%;
-        .fields {
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          padding-left: 1rem;
-          padding-right: 1rem;
-          padding-bottom: 1rem;
+        padding-right: 1rem;
+        img {
+          max-height: 100%;
+          max-width: 100%;
           height: 100%;
-          .title {
-            font-size: xx-large;
-            color: black;
-            align-self: flex-start;
-            font-weight: bold;
-          }
-          .desc {
-            font-size: large;
-            color: $text-color-dark;
-            align-self: flex-start;
-            font-style: italic;
-          }
-          .image-preview-and-metadata {
-            display: flex;
-            overflow: auto;
-            height: 100%;
-            padding-top: 5px;
-            .preview {
-              overflow: auto;
-              align-self: flex-start;
-              height: 100%;
-              width: 100%;
-              padding-right: 1rem;
-              img {
-                max-height: 100%;
-                max-width: 100%;
-                height: 100%;
-                width: 100%;
-              }
-            }
-          }
+          width: 100%;
         }
       }
     }
