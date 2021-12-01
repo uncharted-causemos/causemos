@@ -127,21 +127,6 @@ export default defineComponent({
     color: #5A5A5A;
     @include header-secondary;
   }
-  .close-button {
-    top: 50%;
-    transform: translateY(-50%);
-    right: 10px;
-  }
-
-  &.modal-header-green {
-    h3, h4 {
-      color: #038537;
-    }
-  }
-
-  .green-icon {
-    color: #038537;
-  }
 }
 
 ::v-deep(.modal-body) {
