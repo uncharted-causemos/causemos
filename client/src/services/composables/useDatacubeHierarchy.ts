@@ -3,8 +3,8 @@ import { Indicator, Model } from '@/types/Datacube';
 import { AdminRegionSets } from '@/types/Datacubes';
 import _ from 'lodash';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
-import { getHierarchy } from '../new-datacube-service';
-import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { getRegionLists } from '../new-datacube-service';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
@@ -18,15 +18,6 @@ const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
 interface HierarchyNode {
   [key: string]: null | HierarchyNode;
 }
-
-const flattenRegions = (node: HierarchyNode | null) => {
-  const regions: string[] = [];
-  if (node === null) return [];
-  Object.entries(node).forEach(([key, node]) => {
-    regions.push(key, ...flattenRegions(node));
-  });
-  return regions;
-};
 
 export default function useDatacubeHierarchy(
   selectedScenarioIds: Ref<string[]>,
@@ -58,39 +49,26 @@ export default function useDatacubeHierarchy(
     if (datacubeMetadata === null || _modelRunIds.length === 0) {
       return;
     }
-    // FIXME: Some planned improvements to this endpoint:
-    //  - pass a list of run IDs to fetch the combined hierarchy at once
-    //  - return hierarchy in DatacubeGeography format (will require a new 'region-list' endpoint)
-    // Ben, August 2021
-    const runId = _modelRunIds[0];
+
     try {
-      const hierarchy = await getHierarchy(
+      const regionLists = await getRegionLists(
         datacubeMetadata.data_id,
-        runId,
+        _modelRunIds,
         activeFeature.value
       );
       if (isCancelled) return;
-      const newValue = {
-        country: [] as string[],
-        admin1: [] as string[],
-        admin2: [] as string[],
-        admin3: [] as string[]
-      };
-      const regions = flattenRegions(hierarchy);
-      regions.forEach(regionId => {
-        const path = regionId.split(REGION_ID_DELIMETER);
-        if (path[path.length - 1] === 'None') return;
-        if (path.length === 1) {
-          newValue.country.push(regionId);
-        } else if (path.length === 2) {
-          newValue.admin1.push(regionId);
-        } else if (path.length === 3) {
-          newValue.admin2.push(regionId);
-        } else if (path.length === 4) {
-          newValue.admin3.push(regionId);
-        }
-      });
-      datacubeHierarchy.value = newValue;
+      datacubeHierarchy.value = regionLists;
+      // TODO: If we still want to filter out 'None' regions we also need to do so in getRegionAggregations in runoutput-service.ts
+      // datacubeHierarchy.value = {
+      //   country: regionLists?.country?.filter(
+      //     (regionId: string) => _.last(regionId.split(REGION_ID_DELIMETER)) !== 'None') as string[],
+      //   admin1: regionLists?.admin1?.filter(
+      //     (regionId: string) => _.last(regionId.split(REGION_ID_DELIMETER)) !== 'None') as string[],
+      //   admin2: regionLists?.admin2?.filter(
+      //     (regionId: string) => _.last(regionId.split(REGION_ID_DELIMETER)) !== 'None') as string[],
+      //   admin3: regionLists?.admin3?.filter(
+      //     (regionId: string) => _.last(regionId.split(REGION_ID_DELIMETER)) !== 'None') as string[]
+      // };
     } catch {}
   });
 
