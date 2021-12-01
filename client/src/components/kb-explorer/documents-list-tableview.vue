@@ -57,8 +57,7 @@
               Publisher
             </div>
           </div>
-          <div v-if="sortedDocuments.length > 0">
-            <div class="document-list-elements">
+            <div v-if="sortedDocuments.length > 0" class="document-list-elements">
               <div
                 v-for="documentMeta in sortedDocuments"
                 :key="documentMeta.id">
@@ -67,17 +66,16 @@
                   :documentMeta="documentMeta"/>
               </div>
             </div>
+            <message-display
+              v-else
+              message="Sorry, no results were found"
+            />
             <pagination
-              class="col-md-8"
               v-if="sortedDocuments.length > 0"
+              class="col-md-8"
               :label="'documents'"
               :total="documentsCount"
             />
-          </div>
-          <message-display
-            v-else
-            message="Sorry, no results were found"
-          />
         </div>
       </div>
     </div>
