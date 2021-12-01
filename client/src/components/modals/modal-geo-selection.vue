@@ -82,7 +82,7 @@ import Modal from '@/components/modals/modal.vue';
 import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
 import { Model, ModelParameter } from '@/types/Datacube';
 import GeoSelectionMap from '@/components/data/geo-selection-map.vue';
-import { stringToAdminLevel, BASE_LAYER } from '@/utils/map-util-new';
+import { stringToAdminLevel, BASE_LAYER, computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { getGADMSuggestions } from '@/services/suggestion-service';
 import { DatacubeGeoAttributeVariableType, DatacubeGenericAttributeVariableType } from '@/types/Enums';
 import { GeoRegionDetail, RegionalGADMDetail } from '@/types/Common';
@@ -175,39 +175,9 @@ export default defineComponent({
     // calculate the initial map bounds covering the model geography
     //
     if (this.metadata.geography && this.metadata.geography.country && this.metadata.geography.country.length > 0) {
-      const allBBox: any = [];
-      // fetch the bbox for country of the model geography
-      const promises = this.metadata.geography.country.map(country => {
-        const debouncedFetchFunction = getGADMSuggestions(DatacubeGeoAttributeVariableType.Country, country);
-        return debouncedFetchFunction(); // NOTE: a debounced function may return undefined
-      });
-      const allResults = await Promise.all(promises);
-      allResults.forEach(result => {
-        if (result !== undefined) {
-          allBBox.push(...result.map(item => item.bbox ? item.bbox.coordinates : []));
-        }
-      });
-      // allBBox is an array of bbox values for each country of the model geography
-      //  calculate the union bbox by merging all bbox into a global one
-      if (allBBox.length > 0) {
-        const finalBBox: number[][] = allBBox[0];
-        allBBox.forEach((bbox: number[][]) => {
-          // [[minLon, maxLat], [maxLon, minLat]]:
-          if (bbox[0][0] < finalBBox[0][0]) {
-            finalBBox[0][0] = bbox[0][0];
-          }
-          if (bbox[0][1] > finalBBox[0][1]) {
-            finalBBox[0][1] = bbox[0][1];
-          }
-          if (bbox[1][0] > finalBBox[1][0]) {
-            finalBBox[1][0] = bbox[1][0];
-          }
-          if (bbox[1][1] < finalBBox[1][1]) {
-            finalBBox[1][1] = bbox[1][1];
-          }
-        });
-        // ask the map to fit the final, global, bbox
-        this.mapBounds = finalBBox;
+      const newBounds = await computeMapBoundsForCountries(this.metadata.geography.country);
+      if (newBounds !== null) {
+        this.mapBounds = newBounds;
       }
     }
   },

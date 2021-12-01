@@ -11,6 +11,7 @@ interface InsightState {
   analysisId: string;
   updatedInsight: Insight | null;
   insightList: Insight[] | null;
+  refreshDatacubes: boolean;
 }
 
 /**
@@ -25,7 +26,8 @@ const state: InsightState = {
   contextId: undefined,
   analysisId: '',
   updatedInsight: null,
-  insightList: null
+  insightList: null,
+  refreshDatacubes: false
 };
 
 
@@ -38,7 +40,8 @@ const getters: GetterTree<InsightState, any> = {
   contextId: state => state.contextId,
   analysisId: state => state.analysisId,
   updatedInsight: state => state.updatedInsight,
-  insightList: state => state.insightList
+  insightList: state => state.insightList,
+  refreshDatacubes: state => state.refreshDatacubes
 };
 
 
@@ -69,6 +72,9 @@ const actions: ActionTree<InsightState, any> = {
   },
   setUpdatedInsight: ({ commit }, newValue) => {
     commit('setUpdatedInsight', newValue);
+  },
+  setRefreshDatacubes: ({ commit }, newValue) => {
+    commit('setRefreshDatacubes', newValue);
   },
   setInsightList: ({ commit }, newValue) => {
     commit('setInsightList', newValue);
@@ -106,6 +112,9 @@ const mutations: MutationTree<InsightState> = {
   },
   setInsightList(state, value) {
     state.insightList = value;
+  },
+  setRefreshDatacubes(state, value) {
+    state.refreshDatacubes = value;
   }
 };
 

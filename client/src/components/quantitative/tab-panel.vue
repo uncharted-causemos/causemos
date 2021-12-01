@@ -61,11 +61,9 @@
             :should-confirm-curations="true">
             <edge-polarity-switcher
               :selected-relationship="selectedEdge"
-              @edge-set-user-polarity="setEdgeUserPolarity" />
-            <edge-weight-slider
-              v-if="showComponent"
-              :selected-relationship="selectedEdge"
-              @set-edge-weights="setEdgeWeights" />
+              @edge-set-user-polarity="setEdgeUserPolarity"
+              @edge-set-weights="setEdgeWeights"
+            />
           </evidence-pane>
         </template>
       </drilldown-panel>
@@ -82,7 +80,6 @@ import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis'
 import ModelGraph from '@/components/quantitative/model-graph';
 import modelService from '@/services/model-service';
 import ColorLegend from '@/components/graph/color-legend';
-import EdgeWeightSlider from '@/components/drilldown-panel/edge-weight-slider';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
@@ -123,7 +120,6 @@ export default {
     ColorLegend,
     DrilldownPanel,
     EdgePolaritySwitcher,
-    EdgeWeightSlider,
     EvidencePane,
     CagSidePanel,
     CagCommentsButton
@@ -260,8 +256,17 @@ export default {
       this.closeDrilldown();
       this.$emit('refresh-model');
     },
-    async setEdgeWeights(edgeData) {
-      await modelService.updateEdgeParameter(this.currentCAG, edgeData);
+    async setEdgeWeights(edgeData, weights) {
+      const payload = {
+        id: edgeData.id,
+        source: edgeData.source,
+        target: edgeData.target,
+        polarity: edgeData.polarity,
+        parameter: {
+          weights
+        }
+      };
+      await modelService.updateEdgeParameter(this.currentCAG, payload);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
       this.$emit('refresh-model');
     },

@@ -6,6 +6,7 @@
       :disabled="button.value === selectedButtonValue"
       v-tooltip.top-center="button.tooltip ?? button.label"
       class="btn btn-sm btn-default"
+      :class="{ 'button-active': button.value === selectedButtonValue }"
       @click="emitButtonClicked(button.value)"
     >
       <i v-if="button.icon !== undefined" class="fa" :class="[button.icon]" />
@@ -54,5 +55,14 @@ export default defineComponent({
   display: flex;
   border-radius: 3px;
   overflow: hidden;
+}
+
+button.button-active,
+button.button-active:hover {
+  background: #CACBCC;
+  border-color: #CACBCC;
+  opacity: 1;
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.26);
+  cursor: default;
 }
 </style>

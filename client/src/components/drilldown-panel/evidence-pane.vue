@@ -135,6 +135,7 @@
     <div v-else>
       <message-display :message="messageNoData" />
     </div>
+    <!-- FIXME: hide if there are no valid recommendatins -->
     <div
       v-if="showEdgeRecommendations"
       style="margin-top: 10px">

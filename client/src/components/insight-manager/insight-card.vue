@@ -14,9 +14,8 @@
       </div>
       <div
         v-if="showDescription"
-        class="insight-description"
         :class="{ 'private-insight-title': insight.visibility === 'private' }">
-        <b>{{ insight.name }}</b>. {{ insight.description }}
+        <span>{{ insight.name }}</span> <span class="insight-description">{{ insight.description }}</span>
       </div>
       <div
         v-else
@@ -117,7 +116,7 @@ export default defineComponent({
 
 .insight {
   cursor: pointer;
-  padding: 5px 5px 10px;
+  padding: 5px;
   border: 1px solid #e5e5e5;
   margin: 0px 1rem 1rem 0px;
   .insight-content {

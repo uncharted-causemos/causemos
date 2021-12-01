@@ -3,7 +3,7 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
 const ES = rootRequire('adapters/es/client');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
 const Logger = rootRequire('/config/logger');
-const cache = rootRequire('/cache/node-lru-cache');
+const { getCache } = rootRequire('/cache/node-lru-cache');
 
 const headers = {
   'Content-type': 'application/json',
@@ -40,7 +40,7 @@ const PRE_FILTERED_NUM_RECOMMENDATIONS = 500;
 const getFactorRecommendations = async (projectId, statementIds, factor, numRecommendations) => {
   Logger.info(`Factor recommendation: Project=${projectId}, Factor=${factor}, ${statementIds.length} statements,`);
   const payload = {
-    knowledge_base_id: cache.get(projectId).kb_id,
+    knowledge_base_id: getCache(projectId).kb_id,
     factor,
     num_recommendations: PRE_FILTERED_NUM_RECOMMENDATIONS
   };
@@ -74,7 +74,7 @@ const getFactorRecommendations = async (projectId, statementIds, factor, numReco
 const getPolarityRecommendations = async (projectId, statementIds, subjFactor, objFactor, polarity, numRecommendations) => {
   Logger.info(`Polarity recommendation: Project=${projectId}, Subj=${subjFactor}, Obj=${objFactor}, Polarity=${polarity},  ${statementIds.length} statements,`);
   const payload = {
-    knowledge_base_id: cache.get(projectId).kb_id,
+    knowledge_base_id: getCache(projectId).kb_id,
     subj_factor: subjFactor,
     obj_factor: objFactor,
     num_recommendations: PRE_FILTERED_NUM_RECOMMENDATIONS
@@ -106,7 +106,7 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
 const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, numRecommendations) => {
   Logger.info(`Edge recommendation: Project=${projectId}`);
   const payload = {
-    knowledge_base_id: cache.get(projectId).kb_id,
+    knowledge_base_id: getCache(projectId).kb_id,
     subj_concept: subjConcept,
     obj_concept: objConcept,
     num_recommendations: numRecommendations

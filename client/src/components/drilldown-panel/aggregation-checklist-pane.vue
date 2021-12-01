@@ -22,6 +22,11 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
+    <reference-options-list
+      v-if="showReferences"
+      :reference-options="referenceOptions"
+      @toggle-reference-options="updateSelectedReferences"
+    />
     <div class="sort-selection">
       <span>Sort by</span>
       <radio-button-group
@@ -53,7 +58,7 @@
     </div>
     <div class="checklist-container">
       <aggregation-checklist-item
-        v-for="(row, rowIndex) of rowsWithData"
+        v-for="(row, rowIndex) of displayRows"
         :key="rowIndex"
         :histogram-visible="shouldShowDeselectedBars || row.isChecked"
         :item-data="row"
@@ -65,7 +70,7 @@
         @toggle-checked="toggleChecked(row.path)"
       />
       <collapsible-item
-        v-if="rowsWithoutData.length"
+        v-if="allowCollapsing && rowsWithoutData.length"
         :override="true">
         <template #title>{{rowsWithoutData.length}} more without data</template>
         <template #content>
@@ -95,7 +100,9 @@ import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
+import ReferenceOptionsList from '@/components/drilldown-panel/reference-options-list.vue';
 import { BreakdownData } from '@/types/Datacubes';
+import { ModelRunReference } from '@/types/ModelRunReference';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
   defineComponent,
@@ -290,7 +297,8 @@ export default defineComponent({
   components: {
     AggregationChecklistItem,
     CollapsibleItem,
-    RadioButtonGroup
+    RadioButtonGroup,
+    ReferenceOptionsList
   },
   props: {
     aggregationLevelCount: {
@@ -332,18 +340,31 @@ export default defineComponent({
       type: Boolean,
       required: true
     },
+    showReferences: {
+      type: Boolean,
+      required: true
+    },
+    allowCollapsing: {
+      type: Boolean,
+      required: true
+    },
     checkboxType: {
       type: String as PropType<'checkbox' | 'radio' | null>,
       default: null
+    },
+    referenceOptions: {
+      type: Array as PropType<ModelRunReference[]>,
+      default: []
     }
   },
-  emits: ['aggregation-level-change', 'toggle-is-item-selected'],
+  emits: ['aggregation-level-change', 'toggle-is-item-selected', 'toggle-reference-options'],
   setup(props, { emit }) {
     const {
       rawData,
       aggregationLevel,
       orderedAggregationLevelKeys,
       shouldShowDeselectedBars,
+      allowCollapsing,
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
@@ -507,6 +528,9 @@ export default defineComponent({
     const rowsWithoutData = computed(() => {
       return possibleRows.value.filter(row => !row.bars.length);
     });
+    const displayRows = computed(() => {
+      return allowCollapsing.value ? rowsWithData.value : possibleRows.value;
+    });
 
     const isAllSelected = computed(() => {
       return selectedItemIds.value.length === 0;
@@ -539,7 +563,7 @@ export default defineComponent({
       statefulData,
       maxVisibleBarValue,
       minVisibleBarValue,
-      rowsWithData,
+      displayRows,
       rowsWithoutData,
       isAllSelected,
       toggleChecked,
@@ -587,6 +611,9 @@ export default defineComponent({
       if (isStatefulDataNode(currentNode)) {
         currentNode.isExpanded = !currentNode.isExpanded;
       }
+    },
+    updateSelectedReferences(value: string) {
+      this.$emit('toggle-reference-options', value);
     }
   }
 });
