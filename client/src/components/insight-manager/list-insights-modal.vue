@@ -102,11 +102,13 @@
                 v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
                 :key="insight.id"
                 :insight="insight"
+                :active-insight="activeInsight"
                 :show-description="true"
                 :show-question="false"
                 @remove-insight="removeInsight(insight)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
+                @edit-insight="editInsight(insight)"
               />
             </div>
           </div>
