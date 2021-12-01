@@ -12,7 +12,7 @@
         @click="editInsight"
         >
         <i class="fa fa-pencil" />
-        Edit insight
+        Edit
       </button>
       <div v-else class="insight-edit-controls">
         <button type="button" class="btn btn-default" @click="annotateImage">
@@ -21,15 +21,7 @@
         <button type="button" class="btn btn-default" @click="cropImage">
           Crop
         </button>
-        <button
-          v-if="updatedInsight !== null"
-          class="btn btn-default btn-delete"
-          @click="removeInsight"
-        >
-          <i class="fa fa-trash" />
-          Delete
-        </button>
-        <button class="btn btn-default" @click="cancelInsightEdit">
+        <button class="btn btn-default btn-extra-margin" @click="cancelInsightEdit">
           Cancel
         </button>
         <button
@@ -42,6 +34,14 @@
           Done
         </button>
       </div>
+      <button
+        v-if="updatedInsight !== null"
+        class="btn btn-default btn-delete"
+        @click="removeInsight"
+      >
+        <i class="fa fa-trash" />
+        Delete
+      </button>
       <template #trailing>
         <div class="trailing">
           <button
@@ -766,8 +766,12 @@ export default defineComponent({
   gap: 5px;
 }
 
-.btn-delete {
+.btn-extra-margin {
   margin-left: 5px;
+}
+
+.btn-delete {
+  margin-left: 10px;
   &, &:hover {
     color: red;
   }
