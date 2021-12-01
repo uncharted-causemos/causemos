@@ -12,6 +12,7 @@ const setProcessingSucceeded = async(metadata) => {
   const runId = metadata.run_id;
   const docIds = metadata.doc_ids;
   const isIndicator = metadata.is_indicator;
+  const flowId = metadata.flow_id;
 
   const results = await fetchPipelineResults(dataId, runId);
 
@@ -19,6 +20,7 @@ const setProcessingSucceeded = async(metadata) => {
     return {
       id: docId,
       status: 'READY',
+      flow_id: flowId,
       runtimes: {
         post_processing: {
           end_time: metadata.end_time,
@@ -37,10 +39,12 @@ const setProcessingSucceeded = async(metadata) => {
 const setProcessingFailed = async(metadata) => {
   const docIds = metadata.doc_ids;
   const isIndicator = metadata.is_indicator;
+  const flowId = metadata.flow_id;
 
   const updateDelta = docIds.map(docId => {
     return {
       id: docId,
+      flow_id: flowId,
       status: 'PROCESSING FAILED'
     };
   });

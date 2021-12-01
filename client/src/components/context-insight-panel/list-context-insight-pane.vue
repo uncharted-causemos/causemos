@@ -35,6 +35,7 @@
             <template #content>
               <div
                 class="dropdown-option"
+                :class="{ disabled: isDisabled(contextInsight) }"
                 @click="editContextInsight(contextInsight)"
               >
                 <i class="fa fa-edit" />
@@ -42,7 +43,8 @@
               </div>
               <div
                 class="dropdown-option"
-                @click="deleteContextInsight(contextInsight.id)"
+                :class="{ disabled: isDisabled(contextInsight) }"
+                @click="deleteContextInsight(contextInsight)"
               >
                 <i class="fa fa-trash" />
                 Delete
@@ -96,6 +98,7 @@ import useInsightsData from '@/services/composables/useInsightsData';
 import { ProjectType } from '@/types/Enums';
 import MessageDisplay from '@/components/widgets/message-display';
 import OptionsButton from '@/components/widgets/options-button.vue';
+import { unpublishDatacube } from '@/utils/datacube-util';
 
 export default {
   name: 'ListContextInsightPane',
@@ -154,7 +157,8 @@ export default {
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightList: 'insightPanel/setInsightList'
+      setInsightList: 'insightPanel/setInsightList',
+      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
     }),
     newInsight() {
       this.showInsightPanel();
@@ -215,12 +219,35 @@ export default {
         }).catch(() => {});
       }
     },
-    deleteContextInsight(id) {
+    isDisabled(insight) {
+      return insight.visibility === 'public' && this.projectType === ProjectType.Analysis;
+    },
+    async deleteContextInsight(insight) {
+      if (this.isDisabled(insight)) {
+        return;
+      }
+
+      // are removing a public insight (from the context panel within a domain project)?
+      if (insight.visibility === 'public' && Array.isArray(insight.context_id) && insight.context_id.length > 0) {
+        // is this the last public insight for the relevant dataube?
+        //  if so, unpublish the model datacube
+        const datacubeId = insight.context_id[0];
+        const publicInsights = await InsightUtil.getPublicInsights(datacubeId, this.project);
+        if (publicInsights.length === 1) {
+          await unpublishDatacube(datacubeId, this.project);
+          this.setRefreshDatacubes(true);
+        }
+      }
+
+      const id = insight.id;
       InsightUtil.removeInsight(id);
       // refresh the latest list from the server
       this.reFetchInsights();
     },
     editContextInsight(insight) {
+      if (this.isDisabled(insight)) {
+        return;
+      }
       this.showInsightPanel();
       this.setUpdatedInsight(insight);
       this.setInsightList(this.listContextInsights);
@@ -299,6 +326,11 @@ export default {
 
 .export-dropdown {
   margin-bottom: 10px;
+}
+
+.insight-button-disabled {
+  cursor: none;
+  color: lightgray;
 }
 
 </style>

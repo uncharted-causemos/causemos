@@ -1,21 +1,48 @@
 <template>
   <div class="projection-histograms-container">
-    <h4 class="x-axis-label">Change in value</h4>
+    <div
+      class="grid-row slice-labels x-axis-label"
+      :class="{ 'left-aligned': !isScenarioComparisonActive }"
+    >
+      <h4>Change in value</h4>
+    </div>
     <div class="grid-row slice-labels">
-      <h3 v-for="(timeSliceLabel, index) in timeSliceLabels" :key="index">
+      <h3
+        v-for="(timeSliceLabel, index) in timeSliceLabels"
+        :key="index"
+        :class="{ hidden: isHiddenTimeSlice(index) }"
+      >
+        <small-icon-button
+          v-if="isScenarioComparisonActive && index !== 0"
+          class="time-slice-arrow-button"
+          @click="selectedTimeSliceIndex--"
+        >
+          <i class="fa fa-fw fa-caret-left" />
+        </small-icon-button>
         {{ timeSliceLabel }}
+        <small-icon-button
+          v-if="
+            isScenarioComparisonActive && index !== timeSliceLabels.length - 1
+          "
+          class="time-slice-arrow-button right"
+          @click="selectedTimeSliceIndex++"
+        >
+          <i class="fa fa-fw fa-caret-right" />
+        </small-icon-button>
       </h3>
     </div>
     <div
-      v-for="(scenario, index) of projections"
-      :key="scenario.scenarioId"
+      v-for="row of rowsToDisplay"
+      :key="row.scenarioId"
       class="grid-row scenario-row"
     >
-      <h3>{{ scenario.scenarioName }}</h3>
+      <h3>{{ row.scenarioName }}</h3>
       <histogram
-        v-for="(histogramData, timeSliceIndex) of binnedResults[index]"
+        v-for="(histogramData, timeSliceIndex) of row.histograms"
+        class="histogram"
+        :class="{ hidden: isHiddenTimeSlice(timeSliceIndex) }"
         :key="timeSliceIndex"
-        :bin-values="{ base: histogramData, change: null }"
+        :bin-values="histogramData"
       />
     </div>
   </div>
@@ -28,13 +55,63 @@ import { defineComponent, PropType } from 'vue';
 import Histogram from '@/components/widgets/charts/histogram.vue';
 import {
   convertTimeseriesDistributionToHistograms,
+  HistogramData,
   ProjectionHistograms
 } from '@/utils/histogram-util';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
-import _ from 'lodash';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
+
+/**
+ * `base`: these values represent the grey part of each histogram bar.
+ * `change`: null means that 'relative to' comparison is not active.
+ * Positive values will be drawn as green bars, negative values will be drawn
+ * as striped magenta bars.
+ *
+ * Assumptions:
+ * - the sum of `change` should be 0 whenever it isn't null
+ * - the green and grey bars should add up to 100% of run values, since
+ * combined they represent the total distribution of the run that is being
+ * compared to the baseline
+ */
+export interface ComparisonHistogramData {
+  base: HistogramData;
+  change: HistogramData | null;
+}
+
+interface HistogramRow {
+  scenarioName: string;
+  scenarioId: string;
+  histograms: ComparisonHistogramData[];
+}
+
+function compareHistograms(
+  baseline: ProjectionHistograms,
+  result: ProjectionHistograms
+): ComparisonHistogramData[] {
+  // For each histogram
+  return result.map((histogramData, timeSliceIndex) => {
+    const base: number[] = [];
+    const change: number[] = [];
+    // For each bar
+    histogramData.forEach((barValue, barIndex) => {
+      // Calculate the difference from the baseline value to the result value
+      const baselineValue = baseline[timeSliceIndex][barIndex];
+      const difference = barValue - baselineValue;
+      // This entry in the "base" array will be the same as the result bar,
+      //  but subtract any positive change. This is because the green
+      //  "change" bar can be thought of as a part of scenario result, but the
+      //  pink bar represents runs that are missing from the scenario result.
+      base.push(barValue - (difference > 0 ? difference : 0));
+      // This entry in the "change" array will be equal to the difference.
+      change.push(difference);
+    });
+    // Assert that there are still 5 elements in each array
+    return { base: base as HistogramData, change: change as HistogramData };
+  });
+}
 
 export default defineComponent({
-  components: { Histogram },
+  components: { Histogram, SmallIconButton },
   name: 'ProjectionHistograms',
   props: {
     modelSummary: {
@@ -58,13 +135,18 @@ export default defineComponent({
       default: null
     }
   },
+  data: () => ({
+    // Select middle time slice by default
+    selectedTimeSliceIndex: 1
+  }),
   computed: {
+    isScenarioComparisonActive(): boolean {
+      return this.comparisonBaselineId !== null;
+    },
     timeSliceLabels(): string[] {
       const timeScale = this.modelSummary.parameter.time_scale;
       const timeSlices = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
-      return (
-        timeSlices?.map(({ label }) => _.capitalize(label)) ?? ['', '', '']
-      );
+      return timeSlices?.map(({ label }) => `In ${label}`) ?? ['', '', ''];
     },
     binnedResults(): ProjectionHistograms[] {
       // Filter out the scenarios that haven't been run yet (typically just
@@ -83,6 +165,63 @@ export default defineComponent({
             projection.values
           )
         );
+    },
+    rowsToDisplay(): HistogramRow[] {
+      if (!this.isScenarioComparisonActive) {
+        return this.projections.map((projection, index) => ({
+          scenarioName: projection.scenarioName,
+          scenarioId: projection.scenarioId,
+          histograms: this.binnedResults[index].map(histogramData => ({
+            base: histogramData,
+            change: null
+          }))
+        }));
+      }
+      // Scenario comparison is active.
+      // Display the comparison baseline scenario first
+      // Note that the "comparison baseline scenario" may not be the scenario
+      //  without clamps (also referred to as the "baseline scenario")
+      const baselineIndex = this.projections.findIndex(
+        ({ scenarioId }) => scenarioId === this.comparisonBaselineId
+      );
+      if (baselineIndex === -1) {
+        console.error(
+          'Unable to find projection data for scenario ' +
+            this.comparisonBaselineId
+        );
+        return [];
+      }
+      const baselineScenario = this.projections[baselineIndex];
+      const baselineResult = this.binnedResults[baselineIndex];
+      const baselineRow = {
+        scenarioName: baselineScenario.scenarioName,
+        scenarioId: baselineScenario.scenarioId,
+        histograms: baselineResult.map(histogramData => ({
+          base: histogramData,
+          change: null
+        }))
+      };
+      // Then display each other scenario, after calculating the histogram diff
+      const otherRows: HistogramRow[] = [];
+      this.projections.forEach(({ scenarioName, scenarioId }, index) => {
+        if (index !== baselineIndex) {
+          const result = this.binnedResults[index];
+          otherRows.push({
+            scenarioName,
+            scenarioId,
+            histograms: compareHistograms(baselineResult, result)
+          });
+        }
+      });
+      return [baselineRow, ...otherRows];
+    }
+  },
+  methods: {
+    isHiddenTimeSlice(timeSliceIndex: number): boolean {
+      return (
+        this.isScenarioComparisonActive &&
+        timeSliceIndex !== this.selectedTimeSliceIndex
+      );
     }
   }
 });
@@ -95,13 +234,6 @@ export default defineComponent({
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-}
-
-.x-axis-label {
-  @include header-secondary;
-  // There is 1 half width column and 3 full-width columns
-  //  We want to align with the first full column, so add a left margin of 1/7th
-  margin-left: calc(100% / 7);
 }
 
 h3,
@@ -133,8 +265,38 @@ h3 {
   }
   h3 {
     color: $label-color;
+    position: relative;
+
+    .time-slice-arrow-button {
+      position: absolute;
+      right: calc(100% + 5ch);
+      top: 0;
+
+      &.right {
+        right: auto;
+        // The h3 element stretches to take up the hidden 3rd column, so we
+        //  need to hardcode how far to the right to move the right arrow.
+        left: 25ch;
+      }
+    }
   }
   margin-bottom: 20px;
+}
+
+.x-axis-label {
+  margin-bottom: 0;
+
+  // If scenario comparison is not active, add two extra columns to the right
+  &.left-aligned::after {
+    display: block;
+    content: '';
+    flex: 4;
+    min-width: 0;
+  }
+
+  h4 {
+    @include header-secondary;
+  }
 }
 
 .scenario-row {

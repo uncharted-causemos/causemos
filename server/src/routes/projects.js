@@ -4,11 +4,10 @@ const { v4: uuid } = require('uuid');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
-// const requestAsPromise = rootRequire('/util/request-as-promise');
 
-const { get } = rootRequire('/cache/node-lru-cache');
+// const { getCache } = rootRequire('/cache/node-lru-cache');
 const Logger = rootRequire('/config/logger');
-const indraService = rootRequire('/services/external/indra-service');
+// const indraService = rootRequire('/services/external/indra-service');
 const filtersUtil = rootRequire('/util/filters-util');
 const projectService = rootRequire('/services/project-service');
 const updateService = rootRequire('/services/update-service');
@@ -19,16 +18,27 @@ const searchService = rootRequire('/services/search-service');
 router.get('/', asyncHandler(async (req, res) => {
   const projects = await projectService.listProjects();
 
-  // copy stats from the LRU cache
+  const cagAdapter = Adapter.get(RESOURCE.MODEL);
+  const analysisAdapter = Adapter.get(RESOURCE.ANALYSIS);
+
+  // Get number of cag-models and data-analysis
+  const projectCAG = await cagAdapter.getFacets('project_id');
+  const projectAnalysis = await analysisAdapter.getFacets('project_id');
+
+  const projectCAGMap = new Map();
+  const projectAnalysisMap = new Map();
+  projectCAG.forEach(bucket => {
+    projectCAGMap.set(bucket.key, bucket.doc_count);
+  });
+  projectAnalysis.forEach(bucket => {
+    projectAnalysisMap.set(bucket.key, bucket.doc_count);
+  });
+
   projects.forEach(project => {
-    const cached = get(project.id) || {
-      // show `--` when cache is not available
-      stat: {
-        model_count: '--',
-        data_analysis_count: '--'
-      }
+    project.stat = {
+      model_count: projectCAGMap.get(project.id) || 0,
+      data_analysis_count: projectAnalysisMap.get(project.id) || 0
     };
-    project.stat = cached.stat;
   });
   res.json(projects);
 }));
@@ -49,15 +59,21 @@ router.get('/:projectId', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
   const result = await projectService.findProject(projectId);
 
-  // copy stats from the LRU cache
-  const cached = get(projectId) || {
-    stat: {
-      // show `--` when cache is not available
-      model_count: '--',
-      data_analysis_count: '--'
-    }
+  const cagAdapter = Adapter.get(RESOURCE.MODEL);
+  const analysisAdapter = Adapter.get(RESOURCE.ANALYSIS);
+
+  const projectCAG = await cagAdapter.getFacets('project_id', [
+    { field: 'project_id', value: projectId }
+  ]);
+  const projectAnalysis = await analysisAdapter.getFacets('project_id', [
+    { field: 'project_id', value: projectId }
+  ]);
+
+  result.stats = {
+    model_count: _.isEmpty(projectCAG) ? 0 : projectCAG[0].doc_count,
+    data_analysis_count: _.isEmpty(projectAnalysis) ? 0 : projectAnalysis[0].doc_count
   };
-  result.stat = cached.stat;
+
   res.json(result);
 }));
 
@@ -238,17 +254,17 @@ router.get('/:projectId/ontology-definitions', asyncHandler(async (req, res) => 
 }));
 
 /* POST update belief score */
-router.post('/:projectId/update-belief-score', asyncHandler(async (req, res) => {
-  const modifiedAt = Date.now();
-  const projectId = req.params.projectId;
-  const project = get(projectId);
-  const corpusId = project.corpus_id;
-  const results = await indraService.recalculateBeliefScore(corpusId, projectId);
-  await updateService.updateAllBeliefScores(projectId, results);
-  res.status(200).send({
-    updateToken: modifiedAt
-  });
-}));
+// router.post('/:projectId/update-belief-score', asyncHandler(async (req, res) => {
+//   const modifiedAt = Date.now();
+//   const projectId = req.params.projectId;
+//   const project = getCache(projectId);
+//   const corpusId = project.corpus_id;
+//   const results = await indraService.recalculateBeliefScore(corpusId, projectId);
+//   await updateService.updateAllBeliefScores(projectId, results);
+//   res.status(200).send({
+//     updateToken: modifiedAt
+//   });
+// }));
 
 /**
  * POST Get INDRA statements scores

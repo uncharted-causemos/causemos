@@ -76,7 +76,7 @@ import DropdownControl from '@/components/dropdown-control';
 import HighlightText from '@/components/widgets/highlight-text';
 import projectService from '@/services/project-service';
 
-const CONCEPT_SUGGESTION_COUNT = 8;
+const CONCEPT_SUGGESTION_COUNT = 10;
 
 export default {
   name: 'NewNodeConceptSelect',
@@ -222,7 +222,7 @@ export default {
   top: 20px;
   left: 20px;
   display: inline-block;
-  width: 13rem;
+  width: 15rem;
   height: 3rem;
   border: 2px solid $selected;
   border-radius: 4px;

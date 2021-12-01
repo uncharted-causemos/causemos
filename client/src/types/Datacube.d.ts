@@ -38,6 +38,7 @@ export interface DatacubeAttribute {
     geo_acceptable_levels?: string[]; // specific geo type flag
     geo_region_format?: GeoAttributeFormat; // specific geo type flag
     geo_bbox_format?: string;
+    geo_omit_gadm_code_version?: boolean;
     date_display_format?: string; // when model param is of type date, how it should be displayed
     date_range_delimiter?: string;
     date_min?: string;
@@ -97,6 +98,7 @@ export interface Datacube {
   //  or use null and make the field required
   qualifier_outputs?: FeatureQualifier[] | null;
   default_view: any; // object that will contain various default view configurations such as default aggregations
+  new_version_data_id?: string;
 }
 
 export interface Model extends Datacube {
