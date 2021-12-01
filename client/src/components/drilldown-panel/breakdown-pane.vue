@@ -28,6 +28,7 @@
       :selected-item-ids="selectedRegionIds"
       :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
       :show-references="selectedBreakdownOption === SpatialAggregationLevel.Region"
+      :allow-collapsing="false"
       :reference-options="referenceOptions"
       @toggle-reference-options="toggleReferenceOptions"
       :checkbox-type="
@@ -70,6 +71,7 @@
       :selected-timeseries-points="selectedTimeseriesPoints"
       :should-show-deselected-bars="selectedBreakdownOption === SpatialAggregationLevel.Region || selectedBreakdownOption === TemporalAggregationLevel.Year || selectedBreakdownOption === null"
       :show-references="false"
+      :allow-collapsing="true"
       :units="unit"
       :checkbox-type="
         selectedBreakdownOption === qualifierVariable.id ? 'checkbox' : null
@@ -112,6 +114,7 @@
       :units="unit"
       :should-show-deselected-bars="selectedBreakdownOption !== TemporalAggregationLevel.Year"
       :show-references="selectedBreakdownOption === TemporalAggregationLevel.Year"
+      :allow-collapsing="true"
       :reference-options="referenceOptions"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :checkbox-type="
