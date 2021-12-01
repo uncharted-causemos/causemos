@@ -1,5 +1,5 @@
 <template>
-  <modal @close="save">
+  <modal @close="save" :sticky="true">
     <template #header>
       <h2 class="header-question">Which time scale are you interested in?</h2>
     </template>
