@@ -1,71 +1,121 @@
 <template>
   <div class="config-bar-container">
-    <p>
-      <strong>Projection:</strong>
-      <a
-        @click.stop="editParameters"
-      >{{ projectionSteps }} Months ({{ currentEngine }})
-      </a>
-    </p>
+    Using the
+    <dropdown-button
+      :items="engineOptions"
+      :selected-item="selectedEngine"
+      :is-dropdown-above="true"
+      :is-dropdown-left-aligned="true"
+      @item-selected="setEngine"
+    />
+    engine, project over a period of
+    <strong>{{ timeScaleLabel }}</strong>
+    <button class="btn btn-sm btn-default" @click="showModalTimeScale = true">
+      <i class="fa fa-fw fa-pencil" />
+    </button>
+    starting in
+    <date-dropdown
+      :data="projectionStartDate"
+      @date-updated="setProjectionStartDate"
+    />
+    .
+    <modal-time-scale
+      v-if="showModalTimeScale"
+      :initially-selected-time-scale="modelSummary?.parameter?.time_scale"
+      @save-time-scale="saveTimeScale"
+      @close="showModalTimeScale = false"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
-import { defineComponent } from 'vue';
+import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
+import { defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
+import modelService, { ENGINE_OPTIONS } from '@/services/model-service';
+import dropdownButton, { DropdownItem } from '../dropdown-button.vue';
+import DateDropdown from '@/components/widgets/date-dropdown.vue';
+import { CAGModelParameter, CAGModelSummary } from '@/types/CAG';
+import { mapGetters } from 'vuex';
+import { TimeScale } from '@/types/Enums';
+import ModalTimeScale from '../qualitative/modal-time-scale.vue';
 
 export default defineComponent({
+  components: { dropdownButton, DateDropdown, ModalTimeScale },
   name: 'QuantitativeConfigBar',
   props: {
     modelSummary: {
-      type: Object,
+      type: Object as PropType<CAGModelSummary>,
       required: true
     }
   },
-  emits: [
-    'edit-parameters'
-  ],
+  emits: ['model-parameter-changed'],
+  setup(props) {
+    const { modelSummary } = toRefs(props);
+    const selectedEngine = ref(modelSummary.value.parameter.engine);
+    const selectedTimeScale = ref(modelSummary.value.parameter.time_scale);
+    const projectionStartDate = ref(
+      modelSummary.value.parameter.projection_start
+    );
+    watchEffect(() => {
+      // Whenever modelSummary changes, update local state variables
+      selectedEngine.value = modelSummary.value.parameter.engine;
+      selectedTimeScale.value = modelSummary.value.parameter.time_scale;
+      projectionStartDate.value = modelSummary.value.parameter.projection_start;
+    });
+    return {
+      selectedEngine,
+      selectedTimeScale,
+      projectionStartDate,
+      showModalTimeScale: ref(false)
+    };
+  },
   computed: {
-    projectionSteps(): number {
-      const timeSliceMonths = getSliceMonthsFromTimeScale(
-        this.modelSummary.parameter.time_scale
-      );
-      return timeSliceMonths[timeSliceMonths.length - 1];
+    ...mapGetters({
+      currentCAG: 'app/currentCAG'
+    }),
+    engineOptions(): DropdownItem[] {
+      return ENGINE_OPTIONS.map(option => ({
+        displayName: option.value,
+        value: option.key
+      }));
     },
-    currentEngine(): string {
-      return this.modelSummary.parameter.engine;
+    timeScaleLabel(): string {
+      return TIME_SCALE_OPTIONS_MAP.get(this.selectedTimeScale)?.label ?? '';
     }
   },
   methods: {
-    async editParameters() {
-      this.$emit('edit-parameters');
+    async setEngine(newEngine: string) {
+      this.selectedEngine = newEngine;
+      await modelService.updateModelParameter(this.currentCAG, {
+        engine: newEngine
+      });
+      this.$emit('model-parameter-changed');
+    },
+    async setProjectionStartDate(newStartDate: number) {
+      await modelService.updateModelParameter(this.currentCAG, {
+        projection_start: newStartDate
+      });
+      this.$emit('model-parameter-changed');
+    },
+    async saveTimeScale(newTimeScale: TimeScale) {
+      const newParameter: Partial<CAGModelParameter> = {
+        time_scale: newTimeScale
+      };
+      this.showModalTimeScale = false;
+      await modelService.updateModelParameter(this.currentCAG, newParameter);
+      this.$emit('model-parameter-changed');
     }
   }
 });
 </script>
 
 <style lang="scss" scoped>
-
-@import "~styles/variables";
+@import '~styles/variables';
 
 .config-bar-container {
-  height: $navbar-outer-height;
   display: flex;
   align-items: center;
-  padding: 0 10px;
   z-index: 1;
-
-  p {
-    margin: 0;
-  }
-
-  .label-icon {
-    margin-right: 5px;
-  }
-
-  a {
-    padding-left: 5px;
-    cursor: pointer;
-  }
+  gap: 5px;
 }
 </style>

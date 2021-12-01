@@ -102,6 +102,7 @@ export const getRegionAggregations = async (
     Object.values(AdminLevel).forEach(level => {
       (result[level] || []).forEach((item: RegionAgg|{id: string; value: number}) => {
         if (!dict[level][item.id]) {
+          // TODO: See useDatacubeHierarchy, 'None' regions may be filtered out
           console.warn(
             "getRegionAggregation returned a region that doesn't exist in the hierarchy",
             item.id,

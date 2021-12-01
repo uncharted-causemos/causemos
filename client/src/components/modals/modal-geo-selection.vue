@@ -51,6 +51,7 @@
           :selected-layer-id="selectedLayer"
           :selected-region="selectedRegionForMap"
           :bbox="selectedRegionBBox"
+          :map-bounds="mapBounds"
         />
       </div>
 
@@ -79,13 +80,14 @@
 import { defineComponent, PropType } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
-import { ModelParameter } from '@/types/Datacube';
+import { Model, ModelParameter } from '@/types/Datacube';
 import GeoSelectionMap from '@/components/data/geo-selection-map.vue';
-import { stringToAdminLevel, BASE_LAYER } from '@/utils/map-util-new';
+import { stringToAdminLevel, BASE_LAYER, computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { getGADMSuggestions } from '@/services/suggestion-service';
 import { DatacubeGeoAttributeVariableType, DatacubeGenericAttributeVariableType } from '@/types/Enums';
 import { GeoRegionDetail, RegionalGADMDetail } from '@/types/Common';
 import { REGION_ID_DISPLAY_DELIMETER, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 export default defineComponent({
   name: 'ModalGeoSelection',
@@ -100,6 +102,10 @@ export default defineComponent({
   props: {
     modelParam: {
       type: Object as PropType<ModelParameter>,
+      default: null
+    },
+    metadata: {
+      type: Object as PropType<Model>,
       default: null
     }
   },
@@ -153,12 +159,26 @@ export default defineComponent({
     aggregationLevel: 0,
     BASE_LAYER,
     DatacubeGenericAttributeVariableType,
-    allRegions: {} as {[key: string]: GeoRegionDetail}
+    allRegions: {} as {[key: string]: GeoRegionDetail},
+    mapBounds: [
+      [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
+      [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
+    ]
   }),
-  mounted() {
+  async mounted() {
     // validate initial aggregationLevel
     while (this.acceptableGeoLevels[this.aggregationLevel] === '') {
       this.aggregationLevel++;
+    }
+
+    //
+    // calculate the initial map bounds covering the model geography
+    //
+    if (this.metadata.geography && this.metadata.geography.country && this.metadata.geography.country.length > 0) {
+      const newBounds = await computeMapBoundsForCountries(this.metadata.geography.country);
+      if (newBounds !== null) {
+        this.mapBounds = newBounds;
+      }
     }
   },
   methods: {

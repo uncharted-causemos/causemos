@@ -12,9 +12,10 @@
       :items="breakdownOptions"
       :selectedItem="selectedBreakdownOption"
       :is-dropdown-left-aligned="true"
-      @item-selected="emitBreakdownOptionSelection"
+      @item-selected="emitBreakdownOptionSelection($event); scrollToBreakdown($event)"
     />
     <aggregation-checklist-pane
+      ref="region_ref"
       v-if="isRegionalDataValid"
       class="checklist-section"
       :aggregation-level-count="availableAdminLevelTitles.length"
@@ -26,6 +27,9 @@
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
       :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
+      :show-references="selectedBreakdownOption === SpatialAggregationLevel.Region"
+      :reference-options="referenceOptions"
+      @toggle-reference-options="toggleReferenceOptions"
       :checkbox-type="
         selectedBreakdownOption === SpatialAggregationLevel.Region
           ? 'checkbox'
@@ -56,6 +60,7 @@
     <aggregation-checklist-pane
       class="checklist-section"
       v-for="qualifierVariable in qualifierBreakdownData"
+      :ref="qualifierVariable.id + '_ref'"
       :key="qualifierVariable.id"
       :aggregation-level-count="1"
       :aggregation-level="0"
@@ -64,6 +69,7 @@
       :raw-data="qualifierVariable.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :should-show-deselected-bars="selectedBreakdownOption === SpatialAggregationLevel.Region || selectedBreakdownOption === TemporalAggregationLevel.Year || selectedBreakdownOption === null"
+      :show-references="false"
       :units="unit"
       :checkbox-type="
         selectedBreakdownOption === qualifierVariable.id ? 'checkbox' : null
@@ -95,6 +101,7 @@
       </template>
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
+      ref="year_ref"
       v-if="isTemporalBreakdownDataValid"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
@@ -104,6 +111,8 @@
       :raw-data="temporalBreakdownData"
       :units="unit"
       :should-show-deselected-bars="selectedBreakdownOption !== TemporalAggregationLevel.Year"
+      :show-references="selectedBreakdownOption === TemporalAggregationLevel.Year"
+      :reference-options="referenceOptions"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :checkbox-type="
         selectedBreakdownOption === TemporalAggregationLevel.Year
@@ -112,6 +121,7 @@
       "
       :selected-item-ids="Array.from(selectedYears)"
       @toggle-is-item-selected="toggleIsYearSelected"
+      @toggle-reference-options="toggleReferenceOptions"
     >
       <template #aggregation-description>
         <p class="aggregation-description">
@@ -127,10 +137,11 @@
 <script lang="ts">
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
+import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { ModelRunReference } from '@/types/ModelRunReference';
 import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
-import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import {
   AggregationOption,
   TemporalAggregationLevel,
@@ -206,6 +217,10 @@ export default defineComponent({
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
+    },
+    referenceOptions: {
+      type: Array as PropType<ModelRunReference[]>,
+      default: []
     }
   },
   emits: [
@@ -213,6 +228,7 @@ export default defineComponent({
     'toggle-is-region-selected',
     'toggle-is-qualifier-selected',
     'toggle-is-year-selected',
+    'toggle-reference-options',
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
@@ -240,6 +256,10 @@ export default defineComponent({
 
     const toggleIsYearSelected = (title: string, year: string) => {
       emit('toggle-is-year-selected', year);
+    };
+
+    const toggleReferenceOptions = (value: string) => {
+      emit('toggle-reference-options', value);
     };
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
@@ -305,6 +325,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsQualifierSelected,
       toggleIsYearSelected,
+      toggleReferenceOptions,
       availableAdminLevelTitles,
       timestampFormatter,
       ADMIN_LEVEL_KEYS,
@@ -316,6 +337,24 @@ export default defineComponent({
       SpatialAggregationLevel,
       TemporalAggregationLevel
     };
+  },
+  methods: {
+    async scrollToBreakdown(newValue: string | null) {
+      if (newValue) {
+        const reference = newValue + '_ref';
+        setTimeout(() => { // HACK: wait for element to be mounted, year_ref gets unmounted in certain cases so we need to wait before we try and scroll to it
+          try { // in the future we should look into preventing the mount/unmount behavior
+            const element = (this.$refs[reference] as any).$el; // this will throw an error if element hasn't been rendered (it's ref wont exist)
+            const container = document.getElementById('panel-content-container');
+            if (container) {
+              container.scrollTop = element.offsetTop - 45; // set scroll height to slightly above relevant qualifier
+            }
+          } catch (e) {
+            console.error('could not scroll to element: ', e);
+          }
+        }, 250);
+      }
+    }
   }
 });
 </script>

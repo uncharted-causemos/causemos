@@ -2,7 +2,7 @@ import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import { Clause, Filters } from '@/types/Filters';
 import _ from 'lodash';
-import { deleteInsight } from '@/services/insight-service';
+import { deleteInsight, fetchInsights, InsightFilterFields } from '@/services/insight-service';
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
@@ -447,6 +447,15 @@ function exportPPTX(selectedInsights: Insight[], projectMetadata: any) {
   });
 }
 
+async function getPublicInsights(datacubeId: string, projectId: string) {
+  const publicInsightsSearchFields: InsightFilterFields = {};
+  publicInsightsSearchFields.visibility = 'public';
+  publicInsightsSearchFields.project_id = projectId;
+  publicInsightsSearchFields.context_id = datacubeId;
+  const publicInsights = await fetchInsights([publicInsightsSearchFields]);
+  return publicInsights as Insight[];
+}
+
 export default {
   parseMetadataDetails,
   getFormattedFilterString,
@@ -454,5 +463,6 @@ export default {
   removeInsight,
   jumpToInsightContext,
   exportDOCX,
-  exportPPTX
+  exportPPTX,
+  getPublicInsights
 };

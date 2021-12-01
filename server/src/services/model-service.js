@@ -382,7 +382,7 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
 
   const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
 
-  nodeParameters.forEach(np => {
+  nodeParameters.forEach((np, idx) => {
     const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
 
     if (_.isEmpty(np.parameter)) {
@@ -410,9 +410,9 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
         });
       }
 
-
       r[np.concept] = {
-        name: np.parameter.name,
+        // Need to have unique indicator names because Delphi can't handle duplicates
+        name: np.parameter.name + ` ${idx}`,
         minValue: _.get(np.parameter, 'min', 0),
         maxValue: _.get(np.parameter, 'max', 1),
         func: valueFunc,

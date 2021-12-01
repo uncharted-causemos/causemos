@@ -28,6 +28,11 @@
           />
           <color-legend
             :show-cag-encodings="true" />
+          <config-bar
+            class="config-bar"
+            :model-summary="modelSummary"
+            @model-parameter-changed="$emit('model-parameter-changed')"
+          />
         </div>
         <sensitivity-analysis
           v-if="activeTab === 'matrix'"
@@ -56,20 +61,13 @@
             :should-confirm-curations="true">
             <edge-polarity-switcher
               :selected-relationship="selectedEdge"
-              @edge-set-user-polarity="setEdgeUserPolarity" />
-            <edge-weight-slider
-              v-if="showComponent"
-              :selected-relationship="selectedEdge"
-              @set-edge-weights="setEdgeWeights" />
+              @edge-set-user-polarity="setEdgeUserPolarity"
+              @edge-set-weights="setEdgeWeights"
+            />
           </evidence-pane>
         </template>
       </drilldown-panel>
     </div>
-    <config-bar
-      class="config-bar"
-      :model-summary="modelSummary"
-      @edit-parameters="showModelParameters"
-    />
   </div>
 </template>
 
@@ -82,7 +80,6 @@ import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis'
 import ModelGraph from '@/components/quantitative/model-graph';
 import modelService from '@/services/model-service';
 import ColorLegend from '@/components/graph/color-legend';
-import EdgeWeightSlider from '@/components/drilldown-panel/edge-weight-slider';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
@@ -123,7 +120,6 @@ export default {
     ColorLegend,
     DrilldownPanel,
     EdgePolaritySwitcher,
-    EdgeWeightSlider,
     EvidencePane,
     CagSidePanel,
     CagCommentsButton
@@ -159,7 +155,11 @@ export default {
     }
   },
   emits: [
-    'background-click', 'show-model-parameters', 'refresh-model', 'set-sensitivity-analysis-type', 'tab-click'
+    'background-click',
+    'refresh-model',
+    'set-sensitivity-analysis-type',
+    'tab-click',
+    'model-parameter-changed'
   ],
   data: () => ({
     graphData: {},
@@ -235,9 +235,6 @@ export default {
     closeDrilldown() {
       this.isDrilldownOpen = false;
     },
-    showModelParameters() {
-      this.$emit('show-model-parameters');
-    },
     showRelation(edgeData) {
       this.isFetchingStatements = true;
       this.drilldownTabs = EDGE_DRILLDOWN_TABS;
@@ -259,8 +256,17 @@ export default {
       this.closeDrilldown();
       this.$emit('refresh-model');
     },
-    async setEdgeWeights(edgeData) {
-      await modelService.updateEdgeParameter(this.currentCAG, edgeData);
+    async setEdgeWeights(edgeData, weights) {
+      const payload = {
+        id: edgeData.id,
+        source: edgeData.source,
+        target: edgeData.target,
+        polarity: edgeData.polarity,
+        parameter: {
+          weights
+        }
+      };
+      await modelService.updateEdgeParameter(this.currentCAG, payload);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
       this.$emit('refresh-model');
     },
@@ -354,14 +360,15 @@ main {
     }
   }
 }
+// FIXME: hideable legend contains its own absolute positioning styles.
+//  Refactor it so that its parent determines its positioning, then put both
+//  the legend and the config bar in a flexbox so we don't need hardcoded
+//  positions like we have here.
+$legendWidth: 200px;
 
 .config-bar {
   position: absolute;
-  // FIXME: hideable legend contains its own absolute positioning styles.
-  //  Refactor it so that its parent determines its positioning, then put both
-  //  the legend and the config bar in a flexbox so we don't need hardcoded
-  //  positions like we have here.
-  left: 210px;
-  bottom: 0;
+  left: calc(calc(#{$legendWidth} - #{$navbar-outer-height}) + 10px);
+  bottom: 5px;
 }
 </style>

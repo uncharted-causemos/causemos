@@ -81,7 +81,17 @@
             @item-selected="updateAcceptableGeoFormat"
           />
         </div>
-
+        <div v-if="updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.GADM_Code" class="row date-option-container checkbox">
+          <label
+            @click="toggleOmitGADMCodeVersion()"
+            style="cursor: pointer; color: black;">
+            <i
+              class="fa fa-lg fa-fw"
+              :class="{ 'fa-check-square-o': updatedParameter.additional_options.geo_omit_gadm_code_version, 'fa-square-o': !updatedParameter.additional_options.geo_omit_gadm_code_version }"
+            />
+            Omit GADM code version
+          </label>
+        </div>
         <div v-if="updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.Bounding_Box" class="row date-option-container">
           <label class="col-md-6">Bounding box format</label>
           <input
@@ -211,7 +221,7 @@ export default defineComponent({
         return allGeoLevels.join(REGION_ID_DELIMETER);
       }
       if (this.updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.GADM_Code) {
-        return 'ETH.7_1'; // example geo-code
+        return this.updatedParameter.additional_options.geo_omit_gadm_code_version ? 'ETH.7' : 'ETH.7_1'; // example geo-code
       }
       return '';
     }
@@ -255,6 +265,9 @@ export default defineComponent({
       if (!this.updatedParameter.additional_options.geo_bbox_format) {
         this.resetBBoxFormat();
       }
+      if (this.updatedParameter.additional_options.geo_omit_gadm_code_version === undefined) {
+        this.updatedParameter.additional_options.geo_omit_gadm_code_version = false;
+      }
     }
     if (this.isDateRangeParam || this.isDateParam) {
       if (this.isDateRangeParam && !this.updatedParameter.additional_options.date_range_delimiter) {
@@ -269,6 +282,11 @@ export default defineComponent({
     }
   },
   methods: {
+    toggleOmitGADMCodeVersion() {
+      if (this.updatedParameter) {
+        this.updatedParameter.additional_options.geo_omit_gadm_code_version = !this.updatedParameter.additional_options.geo_omit_gadm_code_version;
+      }
+    },
     resetBBoxFormat() {
       if (this.updatedParameter) {
         this.updatedParameter.additional_options.geo_bbox_format = this.defaultBBoxFormat;

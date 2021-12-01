@@ -3,6 +3,10 @@ import { OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
 import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
+import { getGADMSuggestions } from '@/services/suggestion-service';
+
+// only allow fetching a maximum number of bbox for of a list of countries
+const MAX_NUMBER_BBOX_COUNTRIES = 10;
 
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
@@ -118,4 +122,52 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
     baseline,
     difference: {}
   };
+}
+
+export async function computeMapBoundsForCountries(countryList: string[]) {
+  //
+  // calculate the map bounds covering the geography covered by the input list of countries
+  //
+  if (countryList.length > 0) {
+    let countries = countryList;
+    if (countries.length > MAX_NUMBER_BBOX_COUNTRIES) {
+      countries = countries.slice(0, MAX_NUMBER_BBOX_COUNTRIES);
+    }
+
+    const allBBox: any = [];
+    // fetch the bbox for country of the input geography
+    const promises = countries.map(country => {
+      const debouncedFetchFunction = getGADMSuggestions(DatacubeGeoAttributeVariableType.Country, country);
+      return debouncedFetchFunction(); // NOTE: a debounced function may return undefined
+    });
+    const allResults = await Promise.all(promises);
+    allResults.forEach(result => {
+      if (result !== undefined) {
+        allBBox.push(...result.map(item => item.bbox ? item.bbox.coordinates : []));
+      }
+    });
+    // allBBox is an array of bbox values for each country of the input geography
+    //  calculate the union bbox by merging all bbox into a global one
+    if (allBBox.length > 0) {
+      const finalBBox: number[][] = allBBox[0];
+      allBBox.forEach((bbox: number[][]) => {
+        // [[minLon, maxLat], [maxLon, minLat]]:
+        if (bbox[0][0] < finalBBox[0][0]) {
+          finalBBox[0][0] = bbox[0][0];
+        }
+        if (bbox[0][1] > finalBBox[0][1]) {
+          finalBBox[0][1] = bbox[0][1];
+        }
+        if (bbox[1][0] > finalBBox[1][0]) {
+          finalBBox[1][0] = bbox[1][0];
+        }
+        if (bbox[1][1] < finalBBox[1][1]) {
+          finalBBox[1][1] = bbox[1][1];
+        }
+      });
+      // return the final, global, bbox
+      return finalBBox;
+    }
+  }
+  return null;
 }

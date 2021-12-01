@@ -11,6 +11,9 @@ const datacubeService = rootRequire('/services/datacube-service');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
 const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
+const QUALIFIER_MAX_COUNT = 10000;
+const QUALIFIER_TIMESERIES_MAX_COUNT = 100;
+const QUALIFIER_TIMESERIES_MAX_LEVEL = 1;
 
 /**
  * Submit a new model run to Jataware and store information about it in ES.
@@ -121,9 +124,10 @@ const startModelOutputPostProcessing = async (metadata) => {
   const qualifierMap = {};
   if (modelMetadata.qualifier_outputs) {
     modelMetadata.outputs.forEach(output => {
-      qualifierMap[output.name] = modelMetadata.qualifier_outputs.filter(
-        q => !IMPLICIT_QUALIFIERS.includes(q.name)
-      ).map(q => q.name);
+      qualifierMap[output.name] = modelMetadata.qualifier_outputs
+        .filter(q => !IMPLICIT_QUALIFIERS.includes(q.name))
+        .filter(qualifier => qualifier.related_features.includes(output.name))
+        .map(q => q.name);
     });
   }
 
@@ -160,7 +164,12 @@ const startModelOutputPostProcessing = async (metadata) => {
     doc_ids: docIds,
     data_paths: metadata.data_paths,
     qualifier_map: qualifierMap,
-    compute_tiles: true
+    compute_tiles: true,
+    qualifier_thresholds: {
+      max_count: QUALIFIER_MAX_COUNT,
+      regional_timeseries_count: QUALIFIER_TIMESERIES_MAX_COUNT,
+      regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL
+    }
   };
   try {
     await sendToPipeline(flowParameters);
@@ -260,6 +269,9 @@ const startIndicatorPostProcessing = async (metadata) => {
     Logger.error(err);
     return { result: { error: err }, code: 400 };
   }
+
+  // Allow deprecation of indicators while registering a new one. Field removed via `removeUnwantedData`
+  const deprecatedIds = metadata.deprecatesIDs;
   processFilteredData(metadata);
   removeUnwantedData(metadata);
   metadata.type = 'indicator';
@@ -359,18 +371,26 @@ const startIndicatorPostProcessing = async (metadata) => {
     data_paths: metadata.data_paths,
     temporal_resolution: resolutions[highestRes],
     qualifier_map: qualifierMap,
-    is_indicator: true
+    is_indicator: true,
+    compute_tiles: true,
+    qualifier_thresholds: {
+      max_count: QUALIFIER_MAX_COUNT,
+      regional_timeseries_count: QUALIFIER_TIMESERIES_MAX_COUNT,
+      regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL
+    }
   };
   try {
     await sendToPipeline(flowParameters);
   } catch (err) {
     return { result: { error: err }, code: 500 };
   }
+
+  let response = { result: { message: 'No documents added' }, code: 202 }; // Fallback value
   if (newIndicatorMetadata.length > 0) {
     try {
       const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
       const result = await connection.insert(newIndicatorMetadata, d => d.id);
-      return {
+      response = {
         result:
           {
             es_response: result,
@@ -384,7 +404,10 @@ const startIndicatorPostProcessing = async (metadata) => {
       return { result: { error: err }, code: 500 };
     }
   }
-  return { result: { message: 'No documents added' }, code: 202 };
+  if (deprecatedIds) {
+    await datacubeService.deprecateDatacubes(metadata.id, deprecatedIds);
+  }
+  return response;
 };
 
 /**

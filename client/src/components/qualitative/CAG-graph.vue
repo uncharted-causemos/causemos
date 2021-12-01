@@ -22,8 +22,6 @@
       @close="showCustomConcept = false"
       @save-custom-concept="saveCustomConcept"
     />
-    <color-legend
-      :show-cag-encodings="true" />
   </div>
 </template>
 
@@ -44,7 +42,6 @@ import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util
 import { calculateNeighborhood, hasBackingEvidence, highlightOptions, overlap } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
-import ColorLegend from '@/components/graph/color-legend';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 import GraphSearch from '@/components/widgets/graph-search.vue';
 
@@ -657,7 +654,6 @@ export default {
   name: 'CAGGraph',
   components: {
     NewNodeConceptSelect,
-    ColorLegend,
     ModalCustomConcept,
     GraphSearch
   },
@@ -675,7 +671,8 @@ export default {
     'delete', 'refresh',
     'new-edge', 'node-click', 'edge-click', 'background-click', 'background-dbl-click',
     'rename-node',
-    'merge-nodes'
+    'merge-nodes',
+    'suggestion-selected', 'suggestion-duplicated'
   ],
   data: () => ({
     selectedNode: '',
@@ -993,6 +990,11 @@ export default {
       this.renderer.highlight({ nodes, edges }, highlightOptions);
     },
     onSuggestionSelected(suggestion) {
+      if (this.data.nodes.filter(node => node.concept === suggestion.concept).length > 0) {
+        this.$emit('suggestion-duplicated', suggestion);
+        return;
+      }
+
       // HACK This is leveraing the svg-flowgraph internals.
       //
       // We inject the node-blueprint into the DOM with createNewNode, then when the
