@@ -191,7 +191,7 @@ export default defineComponent({
     },
     setType(v: string) {
       let weights: number[];
-      if (v === 'level') {
+      if (v === EDGE_TYPE_LEVEL) {
         weights = [this.currentEdgeWeight, 0];
       } else {
         weights = [0, this.currentEdgeWeight];
