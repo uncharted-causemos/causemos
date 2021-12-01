@@ -20,7 +20,13 @@
             @button-clicked="switchTab"
           />
           <div class="export">
-            <span>Export insight{{ searchedInsights.length !== 1 ? 's' : '' }} as</span>
+            <span>
+              Export
+              {{ insightsToExport.length }}
+              {{ curatedInsights.length > 0 ? 'selected' : '' }}
+              insight{{ insightsToExport.length !== 1 ? 's' : '' }}
+              as
+            </span>
             <button
               class="btn btn-sm btn-default"
               @click="() => exportSelectedInsights('Powerpoint')"
@@ -199,6 +205,12 @@ export default {
       } else {
         return this.listInsights;
       }
+    },
+    insightsToExport() {
+      if (this.curatedInsights.length > 0) {
+        return this.curatedInsights;
+      }
+      return this.searchedInsights;
     }
   },
   mounted() {
@@ -277,10 +289,10 @@ export default {
     exportSelectedInsights(item) {
       switch (item) {
         case 'Word':
-          InsightUtil.exportDOCX(this.searchedInsights, this.projectMetadata);
+          InsightUtil.exportDOCX(this.selectedInsights, this.projectMetadata);
           break;
         case 'Powerpoint':
-          InsightUtil.exportPPTX(this.searchedInsights, this.projectMetadata);
+          InsightUtil.exportPPTX(this.selectedInsights, this.projectMetadata);
           break;
         default:
           break;
