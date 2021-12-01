@@ -21,7 +21,7 @@
     </div>
     <div style="display: inline-block">
       {{ ontologyFormatter(selectedRelationship.source) }}
-      leads to
+      leads to&nbsp;
     </div>
     <div
       v-if="selectedRelationship.parameter"
@@ -53,8 +53,8 @@
         v-if="isEdgePolarityOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option" @click="setPolarity(1)">increase</div>
-          <div class="dropdown-option" @click="setPolarity(-1)">decrease</div>
+          <div class="dropdown-option polarity-same" @click="setPolarity(1)">increase</div>
+          <div class="dropdown-option polarity-opposite" @click="setPolarity(-1)">decrease</div>
         </template>
       </dropdown-control>
     </div>
@@ -65,7 +65,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, computed } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
@@ -96,6 +96,13 @@ const getEdgeWeight = (edge: EdgeParameter): number => {
   return 0;
 };
 
+enum DROPDOWN {
+  EDGE_TYPE = 'edge-type',
+  EDGE_WEIGHT = 'edge-weight',
+  EDGE_POLARITY = 'edge-polarity',
+  NONE = 'none',
+}
+
 
 export default defineComponent({
   name: 'EdgePolaritySwitcher',
@@ -110,22 +117,28 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const isPolarityDropdownOpen = ref(false);
     const ontologyFormatter = useOntologyFormatter();
 
-    const isEdgeTypeOpen = ref(false);
-    const isEdgeWeightOpen = ref(false);
-    const isEdgePolarityOpen = ref(false);
+    const dropDown = ref(DROPDOWN.NONE);
+    const isEdgeTypeOpen = computed(() => {
+      return dropDown.value === DROPDOWN.EDGE_TYPE;
+    });
+    const isEdgeWeightOpen = computed(() => {
+      return dropDown.value === DROPDOWN.EDGE_WEIGHT;
+    });
+    const isEdgePolarityOpen = computed(() => {
+      return dropDown.value === DROPDOWN.EDGE_POLARITY;
+    });
 
     const currentEdgeType = ref(getEdgeTypeString(props.selectedRelationship as EdgeParameter));
     const currentEdgeWeight = ref(getEdgeWeight(props.selectedRelationship as EdgeParameter));
 
     return {
       ontologyFormatter,
-      isPolarityDropdownOpen,
       isEdgeTypeOpen,
       isEdgeWeightOpen,
       isEdgePolarityOpen,
+      dropDown,
 
       currentEdgeType,
       currentEdgeWeight,
@@ -148,24 +161,16 @@ export default defineComponent({
   },
   methods: {
     closeAll() {
-      this.isEdgeTypeOpen = false;
-      this.isEdgeWeightOpen = false;
-      this.isEdgePolarityOpen = false;
+      this.dropDown = DROPDOWN.NONE;
     },
     openEdgeTypeDropdown() {
-      this.isEdgeTypeOpen = true;
-      this.isEdgeWeightOpen = false;
-      this.isEdgePolarityOpen = false;
+      this.dropDown = DROPDOWN.EDGE_TYPE;
     },
     openEdgeWeightDropdown() {
-      this.isEdgeTypeOpen = false;
-      this.isEdgeWeightOpen = true;
-      this.isEdgePolarityOpen = false;
+      this.dropDown = DROPDOWN.EDGE_WEIGHT;
     },
     openEdgePolarityDropdown() {
-      this.isEdgeTypeOpen = false;
-      this.isEdgeWeightOpen = false;
-      this.isEdgePolarityOpen = true;
+      this.dropDown = DROPDOWN.EDGE_POLARITY;
     },
     weightValueString(v: number): string {
       if (v === 0.9) return 'a large';
@@ -198,9 +203,6 @@ export default defineComponent({
       }
       this.currentEdgeType = v;
       this.$emit('edge-set-weights', this.selectedRelationship, weights);
-    },
-    togglePolarityDropdown() {
-      this.isPolarityDropdownOpen = !this.isPolarityDropdownOpen;
     }
   }
 });
@@ -208,7 +210,6 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import '~styles/variables';
-
 
 .clickable-dropdown {
   font-weight: 600;
@@ -223,21 +224,12 @@ export default defineComponent({
   background: #eee;
 }
 
-.polarity-button {
-  font-weight: normal;
-}
-
-.edge-type-dropdown,
-.polarity-dropdown {
+.edge-type-dropdown {
   font-size: $font-size-medium;
   font-weight: normal;
   cursor: default;
   position: absolute;
   margin: -10px 0 0 4px;
-}
-
-.polarity-label {
-  padding: 5px;
 }
 
 .polarity-same {
@@ -246,5 +238,4 @@ export default defineComponent({
 .polarity-opposite {
   color: $negative;
 }
-
 </style>
