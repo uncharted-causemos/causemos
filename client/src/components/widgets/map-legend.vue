@@ -58,6 +58,7 @@ export default defineComponent({
   methods: {
     refresh() {
       const n = this.ramp.length;
+      if (n === 0) return;
       const colors = this.ramp.map(d => d.color);
       const refSelection = d3.select((this.$refs as any).colorRamp);
       refSelection.selectAll('*').remove();
