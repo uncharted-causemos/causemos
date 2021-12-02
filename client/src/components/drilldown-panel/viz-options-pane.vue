@@ -240,11 +240,11 @@ export default defineComponent({
       .map(key => ({ displayName: key, value: (BASE_LAYER_TRANSPARENCY as any)[key] })));
 
     // FIXME: disable linear/log color scales until map support is added
-    // const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
-    //   .map(val => ({ displayName: capitalize(val), value: val })));
-    const colorScaleGroupButtons = ref([
-      { displayName: capitalize(ColorScaleType.Discrete), value: ColorScaleType.Discrete }
-    ]);
+    const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
+      .map(val => ({ displayName: capitalize(val), value: val })));
+    // const colorScaleGroupButtons = ref([
+    //   { displayName: capitalize(ColorScaleType.Discrete), value: ColorScaleType.Discrete }
+    // ]);
     const colorSchemes = ref(Object.keys(COLOR_SCHEMES)
       .map(val => ({ displayName: capitalize(val.toLowerCase()), value: val })));
 

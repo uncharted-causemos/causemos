@@ -1554,7 +1554,7 @@ export default defineComponent({
       if (outputSpecs.value.length > 1) {
         // if more than one map is shown, e.g., when relativeTo is active
         //  disable animation since the multiple maps are supposed to sync together on move
-        cameraOptions.duration = 0;
+        return { duration: 0 };
       }
       return cameraOptions;
     });
@@ -2107,11 +2107,6 @@ $marginSize: 5px;
     .top-padding {
       height: 19px;
     }
-    div {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-    }
 }
 
 .card-map-container {
@@ -2198,14 +2193,6 @@ $marginSize: 5px;
 
   .timestamp {
     color: $selected-dark;
-  }
-}
-.map-legend-container {
-  ::v-deep(.color-label) {
-    span:nth-child(2) {
-      position: relative;
-      bottom: -16px;
-    }
   }
 }
 

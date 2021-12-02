@@ -44,6 +44,25 @@ export function getColors(color: COLOR, n = 256) {
   return quantize(interpolateRgbBasis(COLOR_SCHEME[color]), n);
 }
 
+/**
+ * return canvas representing color ramp
+ * @param color color interpolator
+ * @param n number of colors
+ * @returns canvas that represent color ramp
+ */
+export function ramp(color: (t: number) => string, n = 256) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = n;
+  const context = canvas.getContext('2d');
+  for (let i = 0; i < n; ++i) {
+    if (!context) return;
+    context.fillStyle = color(i / (n - 1));
+    context.fillRect(0, n - i, 1, 1);
+  }
+  return canvas;
+}
+
 const COLORS = [
   '#8767C8',
   '#1b9e77',

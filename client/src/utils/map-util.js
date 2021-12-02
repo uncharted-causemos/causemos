@@ -303,5 +303,5 @@ export const createMapLegendData = (domain, colors, scaleFn, isDiverging) => {
     data.push({ color: item, label: labels[index] });
   });
   data[0].decor = format(min);
-  return data.reverse();
+  return data;
 };
