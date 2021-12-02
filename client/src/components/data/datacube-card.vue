@@ -315,7 +315,7 @@
               <timeseries-chart
                 v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 class="timeseries-chart"
-                :timeseries-data="allTimeseriesData"
+                :timeseries-data="timeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
@@ -1449,7 +1449,6 @@ export default defineComponent({
     );
 
     const {
-      allTimeseriesData,
       timeseriesData,
       visibleTimeseriesData,
       relativeTo,
@@ -1695,7 +1694,6 @@ export default defineComponent({
     return {
       addNewTag,
       allModelRunData,
-      allTimeseriesData,
       activeDrilldownTab,
       activeVizOptionsTab,
       adminLayerStats,
