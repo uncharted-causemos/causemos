@@ -9,9 +9,9 @@
           <span>{{d.label}}</span>
           <span>{{d.decor}}</span>
           <!-- Theses are dummy duplicates which are not visible to just make the width to auto fit the text since original labels are absolute positioned -->
-          <div class="flex-col">
-            <span style="position: relative; visibility: hidden;">{{d.label}}</span>
-            <span style="position: relative; visibility: hidden;">{{d.decor}}</span>
+          <div class="flex-col" style="height: 0; visibility: hidden;">
+            <span style="position: relative;">{{d.label}}</span>
+            <span style="position: relative;">{{d.decor}}</span>
           </div>
       </div>
     </div>

@@ -214,6 +214,10 @@ export default {
     selectedColorScheme: {
       type: Array,
       default: () => COLOR_SCHEME.DEFAULT
+    },
+    colorOption: {
+      type: Object,
+      default: () => ({ scaleFn: d3.scaleLinear })
     }
   },
   data: () => ({
@@ -338,9 +342,6 @@ export default {
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
-    this.colorOption = {
-      scaleFn: d3.scaleLinear
-    };
 
     // the following are needed to render pre-generated overlay
     this.imageSourceId = 'maas-image-source';
