@@ -246,8 +246,9 @@ export default defineComponent({
           this.disableOverlay();
           if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
             this.isTraining = true;
+          } else {
+            this.toaster(errors[0], 'error', true);
           }
-          this.toaster(errors[0], 'error', true);
           console.error(errors);
           return;
         }
@@ -262,7 +263,6 @@ export default defineComponent({
         );
         // FIXME: use status code
         if (r.status === 'training') {
-          this.toaster(MODEL_MSGS.MODEL_TRAINING, 'error', true);
           this.isTraining = true;
           return;
         }
@@ -540,8 +540,9 @@ export default defineComponent({
           this.disableOverlay();
           if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
             this.isTraining = true;
+          } else {
+            this.toaster(errors[0], 'error', true);
           }
-          this.toaster(errors[0], 'error', true);
           console.error(errors);
           return [];
         }
