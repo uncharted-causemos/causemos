@@ -41,7 +41,7 @@ import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
-import { calculateNeighborhood, hasBackingEvidence, highlightOptions, overlap, findCycles } from '@/utils/graphs-util';
+import { calculateNeighborhood, hasBackingEvidence, highlightOptions, overlap, findSCC, findCycles } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
@@ -895,7 +895,10 @@ export default {
     });
 
     // FIXME: Remove after testing
-    findCycles(this.data.edges);
+    console.log('Identified following strongly connected components:');
+    console.log(findSCC(this.data.edges));
+    console.log('Identified following cycles:');
+    console.log(findCycles(this.data.edges));
     this.refresh();
   },
   beforeUnmount() {
