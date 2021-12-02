@@ -111,17 +111,28 @@ const formatNodeAggregation = (resultNodes, resultEdges) => {
   const concepts = [].concat(subjects).concat(objects);
   const edges = resultEdges.body.aggregations.edges.buckets.map(edge => edge.key);
 
+  // Calculate node degree
+  const degreeMap = new Map();
+  edges.forEach(edge => {
+    const [source, target] = edge.split('///'); // Encoded as $source///$target for ES aggregation
+    if (degreeMap.has(source)) {
+      degreeMap.set(source, degreeMap.get(source) + 1);
+    } else {
+      degreeMap.set(source, 1);
+    }
+
+    if (degreeMap.has(target)) {
+      degreeMap.set(target, degreeMap.get(target) + 1);
+    } else {
+      degreeMap.set(target, 1);
+    }
+  });
+
   const nodeMap = {};
   for (const concept of concepts) {
     const id = concept.key;
     const groundingScore = concept.grounding_score.value;
-    // Calculate node degree
-    let degree = 0;
-    edges.forEach(e => {
-      const splitted = e.split('///');
-      if (splitted.includes(id)) degree++;
-    });
-
+    const degree = degreeMap.get(id);
     if (id in nodeMap) {
       nodeMap[id].groundingScore = _weightedMean(
         [nodeMap[id].groundingScore, groundingScore],
