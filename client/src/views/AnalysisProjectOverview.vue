@@ -112,7 +112,7 @@
               class="btn btn-primary btn-call-for-action"
               @click="onCreateCAG"
               ><i class="fa fa-plus" />
-                Create Qualitative Model
+                Create CAG
             </button>
             <button
               v-tooltip.top-center="'Create a new Quantitative Analysis'"
