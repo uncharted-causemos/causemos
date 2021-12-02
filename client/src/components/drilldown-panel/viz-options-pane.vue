@@ -236,14 +236,18 @@ export default defineComponent({
     const baseLayerTransparencyOptions = ref(Object.keys(BASE_LAYER_TRANSPARENCY)
       .map(key => ({ displayName: key, value: (BASE_LAYER_TRANSPARENCY as any)[key] })));
 
-    const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
-      .map(val => ({ displayName: capitalize(val), value: val })));
+    // FIXME: disable linear/log color scales until map support is added
+    // const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
+    //   .map(val => ({ displayName: capitalize(val), value: val })));
+    const colorScaleGroupButtons = ref([
+      { displayName: capitalize(ColorScaleType.Discrete), value: ColorScaleType.Discrete }
+    ]);
     const colorSchemes = ref(Object.keys(COLOR_SCHEMES)
       .map(val => ({ displayName: capitalize(val.toLowerCase()), value: val })));
 
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined && datacubeCurrentOutputsMap.value[metadata.value?.id] ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const modelOutputs = computed<DatacubeFeature[]>(() => {
       const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;

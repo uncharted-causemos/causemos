@@ -58,7 +58,7 @@
     </div>
     <div class="checklist-container">
       <aggregation-checklist-item
-        v-for="(row, rowIndex) of rowsWithData"
+        v-for="(row, rowIndex) of displayRows"
         :key="rowIndex"
         :histogram-visible="shouldShowDeselectedBars || row.isChecked"
         :item-data="row"
@@ -70,7 +70,7 @@
         @toggle-checked="toggleChecked(row.path)"
       />
       <collapsible-item
-        v-if="rowsWithoutData.length"
+        v-if="allowCollapsing && rowsWithoutData.length"
         :override="true">
         <template #title>{{rowsWithoutData.length}} more without data</template>
         <template #content>
@@ -344,6 +344,10 @@ export default defineComponent({
       type: Boolean,
       required: true
     },
+    allowCollapsing: {
+      type: Boolean,
+      required: true
+    },
     checkboxType: {
       type: String as PropType<'checkbox' | 'radio' | null>,
       default: null
@@ -360,6 +364,7 @@ export default defineComponent({
       aggregationLevel,
       orderedAggregationLevelKeys,
       shouldShowDeselectedBars,
+      allowCollapsing,
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
@@ -523,6 +528,9 @@ export default defineComponent({
     const rowsWithoutData = computed(() => {
       return possibleRows.value.filter(row => !row.bars.length);
     });
+    const displayRows = computed(() => {
+      return allowCollapsing.value ? rowsWithData.value : possibleRows.value;
+    });
 
     const isAllSelected = computed(() => {
       return selectedItemIds.value.length === 0;
@@ -555,7 +563,7 @@ export default defineComponent({
       statefulData,
       maxVisibleBarValue,
       minVisibleBarValue,
-      rowsWithData,
+      displayRows,
       rowsWithoutData,
       isAllSelected,
       toggleChecked,

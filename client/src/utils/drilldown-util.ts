@@ -20,6 +20,7 @@ export function initDataStateFromRefs (
   selectedScenarioIds: Ref<string[]>,
   selectedTimestamp: Ref<number|null>,
   selectedYears: Ref<Set<string>>,
+  activeReferenceOptions: Ref<string[]>,
   searchFilters: Ref<any>,
   visibleTimeseriesData?: Ref<Timeseries[]> // useful for the node view's validation, but ignoreable by everything else, so optional
 ): DataState {
@@ -36,6 +37,7 @@ export function initDataStateFromRefs (
     relativeTo: relativeTo.value,
     selectedQualifierValues: [...selectedQualifierValues.value],
     selectedYears: [...selectedYears.value],
+    activeReferenceOptions: activeReferenceOptions.value,
     visibleTimeseriesData: visibleTimeseriesData?.value,
     searchFilters: searchFilters.value
   };

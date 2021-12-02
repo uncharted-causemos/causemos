@@ -1,7 +1,6 @@
 <template>
   <modal
     :show-close-button="true"
-    :use-green-header="true"
     @close="search()">
     <template #header>
       <h4>

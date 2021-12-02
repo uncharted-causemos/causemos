@@ -311,7 +311,10 @@ export default {
             id: '',
             source: selectedEdge.source,
             target: selectedEdge.target,
-            reference_ids: selectedEdgesData[edgeId]
+            reference_ids: selectedEdgesData[edgeId],
+            parameter: {
+              weights: [0.0, 0.5]
+            }
           };
         } else {
           // Existing edge, merge reference_ids

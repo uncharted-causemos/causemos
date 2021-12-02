@@ -82,7 +82,7 @@
     <div>
       <div class="augment-model">
         <arrow-button
-          :text="'Augment Model'"
+          :text="'Modify CAG'"
           :icon="'fa-book'"
           :is-pointing-left="true"
           @click="onAugmentCAG"

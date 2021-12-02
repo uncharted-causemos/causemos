@@ -76,7 +76,7 @@ const createProject = async (kbId, name, description) => {
 
   // FIXME: May need idempotent id to support ontology updates from upstream
   const conceptsPayload = Object.keys(ontologyMetadata).map(key => {
-    const cleanedKey = key.replaceAll('\'', ''); // Because DySE cannot handle quotes
+    const cleanedKey = key.replace(/'/g, ''); // Because DySE cannot handle quotes
 
     return {
       project_id: projectId,

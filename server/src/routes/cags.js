@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const cagService = rootRequire('/services/cag-service');
 const historyService = rootRequire('/services/history-service');
+const scenarioService = rootRequire('/services/scenario-service');
 const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 
 
@@ -26,6 +27,8 @@ router.put('/:mid/edge-polarity', asyncHandler(async (req, res) => {
     status: MODEL_STATUS.NOT_REGISTERED,
     engine_status: RESET_ALL_ENGINE_STATUS
   });
+
+  await scenarioService.invalidateByModel(modelId);
 
   res.status(200).send({ polarity, updateToken: editTime });
 }));
@@ -121,6 +124,7 @@ router.put('/:mid/components/', asyncHandler(async (req, res) => {
     default:
       throw new Error('Operation not supported: ' + operation);
   }
+  await scenarioService.invalidateByModel(modelId);
 
   res.status(200).send({ updateToken: editTime });
 }));
@@ -194,6 +198,7 @@ router.post('/:mid/change-concept', asyncHandler(async (req, res) => {
   const modelId = req.params.mid;
 
   await cagService.changeConcept(modelId, change);
+  await scenarioService.invalidateByModel(modelId);
   const editTime = Date.now();
   res.status(200).send({ updateToken: editTime });
 }));

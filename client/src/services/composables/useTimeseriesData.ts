@@ -469,7 +469,7 @@ export default function useTimeseriesData(
   };
 
   watchEffect(() => {
-    if (referenceOptions === undefined || referenceOptions === null || referenceOptions.value.length === 0) {
+    if (referenceOptions === undefined || referenceOptions === null || referenceOptions.value.length === 0 || rawTimeseriesData.value.length === 0) {
       referenceTimeseries.value = [];
       return;
     }
