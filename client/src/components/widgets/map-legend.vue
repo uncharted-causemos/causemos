@@ -47,6 +47,9 @@ export default defineComponent({
     },
     labelPosition() {
       this.refresh();
+    },
+    discrete() {
+      this.refresh();
     }
   },
   mounted() {

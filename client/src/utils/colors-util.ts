@@ -22,6 +22,7 @@ export const COLOR_SCHEME: { [key in COLOR ]: string[] } = Object.freeze({
 });
 
 export const COLOR_SWATCH_SIZE = 25;
+export const COLOR_PALETTE_SIZE = 256;
 
 export const UNDEFINED_COLOR = '#000000';
 export const GRAPH_BACKGROUND_COLOR = '#FFFFFF';
@@ -40,7 +41,9 @@ export const EDGE_COLOR_PALETTE = ['#d55e00', '#6b6859', '#0072b2']; // https://
  * Get n uniformly spaced colors for given color name
  * @param {COLOR} color - color name
  */
-export function getColors(color: COLOR, n = 256) {
+export function getColors(color: COLOR, n = COLOR_PALETTE_SIZE) {
+  const scheme = COLOR_SCHEME[color];
+  if (n === 1) return [scheme[scheme.length - 1]];
   return quantize(interpolateRgbBasis(COLOR_SCHEME[color]), n);
 }
 
@@ -50,7 +53,7 @@ export function getColors(color: COLOR, n = 256) {
  * @param n number of colors
  * @returns canvas that represent color ramp
  */
-export function ramp(color: (t: number) => string, n = 256) {
+export function ramp(color: (t: number) => string, n = COLOR_PALETTE_SIZE) {
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = n;

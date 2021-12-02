@@ -116,7 +116,7 @@
         <input
           type="range"
           style="margin-bottom: 1rem;"
-          min="1"
+          min="2"
           :max="maxNumberOfColorBins"
           step="1"
           ref="number-of-color-bins-slider"
@@ -145,7 +145,7 @@ import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
-import { COLOR_SCHEME, ColorScaleType, COLOR_SWATCH_SIZE, COLOR } from '@/utils/colors-util';
+import { COLOR_SCHEME, ColorScaleType, COLOR, getColors, COLOR_PALETTE_SIZE } from '@/utils/colors-util';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.OTHER]);
 
@@ -189,7 +189,7 @@ export default defineComponent({
       default: false
     },
     selectedColorSchemeName: {
-      type: String,
+      type: String as PropType<COLOR>,
       default: COLOR.DEFAULT
     },
     selectedColorScaleType: {
@@ -360,18 +360,18 @@ export default defineComponent({
       this.$emit('set-color-scheme-name', colorScheme);
     },
     renderColorScale() {
-      const colors = this.selectedColorScheme;
+      const colors = this.selectedColorScaleType === ColorScaleType.Discrete
+        ? this.selectedColorScheme
+        : getColors(this.selectedColorSchemeName, COLOR_PALETTE_SIZE);
       const n = colors.length;
-      const width = this.selectedColorScaleType === ColorScaleType.Discrete ? (n * COLOR_SWATCH_SIZE) : n;
       const refSelection = d3.select((this.$refs as any).colorPalette);
       refSelection.selectAll('*').remove();
       refSelection
         .attr('viewBox', '0 0 ' + n + ' 1')
         .attr('preserveAspectRatio', 'none')
         .style('display', 'block')
-        .style('width', width + 'px')
-        .style('height', COLOR_SWATCH_SIZE + 'px')
-      ;
+        .style('width', COLOR_PALETTE_SIZE + 'px')
+        .style('height', '25px');
       refSelection
         .selectAll('rect')
         .data(colors)

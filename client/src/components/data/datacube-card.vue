@@ -342,7 +342,7 @@
               <div class="card-maps-box">
                 <div v-if="outputSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
-                  <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" />
+                  <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :discrete="isDiscreteScale" />
                 </div>
                 <div
                   v-if="mapReady && currentTabView === 'data' && regionalData !== null"
@@ -396,7 +396,7 @@
                 </div>
                 <div v-if="outputSpecs.length > 0" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
-                  <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" />
+                  <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" :discrete="isDiscreteScale" />
                 </div>
               </div>
             </div>
@@ -556,7 +556,7 @@ import {
   OutputSpecWithId
 } from '@/types/Runoutput';
 
-import { colorFromIndex, ColorScaleType, getColors, COLOR } from '@/utils/colors-util';
+import { colorFromIndex, ColorScaleType, getColors, COLOR, COLOR_SCHEME } from '@/utils/colors-util';
 import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
@@ -854,9 +854,13 @@ export default defineComponent({
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
     // however, the map/legend may ignore the generated final color list and instead use the color-related viz options to generate a slightly different color array that can be used when rendering the map/legend
     const finalColorScheme = computed(() => {
-      const numColors = selectedColorScaleType.value === ColorScaleType.Discrete ? numberOfColorBins.value : 256;
-      const scheme = getColors(selectedColorSchemeName.value, numColors);
+      const scheme = selectedColorScaleType.value === ColorScaleType.Discrete
+        ? getColors(selectedColorSchemeName.value, numberOfColorBins.value)
+        : COLOR_SCHEME[selectedColorSchemeName.value];
       return colorSchemeReversed.value ? scheme.reverse() : scheme;
+    });
+    const isDiscreteScale = computed(() => {
+      return selectedColorScaleType.value === ColorScaleType.Discrete;
     });
 
     const updateTabView = (val: string) => {
@@ -1672,6 +1676,7 @@ export default defineComponent({
       gridLayerStats,
       hasDefaultRun,
       headerGroupButtons,
+      isDiscreteScale,
       isModelMetadata,
       isRelativeDropdownOpen,
       mainModelOutput,
