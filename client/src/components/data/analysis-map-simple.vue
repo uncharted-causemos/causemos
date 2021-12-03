@@ -211,10 +211,6 @@ export default {
       type: Boolean,
       default: false
     },
-    selectedColorScheme: {
-      type: Array,
-      default: () => COLOR_SCHEME.DEFAULT
-    },
     colorOptions: {
       type: Object,
       default: () => ({
@@ -301,7 +297,7 @@ export default {
       if (!_.isNil(this.relativeTo)) {
         return this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
       }
-      return this.selectedColorScheme;
+      return this.colorOptions.scheme;
     },
     filter() {
       return this.filters.find(filter => filter.id === this.valueProp);

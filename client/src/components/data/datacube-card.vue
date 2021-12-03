@@ -378,7 +378,6 @@
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
-                      :selected-color-scheme="finalColorScheme"
                       :color-options="mapColorOptions"
                       :show-percent-change="showPercentChange"
                       @sync-bounds="onSyncMapBounds"
