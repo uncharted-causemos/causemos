@@ -39,7 +39,6 @@
               type="text"
               class="model-attribute-text"
               placeholder="unit"
-              :class="{ 'attribute-invalid': !isValid(param.unit) }"
             >
           </td>
           <td>
@@ -107,7 +106,6 @@
               type="text"
               class="model-attribute-text"
               placeholder="unit"
-              :class="{ 'attribute-invalid': !isValid(param.unit) }"
             >
           </td>
           <td>
@@ -159,7 +157,6 @@
               type="text"
               class="model-attribute-text"
               placeholder="unit"
-              :class="{ 'attribute-invalid': !isValid(qualifier.unit) }"
             >
           </td>
           <td>
@@ -386,10 +383,7 @@ export default defineComponent({
       if (invalidInputs.length > 0 || invalidOutputs.length > 0 || outputQualifiers.length > 0) {
         isValid = false;
       }
-      const parentComp = this.$parent;
-      if (parentComp) {
-        parentComp.$emit('check-model-metadata-validity', { valid: isValid });
-      }
+      this.$emit('check-model-metadata-validity', { valid: isValid });
     },
     updateInputKnobVisibility(param: ModelParameter) {
       param.is_visible = !param.is_visible;

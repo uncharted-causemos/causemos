@@ -57,20 +57,25 @@
               Publisher
             </div>
           </div>
-          <div class="document-list-elements">
-            <div
-              v-for="documentMeta in sortedDocuments"
-              :key="documentMeta.id">
-              <documents-list-item
-                @document-click="onDocumentClick"
-                :documentMeta="documentMeta"/>
+            <div v-if="sortedDocuments.length > 0" class="document-list-elements">
+              <div
+                v-for="documentMeta in sortedDocuments"
+                :key="documentMeta.id">
+                <documents-list-item
+                  @document-click="onDocumentClick"
+                  :documentMeta="documentMeta"/>
+              </div>
             </div>
-          </div>
-          <pagination
-            class="col-md-8"
-            :label="'documents'"
-            :total="documentsCount"
-          />
+            <message-display
+              v-else
+              message="Sorry, no results were found"
+            />
+            <pagination
+              v-if="sortedDocuments.length > 0"
+              class="col-md-8"
+              :label="'documents'"
+              :total="documentsCount"
+            />
         </div>
       </div>
     </div>
@@ -85,6 +90,7 @@ import DocumentsListItem from '@/components/kb-explorer/documents-list-item.vue'
 import DropdownControl from '@/components/dropdown-control.vue';
 import Pagination from '@/components/pagination.vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 
 const SORTING_OPTIONS = {
   MOST_RECENT: 'Most recent',
@@ -97,7 +103,8 @@ export default defineComponent({
     DocumentsListItem,
     DropdownControl,
     Pagination,
-    ModalDocument
+    ModalDocument,
+    MessageDisplay
   },
   props: {
     documentData: {

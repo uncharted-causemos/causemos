@@ -20,7 +20,7 @@
           @click="onClose"
         />
       </div>
-      <div class="panel-content">
+      <div class="panel-content" id="panel-content-container">
         <slot name="content" />
       </div>
       <div

@@ -1,8 +1,8 @@
 const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
-const { client, searchAndHighlight } = rootRequire('/adapters/es/client');
+const { client, searchAndHighlight, queryStringBuilder } = rootRequire('/adapters/es/client');
 const { RESOURCE } = rootRequire('/adapters/es/adapter');
-const { get: getCache } = rootRequire('/cache/node-lru-cache');
+const { getCache } = rootRequire('/cache/node-lru-cache');
 
 // Remove unneeded fields from compositional ontology
 const formatOntologyDoc = (d) => {
@@ -21,7 +21,20 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
     }
   }];
 
-  const results = await searchAndHighlight(RESOURCE.ONTOLOGY, queryString, filters, [
+  const reserved = ['or', 'and'];
+
+  const builder = queryStringBuilder()
+    .setOperator('OR')
+    .setFields(['examples', 'label', 'definition']);
+
+  queryString
+    .split(' ')
+    .filter(s => {
+      return !reserved.includes(s.toLowerCase());
+    })
+    .forEach(v => builder.addWildCard(v));
+
+  const results = await searchAndHighlight(RESOURCE.ONTOLOGY, builder.build(), filters, [
     'label',
     'examples'
   ]);
@@ -29,6 +42,7 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
   return results.map(d => {
     return {
       doc_type: 'concept',
+      score: d._score,
       doc: formatOntologyDoc(d._source),
       highlight: d.highlight
     };
@@ -83,9 +97,11 @@ const reverseFlattenedConcept = (name, conceptSet) => {
  * Build an ES query to search by compositional ontology concepts
  *
  * FIXME: Need to handle user-created??
+ * FIXME: Maybe checkout sampler aggregations: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-sampler-aggregation.html
  */
 const buildSubjObjAggregation = (concepts) => {
   const limit = 10;
+  const minimumShouldMatch = concepts.length < 2 ? 1 : 2;
   return {
     filteredSubj: {
       filter: {
@@ -95,7 +111,8 @@ const buildSubjObjAggregation = (concepts) => {
             { terms: { 'subj.theme_property': concepts } },
             { terms: { 'subj.process': concepts } },
             { terms: { 'subj.process_property': concepts } }
-          ]
+          ],
+          minimum_should_match: minimumShouldMatch
         }
       },
       aggs: {
@@ -115,7 +132,8 @@ const buildSubjObjAggregation = (concepts) => {
             { terms: { 'obj.theme_property': concepts } },
             { terms: { 'obj.process': concepts } },
             { terms: { 'obj.process_property': concepts } }
-          ]
+          ],
+          minimum_should_match: minimumShouldMatch
         }
       },
       aggs: {
@@ -134,9 +152,15 @@ const buildSubjObjAggregation = (concepts) => {
 // Search for concepts within a given project's INDRA statements
 const statementConceptEntitySearch = async (projectId, queryString) => {
   Logger.info(`Query ${projectId} ${queryString}`);
+
   // Bootstrap from rawConcept
-  const rawResult = await rawConceptEntitySearch(projectId, queryString + '*');
+  const rawResult = await rawConceptEntitySearch(projectId, queryString);
   if (_.isEmpty(rawResult)) return [];
+
+  const scoreMap = new Map();
+  rawResult.forEach(r => {
+    scoreMap.set(r.doc.label, r.score);
+  });
 
   const matchedRawConcepts = rawResult.map(d => d.doc.label);
   const aggFilter = buildSubjObjAggregation(matchedRawConcepts);
@@ -151,8 +175,14 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
 
   const aggResult = result.body.aggregations;
   const items = [
+    // Search results in project
     ...aggResult.filteredSubj.fieldAgg.buckets,
-    ...aggResult.filteredObj.fieldAgg.buckets
+    ...aggResult.filteredObj.fieldAgg.buckets,
+
+    // Search result in raw ontology space
+    ...matchedRawConcepts.map(d => {
+      return { key: d };
+    })
   ];
 
   // Start post processing, unique and attach matched metadata
@@ -166,22 +196,32 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
+
     if (dupeMap.has(item.key)) continue;
 
     const memberStrings = reverseFlattenedConcept(item.key, set);
-    const members = ontologyValues.filter(d => {
-      return memberStrings.includes(_.last(d.label.split('/'))) && !_.isEmpty(d.examples);
-    }).map(formatOntologyDoc);
+
+    let members = [];
+    let score = 0;
+    if (ontologyMap[item.key]) {
+      members = ontologyValues.filter(d => d.label === item.key).map(formatOntologyDoc);
+    } else {
+      members = ontologyValues.filter(d => {
+        return memberStrings.includes(_.last(d.label.split('/')));
+      }).map(formatOntologyDoc);
+    }
 
     // Attach highlight if applicable
     for (let j = 0; j < members.length; j++) {
       const highlightMatch = rawResult.find(d => d.doc.label === members[j].label);
       if (_.isNil(highlightMatch)) continue;
       members[j].highlight = highlightMatch.highlight;
+      score += scoreMap.get(members[j].label);
     }
 
     const r = {
       doc_type: 'concept',
+      score,
       doc: {
         key: item.key,
         members: members
@@ -190,6 +230,27 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
     finalResults.push(r);
     dupeMap.set(item.key, 1);
   }
+
+
+  // Temporary counter tokens
+  const tokens = queryString.split(' ');
+  for (let i = 0; i < finalResults.length; i++) {
+    const doc = finalResults[i].doc;
+    doc.tokenCounter = 0;
+    for (let j = 0; j < tokens.length; j++) {
+      if (doc.key.includes(tokens[j])) {
+        doc.tokenCounter++;
+      }
+    }
+  }
+  finalResults.sort((a, b) => {
+    return b.score * b.doc.tokenCounter - a.score * a.doc.tokenCounter;
+  });
+  for (let i = 0; i < finalResults.length; i++) {
+    delete finalResults[i].doc.tokenCounter;
+  }
+
+
 
   // FIXME: Also attach concept matches
   return finalResults;
@@ -272,5 +333,6 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
 
 module.exports = {
   statementConceptEntitySearch,
+  rawConceptEntitySearch,
   indicatorSearchByConcepts
 };

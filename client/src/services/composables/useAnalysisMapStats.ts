@@ -5,7 +5,7 @@ import { watchEffect } from '@vue/runtime-core';
 import { MapLegendColor, AnalysisMapStats } from '@/types/Common';
 import { OutputSpecWithId, OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
 import { computeRegionalStats, adminLevelToString, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
-import { createMapLegendData, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import { createMapLegendData } from '@/utils/map-util';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import { calculateDiff } from '@/utils/value-util';
 import { getOutputStats } from '@/services/runoutput-service';
@@ -119,17 +119,7 @@ export default function useAnalysisMapStats(
     return isGridLayer.value ? gridMapLayerLegendData.value : adminMapLayerLegendData.value;
   });
 
-  const mapBounds = ref<number[][]>([
-    [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-    [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
-  ]);
-
-  const onSyncMapBounds = (bounds: number[][]) => {
-    mapBounds.value = bounds;
-  };
-
   return {
-    onSyncMapBounds,
     updateMapCurSyncedZoom,
     recalculateGridMapDiffStats,
     adminLayerStats,
@@ -138,7 +128,6 @@ export default function useAnalysisMapStats(
     adminMapLayerLegendData,
     mapLegendData,
     isGridLayer,
-    mapSelectedLayer,
-    mapBounds
+    mapSelectedLayer
   };
 }

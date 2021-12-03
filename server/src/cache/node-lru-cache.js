@@ -8,17 +8,17 @@ const transLock = new LRU(1000);
 
 const ts = () => (new Date().getTime());
 
-const has = (key) => {
+const hasCache = (key) => {
   return cache.has(key);
 };
-const get = (key) => {
+const getCache = (key) => {
   return cache.get(key);
 };
-const set = (key, value, maxAge) => {
+const setCache = (key, value, maxAge) => {
   return cache.set(key, value, maxAge);
 };
 
-const del = (key) => {
+const delCache = (key) => {
   cache.del(key);
 };
 
@@ -36,10 +36,10 @@ const releaseLock = (key) => {
 };
 
 module.exports = {
-  has,
-  get,
-  set,
-  del,
+  hasCache,
+  getCache,
+  setCache,
+  delCache,
 
   setLock,
   releaseLock

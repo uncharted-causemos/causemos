@@ -95,7 +95,7 @@
             v-for="instance in filteredDatacubeInstances"
             :key="instance.id"
             :datacube="instance"
-            @unpublish="unpublishDatacubeInstance(instance)"
+            @unpublish="unpublishInstance(instance)"
           />
           <message-display
             v-if="filteredDatacubeInstances.length === 0"
@@ -112,13 +112,13 @@
 import { mapGetters, mapActions } from 'vuex';
 import DomainDatacubeInstanceCard from '@/components/domain-datacube-instance-card.vue';
 import filtersUtil from '@/utils/filters-util';
-import { getDatacubes, updateDatacube } from '@/services/new-datacube-service';
-import { DatacubeStatus } from '@/types/Enums';
+import { getDatacubes } from '@/services/new-datacube-service';
 import _ from 'lodash';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import domainProjectService from '@/services/domain-project-service';
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
+import { unpublishDatacubeInstance } from '@/utils/datacube-util';
 
 export default {
   name: 'DomainProjectOverview',
@@ -139,7 +139,8 @@ export default {
   computed: {
     ...mapGetters({
       project: 'app/project',
-      projectMetadata: 'app/projectMetadata'
+      projectMetadata: 'app/projectMetadata',
+      refreshDatacubes: 'insightPanel/refreshDatacubes'
     }),
     filteredDatacubeInstances() {
       return this.datacubeInstances.filter(instance => {
@@ -185,6 +186,11 @@ export default {
   watch: {
     projectMetadata: function() {
       this.fetchDatacubeInstances();
+    },
+    refreshDatacubes: function() {
+      if (this.refreshDatacubes) {
+        this.fetchDatacubeInstances();
+      }
     }
   },
   async mounted() {
@@ -200,7 +206,8 @@ export default {
       disableOverlay: 'app/disableOverlay',
       setContextId: 'insightPanel/setContextId',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds'
+      setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds',
+      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
     }),
     updateDesc() {
       if (this.isEditingDesc) {
@@ -240,29 +247,12 @@ export default {
       this.sortDatacubeInstancesByMostRecentDate();
 
       this.disableOverlay();
-    },
-    async unpublishDatacubeInstance(instance) {
-      // unpublish the datacube instance
-      instance.status = DatacubeStatus.Registered;
-      await updateDatacube(instance.id, instance);
 
-      // also, update the project stats count
-      const domainProject = await domainProjectService.getProject(this.project);
-      // add the instance to list of draft instances
-      const updatedDraftInstances = domainProject.draft_instances;
-      if (!updatedDraftInstances.includes(instance.name)) {
-        updatedDraftInstances.push(instance.name);
-      }
-      // remove the instance from the list of ready/published instances
-      const updatedReadyInstances = domainProject.ready_instances.filter(n => n !== instance.name);
-      // update the project doc at the server
-      domainProjectService.updateDomainProject(
-        this.project,
-        {
-          draft_instances: updatedDraftInstances,
-          ready_instances: updatedReadyInstances
-        }
-      );
+      // reset the flag that is often needed to request a refresh when the last public insight is removed
+      this.setRefreshDatacubes(false);
+    },
+    unpublishInstance(instance) {
+      unpublishDatacubeInstance(instance, this.project);
     },
     toggleSortingDropdownDatacubeInstances() {
       this.showSortingDropdownDatacubeInstances = !this.showSortingDropdownDatacubeInstances;
@@ -372,6 +362,7 @@ header {
 
 .column-title {
   font-size: x-large;
+  padding-right: 4px;
 }
 
 main {

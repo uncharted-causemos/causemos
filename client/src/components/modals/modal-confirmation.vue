@@ -1,6 +1,5 @@
 <template>
   <modal
-    :use-green-header="true"
     @close="close()">
     <template #header>
       <h4><slot name="title" /></h4>

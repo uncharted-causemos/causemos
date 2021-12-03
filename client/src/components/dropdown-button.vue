@@ -14,7 +14,10 @@
     <dropdown-control
       v-if="isDropdownOpen"
       class="dropdown-control"
-      :class="{ 'left-aligned': isDropdownLeftAligned }"
+      :class="{
+        'left-aligned': isDropdownLeftAligned,
+        'above': isDropdownAbove
+      }"
     >
       <template #content>
         <div
@@ -69,6 +72,10 @@ export default defineComponent({
     isDropdownLeftAligned: {
       type: Boolean,
       default: false
+    },
+    isDropdownAbove: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['item-selected'],
@@ -79,7 +86,10 @@ export default defineComponent({
     const containerElement = ref<HTMLElement | null>(null);
 
     const onClickOutside = (event: MouseEvent) => {
-      if ((event.target instanceof Element) && containerElement.value?.contains(event.target)) {
+      if (
+        event.target instanceof Element &&
+        containerElement.value?.contains(event.target)
+      ) {
         // Click was within this element, so do nothing
         return;
       }
@@ -141,6 +151,10 @@ export default defineComponent({
   &.left-aligned {
     left: 0;
     right: auto;
+  }
+  &.above {
+    bottom: 90%;
+    top: auto;
   }
 }
 .dropdown-option {

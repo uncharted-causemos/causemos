@@ -11,27 +11,22 @@
       <div class="metadata-column">
         <h3>{{ projectMetadata.name }}</h3>
         <div class="description">
-          <div v-if="!isEditingDesc">
-            {{ projectMetadata.description }}
-          </div>
           <textarea
-            v-else
+            v-if="isEditingDesc"
             v-model="projectMetadata.description"
             type="text"
             class="model-attribute-desc"
           />
-          <div
-            v-if="!isEditingDesc"
-            class="edit-model-desc"
-          >
-            <i
-              class="fa fa-edit"
-              @click="editDesc"
-              v-tooltip.top-center="'Edit description'"
-            />
+          <div v-else-if="projectMetadata.description">
+            {{ projectMetadata.description }}
           </div>
           <div
             v-else
+            class="description-hint-text">
+            Add a description
+          </div>
+          <div
+            v-if="isEditingDesc"
             class="edit-model-desc"
           >
             <i
@@ -43,6 +38,16 @@
               class="fa fa-close"
               @click="discardDesc"
               v-tooltip.top-center="'Discard changes'"
+            />
+          </div>
+          <div
+            v-else
+            class="edit-model-desc"
+          >
+            <i
+              class="fa fa-edit"
+              @click="editDesc"
+              v-tooltip.top-center="'Edit description'"
             />
           </div>
         </div>
@@ -107,7 +112,7 @@
               class="btn btn-primary btn-call-for-action"
               @click="onCreateCAG"
               ><i class="fa fa-plus" />
-                Create Qualitative Model
+                Create CAG
             </button>
             <button
               v-tooltip.top-center="'Create a new Quantitative Analysis'"
@@ -215,6 +220,7 @@ export default {
   watch: {
     projectMetadata: function() {
       this.fetchAnalyses();
+      this.fetchKbStats();
     }
   },
   async mounted() {
@@ -321,6 +327,16 @@ export default {
       const KBlist = await projectService.getKBs(); // FIXME this is more expensive than it needs to be, we fetch the whole list of KBs then only use one
       const projectKB_id = this.projectMetadata.kb_id;
       const projectKB = KBlist.find(kb => kb.id === projectKB_id);
+      if (projectKB === undefined) {
+        if (!_.isEmpty(this.projectMetadata)) {
+          // App.vue is responsible for fetching projectMetadata.
+          // If projectMetadata is equal to `{}` here, it means results haven't
+          //  been returned yet. We only need to flag the error if metadata has
+          //  been successfully fetched but a matching KB isn't found.
+          console.error('Unable to find knowledge base with ID', projectKB_id, 'in', KBlist);
+        }
+        return;
+      }
 
       this.numDocuments = _.get(projectKB.corpus_parameter, 'num_documents', 0);
       this.numStatements = _.get(projectKB.corpus_parameter, 'num_statements', 0);
@@ -493,6 +509,11 @@ export default {
   display: flex;
   flex-direction: column;
   height: $content-full-height;
+}
+
+.description-hint-text {
+  font-style: italic;
+  color: $label-color;
 }
 
 header {

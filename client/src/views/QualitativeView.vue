@@ -39,9 +39,24 @@
           @delete="onDelete"
           @edge-set-user-polarity="setEdgeUserPolarity"
           @suggestion-selected="onSuggestionSelected"
+          @suggestion-duplicated="onSuggestionDuplicated"
           @rename-node="openRenameModal"
           @merge-nodes="mergeNodes"
         />
+        <color-legend
+        v-if="!showEmptyStateInstructions"
+          :show-cag-encodings="true" />
+        <div class="config-bar" v-if="selectedTimeScaleLabel !== null">
+          Time scale of interest:
+          <strong>{{ selectedTimeScaleLabel}} </strong>
+          <button
+            class="btn btn-sm btn-default"
+            @click="showModalTimeScale = true"
+          >
+            <i class="fa fa-fw fa-pencil" />
+          </button>
+          .
+        </div>
       </div>
       <drilldown-panel
         class="qualitative-drilldown"
@@ -70,6 +85,7 @@
               <edge-polarity-switcher
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity"
+                @edge-set-weights="setEdgeWeights"
               />
               <button
                 style="margin-left: 5px; font-weight: normal"
@@ -139,6 +155,7 @@
     </main>
     <modal-time-scale
       v-if="showModalTimeScale"
+      :initially-selected-time-scale="modelSummary?.parameter?.time_scale"
       @save-time-scale="saveTimeScale"
       @close="showModalTimeScale = false"
     />
@@ -217,6 +234,7 @@ import RelationshipsPane from '@/components/drilldown-panel/relationships-pane.v
 import FactorsPane from '@/components/drilldown-panel/factors-pane.vue';
 import NodeSuggestionsPane from '@/components/drilldown-panel/node-suggestions-pane.vue';
 import FactorsRecommendationsPane from '@/components/drilldown-panel/factors-recommendations-pane.vue';
+import ColorLegend from '@/components/graph/color-legend.vue';
 
 import filtersUtil from '@/utils/filters-util';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
@@ -243,6 +261,7 @@ import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 import ModalTimeScale from '@/components/qualitative/modal-time-scale.vue';
 import { TimeScale } from '@/types/Enums';
+import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -300,7 +319,8 @@ export default defineComponent({
     CagSidePanel,
     CagAnalysisOptionsButton,
     RenameModal,
-    ModalTimeScale
+    ModalTimeScale,
+    ColorLegend
   },
   setup() {
     return {
@@ -391,6 +411,11 @@ export default defineComponent({
         title = 'Suggested Factors to Correct';
       }
       return title;
+    },
+    selectedTimeScaleLabel() {
+      const timeScale = this.modelSummary?.parameter?.time_scale;
+      const timeScaleOption = TIME_SCALE_OPTIONS_MAP.get(timeScale ?? '');
+      return timeScaleOption?.label ?? null;
     }
   },
   watch: {
@@ -485,6 +510,13 @@ export default defineComponent({
       this.setDataState(dataState);
     },
     async addCAGComponents(nodes: NodeParameter[], edges: EdgeParameter[], updateType: string) {
+      edges.forEach(edge => {
+        if (!edge.parameter) {
+          edge.parameter = {
+            weights: [0.0, 0.5]
+          };
+        }
+      });
       return modelService.addComponents(this.currentCAG, nodes, edges, updateType);
     },
     async removeCAGComponents(
@@ -585,6 +617,9 @@ export default defineComponent({
     onSuggestionSelected(suggestion: Suggestion) {
       this.addNodeToGraph(suggestion);
       this.setNewNodeVisible(false);
+    },
+    onSuggestionDuplicated(suggestion: Suggestion) {
+      this.showConceptExistsToaster(suggestion.label);
     },
     addNodeToGraph(suggestion: Suggestion) {
       if (this.isConceptInCag(suggestion.concept)) {
@@ -699,6 +734,16 @@ export default defineComponent({
         this.selectedEdge.user_polarity = polarity;
       }
       this.refresh();
+    },
+    async setEdgeWeights(_edge: EdgeParameter, weights: number[]) {
+      if (this.selectedEdge) {
+        const edge = this.selectedEdge;
+        if (edge.parameter) {
+          edge.parameter.weights = weights;
+          await modelService.updateEdgeParameter(this.currentCAG, edge);
+          this.refresh();
+        }
+      }
     },
     onBackgroundClick() {
       this.deselectNodeAndEdge();
@@ -1263,6 +1308,19 @@ export default defineComponent({
       margin-right: 5px;
     }
   }
+}
+
+// FIXME: refactor legend so that its position isn't absolute and its width can
+//  be determined with flexbox
+$legendWidth: 200px;
+
+.config-bar {
+  position: absolute;
+  left: calc(calc(#{$legendWidth} - #{$navbar-outer-height}) + 10px);
+  bottom: 5px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
 }
 
 .side-panel {

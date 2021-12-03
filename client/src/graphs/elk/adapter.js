@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import ELK from 'elkjs/lib/elk.bundled';
 
+const ELK_DEBUG = false;
+
 /**
  * Recursively traverse a graph that looks like
  * {
@@ -237,9 +239,11 @@ const postProcess = (layout) => {
       }
     }
 
-    console.log(`${sourceNode.id}-${targetNode.id} Source in target ${sourceInTarget}, Target in source ${targetInSource}`);
-    console.log('\tsource-chaing', sourceChain);
-    console.log('\ttarget-chaing', targetChain);
+    if (ELK_DEBUG === true) {
+      console.log(`${sourceNode.id}-${targetNode.id} Source in target ${sourceInTarget}, Target in source ${targetInSource}`);
+      console.log('\tsource-chaing', sourceChain);
+      console.log('\ttarget-chaing', targetChain);
+    }
 
     if (sourceNode.id === targetNode.id) {
       const p = parentMap.get(sourceNode.id);

@@ -1,6 +1,5 @@
 <template>
   <modal
-    :use-green-header="true"
     :show-close-button="true"
     @close="close()">
     <template #header>

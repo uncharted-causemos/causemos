@@ -30,6 +30,7 @@
               <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
               <span v-if="isIndicator(metadata)" v-tooltip.top-center="'Explore related indicators'" class="datacube-name indicator" @click="onClickDatacubeName">{{metadata.name}} <i class="fa fa-search"></i></span>
               <span v-else class="datacube-name">{{metadata.name}} </span>
+              <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin-left: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
             </h5>
           </template>
 
@@ -69,12 +70,13 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { ProjectType } from '@/types/Enums';
+import { DatacubeStatus, ProjectType } from '@/types/Enums';
 import { DataState, ViewState } from '@/types/Insight';
 
 import { DATASET_NAME, isIndicator, getValidatedOutputs } from '@/utils/datacube-util';
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import filtersUtil from '@/utils/filters-util';
+import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 
 export default defineComponent({
   name: 'DatacubeDrilldown',
@@ -91,9 +93,14 @@ export default defineComponent({
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeId = route.query.datacube_id as any;
-    const initialViewConfig = analysisItems.value[0].viewConfig;
-    const initialDataConfig = analysisItems.value[0].dataConfig;
     const selectedModelId = ref(datacubeId);
+    const datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === selectedModelId.value);
+    const initialViewConfig = ref<ViewState | null>(null);
+    const initialDataConfig = ref<DataState | null>(null);
+    if (datacubeAnalysisItem) {
+      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
+      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
+    }
     const metadata = useModelMetadata(selectedModelId);
     const project = computed(() => store.getters['app/project']);
     const projectType = computed(() => store.getters['app/projectType']);
@@ -108,10 +115,10 @@ export default defineComponent({
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
 
     // apply initial view config for this datacube
-    if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
-      if (initialViewConfig.selectedOutputIndex !== undefined) {
+    if (initialViewConfig.value !== null) {
+      if (initialViewConfig.value.selectedOutputIndex !== undefined) {
         const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-        defaultOutputMap[datacubeId] = initialViewConfig.selectedOutputIndex;
+        defaultOutputMap[datacubeId] = initialViewConfig.value.selectedOutputIndex;
         setDatacubeCurrentOutputsMap(defaultOutputMap);
       }
     }
@@ -193,6 +200,8 @@ export default defineComponent({
       }
     };
 
+    const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
+
     return {
       aggregationOptionFiltered,
       analysisId,
@@ -209,7 +218,10 @@ export default defineComponent({
       projectType,
       selectedModelId,
       temporalResolutionOptionFiltered,
-      onModelParamUpdated
+      onModelParamUpdated,
+      DatacubeStatus,
+      statusColor,
+      statusLabel
     };
   },
   data: () => ({

@@ -3,6 +3,7 @@ const removeUnwantedData = (metadata) => {
   metadata.attributes = undefined;
   metadata.image = undefined;
   metadata.storedRegions = undefined;
+  metadata.deprecatesIDs = undefined;
   if (metadata.geography) {
     metadata.geography.coordinates = undefined;
   }
@@ -11,11 +12,13 @@ const removeUnwantedData = (metadata) => {
   }
   if (metadata.parameters) {
     metadata.parameters.forEach(param => { param.id = undefined; });
+    metadata.parameters.forEach(param => { param.template = undefined; });
   }
 }
 
 const processFilteredData = (metadata) => {
   metadata.family_name = metadata.family_name || metadata.name;
+  metadata.qualifier_outputs = metadata.qualifier_outputs || [];
 };
 
 module.exports = {

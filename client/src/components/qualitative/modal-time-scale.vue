@@ -1,5 +1,5 @@
 <template>
-  <modal @close="save">
+  <modal @close="save" :sticky="true">
     <template #header>
       <h2 class="header-question">Which time scale are you interested in?</h2>
     </template>
@@ -45,17 +45,26 @@
 <script lang="ts">
 import { TimeScale } from '@/types/Enums';
 import { TIME_SCALE_OPTIONS } from '@/utils/time-scale-util';
-import { defineComponent, ref } from 'vue';
+import { defineComponent, PropType, ref, toRefs } from 'vue';
 import modal from '../modals/modal.vue';
 
 export default defineComponent({
   components: { modal },
   name: 'ModalTimeScale',
   emits: ['save-time-scale'],
-  setup() {
+  props: {
+    initiallySelectedTimeScale: {
+      type: String as PropType<string | null>,
+      default: null
+    }
+  },
+  setup(props) {
+    const { initiallySelectedTimeScale } = toRefs(props);
     return {
       TIME_SCALE_OPTIONS,
-      selectedTimeScaleOption: ref(TimeScale.Months)
+      selectedTimeScaleOption: ref(
+        initiallySelectedTimeScale.value ?? TimeScale.Months
+      )
     };
   },
   methods: {

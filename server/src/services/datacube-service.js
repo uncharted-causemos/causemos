@@ -45,7 +45,9 @@ const insertDatacube = async(metadata) => {
   Logger.info(`Start insert datacube ${metadata.name} ${metadata.id}`);
   // TODO: Fix all this copypasta from maas-service startIndicatorPostProcessing
 
-  metadata.type = metadata.type || 'model'; // Assume these ar all models for now
+  // Allow deprecation of models while registering a new one. Field removed via `removeUnwantedData`
+  const deprecatedIds = metadata.deprecatesIDs;
+  metadata.type = metadata.type || 'model'; // Assume these are all models for now
   metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
   processFilteredData(metadata);
   removeUnwantedData(metadata);
@@ -83,6 +85,11 @@ const insertDatacube = async(metadata) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
   try {
     const result = await connection.insert([metadata]);
+
+    // Allow deprecation of models while registering a new one
+    if (deprecatedIds) {
+      await deprecateDatacubes(metadata.id, deprecatedIds);
+    }
     return { result: { es_response: result }, code: 201 };
   } catch (err) {
     return { result: { error: err }, code: 500 };
@@ -106,15 +113,18 @@ const updateDatacubes = async(metadataDeltas) => {
 };
 
 /**
- * Deprecate a datacube and update any references to it from previously deprecated datacubes
+ * Deprecate datacubes and update any references to it from previously deprecated datacubes
  */
-const deprecateDatacube = async(oldDatacubeId, newDatacubeId) => {
+const deprecateDatacubes = async(newDatacubeId, oldDatacubeIds) => {
+  if (!_.isArray(oldDatacubeIds) || oldDatacubeIds.length === 0) {
+    return;
+  }
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
 
   // Search by data_id so that this works for indicators as well
   const idsToDeprecate = await getDatacubes({
     clauses: [
-      { field: 'dataId', operand: 'or', isNot: false, values: [oldDatacubeId] }
+      { field: 'dataId', operand: 'or', isNot: false, values: oldDatacubeIds }
     ]
   }, { includes: ['id'] });
 
@@ -123,18 +133,20 @@ const deprecateDatacube = async(oldDatacubeId, newDatacubeId) => {
   // In order to deprecate 'v2' with 'v3', we much update 'v1' and 'v1.1' as well as 'v2'
   const deprecatedIdsToUpdate = await getDatacubes({
     clauses: [
-      { field: 'newVersionId', operand: 'or', isNot: false, values: [oldDatacubeId] }
+      { field: 'newVersionId', operand: 'or', isNot: false, values: oldDatacubeIds }
     ]
   }, { includes: ['id'] });
 
   const updateDeltas = [];
-  idsToDeprecate.forEach(doc => {
-    updateDeltas.push({
-      id: doc.id,
-      status: 'DEPRECATED',
-      new_version_data_id: newDatacubeId
+  idsToDeprecate
+    .filter(id => !deprecatedIdsToUpdate.includes(id))
+    .forEach(doc => {
+      updateDeltas.push({
+        id: doc.id,
+        status: 'DEPRECATED',
+        new_version_data_id: newDatacubeId
+      });
     });
-  });
   deprecatedIdsToUpdate.forEach(doc => {
     updateDeltas.push({
       id: doc.id,
@@ -176,7 +188,7 @@ module.exports = {
   insertDatacube,
   updateDatacube,
   updateDatacubes,
-  deprecateDatacube,
+  deprecateDatacubes,
 
   facets,
   searchFields

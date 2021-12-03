@@ -65,8 +65,7 @@ export default {
     },
     bounds(value) {
       if (!this.cameraMoveEnabled) return;
-      // duration 0 to diable animation
-      this.map.fitBounds(value, { duration: 0 });
+      this.map.fitBounds(value, this.cameraOptions);
     },
     mapStyle(value) {
       this.map.setStyle(value);

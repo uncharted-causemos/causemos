@@ -1,59 +1,148 @@
 <template>
-  <div>
-    <button
-      class="btn polarity-button"
-      @click="togglePolarityDropdown">
-      <i
-        :class="polarityClass"
-        :style="polarityColor"
-      />
-      <span class="polarity-label">Polarity: {{ polarityLabel }}</span>
-      <i
-        class="fa"
-        :class="{'fa-angle-down': !isPolarityDropdownOpen, 'fa-angle-up': isPolarityDropdownOpen}"
-      />
-    </button>
-    <dropdown-control
-      v-if="isPolarityDropdownOpen"
-      class="polarity-dropdown">
-      <template #content>
-        <div
-          class="dropdown-option"
-          @click="onSelectEdgeUserPolarity(STATEMENT_POLARITY.SAME)">
-          <span class="polarity-same">Same</span>
-        </div>
-        <div
-          class="dropdown-option"
-          @click="onSelectEdgeUserPolarity(STATEMENT_POLARITY.OPPOSITE)">
-          <span class="polarity-opposite">Opposite</span>
-        </div>
-      </template>
-    </dropdown-control>
+  <div @click="closeAll()">
+    <div
+      v-if="selectedRelationship.parameter"
+      style="display: inline-block">
+      <span
+        class="clickable-dropdown"
+        @click.stop="openEdgeTypeDropdown()">
+        <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
+        {{ weightTypeString(currentEdgeType) }}
+        <i class="fa fa-fw fa-caret-down" />
+      </span>
+      <dropdown-control
+        v-if="isEdgeTypeOpen"
+        class="edge-type-dropdown">
+        <template #content>
+          <div class="dropdown-option" @click="setType('level')">{{ weightTypeString('level') }}</div>
+          <div class="dropdown-option" @click="setType('trend')">{{ weightTypeString('trend') }}</div>
+        </template>
+      </dropdown-control>
+    </div>
+    <div style="display: inline-block">
+      {{ ontologyFormatter(selectedRelationship.source) }}
+      leads to&nbsp;
+    </div>
+    <div
+      v-if="selectedRelationship.parameter"
+      style="display: inline-block">
+      <span
+        class="clickable-dropdown"
+        @click.stop="openEdgeWeightDropdown()">
+        {{ weightValueString(currentEdgeWeight) }}
+        <i class="fa fa-fw fa-caret-down" />
+      </span>
+      <dropdown-control
+        v-if="isEdgeWeightOpen"
+        class="edge-type-dropdown">
+        <template #content>
+          <div class="dropdown-option" @click="setWeight(0.1)">{{ weightValueString(0.1) }}</div>
+          <div class="dropdown-option" @click="setWeight(0.5)">{{ weightValueString(0.5) }}</div>
+          <div class="dropdown-option" @click="setWeight(0.9)">{{ weightValueString(0.9) }}</div>
+        </template>
+      </dropdown-control>
+    </div>
+    <div style="display: inline-block">
+      <span
+        class="clickable-dropdown"
+        @click.stop="openEdgePolarityDropdown()">
+        {{ polarityLabel }}
+        <i class="fa fa-fw fa-caret-down" />
+      </span>
+      <dropdown-control
+        v-if="isEdgePolarityOpen"
+        class="edge-type-dropdown">
+        <template #content>
+          <div class="dropdown-option polarity-same" @click="setPolarity(1)">increase</div>
+          <div class="dropdown-option polarity-opposite" @click="setPolarity(-1)">decrease</div>
+        </template>
+      </dropdown-control>
+    </div>
+    <div style="display: inline-block">
+      in {{ ontologyFormatter(selectedRelationship.target) }}
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, computed } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
-import { STATEMENT_POLARITY, STATEMENT_POLARITY_MAP, polarityClass, statementPolarityColor } from '@/utils/polarity-util';
+import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import { EdgeParameter } from '@/types/CAG';
+
+const EDGE_TYPE_LEVEL = 'level';
+const EDGE_TYPE_TREND = 'trend';
+
+const getEdgeTypeString = (edge: EdgeParameter): string => {
+  const param = edge.parameter;
+  if (param) {
+    return param.weights[0] > param.weights[1] ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
+  }
+  return '';
+};
+
+
+// FIXME: Need better init heuristic because engine numbers are not discrete??
+const getEdgeWeight = (edge: EdgeParameter): number => {
+  const type = getEdgeTypeString(edge);
+  const param = edge.parameter;
+  if (param) {
+    const w = type === EDGE_TYPE_TREND ? param.weights[1] : param.weights[0];
+    if (w > 0.7) return 0.9;
+    if (w > 0.3) return 0.5;
+    return 0.1;
+  }
+  return 0;
+};
+
+enum DROPDOWN {
+  EDGE_TYPE = 'edge-type',
+  EDGE_WEIGHT = 'edge-weight',
+  EDGE_POLARITY = 'edge-polarity',
+  NONE = 'none',
+}
+
 
 export default defineComponent({
   name: 'EdgePolaritySwitcher',
   components: {
     DropdownControl
   },
-  emits: ['edge-set-user-polarity'],
+  emits: ['edge-set-user-polarity', 'edge-set-weights'],
   props: {
     selectedRelationship: {
       type: Object,
       required: true
     }
   },
-  setup() {
-    const isPolarityDropdownOpen = ref(false);
+  setup(props) {
+    const ontologyFormatter = useOntologyFormatter();
+
+    const dropDown = ref(DROPDOWN.NONE);
+    const isEdgeTypeOpen = computed(() => {
+      return dropDown.value === DROPDOWN.EDGE_TYPE;
+    });
+    const isEdgeWeightOpen = computed(() => {
+      return dropDown.value === DROPDOWN.EDGE_WEIGHT;
+    });
+    const isEdgePolarityOpen = computed(() => {
+      return dropDown.value === DROPDOWN.EDGE_POLARITY;
+    });
+
+    const currentEdgeType = ref(getEdgeTypeString(props.selectedRelationship as EdgeParameter));
+    const currentEdgeWeight = ref(getEdgeWeight(props.selectedRelationship as EdgeParameter));
 
     return {
-      isPolarityDropdownOpen,
+      ontologyFormatter,
+      isEdgeTypeOpen,
+      isEdgeWeightOpen,
+      isEdgePolarityOpen,
+      dropDown,
+
+      currentEdgeType,
+      currentEdgeWeight,
+
       STATEMENT_POLARITY
     };
   },
@@ -61,25 +150,60 @@ export default defineComponent({
     polarity(): number {
       return this.selectedRelationship.polarity;
     },
-    polarityClass(): string {
-      return polarityClass(this.polarity);
-    },
     polarityColor(): { color: string } {
       return statementPolarityColor(this.polarity);
     },
     polarityLabel(): string {
-      return STATEMENT_POLARITY_MAP[this.polarity];
+      if (this.polarity === 1) return 'increase';
+      if (this.polarity === -1) return 'decrease';
+      return 'unknown';
     }
   },
   methods: {
-    togglePolarityDropdown() {
-      this.isPolarityDropdownOpen = !this.isPolarityDropdownOpen;
+    closeAll() {
+      this.dropDown = DROPDOWN.NONE;
     },
-    async onSelectEdgeUserPolarity(polarity: number) {
-      this.isPolarityDropdownOpen = false;
-      this.$emit('edge-set-user-polarity', this.selectedRelationship, polarity);
+    openEdgeTypeDropdown() {
+      this.dropDown = DROPDOWN.EDGE_TYPE;
+    },
+    openEdgeWeightDropdown() {
+      this.dropDown = DROPDOWN.EDGE_WEIGHT;
+    },
+    openEdgePolarityDropdown() {
+      this.dropDown = DROPDOWN.EDGE_POLARITY;
+    },
+    weightValueString(v: number): string {
+      if (v === 0.9) return 'a large';
+      if (v === 0.5) return 'a medium';
+      return 'a small';
+    },
+    weightTypeString(v: string): string {
+      if (v === EDGE_TYPE_LEVEL) return 'The presence of';
+      return 'An increase of';
+    },
+    setPolarity(v: number) {
+      this.$emit('edge-set-user-polarity', this.selectedRelationship, v);
+    },
+    setWeight(v: number) {
+      let weights: number[];
+      if (this.currentEdgeType === EDGE_TYPE_LEVEL) {
+        weights = [v, 0];
+      } else {
+        weights = [0, v];
+      }
+      this.currentEdgeWeight = v;
+      this.$emit('edge-set-weights', this.selectedRelationship, weights);
+    },
+    setType(v: string) {
+      let weights: number[];
+      if (v === EDGE_TYPE_LEVEL) {
+        weights = [this.currentEdgeWeight, 0];
+      } else {
+        weights = [0, this.currentEdgeWeight];
+      }
+      this.currentEdgeType = v;
+      this.$emit('edge-set-weights', this.selectedRelationship, weights);
     }
-
   }
 });
 </script>
@@ -87,20 +211,25 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 
-.polarity-button {
-  font-weight: normal;
+.clickable-dropdown {
+  font-weight: 600;
+  cursor: pointer;
+
+  i {
+    margin-left: -5px;
+  }
 }
 
-.polarity-dropdown {
+.clickable-dropdown:hover {
+  background: #eee;
+}
+
+.edge-type-dropdown {
   font-size: $font-size-medium;
   font-weight: normal;
   cursor: default;
   position: absolute;
   margin: -10px 0 0 4px;
-}
-
-.polarity-label {
-  padding: 5px;
 }
 
 .polarity-same {
@@ -109,5 +238,4 @@ export default defineComponent({
 .polarity-opposite {
   color: $negative;
 }
-
 </style>

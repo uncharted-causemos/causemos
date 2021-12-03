@@ -5,10 +5,11 @@ import {
   AggregationOption,
   TemporalResolutionOption,
   SpatialAggregationLevel,
-  TemporalAggregationLevel
+  TemporalAggregationLevel,
+  ReferenceSeriesOption
 } from '@/types/Enums';
 import { ModelRun } from '@/types/ModelRun';
-import { QualifierTimeseriesResponse, Timeseries } from '@/types/Timeseries';
+import { QualifierTimeseriesResponse, Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
@@ -17,6 +18,22 @@ import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
 import { getQualifierTimeseries } from '../new-datacube-service';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
+
+const breakdownByYear = (
+  timeseriesData: Timeseries[]
+) => {
+  const onlyTimeseries = timeseriesData[0].points;
+  return _.groupBy(onlyTimeseries, point =>
+    getYearFromTimestamp(point.timestamp)
+  );
+};
+
+const mapToBreakdownDomain = (points: TimeseriesPoint[]) => {
+  return points.map(({ value, timestamp }) => ({
+    value,
+    timestamp: getMonthFromTimestamp(timestamp)
+  }));
+};
 
 const applyBreakdown = (
   timeseriesData: Timeseries[],
@@ -29,10 +46,8 @@ const applyBreakdown = (
   ) {
     return timeseriesData;
   }
-  const onlyTimeseries = timeseriesData[0].points;
-  const brokenDownByYear = _.groupBy(onlyTimeseries, point =>
-    getYearFromTimestamp(point.timestamp)
-  );
+  const brokenDownByYear = breakdownByYear(timeseriesData);
+
   return Object.keys(brokenDownByYear)
     .filter(year => selectedYears.has(year))
     .map((year, index) => {
@@ -40,10 +55,7 @@ const applyBreakdown = (
       // Depending on the selected breakdown option, timestamp values may need to be mapped
       //  from the standard epoch format, e.g. `1451606400` for `Dec 31, 2015 @ 7pm`
       //  to a less specific domain like "the month's index", e.g. `1` for `February`
-      const mappedToBreakdownDomain = points.map(({ value, timestamp }) => ({
-        value,
-        timestamp: getMonthFromTimestamp(timestamp)
-      }));
+      const mappedToBreakdownDomain = mapToBreakdownDomain(points);
       return {
         name: year,
         id: year,
@@ -73,10 +85,12 @@ export default function useTimeseriesData(
   selectedQualifierValues: Ref<Set<string>>,
   initialSelectedYears: Ref<string[]>,
   showPercentChange: Ref<boolean>,
-  modelRuns?: Ref<ModelRun[]>
+  modelRuns?: Ref<ModelRun[]>,
+  referenceOptions?: Ref<string[]>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
+  const referenceTimeseries = ref<Timeseries[]>([]);
 
   watchEffect(onInvalidate => {
     const datacubeMetadata = metadata.value;
@@ -149,6 +163,8 @@ export default function useTimeseriesData(
         // Breakdown by qualifier
         // ASSUMPTION: we'll only need to fetch the qualifier timeseries when
         //  exactly one model run is selected
+        const regionId =
+          regionIds.value.length > 0 ? regionIds.value[0] : undefined;
         promises = [
           getQualifierTimeseries(
             dataId,
@@ -158,7 +174,8 @@ export default function useTimeseriesData(
             temporalAgg,
             spatialAgg,
             breakdownOption.value,
-            Array.from(selectedQualifierValues.value)
+            Array.from(selectedQualifierValues.value),
+            regionId
           )
         ];
       }
@@ -405,7 +422,109 @@ export default function useTimeseriesData(
     }
   });
 
+  const aggregateRefTemporalTimeseries = (temporalTimeseries: Timeseries[]): Timeseries => {
+    // because we can have data with missing months, we need to count up instances of each month
+    // across however many years on are in the time series
+    const monthCounts = temporalTimeseries.reduce((acc: TimeseriesPoint[], year: Timeseries): TimeseriesPoint[] => {
+      year.points.forEach((p) => {
+        const month = acc.find((mc) => mc.timestamp === p.timestamp);
+        if (month) {
+          month.value++;
+        } else {
+          acc.push({
+            timestamp: p.timestamp,
+            value: 1
+          });
+        }
+      });
+      return acc;
+    }, new Array<TimeseriesPoint>());
+
+    const aggregratedRefSeries = temporalTimeseries.reduce((acc: Timeseries, ts: Timeseries, ind: number) => {
+      if (ind === 0) {
+        acc.points = monthCounts.map((p) => {
+          return {
+            timestamp: p.timestamp,
+            value: 0
+          } as TimeseriesPoint;
+        });
+      }
+      ts.points.forEach((p) => {
+        const accMonth = acc.points.find(ap => ap.timestamp === p.timestamp);
+        accMonth && (accMonth.value = accMonth.value + p.value);
+      });
+      return acc;
+    }, {} as Timeseries);
+
+    aggregratedRefSeries.points.forEach((p) => {
+      const month = monthCounts.find((mc) => mc.timestamp === p.timestamp);
+      if (month) {
+        p.value = p.value / month.value;
+      }
+    });
+    aggregratedRefSeries.points.sort((a, b) => {
+      return a.timestamp - b.timestamp;
+    });
+    return aggregratedRefSeries;
+  };
+
+  watchEffect(() => {
+    if (referenceOptions === undefined || referenceOptions === null || referenceOptions.value.length === 0 || rawTimeseriesData.value.length === 0) {
+      referenceTimeseries.value = [];
+      return;
+    }
+    if (breakdownOption.value === TemporalAggregationLevel.Year) {
+      if (referenceOptions.value.includes(ReferenceSeriesOption.AllYears)) {
+        const brokenDownByYear = breakdownByYear(rawTimeseriesData.value);
+        const allYearsFormattedTimeseries = Object.keys(brokenDownByYear).map((year) => {
+          const points = brokenDownByYear[year];
+          const mappedToBreakdownDomain = mapToBreakdownDomain(points);
+          return {
+            name: year,
+            id: year,
+            points: mappedToBreakdownDomain
+          } as Timeseries;
+        });
+
+        const aggregratedRefSeries = aggregateRefTemporalTimeseries(allYearsFormattedTimeseries);
+        const existingReferenceTimeseries = referenceTimeseries.value.find((rts) => rts.id === ReferenceSeriesOption.AllYears);
+
+        if (existingReferenceTimeseries) {
+          existingReferenceTimeseries.points = aggregratedRefSeries.points;
+        } else {
+          aggregratedRefSeries.id = ReferenceSeriesOption.AllYears;
+          aggregratedRefSeries.isDefaultRun = false;
+          aggregratedRefSeries.name = 'All Years';
+          aggregratedRefSeries.color = '#555';
+          referenceTimeseries.value.push(aggregratedRefSeries);
+        }
+      }
+
+      if (
+        referenceOptions.value.includes(ReferenceSeriesOption.SelectYears) &&
+        timeseriesData.value.length > 0
+      ) {
+        const aggregratedRefSeries = aggregateRefTemporalTimeseries(timeseriesData.value);
+        const existingreferenceTimeseries = referenceTimeseries.value.find((rts) => rts.id === ReferenceSeriesOption.SelectYears);
+
+        if (existingreferenceTimeseries) {
+          existingreferenceTimeseries.points = aggregratedRefSeries.points;
+        } else {
+          aggregratedRefSeries.id = ReferenceSeriesOption.SelectYears;
+          aggregratedRefSeries.isDefaultRun = false;
+          aggregratedRefSeries.name = 'Select Years';
+          aggregratedRefSeries.color = '#888';
+          referenceTimeseries.value.push(aggregratedRefSeries);
+        }
+      }
+      referenceTimeseries.value = referenceTimeseries.value.filter((rts) => referenceOptions.value.includes(rts.id));
+    }
+  });
+
   return {
+    allTimeseriesData: computed(() => {
+      return timeseriesData.value.concat(referenceTimeseries.value);
+    }),
     timeseriesData,
     visibleTimeseriesData: computed(() =>
       timeseriesData.value.filter(
