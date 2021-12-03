@@ -971,12 +971,10 @@ export default defineComponent({
         }
         // once the list of selected scenario changes,
         // extract model runs that match the selected scenario IDs
-        console.log('NEW IDS', newIds);
         selectedScenarios.value = newIds.reduce((filteredRuns: ModelRun[], runId) => {
           filteredRunData.value.some(run => {
             return runId === run.id && filteredRuns.push(run);
           });
-          console.log('FILTERED RUNS:', filteredRuns);
           return filteredRuns;
         }, []);
       } else {
@@ -1473,7 +1471,7 @@ export default defineComponent({
       selectedQualifierValues,
       initialSelectedYears,
       showPercentChange,
-      selectedScenarios, // passes in correctly here
+      selectedScenarios,
       activeReferenceOptions
     );
 

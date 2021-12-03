@@ -58,7 +58,7 @@ const applyBreakdown = (
       const mappedToBreakdownDomain = mapToBreakdownDomain(points);
       return {
         name: year,
-        id: year,
+        id: year, // maybe here is problem andrew?
         color: colorFromIndex(index),
         points: mappedToBreakdownDomain,
         isDefaultRun: timeseriesData[0].isDefaultRun
@@ -206,11 +206,9 @@ export default function useTimeseriesData(
         breakdownOption.value === null
       ) {
         // use run names if available
-        console.log(modelRuns); // problem is here: sometimes is null when it shouldn't be
         const modeRunNames = modelRuns && modelRuns.value && modelRuns.value.length > 0 ? modelRuns?.value.map(r => r.name) : modelRunIds.value;
         const defaultRunData = modelRuns && modelRuns.value && modelRuns.value.length > 0
           ? modelRuns?.value.map(r => r.is_default_run) : new Array(modelRunIds.value.length).fill(false);
-        console.log('!!!!!!!', modeRunNames);
         rawTimeseriesData.value = fetchResults.map((points, index) => {
           const name = modeRunNames[index] ?? 'no name: ' + index;
           const id = modelRunIds.value[index];

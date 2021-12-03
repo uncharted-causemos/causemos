@@ -145,10 +145,7 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
-        console.log('MEEP: ', allModelRunData.value);
         const allScenarioIds = allModelRunData.value.map(run => run.id);
-        const allScenarios = allModelRunData.value.map(run => run.name);
-        console.log(allScenarios); // can get the names here
         // do not pick the first run by default in case a run was previously selected
         selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
 
@@ -156,11 +153,8 @@ export default defineComponent({
           allModelRunData.value.some(run => {
             return runId === run.id && filteredRuns.push(run);
           });
-          console.log('FILTERED RUNS:', filteredRuns);
           return filteredRuns;
-        }, []);
-
-        console.log('IT WORKS?????', selectedScenarios.value);
+        }, []); // some pretty dirty code duplication, copied straight from datacube-card.vue
       }
     });
 
