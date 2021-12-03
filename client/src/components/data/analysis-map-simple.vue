@@ -216,7 +216,8 @@ export default {
       default: () => ({
         scheme: COLOR_SCHEME.DEFAULT,
         scaleFn: d3.scaleLinear,
-        isContinuous: false
+        isContinuous: false,
+        opacity: 1
       })
     }
   },
@@ -293,11 +294,12 @@ export default {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
     },
-    colorScheme() {
+    colorOptionsComputed() {
+      const options = { ...this.colorOptions };
       if (!_.isNil(this.relativeTo)) {
-        return this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
+        options.scheme = this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
       }
-      return this.colorOptions.scheme;
+      return options;
     },
     filter() {
       return this.filters.find(filter => filter.id === this.valueProp);
@@ -425,9 +427,8 @@ export default {
         return;
       }
       const { min, max } = this.extent;
-      const { scaleFn } = this.colorOptions;
       const relativeToProp = this.baselineSpec?.id;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp, this.showPercentChange);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorOptionsComputed, useFeatureState, relativeToProp, this.showPercentChange);
     },
     setFeatureStates() {
       if (!this.map || !this.adminLevel || this.isGridMap) return;

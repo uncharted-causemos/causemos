@@ -455,8 +455,8 @@
                   :selected-unit="unit"
                   :selected-resolution="selectedTemporalResolution"
                   :selected-base-layer="selectedBaseLayer"
-                  :selected-base-layer-transparency="selectedBaseLayerTransparency"
                   :selected-data-layer="selectedDataLayer"
+                  :selected-data-layer-transparency="selectedDataLayerTransparency"
                   :color-scheme-reversed="colorSchemeReversed"
                   :selected-color-scheme-name="selectedColorSchemeName"
                   :selected-color-scale-type="selectedColorScaleType"
@@ -465,7 +465,7 @@
                   @set-aggregation-selection="setAggregationSelection"
                   @set-resolution-selection="setTemporalResolutionSelection"
                   @set-base-layer-selection="setBaseLayer"
-                  @set-base-layer-transparency-selection="setBaseLayerTransparency"
+                  @set-data-layer-transparency-selection="setDataLayerTransparency"
                   @set-data-layer-selection="setDataLayer"
                   @set-color-scheme-reversed="setColorSchemeReversed"
                   @set-color-scheme-name="setColorSchemeName"
@@ -562,8 +562,8 @@ import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-
 import {
   // adminLevelToString,
   BASE_LAYER,
-  BASE_LAYER_TRANSPARENCY,
-  DATA_LAYER
+  DATA_LAYER,
+  DATA_LAYER_TRANSPARENCY
 } from '@/utils/map-util-new';
 
 import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
@@ -676,7 +676,7 @@ export default defineComponent({
     const breakdownOption = ref<string | null>(null);
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
-    const selectedBaseLayerTransparency = ref(BASE_LAYER_TRANSPARENCY['50%']);
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
@@ -809,8 +809,8 @@ export default defineComponent({
       selectedBaseLayer.value = val;
     };
 
-    const setBaseLayerTransparency = (val: BASE_LAYER_TRANSPARENCY) => {
-      selectedBaseLayerTransparency.value = val;
+    const setDataLayerTransparency = (val: DATA_LAYER_TRANSPARENCY) => {
+      selectedDataLayerTransparency.value = val;
     };
 
     const setDataLayer = (val: DATA_LAYER) => {
@@ -856,7 +856,7 @@ export default defineComponent({
     const finalColorScheme = computed(() => {
       const scheme = isDiscreteScale(selectedColorScaleType.value)
         ? getColors(selectedColorSchemeName.value, numberOfColorBins.value)
-        : COLOR_SCHEME[selectedColorSchemeName.value];
+        : _.clone(COLOR_SCHEME[selectedColorSchemeName.value]);
       return colorSchemeReversed.value ? scheme.reverse() : scheme;
     });
     const isContinuousScale = computed(() => {
@@ -895,7 +895,7 @@ export default defineComponent({
           selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
         }
         if (initialViewConfig.value.baseLayerTransparency !== undefined) {
-          selectedBaseLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
+          selectedDataLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
         }
         if (initialViewConfig.value.colorSchemeReversed !== undefined) {
           colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
@@ -1356,7 +1356,7 @@ export default defineComponent({
           setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
         }
         if (loadedInsight.view_state?.baseLayerTransparency !== undefined) {
-          setBaseLayerTransparency(loadedInsight.view_state?.baseLayerTransparency);
+          setDataLayerTransparency(loadedInsight.view_state?.baseLayerTransparency);
         }
         if (loadedInsight.view_state?.colorSchemeReversed !== undefined) {
           setColorSchemeReversed(loadedInsight.view_state?.colorSchemeReversed);
@@ -1539,7 +1539,8 @@ export default defineComponent({
       const options = {
         scheme: finalColorScheme.value,
         scaleFn: SCALE_FUNCTION[selectedColorScaleType.value],
-        isContinuous: isContinuousScale.value
+        isContinuous: isContinuousScale.value,
+        opacity: Number(selectedDataLayerTransparency.value)
       };
       return options;
     });
@@ -1601,7 +1602,7 @@ export default defineComponent({
         selectedSpatialAggregation,
         selectedTemporalAggregation,
         selectedTemporalResolution,
-        selectedBaseLayerTransparency,
+        selectedDataLayerTransparency,
         colorSchemeReversed,
         selectedColorSchemeName,
         selectedColorScaleType,
@@ -1722,7 +1723,7 @@ export default defineComponent({
       searchFilters,
       selectedAdminLevel,
       selectedBaseLayer,
-      selectedBaseLayerTransparency,
+      selectedDataLayerTransparency,
       finalColorScheme,
       setColorSchemeReversed,
       colorSchemeReversed,
@@ -1749,8 +1750,8 @@ export default defineComponent({
       setSelectedAdminLevel,
       setBreakdownOption,
       setBaseLayer,
-      setBaseLayerTransparency,
       setDataLayer,
+      setDataLayerTransparency,
       setRelativeTo,
       setSelectedTimestamp,
       setAggregationSelection,

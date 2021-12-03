@@ -74,8 +74,8 @@
         <dropdown-button
           class="dropdown-button"
           :is-dropdown-left-aligned="true"
-          :items="baseLayerTransparencyOptions"
-          :selected-item="selectedTransparency"
+          :items="dataLayerTransparencyOptions"
+          :selected-item="selectedDataLayerTransparency"
           :inner-button-label="'Transparency'"
           @item-selected="setTransparencySelection"
         />
@@ -142,7 +142,7 @@ import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
-import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
 import { COLOR_SCHEME, ColorScaleType, COLOR, getColors, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
@@ -180,9 +180,9 @@ export default defineComponent({
       type: String,
       default: DATA_LAYER.ADMIN
     },
-    selectedTransparency: {
+    selectedDataLayerTransparency: {
       type: String,
-      default: BASE_LAYER_TRANSPARENCY['50%']
+      default: DATA_LAYER_TRANSPARENCY['50%']
     },
     colorSchemeReversed: {
       type: Boolean,
@@ -215,7 +215,7 @@ export default defineComponent({
     'set-resolution-selection',
     'set-base-layer-selection',
     'set-data-layer-selection',
-    'set-base-layer-transparency-selection',
+    'set-data-layer-transparency-selection',
     'set-color-scheme-reversed',
     'set-color-scheme-name',
     'set-color-scale-type',
@@ -236,15 +236,12 @@ export default defineComponent({
     const dataLayerGroupButtons = ref(Object.values(DATA_LAYER)
       .map(val => ({ label: capitalize(val), value: val })));
 
-    const baseLayerTransparencyOptions = ref(Object.keys(BASE_LAYER_TRANSPARENCY)
-      .map(key => ({ displayName: key, value: (BASE_LAYER_TRANSPARENCY as any)[key] })));
+    const dataLayerTransparencyOptions = ref(Object.keys(DATA_LAYER_TRANSPARENCY)
+      .map(key => ({ displayName: key, value: (DATA_LAYER_TRANSPARENCY as any)[key] })));
 
-    // FIXME: disable linear/log color scales until map support is added
     const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
       .map(val => ({ displayName: capitalize(val), value: val })));
-    // const colorScaleGroupButtons = ref([
-    //   { displayName: capitalize(ColorScaleType.Discrete), value: ColorScaleType.Discrete }
-    // ]);
+
     const colorSchemes = ref(Object.keys(COLOR_SCHEMES)
       .map(val => ({ displayName: capitalize(val.toLowerCase()), value: val })));
 
@@ -283,7 +280,7 @@ export default defineComponent({
       currentOutputDisplayName,
       colorSchemes,
       isDiscreteScale,
-      baseLayerTransparencyOptions,
+      dataLayerTransparencyOptions,
       unitOptions,
       TemporalResolutionOption,
       AggregationOption
@@ -351,7 +348,7 @@ export default defineComponent({
       this.$emit('set-data-layer-selection', dateLayer);
     },
     setTransparencySelection(transparency: string) {
-      this.$emit('set-base-layer-transparency-selection', transparency);
+      this.$emit('set-data-layer-transparency-selection', transparency);
     },
     setColorScaleTypeSelection(colorScale: ColorScaleType) {
       this.$emit('set-color-scale-type', colorScale);
@@ -360,9 +357,13 @@ export default defineComponent({
       this.$emit('set-color-scheme-name', colorScheme);
     },
     renderColorScale() {
+      const continuosColors = getColors(this.selectedColorSchemeName, COLOR_PALETTE_SIZE);
+      if (this.colorSchemeReversed) {
+        continuosColors.reverse();
+      }
       const colors = isDiscreteScale(this.selectedColorScaleType)
         ? this.selectedColorScheme
-        : getColors(this.selectedColorSchemeName, COLOR_PALETTE_SIZE);
+        : continuosColors;
       const n = colors.length;
       const refSelection = d3.select((this.$refs as any).colorPalette);
       refSelection.selectAll('*').remove();

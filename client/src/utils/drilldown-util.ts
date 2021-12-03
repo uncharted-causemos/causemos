@@ -3,7 +3,7 @@ import { ComputedRef, Ref } from 'vue';
 import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { DataState, ViewState } from '@/types/Insight';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
-import { BASE_LAYER, DATA_LAYER, BASE_LAYER_TRANSPARENCY } from './map-util-new';
+import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new';
 import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 
@@ -51,7 +51,7 @@ export function initViewStateFromRefs (
   selectedSpatialAggregation: Ref<AggregationOption>,
   selectedTemporalAggregation: Ref<AggregationOption>,
   selectedTemporalResolution: Ref<TemporalResolutionOption>,
-  baseLayerTransparency: Ref<BASE_LAYER_TRANSPARENCY>,
+  dataLayerTransparency: Ref<DATA_LAYER_TRANSPARENCY>,
   colorSchemeReversed: Ref<boolean>,
   colorSchemeName: Ref<COLOR>,
   colorScaleType: Ref<ColorScaleType>,
@@ -67,7 +67,7 @@ export function initViewStateFromRefs (
     selectedMapDataLayer: selectedDataLayer.value,
     breakdownOption: breakdownOption.value,
     selectedAdminLevel: selectedAdminLevel.value,
-    baseLayerTransparency: baseLayerTransparency.value,
+    dataLayerTransparency: dataLayerTransparency.value,
     colorSchemeReversed: colorSchemeReversed.value,
     colorSchemeName: colorSchemeName.value,
     colorScaleType: colorScaleType.value,
