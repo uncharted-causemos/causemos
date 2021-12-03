@@ -162,6 +162,7 @@ export default defineComponent({
       // we should only set the global timeseries one time
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
+
       // clone and save the incoming timeseries in the map object
       //  where all timeseries lists will be saved
       this.allTimeseriesMap[timeseriesInfo.id] = _.cloneDeep(timeseriesInfo.timeseriesList);

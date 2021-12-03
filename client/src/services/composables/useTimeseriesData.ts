@@ -208,6 +208,7 @@ export default function useTimeseriesData(
         const modeRunNames = modelRuns && modelRuns.value && modelRuns.value.length > 0 ? modelRuns?.value.map(r => r.name) : modelRunIds.value;
         const defaultRunData = modelRuns && modelRuns.value && modelRuns.value.length > 0
           ? modelRuns?.value.map(r => r.is_default_run) : new Array(modelRunIds.value.length).fill(false);
+
         rawTimeseriesData.value = fetchResults.map((points, index) => {
           const name = modeRunNames[index] ?? 'no name: ' + index;
           const id = modelRunIds.value[index];
