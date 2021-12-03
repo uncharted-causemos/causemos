@@ -109,7 +109,7 @@
       </div>
 
       <div
-        v-if="selectedColorScaleType === ColorScaleType.Discrete"
+        v-if="isDiscreteScale(selectedColorScaleType)"
         class="config-sub-group"
       >
         <label class="header-secondary">Number of bins: {{numberOfColorBins}}</label>
@@ -145,7 +145,7 @@ import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
-import { COLOR_SCHEME, ColorScaleType, COLOR, getColors, COLOR_PALETTE_SIZE } from '@/utils/colors-util';
+import { COLOR_SCHEME, ColorScaleType, COLOR, getColors, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.OTHER]);
 
@@ -193,8 +193,8 @@ export default defineComponent({
       default: COLOR.DEFAULT
     },
     selectedColorScaleType: {
-      type: String,
-      default: ColorScaleType.Discrete
+      type: String as PropType<ColorScaleType>,
+      default: ColorScaleType.LinearDiscrete
     },
     numberOfColorBins: {
       type: Number,
@@ -282,7 +282,7 @@ export default defineComponent({
       modelOutputsDisplayNames,
       currentOutputDisplayName,
       colorSchemes,
-      ColorScaleType,
+      isDiscreteScale,
       baseLayerTransparencyOptions,
       unitOptions,
       TemporalResolutionOption,
@@ -360,7 +360,7 @@ export default defineComponent({
       this.$emit('set-color-scheme-name', colorScheme);
     },
     renderColorScale() {
-      const colors = this.selectedColorScaleType === ColorScaleType.Discrete
+      const colors = isDiscreteScale(this.selectedColorScaleType)
         ? this.selectedColorScheme
         : getColors(this.selectedColorSchemeName, COLOR_PALETTE_SIZE);
       const n = colors.length;

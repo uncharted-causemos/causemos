@@ -36,7 +36,7 @@ export default defineComponent({
       type: Object as PropType<{ top: boolean; right: boolean }>,
       default: { top: true, right: true }
     },
-    discrete: {
+    isContinuos: {
       type: Boolean,
       default: true
     }
@@ -48,7 +48,7 @@ export default defineComponent({
     labelPosition() {
       this.refresh();
     },
-    discrete() {
+    isContinuos() {
       this.refresh();
     }
   },
@@ -67,7 +67,13 @@ export default defineComponent({
         .attr('preserveAspectRatio', 'none')
         .style('display', 'block');
 
-      if (this.discrete) {
+      if (this.isContinuos) {
+        refSelection.append('image')
+          .attr('width', '100%')
+          .attr('height', '100%')
+          .attr('preserveAspectRatio', 'none')
+          .attr('xlink:href', ramp(d3.interpolateRgbBasis(colors))?.toDataURL() || '');
+      } else {
         const margin = 0.01;
         refSelection
           .selectAll('rect')
@@ -77,12 +83,6 @@ export default defineComponent({
           .attr('y', (d, i) => n - 1 - i + margin)
           .attr('width', 1)
           .attr('height', 1 - (margin * 2));
-      } else {
-        refSelection.append('image')
-          .attr('width', '100%')
-          .attr('height', '100%')
-          .attr('preserveAspectRatio', 'none')
-          .attr('xlink:href', ramp(d3.interpolateRgbBasis(colors))?.toDataURL() || '');
       }
     }
   }

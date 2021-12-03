@@ -1,7 +1,4 @@
-import {
-  quantize,
-  interpolateRgbBasis
-} from 'd3';
+import * as d3 from 'd3';
 
 export enum COLOR {
   GREYS_7 = 'GREYS_7',
@@ -44,7 +41,7 @@ export const EDGE_COLOR_PALETTE = ['#d55e00', '#6b6859', '#0072b2']; // https://
 export function getColors(color: COLOR, n = COLOR_PALETTE_SIZE) {
   const scheme = COLOR_SCHEME[color];
   if (n === 1) return [scheme[scheme.length - 1]];
-  return quantize(interpolateRgbBasis(COLOR_SCHEME[color]), n);
+  return d3.quantize(d3.interpolateRgbBasis(COLOR_SCHEME[color]), n);
 }
 
 /**
@@ -80,8 +77,25 @@ export function colorFromIndex(index: number) {
 
 export enum ColorScaleType {
   Linear = 'linear',
-  Discrete = 'discrete',
-  Log = 'log'
+  Log = 'log',
+  LinearDiscrete = 'linear discrete',
+  LogDiscrete = 'log discrete',
+}
+
+export const DISCRETE_SCALES = [
+  ColorScaleType.LinearDiscrete,
+  ColorScaleType.LogDiscrete
+];
+
+export const SCALE_FUNCTION = {
+  [ColorScaleType.Linear]: d3.scaleLinear,
+  [ColorScaleType.Log]: d3.scaleSymlog,
+  [ColorScaleType.LinearDiscrete]: d3.scaleLinear,
+  [ColorScaleType.LogDiscrete]: d3.scaleSymlog
+};
+
+export function isDiscreteScale(scaleType: ColorScaleType) {
+  return Boolean(DISCRETE_SCALES.find(v => v === scaleType));
 }
 
 export default {

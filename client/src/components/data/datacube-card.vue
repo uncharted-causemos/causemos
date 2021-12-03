@@ -342,7 +342,7 @@
               <div class="card-maps-box">
                 <div v-if="outputSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
-                  <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :discrete="isDiscreteScale" />
+                  <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :isContinuos="isContinuousScale" />
                 </div>
                 <div
                   v-if="mapReady && currentTabView === 'data' && regionalData !== null"
@@ -379,6 +379,7 @@
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
                       :selected-color-scheme="finalColorScheme"
+                      :color-options="mapColorOptions"
                       :show-percent-change="showPercentChange"
                       @sync-bounds="onSyncMapBounds"
                       @on-map-load="onMapLoad"
@@ -396,7 +397,7 @@
                 </div>
                 <div v-if="outputSpecs.length > 0" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
-                  <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" :discrete="isDiscreteScale" />
+                  <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" :isContinuos="isContinuousScale" />
                 </div>
               </div>
             </div>
@@ -556,7 +557,7 @@ import {
   OutputSpecWithId
 } from '@/types/Runoutput';
 
-import { colorFromIndex, ColorScaleType, getColors, COLOR, COLOR_SCHEME } from '@/utils/colors-util';
+import { colorFromIndex, ColorScaleType, getColors, COLOR, COLOR_SCHEME, isDiscreteScale, SCALE_FUNCTION } from '@/utils/colors-util';
 import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
@@ -689,7 +690,7 @@ export default defineComponent({
     //
     const colorSchemeReversed = ref(false);
     const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
-    const selectedColorScaleType = ref(ColorScaleType.Discrete);
+    const selectedColorScaleType = ref(ColorScaleType.LinearDiscrete);
     const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
 
     const showTagNameModal = ref<boolean>(false);
@@ -854,13 +855,13 @@ export default defineComponent({
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
     // however, the map/legend may ignore the generated final color list and instead use the color-related viz options to generate a slightly different color array that can be used when rendering the map/legend
     const finalColorScheme = computed(() => {
-      const scheme = selectedColorScaleType.value === ColorScaleType.Discrete
+      const scheme = isDiscreteScale(selectedColorScaleType.value)
         ? getColors(selectedColorSchemeName.value, numberOfColorBins.value)
         : COLOR_SCHEME[selectedColorSchemeName.value];
       return colorSchemeReversed.value ? scheme.reverse() : scheme;
     });
-    const isDiscreteScale = computed(() => {
-      return selectedColorScaleType.value === ColorScaleType.Discrete;
+    const isContinuousScale = computed(() => {
+      return !isDiscreteScale(selectedColorScaleType.value);
     });
 
     const updateTabView = (val: string) => {
@@ -1535,6 +1536,15 @@ export default defineComponent({
     };
     */
 
+    const mapColorOptions = computed(() => {
+      const options = {
+        scheme: finalColorScheme.value,
+        scaleFn: SCALE_FUNCTION[selectedColorScaleType.value],
+        isContinuous: isContinuousScale.value
+      };
+      return options;
+    });
+
     const {
       updateMapCurSyncedZoom,
       recalculateGridMapDiffStats,
@@ -1542,7 +1552,7 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange, finalColorScheme);
+    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange, mapColorOptions);
 
     const {
       onSyncMapBounds,
@@ -1676,12 +1686,13 @@ export default defineComponent({
       gridLayerStats,
       hasDefaultRun,
       headerGroupButtons,
-      isDiscreteScale,
+      isContinuousScale,
       isModelMetadata,
       isRelativeDropdownOpen,
       mainModelOutput,
       mapBounds,
       mapCameraOptions,
+      mapColorOptions,
       mapLegendData,
       mapReady,
       mapSelectedLayer,

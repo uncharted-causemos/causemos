@@ -215,9 +215,13 @@ export default {
       type: Array,
       default: () => COLOR_SCHEME.DEFAULT
     },
-    colorOption: {
+    colorOptions: {
       type: Object,
-      default: () => ({ scaleFn: d3.scaleLinear })
+      default: () => ({
+        scheme: COLOR_SCHEME.DEFAULT,
+        scaleFn: d3.scaleLinear,
+        isContinuous: false
+      })
     }
   },
   data: () => ({
@@ -425,7 +429,7 @@ export default {
         return;
       }
       const { min, max } = this.extent;
-      const { scaleFn } = this.colorOption;
+      const { scaleFn } = this.colorOptions;
       const relativeToProp = this.baselineSpec?.id;
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp, this.showPercentChange);
     },

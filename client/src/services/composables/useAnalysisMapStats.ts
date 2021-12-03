@@ -1,8 +1,7 @@
-import * as d3 from 'd3';
 import _ from 'lodash';
 import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
-import { MapLegendColor, AnalysisMapStats } from '@/types/Common';
+import { MapLegendColor, AnalysisMapStats, AnalysisMapColorOptions } from '@/types/Common';
 import { OutputSpecWithId, OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
 import { computeRegionalStats, adminLevelToString, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
 import { createMapLegendData } from '@/utils/map-util';
@@ -17,7 +16,7 @@ export default function useAnalysisMapStats(
   selectedDataLayer: Ref<string>,
   selectedAdminLevel: Ref<number>,
   showPercentChange: Ref<boolean>,
-  selectedColorScheme: Ref<string[]>
+  colorOptions: Ref<AnalysisMapColorOptions>
 ) {
   const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
   const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
@@ -32,13 +31,13 @@ export default function useAnalysisMapStats(
       const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
       const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
       adminMapLayerLegendData.value = (baseline && difference) ? [
-        createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
-        createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
+        createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, colorOptions.value.scaleFn),
+        createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, colorOptions.value.scaleFn, true)
       ] : [];
     } else {
       const globalStats = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
       adminMapLayerLegendData.value = globalStats ? [
-        createMapLegendData([globalStats.min, globalStats.max], selectedColorScheme.value, d3.scaleLinear)
+        createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn)
       ] : [];
     }
   });
@@ -98,13 +97,13 @@ export default function useAnalysisMapStats(
       const baseline = gridLayerStats.value?.baseline[String(mapCurZoom.value)];
       const difference = gridLayerStats.value?.difference?.diff;
       gridMapLayerLegendData.value = (baseline && difference) ? [
-        createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
-        createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
+        createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, colorOptions.value.scaleFn),
+        createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, colorOptions.value.scaleFn, true)
       ] : [];
     } else {
       const globalStats = gridLayerStats.value?.global[String(mapCurZoom.value)];
       gridMapLayerLegendData.value = globalStats ? [
-        createMapLegendData([globalStats.min, globalStats.max], selectedColorScheme.value, d3.scaleLinear)
+        createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn)
       ] : [];
     }
   });
