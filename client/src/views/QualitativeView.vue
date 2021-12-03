@@ -510,6 +510,13 @@ export default defineComponent({
       this.setDataState(dataState);
     },
     async addCAGComponents(nodes: NodeParameter[], edges: EdgeParameter[], updateType: string) {
+      edges.forEach(edge => {
+        if (!edge.parameter) {
+          edge.parameter = {
+            weights: [0.0, 0.5]
+          };
+        }
+      });
       return modelService.addComponents(this.currentCAG, nodes, edges, updateType);
     },
     async removeCAGComponents(

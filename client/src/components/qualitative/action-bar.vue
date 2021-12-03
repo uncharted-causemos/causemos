@@ -40,7 +40,7 @@
     <div class="run-model">
       <arrow-button
         :disabled="isRunningModel || numEdges === 0"
-        :text="`Run${isRunningModel ? 'ning' : ''} Model`"
+        :text="'Analyze Scenarios'"
         :isPointingLeft="false"
         :icon="'fa-connectdevelop'"
         @click="onRunModel"
