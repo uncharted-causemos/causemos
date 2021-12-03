@@ -762,6 +762,7 @@ export default defineComponent({
     const initialSelectedRegionIds = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
     const initialSelectedYears = ref<string[]>([]);
+    const initialActiveReferenceOptions = ref<string[]>([]);
 
     const addNewTag = (tagName: string) => {
       let numAdded = 0;
@@ -1007,6 +1008,12 @@ export default defineComponent({
           }
           if (initialDataConfig.value.selectedRegionIds !== undefined) {
             initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
+          }
+          if (initialDataConfig.value.selectedYears !== undefined) {
+            initialSelectedYears.value = _.clone(initialDataConfig.value.selectedYears);
+          }
+          if (initialDataConfig.value.activeReferenceOptions !== undefined) {
+            initialActiveReferenceOptions.value = _.clone(initialDataConfig.value.activeReferenceOptions);
           }
           if (initialDataConfig.value.selectedQualifierValues !== undefined) {
             initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
@@ -1382,6 +1389,10 @@ export default defineComponent({
         if (loadedInsight.data_state?.selectedYears !== undefined) {
           initialSelectedYears.value = _.clone(loadedInsight.data_state?.selectedYears);
         }
+        // @NOTE: 'initialActiveReferenceOptions' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.activeReferenceOptions !== undefined) {
+          initialActiveReferenceOptions.value = _.clone(loadedInsight.data_state?.activeReferenceOptions);
+        }
       }
     };
 
@@ -1439,6 +1450,12 @@ export default defineComponent({
       selectedScenarios,
       activeReferenceOptions
     );
+
+    watchEffect(() => {
+      if (initialActiveReferenceOptions.value && initialActiveReferenceOptions.value.length > 0) {
+        activeReferenceOptions.value = initialActiveReferenceOptions.value;
+      }
+    });
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
       breakdownOption,
@@ -1620,6 +1637,7 @@ export default defineComponent({
         selectedScenarioIds,
         selectedTimestamp,
         selectedYears,
+        activeReferenceOptions,
         searchFilters,
         visibleTimeseriesData
       );

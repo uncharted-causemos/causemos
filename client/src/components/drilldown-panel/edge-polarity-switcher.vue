@@ -6,7 +6,7 @@
       <span
         class="clickable-dropdown"
         @click.stop="openEdgeTypeDropdown()">
-        <i class="fa fa-fw fa-bolt" />
+        <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
         {{ weightTypeString(currentEdgeType) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
@@ -77,7 +77,7 @@ const EDGE_TYPE_TREND = 'trend';
 const getEdgeTypeString = (edge: EdgeParameter): string => {
   const param = edge.parameter;
   if (param) {
-    return param.weights[0] > 0 ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
+    return param.weights[0] > param.weights[1] ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
   }
   return '';
 };
@@ -88,7 +88,7 @@ const getEdgeWeight = (edge: EdgeParameter): number => {
   const type = getEdgeTypeString(edge);
   const param = edge.parameter;
   if (param) {
-    const w = type === EDGE_TYPE_TREND ? param.weights[0] : param.weights[1];
+    const w = type === EDGE_TYPE_TREND ? param.weights[1] : param.weights[0];
     if (w > 0.7) return 0.9;
     if (w > 0.3) return 0.5;
     return 0.1;

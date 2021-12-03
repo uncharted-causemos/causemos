@@ -21,8 +21,18 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
     }
   }];
 
-  const builder = queryStringBuilder().setOperator('OR');
-  queryString.split(' ').forEach(v => builder.addWildCard(v));
+  const reserved = ['or', 'and'];
+
+  const builder = queryStringBuilder()
+    .setOperator('OR')
+    .setFields(['examples', 'label', 'definition']);
+
+  queryString
+    .split(' ')
+    .filter(s => {
+      return !reserved.includes(s.toLowerCase());
+    })
+    .forEach(v => builder.addWildCard(v));
 
   const results = await searchAndHighlight(RESOURCE.ONTOLOGY, builder.build(), filters, [
     'label',
@@ -32,6 +42,7 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
   return results.map(d => {
     return {
       doc_type: 'concept',
+      score: d._score,
       doc: formatOntologyDoc(d._source),
       highlight: d.highlight
     };
@@ -146,6 +157,11 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
   const rawResult = await rawConceptEntitySearch(projectId, queryString);
   if (_.isEmpty(rawResult)) return [];
 
+  const scoreMap = new Map();
+  rawResult.forEach(r => {
+    scoreMap.set(r.doc.label, r.score);
+  });
+
   const matchedRawConcepts = rawResult.map(d => d.doc.label);
   const aggFilter = buildSubjObjAggregation(matchedRawConcepts);
 
@@ -180,11 +196,13 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
+
     if (dupeMap.has(item.key)) continue;
 
     const memberStrings = reverseFlattenedConcept(item.key, set);
 
     let members = [];
+    let score = 0;
     if (ontologyMap[item.key]) {
       members = ontologyValues.filter(d => d.label === item.key).map(formatOntologyDoc);
     } else {
@@ -198,10 +216,12 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
       const highlightMatch = rawResult.find(d => d.doc.label === members[j].label);
       if (_.isNil(highlightMatch)) continue;
       members[j].highlight = highlightMatch.highlight;
+      score += scoreMap.get(members[j].label);
     }
 
     const r = {
       doc_type: 'concept',
+      score,
       doc: {
         key: item.key,
         members: members
@@ -210,6 +230,27 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
     finalResults.push(r);
     dupeMap.set(item.key, 1);
   }
+
+
+  // Temporary counter tokens
+  const tokens = queryString.split(' ');
+  for (let i = 0; i < finalResults.length; i++) {
+    const doc = finalResults[i].doc;
+    doc.tokenCounter = 0;
+    for (let j = 0; j < tokens.length; j++) {
+      if (doc.key.includes(tokens[j])) {
+        doc.tokenCounter++;
+      }
+    }
+  }
+  finalResults.sort((a, b) => {
+    return b.score * b.doc.tokenCounter - a.score * a.doc.tokenCounter;
+  });
+  for (let i = 0; i < finalResults.length; i++) {
+    delete finalResults[i].doc.tokenCounter;
+  }
+
+
 
   // FIXME: Also attach concept matches
   return finalResults;

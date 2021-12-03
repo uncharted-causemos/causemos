@@ -14,7 +14,7 @@ const createModel = async (payload) => {
   // create to delphi
   const delphiOptions = {
     method: 'POST',
-    url: process.env.DELPHI_URL + '/delphi/create-model',
+    url: process.env.DELPHI_URL + '/create-model',
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
@@ -43,7 +43,7 @@ const modelStatus = async (modelId) => {
   // create to delphi
   const delphiOptions = {
     method: 'GET',
-    url: process.env.DELPHI_URL + '/delphi/models/' + modelId,
+    url: process.env.DELPHI_URL + '/models/' + modelId,
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
@@ -56,7 +56,7 @@ const modelStatus = async (modelId) => {
 
 const createExperiment = async (modelId, payload) => {
   const options = {
-    url: process.env.DELPHI_URL + `/delphi/models/${modelId}/experiments`,
+    url: process.env.DELPHI_URL + `/models/${modelId}/experiments`,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ const createExperiment = async (modelId, payload) => {
  */
 const findExperiment = async (modelId, experimentId) => {
   const options = {
-    url: process.env.DELPHI_URL + `/delphi/models/${modelId}/experiments/${experimentId}`,
+    url: process.env.DELPHI_URL + `/models/${modelId}/experiments/${experimentId}`,
     method: 'GET',
     headers: {
       Accept: 'application/json'

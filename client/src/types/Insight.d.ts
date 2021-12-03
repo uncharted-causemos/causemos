@@ -90,6 +90,8 @@ export interface DataState {
   selectedRegionIds?: string[];
   selectedQualifierValues?: string[];
   selectedYears?: string[];
+  activeReferenceOptions?: string[];
+
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
   datacubeRegions?: string[];

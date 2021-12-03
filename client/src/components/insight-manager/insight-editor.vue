@@ -31,6 +31,7 @@ export default defineComponent({
   components: {
     DropdownControl
   },
+  emits: ['edit', 'remove'],
   methods: {
     editInsight() {
       this.$emit('edit');
