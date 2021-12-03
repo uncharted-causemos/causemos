@@ -56,6 +56,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
+import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType, DatacubeStatus } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
@@ -100,6 +101,7 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
+    const selectedScenarios = ref([] as ModelRun[]);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
@@ -143,9 +145,22 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
+        console.log('MEEP: ', allModelRunData.value);
         const allScenarioIds = allModelRunData.value.map(run => run.id);
+        const allScenarios = allModelRunData.value.map(run => run.name);
+        console.log(allScenarios); // can get the names here
         // do not pick the first run by default in case a run was previously selected
         selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
+
+        selectedScenarios.value = selectedScenarioIds.value.reduce((filteredRuns: ModelRun[], runId) => {
+          allModelRunData.value.some(run => {
+            return runId === run.id && filteredRuns.push(run);
+          });
+          console.log('FILTERED RUNS:', filteredRuns);
+          return filteredRuns;
+        }, []);
+
+        console.log('IT WORKS?????', selectedScenarios.value);
       }
     });
 
@@ -227,7 +242,8 @@ export default defineComponent({
       ref(selectedRegionIds),
       ref(new Set()),
       ref([]),
-      ref(false)
+      ref(false),
+      selectedScenarios // this is the problem, need to find the actual selected scenarios
     );
 
     watchEffect(() => {

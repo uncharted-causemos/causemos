@@ -195,6 +195,7 @@ export default function useTimeseriesData(
           const name =
             regionIds.value[index].split(REGION_ID_DELIMETER).pop() ??
             regionIds.value[index];
+
           const isDefaultRun = modelRuns && modelRuns.value[index] ? modelRuns.value[index].is_default_run : false;
           const id = regionIds.value[index];
           const color = colorFromIndex(index);
@@ -205,10 +206,11 @@ export default function useTimeseriesData(
         breakdownOption.value === null
       ) {
         // use run names if available
+        console.log(modelRuns); // problem is here: sometimes is null when it shouldn't be
         const modeRunNames = modelRuns && modelRuns.value && modelRuns.value.length > 0 ? modelRuns?.value.map(r => r.name) : modelRunIds.value;
         const defaultRunData = modelRuns && modelRuns.value && modelRuns.value.length > 0
           ? modelRuns?.value.map(r => r.is_default_run) : new Array(modelRunIds.value.length).fill(false);
-
+        console.log('!!!!!!!', modeRunNames);
         rawTimeseriesData.value = fetchResults.map((points, index) => {
           const name = modeRunNames[index] ?? 'no name: ' + index;
           const id = modelRunIds.value[index];
