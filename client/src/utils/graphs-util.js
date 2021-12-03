@@ -95,7 +95,8 @@ class Graph {
 
       const stack = [[startNode, Array.from(this.adjacentVertices[startNode.name])]];
       while (stack.length > 0) {
-        const lastStacked = stack.at(-1);
+        // const lastStacked = stack.at(-1);
+        const lastStacked = stack[stack.length - 1];
         const currNode = lastStacked[0];
         const neighbors = lastStacked[1];
 
@@ -226,7 +227,7 @@ export function findSCC(edges) {
  * @returns A list of lists, where the inner lists are cycles in the graph
  */
 export function findCycles(edges) {
-  if (edges.length === 0) { return; }
+  if (!edges || edges.length === 0) { return []; }
   const g = new Graph(edges);
   return g.findCycles();
 }
