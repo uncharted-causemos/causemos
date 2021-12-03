@@ -58,7 +58,7 @@ const applyBreakdown = (
       const mappedToBreakdownDomain = mapToBreakdownDomain(points);
       return {
         name: year,
-        id: year, // maybe here is problem andrew?
+        id: year,
         color: colorFromIndex(index),
         points: mappedToBreakdownDomain,
         isDefaultRun: timeseriesData[0].isDefaultRun
@@ -195,7 +195,6 @@ export default function useTimeseriesData(
           const name =
             regionIds.value[index].split(REGION_ID_DELIMETER).pop() ??
             regionIds.value[index];
-
           const isDefaultRun = modelRuns && modelRuns.value[index] ? modelRuns.value[index].is_default_run : false;
           const id = regionIds.value[index];
           const color = colorFromIndex(index);
