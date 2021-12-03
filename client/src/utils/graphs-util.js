@@ -19,9 +19,6 @@ class Vertex {
   }
 }
 class Graph {
-  PROCESSING = 1
-  PROCESSED = 2
-
   constructor(edges) {
     const vertices = {};
     const adjacentVertices = {};
