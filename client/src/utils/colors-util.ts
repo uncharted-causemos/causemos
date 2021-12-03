@@ -18,7 +18,6 @@ export const COLOR_SCHEME: { [key in COLOR ]: string[] } = Object.freeze({
   [COLOR.OTHER]: ['#feedde', '#fdd0a2', '#fdae6b', '#fd8d3c', '#f16913', '#d94801', '#8c2d04']
 });
 
-export const COLOR_SWATCH_SIZE = 25;
 export const COLOR_PALETTE_SIZE = 256;
 
 export const UNDEFINED_COLOR = '#000000';

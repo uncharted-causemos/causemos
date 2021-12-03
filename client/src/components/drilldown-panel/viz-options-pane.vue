@@ -145,7 +145,7 @@ import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
-import { COLOR_SCHEME, ColorScaleType, COLOR, getColors, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
+import { COLOR_SCHEME, ColorScaleType, COLOR, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.OTHER]);
 
@@ -357,13 +357,9 @@ export default defineComponent({
       this.$emit('set-color-scheme-name', colorScheme);
     },
     renderColorScale() {
-      const continuosColors = getColors(this.selectedColorSchemeName, COLOR_PALETTE_SIZE);
-      if (this.colorSchemeReversed) {
-        continuosColors.reverse();
-      }
       const colors = isDiscreteScale(this.selectedColorScaleType)
         ? this.selectedColorScheme
-        : continuosColors;
+        : d3.quantize(d3.interpolateRgbBasis(this.selectedColorScheme), COLOR_PALETTE_SIZE);
       const n = colors.length;
       const refSelection = d3.select((this.$refs as any).colorPalette);
       refSelection.selectAll('*').remove();
