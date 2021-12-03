@@ -367,6 +367,7 @@
                       :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
+                      :reference-options="activeReferenceOptions"
                       :is-default-run="spec.isDefaultRun"
                       :show-tooltip="true"
                       :selected-layer-id="mapSelectedLayer"
@@ -1582,7 +1583,16 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange, finalColorScheme);
+    } = useAnalysisMapStats(
+      outputSpecs,
+      regionalData,
+      relativeTo,
+      selectedDataLayer,
+      selectedAdminLevel,
+      showPercentChange,
+      finalColorScheme,
+      activeReferenceOptions
+    );
 
     const {
       onSyncMapBounds,
@@ -1692,6 +1702,7 @@ export default defineComponent({
     };
 
     return {
+      activeReferenceOptions,
       addNewTag,
       allModelRunData,
       activeDrilldownTab,

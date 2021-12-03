@@ -152,6 +152,10 @@ export default {
       type: String,
       default: null
     },
+    referenceOptions: {
+      type: Array,
+      default: () => []
+    },
     showTooltip: {
       type: Boolean,
       default: false
@@ -290,7 +294,7 @@ export default {
       }
     },
     colorScheme() {
-      if (!_.isNil(this.relativeTo)) {
+      if (!_.isNil(this.relativeTo) && !this.referenceOptions.includes(this.relativeTo)) {
         return this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
       }
       return this.selectedColorScheme;

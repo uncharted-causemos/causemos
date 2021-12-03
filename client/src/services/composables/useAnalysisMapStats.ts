@@ -17,7 +17,8 @@ export default function useAnalysisMapStats(
   selectedDataLayer: Ref<string>,
   selectedAdminLevel: Ref<number>,
   showPercentChange: Ref<boolean>,
-  selectedColorScheme: Ref<string[]>
+  selectedColorScheme: Ref<string[]>,
+  referenceOptions: Ref<string[]>
 ) {
   const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
   const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
@@ -28,7 +29,7 @@ export default function useAnalysisMapStats(
       return;
     }
     adminLayerStats.value = computeRegionalStats(regionalData.value, relativeTo.value, showPercentChange.value);
-    if (relativeTo.value) {
+    if (relativeTo.value && !referenceOptions.value.includes(relativeTo.value)) {
       const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
       const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
       adminMapLayerLegendData.value = (baseline && difference) ? [
@@ -94,7 +95,7 @@ export default function useAnalysisMapStats(
       gridMapLayerLegendData.value = [];
       return;
     }
-    if (relativeTo.value) {
+    if (relativeTo.value && !referenceOptions.value.includes(relativeTo.value)) {
       const baseline = gridLayerStats.value?.baseline[String(mapCurZoom.value)];
       const difference = gridLayerStats.value?.difference?.diff;
       gridMapLayerLegendData.value = (baseline && difference) ? [
