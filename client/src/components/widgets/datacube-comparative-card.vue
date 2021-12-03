@@ -237,7 +237,7 @@ export default defineComponent({
       ref(new Set()),
       ref([]),
       ref(false),
-      selectedScenarios // this is the problem, need to find the actual selected scenarios
+      selectedScenarios
     );
 
     watchEffect(() => {
