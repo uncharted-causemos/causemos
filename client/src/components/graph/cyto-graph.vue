@@ -37,6 +37,7 @@ import { calculateNeighborhood } from '@/utils/graphs-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 export const EDGE_THRESHOLD = 2000;
+export const NODE_THRESHOLD = 4000;
 
 const FADED_OPACITY = 0.3;
 
@@ -69,6 +70,7 @@ export default {
   },
   data: () => ({
     showEdges: false,
+    exceedNodesThreshold: false,
     showExpandControls: false,
     showAllExpandControls: false,
     showCollapseControls: false,
@@ -79,7 +81,6 @@ export default {
   computed: {
     ...mapGetters({
       nodesCount: 'graph/filteredNodesCount',
-      isPanelOpen: 'panel/isPanelOpen',
       selectedNode: 'graph/selectedNode',
       selectedEdge: 'graph/selectedEdge'
     }),
@@ -87,7 +88,9 @@ export default {
       return !_.isEmpty(this.focusedNodes);
     },
     layoutMessage() {
-      if (this.showEdges === false) {
+      if (this.exceedNodesThreshold === true) {
+        return `Number of nodes exceeds interactivity threshold of ${NODE_THRESHOLD}, please select one or more additional filters to narrow down the search criteria.`;
+      } else if (this.showEdges === false) {
         return `Relationships are hidden when there are more than ${EDGE_THRESHOLD} relationships in the result.`;
       }
       return '';
@@ -339,7 +342,6 @@ export default {
     ...mapActions({
       setSearchClause: 'query/setSearchClause',
       removeSearchTerm: 'query/removeSearchTerm',
-      setCurrentTab: 'panel/setCurrentTab',
       setSelectedNode: 'graph/setSelectedNode',
       setSelectedEdge: 'graph/setSelectedEdge',
       setSelectedRelationships: 'graph/setSelectedRelationships',
@@ -352,6 +354,13 @@ export default {
       if (_.isEmpty(this.graphData)) return;
 
       this.clearSelections();
+
+      this.exceedNodesThreshold = false;
+      if (this.graphData.nodes.length > NODE_THRESHOLD) {
+        this.exceedNodesThreshold = true;
+        return;
+      }
+
       // Don't process edges if there are too many of them
       this.showEdges = this.graphData.edges.length <= EDGE_THRESHOLD;
 
