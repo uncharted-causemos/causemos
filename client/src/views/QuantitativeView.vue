@@ -19,6 +19,8 @@
       @set-sensitivity-analysis-type="setSensitivityAnalysisType"
       @refresh-model="refreshModelAndScenarios"
       @model-parameter-changed="refresh"
+      @update-scenario='onCreateOrUpdateScenario'
+      @delete-scenario='onDeleteScenario'
     >
       <template #action-bar>
         <action-bar
@@ -58,7 +60,7 @@ import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
 import csrUtil from '@/utils/csr-util';
 import { CsrMatrix } from '@/types/CsrMatrix';
-import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, NewScenario, Scenario } from '@/types/CAG';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -181,6 +183,72 @@ export default defineComponent({
       setContextId: 'insightPanel/setContextId',
       setDataState: 'insightPanel/setDataState'
     }),
+    async onCreateOrUpdateScenario(evt: any) {
+      if (this.scenarios === null) {
+        console.error('Failed to save new scenario, scenarios list is null.');
+        return;
+      }
+      const baselLineScenario = this.scenarios.find(s => s.is_baseline);
+      if (baselLineScenario === undefined) {
+        console.error('Failed to save new scenario, baseline scenario is null.');
+        return;
+      }
+      if (evt.id === '') {
+        // add new scenario
+        const newScenario: NewScenario = {
+          model_id: this.currentCAG,
+          name: evt.name,
+          description: evt.description,
+          is_baseline: false,
+          parameter: _.cloneDeep(baselLineScenario?.parameter)
+        };
+        this.enableOverlay('Creating Scenario');
+        const createdScenario = await modelService.createScenario(newScenario);
+        this.setDraftScenario(null);
+        this.setSelectedScenarioId(createdScenario.id);
+      } else {
+        // updating existing scenario
+        const existingScenario = {
+          id: evt.id,
+          name: evt.name,
+          description: evt.description,
+          model_id: this.currentCAG
+        };
+        this.enableOverlay('Saving Scenario');
+        await modelService.updateScenario(existingScenario);
+        this.setSelectedScenarioId(evt.id);
+      }
+      // Save and reload scenarios
+      await this.reloadScenarios();
+      this.disableOverlay();
+    },
+    async onDeleteScenario(evt: any) {
+      const id = evt;
+      if (this.scenarios === null) {
+        console.error('Failed to remove scenario, scenarios list is null.');
+        return;
+      }
+      const baselLineScenario = this.scenarios.find(s => s.is_baseline);
+      if (baselLineScenario !== undefined && id === baselLineScenario.id) {
+        console.error('Failed to remove scenario, baseline scenario is not removable.');
+        return;
+      }
+      const scenarioToRemove = this.scenarios.find(s => s.id === id);
+      if (scenarioToRemove === undefined) {
+        console.error('Failed to remove scenario, scenario does not exist in scenario list.');
+        return;
+      }
+      this.enableOverlay('Removing Scenario');
+      await modelService.deleteScenario(scenarioToRemove);
+      // Save and reload scenarios
+      await this.reloadScenarios();
+      this.disableOverlay();
+    },
+    async reloadScenarios() {
+      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+      this.scenarios = scenarios;
+      this.previousScenarioId = null;
+    },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
@@ -279,7 +347,8 @@ export default defineComponent({
           scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
         } catch (error) {
           console.error(error);
-          this.toaster(error && error.message ? error.message : error, 'error', true);
+          const errorMessage: string = error && (error as any).message ? (error as any).message : error;
+          this.toaster(errorMessage, 'error', true);
           this.disableOverlay();
           return;
         }
@@ -584,7 +653,7 @@ export default defineComponent({
           updateList.push(scenario);
         } catch (error) {
           console.error(error);
-          this.toaster(error, 'error', true);
+          this.toaster(error as string, 'error', true);
           this.disableOverlay();
           return [];
         }
