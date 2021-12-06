@@ -4,6 +4,7 @@ import { Field, FieldMap, field, searchable } from './lex-util';
 import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service';
 import domainProjectService from '@/services/domain-project-service';
 import { DomainProject } from '@/types/Common';
+import { ModelRun } from '@/types/ModelRun';
 
 export const DEFAULT_DATE_RANGE_DELIMETER = '__';
 
@@ -222,6 +223,17 @@ export const unpublishDatacubeInstance = async (instance: Model, projectId: stri
       ready_instances: updatedReadyInstances
     }
   );
+};
+
+export const getFilteredScenariosFromIds = (scenarioIds: string[], allModelRunData: ModelRun[]) => {
+  const filteredScenarios = scenarioIds.reduce((filteredRuns: ModelRun[], runId) => {
+    allModelRunData.some(run => {
+      return runId === run.id && filteredRuns.push(run);
+    });
+    return filteredRuns;
+  }, []);
+
+  return filteredScenarios;
 };
 
 export default {
