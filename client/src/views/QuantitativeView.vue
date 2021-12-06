@@ -19,6 +19,9 @@
       @set-sensitivity-analysis-type="setSensitivityAnalysisType"
       @refresh-model="refreshModelAndScenarios"
       @model-parameter-changed="refresh"
+      @new-scenario='onCreateScenario'
+      @update-scenario='onUpdateScenario'
+      @delete-scenario='onDeleteScenario'
     >
       <template #action-bar>
         <action-bar
@@ -58,7 +61,7 @@ import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
 import csrUtil from '@/utils/csr-util';
 import { CsrMatrix } from '@/types/CsrMatrix';
-import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, NewScenario, Scenario } from '@/types/CAG';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -181,6 +184,84 @@ export default defineComponent({
       setContextId: 'insightPanel/setContextId',
       setDataState: 'insightPanel/setDataState'
     }),
+    async onCreateScenario(scenarioInfo: { name: string; description: string }) {
+      if (this.scenarios === null) {
+        console.error('Failed to save new scenario, scenarios list is null.');
+        return;
+      }
+      const baselineScenario = this.scenarios.find(s => s.is_baseline);
+      if (baselineScenario === undefined) {
+        console.error('Failed to save new scenario, baseline scenario is null.');
+        return;
+      }
+      // add new scenario
+      const newScenario: NewScenario = {
+        model_id: this.currentCAG,
+        name: scenarioInfo.name,
+        description: scenarioInfo.description,
+        is_baseline: false,
+        parameter: _.cloneDeep(baselineScenario?.parameter)
+      };
+      this.enableOverlay('Creating Scenario');
+      const createdScenario = await modelService.createScenario(newScenario);
+      this.setDraftScenario(null);
+      this.setSelectedScenarioId(createdScenario.id);
+
+      // Save and reload scenarios
+      await this.reloadScenarios();
+      this.disableOverlay();
+    },
+    async onUpdateScenario(scenarioInfo: { id: string; name: string; description: string }) {
+      if (this.scenarios === null) {
+        console.error('Failed to update scenario, scenarios list is null.');
+        return;
+      }
+      const baselineScenario = this.scenarios.find(s => s.is_baseline);
+      if (baselineScenario === undefined) {
+        console.error('Failed to update scenario, baseline scenario is null.');
+        return;
+      }
+      // updating existing scenario
+      const existingScenario = {
+        id: scenarioInfo.id,
+        name: scenarioInfo.name,
+        description: scenarioInfo.description,
+        model_id: this.currentCAG
+      };
+      this.enableOverlay('Saving Scenario');
+      await modelService.updateScenario(existingScenario);
+      this.setSelectedScenarioId(scenarioInfo.id);
+
+      // Save and reload scenarios
+      await this.reloadScenarios();
+      this.disableOverlay();
+    },
+    async onDeleteScenario(id: string) {
+      if (this.scenarios === null) {
+        console.error('Failed to remove scenario, scenarios list is null.');
+        return;
+      }
+      const baselineScenario = this.scenarios.find(s => s.is_baseline);
+      if (baselineScenario !== undefined && id === baselineScenario.id) {
+        console.error('Failed to remove scenario, baseline scenario is not removable.');
+        return;
+      }
+      const scenarioToRemove = this.scenarios.find(s => s.id === id);
+      if (scenarioToRemove === undefined) {
+        console.error('Failed to remove scenario, scenario does not exist in scenario list.');
+        return;
+      }
+      this.enableOverlay('Removing Scenario');
+      await modelService.deleteScenario(scenarioToRemove);
+      // Save and reload scenarios
+      await this.reloadScenarios();
+      this.disableOverlay();
+    },
+    async reloadScenarios() {
+      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+      this.scenarios = scenarios;
+      this.previousScenarioId = null;
+    },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
@@ -279,7 +360,8 @@ export default defineComponent({
           scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
         } catch (error) {
           console.error(error);
-          this.toaster(error && error.message ? error.message : error, 'error', true);
+          const errorMessage: string = error && (error as any).message ? (error as any).message : error;
+          this.toaster(errorMessage, 'error', true);
           this.disableOverlay();
           return;
         }
@@ -584,7 +666,7 @@ export default defineComponent({
           updateList.push(scenario);
         } catch (error) {
           console.error(error);
-          this.toaster(error, 'error', true);
+          this.toaster(error as string, 'error', true);
           this.disableOverlay();
           return [];
         }

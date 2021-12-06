@@ -152,6 +152,10 @@ export default {
       type: String,
       default: null
     },
+    referenceOptions: {
+      type: Array,
+      default: () => []
+    },
     showTooltip: {
       type: Boolean,
       default: false

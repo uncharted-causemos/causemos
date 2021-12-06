@@ -49,16 +49,18 @@
   </nav>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent, ref } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
+import useToaster from '@/services/composables/useToaster';
 import modelService from '@/services/model-service';
 import { CAG } from '@/utils/messages-util';
 import ArrowButton from '@/components/widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
 
-export default {
+export default defineComponent({
   name: 'ActionBar',
   components: {
     ArrowButton
@@ -76,18 +78,21 @@ export default {
   emits: [
     'add-concept', 'import-cag', 'reset-cag'
   ],
-  data: () => ({
-    showDuplicateModal: false,
-    showRenameModal: false,
-    newCagName: '',
-    isRunningModel: false
-  }),
+  setup() {
+    return {
+      showDuplicateModal: ref(false),
+      showRenameModal: ref(false),
+      newCagName: ref(''),
+      isRunningModel: ref(false),
+      toaster: useToaster()
+    };
+  },
   computed: {
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG'
     }),
-    numEdges() {
+    numEdges(): number {
       return _.get(this.modelComponents, 'edges', []).length;
     }
   },
@@ -133,7 +138,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

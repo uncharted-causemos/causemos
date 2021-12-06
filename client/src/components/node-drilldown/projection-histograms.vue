@@ -171,7 +171,9 @@ export default defineComponent({
         return this.projections.map((projection, index) => ({
           scenarioName: projection.scenarioName,
           scenarioId: projection.scenarioId,
-          histograms: this.binnedResults[index].map(histogramData => ({
+          // If a scenario has been created but not yet run, map it to an empty
+          //  array instead of histograms
+          histograms: (this.binnedResults[index] ?? []).map(histogramData => ({
             base: histogramData,
             change: null
           }))

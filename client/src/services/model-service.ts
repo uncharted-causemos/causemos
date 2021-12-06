@@ -232,6 +232,8 @@ const updateScenario = async (scenario: {
   id: string;
   model_id: string;
   parameter?: ScenarioParameter;
+  name?: string;
+  description?: string;
 }) => {
   const result = await API.put(`scenarios/${scenario.id}`, scenario);
   return result.data;
@@ -271,7 +273,7 @@ const initializeModel = async (modelId: string) => {
         errors.push(MODEL_MSGS.MODEL_TRAINING);
       }
     } catch (error) {
-      errors.push(error.response.data);
+      errors.push((error as any).response.data);
     }
     return errors;
   }
@@ -320,7 +322,7 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
         console.log('Ignoring Delphi error getting experiment');
         return [false, null];
       }
-      throw new Error(err);
+      throw new Error(err as any);
     }
   };
 

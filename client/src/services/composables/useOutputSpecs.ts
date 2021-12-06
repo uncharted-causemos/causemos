@@ -50,7 +50,7 @@ export default function useOutputSpecs(
       }
 
       return outputSpec;
-    });
+    }).filter(os => !isNaN(os.timestamp));
   });
   return { outputSpecs };
 }

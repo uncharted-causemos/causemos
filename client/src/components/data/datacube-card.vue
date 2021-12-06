@@ -315,7 +315,7 @@
               <timeseries-chart
                 v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 class="timeseries-chart"
-                :timeseries-data="allTimeseriesData"
+                :timeseries-data="timeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
@@ -367,6 +367,7 @@
                       :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
+                      :reference-options="activeReferenceOptions"
                       :is-default-run="spec.isDefaultRun"
                       :show-tooltip="true"
                       :selected-layer-id="mapSelectedLayer"
@@ -557,7 +558,7 @@ import {
 } from '@/types/Runoutput';
 
 import { colorFromIndex, ColorScaleType, getColors, COLOR, COLOR_SCHEME, isDiscreteScale, SCALE_FUNCTION } from '@/utils/colors-util';
-import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
+import { isIndicator, isModel, getFilteredScenariosFromIds, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
   // adminLevelToString,
@@ -947,12 +948,7 @@ export default defineComponent({
         }
         // once the list of selected scenario changes,
         // extract model runs that match the selected scenario IDs
-        selectedScenarios.value = newIds.reduce((filteredRuns: ModelRun[], runId) => {
-          filteredRunData.value.some(run => {
-            return runId === run.id && filteredRuns.push(run);
-          });
-          return filteredRuns;
-        }, []);
+        selectedScenarios.value = getFilteredScenariosFromIds(newIds, filteredRunData.value);
       } else {
         selectedScenarios.value = [];
         updateTabView('description');
@@ -1032,6 +1028,13 @@ export default defineComponent({
         }
       },
       { immediate: true }
+    );
+
+    watch(
+      () => filteredRunData.value,
+      () => {
+        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, filteredRunData.value);
+      }
     );
 
     const clickData = (tab: string) => {
@@ -1425,7 +1428,6 @@ export default defineComponent({
     );
 
     const {
-      allTimeseriesData,
       timeseriesData,
       visibleTimeseriesData,
       relativeTo,
@@ -1570,7 +1572,16 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange, mapColorOptions);
+    } = useAnalysisMapStats(
+      outputSpecs,
+      regionalData,
+      relativeTo,
+      selectedDataLayer,
+      selectedAdminLevel,
+      showPercentChange,
+      mapColorOptions,
+      activeReferenceOptions
+    );
 
     const {
       onSyncMapBounds,
@@ -1680,9 +1691,9 @@ export default defineComponent({
     };
 
     return {
+      activeReferenceOptions,
       addNewTag,
       allModelRunData,
-      allTimeseriesData,
       activeDrilldownTab,
       activeVizOptionsTab,
       adminLayerStats,
