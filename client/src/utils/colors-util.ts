@@ -44,10 +44,10 @@ export function getColors(color: COLOR, n = COLOR_PALETTE_SIZE) {
 }
 
 /**
- * return canvas representing color ramp
+ * return canvas representing continuous color ramp
  * @param color color interpolator
  * @param n number of colors
- * @returns canvas that represent color ramp
+ * @returns canvas that represent continuous color ramp
  */
 export function ramp(color: (t: number) => string, n = COLOR_PALETTE_SIZE) {
   const canvas = document.createElement('canvas');
