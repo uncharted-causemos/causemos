@@ -297,7 +297,7 @@ export default {
     heatMapColorOptions() {
       const options = { ...this.colorOptions };
       if (!_.isNil(this.relativeTo)) {
-        options.scheme = this.relativeTo === this.outputSelection ? this.colorOptions[0] : this.colorOptions[1];
+        options.scheme = this.relativeTo === this.outputSelection ? this.colorOptions.relativeToSchemes[0] : this.colorOptions.relativeToSchemes[1];
       }
       return options;
     },
