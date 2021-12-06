@@ -189,7 +189,6 @@ export default defineComponent({
       };
       this.enableOverlay('Creating Scenario');
       const createdScenario = await modelService.createScenario(newScenario);
-      this.setDraftScenario(null);
       this.setSelectedScenarioId(createdScenario.id);
 
       // Save and reload scenarios
@@ -243,9 +242,7 @@ export default defineComponent({
       this.disableOverlay();
     },
     async reloadScenarios() {
-      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-      this.scenarios = scenarios;
-      this.previousScenarioId = null;
+      this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
     },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);
