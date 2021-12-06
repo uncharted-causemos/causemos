@@ -275,7 +275,7 @@ export default defineComponent({
       scenarios.value = _scenarios;
     });
 
-    const saveConstraints = async (constraints: ProjectionConstraint[]) => {
+    const saveConstraints = async (updatedConstraints: ProjectionConstraint[]) => {
       if (
         selectedScenarioId.value === null ||
         currentCAG.value === null ||
@@ -297,12 +297,22 @@ export default defineComponent({
         );
         return;
       }
+      if (selectedScenario.is_baseline) {
+        toaster(
+          'Please select a non-baseline scenario to place constraints.',
+          'error',
+          true
+        );
+        // Remove constraints from the chart renderer
+        constraints.value = [];
+        return;
+      }
       const selectedConcept = selectedNode.value.concept;
-      const updatedConstraints = [
+      const constraintsParameter = [
         ...selectedScenario.parameter.constraints.filter(
           conceptConstraints => conceptConstraints.concept !== selectedConcept
         ),
-        { concept: selectedConcept, values: constraints }
+        { concept: selectedConcept, values: updatedConstraints }
       ];
       const {
         time_scale,
@@ -314,7 +324,7 @@ export default defineComponent({
         id: selectedScenarioId.value,
         model_id: currentCAG.value,
         parameter: {
-          constraints: updatedConstraints,
+          constraints: constraintsParameter,
           num_steps: numSteps,
           indicator_time_series_range,
           projection_start
