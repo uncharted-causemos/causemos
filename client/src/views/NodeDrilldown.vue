@@ -819,6 +819,9 @@ input[type="radio"] {
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
+  padding: 10px;
+  padding-top: 0;
 }
 
 .button-group > *:not(:first-child) {
@@ -826,8 +829,7 @@ input[type="radio"] {
 }
 
 .scenario-chart {
-  flex: 1;
-  min-width: 0;
+  height: 150px;
 }
 
 .projection-histograms {
