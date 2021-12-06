@@ -535,7 +535,7 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
 import { getInsightById } from '@/services/insight-service';
 
-import { GeoRegionDetail, ScenarioData } from '@/types/Common';
+import { GeoRegionDetail, ScenarioData, AnalysisMapColorOptions } from '@/types/Common';
 import {
   AggregationOption,
   DatacubeType,
@@ -1553,8 +1553,9 @@ export default defineComponent({
     */
 
     const mapColorOptions = computed(() => {
-      const options = {
+      const options: AnalysisMapColorOptions = {
         scheme: finalColorScheme.value,
+        relativeToSchemes: [COLOR_SCHEME.GREYS_7, COLOR_SCHEME.PIYG_7],
         scaleFn: SCALE_FUNCTION[selectedColorScaleType.value],
         isContinuous: isContinuousScale.value,
         opacity: Number(selectedDataLayerTransparency.value)

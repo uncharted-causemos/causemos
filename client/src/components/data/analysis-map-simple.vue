@@ -294,10 +294,10 @@ export default {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
     },
-    colorOptionsComputed() {
+    heatMapColorOptions() {
       const options = { ...this.colorOptions };
       if (!_.isNil(this.relativeTo)) {
-        options.scheme = this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
+        options.scheme = this.relativeTo === this.outputSelection ? this.colorOptions[0] : this.colorOptions[1];
       }
       return options;
     },
@@ -428,7 +428,7 @@ export default {
       }
       const { min, max } = this.extent;
       const relativeToProp = this.baselineSpec?.id;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorOptionsComputed, useFeatureState, relativeToProp, this.showPercentChange);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
     },
     setFeatureStates() {
       if (!this.map || !this.adminLevel || this.isGridMap) return;

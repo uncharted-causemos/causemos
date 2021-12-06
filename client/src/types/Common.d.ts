@@ -97,8 +97,10 @@ export interface MapLegendColor {
 }
 export interface AnalysisMapColorOptions {
   scheme: string[];
+  relativeToSchemes: string[][];
   scaleFn: Function;
   isContinuous: boolean;
+  opacity: number;
 }
 export interface AnalysisMapStats {
   global: MapLayerStats;

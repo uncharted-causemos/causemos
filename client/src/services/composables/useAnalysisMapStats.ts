@@ -5,7 +5,6 @@ import { MapLegendColor, AnalysisMapStats, AnalysisMapColorOptions } from '@/typ
 import { OutputSpecWithId, OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
 import { computeRegionalStats, adminLevelToString, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
 import { createMapLegendData } from '@/utils/map-util';
-import { COLOR_SCHEME } from '@/utils/colors-util';
 import { calculateDiff } from '@/utils/value-util';
 import { getOutputStats } from '@/services/runoutput-service';
 
@@ -31,8 +30,8 @@ export default function useAnalysisMapStats(
       const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
       const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
       adminMapLayerLegendData.value = (baseline && difference) ? [
-        createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, colorOptions.value.scaleFn),
-        createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, colorOptions.value.scaleFn, true)
+        createMapLegendData([baseline.min, baseline.max], colorOptions.value.relativeToSchemes[0], colorOptions.value.scaleFn),
+        createMapLegendData([difference.min, difference.max], colorOptions.value.relativeToSchemes[1], colorOptions.value.scaleFn, true)
       ] : [];
     } else {
       const globalStats = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
@@ -97,8 +96,8 @@ export default function useAnalysisMapStats(
       const baseline = gridLayerStats.value?.baseline[String(mapCurZoom.value)];
       const difference = gridLayerStats.value?.difference?.diff;
       gridMapLayerLegendData.value = (baseline && difference) ? [
-        createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, colorOptions.value.scaleFn),
-        createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, colorOptions.value.scaleFn, true)
+        createMapLegendData([baseline.min, baseline.max], colorOptions.value.relativeToSchemes[0], colorOptions.value.scaleFn),
+        createMapLegendData([difference.min, difference.max], colorOptions.value.relativeToSchemes[1], colorOptions.value.scaleFn, true)
       ] : [];
     } else {
       const globalStats = gridLayerStats.value?.global[String(mapCurZoom.value)];
