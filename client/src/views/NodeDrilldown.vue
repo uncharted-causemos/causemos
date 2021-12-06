@@ -68,7 +68,6 @@
               class="scenario-chart"
               :class="{'is-expanded': isHistoricalDataExpanded}"
               :is-expanded="isHistoricalDataExpanded"
-              :selected-scenario-id="selectedScenarioId"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
               :min-value="indicatorMin"

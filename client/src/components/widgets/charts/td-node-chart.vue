@@ -33,10 +33,6 @@ export default defineComponent({
       type: Array as PropType<TimeseriesPoint[]>,
       default: []
     },
-    selectedScenarioId: {
-      type: String,
-      default: null
-    },
     projections: {
       type: Array as PropType<ScenarioProjection[]>,
       default: []
@@ -66,7 +62,6 @@ export default defineComponent({
     const {
       historicalTimeseries,
       projections,
-      selectedScenarioId,
       minValue,
       maxValue,
       viewingExtent,
@@ -108,7 +103,6 @@ export default defineComponent({
       const svg = chartRef.value
         ? d3.select<HTMLElement, null>(chartRef.value)
         : null;
-      const _selectedScenarioId = selectedScenarioId.value;
       const _projections = projections.value;
       const { width, height } = chartSize.value;
       const _constraints = constraints.value;
@@ -116,7 +110,6 @@ export default defineComponent({
       const max = maxValue.value;
       if (
         svg === null ||
-        _selectedScenarioId === null ||
         _projections.length === 0 ||
         parentElement === undefined ||
         parentElement === null
@@ -128,7 +121,6 @@ export default defineComponent({
         width === 0 ? parentElement.clientWidth : width,
         height === 0 ? parentElement.clientHeight : height,
         _projections,
-        _selectedScenarioId,
         _constraints,
         min,
         max
@@ -161,7 +153,6 @@ export default defineComponent({
       width: number,
       height: number,
       projections: ScenarioProjection[],
-      selectedScenarioId: string,
       constraints: ProjectionConstraint[],
       min: number,
       max: number
@@ -177,7 +168,6 @@ export default defineComponent({
         height,
         historicalTimeseriesBeforeStart.value,
         projections,
-        selectedScenarioId,
         constraints,
         min,
         max,
