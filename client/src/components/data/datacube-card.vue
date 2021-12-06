@@ -557,7 +557,7 @@ import {
 } from '@/types/Runoutput';
 
 import { colorFromIndex, ColorScaleType, COLOR_SCHEMES, COLOR_SWATCH_SIZE } from '@/utils/colors-util';
-import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
+import { isIndicator, isModel, getFilteredScenariosFromIds, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
   // adminLevelToString,
@@ -971,12 +971,7 @@ export default defineComponent({
         }
         // once the list of selected scenario changes,
         // extract model runs that match the selected scenario IDs
-        selectedScenarios.value = newIds.reduce((filteredRuns: ModelRun[], runId) => {
-          filteredRunData.value.some(run => {
-            return runId === run.id && filteredRuns.push(run);
-          });
-          return filteredRuns;
-        }, []);
+        selectedScenarios.value = getFilteredScenariosFromIds(newIds, filteredRunData.value);
       } else {
         selectedScenarios.value = [];
         updateTabView('description');
@@ -1056,6 +1051,13 @@ export default defineComponent({
         }
       },
       { immediate: true }
+    );
+
+    watch(
+      () => filteredRunData.value,
+      () => {
+        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, filteredRunData.value);
+      }
     );
 
     const clickData = (tab: string) => {
