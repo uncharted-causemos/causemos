@@ -56,6 +56,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
+import { getFilteredScenariosFromIds } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType, DatacubeStatus } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
@@ -149,12 +150,8 @@ export default defineComponent({
         // do not pick the first run by default in case a run was previously selected
         selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
 
-        selectedScenarios.value = selectedScenarioIds.value.reduce((filteredRuns: ModelRun[], runId) => {
-          allModelRunData.value.some(run => {
-            return runId === run.id && filteredRuns.push(run);
-          });
-          return filteredRuns;
-        }, []); // some pretty dirty code duplication, copied straight from datacube-card.vue
+        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, allModelRunData.value);
+        console.log(selectedScenarios.value);
       }
     });
 
