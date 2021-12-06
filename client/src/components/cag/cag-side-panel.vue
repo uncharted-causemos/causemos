@@ -14,6 +14,7 @@
     <cag-scenarios-pane
       v-if="currentTab === 'Scenarios'"
       :scenarios="scenarios"
+      @new-scenario='$emit("new-scenario", $event)'
       @update-scenario='$emit("update-scenario", $event)'
       @delete-scenario='$emit("delete-scenario", $event)'
     />
@@ -60,6 +61,7 @@ export default defineComponent({
     ListAnalyticalQuestionsPane,
     CagScenariosPane
   },
+  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'download-experiment'],
   props: {
     isExperimentDownloadVisible: {
       type: Boolean,

@@ -123,7 +123,7 @@ export default defineComponent({
     MessageDisplay,
     OptionsButton
   },
-  emits: ['update-scenario', 'delete-scenario'],
+  emits: ['new-scenario', 'update-scenario', 'delete-scenario'],
   props: {
     scenarios: {
       type: Array as PropType<Scenario[]>,
@@ -187,11 +187,18 @@ export default defineComponent({
       // hide the scenario edit UI
       this.showNewOrEditScenario = false;
       // emit an event create a new scenario or update an existing one
-      this.$emit('update-scenario', {
-        name: this.scenarioName,
-        description: this.scenarioDesc,
-        id: this.editingScenarioId
-      });
+      if (this.editingScenarioId === '') {
+        this.$emit('new-scenario', {
+          name: this.scenarioName,
+          description: this.scenarioDesc
+        });
+      } else {
+        this.$emit('update-scenario', {
+          name: this.scenarioName,
+          description: this.scenarioDesc,
+          id: this.editingScenarioId
+        });
+      }
       // clear the variable that is used to track whether
       //  we are adding a new scenario or updating an existing one
       this.editingScenarioId = '';

@@ -19,7 +19,8 @@
       @set-sensitivity-analysis-type="setSensitivityAnalysisType"
       @refresh-model="refreshModelAndScenarios"
       @model-parameter-changed="refresh"
-      @update-scenario='onCreateOrUpdateScenario'
+      @new-scenario='onCreateScenario'
+      @update-scenario='onUpdateScenario'
       @delete-scenario='onDeleteScenario'
     >
       <template #action-bar>
@@ -183,53 +184,65 @@ export default defineComponent({
       setContextId: 'insightPanel/setContextId',
       setDataState: 'insightPanel/setDataState'
     }),
-    async onCreateOrUpdateScenario(evt: any) {
+    async onCreateScenario(scenarioInfo: { name: string; description: string }) {
       if (this.scenarios === null) {
         console.error('Failed to save new scenario, scenarios list is null.');
         return;
       }
-      const baseLineScenario = this.scenarios.find(s => s.is_baseline);
-      if (baseLineScenario === undefined) {
+      const baselineScenario = this.scenarios.find(s => s.is_baseline);
+      if (baselineScenario === undefined) {
         console.error('Failed to save new scenario, baseline scenario is null.');
         return;
       }
-      if (evt.id === '') {
-        // add new scenario
-        const newScenario: NewScenario = {
-          model_id: this.currentCAG,
-          name: evt.name,
-          description: evt.description,
-          is_baseline: false,
-          parameter: _.cloneDeep(baseLineScenario?.parameter)
-        };
-        this.enableOverlay('Creating Scenario');
-        const createdScenario = await modelService.createScenario(newScenario);
-        this.setDraftScenario(null);
-        this.setSelectedScenarioId(createdScenario.id);
-      } else {
-        // updating existing scenario
-        const existingScenario = {
-          id: evt.id,
-          name: evt.name,
-          description: evt.description,
-          model_id: this.currentCAG
-        };
-        this.enableOverlay('Saving Scenario');
-        await modelService.updateScenario(existingScenario);
-        this.setSelectedScenarioId(evt.id);
-      }
+      // add new scenario
+      const newScenario: NewScenario = {
+        model_id: this.currentCAG,
+        name: scenarioInfo.name,
+        description: scenarioInfo.description,
+        is_baseline: false,
+        parameter: _.cloneDeep(baselineScenario?.parameter)
+      };
+      this.enableOverlay('Creating Scenario');
+      const createdScenario = await modelService.createScenario(newScenario);
+      this.setDraftScenario(null);
+      this.setSelectedScenarioId(createdScenario.id);
+
       // Save and reload scenarios
       await this.reloadScenarios();
       this.disableOverlay();
     },
-    async onDeleteScenario(evt: any) {
-      const id = evt;
+    async onUpdateScenario(scenarioInfo: { id: string; name: string; description: string }) {
+      if (this.scenarios === null) {
+        console.error('Failed to update scenario, scenarios list is null.');
+        return;
+      }
+      const baselineScenario = this.scenarios.find(s => s.is_baseline);
+      if (baselineScenario === undefined) {
+        console.error('Failed to update scenario, baseline scenario is null.');
+        return;
+      }
+      // updating existing scenario
+      const existingScenario = {
+        id: scenarioInfo.id,
+        name: scenarioInfo.name,
+        description: scenarioInfo.description,
+        model_id: this.currentCAG
+      };
+      this.enableOverlay('Saving Scenario');
+      await modelService.updateScenario(existingScenario);
+      this.setSelectedScenarioId(scenarioInfo.id);
+
+      // Save and reload scenarios
+      await this.reloadScenarios();
+      this.disableOverlay();
+    },
+    async onDeleteScenario(id: string) {
       if (this.scenarios === null) {
         console.error('Failed to remove scenario, scenarios list is null.');
         return;
       }
-      const baseLineScenario = this.scenarios.find(s => s.is_baseline);
-      if (baseLineScenario !== undefined && id === baseLineScenario.id) {
+      const baselineScenario = this.scenarios.find(s => s.is_baseline);
+      if (baselineScenario !== undefined && id === baselineScenario.id) {
         console.error('Failed to remove scenario, baseline scenario is not removable.');
         return;
       }

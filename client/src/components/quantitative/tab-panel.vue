@@ -10,6 +10,7 @@
         :model-components="modelComponents"
         :scenarios="scenarios"
         @download-experiment="downloadExperiment"
+        @new-scenario='$emit("new-scenario", $event)'
         @update-scenario='$emit("update-scenario", $event)'
         @delete-scenario='$emit("delete-scenario", $event)'
       >
