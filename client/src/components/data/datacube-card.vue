@@ -1053,6 +1053,13 @@ export default defineComponent({
       { immediate: true }
     );
 
+    watch(
+      () => filteredRunData.value,
+      () => {
+        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, filteredRunData.value);
+      }
+    );
+
     const clickData = (tab: string) => {
       if (tab !== 'data' || canClickDataTab.value) {
         // FIXME: This code to select a model run when switching to the data tab
