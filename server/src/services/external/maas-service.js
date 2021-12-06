@@ -364,9 +364,16 @@ const startIndicatorPostProcessing = async (metadata) => {
     }
   }
 
+  const featureNames = metadata.outputs
+    .filter(output => acceptedTypes.includes(output.type))
+    .map(output => output.name);
+  const existingDocIds = existingIndicators
+    .filter(item => featureNames.includes(item.default_feature))
+    .map(item => item.id);
+  const docIds = existingDocIds.concat(newIndicatorMetadata.map(meta => meta.id));
   const flowParameters = {
     model_id: metadata.id,
-    doc_ids: newIndicatorMetadata.map(indicatorMetadata => indicatorMetadata.id),
+    doc_ids: docIds,
     run_id: 'indicator',
     data_paths: metadata.data_paths,
     temporal_resolution: resolutions[highestRes],
