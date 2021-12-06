@@ -5,6 +5,8 @@ const router = express.Router();
 const { RESOURCE } = rootRequire('adapters/es/adapter');
 const { client, searchAndHighlight, queryStringBuilder } = rootRequire('adapters/es/client');
 
+const MAX_REGIONS = 10000;
+
 /**
  * GET Search fields based on partial matches
  **/
@@ -32,23 +34,16 @@ router.get('/suggestions', asyncHandler(async (req, res) => {
 /**
  * GET A bounding box spanning all specified regions
  **/
-router.get('/spanning-bbox', asyncHandler(async (req, res) => {
-  const regionIds = req.query.ids;
+router.post('/get-spanning-bbox', asyncHandler(async (req, res) => {
+  const regionIds = req.body.region_ids;
+  if (!_.isArray(regionIds) || regionIds.length === 0) {
+    res.status(400).send('region_ids must be a non-empty array');
+    return;
+  }
 
   const termsQuery = {
-    bool: {
-      must: [
-        {
-          terms: {
-            'country.raw': regionIds
-          }
-        },
-        {
-          term: {
-            level: 'country'
-          }
-        }
-      ]
+    terms: {
+      full_path: regionIds.slice(0, MAX_REGIONS)
     }
   };
 
