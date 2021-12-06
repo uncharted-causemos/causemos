@@ -8,7 +8,11 @@
         class="side-panel"
         :is-experiment-download-visible="true"
         :model-components="modelComponents"
+        :scenarios="scenarios"
         @download-experiment="downloadExperiment"
+        @new-scenario='$emit("new-scenario", $event)'
+        @update-scenario='$emit("update-scenario", $event)'
+        @delete-scenario='$emit("delete-scenario", $event)'
       >
         <template #below-tabs>
           <cag-comments-button :model-summary="modelSummary" />
@@ -159,7 +163,8 @@ export default {
     'refresh-model',
     'set-sensitivity-analysis-type',
     'tab-click',
-    'model-parameter-changed'
+    'model-parameter-changed',
+    'update-scenario'
   ],
   data: () => ({
     graphData: {},
