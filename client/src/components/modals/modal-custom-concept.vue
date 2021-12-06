@@ -54,18 +54,28 @@
   </modal>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, ref, Ref } from 'vue';
 import { mapGetters, mapActions } from 'vuex';
-import Modal from '@/components/modals/modal';
+import Modal from '@/components/modals/modal.vue';
 import projectService from '@/services/project-service';
 
 // this error message can probably be worded better
 const ALPHANUMERIC_ERROR = 'This field can only contain alphanumeric characters';
 
-export default {
+export default defineComponent({
   name: 'modal-custom-concept',
   components: {
     Modal
+  },
+  setup() {
+    return {
+      theme: ref(''),
+      theme_property: ref(''),
+      process: ref(''),
+      process_property: ref(''),
+      errorMessages: ref({ theme: 'This field is required', theme_property: '', process: '', process_property: '' }) as Ref<{ [key: string]: string }>
+    };
   },
   watch: {
     theme(value) {
@@ -118,30 +128,14 @@ export default {
       this.$emit('saveCustomConcept', this.customGrounding);
       this.$emit('close');
     },
-    clearData() {
-      this.newTheme = this.newThemeProperty = this.newProcess = this.newProcessProperty = '';
-    },
-    isAlphaNumeric(str) {
+    isAlphaNumeric(str: string) {
       const regex = RegExp('^[A-Za-z0-9 ]+$');
       return regex.test(str);
     },
     close() {
-      this.clearData();
-      if (this.hasContext === true) {
-        this.hasContext = false;
-        return;
-      }
       this.$emit('close', null);
     }
   },
-  data: () => ({
-    theme: '',
-    theme_property: '',
-    process: '',
-    process_property: '',
-    errorMessages: { theme: 'This field is required', theme_property: '', process: '', process_property: '' }
-  }),
-
   computed: {
     ...mapGetters({
       project: 'app/project',
@@ -153,7 +147,7 @@ export default {
       }
       return true;
     },
-    customGrounding() {
+    customGrounding(): { [key: string]: string } {
       return {
         theme: this.theme,
         theme_property: this.theme_property,
@@ -166,7 +160,7 @@ export default {
     'close',
     'saveCustomConcept'
   ]
-};
+});
 </script>
 
 <style lang="scss" scoped>
