@@ -188,8 +188,8 @@ export default defineComponent({
         console.error('Failed to save new scenario, scenarios list is null.');
         return;
       }
-      const baselLineScenario = this.scenarios.find(s => s.is_baseline);
-      if (baselLineScenario === undefined) {
+      const baseLineScenario = this.scenarios.find(s => s.is_baseline);
+      if (baseLineScenario === undefined) {
         console.error('Failed to save new scenario, baseline scenario is null.');
         return;
       }
@@ -200,7 +200,7 @@ export default defineComponent({
           name: evt.name,
           description: evt.description,
           is_baseline: false,
-          parameter: _.cloneDeep(baselLineScenario?.parameter)
+          parameter: _.cloneDeep(baseLineScenario?.parameter)
         };
         this.enableOverlay('Creating Scenario');
         const createdScenario = await modelService.createScenario(newScenario);
@@ -228,8 +228,8 @@ export default defineComponent({
         console.error('Failed to remove scenario, scenarios list is null.');
         return;
       }
-      const baselLineScenario = this.scenarios.find(s => s.is_baseline);
-      if (baselLineScenario !== undefined && id === baselLineScenario.id) {
+      const baseLineScenario = this.scenarios.find(s => s.is_baseline);
+      if (baseLineScenario !== undefined && id === baseLineScenario.id) {
         console.error('Failed to remove scenario, baseline scenario is not removable.');
         return;
       }
