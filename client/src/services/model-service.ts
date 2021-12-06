@@ -13,7 +13,7 @@ import {
   ScenarioParameter,
   CAGModelParameter
 } from '@/types/CAG';
-import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
+import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
 
 const MODEL_STATUS = {
   NOT_REGISTERED: 0,
@@ -402,10 +402,9 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
 
     // FIXME: hackin parameters from modelSummary
     graphData.scenarios.forEach(scenario => {
-      const timeSliceMonths = getSliceMonthsFromTimeScale(
+      const numSteps = getLastTimeStepFromTimeScale(
         modelSummary.parameter.time_scale
       );
-      const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
       if (scenario.parameter) {
         scenario.parameter.num_steps = numSteps;
       }
@@ -435,8 +434,7 @@ const runSensitivityAnalysis = async (
   const { id: modelId } = modelSummary;
   const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
 
-  const timeSliceMonths = getSliceMonthsFromTimeScale(timeScale);
-  const numTimeSteps = timeSliceMonths[timeSliceMonths.length - 1];
+  const numTimeSteps = getLastTimeStepFromTimeScale(timeScale);
 
   const analysisParams = {
     numPath: 0,
@@ -464,10 +462,7 @@ const runSensitivityAnalysis = async (
 
 const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
   const modelId = modelSummary.id;
-  const timeSliceMonths = getSliceMonthsFromTimeScale(
-    modelSummary.parameter.time_scale
-  );
-  const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
+  const numSteps = getLastTimeStepFromTimeScale(modelSummary.parameter.time_scale);
   try {
     const experimentId = await runProjectionExperiment(modelId, numSteps, cleanConstraints([]));
     const experiment: any = await getExperimentResult(modelId, experimentId, 30);
@@ -515,10 +510,7 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
 
   if (!scenario.parameter) return scenario;
 
-  const timeSliceMonths = getSliceMonthsFromTimeScale(
-    modelParameter.time_scale
-  );
-  const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
+  const numSteps = getLastTimeStepFromTimeScale(modelParameter.time_scale);
 
   // Remove constraints if the concept is no longer in the model's topology
   _.remove(scenario.parameter.constraints, constraint => {

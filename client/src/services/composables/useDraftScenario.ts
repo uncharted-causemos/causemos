@@ -5,7 +5,7 @@ import {
   ProjectionConstraint,
   Scenario
 } from '@/types/CAG';
-import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
+import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
 import _ from 'lodash';
 import { computed, Ref, ref } from 'vue';
 import { useStore } from 'vuex';
@@ -67,10 +67,7 @@ export default function useDraftScenario(
       const selectedScenario = scenarios.value.find(
         s => s.id === selectedScenarioId.value
       );
-      const timeSliceMonths = getSliceMonthsFromTimeScale(
-        _modelSummary.parameter.time_scale
-      );
-      const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
+      const numSteps = getLastTimeStepFromTimeScale(_modelSummary.parameter.time_scale);
       const draft: Scenario = {
         id: DRAFT_SCENARIO_ID,
         name: 'Draft',

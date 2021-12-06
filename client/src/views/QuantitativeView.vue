@@ -55,7 +55,7 @@ import modelService from '@/services/model-service';
 import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
+import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
 import csrUtil from '@/utils/csr-util';
 import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
@@ -121,10 +121,7 @@ export default defineComponent({
     },
     projectionSteps(): number {
       if (this.modelSummary === null) return 12;
-      const timeSliceMonths = getSliceMonthsFromTimeScale(
-        this.modelSummary.parameter.time_scale
-      );
-      return timeSliceMonths[timeSliceMonths.length - 1];
+      return getLastTimeStepFromTimeScale(this.modelSummary.parameter.time_scale);
     },
     onMatrixTab(): boolean {
       return !!(this.$route.query && this.$route.query.activeTab === 'matrix');
@@ -448,58 +445,6 @@ export default defineComponent({
     },
     closeEditIndicatorModal() {
       this.isEditIndicatorModalOpen = false;
-    },
-    async saveDraft({ concept, values }: { concept: string; values: any[] }) {
-      this.isEditConstraintsOpen = false;
-      if (this.scenarios === null) {
-        console.error('Failed to save draft, scenarios list is null.');
-        return;
-      }
-      if (this.modelSummary === null) {
-        console.error('Failed to save draft, modelSummary is null.');
-        return;
-      }
-
-      // 1. If no draft scenario we need to create one
-      if (_.isNil(this.draftScenario)) {
-        const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-        if (selectedScenario === undefined) {
-          console.error(
-            `Failed to save draft, unable to find scenario with selected scenario ID '${this.selectedScenarioId}'.`
-          );
-          return;
-        }
-        const draft = {
-          id: 'draft',
-          name: 'Draft',
-          model_id: this.currentCAG,
-          description: '',
-          is_valid: true,
-          is_baseline: false,
-          parameter: {
-            constraints: _.cloneDeep(selectedScenario.parameter?.constraints ?? []),
-            num_steps: this.projectionSteps,
-            indicator_time_series_range: this.modelSummary.parameter.indicator_time_series_range,
-            projection_start: this.modelSummary.parameter.projection_start
-          },
-          engine: this.currentEngine
-        };
-        await this.setDraftScenario(draft);
-      }
-
-      // Switch to draft
-      if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
-        this.previousScenarioId = this.selectedScenarioId;
-      }
-      await this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
-
-      // 2. Update
-      await this.updateDraftScenarioConstraints({ concept, values });
-
-      // Cycle the scenarios to force reactive to trigger
-      const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
-      temp.push(this.draftScenario);
-      this.scenarios = temp;
     },
     async runScenariosWrapper() {
       if (!this.scenarios) return;
