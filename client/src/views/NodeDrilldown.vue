@@ -90,14 +90,6 @@
             />
           </div>
         </div>
-        <p>
-          <i class="fa fa-fw fa-info-circle" />To create a scenario, set values
-            by clicking on the chart. To remove a point, click on it again.
-        </p>
-
-        <h5 class="indicator-section-header restrict-max-width">
-          Parameterization for <span class="node-name">{{ nodeConceptName }} - {{ indicatorRegions }}</span>
-        </h5>
         <div class="restrict-max-width indicator-title-row">
           <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
           <div class="indicator-buttons">
@@ -828,12 +820,13 @@ input[type="radio"] {
 }
 
 .scenario-chart {
-  height: 150px;
+  height: 120px;
 }
 
 .projection-histograms {
   flex: 3;
   min-width: 0;
+  margin-top: 5px;
 }
 
 .neighbor-node {
@@ -845,14 +838,6 @@ input[type="radio"] {
 h5 {
   margin: 0;
   @include header-secondary;
-}
-
-.indicator-section-header {
-  margin: 20px 0 10px;
-
-  .node-name {
-    color: $text-color-dark;
-  }
 }
 
 .indicator-title-row {
