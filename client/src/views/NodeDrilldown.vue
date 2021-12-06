@@ -321,12 +321,11 @@ export default defineComponent({
         }
       };
       // Save and reload scenarios
-      // TODO: do we need this? this.enableOverlay('Saving Scenario');
       await modelService.updateScenario(updatedScenario);
-      // TODO: trigger a scenario refresh (shouldn't happen here)
+      // REFACTOR: We shouldn't set scenarios from so many places.
+      // trigger a scenario refresh
       const _scenarios = await modelService.getScenarios(currentCAG.value, currentEngine.value);
       scenarios.value = _scenarios;
-      // TODO: do we need this? this.disableOverlay();
     };
 
     const selectedNode = computed(() => {

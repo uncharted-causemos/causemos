@@ -26,9 +26,6 @@
           :model-summary="modelSummary"
           :scenarios="scenarios"
           @reset-cag="resetCAGLayout()"
-          @revert-draft-changes="revertDraftChanges"
-          @overwrite-scenario="overwriteScenario"
-          @save-new-scenario="saveNewScenario"
           @run-model="runScenariosWrapper"
           @tab-click="tabClick"
         />
@@ -60,7 +57,6 @@ import csrUtil from '@/utils/csr-util';
 import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
 
-const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
 const MODEL_STATUS = modelService.MODEL_STATUS;
 
@@ -94,9 +90,6 @@ export default defineComponent({
     sensitivityAnalysisType: 'GLOBAL',
     sensitivityDataTimestamp: null as number | null,
 
-    // Tracking draft scenario
-    previousScenarioId: null,
-
     resetLayoutToken: 0,
     isTraining: false
   }),
@@ -105,8 +98,6 @@ export default defineComponent({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
       selectedScenarioId: 'model/selectedScenarioId',
-      draftScenario: 'model/draftScenario',
-      draftScenarioDirty: 'model/draftScenarioDirty',
       tour: 'tour/tour'
     }),
     ready(): boolean {
@@ -172,9 +163,6 @@ export default defineComponent({
       disableOverlay: 'app/disableOverlay',
       setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
-      setDraftScenario: 'model/setDraftScenario',
-      updateDraftScenarioConstraints: 'model/updateDraftScenarioConstraints',
-      setDraftScenarioDirty: 'model/setDraftScenarioDirty',
       setContextId: 'insightPanel/setContextId',
       setDataState: 'insightPanel/setDataState'
     }),
@@ -205,12 +193,7 @@ export default defineComponent({
     },
     async refreshModelAndScenarios() {
       this.refreshModel();
-      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-      if (this.draftScenario) {
-        this.scenarios = [this.draftScenario, ...scenarios];
-      } else {
-        this.scenarios = scenarios;
-      }
+      this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
     },
     async refresh() {
       this.isTraining = false;
@@ -283,15 +266,8 @@ export default defineComponent({
         this.disableOverlay();
       }
 
-      // 4. Check if draft scenario is in play
-      if (!_.isNil(this.draftScenario) && this.draftScenario.model_id === this.currentCAG) {
-        scenarios.push(this.draftScenario);
-      } else {
-        this.setDraftScenario(null);
-      }
 
-
-      // 5. Figure out the current selected scenario
+      // 4. Figure out the current selected scenario
       let scenarioId = this.selectedScenarioId;
       if (_.isNil(this.selectedScenarioId) || scenarios.filter(d => d.id === this.selectedScenarioId).length === 0) {
         const baselineScenario = scenarios.find(d => d.is_baseline);
@@ -302,12 +278,12 @@ export default defineComponent({
         }
       }
 
-      // 6. Rebuild scenarios' result if necessary
+      // 5. Rebuild scenarios' result if necessary
       if (hasEmptyScenarioResults) {
         scenarios = await this.runScenarios(scenarios);
       }
 
-      // 7. Finally we are done and kick off the relevant events
+      // 6. Finally we are done and kick off the relevant events
       this.setSelectedScenarioId(scenarioId);
       this.scenarios = scenarios;
 
@@ -334,114 +310,6 @@ export default defineComponent({
         nodesCount: this.modelComponents.nodes.length
       };
       this.setDataState(dataState);
-    },
-    revertDraftChanges() {
-      if (this.scenarios === null) {
-        console.error('Failed to revert draft changes because scenarios list is null.');
-        return;
-      }
-      if (!_.isNil(this.previousScenarioId)) {
-        this.setSelectedScenarioId(this.previousScenarioId);
-      } else {
-        const baselineScenario = this.scenarios.find(s => s.is_baseline === true);
-        if (baselineScenario === undefined) {
-          console.error('Failed to revert draft changes because no scenario is flagged as baseline.', this.scenarios);
-        } else {
-          const id = baselineScenario.id;
-          this.setSelectedScenarioId(id);
-        }
-      }
-      const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
-
-      this.setDraftScenario(null);
-      this.scenarios = temp;
-    },
-    async overwriteScenario(id: string) {
-      if (this.scenarios === null) {
-        console.error('Failed to overwrite scenario, scenarios list is null.');
-        return;
-      }
-      // Transfer draft data to overwrite existing scenario
-      const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
-      if (draft === undefined) {
-        console.error(
-        `Failed to overwrite scenario, unable to find scenario with draft ID '${DRAFT_SCENARIO_ID}'.`
-        );
-        return;
-      }
-      const existingScenario = {
-        id: id,
-        model_id: this.currentCAG,
-        parameter: draft.parameter
-      };
-
-      // Save and reload scenarios
-      this.enableOverlay('Saving Scenario');
-
-      await modelService.updateScenario(existingScenario);
-      if (draft.experiment_id) {
-        await modelService.createScenarioResult(
-          this.currentCAG,
-          id,
-          this.currentEngine,
-          draft.experiment_id,
-          draft.result
-        );
-      }
-
-      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-
-      this.scenarios = scenarios;
-      this.previousScenarioId = null;
-      this.setSelectedScenarioId(id);
-      this.disableOverlay();
-    },
-    async saveNewScenario({
-      name,
-      description
-    }: {
-      name: string;
-      description: string;
-    }) {
-      if (this.scenarios === null) {
-        console.error('Failed to save new scenario, scenarios list is null.');
-        return;
-      }
-      // Transfer draft data
-      const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
-      if (draft === undefined) {
-        console.error(
-          `Failed to save new scenario, unable to find scenario with draft ID '${DRAFT_SCENARIO_ID}'.`
-        );
-        return;
-      }
-      const newScenario = {
-        model_id: this.currentCAG,
-        name: name,
-        description: description,
-        parameter: draft.parameter,
-        is_baseline: false
-      };
-
-      // Save and reload scenarios
-      this.enableOverlay('Creating Scenario');
-      const response = await modelService.createScenario(newScenario);
-      if (draft.experiment_id) {
-        await modelService.createScenarioResult(
-          this.currentCAG,
-          response.id,
-          this.currentEngine,
-          draft.experiment_id,
-          draft.result
-        );
-      }
-      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-
-      this.scenarios = scenarios;
-      this.previousScenarioId = null;
-      this.setDraftScenario(null);
-      this.setSelectedScenarioId(response.id);
-      this.disableOverlay();
     },
     closeEditIndicatorModal() {
       this.isEditIndicatorModalOpen = false;
@@ -535,10 +403,9 @@ export default defineComponent({
         }
       }
 
-      // 3. Write back if needed, we don't write draft scenario
+      // 3. Write back if needed
       this.enableOverlay('Saving results');
       for (const scenario of updateList) {
-        if (scenario.id === DRAFT_SCENARIO_ID) continue;
         if (!scenario.experiment_id) continue;
         await modelService.createScenarioResult(
           this.currentCAG,
