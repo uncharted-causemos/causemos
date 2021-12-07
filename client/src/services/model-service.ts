@@ -102,6 +102,18 @@ const getScenarios = async (modelId: string, engine: string) => {
   return scenarios;
 };
 
+
+/**
+ * Get model's sensitivity results - only applicable to DySE
+ */
+const getScenarioSensitivity = async (modelId: string, engine: string) => {
+  const sensitivityResults = (await API.get('scenario-results/sensitivity', {
+    params: { model_id: modelId, engine: engine }
+  })).data;
+  return sensitivityResults;
+};
+
+
 /**
  * Update graph node
  */
@@ -694,6 +706,22 @@ const createScenarioResult = async (
   });
 };
 
+const createScenaioSensitivityResult = async (
+  modelId: string,
+  scenarioId: string,
+  engine: string,
+  experimentId: string,
+  result: any
+): Promise<void> => {
+  await API.post('/scenario-results/sensitivity', {
+    model_id: modelId,
+    scenario_id: scenarioId,
+    engine: engine,
+    experiment_id: experimentId,
+    result: result
+  });
+};
+
 export default {
   getProjectModels,
   getSummary,
@@ -712,8 +740,11 @@ export default {
   createBaselineScenario,
 
   getScenarios,
+  getScenarioSensitivity,
   createScenario,
   createScenarioResult,
+  createScenaioSensitivityResult,
+
   updateScenario,
   deleteScenario,
   resetScenarioParameter,
