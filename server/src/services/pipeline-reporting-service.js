@@ -1,6 +1,7 @@
 const maasService = rootRequire('/services/external/maas-service');
 const datacubeService = rootRequire('/services/datacube-service');
 const requestAsPromise = rootRequire('/util/request-as-promise');
+const Logger = rootRequire('/config/logger');
 
 /**
  * Update a set of documents after the data has successfully finished.
@@ -14,7 +15,19 @@ const setProcessingSucceeded = async(metadata) => {
   const isIndicator = metadata.is_indicator;
   const flowId = metadata.flow_id;
 
-  const results = await fetchPipelineResults(dataId, runId);
+  Logger.info(`Marking pipeline job successful data_id=${dataId}, run_id=${runId}, flow_id=${flowId}`);
+  if (!docIds || docIds.length === 0) {
+    Logger.warn('No document IDs have been provided. Skipping...');
+    return { result: { message: 'No document IDs' }, code: 400 };
+  }
+
+  let results;
+  try {
+    results = await fetchPipelineResults(dataId, runId);
+  } catch (err) {
+    Logger.error(err);
+    return { result: { message: 'Unable to fetch results.', error: err }, code: 404 };
+  }
 
   const updateDelta = docIds.map(docId => {
     return {
@@ -37,9 +50,17 @@ const setProcessingSucceeded = async(metadata) => {
  * Update a set of documents so that their status is now `PROCESSING_FAILED`
  */
 const setProcessingFailed = async(metadata) => {
+  const dataId = metadata.data_id;
+  const runId = metadata.run_id;
   const docIds = metadata.doc_ids;
   const isIndicator = metadata.is_indicator;
   const flowId = metadata.flow_id;
+
+  Logger.info(`Marking pipeline job failed data_id=${dataId}, run_id=${runId}, flow_id=${flowId}`);
+  if (!docIds || docIds.length === 0) {
+    Logger.warn('No document IDs have been provided. Skipping...');
+    return { result: { message: 'No document IDs' }, code: 400 };
+  }
 
   const updateDelta = docIds.map(docId => {
     return {
@@ -55,8 +76,16 @@ const setProcessingFailed = async(metadata) => {
  * Sets the runtimes.queued timestamps for some documents
  */
 const setRuntimeQueued = async(metadata) => {
+  const dataId = metadata.data_id;
+  const runId = metadata.run_id;
   const docIds = metadata.doc_ids;
   const isIndicator = metadata.is_indicator;
+
+  Logger.info(`Setting queue timestamps data_id=${dataId}, run_id=${runId}`);
+  if (!docIds || docIds.length === 0) {
+    Logger.warn('No document IDs have been provided. Skipping...');
+    return { result: { message: 'No document IDs' }, code: 400 };
+  }
 
   const updateDelta = docIds.map(docId => {
     return {
