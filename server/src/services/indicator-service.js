@@ -74,7 +74,14 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
 
     if (!_.isNil(topUsedIndicator)) {
       Logger.info(`Using previous selection ${node.concept} => ${topUsedIndicator.indicator_id}`);
-      const cube = await datacubeAdapter.findOne([{ field: 'id', value: topUsedIndicator.indicator_id }], {});
+      const cube = await datacubeAdapter.findOne({
+        clauses: [
+          {
+            field: 'id',
+            values: [topUsedIndicator.indicator_id]
+          }
+        ]
+      }, {});
       if (cube) {
         result.set(node.concept, cube);
       }
