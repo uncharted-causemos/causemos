@@ -88,9 +88,6 @@ const update = async (scenarioId, payload) => {
     modified_at: Date.now(),
     ...payload
   };
-  // fetch scenario before update to check if constraints have changed
-  const scenario = await findOne([{ field: 'id', value: scenarioId }], {});
-  const constraintsBeforeUpdate = (scenario && scenario.parameter.constraints) || [];
 
   // update scenario
   const result = await scenarioConnection.update(updatePayload, (d) => d.id);
@@ -99,8 +96,8 @@ const update = async (scenarioId, payload) => {
   }
 
   // if constraints were updated, invalidate any scenario results for this scenario
-  const constraintsAfterUpdate = payload.parameter.constraints || [];
-  if (_.isEqual(constraintsBeforeUpdate, constraintsAfterUpdate) === false) {
+  const isUpdatingConstraints = payload && payload.parameter && payload.parameter.constraints;
+  if (isUpdatingConstraints) {
     const scenarioResultConnection = Adapter.get(RESOURCE.SCENARIO_RESULT);
     const scenarioResults = await scenarioResultConnection.find([{
       field: 'scenario_id',
