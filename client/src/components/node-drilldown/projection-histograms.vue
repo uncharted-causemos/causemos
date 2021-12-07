@@ -149,8 +149,8 @@ export default defineComponent({
       return timeSlices?.map(({ label }) => `In ${label}`) ?? ['', '', ''];
     },
     binnedResults(): ProjectionHistograms[] {
-      // Filter out the scenarios that haven't been run yet (typically just
-      //  draft) and then convert all projection results into histograms
+      // Filter out the scenarios that haven't been run yet and then convert
+      //  all projection results into histograms
 
       // Ensure we pass an empty array of historical data if no indicator is
       //  being used to ground this node, since we currently (Nov 2021)
