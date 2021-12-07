@@ -5,7 +5,6 @@ import AnalysisProjectOverview from '@/views/AnalysisProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import NewDomainProject from '@/views/NewDomainProject.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
-import TileExperiment from '@/views/TileExperiment.vue';
 import GraphExperiment from '@/views/GraphExperiment.vue';
 import QualitativeView from '@/views/QualitativeView.vue';
 import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
@@ -96,11 +95,6 @@ const routes = [
     name: 'dataExplorer',
     component: DataExplorer,
     beforeEnter: loadAnalysisState
-  },
-  {
-    path: '/tile-experiment',
-    name: 'tileExperiment',
-    component: TileExperiment
   },
   {
     path: '/:projectType/:project/model-publishing-experiment',

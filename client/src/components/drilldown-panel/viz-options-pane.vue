@@ -74,8 +74,8 @@
         <dropdown-button
           class="dropdown-button"
           :is-dropdown-left-aligned="true"
-          :items="baseLayerTransparencyOptions"
-          :selected-item="selectedTransparency"
+          :items="dataLayerTransparencyOptions"
+          :selected-item="selectedDataLayerTransparency"
           :inner-button-label="'Transparency'"
           @item-selected="setTransparencySelection"
         />
@@ -109,14 +109,14 @@
       </div>
 
       <div
-        v-if="selectedColorScaleType === ColorScaleType.Discrete"
+        v-if="isDiscreteScale(selectedColorScaleType)"
         class="config-sub-group"
       >
         <label class="header-secondary">Number of bins: {{numberOfColorBins}}</label>
         <input
           type="range"
           style="margin-bottom: 1rem;"
-          min="1"
+          min="2"
           :max="maxNumberOfColorBins"
           step="1"
           ref="number-of-color-bins-slider"
@@ -136,15 +136,18 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
+import * as d3 from 'd3';
 import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
-import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
-import { COLOR_SCHEMES, ColorScaleType, COLOR_SWATCH_SIZE } from '@/utils/colors-util';
-import * as d3 from 'd3';
+import { COLOR_SCHEME, ColorScaleType, COLOR, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
+
+const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.OTHER]);
 
 export default defineComponent({
   components: {
@@ -177,21 +180,21 @@ export default defineComponent({
       type: String,
       default: DATA_LAYER.ADMIN
     },
-    selectedTransparency: {
+    selectedDataLayerTransparency: {
       type: String,
-      default: BASE_LAYER_TRANSPARENCY['50%']
+      default: DATA_LAYER_TRANSPARENCY['50%']
     },
     colorSchemeReversed: {
       type: Boolean,
       default: false
     },
     selectedColorSchemeName: {
-      type: String,
-      default: Object.keys(COLOR_SCHEMES)[0]
+      type: String as PropType<COLOR>,
+      default: COLOR.DEFAULT
     },
     selectedColorScaleType: {
-      type: String,
-      default: ColorScaleType.Discrete
+      type: String as PropType<ColorScaleType>,
+      default: ColorScaleType.LinearDiscrete
     },
     numberOfColorBins: {
       type: Number,
@@ -212,7 +215,7 @@ export default defineComponent({
     'set-resolution-selection',
     'set-base-layer-selection',
     'set-data-layer-selection',
-    'set-base-layer-transparency-selection',
+    'set-data-layer-transparency-selection',
     'set-color-scheme-reversed',
     'set-color-scheme-name',
     'set-color-scale-type',
@@ -233,15 +236,12 @@ export default defineComponent({
     const dataLayerGroupButtons = ref(Object.values(DATA_LAYER)
       .map(val => ({ label: capitalize(val), value: val })));
 
-    const baseLayerTransparencyOptions = ref(Object.keys(BASE_LAYER_TRANSPARENCY)
-      .map(key => ({ displayName: key, value: (BASE_LAYER_TRANSPARENCY as any)[key] })));
+    const dataLayerTransparencyOptions = ref(Object.keys(DATA_LAYER_TRANSPARENCY)
+      .map(key => ({ displayName: key, value: (DATA_LAYER_TRANSPARENCY as any)[key] })));
 
-    // FIXME: disable linear/log color scales until map support is added
-    // const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
-    //   .map(val => ({ displayName: capitalize(val), value: val })));
-    const colorScaleGroupButtons = ref([
-      { displayName: capitalize(ColorScaleType.Discrete), value: ColorScaleType.Discrete }
-    ]);
+    const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
+      .map(val => ({ displayName: capitalize(val), value: val })));
+
     const colorSchemes = ref(Object.keys(COLOR_SCHEMES)
       .map(val => ({ displayName: capitalize(val.toLowerCase()), value: val })));
 
@@ -279,8 +279,8 @@ export default defineComponent({
       modelOutputsDisplayNames,
       currentOutputDisplayName,
       colorSchemes,
-      ColorScaleType,
-      baseLayerTransparencyOptions,
+      isDiscreteScale,
+      dataLayerTransparencyOptions,
       unitOptions,
       TemporalResolutionOption,
       AggregationOption
@@ -348,7 +348,7 @@ export default defineComponent({
       this.$emit('set-data-layer-selection', dateLayer);
     },
     setTransparencySelection(transparency: string) {
-      this.$emit('set-base-layer-transparency-selection', transparency);
+      this.$emit('set-data-layer-transparency-selection', transparency);
     },
     setColorScaleTypeSelection(colorScale: ColorScaleType) {
       this.$emit('set-color-scale-type', colorScale);
@@ -357,18 +357,18 @@ export default defineComponent({
       this.$emit('set-color-scheme-name', colorScheme);
     },
     renderColorScale() {
-      const colors = this.selectedColorScheme;
+      const colors = isDiscreteScale(this.selectedColorScaleType)
+        ? this.selectedColorScheme
+        : d3.quantize(d3.interpolateRgbBasis(this.selectedColorScheme), COLOR_PALETTE_SIZE);
       const n = colors.length;
-      const width = this.selectedColorScaleType === ColorScaleType.Discrete ? (n * COLOR_SWATCH_SIZE) : n;
       const refSelection = d3.select((this.$refs as any).colorPalette);
       refSelection.selectAll('*').remove();
       refSelection
         .attr('viewBox', '0 0 ' + n + ' 1')
         .attr('preserveAspectRatio', 'none')
         .style('display', 'block')
-        .style('width', width + 'px')
-        .style('height', COLOR_SWATCH_SIZE + 'px')
-      ;
+        .style('width', COLOR_PALETTE_SIZE + 'px')
+        .style('height', '25px');
       refSelection
         .selectAll('rect')
         .data(colors)
