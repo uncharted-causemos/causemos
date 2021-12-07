@@ -34,7 +34,7 @@ router.get('/suggestions', asyncHandler(async (req, res) => {
 /**
  * GET A bounding box spanning all specified regions
  **/
-router.post('/get-spanning-bbox', asyncHandler(async (req, res) => {
+router.post('/spanning-bbox', asyncHandler(async (req, res) => {
   const regionIds = req.body.region_ids;
   if (!_.isArray(regionIds) || regionIds.length === 0) {
     res.status(400).send('region_ids must be a non-empty array');
