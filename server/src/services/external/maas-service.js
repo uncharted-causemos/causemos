@@ -357,19 +357,23 @@ const startIndicatorPostProcessing = async (metadata) => {
       return clonedMetadata;
     });
 
-  if (newIndicatorMetadata.length < metadata.outputs.length) {
-    Logger.warn(`Filtered out ${metadata.outputs.length - newIndicatorMetadata.length} indicators`);
-    if (newIndicatorMetadata.length === 0) {
-      Logger.warn('No indicators left to process.');
-    }
+  const newLength = newIndicatorMetadata.length;
+  if (newLength < metadata.outputs.length) {
+    Logger.warn(`Filtered out ${metadata.outputs.length - newLength} indicators`);
   }
 
+  // When reprocessing a dataset, existingDocIds will be the existing indicator ids in ES,
+  // there should be no new indicators (newLength === 0).
+  // When processing a new datasets, existingDocIds will be empty.
   const featureNames = metadata.outputs
     .filter(output => acceptedTypes.includes(output.type))
     .map(output => output.name);
   const existingDocIds = existingIndicators
     .filter(item => featureNames.includes(item.default_feature))
     .map(item => item.id);
+
+  Logger.info(`${newLength} new indicators will be added. ${existingDocIds.length} indicators will be updated.`);
+
   const docIds = existingDocIds.concat(newIndicatorMetadata.map(meta => meta.id));
   const flowParameters = {
     model_id: metadata.id,
@@ -393,7 +397,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   }
 
   let response = { result: { message: 'No documents added' }, code: 202 }; // Fallback value
-  if (newIndicatorMetadata.length > 0) {
+  if (newLength > 0) {
     try {
       const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
       const result = await connection.insert(newIndicatorMetadata, d => d.id);
