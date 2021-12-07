@@ -2,6 +2,7 @@ import _ from 'lodash';
 import mapboxgl from 'mapbox-gl';
 import { BASE_LAYER } from '@/utils/map-util-new';
 import { chartValueFormatter } from '@/utils/string-util';
+import { COLOR_PALETTE_SIZE } from '@/utils/colors-util';
 
 export const ETHIOPIA_BOUNDING_BOX = {
   TOP: 18,
@@ -146,11 +147,12 @@ export function diffExpr(oldValExpr, newValExpr, showPercentChange = false) {
 /**
  * @param {String} property - Name of the property for the geojson feature for applying color
  * @param {Array} dataDomain - Data domain in the form of [min, max]
- * @param {Array} colors - Color scheme, list of colors
+ * @param {Array} colorScheme - Color scheme, list of colors
  * @param {Function} scaleFn - d3 scale function
  * @param {Boolean} useFeatureState - use feature state instead of a property
  */
-function discreteColors(property, domain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo, showPercentChange = false) {
+function colorExpr(property, domain, colorScheme, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo, showPercentChange = false, continuous = false) {
+  const colors = continuous ? d3.quantize(d3.interpolateRgbBasis(colorScheme), COLOR_PALETTE_SIZE) : colorScheme;
   const stops = !_.isNil(relativeTo)
     ? createDivergingColorStops(domain, colors, scaleFn)
     : createColorStops(domain, colors, scaleFn);
@@ -159,11 +161,25 @@ function discreteColors(property, domain, colors, scaleFn = d3.scaleLinear, useF
   const valueExpr = !_.isNil(relativeTo)
     ? diffExpr(baselineValueExpr, [getter, property], showPercentChange)
     : [getter, property];
+
   return [
     'step',
     valueExpr,
     ...stops
+
   ];
+  // return continuous
+  //   ? [
+  //     'interpolate',
+  //     ['linear'],
+  //     valueExpr,
+  //     ...stops
+  //   ]
+  //   : [
+  //     'step',
+  //     valueExpr,
+  //     ...stops
+  //   ];
 }
 
 // Produce an array representing color stops
@@ -208,16 +224,17 @@ export function createDivergingColorStops(domain, colors, scaleFn) {
  * @param {String} property - Name of the property for the geojson feature for applying color
  * @param {Array} dataDomain - Data domain in the form of [min, max]
  * @param {Array} filterDomain - Filter domain in the form of [min, max]
- * @param {Array} colors - Color scheme, list of colors
- * @param {Function} scaleFn - d3 scale function
+ * @param {Array} colorOptions - Color options
  * @param {Boolean} useFeatureState - use feature state instead of a property
  */
-export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo, showPercentChange = false) {
+export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colorOptions, useFeatureState = false, relativeTo, showPercentChange = false) {
+  const opacity = _.isNil(colorOptions.opacity) ? 1 : colorOptions.opacity;
   const style = {
     type: 'fill',
     paint: {
       'fill-antialias': false,
-      'fill-color': discreteColors(property, dataDomain, colors, scaleFn, useFeatureState, relativeTo, showPercentChange)
+      'fill-color': colorExpr(property, dataDomain, colorOptions.scheme, colorOptions.scaleFn, useFeatureState, relativeTo, showPercentChange, colorOptions.isContinuous),
+      'fill-opacity': opacity
     }
   };
   if (useFeatureState) {
@@ -239,7 +256,7 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
       ['<', propertyGetter, filterDomain.min], 0.0,
       ['>', propertyGetter, filterDomain.max], 0.0,
       ['==', true, ['feature-state', '_isHidden']], 0.0,
-      1
+      opacity
     ];
   }
   return style;
@@ -295,5 +312,5 @@ export const createMapLegendData = (domain, colors, scaleFn, isDiverging) => {
     data.push({ color: item, label: labels[index] });
   });
   data[0].decor = format(min);
-  return data.reverse();
+  return data;
 };

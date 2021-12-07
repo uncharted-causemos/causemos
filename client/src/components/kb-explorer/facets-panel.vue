@@ -171,16 +171,16 @@
   </side-panel>
 </template>
 
-<script>
+<script lang="ts">
 
 import _ from 'lodash';
+import { defineComponent, ref, Ref } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import projectService from '@/services/project-service';
 
-import CategoricalFacet from '@/components/facets/categorical-facet';
-import NumericalFacet from '@/components/facets/numerical-facet';
-
-import SidePanel from '@/components/side-panel/side-panel';
+import CategoricalFacet from '@/components/facets/categorical-facet.vue';
+import NumericalFacet from '@/components/facets/numerical-facet.vue';
+import SidePanel from '@/components/side-panel/side-panel.vue';
 
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import contradictionCategoryFormatter from '@/formatters/contradiction-category-formatter';
@@ -221,43 +221,56 @@ const DOCUMENT_FACETS = [
   CODE_TABLE.DOC_SENTIMENT.field
 ];
 
-const FACET_GROUPS = {
+const FACET_GROUPS: { [key: string]: string[] } = {
   'Documents': DOCUMENT_FACETS,
   'Relationships': RELATIONSHIP_FACETS,
   'Evidence quality': STATEMENT_FACETS
 };
 
 
-export default {
+export default defineComponent({
   name: 'FacetsPanel',
   components: {
     CategoricalFacet,
     NumericalFacet,
     SidePanel
   },
-  data: () => ({
-    statementPolarityFormatter: statementPolarityFormatter,
-    contradictionCategoryFormatter: contradictionCategoryFormatter,
-    hedgingCategoryFormatter: hedgingCategoryFormatter,
+  setup() {
+    const cachedPromises = ref({}) as Ref<{[key: string]: Promise<any>}>;
+    const currentTab = ref('Documents');
 
-    // special type label formatters
-    numEvidencesLabelFormatter: facetUtil.numEvidencesLabelFormatter,
-    monthLabelFormatter: facetUtil.monthLabelFormatter,
+    const groupBaseState = ref({}) as Ref<{ [key: string]: number }>;
+    const groupFacetState = ref({}) as Ref<{ [key: string]: number }>;
 
-    facetTabs: [
-      { name: 'Documents', icon: 'fa fa-file-text' },
-      { name: 'Relationships', icon: 'fa fa-sitemap' },
-      { name: 'Evidence quality', icon: 'fa fa-long-arrow-right' }
-    ],
-    baseData: {},
-    facetData: {},
+    const baseData = ref({}) as any;
+    const facetData = ref({}) as any;
 
-    groupBaseState: {},
-    groupFacetState: {},
+    return {
+      cachedPromises,
+      currentTab,
+      groupBaseState,
+      groupFacetState,
+      baseData,
+      facetData,
 
-    currentTab: 'Documents',
-    CODE_TABLE: CODE_TABLE
-  }),
+      // Formatter
+      statementPolarityFormatter,
+      contradictionCategoryFormatter,
+      hedgingCategoryFormatter,
+
+      // special type label formatters
+      numEvidencesLabelFormatter: facetUtil.numEvidencesLabelFormatter,
+      monthLabelFormatter: facetUtil.monthLabelFormatter,
+
+      // Static
+      CODE_TABLE,
+      facetTabs: [
+        { name: 'Documents', icon: 'fa fa-file-text' },
+        { name: 'Relationships', icon: 'fa fa-sitemap' },
+        { name: 'Evidence quality', icon: 'fa fa-long-arrow-right' }
+      ]
+    };
+  },
   computed: {
     ...mapGetters({
       filters: 'query/filters',
@@ -301,9 +314,9 @@ export default {
       const facetGroup = FACET_GROUPS[this.currentTab];
       const baseFilters = filtersUtil.newFilters();
       const enableClause = filtersUtil.findPositiveFacetClause(this.filters, 'enable');
-      if (!_.isEmpty(enableClause)) {
+      if (enableClause) {
         const { field, values, operand, isNot } = enableClause;
-        filtersUtil.setClause(baseFilters, field, values, operand, isNot);
+        filtersUtil.setClause(baseFilters, field, values, operand ?? 'or', isNot ?? false);
       }
       const promise = projectService.getProjectFacetsPromise(this.project, facetGroup, baseFilters);
       this.cachedPromises[this.currentTab] = promise;
@@ -312,7 +325,7 @@ export default {
           // HACK for demo: filter out "" labels for stance and sentiment
           let data = result.data[key];
           if (key === CODE_TABLE.DOC_STANCE.field || key === CODE_TABLE.DOC_SENTIMENT.field) {
-            data = data.filter(d => d.key !== '');
+            data = data.filter((d: any) => d.key !== '');
           }
           // this.$set(this.baseData, key, data); // Needed for reactivity
           this.baseData[key] = data;
@@ -334,7 +347,7 @@ export default {
           // HACK for demo: filter out "" labels for stance and sentiment
           let data = result.data[key];
           if (key === CODE_TABLE.DOC_STANCE.field || key === CODE_TABLE.DOC_SENTIMENT.field) {
-            data = data.filter(d => d.key !== '');
+            data = data.filter((d: any) => d.key !== '');
           }
           // this.$set(this.facetData, key, data); // Needed for reactivity
           this.facetData[key] = data;
@@ -343,10 +356,10 @@ export default {
         this.disableOverlay(); // HACK: added this for the demo
       });
     },
-    hasData(field) {
+    hasData(field: string) {
       return !_.isEmpty(this.baseData[field]) && !_.isEmpty(this.facetData[field]);
     },
-    setActive(tab) {
+    setActive(tab: string) {
       this.currentTab = tab;
       if (this.currentTab === '') {
         // No need to make any refresh() calls
@@ -362,7 +375,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

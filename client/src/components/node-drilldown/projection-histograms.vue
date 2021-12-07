@@ -149,8 +149,8 @@ export default defineComponent({
       return timeSlices?.map(({ label }) => `In ${label}`) ?? ['', '', ''];
     },
     binnedResults(): ProjectionHistograms[] {
-      // Filter out the scenarios that haven't been run yet (typically just
-      //  draft) and then convert all projection results into histograms
+      // Filter out the scenarios that haven't been run yet and then convert
+      //  all projection results into histograms
 
       // Ensure we pass an empty array of historical data if no indicator is
       //  being used to ground this node, since we currently (Nov 2021)
@@ -171,7 +171,9 @@ export default defineComponent({
         return this.projections.map((projection, index) => ({
           scenarioName: projection.scenarioName,
           scenarioId: projection.scenarioId,
-          histograms: this.binnedResults[index].map(histogramData => ({
+          // If a scenario has been created but not yet run, map it to an empty
+          //  array instead of histograms
+          histograms: (this.binnedResults[index] ?? []).map(histogramData => ({
             base: histogramData,
             change: null
           }))

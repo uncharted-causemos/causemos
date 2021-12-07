@@ -1,13 +1,78 @@
 import * as d3 from 'd3';
+import _ from 'lodash';
 import moment from 'moment';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3GElementSelection } from '@/types/D3';
 import { translate } from './svg-util';
+import {
+  TemporalAggregationLevel,
+  ReferenceSeriesOption
+} from '@/types/Enums';
+import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import { calculateDiff } from '@/utils/value-util';
 
 
 const DEFAULT_LINE_COLOR = '#000';
 const DEFAULT_LINE_WIDTH = 2;
+
+
+export function applyReference (
+  timeseriesData: Timeseries[],
+  rawTimeseriesData: Timeseries[],
+  breakdownOption: string | null,
+  referenceOptions: string[]
+) {
+  let referenceTimeseries = [] as Timeseries[];
+
+  if (breakdownOption === TemporalAggregationLevel.Year) {
+    if (referenceOptions.includes(ReferenceSeriesOption.AllYears)) {
+      const brokenDownByYear = breakdownByYear(rawTimeseriesData);
+      const allYearsFormattedTimeseries = Object.keys(brokenDownByYear).map((year) => {
+        const points = brokenDownByYear[year];
+        const mappedToBreakdownDomain = mapToBreakdownDomain(points);
+        return {
+          name: year,
+          id: year,
+          points: mappedToBreakdownDomain
+        } as Timeseries;
+      });
+
+      const aggregratedRefSeries = aggregateRefTemporalTimeseries(allYearsFormattedTimeseries);
+      const existingReferenceTimeseries = referenceTimeseries.find((rts) => rts.id === ReferenceSeriesOption.AllYears);
+
+      if (existingReferenceTimeseries) {
+        existingReferenceTimeseries.points = aggregratedRefSeries.points;
+      } else {
+        aggregratedRefSeries.id = ReferenceSeriesOption.AllYears;
+        aggregratedRefSeries.isDefaultRun = false;
+        aggregratedRefSeries.name = 'All Years';
+        aggregratedRefSeries.color = '#555';
+        referenceTimeseries.push(aggregratedRefSeries);
+      }
+    }
+
+    if (
+      referenceOptions.includes(ReferenceSeriesOption.SelectYears) &&
+      timeseriesData.length > 0
+    ) {
+      const aggregratedRefSeries = aggregateRefTemporalTimeseries(timeseriesData);
+      const existingreferenceTimeseries = referenceTimeseries.find((rts) => rts.id === ReferenceSeriesOption.SelectYears);
+
+      if (existingreferenceTimeseries) {
+        existingreferenceTimeseries.points = aggregratedRefSeries.points;
+      } else {
+        aggregratedRefSeries.id = ReferenceSeriesOption.SelectYears;
+        aggregratedRefSeries.isDefaultRun = false;
+        aggregratedRefSeries.name = 'Select Years';
+        aggregratedRefSeries.color = '#888';
+        referenceTimeseries.push(aggregratedRefSeries);
+      }
+    }
+    referenceTimeseries = referenceTimeseries.filter((rts) => referenceOptions.includes(rts.id));
+  }
+
+  return timeseriesData.concat(referenceTimeseries);
+}
 
 
 export function applyRelativeTo(
@@ -56,6 +121,66 @@ export function applyRelativeTo(
   };
   return { baselineMetadata, timeseriesData: returnValue };
 }
+
+export function breakdownByYear(timeseriesData: Timeseries[]) {
+  const onlyTimeseries = timeseriesData[0].points;
+  return _.groupBy(onlyTimeseries, point =>
+    getYearFromTimestamp(point.timestamp)
+  );
+}
+
+export function mapToBreakdownDomain(points: TimeseriesPoint[]) {
+  return points.map(({ value, timestamp }) => ({
+    value,
+    timestamp: getMonthFromTimestamp(timestamp)
+  }));
+}
+
+const aggregateRefTemporalTimeseries = (temporalTimeseries: Timeseries[]): Timeseries => {
+  // because we can have data with missing months, we need to count up instances of each month
+  // across however many years on are in the time series
+  const monthCounts = temporalTimeseries.reduce((acc: TimeseriesPoint[], year: Timeseries): TimeseriesPoint[] => {
+    year.points.forEach((p) => {
+      const month = acc.find((mc) => mc.timestamp === p.timestamp);
+      if (month) {
+        month.value++;
+      } else {
+        acc.push({
+          timestamp: p.timestamp,
+          value: 1
+        });
+      }
+    });
+    return acc;
+  }, new Array<TimeseriesPoint>());
+
+  const aggregratedRefSeries = temporalTimeseries.reduce((acc: Timeseries, ts: Timeseries, ind: number) => {
+    if (ind === 0) {
+      acc.points = monthCounts.map((p) => {
+        return {
+          timestamp: p.timestamp,
+          value: 0
+        } as TimeseriesPoint;
+      });
+    }
+    ts.points.forEach((p) => {
+      const accMonth = acc.points.find(ap => ap.timestamp === p.timestamp);
+      accMonth && (accMonth.value = accMonth.value + p.value);
+    });
+    return acc;
+  }, {} as Timeseries);
+
+  aggregratedRefSeries.points.forEach((p) => {
+    const month = monthCounts.find((mc) => mc.timestamp === p.timestamp);
+    if (month) {
+      p.value = p.value / month.value;
+    }
+  });
+  aggregratedRefSeries.points.sort((a, b) => {
+    return a.timestamp - b.timestamp;
+  });
+  return aggregratedRefSeries;
+};
 
 export function renderAxes(
   selection: D3GElementSelection,

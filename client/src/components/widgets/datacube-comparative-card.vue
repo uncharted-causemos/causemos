@@ -56,6 +56,8 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
+import { getFilteredScenariosFromIds } from '@/utils/datacube-util';
+import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType, DatacubeStatus } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
@@ -100,6 +102,7 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
+    const selectedScenarios = ref([] as ModelRun[]);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
@@ -146,6 +149,9 @@ export default defineComponent({
         const allScenarioIds = allModelRunData.value.map(run => run.id);
         // do not pick the first run by default in case a run was previously selected
         selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
+
+        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, allModelRunData.value);
+        console.log(selectedScenarios.value);
       }
     });
 
@@ -227,7 +233,8 @@ export default defineComponent({
       ref(selectedRegionIds),
       ref(new Set()),
       ref([]),
-      ref(false)
+      ref(false),
+      selectedScenarios
     );
 
     watchEffect(() => {

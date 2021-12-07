@@ -42,23 +42,45 @@
     </div>
   </div>
 </template>
-<script>
+
+<script lang="ts">
 
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
+import { defineComponent, ref, Ref } from 'vue';
+
 import projectService from '@/services/project-service';
-import Counters from '@/components/kb-explorer/counters';
-import StatementsView from '@/components/kb-explorer/statements-view';
-import DocumentsView from '@/components/kb-explorer/documents-view';
-import MapView from '@/components/kb-explorer/map-view';
-import CytoGraph from '@/components/graph/cyto-graph';
+import Counters from '@/components/kb-explorer/counters.vue';
+import StatementsView from '@/components/kb-explorer/statements-view.vue';
+import DocumentsView from '@/components/kb-explorer/documents-view.vue';
+import SubActionBar from '@/components/kb-explorer/sub-action-bar.vue';
+import MapView from '@/components/kb-explorer/map-view.vue';
+import CytoGraph from '@/components/graph/cyto-graph.vue';
 import MapStyles from '@/utils/map-styles';
-import SubActionBar from '@/components/kb-explorer/sub-action-bar';
 import filtersUtil from '@/utils/filters-util';
 import { transformMapData } from '@/utils/map-util';
 import TabBar from '../widgets/tab-bar.vue';
 
-export default {
+
+interface GEOPoint {
+  geometry: {
+    coordinates: number[];
+    type: string;
+  };
+  properties: {
+    count: number;
+    name: string;
+    color?: string;
+  };
+  type: string;
+}
+
+interface MapData {
+  type: string;
+  features: GEOPoint[];
+}
+
+export default defineComponent({
   name: 'TabPanel',
   components: {
     Counters,
@@ -69,8 +91,8 @@ export default {
     SubActionBar,
     TabBar
   },
-  data: () => ({
-    tabs: [
+  setup() {
+    const tabs = [
       {
         name: 'Docs',
         icon: 'fa fa-file-text',
@@ -91,11 +113,21 @@ export default {
         icon: 'fa fa-map',
         id: 'maps'
       }
-    ],
-    graphData: {},
-    mapData: {},
-    documentsData: []
-  }),
+    ];
+
+    const setMapDataPromise: any = null;
+    const graphData = ref(null);
+    const mapData = ref(null) as Ref<MapData | null>;
+    const documentsData = ref(null);
+
+    return {
+      tabs,
+      graphData,
+      mapData,
+      documentsData,
+      setMapDataPromise
+    };
+  },
   computed: {
     ...mapGetters({
       project: 'app/project',
@@ -139,12 +171,8 @@ export default {
   methods: {
     ...mapActions({
       setView: 'query/setView',
-      setLayout: 'query/setLayout',
       setSearchClause: 'query/setSearchClause',
       removeSearchTerm: 'query/removeSearchTerm',
-      setCurrentTab: 'panel/setCurrentTab',
-      setSelectedNode: 'graph/setSelectedNode',
-      setSelectedEdge: 'graph/setSelectedEdge',
       setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges',
       setFilteredEdgesCount: 'graph/setFilteredEdgesCount'
     }),
@@ -160,11 +188,11 @@ export default {
         this.graphData = graph;
       });
     },
-    setActive (tabId) {
+    setActive (tabId: string) {
       this.setView(tabId);
     },
     setMapData() {
-      this.setMapDataPromise = projectService.getProjectLocationsPromise(this.project, null).then(d => {
+      this.setMapDataPromise = projectService.getProjectLocationsPromise(this.project, filtersUtil.newFilters()).then(d => {
         const transformedData = transformMapData(d.data);
         this.mapData = Object.assign({}, this.mapData, { type: 'FeatureCollection', features: transformedData });
       });
@@ -181,14 +209,16 @@ export default {
         this.setMapDataPromise
       ]).then(results => {
         const geoJSON = results[0].data.geoJSON;
-        const locationNames = geoJSON.features.map(d => d.properties.name);
+        const locationNames = geoJSON.features.map((d: GEOPoint) => d.properties.name);
         const geoLocationNameFacet = filtersUtil.findPositiveFacetClause(this.filters, 'factorLocationName');
         const relatedLocations = new Set(locationNames);
         const selectedLocations = new Set();
-        if (!_.isEmpty(geoLocationNameFacet)) {
-          geoLocationNameFacet.values.forEach(v => selectedLocations.add(v));
+        if (geoLocationNameFacet && !_.isEmpty(geoLocationNameFacet)) {
+          geoLocationNameFacet.values.forEach(v => {
+            selectedLocations.add(v);
+          });
         }
-        const features = this.mapData.features.map(feature => {
+        const features = this.mapData?.features.map((feature: GEOPoint) => {
           feature.properties.color = MapStyles.UNSELECTED_REGION_STYLE.fillColor;
           if (selectedLocations.has(feature.properties.name)) {
             feature.properties.color = MapStyles.SELECTED_REGION_STYLE.fillColor;
@@ -207,7 +237,7 @@ export default {
       });
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
