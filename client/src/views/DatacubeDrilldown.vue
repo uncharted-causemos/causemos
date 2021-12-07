@@ -30,7 +30,7 @@
               <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
               <span v-if="isIndicator(metadata)" v-tooltip.top-center="'Explore related indicators'" class="datacube-name indicator" @click="onClickDatacubeName">{{metadata.name}} <i class="fa fa-search"></i></span>
               <span v-else class="datacube-name">{{metadata.name}} </span>
-              <span v-if="metadata.status === DatacubeStatus.Deprecated" v-tooltip.top-center="'Show newer version of datacube'" style="margin-left: 1rem" :style="{ backgroundColor: statusColor, cursor: 'pointer' }" @click="showNewDatacube">{{ statusLabel }} <i class="fa fa-search"></i></span>
+              <span v-if="metadata.status === DatacubeStatus.Deprecated" v-tooltip.top-center="'Show current version of datacube'" style="margin-left: 1rem" :style="{ backgroundColor: statusColor, cursor: 'pointer' }" @click="showCurrentDatacube">{{ statusLabel }} <i class="fa fa-search"></i></span>
             </h5>
           </template>
 
@@ -255,7 +255,7 @@ export default defineComponent({
       filtersUtil.setClause(filters, DATASET_NAME, [metadataName], 'or', false);
       this.$router.push({ name: 'dataExplorer', query: { analysisId, filters } });
     },
-    showNewDatacube() { // direct user to update the deprecated datacube to the newer version
+    showCurrentDatacube() { // direct user to update the deprecated datacube to the current version
       const analysisId = this.analysisId ?? '';
       const metadataNewId = this.metadata?.new_version_data_id ?? '';
       const filters: any = filtersUtil.newFilters();
