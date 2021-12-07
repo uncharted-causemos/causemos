@@ -259,7 +259,7 @@ export default defineComponent({
       const analysisId = this.analysisId ?? '';
       const metadataNewId = this.metadata?.new_version_data_id ?? '';
       const filters: any = filtersUtil.newFilters();
-      filtersUtil.setClause(filters, 'id', [metadataNewId], 'or', false);
+      filtersUtil.setClause(filters, 'dataId', [metadataNewId], 'or', false);
       this.$router.push({ name: 'dataExplorer', query: { analysisId, filters } });
     }
   }
