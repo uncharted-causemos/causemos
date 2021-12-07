@@ -80,6 +80,9 @@ export enum ColorScaleType {
   LinearDiscrete = 'linear discrete',
   LogDiscrete = 'log discrete',
 }
+export function validateColorScaleType(val: string) {
+  return Object.values(ColorScaleType).includes(val as ColorScaleType);
+}
 
 export const DISCRETE_SCALES = [
   ColorScaleType.LinearDiscrete,

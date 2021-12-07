@@ -557,7 +557,7 @@ import {
   OutputSpecWithId
 } from '@/types/Runoutput';
 
-import { colorFromIndex, ColorScaleType, getColors, COLOR, COLOR_SCHEME, isDiscreteScale, SCALE_FUNCTION } from '@/utils/colors-util';
+import { colorFromIndex, ColorScaleType, getColors, COLOR, COLOR_SCHEME, isDiscreteScale, SCALE_FUNCTION, validateColorScaleType } from '@/utils/colors-util';
 import { isIndicator, isModel, getFilteredScenariosFromIds, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
@@ -904,8 +904,8 @@ export default defineComponent({
         if (initialViewConfig.value.colorSchemeName !== undefined) {
           selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
         }
-        if (initialViewConfig.value.colorScaleType !== undefined) {
-          selectedColorScaleType.value = initialViewConfig.value.colorScaleType;
+        if (validateColorScaleType(String(initialViewConfig.value.colorScaleType))) {
+          selectedColorScaleType.value = initialViewConfig.value.colorScaleType as ColorScaleType;
         }
         if (initialViewConfig.value.numberOfColorBins !== undefined) {
           numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
@@ -1373,8 +1373,8 @@ export default defineComponent({
         if (loadedInsight.view_state?.colorSchemeName !== undefined) {
           setColorSchemeName(loadedInsight.view_state?.colorSchemeName);
         }
-        if (loadedInsight.view_state?.colorScaleType !== undefined) {
-          setColorScaleType(loadedInsight.view_state?.colorScaleType);
+        if (validateColorScaleType(String(loadedInsight.view_state?.colorScaleType))) {
+          setColorScaleType(loadedInsight.view_state?.colorScaleType as ColorScaleType);
         }
         if (loadedInsight.view_state?.numberOfColorBins !== undefined) {
           setNumberOfColorBins(loadedInsight.view_state?.numberOfColorBins);
