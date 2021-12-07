@@ -854,7 +854,6 @@ export default defineComponent({
     };
 
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
-    // however, the map/legend may ignore the generated final color list and instead use the color-related viz options to generate a slightly different color array that can be used when rendering the map/legend
     const finalColorScheme = computed(() => {
       const scheme = isDiscreteScale(selectedColorScaleType.value)
         ? getColors(selectedColorSchemeName.value, numberOfColorBins.value)

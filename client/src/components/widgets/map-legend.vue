@@ -72,7 +72,7 @@ export default defineComponent({
           .attr('width', '100%')
           .attr('height', '100%')
           .attr('preserveAspectRatio', 'none')
-          .attr('xlink:href', ramp(d3.interpolateRgbBasis(colors))?.toDataURL() || '');
+          .attr('href', ramp(d3.interpolateRgbBasis(colors))?.toDataURL() || '');
       } else {
         const margin = 0.01;
         refSelection

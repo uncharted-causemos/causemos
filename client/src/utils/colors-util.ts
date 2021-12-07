@@ -54,8 +54,8 @@ export function ramp(color: (t: number) => string, n = COLOR_PALETTE_SIZE) {
   canvas.width = 1;
   canvas.height = n;
   const context = canvas.getContext('2d');
+  if (!context) return;
   for (let i = 0; i < n; ++i) {
-    if (!context) return;
     context.fillStyle = color(i / (n - 1));
     context.fillRect(0, n - i, 1, 1);
   }
