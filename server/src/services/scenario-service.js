@@ -192,6 +192,42 @@ const findResults = async (modelId, engine) => {
 };
 
 
+const createSensitivityResult = async
+  modelId,
+  scenarioId,
+  engine,
+  experimentId,
+  resultData
+} > {
+  const scenarioResultConnection = Adapter.get(RESOURCE.SENSITIVITY_RESULT);
+
+  const payload = {
+    id: `${scenarioId}-${engine}`,
+    engine: engine,
+    is_valid: true,
+    experiment_id: experimentId, // We don't use this in the app, it is purely for debugging against engines
+    model_id: modelId,
+    scenario_id: scenarioId,
+    result: resultData
+  };
+  await scenarioResultConnection.insert([payload], d => d.id);
+};
+
+const findSensitivityResults = async (modelId, engine) => {
+  const scenarioResultConnection = Adapter.get(RESOURCE.SENSITIVITY_RESULT);
+
+  const r = await scenarioResultConnection.find(
+    [
+      { field: 'model_id', value: modelId },
+      { field: 'engine', value: engine }
+    ],
+    { size: 100 }
+  );
+  return r;
+};
+
+
+
 module.exports = {
   find,
   findOne,
@@ -202,6 +238,10 @@ module.exports = {
 
   createScenarioResult,
   findResults,
+
+  // Only for DySE
+  createSensitivityResult,
+  findSensitivityResults,
 
   invalidateByModel
 };
