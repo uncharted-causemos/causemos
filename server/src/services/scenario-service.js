@@ -73,10 +73,6 @@ const createScenario = async ({ parameter, name, description, model_id: modelId,
   return { id };
 };
 
-
-
-
-
 /**
  * Update scenario fields
  *
@@ -92,11 +88,42 @@ const update = async (scenarioId, payload) => {
     modified_at: Date.now(),
     ...payload
   };
+  // fetch scenario before update to check if constraints have changed
+  const scenario = await findOne([{ field: 'id', value: scenarioId }], {});
+  const constraintsBeforeUpdate = (scenario && scenario.parameter.constraints) || [];
+
   // update scenario
   const result = await scenarioConnection.update(updatePayload, (d) => d.id);
   if (result.errors) {
     throw new Error(JSON.stringify(result.items[0]));
   }
+
+  // if constraints were updated, invalidate any scenario results for this scenario
+  const constraintsAfterUpdate = payload.parameter.constraints || [];
+  if (_.isEqual(constraintsBeforeUpdate, constraintsAfterUpdate) === false) {
+    const scenarioResultConnection = Adapter.get(RESOURCE.SCENARIO_RESULT);
+    const scenarioResults = await scenarioResultConnection.find([{
+      field: 'scenario_id',
+      value: scenarioId
+    }], {});
+
+    // Nothing to do
+    if (scenarioResults.length === 0) return;
+
+    const updatePayload = scenarioResults.map(s => {
+      return {
+        id: s.id,
+        is_valid: false
+      };
+    });
+
+    // update scenario
+    const result = await scenarioResultConnection.update(updatePayload, d => d.id);
+    if (result.errors) {
+      throw new Error(JSON.stringify(result.items[0]));
+    }
+  }
+
   Logger.info('Updated scenario:' + scenarioId);
 };
 
