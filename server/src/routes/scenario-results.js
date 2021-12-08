@@ -30,7 +30,7 @@ router.get('/sensitivity', asyncHandler(async (req, res) => {
   res.json(r);
 }));
 
-router.post('/sensitivity', asyncHandler(async (req, res) => {
+router.put('/sensitivity', asyncHandler(async (req, res) => {
   const {
     result,
     scenario_id,
@@ -39,6 +39,17 @@ router.post('/sensitivity', asyncHandler(async (req, res) => {
     engine
   } = req.body;
   await scenarioService.createSensitivityResult(model_id, scenario_id, engine, experiment_id, result);
+  res.json({});
+}));
+
+router.post('/sensitivity', asyncHandler(async (req, res) => {
+  const {
+    id,
+    experiment_id,
+    result
+  } = req.body;
+
+  await scenarioService.updateSensitivityResult(id, experiment_id, result);
   res.json({});
 }));
 

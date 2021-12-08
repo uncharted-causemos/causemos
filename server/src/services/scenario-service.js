@@ -250,6 +250,17 @@ const findSensitivityResults = async (modelId, engine) => {
   return r;
 };
 
+const updateSensitivityResult = async (id, experimentId, result) => {
+  const scenarioResultConnection = Adapter.get(RESOURCE.SENSITIVITY_RESULT);
+  const r = await scenarioResultConnection.update([
+    {
+      id: id,
+      experiment_id: experimentId,
+      result: result
+    }], d => d.id);
+  return r;
+};
+
 
 
 module.exports = {
@@ -266,6 +277,7 @@ module.exports = {
   // Only for DySE
   createSensitivityResult,
   findSensitivityResults,
+  updateSensitivityResult,
 
   invalidateByModel
 };
