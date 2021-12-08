@@ -66,3 +66,8 @@ export const getSliceMonthsFromTimeScale = (timeScale: TimeScale) => {
     ]
   );
 };
+
+export const getLastTimeStepFromTimeScale = (timeScale: TimeScale) => {
+  const timeSliceMonths = getSliceMonthsFromTimeScale(timeScale);
+  return timeSliceMonths[timeSliceMonths.length - 1];
+};
