@@ -11,15 +11,17 @@ import {
   showSvgTooltip,
   translate
 } from '@/utils/svg-util';
-import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 import { roundToNearestMonth } from '@/utils/date-util';
 
 const HISTORICAL_DATA_COLOR = '#888';
-const HISTORICAL_RANGE_OPACITY = 0.025;
+const HISTORICAL_RANGE_OPACITY = 0.05;
 const SCROLL_BAR_HEIGHT_PERCENTAGE = 0.13;
-const SCROLL_BAR_RANGE_FILL = SELECTED_COLOR;
-const SCROLL_BAR_RANGE_STROKE = SELECTED_COLOR_DARK;
-const SCROLL_BAR_RANGE_OPACITY = 0.4;
+const SCROLL_BAR_RANGE_FILL = '#ccc';
+const SCROLL_BAR_RANGE_STROKE = 'none';
+const SCROLL_BAR_RANGE_OPACITY = 0.8;
+const SCROLL_BAR_BACKGROUND_COLOR = HISTORICAL_DATA_COLOR;
+const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
 const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
 const GRIDLINE_COLOR = '#eee';
 
@@ -93,9 +95,10 @@ export default function(
     .classed('focusGroupElement', true);
 
   // Build scroll bar for zooming and panning
+  const scrollBarHeight = totalHeight * SCROLL_BAR_HEIGHT_PERCENTAGE;
   const [xScaleScrollbar, yScaleScrollbar] = calculateScales(
     totalWidth - PADDING_RIGHT,
-    (totalHeight * SCROLL_BAR_HEIGHT_PERCENTAGE),
+    scrollBarHeight,
     0,
     Y_AXIS_WIDTH,
     xExtent,
@@ -104,6 +107,17 @@ export default function(
   const scrollBarGroupElement = selection
     .append('g')
     .classed('scrollBarGroupElement', true);
+
+  // Add background to scrollbar
+  scrollBarGroupElement
+    .append('rect')
+    .attr('y', 0)
+    .attr('x', Y_AXIS_WIDTH)
+    .attr('height', scrollBarHeight)
+    .attr('width', totalWidth - Y_AXIS_WIDTH - PADDING_RIGHT)
+    .attr('stroke', 'none')
+    .attr('fill', SCROLL_BAR_BACKGROUND_COLOR)
+    .attr('fill-opacity', SCROLL_BAR_BACKGROUND_OPACITY);
 
   // move scroll bar to bottom
   scrollBarGroupElement.attr('transform', translate(0, focusHeight));
