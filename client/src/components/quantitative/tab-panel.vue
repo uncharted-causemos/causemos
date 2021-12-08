@@ -41,6 +41,7 @@
         <sensitivity-analysis
           v-if="activeTab === 'matrix'"
           :model-summary="modelSummary"
+          :sensitivity-result="sensitivityResult"
           :matrix-data="sensitivityMatrixData"
           :analysis-type="sensitivityAnalysisType"
           @set-analysis-type="setSensitivityAnalysisType"
@@ -169,7 +170,7 @@ export default {
   data: () => ({
     graphData: {},
     scenarioData: null,
-
+    sensitivityResult: null,
 
     drilldownTabs: NODE_DRILLDOWN_TABS,
     activeDrilldownTab: PANE_ID.INDICATOR,
@@ -217,6 +218,14 @@ export default {
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
+
+      // Get sensitivity results, note these results may still be pending
+      if (this.currentEngine === 'dyse') {
+        modelService.getScenarioSensitivity(this.currentCAG, this.currentEngine).then(sensitivityResults => {
+          this.sensitivityResult = sensitivityResults.find(d => d.scenario_id === this.selectedScenarioId);
+          console.log('hihi', this.selectedScenarioId, sensitivityResults.map(d => d.scenario_id), this.sensitivityResult);
+        });
+      }
     },
     onNodeDrilldown(node) {
       this.$router.push({

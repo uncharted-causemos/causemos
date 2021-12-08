@@ -343,6 +343,10 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
     threshold: threshold
   });
 };
+const getExperimentResultOnce = async (modelId: string, engine: string, experimentId: string) => {
+  const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: engine, experiment_id: experimentId } });
+  return data;
+};
 
 
 /**
@@ -502,6 +506,10 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
     } else {
       r = experiment.results;
     }
+
+    // Fire  off a sensitivity request in the background
+    const sensitivityExperimentId = await runSensitivityAnalysis(modelSummary, 'GLOBAL', 'DYNAMIC', []);
+    await createScenaioSensitivityResult(modelId, id, modelSummary.parameter.engine, sensitivityExperimentId, null);
 
     await createScenarioResult(modelId, id, modelSummary.parameter.engine, experimentId, r);
   } catch (error) {
@@ -729,6 +737,7 @@ export default {
   runProjectionExperiment,
   runSensitivityAnalysis,
   getExperimentResult,
+  getExperimentResultOnce,
   createBaselineScenario,
 
   getScenarios,

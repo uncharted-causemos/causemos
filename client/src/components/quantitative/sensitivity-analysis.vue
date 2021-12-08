@@ -46,12 +46,14 @@
 <script>
 import _ from 'lodash';
 import * as d3 from 'd3';
+import { mapActions, mapGetters } from 'vuex';
 import renderSensitivityMatrix from '@/charts/matrix-renderer';
 import csrUtil from '@/utils/csr-util';
 import { showSvgTooltip, hideSvgTooltip } from '@/utils/svg-util';
 import ordinalNumberFormatter from '@/formatters/ordinal-number-formatter';
+import modelService from '@/services/model-service';
 import SensitivityAnalysisLegend from './sensitivity-analysis-legend.vue';
-import { mapActions, mapGetters } from 'vuex';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 const RESIZE_DELAY = 50;
 
@@ -68,7 +70,7 @@ export default {
       type: Object,
       required: true
     },
-    matrixData: {
+    sensitivityResult: {
       type: Object,
       default: null
     },
@@ -76,6 +78,12 @@ export default {
       type: String,
       default: 'GLOBAL'
     }
+  },
+  setup() {
+    const ontologyFormatter = useOntologyFormatter();
+    return {
+      ontologyFormatter
+    };
   },
   data: () => ({
     // Declare this method in data instead of in methods so that one debounced function is created
@@ -85,11 +93,13 @@ export default {
     resize: _.debounce(function (width, height) {
       this.render(width, height);
     }, RESIZE_DELAY),
-    selectedRowOrColumn: { isRow: false, concept: null }
+    selectedRowOrColumn: { isRow: false, concept: null },
+    matrixData: null
   }),
   computed: {
     ...mapGetters({
-      tour: 'tour/tour'
+      tour: 'tour/tour',
+      currentCAG: 'app/currentCAG'
     }),
     rowOrder() {
       if (this.matrixData === null) return [];
@@ -126,8 +136,8 @@ export default {
     }
   },
   watch: {
-    matrixData() {
-      this.render();
+    sensitivityResult() {
+      this.render2();
       // allow the relevant tour to advance to the next step
       if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
         this.enableNextStep();
@@ -141,7 +151,7 @@ export default {
     }
   },
   mounted() {
-    this.render();
+    this.render2();
   },
   beforeUnmount() {
     // a tour may be active while we are in this view,
@@ -156,6 +166,20 @@ export default {
     }),
     setAnalysisType(e) {
       this.$emit('set-analysis-type', e.target.value);
+    },
+    async render2() {
+      if (this.sensitivityResult === null) return;
+
+      // FIXME: loop
+      if (!this.sensitivityResult.result) {
+        const data = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.sensitivityResult.experiment_id);
+        const csrResults = csrUtil.resultsToCsrFormat((data).results.global); // FIXME sensitivity type?
+        csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
+        csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
+        console.log('fetching', csrResults);
+        this.matrixData = csrResults;
+        this.render();
+      }
     },
     render() {
       if (this.matrixData === null) return;
