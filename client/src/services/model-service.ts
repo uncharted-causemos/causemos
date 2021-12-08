@@ -465,6 +465,7 @@ const runSensitivityAnalysis = async (
     `models/${modelId}/sensitivity-analysis`,
     {
       analysisMode,
+      analysisMethodology: 'HYBRID', // FIXME this flexible? either HYBRID or FUNCTION
       analysisParams,
       analysisType,
       constraints,

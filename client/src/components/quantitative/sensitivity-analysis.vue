@@ -185,7 +185,7 @@ export default {
     },
     async processSensitivityResult(result) {
       console.log('process sensitivity result', result);
-      modelService.updateScenarioSensitivityResult(
+      await modelService.updateScenarioSensitivityResult(
         this.sensitivityResult.id,
         this.sensitivityResult.experiment_id,
         result);
@@ -211,8 +211,6 @@ export default {
     },
     render() {
       if (this.matrixData === null) return;
-
-      console.log('render', this.sensitivityResult.scenario_id);
 
       const refSelection = d3.select(this.$refs['matrix-container']);
       const svgWidth = _.uniq(this.matrixData.columns).length * CELL_WIDTH_PX + AXIS_LABEL_MARGIN_PX;
