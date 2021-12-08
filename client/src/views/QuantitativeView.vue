@@ -447,7 +447,7 @@ export default defineComponent({
 
         const constraints = modelService.cleanConstraints(scenario.parameter?.constraints ?? []);
         const sensitivityExperimentId = await modelService.runSensitivityAnalysis(this.modelSummary, 'GLOBAL', 'DYNAMIC', constraints);
-        await modelService.createScenaioSensitivityResult(this.currentCAG, scenario.id, this.modelSummary.parameter.engine, sensitivityExperimentId, null);
+        await modelService.createScenarioSensitivityResult(this.currentCAG, scenario.id, this.modelSummary.parameter.engine, sensitivityExperimentId, null);
       }
 
       // 2.2 Process projection experiments

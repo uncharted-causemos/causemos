@@ -510,7 +510,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
 
     // Fire  off a sensitivity request in the background
     const sensitivityExperimentId = await runSensitivityAnalysis(modelSummary, 'GLOBAL', 'DYNAMIC', []);
-    await createScenaioSensitivityResult(modelId, id, modelSummary.parameter.engine, sensitivityExperimentId, null);
+    await createScenarioSensitivityResult(modelId, id, modelSummary.parameter.engine, sensitivityExperimentId, null);
 
     await createScenarioResult(modelId, id, modelSummary.parameter.engine, experimentId, r);
   } catch (error) {
@@ -707,7 +707,7 @@ const createScenarioResult = async (
   });
 };
 
-const createScenaioSensitivityResult = async (
+const createScenarioSensitivityResult = async (
   modelId: string,
   scenarioId: string,
   engine: string,
@@ -756,7 +756,7 @@ export default {
   getScenarioSensitivity,
   createScenario,
   createScenarioResult,
-  createScenaioSensitivityResult,
+  createScenarioSensitivityResult,
 
   updateScenario,
   updateScenarioSensitivityResult,
