@@ -1,3 +1,4 @@
+import { ProjectionConstraint } from '@/types/CAG';
 import { TimeScale } from '@/types/Enums';
 import {
   TimeseriesDistributionPoint,
@@ -242,27 +243,95 @@ export const convertTimeseriesDistributionToHistograms = (
       closestDistribution = [];
     }
     // 4. Feed distribution into bins to get histogram
-    const histogram: HistogramData = [0, 0, 0, 0, 0];
+    let histogram: HistogramData = [0, 0, 0, 0, 0];
     closestDistribution.forEach(value => {
-      if (value < bins[0]) {
-        // Much lower
-        histogram[4]++;
-      } else if (value < bins[1]) {
-        // Lower
-        histogram[3]++;
-      } else if (value < bins[2]) {
-        // Negligible change
-        histogram[2]++;
-      } else if (value < bins[3]) {
-        // Higher
-        histogram[1]++;
-      } else {
-        // Much higher
-        histogram[0]++;
-      }
+      histogram = addValueToHistogram(value, bins, histogram);
     });
     return histogram;
   }) as [HistogramData, HistogramData, HistogramData];
+};
+
+/**
+ * Finds the correct bin that a value should be mapped to and increments it by one.
+ * @param value the number to be assigned to a bin.
+ * @param bins the 4 numbers that act as boundaries between histogram bins.
+ * @param histogram the current state of the histogram.
+ * @returns the updated histogram.
+ */
+const addValueToHistogram = (
+  value: number,
+  bins: [number, number, number, number],
+  histogram: HistogramData
+) => {
+  const updatedHistogram = _.clone(histogram);
+  if (value < bins[0]) {
+    // Much lower
+    updatedHistogram[4]++;
+  } else if (value < bins[1]) {
+    // Lower
+    updatedHistogram[3]++;
+  } else if (value < bins[2]) {
+    // Negligible change
+    updatedHistogram[2]++;
+  } else if (value < bins[3]) {
+    // Higher
+    updatedHistogram[1]++;
+  } else {
+    // Much higher
+    updatedHistogram[0]++;
+  }
+  return updatedHistogram;
+};
+
+/**
+ * Maps constraints to histograms to summarize them more succinctly.
+ * Each constraint in the period between time slices is mapped to the following time slice's histogram.
+ * @param timeScale used to determine which time periods to group constraints into.
+ * @param historicalData used to determine whether a clamp represents a normal change or extreme change.
+ * @param projectionStartTimestamp used with historical data to differentiate between normal/extreme changes.
+ * @param constraints a list of steps and values to be summarized.
+ * @returns 3 lists of 5 integers. Each list represents a time period, each number represents how many clamps fell into that bin.
+ */
+export const summarizeConstraints = (
+  timeScale: TimeScale,
+  historicalData: TimeseriesPoint[],
+  projectionStartTimestamp: number,
+  constraints: ProjectionConstraint[]
+) => {
+  const result = _.range(3).map(() => [0, 0, 0, 0, 0]) as [
+    HistogramData,
+    HistogramData,
+    HistogramData
+  ];
+  // 1. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
+  // This will be used to determine which histogram the clamp should be mapped to
+  const timeSliceMonths = getSliceMonthsFromTimeScale(timeScale);
+  const projectionStartMonth = getMonthFromTimestamp(projectionStartTimestamp);
+  // For each constraint:
+  constraints.forEach(constraint => {
+    // 2. Get bins from historical data using computeProjectionBins()
+    const bins = computeProjectionBins(
+      historicalData,
+      constraint.step,
+      projectionStartMonth
+    );
+    // 3. Find which timeSlice it falls into
+    let timeSliceIndex = -1;
+    if (constraint.step < timeSliceMonths[0]) {
+      //  Anything before the first time slice will be mapped to the first time slice
+      timeSliceIndex = 0;
+    } else if (constraint.step < timeSliceMonths[1]) {
+      //  Anything between the first two time slices will be mapped to the second
+      timeSliceIndex = 1;
+    } else {
+      //  Anything else will be mapped to the third
+      timeSliceIndex = 2;
+    }
+    // 4. Select histogram for this time slice and increment the relevant bin
+    const histogram: HistogramData = result[timeSliceIndex];
+    result[timeSliceIndex] = addValueToHistogram(constraint.value, bins, histogram);
+  });
+  return result;
 };
 
 /**
