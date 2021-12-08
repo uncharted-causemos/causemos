@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import moment from 'moment';
 import dateFormatter from '@/formatters/date-formatter';
 import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
@@ -12,15 +11,18 @@ import {
   showSvgTooltip,
   translate
 } from '@/utils/svg-util';
-import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 import { roundToNearestMonth } from '@/utils/date-util';
 
 const HISTORICAL_DATA_COLOR = '#888';
-const HISTORICAL_RANGE_OPACITY = 0.025;
-const CONTEXT_RANGE_FILL = SELECTED_COLOR;
-const CONTEXT_RANGE_STROKE = SELECTED_COLOR_DARK;
-const CONTEXT_RANGE_OPACITY = 0.4;
-const CONTEXT_TIMESERIES_OPACITY = 0.2;
+const HISTORICAL_RANGE_OPACITY = 0.05;
+const SCROLL_BAR_HEIGHT_PERCENTAGE = 0.13;
+const SCROLL_BAR_RANGE_FILL = '#ccc';
+const SCROLL_BAR_RANGE_STROKE = 'none';
+const SCROLL_BAR_RANGE_OPACITY = 0.8;
+const SCROLL_BAR_BACKGROUND_COLOR = HISTORICAL_DATA_COLOR;
+const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
+const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
 const GRIDLINE_COLOR = '#eee';
 
 const X_AXIS_HEIGHT = 20;
@@ -43,7 +45,6 @@ export default function(
   totalHeight: number,
   historicalTimeseries: TimeseriesPoint[],
   projections: ScenarioProjection[],
-  selectedScenarioId: string,
   constraints: ProjectionConstraint[],
   minValue: number,
   maxValue: number,
@@ -53,7 +54,7 @@ export default function(
 ) {
   // FIXME: Tie data to group element, should make renderer stateful instead of a single function
   let oldCoords: number[] = [];
-  const oldG = selection.select('.contextGroupElement');
+  const oldG = selection.select('.scrollBarGroupElement');
   if (oldG.size() === 1 && !_.isEmpty(oldG.datum())) {
     oldCoords = oldG.datum();
   }
@@ -80,7 +81,7 @@ export default function(
   const valueFormatter = chartValueFormatter(...yExtent);
 
   // Build main "focus" chart scales and group element
-  const focusHeight = totalHeight * 0.75;
+  const focusHeight = totalHeight * (1 - SCROLL_BAR_HEIGHT_PERCENTAGE);
   const [xScaleFocus, yScaleFocus] = calculateScales(
     totalWidth - PADDING_RIGHT,
     focusHeight - PADDING_TOP - X_AXIS_HEIGHT,
@@ -93,76 +94,50 @@ export default function(
     .append('g')
     .classed('focusGroupElement', true);
 
-  // Build "context" chart for zooming and panning
-  const contextHeight = totalHeight - focusHeight;
-  const [xScaleContext, yScaleContext] = calculateScales(
+  // Build scroll bar for zooming and panning
+  const scrollBarHeight = totalHeight * SCROLL_BAR_HEIGHT_PERCENTAGE;
+  const [xScaleScrollbar, yScaleScrollbar] = calculateScales(
     totalWidth - PADDING_RIGHT,
-    contextHeight - X_AXIS_HEIGHT,
+    scrollBarHeight,
     0,
     Y_AXIS_WIDTH,
     xExtent,
     yExtent
   );
-  const contextGroupElement = selection
+  const scrollBarGroupElement = selection
     .append('g')
-    .classed('contextGroupElement', true);
+    .classed('scrollBarGroupElement', true);
 
-  const firstTimestamp = xScaleContext.domain()[0]; // potentially misleading as this isnt always the first day of the year
-  const lastTimestamp = moment([moment(xScaleContext.domain()[1]).year()]).valueOf();
+  // Add background to scrollbar
+  scrollBarGroupElement
+    .append('rect')
+    .attr('y', 0)
+    .attr('x', Y_AXIS_WIDTH)
+    .attr('height', scrollBarHeight)
+    .attr('width', totalWidth - Y_AXIS_WIDTH - PADDING_RIGHT)
+    .attr('stroke', 'none')
+    .attr('fill', SCROLL_BAR_BACKGROUND_COLOR)
+    .attr('fill-opacity', SCROLL_BAR_BACKGROUND_OPACITY);
 
-  const xAxisTicksContext = [firstTimestamp, lastTimestamp];
-  const yAxisTicksContext = calculateGenericTicks(
-    yScaleContext.domain()[0],
-    yScaleContext.domain()[1]
-  );
-
-  const yOffset = contextHeight - X_AXIS_HEIGHT;
-  const xOffset = totalWidth - PADDING_RIGHT;
-
-  renderXaxis(
-    contextGroupElement,
-    xScaleContext,
-    xAxisTicksContext,
-    yOffset,
-    DATE_FORMATTER
-  );
-  renderYaxis(
-    contextGroupElement,
-    yScaleContext,
-    yAxisTicksContext,
-    valueFormatter,
-    xOffset,
-    Y_AXIS_WIDTH
-  );
-
-  contextGroupElement.selectAll('.yAxis').remove();
-  contextGroupElement.attr('transform', translate(0, focusHeight)); // move context to bottom
-  renderStaticElements(
-    contextGroupElement,
-    xScaleContext,
-    yScaleContext,
-    0,
-    projections,
-    historicalTimeseries
-  );
-
-  // Render timeseries in the context chart, then fade them out
+  // move scroll bar to bottom
+  scrollBarGroupElement.attr('transform', translate(0, focusHeight));
+  // Render timeseries in the scrollbar chart, then fade them out
   renderHistoricalTimeseries(
     historicalTimeseries,
-    contextGroupElement,
-    xScaleContext,
-    yScaleContext
+    scrollBarGroupElement,
+    xScaleScrollbar,
+    yScaleScrollbar
   );
-  contextGroupElement
+  scrollBarGroupElement
     .selectAll('.segment-line')
-    .attr('opacity', CONTEXT_TIMESERIES_OPACITY);
+    .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
 
-  // Create brush object and position over context axis
+  // Create brush object and position over scroll bar
   const brush = d3
     .brushX()
     .extent([
-      [xScaleContext.range()[0], yScaleContext.range()[1]],
-      [xScaleContext.range()[1], yScaleContext.range()[0]]
+      [xScaleScrollbar.range()[0], yScaleScrollbar.range()[1]],
+      [xScaleScrollbar.range()[1], yScaleScrollbar.range()[0]]
     ])
     .on('start brush end', brushed);
 
@@ -172,7 +147,7 @@ export default function(
     oldCoords.push(xScaleFocus(viewingExtent[1]));
   }
 
-  contextGroupElement
+  scrollBarGroupElement
     .append('g') // create brush element and move to default
     .classed('brush', true)
     .call(brush)
@@ -180,9 +155,9 @@ export default function(
     .call(brush.move, oldCoords.length === 2 ? oldCoords : xScaleFocus.range());
   selection
     .selectAll('.brush > .selection')
-    .attr('fill', CONTEXT_RANGE_FILL)
-    .attr('stroke', CONTEXT_RANGE_STROKE)
-    .attr('opacity', CONTEXT_RANGE_OPACITY);
+    .attr('fill', SCROLL_BAR_RANGE_FILL)
+    .attr('stroke', SCROLL_BAR_RANGE_STROKE)
+    .attr('opacity', SCROLL_BAR_RANGE_OPACITY);
 
   // Add clipping mask to hide elements that are outside the focus chart area when zoomed in
   selection
@@ -199,8 +174,8 @@ export default function(
     const enterFn = (enter: D3Selection) => {
       const handleW = 9;
       const handleWGap = -2;
-      const handleHGap = 4;
-      const handleH = contextHeight - X_AXIS_HEIGHT - 2 * handleHGap;
+      const handleHGap = 0;
+      const handleH = (SCROLL_BAR_HEIGHT_PERCENTAGE * totalHeight) - 2 * handleHGap;
 
       const container = enter.append('g')
         .attr('class', 'custom-handle')
@@ -217,7 +192,7 @@ export default function(
         .attr('height', handleH);
 
       // Vertical dots
-      [0.3, 0.4, 0.5, 0.6, 0.7].forEach(value => {
+      [0.3, 0.5, 0.7].forEach(value => {
         container.append('circle')
           .attr('cx', (d, i) => i === 0 ? -(0.5 * handleW + handleWGap) : 0.5 * handleW + handleWGap)
           .attr('cy', handleHGap + handleH * value)
@@ -237,10 +212,10 @@ export default function(
   //  Also gets called with "initialBrushSelection"
   function brushed({ selection }: { selection: number[] }) {
     // FIXME: Tie data to group element, should make renderer stateful instead of a single function
-    contextGroupElement.datum(selection);
-    contextGroupElement.select('.brush').call(brushHandle as any, selection);
+    scrollBarGroupElement.datum(selection);
+    scrollBarGroupElement.select('.brush').call(brushHandle as any, selection);
 
-    const [x0, x1] = selection.map(xScaleContext.invert);
+    const [x0, x1] = selection.map(xScaleScrollbar.invert);
     xScaleFocus.domain([x0, x1]);
     focusGroupElement.selectAll('*').remove();
     renderStaticElements(
