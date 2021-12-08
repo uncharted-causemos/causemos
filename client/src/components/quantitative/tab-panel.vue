@@ -192,6 +192,10 @@ export default {
     },
     resetLayoutToken() {
       this.resetCAGLayout();
+    },
+    selectedScenarioId() {
+      // FIXME: Probably need a ligher weight function than refresh
+      this.refresh();
     }
   },
   created() {
@@ -213,7 +217,6 @@ export default {
       if (this.currentEngine === 'dyse') {
         modelService.getScenarioSensitivity(this.currentCAG, this.currentEngine).then(sensitivityResults => {
           this.sensitivityResult = sensitivityResults.find(d => d.scenario_id === this.selectedScenarioId);
-          console.log('hihi', this.selectedScenarioId, sensitivityResults.map(d => d.scenario_id), this.sensitivityResult);
         });
       }
     },

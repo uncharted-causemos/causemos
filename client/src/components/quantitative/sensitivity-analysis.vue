@@ -212,6 +212,8 @@ export default {
     render() {
       if (this.matrixData === null) return;
 
+      console.log('render', this.sensitivityResult.scenario_id);
+
       const refSelection = d3.select(this.$refs['matrix-container']);
       const svgWidth = _.uniq(this.matrixData.columns).length * CELL_WIDTH_PX + AXIS_LABEL_MARGIN_PX;
       const svgHeight = _.uniq(this.matrixData.rows).length * CELL_HEIGHT_PX + AXIS_LABEL_MARGIN_PX;
