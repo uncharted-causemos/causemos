@@ -137,7 +137,7 @@ export default {
   },
   watch: {
     sensitivityResult() {
-      this.render2();
+      this.refresh();
       // allow the relevant tour to advance to the next step
       if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
         this.enableNextStep();
@@ -151,7 +151,7 @@ export default {
     }
   },
   mounted() {
-    this.render2();
+    this.refresh();
   },
   beforeUnmount() {
     // a tour may be active while we are in this view,
@@ -167,29 +167,44 @@ export default {
     setAnalysisType(e) {
       this.$emit('set-analysis-type', e.target.value);
     },
-    async render2() {
+    async poll() {
+      const r = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.sensitivityResult.experiment_id);
+      if (r.status === 'completed' && r.results) {
+        this.processSensitivityResult(r);
+      } else {
+        this.updatePollingProgress(r);
+      }
+    },
+    updatePollingProgress(result) {
+      console.log('update polling progress', result);
+      window.setTimeout(() => {
+        this.poll();
+      }, 5000);
+    },
+    async processSensitivityResult(result) {
+      console.log('process sensitivity result', result);
+      modelService.updateScenarioSensitivityResult(
+        this.sensitivityResult.id,
+        this.sensitivityResult.experiment_id,
+        result);
+      const csrResults = csrUtil.resultsToCsrFormat(result.results.global);
+      csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
+      csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
+      this.matrixData = csrResults;
+      this.render();
+    },
+    async refresh() {
       if (this.sensitivityResult === null) return;
 
-      // FIXME: polling loop, umount cancel polling
       if (!this.sensitivityResult.result) {
-        const data = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.sensitivityResult.experiment_id);
-
-        // Save back into datastore so we don't need to fetch nexttime
-        if (data.results) {
-          modelService.updateScenarioSensitivityResult(
-            this.sensitivityResult.id,
-            this.sensitivityResult.experiment_id,
-            data);
-        }
-
-        const csrResults = csrUtil.resultsToCsrFormat((data).results.global); // FIXME sensitivity type?
+        this.poll();
+      } else {
+        console.log('use cache!!!');
+        const csrResults = csrUtil.resultsToCsrFormat(this.sensitivityResult.result.results.global);
         csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
         csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
-        console.log('fetching', csrResults);
         this.matrixData = csrResults;
         this.render();
-      } else {
-        console.log('has cache!!!');
       }
     },
     render() {
