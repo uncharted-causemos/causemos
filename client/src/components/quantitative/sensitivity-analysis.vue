@@ -198,7 +198,7 @@ export default {
     async refresh() {
       if (this.sensitivityResult === null) return;
 
-      if (!this.sensitivityResult.result) {
+      if (!this.sensitivityResult.result || this.sensitivityResult.is_valid === false) {
         this.poll();
       } else {
         console.log('use cache!!!');
