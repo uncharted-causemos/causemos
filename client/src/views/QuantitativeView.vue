@@ -19,6 +19,7 @@
       @new-scenario='onCreateScenario'
       @update-scenario='onUpdateScenario'
       @delete-scenario='onDeleteScenario'
+      @delete-scenario-clamp='onDeleteScenarioClamp'
     >
       <template #action-bar>
         <action-bar
@@ -53,7 +54,7 @@ import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
-import { CAGGraph, CAGModelSummary, NewScenario, Scenario } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
 const MODEL_STATUS = modelService.MODEL_STATUS;
@@ -177,10 +178,9 @@ export default defineComponent({
       };
       this.enableOverlay('Creating Scenario');
       const createdScenario = await modelService.createScenario(newScenario);
-      this.setSelectedScenarioId(createdScenario.id);
-
       // Save and reload scenarios
       await this.reloadScenarios();
+      this.setSelectedScenarioId(createdScenario.id);
       this.disableOverlay();
     },
     async onUpdateScenario(scenarioInfo: { id: string; name: string; description: string }) {
@@ -203,7 +203,6 @@ export default defineComponent({
       this.enableOverlay('Saving Scenario');
       await modelService.updateScenario(existingScenario);
       this.setSelectedScenarioId(scenarioInfo.id);
-
       // Save and reload scenarios
       await this.reloadScenarios();
       this.disableOverlay();
@@ -226,11 +225,39 @@ export default defineComponent({
       this.enableOverlay('Removing Scenario');
       await modelService.deleteScenario(scenarioToRemove);
       // Save and reload scenarios
+      this.setSelectedScenarioId(baselineScenario?.id);
       await this.reloadScenarios();
       this.disableOverlay();
     },
     async reloadScenarios() {
       this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+    },
+    async onDeleteScenarioClamp(scenarioClampDetails: { scenario: Scenario; clamp: ConceptProjectionConstraints }) {
+      if (this.scenarios === null) {
+        console.error('Failed to remove scenario constraint, scenarios list is null.');
+        return;
+      }
+      this.enableOverlay('Removing Scenario Clamp/Constraint');
+      // update the scenario's list of constraints
+      //  by removing clamps for the relevant concetp
+      const selectedScenario = scenarioClampDetails.scenario;
+      const selectedConcept = scenarioClampDetails.clamp.concept;
+      const updatedScenario = {
+        id: selectedScenario.id,
+        model_id: this.currentCAG,
+        parameter: {
+          constraints: selectedScenario.parameter.constraints.filter(
+            conceptConstraints => conceptConstraints.concept !== selectedConcept
+          ),
+          num_steps: selectedScenario.parameter.num_steps,
+          indicator_time_series_range: selectedScenario.parameter.indicator_time_series_range,
+          projection_start: selectedScenario.parameter.projection_start
+        }
+      };
+      // Save and reload scenarios
+      await modelService.updateScenario(updatedScenario);
+      await this.reloadScenarios();
+      this.disableOverlay();
     },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);

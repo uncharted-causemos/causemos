@@ -13,6 +13,7 @@
         @new-scenario='$emit("new-scenario", $event)'
         @update-scenario='$emit("update-scenario", $event)'
         @delete-scenario='$emit("delete-scenario", $event)'
+        @delete-scenario-clamp='$emit("delete-scenario-clamp", $event)'
       >
         <template #below-tabs>
           <cag-comments-button :model-summary="modelSummary" />
@@ -155,7 +156,10 @@ export default {
     'set-sensitivity-analysis-type',
     'tab-click',
     'model-parameter-changed',
-    'update-scenario'
+    'new-scenario',
+    'update-scenario',
+    'delete-scenario',
+    'delete-scenario-clamp'
   ],
   data: () => ({
     graphData: {},

@@ -17,6 +17,7 @@
       @new-scenario='$emit("new-scenario", $event)'
       @update-scenario='$emit("update-scenario", $event)'
       @delete-scenario='$emit("delete-scenario", $event)'
+      @delete-scenario-clamp='$emit("delete-scenario-clamp", $event)'
     />
 
     <list-context-insight-pane v-if="currentTab === 'Context Insights'" />
@@ -61,7 +62,7 @@ export default defineComponent({
     ListAnalyticalQuestionsPane,
     CagScenariosPane
   },
-  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'download-experiment'],
+  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp', 'download-experiment'],
   props: {
     isExperimentDownloadVisible: {
       type: Boolean,
