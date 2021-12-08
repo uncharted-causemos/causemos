@@ -13,7 +13,7 @@ import { RegionalGADMDetail } from '@/types/Common';
  */
 export const getGADMSuggestions = (field: string, query: string) => {
   return _.debounce(async () => {
-    const result = await API.get('gadm-names/suggestions', { params: { field, q: query } });
+    const result = await API.get('gadm/suggestions', { params: { field, q: query } });
     return result.data as Array<RegionalGADMDetail>;
   }, 300, { trailing: true, leading: true });
 };

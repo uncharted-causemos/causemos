@@ -73,9 +73,9 @@ export default defineComponent({
         // Get the first timestamp from the first projection.
         // FIXME: can we make this selection a little smarter to use the
         //  selected scenario, or at least a non-empty, non-stale scenario?
-        // CAUTION: when placing a new clamp, the new draft scenario has
-        //  no projection points but is selected. When trying to make this
-        //  logic smarter, watch for that case.
+        // CAUTION: new scenarios have no projection points but can be
+        //  selected. When trying to make this logic smarter, watch for that
+        //  case.
         const selectedScenario = projections.value[0];
         if (selectedScenario.values.length === 0) {
           console.error(

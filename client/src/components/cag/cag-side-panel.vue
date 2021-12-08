@@ -11,6 +11,14 @@
       v-if="currentTab === 'Analysis Checklist'"
     />
 
+    <cag-scenarios-pane
+      v-if="currentTab === 'Scenarios'"
+      :scenarios="scenarios"
+      @new-scenario='$emit("new-scenario", $event)'
+      @update-scenario='$emit("update-scenario", $event)'
+      @delete-scenario='$emit("delete-scenario", $event)'
+    />
+
     <list-context-insight-pane v-if="currentTab === 'Context Insights'" />
 
     <div v-if="currentTab === 'Details'" class="details-pane">
@@ -38,19 +46,22 @@
 
 <script lang="ts">
 import SidePanel from '@/components/side-panel/side-panel.vue';
-import { defineComponent, PropType } from 'vue';
+import { computed, defineComponent, PropType, ref, watchEffect } from 'vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
-import { mapGetters } from 'vuex';
-import { CAGGraph } from '@/types/CAG';
+import CagScenariosPane from '@/components/cag/cag-scenarios-pane.vue';
+import { mapGetters, useStore } from 'vuex';
+import { CAGGraph, Scenario } from '@/types/CAG';
 
 export default defineComponent({
   name: 'CAGSidePanel',
   components: {
     SidePanel,
     ListContextInsightPane,
-    ListAnalyticalQuestionsPane
+    ListAnalyticalQuestionsPane,
+    CagScenariosPane
   },
+  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'download-experiment'],
   props: {
     isExperimentDownloadVisible: {
       type: Boolean,
@@ -59,14 +70,41 @@ export default defineComponent({
     modelComponents: {
       type: Object as PropType<CAGGraph>,
       default: null
+    },
+    scenarios: {
+      type: Array as PropType<Scenario[]>,
+      default: () => []
     }
   },
-  data: () => ({
-    tabs: Object.freeze([
+  setup() {
+    const store = useStore();
+    const currentView = computed(() => store.getters['app/currentView']);
+
+    const tabsQuantitative = [
+      { name: 'Scenarios', icon: 'fa fa-circle fa-lg' },
       { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
       { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' },
       { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' }
-    ]),
+    ];
+
+    const tabsQualitative = [
+      { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
+      { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' },
+      { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' }
+    ];
+
+    const tabs = ref(tabsQuantitative);
+
+    watchEffect(() => {
+      if (currentView.value) {
+        tabs.value = currentView.value === 'quantitative' ? tabsQuantitative : tabsQualitative;
+      }
+    });
+    return {
+      tabs
+    };
+  },
+  data: () => ({
     currentTab: ''
   }),
   computed: {

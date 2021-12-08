@@ -315,7 +315,7 @@
               <timeseries-chart
                 v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 class="timeseries-chart"
-                :timeseries-data="allTimeseriesData"
+                :timeseries-data="timeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
@@ -342,7 +342,7 @@
               <div class="card-maps-box">
                 <div v-if="outputSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
-                  <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" />
+                  <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :isContinuos="isContinuousScale" />
                 </div>
                 <div
                   v-if="mapReady && currentTabView === 'data' && regionalData !== null"
@@ -367,6 +367,7 @@
                       :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
+                      :reference-options="activeReferenceOptions"
                       :is-default-run="spec.isDefaultRun"
                       :show-tooltip="true"
                       :selected-layer-id="mapSelectedLayer"
@@ -378,7 +379,7 @@
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
-                      :selected-color-scheme="finalColorScheme"
+                      :color-options="mapColorOptions"
                       :show-percent-change="showPercentChange"
                       @sync-bounds="onSyncMapBounds"
                       @on-map-load="onMapLoad"
@@ -396,7 +397,7 @@
                 </div>
                 <div v-if="outputSpecs.length > 0" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
-                  <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" />
+                  <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" :isContinuos="isContinuousScale" />
                 </div>
               </div>
             </div>
@@ -455,8 +456,8 @@
                   :selected-unit="unit"
                   :selected-resolution="selectedTemporalResolution"
                   :selected-base-layer="selectedBaseLayer"
-                  :selected-base-layer-transparency="selectedBaseLayerTransparency"
                   :selected-data-layer="selectedDataLayer"
+                  :selected-data-layer-transparency="selectedDataLayerTransparency"
                   :color-scheme-reversed="colorSchemeReversed"
                   :selected-color-scheme-name="selectedColorSchemeName"
                   :selected-color-scale-type="selectedColorScaleType"
@@ -465,7 +466,7 @@
                   @set-aggregation-selection="setAggregationSelection"
                   @set-resolution-selection="setTemporalResolutionSelection"
                   @set-base-layer-selection="setBaseLayer"
-                  @set-base-layer-transparency-selection="setBaseLayerTransparency"
+                  @set-data-layer-transparency-selection="setDataLayerTransparency"
                   @set-data-layer-selection="setDataLayer"
                   @set-color-scheme-reversed="setColorSchemeReversed"
                   @set-color-scheme-name="setColorSchemeName"
@@ -535,7 +536,7 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
 import { getInsightById } from '@/services/insight-service';
 
-import { GeoRegionDetail, ScenarioData } from '@/types/Common';
+import { GeoRegionDetail, ScenarioData, AnalysisMapColorOptions } from '@/types/Common';
 import {
   AggregationOption,
   DatacubeType,
@@ -556,21 +557,20 @@ import {
   OutputSpecWithId
 } from '@/types/Runoutput';
 
-import { colorFromIndex, ColorScaleType, COLOR_SCHEMES, COLOR_SWATCH_SIZE } from '@/utils/colors-util';
-import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
+import { colorFromIndex, ColorScaleType, getColors, COLOR, COLOR_SCHEME, isDiscreteScale, SCALE_FUNCTION, validateColorScaleType } from '@/utils/colors-util';
+import { isIndicator, isModel, getFilteredScenariosFromIds, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
   // adminLevelToString,
   BASE_LAYER,
-  BASE_LAYER_TRANSPARENCY,
-  DATA_LAYER
+  DATA_LAYER,
+  DATA_LAYER_TRANSPARENCY
 } from '@/utils/map-util-new';
 
 import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
-import * as d3 from 'd3';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -677,7 +677,7 @@ export default defineComponent({
     const breakdownOption = ref<string | null>(null);
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
-    const selectedBaseLayerTransparency = ref(BASE_LAYER_TRANSPARENCY['50%']);
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
@@ -689,8 +689,8 @@ export default defineComponent({
     // color scheme options
     //
     const colorSchemeReversed = ref(false);
-    const selectedColorSchemeName = ref(Object.keys(COLOR_SCHEMES)[0]); // DEFAULT
-    const selectedColorScaleType = ref(ColorScaleType.Discrete);
+    const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
+    const selectedColorScaleType = ref(ColorScaleType.LinearDiscrete);
     const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
 
     const showTagNameModal = ref<boolean>(false);
@@ -811,8 +811,8 @@ export default defineComponent({
       selectedBaseLayer.value = val;
     };
 
-    const setBaseLayerTransparency = (val: BASE_LAYER_TRANSPARENCY) => {
-      selectedBaseLayerTransparency.value = val;
+    const setDataLayerTransparency = (val: DATA_LAYER_TRANSPARENCY) => {
+      selectedDataLayerTransparency.value = val;
     };
 
     const setDataLayer = (val: DATA_LAYER) => {
@@ -841,7 +841,7 @@ export default defineComponent({
       colorSchemeReversed.value = reversed;
     };
 
-    const setColorSchemeName = (schemeName: string) => {
+    const setColorSchemeName = (schemeName: COLOR) => {
       selectedColorSchemeName.value = schemeName;
     };
 
@@ -854,38 +854,14 @@ export default defineComponent({
     };
 
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
-    // however, the map/legend may ignore the generated final color list and instead use the color-related viz options to generate a slightly different color array that can be used when rendering the map/legend
     const finalColorScheme = computed(() => {
-      // Note: should/can not reverse the original array. Instead, clone and reverse
-      const rawScheme = _.clone((COLOR_SCHEMES as any)[selectedColorSchemeName.value]);
-      const scheme: string[] = colorSchemeReversed.value ? rawScheme.reverse() : rawScheme;
-      const n = scheme.length * COLOR_SWATCH_SIZE;
-
-      const getColorScale = () => {
-        if (selectedColorScaleType.value === ColorScaleType.Log) {
-          return d3.scaleLog<string>()
-            .domain([1 / n, 1])
-            .range([scheme[0], scheme[scheme.length - 1]]);
-        }
-        // NOTE: The following 3 ways are the same when creating the color scale
-        // return d3.scaleSequential([scheme[0], scheme[scheme.length - 1]]);
-        // return d3.interpolateRgb(scheme[0], scheme[scheme.length - 1]);
-        return d3.scaleLinear<string>().range([scheme[0], scheme[scheme.length - 1]]);
-      };
-
-      const colorScale = getColorScale();
-
-      // limit the availabe scheme colors to the user selected number of bins, if needed
-      const numColors = selectedColorScaleType.value === ColorScaleType.Discrete ? numberOfColorBins.value : n;
-
-      // re-create the color scheme with the final list of colors
-      scheme.length = 0;
-      for (let i = 0; i < numColors; ++i) {
-        const color: string = colorScale ? colorScale(i / (numColors - 1)) : 'black';
-        scheme.push(d3.color(color)?.formatHex() ?? '');
-      }
-
-      return scheme;
+      const scheme = isDiscreteScale(selectedColorScaleType.value)
+        ? getColors(selectedColorSchemeName.value, numberOfColorBins.value)
+        : _.clone(COLOR_SCHEME[selectedColorSchemeName.value]);
+      return colorSchemeReversed.value ? scheme.reverse() : scheme;
+    });
+    const isContinuousScale = computed(() => {
+      return !isDiscreteScale(selectedColorScaleType.value);
     });
 
     const updateTabView = (val: string) => {
@@ -920,7 +896,7 @@ export default defineComponent({
           selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
         }
         if (initialViewConfig.value.baseLayerTransparency !== undefined) {
-          selectedBaseLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
+          selectedDataLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
         }
         if (initialViewConfig.value.colorSchemeReversed !== undefined) {
           colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
@@ -928,8 +904,8 @@ export default defineComponent({
         if (initialViewConfig.value.colorSchemeName !== undefined) {
           selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
         }
-        if (initialViewConfig.value.colorScaleType !== undefined) {
-          selectedColorScaleType.value = initialViewConfig.value.colorScaleType;
+        if (validateColorScaleType(String(initialViewConfig.value.colorScaleType))) {
+          selectedColorScaleType.value = initialViewConfig.value.colorScaleType as ColorScaleType;
         }
         if (initialViewConfig.value.numberOfColorBins !== undefined) {
           numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
@@ -971,12 +947,7 @@ export default defineComponent({
         }
         // once the list of selected scenario changes,
         // extract model runs that match the selected scenario IDs
-        selectedScenarios.value = newIds.reduce((filteredRuns: ModelRun[], runId) => {
-          filteredRunData.value.some(run => {
-            return runId === run.id && filteredRuns.push(run);
-          });
-          return filteredRuns;
-        }, []);
+        selectedScenarios.value = getFilteredScenariosFromIds(newIds, filteredRunData.value);
       } else {
         selectedScenarios.value = [];
         updateTabView('description');
@@ -1056,6 +1027,13 @@ export default defineComponent({
         }
       },
       { immediate: true }
+    );
+
+    watch(
+      () => filteredRunData.value,
+      () => {
+        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, filteredRunData.value);
+      }
     );
 
     const clickData = (tab: string) => {
@@ -1387,7 +1365,7 @@ export default defineComponent({
           setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
         }
         if (loadedInsight.view_state?.baseLayerTransparency !== undefined) {
-          setBaseLayerTransparency(loadedInsight.view_state?.baseLayerTransparency);
+          setDataLayerTransparency(loadedInsight.view_state?.baseLayerTransparency);
         }
         if (loadedInsight.view_state?.colorSchemeReversed !== undefined) {
           setColorSchemeReversed(loadedInsight.view_state?.colorSchemeReversed);
@@ -1395,8 +1373,8 @@ export default defineComponent({
         if (loadedInsight.view_state?.colorSchemeName !== undefined) {
           setColorSchemeName(loadedInsight.view_state?.colorSchemeName);
         }
-        if (loadedInsight.view_state?.colorScaleType !== undefined) {
-          setColorScaleType(loadedInsight.view_state?.colorScaleType);
+        if (validateColorScaleType(String(loadedInsight.view_state?.colorScaleType))) {
+          setColorScaleType(loadedInsight.view_state?.colorScaleType as ColorScaleType);
         }
         if (loadedInsight.view_state?.numberOfColorBins !== undefined) {
           setNumberOfColorBins(loadedInsight.view_state?.numberOfColorBins);
@@ -1449,7 +1427,6 @@ export default defineComponent({
     );
 
     const {
-      allTimeseriesData,
       timeseriesData,
       visibleTimeseriesData,
       relativeTo,
@@ -1576,6 +1553,17 @@ export default defineComponent({
     };
     */
 
+    const mapColorOptions = computed(() => {
+      const options: AnalysisMapColorOptions = {
+        scheme: finalColorScheme.value,
+        relativeToSchemes: [COLOR_SCHEME.GREYS_7, COLOR_SCHEME.PIYG_7],
+        scaleFn: SCALE_FUNCTION[selectedColorScaleType.value],
+        isContinuous: isContinuousScale.value,
+        opacity: Number(selectedDataLayerTransparency.value)
+      };
+      return options;
+    });
+
     const {
       updateMapCurSyncedZoom,
       recalculateGridMapDiffStats,
@@ -1583,7 +1571,16 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange, finalColorScheme);
+    } = useAnalysisMapStats(
+      outputSpecs,
+      regionalData,
+      relativeTo,
+      selectedDataLayer,
+      selectedAdminLevel,
+      showPercentChange,
+      mapColorOptions,
+      activeReferenceOptions
+    );
 
     const {
       onSyncMapBounds,
@@ -1633,7 +1630,7 @@ export default defineComponent({
         selectedSpatialAggregation,
         selectedTemporalAggregation,
         selectedTemporalResolution,
-        selectedBaseLayerTransparency,
+        selectedDataLayerTransparency,
         colorSchemeReversed,
         selectedColorSchemeName,
         selectedColorScaleType,
@@ -1693,9 +1690,9 @@ export default defineComponent({
     };
 
     return {
+      activeReferenceOptions,
       addNewTag,
       allModelRunData,
-      allTimeseriesData,
       activeDrilldownTab,
       activeVizOptionsTab,
       adminLayerStats,
@@ -1718,11 +1715,13 @@ export default defineComponent({
       gridLayerStats,
       hasDefaultRun,
       headerGroupButtons,
+      isContinuousScale,
       isModelMetadata,
       isRelativeDropdownOpen,
       mainModelOutput,
       mapBounds,
       mapCameraOptions,
+      mapColorOptions,
       mapLegendData,
       mapReady,
       mapSelectedLayer,
@@ -1753,7 +1752,7 @@ export default defineComponent({
       searchFilters,
       selectedAdminLevel,
       selectedBaseLayer,
-      selectedBaseLayerTransparency,
+      selectedDataLayerTransparency,
       finalColorScheme,
       setColorSchemeReversed,
       colorSchemeReversed,
@@ -1780,8 +1779,8 @@ export default defineComponent({
       setSelectedAdminLevel,
       setBreakdownOption,
       setBaseLayer,
-      setBaseLayerTransparency,
       setDataLayer,
+      setDataLayerTransparency,
       setRelativeTo,
       setSelectedTimestamp,
       setAggregationSelection,
@@ -2153,11 +2152,6 @@ $marginSize: 5px;
     .top-padding {
       height: 19px;
     }
-    div {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-    }
 }
 
 .card-map-container {
@@ -2244,14 +2238,6 @@ $marginSize: 5px;
 
   .timestamp {
     color: $selected-dark;
-  }
-}
-.map-legend-container {
-  ::v-deep(.color-label) {
-    span:nth-child(2) {
-      position: relative;
-      bottom: -16px;
-    }
   }
 }
 

@@ -133,14 +133,15 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
 import projectService from '@/services/project-service';
-import SortIndicator from '@/components/sort-indicator';
-import Pagination from '@/components/pagination';
-import MessageDisplay from '@/components/widgets/message-display';
+import SortIndicator from '@/components/sort-indicator.vue';
+import Pagination from '@/components/pagination.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 
 import codeUtil from '@/utils/code-util';
 import filtersUtil from '@/utils/filters-util';
@@ -149,8 +150,14 @@ import listFormatter from '@/formatters/list-formatter';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import precisionFormatter from '@/formatters/precision-formatter';
 import polarityFormatter from '@/formatters/polarity-formatter';
+import { Statement } from '@/types/Statement';
 
-export default {
+
+interface StatementDisplay extends Statement {
+  years? : number[];
+}
+
+export default defineComponent({
   name: 'StatementsView',
   components: {
     Pagination,
@@ -175,13 +182,13 @@ export default {
       statementsCount: 'kb/filteredStatementCount',
       updateToken: 'app/updateToken'
     }),
-    pageStart() {
+    pageStart(): number {
       return this.statementsQuery.from;
     },
-    pageLimit() {
+    pageLimit(): number {
       return this.statementsQuery.size;
     },
-    sort() {
+    sort(): { [key: string]: string } {
       return this.statementsQuery.sort;
     }
   },
@@ -222,23 +229,23 @@ export default {
         from: this.pageStart, size: this.pageLimit, sort: this.sort
       }).then(statements => {
         this.statements = statements;
-        this.statements.forEach(statement => {
+        this.statements.forEach((statement: StatementDisplay) => {
           statement.years = [];
-          if (statement.subj.time_context.start) {
+          if (statement.subj.time_context?.start) {
             statement.years.push(statement.subj.time_context.start.year);
           }
-          if (statement.obj.time_context.start) {
+          if (statement.obj.time_context?.start) {
             statement.years.push(statement.obj.time_context.start.year);
           }
         });
         this.disableOverlay();
       });
     },
-    isEmpty(obj) {
+    isEmpty(obj: any) {
       return _.isEmpty(obj);
     }
   }
-};
+});
 </script>
 <style lang="scss" scoped>
 @import "~styles/variables";
