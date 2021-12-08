@@ -68,7 +68,6 @@
               class="scenario-chart"
               :class="{'is-expanded': isHistoricalDataExpanded}"
               :is-expanded="isHistoricalDataExpanded"
-              :selected-scenario-id="selectedScenarioId"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
               :min-value="indicatorMin"
@@ -91,14 +90,6 @@
             />
           </div>
         </div>
-        <p>
-          <i class="fa fa-fw fa-info-circle" />To create a scenario, set values
-            by clicking on the chart. To remove a point, click on it again.
-        </p>
-
-        <h5 class="indicator-section-header restrict-max-width">
-          Parameterization for <span class="node-name">{{ nodeConceptName }} - {{ indicatorRegions }}</span>
-        </h5>
         <div class="restrict-max-width indicator-title-row">
           <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
           <div class="indicator-buttons">
@@ -868,6 +859,9 @@ input[type="radio"] {
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
+  padding: 10px;
+  padding-top: 0;
 }
 
 .button-group > *:not(:first-child) {
@@ -875,13 +869,13 @@ input[type="radio"] {
 }
 
 .scenario-chart {
-  flex: 1;
-  min-width: 0;
+  height: 120px;
 }
 
 .projection-histograms {
   flex: 3;
   min-width: 0;
+  margin-top: 5px;
 }
 
 .neighbor-node {
@@ -893,14 +887,6 @@ input[type="radio"] {
 h5 {
   margin: 0;
   @include header-secondary;
-}
-
-.indicator-section-header {
-  margin: 20px 0 10px;
-
-  .node-name {
-    color: $text-color-dark;
-  }
 }
 
 .indicator-title-row {
