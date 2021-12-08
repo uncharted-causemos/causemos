@@ -442,12 +442,14 @@ export default defineComponent({
 
       // 2. Run experiments where necessary, run sensitivity analyses in the backround where necessary
       // 2.1 Process sensitivity analyses, these run in the background
-      for (const scenario of scenarios) {
-        if (scenario.is_valid === true) continue;
+      if (this.currentEngine === 'dyse') {
+        for (const scenario of scenarios) {
+          if (scenario.is_valid === true) continue;
 
-        const constraints = modelService.cleanConstraints(scenario.parameter?.constraints ?? []);
-        const sensitivityExperimentId = await modelService.runSensitivityAnalysis(this.modelSummary, 'GLOBAL', 'DYNAMIC', constraints);
-        await modelService.createScenarioSensitivityResult(this.currentCAG, scenario.id, this.modelSummary.parameter.engine, sensitivityExperimentId, null);
+          const constraints = modelService.cleanConstraints(scenario.parameter?.constraints ?? []);
+          const sensitivityExperimentId = await modelService.runSensitivityAnalysis(this.modelSummary, 'GLOBAL', 'DYNAMIC', constraints);
+          await modelService.createScenarioSensitivityResult(this.currentCAG, scenario.id, this.currentEngine, sensitivityExperimentId, null);
+        }
       }
 
       // 2.2 Process projection experiments
