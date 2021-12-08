@@ -178,8 +178,6 @@ class Graph {
       }
     }
 
-
-
     function findSCCRecurse(node) {
       node.index = index;
       node.lowestNode = index;
@@ -222,6 +220,7 @@ export function findSCC(edges) {
   const g = new Graph(edges);
   return g.findSCC();
 }
+
 /**
  * Get all the cycles in the graph
  * @returns A list of lists, where the inner lists are cycles in the graph
@@ -230,6 +229,75 @@ export function findCycles(edges) {
   if (!edges || edges.length === 0) { return []; }
   const g = new Graph(edges);
   return g.findCycles();
+}
+
+/**
+ *  Classify cycles as either balancing, reinforcing or ambiguous
+ */
+export function classifyCycles(cyclePaths, graphEdges) {
+  const g = new Graph(graphEdges);
+  const num_nodes = g.vertices.size;
+
+  // Mark each node with a unique numerical identifier
+  const nameToId = {};
+  let uniqueIdentifier = 0;
+  for (const v of g.vertices) {
+    nameToId[v.name] = uniqueIdentifier;
+    uniqueIdentifier++;
+  }
+
+  // Initialize an adjacency matrix
+  const adjacencyMatrix = [];
+  for (let i = 0; i < num_nodes; i++) {
+    adjacencyMatrix.push([]);
+    for (let j = 0; j < num_nodes; j++) {
+      adjacencyMatrix[i].push(0);
+    }
+  }
+
+  // Fill the adjacency matrix
+  for (const e of graphEdges) {
+    const sourceId = nameToId[e.source];
+    const targetId = nameToId[e.target];
+    adjacencyMatrix[sourceId][targetId] = e.polarity;
+  }
+
+  const balancing = [];
+  const reinforcing = [];
+  const ambiguous = [];
+
+  // Check status of cycle path
+  for (const path of cyclePaths) {
+    let negativePolarity = 0;
+    let positivePolarity = 0;
+    let isAmbiguous = false;
+    for (let k = 0; k < path.length; k++) {
+      const source = nameToId[path[k].name];
+      const target = nameToId[path[(k + 1) % path.length].name];
+      if (adjacencyMatrix[source][target] === 1) {
+        positivePolarity += 1;
+      } else if (adjacencyMatrix[source][target] === -1) {
+        negativePolarity += 1;
+      } else {
+        isAmbiguous = true;
+        break;
+      }
+    }
+
+    if (isAmbiguous) {
+      ambiguous.push(path);
+    } else if (negativePolarity === positivePolarity) {
+      balancing.push(path);
+    } else {
+      reinforcing.push(path);
+    }
+  }
+
+  return {
+    balancing: balancing,
+    reinforcing: reinforcing,
+    ambiguous: ambiguous
+  };
 }
 
 /**
