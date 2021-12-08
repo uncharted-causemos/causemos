@@ -86,6 +86,7 @@ const FADED_OPACITY = 0.2;
 const THRESHOLD_TIME = 1;
 
 let temporaryNewEdge = null;
+let handleBeingDragged = false;
 
 class CAGRenderer extends BaseCAGRenderer {
   renderNodeAdded(nodeSelection) {
@@ -506,6 +507,9 @@ class CAGRenderer extends BaseCAGRenderer {
             });
           });
         });
+
+        // mark dragging flag
+        handleBeingDragged = true;
       })
       .on('drag', (evt) => {
         chart.selectAll('.new-edge').remove();
@@ -556,6 +560,8 @@ class CAGRenderer extends BaseCAGRenderer {
         temporaryNewEdge = { sourceNode, targetNode };
 
         this.options.newEdgeFn(sourceNode.data, targetNode.data);
+
+        handleBeingDragged = false;
       });
     handles.call(drag);
   }
@@ -781,6 +787,8 @@ export default {
       if (data.label !== node.select('.node-label').text()) {
         svgUtil.showSvgTooltip(renderer.chart, data.label, [data.x + data.width / 2, data.y]);
       }
+
+      if (handleBeingDragged === true) return;
 
       const H = node.datum().height;
       const control = node.append('g')
