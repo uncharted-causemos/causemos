@@ -40,18 +40,21 @@
     </template>
     <div v-else class="scenarios-container">
       <div
-        v-for="scenario in scenarioList"
+        v-for="scenario in scenarios"
         :key="scenario.id"
         class="checklist-item"
       >
           <!-- first row display the scenario title/name -->
           <div class="checklist-item-scenario">
             <div class="checklist-item-scenario-title-and-icon" @click="selectScenario(scenario)">
-              <i v-if="selectedScenario && selectedScenario.id === scenario.id" class="fa fa-circle" />
+              <i v-if="selectedScenarioId && selectedScenarioId === scenario.id" class="fa fa-circle" />
               <i v-else class="fa fa-circle-o" />
-              <span class="scenario-title"> {{ scenario.name }}</span>
+              <div class="scenario-title" :class="{ 'scenario-title-stale': !scenario.is_valid }">
+                {{ scenario.is_valid ? scenario.name : (scenario.name + ' (Stale)') }}
+              </div>
             </div>
             <options-button
+              v-if="!scenario.is_baseline"
               :dropdown-below="true"
               :wider-dropdown-options="true"
               class="options-button"
@@ -66,7 +69,6 @@
                 </div>
                 <div
                   class="dropdown-option"
-                  :class="{ disabled: scenario.is_baseline }"
                   @click="deleteScenario(scenario)"
                 >
                   <i class="fa fa-trash" />
@@ -76,27 +78,31 @@
             </options-button>
           </div>
           <div class="scenario-desc"> {{ scenario.description }}</div>
-          <!-- second row display a list of scenario clamps -->
+          <!--
+            second row display a list of scenario clamps
+            (only for non-baseline scenarios)
+          -->
           <message-display
             v-if="!scenario.is_baseline && getScenarioClamps(scenario).length === 0"
             class="no-clamps-warning"
             :message-type="'alert-warning'"
             :message="'Select a node to define what-if conditions.'"
           />
-          <div
-            v-for="clamp in getScenarioClamps(scenario)"
-            :key="clamp.id"
-            class="checklist-item-clamp">
-              <i @mousedown.stop.prevent class="fa fa-star" />
-              <span
-                @mousedown.stop.prevent
-                class="scenario-clamp-name">
-                {{ clamp.concept }}
-              </span>
-              <i class="fa fa-fw fa-close"
-                style="pointer-events: all; cursor: pointer; margin-left: auto;"
-                @click="deleteScenarioClamp(scenario, clamp)" />
-          </div>
+          <template v-if="!scenario.is_baseline && getScenarioClamps(scenario).length > 0">
+            <div
+              v-for="clamp in getScenarioClamps(scenario)"
+              :key="clamp.concept"
+              class="scenario-clamps">
+                <i @mousedown.stop.prevent class="fa fa-star scenario-clamp-icon" />
+                <div
+                  @mousedown.stop.prevent
+                  class="scenario-clamp-name">
+                  {{ ontologyFormatter(clamp.concept) }}
+                </div>
+                <i class="fa fa-fw fa-close delete-scenario-clamp"
+                  @click="deleteScenarioClamp(scenario, clamp)" />
+            </div>
+          </template>
         </div>
         <button
           v-tooltip.top-center="'Add a new model scenario'"
@@ -114,8 +120,9 @@
 import { defineComponent, PropType } from 'vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
-import { Scenario } from '@/types/CAG';
-import { mapActions } from 'vuex';
+import { ConceptProjectionConstraints, Scenario } from '@/types/CAG';
+import { mapActions, mapGetters } from 'vuex';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 export default defineComponent({
   name: 'CAGScenariosPane',
@@ -123,7 +130,7 @@ export default defineComponent({
     MessageDisplay,
     OptionsButton
   },
-  emits: ['new-scenario', 'update-scenario', 'delete-scenario'],
+  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp'],
   props: {
     scenarios: {
       type: Array as PropType<Scenario[]>,
@@ -135,7 +142,6 @@ export default defineComponent({
     scenarioDesc: '',
     showNewOrEditScenario: false,
     editingScenarioId: '',
-    selectedScenario: null as Scenario | null,
     showError: false
   }),
   watch: {
@@ -144,29 +150,30 @@ export default defineComponent({
     }
   },
   computed: {
-    scenarioList(): Scenario[] {
-      // ensure the baseline is on the top of the list
-      const updatedBaselineScenario = this.scenarios.find(s => s.is_baseline);
-      if (updatedBaselineScenario !== undefined) {
-        const updatedScenarios = this.scenarios.filter(s => !s.is_baseline);
-        updatedScenarios.unshift(updatedBaselineScenario);
-        return updatedScenarios;
-      }
-      return this.scenarios;
-    }
+    ...mapGetters({
+      selectedScenarioId: 'model/selectedScenarioId'
+    })
+  },
+  setup() {
+    return {
+      ontologyFormatter: useOntologyFormatter()
+    };
   },
   mounted() {
-    if (this.scenarios.length > 0) {
-      const baselineScenario = this.scenarios.find(s => s.is_baseline);
-      if (baselineScenario !== undefined) {
-        this.selectedScenario = baselineScenario;
-      }
-    }
+    // this.selectBaselineScenario();
   },
   methods: {
     ...mapActions({
       setSelectedScenarioId: 'model/setSelectedScenarioId'
     }),
+    selectBaselineScenario() {
+      if (this.scenarios.length > 0) {
+        const baselineScenario = this.scenarios.find(s => s.is_baseline);
+        if (baselineScenario !== undefined) {
+          this.setSelectedScenarioId(baselineScenario.id);
+        }
+      }
+    },
     addNewScenario() {
       this.scenarioName = '';
       this.scenarioDesc = '';
@@ -218,18 +225,17 @@ export default defineComponent({
       this.editingScenarioId = scenario.id;
       this.showError = false;
     },
-    deleteScenarioClamp(scenario: Scenario, clamp: any) {
-      // TODO: emit an event to update the scenario and delete the relevant clamp
-      console.log(scenario, clamp);
+    deleteScenarioClamp(scenario: Scenario, clamp: ConceptProjectionConstraints) {
+      // emit an event to update the scenario and delete the relevant clamp
+      this.$emit('delete-scenario-clamp', { scenario, clamp });
     },
     getScenarioClamps(scenario: Scenario) {
       return scenario.parameter.constraints;
     },
     selectScenario(scenario: Scenario) {
-      if (this.selectedScenario && this.selectedScenario.id === scenario.id) {
+      if (this.selectedScenarioId && this.selectedScenarioId === scenario.id) {
         return;
       }
-      this.selectedScenario = scenario;
       this.setSelectedScenarioId(scenario.id);
     }
   }
@@ -267,11 +273,8 @@ export default defineComponent({
           .checklist-item-scenario-title-and-icon {
             width: 100%;
             cursor: pointer;
-          }
-
-          .checklist-item-menu {
-            cursor: move;
-            margin-right: 5px;
+            display: flex;
+            align-items: baseline;
           }
 
           .scenario-title {
@@ -282,6 +285,9 @@ export default defineComponent({
             margin-left: 8px;
             font-size: $font-size-extra-large;
             cursor: pointer;
+          }
+          .scenario-title-stale {
+            color: gray;
           }
         }
         .scenario-desc {
@@ -295,20 +301,30 @@ export default defineComponent({
             margin-top: 5px;
             color: $text-color-medium;
           }
-        .checklist-item-clamp {
+        .scenario-clamps {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          user-select: none;
           margin-left: 20px;
           margin-top: 5px;
+          pointer-events: all;
+          .scenario-clamp-icon {
+            user-select: none;
+          }
           .scenario-clamp-name {
             padding-left: 1rem;
             padding-right: 1rem;
             color: gray;
             font-style: italic;
-            flex: 1;
-            min-width: 0;
+            // flex: 1;
+            // min-width: 0;
+            cursor: default;
+          }
+          .delete-scenario-clamp {
+            margin-left: auto;
+            margin-right: 1rem;
+            cursor: pointer;
+            color: red;
           }
         }
       }
