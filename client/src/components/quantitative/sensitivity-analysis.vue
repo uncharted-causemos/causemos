@@ -74,7 +74,7 @@ export default {
       type: Object,
       default: null
     },
-    analysisType: {
+    analysisType: { // Deprecated
       type: String,
       default: 'GLOBAL'
     }

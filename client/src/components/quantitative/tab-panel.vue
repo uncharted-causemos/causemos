@@ -42,8 +42,6 @@
           v-if="activeTab === 'matrix'"
           :model-summary="modelSummary"
           :sensitivity-result="sensitivityResult"
-          :matrix-data="sensitivityMatrixData"
-          :analysis-type="sensitivityAnalysisType"
           @set-analysis-type="setSensitivityAnalysisType"
         />
       </main>
@@ -140,14 +138,6 @@ export default {
     },
     modelComponents: {
       type: Object,
-      required: true
-    },
-    sensitivityMatrixData: {
-      type: Object,
-      default: null
-    },
-    sensitivityAnalysisType: {
-      type: String,
       required: true
     },
     scenarios: {
