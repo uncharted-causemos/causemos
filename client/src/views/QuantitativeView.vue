@@ -53,8 +53,6 @@ import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
-// import csrUtil from '@/utils/csr-util';
-import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, NewScenario, Scenario } from '@/types/CAG';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;

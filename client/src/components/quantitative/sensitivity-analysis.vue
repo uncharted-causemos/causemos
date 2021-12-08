@@ -14,6 +14,7 @@
           }}
           <span class="concept">{{ selectedRowOrColumn.concept }}</span>
         </p>
+        <!--
         <label>Analysis Type: </label>
         <select
           :value="analysisType"
@@ -25,6 +26,7 @@
             value="IMMEDIATE"
           >Immediate</option>
         </select>
+        -->
       </div>
     </div>
     <div class="y-axis-label">
