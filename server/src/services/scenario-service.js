@@ -216,13 +216,13 @@ const findResults = async (modelId, engine) => {
 };
 
 
-const createSensitivityResult = async
+const createSensitivityResult = async (
   modelId,
   scenarioId,
   engine,
   experimentId,
   resultData
-} > {
+) => {
   const scenarioResultConnection = Adapter.get(RESOURCE.SENSITIVITY_RESULT);
 
   const payload = {
