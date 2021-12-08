@@ -80,7 +80,6 @@
           <div class="scenario-desc"> {{ scenario.description }}</div>
           <!--
             second row display a list of scenario clamps
-            (only for non-baseline scenarios)
           -->
           <message-display
             v-if="!scenario.is_baseline && getScenarioClamps(scenario).length === 0"
@@ -88,20 +87,18 @@
             :message-type="'alert-warning'"
             :message="'Select a node to define what-if conditions.'"
           />
-          <template v-if="!scenario.is_baseline && getScenarioClamps(scenario).length > 0">
-            <div
-              v-for="clamp in getScenarioClamps(scenario)"
-              :key="clamp.concept"
-              class="scenario-clamps">
-                <i class="fa fa-star scenario-clamp-icon" />
-                <div
-                  class="scenario-clamp-name">
-                  {{ ontologyFormatter(clamp.concept) }}
-                </div>
-                <i class="fa fa-fw fa-close delete-scenario-clamp"
-                  @click="deleteScenarioClamp(scenario, clamp)" />
-            </div>
-          </template>
+          <div
+            v-for="clamp in getScenarioClamps(scenario)"
+            :key="clamp.concept"
+            class="scenario-clamps">
+              <i class="fa fa-star scenario-clamp-icon" />
+              <div
+                class="scenario-clamp-name">
+                {{ ontologyFormatter(clamp.concept) }}
+              </div>
+              <i class="fa fa-fw fa-close delete-scenario-clamp"
+                @click="deleteScenarioClamp(scenario, clamp)" />
+          </div>
         </div>
         <button
           v-tooltip.top-center="'Add a new model scenario'"
