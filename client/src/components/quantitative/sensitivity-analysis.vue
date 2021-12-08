@@ -170,15 +170,26 @@ export default {
     async render2() {
       if (this.sensitivityResult === null) return;
 
-      // FIXME: loop
+      // FIXME: polling loop, umount cancel polling
       if (!this.sensitivityResult.result) {
         const data = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.sensitivityResult.experiment_id);
+
+        // Save back into datastore so we don't need to fetch nexttime
+        if (data.results) {
+          modelService.updateScenarioSensitivityResult(
+            this.sensitivityResult.id,
+            this.sensitivityResult.experiment_id,
+            data);
+        }
+
         const csrResults = csrUtil.resultsToCsrFormat((data).results.global); // FIXME sensitivity type?
         csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
         csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
         console.log('fetching', csrResults);
         this.matrixData = csrResults;
         this.render();
+      } else {
+        console.log('has cache!!!');
       }
     },
     render() {

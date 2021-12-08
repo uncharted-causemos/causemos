@@ -91,7 +91,7 @@ export default defineComponent({
 
     sensitivityMatrixData: null as CsrMatrix | null,
     sensitivityAnalysisType: 'GLOBAL',
-    sensitivityDataTimestamp: null as number | null,
+    // sensitivityDataTimestamp: null as number | null,
 
     resetLayoutToken: 0,
     isTraining: false

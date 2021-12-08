@@ -713,10 +713,21 @@ const createScenaioSensitivityResult = async (
   experimentId: string,
   result: any
 ): Promise<void> => {
-  await API.post('/scenario-results/sensitivity', {
+  await API.put('/scenario-results/sensitivity', {
     model_id: modelId,
     scenario_id: scenarioId,
     engine: engine,
+    experiment_id: experimentId,
+    result: result
+  });
+};
+const updateScenarioSensitivityResult = async (
+  id: string,
+  experimentId: string,
+  result: any
+): Promise<void> => {
+  await API.post('/scenario-results/sensitivity', {
+    id: id,
     experiment_id: experimentId,
     result: result
   });
@@ -747,6 +758,7 @@ export default {
   createScenaioSensitivityResult,
 
   updateScenario,
+  updateScenarioSensitivityResult,
   deleteScenario,
   resetScenarioParameter,
 
