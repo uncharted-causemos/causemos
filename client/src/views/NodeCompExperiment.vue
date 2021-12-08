@@ -297,7 +297,6 @@ export default defineComponent({
       const nodeId = this.nodeId ?? '';
       const project = this.project ?? '';
       const metadataNewId = this.metadata?.new_version_data_id ?? '';
-      console.log(metadataNewId);
       const filters: any = filtersUtil.newFilters();
       filtersUtil.setClause(filters, 'dataId', [metadataNewId], 'or', false);
       this.$router.push({
@@ -306,8 +305,7 @@ export default defineComponent({
           currentCAG: currentCAG,
           nodeId: nodeId,
           project: project,
-          projectType: ProjectType.Analysis,
-          filters
+          projectType: ProjectType.Analysis
         },
         query: { filters }
       });
