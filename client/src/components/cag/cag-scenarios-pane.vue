@@ -93,9 +93,8 @@
               v-for="clamp in getScenarioClamps(scenario)"
               :key="clamp.concept"
               class="scenario-clamps">
-                <i @mousedown.stop.prevent class="fa fa-star scenario-clamp-icon" />
+                <i class="fa fa-star scenario-clamp-icon" />
                 <div
-                  @mousedown.stop.prevent
                   class="scenario-clamp-name">
                   {{ ontologyFormatter(clamp.concept) }}
                 </div>
@@ -159,21 +158,10 @@ export default defineComponent({
       ontologyFormatter: useOntologyFormatter()
     };
   },
-  mounted() {
-    // this.selectBaselineScenario();
-  },
   methods: {
     ...mapActions({
       setSelectedScenarioId: 'model/setSelectedScenarioId'
     }),
-    selectBaselineScenario() {
-      if (this.scenarios.length > 0) {
-        const baselineScenario = this.scenarios.find(s => s.is_baseline);
-        if (baselineScenario !== undefined) {
-          this.setSelectedScenarioId(baselineScenario.id);
-        }
-      }
-    },
     addNewScenario() {
       this.scenarioName = '';
       this.scenarioDesc = '';
