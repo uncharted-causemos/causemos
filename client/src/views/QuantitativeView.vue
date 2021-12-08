@@ -11,12 +11,9 @@
       class="graph-container"
       :model-summary="modelSummary"
       :model-components="modelComponents"
-      :sensitivity-matrix-data="sensitivityMatrixData"
-      :sensitivity-analysis-type="sensitivityAnalysisType"
       :scenarios="scenarios"
       :current-engine="currentEngine"
       :reset-layout-token='resetLayoutToken'
-      @set-sensitivity-analysis-type="setSensitivityAnalysisType"
       @refresh-model="refreshModelAndScenarios"
       @model-parameter-changed="refresh"
       @new-scenario='onCreateScenario'
@@ -57,8 +54,6 @@ import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
-import csrUtil from '@/utils/csr-util';
-import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -90,10 +85,6 @@ export default defineComponent({
     modelComponents: null as CAGGraph | null,
     scenarios: null as Scenario[] | null,
 
-    sensitivityMatrixData: null as CsrMatrix | null,
-    sensitivityAnalysisType: 'GLOBAL',
-    sensitivityDataTimestamp: null as number | null,
-
     resetLayoutToken: 0,
     isTraining: false
   }),
@@ -123,14 +114,11 @@ export default defineComponent({
     }
   },
   watch: {
-    sensitivityAnalysisType() {
-      this.fetchSensitivityAnalysisResults();
-    },
-    selectedScenarioId() {
-      if (this.onMatrixTab) {
-        this.fetchSensitivityAnalysisResults();
-      }
-    },
+    // selectedScenarioId() {
+    //   if (this.onMatrixTab) {
+    //     this.fetchSensitivityAnalysisResults();
+    //   }
+    // },
     currentCAG() {
       this.refresh();
     },
@@ -393,9 +381,10 @@ export default defineComponent({
       this.setSelectedScenarioId(scenarioId);
       this.scenarios = scenarios;
 
-      if (this.onMatrixTab) {
-        this.fetchSensitivityAnalysisResults();
-      }
+      // FIXME: Restore sensitivity insight
+      // if (this.onMatrixTab) {
+      //   this.fetchSensitivityAnalysisResults();
+      // }
 
       this.updateDataState();
     },
@@ -478,7 +467,19 @@ export default defineComponent({
 
       this.disableOverlay();
 
-      // 2. Run experiments where necessary
+      // 2. Run experiments where necessary, run sensitivity analyses in the backround where necessary
+      // 2.1 Process sensitivity analyses, these run in the background
+      if (this.currentEngine === 'dyse') {
+        for (const scenario of scenarios) {
+          if (scenario.is_valid === true) continue;
+
+          const constraints = modelService.cleanConstraints(scenario.parameter?.constraints ?? []);
+          const sensitivityExperimentId = await modelService.runSensitivityAnalysis(this.modelSummary, 'GLOBAL', 'DYNAMIC', constraints);
+          await modelService.createScenarioSensitivityResult(this.currentCAG, scenario.id, this.currentEngine, sensitivityExperimentId, null);
+        }
+      }
+
+      // 2.2 Process projection experiments
       const updateList = [];
       for (const scenario of scenarios) {
         if (scenario.is_valid === true) continue;
@@ -537,67 +538,8 @@ export default defineComponent({
 
       return 2 * numEdges / (numNodes * (numNodes - 1));
     },
-    async fetchSensitivityAnalysisResults() {
-      if (
-        this.currentEngine !== 'dyse' ||
-        _.isNil(this.scenarios) ||
-        _.isNil(this.modelSummary) ||
-        _.isNil(this.modelComponents) ||
-        this.scenarios.length === 0
-      ) return;
-
-      const selectedScenario = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId);
-      if (selectedScenario === undefined) {
-        console.error(
-          `Failed to fetch sensitivity analysis results, unable to find scenario with selected scenario ID '${this.selectedScenarioId}'.`
-        );
-        return;
-      }
-
-      // Ensure we are ready to run, sync up with engines if necessary
-      const engineStatus = this.modelSummary.engine_status[this.currentEngine];
-      if (engineStatus === MODEL_STATUS.NOT_REGISTERED) {
-        await modelService.initializeModel(this.currentCAG);
-        await this.refreshModel();
-      }
-      if (selectedScenario.is_valid === false) {
-        modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
-      }
-
-      this.sensitivityMatrixData = null;
-      const now = Date.now();
-      this.sensitivityDataTimestamp = now;
-      const constraints = modelService.cleanConstraints(selectedScenario.parameter?.constraints ?? []);
-
-      const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
-
-      // If another sensitivity analysis started running before this one returns an ID,
-      //  then don't bother fetching/processing the results to avoid a race condition
-      if (this.sensitivityDataTimestamp !== now) return;
-      const progressFn = (current: number, max: number) => {
-        if (current > 2) {
-          this.enableOverlay(`Will await result for  ${(max - current) * 3} more seconds`);
-        }
-      };
-
-      this.enableOverlay('Running sensitivity analysis');
-      const numPolls = Math.max(10, Math.round(this._getGraphDensity() * 50));
-      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, numPolls, progressFn);
-      this.disableOverlay();
-
-      if (this.sensitivityDataTimestamp !== now) return;
-      // FIXME: Add type for return value of modelService.getExperimentResult()
-      const csrResults = csrUtil.resultsToCsrFormat((results as any).results[this.sensitivityAnalysisType.toLowerCase()]);
-      csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
-      csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
-      this.sensitivityMatrixData = csrResults;
-    },
-    setSensitivityAnalysisType(newValue: string) {
-      this.sensitivityAnalysisType = newValue;
-    },
     tabClick(tab: string) {
       if (tab === 'matrix') {
-        this.fetchSensitivityAnalysisResults();
         // advance the tour if it is active
         if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
           this.tour.next();

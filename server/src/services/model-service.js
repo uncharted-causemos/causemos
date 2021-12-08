@@ -292,9 +292,10 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeS
  * @param {string}   analysisType - one of { "IMMEDIATE", "GLOBAL", "PATHWAYS" }
  * @param {string}   analysisMode - one of { "STATIC", "DYNAMIC" }
  * @param {object}   analysisParams - parameters for analysis
+ * @param {object}   analysisMethodology - one of HYBRID or FUNCTION
  */
 const buildSensitivityPayload = async (engine, experimentStart, numTimeSteps,
-  constraintParams, analysisType, analysisMode, analysisParams) => {
+  constraintParams, analysisType, analysisMode, analysisParams, analysisMethodology) => {
   const experimentStartDate = moment.utc(experimentStart);
 
   let payload;
@@ -313,7 +314,8 @@ const buildSensitivityPayload = async (engine, experimentStart, numTimeSteps,
         constraints,
         analysisType,
         analysisMode,
-        analysisParam: analysisParams
+        analysisParam: analysisParams,
+        analysisMethodology
       }
     };
   }

@@ -431,13 +431,13 @@ router.post('/:modelId/sensitivity-analysis', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
   const {
     experimentStart, numTimeSteps, constraints, engine,
-    analysisType, analysisMode, analysisParams
+    analysisType, analysisMode, analysisParams, analysisMethodology
   } = req.body;
 
   if (_.isNil(numTimeSteps)) throw new Error('time step cannot be empty');
   // 2. Build experiment request payload
   const payload = await modelService.buildSensitivityPayload(engine,
-    experimentStart, numTimeSteps, constraints, analysisType, analysisMode, analysisParams);
+    experimentStart, numTimeSteps, constraints, analysisType, analysisMode, analysisParams, analysisMethodology);
 
   // 3. Create experiment (experiment) in modelling engine
   let result;
