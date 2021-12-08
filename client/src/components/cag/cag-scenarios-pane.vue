@@ -10,9 +10,6 @@
         rows="1"
         class="scenario-text"
       />
-      <span v-if="showError" style="color: red">
-        please use a valid unique scenario name
-      </span>
       <textarea
         v-model="scenarioDesc"
         type="text"
@@ -137,14 +134,8 @@ export default defineComponent({
     scenarioName: '',
     scenarioDesc: '',
     showNewOrEditScenario: false,
-    editingScenarioId: '',
-    showError: false
+    editingScenarioId: ''
   }),
-  watch: {
-    scenarioName() {
-      this.showError = false;
-    }
-  },
   computed: {
     ...mapGetters({
       selectedScenarioId: 'model/selectedScenarioId'
@@ -164,18 +155,11 @@ export default defineComponent({
       this.scenarioDesc = '';
       this.showNewOrEditScenario = true;
       this.editingScenarioId = '';
-      this.showError = false;
     },
     saveScenario() {
       //
       // update the list of scenarios using scenarioName and scenarioDesc
       //
-      // do not save a scenario with the same name as an existing one
-      if (this.scenarios.map(s => s.name).includes(this.scenarioName)) {
-        this.showError = true;
-        return;
-      }
-      this.showError = false;
       // hide the scenario edit UI
       this.showNewOrEditScenario = false;
       // emit an event create a new scenario or update an existing one
@@ -208,7 +192,6 @@ export default defineComponent({
       this.scenarioDesc = scenario.description;
       this.showNewOrEditScenario = true;
       this.editingScenarioId = scenario.id;
-      this.showError = false;
     },
     deleteScenarioClamp(scenario: Scenario, clamp: ConceptProjectionConstraints) {
       // emit an event to update the scenario and delete the relevant clamp
