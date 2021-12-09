@@ -116,7 +116,6 @@ export default function(
   // Add background to scrollbar
   scrollBarGroupElement
     .append('rect')
-    .classed('scrollbar-background', true)
     .attr('y', 0)
     .attr('x', Y_AXIS_WIDTH)
     .attr('height', scrollBarHeight)
