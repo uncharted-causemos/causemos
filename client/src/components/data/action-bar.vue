@@ -65,7 +65,7 @@ export default {
       setTimeSelectionSyncing: 'dataAnalysis/setTimeSelectionSyncing'
     }),
     openDataExplorer() {
-      this.$router.push({ name: 'dataExplorer', query: { analysisName: this.analysisName } });
+      this.$router.push({ name: 'dataExplorer', query: { analysisId: this.analysisId } });
     }
   }
 };
