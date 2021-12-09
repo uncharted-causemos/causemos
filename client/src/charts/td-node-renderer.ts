@@ -40,7 +40,7 @@ const CONSTRAINT_HOVER_RADIUS = CONSTRAINT_RADIUS * 1.5;
   be snapped to. */
 const DISCRETE_Y_POSITION_COUNT = 31;
 
-const DATE_FORMATTER = (value: any) => dateFormatter(value, 'YYYY-MM');
+const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
 
 export default function(
   selection: D3Selection,
