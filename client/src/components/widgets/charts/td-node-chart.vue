@@ -20,7 +20,7 @@ import {
   watchEffect
 } from 'vue';
 import renderChart from '@/charts/td-node-renderer';
-import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
+import { CAGModelSummary, ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3Selection } from '@/types/D3';
 
 const RESIZE_DELAY = 15;
@@ -53,9 +53,13 @@ export default defineComponent({
       type: Array as PropType<ProjectionConstraint[]>,
       required: true
     },
-    isExpanded: {
-      type: Boolean,
-      default: false
+    unit: {
+      type: String,
+      default: ''
+    },
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      required: true
     }
   },
   setup(props, { emit }) {
@@ -65,7 +69,9 @@ export default defineComponent({
       minValue,
       maxValue,
       viewingExtent,
-      constraints
+      constraints,
+      unit,
+      modelSummary
     } = toRefs(props);
     const historicalTimeseriesBeforeStart = computed(() => {
       let projectionStartTimestamp = 0;
@@ -123,7 +129,9 @@ export default defineComponent({
         _projections,
         _constraints,
         min,
-        max
+        max,
+        unit.value,
+        modelSummary.value
       );
     });
     onMounted(() => {
@@ -155,7 +163,9 @@ export default defineComponent({
       projections: ScenarioProjection[],
       constraints: ProjectionConstraint[],
       min: number,
-      max: number
+      max: number,
+      unit: string,
+      modelSummary: CAGModelSummary
     ) => {
       // Set new size
       svg.attr('width', width).attr('height', height);
@@ -171,6 +181,8 @@ export default defineComponent({
         constraints,
         min,
         max,
+        unit,
+        modelSummary,
         viewingExtent.value,
         setConstraints,
         setHistoricalTimeseries

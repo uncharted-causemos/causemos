@@ -70,9 +70,11 @@
               :is-expanded="isHistoricalDataExpanded"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
+              :unit="selectedNodeScenarioData.unit"
               :min-value="indicatorMin"
               :max-value="indicatorMax"
               :constraints="constraints"
+              :model-summary="modelSummary"
               :viewing-extent="viewingExtent"
               @set-constraints="modifyConstraints"
               @set-historical-timeseries="setHistoricalTimeseries"
@@ -361,6 +363,8 @@ export default defineComponent({
       const selectedNodeScenarioData = scenarioData.value[selectedNode.value.concept] ?? null;
       if (selectedNodeScenarioData === null) return null;
 
+      const unit = selectedNode.value.parameter?.unit;
+
       const projections: ScenarioProjection[] = [];
       selectedNodeScenarioData.scenarios.forEach(({ id, name, result, constraints }) => {
         // `result` is undefined for the any scenarios that haven't been run yet
@@ -376,7 +380,8 @@ export default defineComponent({
         indicatorName: selectedNodeScenarioData.indicator_name,
         historicalTimeseries: selectedNodeScenarioData.indicator_time_series ?? [],
         historicalConstraints: [],
-        projections
+        projections,
+        unit
       };
     });
 

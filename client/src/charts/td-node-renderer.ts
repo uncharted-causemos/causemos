@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import dateFormatter from '@/formatters/date-formatter';
-import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
+import { CAGModelSummary, ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
@@ -13,6 +13,8 @@ import {
 } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { roundToNearestMonth } from '@/utils/date-util';
+import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
+import moment from 'moment';
 
 const HISTORICAL_DATA_COLOR = '#888';
 const HISTORICAL_RANGE_OPACITY = 0.05;
@@ -24,6 +26,7 @@ const SCROLL_BAR_BACKGROUND_COLOR = HISTORICAL_DATA_COLOR;
 const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
 const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
 const GRIDLINE_COLOR = '#eee';
+const TIMESLICE_COLOR = '#A9A9A9';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -37,7 +40,7 @@ const CONSTRAINT_HOVER_RADIUS = CONSTRAINT_RADIUS * 1.5;
   be snapped to. */
 const DISCRETE_Y_POSITION_COUNT = 31;
 
-const DATE_FORMATTER = (value: any) => dateFormatter(value, 'YYYY');
+const DATE_FORMATTER = (value: any) => dateFormatter(value, 'YYYY-MM');
 
 export default function(
   selection: D3Selection,
@@ -48,6 +51,8 @@ export default function(
   constraints: ProjectionConstraint[],
   minValue: number,
   maxValue: number,
+  unit: string,
+  modelSummary: CAGModelSummary,
   viewingExtent: number[] | null,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
@@ -111,6 +116,7 @@ export default function(
   // Add background to scrollbar
   scrollBarGroupElement
     .append('rect')
+    .classed('scrollbar-background', true)
     .attr('y', 0)
     .attr('x', Y_AXIS_WIDTH)
     .attr('height', scrollBarHeight)
@@ -220,11 +226,14 @@ export default function(
     focusGroupElement.selectAll('*').remove();
     renderStaticElements(
       focusGroupElement,
+      scrollBarGroupElement,
+      totalWidth,
       xScaleFocus,
       yScaleFocus,
       PADDING_TOP,
       projections,
-      historicalTimeseries
+      historicalTimeseries,
+      modelSummary
     );
     const xAxisTicksFocus = calculateYearlyTicks(
       xScaleFocus.domain()[0],
@@ -277,6 +286,7 @@ export default function(
       historicalTimeseries,
       projections,
       constraints,
+      unit,
       setConstraints,
       setHistoricalTimeseries
     );
@@ -325,11 +335,14 @@ const calculateScales = (
 
 const renderStaticElements = (
   groupElement: D3GElementSelection,
+  scrollbarGroupElement: D3GElementSelection,
+  totalWidth: number,
   xScale: D3ScaleLinear,
   yScale: D3ScaleLinear,
   offsetFromTop: number,
   projections: ScenarioProjection[],
-  historicalTimeseries: TimeseriesPoint[]
+  historicalTimeseries: TimeseriesPoint[],
+  modelSummary: CAGModelSummary
 ) => {
   const stepTimestamps = projections[0].values.map(point => point.timestamp);
   // Draw a vertical line at each step
@@ -370,6 +383,63 @@ const renderStaticElements = (
     .attr('stroke', 'none')
     .attr('fill', HISTORICAL_DATA_COLOR)
     .attr('fill-opacity', HISTORICAL_RANGE_OPACITY);
+
+  // render timeslices indicating major temporal marks, e.g., now, in a few month, in a few years
+  const projectionStart = _.min(stepTimestamps) ?? 0;
+  const timeScale = modelSummary.parameter.time_scale;
+  const timeSlicesRaw = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
+  const timeSlices = timeSlicesRaw?.map(timeslice => moment.utc(projectionStart).add(timeslice.months, 'M').valueOf());
+  const timeSlicesValues = [projectionStart, ...timeSlices ?? []];
+  const timeSlicesRawLabels = timeSlicesRaw?.map(timeslice => timeslice.label) ?? [];
+  const timeSlicesLabels = ['now', ...timeSlicesRawLabels];
+  const timeSlicesLabelsOffset = 10;
+  groupElement
+    .selectAll('.grid-timeslice-line')
+    .data(timeSlicesValues)
+    .join('path')
+    .attr('d', timestamp =>
+      lineGenerator([
+        { timestamp, isBottom: false },
+        { timestamp, isBottom: true }
+      ])
+    )
+    .classed('grid-timeslice-line', true)
+    .style('fill', 'none')
+    .style('stroke', TIMESLICE_COLOR);
+  groupElement
+    .selectAll('.grid-timeslice-label')
+    .data(timeSlicesValues)
+    .join('text')
+    .classed('grid-timeslice-label', true)
+    .attr('x', (d) => xScale(d))
+    .attr('y', offsetFromTop + timeSlicesLabelsOffset)
+    .style('text-anchor', 'start')
+    .style('font-size', 'x-small')
+    .style('fill', 'gray')
+    .text((d, i) => timeSlicesLabels[i]);
+
+  // render scrollbar data range labels
+  const scrollbarLabelYOffset = 10;
+  const scrollbarLabelXOffset = 5;
+  const projectionEnd = _.max(stepTimestamps) ?? 0;
+  scrollbarGroupElement
+    .append('text')
+    .classed('scrollbar-range-start', true)
+    .attr('x', Y_AXIS_WIDTH + scrollbarLabelXOffset)
+    .attr('y', scrollbarLabelYOffset)
+    .style('text-anchor', 'start')
+    .style('font-size', 'x-small')
+    .style('fill', 'gray')
+    .text(DATE_FORMATTER(historicalStartTimestamp));
+  scrollbarGroupElement
+    .append('text')
+    .classed('scrollbar-range-end', true)
+    .attr('x', totalWidth - Y_AXIS_WIDTH - scrollbarLabelXOffset)
+    .attr('y', scrollbarLabelYOffset)
+    .style('text-anchor', 'end')
+    .style('font-size', 'x-small')
+    .style('fill', 'gray')
+    .text(DATE_FORMATTER(projectionEnd));
 };
 
 const renderHistoricalTimeseries = (
@@ -440,6 +510,7 @@ const generateClickableAreas = (
   historicalTimeseries: TimeseriesPoint[],
   scenarios: ScenarioProjection[],
   constraints: ProjectionConstraint[],
+  unit: string,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) => {
@@ -503,7 +574,7 @@ const generateClickableAreas = (
     const timestamp = roundToNearestMonth(xScale.invert(discreteXPosition));
     showSvgTooltip(
       parentGroupElement,
-      `${DATE_FORMATTER(timestamp)}: ${valueFormatter(value)}`,
+      `${DATE_FORMATTER(timestamp)}: ${valueFormatter(value)} ${unit}`,
       [discreteXPosition, discreteYPosition],
       0,
       true
