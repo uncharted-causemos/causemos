@@ -560,6 +560,7 @@ const generateClickableAreas = (
     const discreteYPosition =
       PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues;
     parentGroupElement.select('.constraint-selector').remove();
+    parentGroupElement.select('.constraint-selector-support-line').remove();
     parentGroupElement
       .append('circle')
       .classed('constraint-selector', true)
@@ -568,6 +569,16 @@ const generateClickableAreas = (
       .attr('r', CONSTRAINT_HOVER_RADIUS)
       .style('pointer-events', 'none')
       .style('fill', 'none')
+      .style('stroke', SELECTED_COLOR);
+    parentGroupElement
+      .append('line')
+      .classed('constraint-selector-support-line', true)
+      .attr('x1', Y_AXIS_WIDTH)
+      .attr('y1', discreteYPosition)
+      .attr('x2', discreteXPosition)
+      .attr('y2', discreteYPosition)
+      .style('pointer-events', 'none')
+      .style('stroke-dasharray', ('3, 3'))
       .style('stroke', SELECTED_COLOR);
 
     const value = yScale.invert(discreteYPosition);
@@ -582,6 +593,7 @@ const generateClickableAreas = (
   });
   timelineRect.on('mouseleave', function() {
     parentGroupElement.select('.constraint-selector').remove();
+    parentGroupElement.select('.constraint-selector-support-line').remove();
     hideSvgTooltip(parentGroupElement);
   });
   timelineRect.on('click', function(event) {
