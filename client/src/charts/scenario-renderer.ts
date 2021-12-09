@@ -8,11 +8,15 @@ import { D3GElementSelection, D3Selection } from '@/types/D3';
 import { Chart } from '@/types/Chart';
 import { NodeScenarioData } from '@/types/CAG';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
-import { convertTimeseriesDistributionToHistograms } from '@/utils/histogram-util';
+import {
+  convertTimeseriesDistributionToHistograms,
+  summarizeConstraints
+} from '@/utils/histogram-util';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_LINE_COLOR = '#999';
-const SPACE_BETWEEN_HISTOGRAMS = 2;
+const SPACE_BETWEEN_HISTOGRAMS = 8;
 const SPACE_BETWEEN_HISTOGRAM_BARS = 1;
 const HISTOGRAM_BACKGROUND_COLOR = HISTORY_BACKGROUND_COLOR;
 const HISTOGRAM_FOREGROUND_COLOR = HISTORY_LINE_COLOR;
@@ -199,11 +203,22 @@ function renderScenarioProjections(
     projectionValues
   );
 
+  const constraintSummary = summarizeConstraints(
+    nodeScenarioData.time_scale,
+    isAbstractNode ? [] : historicalTimeseries,
+    projectionValues[0].timestamp,
+    projection.constraints ?? []
+  );
+
   // Render one histogram for each selected time slice
   // FIXME: only render some slices depending on which ones are selected
   // FIXME: we should exit much earlier if no slices are selected
   const widthPerHistogram = width / histograms.length;
-  const heightPerHistogramBar = height / histograms[0].length;
+  const heightPerHistogramRow = height / histograms[0].length;
+  const histogramBarHeight =
+    heightPerHistogramRow - SPACE_BETWEEN_HISTOGRAM_BARS;
+  const constraintRadius = histogramBarHeight / 2;
+
   const histogramElements = svgGroup
     .selectAll('.histogram')
     .data(histograms)
@@ -212,27 +227,47 @@ function renderScenarioProjections(
     .attr('transform', (d, i) => translate(xOffset + i * widthPerHistogram, 0));
   const histogramBarElements = histogramElements
     .selectAll('.histogram-bar')
-    .data(d => d)
+    .data(histogramData => histogramData)
     .join('g')
     .classed('histogram-bar', true);
+  // Render background of each bar
   histogramBarElements
     .append('rect')
     .attr('width', widthPerHistogram - SPACE_BETWEEN_HISTOGRAMS)
-    .attr('height', heightPerHistogramBar - SPACE_BETWEEN_HISTOGRAM_BARS)
+    .attr('height', histogramBarHeight)
     .attr('fill', HISTOGRAM_BACKGROUND_COLOR)
-    .attr('transform', (d, j) =>
-      translate(SPACE_BETWEEN_HISTOGRAMS, j * heightPerHistogramBar)
+    .attr('transform', (d, rowIndex) =>
+      translate(SPACE_BETWEEN_HISTOGRAMS, rowIndex * heightPerHistogramRow)
     );
+  // Render bar itself
   histogramBarElements
     .append('rect')
     .attr(
       'width',
-      d => (d / 100) * (widthPerHistogram - SPACE_BETWEEN_HISTOGRAMS)
+      // FIXME: implicit requirement that run count adds up to 100
+      barValue =>
+        (barValue / 100) * (widthPerHistogram - SPACE_BETWEEN_HISTOGRAMS)
     )
-    .attr('height', heightPerHistogramBar - SPACE_BETWEEN_HISTOGRAM_BARS)
+    .attr('height', histogramBarHeight)
     .attr('fill', HISTOGRAM_FOREGROUND_COLOR)
-    .attr('transform', (d, j) =>
-      translate(SPACE_BETWEEN_HISTOGRAMS, j * heightPerHistogramBar)
+    .attr('transform', (d, rowIndex) =>
+      translate(SPACE_BETWEEN_HISTOGRAMS, rowIndex * heightPerHistogramRow)
     );
-  // TODO: render constraints
+  // Render constraints
+  histogramElements
+    .selectAll('.constraint')
+    // Map from histogram index to the constraint summary for this time slice
+    .data((histogramData, histogramIndex) => constraintSummary[histogramIndex])
+    .join('circle')
+    .classed('constraint', true)
+    .attr('r', constraintRadius)
+    .attr('cx', -constraintRadius)
+    .attr('cy', constraintRadius)
+    .attr('fill', constraintCount => {
+      const hasConstraints = constraintCount > 0;
+      return hasConstraints ? SELECTED_COLOR : 'none';
+    })
+    .attr('transform', (d, rowIndex) =>
+      translate(SPACE_BETWEEN_HISTOGRAMS, rowIndex * heightPerHistogramRow)
+    );
 }
