@@ -151,7 +151,6 @@ export default defineComponent({
         selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
 
         selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, allModelRunData.value);
-        console.log(selectedScenarios.value);
       }
     });
 
