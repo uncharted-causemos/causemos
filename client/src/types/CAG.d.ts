@@ -79,6 +79,7 @@ export interface NodeScenarioData {
     result?: {
       values: TimeseriesDistributionPoint[];
     };
+    modified_at: number;
   }[];
 }
 export interface NodeParameter {
