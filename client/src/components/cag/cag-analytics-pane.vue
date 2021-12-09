@@ -10,9 +10,11 @@
     />
 
     <div v-if="currentAnalysis === 'cycles'">
-      Cycle analysis
       <div v-for="(path, idx) of cyclesPaths" :key="idx">
         <strong>{{idx}}</strong> {{ path }}
+      </div>
+      <div v-if="cyclesPaths.length === 0">
+        No cycles detected.
       </div>
     </div>
 
@@ -38,14 +40,28 @@
           Run pathway sensitivity
         </button>
       </div>
+
+      <!-- paht results -->
+      <div>
+        <div v-if="pathExperiemntId && !pathExperimentResult">
+          <i class="fa fa-spinner fa-spin" /> Running experiment
+        </div>
+        <div v-if="pathExperiemntId && pathExperimentResult">
+          {{ pathExperimentResult }}
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import { computed, defineComponent, ref, PropType, Ref } from 'vue';
+import { useStore } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { findCycles } from '@/utils/graphs-util';
+import modelService from '@/services/model-service';
+
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelParameter, Scenario } from '@/types/CAG';
 
@@ -72,15 +88,21 @@ export default defineComponent({
       type: Array as PropType<Scenario[]>,
       default: () => []
     }
-
   },
   setup(props) {
+    const store = useStore();
     const currentAnalysis = ref('cycles');
     const cyclesPaths = ref([]) as Ref<any[]>;
 
     const currentPathSource = ref('');
     const currentPathTarget = ref('');
     const ontologyFormatter = useOntologyFormatter();
+    const currentCAG = computed(() => {
+      return store.getters['app/currentCAG'];
+    });
+
+    const pathExperiemntId = ref('');
+    const pathExperimentResult = ref(null) as Ref<any>;
 
     // FIXME: SHould have adapatble lists depending on selection e.g. reachable nodes
     const availableNodes = computed(() => {
@@ -97,9 +119,12 @@ export default defineComponent({
       currentAnalysis,
       currentPathSource,
       currentPathTarget,
+      currentCAG,
       cyclesPaths,
 
       availableNodes,
+      pathExperiemntId,
+      pathExperimentResult,
 
       analyses: ANALYSES
     };
@@ -116,7 +141,27 @@ export default defineComponent({
     showCyclesAnalysis() {
       this.cyclesPaths = findCycles(this.modelComponents.edges);
     },
-    runPathwayAnalysis() {
+    async runPathwayAnalysis() {
+      if (_.isEmpty(this.currentPathSource) || _.isEmpty(this.currentPathTarget)) return;
+      this.pathExperiemntId = await modelService.runPathwaySensitivityAnalysis(
+        this.modelSummary,
+        [this.currentPathSource],
+        [this.currentPathTarget],
+        []
+      );
+      console.log('path exp', this.pathExperiemntId);
+      this.pollPathExperimentResult();
+    },
+    async pollPathExperimentResult() {
+      const r = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.pathExperiemntId);
+
+      if (r.status === 'completed' && r.results) {
+        this.pathExperimentResult = r.results;
+      } else {
+        window.setTimeout(() => {
+          this.pollPathExperimentResult();
+        }, 5000);
+      }
     },
     changeAnalysis(v: string) {
       this.currentAnalysis = v;
