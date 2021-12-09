@@ -32,6 +32,12 @@
         :selected-item="currentPathTarget"
         @item-selected="changePathTarget"
       />
+      <div class="pathway-exec-summary">
+        <button class="btn btn-small btn-primary"
+          @click="runPathwayAnalysis">
+          Run pathway sensitivity
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -39,9 +45,9 @@
 <script lang="ts">
 import { computed, defineComponent, ref, PropType, Ref } from 'vue';
 import DropdownButton from '@/components/dropdown-button.vue';
-import { CAGGraph } from '@/types/CAG';
 import { findCycles } from '@/utils/graphs-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import { CAGGraph, CAGModelParameter, Scenario } from '@/types/CAG';
 
 const ANALYSES = [
   { displayName: 'Cycle analysis', value: 'cycles' },
@@ -54,10 +60,19 @@ export default defineComponent({
     DropdownButton
   },
   props: {
+    modelSummary: {
+      type: Object as PropType<CAGModelParameter>,
+      default: null
+    },
     modelComponents: {
       type: Object as PropType<CAGGraph>,
       default: null
+    },
+    scenarios: {
+      type: Array as PropType<Scenario[]>,
+      default: () => []
     }
+
   },
   setup(props) {
     const currentAnalysis = ref('cycles');
@@ -101,6 +116,8 @@ export default defineComponent({
     showCyclesAnalysis() {
       this.cyclesPaths = findCycles(this.modelComponents.edges);
     },
+    runPathwayAnalysis() {
+    },
     changeAnalysis(v: string) {
       this.currentAnalysis = v;
       this.refresh();
@@ -119,5 +136,11 @@ export default defineComponent({
 .analytics-pane {
   display: flex;
   flex-direction: column;
+
+
+  .pathway-exec-summary {
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
 }
 </style>

@@ -22,7 +22,9 @@
 
     <cag-analytics-pane
       v-if="currentTab === 'Analytics'"
+      :model-summary="modelSummary"
       :model-components="modelComponents"
+      :scenarios="scenarios"
     />
 
     <list-context-insight-pane v-if="currentTab === 'Context Insights'" />
@@ -58,7 +60,7 @@ import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-
 import CagScenariosPane from '@/components/cag/cag-scenarios-pane.vue';
 import CagAnalyticsPane from '@/components/cag/cag-analytics-pane.vue';
 import { mapGetters, useStore } from 'vuex';
-import { CAGGraph, Scenario } from '@/types/CAG';
+import { CAGModelSummary, CAGGraph, Scenario } from '@/types/CAG';
 
 export default defineComponent({
   name: 'CAGSidePanel',
@@ -74,6 +76,10 @@ export default defineComponent({
     isExperimentDownloadVisible: {
       type: Boolean,
       default: false
+    },
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      default: null
     },
     modelComponents: {
       type: Object as PropType<CAGGraph>,
