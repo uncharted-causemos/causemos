@@ -102,6 +102,18 @@ const getScenarios = async (modelId: string, engine: string) => {
   return scenarios;
 };
 
+
+/**
+ * Get model's sensitivity results - only applicable to DySE
+ */
+const getScenarioSensitivity = async (modelId: string, engine: string) => {
+  const sensitivityResults = (await API.get('scenario-results/sensitivity', {
+    params: { model_id: modelId, engine: engine }
+  })).data;
+  return sensitivityResults;
+};
+
+
 /**
  * Update graph node
  */
@@ -331,6 +343,10 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
     threshold: threshold
   });
 };
+const getExperimentResultOnce = async (modelId: string, engine: string, experimentId: string) => {
+  const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: engine, experiment_id: experimentId } });
+  return data;
+};
 
 
 /**
@@ -449,6 +465,7 @@ const runSensitivityAnalysis = async (
     `models/${modelId}/sensitivity-analysis`,
     {
       analysisMode,
+      analysisMethodology: 'HYBRID', // FIXME this flexible? either HYBRID or FUNCTION
       analysisParams,
       analysisType,
       constraints,
@@ -489,6 +506,12 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
       r = experiment.results.data;
     } else {
       r = experiment.results;
+    }
+
+    // Fire  off a sensitivity request in the background
+    if (modelSummary.parameter.engine === 'dyse') {
+      const sensitivityExperimentId = await runSensitivityAnalysis(modelSummary, 'GLOBAL', 'DYNAMIC', []);
+      await createScenarioSensitivityResult(modelId, id, modelSummary.parameter.engine, sensitivityExperimentId, null);
     }
 
     await createScenarioResult(modelId, id, modelSummary.parameter.engine, experimentId, r);
@@ -686,6 +709,33 @@ const createScenarioResult = async (
   });
 };
 
+const createScenarioSensitivityResult = async (
+  modelId: string,
+  scenarioId: string,
+  engine: string,
+  experimentId: string,
+  result: any
+): Promise<void> => {
+  await API.put('/scenario-results/sensitivity', {
+    model_id: modelId,
+    scenario_id: scenarioId,
+    engine: engine,
+    experiment_id: experimentId,
+    result: result
+  });
+};
+const updateScenarioSensitivityResult = async (
+  id: string,
+  experimentId: string,
+  result: any
+): Promise<void> => {
+  await API.post('/scenario-results/sensitivity', {
+    id: id,
+    experiment_id: experimentId,
+    result: result
+  });
+};
+
 export default {
   getProjectModels,
   getSummary,
@@ -701,12 +751,17 @@ export default {
   runProjectionExperiment,
   runSensitivityAnalysis,
   getExperimentResult,
+  getExperimentResultOnce,
   createBaselineScenario,
 
   getScenarios,
+  getScenarioSensitivity,
   createScenario,
   createScenarioResult,
+  createScenarioSensitivityResult,
+
   updateScenario,
+  updateScenarioSensitivityResult,
   deleteScenario,
   resetScenarioParameter,
 

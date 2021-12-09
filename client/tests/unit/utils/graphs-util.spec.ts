@@ -1,5 +1,7 @@
 import { expect } from 'chai';
-import { hasBackingEvidence, findCycles } from '@/utils/graphs-util';
+import {
+  hasBackingEvidence, findCycles, findAllAncestorPaths, findAllDescendantPaths
+} from '@/utils/graphs-util';
 
 describe('graphs-util', () => {
   it('hasBackingEvidence - user set no evidence', () => {
@@ -81,5 +83,81 @@ describe('graphs-util', () => {
     ];
     const cycles = findCycles(edges);
     expect(cycles.length).to.equal(3);
+  });
+
+
+  it('trace ancestor paths - no path', () => {
+    const edges = [
+      { source: 'A', target: 'B' }
+    ];
+    const paths = findAllAncestorPaths('C', edges);
+    expect(paths.length).to.equal(0);
+  });
+
+  it('trace ancestor paths - simple', () => {
+    const edges = [
+      { source: 'A', target: 'B' },
+      { source: 'B', target: 'C' },
+      { source: 'C', target: 'D' }
+    ];
+
+    const paths = findAllAncestorPaths('C', edges);
+    expect(paths.length).to.equal(1);
+    expect(paths[0]).to.deep.equal(['A', 'B', 'C']);
+  });
+
+  it('trace ancestor paths - loop', () => {
+    const edges = [
+      { source: 'A', target: 'B' },
+      { source: 'B', target: 'C' },
+      { source: 'C', target: 'D' },
+      { source: 'D', target: 'A' }
+    ];
+
+    const paths = findAllAncestorPaths('B', edges);
+    expect(paths.length).to.equal(1);
+    expect(paths[0]).to.deep.equal(['B', 'C', 'D', 'A', 'B']);
+  });
+
+  it('trace ancestor paths - multiple', () => {
+    const edges = [
+      { source: 'A', target: 'C' },
+      { source: 'B', target: 'C' },
+      { source: 'C', target: 'D' },
+      { source: 'D', target: 'E' }
+    ];
+
+    const paths = findAllAncestorPaths('E', edges);
+    expect(paths.length).to.equal(2);
+  });
+
+  it('trace descendant paths - multiple', () => {
+    const edges = [
+      { source: 'A', target: 'C' },
+      { source: 'B', target: 'C' },
+      { source: 'C', target: 'D' },
+      { source: 'D', target: 'E' }
+    ];
+
+    const p1 = findAllDescendantPaths('A', edges);
+    expect(p1.length).to.equal(1);
+    expect(p1[0]).to.deep.equal(['A', 'C', 'D', 'E']);
+
+
+    const p2 = findAllDescendantPaths('B', edges);
+    expect(p2.length).to.equal(1);
+    expect(p2[0]).to.deep.equal(['B', 'C', 'D', 'E']);
+  });
+
+  it('trace descendant - multiple', () => {
+    const edges = [
+      { source: 'A', target: 'C' },
+      { source: 'A', target: 'B' },
+      { source: 'C', target: 'D' },
+      { source: 'B', target: 'D' }
+    ];
+
+    const p1 = findAllDescendantPaths('A', edges);
+    expect(p1.length).to.equal(2);
   });
 });

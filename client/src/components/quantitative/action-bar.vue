@@ -112,7 +112,8 @@ export default {
   },
   emits: [
     'run-model',
-    'reset-cag'
+    'reset-cag',
+    'tab-click'
   ],
   data: () => ({
     isScendarioDropdownOpen: false

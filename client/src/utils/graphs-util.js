@@ -221,6 +221,67 @@ export function findSCC(edges) {
   return g.findSCC();
 }
 
+
+/**
+ * Helper function: Trace adjacency matrix recursively
+ *
+ * @param {string} id - node
+ * @param {array} buffer - current path
+ * @param {Map} adjMap - adjacency data
+ * @param {Set} visited - visited tracker
+ * @param {array} paths - result accumulator
+ */
+function trace(id, buffer, adjMap, visited, paths) {
+  if (visited.has(id)) {
+    paths.push(buffer);
+    return;
+  }
+  visited.add(id);
+
+  const parents = adjMap.get(id);
+  if (parents && parents.length > 0) {
+    for (const newId of parents) {
+      trace(newId, [newId, ...buffer], adjMap, visited, paths);
+    }
+  } else {
+    paths.push(buffer);
+  }
+}
+
+/**
+ * Trace ancestor paths given a node, we do not consider a singular
+ * node to be a "path"
+ */
+export function findAllAncestorPaths(node, edges) {
+  const adjMap = new Map();
+  const visited = new Set();
+  const paths = [];
+
+  for (const edge of edges) {
+    if (!adjMap.has(edge.target)) {
+      adjMap.set(edge.target, []);
+    }
+    adjMap.get(edge.target).push(edge.source);
+  }
+  trace(node, [node], adjMap, visited, paths);
+  return paths.filter(path => path.length > 1);
+}
+
+export function findAllDescendantPaths(node, edges) {
+  const adjMap = new Map();
+  const visited = new Set();
+  const paths = [];
+
+  for (const edge of edges) {
+    if (!adjMap.has(edge.source)) {
+      adjMap.set(edge.source, []);
+    }
+    adjMap.get(edge.source).push(edge.target);
+  }
+  trace(node, [node], adjMap, visited, paths);
+  return paths.filter(path => path.length > 1).map(path => path.reverse());
+}
+
 /**
  * Get all the cycles in the graph
  * @returns A list of lists, where the inner lists are cycles in the graph

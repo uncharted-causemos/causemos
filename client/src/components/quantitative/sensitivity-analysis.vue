@@ -14,6 +14,7 @@
           }}
           <span class="concept">{{ selectedRowOrColumn.concept }}</span>
         </p>
+        <!--
         <label>Analysis Type: </label>
         <select
           :value="analysisType"
@@ -25,6 +26,7 @@
             value="IMMEDIATE"
           >Immediate</option>
         </select>
+        -->
       </div>
     </div>
     <div class="y-axis-label">
@@ -46,12 +48,14 @@
 <script>
 import _ from 'lodash';
 import * as d3 from 'd3';
+import { mapActions, mapGetters } from 'vuex';
 import renderSensitivityMatrix from '@/charts/matrix-renderer';
 import csrUtil from '@/utils/csr-util';
 import { showSvgTooltip, hideSvgTooltip } from '@/utils/svg-util';
 import ordinalNumberFormatter from '@/formatters/ordinal-number-formatter';
+import modelService from '@/services/model-service';
 import SensitivityAnalysisLegend from './sensitivity-analysis-legend.vue';
-import { mapActions, mapGetters } from 'vuex';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 const RESIZE_DELAY = 50;
 
@@ -68,14 +72,20 @@ export default {
       type: Object,
       required: true
     },
-    matrixData: {
+    sensitivityResult: {
       type: Object,
       default: null
     },
-    analysisType: {
+    analysisType: { // Deprecated
       type: String,
       default: 'GLOBAL'
     }
+  },
+  setup() {
+    const ontologyFormatter = useOntologyFormatter();
+    return {
+      ontologyFormatter
+    };
   },
   data: () => ({
     // Declare this method in data instead of in methods so that one debounced function is created
@@ -85,11 +95,13 @@ export default {
     resize: _.debounce(function (width, height) {
       this.render(width, height);
     }, RESIZE_DELAY),
-    selectedRowOrColumn: { isRow: false, concept: null }
+    selectedRowOrColumn: { isRow: false, concept: null },
+    matrixData: null
   }),
   computed: {
     ...mapGetters({
-      tour: 'tour/tour'
+      tour: 'tour/tour',
+      currentCAG: 'app/currentCAG'
     }),
     rowOrder() {
       if (this.matrixData === null) return [];
@@ -126,8 +138,8 @@ export default {
     }
   },
   watch: {
-    matrixData() {
-      this.render();
+    sensitivityResult() {
+      this.refresh();
       // allow the relevant tour to advance to the next step
       if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
         this.enableNextStep();
@@ -141,7 +153,7 @@ export default {
     }
   },
   mounted() {
-    this.render();
+    this.refresh();
   },
   beforeUnmount() {
     // a tour may be active while we are in this view,
@@ -156,6 +168,46 @@ export default {
     }),
     setAnalysisType(e) {
       this.$emit('set-analysis-type', e.target.value);
+    },
+    async poll() {
+      const r = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.sensitivityResult.experiment_id);
+      if (r.status === 'completed' && r.results) {
+        this.processSensitivityResult(r);
+      } else {
+        this.updatePollingProgress(r);
+      }
+    },
+    updatePollingProgress(result) {
+      console.log('update polling progress', result);
+      window.setTimeout(() => {
+        this.poll();
+      }, 5000);
+    },
+    async processSensitivityResult(result) {
+      console.log('process sensitivity result', result);
+      await modelService.updateScenarioSensitivityResult(
+        this.sensitivityResult.id,
+        this.sensitivityResult.experiment_id,
+        result);
+      const csrResults = csrUtil.resultsToCsrFormat(result.results.global);
+      csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
+      csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
+      this.matrixData = csrResults;
+      this.render();
+    },
+    async refresh() {
+      if (this.sensitivityResult === null) return;
+
+      if (!this.sensitivityResult.result || this.sensitivityResult.is_valid === false) {
+        this.poll();
+      } else {
+        console.log('use cache!!!');
+        const csrResults = csrUtil.resultsToCsrFormat(this.sensitivityResult.result.results.global);
+        csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
+        csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
+        this.matrixData = csrResults;
+        this.render();
+      }
     },
     render() {
       if (this.matrixData === null) return;
