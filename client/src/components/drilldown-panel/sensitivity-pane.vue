@@ -29,6 +29,7 @@
         {{driver.label}}
         <importance-bars
           v-if="maxSensitivity"
+          label="driver"
           :importance="driver.value"
           :max="maxSensitivity"
         >
@@ -50,6 +51,7 @@
         {{impact.label}}:
         <importance-bars
           v-if="maxSensitivity"
+          label="impact"
           :importance="impact.value"
           :max="maxSensitivity"
         >
@@ -183,8 +185,6 @@ export default defineComponent({
       const sensitivities = concepts.value.reduce((acc, concept) => {
         return acc.concat(Object.values(sensitivityData.value[concept]).filter(v => v !== 0) as number[]);
       }, [] as number[]);
-      console.log(sensitivities.sort());
-
       return Math.max(...sensitivities);
     });
 

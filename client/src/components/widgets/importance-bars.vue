@@ -1,5 +1,6 @@
 <template>
   <div
+    v-tooltip.top="tooltipInfo"
     class="importance"
     :class="{ 'not-available': !importance }"
   >
@@ -14,6 +15,9 @@
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
 
+// Labels associated with confidences for tooltips
+const TOOLTIP_LEVELS = ['LOW', 'MEDIUM', 'HIGH'];
+
 export default defineComponent({
   name: 'ImportanceBars',
 
@@ -21,6 +25,11 @@ export default defineComponent({
     importance: {
       type: Number as PropType<number>,
       default: null
+    },
+
+    label: {
+      type: String as PropType<string>,
+      default: 'importance'
     },
     max: {
       type: Number as PropType<number>,
@@ -44,6 +53,19 @@ export default defineComponent({
     numActive(): number {
       if (this.importanceRatio === null) return -1;
       return Math.round(this.importanceRatio * this.numBars);
+    },
+    tooltipInfo(): string|null {
+      if (this.importanceRatio) {
+        const level = TOOLTIP_LEVELS[
+          Math.min(
+            Math.round(this.importanceRatio * (TOOLTIP_LEVELS.length - 1)),
+            TOOLTIP_LEVELS.length - 1
+          )
+        ];
+        return `${level} estimated ${this.label}`;
+      } else {
+        return null;
+      }
     }
   }
 });
