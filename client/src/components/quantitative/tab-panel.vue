@@ -7,6 +7,7 @@
       <cag-side-panel
         class="side-panel"
         :is-experiment-download-visible="true"
+        :model-summary="modelSummary"
         :model-components="modelComponents"
         :scenarios="scenarios"
         @download-experiment="downloadExperiment"

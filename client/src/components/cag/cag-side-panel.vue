@@ -20,6 +20,13 @@
       @delete-scenario-clamp='$emit("delete-scenario-clamp", $event)'
     />
 
+    <cag-analytics-pane
+      v-if="currentTab === 'Analytics'"
+      :model-summary="modelSummary"
+      :model-components="modelComponents"
+      :scenarios="scenarios"
+    />
+
     <list-context-insight-pane v-if="currentTab === 'Context Insights'" />
 
     <div v-if="currentTab === 'Details'" class="details-pane">
@@ -51,8 +58,9 @@ import { computed, defineComponent, PropType, ref, watchEffect } from 'vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
 import CagScenariosPane from '@/components/cag/cag-scenarios-pane.vue';
+import CagAnalyticsPane from '@/components/cag/cag-analytics-pane.vue';
 import { mapGetters, useStore } from 'vuex';
-import { CAGGraph, Scenario } from '@/types/CAG';
+import { CAGModelSummary, CAGGraph, Scenario } from '@/types/CAG';
 
 export default defineComponent({
   name: 'CAGSidePanel',
@@ -60,13 +68,18 @@ export default defineComponent({
     SidePanel,
     ListContextInsightPane,
     ListAnalyticalQuestionsPane,
-    CagScenariosPane
+    CagScenariosPane,
+    CagAnalyticsPane
   },
   emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp', 'download-experiment'],
   props: {
     isExperimentDownloadVisible: {
       type: Boolean,
       default: false
+    },
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      default: null
     },
     modelComponents: {
       type: Object as PropType<CAGGraph>,
@@ -83,6 +96,7 @@ export default defineComponent({
 
     const tabsQuantitative = [
       { name: 'Scenarios', icon: 'fa fa-circle fa-lg' },
+      { name: 'Analytics', icon: 'fa fa-fw fa-flask fa-lg' },
       { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
       { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' },
       { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' }
