@@ -12,9 +12,8 @@ import {
   translate
 } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-import { roundToNearestMonth } from '@/utils/date-util';
+import { getTimestampAfterMonths, roundToNearestMonth } from '@/utils/date-util';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
-import moment from 'moment';
 
 const HISTORICAL_DATA_COLOR = '#888';
 const HISTORICAL_RANGE_OPACITY = 0.05;
@@ -387,7 +386,7 @@ const renderStaticElements = (
   const projectionStart = _.min(stepTimestamps) ?? 0;
   const timeScale = modelSummary.parameter.time_scale;
   const timeSlicesRaw = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
-  const timeSlices = timeSlicesRaw?.map(timeslice => moment.utc(projectionStart).add(timeslice.months, 'M').valueOf());
+  const timeSlices = timeSlicesRaw?.map(timeslice => getTimestampAfterMonths(projectionStart, timeslice.months));
   const timeSlicesValues = [projectionStart, ...timeSlices ?? []];
   const timeSlicesRawLabels = timeSlicesRaw?.map(timeslice => timeslice.label) ?? [];
   const timeSlicesLabels = ['now', ...timeSlicesRawLabels];
@@ -421,6 +420,8 @@ const renderStaticElements = (
   const scrollbarLabelYOffset = 10;
   const scrollbarLabelXOffset = 5;
   const projectionEnd = _.max(stepTimestamps) ?? 0;
+  scrollbarGroupElement.select('.scrollbar-range-start').remove();
+  scrollbarGroupElement.select('.scrollbar-range-end').remove();
   scrollbarGroupElement
     .append('text')
     .classed('scrollbar-range-start', true)
