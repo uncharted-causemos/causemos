@@ -496,7 +496,7 @@ const runPathwaySensitivityAnalysis = async (
       numPath: 10,
       pathAtt: 'SENSITIVITY',
       source: sources,
-      targets: targets
+      target: targets
     },
     constraints,
     engine,
