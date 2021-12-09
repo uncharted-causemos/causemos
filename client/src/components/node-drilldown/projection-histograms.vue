@@ -43,9 +43,7 @@
         :class="{ hidden: isHiddenTimeSlice(timeSliceIndex) }"
         :key="timeSliceIndex"
         :bin-values="histogramData"
-        :constraint-summary="
-          getConstraintSummary(row.scenarioId, timeSliceIndex)
-        "
+        :constraint-summary="constraintSummaries[row.scenarioId][timeSliceIndex]"
       />
     </div>
   </div>
@@ -268,11 +266,7 @@ export default defineComponent({
       scenarioId: string,
       timeSliceIndex: number
     ): HistogramData {
-      const scenarioSummary = this.constraintSummaries[scenarioId];
-      if (scenarioSummary === undefined) {
-        return [0, 0, 0, 0, 0];
-      }
-      return scenarioSummary[timeSliceIndex];
+      return this.constraintSummaries[scenarioId][timeSliceIndex];
     }
   }
 });
