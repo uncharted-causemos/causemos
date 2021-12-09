@@ -148,36 +148,44 @@ export default defineComponent({
       const timeSlices = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
       return timeSlices?.map(({ label }) => `In ${label}`) ?? ['', '', ''];
     },
-    binnedResults(): ProjectionHistograms[] {
-      // Filter out the scenarios that haven't been run yet and then convert
-      //  all projection results into histograms
+    binnedResults(): (ProjectionHistograms | null)[] {
+      // Convert projection results into histograms, or `null` if the scenario
+      //  hasn't been run yet
 
       // Ensure we pass an empty array of historical data if no indicator is
       //  being used to ground this node, since we currently (Nov 2021)
       //  artificially add 3 points with a value of 0.5 to abstract nodes
       const isAbstractNode = this.indicatorId === null;
-      return this.projections
-        .filter(projection => projection.values.length > 0)
-        .map(projection =>
-          convertTimeseriesDistributionToHistograms(
-            this.modelSummary.parameter.time_scale,
-            isAbstractNode ? [] : this.historicalTimeseries,
-            projection.values
-          )
+      return this.projections.map(projection => {
+        if (projection.values.length === 0) {
+          return null;
+        }
+        return convertTimeseriesDistributionToHistograms(
+          this.modelSummary.parameter.time_scale,
+          isAbstractNode ? [] : this.historicalTimeseries,
+          projection.values
         );
+      });
     },
     rowsToDisplay(): HistogramRow[] {
       if (!this.isScenarioComparisonActive) {
-        return this.projections.map((projection, index) => ({
-          scenarioName: projection.scenarioName,
-          scenarioId: projection.scenarioId,
+        return this.projections.map((projection, index) => {
+          const results = this.binnedResults[index];
           // If a scenario has been created but not yet run, map it to an empty
           //  array instead of histograms
-          histograms: (this.binnedResults[index] ?? []).map(histogramData => ({
-            base: histogramData,
-            change: null
-          }))
-        }));
+          let histograms: ComparisonHistogramData[] = [];
+          if (results !== null) {
+            histograms = results.map(histogramData => ({
+              base: histogramData,
+              change: null
+            }));
+          }
+          return {
+            scenarioName: projection.scenarioName,
+            scenarioId: projection.scenarioId,
+            histograms
+          };
+        });
       }
       // Scenario comparison is active.
       // Display the comparison baseline scenario first
@@ -195,6 +203,14 @@ export default defineComponent({
       }
       const baselineScenario = this.projections[baselineIndex];
       const baselineResult = this.binnedResults[baselineIndex];
+      if (baselineResult === null) {
+        console.error(
+          'Unable to compare to scenario "' +
+            baselineScenario.scenarioName +
+            '", since it doesn\'t have projection results."'
+        );
+        return [];
+      }
       const baselineRow = {
         scenarioName: baselineScenario.scenarioName,
         scenarioId: baselineScenario.scenarioId,
@@ -208,10 +224,14 @@ export default defineComponent({
       this.projections.forEach(({ scenarioName, scenarioId }, index) => {
         if (index !== baselineIndex) {
           const result = this.binnedResults[index];
+          // If this scenario has no projection results yet, don't display any
+          //  histograms
+          const histograms =
+            result === null ? [] : compareHistograms(baselineResult, result);
           otherRows.push({
             scenarioName,
             scenarioId,
-            histograms: compareHistograms(baselineResult, result)
+            histograms
           });
         }
       });
