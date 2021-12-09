@@ -899,9 +899,6 @@ export default {
       edge.selectAll('.edge-mouseover-handle').remove();
     });
 
-    const cycles = findCycles(this.data.edges);
-    const classifications = classifyCycles(cycles, this.data.edges);
-    console.log(classifications);
     this.refresh();
   },
   beforeUnmount() {
