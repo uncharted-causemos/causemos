@@ -478,6 +478,36 @@ const runSensitivityAnalysis = async (
   return result.data.experimentId;
 };
 
+const runPathwaySensitivityAnalysis = async (
+  modelSummary: CAGModelSummary,
+  sources: string[],
+  targets: string[],
+  constraints: ConceptProjectionConstraints[]
+) => {
+  const { id: modelId } = modelSummary;
+  const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
+
+  const numTimeSteps = getLastTimeStepFromTimeScale(timeScale);
+  const payload = {
+    analysisMode: 'DYNAMIC',
+    analysisType: 'PATHWAYS',
+    analysisMethodology: 'HYBRID', // FIXME this flexible? either HYBRID or FUNCTION
+    analysisParams: {
+      numPath: 10,
+      pathAtt: 'SENSITIVITY',
+      source: sources,
+      targets: targets
+    },
+    constraints,
+    engine,
+    experimentStart,
+    numTimeSteps
+  };
+
+  const result = await API.post(`models/${modelId}/sensitivity-analysis`, payload);
+  return result.data.experimentId;
+};
+
 
 const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
   const modelId = modelSummary.id;
@@ -750,6 +780,7 @@ export default {
   initializeModel,
   runProjectionExperiment,
   runSensitivityAnalysis,
+  runPathwaySensitivityAnalysis,
   getExperimentResult,
   getExperimentResultOnce,
   createBaselineScenario,
