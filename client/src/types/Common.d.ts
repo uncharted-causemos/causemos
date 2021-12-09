@@ -95,6 +95,13 @@ export interface MapLegendColor {
   label?: string;
   decor?: string; // optional label decorator to provide extra text in addition to the label text
 }
+export interface AnalysisMapColorOptions {
+  scheme: string[];
+  relativeToSchemes: string[][];
+  scaleFn: Function;
+  isContinuous: boolean;
+  opacity: number;
+}
 export interface AnalysisMapStats {
   global: MapLayerStats;
   baseline: MapLayerStats;

@@ -13,6 +13,7 @@
         @new-scenario='$emit("new-scenario", $event)'
         @update-scenario='$emit("update-scenario", $event)'
         @delete-scenario='$emit("delete-scenario", $event)'
+        @delete-scenario-clamp='$emit("delete-scenario-clamp", $event)'
       >
         <template #below-tabs>
           <cag-comments-button :model-summary="modelSummary" />
@@ -41,8 +42,7 @@
         <sensitivity-analysis
           v-if="activeTab === 'matrix'"
           :model-summary="modelSummary"
-          :matrix-data="sensitivityMatrixData"
-          :analysis-type="sensitivityAnalysisType"
+          :sensitivity-result="sensitivityResult"
           @set-analysis-type="setSensitivityAnalysisType"
         />
       </main>
@@ -141,14 +141,6 @@ export default {
       type: Object,
       required: true
     },
-    sensitivityMatrixData: {
-      type: Object,
-      default: null
-    },
-    sensitivityAnalysisType: {
-      type: String,
-      required: true
-    },
     scenarios: {
       type: Array,
       required: true
@@ -164,12 +156,15 @@ export default {
     'set-sensitivity-analysis-type',
     'tab-click',
     'model-parameter-changed',
-    'update-scenario'
+    'new-scenario',
+    'update-scenario',
+    'delete-scenario',
+    'delete-scenario-clamp'
   ],
   data: () => ({
     graphData: {},
     scenarioData: null,
-
+    sensitivityResult: null,
 
     drilldownTabs: NODE_DRILLDOWN_TABS,
     activeDrilldownTab: PANE_ID.INDICATOR,
@@ -201,6 +196,10 @@ export default {
     },
     resetLayoutToken() {
       this.resetCAGLayout();
+    },
+    selectedScenarioId() {
+      // FIXME: Probably need a ligher weight function than refresh
+      this.refresh();
     }
   },
   created() {
@@ -217,6 +216,13 @@ export default {
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
+
+      // Get sensitivity results, note these results may still be pending
+      if (this.currentEngine === 'dyse') {
+        modelService.getScenarioSensitivity(this.currentCAG, this.currentEngine).then(sensitivityResults => {
+          this.sensitivityResult = sensitivityResults.find(d => d.scenario_id === this.selectedScenarioId);
+        });
+      }
     },
     onNodeDrilldown(node) {
       this.$router.push({

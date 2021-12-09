@@ -68,12 +68,13 @@
               class="scenario-chart"
               :class="{'is-expanded': isHistoricalDataExpanded}"
               :is-expanded="isHistoricalDataExpanded"
-              :selected-scenario-id="selectedScenarioId"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
+              :unit="selectedNodeScenarioData.unit"
               :min-value="indicatorMin"
               :max-value="indicatorMax"
               :constraints="constraints"
+              :model-summary="modelSummary"
               :viewing-extent="viewingExtent"
               @set-constraints="modifyConstraints"
               @set-historical-timeseries="setHistoricalTimeseries"
@@ -91,14 +92,6 @@
             />
           </div>
         </div>
-        <p>
-          <i class="fa fa-fw fa-info-circle" />To create a scenario, set values
-            by clicking on the chart. To remove a point, click on it again.
-        </p>
-
-        <h5 class="indicator-section-header restrict-max-width">
-          Parameterization for <span class="node-name">{{ nodeConceptName }} - {{ indicatorRegions }}</span>
-        </h5>
         <div class="restrict-max-width indicator-title-row">
           <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
           <div class="indicator-buttons">
@@ -210,7 +203,6 @@ import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG'
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import useDraftScenario from '@/services/composables/useDraftScenario';
 import useQualitativeModel from '@/services/composables/useQualitativeModel';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useToaster from '@/services/composables/useToaster';
@@ -218,6 +210,7 @@ import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
 import ProjectionHistograms from '@/components/node-drilldown/projection-histograms.vue';
 import moment from 'moment';
+import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -272,13 +265,71 @@ export default defineComponent({
         currentEngine.value
       );
       if (isCancelled) return;
-      // Draft scenario won't be returned by getScenarios, so we need to append
-      //  it to the local scenario list for it to be considered along with them
-      if (draftScenario.value !== null && draftScenario.value.model_id === currentCAG.value) {
-        _scenarios.push(draftScenario.value);
-      }
       scenarios.value = _scenarios;
     });
+
+    const saveConstraints = async (updatedConstraints: ProjectionConstraint[]) => {
+      if (
+        selectedScenarioId.value === null ||
+        currentCAG.value === null ||
+        currentEngine.value === null ||
+        modelSummary.value === null ||
+        selectedNode.value === null
+      ) {
+        return;
+      }
+      const selectedScenario = scenarios.value.find(
+        scenario => scenario.id === selectedScenarioId.value
+      );
+      if (selectedScenario === undefined) {
+        console.error(
+          'Unable to find selected scenario with ID',
+          selectedScenarioId.value,
+          'in scenario list',
+          scenarios.value
+        );
+        return;
+      }
+      if (selectedScenario.is_baseline) {
+        toaster(
+          'Please select a non-baseline scenario to place constraints.',
+          'error',
+          true
+        );
+        // Remove constraints from the chart renderer
+        constraints.value = [];
+        return;
+      }
+      const selectedConcept = selectedNode.value.concept;
+      const constraintsParameter = [
+        ...selectedScenario.parameter.constraints.filter(
+          conceptConstraints => conceptConstraints.concept !== selectedConcept
+        ),
+        { concept: selectedConcept, values: updatedConstraints }
+      ];
+      const {
+        time_scale,
+        indicator_time_series_range,
+        projection_start
+      } = modelSummary.value.parameter;
+      const numSteps = getLastTimeStepFromTimeScale(time_scale);
+      const updatedScenario = {
+        id: selectedScenarioId.value,
+        model_id: currentCAG.value,
+        parameter: {
+          constraints: constraintsParameter,
+          num_steps: numSteps,
+          indicator_time_series_range,
+          projection_start
+        }
+      };
+      // Save and reload scenarios
+      await modelService.updateScenario(updatedScenario);
+      // REFACTOR: We shouldn't set scenarios from so many places.
+      // trigger a scenario refresh
+      const _scenarios = await modelService.getScenarios(currentCAG.value, currentEngine.value);
+      scenarios.value = _scenarios;
+    };
 
     const selectedNode = computed(() => {
       if (nodeId.value === undefined || modelComponents.value === null) {
@@ -312,9 +363,11 @@ export default defineComponent({
       const selectedNodeScenarioData = scenarioData.value[selectedNode.value.concept] ?? null;
       if (selectedNodeScenarioData === null) return null;
 
+      const unit = selectedNode.value.parameter?.unit;
+
       const projections: ScenarioProjection[] = [];
       selectedNodeScenarioData.scenarios.forEach(({ id, name, result, constraints }) => {
-        // `result` is undefined for the draft scenario
+        // `result` is undefined for the any scenarios that haven't been run yet
         projections.push({
           scenarioName: name,
           scenarioId: id,
@@ -327,7 +380,8 @@ export default defineComponent({
         indicatorName: selectedNodeScenarioData.indicator_name,
         historicalTimeseries: selectedNodeScenarioData.indicator_time_series ?? [],
         historicalConstraints: [],
-        projections
+        projections,
+        unit
       };
     });
 
@@ -568,12 +622,12 @@ export default defineComponent({
     const constraints = ref<ProjectionConstraint[]>([]);
     const modifyConstraints = (newConstraints: ProjectionConstraint[]) => {
       constraints.value = newConstraints;
-      saveDraft();
+      saveConstraints(newConstraints);
     };
 
     const clearConstraints = () => {
       constraints.value = [];
-      saveDraft();
+      saveConstraints([]);
     };
 
     watchEffect(() => {
@@ -587,15 +641,6 @@ export default defineComponent({
         constraints.value = selectedScenario.constraints;
       }
     });
-
-    const { draftScenario, saveDraft } = useDraftScenario(
-      selectedNode,
-      scenarios,
-      constraints,
-      currentEngine,
-      modelSummary,
-      currentCAG
-    );
 
     // Find out the default viewing window
     const viewingExtent = computed<number[] | null>(() => {
@@ -819,6 +864,9 @@ input[type="radio"] {
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
+  padding: 10px;
+  padding-top: 0;
 }
 
 .button-group > *:not(:first-child) {
@@ -826,13 +874,13 @@ input[type="radio"] {
 }
 
 .scenario-chart {
-  flex: 1;
-  min-width: 0;
+  height: 120px;
 }
 
 .projection-histograms {
   flex: 3;
   min-width: 0;
+  margin-top: 5px;
 }
 
 .neighbor-node {
@@ -844,14 +892,6 @@ input[type="radio"] {
 h5 {
   margin: 0;
   @include header-secondary;
-}
-
-.indicator-section-header {
-  margin: 20px 0 10px;
-
-  .node-name {
-    color: $text-color-dark;
-  }
 }
 
 .indicator-title-row {

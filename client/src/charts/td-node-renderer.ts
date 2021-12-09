@@ -1,7 +1,6 @@
 import _ from 'lodash';
-import moment from 'moment';
 import dateFormatter from '@/formatters/date-formatter';
-import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
+import { CAGModelSummary, ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
@@ -12,16 +11,21 @@ import {
   showSvgTooltip,
   translate
 } from '@/utils/svg-util';
-import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
-import { roundToNearestMonth } from '@/utils/date-util';
+import { SELECTED_COLOR } from '@/utils/colors-util';
+import { getTimestampAfterMonths, roundToNearestMonth } from '@/utils/date-util';
+import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 
 const HISTORICAL_DATA_COLOR = '#888';
-const HISTORICAL_RANGE_OPACITY = 0.025;
-const CONTEXT_RANGE_FILL = SELECTED_COLOR;
-const CONTEXT_RANGE_STROKE = SELECTED_COLOR_DARK;
-const CONTEXT_RANGE_OPACITY = 0.4;
-const CONTEXT_TIMESERIES_OPACITY = 0.2;
+const HISTORICAL_RANGE_OPACITY = 0.05;
+const SCROLL_BAR_HEIGHT_PERCENTAGE = 0.13;
+const SCROLL_BAR_RANGE_FILL = '#ccc';
+const SCROLL_BAR_RANGE_STROKE = 'none';
+const SCROLL_BAR_RANGE_OPACITY = 0.8;
+const SCROLL_BAR_BACKGROUND_COLOR = HISTORICAL_DATA_COLOR;
+const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
+const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
 const GRIDLINE_COLOR = '#eee';
+const TIMESLICE_COLOR = '#A9A9A9';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -35,7 +39,7 @@ const CONSTRAINT_HOVER_RADIUS = CONSTRAINT_RADIUS * 1.5;
   be snapped to. */
 const DISCRETE_Y_POSITION_COUNT = 31;
 
-const DATE_FORMATTER = (value: any) => dateFormatter(value, 'YYYY');
+const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
 
 export default function(
   selection: D3Selection,
@@ -43,17 +47,18 @@ export default function(
   totalHeight: number,
   historicalTimeseries: TimeseriesPoint[],
   projections: ScenarioProjection[],
-  selectedScenarioId: string,
   constraints: ProjectionConstraint[],
   minValue: number,
   maxValue: number,
+  unit: string,
+  modelSummary: CAGModelSummary,
   viewingExtent: number[] | null,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) {
   // FIXME: Tie data to group element, should make renderer stateful instead of a single function
   let oldCoords: number[] = [];
-  const oldG = selection.select('.contextGroupElement');
+  const oldG = selection.select('.scrollBarGroupElement');
   if (oldG.size() === 1 && !_.isEmpty(oldG.datum())) {
     oldCoords = oldG.datum();
   }
@@ -80,7 +85,7 @@ export default function(
   const valueFormatter = chartValueFormatter(...yExtent);
 
   // Build main "focus" chart scales and group element
-  const focusHeight = totalHeight * 0.75;
+  const focusHeight = totalHeight * (1 - SCROLL_BAR_HEIGHT_PERCENTAGE);
   const [xScaleFocus, yScaleFocus] = calculateScales(
     totalWidth - PADDING_RIGHT,
     focusHeight - PADDING_TOP - X_AXIS_HEIGHT,
@@ -93,76 +98,50 @@ export default function(
     .append('g')
     .classed('focusGroupElement', true);
 
-  // Build "context" chart for zooming and panning
-  const contextHeight = totalHeight - focusHeight;
-  const [xScaleContext, yScaleContext] = calculateScales(
+  // Build scroll bar for zooming and panning
+  const scrollBarHeight = totalHeight * SCROLL_BAR_HEIGHT_PERCENTAGE;
+  const [xScaleScrollbar, yScaleScrollbar] = calculateScales(
     totalWidth - PADDING_RIGHT,
-    contextHeight - X_AXIS_HEIGHT,
+    scrollBarHeight,
     0,
     Y_AXIS_WIDTH,
     xExtent,
     yExtent
   );
-  const contextGroupElement = selection
+  const scrollBarGroupElement = selection
     .append('g')
-    .classed('contextGroupElement', true);
+    .classed('scrollBarGroupElement', true);
 
-  const firstTimestamp = xScaleContext.domain()[0]; // potentially misleading as this isnt always the first day of the year
-  const lastTimestamp = moment([moment(xScaleContext.domain()[1]).year()]).valueOf();
+  // Add background to scrollbar
+  scrollBarGroupElement
+    .append('rect')
+    .attr('y', 0)
+    .attr('x', Y_AXIS_WIDTH)
+    .attr('height', scrollBarHeight)
+    .attr('width', totalWidth - Y_AXIS_WIDTH - PADDING_RIGHT)
+    .attr('stroke', 'none')
+    .attr('fill', SCROLL_BAR_BACKGROUND_COLOR)
+    .attr('fill-opacity', SCROLL_BAR_BACKGROUND_OPACITY);
 
-  const xAxisTicksContext = [firstTimestamp, lastTimestamp];
-  const yAxisTicksContext = calculateGenericTicks(
-    yScaleContext.domain()[0],
-    yScaleContext.domain()[1]
-  );
-
-  const yOffset = contextHeight - X_AXIS_HEIGHT;
-  const xOffset = totalWidth - PADDING_RIGHT;
-
-  renderXaxis(
-    contextGroupElement,
-    xScaleContext,
-    xAxisTicksContext,
-    yOffset,
-    DATE_FORMATTER
-  );
-  renderYaxis(
-    contextGroupElement,
-    yScaleContext,
-    yAxisTicksContext,
-    valueFormatter,
-    xOffset,
-    Y_AXIS_WIDTH
-  );
-
-  contextGroupElement.selectAll('.yAxis').remove();
-  contextGroupElement.attr('transform', translate(0, focusHeight)); // move context to bottom
-  renderStaticElements(
-    contextGroupElement,
-    xScaleContext,
-    yScaleContext,
-    0,
-    projections,
-    historicalTimeseries
-  );
-
-  // Render timeseries in the context chart, then fade them out
+  // move scroll bar to bottom
+  scrollBarGroupElement.attr('transform', translate(0, focusHeight));
+  // Render timeseries in the scrollbar chart, then fade them out
   renderHistoricalTimeseries(
     historicalTimeseries,
-    contextGroupElement,
-    xScaleContext,
-    yScaleContext
+    scrollBarGroupElement,
+    xScaleScrollbar,
+    yScaleScrollbar
   );
-  contextGroupElement
+  scrollBarGroupElement
     .selectAll('.segment-line')
-    .attr('opacity', CONTEXT_TIMESERIES_OPACITY);
+    .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
 
-  // Create brush object and position over context axis
+  // Create brush object and position over scroll bar
   const brush = d3
     .brushX()
     .extent([
-      [xScaleContext.range()[0], yScaleContext.range()[1]],
-      [xScaleContext.range()[1], yScaleContext.range()[0]]
+      [xScaleScrollbar.range()[0], yScaleScrollbar.range()[1]],
+      [xScaleScrollbar.range()[1], yScaleScrollbar.range()[0]]
     ])
     .on('start brush end', brushed);
 
@@ -172,7 +151,7 @@ export default function(
     oldCoords.push(xScaleFocus(viewingExtent[1]));
   }
 
-  contextGroupElement
+  scrollBarGroupElement
     .append('g') // create brush element and move to default
     .classed('brush', true)
     .call(brush)
@@ -180,9 +159,9 @@ export default function(
     .call(brush.move, oldCoords.length === 2 ? oldCoords : xScaleFocus.range());
   selection
     .selectAll('.brush > .selection')
-    .attr('fill', CONTEXT_RANGE_FILL)
-    .attr('stroke', CONTEXT_RANGE_STROKE)
-    .attr('opacity', CONTEXT_RANGE_OPACITY);
+    .attr('fill', SCROLL_BAR_RANGE_FILL)
+    .attr('stroke', SCROLL_BAR_RANGE_STROKE)
+    .attr('opacity', SCROLL_BAR_RANGE_OPACITY);
 
   // Add clipping mask to hide elements that are outside the focus chart area when zoomed in
   selection
@@ -199,8 +178,8 @@ export default function(
     const enterFn = (enter: D3Selection) => {
       const handleW = 9;
       const handleWGap = -2;
-      const handleHGap = 4;
-      const handleH = contextHeight - X_AXIS_HEIGHT - 2 * handleHGap;
+      const handleHGap = 0;
+      const handleH = (SCROLL_BAR_HEIGHT_PERCENTAGE * totalHeight) - 2 * handleHGap;
 
       const container = enter.append('g')
         .attr('class', 'custom-handle')
@@ -217,7 +196,7 @@ export default function(
         .attr('height', handleH);
 
       // Vertical dots
-      [0.3, 0.4, 0.5, 0.6, 0.7].forEach(value => {
+      [0.3, 0.5, 0.7].forEach(value => {
         container.append('circle')
           .attr('cx', (d, i) => i === 0 ? -(0.5 * handleW + handleWGap) : 0.5 * handleW + handleWGap)
           .attr('cy', handleHGap + handleH * value)
@@ -237,19 +216,22 @@ export default function(
   //  Also gets called with "initialBrushSelection"
   function brushed({ selection }: { selection: number[] }) {
     // FIXME: Tie data to group element, should make renderer stateful instead of a single function
-    contextGroupElement.datum(selection);
-    contextGroupElement.select('.brush').call(brushHandle as any, selection);
+    scrollBarGroupElement.datum(selection);
+    scrollBarGroupElement.select('.brush').call(brushHandle as any, selection);
 
-    const [x0, x1] = selection.map(xScaleContext.invert);
+    const [x0, x1] = selection.map(xScaleScrollbar.invert);
     xScaleFocus.domain([x0, x1]);
     focusGroupElement.selectAll('*').remove();
     renderStaticElements(
       focusGroupElement,
+      scrollBarGroupElement,
+      totalWidth,
       xScaleFocus,
       yScaleFocus,
       PADDING_TOP,
       projections,
-      historicalTimeseries
+      historicalTimeseries,
+      modelSummary
     );
     const xAxisTicksFocus = calculateYearlyTicks(
       xScaleFocus.domain()[0],
@@ -302,6 +284,7 @@ export default function(
       historicalTimeseries,
       projections,
       constraints,
+      unit,
       setConstraints,
       setHistoricalTimeseries
     );
@@ -350,11 +333,14 @@ const calculateScales = (
 
 const renderStaticElements = (
   groupElement: D3GElementSelection,
+  scrollbarGroupElement: D3GElementSelection,
+  totalWidth: number,
   xScale: D3ScaleLinear,
   yScale: D3ScaleLinear,
   offsetFromTop: number,
   projections: ScenarioProjection[],
-  historicalTimeseries: TimeseriesPoint[]
+  historicalTimeseries: TimeseriesPoint[],
+  modelSummary: CAGModelSummary
 ) => {
   const stepTimestamps = projections[0].values.map(point => point.timestamp);
   // Draw a vertical line at each step
@@ -395,6 +381,65 @@ const renderStaticElements = (
     .attr('stroke', 'none')
     .attr('fill', HISTORICAL_DATA_COLOR)
     .attr('fill-opacity', HISTORICAL_RANGE_OPACITY);
+
+  // render timeslices indicating major temporal marks, e.g., now, in a few month, in a few years
+  const projectionStart = _.min(stepTimestamps) ?? 0;
+  const timeScale = modelSummary.parameter.time_scale;
+  const timeSlicesRaw = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
+  const timeSlices = timeSlicesRaw?.map(timeslice => getTimestampAfterMonths(projectionStart, timeslice.months));
+  const timeSlicesValues = [projectionStart, ...timeSlices ?? []];
+  const timeSlicesRawLabels = timeSlicesRaw?.map(timeslice => timeslice.label) ?? [];
+  const timeSlicesLabels = ['now', ...timeSlicesRawLabels];
+  const timeSlicesLabelsOffset = 10;
+  groupElement
+    .selectAll('.grid-timeslice-line')
+    .data(timeSlicesValues)
+    .join('path')
+    .attr('d', timestamp =>
+      lineGenerator([
+        { timestamp, isBottom: false },
+        { timestamp, isBottom: true }
+      ])
+    )
+    .classed('grid-timeslice-line', true)
+    .style('fill', 'none')
+    .style('stroke', TIMESLICE_COLOR);
+  groupElement
+    .selectAll('.grid-timeslice-label')
+    .data(timeSlicesValues)
+    .join('text')
+    .classed('grid-timeslice-label', true)
+    .attr('x', (d) => xScale(d))
+    .attr('y', offsetFromTop + timeSlicesLabelsOffset)
+    .style('text-anchor', 'start')
+    .style('font-size', 'x-small')
+    .style('fill', 'gray')
+    .text((d, i) => timeSlicesLabels[i]);
+
+  // render scrollbar data range labels
+  const scrollbarLabelYOffset = 10;
+  const scrollbarLabelXOffset = 5;
+  const projectionEnd = _.max(stepTimestamps) ?? 0;
+  scrollbarGroupElement.select('.scrollbar-range-start').remove();
+  scrollbarGroupElement.select('.scrollbar-range-end').remove();
+  scrollbarGroupElement
+    .append('text')
+    .classed('scrollbar-range-start', true)
+    .attr('x', Y_AXIS_WIDTH + scrollbarLabelXOffset)
+    .attr('y', scrollbarLabelYOffset)
+    .style('text-anchor', 'start')
+    .style('font-size', 'x-small')
+    .style('fill', 'gray')
+    .text(DATE_FORMATTER(historicalStartTimestamp));
+  scrollbarGroupElement
+    .append('text')
+    .classed('scrollbar-range-end', true)
+    .attr('x', totalWidth - Y_AXIS_WIDTH - scrollbarLabelXOffset)
+    .attr('y', scrollbarLabelYOffset)
+    .style('text-anchor', 'end')
+    .style('font-size', 'x-small')
+    .style('fill', 'gray')
+    .text(DATE_FORMATTER(projectionEnd));
 };
 
 const renderHistoricalTimeseries = (
@@ -465,6 +510,7 @@ const generateClickableAreas = (
   historicalTimeseries: TimeseriesPoint[],
   scenarios: ScenarioProjection[],
   constraints: ProjectionConstraint[],
+  unit: string,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) => {
@@ -514,6 +560,7 @@ const generateClickableAreas = (
     const discreteYPosition =
       PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues;
     parentGroupElement.select('.constraint-selector').remove();
+    parentGroupElement.select('.constraint-selector-support-line').remove();
     parentGroupElement
       .append('circle')
       .classed('constraint-selector', true)
@@ -523,12 +570,22 @@ const generateClickableAreas = (
       .style('pointer-events', 'none')
       .style('fill', 'none')
       .style('stroke', SELECTED_COLOR);
+    parentGroupElement
+      .append('line')
+      .classed('constraint-selector-support-line', true)
+      .attr('x1', Y_AXIS_WIDTH)
+      .attr('y1', discreteYPosition)
+      .attr('x2', discreteXPosition)
+      .attr('y2', discreteYPosition)
+      .style('pointer-events', 'none')
+      .style('stroke-dasharray', ('3, 3'))
+      .style('stroke', SELECTED_COLOR);
 
     const value = yScale.invert(discreteYPosition);
     const timestamp = roundToNearestMonth(xScale.invert(discreteXPosition));
     showSvgTooltip(
       parentGroupElement,
-      `${DATE_FORMATTER(timestamp)}: ${valueFormatter(value)}`,
+      `${DATE_FORMATTER(timestamp)}: ${valueFormatter(value)} ${unit}`,
       [discreteXPosition, discreteYPosition],
       0,
       true
@@ -536,6 +593,7 @@ const generateClickableAreas = (
   });
   timelineRect.on('mouseleave', function() {
     parentGroupElement.select('.constraint-selector').remove();
+    parentGroupElement.select('.constraint-selector-support-line').remove();
     hideSvgTooltip(parentGroupElement);
   });
   timelineRect.on('click', function(event) {

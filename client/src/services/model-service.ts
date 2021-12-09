@@ -13,7 +13,7 @@ import {
   ScenarioParameter,
   CAGModelParameter
 } from '@/types/CAG';
-import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
+import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
 
 const MODEL_STATUS = {
   NOT_REGISTERED: 0,
@@ -101,6 +101,18 @@ const getScenarios = async (modelId: string, engine: string) => {
 
   return scenarios;
 };
+
+
+/**
+ * Get model's sensitivity results - only applicable to DySE
+ */
+const getScenarioSensitivity = async (modelId: string, engine: string) => {
+  const sensitivityResults = (await API.get('scenario-results/sensitivity', {
+    params: { model_id: modelId, engine: engine }
+  })).data;
+  return sensitivityResults;
+};
+
 
 /**
  * Update graph node
@@ -331,6 +343,10 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
     threshold: threshold
   });
 };
+const getExperimentResultOnce = async (modelId: string, engine: string, experimentId: string) => {
+  const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: engine, experiment_id: experimentId } });
+  return data;
+};
 
 
 /**
@@ -404,10 +420,9 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
 
     // FIXME: hackin parameters from modelSummary
     graphData.scenarios.forEach(scenario => {
-      const timeSliceMonths = getSliceMonthsFromTimeScale(
+      const numSteps = getLastTimeStepFromTimeScale(
         modelSummary.parameter.time_scale
       );
-      const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
       if (scenario.parameter) {
         scenario.parameter.num_steps = numSteps;
       }
@@ -437,8 +452,7 @@ const runSensitivityAnalysis = async (
   const { id: modelId } = modelSummary;
   const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
 
-  const timeSliceMonths = getSliceMonthsFromTimeScale(timeScale);
-  const numTimeSteps = timeSliceMonths[timeSliceMonths.length - 1];
+  const numTimeSteps = getLastTimeStepFromTimeScale(timeScale);
 
   const analysisParams = {
     numPath: 0,
@@ -451,6 +465,7 @@ const runSensitivityAnalysis = async (
     `models/${modelId}/sensitivity-analysis`,
     {
       analysisMode,
+      analysisMethodology: 'HYBRID', // FIXME this flexible? either HYBRID or FUNCTION
       analysisParams,
       analysisType,
       constraints,
@@ -466,10 +481,7 @@ const runSensitivityAnalysis = async (
 
 const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
   const modelId = modelSummary.id;
-  const timeSliceMonths = getSliceMonthsFromTimeScale(
-    modelSummary.parameter.time_scale
-  );
-  const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
+  const numSteps = getLastTimeStepFromTimeScale(modelSummary.parameter.time_scale);
   try {
     const experimentId = await runProjectionExperiment(modelId, numSteps, cleanConstraints([]));
     const experiment: any = await getExperimentResult(modelId, experimentId, 30);
@@ -496,6 +508,12 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
       r = experiment.results;
     }
 
+    // Fire  off a sensitivity request in the background
+    if (modelSummary.parameter.engine === 'dyse') {
+      const sensitivityExperimentId = await runSensitivityAnalysis(modelSummary, 'GLOBAL', 'DYNAMIC', []);
+      await createScenarioSensitivityResult(modelId, id, modelSummary.parameter.engine, sensitivityExperimentId, null);
+    }
+
     await createScenarioResult(modelId, id, modelSummary.parameter.engine, experimentId, r);
   } catch (error) {
     console.log(error);
@@ -517,10 +535,7 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
 
   if (!scenario.parameter) return scenario;
 
-  const timeSliceMonths = getSliceMonthsFromTimeScale(
-    modelParameter.time_scale
-  );
-  const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
+  const numSteps = getLastTimeStepFromTimeScale(modelParameter.time_scale);
 
   // Remove constraints if the concept is no longer in the model's topology
   _.remove(scenario.parameter.constraints, constraint => {
@@ -694,6 +709,33 @@ const createScenarioResult = async (
   });
 };
 
+const createScenarioSensitivityResult = async (
+  modelId: string,
+  scenarioId: string,
+  engine: string,
+  experimentId: string,
+  result: any
+): Promise<void> => {
+  await API.put('/scenario-results/sensitivity', {
+    model_id: modelId,
+    scenario_id: scenarioId,
+    engine: engine,
+    experiment_id: experimentId,
+    result: result
+  });
+};
+const updateScenarioSensitivityResult = async (
+  id: string,
+  experimentId: string,
+  result: any
+): Promise<void> => {
+  await API.post('/scenario-results/sensitivity', {
+    id: id,
+    experiment_id: experimentId,
+    result: result
+  });
+};
+
 export default {
   getProjectModels,
   getSummary,
@@ -709,12 +751,17 @@ export default {
   runProjectionExperiment,
   runSensitivityAnalysis,
   getExperimentResult,
+  getExperimentResultOnce,
   createBaselineScenario,
 
   getScenarios,
+  getScenarioSensitivity,
   createScenario,
   createScenarioResult,
+  createScenarioSensitivityResult,
+
   updateScenario,
+  updateScenarioSensitivityResult,
   deleteScenario,
   resetScenarioParameter,
 

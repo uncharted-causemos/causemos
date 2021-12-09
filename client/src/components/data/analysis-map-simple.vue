@@ -57,7 +57,7 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import { WmMap, WmMapVector, WmMapImage, WmMapPopup } from '@/wm-map';
-import { COLOR_SCHEME, COLOR_SCHEMES } from '@/utils/colors-util';
+import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
   createHeatmapLayerStyle,
@@ -152,6 +152,10 @@ export default {
       type: String,
       default: null
     },
+    referenceOptions: {
+      type: Array,
+      default: () => []
+    },
     showTooltip: {
       type: Boolean,
       default: false
@@ -211,9 +215,14 @@ export default {
       type: Boolean,
       default: false
     },
-    selectedColorScheme: {
-      type: Array,
-      default: () => COLOR_SCHEMES.DEFAULT
+    colorOptions: {
+      type: Object,
+      default: () => ({
+        scheme: COLOR_SCHEME.DEFAULT,
+        scaleFn: d3.scaleLinear,
+        isContinuous: false,
+        opacity: 1
+      })
     }
   },
   data: () => ({
@@ -289,11 +298,12 @@ export default {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
     },
-    colorScheme() {
+    heatMapColorOptions() {
+      const options = { ...this.colorOptions };
       if (!_.isNil(this.relativeTo)) {
-        return this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
+        options.scheme = this.relativeTo === this.outputSelection ? this.colorOptions.relativeToSchemes[0] : this.colorOptions.relativeToSchemes[1];
       }
-      return this.selectedColorScheme;
+      return options;
     },
     filter() {
       return this.filters.find(filter => filter.id === this.valueProp);
@@ -338,9 +348,6 @@ export default {
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
-    this.colorOption = {
-      scaleFn: d3.scaleLinear
-    };
 
     // the following are needed to render pre-generated overlay
     this.imageSourceId = 'maas-image-source';
@@ -424,9 +431,8 @@ export default {
         return;
       }
       const { min, max } = this.extent;
-      const { scaleFn } = this.colorOption;
       const relativeToProp = this.baselineSpec?.id;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp, this.showPercentChange);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
     },
     setFeatureStates() {
       if (!this.map || !this.adminLevel || this.isGridMap) return;

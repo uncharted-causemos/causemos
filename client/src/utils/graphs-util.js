@@ -178,8 +178,6 @@ class Graph {
       }
     }
 
-
-
     function findSCCRecurse(node) {
       node.index = index;
       node.lowestNode = index;
@@ -222,6 +220,68 @@ export function findSCC(edges) {
   const g = new Graph(edges);
   return g.findSCC();
 }
+
+
+/**
+ * Helper function: Trace adjacency matrix recursively
+ *
+ * @param {string} id - node
+ * @param {array} buffer - current path
+ * @param {Map} adjMap - adjacency data
+ * @param {Set} visited - visited tracker
+ * @param {array} paths - result accumulator
+ */
+function trace(id, buffer, adjMap, visited, paths) {
+  if (visited.has(id)) {
+    paths.push(buffer);
+    return;
+  }
+  visited.add(id);
+
+  const parents = adjMap.get(id);
+  if (parents && parents.length > 0) {
+    for (const newId of parents) {
+      trace(newId, [newId, ...buffer], adjMap, visited, paths);
+    }
+  } else {
+    paths.push(buffer);
+  }
+}
+
+/**
+ * Trace ancestor paths given a node, we do not consider a singular
+ * node to be a "path"
+ */
+export function findAllAncestorPaths(node, edges) {
+  const adjMap = new Map();
+  const visited = new Set();
+  const paths = [];
+
+  for (const edge of edges) {
+    if (!adjMap.has(edge.target)) {
+      adjMap.set(edge.target, []);
+    }
+    adjMap.get(edge.target).push(edge.source);
+  }
+  trace(node, [node], adjMap, visited, paths);
+  return paths.filter(path => path.length > 1);
+}
+
+export function findAllDescendantPaths(node, edges) {
+  const adjMap = new Map();
+  const visited = new Set();
+  const paths = [];
+
+  for (const edge of edges) {
+    if (!adjMap.has(edge.source)) {
+      adjMap.set(edge.source, []);
+    }
+    adjMap.get(edge.source).push(edge.target);
+  }
+  trace(node, [node], adjMap, visited, paths);
+  return paths.filter(path => path.length > 1).map(path => path.reverse());
+}
+
 /**
  * Get all the cycles in the graph
  * @returns A list of lists, where the inner lists are cycles in the graph
@@ -230,6 +290,75 @@ export function findCycles(edges) {
   if (!edges || edges.length === 0) { return []; }
   const g = new Graph(edges);
   return g.findCycles();
+}
+
+/**
+ *  Classify cycles as either balancing, reinforcing or ambiguous
+ */
+export function classifyCycles(cyclePaths, graphEdges) {
+  const g = new Graph(graphEdges);
+  const numNodes = g.vertices.size;
+
+  // Mark each node with a unique numerical identifier
+  const nameToId = {};
+  let uniqueIdentifier = 0;
+  for (const v of g.vertices) {
+    nameToId[v.name] = uniqueIdentifier;
+    uniqueIdentifier++;
+  }
+
+  // Initialize an adjacency matrix
+  const adjacencyMatrix = [];
+  for (let i = 0; i < numNodes; i++) {
+    adjacencyMatrix.push([]);
+    for (let j = 0; j < numNodes; j++) {
+      adjacencyMatrix[i].push(0);
+    }
+  }
+
+  // Fill the adjacency matrix
+  for (const e of graphEdges) {
+    const sourceId = nameToId[e.source];
+    const targetId = nameToId[e.target];
+    adjacencyMatrix[sourceId][targetId] = e.polarity;
+  }
+
+  const balancing = [];
+  const reinforcing = [];
+  const ambiguous = [];
+
+  // Check status of cycle path
+  for (const path of cyclePaths) {
+    let negativePolarity = 0;
+    let positivePolarity = 0;
+    let isAmbiguous = false;
+    for (let k = 0; k < path.length; k++) {
+      const source = nameToId[path[k].name];
+      const target = nameToId[path[(k + 1) % path.length].name];
+      if (adjacencyMatrix[source][target] === 1) {
+        positivePolarity += 1;
+      } else if (adjacencyMatrix[source][target] === -1) {
+        negativePolarity += 1;
+      } else {
+        isAmbiguous = true;
+        break;
+      }
+    }
+
+    if (isAmbiguous) {
+      ambiguous.push(path);
+    } else if (negativePolarity === positivePolarity) {
+      balancing.push(path);
+    } else {
+      reinforcing.push(path);
+    }
+  }
+
+  return {
+    balancing: balancing,
+    reinforcing: reinforcing,
+    ambiguous: ambiguous
+  };
 }
 
 /**

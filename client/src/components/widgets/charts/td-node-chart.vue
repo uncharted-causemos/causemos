@@ -20,7 +20,7 @@ import {
   watchEffect
 } from 'vue';
 import renderChart from '@/charts/td-node-renderer';
-import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
+import { CAGModelSummary, ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3Selection } from '@/types/D3';
 
 const RESIZE_DELAY = 15;
@@ -32,10 +32,6 @@ export default defineComponent({
     historicalTimeseries: {
       type: Array as PropType<TimeseriesPoint[]>,
       default: []
-    },
-    selectedScenarioId: {
-      type: String,
-      default: null
     },
     projections: {
       type: Array as PropType<ScenarioProjection[]>,
@@ -57,20 +53,25 @@ export default defineComponent({
       type: Array as PropType<ProjectionConstraint[]>,
       required: true
     },
-    isExpanded: {
-      type: Boolean,
-      default: false
+    unit: {
+      type: String,
+      default: ''
+    },
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      required: true
     }
   },
   setup(props, { emit }) {
     const {
       historicalTimeseries,
       projections,
-      selectedScenarioId,
       minValue,
       maxValue,
       viewingExtent,
-      constraints
+      constraints,
+      unit,
+      modelSummary
     } = toRefs(props);
     const historicalTimeseriesBeforeStart = computed(() => {
       let projectionStartTimestamp = 0;
@@ -78,9 +79,9 @@ export default defineComponent({
         // Get the first timestamp from the first projection.
         // FIXME: can we make this selection a little smarter to use the
         //  selected scenario, or at least a non-empty, non-stale scenario?
-        // CAUTION: when placing a new clamp, the new draft scenario has
-        //  no projection points but is selected. When trying to make this
-        //  logic smarter, watch for that case.
+        // CAUTION: new scenarios have no projection points but can be
+        //  selected. When trying to make this logic smarter, watch for that
+        //  case.
         const selectedScenario = projections.value[0];
         if (selectedScenario.values.length === 0) {
           console.error(
@@ -108,7 +109,6 @@ export default defineComponent({
       const svg = chartRef.value
         ? d3.select<HTMLElement, null>(chartRef.value)
         : null;
-      const _selectedScenarioId = selectedScenarioId.value;
       const _projections = projections.value;
       const { width, height } = chartSize.value;
       const _constraints = constraints.value;
@@ -116,7 +116,6 @@ export default defineComponent({
       const max = maxValue.value;
       if (
         svg === null ||
-        _selectedScenarioId === null ||
         _projections.length === 0 ||
         parentElement === undefined ||
         parentElement === null
@@ -128,10 +127,11 @@ export default defineComponent({
         width === 0 ? parentElement.clientWidth : width,
         height === 0 ? parentElement.clientHeight : height,
         _projections,
-        _selectedScenarioId,
         _constraints,
         min,
-        max
+        max,
+        unit.value,
+        modelSummary.value
       );
     });
     onMounted(() => {
@@ -161,10 +161,11 @@ export default defineComponent({
       width: number,
       height: number,
       projections: ScenarioProjection[],
-      selectedScenarioId: string,
       constraints: ProjectionConstraint[],
       min: number,
-      max: number
+      max: number,
+      unit: string,
+      modelSummary: CAGModelSummary
     ) => {
       // Set new size
       svg.attr('width', width).attr('height', height);
@@ -177,10 +178,11 @@ export default defineComponent({
         height,
         historicalTimeseriesBeforeStart.value,
         projections,
-        selectedScenarioId,
         constraints,
         min,
         max,
+        unit,
+        modelSummary,
         viewingExtent.value,
         setConstraints,
         setHistoricalTimeseries

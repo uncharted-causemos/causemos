@@ -11,17 +11,15 @@
       class="graph-container"
       :model-summary="modelSummary"
       :model-components="modelComponents"
-      :sensitivity-matrix-data="sensitivityMatrixData"
-      :sensitivity-analysis-type="sensitivityAnalysisType"
       :scenarios="scenarios"
       :current-engine="currentEngine"
       :reset-layout-token='resetLayoutToken'
-      @set-sensitivity-analysis-type="setSensitivityAnalysisType"
       @refresh-model="refreshModelAndScenarios"
       @model-parameter-changed="refresh"
       @new-scenario='onCreateScenario'
       @update-scenario='onUpdateScenario'
       @delete-scenario='onDeleteScenario'
+      @delete-scenario-clamp='onDeleteScenarioClamp'
     >
       <template #action-bar>
         <action-bar
@@ -29,9 +27,6 @@
           :model-summary="modelSummary"
           :scenarios="scenarios"
           @reset-cag="resetCAGLayout()"
-          @revert-draft-changes="revertDraftChanges"
-          @overwrite-scenario="overwriteScenario"
-          @save-new-scenario="saveNewScenario"
           @run-model="runScenariosWrapper"
           @tab-click="tabClick"
         />
@@ -58,12 +53,9 @@ import modelService from '@/services/model-service';
 import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
-import csrUtil from '@/utils/csr-util';
-import { CsrMatrix } from '@/types/CsrMatrix';
-import { CAGGraph, CAGModelSummary, NewScenario, Scenario } from '@/types/CAG';
+import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
+import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
 
-const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
 const MODEL_STATUS = modelService.MODEL_STATUS;
 
@@ -93,13 +85,6 @@ export default defineComponent({
     modelComponents: null as CAGGraph | null,
     scenarios: null as Scenario[] | null,
 
-    sensitivityMatrixData: null as CsrMatrix | null,
-    sensitivityAnalysisType: 'GLOBAL',
-    sensitivityDataTimestamp: null as number | null,
-
-    // Tracking draft scenario
-    previousScenarioId: null,
-
     resetLayoutToken: 0,
     isTraining: false
   }),
@@ -108,8 +93,6 @@ export default defineComponent({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
       selectedScenarioId: 'model/selectedScenarioId',
-      draftScenario: 'model/draftScenario',
-      draftScenarioDirty: 'model/draftScenarioDirty',
       tour: 'tour/tour'
     }),
     ready(): boolean {
@@ -124,24 +107,18 @@ export default defineComponent({
     },
     projectionSteps(): number {
       if (this.modelSummary === null) return 12;
-      const timeSliceMonths = getSliceMonthsFromTimeScale(
-        this.modelSummary.parameter.time_scale
-      );
-      return timeSliceMonths[timeSliceMonths.length - 1];
+      return getLastTimeStepFromTimeScale(this.modelSummary.parameter.time_scale);
     },
     onMatrixTab(): boolean {
       return !!(this.$route.query && this.$route.query.activeTab === 'matrix');
     }
   },
   watch: {
-    sensitivityAnalysisType() {
-      this.fetchSensitivityAnalysisResults();
-    },
-    selectedScenarioId() {
-      if (this.onMatrixTab) {
-        this.fetchSensitivityAnalysisResults();
-      }
-    },
+    // selectedScenarioId() {
+    //   if (this.onMatrixTab) {
+    //     this.fetchSensitivityAnalysisResults();
+    //   }
+    // },
     currentCAG() {
       this.refresh();
     },
@@ -178,9 +155,6 @@ export default defineComponent({
       disableOverlay: 'app/disableOverlay',
       setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
-      setDraftScenario: 'model/setDraftScenario',
-      updateDraftScenarioConstraints: 'model/updateDraftScenarioConstraints',
-      setDraftScenarioDirty: 'model/setDraftScenarioDirty',
       setContextId: 'insightPanel/setContextId',
       setDataState: 'insightPanel/setDataState'
     }),
@@ -204,11 +178,9 @@ export default defineComponent({
       };
       this.enableOverlay('Creating Scenario');
       const createdScenario = await modelService.createScenario(newScenario);
-      this.setDraftScenario(null);
-      this.setSelectedScenarioId(createdScenario.id);
-
       // Save and reload scenarios
       await this.reloadScenarios();
+      this.setSelectedScenarioId(createdScenario.id);
       this.disableOverlay();
     },
     async onUpdateScenario(scenarioInfo: { id: string; name: string; description: string }) {
@@ -231,7 +203,6 @@ export default defineComponent({
       this.enableOverlay('Saving Scenario');
       await modelService.updateScenario(existingScenario);
       this.setSelectedScenarioId(scenarioInfo.id);
-
       // Save and reload scenarios
       await this.reloadScenarios();
       this.disableOverlay();
@@ -254,13 +225,39 @@ export default defineComponent({
       this.enableOverlay('Removing Scenario');
       await modelService.deleteScenario(scenarioToRemove);
       // Save and reload scenarios
+      this.setSelectedScenarioId(baselineScenario?.id);
       await this.reloadScenarios();
       this.disableOverlay();
     },
     async reloadScenarios() {
-      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-      this.scenarios = scenarios;
-      this.previousScenarioId = null;
+      this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+    },
+    async onDeleteScenarioClamp(scenarioClampDetails: { scenario: Scenario; clamp: ConceptProjectionConstraints }) {
+      if (this.scenarios === null) {
+        console.error('Failed to remove scenario constraint, scenarios list is null.');
+        return;
+      }
+      this.enableOverlay('Removing Scenario Clamp/Constraint');
+      // update the scenario's list of constraints
+      //  by removing clamps for the relevant concetp
+      const selectedScenario = scenarioClampDetails.scenario;
+      const selectedConcept = scenarioClampDetails.clamp.concept;
+      const updatedScenario = {
+        id: selectedScenario.id,
+        model_id: this.currentCAG,
+        parameter: {
+          constraints: selectedScenario.parameter.constraints.filter(
+            conceptConstraints => conceptConstraints.concept !== selectedConcept
+          ),
+          num_steps: selectedScenario.parameter.num_steps,
+          indicator_time_series_range: selectedScenario.parameter.indicator_time_series_range,
+          projection_start: selectedScenario.parameter.projection_start
+        }
+      };
+      // Save and reload scenarios
+      await modelService.updateScenario(updatedScenario);
+      await this.reloadScenarios();
+      this.disableOverlay();
     },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);
@@ -289,12 +286,7 @@ export default defineComponent({
     },
     async refreshModelAndScenarios() {
       this.refreshModel();
-      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-      if (this.draftScenario) {
-        this.scenarios = [this.draftScenario, ...scenarios];
-      } else {
-        this.scenarios = scenarios;
-      }
+      this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
     },
     async refresh() {
       this.isTraining = false;
@@ -368,15 +360,8 @@ export default defineComponent({
         this.disableOverlay();
       }
 
-      // 4. Check if draft scenario is in play
-      if (!_.isNil(this.draftScenario) && this.draftScenario.model_id === this.currentCAG) {
-        scenarios.push(this.draftScenario);
-      } else {
-        this.setDraftScenario(null);
-      }
 
-
-      // 5. Figure out the current selected scenario
+      // 4. Figure out the current selected scenario
       let scenarioId = this.selectedScenarioId;
       if (_.isNil(this.selectedScenarioId) || scenarios.filter(d => d.id === this.selectedScenarioId).length === 0) {
         const baselineScenario = scenarios.find(d => d.is_baseline);
@@ -387,18 +372,19 @@ export default defineComponent({
         }
       }
 
-      // 6. Rebuild scenarios' result if necessary
+      // 5. Rebuild scenarios' result if necessary
       if (hasEmptyScenarioResults) {
         scenarios = await this.runScenarios(scenarios);
       }
 
-      // 7. Finally we are done and kick off the relevant events
+      // 6. Finally we are done and kick off the relevant events
       this.setSelectedScenarioId(scenarioId);
       this.scenarios = scenarios;
 
-      if (this.onMatrixTab) {
-        this.fetchSensitivityAnalysisResults();
-      }
+      // FIXME: Restore sensitivity insight
+      // if (this.onMatrixTab) {
+      //   this.fetchSensitivityAnalysisResults();
+      // }
 
       this.updateDataState();
     },
@@ -420,168 +406,8 @@ export default defineComponent({
       };
       this.setDataState(dataState);
     },
-    revertDraftChanges() {
-      if (this.scenarios === null) {
-        console.error('Failed to revert draft changes because scenarios list is null.');
-        return;
-      }
-      if (!_.isNil(this.previousScenarioId)) {
-        this.setSelectedScenarioId(this.previousScenarioId);
-      } else {
-        const baselineScenario = this.scenarios.find(s => s.is_baseline === true);
-        if (baselineScenario === undefined) {
-          console.error('Failed to revert draft changes because no scenario is flagged as baseline.', this.scenarios);
-        } else {
-          const id = baselineScenario.id;
-          this.setSelectedScenarioId(id);
-        }
-      }
-      const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
-
-      this.setDraftScenario(null);
-      this.scenarios = temp;
-    },
-    async overwriteScenario(id: string) {
-      if (this.scenarios === null) {
-        console.error('Failed to overwrite scenario, scenarios list is null.');
-        return;
-      }
-      // Transfer draft data to overwrite existing scenario
-      const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
-      if (draft === undefined) {
-        console.error(
-        `Failed to overwrite scenario, unable to find scenario with draft ID '${DRAFT_SCENARIO_ID}'.`
-        );
-        return;
-      }
-      const existingScenario = {
-        id: id,
-        model_id: this.currentCAG,
-        parameter: draft.parameter
-      };
-
-      // Save and reload scenarios
-      this.enableOverlay('Saving Scenario');
-
-      await modelService.updateScenario(existingScenario);
-      if (draft.experiment_id) {
-        await modelService.createScenarioResult(
-          this.currentCAG,
-          id,
-          this.currentEngine,
-          draft.experiment_id,
-          draft.result
-        );
-      }
-
-      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-
-      this.scenarios = scenarios;
-      this.previousScenarioId = null;
-      this.setSelectedScenarioId(id);
-      this.disableOverlay();
-    },
-    async saveNewScenario({
-      name,
-      description
-    }: {
-      name: string;
-      description: string;
-    }) {
-      if (this.scenarios === null) {
-        console.error('Failed to save new scenario, scenarios list is null.');
-        return;
-      }
-      // Transfer draft data
-      const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
-      if (draft === undefined) {
-        console.error(
-          `Failed to save new scenario, unable to find scenario with draft ID '${DRAFT_SCENARIO_ID}'.`
-        );
-        return;
-      }
-      const newScenario = {
-        model_id: this.currentCAG,
-        name: name,
-        description: description,
-        parameter: draft.parameter,
-        is_baseline: false
-      };
-
-      // Save and reload scenarios
-      this.enableOverlay('Creating Scenario');
-      const response = await modelService.createScenario(newScenario);
-      if (draft.experiment_id) {
-        await modelService.createScenarioResult(
-          this.currentCAG,
-          response.id,
-          this.currentEngine,
-          draft.experiment_id,
-          draft.result
-        );
-      }
-      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-
-      this.scenarios = scenarios;
-      this.previousScenarioId = null;
-      this.setDraftScenario(null);
-      this.setSelectedScenarioId(response.id);
-      this.disableOverlay();
-    },
     closeEditIndicatorModal() {
       this.isEditIndicatorModalOpen = false;
-    },
-    async saveDraft({ concept, values }: { concept: string; values: any[] }) {
-      this.isEditConstraintsOpen = false;
-      if (this.scenarios === null) {
-        console.error('Failed to save draft, scenarios list is null.');
-        return;
-      }
-      if (this.modelSummary === null) {
-        console.error('Failed to save draft, modelSummary is null.');
-        return;
-      }
-
-      // 1. If no draft scenario we need to create one
-      if (_.isNil(this.draftScenario)) {
-        const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-        if (selectedScenario === undefined) {
-          console.error(
-            `Failed to save draft, unable to find scenario with selected scenario ID '${this.selectedScenarioId}'.`
-          );
-          return;
-        }
-        const draft = {
-          id: 'draft',
-          name: 'Draft',
-          model_id: this.currentCAG,
-          description: '',
-          is_valid: true,
-          is_baseline: false,
-          parameter: {
-            constraints: _.cloneDeep(selectedScenario.parameter?.constraints ?? []),
-            num_steps: this.projectionSteps,
-            indicator_time_series_range: this.modelSummary.parameter.indicator_time_series_range,
-            projection_start: this.modelSummary.parameter.projection_start
-          },
-          engine: this.currentEngine
-        };
-        await this.setDraftScenario(draft);
-      }
-
-      // Switch to draft
-      if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
-        this.previousScenarioId = this.selectedScenarioId;
-      }
-      await this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
-
-      // 2. Update
-      await this.updateDraftScenarioConstraints({ concept, values });
-
-      // Cycle the scenarios to force reactive to trigger
-      const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
-      temp.push(this.draftScenario);
-      this.scenarios = temp;
     },
     async runScenariosWrapper() {
       if (!this.scenarios) return;
@@ -641,7 +467,19 @@ export default defineComponent({
 
       this.disableOverlay();
 
-      // 2. Run experiments where necessary
+      // 2. Run experiments where necessary, run sensitivity analyses in the backround where necessary
+      // 2.1 Process sensitivity analyses, these run in the background
+      if (this.currentEngine === 'dyse') {
+        for (const scenario of scenarios) {
+          if (scenario.is_valid === true) continue;
+
+          const constraints = modelService.cleanConstraints(scenario.parameter?.constraints ?? []);
+          const sensitivityExperimentId = await modelService.runSensitivityAnalysis(this.modelSummary, 'GLOBAL', 'DYNAMIC', constraints);
+          await modelService.createScenarioSensitivityResult(this.currentCAG, scenario.id, this.currentEngine, sensitivityExperimentId, null);
+        }
+      }
+
+      // 2.2 Process projection experiments
       const updateList = [];
       for (const scenario of scenarios) {
         if (scenario.is_valid === true) continue;
@@ -672,10 +510,9 @@ export default defineComponent({
         }
       }
 
-      // 3. Write back if needed, we don't write draft scenario
+      // 3. Write back if needed
       this.enableOverlay('Saving results');
       for (const scenario of updateList) {
-        if (scenario.id === DRAFT_SCENARIO_ID) continue;
         if (!scenario.experiment_id) continue;
         await modelService.createScenarioResult(
           this.currentCAG,
@@ -701,67 +538,8 @@ export default defineComponent({
 
       return 2 * numEdges / (numNodes * (numNodes - 1));
     },
-    async fetchSensitivityAnalysisResults() {
-      if (
-        this.currentEngine !== 'dyse' ||
-        _.isNil(this.scenarios) ||
-        _.isNil(this.modelSummary) ||
-        _.isNil(this.modelComponents) ||
-        this.scenarios.length === 0
-      ) return;
-
-      const selectedScenario = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId);
-      if (selectedScenario === undefined) {
-        console.error(
-          `Failed to fetch sensitivity analysis results, unable to find scenario with selected scenario ID '${this.selectedScenarioId}'.`
-        );
-        return;
-      }
-
-      // Ensure we are ready to run, sync up with engines if necessary
-      const engineStatus = this.modelSummary.engine_status[this.currentEngine];
-      if (engineStatus === MODEL_STATUS.NOT_REGISTERED) {
-        await modelService.initializeModel(this.currentCAG);
-        await this.refreshModel();
-      }
-      if (selectedScenario.is_valid === false) {
-        modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
-      }
-
-      this.sensitivityMatrixData = null;
-      const now = Date.now();
-      this.sensitivityDataTimestamp = now;
-      const constraints = modelService.cleanConstraints(selectedScenario.parameter?.constraints ?? []);
-
-      const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
-
-      // If another sensitivity analysis started running before this one returns an ID,
-      //  then don't bother fetching/processing the results to avoid a race condition
-      if (this.sensitivityDataTimestamp !== now) return;
-      const progressFn = (current: number, max: number) => {
-        if (current > 2) {
-          this.enableOverlay(`Will await result for  ${(max - current) * 3} more seconds`);
-        }
-      };
-
-      this.enableOverlay('Running sensitivity analysis');
-      const numPolls = Math.max(10, Math.round(this._getGraphDensity() * 50));
-      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, numPolls, progressFn);
-      this.disableOverlay();
-
-      if (this.sensitivityDataTimestamp !== now) return;
-      // FIXME: Add type for return value of modelService.getExperimentResult()
-      const csrResults = csrUtil.resultsToCsrFormat((results as any).results[this.sensitivityAnalysisType.toLowerCase()]);
-      csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
-      csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
-      this.sensitivityMatrixData = csrResults;
-    },
-    setSensitivityAnalysisType(newValue: string) {
-      this.sensitivityAnalysisType = newValue;
-    },
     tabClick(tab: string) {
       if (tab === 'matrix') {
-        this.fetchSensitivityAnalysisResults();
         // advance the tour if it is active
         if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
           this.tour.next();

@@ -3,15 +3,6 @@
     <div>
       Scenario
       <button
-        v-if="isInDraftState"
-        class="btn btn-primary scenario-button"
-        @click="openModal"
-      >
-        <i class="fa fa-fw fa-save" />
-        Save As
-      </button>
-      <button
-        v-else
         class="btn btn-primary scenario-button"
         @click="toggleScenarioDropdownOpen"
       >
@@ -41,14 +32,6 @@
             </div>
           </template>
         </dropdown-control>
-      </button>
-      <button
-        v-if="isInDraftState"
-        v-tooltip="'Discard all unsaved changes'"
-        class="btn btn-default"
-        @click="revertDraftChanges"
-      >
-        <i class="fa fa-fw fa-trash" />Discard
       </button>
       <button
         class="btn btn-default"
@@ -89,13 +72,6 @@
         />
       </div>
     </div>
-    <save-scenario-modal
-      v-if="isModalOpen"
-      :scenarios="scenarios"
-      @close="closeModal"
-      @overwrite-scenario="overwriteScenario"
-      @save-new-scenario="saveNewScenario"
-    />
   </div>
 </template>
 
@@ -103,7 +79,6 @@
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
-import SaveScenarioModal from '../modals/modal-save-scenario';
 import DropdownControl from '../dropdown-control';
 import ArrowButton from '../widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
@@ -117,7 +92,6 @@ const PROJECTION_ENGINES = {
 export default {
   name: 'QuantitativeActionBar',
   components: {
-    SaveScenarioModal,
     DropdownControl,
     ArrowButton,
     RadioButtonGroup
@@ -138,27 +112,19 @@ export default {
   },
   emits: [
     'run-model',
-    'revert-draft-changes',
-    'overwrite-scenario',
-    'save-new-scenario',
-    'reset-cag'
+    'reset-cag',
+    'tab-click'
   ],
   data: () => ({
-    isModalOpen: false,
     isScendarioDropdownOpen: false
   }),
   computed: {
     ...mapGetters({
       selectedScenarioId: 'model/selectedScenarioId',
-      draftScenarioDirty: 'model/draftScenarioDirty',
       project: 'app/project',
       currentCAG: 'app/currentCAG'
     }),
-    isInDraftState() {
-      return this.selectedScenarioId === 'draft';
-    },
     selectedScenario() {
-      if (this.isInDraftState) return null;
       const found = this.scenarios.find(
         scenario => scenario.id === this.selectedScenarioId
       );
@@ -192,15 +158,6 @@ export default {
     runModel() {
       this.$emit('run-model');
     },
-    revertDraftChanges() {
-      this.$emit('revert-draft-changes');
-    },
-    openModal() {
-      this.isModalOpen = true;
-    },
-    closeModal() {
-      this.isModalOpen = false;
-    },
     resetCAG() {
       this.$emit('reset-cag');
     },
@@ -211,12 +168,6 @@ export default {
       if (scenarioId === this.selectedScenarioId) return;
       this.isScendarioDropdownOpen = false;
       this.setSelectedScenarioId(scenarioId);
-    },
-    overwriteScenario(id) {
-      this.$emit('overwrite-scenario', id);
-    },
-    saveNewScenario(metadata) {
-      this.$emit('save-new-scenario', metadata);
     },
     onAugmentCAG() {
       this.$router.push({
