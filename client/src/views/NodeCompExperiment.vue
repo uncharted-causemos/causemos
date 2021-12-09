@@ -42,6 +42,7 @@
               </select>
               <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
               <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
+              <span v-if="metadata.status === DatacubeStatus.Deprecated" v-tooltip.top-center="'Show current version of datacube'" style="margin-left: 1rem" :style="{ backgroundColor: statusColor, cursor: 'pointer' }" @click="showCurrentDatacube">{{ statusLabel }} <i class="fa fa-search"></i></span>
             </h5>
             <disclaimer
               v-if="scenarioCount > 0"
@@ -73,9 +74,11 @@ import DatacubeDescription from '@/components/data/datacube-description.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import modelService from '@/services/model-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
+import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { ProjectType } from '@/types/Enums';
+import { ProjectType, DatacubeStatus } from '@/types/Enums';
 import { getValidatedOutputs } from '@/utils/datacube-util';
+import filtersUtil from '@/utils/filters-util';
 
 import { aggregationOptionFiltered } from '@/utils/drilldown-util';
 
@@ -255,22 +258,29 @@ export default defineComponent({
       }
     };
 
+    const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
+
     return {
       aggregationOptionFiltered,
       currentCAG,
       currentOutputIndex,
+      DatacubeStatus,
       indicatorId,
       initialViewConfig,
       mainModelOutput,
       metadata,
       modelComponents,
       navBackLabel,
+      nodeId,
       onBack,
       onOutputSelectionChange,
       onSelection,
       outputs,
+      project,
       selectedNode,
       selectLabel,
+      statusColor,
+      statusLabel,
       stepsBeforeCanConfirm,
       onModelParamUpdated
     };
@@ -280,6 +290,26 @@ export default defineComponent({
     modelService.getComponents(this.currentCAG).then(_modelComponents => {
       this.modelComponents = _modelComponents;
     });
+  },
+  methods: {
+    showCurrentDatacube() { // direct user to update the deprecated datacube to the current version
+      const currentCAG = this.currentCAG ?? '';
+      const nodeId = this.nodeId ?? '';
+      const project = this.project ?? '';
+      const metadataNewId = this.metadata?.new_version_data_id ?? '';
+      const filters: any = filtersUtil.newFilters();
+      filtersUtil.setClause(filters, 'dataId', [metadataNewId], 'or', false);
+      this.$router.push({
+        name: 'nodeDataExplorer',
+        params: {
+          currentCAG: currentCAG,
+          nodeId: nodeId,
+          project: project,
+          projectType: ProjectType.Analysis
+        },
+        query: { filters }
+      });
+    }
   }
 });
 </script>
