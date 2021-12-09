@@ -236,7 +236,7 @@ export function findCycles(edges) {
  */
 export function classifyCycles(cyclePaths, graphEdges) {
   const g = new Graph(graphEdges);
-  const num_nodes = g.vertices.size;
+  const numNodes = g.vertices.size;
 
   // Mark each node with a unique numerical identifier
   const nameToId = {};
@@ -248,9 +248,9 @@ export function classifyCycles(cyclePaths, graphEdges) {
 
   // Initialize an adjacency matrix
   const adjacencyMatrix = [];
-  for (let i = 0; i < num_nodes; i++) {
+  for (let i = 0; i < numNodes; i++) {
     adjacencyMatrix.push([]);
-    for (let j = 0; j < num_nodes; j++) {
+    for (let j = 0; j < numNodes; j++) {
       adjacencyMatrix[i].push(0);
     }
   }
