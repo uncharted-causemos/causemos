@@ -43,6 +43,9 @@
         :class="{ hidden: isHiddenTimeSlice(timeSliceIndex) }"
         :key="timeSliceIndex"
         :bin-values="histogramData"
+        :constraint-summary="
+          getConstraintSummary(row.scenarioId, timeSliceIndex)
+        "
       />
     </div>
   </div>
@@ -56,7 +59,8 @@ import Histogram from '@/components/widgets/charts/histogram.vue';
 import {
   convertTimeseriesDistributionToHistograms,
   HistogramData,
-  ProjectionHistograms
+  ProjectionHistograms,
+  summarizeConstraints
 } from '@/utils/histogram-util';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
@@ -167,6 +171,21 @@ export default defineComponent({
         );
       });
     },
+    constraintSummaries() {
+      const summaries: { [scenarioId: string]: ProjectionHistograms } = {};
+      const isAbstractNode = this.indicatorId === null;
+      const projectionStartTimestamp = this.modelSummary.parameter
+        .projection_start;
+      this.projections.forEach(projection => {
+        summaries[projection.scenarioId] = summarizeConstraints(
+          this.modelSummary.parameter.time_scale,
+          isAbstractNode ? [] : this.historicalTimeseries,
+          projectionStartTimestamp,
+          projection.constraints ?? []
+        );
+      });
+      return summaries;
+    },
     rowsToDisplay(): HistogramRow[] {
       if (!this.isScenarioComparisonActive) {
         return this.projections.map((projection, index) => {
@@ -244,6 +263,16 @@ export default defineComponent({
         this.isScenarioComparisonActive &&
         timeSliceIndex !== this.selectedTimeSliceIndex
       );
+    },
+    getConstraintSummary(
+      scenarioId: string,
+      timeSliceIndex: number
+    ): HistogramData {
+      const scenarioSummary = this.constraintSummaries[scenarioId];
+      if (scenarioSummary === undefined) {
+        return [0, 0, 0, 0, 0];
+      }
+      return scenarioSummary[timeSliceIndex];
     }
   }
 });

@@ -1,5 +1,17 @@
 <template>
   <div class="histogram-container">
+    <div class="column constraint-column">
+      <div
+        v-for="(constraintCount, index) in constraintSummary ?? []"
+        :key="index"
+        class="constraint"
+        :class="{ visible: constraintCount > 0 }"
+      >
+        <span class="count" v-if="constraintCount > 1">
+          {{ constraintCount }}
+        </span>
+      </div>
+    </div>
     <div class="column bar-column">
       <div
         v-for="(baseValue, index) in binValues.base"
@@ -7,6 +19,7 @@
         class="histogram-row"
       >
         <div class="bar default" :style="{ width: baseValue + '%' }" />
+        <!-- FIXME: implicit requirement that run count adds up to 100 -->
         <div
           v-if="isRelativeToActive"
           class="bar"
@@ -102,6 +115,10 @@ export default defineComponent({
     binValues: {
       type: Object as PropType<ComparisonHistogramData>,
       required: true
+    },
+    constraintSummary: {
+      type: Object as PropType<HistogramData | null>,
+      default: null
     }
   },
   setup(props) {
@@ -214,14 +231,42 @@ $axis-line-height: $font-size-large;
   }
 }
 
+$constraintDiameter: 14px;
+$constraintBorderWidth: 2px;
+.constraint-column {
+  width: $constraintDiameter;
+  justify-content: space-around;
+}
+
+.constraint {
+  display: flex;
+  min-height: $constraintDiameter;
+  width: $constraintDiameter;
+  flex-grow: 0;
+  border-radius: $constraintDiameter;
+  position: relative;
+  &.visible {
+    border: $constraintBorderWidth solid $selected;
+  }
+}
+
+.count {
+  line-height: $constraintDiameter;
+  color: $selected-dark;
+  font-size: #{$constraintDiameter - 2 * $constraintBorderWidth};
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .bar-column {
-  width: 50px;
+  width: 40px;
 }
 
 .histogram-row {
   display: flex;
   background: #f3f3f3;
-  width: 50px;
 }
 
 .bar {
