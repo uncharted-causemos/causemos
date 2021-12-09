@@ -370,7 +370,7 @@ export default defineComponent({
       //  (selected scenario first, followed other scenarios sorted from oldest to newest)
       const selectedScenario = selectedNodeScenarioData.scenarios.find(s => s.id === selectedScenarioId.value);
       const allOtherScenarios = selectedNodeScenarioData.scenarios.filter(s => s.id !== selectedScenarioId.value);
-      allOtherScenarios.sort((a, b) => a.modified_at - b.modified_at);
+      allOtherScenarios.sort((a, b) => a.created_at - b.created_at);
       const nodeScenarios = selectedScenario !== undefined ? [selectedScenario, ...allOtherScenarios] : [...allOtherScenarios];
       nodeScenarios.forEach(({ id, name, result, constraints }) => {
         // `result` is undefined for the any scenarios that haven't been run yet

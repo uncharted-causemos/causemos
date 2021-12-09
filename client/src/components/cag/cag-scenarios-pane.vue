@@ -143,7 +143,7 @@ export default defineComponent({
     sortedScenarios(): Scenario[] {
       const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
       const allOtherScenarios = this.scenarios.filter(s => s.id !== this.selectedScenarioId);
-      allOtherScenarios.sort((a, b) => a.modified_at - b.modified_at);
+      allOtherScenarios.sort((a, b) => a.created_at - b.created_at);
       return selectedScenario !== undefined ? [selectedScenario, ...allOtherScenarios] : [...allOtherScenarios];
     }
   },

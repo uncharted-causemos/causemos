@@ -55,6 +55,7 @@ const createScenario = async ({ parameter, name, description, model_id: modelId,
     name,
     description,
     modified_at: Date.now(),
+    created_at: Date.now(),
     model_id: modelId,
     is_baseline: isBaseline
   };
