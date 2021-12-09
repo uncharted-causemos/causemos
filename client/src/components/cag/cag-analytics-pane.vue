@@ -63,7 +63,7 @@ import { findCycles } from '@/utils/graphs-util';
 import modelService from '@/services/model-service';
 
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { CAGGraph, CAGModelParameter, Scenario } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
 
 const ANALYSES = [
   { displayName: 'Cycle analysis', value: 'cycles' },
@@ -77,7 +77,7 @@ export default defineComponent({
   },
   props: {
     modelSummary: {
-      type: Object as PropType<CAGModelParameter>,
+      type: Object as PropType<CAGModelSummary>,
       default: null
     },
     modelComponents: {
