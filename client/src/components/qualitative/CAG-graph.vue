@@ -39,7 +39,7 @@ import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
-import { calculateNeighborhood, hasBackingEvidence, highlightOptions, overlap, findCycles, classifyCycles } from '@/utils/graphs-util';
+import { calculateNeighborhood, hasBackingEvidence, highlightOptions, overlap } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
