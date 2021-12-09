@@ -37,7 +37,7 @@
     </template>
     <div v-else class="scenarios-container">
       <div
-        v-for="scenario in scenarios"
+        v-for="scenario in sortedScenarios"
         :key="scenario.id"
         class="checklist-item"
       >
@@ -139,7 +139,13 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       selectedScenarioId: 'model/selectedScenarioId'
-    })
+    }),
+    sortedScenarios(): Scenario[] {
+      const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      const allOtherScenarios = this.scenarios.filter(s => s.id !== this.selectedScenarioId);
+      allOtherScenarios.sort((a, b) => a.created_at - b.created_at);
+      return selectedScenario !== undefined ? [selectedScenario, ...allOtherScenarios] : [...allOtherScenarios];
+    }
   },
   setup() {
     return {

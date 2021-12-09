@@ -47,6 +47,7 @@ export interface Scenario {
   name: string;
   description: string;
   modified_at: number;
+  created_at: number;
   model_id: string;
   engine: string;
   is_valid: boolean;
@@ -79,6 +80,7 @@ export interface NodeScenarioData {
     result?: {
       values: TimeseriesDistributionPoint[];
     };
+    created_at: number;
   }[];
 }
 export interface NodeParameter {

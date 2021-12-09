@@ -404,7 +404,7 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
 
     // 2. grab relevant data for this node from each scenario, if applicable
     const scenarioDataForThisNode = scenarios.map(scenario => {
-      const { id, is_baseline, is_valid, parameter, name } = scenario;
+      const { id, is_baseline, is_valid, parameter, name, created_at } = scenario;
       return {
         id,
         is_baseline,
@@ -412,7 +412,8 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
         parameter,
         name,
         constraints: getConceptProjectionConstraints(scenario, concept),
-        result: getScenarioResult(scenario, concept) || undefined
+        result: getScenarioResult(scenario, concept) || undefined,
+        created_at
       };
     });
 
