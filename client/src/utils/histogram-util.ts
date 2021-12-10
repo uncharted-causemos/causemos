@@ -21,12 +21,7 @@ export type ProjectionHistograms = [
 ];
 
 // The bin boundaries that are used when a node has no historical data.
-export const ABSTRACT_NODE_BINS: [number, number, number, number] = [
-  0.1,
-  0.4,
-  0.6,
-  0.9
-];
+export const ABSTRACT_NODE_BINS: BinBoundaries = [0.1, 0.4, 0.6, 0.9];
 
 /**
  * Partitions a list of numbers into two parts and returns the value that's
@@ -112,7 +107,7 @@ export const computeProjectionBins = (
   historicalData: TimeseriesPoint[],
   monthsElapsedSinceNow: number,
   projectionStartMonth: number
-): [number, number, number, number] => {
+): BinBoundaries => {
   if (isAbstractNode(historicalData)) {
     // There is no historical data, so return arbitrary
     //  buckets between 0 and 1
@@ -179,12 +174,9 @@ export const computeProjectionBins = (
     //    case is distinct from the abstract node case?
     //  - Is there a fallback heuristic we can use to compute better bins?
     //  - If so, is it worth the added algorithm complexity?
-    return ABSTRACT_NODE_BINS.map(binBoundary => binBoundary + nowValue) as [
-      number,
-      number,
-      number,
-      number
-    ];
+    return ABSTRACT_NODE_BINS.map(
+      binBoundary => binBoundary + nowValue
+    ) as BinBoundaries;
   } else if (lowerBinsAreInvalid) {
     // Invert and copy positive cutoffs
     negligibleNegativeCutoff = -negligiblePositiveCutoff;
@@ -195,7 +187,7 @@ export const computeProjectionBins = (
     higherMuchHigherCutoff = -lowerMuchLowerCutoff;
   }
 
-  const bins: [number, number, number, number] = [
+  const bins: BinBoundaries = [
     nowValue + lowerMuchLowerCutoff,
     nowValue + negligibleNegativeCutoff,
     nowValue + negligiblePositiveCutoff,
@@ -379,7 +371,7 @@ interface RelativeChangeSummary {
  * @returns an object containing enough information to generate a one-sentence summary of the change, as well as the arrows used to support the sentence.See RelativeChangeSummary for more detail.
  */
 export const summarizeRelativeChange = (
-  changes: [number, number, number, number, number]
+  changes: BinCounts
 ): RelativeChangeSummary => {
   // ASSUMPTION: total losses should equal total gains in magnitude
   const greatestLoss = _.min(changes) ?? 0;
