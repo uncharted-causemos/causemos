@@ -454,6 +454,14 @@ const deleteCAG = async(modelId) => {
   const scenarioConnection = Adapter.get(RESOURCE.SCENARIO);
   await scenarioConnection.remove([{ field: 'model_id', value: modelId }]);
 
+  // Delete scenario-results
+  const scenarioResultConnection = Adapter.get(RESOURCE.SCENARIO_RESULT);
+  await scenarioResultConnection.remove([{ field: 'model_id', value: modelId }]);
+
+  // Delete sensitivity-results
+  const sensitivityConnection = Adapter.get(RESOURCE.SENSITIVITY_RESULT);
+  await sensitivityConnection.remove([{ field: 'model_id', value: modelId }]);
+
   return true;
 };
 
