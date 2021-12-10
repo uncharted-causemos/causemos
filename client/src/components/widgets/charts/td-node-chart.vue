@@ -74,23 +74,7 @@ export default defineComponent({
       modelSummary
     } = toRefs(props);
     const historicalTimeseriesBeforeStart = computed(() => {
-      let projectionStartTimestamp = 0;
-      if (projections.value.length > 0) {
-        // Get the first timestamp from the first projection.
-        // FIXME: can we make this selection a little smarter to use the
-        //  selected scenario, or at least a non-empty, non-stale scenario?
-        // CAUTION: new scenarios have no projection points but can be
-        //  selected. When trying to make this logic smarter, watch for that
-        //  case.
-        const selectedScenario = projections.value[0];
-        if (selectedScenario.values.length === 0) {
-          console.error(
-            `When deriving the projection start timestamp, scenario with ID ${selectedScenario.scenarioId} had no points.`
-          );
-        } else {
-          projectionStartTimestamp = selectedScenario.values[0].timestamp;
-        }
-      }
+      const projectionStartTimestamp = modelSummary.value.parameter.projection_start;
       return historicalTimeseries.value.filter(
         point => point.timestamp < projectionStartTimestamp
       );
