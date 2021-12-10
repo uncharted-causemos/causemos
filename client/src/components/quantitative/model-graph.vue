@@ -97,11 +97,6 @@ export default {
       this.$emit('node-drilldown', node.datum().data);
     });
 
-    // Test sending visual-state
-    this.renderer.setCallback('nodeDblClick', (event, node) => {
-      this.$emit('node-select', node.datum().data);
-    });
-
     this.renderer.setCallback('nodeMouseEnter', (evt, node, g) => {
       this.$emit('node-enter', node, g);
     });
