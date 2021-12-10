@@ -18,19 +18,19 @@
       <div v-if="cyclesPaths && cyclesPaths.balancing.length > 0">
         <div> Balancing paths </div>
         <div v-for="(path, idx) of cyclesPaths.balancing" :key="idx">
-          <cag-path-item :path-item="path" />
+          <cag-path-item :path-item="path" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="cyclesPaths && cyclesPaths.reinforcing.length > 0">
         <div> Reinforcing paths </div>
         <div v-for="(path, idx) of cyclesPaths.reinforcing" :key="idx">
-          <cag-path-item :path-item="path" />
+          <cag-path-item :path-item="path" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="cyclesPaths && cyclesPaths.ambiguous.length > 0">
         <div> Ambiguous paths </div>
         <div v-for="(path, idx) of cyclesPaths.ambiguous" :key="idx">
-          <cag-path-item :path-item="path" />
+          <cag-path-item :path-item="path" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="totalCycles === 0">
@@ -68,7 +68,7 @@
         </div>
         <div v-if="pathExperiemntId && pathExperimentResult.length > 0">
           <div v-for="(path, idx) of pathExperimentResult" :key="idx">
-          {{ path }}
+            <cag-path-item :path-item="path" @click="showPath(path)" />
           </div>
         </div>
       </div>
@@ -217,6 +217,9 @@ export default defineComponent({
           this.pollPathExperimentResult();
         }, 5000);
       }
+    },
+    showPath(pathItem: GraphPath) {
+      this.$emit('show-path', pathItem);
     },
     changeAnalysis(v: string) {
       this.currentAnalysis = v;
