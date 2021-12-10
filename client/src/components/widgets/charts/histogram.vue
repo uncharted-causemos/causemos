@@ -1,5 +1,5 @@
 <template>
-  <div class="histogram-container">
+  <div class="histogram-container" v-tooltip="{ content: debugBinBoundaryTooltip,  html: true }">
     <div class="column constraint-column">
       <div
         v-for="(constraintCount, index) in constraintSummary ?? []"
@@ -14,7 +14,7 @@
     </div>
     <div class="column bar-column">
       <div
-        v-for="(baseValue, index) in binValues.base"
+        v-for="(baseValue, index) in histogramData.base"
         :key="index"
         class="histogram-row"
       >
@@ -23,13 +23,13 @@
         <div
           v-if="isRelativeToActive"
           class="bar"
-          :class="binValues.change[index] < 0 ? 'reduced' : 'increased'"
-          :style="{ width: Math.abs(binValues.change[index]) + '%' }"
+          :class="histogramData.change[index] < 0 ? 'reduced' : 'increased'"
+          :style="{ width: Math.abs(histogramData.change[index]) + '%' }"
         />
       </div>
     </div>
     <div class="column value-column">
-      <span v-for="(baseValue, index) in binValues.base" :key="index">
+      <span v-for="(baseValue, index) in histogramData.base" :key="index">
         <span v-if="!isRelativeToActive" class="value">
           {{ baseValue }}
         </span>
@@ -37,19 +37,20 @@
           v-else
           class="value"
           :class="{
-            reduced: binValues.change[index] < 0,
-            increased: binValues.change[index] > 0
+            reduced: histogramData.change[index] < 0,
+            increased: histogramData.change[index] > 0
           }"
         >
           {{
-            (binValues.change[index] > 0 ? '+' : '') + binValues.change[index]
+            (histogramData.change[index] > 0 ? '+' : '') +
+              histogramData.change[index]
           }}
         </span>
       </span>
     </div>
     <div class="column summary-column">
       <span
-        v-for="(baseValue, index) in binValues.base"
+        v-for="(baseValue, index) in histogramData.base"
         :key="index"
         class="summary"
         :class="
@@ -93,6 +94,7 @@
 import _ from 'lodash';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import {
+  BinCounts,
   generateRelativeSummaryMessage,
   HistogramData,
   summarizeRelativeChange
@@ -108,11 +110,13 @@ const BIN_LABELS = [
   'Much lower'
 ];
 
+const SHOW_DEBUG_BIN_BOUNDARY_TOOLTIPS = false;
+
 export default defineComponent({
   components: { HistogramArrow },
   name: 'Histogram',
   props: {
-    binValues: {
+    histogramData: {
       type: Object as PropType<ComparisonHistogramData>,
       required: true
     },
@@ -122,27 +126,50 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const { binValues } = toRefs(props);
+    const { histogramData } = toRefs(props);
 
-    const isRelativeToActive = computed(() => binValues.value.change !== null);
+    const isRelativeToActive = computed(
+      () => histogramData.value.change !== null
+    );
 
     const relativeToSummary = computed(() => {
       if (!isRelativeToActive.value) return null;
       // RelativeTo is active, so we can safely assert that changes array is
       //  not null
-      return summarizeRelativeChange(binValues.value.change as HistogramData);
+      return summarizeRelativeChange(histogramData.value.change as BinCounts);
     });
 
     const relativeToSummaryMessage = computed(() => {
       return generateRelativeSummaryMessage(relativeToSummary.value);
     });
 
+    const debugBinBoundaryTooltip = computed(() => {
+      // Cast to boolean since TS can tell that the constant is always
+      //  the value it's set to (either always `true` or always `false`)
+      if ((SHOW_DEBUG_BIN_BOUNDARY_TOOLTIPS as boolean) === false) {
+        return '';
+      }
+      const { binBoundaries } = histogramData.value;
+      return (
+        '<strong>Much higher</strong> >= <br>' +
+        `${binBoundaries[3]} <br>` +
+        '> <strong>Higher</strong> >= <br>' +
+        `${binBoundaries[2]} <br>` +
+        '> <strong>Negligible Change</strong> >= <br>' +
+        `${binBoundaries[1]} <br>` +
+        '> <strong>Lower</strong> >= <br>' +
+        `${binBoundaries[0]} <br>` +
+        '> <strong>Much lower</strong>'
+      );
+    });
+
     return {
       isRelativeToActive,
       relativeToSummary,
-      maxValue: computed(() => _.max(binValues.value.base)),
+      maxValue: computed(() => _.max(histogramData.value.base)),
       BIN_LABELS,
-      relativeToSummaryMessage
+      relativeToSummaryMessage,
+      debugBinBoundaryTooltip
     };
   }
 });

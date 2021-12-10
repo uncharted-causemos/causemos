@@ -214,7 +214,7 @@ function renderScenarioProjections(
   // FIXME: only render some slices depending on which ones are selected
   // FIXME: we should exit much earlier if no slices are selected
   const widthPerHistogram = width / histograms.length;
-  const heightPerHistogramRow = height / histograms[0].length;
+  const heightPerHistogramRow = height / histograms[0].binCounts.length;
   const histogramBarHeight =
     heightPerHistogramRow - SPACE_BETWEEN_HISTOGRAM_BARS;
   const constraintRadius = histogramBarHeight / 2;
@@ -227,7 +227,7 @@ function renderScenarioProjections(
     .attr('transform', (d, i) => translate(xOffset + i * widthPerHistogram, 0));
   const histogramBarElements = histogramElements
     .selectAll('.histogram-bar')
-    .data(histogramData => histogramData)
+    .data(histogramData => histogramData.binCounts)
     .join('g')
     .classed('histogram-bar', true);
   // Render background of each bar
@@ -257,7 +257,7 @@ function renderScenarioProjections(
   histogramElements
     .selectAll('.constraint')
     // Map from histogram index to the constraint summary for this time slice
-    .data((histogramData, histogramIndex) => constraintSummary[histogramIndex])
+    .data((histogramData, histogramIndex) => constraintSummary[histogramIndex].binCounts)
     .join('circle')
     .classed('constraint', true)
     .attr('r', constraintRadius)

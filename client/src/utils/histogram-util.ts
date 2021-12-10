@@ -8,7 +8,12 @@ import _ from 'lodash';
 import { getMonthFromTimestamp, getTimestampAfterMonths } from './date-util';
 import { getSliceMonthsFromTimeScale } from './time-scale-util';
 
-export type HistogramData = [number, number, number, number, number];
+export type BinCounts = [number, number, number, number, number];
+export type BinBoundaries = [number, number, number, number];
+export type HistogramData = {
+  binCounts: BinCounts;
+  binBoundaries: BinBoundaries;
+};
 export type ProjectionHistograms = [
   HistogramData,
   HistogramData,
@@ -243,9 +248,12 @@ export const convertTimeseriesDistributionToHistograms = (
       closestDistribution = [];
     }
     // 4. Feed distribution into bins to get histogram
-    let histogram: HistogramData = [0, 0, 0, 0, 0];
+    const histogram: HistogramData = {
+      binBoundaries: bins,
+      binCounts: [0, 0, 0, 0, 0]
+    };
     closestDistribution.forEach(value => {
-      histogram = addValueToHistogram(value, bins, histogram);
+      histogram.binCounts = addValueToHistogram(value, histogram);
     });
     return histogram;
   }) as [HistogramData, HistogramData, HistogramData];
@@ -254,33 +262,29 @@ export const convertTimeseriesDistributionToHistograms = (
 /**
  * Finds the correct bin that a value should be mapped to and increments it by one.
  * @param value the number to be assigned to a bin.
- * @param bins the 4 numbers that act as boundaries between histogram bins.
- * @param histogram the current state of the histogram.
- * @returns the updated histogram.
+ * @param histogram 4 bin boundaries and their 5 current counts.
+ * @returns the updated bin counts.
  */
-const addValueToHistogram = (
-  value: number,
-  bins: [number, number, number, number],
-  histogram: HistogramData
-) => {
-  const updatedHistogram = _.clone(histogram);
-  if (value < bins[0]) {
+const addValueToHistogram = (value: number, histogram: HistogramData) => {
+  const { binBoundaries, binCounts } = histogram;
+  const updatedBinCounts = _.clone(binCounts);
+  if (value < binBoundaries[0]) {
     // Much lower
-    updatedHistogram[4]++;
-  } else if (value < bins[1]) {
+    updatedBinCounts[4]++;
+  } else if (value < binBoundaries[1]) {
     // Lower
-    updatedHistogram[3]++;
-  } else if (value < bins[2]) {
+    updatedBinCounts[3]++;
+  } else if (value < binBoundaries[2]) {
     // Negligible change
-    updatedHistogram[2]++;
-  } else if (value < bins[3]) {
+    updatedBinCounts[2]++;
+  } else if (value < binBoundaries[3]) {
     // Higher
-    updatedHistogram[1]++;
+    updatedBinCounts[1]++;
   } else {
     // Much higher
-    updatedHistogram[0]++;
+    updatedBinCounts[0]++;
   }
-  return updatedHistogram;
+  return updatedBinCounts;
 };
 
 /**
@@ -298,11 +302,10 @@ export const summarizeConstraints = (
   projectionStartTimestamp: number,
   constraints: ProjectionConstraint[]
 ) => {
-  const result = _.range(3).map(() => [0, 0, 0, 0, 0]) as [
-    HistogramData,
-    HistogramData,
-    HistogramData
-  ];
+  const result = _.range(3).map(() => ({
+    binCounts: [0, 0, 0, 0, 0],
+    binBoundaries: [0, 0, 0, 0]
+  })) as ProjectionHistograms;
   // 1. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
   // This will be used to determine which histogram the clamp should be mapped to
   const timeSliceMonths = getSliceMonthsFromTimeScale(timeScale);
@@ -329,7 +332,11 @@ export const summarizeConstraints = (
     }
     // 4. Select histogram for this time slice and increment the relevant bin
     const histogram: HistogramData = result[timeSliceIndex];
-    result[timeSliceIndex] = addValueToHistogram(constraint.value, bins, histogram);
+    histogram.binBoundaries = bins;
+    result[timeSliceIndex].binCounts = addValueToHistogram(
+      constraint.value,
+      histogram
+    );
   });
   return result;
 };

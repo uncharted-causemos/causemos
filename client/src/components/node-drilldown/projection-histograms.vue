@@ -42,8 +42,10 @@
         class="histogram"
         :class="{ hidden: isHiddenTimeSlice(timeSliceIndex) }"
         :key="timeSliceIndex"
-        :bin-values="histogramData"
-        :constraint-summary="constraintSummaries[row.scenarioId][timeSliceIndex]"
+        :histogram-data="histogramData"
+        :constraint-summary="
+          constraintSummaries[row.scenarioId][timeSliceIndex]
+        "
       />
     </div>
   </div>
@@ -55,6 +57,8 @@ import { TimeseriesPoint } from '@/types/Timeseries';
 import { defineComponent, PropType } from 'vue';
 import Histogram from '@/components/widgets/charts/histogram.vue';
 import {
+  BinBoundaries,
+  BinCounts,
   convertTimeseriesDistributionToHistograms,
   HistogramData,
   ProjectionHistograms,
@@ -76,8 +80,9 @@ import SmallIconButton from '@/components/widgets/small-icon-button.vue';
  * compared to the baseline
  */
 export interface ComparisonHistogramData {
-  base: HistogramData;
-  change: HistogramData | null;
+  base: BinCounts;
+  change: BinCounts | null;
+  binBoundaries: BinBoundaries;
 }
 
 interface HistogramRow {
@@ -95,9 +100,9 @@ function compareHistograms(
     const base: number[] = [];
     const change: number[] = [];
     // For each bar
-    histogramData.forEach((barValue, barIndex) => {
+    histogramData.binCounts.forEach((barValue, barIndex) => {
       // Calculate the difference from the baseline value to the result value
-      const baselineValue = baseline[timeSliceIndex][barIndex];
+      const baselineValue = baseline[timeSliceIndex].binCounts[barIndex];
       const difference = barValue - baselineValue;
       // This entry in the "base" array will be the same as the result bar,
       //  but subtract any positive change. This is because the green
@@ -108,7 +113,11 @@ function compareHistograms(
       change.push(difference);
     });
     // Assert that there are still 5 elements in each array
-    return { base: base as HistogramData, change: change as HistogramData };
+    return {
+      base: base as BinCounts,
+      change: change as BinCounts,
+      binBoundaries: histogramData.binBoundaries
+    };
   });
 }
 
@@ -192,9 +201,10 @@ export default defineComponent({
           //  array instead of histograms
           let histograms: ComparisonHistogramData[] = [];
           if (results !== null) {
-            histograms = results.map(histogramData => ({
-              base: histogramData,
-              change: null
+            histograms = results.map(({ binCounts, binBoundaries }) => ({
+              base: binCounts,
+              change: null,
+              binBoundaries
             }));
           }
           return {
@@ -231,9 +241,10 @@ export default defineComponent({
       const baselineRow = {
         scenarioName: baselineScenario.scenarioName,
         scenarioId: baselineScenario.scenarioId,
-        histograms: baselineResult.map(histogramData => ({
-          base: histogramData,
-          change: null
+        histograms: baselineResult.map(({ binCounts, binBoundaries }) => ({
+          base: binCounts,
+          change: null,
+          binBoundaries
         }))
       };
       // Then display each other scenario, after calculating the histogram diff
