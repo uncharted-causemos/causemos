@@ -187,8 +187,10 @@ const deleteProject = async (projectId) => {
     Logger.info(`Removing scenario with model id: ${modelId}`);
     response = await scenarioAdapter.remove([{ field: 'model_id', value: modelId }]);
     Logger.info(JSON.stringify(response));
+    Logger.info(`Removing scenario results with model id: ${modelId}`);
     response = await scenarioResultAdpater.remove([{ field: 'model_id', value: modelId }]);
     Logger.info(JSON.stringify(response));
+    Logger.info(`Removing sensitivity results with model id: ${modelId}`);
     response = await sensitivityAdapter.remove([{ field: 'model_id', value: modelId }]);
     Logger.info(JSON.stringify(response));
 
