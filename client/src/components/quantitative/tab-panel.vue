@@ -29,7 +29,8 @@
             :scenario-data="scenarioData"
             ref="modelGraph"
             @background-click="onBackgroundClick"
-            @node-drilldown="onNodeDrilldown"
+            @node-sensitivity="onNodeSensitivity"
+            @node-drilldown="openNodeDrilldownView"
             @edge-click="showRelation"
           />
           <color-legend
@@ -237,7 +238,7 @@ export default {
         });
       }
     },
-    onNodeDrilldown(node) {
+    onNodeSensitivity(node) {
       this.drilldownTabs = NODE_DRILLDOWN_TABS;
       this.activeDrilldownTab = PANE_ID.SENSITIVITY;
       this.openDrilldown();
