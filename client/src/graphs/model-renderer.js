@@ -345,7 +345,7 @@ export default class ModelRenderer extends BaseCAGRenderer {
           );
         });
 
-      // Add a shadow to ndoes that have clamps for the currently selected scenario
+      // Add a shadow to nodes that have clamps for the currently selected scenario
       if (selectedScenarioId !== null) {
         const selectedScenario = nodeScenarioData.scenarios.find(s => s.id === selectedScenarioId);
         d3.select(nodes[index]).attr('filter', (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null);
