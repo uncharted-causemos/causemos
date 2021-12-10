@@ -29,7 +29,8 @@
             :scenario-data="scenarioData"
             ref="modelGraph"
             @background-click="onBackgroundClick"
-            @node-drilldown="onNodeDrilldown"
+            @node-sensitivity="onNodeSensitivity"
+            @node-drilldown="openNodeDrilldownView"
             @edge-click="showRelation"
           />
           <color-legend
@@ -70,6 +71,15 @@
               @edge-set-weights="setEdgeWeights"
             />
           </evidence-pane>
+          <!-- make this a component later-->
+          <sensitivity-pane
+            v-else-if="activeDrilldownTab === PANE_ID.SENSITIVITY && selectedNode !== null"
+            :model-components="modelComponents"
+            :selected-node="selectedNode"
+            :sensitivity-result="sensitivityResult"
+            @open-drilldown="openNodeDrilldownView"
+          >
+          </sensitivity-pane>
         </template>
       </drilldown-panel>
     </div>
@@ -88,19 +98,20 @@ import ColorLegend from '@/components/graph/color-legend';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
+import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 
 const PANE_ID = {
-  INDICATOR: 'indicator',
+  SENSITIVITY: 'sensitivity',
   EVIDENCE: 'evidence'
 };
 
 const NODE_DRILLDOWN_TABS = [
   {
-    name: 'Indicator',
-    id: PANE_ID.INDICATOR
+    name: 'Node Sensitivity',
+    id: PANE_ID.SENSITIVITY
   }
 ];
 
@@ -126,6 +137,7 @@ export default {
     DrilldownPanel,
     EdgePolaritySwitcher,
     EvidencePane,
+    SensitivityPane,
     CagSidePanel,
     CagCommentsButton
   },
@@ -168,10 +180,11 @@ export default {
     sensitivityResult: null,
 
     drilldownTabs: NODE_DRILLDOWN_TABS,
-    activeDrilldownTab: PANE_ID.INDICATOR,
+    activeDrilldownTab: PANE_ID.EVIDENCE,
     isDrilldownOpen: false,
     isFetchingStatements: false,
-    selectedEdge: null
+    selectedEdge: null,
+    selectedNode: null
   }),
   computed: {
     ...mapGetters({
@@ -225,7 +238,14 @@ export default {
         });
       }
     },
-    onNodeDrilldown(node) {
+    onNodeSensitivity(node) {
+      this.drilldownTabs = NODE_DRILLDOWN_TABS;
+      this.activeDrilldownTab = PANE_ID.SENSITIVITY;
+      this.openDrilldown();
+      this.selectedNode = node;
+    },
+    openNodeDrilldownView(node) {
+      this.onBackgroundClick();
       this.$router.push({
         name: 'nodeDrilldown',
         params: {
@@ -240,6 +260,7 @@ export default {
       this.$emit('background-click');
       this.closeDrilldown();
       this.selectedEdge = null;
+      this.selectedNode = null;
     },
     openDrilldown() {
       this.isDrilldownOpen = true;

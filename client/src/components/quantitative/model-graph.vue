@@ -37,7 +37,7 @@ export default {
     }
   },
   emits: [
-    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-drilldown'
+    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-sensitivity', 'node-drilldown'
   ],
   computed: {
     ...mapGetters({
@@ -83,6 +83,9 @@ export default {
     //   this.renderer.selectNode(node);
     // });
     this.renderer.setCallback('nodeClick', (event, node) => {
+      this.$emit('node-sensitivity', node.datum().data);
+    });
+    this.renderer.setCallback('nodeDblClick', (event, node) => {
       this.$emit('node-drilldown', node.datum().data);
     });
     this.renderer.setCallback('nodeMouseEnter', (evt, node, g) => {

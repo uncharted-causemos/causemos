@@ -40,7 +40,7 @@
       <svg
         ref="matrix-container"
         :class="{'faded': matrixData === null}"
-      />
+      ></svg>
     </div>
   </div>
 </template>
