@@ -81,6 +81,7 @@
             />
             <projection-histograms
               v-if="
+                selectedScenarioId !== null &&
                 selectedNodeScenarioData !== null && !isHistoricalDataExpanded
               "
               class="projection-histograms"
@@ -406,20 +407,23 @@ export default defineComponent({
     const selectedScenarioId = computed<string | null>(() => {
       const scenarioId = store.getters['model/selectedScenarioId'];
       if (scenarios.value.filter(d => d.id === scenarioId).length === 0) {
-        const baselineScenario = scenarios.value.find(d => d.is_baseline);
-        return baselineScenario?.id ?? null;
+        // Default to "historical data only" mode
+        return null;
       }
       return scenarioId;
     });
 
     const setSelectedScenarioId =
-      (newId: string) => store.dispatch('model/setSelectedScenarioId', newId);
+      (newId: string | null) => store.dispatch('model/setSelectedScenarioId', newId);
 
-    const scenarioSelectDropdownItems = computed<DropdownItem[]>(() =>
-      scenarios.value.map(scenario => {
-        return { displayName: scenario.name, value: scenario.id };
-      })
-    );
+    const scenarioSelectDropdownItems = computed<DropdownItem[]>(() => {
+      return [
+        { displayName: 'Historical data', value: null },
+        ...scenarios.value.map(scenario => {
+          return { displayName: scenario.name, value: scenario.id };
+        })
+      ];
+    });
 
     const hasConstraints = computed(() => {
       return constraints.value.length > 0;

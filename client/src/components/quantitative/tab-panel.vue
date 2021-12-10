@@ -6,7 +6,7 @@
     <div class="tab-content">
       <cag-side-panel
         class="side-panel"
-        :is-experiment-download-visible="true"
+        :is-experiment-download-visible="selectedScenarioId !== null"
         :model-summary="modelSummary"
         :model-components="modelComponents"
         :scenarios="scenarios"

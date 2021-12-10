@@ -37,21 +37,35 @@
     </template>
     <div v-else class="scenarios-container">
       <div
-        v-for="scenario in sortedScenarios"
-        :key="scenario.id"
+        v-for="scenario in scenarioListItems"
+        :key="scenario.id ?? 'historical-data-id'"
         class="checklist-item"
       >
           <!-- first row display the scenario title/name -->
           <div class="checklist-item-scenario">
-            <div class="checklist-item-scenario-title-and-icon" @click="selectScenario(scenario)">
-              <i v-if="selectedScenarioId && selectedScenarioId === scenario.id" class="fa fa-circle" />
+            <div
+              class="checklist-item-scenario-title-and-icon"
+              @click="selectScenario(scenario.id)"
+            >
+              <i v-if="selectedScenarioId === scenario.id" class="fa fa-circle" />
               <i v-else class="fa fa-circle-o" />
-              <div class="scenario-title" :class="{ 'scenario-title-stale': !scenario.is_valid }">
-                {{ scenario.is_valid ? scenario.name : (scenario.name + ' (Stale)') }}
+              <div
+                class="scenario-title"
+                :class="{
+                  'scenario-title-stale':
+                    isFullScenario(scenario) && !scenario.is_valid
+                }"
+              >
+                {{
+                  scenario.name +
+                  (isFullScenario(scenario) && !scenario.is_valid
+                    ? ' (Stale)'
+                    : '')
+                }}
               </div>
             </div>
             <options-button
-              v-if="!scenario.is_baseline"
+              v-if="isFullScenario(scenario) && !scenario.is_baseline"
               :dropdown-below="true"
               :wider-dropdown-options="true"
               class="options-button"
@@ -79,22 +93,24 @@
             second row display a list of scenario clamps
           -->
           <message-display
-            v-if="!scenario.is_baseline && getScenarioClamps(scenario).length === 0"
+            v-if="isFullScenario(scenario) && !scenario.is_baseline && getScenarioClamps(scenario).length === 0"
             class="no-clamps-warning"
             :message-type="'alert-warning'"
             :message="'Select a node to define what-if conditions.'"
           />
-          <div
-            v-for="clamp in getScenarioClamps(scenario)"
-            :key="clamp.concept"
-            class="scenario-clamps">
-              <i class="fa fa-star scenario-clamp-icon" />
-              <div
-                class="scenario-clamp-name">
-                {{ ontologyFormatter(clamp.concept) }}
-              </div>
-              <i class="fa fa-fw fa-close delete-scenario-clamp"
-                @click="deleteScenarioClamp(scenario, clamp)" />
+          <div v-if="isFullScenario(scenario)">
+            <div
+              v-for="clamp in getScenarioClamps(scenario)"
+              :key="clamp.concept"
+              class="scenario-clamps">
+                <i class="fa fa-star scenario-clamp-icon" />
+                <div
+                  class="scenario-clamp-name">
+                  {{ ontologyFormatter(clamp.concept) }}
+                </div>
+                <i class="fa fa-fw fa-close delete-scenario-clamp"
+                  @click="deleteScenarioClamp(scenario, clamp)" />
+            </div>
           </div>
         </div>
         <button
@@ -117,6 +133,12 @@ import { ConceptProjectionConstraints, Scenario } from '@/types/CAG';
 import { mapActions, mapGetters } from 'vuex';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
+interface HistoricalOnlyScenario {
+  id: null;
+  name: string;
+  description: string;
+}
+
 export default defineComponent({
   name: 'CAGScenariosPane',
   components: {
@@ -134,17 +156,25 @@ export default defineComponent({
     scenarioName: '',
     scenarioDesc: '',
     showNewOrEditScenario: false,
-    editingScenarioId: ''
+    editingScenarioId: ('' as string | null)
   }),
   computed: {
     ...mapGetters({
       selectedScenarioId: 'model/selectedScenarioId'
     }),
-    sortedScenarios(): Scenario[] {
+    scenarioListItems(): (HistoricalOnlyScenario | Scenario)[] {
+      const historicalDataScenario = {
+        id: null,
+        name: 'Historical data',
+        description: 'Validate the indicators assigned to each concept.'
+      };
       const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
       const allOtherScenarios = this.scenarios.filter(s => s.id !== this.selectedScenarioId);
       allOtherScenarios.sort((a, b) => a.created_at - b.created_at);
-      return selectedScenario !== undefined ? [selectedScenario, ...allOtherScenarios] : [...allOtherScenarios];
+      // Add "historical data" to the list
+      return selectedScenario !== undefined
+        ? [selectedScenario, historicalDataScenario, ...allOtherScenarios]
+        : [historicalDataScenario, ...allOtherScenarios];
     }
   },
   setup() {
@@ -206,11 +236,16 @@ export default defineComponent({
     getScenarioClamps(scenario: Scenario) {
       return scenario.parameter.constraints;
     },
-    selectScenario(scenario: Scenario) {
-      if (this.selectedScenarioId && this.selectedScenarioId === scenario.id) {
+    selectScenario(scenarioId: string | null) {
+      if (this.selectedScenarioId === scenarioId) {
         return;
       }
-      this.setSelectedScenarioId(scenario.id);
+      this.setSelectedScenarioId(scenarioId);
+    },
+    isFullScenario(
+      scenario: Scenario | HistoricalOnlyScenario
+    ): scenario is Scenario {
+      return scenario.id !== null;
     }
   }
 });

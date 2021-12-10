@@ -18,7 +18,7 @@
         >
           <template #content>
             <div
-              v-for="scenario of scenarios"
+              v-for="scenario of scenarioOptions"
               :key="scenario.id"
               class="dropdown-option"
               :class="{ selected: scenario.id === selectedScenarioId }"
@@ -125,7 +125,7 @@ export default {
       currentCAG: 'app/currentCAG'
     }),
     selectedScenario() {
-      const found = this.scenarios.find(
+      const found = this.scenarioOptions.find(
         scenario => scenario.id === this.selectedScenarioId
       );
       if (found !== undefined) return found;
@@ -138,6 +138,12 @@ export default {
       return {
         name: '[No Scenarios Exist]'
       };
+    },
+    scenarioOptions() {
+      return [
+        { id: null, name: 'Historical data', is_valid: true },
+        ...this.scenarios
+      ];
     },
     isDirty() {
       return _.some(this.scenarios, s => s.is_valid === false);

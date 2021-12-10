@@ -28,7 +28,7 @@ export default function(
   selection: D3Selection,
   nodeScenarioData: NodeScenarioData,
   renderOptions: any,
-  runOptions: { selectedScenarioId: string }
+  runOptions: { selectedScenarioId: string | null }
 ) {
   const chart: Chart = initialize(selection, renderOptions);
   render(chart, nodeScenarioData, runOptions);
@@ -40,9 +40,14 @@ export default function(
 function render(
   chart: Chart,
   nodeScenarioData: NodeScenarioData,
-  runOptions: { selectedScenarioId: string }
+  runOptions: { selectedScenarioId: string | null }
 ) {
   const { scenarios, indicator_time_series, min, max } = nodeScenarioData;
+  const selectedScenarioId = runOptions.selectedScenarioId;
+  if (selectedScenarioId === null) {
+    // TODO: Render historical data only
+    return;
+  }
   const selectedScenario = scenarios.find(
     s => s.id === runOptions.selectedScenarioId
   );
@@ -136,7 +141,7 @@ function render(
     width * (1 - HISTORY_WIDTH_PERCENTAGE),
     height,
     nodeScenarioData,
-    runOptions
+    { selectedScenarioId }
   );
 
   // Axes
