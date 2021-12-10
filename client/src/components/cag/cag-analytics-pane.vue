@@ -1,6 +1,5 @@
 <template>
   <div class="analytics-pane">
-    <div>Graph analytics</div>
     <dropdown-button
       :is-dropdown-left-aligned="true"
       :inner-button-label="'Analysis'"
@@ -11,19 +10,19 @@
 
     <div v-if="currentAnalysis === 'cycles'">
       <div v-if="cyclesPaths && cyclesPaths.balancing.length > 0" class="cycles-result">
-        <strong> Balancing paths </strong>
+        <strong> Balancing Loops </strong>
         <div v-for="(path, idx) of cyclesPaths.balancing" :key="idx">
           <cag-path-item :path-item="path" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="cyclesPaths && cyclesPaths.reinforcing.length > 0" class="cycles-result">
-        <strong> Reinforcing paths </strong>
+        <strong> Reinforcing Loops</strong>
         <div v-for="(path, idx) of cyclesPaths.reinforcing" :key="idx">
           <cag-path-item :path-item="path" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="cyclesPaths && cyclesPaths.ambiguous.length > 0" class="cycles-result">
-        <strong> Ambiguous paths </strong>
+        <strong> Ambiguous Loops </strong>
         <div v-for="(path, idx) of cyclesPaths.ambiguous" :key="idx">
           <cag-path-item :path-item="path" @click="showPath(path)" />
         </div>
@@ -84,8 +83,8 @@ import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelSummary, Scenario, GraphPath } from '@/types/CAG';
 
 const ANALYSES = [
-  { displayName: 'Cycle analysis', value: 'cycles' },
-  { displayName: 'Path sensitivity', value: 'paths' }
+  { displayName: 'Feedback Loops', value: 'cycles' },
+  { displayName: 'Influence Paths', value: 'paths' }
 ];
 
 interface CycleAnalysis {
