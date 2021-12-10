@@ -369,7 +369,8 @@ export default defineComponent({
     } | null,
     PANE_ID,
     timerId: null as NodeJS.Timeout | null,
-    cagsToImport: [] as CAGGraphInterface[]
+    cagsToImport: [] as CAGGraphInterface[],
+    prevStabilitySetting: true // matching CAG Renderer init
   }),
   computed: {
     ...mapGetters({
@@ -683,6 +684,10 @@ export default defineComponent({
       }
     },
     async captureThumbnail() {
+      // FIXME: See layout hack in mergeNodes
+      const graphOptions = this.cagGraph.renderer.options;
+      graphOptions.useStableLayout = this.prevStabilitySetting;
+
       // To compensate for animiated transitions in the graph, we need to wait a little bit for the graph
       // components to move into their rightful positions.
       this.clearThumbnailTimer();
@@ -1107,10 +1112,10 @@ export default defineComponent({
     async resetCAGLayout() {
       if (this.cagGraph === undefined) return;
       const graphOptions = this.cagGraph.renderer.options;
-      const prevStabilitySetting = graphOptions.useStableLayout;
+      this.prevStabilitySetting = graphOptions.useStableLayout;
       graphOptions.useStableLayout = false;
       await this.cagGraph.refresh();
-      graphOptions.useStableLayout = prevStabilitySetting;
+      graphOptions.useStableLayout = this.prevStabilitySetting;
     },
     async resolveUpdatedRelations(edges: EdgeParameter[]) {
       const currentEdges = this.modelComponents.edges;
@@ -1244,6 +1249,13 @@ export default defineComponent({
 
       // 3. update the target node with new components and edges
       const result = await this.addCAGComponents([updatedNode], updatedEdges, 'manual');
+
+      // FIXME: Layout hack: svg-flowgraph has a faulty stableness calculation that results in outdated edges not getting flusehd,
+      // temporary fix to force layout to reset. - DC Dec2021
+      const graphOptions = this.cagGraph.renderer.options;
+      this.prevStabilitySetting = graphOptions.useStableLayout;
+      graphOptions.useStableLayout = false;
+
       this.setUpdateToken(result.updateToken);
     },
     openPathFind() {
