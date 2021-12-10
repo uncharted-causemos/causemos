@@ -10,11 +10,6 @@
     />
 
     <div v-if="currentAnalysis === 'cycles'">
-      <!--
-      <div v-for="(path, idx) of cyclesPaths" :key="idx">
-        <strong>{{idx}}</strong> {{ path }}
-      </div>
-      -->
       <div v-if="cyclesPaths && cyclesPaths.balancing.length > 0" class="cycles-result">
         <strong> Balancing paths </strong>
         <div v-for="(path, idx) of cyclesPaths.balancing" :key="idx">
