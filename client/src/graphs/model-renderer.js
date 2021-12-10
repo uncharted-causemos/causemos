@@ -443,6 +443,11 @@ export default class ModelRenderer extends BaseCAGRenderer {
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
   }
 
+  selectNodeById(nodeId) {
+    const node = this.chart.selectAll('.node').filter(node => node.concept === nodeId);
+    this.selectNode(node);
+  }
+
   selectEdge(evt, edge) {
     const mousePoint = d3.pointer(evt, edge.node());
     const pathNode = edge.select('.edge-path').node();
