@@ -204,6 +204,8 @@ export default defineComponent({
       const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
       if (!scenario) return;
 
+      this.pathExperimentResult = [];
+
       const constraints = scenario.parameter.constraints;
       this.pathExperiemntId = await modelService.runPathwaySensitivityAnalysis(
         this.modelSummary,
