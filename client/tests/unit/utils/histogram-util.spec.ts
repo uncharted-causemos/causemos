@@ -4,7 +4,8 @@ import {
   findPartitionValue,
   extractRelevantHistoricalChanges,
   computeProjectionBins,
-  ABSTRACT_NODE_BINS
+  ABSTRACT_NODE_BINS,
+  abstractBinsMidpoint
 } from '@/utils/histogram-util';
 import { getYearFromTimestamp } from '@/utils/date-util';
 
@@ -472,7 +473,7 @@ describe('HistogramUtil', () => {
       expect(absoluteDifferences[0]).to.equal(absoluteDifferences[3]);
       expect(absoluteDifferences[1]).to.equal(absoluteDifferences[2]);
     });
-    it("returns nowValue + ABSTRACT_NODE_BINS when there aren't enough data to split into 5 bins", () => {
+    it("returns ABSTRACT_NODE_BINS centered on nowValue when there aren't enough data to split into 5 bins", () => {
       const result = computeProjectionBins(
         [
           { timestamp: 662688000000, value: 11.6000003815 },
@@ -483,7 +484,7 @@ describe('HistogramUtil', () => {
         0
       );
       expect(result).to.deep.equal(
-        ABSTRACT_NODE_BINS.map(binBoundary => binBoundary + 100)
+        ABSTRACT_NODE_BINS.map(binBoundary => binBoundary + 100 - abstractBinsMidpoint)
       );
     });
   });
