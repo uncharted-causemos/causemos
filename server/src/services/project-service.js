@@ -165,6 +165,9 @@ const deleteProject = async (projectId) => {
   const nodeAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const scenarioAdapter = Adapter.get(RESOURCE.SCENARIO);
+  const scenarioResultAdpater = Adapter.get(RESOURCE.SCENARIO_RESULT);
+  const sensitivityAdapter = Adapter.get(RESOURCE.SENSITIVITY_RESULT);
+
   // misc
   const insightAdapter = Adapter.get(RESOURCE.INSIGHT);
   const questionAdapter = Adapter.get(RESOURCE.QUESTION);
@@ -184,6 +187,13 @@ const deleteProject = async (projectId) => {
     Logger.info(`Removing scenario with model id: ${modelId}`);
     response = await scenarioAdapter.remove([{ field: 'model_id', value: modelId }]);
     Logger.info(JSON.stringify(response));
+    Logger.info(`Removing scenario results with model id: ${modelId}`);
+    response = await scenarioResultAdpater.remove([{ field: 'model_id', value: modelId }]);
+    Logger.info(JSON.stringify(response));
+    Logger.info(`Removing sensitivity results with model id: ${modelId}`);
+    response = await sensitivityAdapter.remove([{ field: 'model_id', value: modelId }]);
+    Logger.info(JSON.stringify(response));
+
     Logger.info(`Removing model with id: ${modelId}`);
     response = await modelAdapter.remove([{ field: 'id', value: modelId }]);
     Logger.info(JSON.stringify(response));
