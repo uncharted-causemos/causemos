@@ -25,6 +25,7 @@
       :model-summary="modelSummary"
       :model-components="modelComponents"
       :scenarios="scenarios"
+      @show-path="showPath"
     />
 
     <list-context-insight-pane v-if="currentTab === 'Context Insights'" />
@@ -60,7 +61,7 @@ import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-
 import CagScenariosPane from '@/components/cag/cag-scenarios-pane.vue';
 import CagAnalyticsPane from '@/components/cag/cag-analytics-pane.vue';
 import { mapGetters, useStore } from 'vuex';
-import { CAGModelSummary, CAGGraph, Scenario } from '@/types/CAG';
+import { CAGModelSummary, CAGGraph, Scenario, GraphPath } from '@/types/CAG';
 
 export default defineComponent({
   name: 'CAGSidePanel',
@@ -71,7 +72,7 @@ export default defineComponent({
     CagScenariosPane,
     CagAnalyticsPane
   },
-  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp', 'download-experiment'],
+  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp', 'download-experiment', 'show-path'],
   props: {
     isExperimentDownloadVisible: {
       type: Boolean,
@@ -145,6 +146,9 @@ export default defineComponent({
     },
     onDownloadExperiment() {
       this.$emit('download-experiment');
+    },
+    showPath(item: GraphPath) {
+      this.$emit('show-path', item);
     }
   }
 });

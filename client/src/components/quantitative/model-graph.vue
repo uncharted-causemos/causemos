@@ -34,6 +34,14 @@ export default {
     scenarioData: {
       type: Object,
       required: true
+    },
+    visualState: {
+      // selected.nodes
+      // selected.edges
+      // highlighted.nodes
+      // highlighted.edges
+      type: Object,
+      default: () => ({})
     }
   },
   emits: [
@@ -58,6 +66,9 @@ export default {
       const nodeScenarios = Object.values(this.scenarioData)[0].scenarios;
       if (!_.some(nodeScenarios, d => d.id === this.selectedScenarioId)) return;
       this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
+    },
+    visualState() {
+      this.applyVisualState();
     }
   },
   created() {
@@ -88,6 +99,7 @@ export default {
     this.renderer.setCallback('nodeDblClick', (event, node) => {
       this.$emit('node-drilldown', node.datum().data);
     });
+
     this.renderer.setCallback('nodeMouseEnter', (evt, node, g) => {
       this.$emit('node-enter', node, g);
     });
@@ -136,6 +148,25 @@ export default {
       this.renderer.enableDrag(true);
       this.renderer.enableSubInteractions();
       this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
+
+      // apply visual state
+      this.applyVisualState();
+    },
+    applyVisualState() {
+      // reset
+      this.renderer.hideNeighbourhood();
+      this.renderer.clearSelections();
+
+      // apply changes
+      const visualState = this.visualState;
+      if (visualState.selected && visualState.selected.nodes) {
+        visualState.selected.nodes.forEach(node => {
+          this.renderer.selectNodeById(node);
+        });
+      }
+      if (visualState.highlighted) {
+        this.renderer.showNeighborhood(visualState.highlighted);
+      }
     }
   }
 };

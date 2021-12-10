@@ -1,6 +1,11 @@
 import { TimeseriesDistributionPoint, TimeseriesPoint } from './Timeseries';
 import { TimeScale } from './Enums';
 
+export interface GraphPath {
+  path: string[];
+  score?: number;
+}
+
 export interface ConceptProjectionConstraints {
   concept: string;
   values: ProjectionConstraint[];

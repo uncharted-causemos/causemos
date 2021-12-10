@@ -10,6 +10,7 @@
         :model-summary="modelSummary"
         :model-components="modelComponents"
         :scenarios="scenarios"
+        @show-path="showPath"
         @download-experiment="downloadExperiment"
         @new-scenario='$emit("new-scenario", $event)'
         @update-scenario='$emit("update-scenario", $event)'
@@ -27,6 +28,7 @@
           <model-graph
             :data="graphData"
             :scenario-data="scenarioData"
+            :visual-state="visualState"
             ref="modelGraph"
             @background-click="onBackgroundClick"
             @node-sensitivity="onNodeSensitivity"
@@ -87,6 +89,7 @@
 </template>
 
 <script>
+import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import moment from 'moment';
 
@@ -184,6 +187,7 @@ export default {
     isDrilldownOpen: false,
     isFetchingStatements: false,
     selectedEdge: null,
+    visualState: {},
     selectedNode: null
   }),
   computed: {
@@ -333,6 +337,30 @@ export default {
         type: 'application/json'
       });
       window.saveAs(file, 'experiment.json');
+    },
+    showPath(item) {
+      console.log('received', item);
+
+      const path = item.path;
+      const highlightEdges = [];
+      const highlightNode = _.uniq(path).map(d => {
+        return {
+          concept: d
+        };
+      });
+
+      for (let i = 0; i < path.length - 1; i++) {
+        highlightEdges.push({
+          source: path[i],
+          target: path[i + 1]
+        });
+      }
+      this.visualState = {
+        highlighted: {
+          nodes: highlightNode,
+          edges: highlightEdges
+        }
+      };
     }
   }
 };
