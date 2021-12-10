@@ -163,6 +163,12 @@ const remove = async (scenarioId) => {
   } else {
     Logger.info('Deleted scenario:' + scenarioId);
   }
+
+  const scenarioResultConnection = Adapter.get(RESOURCE.SCENARIO_RESULT);
+  scenarioResultConnection.remove([{ field: 'scenario_id', value: scenarioId }]);
+
+  const sensitivityResultConnection = Adapter.get(RESOURCE.SENSITIVITY_RESULT);
+  sensitivityResultConnection.remove([{ field: 'scenario_id', value: scenarioId }]);
 };
 
 const removeAll = async (modelId) => {
