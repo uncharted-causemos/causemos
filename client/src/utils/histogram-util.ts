@@ -22,6 +22,9 @@ export type ProjectionHistograms = [
 
 // The bin boundaries that are used when a node has no historical data.
 export const ABSTRACT_NODE_BINS: BinBoundaries = [0.1, 0.4, 0.6, 0.9];
+// The midpoint is used to center the abstract bins around the now value when
+//  we can't determine bin size because the historical data is a flat line.
+const abstractBinsMidpoint = _.mean(ABSTRACT_NODE_BINS);
 
 /**
  * Partitions a list of numbers into two parts and returns the value that's
@@ -174,8 +177,9 @@ export const computeProjectionBins = (
     //    case is distinct from the abstract node case?
     //  - Is there a fallback heuristic we can use to compute better bins?
     //  - If so, is it worth the added algorithm complexity?
+    // For now return the abstract bins, centered around the nowValue
     return ABSTRACT_NODE_BINS.map(
-      binBoundary => binBoundary + nowValue
+      binBoundary => binBoundary + nowValue - abstractBinsMidpoint
     ) as BinBoundaries;
   } else if (lowerBinsAreInvalid) {
     // Invert and copy positive cutoffs
