@@ -21,8 +21,8 @@ const SPACE_BETWEEN_HISTOGRAM_BARS = 1;
 const HISTOGRAM_BACKGROUND_COLOR = HISTORY_BACKGROUND_COLOR;
 const HISTOGRAM_FOREGROUND_COLOR = HISTORY_LINE_COLOR;
 // How much of the node is taken up by the history chart
-// TODO: If all projections are hidden, this will expand to take the full width
-const HISTORY_WIDTH_PERCENTAGE = 0.5;
+// If all projections are hidden, this will expand to take the full height
+const HISTORY_HEIGHT_PERCENTAGE = 0.2;
 
 export default function(
   selection: D3Selection,
@@ -42,24 +42,9 @@ function render(
   nodeScenarioData: NodeScenarioData,
   runOptions: { selectedScenarioId: string | null }
 ) {
-  const { scenarios, indicator_time_series, min, max } = nodeScenarioData;
-  const selectedScenarioId = runOptions.selectedScenarioId;
-  if (selectedScenarioId === null) {
-    // TODO: Render historical data only
-    return;
-  }
-  const selectedScenario = scenarios.find(
-    s => s.id === runOptions.selectedScenarioId
-  );
-  if (selectedScenario === undefined) {
-    console.error(
-      'Unable to find scenario with ID ' + runOptions.selectedScenarioId + '.'
-    );
-    return;
-  }
+  const { indicator_time_series, min, max, projection_start } = nodeScenarioData;
 
   // Calculate timestamp of the earliest historical time to display
-  const { projection_start } = selectedScenario.parameter;
   // TODO: should this be a constant? based on time_scale? based on how many columns are hidden?
   const historicalMonthsToDisplay = 5 * 12;
   const historyStart = moment
@@ -93,15 +78,21 @@ function render(
   const height = chart.y2 - chart.y1;
   const width = chart.x2 - chart.x1;
 
+  const selectedScenarioId = runOptions.selectedScenarioId;
+  const isHistoricalDataOnlyMode = selectedScenarioId === null;
+  const historicalDataHeight = isHistoricalDataOnlyMode
+    ? height
+    : HISTORY_HEIGHT_PERCENTAGE * height;
+
   const formatter = chartValueFormatter(...yExtent);
   const historyChartXScale = d3
     .scaleLinear()
     .domain([historyStart, historyEnd])
-    .range([0, width * HISTORY_WIDTH_PERCENTAGE]);
+    .range([0, width]);
   const historyChartYScale = d3
     .scaleLinear()
     .domain(yExtent)
-    .range([height, 0])
+    .range([historicalDataHeight, 0])
     .clamp(true);
 
   const svgGroup = chart.g;
@@ -113,7 +104,7 @@ function render(
     .classed('historical-rect', true)
     .attr('x', historyChartXScale(historyStart))
     .attr('y', 0)
-    .attr('height', height)
+    .attr('height', historicalDataHeight)
     .attr('width', historyChartXScale(historyEnd))
     .attr('fill', HISTORY_BACKGROUND_COLOR);
 
@@ -135,23 +126,16 @@ function render(
     .style('pointer-events', 'none')
     .style('fill', 'none');
 
-  renderScenarioProjections(
-    svgGroup,
-    width * HISTORY_WIDTH_PERCENTAGE,
-    width * (1 - HISTORY_WIDTH_PERCENTAGE),
-    height,
-    nodeScenarioData,
-    { selectedScenarioId }
-  );
-
-  // Axes
+  // Only render yAxis ticks if isHistoricalDataMode
   const yAxis = d3
     .axisRight(historyChartYScale)
     .tickValues(
-      calculateGenericTicks(
-        historyChartYScale.domain()[0],
-        historyChartYScale.domain()[1]
-      )
+      isHistoricalDataOnlyMode
+        ? calculateGenericTicks(
+          historyChartYScale.domain()[0],
+          historyChartYScale.domain()[1]
+        )
+        : []
     )
     .tickSize(0)
     // The type of formatter can't be more specific than `any`
@@ -169,11 +153,27 @@ function render(
     .style('color', HISTORY_LINE_COLOR);
   yAxisElement.select('.domain').attr('stroke-width', 0);
   yAxisElement.selectAll('text').attr('x', 0);
+
+  if (isHistoricalDataOnlyMode) {
+    // Don't render projections
+    return;
+  }
+
+  renderScenarioProjections(
+    svgGroup,
+    historicalDataHeight + 2 * SPACE_BETWEEN_HISTOGRAM_BARS,
+    width,
+    height - historicalDataHeight,
+    nodeScenarioData,
+    // If we've reached this point, historical data only mode is not active and
+    //  it's safe to assert that selectedScenarioId is not null
+    { selectedScenarioId: selectedScenarioId as string }
+  );
 }
 
 function renderScenarioProjections(
   svgGroup: D3GElementSelection,
-  xOffset: number,
+  yOffset: number,
   width: number,
   height: number,
   nodeScenarioData: NodeScenarioData,
@@ -229,7 +229,7 @@ function renderScenarioProjections(
     .data(histograms)
     .join('g')
     .classed('histogram', true)
-    .attr('transform', (d, i) => translate(xOffset + i * widthPerHistogram, 0));
+    .attr('transform', (d, i) => translate(i * widthPerHistogram, yOffset));
   const histogramBarElements = histogramElements
     .selectAll('.histogram-bar')
     .data(histogramData => histogramData.binCounts)
