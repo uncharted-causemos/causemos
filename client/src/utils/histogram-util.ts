@@ -149,7 +149,7 @@ export const computeProjectionBins = (
 
   let negligibleNegativeCutoff = findPartitionValue(
     negative_values,
-    fractionInNegligibleBin
+    1 - fractionInNegligibleBin
   );
   const nonNegligibleNegative = negative_values.filter(
     value => value < negligibleNegativeCutoff
@@ -158,10 +158,10 @@ export const computeProjectionBins = (
 
   let negligiblePositiveCutoff = findPartitionValue(
     positive_values,
-    1 - fractionInNegligibleBin
+    fractionInNegligibleBin
   );
   const nonNegligiblePositive = positive_values.filter(
-    value => value <= negligiblePositiveCutoff
+    value => value > negligiblePositiveCutoff
   );
   let higherMuchHigherCutoff = findPartitionValue(nonNegligiblePositive, 0.5);
 
