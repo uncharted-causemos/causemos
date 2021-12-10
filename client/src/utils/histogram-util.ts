@@ -24,7 +24,7 @@ export type ProjectionHistograms = [
 export const ABSTRACT_NODE_BINS: BinBoundaries = [0.1, 0.4, 0.6, 0.9];
 // The midpoint is used to center the abstract bins around the now value when
 //  we can't determine bin size because the historical data is a flat line.
-const abstractBinsMidpoint = _.mean(ABSTRACT_NODE_BINS);
+export const abstractBinsMidpoint = _.mean(ABSTRACT_NODE_BINS);
 
 /**
  * Partitions a list of numbers into two parts and returns the value that's
