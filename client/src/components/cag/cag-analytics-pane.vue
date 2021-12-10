@@ -134,6 +134,9 @@ export default defineComponent({
     const currentCAG = computed(() => {
       return store.getters['app/currentCAG'];
     });
+    const selectedScenarioId = computed(() => {
+      return store.getters['model/selectedScenarioId'];
+    });
 
     const pathExperiemntId = ref('');
     const pathExperimentResult = ref([]) as Ref<GraphPath[]>;
@@ -154,6 +157,7 @@ export default defineComponent({
       currentPathSource,
       currentPathTarget,
       currentCAG,
+      selectedScenarioId,
       cyclesPaths,
       totalCycles,
 
@@ -195,11 +199,17 @@ export default defineComponent({
     },
     async runPathwayAnalysis() {
       if (_.isEmpty(this.currentPathSource) || _.isEmpty(this.currentPathTarget)) return;
+
+      // Extract constraints
+      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      if (!scenario) return;
+
+      const constraints = scenario.parameter.constraints;
       this.pathExperiemntId = await modelService.runPathwaySensitivityAnalysis(
         this.modelSummary,
         [this.currentPathSource],
         [this.currentPathTarget],
-        []
+        modelService.cleanConstraints(constraints)
       );
       console.log('path exp', this.pathExperiemntId);
       this.pollPathExperimentResult();
