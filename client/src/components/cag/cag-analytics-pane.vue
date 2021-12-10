@@ -10,10 +10,30 @@
     />
 
     <div v-if="currentAnalysis === 'cycles'">
+      <!--
       <div v-for="(path, idx) of cyclesPaths" :key="idx">
         <strong>{{idx}}</strong> {{ path }}
       </div>
-      <div v-if="cyclesPaths.length === 0">
+      -->
+      <div v-if="cyclesPaths && cyclesPaths.balancing.length > 0">
+        <div> Balancing paths </div>
+        <div v-for="(path, idx) of cyclesPaths.balancing" :key="idx">
+          <cag-path-item :path-item="path" />
+        </div>
+      </div>
+      <div v-if="cyclesPaths && cyclesPaths.reinforcing.length > 0">
+        <div> Reinforcing paths </div>
+        <div v-for="(path, idx) of cyclesPaths.reinforcing" :key="idx">
+          <cag-path-item :path-item="path" />
+        </div>
+      </div>
+      <div v-if="cyclesPaths && cyclesPaths.ambiguous.length > 0">
+        <div> Ambiguous paths </div>
+        <div v-for="(path, idx) of cyclesPaths.ambiguous" :key="idx">
+          <cag-path-item :path-item="path" />
+        </div>
+      </div>
+      <div v-if="totalCycles === 0">
         No cycles detected.
       </div>
     </div>
@@ -43,11 +63,13 @@
 
       <!-- paht results -->
       <div>
-        <div v-if="pathExperiemntId && !pathExperimentResult">
+        <div v-if="pathExperiemntId && pathExperimentResult.length === 0">
           <i class="fa fa-spinner fa-spin" /> Running experiment
         </div>
-        <div v-if="pathExperiemntId && pathExperimentResult">
-          {{ pathExperimentResult }}
+        <div v-if="pathExperiemntId && pathExperimentResult.length > 0">
+          <div v-for="(path, idx) of pathExperimentResult" :key="idx">
+          {{ path }}
+          </div>
         </div>
       </div>
     </div>
@@ -59,21 +81,33 @@ import _ from 'lodash';
 import { computed, defineComponent, ref, PropType, Ref } from 'vue';
 import { useStore } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
-import { findCycles } from '@/utils/graphs-util';
+import CagPathItem from '@/components/cag/cag-path-item.vue';
+import { findCycles, classifyCycles } from '@/utils/graphs-util';
 import modelService from '@/services/model-service';
 
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, Scenario, GraphPath } from '@/types/CAG';
 
 const ANALYSES = [
   { displayName: 'Cycle analysis', value: 'cycles' },
   { displayName: 'Path sensitivity', value: 'paths' }
 ];
 
+interface CycleAnalysis {
+  balancing: GraphPath[];
+  reinforcing: GraphPath[];
+  ambiguous: GraphPath[];
+}
+
+interface CycleAnalysisItem {
+  name: string;
+}
+
 export default defineComponent({
   name: 'CAGAnalyticsPane',
   components: {
-    DropdownButton
+    DropdownButton,
+    CagPathItem
   },
   props: {
     modelSummary: {
@@ -92,7 +126,12 @@ export default defineComponent({
   setup(props) {
     const store = useStore();
     const currentAnalysis = ref('cycles');
-    const cyclesPaths = ref([]) as Ref<any[]>;
+    const cyclesPaths = ref({ balancing: [], reinforcing: [], ambiguous: [] }) as Ref<CycleAnalysis>;
+
+    const totalCycles = computed(() => {
+      if (_.isEmpty(cyclesPaths.value)) return 0;
+      return cyclesPaths.value.balancing.length + cyclesPaths.value.reinforcing.length + cyclesPaths.value.ambiguous.length;
+    });
 
     const currentPathSource = ref('');
     const currentPathTarget = ref('');
@@ -102,7 +141,7 @@ export default defineComponent({
     });
 
     const pathExperiemntId = ref('');
-    const pathExperimentResult = ref(null) as Ref<any>;
+    const pathExperimentResult = ref([]) as Ref<GraphPath[]>;
 
     // FIXME: SHould have adapatble lists depending on selection e.g. reachable nodes
     const availableNodes = computed(() => {
@@ -121,6 +160,7 @@ export default defineComponent({
       currentPathTarget,
       currentCAG,
       cyclesPaths,
+      totalCycles,
 
       availableNodes,
       pathExperiemntId,
@@ -139,7 +179,21 @@ export default defineComponent({
       }
     },
     showCyclesAnalysis() {
-      this.cyclesPaths = findCycles(this.modelComponents.edges);
+      const edges = this.modelComponents.edges;
+      const cycleResult = classifyCycles(findCycles(edges), edges);
+
+      const reformat = (p: CycleAnalysisItem[]) => {
+        return {
+          path: p.map(pItem => pItem.name),
+          score: 1.0
+        };
+      };
+
+      cycleResult.balancing = cycleResult.balancing.map(reformat);
+      cycleResult.reinforcing = cycleResult.reinforcing.map(reformat);
+      cycleResult.ambiguous = cycleResult.ambiguous.map(reformat);
+
+      this.cyclesPaths = cycleResult;
     },
     async runPathwayAnalysis() {
       if (_.isEmpty(this.currentPathSource) || _.isEmpty(this.currentPathTarget)) return;
@@ -156,7 +210,8 @@ export default defineComponent({
       const r = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.pathExperiemntId);
 
       if (r.status === 'completed' && r.results) {
-        this.pathExperimentResult = r.results;
+        const pathResult = r.results.pathways;
+        this.pathExperimentResult = pathResult;
       } else {
         window.setTimeout(() => {
           this.pollPathExperimentResult();
