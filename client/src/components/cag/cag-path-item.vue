@@ -1,7 +1,7 @@
 <template>
   <div class="path-container">
     <span v-for="(node, idx) of pathItem.path" :key="node">
-      {{ node }}
+      {{ ontologyFormatter(node) }}
       <i v-if="idx < pathItem.path.length - 1" class="fa fa-arrow-right fa-fw" />
     </span>
   </div>
@@ -11,6 +11,7 @@
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
 import { GraphPath } from '@/types/CAG';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 export default defineComponent({
   name: 'CAGPathItem',
@@ -18,6 +19,11 @@ export default defineComponent({
     pathItem: {
       type: Object as PropType<GraphPath>
     }
+  },
+  setup() {
+    return {
+      ontologyFormatter: useOntologyFormatter()
+    };
   }
 });
 </script>
@@ -32,7 +38,7 @@ export default defineComponent({
 }
 
 .path-container:hover {
-  background: #f8f8f8;
+  background: #EEE;
   cursor: pointer
 }
 </style>

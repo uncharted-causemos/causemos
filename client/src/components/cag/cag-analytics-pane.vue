@@ -15,20 +15,20 @@
         <strong>{{idx}}</strong> {{ path }}
       </div>
       -->
-      <div v-if="cyclesPaths && cyclesPaths.balancing.length > 0">
-        <div> Balancing paths </div>
+      <div v-if="cyclesPaths && cyclesPaths.balancing.length > 0" class="cycles-result">
+        <strong> Balancing paths </strong>
         <div v-for="(path, idx) of cyclesPaths.balancing" :key="idx">
           <cag-path-item :path-item="path" @click="showPath(path)" />
         </div>
       </div>
-      <div v-if="cyclesPaths && cyclesPaths.reinforcing.length > 0">
-        <div> Reinforcing paths </div>
+      <div v-if="cyclesPaths && cyclesPaths.reinforcing.length > 0" class="cycles-result">
+        <strong> Reinforcing paths </strong>
         <div v-for="(path, idx) of cyclesPaths.reinforcing" :key="idx">
           <cag-path-item :path-item="path" @click="showPath(path)" />
         </div>
       </div>
-      <div v-if="cyclesPaths && cyclesPaths.ambiguous.length > 0">
-        <div> Ambiguous paths </div>
+      <div v-if="cyclesPaths && cyclesPaths.ambiguous.length > 0" class="cycles-result">
+        <strong> Ambiguous paths </strong>
         <div v-for="(path, idx) of cyclesPaths.ambiguous" :key="idx">
           <cag-path-item :path-item="path" @click="showPath(path)" />
         </div>
@@ -109,6 +109,7 @@ export default defineComponent({
     DropdownButton,
     CagPathItem
   },
+  emits: ['show-path'],
   props: {
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
@@ -183,8 +184,11 @@ export default defineComponent({
       const cycleResult = classifyCycles(findCycles(edges), edges);
 
       const reformat = (p: CycleAnalysisItem[]) => {
+        const fullPath = p.map(pItem => pItem.name);
+        // Complete the cycle
+        fullPath.push(p[0].name);
         return {
-          path: p.map(pItem => pItem.name),
+          path: fullPath,
           score: 1.0
         };
       };
@@ -240,6 +244,9 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
 
+  .cycles-result {
+    margin: 5px 0;
+  }
 
   .pathway-exec-summary {
     margin-top: 5px;

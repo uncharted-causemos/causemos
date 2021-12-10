@@ -155,6 +155,11 @@ export default {
       this.applyVisualState();
     },
     applyVisualState() {
+      // reset
+      this.renderer.hideNeighbourhood();
+      this.renderer.clearSelections();
+
+      // apply changes
       const visualState = this.visualState;
       if (visualState.selected && visualState.selected.nodes) {
         visualState.selected.nodes.forEach(node => {
