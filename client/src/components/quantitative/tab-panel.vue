@@ -80,6 +80,7 @@
             :selected-node="selectedNode"
             :sensitivity-result="sensitivityResult"
             @open-drilldown="openNodeDrilldownView"
+            @highlight-node-paths="highlightNodePaths"
           >
           </sensitivity-pane>
         </template>
@@ -247,6 +248,11 @@ export default {
       this.activeDrilldownTab = PANE_ID.SENSITIVITY;
       this.openDrilldown();
       this.selectedNode = node;
+      this.visualState = {
+        selected: {
+          nodes: [this.selectedNode]
+        }
+      };
     },
     openNodeDrilldownView(node) {
       this.onBackgroundClick();
@@ -259,6 +265,18 @@ export default {
           nodeId: node.id
         }
       });
+    },
+    highlightNodePaths(node) {
+      if (node) {
+        this.visualState = {
+          highlighted: {
+            nodes: [node, this.selectedNode]
+          },
+          selected: {
+            nodes: [this.selectedNode]
+          }
+        };
+      }
     },
     onBackgroundClick() {
       this.$emit('background-click');

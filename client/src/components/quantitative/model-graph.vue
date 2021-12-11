@@ -161,7 +161,7 @@ export default {
       const visualState = this.visualState;
       if (visualState.selected && visualState.selected.nodes) {
         visualState.selected.nodes.forEach(node => {
-          this.renderer.selectNodeById(node);
+          this.renderer.selectNodeById(node.concept);
         });
       }
       if (visualState.highlighted) {

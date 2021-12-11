@@ -52,7 +52,7 @@ export default defineComponent({
     // Threshold to display a bar active
     numActive(): number {
       if (this.importanceRatio === null) return -1;
-      return Math.round(this.importanceRatio * this.numBars);
+      return Math.ceil(this.importanceRatio * this.numBars);
     },
     tooltipInfo(): string|null {
       if (this.importanceRatio) {
