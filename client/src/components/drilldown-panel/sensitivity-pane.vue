@@ -26,7 +26,7 @@
         v-for="driver in drivers"
         :active="driver.node?.id === activeNode?.id"
         :key="driver.concept"
-        @click="highlightNodePaths(driver.node)"
+        @click="highlightNodePaths(driver.node, 'source')"
       >
         <importance-bars
           v-if="maxSensitivity"
@@ -51,7 +51,7 @@
         v-for="impact in impacts"
         :active="impact.node?.id === activeNode?.id"
         :key="impact.concept"
-        @click="highlightNodePaths(impact.node)"
+        @click="highlightNodePaths(impact.node, 'target')"
       >
         <importance-bars
           v-if="maxSensitivity"
@@ -269,9 +269,9 @@ export default defineComponent({
     openFullDrilldown() {
       this.$emit('open-drilldown', this.selectedNode);
     },
-    highlightNodePaths(node: any) {
+    highlightNodePaths(node: any, type: string) {
       this.activeNode = node;
-      this.$emit('highlight-node-paths', node);
+      this.$emit('highlight-node-paths', node, type);
     },
     setActiveTab(activeTab: string) {
       this.activeTab = activeTab;

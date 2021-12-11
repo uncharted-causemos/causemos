@@ -106,6 +106,7 @@ import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
+import { findPaths } from '@/utils/graphs-util';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -266,11 +267,39 @@ export default {
         }
       });
     },
-    highlightNodePaths(node) {
+    highlightNodePaths(node, type) {
+      let paths = [];
+      if (type === 'source') {
+        paths = findPaths(node.concept, this.selectedNode.concept, this.modelComponents.edges);
+      } else {
+        paths = findPaths(this.selectedNode.concept, node.concept, this.modelComponents.edges);
+      }
+
+      const highlightEdges = [];
+      const highlightNodes = [];
+      const nodesSet = new Set();
+      // FIXME: might have dupliate edges, should clean up
+      for (const path of paths) {
+        for (let i = 0; i < path.length - 1; i++) {
+          highlightEdges.push({
+            source: path[i],
+            target: path[i + 1]
+          });
+          nodesSet.add(path[i]);
+          nodesSet.add(path[i + 1]);
+        }
+      }
+      for (const nodeStr of nodesSet.values()) {
+        highlightNodes.push({
+          concept: nodeStr
+        });
+      }
+
       if (node) {
         this.visualState = {
           highlighted: {
-            nodes: [node, this.selectedNode]
+            nodes: highlightNodes,
+            edges: highlightEdges
           },
           selected: {
             nodes: [this.selectedNode]
