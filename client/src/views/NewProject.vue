@@ -79,10 +79,12 @@ import { defineComponent } from 'vue';
 import projectService from '@/services/project-service';
 
 import KnowledgeBaseRow from '@/components/new-project/knowledge-base-row.vue';
-import { KnowledgeBase } from '@/types/Common';
+import { KnowledgeBase, Project } from '@/types/Common';
 import { ProjectType } from '@/types/Enums';
 
+
 const MSG_EMPTY_PROJECT_NAME = 'Project name cannot be blank';
+const MSG_PROJECT_NAME_ALREADY_EXIST = 'Project name already exists';
 
 export default defineComponent({
   name: 'NewProjectView',
@@ -91,6 +93,7 @@ export default defineComponent({
   },
   data: () => ({
     kbList: [] as KnowledgeBase[],
+    existingProjectNames: [] as string[],
     projectName: '',
     projectDescription: '',
     hasError: false,
@@ -109,8 +112,11 @@ export default defineComponent({
       }
     }
   },
-  mounted() {
+  async mounted() {
     this.refresh();
+
+    const existingProjects: Project[] = await projectService.getProjects();
+    this.existingProjectNames = existingProjects.map(p => p.name.toLowerCase());
   },
   methods: {
     ...mapActions({
@@ -121,6 +127,10 @@ export default defineComponent({
       if (_.isEmpty(this.projectName)) {
         this.hasError = true;
         this.errorMsg = MSG_EMPTY_PROJECT_NAME;
+      }
+      if (this.existingProjectNames.includes(this.projectName.toLowerCase())) {
+        this.hasError = true;
+        this.errorMsg = MSG_PROJECT_NAME_ALREADY_EXIST;
       }
       if (this.isProcessing || this.hasError) return;
 
