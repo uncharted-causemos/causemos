@@ -49,8 +49,8 @@ export default defineComponent({
       default: () => {}
     },
     selectedScenarioId: {
-      type: String,
-      required: true
+      type: String as PropType<(string | null)>,
+      default: null
     }
   },
   watch: {

@@ -270,7 +270,7 @@ export default defineComponent({
         //
         // data state
         // FIXME: the order of resetting the state is important
-        if (loadedInsight.data_state?.selectedScenarioId) {
+        if (loadedInsight.data_state?.selectedScenarioId !== undefined) {
           // this will reload datacube metadata as well as scenario runs
           this.setSelectedScenarioId(loadedInsight.data_state?.selectedScenarioId);
         }
@@ -363,13 +363,9 @@ export default defineComponent({
 
       // 4. Figure out the current selected scenario
       let scenarioId = this.selectedScenarioId;
-      if (_.isNil(this.selectedScenarioId) || scenarios.filter(d => d.id === this.selectedScenarioId).length === 0) {
-        const baselineScenario = scenarios.find(d => d.is_baseline);
-        if (baselineScenario === undefined) {
-          console.error('No scenario is flagged as baseline.', scenarios);
-        } else {
-          scenarioId = baselineScenario.id;
-        }
+      if (scenarios.find(d => d.id === this.selectedScenarioId) === undefined) {
+        // Default to 'historical data only' mode
+        scenarioId = null;
       }
 
       // 5. Rebuild scenarios' result if necessary

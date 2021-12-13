@@ -345,8 +345,11 @@ export default class ModelRenderer extends BaseCAGRenderer {
           );
         });
 
-      const selectedScenario = nodeScenarioData.scenarios.find(s => s.id === selectedScenarioId);
-      d3.select(nodes[index]).attr('filter', (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null);
+      // Add a shadow to nodes that have clamps for the currently selected scenario
+      if (selectedScenarioId !== null) {
+        const selectedScenario = nodeScenarioData.scenarios.find(s => s.id === selectedScenarioId);
+        d3.select(nodes[index]).attr('filter', (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null);
+      }
 
       const runOptions = { selectedScenarioId };
       const renderOptions = {
@@ -436,16 +439,16 @@ export default class ModelRenderer extends BaseCAGRenderer {
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
   }
 
-  selectNode(node) {
+  selectNode(node, color) {
     node.select('.node-container')
       .style('border-radius', DEFAULT_STYLE.node.highlighted.borderRadius)
-      .style('stroke', DEFAULT_STYLE.node.highlighted.stroke)
+      .style('stroke', _.isEmpty(color) ? DEFAULT_STYLE.node.highlighted.stroke : color)
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
   }
 
-  selectNodeById(nodeId) {
+  selectNodeById(nodeId, color) {
     const node = this.chart.selectAll('.node').filter(node => node.concept === nodeId);
-    this.selectNode(node);
+    this.selectNode(node, color);
   }
 
   selectEdge(evt, edge) {
