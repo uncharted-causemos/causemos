@@ -571,6 +571,7 @@ import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } f
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
+import useQualifierCounts from '@/services/composables/useQualifierCounts';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -1411,6 +1412,8 @@ export default defineComponent({
       initialSelectedRegionIds
     );
 
+    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds);
+
     const {
       qualifierBreakdownData,
       toggleIsQualifierSelected,
@@ -1423,6 +1426,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedTimestamp,
+      availableQualifiers,
       initialSelectedQualifierValues
     );
 

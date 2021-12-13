@@ -1,10 +1,9 @@
 import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
-import { NamedBreakdownData } from '@/types/Datacubes';
+import { QualifierInfo, NamedBreakdownData } from '@/types/Datacubes';
 import {
   AggregationOption,
   TemporalResolutionOption
 } from '@/types/Enums';
-import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { getQualifierBreakdown } from '../new-datacube-service';
@@ -77,6 +76,7 @@ export default function useQualifiers(
   temporalAggregation: Ref<AggregationOption>,
   spatialAggregation: Ref<AggregationOption>,
   selectedTimestamp: Ref<number | null>,
+  availableQualifiers: Ref<Map<string, QualifierInfo>>,
   initialSelectedQualifierValues: Ref<string[]>
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
@@ -85,9 +85,12 @@ export default function useQualifiers(
   const filteredQualifierVariables = computed(() => {
     if (metadata.value === null) return [];
     const { qualifier_outputs } = metadata.value;
+
+    // Only display qualifiers marked `fetchByDefault`
+    // TODO: All qualifier headings should be visible.
+    //  Users should be able to request the other qualifiers by "expanding" the heading
     return (qualifier_outputs ?? [])
-      .filter(qualifier => qualifier.is_visible)
-      .filter(qualifier => !QUALIFIERS_TO_EXCLUDE.includes(qualifier.name));
+      .filter(qualifier => availableQualifiers.value.get(qualifier.name)?.fetchByDefault);
   });
 
   const selectedQualifierValues = ref<Set<string>>(new Set());
