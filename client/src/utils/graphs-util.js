@@ -378,10 +378,10 @@ export function classifyCycles(cyclePaths, graphEdges) {
 
     if (isAmbiguous) {
       ambiguous.push(path);
-    } else if (negativePolarity === positivePolarity) {
-      balancing.push(path);
-    } else {
+    } else if (negativePolarity % 2 === 0) {
       reinforcing.push(path);
+    } else {
+      balancing.push(path);
     }
   }
 
