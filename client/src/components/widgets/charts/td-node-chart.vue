@@ -60,6 +60,10 @@ export default defineComponent({
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
       required: true
+    },
+    isClampAreaHidden: {
+      type: Boolean,
+      default: false
     }
   },
   setup(props, { emit }) {
@@ -71,7 +75,8 @@ export default defineComponent({
       viewingExtent,
       constraints,
       unit,
-      modelSummary
+      modelSummary,
+      isClampAreaHidden
     } = toRefs(props);
     const historicalTimeseriesBeforeStart = computed(() => {
       let projectionStartTimestamp = 0;
@@ -131,7 +136,8 @@ export default defineComponent({
         min,
         max,
         unit.value,
-        modelSummary.value
+        modelSummary.value,
+        isClampAreaHidden.value
       );
     });
     onMounted(() => {
@@ -165,7 +171,8 @@ export default defineComponent({
       min: number,
       max: number,
       unit: string,
-      modelSummary: CAGModelSummary
+      modelSummary: CAGModelSummary,
+      isClampAreaHidden: boolean
     ) => {
       // Set new size
       svg.attr('width', width).attr('height', height);
@@ -184,6 +191,7 @@ export default defineComponent({
         unit,
         modelSummary,
         viewingExtent.value,
+        isClampAreaHidden,
         setConstraints,
         setHistoricalTimeseries
       );

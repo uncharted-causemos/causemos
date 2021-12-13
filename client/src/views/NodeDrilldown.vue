@@ -66,8 +66,6 @@
             <td-node-chart
               v-if="selectedNodeScenarioData !== null"
               class="scenario-chart"
-              :class="{'is-expanded': isHistoricalDataExpanded}"
-              :is-expanded="isHistoricalDataExpanded"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
               :unit="selectedNodeScenarioData.unit"
@@ -76,13 +74,14 @@
               :constraints="constraints"
               :model-summary="modelSummary"
               :viewing-extent="viewingExtent"
+              :is-clamp-area-hidden="selectedScenarioId === null"
               @set-constraints="modifyConstraints"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
             <projection-histograms
               v-if="
                 selectedScenarioId !== null &&
-                selectedNodeScenarioData !== null && !isHistoricalDataExpanded
+                selectedNodeScenarioData !== null
               "
               class="projection-histograms"
               :comparison-baseline-id="comparisonBaselineId"
@@ -655,7 +654,7 @@ export default defineComponent({
     // Find out the default viewing window
     const viewingExtent = computed<number[] | null>(() => {
       const parameter = modelSummary.value?.parameter;
-      if (!parameter) {
+      if (!parameter || selectedScenarioId.value === null) {
         return null;
       } else {
         // FIXME: last available clamp position can be derived from time_scale
@@ -719,9 +718,6 @@ export default defineComponent({
       scenarioData
     };
   },
-  data: () => ({
-    isHistoricalDataExpanded: false
-  }),
   methods: {
     openDataExplorer() {
       this.$router.push({
