@@ -2,25 +2,39 @@
   <hideable-legend>
     <div class="cag-legend">
       <div class="column edge-column">
-        <span>Increase of A <strong class="positive">increases</strong> B</span>
-        <span>Increase of A <strong class="negative">decreases</strong> B</span>
-        <span>A <strong class="ambiguous">increases or decreases</strong> B</span>
-        <span>No evidence</span>
+        <div class="edge-row">
+          <arrow-icon class="arrow" :type="ArrowType.Positive"/>
+          <span>Increase of A <strong class="positive">increases</strong> B</span>
+        </div>
+        <div class="edge-row">
+          <arrow-icon class="arrow" :type="ArrowType.Negative"/>
+          <span>Increase of A <strong class="negative">decreases</strong> B</span>
+        </div>
+
+        <div class="edge-row">
+          <arrow-icon class="arrow" :type="ArrowType.Ambiguous"/>
+          <span>A <strong class="ambiguous">increases or decreases</strong> B</span>
+        </div>
+
+        <div class="edge-row">
+          <arrow-icon class="arrow" :type="ArrowType.NoEvidence"/>
+          <span>No evidence</span>
+        </div>
       </div>
       <div class="column histogram-y-axis" v-if="areHistogramsVisible">
         <span>Change in value</span>
-        <span>Much higher than now</span>
-        <span>Higher than now</span>
-        <span>Negligible change from now</span>
-        <span>Lower than now</span>
-        <span>Much lower than now</span>
+        <span class="faded">Much higher than now</span>
+        <span class="faded">Higher than now</span>
+        <span class="faded">Negligible change from now</span>
+        <span class="faded">Lower than now</span>
+        <span class="faded">Much lower than now</span>
       </div>
       <div
         class="column histogram-column"
         v-for="label of histogramTimeSliceLabels"
         :key="label"
       >
-        <span>{{ label }}</span>
+        <span class="faded">In {{ label }}</span>
         <div
           class="histogram-row"
           v-for="(histogramValue, index) of [15, 25, 30, 20, 10]"
@@ -35,10 +49,12 @@
 
 <script lang="ts">
 import { defineComponent, PropType, toRefs, computed } from 'vue';
-import HideableLegend from '../widgets/hideable-legend.vue';
+import HideableLegend from '@/components/widgets/hideable-legend.vue';
+import ArrowIcon, { ArrowType } from '@/components/graph/arrow-icon.vue';
+
 export default defineComponent({
   name: 'CagLegend',
-  components: { HideableLegend },
+  components: { HideableLegend, ArrowIcon },
   props: {
     histogramTimeSliceLabels: {
       type: Array as PropType<string[]>,
@@ -50,7 +66,8 @@ export default defineComponent({
     return {
       areHistogramsVisible: computed(
         () => histogramTimeSliceLabels.value.length > 0
-      )
+      ),
+      ArrowType
     };
   }
 });
@@ -69,11 +86,25 @@ export default defineComponent({
   margin-left: 5px;
 }
 
+.edge-row {
+  display: flex;
+  gap: 5px;
+}
+
+.arrow {
+  width: 20px;
+}
+
 .histogram-y-axis {
   text-align: right;
+  margin-left: 20px;
 }
 
 .histogram-column {
+  margin-left: 10px;
+  // Hardcoded to the approximate length of the longest label,
+  //  "In several weeks"
+  width: 96px;
 }
 
 .histogram-row {
@@ -98,6 +129,10 @@ export default defineComponent({
 }
 
 .ambiguous {
+  color: $text-color-medium;
+}
+
+.faded {
   color: $text-color-medium;
 }
 
