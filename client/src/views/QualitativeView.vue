@@ -1183,14 +1183,15 @@ export default defineComponent({
     },
     async addEdgeEvidenceRecommendations(ids: string[]) {
       if (this.selectedEdge) {
+        const newIds = _.uniq([...this.selectedEdge.reference_ids, ...ids]);
         const payload = {
           id: this.selectedEdge.id,
           source: this.selectedEdge.source,
           target: this.selectedEdge.target,
           user_polarity: null,
-          reference_ids: ids
+          reference_ids: newIds
         };
-        this.selectedEdge.reference_ids = ids;
+        this.selectedEdge.reference_ids = newIds;
         const data = await this.addCAGComponents([], [payload], 'curation');
         this.setUpdateToken(data.updateToken);
       }

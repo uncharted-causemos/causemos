@@ -143,8 +143,10 @@
         Recommendations
         <button
           class="btn btn-sm"
+          :disabled="(recommendations?.length ?? 0) === 0"
           @click="addRecommendations">Add</button>
       </div>
+      <message-display v-if="(recommendations?.length ?? 0) === 0" :message="'No recommended evidence found.'" />
       <collapsible-item
         v-for="(recommendation, statIdx) in recommendations"
         :override="{value: false}"
@@ -152,7 +154,7 @@
         class="statements-container">
         <template #controls>
           <i class="fa fa-lg fa-fw"
-             :class="{
+            :class="{
               'fa-check-square-o': recommendations[statIdx].isSelected,
               'fa-square-o': !recommendations[statIdx].isSelected,
             }"
@@ -169,7 +171,7 @@
 
         <template #content>
           <div v-for="(evidence, idx) in recommendation.statement.evidence"
-               :key="idx"
+            :key="idx"
             class="evidence">
             {{ evidence.evidence_context.text }}
           </div>
