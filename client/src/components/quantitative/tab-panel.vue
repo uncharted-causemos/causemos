@@ -278,6 +278,7 @@ export default {
       const highlightEdges = [];
       const highlightNodes = [];
       const nodesSet = new Set();
+
       // FIXME: might have dupliate edges, should clean up
       for (const path of paths) {
         for (let i = 0; i < path.length - 1; i++) {
@@ -303,6 +304,9 @@ export default {
           },
           selected: {
             nodes: [this.selectedNode]
+          },
+          annotated: {
+            nodes: [node]
           }
         };
       }
@@ -386,8 +390,6 @@ export default {
       window.saveAs(file, 'experiment.json');
     },
     showPath(item) {
-      console.log('received', item);
-
       const path = item.path;
       const highlightEdges = [];
       const highlightNode = _.uniq(path).map(d => {

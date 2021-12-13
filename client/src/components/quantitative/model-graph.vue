@@ -167,6 +167,14 @@ export default {
       if (visualState.highlighted) {
         this.renderer.showNeighborhood(visualState.highlighted);
       }
+      if (visualState.annotated) {
+        // FIXME: Need to be more flexible
+        if (visualState.annotated.nodes) {
+          visualState.annotated.nodes.forEach(node => {
+            this.renderer.selectNodeById(node.concept, '#f0f');
+          });
+        }
+      }
     }
   }
 };
