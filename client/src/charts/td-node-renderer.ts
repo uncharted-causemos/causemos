@@ -269,11 +269,19 @@ export default function(
       xScaleFocus,
       yScaleFocus
     );
+    const { projection_start, num_steps } = modelSummary.parameter;
+
+    const projectionLastTimestamp = getTimestampAfterMonths(
+      projection_start,
+      num_steps
+    );
     renderConstraints(
       focusGroupElement,
       historicalTimeseries,
       constraints,
-      projections[0],
+      projection_start,
+      projectionLastTimestamp,
+      num_steps,
       xScaleFocus,
       yScaleFocus
     );
@@ -282,9 +290,11 @@ export default function(
       xScaleFocus,
       yScaleFocus,
       historicalTimeseries,
-      projections,
       constraints,
       unit,
+      projection_start,
+      projectionLastTimestamp,
+      num_steps,
       setConstraints,
       setHistoricalTimeseries
     );
@@ -461,16 +471,14 @@ const renderConstraints = (
   parentGroupElement: D3GElementSelection,
   historicalTimeseries: TimeseriesPoint[],
   constraints: ProjectionConstraint[],
-  arbitraryScenario: ScenarioProjection,
+  projectionStartTimestamp: number,
+  projectionLastTimestamp: number,
+  projectionStepCount: number,
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>
 ) => {
-  const { values } = arbitraryScenario;
-  const projectionStartTimestamp = values[0].timestamp;
   const projectionRectWidth =
-    xScale(values[values.length - 1].timestamp) -
-    xScale(projectionStartTimestamp);
-  const projectionStepCount = values.length;
+    xScale(projectionLastTimestamp) - xScale(projectionStartTimestamp);
   // Subtract one from step count because half a clickable area is outside
   //  of the projection rect on the left and the right
   const spaceBetweenSteps = projectionRectWidth / (projectionStepCount - 1);
@@ -508,16 +516,16 @@ const generateClickableAreas = (
   xScale: D3ScaleLinear,
   yScale: D3ScaleLinear,
   historicalTimeseries: TimeseriesPoint[],
-  scenarios: ScenarioProjection[],
   constraints: ProjectionConstraint[],
   unit: string,
+  projectionStartTimestamp: number,
+  projectionLastTimestamp: number,
+  projectionStepCount: number,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) => {
   const startTimestamp = historicalTimeseries[0].timestamp;
-  const endTimestamp =
-    scenarios[0].values[scenarios[0].values.length - 1].timestamp;
-  const timelineRectWidth = xScale(endTimestamp) - xScale(startTimestamp);
+  const timelineRectWidth = xScale(projectionLastTimestamp) - xScale(startTimestamp);
   const timelineRectHeight = yScale.range()[0] - yScale.range()[1];
   const timelineRect = parentGroupElement
     .append('rect')
@@ -532,12 +540,10 @@ const generateClickableAreas = (
     .attr('stroke', 'none')
     .attr('cursor', 'pointer');
 
-  const projectionStepCount = scenarios[0].values.length;
-  const projectionStartTimestamp = scenarios[0].values[0].timestamp;
   // IMPORTANT: projectionRect specifically refers to the area from the first
   //  projected timestep to the last.
   const projectionRectWidth =
-    xScale(endTimestamp) - xScale(projectionStartTimestamp);
+    xScale(projectionLastTimestamp) - xScale(projectionStartTimestamp);
   // Subtract one from step and y position count because half a clickable area is outside
   //  of the projection area on the left and on the right
   const spaceBetweenSteps = projectionRectWidth / (projectionStepCount - 1);

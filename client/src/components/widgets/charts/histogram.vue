@@ -2,7 +2,7 @@
   <div class="histogram-container" v-tooltip="{ content: debugBinBoundaryTooltip,  html: true }">
     <div class="column constraint-column">
       <div
-        v-for="(constraintCount, index) in constraintSummary ?? []"
+        v-for="(constraintCount, index) in constraintSummary?.binCounts ?? []"
         :key="index"
         class="constraint"
         :class="{ visible: constraintCount > 0 }"
