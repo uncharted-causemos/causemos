@@ -205,6 +205,7 @@ export default {
       return this.currentEngine !== PROJECTION_ENGINES.DELPHI;
     },
     histogramTimeSliceLabels() {
+      // If "historical data only" mode is active, don't display histograms in the legend
       if (this.selectedScenarioId === null) {
         return [];
       }
