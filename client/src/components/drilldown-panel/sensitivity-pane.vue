@@ -281,6 +281,10 @@ export default defineComponent({
 </script>
 <style lang="scss" scoped>
 @import '~styles/variables';
+
+// coordinated highilght with graph
+$annotation-color: lighten(#8767c8, 30%);
+
 .inline-group-justified {
   display: inline-flex;
   justify-content: space-between;
@@ -292,11 +296,11 @@ export default defineComponent({
   width: 100%;
   padding: 3px;
   &:hover {
-    background-color: $background-light-2;
+    background-color: $annotation-color;
     cursor: pointer;
   }
   &[active=true]{
-    background-color: $background-light-3;
+    background-color: $annotation-color;
   }
 }
 .sensitivity-margin {
