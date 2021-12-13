@@ -35,12 +35,14 @@
             @node-drilldown="openNodeDrilldownView"
             @edge-click="showRelation"
           />
-          <cag-legend :histogram-time-slice-labels="histogramTimeSliceLabels" />
-          <config-bar
-            class="config-bar"
-            :model-summary="modelSummary"
-            @model-parameter-changed="$emit('model-parameter-changed')"
-          />
+          <div class="legend-config-row">
+            <cag-legend :histogram-time-slice-labels="histogramTimeSliceLabels" />
+            <config-bar
+              class="config-bar"
+              :model-summary="modelSummary"
+              @model-parameter-changed="$emit('model-parameter-changed')"
+            />
+          </div>
         </div>
         <sensitivity-analysis
           v-if="activeTab === 'matrix'"
@@ -482,15 +484,17 @@ main {
     }
   }
 }
-// FIXME: hideable legend contains its own absolute positioning styles.
-//  Refactor it so that its parent determines its positioning, then put both
-//  the legend and the config bar in a flexbox so we don't need hardcoded
-//  positions like we have here.
-$legendWidth: 200px;
+
+.legend-config-row {
+  position: absolute;
+  bottom: 0;
+  left: -$navbar-outer-height;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
 
 .config-bar {
-  position: absolute;
-  left: calc(calc(#{$legendWidth} - #{$navbar-outer-height}) + 10px);
-  bottom: 5px;
+  margin-bottom: 5px;
 }
 </style>
