@@ -366,7 +366,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   }
 
   // 5. Mark scenarios as invalid
-  await scenarioService.invalidateByModel(modelId);
+  await scenarioService.invalidateByModelEngine(modelId, engine);
 
 
   Logger.info(`registered model to ${engine}`);

@@ -82,6 +82,7 @@ const createScenario = async ({ parameter, name, description, model_id: modelId,
  */
 const update = async (scenarioId, payload) => {
   Logger.info('Updating scenario:' + scenarioId);
+
   const scenarioConnection = Adapter.get(RESOURCE.SCENARIO);
   // create payload
   const updatePayload = {
@@ -225,6 +226,56 @@ const invalidateByModel = async(modelId) => {
   }
 };
 
+// FIXME: Consolidate with invalidateByModel
+// Mark scenario results under modelid AND engine as invalid
+const invalidateByModelEngine = async(modelId, engine) => {
+  Logger.info('Invalidate scenario for model with id:' + modelId + ' and engine: ' + engine);
+
+  const scenarioResultConnection = Adapter.get(RESOURCE.SCENARIO_RESULT);
+  const sensitivityResultConnection = Adapter.get(RESOURCE.SENSITIVITY_RESULT);
+
+  // FIXME: updateByQuery will be handy here once it is merged in - DC Nov 2021
+  const scenarioResults = await scenarioResultConnection.find([
+    { field: 'model_id', value: modelId },
+    { field: 'engine', value: engine }
+  ], {});
+  const sensitivityResults = await sensitivityResultConnection.find([
+    { field: 'model_id', value: modelId },
+    { field: 'engine', value: engine }
+  ], {});
+
+  let result = null;
+
+  // update scenario
+  if (scenarioResults.length > 0) {
+    const payload = scenarioResults.map(s => {
+      return {
+        id: s.id,
+        is_valid: false
+      };
+    });
+    result = await scenarioResultConnection.update(payload, d => d.id);
+    if (result.errors) {
+      throw new Error(JSON.stringify(result.items[0]));
+    }
+  }
+
+  // Update sensitivity
+  if (sensitivityResults.length > 0) {
+    const payload = sensitivityResults.map(s => {
+      return {
+        id: s.id,
+        is_valid: false
+      };
+    });
+    result = await sensitivityResultConnection.update(payload, d => d.id);
+    if (result.errors) {
+      throw new Error(JSON.stringify(result.items[0]));
+    }
+  }
+};
+
+
 const createScenarioResult = async (
   modelId,
   scenarioId,
@@ -323,5 +374,6 @@ module.exports = {
   findSensitivityResults,
   updateSensitivityResult,
 
-  invalidateByModel
+  invalidateByModel,
+  invalidateByModelEngine
 };
