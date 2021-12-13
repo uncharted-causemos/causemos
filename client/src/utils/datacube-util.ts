@@ -176,10 +176,16 @@ export function isIndicator(datacube: Datacube): datacube is Indicator {
 
 // supported pre-rendered datacube images
 export function isImage(url: string) {
-  return url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.gif');
+  url = url.toLowerCase();
+  return url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.gif') || url.endsWith('.apng') ||
+    url.endsWith('.avif') || url.endsWith('.jpeg') || url.endsWith('.jfif') || url.endsWith('.pjpeg') ||
+    url.endsWith('.pjp') || url.endsWith('.svg') || url.endsWith('.webp') || url.endsWith('.bmp');
 }
 export function isVideo(url: string) {
-  return url.endsWith('.mp4');
+  url = url.toLowerCase();
+  return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') ||
+    url.endsWith('.ogv') || url.endsWith('.ogg') || url.endsWith('.m4v') || url.endsWith('.m4p') ||
+    url.endsWith('.mpg') || url.endsWith('.mpeg') || url.endsWith('.3gp');
 }
 
 export function getAggregationKey(spatial: AggregationOption, temporal: AggregationOption) {
