@@ -144,7 +144,7 @@ export default defineComponent({
       type: 'model'
     };
     const existingProjects: DomainProject[] = await domainProjectService.getProjects(domainProjectSearchFields);
-    this.existingDomainProjectNames = existingProjects.map(p => p.name);
+    this.existingDomainProjectNames = existingProjects.map(p => p.name.toLowerCase());
   },
   methods: {
     ...mapActions({
@@ -174,7 +174,7 @@ export default defineComponent({
         this.hasError = true;
         this.errorMsg = MSG_EMPTY_PROJECT_NAME;
       }
-      if (this.existingDomainProjectNames.includes(this.projectName)) {
+      if (this.existingDomainProjectNames.includes(this.projectName.toLowerCase())) {
         this.hasError = true;
         this.errorMsg = MSG_PROJECT_NAME_ALREADY_EXIST;
       }
