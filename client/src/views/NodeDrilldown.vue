@@ -66,8 +66,6 @@
             <td-node-chart
               v-if="selectedNodeScenarioData !== null"
               class="scenario-chart"
-              :class="{'is-expanded': isHistoricalDataExpanded}"
-              :is-expanded="isHistoricalDataExpanded"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
               :unit="selectedNodeScenarioData.unit"
@@ -76,12 +74,14 @@
               :constraints="constraints"
               :model-summary="modelSummary"
               :viewing-extent="viewingExtent"
+              :is-clamp-area-hidden="selectedScenarioId === null"
               @set-constraints="modifyConstraints"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
             <projection-histograms
               v-if="
-                selectedNodeScenarioData !== null && !isHistoricalDataExpanded
+                selectedScenarioId !== null &&
+                selectedNodeScenarioData !== null
               "
               class="projection-histograms"
               :comparison-baseline-id="comparisonBaselineId"
@@ -406,20 +406,23 @@ export default defineComponent({
     const selectedScenarioId = computed<string | null>(() => {
       const scenarioId = store.getters['model/selectedScenarioId'];
       if (scenarios.value.filter(d => d.id === scenarioId).length === 0) {
-        const baselineScenario = scenarios.value.find(d => d.is_baseline);
-        return baselineScenario?.id ?? null;
+        // Default to "historical data only" mode
+        return null;
       }
       return scenarioId;
     });
 
     const setSelectedScenarioId =
-      (newId: string) => store.dispatch('model/setSelectedScenarioId', newId);
+      (newId: string | null) => store.dispatch('model/setSelectedScenarioId', newId);
 
-    const scenarioSelectDropdownItems = computed<DropdownItem[]>(() =>
-      scenarios.value.map(scenario => {
-        return { displayName: scenario.name, value: scenario.id };
-      })
-    );
+    const scenarioSelectDropdownItems = computed<DropdownItem[]>(() => {
+      return [
+        { displayName: 'Historical data', value: null },
+        ...scenarios.value.map(scenario => {
+          return { displayName: scenario.name, value: scenario.id };
+        })
+      ];
+    });
 
     const hasConstraints = computed(() => {
       return constraints.value.length > 0;
@@ -651,7 +654,7 @@ export default defineComponent({
     // Find out the default viewing window
     const viewingExtent = computed<number[] | null>(() => {
       const parameter = modelSummary.value?.parameter;
-      if (!parameter) {
+      if (!parameter || selectedScenarioId.value === null) {
         return null;
       } else {
         // FIXME: last available clamp position can be derived from time_scale
@@ -715,9 +718,6 @@ export default defineComponent({
       scenarioData
     };
   },
-  data: () => ({
-    isHistoricalDataExpanded: false
-  }),
   methods: {
     openDataExplorer() {
       this.$router.push({

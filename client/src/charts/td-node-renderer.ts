@@ -53,6 +53,7 @@ export default function(
   unit: string,
   modelSummary: CAGModelSummary,
   viewingExtent: number[] | null,
+  isClampAreaHidden: boolean,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) {
@@ -69,7 +70,8 @@ export default function(
     historicalTimeseries,
     projections,
     minValue,
-    maxValue
+    maxValue,
+    isClampAreaHidden
   );
   if (xExtent[0] === undefined || yExtent[0] === undefined) {
     console.error('TD Node Renderer: unable to derive extent from data');
@@ -309,10 +311,14 @@ const calculateExtents = (
   historicalTimeseries: TimeseriesPoint[],
   projections: ScenarioProjection[],
   minValue: number,
-  maxValue: number
+  maxValue: number,
+  isClampAreaHidden: boolean
 ) => {
   const getTimestampFromPoint = (point: { timestamp: number }) => point.timestamp;
-  const projectedPoints = projections.flatMap(projection => projection.values);
+  // Don't include projection timesteps if isClampAreaHidden
+  const projectedPoints = isClampAreaHidden
+    ? []
+    : projections.flatMap(projection => projection.values);
   const projectedTimestamps = projectedPoints.map(getTimestampFromPoint);
   const xExtent = d3.extent([
     ...historicalTimeseries.map(getTimestampFromPoint),
