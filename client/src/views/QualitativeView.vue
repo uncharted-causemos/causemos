@@ -44,8 +44,10 @@
           @merge-nodes="mergeNodes"
         />
         <color-legend
-        v-if="!showEmptyStateInstructions"
-          :show-cag-encodings="true" />
+          v-if="!showEmptyStateInstructions"
+          class="legend"
+          :show-cag-encodings="true"
+        />
         <div class="config-bar" v-if="selectedTimeScaleLabel !== null">
           Time scale of interest:
           <strong>{{ selectedTimeScaleLabel}} </strong>
@@ -1325,6 +1327,12 @@ export default defineComponent({
 // FIXME: refactor legend so that its position isn't absolute and its width can
 //  be determined with flexbox
 $legendWidth: 200px;
+
+.legend {
+  position: absolute;
+  bottom: 0;
+  left: -$navbar-outer-height;
+}
 
 .config-bar {
   position: absolute;

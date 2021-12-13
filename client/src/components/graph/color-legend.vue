@@ -135,9 +135,9 @@ export default defineComponent({
 });
 </script>
 
-<style lang='scss'>
+<style lang='scss' scoped>
 
-.legend {
+::v-deep(.legend) {
   text {
     font-size: 10px !important;
   }
@@ -151,7 +151,7 @@ export default defineComponent({
   .tick:nth-child(3),
   .tick:nth-child(4) {
     text {
-     display: none;
+      display: none;
     }
   }
 }
