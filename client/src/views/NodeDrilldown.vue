@@ -372,11 +372,14 @@ export default defineComponent({
       const allOtherScenarios = selectedNodeScenarioData.scenarios.filter(s => s.id !== selectedScenarioId.value);
       allOtherScenarios.sort((a, b) => a.created_at - b.created_at);
       const nodeScenarios = selectedScenario !== undefined ? [selectedScenario, ...allOtherScenarios] : [...allOtherScenarios];
-      nodeScenarios.forEach(({ id, name, result, constraints }) => {
+      nodeScenarios.forEach(({ id, name, description, is_valid, result, parameter, constraints }) => {
         // `result` is undefined for the any scenarios that haven't been run yet
         projections.push({
           scenarioName: name,
+          scenarioDesc: description,
           scenarioId: id,
+          is_valid,
+          parameter,
           values: result?.values ?? [],
           constraints: constraints ?? []
         });
@@ -419,7 +422,7 @@ export default defineComponent({
       return [
         { displayName: 'Historical data', value: null },
         ...scenarios.value.map(scenario => {
-          return { displayName: scenario.name, value: scenario.id };
+          return { displayName: scenario.is_valid ? scenario.name : (scenario.name + ' (Stale)'), value: scenario.id };
         })
       ];
     });

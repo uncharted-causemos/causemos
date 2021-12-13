@@ -1,6 +1,7 @@
 <template>
   <div class="projection-histograms-container">
     <div
+      id='header-section'
       class="grid-row slice-labels x-axis-label"
       :class="{ 'left-aligned': !isScenarioComparisonActive }"
     >
@@ -34,25 +35,48 @@
     <div
       v-for="row of rowsToDisplay"
       :key="row.scenarioId"
-      class="grid-row scenario-row"
+      class="scenario-row"
     >
-      <h3>{{ row.scenarioName }}</h3>
-      <histogram
-        v-for="(histogramData, timeSliceIndex) of row.histograms"
-        class="histogram"
-        :class="{ hidden: isHiddenTimeSlice(timeSliceIndex) }"
-        :key="timeSliceIndex"
-        :histogram-data="histogramData"
-        :constraint-summary="
-          constraintSummaries[row.scenarioId][timeSliceIndex]
-        "
-      />
+      <div class="scenario-desc"><span v-tooltip="row.scenarioDesc">{{ row.scenarioDesc }}</span></div>
+      <div class="grid-row">
+        <div class="scenario-and-clamps">
+          <div class="scenario-name" @click="selectScenario(row.scenarioId)">
+            <i v-if="selectedScenarioId === row.scenarioId" class="fa fa-circle" />
+            <i v-else class="fa fa-circle-o" />
+            <h3 style="margin-left: 4px" :class="{ 'scenario-title-stale': !row.is_valid }">{{ row.is_valid ? row.scenarioName : (row.scenarioName + ' (Stale)') }}</h3>
+          </div>
+          <div
+            v-for="clamp in getScenarioClamps(row)"
+            :key="clamp.concept"
+            class="clamp-name">
+              <i class="fa fa-star" />
+              {{ ontologyFormatter(clamp.concept) }}
+          </div>
+        </div>
+        <histogram
+          v-for="(histogramData, timeSliceIndex) of row.histograms"
+          class="histogram"
+          :class="{ hidden: isHiddenTimeSlice(timeSliceIndex) }"
+          :key="timeSliceIndex"
+          :histogram-data="histogramData"
+          :constraint-summary="
+            constraintSummaries[row.scenarioId][timeSliceIndex]
+          "
+        />
+      </div>
+      <div v-if="!row.is_valid" class="stale-scenario">
+        <div class="transparent"></div>
+        <!-- overlay on top of the projection histograms -->
+        <div>
+          <span>Pending Changes</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { CAGModelSummary, ScenarioProjection } from '@/types/CAG';
+import { CAGModelSummary, ScenarioParameter, ScenarioProjection } from '@/types/CAG';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { defineComponent, PropType } from 'vue';
 import Histogram from '@/components/widgets/charts/histogram.vue';
@@ -66,6 +90,8 @@ import {
 } from '@/utils/histogram-util';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import { mapActions, mapGetters } from 'vuex';
 
 /**
  * `base`: these values represent the grey part of each histogram bar.
@@ -87,7 +113,10 @@ export interface ComparisonHistogramData {
 
 interface HistogramRow {
   scenarioName: string;
+  scenarioDesc: string;
   scenarioId: string;
+  is_valid: boolean;
+  parameter: ScenarioParameter;
   histograms: ComparisonHistogramData[];
 }
 
@@ -150,7 +179,15 @@ export default defineComponent({
     // Select middle time slice by default
     selectedTimeSliceIndex: 1
   }),
+  setup() {
+    return {
+      ontologyFormatter: useOntologyFormatter()
+    };
+  },
   computed: {
+    ...mapGetters({
+      selectedScenarioId: 'model/selectedScenarioId'
+    }),
     isScenarioComparisonActive(): boolean {
       return this.comparisonBaselineId !== null;
     },
@@ -209,7 +246,10 @@ export default defineComponent({
           }
           return {
             scenarioName: projection.scenarioName,
+            scenarioDesc: projection.scenarioDesc,
+            is_valid: projection.is_valid,
             scenarioId: projection.scenarioId,
+            parameter: projection.parameter,
             histograms
           };
         });
@@ -240,7 +280,10 @@ export default defineComponent({
       }
       const baselineRow = {
         scenarioName: baselineScenario.scenarioName,
+        scenarioDesc: baselineScenario.scenarioDesc,
         scenarioId: baselineScenario.scenarioId,
+        is_valid: baselineScenario.is_valid,
+        parameter: baselineScenario.parameter,
         histograms: baselineResult.map(({ binCounts, binBoundaries }) => ({
           base: binCounts,
           change: null,
@@ -249,7 +292,7 @@ export default defineComponent({
       };
       // Then display each other scenario, after calculating the histogram diff
       const otherRows: HistogramRow[] = [];
-      this.projections.forEach(({ scenarioName, scenarioId }, index) => {
+      this.projections.forEach(({ scenarioName, scenarioDesc, scenarioId, is_valid, parameter }, index) => {
         if (index !== baselineIndex) {
           const result = this.binnedResults[index];
           // If this scenario has no projection results yet, don't display any
@@ -258,7 +301,10 @@ export default defineComponent({
             result === null ? [] : compareHistograms(baselineResult, result);
           otherRows.push({
             scenarioName,
+            scenarioDesc,
             scenarioId,
+            is_valid,
+            parameter,
             histograms
           });
         }
@@ -267,6 +313,9 @@ export default defineComponent({
     }
   },
   methods: {
+    ...mapActions({
+      setSelectedScenarioId: 'model/setSelectedScenarioId'
+    }),
     isHiddenTimeSlice(timeSliceIndex: number): boolean {
       return (
         this.isScenarioComparisonActive &&
@@ -278,6 +327,25 @@ export default defineComponent({
       timeSliceIndex: number
     ): HistogramData {
       return this.constraintSummaries[scenarioId][timeSliceIndex];
+    },
+    getScenarioClamps(row: HistogramRow) {
+      return row.parameter.constraints;
+    },
+    selectScenario(scenarioId: string | null) {
+      if (this.selectedScenarioId === scenarioId) {
+        return;
+      }
+      this.scrollToSection('header-section');
+      this.setSelectedScenarioId(scenarioId);
+    },
+    scrollToSection(sectionName: string) {
+      const elm = document.getElementById(sectionName) as HTMLElement;
+      const scrollViewOptions: ScrollIntoViewOptions = {
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest'
+      };
+      elm.scrollIntoView(scrollViewOptions);
     }
   }
 });
@@ -304,8 +372,69 @@ h3 {
 
 .grid-row {
   display: flex;
-  align-items: center;
   & > * {
+    flex: 2;
+    min-width: 0;
+  }
+}
+
+.stale-scenario {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  position: absolute;
+  top: 0;
+  padding-bottom: 10px;
+  margin-bottom: 30px;
+  .transparent {
+    flex: 1;
+  }
+  div:not(:first-child) {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, .1);
+    flex: 6;
+    z-index: 1;
+    align-items: flex-end;
+    justify-content: end;
+    position: relative;
+    span {
+      color: orange;
+      background-color: white;
+      font-size: large;
+      margin-right: 1rem;
+      margin-bottom: 1rem;
+      cursor: default;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+    }
+  }
+}
+
+.scenario-desc {
+  display: flex;
+  margin-bottom: 0;
+  span {
+    color: $label-color;
+    flex: 4;
+    min-width: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+    cursor: pointer;
+  }
+  // Add empty column at the left to align first label with first histogram.
+  &::before {
+    display: block;
+    content: '';
+    flex: 1;
+    min-width: 0;
+  }
+  // If scenario comparison is not active, add two extra columns to the right
+  &::after {
+    display: block;
+    content: '';
     flex: 2;
     min-width: 0;
   }
@@ -355,20 +484,38 @@ h3 {
   }
 }
 
+.scenario-title-stale {
+  color: gray;
+}
+
 .scenario-row {
+  position: relative;
   padding-bottom: 10px;
   margin-bottom: 30px;
-  h3 {
-    // Give this column half of the space
-    flex: 1;
-    // Histogram component has 20px of bottom whitespace when not hovered, so
-    //  nudge scenario name up by half of that to make it look more centered.
-    position: relative;
-    bottom: 10px;
-  }
-
   &:not(:last-child) {
     border-bottom: 1px solid lightgray;
   }
 }
+
+.scenario-and-clamps {
+  // Give this column half of the space
+  flex: 1;
+  z-index: 1; // allow clicking through the overlay for scenario selection
+  .scenario-name {
+    display: flex;
+    align-items: baseline;
+    cursor: pointer;
+    user-select: none;
+    &:hover {
+      color: rgb(92, 92, 92);
+    }
+  }
+  .clamp-name {
+    padding-left: 2rem;
+    color: gray;
+    font-size: small;
+    user-select: none;
+  }
+}
+
 </style>
