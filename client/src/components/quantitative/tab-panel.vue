@@ -35,8 +35,7 @@
             @node-drilldown="openNodeDrilldownView"
             @edge-click="showRelation"
           />
-          <color-legend
-            :show-cag-encodings="true" />
+          <cag-legend :histogram-time-slice-labels="histogramTimeSliceLabels" />
           <config-bar
             class="config-bar"
             :model-summary="modelSummary"
@@ -97,7 +96,6 @@ import ConfigBar from '@/components/quantitative/config-bar';
 import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis';
 import ModelGraph from '@/components/quantitative/model-graph';
 import modelService from '@/services/model-service';
-import ColorLegend from '@/components/graph/color-legend';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
@@ -105,6 +103,8 @@ import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
+import CagLegend from '@/components/graph/cag-legend.vue';
+import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -136,13 +136,13 @@ export default {
     ConfigBar,
     ModelGraph,
     SensitivityAnalysis,
-    ColorLegend,
     DrilldownPanel,
     EdgePolaritySwitcher,
     EvidencePane,
     SensitivityPane,
     CagSidePanel,
-    CagCommentsButton
+    CagCommentsButton,
+    CagLegend
   },
   props: {
     currentEngine: {
@@ -203,6 +203,17 @@ export default {
     },
     showComponent() {
       return this.currentEngine !== PROJECTION_ENGINES.DELPHI;
+    },
+    histogramTimeSliceLabels() {
+      if (this.selectedScenarioId === null) {
+        return [];
+      }
+      const timeScale = TIME_SCALE_OPTIONS_MAP.get(this.modelSummary.parameter.time_scale);
+      if (timeScale === undefined) {
+        console.error('Unable to find time scale data for ', this.modelSummary.parameter.time_scale);
+        return [];
+      }
+      return timeScale.timeSlices.map(slice => slice.label);
     }
   },
   watch: {
