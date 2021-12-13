@@ -1,6 +1,16 @@
 <template>
   <div class="config-bar-container">
-    Using the
+    Analysis of the
+    <strong>{{ timeScaleLabel }}</strong>
+    <button class="btn btn-sm btn-default" @click="showModalTimeScale = true">
+      <i class="fa fa-fw fa-pencil" />
+    </button>
+    following
+    <date-dropdown
+      :data="projectionStartDate"
+      @date-updated="setProjectionStartDate"
+    />
+    , using the
     <dropdown-button
       :items="engineOptions"
       :selected-item="selectedEngine"
@@ -8,17 +18,7 @@
       :is-dropdown-left-aligned="true"
       @item-selected="setEngine"
     />
-    engine, project over a period of
-    <strong>{{ timeScaleLabel }}</strong>
-    <button class="btn btn-sm btn-default" @click="showModalTimeScale = true">
-      <i class="fa fa-fw fa-pencil" />
-    </button>
-    starting in
-    <date-dropdown
-      :data="projectionStartDate"
-      @date-updated="setProjectionStartDate"
-    />
-    .
+    engine.
     <modal-time-scale
       v-if="showModalTimeScale"
       :initially-selected-time-scale="modelSummary?.parameter?.time_scale"

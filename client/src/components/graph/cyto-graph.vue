@@ -18,7 +18,7 @@
     <div
       ref="graph"
       class="full" />
-    <color-legend />
+    <color-legend class="legend"/>
   </div>
 </template>
 
@@ -443,5 +443,11 @@ export default {
   position:absolute;
   left: 10px;
   pointer-events: none;
+}
+
+.legend {
+  position: absolute;
+  bottom: 0;
+  left: -$navbar-outer-height;
 }
 </style>

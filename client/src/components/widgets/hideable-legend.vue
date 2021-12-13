@@ -46,9 +46,6 @@ $padding: 10px;
 
 .hideable-legend-container {
   box-shadow: $shadow-level-1;
-  position: absolute;
-  bottom: 0;
-  left: -$navbar-outer-height;
   padding: $padding;
   padding-bottom: $padding + $hover-nudge-height;
   z-index: 20;

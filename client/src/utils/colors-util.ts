@@ -31,6 +31,9 @@ export const FADED_COLOR = '#D6DBDF';
 export const MARKER_COLOR = '#d55c00';
 
 
+export const POSITIVE_COLOR = '#0072b2';
+export const NEGATIVE_COLOR = '#d55e00';
+
 export const EDGE_COLOR_PALETTE = ['#d55e00', '#6b6859', '#0072b2']; // https://www.nature.com/articles/nmeth.1618/figures/2
 
 /**

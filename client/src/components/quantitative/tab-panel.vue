@@ -35,13 +35,14 @@
             @node-drilldown="openNodeDrilldownView"
             @edge-click="showRelation"
           />
-          <color-legend
-            :show-cag-encodings="true" />
-          <config-bar
-            class="config-bar"
-            :model-summary="modelSummary"
-            @model-parameter-changed="$emit('model-parameter-changed')"
-          />
+          <div class="legend-config-row">
+            <cag-legend :histogram-time-slice-labels="histogramTimeSliceLabels" />
+            <config-bar
+              class="config-bar"
+              :model-summary="modelSummary"
+              @model-parameter-changed="$emit('model-parameter-changed')"
+            />
+          </div>
         </div>
         <sensitivity-analysis
           v-if="activeTab === 'matrix'"
@@ -98,7 +99,6 @@ import ConfigBar from '@/components/quantitative/config-bar';
 import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis';
 import ModelGraph from '@/components/quantitative/model-graph';
 import modelService from '@/services/model-service';
-import ColorLegend from '@/components/graph/color-legend';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
@@ -106,6 +106,8 @@ import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
+import CagLegend from '@/components/graph/cag-legend.vue';
+import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import { findPaths } from '@/utils/graphs-util';
 
 const PANE_ID = {
@@ -138,13 +140,13 @@ export default {
     ConfigBar,
     ModelGraph,
     SensitivityAnalysis,
-    ColorLegend,
     DrilldownPanel,
     EdgePolaritySwitcher,
     EvidencePane,
     SensitivityPane,
     CagSidePanel,
-    CagCommentsButton
+    CagCommentsButton,
+    CagLegend
   },
   props: {
     currentEngine: {
@@ -205,6 +207,18 @@ export default {
     },
     showComponent() {
       return this.currentEngine !== PROJECTION_ENGINES.DELPHI;
+    },
+    histogramTimeSliceLabels() {
+      // If "historical data only" mode is active, don't display histograms in the legend
+      if (this.selectedScenarioId === null) {
+        return [];
+      }
+      const timeScale = TIME_SCALE_OPTIONS_MAP.get(this.modelSummary.parameter.time_scale);
+      if (timeScale === undefined) {
+        console.error('Unable to find time scale data for ', this.modelSummary.parameter.time_scale);
+        return [];
+      }
+      return timeScale.timeSlices.map(slice => slice.label);
     }
   },
   watch: {
@@ -470,15 +484,17 @@ main {
     }
   }
 }
-// FIXME: hideable legend contains its own absolute positioning styles.
-//  Refactor it so that its parent determines its positioning, then put both
-//  the legend and the config bar in a flexbox so we don't need hardcoded
-//  positions like we have here.
-$legendWidth: 200px;
+
+.legend-config-row {
+  position: absolute;
+  bottom: 0;
+  left: -$navbar-outer-height;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
 
 .config-bar {
-  position: absolute;
-  left: calc(calc(#{$legendWidth} - #{$navbar-outer-height}) + 10px);
-  bottom: 5px;
+  margin-bottom: 5px;
 }
 </style>

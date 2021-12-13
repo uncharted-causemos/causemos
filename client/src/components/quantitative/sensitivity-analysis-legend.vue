@@ -25,7 +25,8 @@ export default defineComponent({
 <style lang="scss" scoped>
 
   .sensitivity-analysis-legend-container.hideable-legend-container {
-    left: auto;
+    position: absolute;
+    bottom: 0;
     right: 10px;
   }
 
