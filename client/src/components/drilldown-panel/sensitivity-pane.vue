@@ -3,7 +3,7 @@
   <h5>
     {{selectedNode.label}}
   </h5>
-  <div class="inline-group">
+  <div class="inline-group-justified">
     <RadioButtonGroup
       :buttons="tabs"
       :selected-button-value="activeTab"
@@ -24,38 +24,44 @@
       <div
         class="inline-group"
         v-for="driver in drivers"
+        :active="driver.node?.id === activeNode?.id"
         :key="driver.concept"
+        @click="highlightNodePaths(driver.node, 'source')"
       >
-        {{driver.label}}
         <importance-bars
           v-if="maxSensitivity"
+          class="sensitivity-margin"
           label="driver"
           :importance="driver.value"
           :max="maxSensitivity"
         >
         </importance-bars>
+        {{driver.node?.label}}
       </div>
       <div
         v-if="drivers.length === 0"
-        class="inline-=group"
+        class="inline-group"
       >
         No drivers available.
       </div>
     </div>
     <div v-if="activeTab === TAB_IDS.IMPACTS">
       <div
-      class="inline-group"
+        class="inline-group"
         v-for="impact in impacts"
+        :active="impact.node?.id === activeNode?.id"
         :key="impact.concept"
+        @click="highlightNodePaths(impact.node, 'target')"
       >
-        {{impact.label}}:
         <importance-bars
           v-if="maxSensitivity"
+          class="sensitivity-margin"
           label="impact"
           :importance="impact.value"
           :max="maxSensitivity"
         >
         </importance-bars>
+        {{impact.node?.label}}
       </div>
       <div
         v-if="impacts.length === 0"
@@ -68,7 +74,7 @@
 </div>
 </template>
 <script lang="ts">
-import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import modelService from '@/services/model-service';
 import { CAGGraph, NodeParameter } from '@/types/CAG';
@@ -81,7 +87,7 @@ export default defineComponent({
     ImportanceBars,
     RadioButtonGroup
   },
-  emits: ['open-drilldown'],
+  emits: ['open-drilldown', 'highlight-node-paths'],
   props: {
     modelComponents: {
       type: Object as PropType<CAGGraph>,
@@ -123,6 +129,7 @@ export default defineComponent({
       }
     ];
     const activeTab = ref('');
+    const activeNode = ref({} as NodeParameter|null);
 
     // polling code as sensitivity may not be ready on panel open
     const poll = async (): Promise<void> => {
@@ -204,7 +211,7 @@ export default defineComponent({
         .map(concept => {
           return {
             concept,
-            label: nodes.find(node => node.concept === concept)?.label,
+            node: nodes.find(node => node.concept === concept),
             // as string needed because despite the null check, compiler complained about possible null
             value: sensitivityData.value[concept][selectedConcept.value as string]
           };
@@ -227,7 +234,7 @@ export default defineComponent({
         .map(concept => {
           return {
             concept,
-            label: nodes.find(node => node.concept === concept)?.label,
+            node: nodes.find(node => node.concept === concept),
             value: impactSet[concept]
           };
         })
@@ -242,8 +249,15 @@ export default defineComponent({
       }
     });
 
+    watch(selectedNode, (newNode, oldNode) => {
+      if (newNode?.id !== oldNode?.id) {
+        activeNode.value = null;
+      }
+    });
+
     return {
       activeTab,
+      activeNode,
       drivers,
       impacts,
       maxSensitivity,
@@ -255,6 +269,10 @@ export default defineComponent({
     openFullDrilldown() {
       this.$emit('open-drilldown', this.selectedNode);
     },
+    highlightNodePaths(node: any, type: string) {
+      this.activeNode = node;
+      this.$emit('highlight-node-paths', node, type);
+    },
     setActiveTab(activeTab: string) {
       this.activeTab = activeTab;
     }
@@ -262,10 +280,30 @@ export default defineComponent({
 });
 </script>
 <style lang="scss" scoped>
-.inline-group {
+@import '~styles/variables';
+
+// coordinated highilght with graph
+$annotation-color: lighten(#8767c8, 30%);
+
+.inline-group-justified {
   display: inline-flex;
   justify-content: space-between;
   width: 100%;
-  margin: 5px 0 0;
+  padding: 3px 0;
+}
+.inline-group {
+  display: inline-flex;
+  width: 100%;
+  padding: 3px;
+  &:hover {
+    background-color: $annotation-color;
+    cursor: pointer;
+  }
+  &[active=true]{
+    background-color: $annotation-color;
+  }
+}
+.sensitivity-margin {
+  margin-right: 5px;
 }
 </style>

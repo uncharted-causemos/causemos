@@ -282,6 +282,37 @@ export function findAllDescendantPaths(node, edges) {
   return paths.filter(path => path.length > 1).map(path => path.reverse());
 }
 
+export function findPaths(source, target, edges) {
+  function traceToTarget(id, target, buffer, adjMap, paths) {
+    if (buffer.indexOf(id) >= 0) return;
+    buffer.push(id);
+
+    if (id === target) {
+      paths.push(buffer);
+      return;
+    }
+    const parents = adjMap.get(id);
+    if (parents && parents.length > 0) {
+      for (const newId of parents) {
+        traceToTarget(newId, target, [...buffer], adjMap, paths);
+      }
+    }
+  }
+
+  const adjMap = new Map();
+  const paths = [];
+
+  for (const edge of edges) {
+    if (!adjMap.has(edge.source)) {
+      adjMap.set(edge.source, []);
+    }
+    adjMap.get(edge.source).push(edge.target);
+  }
+
+  traceToTarget(source, target, [], adjMap, paths);
+  return paths;
+}
+
 /**
  * Get all the cycles in the graph
  * @returns A list of lists, where the inner lists are cycles in the graph

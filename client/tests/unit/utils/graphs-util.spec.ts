@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import {
-  hasBackingEvidence, findCycles, findAllAncestorPaths, findAllDescendantPaths
+  hasBackingEvidence, findCycles, findAllAncestorPaths, findAllDescendantPaths, findPaths
 } from '@/utils/graphs-util';
 
 describe('graphs-util', () => {
@@ -131,7 +131,7 @@ describe('graphs-util', () => {
     expect(paths.length).to.equal(2);
   });
 
-  it('trace descendant paths - multiple', () => {
+  it('trace descendant paths - collider', () => {
     const edges = [
       { source: 'A', target: 'C' },
       { source: 'B', target: 'C' },
@@ -159,5 +159,60 @@ describe('graphs-util', () => {
 
     const p1 = findAllDescendantPaths('A', edges);
     expect(p1.length).to.equal(2);
+  });
+
+
+  it('trace between source/target - simple', () => {
+    const edges = [
+      { source: 'A', target: 'B' },
+      { source: 'B', target: 'C' },
+      { source: 'C', target: 'D' },
+      { source: 'D', target: 'E' }
+    ];
+
+    const p = findPaths('B', 'D', edges);
+    expect(p.length).to.equal(1);
+    expect(p[0]).to.deep.equal(['B', 'C', 'D']);
+  });
+
+  it('trace between source/target - no path', () => {
+    const edges = [
+      { source: 'A', target: 'B' },
+      { source: 'B', target: 'C' },
+      { source: 'C', target: 'D' },
+      { source: 'D', target: 'E' }
+    ];
+
+    const p = findPaths('B', 'X', edges);
+    expect(p.length).to.equal(0);
+  });
+
+  it('trace between source/target - multipath', () => {
+    const edges = [
+      { source: 'A', target: 'B' },
+      { source: 'B', target: 'C' },
+      { source: 'C', target: 'D' },
+      { source: 'D', target: 'E' },
+      { source: 'B', target: 'X' },
+      { source: 'X', target: 'Y' },
+      { source: 'Y', target: 'C' },
+      { source: 'B', target: 'D' }
+    ];
+
+    const p = findPaths('B', 'D', edges);
+    expect(p.length).to.equal(3);
+  });
+
+  it('trace between source/target - cycles', () => {
+    const edges = [
+      { source: 'A', target: 'B' },
+      { source: 'B', target: 'C' },
+      { source: 'C', target: 'D' },
+      { source: 'D', target: 'E' },
+      { source: 'E', target: 'A' }
+    ];
+
+    const p = findPaths('A', 'E', edges);
+    expect(p.length).to.equal(1);
   });
 });

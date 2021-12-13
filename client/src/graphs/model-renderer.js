@@ -436,16 +436,16 @@ export default class ModelRenderer extends BaseCAGRenderer {
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
   }
 
-  selectNode(node) {
+  selectNode(node, color) {
     node.select('.node-container')
       .style('border-radius', DEFAULT_STYLE.node.highlighted.borderRadius)
-      .style('stroke', DEFAULT_STYLE.node.highlighted.stroke)
+      .style('stroke', _.isEmpty(color) ? DEFAULT_STYLE.node.highlighted.stroke : color)
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
   }
 
-  selectNodeById(nodeId) {
+  selectNodeById(nodeId, color) {
     const node = this.chart.selectAll('.node').filter(node => node.concept === nodeId);
-    this.selectNode(node);
+    this.selectNode(node, color);
   }
 
   selectEdge(evt, edge) {
