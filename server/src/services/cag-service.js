@@ -641,15 +641,15 @@ const recalculateCAG = async (modelId) => {
   if (updatePayload.length > 0) {
     await edgeParameterAdapter.update(updatePayload, d => d.id);
   }
-  if (updatePayload.length > 0 || cag.is_ambiguous !== isAmbiguous) {
+  if (updatePayload.length > 0 || cag.is_ambiguous !== isAmbiguous || cag.is_stale === true) {
     await cagAdapter.update([
       {
         id: cag.id,
         is_stale: false,
         status: MODEL_STATUS.NOT_REGISTERED,
         engine_status: RESET_ALL_ENGINE_STATUS,
-        is_ambiguous: isAmbiguous,
-        modified_at: timestamp
+        is_ambiguous: isAmbiguous
+        // modified_at: timestamp
       }
     ], d => d.id);
   }
