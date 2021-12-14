@@ -47,7 +47,7 @@ const DEFAULT_STYLE = {
 };
 
 const OPACITY = 0.2;
-const GRAPH_HEIGHT = 40;
+const GRAPH_HEIGHT = 55;
 const GRAPH_VERTICAL_MARGIN = 6;
 const PADDING_HORIZONTAL = 5;
 const PADDING_BOTTOM = 3;
@@ -136,9 +136,11 @@ export default class ModelRenderer extends BaseCAGRenderer {
           .style('fill', '#F0F0F0')
           .style('stroke', DEFAULT_STYLE.nodeHeader.stroke);
 
+        // FIXME: the node-label transform calculations are hard to interpret
+        //  and duplicated. Simplify and extract magic numbers.
         selection.append('text')
           .classed('node-label', true)
-          .attr('transform', translate(PADDING_HORIZONTAL, GRAPH_HEIGHT * 0.5 - 6))
+          .attr('transform', translate(PADDING_HORIZONTAL, GRAPH_HEIGHT * 0.5 - 14))
           .style('stroke', 'none')
           .style('fill', '#888')
           .style('font-weight', '600')
@@ -176,7 +178,7 @@ export default class ModelRenderer extends BaseCAGRenderer {
 
         selection.append('text')
           .classed('node-label', true)
-          .attr('transform', translate(PADDING_HORIZONTAL, GRAPH_HEIGHT * 0.5 - 6))
+          .attr('transform', translate(PADDING_HORIZONTAL, GRAPH_HEIGHT * 0.5 - 14))
           .style('stroke', 'none')
           .style('fill', '#000')
           .text(d => d.label)
@@ -305,7 +307,6 @@ export default class ModelRenderer extends BaseCAGRenderer {
 
       const nodeWidth = datum.width;
       const nodeHeight = datum.height;
-      const graphHeight = 37;
       const nodeBodyGroup = d3.select(node).select('.node-body-group');
 
       d3.select(node).style('cursor', 'pointer');
@@ -354,13 +355,13 @@ export default class ModelRenderer extends BaseCAGRenderer {
       const runOptions = { selectedScenarioId };
       const renderOptions = {
         margin: {
-          top: GRAPH_VERTICAL_MARGIN,
-          bottom: GRAPH_VERTICAL_MARGIN,
+          top: 0,
+          bottom: PADDING_BOTTOM + INDICATOR_NAME_SIZE,
           left: 0,
           right: 0
         },
         width: nodeWidth - (PADDING_HORIZONTAL * 2) - (DEFAULT_STYLE.node.strokeWidth * 2),
-        height: graphHeight
+        height: GRAPH_HEIGHT
       };
 
       renderHistoricalProjectionsChart(graphEl, nodeScenarioData, renderOptions, runOptions);
