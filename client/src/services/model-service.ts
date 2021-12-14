@@ -521,7 +521,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
     const scenario: NewScenario = {
       model_id: modelId,
       name: 'Baseline scenario',
-      description: 'Baseline scenario',
+      description: 'Examine the system without any interventions.',
       parameter: {
         constraints: [],
         num_steps: numSteps,
