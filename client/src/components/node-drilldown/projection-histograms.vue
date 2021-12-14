@@ -72,14 +72,17 @@
         </div>
       </div>
     </div>
-    <div v-if="requestAddingNewScenario" class="new-scenario-row">
+    <div
+      v-if="requestAddingNewScenario"
+      class="new-scenario-row"
+      id='new-scenario-row'>
       <cag-scenario-form
         @save="saveScenario"
         @cancel="requestAddingNewScenario = false"
       />
     </div>
     <button
-      id='new-scenario-button-id'
+      v-else
       v-tooltip.top-center="'Add a new model scenario'"
       type="button"
       class="btn btn-primary btn-call-for-action"
@@ -370,7 +373,7 @@ export default defineComponent({
     addNewScenario() {
       this.requestAddingNewScenario = true;
       nextTick(() => {
-        this.scrollToSection('new-scenario-button-id');
+        this.scrollToSection('new-scenario-row');
       });
     },
     saveScenario(info: {name: string; description: string}) {
