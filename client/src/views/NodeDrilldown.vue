@@ -395,13 +395,23 @@ export default defineComponent({
       };
     });
 
-    // FIXME
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
-    watch([selectedNodeScenarioData], () => {
-      if (_.isEmpty(historicalTimeseries.value)) {
-        historicalTimeseries.value = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+    // FIXME: we only want to overwrite historicalTimeseries with the selected
+    //  node's timeseries when we first fetch it
+    //  - we DON'T want to overwrite it when changing any parameterization
+    //  - we DO want to overwrite it if we jump to another node drilldown page
+    //    by clicking a neighbour node
+    // As a temporary hack, use the indicator's name to as a heuristic to see
+    //  if we just loaded the historical timeseries for the first time or
+    //  switched to a different node
+    watch(
+      () => selectedNodeScenarioData.value,
+      (newScenarioData, oldScenarioData) => {
+        if (oldScenarioData?.indicatorName !== newScenarioData?.indicatorName) {
+          historicalTimeseries.value = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+        }
       }
-    });
+    );
 
     const setHistoricalTimeseries = (newPoints: TimeseriesPoint[]) => {
       historicalTimeseries.value = newPoints;
