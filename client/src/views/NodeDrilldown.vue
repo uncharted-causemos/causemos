@@ -70,7 +70,10 @@
               @set-historical-timeseries="setHistoricalTimeseries"
             />
             <div class="indicator-config">
-              <strong>
+              <strong
+                class="indicator-name"
+                v-tooltip.top="selectedNodeScenarioData?.indicatorName ?? ''"
+              >
                 {{ selectedNodeScenarioData?.indicatorName ?? '' }}
               </strong>
               <span
@@ -944,6 +947,13 @@ h5 {
 
   .form-control {
     width: 10ch;
+  }
+
+  .indicator-name {
+    max-width: 25ch;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .description {
