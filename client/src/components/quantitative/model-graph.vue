@@ -77,7 +77,7 @@ export default {
   mounted() {
     this.renderer = new ModelRenderer({
       el: this.$refs.container,
-      adapter: new Adapter({ nodeWidth: 120, nodeHeight: 60, layout: layered }),
+      adapter: new Adapter({ nodeWidth: 120, nodeHeight: 80, layout: layered }),
       renderMode: 'delta',
       useEdgeControl: true,
       useStableZoomPan: true,

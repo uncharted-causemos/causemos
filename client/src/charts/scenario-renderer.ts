@@ -22,7 +22,7 @@ const HISTOGRAM_BACKGROUND_COLOR = HISTORY_BACKGROUND_COLOR;
 const HISTOGRAM_FOREGROUND_COLOR = HISTORY_LINE_COLOR;
 // How much of the node is taken up by the history chart
 // If all projections are hidden, this will expand to take the full height
-const HISTORY_HEIGHT_PERCENTAGE = 0.2;
+const HISTORY_HEIGHT_PERCENTAGE = 0.4;
 
 export default function(
   selection: D3Selection,
