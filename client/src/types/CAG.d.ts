@@ -29,7 +29,10 @@ export interface ScenarioParameter {
 
 export interface ScenarioProjection {
   scenarioName: string;
+  scenarioDesc: string;
   scenarioId: string;
+  is_valid: boolean;
+  parameter: ScenarioParameter;
   values: TimeseriesDistributionPoint[];
   constraints: { step: number; value: number }[];
 }
@@ -79,6 +82,7 @@ export interface NodeScenarioData {
     is_baseline: boolean;
     is_valid: boolean;
     name: string;
+    description: string;
     parameter: ScenarioParameter;
     // A list of constraints for this one node in this one scenario
     constraints?: { step: number; value: number }[];

@@ -89,6 +89,7 @@
               :projections="selectedNodeScenarioData.projections"
               :model-summary="modelSummary"
               :indicator-id="indicatorId"
+              @new-scenario='onCreateScenario'
             />
           </div>
         </div>
@@ -199,7 +200,7 @@ import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
 import modelService from '@/services/model-service';
-import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
+import { NewScenario, ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -372,11 +373,14 @@ export default defineComponent({
       const allOtherScenarios = selectedNodeScenarioData.scenarios.filter(s => s.id !== selectedScenarioId.value);
       allOtherScenarios.sort((a, b) => a.created_at - b.created_at);
       const nodeScenarios = selectedScenario !== undefined ? [selectedScenario, ...allOtherScenarios] : [...allOtherScenarios];
-      nodeScenarios.forEach(({ id, name, result, constraints }) => {
+      nodeScenarios.forEach(({ id, name, description, is_valid, result, parameter, constraints }) => {
         // `result` is undefined for the any scenarios that haven't been run yet
         projections.push({
           scenarioName: name,
+          scenarioDesc: description,
           scenarioId: id,
+          is_valid,
+          parameter,
           values: result?.values ?? [],
           constraints: constraints ?? []
         });
@@ -419,7 +423,7 @@ export default defineComponent({
       return [
         { displayName: 'Historical data', value: null },
         ...scenarios.value.map(scenario => {
-          return { displayName: scenario.name, value: scenario.id };
+          return { displayName: scenario.is_valid ? scenario.name : (scenario.name + ' (Stale)'), value: scenario.id };
         })
       ];
     });
@@ -678,6 +682,28 @@ export default defineComponent({
       }
     });
 
+    const onCreateScenario = async (scenarioInfo: { name: string; description: string }) => {
+      const baselineScenario = scenarios.value.find(s => s.is_baseline);
+      if (baselineScenario === undefined) {
+        console.error('Failed to save new scenario, baseline scenario is null.');
+        return;
+      }
+      // add new scenario
+      const newScenario: NewScenario = {
+        model_id: currentCAG.value,
+        name: scenarioInfo.name,
+        description: scenarioInfo.description,
+        is_baseline: false,
+        parameter: _.cloneDeep(baselineScenario?.parameter)
+      };
+      // enableOverlay('Creating Scenario');
+      const createdScenario = await modelService.createScenario(newScenario);
+      // Save and reload scenarios
+      scenarios.value = await modelService.getScenarios(currentCAG.value, currentEngine.value as string);
+      setSelectedScenarioId(createdScenario.id);
+      // disableOverlay();
+    };
+
     return {
       nodeConceptName,
       drilldownPanelTabs,
@@ -715,7 +741,8 @@ export default defineComponent({
       viewingExtent,
       hasConstraints,
       clearConstraints,
-      scenarioData
+      scenarioData,
+      onCreateScenario
     };
   },
   methods: {
