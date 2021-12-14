@@ -55,3 +55,9 @@ export interface AdminRegionSets {
   admin2: Set<string>;
   admin3: Set<string>;
 }
+
+export interface QualifierInfo {
+  count: number;
+  fetchByDefault: boolean;
+  maxAdminLevelTimeseries: number;
+}

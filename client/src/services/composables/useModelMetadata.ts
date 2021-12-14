@@ -60,7 +60,7 @@ export default function useModelMetadata(
       if (rawMetadata.qualifier_outputs) {
         rawMetadata.qualifier_outputs.forEach(qualifier => {
           if (qualifier.is_visible === undefined) {
-            qualifier.is_visible = false;
+            qualifier.is_visible = true;
           }
         });
       }

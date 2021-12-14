@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { Model, QualifierBreakdownResponse } from '@/types/Datacube';
+import { Model, QualifierBreakdownResponse, QualifierCountsResponse, QualifierListsResponse } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
@@ -156,7 +156,7 @@ export const getQualifierCounts = async (
       feature
     }
   });
-  return data;
+  return data as QualifierCountsResponse;
 };
 
 /**
@@ -180,7 +180,7 @@ export const getQualifierLists = async (
       qlf: qualifiers
     }
   });
-  return data;
+  return data as QualifierListsResponse;
 };
 
 export const getQualifierTimeseries = async (
