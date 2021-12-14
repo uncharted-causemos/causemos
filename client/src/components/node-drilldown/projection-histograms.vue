@@ -86,11 +86,16 @@
       v-tooltip.top-center="'Add a new model scenario'"
       type="button"
       class="btn btn-primary btn-call-for-action"
-      style="width: max-content; margin-left: 2rem"
+      style="align-self: flex-start"
       @click="addNewScenario">
         <i class="fa fa-plus-circle" />
         Add new scenario
     </button>
+    <button
+      class="btn btn-default"
+      style="align-self: flex-start; margin-top: 10px"
+      @click="switchToHistoricalOnlyScenario"
+    >Hide scenarios</button>
   </div>
 </template>
 
@@ -383,6 +388,9 @@ export default defineComponent({
       });
       this.requestAddingNewScenario = false;
       this.scrollToSection('header-section');
+    },
+    switchToHistoricalOnlyScenario() {
+      this.setSelectedScenarioId(null);
     }
   }
 });

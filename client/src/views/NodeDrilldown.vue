@@ -154,6 +154,15 @@
               :indicator-id="indicatorId"
               @new-scenario='onCreateScenario'
             />
+            <button
+              v-if="
+                selectedScenarioId === null &&
+                selectedNodeScenarioData !== null
+              "
+              class="btn btn-default"
+              style="align-self: flex-start"
+              @click="switchToBaselineScenario"
+            >View scenarios</button>
           </div>
         </div>
       </div>
@@ -769,6 +778,14 @@ export default defineComponent({
           projectType: ProjectType.Analysis
         }
       });
+    },
+    switchToBaselineScenario() {
+      const baseline = this.scenarios.find(scenario => scenario.is_baseline === true);
+      if (baseline === undefined) {
+        console.error('Unable to find baseline scenario in ', this.scenarios);
+        return;
+      }
+      this.setSelectedScenarioId(baseline.id);
     }
   }
 });
