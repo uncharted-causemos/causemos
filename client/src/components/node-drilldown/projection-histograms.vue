@@ -72,13 +72,29 @@
         </div>
       </div>
     </div>
+    <div v-if="requestAddingNewScenario" class="new-scenario-row">
+      <cag-scenario-form
+        @save="saveScenario"
+        @cancel="requestAddingNewScenario = false"
+      />
+    </div>
+    <button
+      id='new-scenario-button-id'
+      v-tooltip.top-center="'Add a new model scenario'"
+      type="button"
+      class="btn btn-primary btn-call-for-action"
+      style="width: max-content; margin-left: 2rem"
+      @click="addNewScenario">
+        <i class="fa fa-plus-circle" />
+        Add new scenario
+    </button>
   </div>
 </template>
 
 <script lang="ts">
 import { CAGModelSummary, ScenarioParameter, ScenarioProjection } from '@/types/CAG';
 import { TimeseriesPoint } from '@/types/Timeseries';
-import { defineComponent, PropType } from 'vue';
+import { defineComponent, nextTick, PropType } from 'vue';
 import Histogram from '@/components/widgets/charts/histogram.vue';
 import {
   BinBoundaries,
@@ -92,6 +108,7 @@ import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { mapActions, mapGetters } from 'vuex';
+import CagScenarioForm from '@/components/cag/cag-scenario-form.vue';
 
 /**
  * `base`: these values represent the grey part of each histogram bar.
@@ -151,8 +168,9 @@ function compareHistograms(
 }
 
 export default defineComponent({
-  components: { Histogram, SmallIconButton },
+  components: { Histogram, SmallIconButton, CagScenarioForm },
   name: 'ProjectionHistograms',
+  emits: ['new-scenario'],
   props: {
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
@@ -177,7 +195,8 @@ export default defineComponent({
   },
   data: () => ({
     // Select middle time slice by default
-    selectedTimeSliceIndex: 1
+    selectedTimeSliceIndex: 1,
+    requestAddingNewScenario: false
   }),
   setup() {
     return {
@@ -232,7 +251,7 @@ export default defineComponent({
     },
     rowsToDisplay(): HistogramRow[] {
       if (!this.isScenarioComparisonActive) {
-        return this.projections.map((projection, index) => {
+        const histogramRows: HistogramRow[] = this.projections.map((projection, index) => {
           const results = this.binnedResults[index];
           // If a scenario has been created but not yet run, map it to an empty
           //  array instead of histograms
@@ -253,6 +272,7 @@ export default defineComponent({
             histograms
           };
         });
+        return histogramRows;
       }
       // Scenario comparison is active.
       // Display the comparison baseline scenario first
@@ -346,6 +366,20 @@ export default defineComponent({
         inline: 'nearest'
       };
       elm.scrollIntoView(scrollViewOptions);
+    },
+    addNewScenario() {
+      this.requestAddingNewScenario = true;
+      nextTick(() => {
+        this.scrollToSection('new-scenario-button-id');
+      });
+    },
+    saveScenario(info: {name: string; description: string}) {
+      this.$emit('new-scenario', {
+        name: info.name,
+        description: info.description
+      });
+      this.requestAddingNewScenario = false;
+      this.scrollToSection('header-section');
     }
   }
 });
@@ -516,6 +550,14 @@ h3 {
     font-size: small;
     user-select: none;
   }
+}
+
+.new-scenario-row {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  margin-bottom: 1rem;
+  margin-left: 2rem;
 }
 
 </style>

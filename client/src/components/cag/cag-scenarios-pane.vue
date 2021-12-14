@@ -1,39 +1,13 @@
 <template>
   <div class="scenarios-panel-container">
     <template v-if="showNewOrEditScenario">
-      <h5 class="title">{{ editingScenarioId !== '' ? 'Edit ' : 'New '}} Scenario</h5>
-      <textarea
-        v-model="scenarioName"
-        v-focus
-        type="text"
-        placeholder="name"
-        rows="1"
-        class="scenario-text"
+      <cag-scenario-form
+        :title="editingScenarioId !== '' ? 'Edit Scenario' : 'New Scenario'"
+        :name="scenarioName"
+        :description="scenarioDesc"
+        @save="saveScenario"
+        @cancel="showNewOrEditScenario = false"
       />
-      <textarea
-        v-model="scenarioDesc"
-        type="text"
-        placeholder="description"
-        rows="10"
-        class="scenario-text"
-      />
-      <ul class="unstyled-list">
-        <button
-          type="button"
-          class="btn"
-          style="width: 50%"
-          @click.stop="showNewOrEditScenario = false">
-            Cancel
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary btn-call-for-action"
-          style="width: 50%"
-          :disabled="scenarioName.length == 0"
-          @click.stop="saveScenario">
-            Save
-        </button>
-      </ul>
     </template>
     <div v-else class="scenarios-container">
       <div
@@ -129,6 +103,7 @@
 import { defineComponent, PropType } from 'vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
+import CagScenarioForm from '@/components/cag/cag-scenario-form.vue';
 import { ConceptProjectionConstraints, Scenario } from '@/types/CAG';
 import { mapActions, mapGetters } from 'vuex';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
@@ -143,7 +118,8 @@ export default defineComponent({
   name: 'CAGScenariosPane',
   components: {
     MessageDisplay,
-    OptionsButton
+    OptionsButton,
+    CagScenarioForm
   },
   emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp'],
   props: {
@@ -192,7 +168,7 @@ export default defineComponent({
       this.showNewOrEditScenario = true;
       this.editingScenarioId = '';
     },
-    saveScenario() {
+    saveScenario(info: {name: string; description: string}) {
       //
       // update the list of scenarios using scenarioName and scenarioDesc
       //
@@ -201,13 +177,13 @@ export default defineComponent({
       // emit an event create a new scenario or update an existing one
       if (this.editingScenarioId === '') {
         this.$emit('new-scenario', {
-          name: this.scenarioName,
-          description: this.scenarioDesc
+          name: info.name,
+          description: info.description
         });
       } else {
         this.$emit('update-scenario', {
-          name: this.scenarioName,
-          description: this.scenarioDesc,
+          name: info.name,
+          description: info.description,
           id: this.editingScenarioId
         });
       }

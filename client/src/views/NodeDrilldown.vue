@@ -89,6 +89,7 @@
               :projections="selectedNodeScenarioData.projections"
               :model-summary="modelSummary"
               :indicator-id="indicatorId"
+              @new-scenario='onCreateScenario'
             />
           </div>
         </div>
@@ -199,7 +200,7 @@ import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
 import modelService from '@/services/model-service';
-import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
+import { NewScenario, ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -681,6 +682,28 @@ export default defineComponent({
       }
     });
 
+    const onCreateScenario = async (scenarioInfo: { name: string; description: string }) => {
+      const baselineScenario = scenarios.value.find(s => s.is_baseline);
+      if (baselineScenario === undefined) {
+        console.error('Failed to save new scenario, baseline scenario is null.');
+        return;
+      }
+      // add new scenario
+      const newScenario: NewScenario = {
+        model_id: currentCAG.value,
+        name: scenarioInfo.name,
+        description: scenarioInfo.description,
+        is_baseline: false,
+        parameter: _.cloneDeep(baselineScenario?.parameter)
+      };
+      // enableOverlay('Creating Scenario');
+      const createdScenario = await modelService.createScenario(newScenario);
+      // Save and reload scenarios
+      scenarios.value = await modelService.getScenarios(currentCAG.value, currentEngine.value as string);
+      setSelectedScenarioId(createdScenario.id);
+      // disableOverlay();
+    };
+
     return {
       nodeConceptName,
       drilldownPanelTabs,
@@ -718,7 +741,8 @@ export default defineComponent({
       viewingExtent,
       hasConstraints,
       clearConstraints,
-      scenarioData
+      scenarioData,
+      onCreateScenario
     };
   },
   methods: {
