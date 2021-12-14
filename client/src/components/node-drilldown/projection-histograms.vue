@@ -37,7 +37,7 @@
       :key="row.scenarioId"
       class="scenario-row"
     >
-      <div class="scenario-desc"><span v-tooltip="row.scenarioDesc">{{ row.scenarioDesc }}</span></div>
+      <div class="scenario-desc"><span v-tooltip.top-start="row.scenarioDesc">{{ row.scenarioDesc }}</span></div>
       <div class="grid-row">
         <div class="scenario-and-clamps">
           <div class="scenario-name" @click="selectScenario(row.scenarioId)">
