@@ -914,7 +914,7 @@ input[type="radio"] {
 
 .projection-histograms {
   flex: 3;
-  min-width: 0;
+  min-height: 0;
   margin-top: 5px;
 }
 
