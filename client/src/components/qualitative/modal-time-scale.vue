@@ -17,10 +17,10 @@
         />
         <label class="label-column" :for="timeScaleOption.id">
           <h3>{{ timeScaleOption.label }}</h3>
-          <h4>Run projections for</h4>
+          <h4>See change in value</h4>
           <p>
             {{
-              timeScaleOption.timeSlices.map(slice => slice.label).join(', ')
+              timeScaleOption.timeSlices.map(slice => 'in ' + slice.label).join(', ')
             }}
           </p>
           <div class="label-row">
