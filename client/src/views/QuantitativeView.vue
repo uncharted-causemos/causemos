@@ -332,7 +332,7 @@ export default defineComponent({
       if (engineStatus === MODEL_STATUS.TRAINING) {
         // Delphi status is a lot slower, throw up a guard
         if (this.currentEngine === 'delphi') {
-          this.enableOverlay('Check model status');
+          this.enableOverlay('Checking model training status');
         }
         const r = await modelService.checkAndUpdateRegisteredStatus(
           this.modelSummary.id,
