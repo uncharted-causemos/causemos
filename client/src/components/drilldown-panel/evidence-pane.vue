@@ -386,7 +386,7 @@ export default {
     },
     unusedStatementsNotice(value) {
       if (this.shouldShowStatementGroup(value.key)) return '';
-      else return '(' + value.count + ' statement' + (value.count !== 1 ? 's' : '') + ', not used in modeling)';
+      else return '(' + value.count + ' statement' + (value.count !== 1 ? 's' : '') + ', not used in analysis)';
     },
     openDocumentModal(evidence) {
       this.documentModalData = evidence.document_context;
