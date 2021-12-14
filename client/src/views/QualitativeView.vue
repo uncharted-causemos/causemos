@@ -1175,6 +1175,26 @@ export default defineComponent({
     },
     async renameNode(newName: string) {
       console.log('Renaming', newName);
+
+      // FIXME: Stableness hack, because the node has changed, we end up caching the
+      // DOM which refers to the old values. To get it to cache new values we need to swap new/old
+      // into place. Needs better support from renderer itself!!
+      const oldName = this.modelComponents.nodes.find(node => node.id === this.renameNodeId)?.concept;
+      const node = this.cagGraph.renderer.layout.nodes.find((node: any) => node.id === oldName);
+      node.id = newName;
+      node.label = newName;
+
+      const edges = this.cagGraph.renderer.layout.edges;
+      for (const edge of edges) {
+        const [source, target] = edge.id.split(':');
+        if (source === oldName) {
+          edge.id = `${newName}:${target}`;
+        }
+        if (target === oldName) {
+          edge.id = `${source}:${newName}`;
+        }
+      }
+
       this.showModalRename = false;
       await modelService.renameNode(this.currentCAG, this.renameNodeId, newName);
       this.refresh();
