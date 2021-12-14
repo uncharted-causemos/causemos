@@ -49,7 +49,7 @@
             v-for="clamp in getScenarioClamps(row)"
             :key="clamp.concept"
             class="clamp-name">
-              <i class="fa fa-star" />
+              <i class="fa fa-circle scenario-clamp-icon" />
               {{ ontologyFormatter(clamp.concept) }}
           </div>
         </div>
@@ -549,6 +549,11 @@ h3 {
     color: gray;
     font-size: small;
     user-select: none;
+    .scenario-clamp-icon {
+      user-select: none;
+      color: $selected;
+      font-size: $font-size-small;
+    }
   }
 }
 
