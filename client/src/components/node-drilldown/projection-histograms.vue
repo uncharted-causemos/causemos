@@ -32,70 +32,72 @@
         </small-icon-button>
       </h3>
     </div>
-    <div
-      v-for="row of rowsToDisplay"
-      :key="row.scenarioId"
-      class="scenario-row"
-    >
-      <div class="scenario-desc"><span v-tooltip.top-start="row.scenarioDesc">{{ row.scenarioDesc }}</span></div>
-      <div class="grid-row">
-        <div class="scenario-and-clamps">
-          <div class="scenario-name" @click="selectScenario(row.scenarioId)">
-            <i v-if="selectedScenarioId === row.scenarioId" class="fa fa-circle" />
-            <i v-else class="fa fa-circle-o" />
-            <h3 style="margin-left: 5px">{{ row.scenarioName }}</h3>
+    <div class="scrollable">
+      <div
+        v-for="row of rowsToDisplay"
+        :key="row.scenarioId"
+        class="scenario-row"
+      >
+        <div class="scenario-desc"><span v-tooltip.top-start="row.scenarioDesc">{{ row.scenarioDesc }}</span></div>
+        <div class="grid-row">
+          <div class="scenario-and-clamps">
+            <div class="scenario-name" @click="selectScenario(row.scenarioId)">
+              <i v-if="selectedScenarioId === row.scenarioId" class="fa fa-circle" />
+              <i v-else class="fa fa-circle-o" />
+              <h3 style="margin-left: 5px">{{ row.scenarioName }}</h3>
+            </div>
+            <div
+              v-for="clamp in getScenarioClamps(row)"
+              :key="clamp.concept"
+              class="clamp-name">
+                <i class="fa fa-circle scenario-clamp-icon" />
+                {{ ontologyFormatter(clamp.concept) }}
+            </div>
           </div>
-          <div
-            v-for="clamp in getScenarioClamps(row)"
-            :key="clamp.concept"
-            class="clamp-name">
-              <i class="fa fa-circle scenario-clamp-icon" />
-              {{ ontologyFormatter(clamp.concept) }}
+          <histogram
+            v-for="(histogramData, timeSliceIndex) of row.histograms"
+            class="histogram"
+            :class="{ hidden: isHiddenTimeSlice(timeSliceIndex) }"
+            :key="timeSliceIndex"
+            :histogram-data="histogramData"
+            :constraint-summary="
+              constraintSummaries[row.scenarioId][timeSliceIndex]
+            "
+          />
+        </div>
+        <div v-if="!row.is_valid" class="stale-scenario">
+          <div class="transparent"></div>
+          <!-- overlay on top of the projection histograms -->
+          <div>
+            <span>Pending changes</span>
           </div>
         </div>
-        <histogram
-          v-for="(histogramData, timeSliceIndex) of row.histograms"
-          class="histogram"
-          :class="{ hidden: isHiddenTimeSlice(timeSliceIndex) }"
-          :key="timeSliceIndex"
-          :histogram-data="histogramData"
-          :constraint-summary="
-            constraintSummaries[row.scenarioId][timeSliceIndex]
-          "
+      </div>
+      <div
+        v-if="requestAddingNewScenario"
+        class="new-scenario-row"
+        id='new-scenario-row'>
+        <cag-scenario-form
+          @save="saveScenario"
+          @cancel="requestAddingNewScenario = false"
         />
       </div>
-      <div v-if="!row.is_valid" class="stale-scenario">
-        <div class="transparent"></div>
-        <!-- overlay on top of the projection histograms -->
-        <div>
-          <span>Pending changes</span>
-        </div>
-      </div>
+      <button
+        v-else
+        v-tooltip.top-center="'Add a new model scenario'"
+        type="button"
+        class="btn btn-primary btn-call-for-action"
+        style="align-self: flex-start"
+        @click="addNewScenario">
+          <i class="fa fa-plus-circle" />
+          Add new scenario
+      </button>
+      <button
+        class="btn btn-default"
+        style="align-self: flex-start; margin-top: 10px"
+        @click="switchToHistoricalOnlyScenario"
+      >Hide scenarios</button>
     </div>
-    <div
-      v-if="requestAddingNewScenario"
-      class="new-scenario-row"
-      id='new-scenario-row'>
-      <cag-scenario-form
-        @save="saveScenario"
-        @cancel="requestAddingNewScenario = false"
-      />
-    </div>
-    <button
-      v-else
-      v-tooltip.top-center="'Add a new model scenario'"
-      type="button"
-      class="btn btn-primary btn-call-for-action"
-      style="align-self: flex-start"
-      @click="addNewScenario">
-        <i class="fa fa-plus-circle" />
-        Add new scenario
-    </button>
-    <button
-      class="btn btn-default"
-      style="align-self: flex-start; margin-top: 10px"
-      @click="switchToHistoricalOnlyScenario"
-    >Hide scenarios</button>
   </div>
 </template>
 
@@ -400,9 +402,16 @@ export default defineComponent({
 @import '@/styles/variables';
 
 .projection-histograms-container {
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+.scrollable {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 h3,
