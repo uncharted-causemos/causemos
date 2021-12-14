@@ -14,8 +14,9 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
+import { rangeQuantizedLog } from '@/utils/log-quantization-util';
 
-// Labels associated with confidences for tooltips
+// Labels associated with label level for tooltips
 const TOOLTIP_LEVELS = ['LOW', 'MEDIUM', 'HIGH'];
 
 export default defineComponent({
@@ -36,10 +37,17 @@ export default defineComponent({
       default: 1
     },
     // Number of bars in the display
+    // Also the basis for the log range expansion exponent
     numBars: {
       type: Number as PropType<number>,
       default: 10
+    },
+    // log base for quanitization to get more readable numbers
+    logBase: {
+      type: Number as PropType<number>,
+      default: 10
     }
+
   },
 
   computed: {
@@ -52,17 +60,18 @@ export default defineComponent({
     // Threshold to display a bar active
     numActive(): number {
       if (this.importanceRatio === null) return -1;
-      return Math.ceil(this.importanceRatio * this.numBars);
+      return Math.max(Math.ceil(rangeQuantizedLog(this.importanceRatio, this.logBase, this.numBars)), 1);
     },
+
     tooltipInfo(): string|null {
-      if (this.importanceRatio) {
+      if (this.numActive > 0) {
         const level = TOOLTIP_LEVELS[
           Math.min(
-            Math.round(this.importanceRatio * (TOOLTIP_LEVELS.length - 1)),
+            Math.round(this.numActive / this.numBars * (TOOLTIP_LEVELS.length - 1)),
             TOOLTIP_LEVELS.length - 1
           )
         ];
-        return `${level} estimated ${this.label}`;
+        return `${level} estimated relative ${this.label}`;
       } else {
         return null;
       }
