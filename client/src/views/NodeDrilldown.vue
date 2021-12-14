@@ -81,7 +81,10 @@
               <strong>
                 {{ selectedNodeScenarioData?.indicatorName ?? '' }}
               </strong>
-              <span class="restrict-max-width"> - {{ indicatorDescription }}.</span>
+              <span
+                class="description"
+                v-tooltip.top="indicatorDescription"
+              > - {{ indicatorDescription }}.</span>
               <span> Data shows</span>
               <dropdown-button
                 :items="SEASONALITY_OPTIONS"
@@ -133,6 +136,10 @@
                   Clear constraints
                 </button> -->
               </div>
+              <span>Min. value:</span>
+              <input class="form-control input-sm" v-model.number="indicatorMin"/>
+              <span>Max. value:</span>
+              <input class="form-control input-sm" v-model.number="indicatorMax"/>
             </div>
             <projection-histograms
               v-if="
@@ -147,17 +154,6 @@
               :indicator-id="indicatorId"
               @new-scenario='onCreateScenario'
             />
-          </div>
-        </div>
-        <div class="indicator-controls">
-          <div class="indicator-control-column">
-            <span>Minimum value</span>
-            <input class="form-control input-sm" v-model.number="indicatorMin"/>
-          </div>
-          <span class="from-to-separator">to</span>
-          <div class="indicator-control-column">
-            <span>Maximum value</span>
-            <input class="form-control input-sm" v-model.number="indicatorMax"/>
           </div>
         </div>
       </div>
@@ -935,6 +931,20 @@ h5 {
   display: flex;
   align-items: center;
   gap: 5px;
+
+  .form-control {
+    width: 10ch;
+  }
+
+  .description {
+    flex-basis: 4ch;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: $text-color-medium;
+  }
+
 }
 
 .configure-dropdown-container {
