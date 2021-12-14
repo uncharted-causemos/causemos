@@ -135,18 +135,15 @@
     <div v-else>
       <message-display :message="messageNoData" />
     </div>
-    <!-- FIXME: hide if there are no valid recommendatins -->
     <div
-      v-if="showEdgeRecommendations"
+      v-if="showEdgeRecommendations && (recommendations?.length ?? 0) > 0"
       style="margin-top: 10px">
       <div class="pane-summary">
         Recommendations
         <button
           class="btn btn-sm"
-          :disabled="(recommendations?.length ?? 0) === 0"
           @click="addRecommendations">Add</button>
       </div>
-      <message-display v-if="(recommendations?.length ?? 0) === 0" :message="'No recommended evidence found.'" />
       <collapsible-item
         v-for="(recommendation, statIdx) in recommendations"
         :override="{value: false}"
