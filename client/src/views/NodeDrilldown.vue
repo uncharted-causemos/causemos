@@ -21,14 +21,6 @@
       <div class="selected-node-column">
         <div class="scenario-selector-row">
           <div>
-            <span>Selected scenario</span>
-            <dropdown-button
-              :items="scenarioSelectDropdownItems"
-              :selected-item="selectedScenarioId"
-              @item-selected="setSelectedScenarioId"
-            />
-          </div>
-          <div>
             <span v-if="comparisonDropdownOptions.length > 1">
               Compare scenarios relative to
             </span>
@@ -82,6 +74,7 @@
                 {{ selectedNodeScenarioData?.indicatorName ?? '' }}
               </strong>
               <span
+                v-if="indicatorDescription.length > 0"
                 class="description"
                 v-tooltip.top="indicatorDescription"
               > - {{ indicatorDescription }}.</span>

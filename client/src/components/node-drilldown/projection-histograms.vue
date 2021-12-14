@@ -43,7 +43,7 @@
           <div class="scenario-name" @click="selectScenario(row.scenarioId)">
             <i v-if="selectedScenarioId === row.scenarioId" class="fa fa-circle" />
             <i v-else class="fa fa-circle-o" />
-            <h3 style="margin-left: 4px">{{ row.scenarioName }}</h3>
+            <h3 style="margin-left: 5px">{{ row.scenarioName }}</h3>
           </div>
           <div
             v-for="clamp in getScenarioClamps(row)"
