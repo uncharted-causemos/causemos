@@ -43,7 +43,7 @@
           <div class="scenario-name" @click="selectScenario(row.scenarioId)">
             <i v-if="selectedScenarioId === row.scenarioId" class="fa fa-circle" />
             <i v-else class="fa fa-circle-o" />
-            <h3 style="margin-left: 4px" :class="{ 'scenario-title-stale': !row.is_valid }">{{ row.is_valid ? row.scenarioName : (row.scenarioName + ' (Stale)') }}</h3>
+            <h3 style="margin-left: 4px">{{ row.scenarioName }}</h3>
           </div>
           <div
             v-for="clamp in getScenarioClamps(row)"
@@ -68,7 +68,7 @@
         <div class="transparent"></div>
         <!-- overlay on top of the projection histograms -->
         <div>
-          <span>Pending Changes</span>
+          <span>Pending changes</span>
         </div>
       </div>
     </div>
@@ -429,22 +429,21 @@ h3 {
   div:not(:first-child) {
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, .1);
+    background-color: rgba(255, 255, 255, .7);
     flex: 6;
     z-index: 1;
     align-items: flex-end;
     justify-content: end;
     position: relative;
     span {
-      color: orange;
-      background-color: white;
-      font-size: large;
-      margin-right: 1rem;
-      margin-bottom: 1rem;
-      cursor: default;
+      background: grey;
+      padding: 2px 10px;
+      border-radius: 50px;
+      color: white;
+      font-size: $font-size-large;
       position: absolute;
-      bottom: 0;
-      right: 0;
+      bottom: 10px;
+      right: 10px;
     }
   }
 }
@@ -519,10 +518,6 @@ h3 {
   h4 {
     @include header-secondary;
   }
-}
-
-.scenario-title-stale {
-  color: gray;
 }
 
 .scenario-row {
