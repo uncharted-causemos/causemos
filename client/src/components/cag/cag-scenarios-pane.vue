@@ -77,7 +77,7 @@
               v-for="clamp in getScenarioClamps(scenario)"
               :key="clamp.concept"
               class="scenario-clamps">
-                <i class="fa fa-star scenario-clamp-icon" />
+                <i class="fa fa-circle scenario-clamp-icon" />
                 <div
                   class="scenario-clamp-name">
                   {{ ontologyFormatter(clamp.concept) }}
@@ -295,6 +295,8 @@ export default defineComponent({
           pointer-events: all;
           .scenario-clamp-icon {
             user-select: none;
+            color: $selected;
+            font-size: $font-size-small;
           }
           .scenario-clamp-name {
             padding-left: 1rem;
@@ -319,7 +321,6 @@ export default defineComponent({
   .no-clamps-warning {
     margin-top: 5px;
     margin-left: 20px;
-    background-color: lavender;
   }
 
   .delete-confirm-alert {
