@@ -361,13 +361,12 @@ export function classifyCycles(cyclePaths, graphEdges) {
   // Check status of cycle path
   for (const path of cyclePaths) {
     let negativePolarity = 0;
-    let positivePolarity = 0;
     let isAmbiguous = false;
     for (let k = 0; k < path.length; k++) {
       const source = nameToId[path[k].name];
       const target = nameToId[path[(k + 1) % path.length].name];
       if (adjacencyMatrix[source][target] === 1) {
-        positivePolarity += 1;
+        continue;
       } else if (adjacencyMatrix[source][target] === -1) {
         negativePolarity += 1;
       } else {
