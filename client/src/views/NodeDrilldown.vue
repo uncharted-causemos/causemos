@@ -21,14 +21,6 @@
       <div class="selected-node-column">
         <div class="scenario-selector-row">
           <div>
-            <span>Selected scenario</span>
-            <dropdown-button
-              :items="scenarioSelectDropdownItems"
-              :selected-item="selectedScenarioId"
-              @item-selected="setSelectedScenarioId"
-            />
-          </div>
-          <div>
             <span v-if="comparisonDropdownOptions.length > 1">
               Compare scenarios relative to
             </span>
@@ -58,7 +50,6 @@
               >
                 <i class="fa fa-fw fa-compress" />
               </button>
-              <!-- TODO: New scenario button -->
               <!-- TODO: Set goal button -->
             </div>
           </div>
@@ -78,6 +69,74 @@
               @set-constraints="modifyConstraints"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
+            <div class="indicator-config">
+              <strong
+                class="indicator-name"
+                v-tooltip.top="selectedNodeScenarioData?.indicatorName ?? ''"
+              >
+                {{ selectedNodeScenarioData?.indicatorName ?? '' }}
+              </strong>
+              <span
+                v-if="indicatorDescription.length > 0"
+                class="description"
+                v-tooltip.top="indicatorDescription"
+              > - {{ indicatorDescription }}.</span>
+              <span> Data shows</span>
+              <dropdown-button
+                :items="SEASONALITY_OPTIONS"
+                :selected-item="indicatorPeriod"
+                @item-selected="(period) => { indicatorPeriod = period; }"
+              />
+              <span>seasonal trends. </span>
+              <button
+                v-if="indicatorId === null"
+                class="btn btn-sm btn-primary btn-call-for-action"
+                @click="openDataExplorer"
+              >
+                <i class="fa fa-fw fa-search" />
+                Choose a datacube
+              </button>
+              <div class="configure-dropdown-container" v-else>
+                <button
+                  class="btn btn-sm btn-default"
+                  @click="isDatacubeConfigDropdownOpen = !isDatacubeConfigDropdownOpen"
+                >
+                  <i class="fa fa-fw fa-pencil" />
+                  Configure
+                </button>
+                <dropdown-control
+                  v-if="isDatacubeConfigDropdownOpen && indicatorId !== null"
+                  class="configure-dropdown"
+                >
+                  <template #content>
+                    <div
+                      class="dropdown-option"
+                      @click="openDataDrilldown"
+                    >Edit datacube settings</div>
+                    <div
+                      class="dropdown-option"
+                      @click="openDataExplorer"
+                    ><i class="fa fa-fw fa-search" />Choose a different datacube</div>
+                    <div
+                      class="dropdown-option danger"
+                      @click="clearParameterization"
+                    ><i class="fa fa-fw fa-times" />Remove datacube</div>
+                  </template>
+                </dropdown-control>
+                <!-- <button
+                  v-if="hasConstraints"
+                  v-tooltip.top-center="'Clear constraints'"
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  @click="clearConstraints">
+                  Clear constraints
+                </button> -->
+              </div>
+              <span>Min. value:</span>
+              <input class="form-control input-sm" v-model.number="indicatorMin"/>
+              <span>Max. value:</span>
+              <input class="form-control input-sm" v-model.number="indicatorMax"/>
+            </div>
             <projection-histograms
               v-if="
                 selectedScenarioId !== null &&
@@ -91,82 +150,15 @@
               :indicator-id="indicatorId"
               @new-scenario='onCreateScenario'
             />
-          </div>
-        </div>
-        <div class="restrict-max-width indicator-title-row">
-          <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
-          <div class="indicator-buttons">
             <button
-              v-if="indicatorId !== null"
-              v-tooltip.top-center="'Edit datacube'"
-              type="button"
-              class="btn btn-primary btn-sm"
-              @click="openDataDrilldown">
-              Edit datacube
-            </button>
-            <button
-              v-if="indicatorId !== null"
-              v-tooltip.top-center="'Change datacube'"
-              type="button"
-              class="btn btn-primary btn-sm"
-              @click="openDataExplorer">
-              <i class="fa fa-fw fa-search" /> Change datacube
-            </button>
-            <button
-              v-else
-              v-tooltip.top-center="'Find datacube'"
-              type="button"
-              class="btn btn-primary btn-call-for-action btn-sm"
-              @click="openDataExplorer">
-              <i class="fa fa-fw fa-search" /> Find datacube
-            </button>
-            <button
-              v-tooltip.top-center="'Clear parameterization'"
-              type="button"
-              class="btn btn-danger btn-sm"
-              @click="clearParameterization">
-              Clear parameterization
-            </button>
-            <button
-              v-if="hasConstraints"
-              v-tooltip.top-center="'Clear constraints'"
-              type="button"
-              class="btn btn-danger btn-sm"
-              @click="clearConstraints">
-              Clear constraints
-            </button>
-          </div>
-        </div>
-        <p class="restrict-max-width">
-          {{ indicatorDescription }}
-        </p>
-        <div class="indicator-controls">
-          <div class="indicator-control-column">
-            <span>Minimum value</span>
-            <input class="form-control input-sm" v-model.number="indicatorMin"/>
-          </div>
-          <span class="from-to-separator">to</span>
-          <div class="indicator-control-column">
-            <span>Maximum value</span>
-            <input class="form-control input-sm" v-model.number="indicatorMax"/>
-          </div>
-          <div class=" indicator-control-column seasonality">
-            Seasonality
-            <div class="indicator-control-row">
-              <input type="radio" id="seasonality-true" :value="true" v-model="isSeasonalityActive">
-              <label for="seasonality-true">Yes</label>
-              <input
-                v-model.number="indicatorPeriod"
-                :disabled="isSeasonalityActive === false"
-                class="form-control input-sm"
-                type="number"
-              >
-              <span>{{ selectedTemporalResolution + (indicatorPeriod === 1 ? '' : 's') }}</span>
-            </div>
-            <div class="indicator-control-row">
-              <input type="radio" id="seasonality-false" :value="false" v-model="isSeasonalityActive">
-              <label for="seasonality-false">No</label>
-            </div>
+              v-if="
+                selectedScenarioId === null &&
+                selectedNodeScenarioData !== null
+              "
+              class="btn btn-default"
+              style="align-self: flex-start"
+              @click="switchToBaselineScenario"
+            >View scenarios</button>
           </div>
         </div>
       </div>
@@ -212,6 +204,18 @@ import { QUANTIFICATION } from '@/utils/messages-util';
 import ProjectionHistograms from '@/components/node-drilldown/projection-histograms.vue';
 import moment from 'moment';
 import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
+import DropdownControl from '@/components/dropdown-control.vue';
+
+const SEASONALITY_OPTIONS: DropdownItem[] = [
+  {
+    displayName: 'no',
+    value: 1
+  },
+  {
+    displayName: '12-month',
+    value: 12
+  }
+];
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -220,7 +224,8 @@ export default defineComponent({
     TdNodeChart,
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
-    ProjectionHistograms
+    ProjectionHistograms,
+    DropdownControl
   },
   props: {},
   setup() {
@@ -513,15 +518,7 @@ export default defineComponent({
     const indicatorMax = ref(1);
     const selectedTemporalResolution = ref<string|null>(null);
     const indicatorPeriod = ref(1);
-    const isSeasonalityActive = ref(false);
     const indicatorRegions = ref('');
-    watchEffect(() => {
-      // if isSeasonalityActive is toggled on, indicatorPeriod should be at least 2,
-      //  since a period of 1 is equivalent to no seasonality
-      if (isSeasonalityActive.value === true && indicatorPeriod.value < 2) {
-        indicatorPeriod.value = 2;
-      }
-    });
     watchEffect(() => {
       const indicator = selectedNode.value?.parameter;
       if (indicator !== null && indicator !== undefined) {
@@ -530,7 +527,6 @@ export default defineComponent({
         indicatorMax.value = max;
         selectedTemporalResolution.value = temporalResolution;
         indicatorPeriod.value = period;
-        isSeasonalityActive.value = period > 1;
         indicatorRegions.value = [
           indicator.country, indicator.admin1, indicator.admin2, indicator.admin3
         ].filter(d => d !== '').join(', ');
@@ -598,7 +594,6 @@ export default defineComponent({
         indicatorMax.value !== max ||
         selectedTemporalResolution.value !== temporalResolution ||
         indicatorPeriod.value !== period ||
-        isSeasonalityActive.value !== (period > 1) ||
         !_.isEqual(timeseries, historicalTimeseries.value);
     });
     const saveParameterValueChanges = async () => {
@@ -613,7 +608,7 @@ export default defineComponent({
           min: indicatorMin.value,
           max: indicatorMax.value,
           temporalResolution: selectedTemporalResolution.value,
-          period: isSeasonalityActive.value ? indicatorPeriod.value : 1,
+          period: indicatorPeriod.value,
           timeseries: historicalTimeseries.value
         }),
         components
@@ -734,7 +729,6 @@ export default defineComponent({
       indicatorDescription,
       indicatorMin,
       indicatorMax,
-      isSeasonalityActive,
       indicatorPeriod,
       indicatorRegions,
       areParameterValuesChanged,
@@ -752,7 +746,9 @@ export default defineComponent({
       hasConstraints,
       clearConstraints,
       scenarioData,
-      onCreateScenario
+      onCreateScenario,
+      SEASONALITY_OPTIONS,
+      isDatacubeConfigDropdownOpen: ref(false)
     };
   },
   methods: {
@@ -778,6 +774,14 @@ export default defineComponent({
           projectType: ProjectType.Analysis
         }
       });
+    },
+    switchToBaselineScenario() {
+      const baseline = this.scenarios.find(scenario => scenario.is_baseline === true);
+      if (baseline === undefined) {
+        console.error('Unable to find baseline scenario in ', this.scenarios);
+        return;
+      }
+      this.setSelectedScenarioId(baseline.id);
     }
   }
 });
@@ -849,18 +853,6 @@ h6 {
   margin: 2.25rem 5px 0 5px;
 }
 
-.seasonality {
-  margin-left: 10px;
-  flex: 1;
-  min-width: 0;
-
-  label {
-    font-weight: normal;
-    margin-right: 10px;
-    cursor: pointer;
-  }
-}
-
 input {
   background: white;
 }
@@ -886,7 +878,7 @@ input[type="radio"] {
   border: 1px solid #bbb;
   border-radius: 4px;
   overflow: hidden;
-  margin: 10px 0;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   background: white;
@@ -945,14 +937,49 @@ h5 {
     flex-shrink: 1;
     min-width: 0;
   }
+}
 
-  .indicator-buttons {
-    margin-left: 20px;
-    flex-shrink: 0;
-    & > button:not(:first-child) {
-      margin-left: 5px;
-    }
+.indicator-config {
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  .form-control {
+    width: 10ch;
   }
+
+  .indicator-name {
+    max-width: 25ch;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .description {
+    flex-basis: 4ch;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: $text-color-medium;
+  }
+
+}
+
+.configure-dropdown-container {
+  position: relative;
+}
+
+.configure-dropdown {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 0;
+  width: max-content;
+}
+
+.danger {
+  color: $negative;
 }
 
 .restrict-max-width {
