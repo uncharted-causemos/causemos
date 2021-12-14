@@ -875,7 +875,7 @@ input[type="radio"] {
   border: 1px solid #bbb;
   border-radius: 4px;
   overflow: hidden;
-  margin: 10px 0;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   background: white;
