@@ -43,19 +43,22 @@
           @rename-node="openRenameModal"
           @merge-nodes="mergeNodes"
         />
-        <color-legend
-        v-if="!showEmptyStateInstructions"
-          :show-cag-encodings="true" />
-        <div class="config-bar" v-if="selectedTimeScaleLabel !== null">
-          Time scale of interest:
-          <strong>{{ selectedTimeScaleLabel}} </strong>
-          <button
-            class="btn btn-sm btn-default"
-            @click="showModalTimeScale = true"
-          >
-            <i class="fa fa-fw fa-pencil" />
-          </button>
-          .
+        <div class="legend-config-row">
+          <cag-legend
+            v-if="!showEmptyStateInstructions"
+            :histogram-time-slice-labels="[]"
+          />
+          <div class="config-bar" v-if="selectedTimeScaleLabel !== null">
+            Time scale of interest:
+            <strong>{{ selectedTimeScaleLabel}} </strong>
+            <button
+              class="btn btn-sm btn-default"
+              @click="showModalTimeScale = true"
+            >
+              <i class="fa fa-fw fa-pencil" />
+            </button>
+            .
+          </div>
         </div>
       </div>
       <drilldown-panel
@@ -234,7 +237,6 @@ import RelationshipsPane from '@/components/drilldown-panel/relationships-pane.v
 import FactorsPane from '@/components/drilldown-panel/factors-pane.vue';
 import NodeSuggestionsPane from '@/components/drilldown-panel/node-suggestions-pane.vue';
 import FactorsRecommendationsPane from '@/components/drilldown-panel/factors-recommendations-pane.vue';
-import ColorLegend from '@/components/graph/color-legend.vue';
 
 import filtersUtil from '@/utils/filters-util';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
@@ -262,6 +264,7 @@ import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-butt
 import ModalTimeScale from '@/components/qualitative/modal-time-scale.vue';
 import { TimeScale } from '@/types/Enums';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
+import CagLegend from '@/components/graph/cag-legend.vue';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -320,7 +323,7 @@ export default defineComponent({
     CagAnalysisOptionsButton,
     RenameModal,
     ModalTimeScale,
-    ColorLegend
+    CagLegend
   },
   setup() {
     return {
@@ -1322,14 +1325,17 @@ export default defineComponent({
   }
 }
 
-// FIXME: refactor legend so that its position isn't absolute and its width can
-//  be determined with flexbox
-$legendWidth: 200px;
+.legend-config-row {
+  position: absolute;
+  bottom: 0;
+  left: -$navbar-outer-height;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
 
 .config-bar {
-  position: absolute;
-  left: calc(calc(#{$legendWidth} - #{$navbar-outer-height}) + 10px);
-  bottom: 5px;
+  margin-bottom: 5px;
   display: flex;
   align-items: baseline;
   gap: 5px;
