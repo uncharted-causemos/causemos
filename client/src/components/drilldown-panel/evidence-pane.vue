@@ -135,9 +135,8 @@
     <div v-else>
       <message-display :message="messageNoData" />
     </div>
-    <!-- FIXME: hide if there are no valid recommendatins -->
     <div
-      v-if="showEdgeRecommendations"
+      v-if="showEdgeRecommendations && (recommendations?.length ?? 0) > 0"
       style="margin-top: 10px">
       <div class="pane-summary">
         Recommendations
@@ -152,7 +151,7 @@
         class="statements-container">
         <template #controls>
           <i class="fa fa-lg fa-fw"
-             :class="{
+            :class="{
               'fa-check-square-o': recommendations[statIdx].isSelected,
               'fa-square-o': !recommendations[statIdx].isSelected,
             }"
@@ -169,7 +168,7 @@
 
         <template #content>
           <div v-for="(evidence, idx) in recommendation.statement.evidence"
-               :key="idx"
+            :key="idx"
             class="evidence">
             {{ evidence.evidence_context.text }}
           </div>
