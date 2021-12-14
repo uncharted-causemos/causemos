@@ -37,13 +37,13 @@
       :key="row.scenarioId"
       class="scenario-row"
     >
-      <div class="scenario-desc"><span v-tooltip="row.scenarioDesc">{{ row.scenarioDesc }}</span></div>
+      <div class="scenario-desc"><span v-tooltip.top-start="row.scenarioDesc">{{ row.scenarioDesc }}</span></div>
       <div class="grid-row">
         <div class="scenario-and-clamps">
           <div class="scenario-name" @click="selectScenario(row.scenarioId)">
             <i v-if="selectedScenarioId === row.scenarioId" class="fa fa-circle" />
             <i v-else class="fa fa-circle-o" />
-            <h3 style="margin-left: 4px" :class="{ 'scenario-title-stale': !row.is_valid }">{{ row.is_valid ? row.scenarioName : (row.scenarioName + ' (Stale)') }}</h3>
+            <h3 style="margin-left: 5px">{{ row.scenarioName }}</h3>
           </div>
           <div
             v-for="clamp in getScenarioClamps(row)"
@@ -68,26 +68,34 @@
         <div class="transparent"></div>
         <!-- overlay on top of the projection histograms -->
         <div>
-          <span>Pending Changes</span>
+          <span>Pending changes</span>
         </div>
       </div>
     </div>
-    <div v-if="requestAddingNewScenario" class="new-scenario-row">
+    <div
+      v-if="requestAddingNewScenario"
+      class="new-scenario-row"
+      id='new-scenario-row'>
       <cag-scenario-form
         @save="saveScenario"
         @cancel="requestAddingNewScenario = false"
       />
     </div>
     <button
-      id='new-scenario-button-id'
+      v-else
       v-tooltip.top-center="'Add a new model scenario'"
       type="button"
       class="btn btn-primary btn-call-for-action"
-      style="width: max-content; margin-left: 2rem"
+      style="align-self: flex-start"
       @click="addNewScenario">
         <i class="fa fa-plus-circle" />
         Add new scenario
     </button>
+    <button
+      class="btn btn-default"
+      style="align-self: flex-start; margin-top: 10px"
+      @click="switchToHistoricalOnlyScenario"
+    >Hide scenarios</button>
   </div>
 </template>
 
@@ -370,7 +378,7 @@ export default defineComponent({
     addNewScenario() {
       this.requestAddingNewScenario = true;
       nextTick(() => {
-        this.scrollToSection('new-scenario-button-id');
+        this.scrollToSection('new-scenario-row');
       });
     },
     saveScenario(info: {name: string; description: string}) {
@@ -380,6 +388,9 @@ export default defineComponent({
       });
       this.requestAddingNewScenario = false;
       this.scrollToSection('header-section');
+    },
+    switchToHistoricalOnlyScenario() {
+      this.setSelectedScenarioId(null);
     }
   }
 });
@@ -426,22 +437,21 @@ h3 {
   div:not(:first-child) {
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, .1);
+    background-color: rgba(255, 255, 255, .7);
     flex: 6;
     z-index: 1;
     align-items: flex-end;
     justify-content: end;
     position: relative;
     span {
-      color: orange;
-      background-color: white;
-      font-size: large;
-      margin-right: 1rem;
-      margin-bottom: 1rem;
-      cursor: default;
+      background: grey;
+      padding: 2px 10px;
+      border-radius: 50px;
+      color: white;
+      font-size: $font-size-large;
       position: absolute;
-      bottom: 0;
-      right: 0;
+      bottom: 10px;
+      right: 10px;
     }
   }
 }
@@ -516,10 +526,6 @@ h3 {
   h4 {
     @include header-secondary;
   }
-}
-
-.scenario-title-stale {
-  color: gray;
 }
 
 .scenario-row {
