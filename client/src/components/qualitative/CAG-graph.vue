@@ -119,8 +119,10 @@ class CAGRenderer extends BaseCAGRenderer {
     this.displayGraphStats();
   }
 
-  renderNodeUpdated() {
-    // not sure anything is needed here, function is requird though
+  renderNodeUpdated(nodeSelection) {
+    nodeSelection.selectAll('.node-label')
+      .text(d => d.label)
+      .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
   }
 
   renderNodeRemoved(selection) {
