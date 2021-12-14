@@ -124,7 +124,7 @@
             </button>
           </div>
         </div>
-        <div class="analysis-list">
+        <div class="analysis-list" v-if="filteredAnalyses.length > 0">
           <analysis-overview-card
             v-for="analysis in filteredAnalyses"
             :key="analysis.id"
@@ -135,6 +135,12 @@
             @rename="onRename(analysis)"
             @duplicate="onDuplicate(analysis)"
           />
+        </div>
+        <div
+          v-if="analyses.length === 0"
+          class="empty-state-container"
+        >
+          <empty-state-instructions class="empty-state-instructions" />
         </div>
       </div>
     </main>
@@ -156,6 +162,7 @@ import projectService from '@/services/project-service';
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
 import numberFormatter from '@/formatters/number-formatter';
 import DropdownButton from '@/components/dropdown-button.vue';
+import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -184,7 +191,8 @@ export default {
     ListAnalyticalQuestionsPane,
     ModalUploadDocument,
     RenameModal,
-    DropdownButton
+    DropdownButton,
+    EmptyStateInstructions
   },
   data: () => ({
     analyses: [],
@@ -651,6 +659,16 @@ main {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+.empty-state-container {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.empty-state-instructions {
+  width: 100%;
 }
 
 .analysis-overview-card:not(:first-child) {
