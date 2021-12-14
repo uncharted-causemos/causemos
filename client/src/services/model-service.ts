@@ -327,7 +327,7 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
   const taskFn = async () => {
     try {
       const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: model.parameter.engine, experiment_id: experimentId } });
-      return _.isEmpty(data.results) ? [false, null] : [true, data];
+      return _.isEmpty(data.results) ? [false, data] : [true, data];
     } catch (err) {
       // Delphi seems to randomly error out ??
       if (model.parameter.engine === 'delphi') {

@@ -86,7 +86,8 @@ export default defineComponent({
     scenarios: null as Scenario[] | null,
 
     resetLayoutToken: 0,
-    isTraining: false
+    isTraining: false,
+    currentScenarioName: '' as string
   }),
   computed: {
     ...mapGetters({
@@ -487,14 +488,15 @@ export default defineComponent({
         if (scenario.is_valid === true) continue;
 
         try {
-          this.enableOverlay(`Running ${scenario.name} on ${this.currentEngine}`);
+          this.currentScenarioName = scenario.name;
+          this.enableOverlay(`Running ${this.currentScenarioName} on ${this.currentEngine}`);
           const experimentId = await modelService.runProjectionExperiment(
             this.currentCAG,
             this.projectionSteps,
             modelService.cleanConstraints(scenario.parameter?.constraints ?? [])
           );
 
-          const experiment: any = await modelService.getExperimentResult(this.currentCAG, experimentId);
+          const experiment: any = await modelService.getExperimentResult(this.currentCAG, experimentId, 30, this.updateProgress);
           // FIXME: Delphi uses .results, DySE uses .results.data
           if (!_.isEmpty(experiment.results.data)) {
             scenario.result = experiment.results.data;
@@ -504,10 +506,12 @@ export default defineComponent({
           scenario.experiment_id = experimentId;
           scenario.is_valid = true;
           updateList.push(scenario);
+          this.currentScenarioName = '';
         } catch (error) {
           console.error(error);
           this.toaster(error as string, 'error', true);
           this.disableOverlay();
+          this.currentScenarioName = '';
           return [];
         }
       }
@@ -550,6 +554,12 @@ export default defineComponent({
     },
     resetCAGLayout() {
       this.resetLayoutToken = Date.now();
+    },
+    updateProgress(polls: number, threshold: number, result: any) {
+      if (result?.progressPercentage !== undefined) {
+        const overlayContent = `Running ${this.currentScenarioName} on ${this.currentEngine} - ${result.progressPercentage * 100}% complete.`;
+        this.enableOverlay(overlayContent);
+      }
     },
     async switchEngine(engine: string) {
       await modelService.updateModelParameter(this.currentCAG, {
