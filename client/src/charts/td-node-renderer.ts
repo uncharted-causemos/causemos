@@ -361,7 +361,14 @@ const renderStaticElements = (
   historicalTimeseries: TimeseriesPoint[],
   modelSummary: CAGModelSummary
 ) => {
-  const stepTimestamps = projections[0].values.map(point => point.timestamp);
+  const {
+    projection_start: projectionStartTimestamp,
+    time_scale: timeScale
+  } = modelSummary.parameter;
+  const stepCount = getLastTimeStepFromTimeScale(timeScale);
+  const stepTimestamps = _.range(stepCount).map(stepIndex =>
+    getTimestampAfterMonths(projectionStartTimestamp, stepIndex)
+  );
   // Draw a vertical line at each step
   const bottomYValue = offsetFromTop + yScale.range()[0] - yScale.range()[1];
   const lineGenerator = d3
@@ -402,11 +409,11 @@ const renderStaticElements = (
     .attr('fill-opacity', HISTORICAL_RANGE_OPACITY);
 
   // render timeslices indicating major temporal marks, e.g., now, in a few month, in a few years
-  const projectionStart = _.min(stepTimestamps) ?? 0;
-  const timeScale = modelSummary.parameter.time_scale;
   const timeSlicesRaw = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
-  const timeSlices = timeSlicesRaw?.map(timeslice => getTimestampAfterMonths(projectionStart, timeslice.months));
-  const timeSlicesValues = [projectionStart, ...timeSlices ?? []];
+  const timeSlices = timeSlicesRaw?.map(timeslice =>
+    getTimestampAfterMonths(projectionStartTimestamp, timeslice.months)
+  );
+  const timeSlicesValues = [projectionStartTimestamp, ...timeSlices ?? []];
   const timeSlicesRawLabels = timeSlicesRaw?.map(timeslice => timeslice.label) ?? [];
   const timeSlicesLabels = ['now', ...timeSlicesRawLabels];
   const timeSlicesLabelsOffset = 10;
