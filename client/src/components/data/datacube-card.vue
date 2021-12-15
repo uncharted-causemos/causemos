@@ -239,14 +239,14 @@
                   <div style="padding-right: 10px">Selected Viz:</div>
                     <select name="pre-gen-outputs" @change="selectedPreGenDataItem=preGenDataItems[$event.target.selectedIndex]">
                       <option
-                        v-for="pregenItem in preGenDataItems" :key="pregenItem"
-                        :selected="pregenItem === selectedPreGenDataItem"
+                        v-for="pregenItem in preGenDataItems" :key="pregenItem.id"
+                        :selected="pregenItem.id === selectedPreGenDataItem.id"
                       >
-                        {{pregenItem}}
+                        {{pregenItem.id}}
                       </option>
                     </select>
                   </div>
-                <div style="padding-left: 5px; padding-right: 10px">Description:</div>
+                <div style="padding-left: 5px; padding-right: 10px">Caption: {{selectedPreGenDataItem.caption}}</div>
               </div>
 
               <div class="column card-maps-container" style="flex-direction: revert;">
@@ -1201,8 +1201,8 @@ export default defineComponent({
     });
 
     const preGenDataMap = ref<{[key: string]: PreGeneratedModelRunData[]}>({}); // map all pre-gen data for each run
-    const preGenDataItems = ref<string[]>([]);
-    const selectedPreGenDataItem = ref('');
+    const preGenDataItems = ref<PreGeneratedModelRunData[]>([]);
+    const selectedPreGenDataItem = ref<PreGeneratedModelRunData>({ file: '' }); // not sure if this is the best way to declare an 'empty' object of this specific type
     watchEffect(() => {
       if (filteredRunData.value !== null && filteredRunData.value.length > 0) {
         // build a map of all pre-gen data indexed by run-id
@@ -1211,13 +1211,12 @@ export default defineComponent({
           // note that some runs may not have valid pre-gen data (i.e., null)
           const allPreGenData = Object.values(preGenDataMap.value).flat().filter(p => p !== null && p !== undefined);
 
-          // assing each pre-gen data item (within each run) an id
+          // assign each pre-gen data item (within each run) an id
           allPreGenData.forEach(pregen => {
             pregen.id = getPreGenItemDisplayName(pregen);
           });
-          console.log('DATA: ', allPreGenData);
-          // dropdown selection utilize each pre-gen data item id as it display name
-          preGenDataItems.value = _.uniq(allPreGenData.map(pregen => pregen.id ?? ''));
+          // utilized to access the caption, as well as the id for the dropdown
+          preGenDataItems.value = _.uniqBy(allPreGenData, 'id');
 
           // select first pre-gen data item once available
           if (preGenDataItems.value.length > 0) {
@@ -1234,7 +1233,7 @@ export default defineComponent({
     }
 
     function getSelectedPreGenOutput(spec: OutputSpecWithId): PreGeneratedModelRunData | undefined {
-      return preGenDataMap.value[spec.id] ? preGenDataMap.value[spec.id].find(pregen => getPreGenItemDisplayName(pregen) === selectedPreGenDataItem.value) : undefined;
+      return preGenDataMap.value[spec.id] ? preGenDataMap.value[spec.id].find(pregen => getPreGenItemDisplayName(pregen) === selectedPreGenDataItem.value.id) : undefined;
     }
 
     const dataPaths = computed((): string[] => {
