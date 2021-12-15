@@ -56,7 +56,6 @@
           </div>
           <histogram
             v-for="(histogramData, timeSliceIndex) of row.histograms"
-            class="histogram"
             :class="{ hidden: isHiddenTimeSlice(timeSliceIndex) }"
             :key="timeSliceIndex"
             :histogram-data="histogramData"

@@ -187,7 +187,8 @@ export default defineComponent({
         baseQuestion: 'What are the key influences causing change in a node?',
         targetView: 'quantitative'
       }
-    ]
+    ],
+    lastDragEnter: null
   }),
   computed: {
     ...mapGetters({
@@ -381,14 +382,16 @@ export default defineComponent({
       // prevent default action
       evt.preventDefault();
       evt.stopPropagation();
+      this.lastDragEnter = evt.target; // keep track of element that was first entered while draging
     },
     onDragLeave(evt: any) {
       // prevent default action (open as link for some elements)
       evt.preventDefault();
       evt.stopPropagation();
-
       // Change the source element's background color back to white
-      evt.currentTarget.style.background = 'white';
+      if (this.lastDragEnter === evt.target) { // HACK: only flip color back if we leave the original element we entered
+        evt.currentTarget.style.background = 'white';
+      }
     },
     removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string) {
       evt.preventDefault();
