@@ -175,7 +175,7 @@ export default {
     },
     async poll() {
       const r = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.sensitivityResult.experiment_id);
-      if (r.status === 'no' && r.results) {
+      if (r.status === 'completed' && r.results) {
         this.processSensitivityResult(r);
       } else {
         this.updatePollingProgress(r);
