@@ -234,17 +234,19 @@
                 of all pre-rendered-viz items from all runs,
                 and enable selection by item name/id instead of index
                 which won't work when different model runs have different list of pre-rendered items -->
-              <div v-if="preGenDataItems.length > 0"
-                style="display: flex; padding: 5px;">
-                <div style="padding-right: 10px">Selected Viz:</div>
-                <select name="pre-gen-outputs" @change="selectedPreGenDataItem=preGenDataItems[$event.target.selectedIndex]">
-                  <option
-                    v-for="pregenItem in preGenDataItems" :key="pregenItem"
-                    :selected="pregenItem === selectedPreGenDataItem"
-                  >
-                    {{pregenItem}}
-                  </option>
-                </select>
+              <div v-if="preGenDataItems.length > 0">
+                <div style="display: flex; padding: 5px;">
+                  <div style="padding-right: 10px">Selected Viz:</div>
+                    <select name="pre-gen-outputs" @change="selectedPreGenDataItem=preGenDataItems[$event.target.selectedIndex]">
+                      <option
+                        v-for="pregenItem in preGenDataItems" :key="pregenItem"
+                        :selected="pregenItem === selectedPreGenDataItem"
+                      >
+                        {{pregenItem}}
+                      </option>
+                    </select>
+                  </div>
+                <div style="padding-left: 5px; padding-right: 10px">Description:</div>
               </div>
 
               <div class="column card-maps-container" style="flex-direction: revert;">
@@ -1213,7 +1215,7 @@ export default defineComponent({
           allPreGenData.forEach(pregen => {
             pregen.id = getPreGenItemDisplayName(pregen);
           });
-
+          console.log('DATA: ', allPreGenData);
           // dropdown selection utilize each pre-gen data item id as it display name
           preGenDataItems.value = _.uniq(allPreGenData.map(pregen => pregen.id ?? ''));
 
