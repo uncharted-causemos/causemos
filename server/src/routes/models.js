@@ -386,10 +386,12 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
   const engine = req.query.engine;
 
   let modelStatus = {};
-  if (engine === DYSE) {
-    modelStatus = await dyseService.modelStatus(modelId);
-  } else {
+  if (engine === DELPHI) {
     modelStatus = await delphiService.modelStatus(modelId);
+  } else if (engine === DELPHI_DEV) {
+    modelStatus = await delphiDevService.modelStatus(modelId);
+  } else {
+    modelStatus = await dyseService.modelStatus(modelId);
   }
 
   // FIXME: Different engines have slightly different status codes

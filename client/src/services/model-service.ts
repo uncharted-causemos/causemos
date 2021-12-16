@@ -330,7 +330,7 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
       return _.isEmpty(data.results) ? [false, data] : [true, data];
     } catch (err) {
       // Delphi seems to randomly error out ??
-      if (model.parameter.engine === 'delphi') {
+      if (model.parameter.engine === 'delphi' || model.parameter.engine === 'delphi_dev') {
         console.log('Ignoring Delphi error getting experiment');
         return [false, null];
       }
@@ -701,7 +701,8 @@ export const hasMergeConflictEdges = (currentCAG: CAGGraph, importCAGs: CAGGraph
 
 export const ENGINE_OPTIONS = [
   { key: 'dyse', value: 'DySE' },
-  { key: 'delphi', value: 'Delphi' }
+  { key: 'delphi', value: 'Delphi' },
+  { key: 'delphi_dev', value: 'Delphi DEV' }
 ];
 
 // Cleanse constraint payload
