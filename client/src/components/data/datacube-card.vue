@@ -246,7 +246,7 @@
                       </option>
                     </select>
                   </div>
-                <div style="padding-left: 5px; padding-right: 10px">Caption: {{selectedPreGenDataItem.caption}}</div>
+                <div v-if="selectedPreGenDataItem.caption" style="padding-left: 5px; padding-right: 10px">{{selectedPreGenDataItem.caption}}</div>
               </div>
 
               <div class="column card-maps-container" style="flex-direction: revert;">
