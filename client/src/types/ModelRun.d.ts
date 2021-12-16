@@ -22,6 +22,7 @@ export interface PreGeneratedModelRunData {
   type?: string; // resource type, e.g., image, video
   target?: string; // target component, e.g., map, timeseries, none
   coords?: {lat: number; long: number}[]; // geo coordinates of the rect region starting top-left, clock-wise
+  caption?: string; // caption associated with the resource
   description?: string; // accessory desc
 }
 
