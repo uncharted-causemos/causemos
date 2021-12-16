@@ -175,10 +175,7 @@ export default defineComponent({
         tooltip += `${ancestor} / `;
       });
       tooltip += this.itemData.name;
-      return {
-        content: tooltip,
-        classes: 'agg-checklist-item-ancestor-tooltip'
-      };
+      return tooltip;
     }
   },
   methods: {
@@ -193,6 +190,11 @@ export default defineComponent({
     },
     colorFromIndex(index: number) {
       return this.selectedTimeseriesPoints[index].color;
+    }
+  },
+  watch: {
+    itemData(n, o) {
+      console.log('new', n, 'old', o);
     }
   }
 });
