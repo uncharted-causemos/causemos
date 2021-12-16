@@ -41,6 +41,7 @@ export function conceptHumanName(name: string, set: Set<string>) {
       }
     }
     if (found === false) {
+      // FIXME: We don't need to log an error if this is a renamed node
       console.debug('Cannot translate', token);
       return token;
     }
