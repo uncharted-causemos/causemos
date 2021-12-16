@@ -15,12 +15,15 @@ const modelService = rootRequire('/services/model-service');
 const historyService = rootRequire('/services/history-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
+const delphiDevService = rootRequire('/services/external/delphi_dev-service');
+
 const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 const modelUtil = rootRequire('util/model-util');
 
 
 const DYSE = 'dyse';
 const DELPHI = 'delphi';
+const DELPHI_DEV = 'delphi_dev';
 
 // const esLock = {};
 
@@ -275,6 +278,8 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   try {
     if (engine === DELPHI) {
       initialParameters = await delphiService.createModel(enginePayload);
+    } else if (engine === DELPHI_DEV) {
+      initialParameters = await delphiDevService.createModel(enginePayload);
     } else if (engine === DYSE) {
       initialParameters = await dyseService.createModel(enginePayload);
     }
@@ -327,7 +332,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
         throw new Error(JSON.stringify(r.items[0]));
       }
     }
-  } else if (engine === DELPHI) {
+  } else if (engine === DELPHI || engine === DELPHI_DEV) {
     let r = null;
     const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
     const updateEdges = [];
@@ -381,10 +386,12 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
   const engine = req.query.engine;
 
   let modelStatus = {};
-  if (engine === DYSE) {
-    modelStatus = await dyseService.modelStatus(modelId);
-  } else {
+  if (engine === DELPHI) {
     modelStatus = await delphiService.modelStatus(modelId);
+  } else if (engine === DELPHI_DEV) {
+    modelStatus = await delphiDevService.modelStatus(modelId);
+  } else {
+    modelStatus = await dyseService.modelStatus(modelId);
   }
 
   // FIXME: Different engines have slightly different status codes
@@ -414,6 +421,8 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
   try {
     if (engine === DELPHI) {
       result = await delphiService.createExperiment(modelId, payload);
+    } else if (engine === DELPHI_DEV) {
+      result = await delphiDevService.createExperiment(modelId, payload);
     } else if (engine === DYSE) {
       result = await dyseService.createExperiment(modelId, payload);
     } else {
@@ -474,6 +483,8 @@ router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
   let result;
   if (engine === DELPHI) {
     result = await delphiService.findExperiment(modelId, experimentId);
+  } else if (engine === DELPHI_DEV) {
+    result = await delphiDevService.findExperiment(modelId, experimentId);
   } else if (engine === DYSE) {
     result = await dyseService.findExperiment(modelId, experimentId);
   }

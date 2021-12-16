@@ -299,7 +299,7 @@ const buildSensitivityPayload = async (engine, experimentStart, numTimeSteps,
   const experimentStartDate = moment.utc(experimentStart);
 
   let payload;
-  if (engine === 'delphi') {
+  if (engine === 'delphi' || engine === 'delphi_dev') {
     payload = {};
   } else if (engine === 'dyse') {
     const startTime = experimentStartDate.valueOf();
@@ -332,7 +332,7 @@ const buildSensitivityPayload = async (engine, experimentStart, numTimeSteps,
  */
 const buildGoalOptimizationPayload = async (modelId, engine, goals) => {
   let payload;
-  if (engine === 'delphi') {
+  if (engine === 'delphi' || engine === 'delphi_dev') {
     payload = {};
   } else if (engine === 'dyse') {
     payload = {
