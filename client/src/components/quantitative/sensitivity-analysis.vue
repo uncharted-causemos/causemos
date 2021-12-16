@@ -1,5 +1,8 @@
 <template>
   <div class="sensitivity-analysis-container">
+    <div v-if="statusMessage">
+      {{ statusMessage }}
+    </div>
     <sensitivity-analysis-legend />
     <div class="x-axis-label">
       <h5>IMPACTS / EFFECTS</h5>
@@ -96,7 +99,8 @@ export default {
       this.render(width, height);
     }, RESIZE_DELAY),
     selectedRowOrColumn: { isRow: false, concept: null },
-    matrixData: null
+    matrixData: null,
+    statusMessage: null
   }),
   computed: {
     ...mapGetters({
@@ -179,12 +183,16 @@ export default {
     },
     updatePollingProgress(result) {
       console.log('update polling progress', result);
+      const progressMessage = result.progressPercentage ? ` - ${(result.progressPercentage * 100, 2).toFixed(2)}% Complete` : '';
+      this.statusMessage = `Sensitivity Analysis In Progress${progressMessage}`;
       window.setTimeout(() => {
         this.poll();
       }, 5000);
     },
     async processSensitivityResult(result) {
       console.log('process sensitivity result', result);
+      this.statusMessage = null;
+
       await modelService.updateScenarioSensitivityResult(
         this.sensitivityResult.id,
         this.sensitivityResult.experiment_id,

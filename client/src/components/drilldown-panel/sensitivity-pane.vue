@@ -19,7 +19,12 @@
     </button>
   </div>
   <div>
-    <!-- format this nice -->
+    <div v-if="paneSensitivityResult?.result?.status && paneSensitivityResult?.result?.status !== 'completed'">
+      Sensitivity Analysis In Progress
+      <div v-if="paneSensitivityResult?.result?.progressPercentage">
+        {{(paneSensitivityResult.result.progressPercentage * 100, 2).toFixed(2)}}% Complete
+      </div>
+    </div>
     <div v-if="activeTab === TAB_IDS.DRIVERS">
       <div
         class="inline-group"
@@ -142,6 +147,7 @@ export default defineComponent({
     };
     const updatePollingProgress = (result: Promise<void>) => {
       console.log('update polling progress', result);
+      paneSensitivityResult.value.result = result;
       window.setTimeout(() => {
         poll();
       }, 5000);
@@ -154,6 +160,7 @@ export default defineComponent({
         result);
       paneSensitivityResult.value.result = result;
     };
+
     if (sensitivityResult.value !== null &&
       (!sensitivityResult.value.result || sensitivityResult.value.is_valid === false)
     ) {
@@ -171,7 +178,8 @@ export default defineComponent({
       if (
         paneSensitivityResult.value === null ||
         !paneSensitivityResult.value.result ||
-        !paneSensitivityResult.value.result.results
+        !paneSensitivityResult.value.result.results ||
+        !paneSensitivityResult.value.result.results.global
       ) {
         return null;
       }
@@ -242,6 +250,7 @@ export default defineComponent({
     });
 
     watchEffect(() => {
+      if (activeTab.value.length > 0) return;
       if (drivers.value.length > 0) {
         activeTab.value = TAB_IDS.DRIVERS;
       } else if (drivers.value.length === 0 && impacts.value.length > 0) {
@@ -255,12 +264,19 @@ export default defineComponent({
       }
     });
 
+    watch(sensitivityResult, (newResult, oldResult) => {
+      if (newResult.id !== oldResult) {
+        paneSensitivityResult.value = newResult;
+      }
+    });
+
     return {
       activeTab,
       activeNode,
       drivers,
       impacts,
       maxSensitivity,
+      paneSensitivityResult,
       tabs,
       TAB_IDS
     };
