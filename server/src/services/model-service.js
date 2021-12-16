@@ -380,13 +380,11 @@ const clearNodeParameter = async (modelId, nodeId) => {
  *
  */
 const buildNodeParametersPayload = (nodeParameters, model) => {
-  const r = {};
+  const r = [];
 
   const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
 
   nodeParameters.forEach((np, idx) => {
-    const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
-
     if (_.isEmpty(np.parameter)) {
       throw new Error(`${np.concept} is not parameterized`);
     } else {
@@ -412,17 +410,16 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
         });
       }
 
-      r[np.concept] = {
-        // Need to have unique indicator names because Delphi can't handle duplicates
-        name: np.parameter.name + ` ${idx}`,
+      r.push({
+        concept: np.concept,
+        indicator: np.parameter.name + ` ${idx}`, // Delphi doesn't like duplicate indicators across nodes
         minValue: _.get(np.parameter, 'min', 0),
         maxValue: _.get(np.parameter, 'max', 1),
-        func: valueFunc,
         values: indicatorTimeSeries,
         numLevels: NUM_LEVELS,
         resolution: _.get(np.parameter, 'temporalResolution', 'month'),
         period: _.get(np.parameter, 'period', 12)
-      };
+      });
     }
   });
   return r;
@@ -444,6 +441,54 @@ const buildEdgeParametersPayload = (edgeParameters) => {
   return r;
 };
 
+
+// Build create-model payload
+// FIXME
+// - Need to determine if we want to override weights
+const buildCreateModelPayload = async (model, nodeParameters, edgeParameters) => {
+  const projectId = model.project_id;
+  const statementAdapter = Adapter.get(RESOURCE.STATEMENT, projectId);
+
+  const nodesPayload = buildNodeParametersPayload(nodeParameters, model);
+
+  const edgesPayload = [];
+  for (let i = 0; i < edgeParameters.length; i++) {
+    const edge = edgeParameters[i];
+    const source = edge.source;
+    const target = edge.target;
+    const referenceIds = edge.reference_ids;
+    const polarity = edge.polarity;
+
+    const filters = {
+      clauses: [
+        { field: 'id', values: referenceIds, operand: 'OR', isNot: false }
+      ]
+    };
+
+    // If not ambiguous we can apply additional filter
+    if (polarity !== 0) {
+      filters.clauses.push({ field: 'statementPolarity', values: [polarity], operand: 'OR', isNot: false });
+    }
+    const statements = await statementAdapter.find(filters, statementOptions);
+    if (statements.length === 0) {
+      statements.push(_edge2statement(edge, polarity));
+    }
+    edgesPayload.push({
+      source,
+      target,
+      polarity,
+      statments: statements
+    });
+  }
+
+  return {
+    id: model.id,
+    nodes: nodesPayload,
+    edges: edgesPayload
+  };
+};
+
+
 module.exports = {
   find,
   findOne,
@@ -455,5 +500,7 @@ module.exports = {
   buildGoalOptimizationPayload,
   buildNodeParametersPayload,
   buildEdgeParametersPayload,
-  clearNodeParameter
+  clearNodeParameter,
+
+  buildCreateModelPayload
 };

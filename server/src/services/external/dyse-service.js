@@ -29,11 +29,12 @@ const createModel = async (payload) => {
     throw new Error(JSON.stringify(result));
   }
 
-  Logger.debug(JSON.stringify(result.relations, null, 2));
+  console.log(payload.edges);
+  Logger.warn(JSON.stringify(result.edges, null, 2));
 
   // Transform result to node/edge initialization maps
-  const nodes = result.conceptIndicators;
-  const edges = result.relations.reduce((acc, edge) => {
+  const nodes = result.nodes;
+  const edges = result.edges.reduce((acc, edge) => {
     const key = `${edge.source}///${edge.target}`;
     if (!acc[key]) {
       acc[key] = {};
@@ -90,6 +91,11 @@ const createExperiment = async (modelId, payload) => {
     },
     json: payload
   };
+
+  console.log('!!!');
+  console.log(JSON.stringify(payload, null, 2));
+  console.log('!!!');
+
   const result = await requestAsPromise(options);
   return result;
 };
