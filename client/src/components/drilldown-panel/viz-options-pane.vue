@@ -41,17 +41,9 @@
             :selected-item="selectedSpatialAggregation"
             @item-selected="setSpatialAggregationSelection"
           />
-          <span
-            v-tooltip.top-center="selectedSpatialAggregation !== selectedTemporalAggregation ? 'Use the same aggregation function to allow simple options' : ''"
-          >
-            <a
-              class="toggle-advanced-aggregation"
-              :class="{ 'disabled': selectedSpatialAggregation !== selectedTemporalAggregation}"
-              @click="toggleAdvancedAggregation"
-            >
-              {{ shouldShowAdvancedAggregation ? 'Hide' : 'Show' }} advanced options
-            </a>
-          </span>
+          <a class="btn default-btn" @click="toggleAdvancedAggregation">
+            {{ shouldShowAdvancedAggregation ? 'Use a single function ' : 'Use advanced aggregations' }}
+          </a>
         </div>
         <dropdown-button
           v-if="shouldShowAdvancedAggregation"
@@ -390,12 +382,10 @@ export default defineComponent({
       this.setTemporalAggregationSelection(aggregation);
     },
     toggleAdvancedAggregation() {
-      if (!this.showAdvancedAggregations) {
-        this.showAdvancedAggregations = true;
-      } else if (this.selectedSpatialAggregation === this.selectedTemporalAggregation) {
-        this.showAdvancedAggregations = false;
-      } else {
-        // Do nothing. Should we reset selectedTemporalAggregation here?
+      this.showAdvancedAggregations = !this.showAdvancedAggregations;
+      if (!this.showAdvancedAggregations &&
+        this.selectedSpatialAggregation !== this.selectedTemporalAggregation) {
+        this.setTemporalAggregationSelection(this.selectedSpatialAggregation);
       }
     },
     setUnitSelection(unit: string) {
@@ -461,11 +451,6 @@ export default defineComponent({
 }
 
 .add-second-variable {
-  color: blue;
-  cursor: pointer;
-}
-
-.toggle-advanced-aggregation {
   color: blue;
   cursor: pointer;
 }
