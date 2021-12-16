@@ -41,9 +41,9 @@
             :selected-item="selectedSpatialAggregation"
             @item-selected="setSpatialAggregationSelection"
           />
-          <a class="btn default-btn" @click="toggleAdvancedAggregation">
+          <button class="btn btn-sm default-btn" @click="toggleAdvancedAggregation">
             {{ shouldShowAdvancedAggregation ? 'Use a single function ' : 'Use advanced aggregations' }}
-          </a>
+          </button>
         </div>
         <dropdown-button
           v-if="shouldShowAdvancedAggregation"
