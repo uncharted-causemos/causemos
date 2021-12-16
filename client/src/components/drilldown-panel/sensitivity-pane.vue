@@ -250,6 +250,7 @@ export default defineComponent({
     });
 
     watchEffect(() => {
+      if (activeTab.value.length > 0) return;
       if (drivers.value.length > 0) {
         activeTab.value = TAB_IDS.DRIVERS;
       } else if (drivers.value.length === 0 && impacts.value.length > 0) {
@@ -260,6 +261,12 @@ export default defineComponent({
     watch(selectedNode, (newNode, oldNode) => {
       if (newNode?.id !== oldNode?.id) {
         activeNode.value = null;
+      }
+    });
+
+    watch(sensitivityResult, (newResult, oldResult) => {
+      if (newResult.id !== oldResult) {
+        paneSensitivityResult.value = newResult;
       }
     });
 
