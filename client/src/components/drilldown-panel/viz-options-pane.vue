@@ -20,14 +20,41 @@
           :selected-item="selectedUnit"
           @item-selected="setUnitSelection"
         />
+        <div class="aggregation-row">
+          <dropdown-button
+            v-if="!shouldShowAdvancedAggregation"
+            class="dropdown-button"
+            :class="{ 'invalid-option': selectedSpatialAggregation === AggregationOption.None}"
+            :is-dropdown-left-aligned="true"
+            :inner-button-label="'Aggregated by'"
+            :items="aggregationOptions"
+            :selected-item="selectedSpatialAggregation"
+            @item-selected="setAggregationSelection"
+          />
+          <dropdown-button
+            v-else
+            class="dropdown-button"
+            :class="{ 'invalid-option': selectedSpatialAggregation === AggregationOption.None}"
+            :is-dropdown-left-aligned="true"
+            :inner-button-label="'Spatial aggregation'"
+            :items="aggregationOptions"
+            :selected-item="selectedSpatialAggregation"
+            @item-selected="setSpatialAggregationSelection"
+          />
+          <button class="btn btn-sm default-btn" @click="toggleAdvancedAggregation">
+            {{ shouldShowAdvancedAggregation ? 'Use a single function ' : 'Use advanced aggregations' }}
+          </button>
+        </div>
         <dropdown-button
+          v-if="shouldShowAdvancedAggregation"
           class="dropdown-button"
-          :class="{ 'invalid-option': selectedAggregation === AggregationOption.None}"
+          style="margin-top: 5px"
+          :class="{ 'invalid-option': selectedTemporalAggregation === AggregationOption.None}"
           :is-dropdown-left-aligned="true"
-          :inner-button-label="'Aggregated by'"
+          :inner-button-label="'Temporal aggregation'"
           :items="aggregationOptions"
-          :selected-item="selectedAggregation"
-          @item-selected="setAggregationSelection"
+          :selected-item="selectedTemporalAggregation"
+          @item-selected="setTemporalAggregationSelection"
         />
       </div>
       <div class="config-sub-group">
@@ -156,7 +183,11 @@ export default defineComponent({
   },
   name: 'VizOptionsPane',
   props: {
-    selectedAggregation: {
+    selectedSpatialAggregation: {
+      type: String,
+      default: AggregationOption.Mean
+    },
+    selectedTemporalAggregation: {
       type: String,
       default: AggregationOption.Mean
     },
@@ -210,7 +241,8 @@ export default defineComponent({
     }
   },
   emits: [
-    'set-aggregation-selection',
+    'set-spatial-aggregation-selection',
+    'set-temporal-aggregation-selection',
     'set-unit-selection',
     'set-resolution-selection',
     'set-base-layer-selection',
@@ -303,9 +335,16 @@ export default defineComponent({
       this.renderColorScale();
     }
   },
+  data: () => ({
+    showAdvancedAggregations: false
+  }),
   computed: {
     maxNumberOfColorBins(): number {
       return (COLOR_SCHEMES as any)[this.selectedColorSchemeName].length;
+    },
+    shouldShowAdvancedAggregation(): boolean {
+      return this.showAdvancedAggregations ||
+        this.selectedSpatialAggregation !== this.selectedTemporalAggregation;
     }
   },
   mounted() {
@@ -332,8 +371,22 @@ export default defineComponent({
       };
       this.setDatacubeCurrentOutputsMap(defaultFeature);
     },
+    setSpatialAggregationSelection(aggregation: string) {
+      this.$emit('set-spatial-aggregation-selection', aggregation);
+    },
+    setTemporalAggregationSelection(aggregation: string) {
+      this.$emit('set-temporal-aggregation-selection', aggregation);
+    },
     setAggregationSelection(aggregation: string) {
-      this.$emit('set-aggregation-selection', aggregation);
+      this.setSpatialAggregationSelection(aggregation);
+      this.setTemporalAggregationSelection(aggregation);
+    },
+    toggleAdvancedAggregation() {
+      this.showAdvancedAggregations = !this.showAdvancedAggregations;
+      if (!this.showAdvancedAggregations &&
+        this.selectedSpatialAggregation !== this.selectedTemporalAggregation) {
+        this.setTemporalAggregationSelection(this.selectedSpatialAggregation);
+      }
     },
     setUnitSelection(unit: string) {
       this.$emit('set-unit-selection', unit);
@@ -419,6 +472,13 @@ export default defineComponent({
   > *:not(:first-child) {
     margin-top: 5px;
   }
+}
+
+.aggregation-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .label-header {

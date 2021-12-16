@@ -454,7 +454,8 @@
                 <viz-options-pane
                   :metadata="metadata"
                   :aggregation-options="aggregationOptions"
-                  :selected-aggregation="selectedSpatialAggregation"
+                  :selected-spatial-aggregation="selectedSpatialAggregation"
+                  :selected-temporal-aggregation="selectedTemporalAggregation"
                   :selected-unit="unit"
                   :selected-resolution="selectedTemporalResolution"
                   :selected-base-layer="selectedBaseLayer"
@@ -465,7 +466,8 @@
                   :selected-color-scale-type="selectedColorScaleType"
                   :number-of-color-bins="numberOfColorBins"
                   :selected-color-scheme="finalColorScheme"
-                  @set-aggregation-selection="setAggregationSelection"
+                  @set-spatial-aggregation-selection="setSpatialAggregationSelection"
+                  @set-temporal-aggregation-selection="setTemporalAggregationSelection"
                   @set-resolution-selection="setTemporalResolutionSelection"
                   @set-base-layer-selection="setBaseLayer"
                   @set-data-layer-transparency-selection="setDataLayerTransparency"
@@ -822,9 +824,12 @@ export default defineComponent({
       selectedDataLayer.value = val;
     };
 
-    const setAggregationSelection = (aggOption: AggregationOption) => {
-      selectedTemporalAggregation.value = aggOption;
+    const setSpatialAggregationSelection = (aggOption: AggregationOption) => {
       selectedSpatialAggregation.value = aggOption;
+    };
+
+    const setTemporalAggregationSelection = (aggOption: AggregationOption) => {
+      selectedTemporalAggregation.value = aggOption;
     };
 
     const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
@@ -1788,7 +1793,8 @@ export default defineComponent({
       setDataLayerTransparency,
       setRelativeTo,
       setSelectedTimestamp,
-      setAggregationSelection,
+      setSpatialAggregationSelection,
+      setTemporalAggregationSelection,
       setTemporalResolutionSelection,
       showDatasets,
       showGeoSelectionModal,
