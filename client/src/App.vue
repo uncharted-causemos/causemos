@@ -53,6 +53,7 @@ export default {
     }
   },
   mounted() {
+    console.log(process.env.VUE_APP_GIT_HASH); // print out current git commit SHA
     if (_.isEmpty(this.project)) {
       this.setProjectMetadata({});
       return;
