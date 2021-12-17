@@ -6,6 +6,10 @@ const webpack = require('webpack');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
 
+const { gitDescribe, gitDescribeSync } = require('git-describe');
+// makes process.env.VUE_APP_GIT_HASH variable available in every component. This variable contains the short hash of the current commit being run
+process.env.VUE_APP_GIT_HASH = gitDescribeSync().hash;
+
 module.exports = {
   devServer: {
     proxy: {
