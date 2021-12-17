@@ -162,7 +162,6 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-
 .search-bar-container :deep {
   @import "@/styles/lex-overrides";
 

@@ -2,7 +2,7 @@
   <div class="search-bar-container">
     <div ref="lexContainer" />
     <button
-      class="btn clear-button"
+      class="btn btn-default clear-button"
       @click="clearSearch()">
       <i class="fa fa-remove" /> Clear
     </button>
@@ -283,7 +283,7 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
+<style lang='scss' scoped>
 .search-bar-container :deep {
   @import "@/styles/lex-overrides";
 
