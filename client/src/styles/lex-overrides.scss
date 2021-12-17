@@ -1,0 +1,49 @@
+// Overrides lex bar styles
+@import "@/styles/variables";
+
+// Lex expands if there are pills, this is to insure things don't jump around
+$clear-button-width: 80px;
+$lex-bar-height: 40px;
+
+div.lex-box {
+  min-height: $lex-bar-height;
+  height: auto;
+  background: #FFFFFF;
+  border: 1px solid #f2f2f2;
+  padding-right: $clear-button-width;
+
+  &:active, &.active, &.focused {
+    border-color: $selected;
+    box-shadow: none;
+  }
+
+  // Center 'x' button vertically
+  div.token button span {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
+
+
+.clear-button-container {
+  position: absolute;
+  right: 16px;
+  top: 1px;
+  bottom: 6px;
+  width: $clear-button-width;
+}
+
+.clear-button {
+  height: 100%;
+  width: 100%;
+}
+
+.search-bar {
+  padding-bottom: 5px;
+  position: relative;
+}
+
+.form-control {
+  padding: 1px 8px;
+}

@@ -1,5 +1,5 @@
 <template>
-  <div class="row">
+  <div class="search-bar-container row">
     <div class="col-md-12 search-bar">
       <div ref="lexContainer" />
       <div class="clear-button-container">
@@ -287,76 +287,9 @@ export default {
 };
 </script>
 
-<style lang="scss">
-@import '~@uncharted.software/lex/dist/lex.scss';
-@import '~styles/variables';
-
-// Lex expands if there are pills, this is to insure things don't jump around
-$searchbar-height: 40px;
-$clear-button-width: 80px;
-
-div.lex-assistant-box {
-  z-index: 99;
-  max-width: 50vw !important; // lex sets this style in-line and require important flag
-  border-radius: 4px; // Match dropdown-control
-  box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0,0,0,.12), 0 2px 4px rgba(0,0,0,.24);
-  overflow: hidden;
-  .selectable { // this is backup just in case we have a really long identifier
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  ul li {
-    color: $text-color-dark; // Override lex styles
-    padding: 8px 12px; // Match dropdown-control
-  }
-
-  ul li.selectable.active {
-    background-color: #EAEBEC; // Match dropdown-control
-    color: $text-color-dark; // Override lex styles
-  }
+<style lang="scss" scoped>
+.search-bar-container :deep {
+  @import "@/styles/lex-overrides";
 }
 
-div.lex-box {
-  min-height: $searchbar-height;
-  height: auto;
-  background: #FFFFFF;
-  border: 1px solid #f2f2f2;
-  padding-right: $clear-button-width;
-
-  &:active, &.active, &.focused {
-    border-color: $selected;
-    box-shadow: none;
-  }
-
-  // Center 'x' button vertically
-  div.token button span {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-}
-
-.form-control {
-  padding: 1px 8px;
-}
-
-.clear-button-container {
-  position: absolute;
-  right: 16px;
-  top: 1px;
-  bottom: 6px;
-  width: $clear-button-width;
-}
-
-.clear-button {
-  height: 100%;
-  width: 100%;
-}
-
-.search-bar {
-  padding-bottom: 5px;
-  position: relative;
-}
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="row no-gutter">
+  <div class="search-bar-container row no-gutter">
     <div class="col-md-12 search-bar">
       <div ref="lexContainer" />
       <div class="clear-button-container">
@@ -166,36 +166,14 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-@import "~@uncharted.software/lex/dist/lex.scss";
-@import "~styles/variables";
 
-// Lex expands if there are pills, this is to insure things don't jump around
-$searchbar-height: 40px;
+.search-bar-container :deep {
+  @import "@/styles/lex-overrides";
 
-.lex-assistant-box {
-  z-index: 99;
-  max-width: 50vw !important; // lex sets this style in-line and require important flag
-  .selectable {
-    // this is backup just in case we have a really long identifier
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .clear-button {
+    min-height: $lex-bar-height;
+    width: 100%;
   }
-}
-
-div.lex-box {
-  min-height: $searchbar-height;
-  height: auto;
-  background: #FFFFFF;
-}
-
-.form-control {
-  padding: 2px 8px;
-}
-
-.clear-button {
-  min-height: $searchbar-height;
-  width: 100%;
 }
 
 .search-bar {
