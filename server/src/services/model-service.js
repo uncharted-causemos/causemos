@@ -489,6 +489,74 @@ const buildCreateModelPayload = async (model, nodeParameters, edgeParameters) =>
 };
 
 
+const buildCreateModelPayloadDeprecated = async (model, nodeParameters, edgeParameters) => {
+  const modelStatements = await buildModelStatements(model.id);
+
+  // Sanity check
+  const allNodeConcepts = nodeParameters.map(n => n.concept);
+  const allEdgeConcepts = edgeParameters.map(e => [e.source, e.target]).flat();
+  const extraNodes = _.difference(allNodeConcepts, allEdgeConcepts);
+  if (_.isEmpty(modelStatements) || extraNodes.length > 0) {
+    throw new Error('Unabled to process model. Ensure the model has no isolated nodes.');
+  }
+
+  return {
+    id: model.id,
+    statements: modelStatements,
+    conceptIndicators: buildNodeParametersPayloadDeprecated(nodeParameters, model)
+  };
+};
+
+const buildNodeParametersPayloadDeprecated = (nodeParameters, model) => {
+  const r = {};
+
+  const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
+
+  nodeParameters.forEach((np, idx) => {
+    const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
+
+    if (_.isEmpty(np.parameter)) {
+      throw new Error(`${np.concept} is not parameterized`);
+    } else {
+      let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
+      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
+
+      if (_.isEmpty(indicatorTimeSeries)) {
+        // FIXME: Temporary fallback so engines don't blow up - July 2021
+        indicatorTimeSeries = [
+          { value: 0.0, timestamp: Date.UTC(2017, 0) },
+          { value: 0.0, timestamp: Date.UTC(2017, 1) },
+          { value: 0.0, timestamp: Date.UTC(2017, 2) }
+        ];
+      }
+
+      // More hack: DySE needs at least 2 data points
+      if (indicatorTimeSeries.length === 1) {
+        const timestamp = indicatorTimeSeries[0].timestamp;
+        const prevTimestamp = moment.utc(timestamp).subtract(1, 'months').valueOf();
+        indicatorTimeSeries.unshift({
+          value: indicatorTimeSeries[0].value,
+          timestamp: prevTimestamp
+        });
+      }
+
+      r[np.concept] = {
+        // Need to have unique indicator names because Delphi can't handle duplicates
+        name: np.parameter.name + ` ${idx}`,
+        minValue: _.get(np.parameter, 'min', 0),
+        maxValue: _.get(np.parameter, 'max', 1),
+        func: valueFunc,
+        values: indicatorTimeSeries,
+        numLevels: NUM_LEVELS,
+        resolution: _.get(np.parameter, 'temporalResolution', 'month'),
+        period: _.get(np.parameter, 'period', 12)
+      };
+    }
+  });
+  return r;
+};
+
+
 module.exports = {
   find,
   findOne,
@@ -502,5 +570,9 @@ module.exports = {
   buildEdgeParametersPayload,
   clearNodeParameter,
 
-  buildCreateModelPayload
+  buildCreateModelPayload,
+
+  // To deprecated once Graph-like api is in
+  buildCreateModelPayloadDeprecated,
+  buildNodeParametersPayloadDeprecated
 };

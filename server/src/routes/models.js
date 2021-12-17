@@ -200,6 +200,23 @@ const buildCreateModelPayload = async (modelId) => {
   return payload;
 };
 
+const buildCreateModelPayloadDeprecated = async (modelId) => {
+  const model = await modelService.findOne(modelId);
+  const modelComponents = await cagService.getComponents(modelId);
+
+  // Sanity check
+  const allNodeConcepts = modelComponents.nodes.map(n => n.concept);
+  const allEdgeConcepts = modelComponents.edges.map(e => [e.source, e.target]).flat();
+  const extraNodes = _.difference(allNodeConcepts, allEdgeConcepts);
+
+  if (extraNodes.length > 0) {
+    Logger.warn(`Bad model structure detected. Isolated nodes: ${extraNodes}`);
+    throw new Error('Unabled to process model. Ensure the model has no isolated nodes.');
+  }
+  const payload = await modelService.buildCreateModelPayloadDeprecated(model, modelComponents.nodes, modelComponents.edges);
+  return payload;
+};
+
 
 
 /**
@@ -237,16 +254,18 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   Logger.info(`Registering model ${modelId} with ${engine}`);
 
   // 1. Generate payload
-  const enginePayload = await buildCreateModelPayload(modelId);
 
   // 2. register model to engine
   let initialParameters;
   try {
     if (engine === DELPHI) {
+      const enginePayload = await buildCreateModelPayloadDeprecated(modelId);
       initialParameters = await delphiService.createModel(enginePayload);
     } else if (engine === DELPHI_DEV) {
+      const enginePayload = await buildCreateModelPayloadDeprecated(modelId);
       initialParameters = await delphiDevService.createModel(enginePayload);
     } else if (engine === DYSE) {
+      const enginePayload = await buildCreateModelPayload(modelId);
       initialParameters = await dyseService.createModel(enginePayload);
     }
   } catch (error) {
@@ -254,8 +273,6 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     res.status(400).send(`Failed to sync with ${engine} : ${modelId}`);
     return;
   }
-
-  console.log('debug!!!', initialParameters);
 
 
   // FIXME: Redo weights logic
@@ -267,8 +284,6 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
     edgeParameters.forEach(edge => {
       const edgeInit = initialParameters.edges[`${edge.source}///${edge.target}`];
-
-      console.log('>>', edgeInit, edge);
 
       if (edge.parameter && !_.isEqual(edge.parameter.weights, edgeInit.weights)) {
         if (edge.polarity !== 0) {
@@ -496,7 +511,8 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     throw new Error('Model does not contain parameter');
   }
   const engine = parameter.engine;
-  const payload = modelService.buildNodeParametersPayload([nodeParameter], model);
+  let payload = null;
+  modelService.buildNodeParametersPayload([nodeParameter], model);
 
   // Register update with engine and retrieve new value
   if (engine === DYSE) {

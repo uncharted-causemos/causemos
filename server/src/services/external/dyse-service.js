@@ -131,7 +131,7 @@ const findExperiment = async (modelId, experimentId) => {
  */
 const updateNodeParameter = async (modelId, parameter) => {
   const options = {
-    url: DYSE_URL + `/models/${modelId}/edit-indicators`,
+    url: DYSE_URL + `/models/${modelId}/edit-nodes`,
     method: 'POST',
     headers: {
       Authorization: basicAuthToken,
