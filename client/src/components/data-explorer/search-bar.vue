@@ -1,15 +1,11 @@
 <template>
-  <div class="search-bar-container row no-gutter">
-    <div class="col-md-12 search-bar">
-      <div ref="lexContainer" />
-      <div class="clear-button-container">
-        <button
-          class="btn btn-default clear-button"
-          @click="clearSearch()">
-          <i class="fa fa-remove" /> Clear
-        </button>
-      </div>
-    </div>
+  <div class="search-bar-container">
+    <div ref="lexContainer" />
+    <button
+      class="btn btn-default clear-button"
+      @click="clearSearch()">
+      <i class="fa fa-remove" /> Clear
+    </button>
   </div>
 </template>
 
@@ -170,26 +166,17 @@ export default {
 .search-bar-container :deep {
   @import "@/styles/lex-overrides";
 
+  display: flex;
+
+  & > div {
+    flex: 1;
+    min-width: 0;
+  }
+
   .clear-button {
-    min-height: $lex-bar-height;
-    width: 100%;
+    flex: 0;
+    padding: 5px;
   }
 }
 
-.search-bar {
-  padding-bottom: 5px;
-  padding-left: 0;
-}
-
-//Remove gutter spaces for rows
-.row.no-gutter {
-  margin-left: 0;
-  margin-right: 0;
-}
-
-.row.no-gutter [class*='col-']:not(:first-child),
-.row.no-gutter [class*='col-']:not(:last-child) {
-  padding-right: 0;
-  padding-left: 0;
-}
 </style>

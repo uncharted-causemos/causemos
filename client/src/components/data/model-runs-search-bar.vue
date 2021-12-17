@@ -172,38 +172,6 @@ export default {
     flex: 1;
     min-width: 0;
   }
-
-  // Override lex box styles to allow for pills to wrap
-  div.lex-box {
-    padding: 2px;
-    // Lex has a min-height of 40px by default, but it's 41px when active/focused
-    // Keeping this constant avoids a page reflow (and rerendering of PC chart)
-    min-height: 41px;
-    // Be sure to leave room to the right of long pills to allow the analyst
-    //  to click to add new pills
-    padding-right: 20px;
-
-    .token-container:not(:first-child) {
-      margin-top: 2px;
-    }
-
-    .token {
-      margin: 0;
-      font-size: 1.4rem;
-      white-space: normal;
-
-      button.token-remove,
-      button.token-cancel {
-        position: relative;
-        top: unset;
-        transform: none;
-      }
-    }
-
-    .token-icon {
-      display: none !important;
-    }
-  }
 }
 
 .clear-button {

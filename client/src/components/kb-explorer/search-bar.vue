@@ -1,15 +1,11 @@
 <template>
-  <div class="search-bar-container row">
-    <div class="col-md-12 search-bar">
-      <div ref="lexContainer" />
-      <div class="clear-button-container">
-        <button
-          class="btn clear-button"
-          @click="clearSearch()">
-          <i class="fa fa-remove" /> Clear
-        </button>
-      </div>
-    </div>
+  <div class="search-bar-container">
+    <div ref="lexContainer" />
+    <button
+      class="btn clear-button"
+      @click="clearSearch()">
+      <i class="fa fa-remove" /> Clear
+    </button>
   </div>
 </template>
 
@@ -290,6 +286,18 @@ export default {
 <style lang="scss" scoped>
 .search-bar-container :deep {
   @import "@/styles/lex-overrides";
+
+  display: flex;
+
+  & > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .clear-button {
+    flex: 0;
+    padding: 5px;
+  }
 }
 
 </style>
