@@ -114,13 +114,13 @@
             </div>
             <!-- second row display a list of linked insights -->
             <message-display
-              v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
+              v-if="!insightsByQuestionItemId['' + questionItem.id]"
               class="no-insight-warning"
               :message-type="'alert-warning'"
               :message="'No insights assigned to this question.'"
             />
             <div
-              v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
+              v-for="insight in insightsByQuestionItemId['' + questionItem?.id]"
               :key="insight.id"
               class="checklist-item-insight">
                 <i @mousedown.stop.prevent class="fa fa-star" />
@@ -145,11 +145,12 @@ import { mapActions, mapGetters } from 'vuex';
 
 import { getInsightById, updateInsight } from '@/services/insight-service';
 import { AnalyticalQuestion, Insight } from '@/types/Insight';
-import { defineComponent } from 'vue';
+import { defineComponent, ref, Ref, watch } from 'vue';
 import _ from 'lodash';
 import { QUESTIONS } from '@/utils/messages-util';
 import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
 import { ProjectType } from '@/types/Enums';
+import useInsightsData from '@/services/composables/useInsightsData';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import Shepherd from 'shepherd.js';
 import MessageDisplay from '../widgets/message-display.vue';
@@ -162,11 +163,24 @@ export default defineComponent({
     OptionsButton
   },
   setup() {
-    const { questionsList, reFetchQuestions, getInsightsByIDs } = useQuestionsData();
+    const { questionsList, reFetchQuestions } = useQuestionsData();
+    const { insights, getInsightsByIDs, reFetchInsights } = useInsightsData();
+    const insightsByQuestionItemId = ref({}) as Ref<Record<string, Insight[]>>;
+    reFetchInsights();
+    watch(insights, () => {
+      insightsByQuestionItemId.value = {};
+      questionsList.value.forEach((questionItem) => {
+        const results = getInsightsByIDs(questionItem.linked_insights);
+        if (results.length > 0 && questionItem.id) {
+          insightsByQuestionItemId.value[questionItem.id] = results;
+        }
+      });
+    });
     return {
-      questionsList,
+      getInsightsByIDs,
+      insightsByQuestionItemId,
       reFetchQuestions,
-      getInsightsByIDs
+      questionsList
     };
   },
   data: () => ({
