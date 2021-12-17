@@ -6,10 +6,10 @@ cache:
   - node_modules/
 
 before_script:
+  - apk add --no-cache git
   - npm config set @uncharted:registry=https://npm.uncharted.software/
   - npm config set //npm.uncharted.software/:_authToken=${NPM_TOKEN}
   - yarn install
-  - apk add --no-cache git
 
 test:
   script:
