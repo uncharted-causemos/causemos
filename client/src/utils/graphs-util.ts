@@ -1,9 +1,16 @@
 import _ from 'lodash';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
+import { CAGGraph, EdgeParameter } from '@/types/CAG';
 
-class Vertex {
-  constructor(name) {
+export class Vertex {
+  name = '';
+  index: number | null = null;
+  lowestNode: number | null = null;
+  inStack = false;
+  removed = false;
+
+  constructor(name: string) {
     this.name = name;
     this.index = null;
     this.lowestNode = null;
@@ -19,9 +26,13 @@ class Vertex {
   }
 }
 class Graph {
-  constructor(edges) {
-    const vertices = {};
-    const adjacentVertices = {};
+  cycleCount: 0;
+  vertices: Set<Vertex> = new Set();
+  adjacentVertices: { [key: string]: Set<Vertex> } = {};
+
+  constructor(edges: EdgeParameter[]) {
+    const vertices: { [key: string]: Vertex } = {};
+    const adjacentVertices: { [key: string]: Set<Vertex> } = {};
     edges.forEach(e => {
       const sourceVertex = vertices[e.source] ? vertices[e.source] : new Vertex(e.source);
       const targetVertex = vertices[e.target] ? vertices[e.target] : new Vertex(e.target);
@@ -65,11 +76,11 @@ class Graph {
    * @returns cycles - an array of arrays, where each subarray represents a cycle
    */
   findCycles() {
-    function unblock (node, blocked, B) {
+    function unblock (node: Vertex, blocked: Set<Vertex>, B: { [key: string]: Set<Vertex> }) {
       const stack = [node];
       while (stack.length > 0) {
-        node = stack.pop();
-        if (blocked.has(node)) {
+        const node = stack.pop();
+        if (node && blocked.has(node)) {
           blocked.delete(node);
           Array.from(B[node.name]).forEach(e => stack.push(e));
           B[node.name].clear();
@@ -77,18 +88,18 @@ class Graph {
       }
     }
 
-    const cycles = [];
+    const cycles: Vertex[][] = [];
     let sccs = this.findSCC();
     while (sccs.length > 0) {
       const scc = sccs.pop();
-      const startNode = scc.values().next().value;
-      const path = [startNode];
-      const blocked = new Set();
-      const closed = new Set();
+      const startNode = scc?.values().next().value;
+      const path: Vertex[] = [startNode];
+      const blocked: Set<Vertex> = new Set();
+      const closed: Set<Vertex> = new Set();
       blocked.add(startNode);
 
       // Initialize blockedMap
-      const blockedMap = {};
+      const blockedMap: { [key: string]: Set<Vertex> } = {};
       for (const v of this.vertices) {
         blockedMap[v.name] = new Set();
       }
@@ -160,8 +171,9 @@ class Graph {
    * @returns an array of sets of vertices, where each set represents a strongly connected component in the graph
    */
   findSCC() {
-    const sccs = [];
-    const stack = [];
+    const sccs: Set<Vertex>[] = [];
+    const stack: Vertex[] = [];
+    const adjacentVertices = this.adjacentVertices;
     let index = 0;
 
     // TODO: Make this prettier somehow
@@ -178,16 +190,18 @@ class Graph {
       }
     }
 
-    function findSCCRecurse(node) {
+    function findSCCRecurse(node: Vertex) {
       node.index = index;
       node.lowestNode = index;
       stack.push(node);
       node.inStack = true;
       index += 1;
 
-      for (const v of this.adjacentVertices[node.name]) {
+      for (const v of adjacentVertices[node.name]) {
         if (v.index === null) {
           findSCCRecurseBind(v);
+
+          // @ts-ignore: getting around valid assignments
           node.lowestNode = Math.min(node.lowestNode, v.lowestNode);
         } else if (v.inStack) {
           // We've hit a loop, and lowestNode only tracks the lowestNode in the subtree.
@@ -200,13 +214,15 @@ class Graph {
         // If this is the lowest node we can reach, then we've either:
         // - formed a cycle, in which case this is a SCC
         // - or have no cycle what so ever, so the stand-alone node is a SCC
-        const scc = new Set();
+        const scc: Set<Vertex> = new Set();
         let w = null;
         do {
           w = stack.pop();
-          w.inStack = false;
-          scc.add(w);
-        } while (w.name !== node.name);
+          if (w) {
+            w.inStack = false;
+            scc.add(w);
+          }
+        } while (w?.name !== node.name);
         sccs.push(scc);
       }
     }
@@ -215,7 +231,7 @@ class Graph {
   }
 }
 
-export function findSCC(edges) {
+export function findSCC(edges: EdgeParameter[]) {
   if (edges.length === 0) { return; }
   const g = new Graph(edges);
   return g.findSCC();
@@ -231,7 +247,8 @@ export function findSCC(edges) {
  * @param {Set} visited - visited tracker
  * @param {array} paths - result accumulator
  */
-function trace(id, buffer, adjMap, visited, paths) {
+type TracePath = string[];
+function trace(id: string, buffer: string[], adjMap: Map<string, string[]>, visited: Set<string>, paths: TracePath[]) {
   if (visited.has(id)) {
     paths.push(buffer);
     return;
@@ -252,38 +269,44 @@ function trace(id, buffer, adjMap, visited, paths) {
  * Trace ancestor paths given a node, we do not consider a singular
  * node to be a "path"
  */
-export function findAllAncestorPaths(node, edges) {
-  const adjMap = new Map();
-  const visited = new Set();
-  const paths = [];
+export function findAllAncestorPaths(node: string, edges: EdgeParameter[]) {
+  const adjMap = new Map<string, string[]>();
+  const visited = new Set<string>();
+  const paths: TracePath[] = [];
 
   for (const edge of edges) {
     if (!adjMap.has(edge.target)) {
       adjMap.set(edge.target, []);
     }
-    adjMap.get(edge.target).push(edge.source);
+    const p = adjMap.get(edge.target);
+    if (p) {
+      p.push(edge.source);
+    }
   }
   trace(node, [node], adjMap, visited, paths);
   return paths.filter(path => path.length > 1);
 }
 
-export function findAllDescendantPaths(node, edges) {
-  const adjMap = new Map();
-  const visited = new Set();
-  const paths = [];
+export function findAllDescendantPaths(node: string, edges: EdgeParameter[]) {
+  const adjMap = new Map<string, string[]>();
+  const visited = new Set<string>();
+  const paths: TracePath[] = [];
 
   for (const edge of edges) {
     if (!adjMap.has(edge.source)) {
       adjMap.set(edge.source, []);
     }
-    adjMap.get(edge.source).push(edge.target);
+    const p = adjMap.get(edge.source);
+    if (p) {
+      p.push(edge.target);
+    }
   }
   trace(node, [node], adjMap, visited, paths);
   return paths.filter(path => path.length > 1).map(path => path.reverse());
 }
 
-export function findPaths(source, target, edges) {
-  function traceToTarget(id, target, buffer, adjMap, paths) {
+export function findPaths(source: string, target: string, edges: EdgeParameter[]) {
+  function traceToTarget(id: string, target: string, buffer: string[], adjMap: Map<string, string[]>, paths: TracePath[]) {
     if (buffer.indexOf(id) >= 0) return;
     buffer.push(id);
 
@@ -299,14 +322,17 @@ export function findPaths(source, target, edges) {
     }
   }
 
-  const adjMap = new Map();
-  const paths = [];
+  const adjMap = new Map<string, string[]>();
+  const paths: TracePath[] = [];
 
   for (const edge of edges) {
     if (!adjMap.has(edge.source)) {
       adjMap.set(edge.source, []);
     }
-    adjMap.get(edge.source).push(edge.target);
+    const p = adjMap.get(edge.source);
+    if (p) {
+      p.push(edge.target);
+    }
   }
 
   traceToTarget(source, target, [], adjMap, paths);
@@ -317,7 +343,7 @@ export function findPaths(source, target, edges) {
  * Get all the cycles in the graph
  * @returns A list of lists, where the inner lists are cycles in the graph
  */
-export function findCycles(edges) {
+export function findCycles(edges: EdgeParameter[]) {
   if (!edges || edges.length === 0) { return []; }
   const g = new Graph(edges);
   return g.findCycles();
@@ -326,12 +352,12 @@ export function findCycles(edges) {
 /**
  *  Classify cycles as either balancing, reinforcing or ambiguous
  */
-export function classifyCycles(cyclePaths, graphEdges) {
+export function classifyCycles(cyclePaths: Vertex[][], graphEdges: EdgeParameter[]) {
   const g = new Graph(graphEdges);
   const numNodes = g.vertices.size;
 
   // Mark each node with a unique numerical identifier
-  const nameToId = {};
+  const nameToId: { [key: string]: number } = {};
   let uniqueIdentifier = 0;
   for (const v of g.vertices) {
     nameToId[v.name] = uniqueIdentifier;
@@ -339,7 +365,7 @@ export function classifyCycles(cyclePaths, graphEdges) {
   }
 
   // Initialize an adjacency matrix
-  const adjacencyMatrix = [];
+  const adjacencyMatrix: number[][] = [];
   for (let i = 0; i < numNodes; i++) {
     adjacencyMatrix.push([]);
     for (let j = 0; j < numNodes; j++) {
@@ -351,6 +377,8 @@ export function classifyCycles(cyclePaths, graphEdges) {
   for (const e of graphEdges) {
     const sourceId = nameToId[e.source];
     const targetId = nameToId[e.target];
+
+    // @ts-ignore: get around valid assignments
     adjacencyMatrix[sourceId][targetId] = e.polarity;
   }
 
@@ -402,7 +430,7 @@ export const highlightOptions = {
   color: SELECTED_COLOR
 };
 
-export function calculateNeighborhood(graph, node) {
+export function calculateNeighborhood(graph: CAGGraph, node: string) {
   const neighborEdges = graph.edges.filter(edge => {
     return edge.target === node || edge.source === node;
   }).map(edge => {
@@ -420,7 +448,7 @@ export function calculateNeighborhood(graph, node) {
 /**
  * Check if edge has backing evidence
  */
-export function hasBackingEvidence(edge) {
+export function hasBackingEvidence(edge: any) {
   if (edge.polarity === STATEMENT_POLARITY.SAME) return edge.same > 0;
   else if (edge.polarity === STATEMENT_POLARITY.OPPOSITE) return edge.opposite > 0;
 
@@ -433,19 +461,11 @@ export function hasBackingEvidence(edge) {
   */
 }
 
-export function traverse (root, callBackFn, p) {
-  callBackFn(root, p);
-  if (root.nodes) {
-    for (let i = 0; i < root.nodes.length; i++) {
-      traverse(root.nodes[i], callBackFn, root);
-    }
-  }
-}
 
 /**
  * Check if two elements are sufficiently overlapped
  */
-export function overlap (node1, node2, threshold) {
+export function overlap (node1: HTMLElement, node2: HTMLElement, threshold: number) {
   const rec1 = node1.getBoundingClientRect();
   const rec2 = node2.getBoundingClientRect();
 
@@ -464,6 +484,5 @@ export function overlap (node1, node2, threshold) {
 
 export default {
   calculateNeighborhood,
-  overlap,
-  traverse
+  overlap
 };
