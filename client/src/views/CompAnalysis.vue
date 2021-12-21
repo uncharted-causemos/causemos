@@ -375,9 +375,6 @@ export default defineComponent({
         });
       });
 
-      // add ability to highlight bar and sync highlight in other charts
-      // use color options from each datacube except the color scheme as prioritization
-
       //
       // transform/combine data from all datacubes/regions into one composite dataset
       //
