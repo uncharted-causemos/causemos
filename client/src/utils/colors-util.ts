@@ -6,6 +6,7 @@ export enum COLOR {
   DEFAULT = 'DEFAULT',
   VEGETATION = 'VEGETATION',
   WATER = 'WATER',
+  PRIORITIZATION = 'PRIORITIZATION',
   OTHER = 'OTHER'
 }
 
@@ -15,6 +16,7 @@ export const COLOR_SCHEME: { [key in COLOR ]: string[] } = Object.freeze({
   [COLOR.DEFAULT]: ['#f2f0f7', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#4a1486'],
   [COLOR.VEGETATION]: ['#edf8e9', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#005a32'],
   [COLOR.WATER]: ['#eff3ff', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#084594'],
+  [COLOR.PRIORITIZATION]: ['#ffeda0', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#bd0026', '#800026'],
   [COLOR.OTHER]: ['#feedde', '#fdd0a2', '#fdae6b', '#fd8d3c', '#f16913', '#d94801', '#8c2d04']
 });
 

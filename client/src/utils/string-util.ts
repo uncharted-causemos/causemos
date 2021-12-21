@@ -66,7 +66,7 @@ export const chartValueFormatter = (...range: number[]) => {
   }
 
   // Guard against skewed ranges. e.g. [0.103, 888888]
-  if (Math.abs(range[1]) < 1000000 && Math.abs(range[0]) > 0.00001) {
+  if (Math.abs(range[1]) < 1000000 && (range[0] === 0 || Math.abs(range[0]) > 0.00001)) {
     return rangedFormatter;
   }
   return exponentFormatter;

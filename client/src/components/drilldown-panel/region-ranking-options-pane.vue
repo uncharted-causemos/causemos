@@ -1,0 +1,387 @@
+<template>
+  <div class="breakdown-pane-container">
+    <h5>By {{ aggregationLevelTitle }}</h5>
+    <div
+      v-if="aggregationLevelCount > 1"
+      class="aggregation-level-range-container"
+    >
+      <input
+        type="range"
+        class="aggregation-level-range"
+        :value="aggregationLevel"
+        :min="0"
+        :max="aggregationLevelCount - 1"
+        @input="onRangeValueChanged"
+      />
+      <div
+        v-for="tickIndex in aggregationLevelCount"
+        :key="tickIndex"
+        class="aggregation-level-tick"
+        :class="{ hidden: tickIndex - 1 === aggregationLevel }"
+        :style="tickStyle(tickIndex)"
+        @click="changeAggregationLevel(tickIndex - 1)"
+      />
+    </div>
+    <div class="config-sub-group">
+      <label class="header-secondary">Color Options</label>
+      <dropdown-button
+        class="dropdown-button"
+        :is-dropdown-left-aligned="true"
+        :inner-button-label="'Scale'"
+        :items="colorScaleGroupButtons"
+        :selected-item="selectedColorScaleType"
+        @item-selected="setColorScaleTypeSelection"
+      />
+      <svg ref="colorPalette" />
+      <button
+        type="button"
+        class="btn btn-default dropdown-button"
+        @click="reverseColorScale">
+          <i class="fa fa-arrows-h" />
+          Reverse Scale
+      </button>
+    </div>
+
+    <div
+      v-if="isDiscreteScale(selectedColorScaleType)"
+      class="config-sub-group"
+    >
+      <label class="header-secondary">Number of bins: {{numberOfColorBins}}</label>
+      <input
+        type="range"
+        style="margin-bottom: 1rem;"
+        min="2"
+        :max="maxNumberOfColorBins"
+        step="1"
+        ref="number-of-color-bins-slider"
+        :value="numberOfColorBins"
+        @change="updateNumberOfColorBins"
+      />
+      <label class="header-secondary">Binning Options:</label>
+      <dropdown-button
+        class="dropdown-button"
+        :is-dropdown-left-aligned="true"
+        :items="binningOptionsGroupButtons"
+        :selected-item="regionRankingBinningType"
+        @item-selected="setRegionRankingBinningType"
+      />
+    </div>
+    <div class="config-sub-group">
+      <label class="header-secondary">Composition Type:</label>
+      <dropdown-button
+        class="dropdown-button"
+        :is-dropdown-left-aligned="true"
+        :items="regionRankingCompositionTypeGroupButtons"
+        :selected-item="regionRankingCompositionType"
+        @item-selected="setRegionRankingCompositionType"
+      />
+      <label class="header-secondary">Ranking Criteria Relative Weight:</label>
+      <button
+        type="button"
+        class="btn btn-default dropdown-button"
+        @click="setEqualWeights">
+          Equal Weights
+      </button>
+    </div>
+    <div class="config-sub-group">
+      <div class="checkbox">
+        <label
+          @click="updateLimitNumberOfChartBars">
+          <i
+            class="fa fa-lg fa-fw"
+            :class="{ 'fa-check-square-o': limitNumberOfChartBars, 'fa-square-o': !limitNumberOfChartBars }"
+          />
+          <span class="header-secondary limit-number-of-bars">Limit number of bars</span>
+        </label>
+      </div>
+      <div v-if="limitNumberOfChartBars" style="margin-left: 2rem">
+        <label class="header-secondary">Max Number:</label>
+        <input
+          type="number"
+          style="margin-bottom: 1rem; margin-left: 5px;"
+          min="1"
+          max="50"
+          ref="max-number-of-chart-bars-slider"
+          :value="maxNumberOfChartBars"
+          @change="updateMaxNumberOfChartBars"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { COLOR, ColorScaleType, COLOR_PALETTE_SIZE, COLOR_SCHEME, isDiscreteScale } from '@/utils/colors-util';
+import { defineComponent, PropType, ref } from 'vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import * as d3 from 'd3';
+import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
+
+export default defineComponent({
+  components: {
+    DropdownButton
+  },
+  name: 'RegionRankingOptionsPane',
+  props: {
+    aggregationLevelTitle: {
+      type: String,
+      default: '[Aggregation Level Title]'
+    },
+    aggregationLevelCount: {
+      type: Number,
+      default: 1
+    },
+    aggregationLevel: {
+      type: Number,
+      default: 0,
+      validator: (value: number) => {
+        return value >= 0;
+      }
+    },
+    colorSchemeReversed: {
+      type: Boolean,
+      default: false
+    },
+    selectedColorScaleType: {
+      type: String as PropType<ColorScaleType>,
+      default: ColorScaleType.LinearDiscrete
+    },
+    numberOfColorBins: {
+      type: Number,
+      default: 5
+    },
+    selectedColorScheme: {
+      type: Array as PropType<string[]>,
+      default: COLOR_SCHEME.PRIORITIZATION
+    },
+    regionRankingCompositionType: {
+      type: String,
+      default: RegionRankingCompositionType.Union
+    },
+    regionRankingBinningType: {
+      type: String,
+      default: BinningOptions.Linear
+    },
+    maxNumberOfChartBars: {
+      type: Number,
+      default: 20
+    },
+    limitNumberOfChartBars: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: [
+    'set-selected-admin-level',
+    'set-color-scheme-reversed',
+    'set-color-scale-type',
+    'set-number-color-bins',
+    'set-region-ranking-composition-type',
+    'set-region-ranking-equal-weight',
+    'set-max-number-of-chart-bars',
+    'set-limit-number-of-chart-bars',
+    'set-region-ranking-binning-type'
+  ],
+  setup() {
+    const capitalize = (str: string) => {
+      return str[0].toUpperCase() + str.slice(1);
+    };
+    const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
+      .map(val => ({ displayName: capitalize(val), value: val })));
+
+    const regionRankingCompositionTypeGroupButtons = ref(Object.values(RegionRankingCompositionType)
+      .map(val => ({ displayName: capitalize(val), value: val })));
+    const binningOptionsGroupButtons = ref(Object.values(BinningOptions)
+      .map(val => ({ displayName: capitalize(val), value: val })));
+
+    return {
+      binningOptionsGroupButtons,
+      regionRankingCompositionTypeGroupButtons,
+      colorScaleGroupButtons,
+      isDiscreteScale,
+      RegionRankingCompositionType
+    };
+  },
+  watch: {
+    colorSchemeReversed() {
+      this.renderColorScale();
+    },
+    selectedColorScaleType() {
+      this.renderColorScale();
+    },
+    numberOfColorBins() {
+      this.renderColorScale();
+    },
+    selectedColorScheme() {
+      this.renderColorScale();
+    }
+  },
+  computed: {
+    maxNumberOfColorBins(): number {
+      return COLOR.PRIORITIZATION.length;
+    }
+  },
+  mounted() {
+    this.renderColorScale();
+  },
+  methods: {
+    onRangeValueChanged(event: any) {
+      this.changeAggregationLevel(event.target.valueAsNumber);
+    },
+    changeAggregationLevel(newLevel: number) {
+      this.$emit('set-selected-admin-level', newLevel);
+    },
+    tickStyle(tickIndex: number) {
+      const TICK_WIDTH = 8; // px
+      // Tick indices are in 1..aggregationLevelCount.
+      // Adjust both to be 0-indexed
+      const cleanedIndex = tickIndex - 1;
+      const cleanedCount = this.aggregationLevelCount - 1;
+      // Space out each tick horizontally
+      const percentage = cleanedIndex / cleanedCount;
+      // Adjust each tick to the left so that the last one isn't overflowing
+      const errorCorrect = percentage * TICK_WIDTH;
+      return { left: `calc(${percentage * 100}% - ${errorCorrect}px)` };
+    },
+    updateNumberOfColorBins() {
+      const newVal = parseFloat(
+        (this.$refs['number-of-color-bins-slider'] as HTMLInputElement).value
+      );
+      this.$emit('set-number-color-bins', newVal);
+    },
+    reverseColorScale() {
+      this.$emit('set-color-scheme-reversed', !this.colorSchemeReversed);
+    },
+    setColorScaleTypeSelection(colorScale: ColorScaleType) {
+      this.$emit('set-color-scale-type', colorScale);
+    },
+    renderColorScale() {
+      const colors = isDiscreteScale(this.selectedColorScaleType)
+        ? this.selectedColorScheme
+        : d3.quantize(d3.interpolateRgbBasis(this.selectedColorScheme), COLOR_PALETTE_SIZE);
+      const n = colors.length;
+      const refSelection = d3.select((this.$refs as any).colorPalette);
+      refSelection.selectAll('*').remove();
+      refSelection
+        .attr('viewBox', '0 0 ' + n + ' 1')
+        .attr('preserveAspectRatio', 'none')
+        .style('display', 'block')
+        .style('width', COLOR_PALETTE_SIZE + 'px')
+        .style('height', '25px');
+      refSelection
+        .selectAll('rect')
+        .data(colors)
+        .enter().append('rect')
+        .style('fill', function(d) { return d; })
+        .attr('x', function(d, i) { return i; })
+        .attr('width', 1)
+        .attr('height', 1);
+    },
+    setRegionRankingCompositionType(regionRankingCompositionType: string) {
+      this.$emit('set-region-ranking-composition-type', regionRankingCompositionType);
+    },
+    setRegionRankingBinningType(regionRankingBinningType: string) {
+      this.$emit('set-region-ranking-binning-type', regionRankingBinningType);
+    },
+    setEqualWeights() {
+      this.$emit('set-region-ranking-equal-weight');
+    },
+    updateMaxNumberOfChartBars() {
+      const newVal = parseFloat(
+        (this.$refs['max-number-of-chart-bars-slider'] as HTMLInputElement).value
+      );
+      this.$emit('set-max-number-of-chart-bars', newVal);
+    },
+    updateLimitNumberOfChartBars() {
+      this.$emit('set-limit-number-of-chart-bars');
+    }
+  }
+});
+</script>
+
+<style lang="scss" scoped>
+@import '~styles/variables';
+
+$un-color-surface-30: #b3b4b5;
+
+$track-height: 2px;
+$thumb-size: 16px;
+$tick-size: 8px;
+
+h5 {
+  margin: 0;
+  margin-bottom: 5px;
+}
+
+.breakdown-pane-container {
+  margin-bottom: 40px;
+}
+
+.aggregation-level-range-container {
+  position: relative;
+  margin: 15px 0;
+}
+
+.aggregation-level-range {
+  margin-top: 10px;
+
+  &::-webkit-slider-runnable-track {
+    background: $un-color-surface-30;
+    height: $track-height;
+  }
+
+  &::-webkit-slider-thumb {
+    margin-top: -1 * ($thumb-size - $track-height) / 2;
+  }
+}
+
+.aggregation-level-tick {
+  width: $tick-size;
+  height: $tick-size;
+  border: 2px solid $un-color-surface-30;
+  background-color: $background-light-1;
+  border-radius: 50%;
+  position: absolute;
+  top: -1 * ($tick-size - $track-height) / 2;
+  cursor: pointer;
+}
+
+.config-sub-group {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+
+  > *:not(:first-child) {
+    margin-top: 5px;
+  }
+}
+
+.header-secondary {
+  @include header-secondary;
+  margin: 0;
+}
+
+.dropdown-button {
+  width: max-content;
+}
+
+.checkbox {
+  user-select: none; /* Standard syntax */
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  label {
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    cursor: auto;
+    color: gray;
+  }
+}
+
+.limit-number-of-bars {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+</style>
