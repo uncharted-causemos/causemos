@@ -15,7 +15,7 @@
         <datacube-region-ranking-composite-card
           :bars-data="globalBarsData"
           :selected-timestamp="globalRegionRankingTimestamp"
-          :bar-chart-hover-info="barChartHoverInfo"
+          :bar-chart-hover-id="barChartHoverId"
           @bar-chart-hover="onBarChartHover"
         />
         <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
@@ -47,7 +47,7 @@
             :max-number-of-chart-bars="maxNumberOfChartBars"
             :limit-number-of-chart-bars="limitNumberOfChartBars"
             :region-ranking-binning-type="regionRankingBinningType"
-            :bar-chart-hover-info="barChartHoverInfo"
+            :bar-chart-hover-id="barChartHoverId"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
           />
@@ -277,12 +277,9 @@ export default defineComponent({
       regionRankingBinningType.value = binningType as BinningOptions;
     };
 
-    const barChartHoverInfo = ref<{hoverId: string; isVisible: boolean} | null>(null);
-    const onBarChartHover = (hoverInfo: {hoverId: string; isVisible: boolean}) => {
-      barChartHoverInfo.value = {
-        hoverId: hoverInfo.hoverId,
-        isVisible: hoverInfo.isVisible
-      };
+    const barChartHoverId = ref('');
+    const onBarChartHover = (hoverId: string) => {
+      barChartHoverId.value = hoverId;
     };
 
     return {
@@ -324,7 +321,7 @@ export default defineComponent({
       regionRankingBinningType,
       setRegionRankingBinningType,
       onBarChartHover,
-      barChartHoverInfo,
+      barChartHoverId,
       ComparativeAnalysisMode
     };
   },

@@ -27,8 +27,12 @@ function renderBarChart(
   barsData: BarData[], // mostly a two-column data format (since each bar would have a value)
   width: number,
   height: number,
-  onHover: (barLabel: string, isVisible: boolean) => void
+  onHover: (barLabel: string) => void
 ) {
+  selection.on('click', () => {
+    onHover(''); // special case: hide everything
+  });
+
   const groupElement = selection.append('g');
 
   //
@@ -101,7 +105,7 @@ function renderHoverTooltips(
   valueFormatter: (value: any) => string,
   width: number,
   height: number,
-  onHover: (barLabel: string, isVisible: boolean) => void
+  onHover: (barLabel: string) => void
 ) {
   const SELECTED_BAR_WIDTH = xScale.bandwidth();
   const maxX = xScale(barsData[barsData.length - 1].name) ?? 0;
@@ -125,6 +129,7 @@ function renderHoverTooltips(
         translate(barX, PADDING_TOP)
       )
       .attr('visibility', 'hidden')
+      .classed('markerAndTooltip', true)
       .attr('id', getHoverIdFromValue(bar.label)) // assign id to control hover state externally
     ;
     //
@@ -223,13 +228,11 @@ function renderHoverTooltips(
       )
       .attr('fill-opacity', 0)
       .style('cursor', 'pointer')
-      .on('mouseenter', () => {
-        markerAndTooltip.attr('visibility', 'visible');
-        onHover(bar.label, true);
-      })
-      .on('mouseleave', () => {
-        markerAndTooltip.attr('visibility', 'hidden');
-        onHover(bar.label, false);
+      .on('click', function(event: PointerEvent) {
+        // prevent the parent svg from hiding this bar
+        event.stopPropagation();
+
+        onHover(bar.label);
       })
     ;
   });
@@ -292,11 +295,15 @@ function renderAxes(
   ;
 }
 
-function updateHover(selection: D3Selection, barLabel: string, show: boolean) {
+function updateHover(selection: D3Selection, barLabel: string) {
   // search for the target tooltip within this chart selection
   //  to find a bar given its label/id and update its visibility
-  selection.select('#' + getHoverIdFromValue(barLabel))
-    .attr('visibility', show ? 'visible' : 'hidden');
+  // special case: if empty barLabel is provided, then hide all bars
+  selection.selectAll('.markerAndTooltip').attr('visibility', 'hidden');
+  if (barLabel !== '') {
+    selection.select('#' + getHoverIdFromValue(barLabel))
+      .attr('visibility', 'visible');
+  }
 }
 
 export {

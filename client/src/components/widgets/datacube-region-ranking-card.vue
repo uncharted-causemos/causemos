@@ -28,7 +28,7 @@
         <bar-chart
           class="bar-chart"
           :bars-data="barsData"
-          :hover-info="barChartHoverInfo"
+          :hover-id="barChartHoverId"
           @bar-chart-hover="$emit('bar-chart-hover', $event)"
         />
         <div class="row datacube-footer">
@@ -126,9 +126,9 @@ export default defineComponent({
       type: String,
       default: BinningOptions.Linear
     },
-    barChartHoverInfo: {
-      type: Object as PropType<{hoverId: string; isVisible: boolean}>,
-      default: () => null
+    barChartHoverId: {
+      type: String,
+      default: ''
     }
   },
   setup(props, { emit }) {

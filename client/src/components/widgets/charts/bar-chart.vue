@@ -25,15 +25,15 @@ export default defineComponent({
       type: Array as PropType<BarData[]>,
       required: true
     },
-    hoverInfo: {
-      type: Object as PropType<{hoverId: string; isVisible: boolean}>,
-      default: () => null
+    hoverId: {
+      type: String,
+      default: ''
     }
   },
   setup(props, { emit }) {
     const {
       barsData,
-      hoverInfo
+      hoverId
     } = toRefs(props);
     const barChart = ref<HTMLElement | null>(null);
     const svg = ref<D3Selection | null>(null);
@@ -45,11 +45,8 @@ export default defineComponent({
       svg.value.attr('width', width).attr('height', height);
       // (Re-)render
       svg.value.selectAll('*').remove();
-      const onHover = (barLabel: string, isVisible: boolean) => {
-        emit('bar-chart-hover', {
-          hoverId: barLabel,
-          isVisible: isVisible
-        });
+      const onHover = (barLabel: string) => {
+        emit('bar-chart-hover', barLabel)
       };
       renderBarChart(
         svg.value,
@@ -75,13 +72,13 @@ export default defineComponent({
     );
     watch(
       () => [
-        hoverInfo.value
+        hoverId.value
       ],
       () => {
-        if (svg.value === null || hoverInfo.value === null) {
+        if (svg.value === null || hoverId.value === null) {
           return;
         }
-        updateHover(svg.value, hoverInfo.value.hoverId, hoverInfo.value.isVisible);
+        updateHover(svg.value, hoverId.value);
       }
     );
     onMounted(() => {
