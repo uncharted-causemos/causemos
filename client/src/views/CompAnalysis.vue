@@ -426,6 +426,10 @@ export default defineComponent({
         key.name = (indx + 1).toString();
         key.color = barColor;
       });
+      // adjust the bar ranking so that the highest bar value will be ranked 1st
+      compositeDataSorted.forEach((barItem, indx) => {
+        barItem.name = (compositeDataSorted.length - indx).toString();
+      });
       this.globalBarsData = compositeDataSorted;
     },
     onLoadedTimeseries(timeseriesInfo: {id: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; region: string[]}) {

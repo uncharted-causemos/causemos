@@ -408,6 +408,11 @@ export default defineComponent({
               });
             }
 
+            // adjust the bar ranking so that the highest bar value will be ranked 1st
+            temp.forEach((barItem, indx) => {
+              barItem.name = (temp.length - indx).toString();
+            });
+
             emit('updated-bars-data', {
               id: id.value,
               barsData: limitNumberOfChartBars.value ? temp.slice(0, maxNumberOfChartBars.value) : temp,
