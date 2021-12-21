@@ -439,6 +439,7 @@
                   @toggle-reference-options="toggleReferenceOptions"
                   @set-selected-admin-level="setSelectedAdminLevel"
                   @set-breakdown-option="setBreakdownOption"
+                  @request-qualifier-data="requestAdditionalQualifier"
                 />
               </template>
             </drilldown-panel>
@@ -1423,7 +1424,8 @@ export default defineComponent({
     const {
       qualifierBreakdownData,
       toggleIsQualifierSelected,
-      selectedQualifierValues
+      selectedQualifierValues,
+      requestAdditionalQualifier
     } = useQualifiers(
       metadata,
       breakdownOption,
@@ -1796,6 +1798,7 @@ export default defineComponent({
       setSpatialAggregationSelection,
       setTemporalAggregationSelection,
       setTemporalResolutionSelection,
+      requestAdditionalQualifier,
       showDatasets,
       showGeoSelectionModal,
       showModelExecutionStatus,
