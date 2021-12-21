@@ -1,10 +1,5 @@
 <template>
   <div class="datacube-region-ranking-composite-container">
-    <header class="datacube-header" >
-      <h5 class="datacube-title-area">
-        Custom Datacube
-      </h5>
-    </header>
     <main>
       <div class="chart-and-footer">
         <bar-chart
@@ -60,7 +55,7 @@ export default defineComponent({
 .datacube-region-ranking-composite-container {
   background: $background-light-1;
   border-radius: 3px;
-  height: 190px;
+  height: 160px;
   display: flex;
   flex-direction: column;
   border: 1px solid $background-light-3;
@@ -105,19 +100,6 @@ main {
     padding: 0;
     cursor: auto;
     color: gray;
-  }
-}
-
-.datacube-header {
-  display: flex;
-  align-items: center;
-  align-self: baseline;
-
-  .datacube-title-area {
-    display: inline-block;
-    flex: 1;
-    min-width: 0;
-    margin: 0;
   }
 }
 

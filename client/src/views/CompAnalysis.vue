@@ -10,13 +10,16 @@
     </analytical-questions-and-insights-panel>
     <main>
       <action-bar />
-      <datacube-region-ranking-composite-card
-        v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking"
-        :bars-data="globalBarsData"
-        :selected-timestamp="globalRegionRankingTimestamp"
-        :bar-chart-hover-info="barChartHoverInfo"
-        @bar-chart-hover="onBarChartHover"
-      />
+      <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking">
+        <h5 class="ranking-header-top">Ranking Results</h5>
+        <datacube-region-ranking-composite-card
+          :bars-data="globalBarsData"
+          :selected-timestamp="globalRegionRankingTimestamp"
+          :bar-chart-hover-info="barChartHoverInfo"
+          @bar-chart-hover="onBarChartHover"
+        />
+        <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
+      </template>
       <div
         v-if="analysisItems.length"
         class="column insight-capture"
@@ -36,7 +39,7 @@
           <datacube-region-ranking-card
             v-for="item in analysisItems"
             :key="item.id"
-            class="datacube-comparative-card"
+            class="datacube-region-ranking-card"
             :id="item.id"
             :selected-admin-level="selectedAdminLevel"
             :number-of-color-bins="numberOfColorBins"
@@ -559,17 +562,28 @@ main {
   margin-top: 10px;
 }
 
+.datacube-region-ranking-card {
+  margin-bottom: 10px;
+}
+
 .column {
   margin: 10px 0;
-  overflow-y: auto;
 }
 
 .sync-time-view {
   padding-bottom: 80px;
+  overflow-y: auto;
 }
 
 .region-ranking-view {
-  padding-top: 25px;
+  overflow-y: auto;
+}
+
+.ranking-header-bottom {
+  margin-bottom: -1rem;
+}
+.ranking-header-top {
+  margin-bottom: -0.25rem;
 }
 
 </style>
