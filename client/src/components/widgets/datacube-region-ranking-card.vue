@@ -415,12 +415,12 @@ export default defineComponent({
 
             emit('updated-bars-data', {
               id: id.value,
-              barsData: limitNumberOfChartBars.value ? temp.slice(0, maxNumberOfChartBars.value) : temp,
+              barsData: limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp,
               selectedTimestamp: selectedTimestamp.value
             });
           }
           // limit the number of bars to the selected maximum
-          barsData.value = limitNumberOfChartBars.value ? temp.slice(0, maxNumberOfChartBars.value) : temp;
+          barsData.value = limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp;
         }
       });
 
