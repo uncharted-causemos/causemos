@@ -119,7 +119,7 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import RegionRankingOptionsPane from '@/components/drilldown-panel/region-ranking-options-pane.vue';
 import { COLOR, ColorScaleType, COLOR_SCHEME, getColors, isDiscreteScale } from '@/utils/colors-util';
 import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
-import { AdminLevel, BinningOptions, ComparativeAnalysisMode, RegionRankingCompositionType } from '@/types/Enums';
+import { BinningOptions, ComparativeAnalysisMode, DatacubeGeoAttributeVariableType, RegionRankingCompositionType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
 
 const DRILLDOWN_TABS = [
@@ -220,7 +220,7 @@ export default defineComponent({
       }
     );
 
-    const availableAdminLevelTitles = ref(Object.values(AdminLevel)
+    const availableAdminLevelTitles = ref(Object.values(DatacubeGeoAttributeVariableType)
       .map(adminLevel => ADMIN_LEVEL_TITLES[adminLevel]));
 
     const setSelectedAdminLevel = (level: number) => {

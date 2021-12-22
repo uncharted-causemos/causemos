@@ -236,14 +236,28 @@ function renderHoverTooltips(
       .style('cursor', 'pointer')
       // only enable hover if no bar is selected
       .on('mouseenter', () => {
+        if (lastSelectedBar === '') {
+          markerAndTooltip
+            .style('opacity', '1')
+            .attr('visibility', 'visible');
+        }
+        /*
+        // allow hover while there is a selection
         markerAndTooltip
           .style('opacity', '1')
           .attr('visibility', 'visible');
         if (lastSelectedBarElement !== null) {
           lastSelectedBarElement.style('opacity', lastSelectedBar === bar.label ? '1' : '0.25');
         }
+        */
       })
       .on('mouseleave', () => {
+        if (lastSelectedBar === '' || lastSelectedBarElement === null) {
+          markerAndTooltip
+            .attr('visibility', 'hidden');
+        }
+        /*
+        // allow hover while there is a selection
         if (lastSelectedBar !== bar.label) {
           markerAndTooltip.attr('visibility', 'hidden');
         }
@@ -252,6 +266,7 @@ function renderHoverTooltips(
             .style('opacity', '1')
             .attr('visibility', 'visible');
         }
+        */
       })
       .on('click', function(event: PointerEvent) {
         // prevent the parent svg from hiding this bar
