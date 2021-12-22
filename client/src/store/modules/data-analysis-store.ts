@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
 import { AnalysisItem, AnalysisState } from '@/types/Analysis';
+import { ComparativeAnalysisMode } from '@/types/Enums';
 
 const saveState = _.debounce((state: AnalysisState) => {
   // FIXME: Vue3 A bit hacky, might be a better way
@@ -17,7 +18,7 @@ const saveState = _.debounce((state: AnalysisState) => {
 const DEFAULT_STATE: AnalysisState = {
   currentAnalysisId: '',
   analysisItems: [],
-  timeSelectionSyncing: false
+  comparativeAnalysisViewSelection: ComparativeAnalysisMode.List
 };
 
 const state = { ...DEFAULT_STATE };
@@ -25,7 +26,7 @@ const state = { ...DEFAULT_STATE };
 const getters: GetterTree<AnalysisState, any> = {
   analysisItems: state => state.analysisItems,
   analysisId: state => state.currentAnalysisId,
-  timeSelectionSyncing: state => state.timeSelectionSyncing
+  comparativeAnalysisViewSelection: state => state.comparativeAnalysisViewSelection
 };
 
 const actions: ActionTree<AnalysisState, any> = {
@@ -55,8 +56,8 @@ const actions: ActionTree<AnalysisState, any> = {
     const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.id));
     commit('setAnalysisItems', items);
   },
-  setTimeSelectionSyncing({ commit }, newValue: boolean) {
-    commit('setTimeSelectionSyncing', newValue);
+  setComparativeAnalysisViewSelection({ commit }, newValue: string) {
+    commit('setComparativeAnalysisViewSelection', newValue);
   }
 };
 
@@ -72,8 +73,8 @@ const mutations: MutationTree<AnalysisState> = {
   setAnalysisItemsPreview(state, items = []) {
     state.analysisItems = items;
   },
-  setTimeSelectionSyncing(state, newValue: boolean) {
-    state.timeSelectionSyncing = newValue;
+  setComparativeAnalysisViewSelection(state, newValue: string) {
+    state.comparativeAnalysisViewSelection = newValue;
   }
 };
 
