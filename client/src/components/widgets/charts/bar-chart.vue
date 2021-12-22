@@ -46,7 +46,7 @@ export default defineComponent({
       // (Re-)render
       svg.value.selectAll('*').remove();
       const onHover = (barLabel: string) => {
-        emit('bar-chart-hover', barLabel)
+        emit('bar-chart-hover', barLabel);
       };
       renderBarChart(
         svg.value,

@@ -22,6 +22,9 @@ const TOOLTIP_FONT_SIZE = 10;
 const TOOLTIP_PADDING = TOOLTIP_FONT_SIZE / 2;
 const TOOLTIP_LINE_HEIGHT = TOOLTIP_FONT_SIZE + TOOLTIP_PADDING;
 
+let lastSelectedBar = '';
+let lastSelectedBarElement: D3GElementSelection | null = null;
+
 function renderBarChart(
   selection: D3Selection,
   barsData: BarData[], // mostly a two-column data format (since each bar would have a value)
@@ -30,6 +33,8 @@ function renderBarChart(
   onHover: (barLabel: string) => void
 ) {
   selection.on('click', () => {
+    lastSelectedBar = '';
+    lastSelectedBarElement = null;
     onHover(''); // special case: hide everything
   });
 
@@ -130,6 +135,7 @@ function renderHoverTooltips(
       )
       .attr('visibility', 'hidden')
       .classed('markerAndTooltip', true)
+      .style('pointer-events', 'none')
       .attr('id', getHoverIdFromValue(bar.label)) // assign id to control hover state externally
     ;
     //
@@ -228,9 +234,32 @@ function renderHoverTooltips(
       )
       .attr('fill-opacity', 0)
       .style('cursor', 'pointer')
+      // only enable hover if no bar is selected
+      .on('mouseenter', () => {
+        markerAndTooltip
+          .style('opacity', '1')
+          .attr('visibility', 'visible');
+        if (lastSelectedBarElement !== null) {
+          lastSelectedBarElement.style('opacity', lastSelectedBar === bar.label ? '1' : '0.25');
+        }
+      })
+      .on('mouseleave', () => {
+        if (lastSelectedBar !== bar.label) {
+          markerAndTooltip.attr('visibility', 'hidden');
+        }
+        if (lastSelectedBarElement !== null) {
+          lastSelectedBarElement
+            .style('opacity', '1')
+            .attr('visibility', 'visible');
+        }
+      })
       .on('click', function(event: PointerEvent) {
         // prevent the parent svg from hiding this bar
         event.stopPropagation();
+
+        // some bar is being selected, so stop further tooltip hover
+        lastSelectedBar = bar.label;
+        lastSelectedBarElement = markerAndTooltip;
 
         onHover(bar.label);
       })
@@ -302,7 +331,8 @@ function updateHover(selection: D3Selection, barLabel: string) {
   selection.selectAll('.markerAndTooltip').attr('visibility', 'hidden');
   if (barLabel !== '') {
     selection.select('#' + getHoverIdFromValue(barLabel))
-      .attr('visibility', 'visible');
+      .attr('visibility', 'visible')
+      .style('opacity', '1');
   }
 }
 
