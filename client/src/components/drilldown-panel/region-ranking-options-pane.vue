@@ -24,29 +24,7 @@
     </div>
     <div class="config-sub-group">
       <label class="header-secondary">Color Options</label>
-      <dropdown-button
-        class="dropdown-button"
-        :is-dropdown-left-aligned="true"
-        :inner-button-label="'Scale'"
-        :items="colorScaleGroupButtons"
-        :selected-item="selectedColorScaleType"
-        @item-selected="setColorScaleTypeSelection"
-      />
-      <svg ref="colorPalette" />
-      <button
-        type="button"
-        class="btn btn-default dropdown-button"
-        @click="reverseColorScale">
-          <i class="fa fa-arrows-h" />
-          Reverse Scale
-      </button>
-    </div>
-
-    <div
-      v-if="isDiscreteScale(selectedColorScaleType)"
-      class="config-sub-group"
-    >
-      <label class="header-secondary">Number of bins: {{numberOfColorBins}}</label>
+      <label >Number of Color bins: {{numberOfColorBins}}</label>
       <input
         type="range"
         style="margin-bottom: 1rem;"
@@ -57,6 +35,10 @@
         :value="numberOfColorBins"
         @change="updateNumberOfColorBins"
       />
+      <svg ref="colorPalette" />
+    </div>
+
+    <div class="config-sub-group">
       <label class="header-secondary">Binning Options:</label>
       <dropdown-button
         class="dropdown-button"
@@ -75,7 +57,9 @@
         :selected-item="regionRankingCompositionType"
         @item-selected="setRegionRankingCompositionType"
       />
-      <label class="header-secondary">Ranking Criteria Relative Weight:</label>
+    </div>
+    <div class="config-sub-group">
+    <label class="header-secondary">Ranking Criteria Relative Weight:</label>
       <button
         type="button"
         class="btn btn-default dropdown-button"
@@ -111,7 +95,7 @@
 </template>
 
 <script lang="ts">
-import { COLOR, ColorScaleType, COLOR_PALETTE_SIZE, COLOR_SCHEME, isDiscreteScale } from '@/utils/colors-util';
+import { COLOR, COLOR_PALETTE_SIZE, COLOR_SCHEME, isDiscreteScale } from '@/utils/colors-util';
 import { defineComponent, PropType, ref } from 'vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import * as d3 from 'd3';
@@ -137,14 +121,6 @@ export default defineComponent({
       validator: (value: number) => {
         return value >= 0;
       }
-    },
-    colorSchemeReversed: {
-      type: Boolean,
-      default: false
-    },
-    selectedColorScaleType: {
-      type: String as PropType<ColorScaleType>,
-      default: ColorScaleType.LinearDiscrete
     },
     numberOfColorBins: {
       type: Number,
@@ -173,8 +149,6 @@ export default defineComponent({
   },
   emits: [
     'set-selected-admin-level',
-    'set-color-scheme-reversed',
-    'set-color-scale-type',
     'set-number-color-bins',
     'set-region-ranking-composition-type',
     'set-region-ranking-equal-weight',
@@ -186,8 +160,6 @@ export default defineComponent({
     const capitalize = (str: string) => {
       return str[0].toUpperCase() + str.slice(1);
     };
-    const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
-      .map(val => ({ displayName: capitalize(val), value: val })));
 
     const regionRankingCompositionTypeGroupButtons = ref(Object.values(RegionRankingCompositionType)
       .map(val => ({ displayName: capitalize(val), value: val })));
@@ -197,18 +169,11 @@ export default defineComponent({
     return {
       binningOptionsGroupButtons,
       regionRankingCompositionTypeGroupButtons,
-      colorScaleGroupButtons,
       isDiscreteScale,
       RegionRankingCompositionType
     };
   },
   watch: {
-    colorSchemeReversed() {
-      this.renderColorScale();
-    },
-    selectedColorScaleType() {
-      this.renderColorScale();
-    },
     numberOfColorBins() {
       this.renderColorScale();
     },
@@ -249,16 +214,8 @@ export default defineComponent({
       );
       this.$emit('set-number-color-bins', newVal);
     },
-    reverseColorScale() {
-      this.$emit('set-color-scheme-reversed', !this.colorSchemeReversed);
-    },
-    setColorScaleTypeSelection(colorScale: ColorScaleType) {
-      this.$emit('set-color-scale-type', colorScale);
-    },
     renderColorScale() {
-      const colors = isDiscreteScale(this.selectedColorScaleType)
-        ? this.selectedColorScheme
-        : d3.quantize(d3.interpolateRgbBasis(this.selectedColorScheme), COLOR_PALETTE_SIZE);
+      const colors = this.selectedColorScheme;
       const n = colors.length;
       const refSelection = d3.select((this.$refs as any).colorPalette);
       refSelection.selectAll('*').remove();

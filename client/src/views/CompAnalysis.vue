@@ -76,16 +76,12 @@
           :aggregation-level-count="availableAdminLevelTitles.length"
           :aggregation-level="selectedAdminLevel"
           :aggregation-level-title="availableAdminLevelTitles[selectedAdminLevel]"
-          :color-scheme-reversed="colorSchemeReversed"
-          :selected-color-scale-type="selectedColorScaleType"
           :number-of-color-bins="numberOfColorBins"
           :selected-color-scheme="finalColorScheme"
           :region-ranking-composition-type="regionRankingCompositionType"
           :region-ranking-binning-type="regionRankingBinningType"
           :max-number-of-chart-bars="maxNumberOfChartBars"
           :limit-number-of-chart-bars="limitNumberOfChartBars"
-          @set-color-scheme-reversed="setColorSchemeReversed"
-          @set-color-scale-type="setColorScaleType"
           @set-number-color-bins="setNumberOfColorBins"
           @set-selected-admin-level="setSelectedAdminLevel"
           @set-region-ranking-composition-type="setRegionRankingCompositionType"
@@ -117,7 +113,7 @@ import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import RegionRankingOptionsPane from '@/components/drilldown-panel/region-ranking-options-pane.vue';
-import { COLOR, ColorScaleType, COLOR_SCHEME, getColors, isDiscreteScale } from '@/utils/colors-util';
+import { COLOR, getColors } from '@/utils/colors-util';
 import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import { BinningOptions, ComparativeAnalysisMode, DatacubeGeoAttributeVariableType, RegionRankingCompositionType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
@@ -230,27 +226,15 @@ export default defineComponent({
     //
     // color scheme options
     //
-    const colorSchemeReversed = ref(false);
-    const selectedColorScaleType = ref(ColorScaleType.LinearDiscrete);
     const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
-
-    const setColorSchemeReversed = (reversed: boolean) => {
-      colorSchemeReversed.value = reversed;
-    };
-
-    const setColorScaleType = (scaleType: ColorScaleType) => {
-      selectedColorScaleType.value = scaleType;
-    };
 
     const setNumberOfColorBins = (numBins: number) => {
       numberOfColorBins.value = numBins;
     };
 
     const finalColorScheme = computed(() => {
-      const scheme = isDiscreteScale(selectedColorScaleType.value)
-        ? getColors(COLOR.PRIORITIZATION, numberOfColorBins.value)
-        : _.clone(COLOR_SCHEME[COLOR.PRIORITIZATION]);
-      return colorSchemeReversed.value ? scheme.reverse() : scheme;
+      const scheme = getColors(COLOR.PRIORITIZATION, numberOfColorBins.value);
+      return scheme;
     });
 
     const regionRankingCompositionType = ref(RegionRankingCompositionType.Intersection);
@@ -297,12 +281,8 @@ export default defineComponent({
       comparativeAnalysisViewSelection,
       activeDrilldownTab,
       drilldownTabs: DRILLDOWN_TABS,
-      setColorSchemeReversed,
-      setColorScaleType,
       setNumberOfColorBins,
       numberOfColorBins,
-      selectedColorScaleType,
-      colorSchemeReversed,
       finalColorScheme,
       selectedAdminLevel,
       setSelectedAdminLevel,
