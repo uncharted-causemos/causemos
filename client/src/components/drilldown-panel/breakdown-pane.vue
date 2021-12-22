@@ -72,7 +72,7 @@
       :selected-timeseries-points="selectedTimeseriesPoints"
       :should-show-deselected-bars="selectedBreakdownOption === SpatialAggregationLevel.Region || selectedBreakdownOption === TemporalAggregationLevel.Year || selectedBreakdownOption === null"
       :show-references="false"
-      :allow-collapsing="true"
+      :allow-collapsing="qualifierVariable.id !== selectedBreakdownOption"
       :units="unit"
       :checkbox-type="
         selectedBreakdownOption === qualifierVariable.id ? 'checkbox' : null
