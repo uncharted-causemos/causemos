@@ -88,6 +88,7 @@ export interface DataState {
   selectedScenarioIds?: string[];
   selectedTimestamp?: number | null;
   selectedRegionIds?: string[];
+  nonDefaultQualifiers?: string[];
   selectedQualifierValues?: string[];
   selectedYears?: string[];
   activeReferenceOptions?: string[];

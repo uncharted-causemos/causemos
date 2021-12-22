@@ -46,6 +46,7 @@ export interface BreakdownData {
 export interface NamedBreakdownData {
   id: string;
   name: string;
+  totalDataLength: number; // Includes data not yet fetched
   data: BreakdownData;
 }
 

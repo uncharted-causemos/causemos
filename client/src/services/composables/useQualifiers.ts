@@ -10,18 +10,20 @@ import { getQualifierBreakdown } from '../new-datacube-service';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const convertResponsesToBreakdownData = (
+  existingData: NamedBreakdownData[],
   responses: QualifierBreakdownResponse[][],
   breakdownOption: string | null,
   modelRunIds: string[],
-  qualifierIdToNameMap: Map<string, string>
+  qualifierInfoMap: Map<string, QualifierVariableInfo>,
+  appendQualifier: boolean
 ) => {
-  const breakdownDataList: NamedBreakdownData[] = [];
+  const breakdownDataList: NamedBreakdownData[] = appendQualifier ? existingData : [];
   responses.forEach((breakdownVariables, index) => {
     const runId = modelRunIds[index];
     breakdownVariables.forEach(breakdownVariable => {
       const { name: breakdownVariableId, options } = breakdownVariable;
       const breakdownVariableDisplayName =
-        qualifierIdToNameMap.get(breakdownVariableId) ?? breakdownVariableId;
+        qualifierInfoMap.get(breakdownVariableId)?.displayName ?? breakdownVariableId;
       let potentiallyExistingEntry = breakdownDataList.find(
         breakdownData => breakdownData.id === breakdownVariableId
       );
@@ -29,6 +31,7 @@ const convertResponsesToBreakdownData = (
         potentiallyExistingEntry = {
           id: breakdownVariableId,
           name: breakdownVariableDisplayName,
+          totalDataLength: qualifierInfoMap.get(breakdownVariableId)?.count ?? 0,
           data: {}
         };
         breakdownDataList.push(potentiallyExistingEntry);
@@ -65,8 +68,30 @@ const convertResponsesToBreakdownData = (
       });
     });
   });
+
+  // Fill in any qualifiers from the map that don't have data
+  for (const [qualifierId, qualifierInfo] of qualifierInfoMap) {
+    let potentiallyExistingEntry = breakdownDataList.find(
+      breakdownData => breakdownData.id === qualifierId
+    );
+    if (potentiallyExistingEntry === undefined) {
+      potentiallyExistingEntry = {
+        id: qualifierId,
+        name: qualifierInfo.displayName,
+        totalDataLength: qualifierInfo.count,
+        data: {}
+      };
+      breakdownDataList.push(potentiallyExistingEntry);
+    }
+  }
   return breakdownDataList;
 };
+
+interface QualifierVariableInfo {
+  count: number;
+  displayName: string;
+  fetchByDefault: boolean;
+}
 
 export default function useQualifiers(
   metadata: Ref<Model | Indicator | null>,
@@ -77,21 +102,44 @@ export default function useQualifiers(
   spatialAggregation: Ref<AggregationOption>,
   selectedTimestamp: Ref<number | null>,
   availableQualifiers: Ref<Map<string, QualifierInfo>>,
-  initialSelectedQualifierValues: Ref<string[]>
+  initialSelectedQualifierValues: Ref<string[]>,
+  initialNonDefaultQualifiers: Ref<string[]>
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
 
-  const filteredQualifierVariables = computed(() => {
-    if (metadata.value === null) return [];
-    const { qualifier_outputs } = metadata.value;
-
-    // Only display qualifiers marked `fetchByDefault`
-    // TODO: All qualifier headings should be visible.
-    //  Users should be able to request the other qualifiers by "expanding" the heading
-    return (qualifier_outputs ?? [])
-      .filter(qualifier => availableQualifiers.value.get(qualifier.name)?.fetchByDefault);
+  const requestedQualifier = ref<string|null>(null);
+  const additionalQualifiersRequested = ref<Set<string>>(new Set());
+  watch([availableQualifiers], () => {
+    additionalQualifiersRequested.value = new Set();
+    requestedQualifier.value = null;
   });
+
+  const qualifierVariables = computed(() => {
+    const qualifiers = new Map<string, QualifierVariableInfo>();
+
+    const metadataQualifiers = metadata.value?.qualifier_outputs ?? [];
+    for (const [name, info] of availableQualifiers.value) {
+      const qualifierMeta = metadataQualifiers.find(meta => meta.name === name);
+      if (qualifierMeta) {
+        qualifiers.set(name, {
+          count: info.count,
+          displayName: qualifierMeta.display_name,
+          fetchByDefault: info.fetchByDefault
+        });
+      }
+    }
+    return qualifiers;
+  });
+
+  const requestAdditionalQualifier = (qualifier: string) => {
+    if (!additionalQualifiersRequested.value.has(qualifier) &&
+      qualifierVariables.value.has(qualifier) && !qualifierVariables.value.get(qualifier)?.fetchByDefault
+    ) {
+      additionalQualifiersRequested.value.add(qualifier);
+      requestedQualifier.value = qualifier;
+    }
+  };
 
   const selectedQualifierValues = ref<Set<string>>(new Set());
   watch([breakdownOption], () => {
@@ -133,29 +181,40 @@ export default function useQualifiers(
   watchEffect(async onInvalidate => {
     const timestamp = selectedTimestamp.value;
     const _breakdownOption = breakdownOption.value;
+    const desiredNonDefaultQualifiers = initialNonDefaultQualifiers.value;
     if (metadata.value === null || timestamp === null) return;
     let isCancelled = false;
     onInvalidate(() => {
       isCancelled = true;
     });
     const { data_id } = metadata.value;
-    const qualifierVariableIds = filteredQualifierVariables.value.map(
-      variable => variable.name
-    );
-    const qualifierVariableNames = filteredQualifierVariables.value.map(
-      variable => variable.display_name
-    );
-    const qualifierIdToNameMap = new Map<string, string>();
-    qualifierVariableIds.forEach((id, index) => {
-      const name = qualifierVariableNames[index];
-      qualifierIdToNameMap.set(id, name);
+    const defaultQualifierIds: string[] = [];
+    for (const [name, info] of qualifierVariables.value) {
+      if (info.fetchByDefault) {
+        defaultQualifierIds.push(name);
+      }
+    }
+    // If there are non-default qualifiers that should have data,
+    // add them to the default list, and the set of non-default qualifier that had data requested
+    const additionalQualifiers = [_breakdownOption, ...desiredNonDefaultQualifiers];
+    additionalQualifiers.forEach(qualifier => {
+      if (qualifier && !defaultQualifierIds.includes(qualifier) &&
+        !additionalQualifiersRequested.value.has(qualifier)
+      ) {
+        defaultQualifierIds.push(qualifier);
+        additionalQualifiersRequested.value.add(qualifier);
+      }
     });
+    const appendQualifier = !!requestedQualifier.value;
+    const qualifiersToRequest = appendQualifier
+      ? [requestedQualifier.value ?? '']
+      : defaultQualifierIds;
     const promises = selectedScenarioIds.value.map(runId =>
       getQualifierBreakdown(
         data_id,
         runId,
         activeFeature.value,
-        qualifierVariableIds,
+        qualifiersToRequest,
         temporalResolution.value,
         temporalAggregation.value,
         spatialAggregation.value,
@@ -169,16 +228,20 @@ export default function useQualifiers(
     const responses = await Promise.all(promises);
     if (isCancelled) return;
     qualifierBreakdownData.value = convertResponsesToBreakdownData(
+      qualifierBreakdownData.value,
       responses,
       _breakdownOption,
       selectedScenarioIds.value,
-      qualifierIdToNameMap
+      qualifierVariables.value,
+      appendQualifier
     );
   });
 
   return {
     qualifierBreakdownData,
     selectedQualifierValues,
-    toggleIsQualifierSelected
+    toggleIsQualifierSelected,
+    requestAdditionalQualifier,
+    nonDefaultQualifiers: additionalQualifiersRequested
   };
 }
