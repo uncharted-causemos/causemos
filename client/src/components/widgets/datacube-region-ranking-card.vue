@@ -41,7 +41,7 @@
                 class="fa fa-lg fa-fw"
                 :class="{ 'fa-check-square-o': showNormalizedData, 'fa-square-o': !showNormalizedData }"
               />
-              Toggle data normalization
+              Normalized data
             </label>
           </div>
         </div>
