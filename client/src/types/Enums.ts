@@ -123,3 +123,20 @@ export enum ReferenceSeriesOption {
   AllRegions = 'allRegions',
   SelectRegions = 'selectRegions'
 }
+
+export enum ComparativeAnalysisMode {
+  List = 'list',
+  SyncTime = 'sync time',
+  RegionRanking = 'region ranking'
+}
+
+export enum RegionRankingCompositionType {
+  Union = 'union',
+  Intersection = 'intersection'// ,
+  // specific-region-selection // a potential 3rd option to only consider bars for selection regions
+}
+
+export enum BinningOptions {
+  Quantile = 'Quantile (equal counts)',
+  Linear = 'linear'
+}
