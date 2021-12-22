@@ -371,6 +371,9 @@ export default defineComponent({
               const bins = binGenerator(data);
               let regionIndexCounter = 0;
 
+              // @REVIEW
+              // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
+              // To receive normalized data, send transform=normalization when fetching regional data
               const normalize = (value: number) => {
                 const minValue = dataExtent[0];
                 const maxValue = dataExtent[1];
