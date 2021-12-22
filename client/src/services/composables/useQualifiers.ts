@@ -102,7 +102,8 @@ export default function useQualifiers(
   spatialAggregation: Ref<AggregationOption>,
   selectedTimestamp: Ref<number | null>,
   availableQualifiers: Ref<Map<string, QualifierInfo>>,
-  initialSelectedQualifierValues: Ref<string[]>
+  initialSelectedQualifierValues: Ref<string[]>,
+  initialNonDefaultQualifiers: Ref<string[]>
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
@@ -180,6 +181,7 @@ export default function useQualifiers(
   watchEffect(async onInvalidate => {
     const timestamp = selectedTimestamp.value;
     const _breakdownOption = breakdownOption.value;
+    const desiredNonDefaultQualifiers = initialNonDefaultQualifiers.value;
     if (metadata.value === null || timestamp === null) return;
     let isCancelled = false;
     onInvalidate(() => {
@@ -192,12 +194,17 @@ export default function useQualifiers(
         defaultQualifierIds.push(name);
       }
     }
-    // If there is a non-default breakdown option selected, add it to the default list, but mark it as
-    // a non-default qualifier that had data requested
-    if (_breakdownOption && !defaultQualifierIds.includes(_breakdownOption)) {
-      defaultQualifierIds.push(_breakdownOption);
-      additionalQualifiersRequested.value.add(_breakdownOption);
-    }
+    // If there are non-default qualifiers that should have data,
+    // add them to the default list, and the set of non-default qualifier that had data requested
+    const additionalQualifiers = [_breakdownOption, ...desiredNonDefaultQualifiers];
+    additionalQualifiers.forEach(qualifier => {
+      if (qualifier && !defaultQualifierIds.includes(qualifier) &&
+        !additionalQualifiersRequested.value.has(qualifier)
+      ) {
+        defaultQualifierIds.push(qualifier);
+        additionalQualifiersRequested.value.add(qualifier);
+      }
+    });
     const appendQualifier = !!requestedQualifier.value;
     const qualifiersToRequest = appendQualifier
       ? [requestedQualifier.value ?? '']
@@ -234,6 +241,7 @@ export default function useQualifiers(
     qualifierBreakdownData,
     selectedQualifierValues,
     toggleIsQualifierSelected,
-    requestAdditionalQualifier
+    requestAdditionalQualifier,
+    nonDefaultQualifiers: additionalQualifiersRequested
   };
 }
