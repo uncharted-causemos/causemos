@@ -30,6 +30,7 @@ function renderBarChart(
   barsData: BarData[], // mostly a two-column data format (since each bar would have a value)
   width: number,
   height: number,
+  initialHoverId: string,
   onHover: (barLabel: string) => void
 ) {
   selection.on('click', () => {
@@ -96,6 +97,9 @@ function renderBarChart(
     width,
     height,
     onHover);
+
+  // apply initial hover, if any
+  updateHover(selection, initialHoverId);
 }
 
 function renderHoverTooltips(

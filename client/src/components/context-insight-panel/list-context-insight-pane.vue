@@ -214,6 +214,12 @@ export default {
         router.push({
           query: {
             insight_id: this.selectedContextInsight.id,
+            // FIXME: the insight should not set a specific datacube_id in all cases
+            //  for example, the comparative analysis (region-ranking) page does not
+            //  need/understand a specific datacube_id passed as a query param
+            //  which may have a negative side effect
+            //
+            //  Also, remove previously added insight_id in the url if any prior to capturing a new insight
             datacube_id: datacubeId
           }
         }).catch(() => {});
