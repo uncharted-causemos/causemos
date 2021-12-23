@@ -40,7 +40,7 @@ import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { calculateNeighborhood, hasBackingEvidence, highlightOptions } from '@/utils/graphs-util';
-import { overlap } from '@utils/dom-util';
+import { overlap } from '@/utils/dom-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';

@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 import router from '@/router';
-import { LAYOUTS } from '@/utils/graph/layout';
 import FiltersUtil from '@/utils/filters-util';
 import { Filters } from '@/types/Filters';
 
@@ -44,7 +43,7 @@ const defaultAuditsQuery = Object.freeze({
   sort: {}
 });
 const defaultLayout = Object.freeze({
-  layoutOption: LAYOUTS.COSE_BILKENT,
+  layoutOption: 'cose-bilkent',
   hierarchyDepth: 0,
   direction: 'x',
   showLabels: true,

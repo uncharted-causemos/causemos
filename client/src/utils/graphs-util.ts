@@ -1,7 +1,13 @@
 import _ from 'lodash';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-import { CAGGraph, EdgeParameter } from '@/types/CAG';
+import { CAGGraph } from '@/types/CAG';
+
+interface Edge {
+  source: string;
+  target: string;
+  polarity?: number;
+}
 
 export class Vertex {
   name = '';
@@ -30,7 +36,7 @@ class Graph {
   vertices: Set<Vertex> = new Set();
   adjacentVertices: { [key: string]: Set<Vertex> } = {};
 
-  constructor(edges: EdgeParameter[]) {
+  constructor(edges: Edge[]) {
     const vertices: { [key: string]: Vertex } = {};
     const adjacentVertices: { [key: string]: Set<Vertex> } = {};
     edges.forEach(e => {
@@ -201,7 +207,7 @@ class Graph {
         if (v.index === null) {
           findSCCRecurseBind(v);
 
-          // @ts-ignore: getting around valid assignments
+          // @ts-ignore: heavy computation, not worth typescript shenanigans
           node.lowestNode = Math.min(node.lowestNode, v.lowestNode);
         } else if (v.inStack) {
           // We've hit a loop, and lowestNode only tracks the lowestNode in the subtree.
@@ -231,7 +237,7 @@ class Graph {
   }
 }
 
-export function findSCC(edges: EdgeParameter[]) {
+export function findSCC(edges: Edge[]) {
   if (edges.length === 0) { return; }
   const g = new Graph(edges);
   return g.findSCC();
@@ -269,7 +275,7 @@ function trace(id: string, buffer: string[], adjMap: Map<string, string[]>, visi
  * Trace ancestor paths given a node, we do not consider a singular
  * node to be a "path"
  */
-export function findAllAncestorPaths(node: string, edges: EdgeParameter[]) {
+export function findAllAncestorPaths(node: string, edges: Edge[]) {
   const adjMap = new Map<string, string[]>();
   const visited = new Set<string>();
   const paths: TracePath[] = [];
@@ -287,7 +293,7 @@ export function findAllAncestorPaths(node: string, edges: EdgeParameter[]) {
   return paths.filter(path => path.length > 1);
 }
 
-export function findAllDescendantPaths(node: string, edges: EdgeParameter[]) {
+export function findAllDescendantPaths(node: string, edges: Edge[]) {
   const adjMap = new Map<string, string[]>();
   const visited = new Set<string>();
   const paths: TracePath[] = [];
@@ -305,7 +311,7 @@ export function findAllDescendantPaths(node: string, edges: EdgeParameter[]) {
   return paths.filter(path => path.length > 1).map(path => path.reverse());
 }
 
-export function findPaths(source: string, target: string, edges: EdgeParameter[]) {
+export function findPaths(source: string, target: string, edges: Edge[]) {
   function traceToTarget(id: string, target: string, buffer: string[], adjMap: Map<string, string[]>, paths: TracePath[]) {
     if (buffer.indexOf(id) >= 0) return;
     buffer.push(id);
@@ -343,7 +349,7 @@ export function findPaths(source: string, target: string, edges: EdgeParameter[]
  * Get all the cycles in the graph
  * @returns A list of lists, where the inner lists are cycles in the graph
  */
-export function findCycles(edges: EdgeParameter[]) {
+export function findCycles(edges: Edge[]) {
   if (!edges || edges.length === 0) { return []; }
   const g = new Graph(edges);
   return g.findCycles();
@@ -352,7 +358,7 @@ export function findCycles(edges: EdgeParameter[]) {
 /**
  *  Classify cycles as either balancing, reinforcing or ambiguous
  */
-export function classifyCycles(cyclePaths: Vertex[][], graphEdges: EdgeParameter[]) {
+export function classifyCycles(cyclePaths: Vertex[][], graphEdges: Edge[]) {
   const g = new Graph(graphEdges);
   const numNodes = g.vertices.size;
 
@@ -378,7 +384,7 @@ export function classifyCycles(cyclePaths: Vertex[][], graphEdges: EdgeParameter
     const sourceId = nameToId[e.source];
     const targetId = nameToId[e.target];
 
-    // @ts-ignore: get around valid assignments
+    // @ts-ignore: heavy computation, not worth typescript shenanigans
     adjacencyMatrix[sourceId][targetId] = e.polarity;
   }
 
