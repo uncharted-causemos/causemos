@@ -260,7 +260,7 @@ function generateSelectableTimestamps(
     .map(timeSeries => timeSeries.points)
     .flat()
     .map(point => point.timestamp);
-  const uniqueTimestamps = _.uniq(allTimestamps);
+  const uniqueTimestamps = _.sortBy(_.uniq(allTimestamps));
   // FIXME: We assume that all timestamps are evenly spaced when determining
   //  how wide the hover/click hitbox should be. This may not always be the case.
 

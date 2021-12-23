@@ -12,7 +12,7 @@ import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
 import { DatacubeGeoAttributeVariableType, DatacubeGenericAttributeVariableType, ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
 import { isCategoricalAxis, isGeoParameter } from '@/utils/datacube-util';
-
+import { getHoverIdFromValue } from '@/utils/chart-util';
 import { colorFromIndex } from '@/utils/colors-util';
 
 //
@@ -118,16 +118,6 @@ const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
 let currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
-
-const getHoverIdFromValue = (hoverValue: string) => {
-  // remove dots/spaces from the string since it will conflict with the d3 selected later on
-  let hoverValueNoDots = hoverValue.split('.').join('');
-  hoverValueNoDots = hoverValueNoDots.split(',').join('');
-  hoverValueNoDots = hoverValueNoDots.split('[').join('');
-  hoverValueNoDots = hoverValueNoDots.split(']').join('');
-  hoverValueNoDots = hoverValueNoDots.split('-').join('');
-  return hoverValueNoDots.split(' ').join('');
-};
 
 function getLineWidth(datum: any) {
   return datum.is_default_run === 0 ? lineStrokeWidthNormal : lineStrokeWidthDefault;

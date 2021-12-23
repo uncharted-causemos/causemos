@@ -4,7 +4,7 @@ import { Ref, ref, watchEffect } from 'vue';
 import { getQualifierCounts } from '../new-datacube-service';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
-const FETCH_BY_DEFAULT_LIMIT = 200;
+const FETCH_BY_DEFAULT_LIMIT = 100;
 
 const convertResponsesToAvailableQualifiers = (
   responses: QualifierCountsResponse[],
