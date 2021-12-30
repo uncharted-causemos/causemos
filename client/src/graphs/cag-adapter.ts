@@ -295,28 +295,28 @@ const extractELKPositions = (root: ELKNode) => {
     }
   });
 
+  console.log('parent map', parentMap);
+
   // 2. Prepare lookups - now need to calculate global node positions as oopose to relative
   traverseELK(root, (node) => {
     nodeMap.set(node.id, node);
-    if (node.y && node.x) {
-      if (!parentMap.has(node.id)) {
+    if (!parentMap.has(node.id)) {
+      nodeGlobalPosition.set(node.id, {
+        x: node.x,
+        y: node.y,
+        width: node.width,
+        height: node.height
+      });
+    } else {
+      const parentNode = parentMap.get(node.id);
+      const pos = nodeGlobalPosition.get(parentNode.id);
+      if (pos) {
         nodeGlobalPosition.set(node.id, {
-          x: node.x,
-          y: node.y,
+          x: node.x + pos.x,
+          y: node.y + pos.y,
           width: node.width,
           height: node.height
         });
-      } else {
-        const parentNode = parentMap.get(node.id);
-        const pos = nodeGlobalPosition.get(parentNode.id);
-        if (pos) {
-          nodeGlobalPosition.set(node.id, {
-            x: node.x + pos.x,
-            y: node.y + pos.y,
-            width: node.width,
-            height: node.height
-          });
-        }
       }
     }
   });
@@ -370,8 +370,8 @@ export const runLayout = async <V, E> (
     }
 
     if (node.children.length === 0) {
-      node.width = node.width || 40; // FIXME
-      node.height = node.height || 100; // FIXME
+      node.width = node.width || 140; // FIXME
+      node.height = node.height || 60; // FIXME
     } else {
       delete node.width;
       delete node.height;
@@ -425,6 +425,7 @@ export const runLayout = async <V, E> (
     const ep = positionMaps.edgeGlobalPOsition.get(edge.id);
     edge.points = ep;
   }
-  console.log(graphData);
+  graphData.width = elkLayoutResult.width;
+  graphData.height = elkLayoutResult.height;
   return graphData;
 };
