@@ -1,7 +1,12 @@
+// @ts-nocheck
+// Typescript is being unreasonable when it comes to using maps, which we utilize heavily in the layout. Basically #map.get is
+// guaranteed but to add undefined-checks will add about ~20-25% of uncessary overhead. There is no opitons to ignore blocks
+// as of this writing (Dec 2021) and ts-ignore render the code unreadable.
+
 /* Layout adapater for CAGs */
 // import { layered } from './elk/layouts';
 import { CAGGraph, NodeParameter, EdgeParameter } from '@/types/CAG';
-import { IGraph, INode, IEdge } from 'svg-flowgraph2';
+import { IGraph, INode, IEdge, traverseGraph } from 'svg-flowgraph2';
 import ELK from 'elkjs/lib/elk.bundled';
 
 const makeGeneralLayout = (numLeafNodes: number) => {
@@ -115,29 +120,32 @@ export const buildInitialGraph = (modelComponents: CAGGraph): IGraph<NodeParamet
 };
 
 
+interface ELKEdge {
+  id: string;
+  source: string;
+  target: string;
+  sources?: any;
+  targets?: any;
+  points?: any;
+  sections?: any;
+}
+
 interface ELKNode {
   id: string;
   label: string;
   children: ELKNode[];
   ports?: any;
+  x?: number;
+  y?: number;
   width?: number;
   height?: number;
   layoutOptions?: any;
-  edges: {
-    id: string;
-    source: string;
-    target: string;
-    sources?: any;
-    targets?: any;
-    points?: any;
-    sections?: any;
-  }[];
+  edges: ELKEdge[];
 }
-
 
 const walkNode = <T>(node: INode<T>, parentNode: ELKNode | null): ELKNode => {
   const elkNode = {
-    id: node.id,
+    id: node.label, // Note we use label in place of id, makes working wigh edges a little easier
     label: node.label,
     children: [],
     edges: []
@@ -175,7 +183,7 @@ export const convert2ELK = <V, E> (graph: IGraph<V, E>): ELKNode => {
 };
 
 
-const traverseELK = (root: ELKNode, callBackFn: any) => {
+const traverseELK = (root: ELKNode, callBackFn: (node: ELKNode) => void) => {
   callBackFn(root);
   if (root.children && root.children.length > 0) {
     for (let i = 0; i < root.children.length; i++) {
@@ -187,7 +195,7 @@ const traverseELK = (root: ELKNode, callBackFn: any) => {
 
 const reshuffle = (elkGraph: ELKNode): void => {
   const nodeMap = new Map();
-  traverseELK(elkGraph, (node: any) => {
+  traverseELK(elkGraph, (node) => {
     nodeMap.set(node.id, node);
     if (!node.edges) node.edges = [];
   });
@@ -204,35 +212,161 @@ const reshuffle = (elkGraph: ELKNode): void => {
 };
 
 
+const extractEdgePoints = (
+  edge: ELKEdge,
+  nodeMap: Map<string, ELKNode>,
+  parentMap: Map<string, ELKNode>,
+  nodeGlobalPosition: Map<string, { x: number; y: number }>
+): { x: number; y: number }[] => {
+  const { startPoint, bendPoints = [], endPoint } = edge.sections[0];
+  let tx = 0;
+  let ty = 0;
+
+  const sourceNode = nodeMap.get(edge.source);
+  const targetNode = nodeMap.get(edge.target);
+
+  let sourceInTarget = false;
+  let targetInSource = false;
+  let p = sourceNode;
+  while (true && p) {
+    p = parentMap.get(p.id);
+    if (!p) break;
+    if (p.id === targetNode?.id) {
+      sourceInTarget = true;
+    }
+  }
+  p = targetNode;
+  while (true && p) {
+    p = parentMap.get(p.id);
+    if (!p) break;
+    if (p.id === sourceNode?.id) {
+      targetInSource = true;
+    }
+  }
+
+  if (sourceNode.id === targetNode.id) {
+    const p = parentMap.get(sourceNode.id);
+    tx += nodeGlobalPosition.get(p.id).x;
+    ty += nodeGlobalPosition.get(p.id).y;
+  } else {
+    if (targetInSource) {
+      tx += nodeGlobalPosition.get(sourceNode.id).x;
+      ty += nodeGlobalPosition.get(sourceNode.id).y;
+    } else if (sourceInTarget) {
+      tx += nodeGlobalPosition.get(targetNode.id).x;
+      ty += nodeGlobalPosition.get(targetNode.id).y;
+    } else {
+      const sourceParent = parentMap.get(sourceNode.id);
+      const targetParent = parentMap.get(targetNode.id);
+      if (sourceParent.id === targetParent.id) {
+        tx += nodeGlobalPosition.get(sourceParent.id).x;
+        ty += nodeGlobalPosition.get(sourceParent.id).y;
+      }
+    }
+  }
+
+  const points = [startPoint, ...bendPoints, endPoint].map(p => {
+    return {
+      x: p.x + tx,
+      y: p.y + ty
+    };
+  });
+  return points;
+};
+
+
+/**
+ * Given an ELK layout, extract the node and edge positions
+ */
+const extractELKPositions = (root: ELKNode) => {
+  // const nodeGlobalPosition = new Map();
+  const parentMap: Map<string, ELKNode> = new Map();
+  const nodeMap: Map<string, ELKNode> = new Map();
+
+  const nodeGlobalPosition: Map<string, { x: number; y: number; width: number; height: number }> = new Map();
+  const edgeGlobalPOsition: Map<string, { x: number; y: number }[]> = new Map();
+
+  // 1. Prepare lookups - need parent map first
+  traverseELK(root, (node) => {
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => {
+        parentMap.set(child.id, node);
+      });
+    }
+  });
+
+  // 2. Prepare lookups - now need to calculate global node positions as oopose to relative
+  traverseELK(root, (node) => {
+    nodeMap.set(node.id, node);
+    if (node.y && node.x) {
+      if (!parentMap.has(node.id)) {
+        nodeGlobalPosition.set(node.id, {
+          x: node.x,
+          y: node.y,
+          width: node.width,
+          height: node.height
+        });
+      } else {
+        const parentNode = parentMap.get(node.id);
+        const pos = nodeGlobalPosition.get(parentNode.id);
+        if (pos) {
+          nodeGlobalPosition.set(node.id, {
+            x: node.x + pos.x,
+            y: node.y + pos.y,
+            width: node.width,
+            height: node.height
+          });
+        }
+      }
+    }
+  });
+
+  // 3. Reposition edges
+  traverseELK(root, (node) => {
+    if (node.edges && node.edges.length > 0) {
+      for (const edge of node.edges) {
+        edgeGlobalPOsition.set(edge.id, extractEdgePoints(edge, nodeMap, parentMap, nodeGlobalPosition));
+      }
+    }
+  });
+
+  // Return positions
+  return {
+    nodeGlobalPosition,
+    edgeGlobalPOsition
+  };
+};
+
+
+/**
+ * The functions works by creating a graph structure in ELK's format, run the layout and extract the
+ * positional/dimension coordinates, which are then merged into the IGraph data structure
+ */
 export const runLayout = async <V, E> (
   graphData: IGraph<V, E>
 ): Promise<IGraph<V, E>> => {
   // 0. Prepare lookups
-  console.log('step 0');
   const edgeMaps = makeEdgeMaps(graphData.edges);
 
   // 1. Convert from IGraph to ELK nested representation
-  console.log('step 1');
   const elkGraph = convert2ELK(graphData);
 
   // 2. Reshuffle edges into correct ELK hierarhy
-  console.log('step 2');
   reshuffle(elkGraph);
 
   // 3. Apply port config and layout options
-  console.log('step 3');
   const outgoingMap = new Map();
   const incomingMap = new Map();
   traverseELK(elkGraph, (node: ELKNode) => {
     // Create port configs
     const ports = [];
-    const outgoingPorts = edgeMaps.outgoing.get(node.label) || 0;
-    const incomingPorts = edgeMaps.incoming.get(node.label) || 0;
+    const outgoingPorts = edgeMaps.outgoing.get(node.id);
+    const incomingPorts = edgeMaps.incoming.get(node.id);
     for (let i = 0; i < outgoingPorts; i++) {
-      ports.push({ id: `${node.label}:source:${i}`, type: 'outgoing' });
+      ports.push({ id: `${node.id}:source:${i}`, type: 'outgoing' });
     }
     for (let i = 0; i < incomingPorts; i++) {
-      ports.push({ id: `${node.label}:target:${i}`, type: 'incoming' });
+      ports.push({ id: `${node.id}:target:${i}`, type: 'incoming' });
     }
 
     if (node.children.length === 0) {
@@ -268,23 +402,29 @@ export const runLayout = async <V, E> (
   elkGraph.layoutOptions = makeGeneralLayout(30);
 
   // 4. Run layout
-  console.log('step 4');
-  console.log(JSON.stringify(elkGraph, null, 2));
   const elkEngine = new ELK();
+  let elkLayoutResult = null;
   try {
-    const result = await elkEngine.layout(elkGraph);
-    console.log(result);
+    elkLayoutResult = await elkEngine.layout(elkGraph);
   } catch (err) {
     console.error(err);
   }
 
   // 5. Post processing and extract positions
+  const positionMaps = extractELKPositions(elkLayoutResult);
 
   // 6. Apply mappings to IGraph
-  console.log(edgeMaps, elkGraph);
-
-  return {
-    nodes: [],
-    edges: []
-  };
+  traverseGraph(graphData, (node) => {
+    const np = positionMaps.nodeGlobalPosition.get(node.label);
+    node.x = np.x;
+    node.y = np.y;
+    node.width = np.width;
+    node.height = np.height;
+  });
+  for (const edge of graphData.edges) {
+    const ep = positionMaps.edgeGlobalPOsition.get(edge.id);
+    edge.points = ep;
+  }
+  console.log(graphData);
+  return graphData;
 };
