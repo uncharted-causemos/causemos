@@ -45,8 +45,7 @@ const DEFAULT_STYLE = {
 };
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
-
-
+const distance = (a: {x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 
 export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParameter> {
   newEdgeSourceId = '';
@@ -58,14 +57,21 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
   constructor(options: any) {
     super(options);
 
-
     this.on('node-mouse-enter', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
       console.log('mouse enterd ');
+      if (this.newEdgeSourceId === '') {
+        this.showNodeHandles(selection);
+      }
+      if (this.handleBeingDragged === true) return;
+
       this.showNodeMenu(selection);
     });
 
     this.on('node-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
       console.log('mouse leave');
+      if (this.newEdgeSourceId === '') {
+        this.hideNodeHandles();
+      }
       this.hideNodeMenu(selection);
     });
   }
@@ -376,18 +382,14 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
     node.select('.node-control').remove();
   }
 
-
   getNodeCollider() {
-    // TODO: this won't work with hierarchies
+    // FIXME: this won't work with hierarchies
     // @ts-ignore
     return (p) => this.graph.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
   }
 
   getPathBetweenNodes(source: INode<NodeParameter>, target: INode<NodeParameter>) {
-    // @ts-ignore
     const getNodeEntrance = (node: INode<NodeParameter>, offset = 0) => ({ x: node.x + offset, y: node.y + 0.5 * node.height });
-
-    // @ts-ignore
     const getNodeExit = (node: INode<NodeParameter>, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
 
     return [
@@ -406,7 +408,7 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
     const nodeHeight = node.datum().height || 0;
 
     node.select('.node-header')
-      .attr('width', (d) => d.width ?? 0 - DEFAULT_STYLE.nodeHandles.width * 2)
+      .attr('width', (d) => d.width - DEFAULT_STYLE.nodeHandles.width * 2)
       .attr('x', DEFAULT_STYLE.nodeHandles.width)
       .style('border-radius', DEFAULT_STYLE.nodeHeader.highlighted.borderRadius)
       .style('stroke', DEFAULT_STYLE.nodeHeader.highlighted.stroke)
@@ -419,7 +421,7 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
       .attr('x', 30)
       .text(d => d.label)
       // @ts-ignore
-      .each(function (d) { svgUtil.truncateTextToWidth(this, d.width ?? 0 - 50); });
+      .each(function (d) { svgUtil.truncateTextToWidth(this, d.width - 50); });
 
     handles.append('rect')
       .classed('handle', true)
@@ -459,12 +461,9 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
     };
     const getNodeExit = (node: INode<NodeParameter>, offset = 0) => {
       return {
-        // @ts-ignore
         x: node.x + node.width + offset, y: node.y + 0.5 * node.height
       };
     };
-
-    const distance = (a: {x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 
     const drag = d3.drag()
       .on('start', async (evt) => {
@@ -585,6 +584,7 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
 
   // FIXME Typescript weirdness
   hideNodeHandles() {
+    console.log('hiding node handles');
     const chart = this.chart;
     const nodes = chart.selectAll('.node');
 

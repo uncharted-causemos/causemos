@@ -101,7 +101,11 @@ export const buildInitialGraph = (modelComponents: CAGGraph): IGraph<NodeParamet
       id: node.id,
       label: node.concept,
       data: node,
-      nodes: []
+      nodes: [],
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0
     });
   }
 
@@ -110,6 +114,7 @@ export const buildInitialGraph = (modelComponents: CAGGraph): IGraph<NodeParamet
       id: edge.id,
       source: edge.source,
       target: edge.target,
+      points: [],
       data: edge
     });
   }
@@ -370,8 +375,8 @@ export const runLayout = async <V, E> (
     }
 
     if (node.children.length === 0) {
-      node.width = node.width || 140; // FIXME
-      node.height = node.height || 60; // FIXME
+      node.width = node.width || 130; // FIXME
+      node.height = node.height || 30; // FIXME
     } else {
       delete node.width;
       delete node.height;
