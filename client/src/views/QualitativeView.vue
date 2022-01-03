@@ -678,7 +678,7 @@ export default defineComponent({
     onModalClose() {
       this.showModalConfirmation = false;
     },
-    onDelete(node: { data: NodeParameter }) {
+    onDelete(node: NodeParameter) {
       if (node) {
         this.selectNode(node);
       }
@@ -710,7 +710,7 @@ export default defineComponent({
     onBackgroundDblClick() {
       this.createNewNode();
     },
-    onNodeClick(node: { data: NodeParameter }) {
+    onNodeClick(node: NodeParameter) {
       this.selectNode(node);
     },
     onEdgeClick(edge: EdgeParameter) {
@@ -765,11 +765,11 @@ export default defineComponent({
       this.selectedEdge = edge;
       this.switchToTab(PANE_ID.EVIDENCE);
     },
-    selectNode(node: { data: NodeParameter }) {
+    selectNode(node: NodeParameter) {
       this.deselectNodeAndEdge();
       this.setNewNodeVisible(false);
       this.isDrilldownOverlayOpen = false;
-      this.selectedNode = node.data;
+      this.selectedNode = node;
       if (this.activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS) {
         // User is on Suggestions overlay for node A, clicks node B
         // We assume they want to now investigate suggestions for B

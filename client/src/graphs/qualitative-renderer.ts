@@ -58,7 +58,6 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
     super(options);
 
     this.on('node-mouse-enter', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      console.log('mouse enterd ');
       if (this.newEdgeSourceId === '') {
         this.showNodeHandles(selection);
       }
@@ -68,7 +67,6 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
     });
 
     this.on('node-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      console.log('mouse leave');
       if (this.newEdgeSourceId === '') {
         this.hideNodeHandles();
       }
@@ -117,7 +115,6 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
   }
 
   renderNodesRemoved(selection: D3SelectionINode<NodeParameter>) {
-    console.log(selection);
     selection.selectAll('rect').style('fill', '#E88');
     selection
       .transition()
@@ -129,6 +126,17 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
   }
 
   renderEdgesAdded(selection: D3SelectionIEdge<EdgeParameter>) {
+    // If we manually drew a new edge, we need to inject the path points back in, as positions are not stored.
+    if (this.temporaryNewEdge) {
+      const sourceNode = this.temporaryNewEdge.sourceNode;
+      const targetNode = this.temporaryNewEdge.targetNode;
+      const edge = this.graph.edges.find(d => d.source === sourceNode.label && d.target === targetNode.label);
+      if (edge) {
+        edge.points = this.getPathBetweenNodes(sourceNode, targetNode);
+      }
+      this.temporaryNewEdge = null;
+    }
+
     selection
       .append('path')
       .classed('edge-path-bg', true)
@@ -336,8 +344,8 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
       .on('mouseleave', function() {
         d3.select(this).style('opacity', 0.80);
       })
-      .on('click', (evt) => {
-        // renderer.options.renameFn(node.data);
+      .on('click', (evt, node) => {
+        this.emit('rename-node', node.data);
         evt.stopPropagation();
       });
 
@@ -365,8 +373,8 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
       .on('mouseleave', function() {
         d3.select(this).style('opacity', 0.80);
       })
-      .on('click', (evt) => {
-        // renderer.options.deleteFn(node);
+      .on('click', (evt, node) => {
+        this.emit('delete-node', node.data);
         evt.stopPropagation();
       });
 
@@ -574,6 +582,8 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
         if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
         this.temporaryNewEdge = { sourceNode, targetNode };
 
+        this.emit('new-edge', this.temporaryNewEdge);
+
         // FIXME
         // this.options.newEdgeFn(sourceNode.data, targetNode.data);
 
@@ -584,7 +594,6 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
 
   // FIXME Typescript weirdness
   hideNodeHandles() {
-    console.log('hiding node handles');
     const chart = this.chart;
     const nodes = chart.selectAll('.node');
 

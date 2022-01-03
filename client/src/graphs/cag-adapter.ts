@@ -300,8 +300,6 @@ const extractELKPositions = (root: ELKNode) => {
     }
   });
 
-  console.log('parent map', parentMap);
-
   // 2. Prepare lookups - now need to calculate global node positions as oopose to relative
   traverseELK(root, (node) => {
     nodeMap.set(node.id, node);
