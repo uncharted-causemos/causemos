@@ -1180,11 +1180,11 @@ export default defineComponent({
       // DOM which refers to the old values. To get it to cache new values we need to swap new/old
       // into place. Needs better support from renderer itself!!
       const oldName = this.modelComponents.nodes.find(node => node.id === this.renameNodeId)?.concept;
-      const node = this.cagGraph.renderer.layout.nodes.find((node: any) => node.id === oldName);
+      const node = this.cagGraph.renderer.graph.nodes.find((node: any) => node.label === oldName);
       node.id = newName;
       node.label = newName;
 
-      const edges = this.cagGraph.renderer.layout.edges;
+      const edges = this.cagGraph.renderer.graph.edges;
       for (const edge of edges) {
         const [source, target] = edge.id.split(':');
         if (source === oldName) {
