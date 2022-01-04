@@ -12,7 +12,7 @@
       :items="breakdownOptions"
       :selectedItem="selectedBreakdownOption"
       :is-dropdown-left-aligned="true"
-      @item-selected="emitBreakdownOptionSelection($event); scrollToBreakdown($event)"
+      @item-selected="breakdownOptionSelected($event)"
     />
     <aggregation-checklist-pane
       ref="region_ref"
@@ -68,10 +68,11 @@
       :aggregation-level-title="qualifierVariable.name"
       :ordered-aggregation-level-keys="[qualifierVariable.id]"
       :raw-data="qualifierVariable.data"
+      :total-data-length="qualifierVariable.totalDataLength"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :should-show-deselected-bars="selectedBreakdownOption === SpatialAggregationLevel.Region || selectedBreakdownOption === TemporalAggregationLevel.Year || selectedBreakdownOption === null"
       :show-references="false"
-      :allow-collapsing="true"
+      :allow-collapsing="qualifierVariable.id !== selectedBreakdownOption"
       :units="unit"
       :checkbox-type="
         selectedBreakdownOption === qualifierVariable.id ? 'checkbox' : null
@@ -82,6 +83,7 @@
           : []
       "
       @toggle-is-item-selected="toggleIsQualifierSelected"
+      @request-data="emitRequestQualifierData(qualifierVariable.id)"
     >
       <template #aggregation-description>
         <p class="aggregation-description">
@@ -232,7 +234,8 @@ export default defineComponent({
     'toggle-is-qualifier-selected',
     'toggle-is-year-selected',
     'toggle-reference-options',
-    'set-breakdown-option'
+    'set-breakdown-option',
+    'request-qualifier-data'
   ],
   setup(props, { emit }) {
     const {
@@ -267,6 +270,10 @@ export default defineComponent({
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
       emit('set-breakdown-option', breakdownOption);
+    };
+
+    const emitRequestQualifierData = (qualifierId: string) => {
+      emit('request-qualifier-data', qualifierId);
     };
 
     const availableAdminLevelTitles = computed(() => {
@@ -333,6 +340,7 @@ export default defineComponent({
       timestampFormatter,
       ADMIN_LEVEL_KEYS,
       emitBreakdownOptionSelection,
+      emitRequestQualifierData,
       breakdownOptions,
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
@@ -357,6 +365,16 @@ export default defineComponent({
           }
         }, 250);
       }
+    },
+    breakdownOptionSelected(breakdownOption: string | null) {
+      if (breakdownOption &&
+        this.qualifierBreakdownData?.some(breakdown => breakdown.id === breakdownOption)
+      ) {
+        // Request data for qualifiers. If the data is already available this will no-op.
+        this.emitRequestQualifierData(breakdownOption);
+      }
+      this.emitBreakdownOptionSelection(breakdownOption);
+      this.scrollToBreakdown(breakdownOption);
     }
   }
 });

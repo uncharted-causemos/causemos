@@ -27,7 +27,7 @@
       :reference-options="referenceOptions"
       @toggle-reference-options="updateSelectedReferences"
     />
-    <div class="sort-selection">
+    <div v-if="hasData" class="sort-selection">
       <span>Sort by</span>
       <radio-button-group
         :selected-button-value="sortValue"
@@ -35,7 +35,7 @@
         @button-clicked="clickRadioButton"
       />
     </div>
-    <div class="flex-row">
+    <div v-if="hasData" class="flex-row">
       <div
         v-if="checkboxType === 'radio'"
         class="all-radio-button"
@@ -55,6 +55,11 @@
       </div>
       <!-- Render an empty div so the 'all-radio-button' stays left-aligned -->
       <div v-else />
+    </div>
+    <div v-else >
+      <button
+        class="btn btn-sm"
+        @click="requestData">Load {{numberFormatter(totalDataLength)}} values</button>
     </div>
     <div class="checklist-container">
       <aggregation-checklist-item
@@ -89,7 +94,7 @@
         </template>
       </collapsible-item>
     </div>
-    <div class="aggregation-description">
+    <div v-if="hasData" class="aggregation-description">
       <slot name="aggregation-description" />
     </div>
   </div>
@@ -97,6 +102,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
+import numberFormatter from '@/formatters/number-formatter';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
@@ -324,6 +330,10 @@ export default defineComponent({
       type: Object as PropType<BreakdownData | null>,
       default: null
     },
+    totalDataLength: {
+      type: Number,
+      default: 0
+    },
     units: {
       type: String,
       default: null
@@ -357,7 +367,12 @@ export default defineComponent({
       default: []
     }
   },
-  emits: ['aggregation-level-change', 'toggle-is-item-selected', 'toggle-reference-options'],
+  emits: [
+    'aggregation-level-change',
+    'toggle-is-item-selected',
+    'toggle-reference-options',
+    'request-data'
+  ],
   setup(props, { emit }) {
     const {
       rawData,
@@ -532,6 +547,8 @@ export default defineComponent({
       return allowCollapsing.value ? rowsWithData.value : possibleRows.value;
     });
 
+    const hasData = computed(() => possibleRows.value.length > 0);
+
     const isAllSelected = computed(() => {
       return selectedItemIds.value.length === 0;
     });
@@ -565,6 +582,7 @@ export default defineComponent({
       minVisibleBarValue,
       displayRows,
       rowsWithoutData,
+      hasData,
       isAllSelected,
       toggleChecked,
       setAllChecked,
@@ -574,6 +592,7 @@ export default defineComponent({
     };
   },
   methods: {
+    numberFormatter,
     clickRadioButton(value: string) {
       this.sortValue = value;
     },
@@ -614,6 +633,9 @@ export default defineComponent({
     },
     updateSelectedReferences(value: string) {
       this.$emit('toggle-reference-options', value);
+    },
+    requestData() {
+      this.$emit('request-data');
     }
   }
 });
