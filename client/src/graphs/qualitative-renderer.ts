@@ -392,8 +392,7 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
 
   getNodeCollider() {
     // FIXME: this won't work with hierarchies
-    // @ts-ignore
-    return (p) => this.graph.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
+    return (p: { x: number; y: number }) => this.graph.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
   }
 
   getPathBetweenNodes(source: INode<NodeParameter>, target: INode<NodeParameter>) {
