@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-import { CAGGraph } from '@/types/CAG';
+import { CAGGraph, EdgeParameter } from '@/types/CAG';
 
 interface Edge {
   source: string;
@@ -454,8 +454,7 @@ export function calculateNeighborhood(graph: CAGGraph, node: string) {
 /**
  * Check if edge has backing evidence
  */
-type PartialEdge = { polarity?: number; same?: number; opposite?: number; unknown?: number };
-export function hasBackingEvidence(edge: PartialEdge) {
+export function hasBackingEvidence(edge: EdgeParameter) {
   const sameCount = edge.same || 0;
   const oppositeCount = edge.opposite || 0;
   const unknownCount = edge.unknown || 0;

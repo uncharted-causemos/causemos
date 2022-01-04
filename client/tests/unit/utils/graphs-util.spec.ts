@@ -3,31 +3,42 @@ import {
   hasBackingEvidence, findCycles, findAllAncestorPaths, findAllDescendantPaths, findPaths
 } from '@/utils/graphs-util';
 
+
+const dummyEdge = {
+  id: '',
+  model_id: '',
+  source: 'x',
+  target: 'y',
+  reference_ids: [],
+  user_polarity: null
+};
+
+
 describe('graphs-util', () => {
   it('hasBackingEvidence - user set no evidence', () => {
     let edge = null;
-    edge = { polarity: 1, same: 0, opposite: 0, unknown: 0 };
+    edge = Object.assign(dummyEdge, { polarity: 1, same: 0, opposite: 0, unknown: 0 });
     expect(hasBackingEvidence(edge)).to.equal(false);
 
-    edge = { polarity: 1, same: 0, opposite: 10, unknown: 0 };
+    edge = Object.assign(dummyEdge, { polarity: 1, same: 0, opposite: 10, unknown: 0 });
     expect(hasBackingEvidence(edge)).to.equal(false);
   });
 
   it('hasBackingEvidence - with evidence', () => {
     let edge = null;
-    edge = { polarity: 1, same: 10, opposite: 10, unknown: 0 };
+    edge = Object.assign(dummyEdge, { polarity: 1, same: 10, opposite: 10, unknown: 0 });
     expect(hasBackingEvidence(edge)).to.equal(true);
 
-    edge = { polarity: 0, same: 0, opposite: 10, unknown: 5 };
+    edge = Object.assign(dummyEdge, { polarity: 0, same: 0, opposite: 10, unknown: 5 });
     expect(hasBackingEvidence(edge)).to.equal(true);
   });
 
   it('hasBackingEvidence - unknown polarity cases', () => {
     let edge = null;
-    edge = { polarity: 1, same: 0, opposite: 0, unknown: 10 };
+    edge = Object.assign(dummyEdge, { polarity: 1, same: 0, opposite: 0, unknown: 10 });
     expect(hasBackingEvidence(edge)).to.equal(false);
 
-    edge = { polarity: 0, same: 0, opposite: 0, unknown: 10 };
+    edge = Object.assign(dummyEdge, { polarity: 0, same: 0, opposite: 0, unknown: 10 });
     expect(hasBackingEvidence(edge)).to.equal(true);
   });
 
