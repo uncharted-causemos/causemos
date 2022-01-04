@@ -118,6 +118,7 @@ import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import { BinningOptions, ComparativeAnalysisMode, DatacubeGeoAttributeVariableType, RegionRankingCompositionType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
 import { getInsightById } from '@/services/insight-service';
+import router from '@/router';
 
 const DRILLDOWN_TABS = [
   {
@@ -391,6 +392,14 @@ export default defineComponent({
           const insight_id = this.$route.query.insight_id as any;
           if (insight_id !== undefined) {
             this.updateStateFromInsight(insight_id);
+            // remove the insight_id from the url,
+            //  so that (1) future insight capture is valid and (2) enable re-applying the same insight
+            // FIXME: review to avoid double history later
+            router.push({
+              query: {
+                insight_id: undefined
+              }
+            }).catch(() => {});
           }
         }
       },
