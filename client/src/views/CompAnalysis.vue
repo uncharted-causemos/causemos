@@ -270,7 +270,6 @@ export default defineComponent({
     watch(
       () => [
         // also track whether data is shown as normalized or not
-        // and capture bar hover
         selectedAdminLevel.value,
         comparativeAnalysisViewSelection.value,
         regionRankingCompositionType.value,
