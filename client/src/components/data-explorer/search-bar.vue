@@ -1,18 +1,13 @@
 <template>
-  <div class="search-bar-container">
-    <div ref="lexContainer" />
-    <button
-      class="btn btn-default clear-button"
-      @click="clearSearch()">
-      <i class="fa fa-remove" /> Clear
-    </button>
-  </div>
+  <lex-bar :lex-ref="lexRef"/>
 </template>
 
 <script>
 import _ from 'lodash';
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 import { mapActions, mapGetters } from 'vuex';
+
+import LexBar from '@/components/widgets/lex-bar.vue';
 
 import TextPill from '@/search/pills/text-pill';
 import RangePill from '@/search/pills/range-pill';
@@ -29,6 +24,9 @@ const SUGGESTION_CODE_TABLE = datacubeUtil.SUGGESTION_CODE_TABLE;
 
 export default {
   name: 'SearchBar',
+  components: {
+    LexBar
+  },
   props: {
     facets: {
       type: Object,
@@ -46,10 +44,9 @@ export default {
       this.setQuery();
     }
   },
-  created() {
-    this.lexRef = null;
-    this.pills = [];
-  },
+  data: () => ({
+    lexRef: null
+  }),
   mounted() {
     // Generates lex pills from select datacube columns
     const excludedFields = Object.values(SUGGESTION_CODE_TABLE).map(v => v.field);
@@ -109,13 +106,13 @@ export default {
       }
     }).branch(...this.pills.map(pill => pill.makeBranch()));
 
-    this.lexRef = new Lex({
+    const lex = new Lex({
       language: language,
       placeholder: 'Search items...',
       tokenXIcon: '<i class="fa fa-remove"></i>'
     });
 
-    this.lexRef.on('query changed', (...args) => {
+    lex.on('query changed', (...args) => {
       const model = args[0];
       const newFilters = filtersUtil.newFilters();
 
@@ -135,7 +132,7 @@ export default {
       }
     });
 
-    this.lexRef.render(this.$refs.lexContainer);
+    this.lexRef = lex;
     this.setQuery();
   },
   methods: {
@@ -153,29 +150,7 @@ export default {
         }
       });
       this.lexRef.setQuery(lexQuery, false); // TODO: I assume this doesn't call query changed?
-    },
-    clearSearch() {
-      this.lexRef.reset();
     }
   }
 };
 </script>
-
-<style lang='scss' scoped>
-.search-bar-container :deep {
-  @import "@/styles/lex-overrides";
-
-  display: flex;
-
-  & > div {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .clear-button {
-    flex: 0;
-    padding: 5px;
-  }
-}
-
-</style>
