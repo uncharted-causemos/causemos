@@ -114,7 +114,7 @@
             </div>
             <!-- second row display a list of linked insights -->
             <message-display
-              v-if="!insightsByQuestionItemId['' + questionItem.id]"
+              v-if="questionItem.id && !insightsByQuestionItemId[questionItem.id]"
               class="no-insight-warning"
               :message-type="'alert-warning'"
               :message="'No insights assigned to this question.'"
@@ -123,6 +123,7 @@
               v-for="insight in insightsByQuestionItemId['' + questionItem?.id]"
               :key="insight.id"
               class="checklist-item-insight">
+              <div v-if="insight.id">
                 <i @mousedown.stop.prevent class="fa fa-star" />
                 <span
                   @mousedown.stop.prevent
@@ -133,6 +134,7 @@
                 <i class="fa fa-fw fa-close"
                   style="pointer-events: all; cursor: pointer; margin-left: auto;"
                   @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
+              </div>
             </div>
           </div>
       </div>
