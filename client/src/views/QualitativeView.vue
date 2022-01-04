@@ -645,6 +645,12 @@ export default defineComponent({
       const { model_id, concept, label, modified_at, parameter, components } = node;
       const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter, components };
       const data = await this.addCAGComponents([cleanedNode], [], 'manual');
+
+      // HACK: Force cagGraph to inject a node to keep layout stable
+      if (data.newNode) {
+        this.cagGraph.injectNewNode(data.newNode);
+      }
+
       this.setUpdateToken(data.updateToken);
     },
     async onModalConfirm() {
@@ -1218,11 +1224,8 @@ export default defineComponent({
         this.setUpdateToken(data.updateToken);
       }
     },
-    async mergeNodes(mergeNode: { data: NodeParameter }, targetNode: { data: NodeParameter }) {
+    async mergeNodes(mergeData: NodeParameter, targetData: NodeParameter) {
       // 1. collect all of the relevant data for the following steps
-      const mergeData = mergeNode.data;
-      const targetData = targetNode.data;
-
       const updatedComponents = [...mergeData.components, ...targetData.components];
       const mergeNodeEdges = this.modelComponents.edges.filter(e => e.target === mergeData.concept || e.source === mergeData.concept);
       const removedEdges = mergeNodeEdges

@@ -118,7 +118,7 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
     selection.selectAll('rect').style('fill', '#E88');
     selection
       .transition()
-      .duration(1000)
+      .duration(REMOVE_TIMER)
       .style('opacity', 0)
       .on('end', function() {
         d3.select((this as any).parentNode).remove(); // FIXME any
@@ -615,7 +615,6 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
       .each(function (d: any) { svgUtil.truncateTextToWidth(this, d.width - 20); });
     this.chart.selectAll('.node-handles').selectAll('*').remove();
   }
-
 
   resetDragState() {
     const chart = this.chart;

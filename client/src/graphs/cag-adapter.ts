@@ -279,6 +279,23 @@ const extractEdgePoints = (
   return points;
 };
 
+const splitLineSegments = (points: { x: number; y: number }[]) => {
+  const result = [];
+  result.push(_.first(points));
+  let p = _.first(points);
+  for (let i = 1; i < points.length - 1; i++) {
+    result.push({
+      x: 0.5 * (p.x + points[i].x),
+      y: 0.5 * (p.y + points[i].y)
+    });
+    result.push(points[i]);
+    p = points[i];
+  }
+  result.push(_.last(points));
+  return result;
+};
+
+
 
 /**
  * Given an ELK layout, extract the node and edge positions
@@ -328,7 +345,13 @@ const extractELKPositions = (root: ELKNode) => {
   traverseELK(root, (node) => {
     if (node.edges && node.edges.length > 0) {
       for (const edge of node.edges) {
-        edgeGlobalPOsition.set(edge.id, extractEdgePoints(edge, nodeMap, parentMap, nodeGlobalPosition));
+        const edgePathPoints = splitLineSegments(extractEdgePoints(
+          edge,
+          nodeMap,
+          parentMap,
+          nodeGlobalPosition
+        ));
+        edgeGlobalPOsition.set(edge.id, edgePathPoints);
       }
     }
   });

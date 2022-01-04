@@ -6,6 +6,7 @@ const historyService = rootRequire('/services/history-service');
 const scenarioService = rootRequire('/services/scenario-service');
 const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 
+const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 
 const OPERATION = Object.freeze({
   REMOVE: 'remove',
@@ -110,6 +111,11 @@ router.put('/:mid/components/', asyncHandler(async (req, res) => {
     updateType
   } = req.body;
 
+  let returnNodeIdHack = false;
+  if (nodes && nodes.length === 1 && nodes[0].id === '') {
+    returnNodeIdHack = true;
+  }
+
   // Perform the specified operation, or if it's not a supported operation
   // throw an error
   switch (operation) {
@@ -126,7 +132,19 @@ router.put('/:mid/components/', asyncHandler(async (req, res) => {
   }
   await scenarioService.invalidateByModel(modelId);
 
-  res.status(200).send({ updateToken: editTime });
+
+  // FIXME: Hacking, need better API.
+  // If there is only one node and it has id=='' than we are creating a single node, return the id to the client
+  let newNode = null;
+  if (returnNodeIdHack === true) {
+    const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+    newNode = await nodeParameterAdapter.findOne([
+      { field: 'model_id', value: modelId },
+      { field: 'concept', value: nodes[0].concept }
+    ], {});
+  }
+
+  res.status(200).send({ updateToken: editTime, newNode });
 }));
 
 router.put('/:mid/groups/', asyncHandler(async (req, res) => {

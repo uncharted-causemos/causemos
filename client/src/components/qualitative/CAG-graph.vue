@@ -36,6 +36,7 @@ import GraphSearch from '@/components/widgets/graph-search.vue';
 import { QualitativeRenderer } from '@/graphs/qualitative-renderer';
 import { buildInitialGraph, runLayout } from '@/graphs/cag-adapter';
 import { overlap } from '@/utils/dom-util';
+import svgUtil from '@/utils/svg-util';
 
 import { INode } from 'svg-flowgraph2';
 import { NodeParameter } from '@/types/CAG';
@@ -92,7 +93,10 @@ export default defineComponent({
   },
   emits: [
     'edge-click', 'node-click', 'background-click', 'background-dbl-click',
-    'new-edge', 'delete', 'rename-node'
+
+    // Custom
+    'new-edge', 'delete', 'rename-node', 'merge-nodes',
+    'suggestion-selected', 'suggestion-duplicated'
   ],
   setup() {
     const renderer = ref(null) as Ref<QualitativeRenderer | null>;
@@ -130,6 +134,9 @@ export default defineComponent({
       useAStarRouting: true,
       runLayout: runLayout
     });
+
+    // Temporary tracker
+    let mergeTargetNode: D3SelectionINode<NodeParameter> | null = null;
 
     // Native messages
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection, renderer: QualitativeRenderer) => {
@@ -178,7 +185,7 @@ export default defineComponent({
         const otherNodeUIRect = otherRect.node();
 
         if (overlap(otherNodeUIRect as HTMLElement, nodeUIRect as HTMLElement, 0.5)) {
-          // targetNode = otherNodeUI;
+          mergeTargetNode = otherNodeUI as D3SelectionINode<NodeParameter>;
           otherRect
             .style('stroke', mergeNodeColor)
             .style('stroke-width', 12);
@@ -186,6 +193,12 @@ export default defineComponent({
       });
     });
 
+    this.renderer.on('node-drag-end', (_evtName, _event, nodeSelection: D3SelectionINode<NodeParameter>) => {
+      if (mergeTargetNode !== null) {
+        this.$emit('merge-nodes', nodeSelection.datum().data, mergeTargetNode.datum().data);
+        mergeTargetNode = null;
+      }
+    });
 
     // Custom messages
     this.renderer.on('new-edge', (_evtName, payload: any) => {
@@ -214,6 +227,55 @@ export default defineComponent({
     },
     deselectNodeAndEdge() {
       // FIXME: todo
+    },
+    focusNewNodeInput() {
+      // @ts-ignore
+      this.$refs.newNode.focusInput();
+    },
+    onSuggestionSelected(suggestion: any) {
+      if (this.data.nodes.filter((node: any) => node.concept === suggestion.concept).length > 0) {
+        this.$emit('suggestion-duplicated', suggestion);
+        return;
+      }
+
+      // HACK This is leveraing the svg-flowgraph internals.
+      //
+      // We inject the node-blueprint into the DOM with createNewNode, then when the
+      // graph itself re-renders it will detect the node-blueprint, rebinds the data and
+      // thus retaining the original layout.
+      // this.renderer?.createNewNode(this.svgX, this.svgY, {
+      //   concept: suggestion.concept,
+      //   label: suggestion.label
+      // });
+
+      this.$emit('suggestion-selected', suggestion);
+    },
+    injectNewNode(node: NodeParameter) {
+      // Once in DB, create the new node at svgX/svgY, for the sake of preserving stable layout
+      // 1. create node into renderer
+      const newNodeDatum: INode<NodeParameter> = {
+        id: node.id,
+        label: node.concept,
+        x: this.svgX,
+        y: this.svgY,
+        width: 130,
+        height: 30,
+        nodes: [],
+        data: node
+      };
+
+      const chart = this.renderer?.chart;
+      const nodeSelection = chart?.select('.nodes-layer').append('g')
+        .classed('node', true)
+        .attr('transform', svgUtil.translate(this.svgX, this.svgY))
+        .datum(newNodeDatum);
+
+      // 2. enable interaction on the new node
+      if (this.renderer) {
+        const nodeUI = nodeSelection?.append('g').classed('node-ui', true);
+        this.renderer.renderNodesAdded(nodeUI as any);
+        this.renderer.enableEdgeInteraction(nodeUI as any, this.renderer);
+      }
     }
   }
 });
