@@ -220,7 +220,7 @@ class Graph {
         // If this is the lowest node we can reach, then we've either:
         // - formed a cycle, in which case this is a SCC
         // - or have no cycle what so ever, so the stand-alone node is a SCC
-        const scc: Set<Vertex> = new Set();
+        const scc = new Set<Vertex>();
         let w = null;
         do {
           w = stack.pop();
