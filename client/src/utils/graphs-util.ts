@@ -454,13 +454,14 @@ export function calculateNeighborhood(graph: CAGGraph, node: string) {
 /**
  * Check if edge has backing evidence
  */
-export function hasBackingEvidence({ polarity, same, opposite, unknown }: { [key: string]: number }) {
-  const sameCount = same || 0;
-  const oppositeCount = opposite || 0;
-  const unknownCount = unknown || 0;
+type PartialEdge = { polarity?: number; same?: number; opposite?: number; unknown?: number };
+export function hasBackingEvidence(edge: PartialEdge) {
+  const sameCount = edge.same || 0;
+  const oppositeCount = edge.opposite || 0;
+  const unknownCount = edge.unknown || 0;
 
-  if (polarity === STATEMENT_POLARITY.SAME) return sameCount > 0;
-  else if (polarity === STATEMENT_POLARITY.OPPOSITE) return oppositeCount > 0;
+  if (edge.polarity === STATEMENT_POLARITY.SAME) return sameCount > 0;
+  else if (edge.polarity === STATEMENT_POLARITY.OPPOSITE) return oppositeCount > 0;
 
   return (oppositeCount + sameCount + unknownCount) > 0;
   /*
