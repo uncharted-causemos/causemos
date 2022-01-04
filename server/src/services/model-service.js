@@ -477,7 +477,7 @@ const buildCreateModelPayload = async (model, nodeParameters, edgeParameters) =>
       source,
       target,
       polarity,
-      statments: statements
+      statements
     });
   }
 

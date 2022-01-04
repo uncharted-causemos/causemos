@@ -511,8 +511,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     throw new Error('Model does not contain parameter');
   }
   const engine = parameter.engine;
-  let payload = null;
-  modelService.buildNodeParametersPayload([nodeParameter], model);
+  const payload = modelService.buildNodeParametersPayload([nodeParameter], model);
 
   // Register update with engine and retrieve new value
   if (engine === DYSE) {
