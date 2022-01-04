@@ -3,6 +3,7 @@ import { GetterTree, MutationTree, ActionTree } from 'vuex';
 import router from '@/router';
 import FiltersUtil from '@/utils/filters-util';
 import { Filters } from '@/types/Filters';
+import { LAYOUTS } from '@/graphs/cytoscape/cytoscape-layouts';
 
 /**
  * Builds a query object withy any of the options available
@@ -43,7 +44,7 @@ const defaultAuditsQuery = Object.freeze({
   sort: {}
 });
 const defaultLayout = Object.freeze({
-  layoutOption: 'cose-bilkent',
+  layoutOption: LAYOUTS.COSE_BILKENT,
   hierarchyDepth: 0,
   direction: 'x',
   showLabels: true,
