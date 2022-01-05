@@ -123,16 +123,16 @@
               v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
               :key="insight.id"
               class="checklist-item-insight">
-                <i @mousedown.stop.prevent class="fa fa-star" />
-                <span
-                  @mousedown.stop.prevent
-                  class="insight-name"
-                  :class="{ 'private-insight-name': insight.visibility === 'private' }">
-                  {{ insight.name }}
-                </span>
-                <i class="fa fa-fw fa-close"
-                  style="pointer-events: all; cursor: pointer; margin-left: auto;"
-                  @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
+              <i @mousedown.stop.prevent class="fa fa-star" />
+              <span
+                @mousedown.stop.prevent
+                class="insight-name"
+                :class="{ 'private-insight-name': insight.visibility === 'private' }">
+                {{ insight.name }}
+              </span>
+              <i class="fa fa-fw fa-close"
+                style="pointer-events: all; cursor: pointer; margin-left: auto;"
+                @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
             </div>
           </div>
       </div>
@@ -141,17 +141,18 @@
 </template>
 
 <script lang="ts">
+import { defineComponent, watch } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
-
-import { getInsightById, updateInsight } from '@/services/insight-service';
-import { AnalyticalQuestion, Insight } from '@/types/Insight';
-import { defineComponent } from 'vue';
 import _ from 'lodash';
-import { QUESTIONS } from '@/utils/messages-util';
+import Shepherd from 'shepherd.js';
+
+import useInsightsData from '@/services/composables/useInsightsData';
+import useQuestionsData from '@/services/composables/useQuestionsData';
+import { getInsightById, updateInsight } from '@/services/insight-service';
 import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
 import { ProjectType } from '@/types/Enums';
-import useQuestionsData from '@/services/composables/useQuestionsData';
-import Shepherd from 'shepherd.js';
+import { AnalyticalQuestion, Insight } from '@/types/Insight';
+import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 
@@ -162,7 +163,12 @@ export default defineComponent({
     OptionsButton
   },
   setup() {
-    const { questionsList, reFetchQuestions, getInsightsByIDs } = useQuestionsData();
+    const { questionsList, reFetchQuestions } = useQuestionsData();
+    const { getInsightsByIDs, reFetchInsights } = useInsightsData();
+
+    watch(questionsList, () => {
+      reFetchInsights();
+    });
     return {
       questionsList,
       reFetchQuestions,
