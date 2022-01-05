@@ -90,9 +90,23 @@ const findExperiment = async (modelId, experimentId) => {
 };
 
 
+const modelTrainingProgress = async (modelId) => {
+  const options = {
+    url: process.env.DELPHI_URL + `/models/${modelId}/training-progress`,
+    method: 'GET',
+    headers: {
+      Accept: 'application/json'
+    },
+    json: {}
+  };
+  const result = await requestAsPromise(options);
+  return result;
+};
+
 module.exports = {
   createModel,
   createExperiment,
   modelStatus,
-  findExperiment
+  findExperiment,
+  modelTrainingProgress
 };
