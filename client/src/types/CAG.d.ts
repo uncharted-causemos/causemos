@@ -116,6 +116,11 @@ export interface EdgeParameter {
   user_polarity: number | null; // FIXME: need better ways to handle special case nulls
   // Polarity is not stored on the backend, but computed locally from the fetched statements
   polarity?: number;
+
+  // Injected by getComponents API
+  same?: number;
+  opposite?: number;
+  unknown?: number;
 }
 
 export interface SourceTargetPair {
