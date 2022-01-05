@@ -76,7 +76,7 @@ import { computed, defineComponent, ref, PropType, Ref } from 'vue';
 import { useStore } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
 import CagPathItem from '@/components/cag/cag-path-item.vue';
-import { findCycles, classifyCycles } from '@/utils/graphs-util';
+import { findCycles, classifyCycles, Vertex } from '@/utils/graphs-util';
 import modelService from '@/services/model-service';
 
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
@@ -91,10 +91,6 @@ interface CycleAnalysis {
   balancing: GraphPath[];
   reinforcing: GraphPath[];
   ambiguous: GraphPath[];
-}
-
-interface CycleAnalysisItem {
-  name: string;
 }
 
 export default defineComponent({
@@ -181,7 +177,7 @@ export default defineComponent({
       const edges = this.modelComponents.edges;
       const cycleResult = classifyCycles(findCycles(edges), edges);
 
-      const reformat = (p: CycleAnalysisItem[]) => {
+      const reformat = (p: Vertex[]) => {
         const fullPath = p.map(pItem => pItem.name);
         // Complete the cycle
         fullPath.push(p[0].name);
@@ -191,11 +187,11 @@ export default defineComponent({
         };
       };
 
-      cycleResult.balancing = cycleResult.balancing.map(reformat);
-      cycleResult.reinforcing = cycleResult.reinforcing.map(reformat);
-      cycleResult.ambiguous = cycleResult.ambiguous.map(reformat);
+      const balancing = cycleResult.balancing.map<GraphPath>(reformat);
+      const reinforcing = cycleResult.reinforcing.map<GraphPath>(reformat);
+      const ambiguous = cycleResult.ambiguous.map<GraphPath>(reformat);
 
-      this.cyclesPaths = cycleResult;
+      this.cyclesPaths = { balancing, reinforcing, ambiguous };
     },
     async runPathwayAnalysis() {
       if (_.isEmpty(this.currentPathSource) || _.isEmpty(this.currentPathTarget)) return;

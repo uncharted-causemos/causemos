@@ -439,6 +439,7 @@
                   @toggle-reference-options="toggleReferenceOptions"
                   @set-selected-admin-level="setSelectedAdminLevel"
                   @set-breakdown-option="setBreakdownOption"
+                  @request-qualifier-data="requestAdditionalQualifier"
                 />
               </template>
             </drilldown-panel>
@@ -766,6 +767,7 @@ export default defineComponent({
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
+    const initialNonDefaultQualifiers = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
     const initialSelectedYears = ref<string[]>([]);
     const initialActiveReferenceOptions = ref<string[]>([]);
@@ -1018,6 +1020,10 @@ export default defineComponent({
           if (initialDataConfig.value.activeReferenceOptions !== undefined) {
             initialActiveReferenceOptions.value = _.clone(initialDataConfig.value.activeReferenceOptions);
           }
+          // Don't restore non-default qualifiers from an analysis since there is no way to reset the list
+          // if (initialDataConfig.value.nonDefaultQualifiers !== undefined) {
+          //   initialNonDefaultQualifiers.value = _.clone(initialDataConfig.value.nonDefaultQualifiers);
+          // }
           if (initialDataConfig.value.selectedQualifierValues !== undefined) {
             initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
           }
@@ -1386,6 +1392,9 @@ export default defineComponent({
         if (loadedInsight.view_state?.numberOfColorBins !== undefined) {
           setNumberOfColorBins(loadedInsight.view_state?.numberOfColorBins);
         }
+        if (loadedInsight.data_state?.nonDefaultQualifiers !== undefined) {
+          initialNonDefaultQualifiers.value = _.clone(loadedInsight.data_state?.nonDefaultQualifiers);
+        }
         // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
           initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
@@ -1423,7 +1432,9 @@ export default defineComponent({
     const {
       qualifierBreakdownData,
       toggleIsQualifierSelected,
-      selectedQualifierValues
+      selectedQualifierValues,
+      requestAdditionalQualifier,
+      nonDefaultQualifiers
     } = useQualifiers(
       metadata,
       breakdownOption,
@@ -1433,7 +1444,8 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedTimestamp,
       availableQualifiers,
-      initialSelectedQualifierValues
+      initialSelectedQualifierValues,
+      initialNonDefaultQualifiers
     );
 
     const {
@@ -1653,6 +1665,7 @@ export default defineComponent({
         metadata,
         relativeTo,
         selectedModelId,
+        nonDefaultQualifiers,
         selectedQualifierValues,
         selectedRegionIds,
         selectedScenarioIds,
@@ -1796,6 +1809,7 @@ export default defineComponent({
       setSpatialAggregationSelection,
       setTemporalAggregationSelection,
       setTemporalResolutionSelection,
+      requestAdditionalQualifier,
       showDatasets,
       showGeoSelectionModal,
       showModelExecutionStatus,

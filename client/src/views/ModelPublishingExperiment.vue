@@ -381,6 +381,7 @@ export default defineComponent({
   flex: 1;
   display: flex;
   min-height: 0;
+  min-width: 0;
 }
 
 .datacube-card {

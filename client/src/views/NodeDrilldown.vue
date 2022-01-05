@@ -28,6 +28,7 @@
               v-if="comparisonDropdownOptions.length > 1"
               :items="comparisonDropdownOptions"
               :selected-item="comparisonBaselineId"
+              :is-dropdown-left-aligned="true"
               @item-selected="(value) => comparisonBaselineId = value"
             />
           </div>

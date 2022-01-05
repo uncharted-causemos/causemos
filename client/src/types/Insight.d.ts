@@ -1,6 +1,7 @@
 import { Timeseries } from '@/types/Timeseries';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
+import { ComparativeAnalysisMode, BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
 
 // @base/abstract type
 export interface Snapshot {
@@ -70,6 +71,16 @@ export interface ViewState {
   colorScaleType?: ColorScaleType;
   numberOfColorBins?: number;
 
+  // region-ranking specific
+  regionRankingSelectedAdminLevel?: number;
+  regionRankingSelectedComparativeAnalysisMode?: ComparativeAnalysisMode;
+  regionRankingSelectedNumberOfColorBins?: number;
+  regionRankingSelectedCompositionType?: RegionRankingCompositionType;
+  regionRankingSelectedBinningType?: BinningOptions;
+  regionRankingApplyingBarLimit?: boolean;
+  regionRankingSelectedMaxBarLimit?: number;
+  regionRankingHoverId?: string;
+
   // knowledge/model space specific
   sensitivityToggle?: any;
   graphLayout?: any;
@@ -88,6 +99,7 @@ export interface DataState {
   selectedScenarioIds?: string[];
   selectedTimestamp?: number | null;
   selectedRegionIds?: string[];
+  nonDefaultQualifiers?: string[];
   selectedQualifierValues?: string[];
   selectedYears?: string[];
   activeReferenceOptions?: string[];

@@ -11,18 +11,12 @@
           @click="openDataExplorer"
         > <i class="fa fa-fw fa-search" />Search Data Cubes</button>
       </div>
-      <div
-        class="nav-item time-sync"
-        :class="{ 'disabled': emptyDataAnalysis }"
-      >
-        <label @click="setTimeSelectionSyncing(!timeSelectionSyncing)">
-          <i
-            class="fa fa-lg fa-fw"
-            :class="{ 'fa-check-square-o': timeSelectionSyncing, 'fa-square-o': !timeSelectionSyncing }"
-          />
-          Sync time selection
-        </label>
-      </div>
+      <radio-button-group
+        class="nav-item"
+        :selected-button-value="comparativeAnalysisViewSelection"
+        :buttons="comparativeAnalysisGroupButtons"
+        @button-clicked="setComparativeAnalysisView"
+      />
     </nav>
   </div>
 
@@ -31,11 +25,26 @@
 <script>
 
 import { mapActions, mapGetters } from 'vuex';
-
+import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { getAnalysis } from '@/services/analysis-service';
+import { ComparativeAnalysisMode } from '@/types/Enums';
+import { ref } from 'vue';
 
 export default {
   name: 'ActionBar',
+  components: {
+    RadioButtonGroup
+  },
+  setup() {
+    const capitalize = (str) => {
+      return str[0].toUpperCase() + str.slice(1);
+    };
+    const comparativeAnalysisGroupButtons = ref(Object.values(ComparativeAnalysisMode)
+      .map(val => ({ label: capitalize(val), value: val })));
+    return {
+      comparativeAnalysisGroupButtons
+    };
+  },
   data: () => ({
     showDropdown: false,
     showRenameModal: false,
@@ -43,7 +52,7 @@ export default {
   }),
   computed: {
     ...mapGetters({
-      timeSelectionSyncing: 'dataAnalysis/timeSelectionSyncing',
+      comparativeAnalysisViewSelection: 'dataAnalysis/comparativeAnalysisViewSelection',
       analysisId: 'dataAnalysis/analysisId',
       analysisItems: 'dataAnalysis/analysisItems',
       project: 'app/project'
@@ -55,17 +64,16 @@ export default {
   async mounted() {
     const result = await getAnalysis(this.analysisId);
     this.analysisName = result.title;
-    // if no data cube unset time syncing
-    if (this.emptyDataAnalysis) {
-      this.setTimeSelectionSyncing(false);
-    }
   },
   methods: {
     ...mapActions({
-      setTimeSelectionSyncing: 'dataAnalysis/setTimeSelectionSyncing'
+      setComparativeAnalysisViewSelection: 'dataAnalysis/setComparativeAnalysisViewSelection'
     }),
     openDataExplorer() {
       this.$router.push({ name: 'dataExplorer', query: { analysisId: this.analysisId } });
+    },
+    setComparativeAnalysisView(viewSelection) {
+      this.setComparativeAnalysisViewSelection(viewSelection);
     }
   }
 };
@@ -87,14 +95,6 @@ export default {
   button {
     i {
       margin-right: 5px;
-    }
-  }
-
-  .time-sync {
-    label {
-      font-weight: normal;
-      cursor: pointer;
-      margin: 0;
     }
   }
 }

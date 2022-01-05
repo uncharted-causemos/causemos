@@ -17,19 +17,23 @@ export interface MetadataSummary {
   value: string | number | null;
 }
 
-function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId: string) {
+function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId: string | undefined) {
   const separator = '?';
   const insightUrlSeparated = insightURL.split(separator);
   const urlPrefix = _.first(insightUrlSeparated);
   const urlSuffix = insightUrlSeparated.slice(1).join(separator);
   const searchParams = new URLSearchParams(urlSuffix);
   const insightIdKey = 'insight_id';
-  if (!searchParams.has(insightIdKey)) {
+  if (!_.isUndefined(insightIdKey)) {
     searchParams.set(insightIdKey, insightId);
   }
   const datacubeIdKey = 'datacube_id';
-  if (!searchParams.has(datacubeIdKey) && !_.isUndefined(datacubeIdKey)) {
+  if (!searchParams.has(datacubeIdKey) && !_.isUndefined(datacubeId)) {
     searchParams.set(datacubeIdKey, datacubeId);
+  }
+  // remove datacube_id if the passed one is undefined (e.g., within dataComparative)
+  if (searchParams.has(datacubeIdKey) && _.isUndefined(datacubeId)) {
+    searchParams.delete(datacubeIdKey);
   }
   return urlPrefix + separator + searchParams.toString();
 }
@@ -196,14 +200,19 @@ function removeInsight(id: string, store?: any) {
 function jumpToInsightContext(insight: Insight, currentURL: string) {
   const savedURL = insight.url;
   const insightId = insight.id ?? '';
+  // NOTE: applying an insight should not automatically set a specific datacube_id as a query param
+  //  because, for example, the comparative analysis (region-ranking) page does not
+  //  need/understand a specific datacube_id,
+  //  and setting it regardless may have a negative side effect
+  const datacubeId = savedURL.includes('/dataComparative/') ? undefined : _.first(insight.context_id);
+
   if (savedURL !== currentURL) {
     // FIXME: applying (private) insights that belong to analyses that no longer exist
     // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
 
     // add 'insight_id' as a URL param so that the target page can apply it
     // /data/ will be in the url if we are in the datacube drilldown page in which case datacube_id should be in the route.
-    const insightContextIds = insight.context_id ?? [];
-    const finalURL = getSourceUrlForExport(savedURL, insightId, insightContextIds[0]);
+    const finalURL = getSourceUrlForExport(savedURL, insightId, datacubeId);
     return finalURL;
   }
 }
