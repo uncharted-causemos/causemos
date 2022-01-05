@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-import { CAGGraph } from '@/types/CAG';
+import { CAGGraph, EdgeParameter } from '@/types/CAG';
 
 interface Edge {
   source: string;
@@ -220,7 +220,7 @@ class Graph {
         // If this is the lowest node we can reach, then we've either:
         // - formed a cycle, in which case this is a SCC
         // - or have no cycle what so ever, so the stand-alone node is a SCC
-        const scc: Set<Vertex> = new Set();
+        const scc = new Set<Vertex>();
         let w = null;
         do {
           w = stack.pop();
@@ -454,11 +454,15 @@ export function calculateNeighborhood(graph: CAGGraph, node: string) {
 /**
  * Check if edge has backing evidence
  */
-export function hasBackingEvidence(edge: any) {
-  if (edge.polarity === STATEMENT_POLARITY.SAME) return edge.same > 0;
-  else if (edge.polarity === STATEMENT_POLARITY.OPPOSITE) return edge.opposite > 0;
+export function hasBackingEvidence(edge: EdgeParameter) {
+  const sameCount = edge.same || 0;
+  const oppositeCount = edge.opposite || 0;
+  const unknownCount = edge.unknown || 0;
 
-  return (edge.opposite + edge.same + edge.unknown) > 0;
+  if (edge.polarity === STATEMENT_POLARITY.SAME) return sameCount > 0;
+  else if (edge.polarity === STATEMENT_POLARITY.OPPOSITE) return oppositeCount > 0;
+
+  return (oppositeCount + sameCount + unknownCount) > 0;
   /*
   if (edge.polarity === null || edge.polarity === STATEMENT_POLARITY.UNKNOWN) return edge.opposite === 0 && edge.same === 0 && edge.unknown === 0;
   if (edge.polarity === STATEMENT_POLARITY.SAME) return edge.same === 0;

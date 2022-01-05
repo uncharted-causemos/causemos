@@ -126,26 +126,7 @@
 <script>
 import { mapGetters, mapActions } from 'vuex';
 import ToggleButton from '@/components/widgets/toggle-button';
-
-const LAYOUTS = Object.freeze({
-  // COSE: 'cose',
-  // COSE_BILKENT_AGGREGATED: 'cose-bilkent-aggregated',
-  COSE_BILKENT: 'cose-bilkent',
-  COLA: 'cola'
-  // SPREAD: 'spread'
-});
-
-const LAYOUT_LABELS = Object.freeze({
-  // [LAYOUTS.COSE_BILKENT_AGGREGATED]: 'Overview',
-  [LAYOUTS.COLA]: 'Causality Flow',
-  [LAYOUTS.COSE_BILKENT]: 'Ontology Clarity'
-  // [LAYOUTS.SPREAD]: 'Spread'
-});
-
-const COLA_FLOWS = [
-  { id: 'cola-x', value: 'x', name: 'Horizontal' },
-  { id: 'cola-y', value: 'y', name: 'Vertical' }
-];
+import { LAYOUTS, LAYOUT_LABELS, COLA_FLOWS } from '@/graphs/cytoscape/cytoscape-layouts';
 
 export default {
   name: 'Controls',
