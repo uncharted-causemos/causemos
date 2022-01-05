@@ -37,6 +37,7 @@ export default defineComponent({
     } = toRefs(props);
     const barChart = ref<HTMLElement | null>(null);
     const svg = ref<D3Selection | null>(null);
+    const initialHoverId = ref('');
     const resize = _.debounce(function({ width, height }) {
       if (barChart.value === null || barsData.value.length === 0) return;
       svg.value = d3.select<HTMLElement, null>(barChart.value);
@@ -53,6 +54,7 @@ export default defineComponent({
         barsData.value,
         width,
         height,
+        initialHoverId.value,
         onHover
       );
     }, RESIZE_DELAY);
@@ -75,11 +77,16 @@ export default defineComponent({
         hoverId.value
       ],
       () => {
+        if (hoverId.value !== null) {
+          // when applying an insight for example, hoverId may be valid but svg is not
+          initialHoverId.value = hoverId.value;
+        }
         if (svg.value === null || hoverId.value === null) {
           return;
         }
         updateHover(svg.value, hoverId.value);
-      }
+      },
+      { immediate: true }
     );
     onMounted(() => {
       const parentElement = barChart.value?.parentElement;
