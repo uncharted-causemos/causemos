@@ -3,6 +3,11 @@
     <div class="message-container">
       <i class="fa fa-spin fa-spinner" /> {{ message }}
     </div>
+    <div
+      v-if="cancelFn"
+      style="font-size: 2rem">
+      <button class="btn btn-default-" @click="cancelFn">Cancel</button>
+    </div>
   </div>
 </template>
 
@@ -17,6 +22,9 @@ export default defineComponent({
     message: {
       type: String,
       default: 'Loading...'
+    },
+    cancelFn: {
+      type: Function
     }
   }
 });
@@ -32,10 +40,11 @@ export default defineComponent({
   width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   background: #000;
-  opacity: 0.5;
+  opacity: 0.7;
   z-index: 9999;
 
   .message-container {

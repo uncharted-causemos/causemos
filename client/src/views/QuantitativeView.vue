@@ -46,6 +46,7 @@ import _ from 'lodash';
 import { defineComponent } from '@vue/runtime-core';
 import { mapGetters, mapActions } from 'vuex';
 
+import { Poller } from '@/api/poller';
 import ActionBar from '@/components/quantitative/action-bar.vue';
 import TabPanel from '@/components/quantitative/tab-panel.vue';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
@@ -58,6 +59,9 @@ import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, S
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
 const MODEL_STATUS = modelService.MODEL_STATUS;
+
+const PROJECTION_EXPERIMENT_THRESHOLD = 999;
+const PROJECTION_EXPERIMENT_INTERVAL = 3000; // millis
 
 export default defineComponent({
   name: 'QuantitativeView',
@@ -153,6 +157,7 @@ export default defineComponent({
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
+      enableOverlayWithCancel: 'app/enableOverlayWithCancel',
       disableOverlay: 'app/disableOverlay',
       setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
@@ -352,10 +357,15 @@ export default defineComponent({
       await this.refreshModel();
 
       if (scenarios.length === 0) {
+        const poller = new Poller(PROJECTION_EXPERIMENT_INTERVAL, PROJECTION_EXPERIMENT_THRESHOLD);
+        const cancelFn = () => {
+          poller.stop();
+        };
+
         // Now we are up to date, create base scenario
-        this.enableOverlay('Creating baseline scenario');
+        this.enableOverlayWithCancel({ message: 'Creating baseline scenario', cancelFn: cancelFn });
         try {
-          await modelService.createBaselineScenario(this.modelSummary);
+          await modelService.createBaselineScenario(this.modelSummary, poller, this.updateProgress);
           scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
         } catch (error) {
           console.error(error);
@@ -488,15 +498,20 @@ export default defineComponent({
         if (scenario.is_valid === true) continue;
 
         try {
+          const poller = new Poller(PROJECTION_EXPERIMENT_INTERVAL, PROJECTION_EXPERIMENT_THRESHOLD);
+          const cancelFn = () => {
+            poller.stop();
+          };
+
           this.currentScenarioName = scenario.name;
-          this.enableOverlay(`Running ${this.currentScenarioName} on ${this.currentEngine}`);
+          this.enableOverlayWithCancel({ message: `Running ${this.currentScenarioName} on ${this.currentEngine}`, cancelFn: cancelFn });
           const experimentId = await modelService.runProjectionExperiment(
             this.currentCAG,
             this.projectionSteps,
             modelService.cleanConstraints(scenario.parameter?.constraints ?? [])
           );
 
-          const experiment: any = await modelService.getExperimentResult(this.currentCAG, experimentId, 30, this.updateProgress);
+          const experiment: any = await modelService.getExperimentResult(this.currentCAG, experimentId, poller, this.updateProgress);
           // FIXME: Delphi uses .results, DySE uses .results.data
           if (!_.isEmpty(experiment.results.data)) {
             scenario.result = experiment.results.data;
