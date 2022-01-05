@@ -604,18 +604,18 @@ export default defineComponent({
       // If this is the first node in the graph, focus it in two ticks when it's visible.
       //  First tick after `setNewNodeVisible(true)` is called, the `CAG-graph` component is displayed.
       //  Second tick, its children (including the new node input) are rendered.
-      if (this.showEmptyStateInstructions) {
-        this.$nextTick(() => {
-          this.$nextTick(() => {
-            this.cagGraph && this.cagGraph.focusNewNodeInput();
-          });
-        });
-      }
-      // If newNode is already visible, refocus it
-      if (this.showNewNode && this.cagGraph !== undefined) {
-        this.cagGraph.focusNewNodeInput();
-        return;
-      }
+      // if (this.showEmptyStateInstructions) {
+      //   this.$nextTick(() => {
+      //     this.$nextTick(() => {
+      //       this.cagGraph && this.cagGraph.focusNewNodeInput();
+      //     });
+      //   });
+      // }
+      // // If newNode is already visible, refocus it
+      // if (this.showNewNode && this.cagGraph !== undefined) {
+      //   this.cagGraph.focusNewNodeInput();
+      //   return;
+      // }
       this.setNewNodeVisible(true);
     },
     onSuggestionSelected(suggestion: Suggestion) {
@@ -647,7 +647,7 @@ export default defineComponent({
       const data = await this.addCAGComponents([cleanedNode], [], 'manual');
 
       // HACK: Force cagGraph to inject a node to keep layout stable
-      if (data.newNode) {
+      if (data.newNode && this.cagGraph) {
         this.cagGraph.injectNewNode(data.newNode);
       }
 
@@ -1180,8 +1180,6 @@ export default defineComponent({
       this.setUpdateToken(data.updateToken);
     },
     async renameNode(newName: string) {
-      console.log('Renaming', newName);
-
       // FIXME: Stableness hack, because the node has changed, we end up caching the
       // DOM which refers to the old values. To get it to cache new values we need to swap new/old
       // into place. Needs better support from renderer itself!!

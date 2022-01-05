@@ -132,6 +132,7 @@ export default defineComponent({
     this.renderer = new QualitativeRenderer({
       el: containerEl,
       useAStarRouting: true,
+      useStableLayout: true,
       runLayout: runLayout
     });
 
@@ -206,7 +207,6 @@ export default defineComponent({
     });
 
     this.renderer.on('delete-node', (_evtName, payload: any) => {
-      console.log('delete emi', payload);
       this.$emit('delete', payload);
     });
 
@@ -227,10 +227,6 @@ export default defineComponent({
     },
     deselectNodeAndEdge() {
       // FIXME: todo
-    },
-    focusNewNodeInput() {
-      // @ts-ignore
-      this.$refs.newNode.focusInput();
     },
     onSuggestionSelected(suggestion: any) {
       if (this.data.nodes.filter((node: any) => node.concept === suggestion.concept).length > 0) {
