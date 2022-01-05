@@ -85,7 +85,7 @@ export default {
         'source': this.sourceId,
         'source-layer': this.sourceLayer,
         ...this.layer
-      });
+      }, this.beforeId);
       this.$_emitEvent('add-layer', {
         'id': this.layerId,
         'source': this.sourceId,
