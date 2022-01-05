@@ -123,18 +123,16 @@
               v-for="insight in insightsByQuestionItemId['' + questionItem?.id]"
               :key="insight.id"
               class="checklist-item-insight">
-              <div v-if="insight.id">
-                <i @mousedown.stop.prevent class="fa fa-star" />
-                <span
-                  @mousedown.stop.prevent
-                  class="insight-name"
-                  :class="{ 'private-insight-name': insight.visibility === 'private' }">
-                  {{ insight.name }}
-                </span>
-                <i class="fa fa-fw fa-close"
-                  style="pointer-events: all; cursor: pointer; margin-left: auto;"
-                  @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
-              </div>
+              <i @mousedown.stop.prevent class="fa fa-star" />
+              <span
+                @mousedown.stop.prevent
+                class="insight-name"
+                :class="{ 'private-insight-name': insight.visibility === 'private' }">
+                {{ insight.name }}
+              </span>
+              <i class="fa fa-fw fa-close"
+                style="pointer-events: all; cursor: pointer; margin-left: auto;"
+                @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
             </div>
           </div>
       </div>
@@ -143,18 +141,18 @@
 </template>
 
 <script lang="ts">
-import { mapActions, mapGetters } from 'vuex';
-
-import { getInsightById, updateInsight } from '@/services/insight-service';
-import { AnalyticalQuestion, Insight } from '@/types/Insight';
 import { defineComponent, ref, Ref, watch } from 'vue';
+import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
-import { QUESTIONS } from '@/utils/messages-util';
-import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
-import { ProjectType } from '@/types/Enums';
+import Shepherd from 'shepherd.js';
+
 import useInsightsData from '@/services/composables/useInsightsData';
 import useQuestionsData from '@/services/composables/useQuestionsData';
-import Shepherd from 'shepherd.js';
+import { getInsightById, updateInsight } from '@/services/insight-service';
+import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
+import { ProjectType } from '@/types/Enums';
+import { AnalyticalQuestion, Insight } from '@/types/Insight';
+import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 
@@ -168,8 +166,7 @@ export default defineComponent({
     const { questionsList, reFetchQuestions } = useQuestionsData();
     const { insights, getInsightsByIDs, reFetchInsights } = useInsightsData();
     const insightsByQuestionItemId = ref({}) as Ref<Record<string, Insight[]>>;
-    reFetchInsights();
-    watch(insights, () => {
+    const updateQuestionInsightMapping = () => {
       insightsByQuestionItemId.value = {};
       questionsList.value.forEach((questionItem) => {
         const results = getInsightsByIDs(questionItem.linked_insights);
@@ -177,11 +174,19 @@ export default defineComponent({
           insightsByQuestionItemId.value[questionItem.id] = results;
         }
       });
+    };
+    watch(insights, () => {
+      updateQuestionInsightMapping();
+    });
+    watch(questionsList, () => {
+      reFetchInsights();
+      updateQuestionInsightMapping();
     });
     return {
       getInsightsByIDs,
       insightsByQuestionItemId,
       reFetchQuestions,
+      updateQuestionInsightMapping,
       questionsList
     };
   },
@@ -232,7 +237,11 @@ export default defineComponent({
     }
   },
   mounted() {
-    this.showSidePanel();
+    this.$nextTick((): void => {
+      console.log('panel', Date.now());
+      this.showSidePanel();
+      this.reFetchQuestions();
+    });
   },
   methods: {
     ...mapActions({
@@ -383,6 +392,7 @@ export default defineComponent({
             loadedInsight.analytical_question.push(questionItem.id as string);
             updateInsight(loadedInsight.id as string, loadedInsight);
           }
+          this.updateQuestionInsightMapping();
         }
       }
     },
@@ -409,9 +419,10 @@ export default defineComponent({
         evt.currentTarget.style.background = 'white';
       }
     },
-    removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string) {
+    removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string|undefined) {
       evt.preventDefault();
       evt.stopPropagation();
+      if (insightId === undefined) return;
 
       //
       // question
