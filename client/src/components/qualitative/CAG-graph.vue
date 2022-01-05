@@ -28,6 +28,7 @@
 
 <script lang="ts">
 import * as d3 from 'd3';
+import Mousetrap from 'mousetrap';
 import { defineComponent, ref, Ref } from 'vue';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select.vue';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
@@ -108,9 +109,12 @@ export default defineComponent({
     const newNodeY = ref(0);
 
     const showCustomConcept = ref(false);
+    const mouseTrap = new Mousetrap(document as any);
 
     return {
       renderer,
+      mouseTrap,
+
       showCustomConcept,
 
       // Tracking new node
@@ -133,8 +137,13 @@ export default defineComponent({
       el: containerEl,
       useAStarRouting: true,
       useStableLayout: true,
+      useStableZoomPan: true,
       runLayout: runLayout
     });
+    this.mouseTrap.bind(['backspace', 'del'], () => {
+      this.$emit('delete');
+    });
+
 
     // Temporary tracker
     let mergeTargetNode: D3SelectionINode<NodeParameter> | null = null;
@@ -214,7 +223,11 @@ export default defineComponent({
       this.$emit('rename-node', payload);
     });
 
+
     this.refresh();
+  },
+  beforeUnmount() {
+    this.mouseTrap.reset();
   },
   methods: {
     async refresh() {
