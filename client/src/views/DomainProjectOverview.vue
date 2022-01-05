@@ -51,13 +51,29 @@
       </div>
       <div class="instance-list-column">
         <div class="instance-list-header">
-          <div class="column-title">Instances</div>
-          <div class="controls">
+          <div class="column-title">Instances
             <button
               class="btn btn-primary btn-call-for-action"
               disabled>
-                Register New Model Instance in DOJO
+              <i class="fa fa-plus-circle" />
+              Register New
             </button>
+          </div>
+          <div class="controls">
+            <div class="filter-options">
+              <label
+                v-for="(status, index) of filterOptions"
+                :key="status"
+                class="filter-label"
+                @click="selectedFilters[index] = !selectedFilters[index]"
+                style="cursor: pointer; color: black;">
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-check-square-o': selectedFilters[index], 'fa-square-o': !selectedFilters[index] }"
+                />
+                {{getDatacubeStatusInfo(status).label}}
+              </label>
+            </div>
             <input
               v-model="searchDatacubeInstances"
               type="text"
@@ -118,7 +134,9 @@ import ListContextInsightPane from '@/components/context-insight-panel/list-cont
 import domainProjectService from '@/services/domain-project-service';
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
-import { unpublishDatacubeInstance } from '@/utils/datacube-util';
+import { unpublishDatacubeInstance, getDatacubeStatusInfo } from '@/utils/datacube-util';
+
+import { DatacubeStatus } from '@/types/Enums';
 
 export default {
   name: 'DomainProjectOverview',
@@ -134,7 +152,9 @@ export default {
     showSortingDropdownDatacubeInstances: false,
     sortingOptionsDatacubeInstances: ['Most recent', 'Earliest'],
     selectedSortingOptionDatacubeInstances: 'Most recent',
-    isEditingDesc: false
+    isEditingDesc: false,
+    filterOptions: [DatacubeStatus.Ready, DatacubeStatus.Registered, DatacubeStatus.Deprecated],
+    selectedFilters: [true, true, false]
   }),
   computed: {
     ...mapGetters({
@@ -144,6 +164,9 @@ export default {
     }),
     filteredDatacubeInstances() {
       return this.datacubeInstances.filter(instance => {
+        const index = this.filterOptions.findIndex(status => status === instance.status);
+        return index < 0 || this.selectedFilters[index];
+      }).filter(instance => {
         return instance.name.toLowerCase().includes(this.searchDatacubeInstances.toLowerCase());
       });
     },
@@ -209,6 +232,7 @@ export default {
       setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
     }),
+    getDatacubeStatusInfo,
     updateDesc() {
       if (this.isEditingDesc) {
         // we may have just modified the desc text, so update the server value
@@ -476,12 +500,24 @@ main {
   }
 }
 
+.filter-options {
+  display: flex;
+  margin-top: 10px;
+
+  .filter-label {
+    margin: 0px;
+    padding-left: 0px;
+    padding-right: 10px;
+    font-weight: unset;
+  }
+}
+
 .controls {
   display: flex;
   justify-content: space-between;
   input[type=text] {
     padding: 8px;
-    width: 250px;
+    width: 150px;
     margin-right: 5px;
   }
   .sorting {
