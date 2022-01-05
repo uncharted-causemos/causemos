@@ -114,13 +114,13 @@
             </div>
             <!-- second row display a list of linked insights -->
             <message-display
-              v-if="questionItem.id && !insightsByQuestionItemId[questionItem.id]"
+              v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
               class="no-insight-warning"
               :message-type="'alert-warning'"
               :message="'No insights assigned to this question.'"
             />
             <div
-              v-for="insight in insightsByQuestionItemId['' + questionItem?.id]"
+              v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
               :key="insight.id"
               class="checklist-item-insight">
               <i @mousedown.stop.prevent class="fa fa-star" />
@@ -141,7 +141,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, watch } from 'vue';
+import { defineComponent, watch } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 import Shepherd from 'shepherd.js';
@@ -164,30 +164,15 @@ export default defineComponent({
   },
   setup() {
     const { questionsList, reFetchQuestions } = useQuestionsData();
-    const { insights, getInsightsByIDs, reFetchInsights } = useInsightsData();
-    const insightsByQuestionItemId = ref({}) as Ref<Record<string, Insight[]>>;
-    const updateQuestionInsightMapping = () => {
-      insightsByQuestionItemId.value = {};
-      questionsList.value.forEach((questionItem) => {
-        const results = getInsightsByIDs(questionItem.linked_insights);
-        if (results.length > 0 && questionItem.id) {
-          insightsByQuestionItemId.value[questionItem.id] = results;
-        }
-      });
-    };
-    watch(insights, () => {
-      updateQuestionInsightMapping();
-    });
+    const { getInsightsByIDs, reFetchInsights } = useInsightsData();
+
     watch(questionsList, () => {
       reFetchInsights();
-      updateQuestionInsightMapping();
     });
     return {
-      getInsightsByIDs,
-      insightsByQuestionItemId,
+      questionsList,
       reFetchQuestions,
-      updateQuestionInsightMapping,
-      questionsList
+      getInsightsByIDs
     };
   },
   data: () => ({
@@ -237,11 +222,7 @@ export default defineComponent({
     }
   },
   mounted() {
-    this.$nextTick((): void => {
-      console.log('panel', Date.now());
-      this.showSidePanel();
-      this.reFetchQuestions();
-    });
+    this.showSidePanel();
   },
   methods: {
     ...mapActions({
@@ -392,7 +373,6 @@ export default defineComponent({
             loadedInsight.analytical_question.push(questionItem.id as string);
             updateInsight(loadedInsight.id as string, loadedInsight);
           }
-          this.updateQuestionInsightMapping();
         }
       }
     },
@@ -419,10 +399,9 @@ export default defineComponent({
         evt.currentTarget.style.background = 'white';
       }
     },
-    removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string|undefined) {
+    removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string) {
       evt.preventDefault();
       evt.stopPropagation();
-      if (insightId === undefined) return;
 
       //
       // question
