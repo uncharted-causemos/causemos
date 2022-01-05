@@ -23,18 +23,17 @@ const TOOLTIP_PADDING = TOOLTIP_FONT_SIZE / 2;
 const TOOLTIP_LINE_HEIGHT = TOOLTIP_FONT_SIZE + TOOLTIP_PADDING;
 
 let lastSelectedBar = '';
-let lastSelectedBarElement: D3GElementSelection | null = null;
 
 function renderBarChart(
   selection: D3Selection,
   barsData: BarData[], // mostly a two-column data format (since each bar would have a value)
   width: number,
   height: number,
+  initialHoverId: string,
   onHover: (barLabel: string) => void
 ) {
   selection.on('click', () => {
     lastSelectedBar = '';
-    lastSelectedBarElement = null;
     onHover(''); // special case: hide everything
   });
 
@@ -96,6 +95,10 @@ function renderBarChart(
     width,
     height,
     onHover);
+
+  // apply initial hover, if any
+  lastSelectedBar = initialHoverId; // set this in order to not cancel the intial selection on hover
+  updateHover(selection, initialHoverId);
 }
 
 function renderHoverTooltips(
@@ -241,32 +244,12 @@ function renderHoverTooltips(
             .style('opacity', '1')
             .attr('visibility', 'visible');
         }
-        /*
-        // allow hover while there is a selection
-        markerAndTooltip
-          .style('opacity', '1')
-          .attr('visibility', 'visible');
-        if (lastSelectedBarElement !== null) {
-          lastSelectedBarElement.style('opacity', lastSelectedBar === bar.label ? '1' : '0.25');
-        }
-        */
       })
       .on('mouseleave', () => {
-        if (lastSelectedBar === '' || lastSelectedBarElement === null) {
+        if (lastSelectedBar === '') {
           markerAndTooltip
             .attr('visibility', 'hidden');
         }
-        /*
-        // allow hover while there is a selection
-        if (lastSelectedBar !== bar.label) {
-          markerAndTooltip.attr('visibility', 'hidden');
-        }
-        if (lastSelectedBarElement !== null) {
-          lastSelectedBarElement
-            .style('opacity', '1')
-            .attr('visibility', 'visible');
-        }
-        */
       })
       .on('click', function(event: PointerEvent) {
         // prevent the parent svg from hiding this bar
@@ -274,7 +257,6 @@ function renderHoverTooltips(
 
         // some bar is being selected, so stop further tooltip hover
         lastSelectedBar = bar.label;
-        lastSelectedBarElement = markerAndTooltip;
 
         onHover(bar.label);
       })

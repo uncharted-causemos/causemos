@@ -8,7 +8,7 @@
         <analysis-comments-button />
       </template>
     </analytical-questions-and-insights-panel>
-    <main>
+    <main class="insight-capture">
       <action-bar />
       <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking">
         <h5 class="ranking-header-top">Ranking Results</h5>
@@ -22,7 +22,7 @@
       </template>
       <div
         v-if="analysisItems.length"
-        class="column insight-capture"
+        class="column"
         :class="{ 'sync-time-view': comparativeAnalysisViewSelection === ComparativeAnalysisMode.SyncTime, 'region-ranking-view': comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking }">
         <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.List || comparativeAnalysisViewSelection === ComparativeAnalysisMode.SyncTime">
           <datacube-comparative-card
@@ -107,7 +107,7 @@ import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import DatacubeRegionRankingCompositeCard from '@/components/widgets/datacube-region-ranking-composite-card.vue';
 import _ from 'lodash';
-import { DataState } from '@/types/Insight';
+import { DataState, Insight, ViewState } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
 import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
@@ -117,6 +117,8 @@ import { COLOR, getColors } from '@/utils/colors-util';
 import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import { BinningOptions, ComparativeAnalysisMode, DatacubeGeoAttributeVariableType, RegionRankingCompositionType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
+import { getInsightById } from '@/services/insight-service';
+import router from '@/router';
 
 const DRILLDOWN_TABS = [
   {
@@ -266,6 +268,69 @@ export default defineComponent({
       barChartHoverId.value = hoverId;
     };
 
+    watch(
+      () => [
+        // also track whether data is shown as normalized or not
+        selectedAdminLevel.value,
+        comparativeAnalysisViewSelection.value,
+        regionRankingCompositionType.value,
+        regionRankingBinningType.value,
+        limitNumberOfChartBars.value,
+        maxNumberOfChartBars.value,
+        numberOfColorBins.value,
+        barChartHoverId.value
+      ],
+      () => {
+        const viewState: ViewState = {
+          regionRankingSelectedAdminLevel: selectedAdminLevel.value,
+          regionRankingSelectedComparativeAnalysisMode: comparativeAnalysisViewSelection.value as ComparativeAnalysisMode,
+          regionRankingSelectedCompositionType: regionRankingCompositionType.value,
+          regionRankingSelectedBinningType: regionRankingBinningType.value,
+          regionRankingApplyingBarLimit: limitNumberOfChartBars.value,
+          regionRankingSelectedMaxBarLimit: maxNumberOfChartBars.value,
+          regionRankingSelectedNumberOfColorBins: numberOfColorBins.value,
+          regionRankingHoverId: barChartHoverId.value
+        };
+        store.dispatch('insightPanel/setViewState', viewState);
+      }
+    );
+
+    const updateStateFromInsight = async (insight_id: string) => {
+      const loadedInsight: Insight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        if (loadedInsight.view_state?.regionRankingSelectedAdminLevel !== undefined) {
+          setSelectedAdminLevel(loadedInsight.view_state?.regionRankingSelectedAdminLevel);
+        }
+        if (loadedInsight.view_state?.regionRankingSelectedComparativeAnalysisMode !== undefined) {
+          store.dispatch('dataAnalysis/setComparativeAnalysisViewSelection', loadedInsight.view_state?.regionRankingSelectedComparativeAnalysisMode);
+        }
+        if (loadedInsight.view_state?.regionRankingSelectedCompositionType !== undefined) {
+          setRegionRankingCompositionType(loadedInsight.view_state?.regionRankingSelectedCompositionType);
+        }
+        if (loadedInsight.view_state?.regionRankingSelectedBinningType !== undefined) {
+          setRegionRankingBinningType(loadedInsight.view_state?.regionRankingSelectedBinningType);
+        }
+        if (loadedInsight.view_state?.regionRankingApplyingBarLimit !== undefined) {
+          limitNumberOfChartBars.value = loadedInsight.view_state?.regionRankingApplyingBarLimit;
+        }
+        if (loadedInsight.view_state?.regionRankingSelectedMaxBarLimit !== undefined) {
+          setMaxNumberOfChartBars(loadedInsight.view_state?.regionRankingSelectedMaxBarLimit);
+        }
+        if (loadedInsight.view_state?.regionRankingSelectedNumberOfColorBins !== undefined) {
+          setNumberOfColorBins(loadedInsight.view_state?.regionRankingSelectedNumberOfColorBins);
+        }
+        if (loadedInsight.view_state?.regionRankingHoverId !== undefined) {
+          onBarChartHover(loadedInsight.view_state?.regionRankingHoverId);
+        }
+      }
+    };
+
     return {
       analysisItems,
       allTimeseriesMap,
@@ -302,7 +367,8 @@ export default defineComponent({
       setRegionRankingBinningType,
       onBarChartHover,
       barChartHoverId,
-      ComparativeAnalysisMode
+      ComparativeAnalysisMode,
+      updateStateFromInsight
     };
   },
   mounted() {
@@ -318,6 +384,26 @@ export default defineComponent({
   watch: {
     regionRankingCompositionType() {
       this.updateGlobalRegionRankingData();
+    },
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'dataComparative' space
+        if ((this.$route.name === 'dataComparative') && this.$route.query) {
+          const insight_id = this.$route.query.insight_id as any;
+          if (insight_id !== undefined) {
+            this.updateStateFromInsight(insight_id);
+            // remove the insight_id from the url,
+            //  so that (1) future insight capture is valid and (2) enable re-applying the same insight
+            // FIXME: review to avoid double history later
+            router.push({
+              query: {
+                insight_id: undefined
+              }
+            }).catch(() => {});
+          }
+        }
+      },
+      immediate: true
     }
   },
   methods: {
