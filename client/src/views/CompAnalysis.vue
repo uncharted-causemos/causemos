@@ -82,6 +82,7 @@
           :region-ranking-binning-type="regionRankingBinningType"
           :max-number-of-chart-bars="maxNumberOfChartBars"
           :limit-number-of-chart-bars="limitNumberOfChartBars"
+          :region-ranking-weights="regionRankingWeights"
           @set-number-color-bins="setNumberOfColorBins"
           @set-selected-admin-level="setSelectedAdminLevel"
           @set-region-ranking-composition-type="setRegionRankingCompositionType"
@@ -89,6 +90,7 @@
           @set-max-number-of-chart-bars="setMaxNumberOfChartBars"
           @set-limit-number-of-chart-bars="setLimitNumberOfChartBars"
           @set-region-ranking-binning-type="setRegionRankingBinningType"
+          @region-ranking-weights-updated="onRegionRankingWeightsUpdated"
         />
       </template>
     </drilldown-panel>
@@ -96,7 +98,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, defineComponent, onMounted, Ref, ref, watch } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
 import DatacubeRegionRankingCard from '@/components/widgets/datacube-region-ranking-card.vue';
@@ -119,6 +121,15 @@ import { BinningOptions, ComparativeAnalysisMode, DatacubeGeoAttributeVariableTy
 import { BarData } from '@/types/BarChart';
 import { getInsightById } from '@/services/insight-service';
 import router from '@/router';
+
+// TODO:
+// add insight support for region ranking custom weights
+//
+// review how the region limits are applied to each datacube vs to the resulting datacube
+// apply the bar limit to the top resulting ranking cube
+// respect which runs are selected for each datacube and if multiple runs show a dropdown. Also, add a legend for the runs
+// add an option to toggle the region ranking panel on/off
+// move toggle-data-normalization to area on the top besides the ranking criteria or make it a synched selection
 
 const DRILLDOWN_TABS = [
   {
@@ -154,22 +165,38 @@ export default defineComponent({
     const activeDrilldownTab = ref<string|null>('region-settings');
     const selectedAdminLevel = ref(0);
 
+    const regionRankingWeights = ref<{[key: string]: {name: string; weight: number}}>({});
+
     onMounted(async () => {
       store.dispatch('app/setAnalysisName', '');
       const result = await getAnalysis(quantitativeAnalysisId.value);
       store.dispatch('app/setAnalysisName', result.title);
     });
 
-    watchEffect(() => {
-      if (analysisItems.value && analysisItems.value.length > 0) {
-        // set context-ids to fetch insights correctly for all datacubes in this analysis
-        const contextIDs = analysisItems.value.map((dc: any) => dc.id);
-        store.dispatch('insightPanel/setContextId', contextIDs);
-      } else {
-        // no datacubes in this analysis, so do not fetch any insights/questions
-        store.dispatch('insightPanel/setContextId', undefined);
+    watch(
+      () => analysisItems.value,
+      analysisItems => {
+        if (analysisItems.value && analysisItems.value.length > 0) {
+          // set context-ids to fetch insights correctly for all datacubes in this analysis
+          const contextIDs = analysisItems.value.map((dc: any) => dc.id);
+          store.dispatch('insightPanel/setContextId', contextIDs);
+
+          // set initial equal weights (must be executed only one time on init)
+          const regionRankingEqualCompositionWeight = 1 / (analysisItems.value.length) * 100;
+          const regionRankingWeightsMap = _.cloneDeep(regionRankingWeights.value);
+          Object.keys(regionRankingWeightsMap).forEach(key => {
+            regionRankingWeightsMap[key] = {
+              name: '', // we don't have datacube names at this point. Upon loading each region-ranking-card, the name will be overriden in onUpdatedBarsData()
+              weight: regionRankingEqualCompositionWeight
+            };
+          });
+          regionRankingWeights.value = regionRankingWeightsMap;
+        } else {
+          // no datacubes in this analysis, so do not fetch any insights/questions
+          store.dispatch('insightPanel/setContextId', undefined);
+        }
       }
-    });
+    );
 
     const allTimeseriesMap: {[key: string]: Timeseries[]} = {};
     const allDatacubesMetadataMap: {[key: string]: {datacubeName: string; datacubeOutputName: string; region: string[]}} = {};
@@ -244,11 +271,6 @@ export default defineComponent({
       regionRankingCompositionType.value = compositionType as RegionRankingCompositionType;
     };
 
-    const isRegionRankingEqualWeights = ref(true);
-    const setRegionRankingEqualWeight = (equalWeights: boolean) => {
-      isRegionRankingEqualWeights.value = equalWeights;
-    };
-
     const maxNumberOfChartBars = ref(50);
     const setMaxNumberOfChartBars = (numBins: number) => {
       maxNumberOfChartBars.value = numBins;
@@ -295,15 +317,29 @@ export default defineComponent({
       }
     );
 
+    watch(
+      () => [
+        regionRankingWeights.value
+      ],
+      () => {
+        const dataState: DataState = {
+          regionRankingWeights: regionRankingWeights.value
+        };
+        store.dispatch('insightPanel/setDataState', dataState);
+      }
+    );
+
     const updateStateFromInsight = async (insight_id: string) => {
       const loadedInsight: Insight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
       //  consider pushing current state to the url to support browser hsitory
       //  in case the user wants to navigate to the original state using back button
       if (loadedInsight) {
-        //
-        // insight was found and loaded
-        //
+        // data state
+        if (loadedInsight.data_state?.regionRankingWeights !== undefined) {
+          regionRankingWeights.value = loadedInsight.data_state?.regionRankingWeights;
+        }
+        // view state
         if (loadedInsight.view_state?.regionRankingSelectedAdminLevel !== undefined) {
           setSelectedAdminLevel(loadedInsight.view_state?.regionRankingSelectedAdminLevel);
         }
@@ -356,8 +392,6 @@ export default defineComponent({
       allRegionalRankingMap,
       regionRankingCompositionType,
       setRegionRankingCompositionType,
-      setRegionRankingEqualWeight,
-      isRegionRankingEqualWeights,
       globalRegionRankingTimestamp,
       setMaxNumberOfChartBars,
       maxNumberOfChartBars,
@@ -368,7 +402,8 @@ export default defineComponent({
       onBarChartHover,
       barChartHoverId,
       ComparativeAnalysisMode,
-      updateStateFromInsight
+      updateStateFromInsight,
+      regionRankingWeights
     };
   },
   mounted() {
@@ -411,7 +446,31 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setDataState: 'insightPanel/setDataState'
     }),
-    onUpdatedBarsData(regionRankingInfo: {id: string; barsData: BarData[]; selectedTimestamp: number}) {
+    setRegionRankingEqualWeight() {
+      // reset to equal weights
+      const regionRankingEqualCompositionWeight = 1 / (this.analysisItems.length) * 100;
+      const regionRankingWeightsMap = _.cloneDeep(this.regionRankingWeights);
+      Object.keys(regionRankingWeightsMap).forEach(key => {
+        regionRankingWeightsMap[key] = {
+          name: regionRankingWeightsMap[key].name, // do not change name
+          weight: regionRankingEqualCompositionWeight
+        };
+      });
+      this.regionRankingWeights = regionRankingWeightsMap;
+
+      // re-build the transform computing the region ranking data
+      this.updateGlobalRegionRankingData();
+    },
+    onRegionRankingWeightsUpdated(newDatacubeWeights: {[key: string]: {name: string; weight: number}}) {
+      // if new weights are not different from current weights, do nothing
+      if (!_.isEqual(this.regionRankingWeights, newDatacubeWeights)) {
+        this.regionRankingWeights = _.cloneDeep(newDatacubeWeights);
+
+        // re-build the transform computing the region ranking data
+        this.updateGlobalRegionRankingData();
+      }
+    },
+    onUpdatedBarsData(regionRankingInfo: {id: string; name: string; barsData: BarData[]; selectedTimestamp: number}) {
       // clone and save the incoming regional-ranking data in the global map object
       this.allRegionalRankingMap[regionRankingInfo.id] = _.cloneDeep(regionRankingInfo.barsData);
 
@@ -419,6 +478,16 @@ export default defineComponent({
       if (regionRankingInfo.selectedTimestamp > this.globalRegionRankingTimestamp) {
         this.globalRegionRankingTimestamp = regionRankingInfo.selectedTimestamp;
       }
+
+      // update the name in weights map
+      const regionRankingWeightsMap = _.cloneDeep(this.regionRankingWeights);
+      const regionRankingEqualCompositionWeight = 1 / (this.analysisItems.length) * 100;
+      regionRankingWeightsMap[regionRankingInfo.id] = {
+        name: regionRankingInfo.name,
+        weight: regionRankingWeightsMap[regionRankingInfo.id] !== undefined ? regionRankingWeightsMap[regionRankingInfo.id].weight : regionRankingEqualCompositionWeight // do not change the weight
+      };
+      this.regionRankingWeights = _.cloneDeep(regionRankingWeightsMap);
+
       // re-build the transform computing the region ranking data
       this.updateGlobalRegionRankingData();
     },
@@ -456,9 +525,9 @@ export default defineComponent({
         // for each region, create a bar
         const regionDatacubesList = globalRegionsMap[key];
         const regionValues = regionDatacubesList.map(item => item.normalizedValue);
-        const regionRankingEqualCompositionWeight = 1 / (regionValues.length);
-        const weights = this.isRegionRankingEqualWeights ? Array(regionValues.length).fill(regionRankingEqualCompositionWeight) : Array(regionValues.length).fill(regionRankingEqualCompositionWeight);
-        const compositeValue = dotProduct(regionValues, weights);
+        const weights = Object.keys(this.regionRankingWeights).map(key => this.regionRankingWeights[key].weight / 100);
+        const equalWeights = Array(regionValues.length).fill(1 / (regionValues.length)); // sometimes not all datacubes are loaded and thus the map size may not match the regions
+        const compositeValue = dotProduct(regionValues, weights.length === regionValues.length ? weights : equalWeights);
         const scaledCompositeValue = compositeValue * this.numberOfColorBins;
         const shouldAddRegionBar = this.regionRankingCompositionType === RegionRankingCompositionType.Union || (this.regionRankingCompositionType === RegionRankingCompositionType.Intersection && regionValues.length === this.analysisItems.length);
         if (shouldAddRegionBar) {
@@ -477,12 +546,15 @@ export default defineComponent({
       const slope = 1.0 * (colors.length) / numBars;
       compositeDataSorted.forEach((key, indx) => {
         let barColor = 'skyblue';
+        let binIndex = -1;
         if (this.regionRankingBinningType === BinningOptions.Linear) {
-          const binIndex = Math.trunc(key.normalizedValue);
-          barColor = colors[binIndex];
+          binIndex = Math.trunc(key.normalizedValue);
         }
         if (this.regionRankingBinningType === BinningOptions.Quantile) {
-          const colorIndex = Math.trunc(slope * indx);
+          binIndex = Math.trunc(slope * indx);
+        }
+        if (binIndex !== -1) {
+          const colorIndex = _.clamp(binIndex, 0, colors.length - 1);
           barColor = colors[colorIndex];
         }
         // update name and color of each bar

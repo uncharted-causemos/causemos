@@ -62,10 +62,12 @@
     <label class="header-secondary">Ranking Criteria Relative Weight:</label>
       <button
         type="button"
+        style="padding: 4px 8px"
         class="btn btn-default dropdown-button"
         @click="setEqualWeights">
           Equal Weights
       </button>
+      <tag-slider :sections="regionRankingWeights" @sections-size-updated="$emit('region-ranking-weights-updated', $event)" />
     </div>
     <div class="config-sub-group">
       <div class="checkbox">
@@ -100,10 +102,12 @@ import { defineComponent, PropType, ref } from 'vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import * as d3 from 'd3';
 import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
+import TagSlider from '@/components/widgets/multi-thumb-slider/tag-slider.vue';
 
 export default defineComponent({
   components: {
-    DropdownButton
+    DropdownButton,
+    TagSlider
   },
   name: 'RegionRankingOptionsPane',
   props: {
@@ -145,6 +149,10 @@ export default defineComponent({
     limitNumberOfChartBars: {
       type: Boolean,
       default: false
+    },
+    regionRankingWeights: {
+      type: Object as PropType<{[key: string]: {name: string; weight: number}}>,
+      default: () => ({})
     }
   },
   emits: [
@@ -154,7 +162,8 @@ export default defineComponent({
     'set-region-ranking-equal-weight',
     'set-max-number-of-chart-bars',
     'set-limit-number-of-chart-bars',
-    'set-region-ranking-binning-type'
+    'set-region-ranking-binning-type',
+    'region-ranking-weights-updated'
   ],
   setup() {
     const capitalize = (str: string) => {

@@ -104,6 +104,9 @@ export interface DataState {
   selectedYears?: string[];
   activeReferenceOptions?: string[];
 
+  // region-ranking specific
+  regionRankingWeights?: {[key: string]: {name: string; weight: number}};
+
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
   datacubeRegions?: string[];

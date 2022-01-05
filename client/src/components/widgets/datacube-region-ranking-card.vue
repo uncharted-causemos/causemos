@@ -387,16 +387,20 @@ export default defineComponent({
               const numBars = regionLevelData.length;
               // we can have many bars than the available colors, so map indices
               const slope = 1.0 * (colors.length) / (numBars);
-              bins.forEach((bin, binIndex) => {
+              bins.forEach((bin) => {
                 _.sortBy(bin, item => item.value).forEach(dataItem => {
                   const normalizedValue = normalize(dataItem.value);
                   const barValue = showNormalizedData.value ? (normalizedValue * numberOfColorBins.value) : dataItem.value;
                   let barColor = 'skyblue';
+                  let binIndex = -1;
                   if (regionRankingBinningType.value === BinningOptions.Linear) {
-                    barColor = colors[binIndex];
+                    binIndex = Math.trunc(normalizedValue * numberOfColorBins.value);
                   }
                   if (regionRankingBinningType.value === BinningOptions.Quantile) {
-                    const colorIndex = Math.trunc(slope * (regionIndexCounter));
+                    binIndex = Math.trunc(slope * (regionIndexCounter));
+                  }
+                  if (binIndex !== -1) {
+                    const colorIndex = _.clamp(binIndex, 0, colors.length - 1);
                     barColor = colors[colorIndex];
                   }
                   temp.push({
@@ -418,6 +422,7 @@ export default defineComponent({
 
             emit('updated-bars-data', {
               id: id.value,
+              name: metadata.value?.name,
               barsData: limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp,
               selectedTimestamp: selectedTimestamp.value
             });
