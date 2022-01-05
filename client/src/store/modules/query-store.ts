@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 import router from '@/router';
-import { LAYOUTS } from '@/utils/graph/layout';
 import FiltersUtil from '@/utils/filters-util';
 import { Filters } from '@/types/Filters';
+import { LAYOUTS } from '@/graphs/cytoscape/cytoscape-layouts';
 
 /**
  * Builds a query object withy any of the options available

@@ -1,5 +1,3 @@
-'use strict';
-
 export const LAYOUTS = Object.freeze({
   // COSE: 'cose',
   // COSE_BILKENT_AGGREGATED: 'cose-bilkent-aggregated',
@@ -19,3 +17,4 @@ export const COLA_FLOWS = [
   { id: 'cola-x', value: 'x', name: 'Horizontal' },
   { id: 'cola-y', value: 'y', name: 'Vertical' }
 ];
+
