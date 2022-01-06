@@ -1,5 +1,10 @@
 <template>
-  <lex-bar :lex-ref="lexRef" :is-close-button-label-visible="false" />
+  <div class="search-bar-container">
+    <div ref="lexContainer" />
+    <button class="btn btn-default clear-button" @click="clearSearch()">
+      <i class="fa fa-remove" />
+    </button>
+  </div>
 </template>
 
 <script>
@@ -16,13 +21,9 @@ import SingleRelationState from '@/search/single-relation-state';
 import filtersUtil from '@/utils/filters-util';
 import { DatacubeGenericAttributeVariableType } from '@/types/Enums';
 import { TAGS } from '@/utils/datacube-util';
-import LexBar from '@/components/widgets/lex-bar.vue';
 
 export default {
   name: 'ModelRunsSearchBar',
-  components: {
-    LexBar
-  },
   props: {
     data: {
       type: Object,
@@ -109,13 +110,13 @@ export default {
         }
       }).branch(...this.pills.map(pill => pill.makeBranch()));
 
-      const lex = new Lex({
+      this.lexRef = new Lex({
         language: language,
         placeholder: 'Filter runs',
         tokenXIcon: '<i class="fa fa-remove"></i>'
       });
 
-      lex.on('query changed', (...args) => {
+      this.lexRef.on('query changed', (...args) => {
         const model = args[0];
         const newFilters = filtersUtil.newFilters();
 
@@ -134,7 +135,7 @@ export default {
         }
       });
 
-      this.lexRef = lex;
+      this.lexRef.render(this.$refs.lexContainer);
       this.setQuery();
     },
     setQuery() {
@@ -150,7 +151,19 @@ export default {
         });
       }
       this.lexRef.setQuery(lexQuery, false); // TODO: I assume this doesn't call query changed?
+    },
+    clearSearch() {
+      this.lexRef.reset();
     }
   }
 };
 </script>
+
+<style lang="scss" scoped>
+
+.search-bar-container :deep {
+  @import '@/styles/lex-overrides';
+  @include lex-wrapper;
+}
+
+</style>
