@@ -564,7 +564,8 @@ export default defineComponent({
       compositeDataSorted.forEach((barItem, indx) => {
         barItem.name = (compositeDataSorted.length - indx).toString();
       });
-      this.globalBarsData = compositeDataSorted;
+      // limit the number of bars to the selected maximum
+      this.globalBarsData = this.limitNumberOfChartBars ? compositeDataSorted.slice(-this.maxNumberOfChartBars) : compositeDataSorted;
     },
     onLoadedTimeseries(timeseriesInfo: {id: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; region: string[]}) {
       // we should only set the global timeseries one time
