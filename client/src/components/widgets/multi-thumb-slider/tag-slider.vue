@@ -60,10 +60,6 @@ export default defineComponent({
     originalSizes: [] as number[],
     canResize: false
   }),
-  mounted () {
-    // if the user dragged outside the slider area, signal stop processing
-    window.addEventListener('mouseup', this.handleEventUp);
-  },
   methods: {
     niceFormat(number: number) {
       return +number.toFixed(1);

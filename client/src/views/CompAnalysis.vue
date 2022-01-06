@@ -124,7 +124,6 @@ import router from '@/router';
 
 // TODO:
 //
-// apply the bar limit to the top resulting ranking cube
 // add an option to toggle the region ranking panel on/off
 // move toggle-data-normalization to area on the top besides the ranking criteria or make it a synched selection
 // respect which runs are selected for each datacube and if multiple runs show a dropdown. Also, add a legend for the runs

@@ -87,9 +87,8 @@
           style="margin-bottom: 1rem; margin-left: 5px;"
           min="1"
           max="50"
-          ref="max-number-of-chart-bars-slider"
           :value="maxNumberOfChartBars"
-          @change="updateMaxNumberOfChartBars"
+          @input="updateMaxNumberOfChartBars"
         />
       </div>
     </div>
@@ -252,10 +251,8 @@ export default defineComponent({
     setEqualWeights() {
       this.$emit('set-region-ranking-equal-weight');
     },
-    updateMaxNumberOfChartBars() {
-      const newVal = parseFloat(
-        (this.$refs['max-number-of-chart-bars-slider'] as HTMLInputElement).value
-      );
+    updateMaxNumberOfChartBars(event: any) {
+      const newVal = parseFloat(event.target.value);
       this.$emit('set-max-number-of-chart-bars', newVal);
     },
     updateLimitNumberOfChartBars() {
