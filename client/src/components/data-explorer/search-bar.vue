@@ -151,6 +151,9 @@ export default {
         }
       });
       this.lexRef.setQuery(lexQuery, false); // TODO: I assume this doesn't call query changed?
+    },
+    clearSearch() {
+      this.lexRef.reset();
     }
   }
 };
