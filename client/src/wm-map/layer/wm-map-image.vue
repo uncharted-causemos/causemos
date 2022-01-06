@@ -54,7 +54,7 @@ export default {
         id: this.layerId,
         type: 'raster',
         source: this.sourceId
-      });
+      }, this.beforeId);
     },
     convertToMapBoxCoords(coords) {
       // mapbox gl expects an array with four pairs in the format [long, lat]

@@ -20,7 +20,7 @@ export default {
       id: this.layerId,
       source: this.sourceId,
       ...this.layer
-    });
+    }, this.beforeId);
   },
   methods: {
     _addSource() {
