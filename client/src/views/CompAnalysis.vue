@@ -11,7 +11,14 @@
     <main class="insight-capture">
       <action-bar />
       <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking">
-        <h5 class="ranking-header-top">Ranking Results</h5>
+        <div style="display: flex">
+          <h5 class="ranking-header-top">Ranking Results</h5>
+          <i
+            :onClick="() => activeDrilldownTab = (activeDrilldownTab === null ? 'region-settings' : null)"
+            class="fa fa-gear region-ranking-settings-button"
+            :class="{ 'region-ranking-settings-button-invalid': activeDrilldownTab === null , 'region-ranking-settings-button-valid': activeDrilldownTab !== null }"
+          />
+        </div>
         <datacube-region-ranking-composite-card
           :bars-data="globalBarsData"
           :selected-timestamp="globalRegionRankingTimestamp"
@@ -124,7 +131,6 @@ import router from '@/router';
 
 // TODO:
 //
-// add an option to toggle the region ranking panel on/off
 // move toggle-data-normalization to area on the top besides the ranking criteria or make it a synched selection
 // respect which runs are selected for each datacube and if multiple runs show a dropdown. Also, add a legend for the runs
 // review how the region limits are applied to each datacube vs to the resulting datacube
@@ -722,6 +728,27 @@ main {
 }
 .ranking-header-top {
   margin-bottom: -0.25rem;
+  flex: 1;
+}
+
+.region-ranking-settings-button {
+  align-self: center;
+  cursor: pointer;
+  font-size: large;
+}
+
+.region-ranking-settings-button-invalid {
+  color: black;
+  &:hover {
+    color: darkgray;
+  }
+}
+
+.region-ranking-settings-button-valid {
+  color: gray;
+  &:hover {
+    color: darkgray;
+  }
 }
 
 </style>
