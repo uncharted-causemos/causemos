@@ -1,13 +1,16 @@
 <template>
-  <lex-bar :lex-ref="lexRef"/>
+  <div class="search-bar-container">
+    <div ref="lexContainer" />
+    <button class="btn btn-default clear-button" @click="clearSearch()">
+      <i class="fa fa-remove" />Clear
+    </button>
+  </div>
 </template>
 
 <script>
 import _ from 'lodash';
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 import { mapActions, mapGetters } from 'vuex';
-
-import LexBar from '@/components/widgets/lex-bar.vue';
 
 import TextPill from '@/search/pills/text-pill';
 import RangePill from '@/search/pills/range-pill';
@@ -24,9 +27,6 @@ const SUGGESTION_CODE_TABLE = datacubeUtil.SUGGESTION_CODE_TABLE;
 
 export default {
   name: 'SearchBar',
-  components: {
-    LexBar
-  },
   props: {
     facets: {
       type: Object,
@@ -44,9 +44,10 @@ export default {
       this.setQuery();
     }
   },
-  data: () => ({
-    lexRef: null
-  }),
+  created() {
+    this.lexRef = null;
+    this.pills = [];
+  },
   mounted() {
     // Generates lex pills from select datacube columns
     const excludedFields = Object.values(SUGGESTION_CODE_TABLE).map(v => v.field);
@@ -106,13 +107,13 @@ export default {
       }
     }).branch(...this.pills.map(pill => pill.makeBranch()));
 
-    const lex = new Lex({
+    this.lexRef = new Lex({
       language: language,
       placeholder: 'Search items...',
       tokenXIcon: '<i class="fa fa-remove"></i>'
     });
 
-    lex.on('query changed', (...args) => {
+    this.lexRef.on('query changed', (...args) => {
       const model = args[0];
       const newFilters = filtersUtil.newFilters();
 
@@ -132,7 +133,7 @@ export default {
       }
     });
 
-    this.lexRef = lex;
+    this.lexRef.render(this.$refs.lexContainer);
     this.setQuery();
   },
   methods: {
@@ -154,3 +155,12 @@ export default {
   }
 };
 </script>
+
+<style lang="scss" scoped>
+
+.search-bar-container :deep {
+  @import '@/styles/lex-overrides';
+  @include lex-wrapper;
+}
+
+</style>

@@ -1,5 +1,5 @@
 // Overrides lex bar styles
-@import "@/styles/variables";
+@import '@/styles/variables';
 
 div.lex-box {
   // Lex expands if there are pills, this is to insure things don't jump around
@@ -7,14 +7,16 @@ div.lex-box {
   // Keeping this constant avoids a page reflow (and rerendering of PC chart)
   min-height: 41px;
   height: auto;
-  background: #FFFFFF;
+  background: #ffffff;
   border: 1px solid #f2f2f2;
   padding: 2px;
   // Be sure to leave room to the right of long pills to allow the analyst
   //  to click to add new pills
   padding-right: 20px;
 
-  &:active, &.active, &.focused {
+  &:active,
+  &.active,
+  &.focused {
     border-color: $selected;
     box-shadow: none;
   }
@@ -52,5 +54,24 @@ div.lex-box {
   .token-icon {
     // Hide search icon in every pill
     display: none !important;
+  }
+}
+
+
+// Include this mixin on the wrapper element that includes the
+//  <div ref="lexContainer" />
+// and the
+//  <button class="clear-button">
+@mixin lex-wrapper() {
+  display: flex;
+
+  & > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .clear-button {
+    flex: 0;
+    padding: 5px;
   }
 }
