@@ -508,7 +508,7 @@ import flatpickr from 'flatpickr';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import VizOptionsPane from '@/components/drilldown-panel/viz-options-pane.vue';
-import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
+import DataAnalysisMap from '@/components/data/analysis-map.vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
