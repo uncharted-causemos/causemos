@@ -244,7 +244,7 @@ export default defineComponent({
       ref([])
     );
 
-    const selectedTimestamp = ref(0);
+    const selectedTimestamp = ref<number | null>(null);
 
     const {
       timeseriesData,
@@ -257,7 +257,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       ref(null), // breakdownOption
-      selectedTimestamp,
+      ref(null), // selectedTimestamp
       () => {}, // setSelectedTimestamp
       selectedRegionIds,
       ref(new Set()),
@@ -268,6 +268,7 @@ export default defineComponent({
 
     watchEffect(() => {
       if (visibleTimeseriesData.value.length > 0) {
+        // flatten the list of timeseries for all selected runs and extract the last timestmap
         const allTimestamps = visibleTimeseriesData.value
           .map(timeseries => timeseries.points)
           .flat()
