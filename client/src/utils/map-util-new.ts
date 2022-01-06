@@ -31,6 +31,29 @@ export function adminLevelToString(level: number) {
   return adminLevel;
 }
 
+export const SOURCE_LAYERS = [
+  {
+    layerId: 'boundaries-adm0',
+    sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm0/{z}/{x}/{y}'
+  },
+  {
+    layerId: 'boundaries-adm1',
+    sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm1/{z}/{x}/{y}'
+  },
+  {
+    layerId: 'boundaries-adm2',
+    sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm2/{z}/{x}/{y}'
+  },
+  {
+    layerId: 'boundaries-adm3',
+    sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm3/{z}/{x}/{y}'
+  },
+  {
+    layerId: 'maas',
+    sourceBaseUrl: 'api/maas/tiles/grid-output/{z}/{x}/{y}'
+  }
+];
+
 export function stringToAdminLevel(geoString: string) {
   const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
   return adminLevel;
