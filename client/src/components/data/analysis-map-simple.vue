@@ -20,16 +20,19 @@
         :promote-id="idPropName"
         :layer-id="baseLayerId"
         :layer="baseLayer"
+        :before-id="firstSymbolLayerId"
       />
       <wm-map-vector
         v-if="vectorSource && colorLayer"
         :key="layerRerenderTrigger"
+        :source="vectorSource"
         :source-id="vectorSourceId"
         :source-layer="vectorSourceLayer"
         :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="colorLayerId"
         :layer="colorLayer"
+        :before-id="firstSymbolLayerId"
         @add-layer="onAddLayer"
         @update-source="onUpdateSource"
       />
@@ -348,6 +351,7 @@ export default {
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
+    this.firstSymbolLayerId = 'watername_ocean';
 
     // the following are needed to render pre-generated overlay
     this.imageSourceId = 'maas-image-source';
