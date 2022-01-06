@@ -1,9 +1,7 @@
 <template>
-  <div class="model-runs-search-bar-container">
-    <div ref="lexContainer"/>
-    <button
-      class="btn btn-default clear-button"
-      @click="clearSearch()">
+  <div class="search-bar-container">
+    <div ref="lexContainer" />
+    <button class="btn btn-default clear-button" @click="clearSearch()">
       <i class="fa fa-remove" />
     </button>
   </div>
@@ -23,7 +21,6 @@ import SingleRelationState from '@/search/single-relation-state';
 import filtersUtil from '@/utils/filters-util';
 import { DatacubeGenericAttributeVariableType } from '@/types/Enums';
 import { TAGS } from '@/utils/datacube-util';
-
 
 export default {
   name: 'ModelRunsSearchBar',
@@ -162,51 +159,11 @@ export default {
 };
 </script>
 
-<style lang='scss' scoped>
-.model-runs-search-bar-container {
-  display: flex;
+<style lang="scss" scoped>
 
-  & > ::v-deep(div) {
-    flex: 1;
-    min-width: 0p;
-  }
-}
-
-// Override lex box styles to allow for pills to wrap
-::v-deep(.lex-box) {
-  padding: 2px;
-  // Lex has a min-height of 40px by default, but it's 41px when active/focused
-  // Keeping this constant avoids a page reflow (and rerendering of PC chart)
-  min-height: 41px;
-  // Be sure to leave room to the right of long pills to allow the analyst
-  //  to click to add new pills
-  padding-right: 20px;
-
-  .token-container:not(:first-child) {
-    margin-top: 2px;
-  }
-
-  .token {
-    margin: 0;
-    font-size: 1.4rem;
-    white-space: normal;
-
-    button.token-remove,
-    button.token-cancel {
-      position: relative;
-      top: unset;
-      transform: none;
-    }
-  }
-
-  .token-icon {
-    display: none !important;
-  }
-}
-
-.clear-button {
-  flex: 0;
-  padding: 5px;
+.search-bar-container :deep {
+  @import '@/styles/lex-overrides';
+  @include lex-wrapper;
 }
 
 </style>
