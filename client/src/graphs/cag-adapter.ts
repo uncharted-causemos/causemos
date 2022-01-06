@@ -58,6 +58,14 @@ const makeNodeLayout = () => {
   };
 };
 
+const makePortLayout = (port: any) => {
+  if (port.type === 'outgoing') {
+    return { 'elk.port.side': 'EAST' };
+  } else {
+    return { 'elk.port.side': 'WEST' };
+  }
+};
+
 
 
 const makeEdgeMaps = (edges: any) => {
@@ -424,6 +432,9 @@ export const runLayout = async <V, E> (
 
     // Assign layout options
     node.layoutOptions = makeNodeLayout();
+    node.ports.forEach(p => {
+      p.layoutOptions = makePortLayout(p);
+    });
   });
   elkGraph.layoutOptions = makeGeneralLayout(30);
 

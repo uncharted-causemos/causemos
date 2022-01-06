@@ -500,54 +500,8 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
     const drag = d3.drag()
       .on('start', async (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
-        // const graph = evt.subject.parent.data; // FIXME - we should avoid this kind of data access, we should probably pass projectID into the renderer directly
-
-        // Begin processing to highlight nodes that have evidence for an edge originating from the source
-        // const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
-        // const project_id = graph.project_id;
-        // const nodesInGraph = graph.nodes;
-
-        // const edges = graph.edges;
-        // const nodesToCheck = nodesInGraph
-        //   .filter(node => node.components)
-        //   .filter(node => {
-        //     return !_.some(edges, edge => edge.source === sourceNode.concept && edge.target === node.concept);
-        //   });
-        // const componentsInGraph = _.uniq(_.flatten(nodesToCheck.map(node => node.components)));
-
-        // const svg = this.svgEl;
-        // const foregroundLayer = d3.select(svg).select('.data-layer');
-
-        // const filters = {
-        //   clauses: [
-        //     { field: 'subjConcept', values: sourceNode.data.components, isNot: false, operand: 'or' },
-        //     { field: 'objConcept', values: componentsInGraph, isNot: false, operand: 'or' }]
-        // };
-
-        // Get the edges, then reverse-map the edges back into containers
-        // projectService.getProjectGraph(project_id, filters).then(d => {
-        //   // Contains all possible edges in the knowledge-base originating from the source
-        //   const resultEdges = d.edges;
-        //   resultEdges.forEach(edge => {
-        //     const nodes = nodesToCheck.filter(n => n.components.includes(edge.target));
-        //     nodes.forEach(nodeData => {
-        //       const targetNode = getLayoutNodeById(nodeData.concept);
-        //       const pointerX = targetNode.x;
-        //       const pointerY = targetNode.y + (targetNode.height * 0.5);
-        //       foregroundLayer
-        //         .append('svg:path')
-        //         .attr('d', svgUtil.ARROW)
-        //         .classed('edge-possibility-indicator', true)
-        //         .attr('transform', `translate(${pointerX}, ${pointerY}) scale(1.8)`)
-        //         .attr('fill', calcEdgeColor(edge))
-        //         .attr('opactiy', 0)
-        //         .style('pointer-events', 'none')
-        //         .transition()
-        //         .duration(300)
-        //         .attr('opacity', 1);
-        //     });
-        //   });
-        // });
+        const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
+        this.emit('node-handle-drag-start', sourceNode.data);
 
         // mark dragging flag
         this.handleBeingDragged = true;
@@ -610,10 +564,6 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
           source: sourceNode.data,
           target: targetNode.data
         });
-
-        // FIXME
-        // this.options.newEdgeFn(sourceNode.data, targetNode.data);
-
         this.handleBeingDragged = false;
       });
     handles.call(drag as any);

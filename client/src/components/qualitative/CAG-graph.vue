@@ -27,9 +27,11 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import * as d3 from 'd3';
 import Mousetrap from 'mousetrap';
-import { defineComponent, ref, Ref } from 'vue';
+import { defineComponent, computed, ref, Ref } from 'vue';
+import { useStore } from 'vuex';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select.vue';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 import GraphSearch from '@/components/widgets/graph-search.vue';
@@ -40,7 +42,9 @@ import { overlap } from '@/utils/dom-util';
 import svgUtil from '@/utils/svg-util';
 
 import { INode } from 'svg-flowgraph2';
-import { NodeParameter } from '@/types/CAG';
+import { NodeParameter, EdgeParameter } from '@/types/CAG';
+import projectService from '@/services/project-service';
+import { calcEdgeColor } from '@/utils/scales-util';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -100,6 +104,7 @@ export default defineComponent({
     'suggestion-selected', 'suggestion-duplicated'
   ],
   setup() {
+    const store = useStore();
     const renderer = ref(null) as Ref<QualitativeRenderer | null>;
     const selectedNode = ref('');
 
@@ -110,6 +115,7 @@ export default defineComponent({
 
     const showCustomConcept = ref(false);
     const mouseTrap = new Mousetrap(document as any);
+    const project = computed(() => store.getters['app/project']);
 
     return {
       renderer,
@@ -123,6 +129,7 @@ export default defineComponent({
       newNodeX,
       newNodeY,
 
+      project,
       selectedNode
     };
   },
@@ -223,6 +230,50 @@ export default defineComponent({
       this.$emit('rename-node', payload);
     });
 
+    this.renderer.on('node-handle-drag-start', async (_evtName, sourceNode: NodeParameter) => {
+      const edges = this.data.edges as EdgeParameter[];
+      const nodes = this.data.nodes as NodeParameter[];
+
+      // 1. Find out the extra edges we can add
+      const nodesToCheck = nodes
+        .filter(node => node.components)
+        .filter(node => {
+          return !_.some(edges, edge => edge.source === sourceNode.concept && edge.target === node.concept);
+        });
+      const componentsInGraph = _.uniq(_.flatten(nodesToCheck.map(node => node.components)));
+
+      const filters = {
+        clauses: [
+          { field: 'subjConcept', values: sourceNode.components, isNot: false, operand: 'or' },
+          { field: 'objConcept', values: componentsInGraph, isNot: false, operand: 'or' }]
+      };
+      const projectGraph = await projectService.getProjectGraph(this.project, filters as any);
+
+      // 2. Render potential node with markers
+      const foregroundLayer = this.renderer?.chart;
+      if (!foregroundLayer) return;
+      const resultEdges = projectGraph.edges;
+      resultEdges.forEach((edge: any) => {
+        const nodes = nodesToCheck.filter(n => n.components.includes(edge.target));
+        nodes.forEach(nodeData => {
+          const targetNode = this.renderer?.graph.nodes.find(n => n.id === nodeData.id);
+          if (!targetNode) return;
+          const pointerX = targetNode.x;
+          const pointerY = targetNode.y + (targetNode.height * 0.5);
+          foregroundLayer
+            .append('svg:path')
+            .attr('d', svgUtil.ARROW)
+            .classed('edge-possibility-indicator', true)
+            .attr('transform', `translate(${pointerX}, ${pointerY}) scale(2.5)`)
+            .attr('fill', calcEdgeColor(edge))
+            .attr('opactiy', 0)
+            .style('pointer-events', 'none')
+            .transition()
+            .duration(300)
+            .attr('opacity', 1);
+        });
+      });
+    });
 
     this.refresh();
   },
@@ -246,17 +297,6 @@ export default defineComponent({
         this.$emit('suggestion-duplicated', suggestion);
         return;
       }
-
-      // HACK This is leveraing the svg-flowgraph internals.
-      //
-      // We inject the node-blueprint into the DOM with createNewNode, then when the
-      // graph itself re-renders it will detect the node-blueprint, rebinds the data and
-      // thus retaining the original layout.
-      // this.renderer?.createNewNode(this.svgX, this.svgY, {
-      //   concept: suggestion.concept,
-      //   label: suggestion.label
-      // });
-
       this.$emit('suggestion-selected', suggestion);
     },
     injectNewNode(node: NodeParameter) {
