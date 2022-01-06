@@ -80,6 +80,7 @@ export interface ViewState {
   regionRankingApplyingBarLimit?: boolean;
   regionRankingSelectedMaxBarLimit?: number;
   regionRankingHoverId?: string;
+  regionRankingShowNormalizedData?: boolean;
 
   // knowledge/model space specific
   sensitivityToggle?: any;

@@ -33,17 +33,6 @@
         />
         <div class="row datacube-footer">
           <div >Showing data for {{timestampFormatter(selectedTimestamp)}}</div>
-          <div class="checkbox">
-            <label
-              @click="showNormalizedData=!showNormalizedData"
-              style="cursor: pointer; color: black;">
-              <i
-                class="fa fa-lg fa-fw"
-                :class="{ 'fa-check-square-o': showNormalizedData, 'fa-square-o': !showNormalizedData }"
-              />
-              Normalized data
-            </label>
-          </div>
         </div>
       </div>
       <div class="datacube-map-placeholder">
@@ -129,6 +118,10 @@ export default defineComponent({
     barChartHoverId: {
       type: String,
       default: ''
+    },
+    showNormalizedData: {
+      type: Boolean,
+      default: true
     }
   },
   setup(props, { emit }) {
@@ -139,7 +132,8 @@ export default defineComponent({
       selectedAdminLevel,
       maxNumberOfChartBars,
       limitNumberOfChartBars,
-      regionRankingBinningType
+      regionRankingBinningType,
+      showNormalizedData
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -152,8 +146,6 @@ export default defineComponent({
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
     const store = useStore();
-
-    const showNormalizedData = ref(true);
 
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
@@ -455,8 +447,7 @@ export default defineComponent({
       statusLabel,
       barsData,
       selectedTimestamp,
-      timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY'),
-      showNormalizedData
+      timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY')
     };
   },
   methods: {
@@ -573,20 +564,6 @@ main {
   font-size: small;
   display: flex;
   justify-content: space-around;
-}
-
-.checkbox {
-  user-select: none; /* Standard syntax */
-  display: inline-block;
-  margin: 0;
-  padding: 0;
-  label {
-    font-weight: normal;
-    margin: 0;
-    padding: 0;
-    cursor: auto;
-    color: gray;
-  }
 }
 
 </style>

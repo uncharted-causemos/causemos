@@ -25,7 +25,20 @@
           :bar-chart-hover-id="barChartHoverId"
           @bar-chart-hover="onBarChartHover"
         />
-        <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
+        <div style="display: flex">
+          <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
+          <div class="checkbox">
+            <label
+              @click="showNormalizedData=!showNormalizedData"
+              style="cursor: pointer; color: black;">
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{ 'fa-check-square-o': showNormalizedData, 'fa-square-o': !showNormalizedData }"
+              />
+              Normalized data
+            </label>
+          </div>
+        </div>
       </template>
       <div
         v-if="analysisItems.length"
@@ -55,6 +68,7 @@
             :limit-number-of-chart-bars="limitNumberOfChartBars"
             :region-ranking-binning-type="regionRankingBinningType"
             :bar-chart-hover-id="barChartHoverId"
+            :show-normalized-data="showNormalizedData"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
           />
@@ -131,7 +145,6 @@ import router from '@/router';
 
 // TODO:
 //
-// move toggle-data-normalization to area on the top besides the ranking criteria or make it a synched selection
 // respect which runs are selected for each datacube and if multiple runs show a dropdown. Also, add a legend for the runs
 // review how the region limits are applied to each datacube vs to the resulting datacube
 
@@ -169,6 +182,7 @@ export default defineComponent({
     const activeDrilldownTab = ref<string|null>('region-settings');
     const selectedAdminLevel = ref(0);
 
+    const showNormalizedData = ref(true);
     const regionRankingWeights = ref<{[key: string]: {name: string; weight: number}}>({});
 
     onMounted(async () => {
@@ -304,7 +318,8 @@ export default defineComponent({
         limitNumberOfChartBars.value,
         maxNumberOfChartBars.value,
         numberOfColorBins.value,
-        barChartHoverId.value
+        barChartHoverId.value,
+        showNormalizedData.value
       ],
       () => {
         const viewState: ViewState = {
@@ -315,7 +330,8 @@ export default defineComponent({
           regionRankingApplyingBarLimit: limitNumberOfChartBars.value,
           regionRankingSelectedMaxBarLimit: maxNumberOfChartBars.value,
           regionRankingSelectedNumberOfColorBins: numberOfColorBins.value,
-          regionRankingHoverId: barChartHoverId.value
+          regionRankingHoverId: barChartHoverId.value,
+          regionRankingShowNormalizedData: showNormalizedData.value
         };
         store.dispatch('insightPanel/setViewState', viewState);
       }
@@ -368,6 +384,9 @@ export default defineComponent({
         if (loadedInsight.view_state?.regionRankingHoverId !== undefined) {
           onBarChartHover(loadedInsight.view_state?.regionRankingHoverId);
         }
+        if (loadedInsight.view_state?.regionRankingShowNormalizedData !== undefined) {
+          showNormalizedData.value = loadedInsight.view_state?.regionRankingShowNormalizedData;
+        }
       }
     };
 
@@ -407,7 +426,8 @@ export default defineComponent({
       barChartHoverId,
       ComparativeAnalysisMode,
       updateStateFromInsight,
-      regionRankingWeights
+      regionRankingWeights,
+      showNormalizedData
     };
   },
   mounted() {
@@ -725,6 +745,7 @@ main {
 
 .ranking-header-bottom {
   margin-bottom: -1rem;
+  flex: 1;
 }
 .ranking-header-top {
   margin-bottom: -0.25rem;
@@ -748,6 +769,21 @@ main {
   color: gray;
   &:hover {
     color: darkgray;
+  }
+}
+
+.checkbox {
+  user-select: none;
+  display: inline-block;
+  align-self: center;
+  margin-bottom: -1rem;
+
+  label {
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    cursor: auto;
+    color: gray;
   }
 }
 
