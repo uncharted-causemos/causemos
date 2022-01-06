@@ -190,7 +190,13 @@ export default {
 
       let savedURL = this.selectedContextInsight.url;
       const currentURL = this.$route.fullPath;
-      const datacubeId = _.first(contextInsight.context_id);
+
+      // NOTE: applying an insight should not automatically set a specific datacube_id as a query param
+      //  because, for example, the comparative analysis (region-ranking) page does not
+      //  need/understand a specific datacube_id,
+      //  and setting it regardless may have a negative side effect
+      const datacubeId = savedURL.includes('/dataComparative/') ? undefined : _.first(contextInsight.context_id);
+
       if (savedURL !== currentURL) {
         // special case
         if (this.projectType === ProjectType.Analysis && this.selectedContextInsight.visibility === 'public') {
@@ -207,7 +213,7 @@ export default {
         }
 
         // add 'insight_id' as a URL param so that the target page can apply it
-        const finalURL = InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id, _.first(this.selectedContextInsight.context_id));
+        const finalURL = InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id, datacubeId);
 
         this.$router.push(finalURL);
       } else {

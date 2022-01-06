@@ -191,11 +191,6 @@ export default defineComponent({
     colorFromIndex(index: number) {
       return this.selectedTimeseriesPoints[index].color;
     }
-  },
-  watch: {
-    itemData(n, o) {
-      console.log('new', n, 'old', o);
-    }
   }
 });
 </script>

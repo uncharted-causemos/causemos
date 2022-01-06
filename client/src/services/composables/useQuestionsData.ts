@@ -4,7 +4,6 @@ import { computed, ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { InsightFilterFields } from '@/services/insight-service';
 import _ from 'lodash';
-import useInsightsData from './useInsightsData';
 import { fetchQuestions } from '../question-service';
 
 export default function useQuestionsData() {
@@ -23,9 +22,6 @@ export default function useQuestionsData() {
 
   const isPanelOpen = computed(() => store.getters['panel/isPanelOpen']);
   const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
-
-  // reference the utility function (or the computed property) of all insights to quickly find linked insights
-  const { getInsightsByIDs } = useInsightsData();
 
   watchEffect(onInvalidate => {
     console.log('refetching questions at: ' + new Date(questionsFetchedAt.value).toTimeString());
@@ -99,7 +95,6 @@ export default function useQuestionsData() {
 
   return {
     questionsList,
-    reFetchQuestions,
-    getInsightsByIDs
+    reFetchQuestions
   };
 }
