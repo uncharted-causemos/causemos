@@ -62,16 +62,15 @@
           <div class="controls">
             <div class="filter-options">
               <label
-                v-for="(status, index) of filterOptions"
-                :key="status"
+                v-for="filter of filterOptions"
+                :key="filter.status"
                 class="filter-label"
-                @click="selectedFilters[index] = !selectedFilters[index]"
-                style="cursor: pointer; color: black;">
+                @click="filter.selected = !filter.selected">
                 <i
                   class="fa fa-lg fa-fw"
-                  :class="{ 'fa-check-square-o': selectedFilters[index], 'fa-square-o': !selectedFilters[index] }"
+                  :class="{ 'fa-check-square-o': filter.selected, 'fa-square-o': !filter.selected }"
                 />
-                {{getDatacubeStatusInfo(status).label}}
+                {{getDatacubeStatusInfo(filter.status).label}}
               </label>
             </div>
             <input
@@ -116,7 +115,7 @@
           <message-display
             v-if="filteredDatacubeInstances.length === 0"
             :message-type="'alert-warning'"
-            :message="'No registered model instances!'"
+            :message="'No model instances'"
           />
         </div>
       </div>
@@ -153,8 +152,11 @@ export default {
     sortingOptionsDatacubeInstances: ['Most recent', 'Earliest'],
     selectedSortingOptionDatacubeInstances: 'Most recent',
     isEditingDesc: false,
-    filterOptions: [DatacubeStatus.Ready, DatacubeStatus.Registered, DatacubeStatus.Deprecated],
-    selectedFilters: [true, true, false]
+    filterOptions: [
+      { status: DatacubeStatus.Ready, selected: true },
+      { status: DatacubeStatus.Registered, selected: true },
+      { status: DatacubeStatus.Deprecated, selected: false }
+    ]
   }),
   computed: {
     ...mapGetters({
@@ -163,12 +165,11 @@ export default {
       refreshDatacubes: 'insightPanel/refreshDatacubes'
     }),
     filteredDatacubeInstances() {
-      return this.datacubeInstances.filter(instance => {
-        const index = this.filterOptions.findIndex(status => status === instance.status);
-        return index < 0 || this.selectedFilters[index];
-      }).filter(instance => {
-        return instance.name.toLowerCase().includes(this.searchDatacubeInstances.toLowerCase());
-      });
+      return this.datacubeInstances.filter(instance =>
+        this.filterOptions.find(filter => filter.status === instance.status)?.selected ?? true
+      ).filter(instance =>
+        instance.name.toLowerCase().includes(this.searchDatacubeInstances.toLowerCase())
+      );
     },
     tags() {
       if (!this.datacubeInstances || this.datacubeInstances.length === 0) {
@@ -509,6 +510,8 @@ main {
     padding-left: 0px;
     padding-right: 10px;
     font-weight: unset;
+    cursor: pointer;
+    color: black;
   }
 }
 
