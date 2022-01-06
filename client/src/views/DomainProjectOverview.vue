@@ -51,13 +51,28 @@
       </div>
       <div class="instance-list-column">
         <div class="instance-list-header">
-          <div class="column-title">Instances</div>
-          <div class="controls">
+          <div class="column-title">Instances
             <button
               class="btn btn-primary btn-call-for-action"
               disabled>
-                Register New Model Instance in DOJO
+              <i class="fa fa-plus-circle" />
+              Register New
             </button>
+          </div>
+          <div class="controls">
+            <div class="filter-options">
+              <label
+                v-for="filter of filterOptions"
+                :key="filter.status"
+                class="filter-label"
+                @click="filter.selected = !filter.selected">
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-check-square-o': filter.selected, 'fa-square-o': !filter.selected }"
+                />
+                {{getDatacubeStatusInfo(filter.status).label}}
+              </label>
+            </div>
             <input
               v-model="searchDatacubeInstances"
               type="text"
@@ -100,7 +115,7 @@
           <message-display
             v-if="filteredDatacubeInstances.length === 0"
             :message-type="'alert-warning'"
-            :message="'No registered model instances!'"
+            :message="'No model instances'"
           />
         </div>
       </div>
@@ -118,7 +133,9 @@ import ListContextInsightPane from '@/components/context-insight-panel/list-cont
 import domainProjectService from '@/services/domain-project-service';
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
-import { unpublishDatacubeInstance } from '@/utils/datacube-util';
+import { unpublishDatacubeInstance, getDatacubeStatusInfo } from '@/utils/datacube-util';
+
+import { DatacubeStatus } from '@/types/Enums';
 
 export default {
   name: 'DomainProjectOverview',
@@ -134,7 +151,12 @@ export default {
     showSortingDropdownDatacubeInstances: false,
     sortingOptionsDatacubeInstances: ['Most recent', 'Earliest'],
     selectedSortingOptionDatacubeInstances: 'Most recent',
-    isEditingDesc: false
+    isEditingDesc: false,
+    filterOptions: [
+      { status: DatacubeStatus.Ready, selected: true },
+      { status: DatacubeStatus.Registered, selected: true },
+      { status: DatacubeStatus.Deprecated, selected: false }
+    ]
   }),
   computed: {
     ...mapGetters({
@@ -143,9 +165,11 @@ export default {
       refreshDatacubes: 'insightPanel/refreshDatacubes'
     }),
     filteredDatacubeInstances() {
-      return this.datacubeInstances.filter(instance => {
-        return instance.name.toLowerCase().includes(this.searchDatacubeInstances.toLowerCase());
-      });
+      return this.datacubeInstances.filter(instance =>
+        this.filterOptions.find(filter => filter.status === instance.status)?.selected ?? true
+      ).filter(instance =>
+        instance.name.toLowerCase().includes(this.searchDatacubeInstances.toLowerCase())
+      );
     },
     tags() {
       if (!this.datacubeInstances || this.datacubeInstances.length === 0) {
@@ -209,6 +233,7 @@ export default {
       setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
     }),
+    getDatacubeStatusInfo,
     updateDesc() {
       if (this.isEditingDesc) {
         // we may have just modified the desc text, so update the server value
@@ -476,12 +501,26 @@ main {
   }
 }
 
+.filter-options {
+  display: flex;
+  margin-top: 10px;
+
+  .filter-label {
+    margin: 0px;
+    padding-left: 0px;
+    padding-right: 10px;
+    font-weight: unset;
+    cursor: pointer;
+    color: black;
+  }
+}
+
 .controls {
   display: flex;
   justify-content: space-between;
   input[type=text] {
     padding: 8px;
-    width: 250px;
+    width: 150px;
     margin-right: 5px;
   }
   .sorting {
