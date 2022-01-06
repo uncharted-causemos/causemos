@@ -45,6 +45,7 @@ import { INode } from 'svg-flowgraph2';
 import { NodeParameter, EdgeParameter } from '@/types/CAG';
 import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
+import { calculateNeighborhood } from '@/utils/graphs-util';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -151,6 +152,7 @@ export default defineComponent({
       this.$emit('delete');
     });
 
+    const rendererRef = this.renderer;
 
     // Temporary tracker
     let mergeTargetNode: D3SelectionINode<NodeParameter> | null = null;
@@ -158,8 +160,13 @@ export default defineComponent({
     // Native messages
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection, renderer: QualitativeRenderer) => {
       renderer.selectNode(nodeSelection);
-
       nodeSelection.select('.node-header').classed('node-selected', true);
+
+      const neighborhood = calculateNeighborhood(this.data as any, nodeSelection.datum().data.concept);
+      renderer.resetAnnotations();
+      renderer.neighborhoodAnnotation(neighborhood);
+      console.log(neighborhood);
+
       this.selectedNode = nodeSelection.datum().data.concept;
       this.$emit('node-click', nodeSelection.datum().data);
     });
@@ -170,6 +177,7 @@ export default defineComponent({
     });
 
     this.renderer.on('background-click', () => {
+      rendererRef.resetAnnotations();
       this.$emit('background-click');
     });
 

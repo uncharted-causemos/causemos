@@ -47,6 +47,15 @@ const DEFAULT_STYLE = {
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 const distance = (a: {x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 
+const FADED_OPACITY = 0.2;
+type NeighborNode = {
+  concept: string;
+};
+type NeighborEdge = {
+  source: string;
+  target: string;
+};
+
 export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParameter> {
   newEdgeSourceId = '';
   newEdgeTargetId = '';
@@ -599,6 +608,30 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
     this.newEdgeSourceId = '';
     this.newEdgeTargetId = '';
   }
+
+
+  neighborhoodAnnotation({ nodes, edges }: { nodes: NeighborNode[]; edges: NeighborEdge[] }) {
+    const chart = this.chart;
+
+    // FIXME: not very efficient
+    const nonNeighborNodes = chart.selectAll('.node').filter((d: any) => {
+      return !nodes.map(node => node.concept).includes(d.label);
+    });
+    nonNeighborNodes.style('opacity', FADED_OPACITY);
+
+    const nonNeighborEdges = chart.selectAll('.edge').filter((d: any) => !_.some(edges, edge => edge.source === d.data.source && edge.target === d.data.target));
+    nonNeighborEdges.style('opacity', FADED_OPACITY);
+  }
+
+  resetAnnotations() {
+    const chart = this.chart;
+    chart.selectAll('.node').style('opacity', 1);
+    chart.selectAll('.edge').style('opacity', 1);
+    chart.selectAll('.node-header').classed('node-selected', false);
+    chart.selectAll('.edge-control').remove();
+  }
+
+
 
   selectNode(node: D3SelectionINode<NodeParameter>) {
     node.select('.node-header')
