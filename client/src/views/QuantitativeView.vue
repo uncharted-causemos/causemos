@@ -360,6 +360,7 @@ export default defineComponent({
         const poller = new Poller(PROJECTION_EXPERIMENT_INTERVAL, PROJECTION_EXPERIMENT_THRESHOLD);
         const cancelFn = () => {
           poller.stop();
+          this.toaster('No baseline generated, you may need to refresh the page', 'error', true);
         };
 
         // Now we are up to date, create base scenario
