@@ -376,8 +376,9 @@ const extractELKPositions = (root: ELKNode) => {
  * The functions works by creating a graph structure in ELK's format, run the layout and extract the
  * positional/dimension coordinates, which are then merged into the IGraph data structure
  */
-export const runLayout = async <V, E> (
-  graphData: IGraph<V, E>
+export const runELKLayout = async <V, E> (
+  graphData: IGraph<V, E>,
+  nodeSize: { width: number; height: number}
 ): Promise<IGraph<V, E>> => {
   // 0. Prepare lookups
   const edgeMaps = makeEdgeMaps(graphData.edges);
@@ -404,8 +405,8 @@ export const runLayout = async <V, E> (
     }
 
     if (node.children.length === 0) {
-      node.width = node.width || 130; // FIXME
-      node.height = node.height || 30; // FIXME
+      node.width = node.width || nodeSize.width;
+      node.height = node.height || nodeSize.height;
     } else {
       delete node.width;
       delete node.height;

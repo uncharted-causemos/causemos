@@ -9,7 +9,95 @@
   />
 </template>
 
-<script>
+<script lang="ts">
+
+import { defineComponent, ref, Ref, computed } from 'vue';
+import { useStore } from 'vuex';
+import { QuantitativeRenderer, D3SelectionINode } from '@/graphs/quantitative-renderer';
+import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
+import GraphSearch from '@/components/widgets/graph-search.vue';
+import { IGraph } from 'svg-flowgraph2';
+import { NodeParameter, EdgeParameter } from '@/types/CAG';
+
+export default defineComponent({
+  name: 'ModelGraph',
+  components: {
+    GraphSearch
+  },
+  props: {
+    data: {
+      type: Object,
+      default: () => ({})
+    },
+    scenarioData: {
+      type: Object,
+      required: true
+    },
+    visualState: {
+      // selected.nodes
+      // selected.edges
+      // highlighted.nodes
+      // highlighted.edges
+      type: Object,
+      default: () => ({})
+    }
+  },
+  emits: [
+    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-sensitivity', 'node-drilldown'
+  ],
+  setup(props) {
+    const store = useStore();
+    const renderer = ref(null) as Ref<QuantitativeRenderer | null>;
+    const selectedScenarioId = computed(() => store.getters['model/selectedScenarioId']);
+    const scenarioProxy = computed(() => {
+      return { scenarioData: props.scenarioData, selectedScenarioId: selectedScenarioId.value };
+    });
+
+    return {
+      renderer,
+
+      selectedScenarioId,
+      scenarioProxy
+    };
+  },
+  watch: {
+  },
+  mounted() {
+    const containerEl = this.$refs.container;
+    this.renderer = new QuantitativeRenderer({
+      el: containerEl,
+      useAStarRouting: true,
+      useStableLayout: true,
+      useStableZoomPan: true,
+      runLayout: (graphData: IGraph<NodeParameter, EdgeParameter>) => {
+        return runELKLayout(graphData, { width: 120, height: 80 });
+      }
+    });
+
+    this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
+      this.$emit('node-sensitivity', nodeSelection.datum().data);
+    });
+    this.renderer.on('node-dbl-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
+      this.$emit('node-drilldown', nodeSelection.datum().data);
+    });
+
+
+    this.refresh();
+  },
+  methods: {
+    async refresh() {
+      const d = buildInitialGraph(this.data.graph as any);
+      if (this.renderer) {
+        this.renderer.isGraphDirty = true;
+        await this.renderer.setData(d);
+        await this.renderer.render();
+      }
+    }
+  }
+});
+
+
+/*
 import _ from 'lodash';
 
 import { mapGetters } from 'vuex';
@@ -48,13 +136,6 @@ export default {
     'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-sensitivity', 'node-drilldown'
   ],
   computed: {
-    ...mapGetters({
-      selectedScenarioId: 'model/selectedScenarioId'
-    }),
-    scenarioProxy() {
-      // Need both scenarioData and selectedScenarioId to sync up
-      return { scenarioData: this.scenarioData, selectedScenarioId: this.selectedScenarioId };
-    }
   },
   watch: {
     data() {
@@ -93,12 +174,6 @@ export default {
     //   this.renderer.showNeighborhood(neighborhood);
     //   this.renderer.selectNode(node);
     // });
-    this.renderer.setCallback('nodeClick', (event, node) => {
-      this.$emit('node-sensitivity', node.datum().data);
-    });
-    this.renderer.setCallback('nodeDblClick', (event, node) => {
-      this.$emit('node-drilldown', node.datum().data);
-    });
 
     this.renderer.setCallback('nodeMouseEnter', (evt, node, g) => {
       this.$emit('node-enter', node, g);
@@ -178,6 +253,7 @@ export default {
     }
   }
 };
+*/
 
 </script>
 

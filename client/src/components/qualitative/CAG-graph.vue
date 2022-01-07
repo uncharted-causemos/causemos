@@ -37,11 +37,11 @@ import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 import GraphSearch from '@/components/widgets/graph-search.vue';
 
 import { QualitativeRenderer } from '@/graphs/qualitative-renderer';
-import { buildInitialGraph, runLayout } from '@/graphs/cag-adapter';
+import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import { overlap } from '@/utils/dom-util';
 import svgUtil from '@/utils/svg-util';
 
-import { INode } from 'svg-flowgraph2';
+import { IGraph, INode } from 'svg-flowgraph2';
 import { NodeParameter, EdgeParameter } from '@/types/CAG';
 import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
@@ -146,7 +146,9 @@ export default defineComponent({
       useAStarRouting: true,
       useStableLayout: true,
       useStableZoomPan: true,
-      runLayout: runLayout
+      runLayout: (graphData: IGraph<NodeParameter, EdgeParameter>) => {
+        return runELKLayout(graphData, { width: 130, height: 30 });
+      }
     });
     this.mouseTrap.bind(['backspace', 'del'], () => {
       this.$emit('delete');
