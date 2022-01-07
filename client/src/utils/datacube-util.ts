@@ -102,6 +102,7 @@ export const TEMPORAL_RESOLUTION = 'temporalResolution';
 export const MAINTAINER_NAME = 'maintainerName';
 export const MAINTAINER_ORG = 'maintainerOrg';
 export const TYPE = 'type';
+export const STATUS = 'status';
 
 
 
@@ -116,6 +117,7 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
   tags: 'Tags',
   temporalResolution: 'Temporal Resolution',
   type: 'Datacube Types',
+  status: 'Datacube Status',
   name: 'Dataset Name',
   variableUnit: 'Output Units',
   familyName: 'Family Name'
@@ -135,7 +137,8 @@ export const FACET_FIELDS: string [] = [
   FAMILY_NAME,
   TEMPORAL_RESOLUTION,
   MAINTAINER_NAME,
-  MAINTAINER_ORG
+  MAINTAINER_ORG,
+  STATUS
 ];
 
 export const NODE_FACET_FIELDS: string [] = [
@@ -150,7 +153,8 @@ export const NODE_FACET_FIELDS: string [] = [
   FAMILY_NAME,
   TEMPORAL_RESOLUTION,
   MAINTAINER_NAME,
-  MAINTAINER_ORG
+  MAINTAINER_ORG,
+  STATUS
 ];
 
 export const getDatacubeStatusInfo = (status: DatacubeStatus) => {
