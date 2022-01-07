@@ -5,6 +5,7 @@ const request = require('request');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 
 const Logger = rootRequire('/config/logger');
+const baseMapStyle = rootRequire('/basemap-style.json');
 
 const CARTO_API_KEY = process.env.CARTO_MAP_API_KEY;
 const API_KEY_PARAM = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : '';
@@ -67,13 +68,7 @@ router.get('/satellite-tiles/:z/:x/:y', (req, res) => {
  * Retrieve enterprise carto stylesheet for mapbox-gl-js
  */
 router.get('/styles/default', asyncHandler(async (req, res) => {
-  const options = {
-    url: 'https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-    method: 'GET',
-    timeout: 10 * 1000 // 10 seconds
-  };
-  const results = await requestAsPromise(options);
-  const stylesheet = JSON.parse(results);
+  const stylesheet = baseMapStyle;
   /**
    * Notes:
    * Mapbox tileJSON schema reference: https://github.com/mapbox/tilejson-spec/tree/master/2.0.0*

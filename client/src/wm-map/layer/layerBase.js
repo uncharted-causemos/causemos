@@ -36,6 +36,13 @@ export default {
     layer: {
       type: Object,
       required: true
+    },
+    /**
+     * Inject the new layer before layer=beforeId
+     */
+    beforeId: {
+      type: String,
+      default: undefined
     }
   },
   watch: {

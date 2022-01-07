@@ -1,0 +1,78 @@
+// Overrides lex bar styles
+@import '@/styles/variables';
+
+div.lex-box {
+  // Lex expands if there are pills, this is to insure things don't jump around
+  // Lex has a min-height of 40px by default, but it's 41px when active/focused
+  // Keeping this constant avoids a page reflow (which can avoid rerendering d3
+  //  components that watch for element resizing, such as the PC chart)
+  min-height: 41px;
+  height: auto;
+  background: #ffffff;
+  border: 1px solid #f2f2f2;
+  padding: 2px;
+  // Be sure to leave room to the right of long pills to allow the analyst
+  //  to click to add new pills
+  padding-right: 20px;
+
+  &:active,
+  &.active,
+  &.focused {
+    border-color: $selected;
+    box-shadow: none;
+  }
+
+  // Center 'x' button vertically
+  div.token button span {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .token-container {
+    // Center pills vertically, and ensure that there's a gap between rows
+    margin-top: 2px;
+
+    &:not(:first-child) {
+      // Add a gap between columns
+      margin-left: 2px;
+    }
+  }
+
+  .token {
+    margin: 0;
+    font-size: 1.4rem;
+    white-space: normal;
+
+    button.token-remove,
+    button.token-cancel {
+      position: relative;
+      top: unset;
+      transform: none;
+    }
+  }
+
+  .token-icon {
+    // Hide search icon in every pill
+    display: none !important;
+  }
+}
+
+
+// Include this mixin on the wrapper element that includes the
+//  <div ref="lexContainer" />
+// and the
+//  <button class="clear-button">
+@mixin lex-wrapper() {
+  display: flex;
+
+  & > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .clear-button {
+    flex: 0;
+    padding: 5px;
+  }
+}
