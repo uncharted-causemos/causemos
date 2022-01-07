@@ -34,7 +34,7 @@
     </tab-panel>
     <div v-if="isTraining === true">
       <h4 style="margin-left: 15px">
-        Model is currently training on the {{currentEngine}} engine, you can switch to
+        Model is currently training on the {{currentEngine}} engine - {{ trainingPercentage }}%. You can switch to
         <button class="btn btn-primary btn-sm" @click="switchEngine('dyse')">DySE</button> to continue running experiments.
       </h4>
     </div>
@@ -87,6 +87,8 @@ export default defineComponent({
 
     resetLayoutToken: 0,
     isTraining: false,
+    trainingPercentage: 0,
+    refreshTimer: 0,
     currentScenarioName: '' as string
   }),
   computed: {
@@ -146,6 +148,9 @@ export default defineComponent({
     // update insight related state
     // use contextId to store cag-id
     this.setContextId([this.currentCAG]);
+  },
+  beforeUnmount() {
+    window.clearTimeout(this.refreshTimer);
   },
   mounted() {
     this.refresh();
@@ -320,6 +325,7 @@ export default defineComponent({
           this.disableOverlay();
           if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
             this.isTraining = true;
+            this.scheduleRefresh();
           } else {
             this.toaster(errors[0], 'error', true);
           }
@@ -344,6 +350,8 @@ export default defineComponent({
         // FIXME: use status code
         if (r.status === 'training') {
           this.isTraining = true;
+          this.trainingPercentage = r.progressPercentage;
+          this.scheduleRefresh();
           return;
         }
       }
@@ -451,6 +459,7 @@ export default defineComponent({
           this.disableOverlay();
           if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
             this.isTraining = true;
+            this.scheduleRefresh();
           } else {
             this.toaster(errors[0], 'error', true);
           }
@@ -566,6 +575,11 @@ export default defineComponent({
         engine: engine
       });
       this.refresh();
+    },
+    scheduleRefresh() {
+      this.refreshTimer = window.setTimeout(() => {
+        this.refresh();
+      }, 9000);
     }
   }
 });
