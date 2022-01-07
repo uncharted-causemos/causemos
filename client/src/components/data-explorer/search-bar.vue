@@ -1,15 +1,9 @@
 <template>
-  <div class="row no-gutter">
-    <div class="col-md-12 search-bar">
-      <div ref="lexContainer" />
-      <div class="clear-button-container">
-        <button
-          class="btn btn-default clear-button"
-          @click="clearSearch()">
-          <i class="fa fa-remove" /> Clear
-        </button>
-      </div>
-    </div>
+  <div class="search-bar-container">
+    <div ref="lexContainer" />
+    <button class="btn btn-default clear-button" @click="clearSearch()">
+      <i class="fa fa-remove" />Clear
+    </button>
   </div>
 </template>
 
@@ -165,53 +159,11 @@ export default {
 };
 </script>
 
-<style lang='scss' scoped>
-@import "~@uncharted.software/lex/dist/lex.scss";
-@import "~styles/variables";
+<style lang="scss" scoped>
 
-// Lex expands if there are pills, this is to insure things don't jump around
-$searchbar-height: 40px;
-
-.lex-assistant-box {
-  z-index: 99;
-  max-width: 50vw !important; // lex sets this style in-line and require important flag
-  .selectable {
-    // this is backup just in case we have a really long identifier
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+.search-bar-container :deep {
+  @import '@/styles/lex-overrides';
+  @include lex-wrapper;
 }
 
-div.lex-box {
-  min-height: $searchbar-height;
-  height: auto;
-  background: #FFFFFF;
-}
-
-.form-control {
-  padding: 2px 8px;
-}
-
-.clear-button {
-  min-height: $searchbar-height;
-  width: 100%;
-}
-
-.search-bar {
-  padding-bottom: 5px;
-  padding-left: 0;
-}
-
-//Remove gutter spaces for rows
-.row.no-gutter {
-  margin-left: 0;
-  margin-right: 0;
-}
-
-.row.no-gutter [class*='col-']:not(:first-child),
-.row.no-gutter [class*='col-']:not(:last-child) {
-  padding-right: 0;
-  padding-left: 0;
-}
 </style>

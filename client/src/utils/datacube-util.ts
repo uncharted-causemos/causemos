@@ -153,6 +153,19 @@ export const NODE_FACET_FIELDS: string [] = [
   MAINTAINER_ORG
 ];
 
+export const getDatacubeStatusInfo = (status: DatacubeStatus) => {
+  switch (status) {
+    case DatacubeStatus.Ready:
+      return { label: 'Published', color: 'lightgreen' };
+    case DatacubeStatus.Registered:
+      return { label: 'Registered', color: 'lightgray' };
+    case DatacubeStatus.Deprecated:
+      return { label: 'Deprecated', color: 'lightblue' };
+    default:
+      return { label: status, color: 'red' };
+  }
+};
+
 export const getValidatedOutputs = (outputs: DatacubeFeature[]) => {
   // FIXME: only numeric outputs are currently supported
   const validOutputs = outputs.filter(o => o.type === 'int' || o.type === 'float' || o.type === 'boolean');
