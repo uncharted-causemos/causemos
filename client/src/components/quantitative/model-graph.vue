@@ -43,7 +43,7 @@ export default defineComponent({
     }
   },
   emits: [
-    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-sensitivity', 'node-drilldown'
+    'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-sensitivity', 'node-drilldown'
   ],
   setup(props) {
     const store = useStore();
@@ -81,7 +81,6 @@ export default defineComponent({
       this.$emit('node-drilldown', nodeSelection.datum().data);
     });
 
-
     this.refresh();
   },
   methods: {
@@ -114,27 +113,6 @@ export default {
   components: {
     GraphSearch
   },
-  props: {
-    data: {
-      type: Object,
-      default: () => ({})
-    },
-    scenarioData: {
-      type: Object,
-      required: true
-    },
-    visualState: {
-      // selected.nodes
-      // selected.edges
-      // highlighted.nodes
-      // highlighted.edges
-      type: Object,
-      default: () => ({})
-    }
-  },
-  emits: [
-    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-sensitivity', 'node-drilldown'
-  ],
   computed: {
   },
   watch: {
@@ -152,35 +130,7 @@ export default {
       this.applyVisualState();
     }
   },
-  created() {
-    this.renderer = null;
-  },
   mounted() {
-    this.renderer = new ModelRenderer({
-      el: this.$refs.container,
-      adapter: new Adapter({ nodeWidth: 120, nodeHeight: 80, layout: layered }),
-      renderMode: 'delta',
-      useEdgeControl: true,
-      useStableZoomPan: true,
-      useStableLayout: true,
-      addons: [highlight, nodeDrag, panZoom]
-    });
-
-    // this.renderer.setCallback('nodeClick', (evt, node) => {
-    //   const concept = node.datum().concept;
-    //   const neighborhood = calculateNeighborhood(this.data.graph, concept);
-    //   this.renderer.hideNeighbourhood();
-    //   this.renderer.clearSelections();
-    //   this.renderer.showNeighborhood(neighborhood);
-    //   this.renderer.selectNode(node);
-    // });
-
-    this.renderer.setCallback('nodeMouseEnter', (evt, node, g) => {
-      this.$emit('node-enter', node, g);
-    });
-    this.renderer.setCallback('nodeMouseLeave', (evt, node, g) => {
-      this.$emit('node-leave', node, g);
-    });
     this.renderer.setCallback('backgroundClick', (evt, e, g) => {
       this.$emit('background-click', e, g);
       this.renderer.clearSelections();
@@ -196,12 +146,6 @@ export default {
       this.renderer.clearSelections();
       this.renderer.showNeighborhood(neighborhood);
       this.renderer.selectEdge(evt, edge);
-    });
-    this.renderer.setCallback('edgeMouseEnter', (evt, edge) => {
-      this.renderer.mouseEnterEdge(evt, edge);
-    });
-    this.renderer.setCallback('edgeMouseLeave', (evt, edge) => {
-      this.renderer.mouseLeaveEdge(evt, edge);
     });
 
     this.refresh();
