@@ -4,6 +4,7 @@ import { GetterTree, MutationTree, ActionTree } from 'vuex';
 interface AppState {
   overlayActivated: boolean;
   overlayMessage: string;
+  overlayCancelFn: Function | null;
   updateToken: string;
   ontologyConcepts: Array<string>;
   ontologySet: Set<string>;
@@ -16,6 +17,7 @@ interface AppState {
 const state: AppState = {
   overlayActivated: false,
   overlayMessage: 'Loading...',
+  overlayCancelFn: null,
   updateToken: '',
   ontologyConcepts: [],
   ontologySet: new Set<string>(),
@@ -51,6 +53,7 @@ const getters: GetterTree<AppState, any> = {
   },
   overlayActivated: state => state.overlayActivated,
   overlayMessage: state => state.overlayMessage,
+  overlayCancelFn: state => state.overlayCancelFn,
   updateToken: state => state.updateToken,
   ontologyConcepts: state => state.ontologyConcepts,
   ontologySet: state => state.ontologySet,
@@ -61,12 +64,23 @@ const getters: GetterTree<AppState, any> = {
 };
 
 
+type MsgCancel = {
+  message: string;
+  cancelFn: Function;
+};
 const actions: ActionTree<AppState, any> = {
+  enableOverlayWithCancel({ commit }, payload: MsgCancel) {
+    commit('enableOverlay', payload.message);
+    if (payload.cancelFn) {
+      commit('setOverlayCancelFn', payload.cancelFn);
+    }
+  },
   enableOverlay({ commit }, message) {
     commit('enableOverlay', message);
   },
   disableOverlay({ commit }) {
     commit('disableOverlay');
+    commit('setOverlayCancelFn', null);
   },
   setUpdateToken({ commit }, updateToken) {
     commit('setUpdateToken', updateToken);
@@ -99,6 +113,9 @@ const mutations: MutationTree<AppState> = {
   },
   disableOverlay(state) {
     state.overlayActivated = false;
+  },
+  setOverlayCancelFn(state, fn) {
+    state.overlayCancelFn = fn;
   },
   setUpdateToken(state, updateToken) {
     state.updateToken = updateToken;
