@@ -107,7 +107,7 @@
                 :show-question="false"
                 @remove-insight="removeInsight(insight)"
                 @open-editor="openEditor(insight.id)"
-                @select-insight="selectInsight(insight)"
+                @select-insight="reviewInsight(insight)"
                 @edit-insight="editInsight(insight)"
               />
             </div>
@@ -131,7 +131,6 @@ import { INSIGHTS } from '@/utils/messages-util';
 import InsightCard from '@/components/insight-manager/insight-card';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
 
-import router from '@/router';
 import { computed } from 'vue';
 
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
@@ -321,27 +320,6 @@ export default {
       this.setUpdatedInsight(insight);
       this.setInsightList(this.searchedInsights);
       this.setCurrentPane('review-insight');
-    },
-    selectInsight(insight) {
-      if (insight === this.selectedInsight) {
-        this.selectedInsight = null;
-        return;
-      }
-      this.selectedInsight = insight;
-
-      const savedURL = insight.url;
-      const currentURL = this.$route.fullPath;
-      const finalURL = InsightUtil.jumpToInsightContext(insight, currentURL);
-      if (savedURL !== currentURL) {
-        this.$router.push(finalURL);
-      } else {
-        router.push({
-          query: {
-            insight_id: insight.id
-          }
-        }).catch(() => {});
-      }
-      this.closeInsightPanel();
     },
     switchTab(id) {
       this.activeInsight = null;
