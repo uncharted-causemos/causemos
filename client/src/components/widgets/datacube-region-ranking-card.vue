@@ -32,7 +32,27 @@
           @bar-chart-hover="$emit('bar-chart-hover', $event)"
         />
         <div class="row datacube-footer">
-          <div >Showing data for {{timestampFormatter(selectedTimestamp)}}</div>
+          <div>Showing data for {{timestampFormatter(selectedTimestamp)}}</div>
+          <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
+          <div style="display: flex; align-items: center">
+            <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
+            <div style="display: flex; align-items: center">
+              <div style="margin-right: 4px">Selected:</div>
+              <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
+                @change="selectedRegionRankingScenario = $event.target.selectedIndex"
+                :disabled="selectedScenarioIds.length === 1"
+                :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedRegionRankingScenario ? regionRunsScenarios[selectedRegionRankingScenario].color : 'black' }"
+              >
+                <option
+                  v-for="(selectedRun, indx) in regionRunsScenarios"
+                  :key="selectedRun.name"
+                  :selected="indx === selectedRegionRankingScenario"
+                >
+                  {{selectedRun.name}}
+                </option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
       <div class="datacube-map-placeholder">
@@ -142,6 +162,8 @@ export default defineComponent({
 
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
+    const selectedRegionRankingScenario = ref(0);
+    const regionRunsScenarios = ref([] as {name: string; color: string}[]);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
@@ -268,11 +290,22 @@ export default defineComponent({
 
     watchEffect(() => {
       if (visibleTimeseriesData.value.length > 0) {
+        regionRunsScenarios.value = visibleTimeseriesData.value.map(timeseries => ({ name: timeseries.name, color: timeseries.color }));
+
         // flatten the list of timeseries for all selected runs and extract the last timestmap
-        const allTimestamps = visibleTimeseriesData.value
+        let allTimestamps = visibleTimeseriesData.value
           .map(timeseries => timeseries.points)
           .flat()
           .map(point => point.timestamp);
+
+        const timeseriesForSelectedRun = visibleTimeseriesData.value
+          .find((timeseries, indx) => indx === selectedRegionRankingScenario.value);
+        if (timeseriesForSelectedRun !== undefined) {
+          allTimestamps = timeseriesForSelectedRun.points
+            .flat()
+            .map(point => point.timestamp);
+        }
+
         // select the last timestamp as the initial value
         const lastTimestamp = _.max(allTimestamps);
         if (lastTimestamp !== undefined) {
@@ -325,7 +358,8 @@ export default defineComponent({
         numberOfColorBins.value,
         maxNumberOfChartBars.value,
         limitNumberOfChartBars.value,
-        regionRankingBinningType.value
+        regionRankingBinningType.value,
+        selectedRegionRankingScenario.value
       ],
       () => {
         const temp: BarData[] = [];
@@ -340,7 +374,7 @@ export default defineComponent({
           if (regionLevelData !== undefined && regionLevelData.length > 0) {
             const data = regionLevelData.map(regionDataItem => ({
               name: regionDataItem.id,
-              value: Object.values(regionDataItem.values).length > 0 ? Object.values(regionDataItem.values)[0] : 0
+              value: Object.values(regionDataItem.values).length > 0 && Object.values(regionDataItem.values).length > selectedRegionRankingScenario.value ? Object.values(regionDataItem.values)[selectedRegionRankingScenario.value] : 0
             }));
             //
             // bin data
@@ -448,7 +482,9 @@ export default defineComponent({
       statusLabel,
       barsData,
       selectedTimestamp,
-      timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY')
+      timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY'),
+      selectedRegionRankingScenario,
+      regionRunsScenarios
     };
   },
   methods: {
