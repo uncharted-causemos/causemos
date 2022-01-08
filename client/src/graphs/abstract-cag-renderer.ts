@@ -14,11 +14,16 @@ type NeighborEdge = {
   target: string;
 };
 
-
 export type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 export type D3SelectionIEdge<T> = d3.Selection<d3.BaseType, IEdge<T>, null, any>;
 
 export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
+  labelFormatter: (label: string) => string = (s) => s;
+
+  setLabelFormatter(fn: (label: string) => string) {
+    this.labelFormatter = fn;
+  }
+
   neighborhoodAnnotation({ nodes, edges }: { nodes: NeighborNode[]; edges: NeighborEdge[] }) {
     const chart = this.chart;
 

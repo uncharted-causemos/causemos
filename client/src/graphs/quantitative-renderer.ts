@@ -110,7 +110,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       .attr('transform', svgUtil.translate(PADDING_HORIZONTAL, GRAPH_HEIGHT * 0.5 - 14))
       .style('stroke', 'none')
       .style('fill', '#000')
-      .text(d => d.label)
+      .text(d => this.labelFormatter(d.label))
       .each(function (d) { svgUtil.truncateTextToWidth(this, d.width - 2 * PADDING_HORIZONTAL); });
 
     selection.append('g')

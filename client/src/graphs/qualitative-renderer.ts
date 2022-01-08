@@ -92,7 +92,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('x', 10)
       .attr('y', 20)
       .style('pointer-events', 'none')
-      .text(d => d.label)
+      .text(d => this.labelFormatter(d.label))
       .each(function (d) {
         if (d.width) {
           svgUtil.truncateTextToWidth(this, d.width - 20);
@@ -103,7 +103,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   renderNodesUpdated(selection: D3SelectionINode<NodeParameter>) {
     selection
       .select('.node-label')
-      .text(d => d.label)
+      .text(d => this.labelFormatter(d.label))
       .each(function (d) {
         if (d.width) {
           svgUtil.truncateTextToWidth(this as any, d.width - 20); // FIXME any
@@ -429,7 +429,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
     node.select('.node-label')
       .attr('x', 30)
-      .text(d => d.label)
+      .text(d => this.labelFormatter(d.label))
       // @ts-ignore
       .each(function (d) { svgUtil.truncateTextToWidth(this, d.width - 50); });
 
@@ -565,7 +565,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
     nodes.select('.node-label')
       .attr('x', 10)
-      .text((d: any) => d.label)
+      .text((d: any) => this.labelFormatter(d.label))
       // @ts-ignore
       .each(function (d: any) { svgUtil.truncateTextToWidth(this, d.width - 20); });
     this.chart.selectAll('.node-handles').selectAll('*').remove();

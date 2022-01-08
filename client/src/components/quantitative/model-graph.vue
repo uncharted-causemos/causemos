@@ -14,6 +14,7 @@
 import _ from 'lodash';
 import { defineComponent, ref, Ref, computed } from 'vue';
 import { useStore } from 'vuex';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { D3SelectionINode, D3SelectionIEdge } from '@/graphs/abstract-cag-renderer';
 import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
@@ -57,6 +58,7 @@ export default defineComponent({
 
     return {
       renderer,
+      ontologyFormatter: useOntologyFormatter(),
 
       selectedScenarioId,
       scenarioProxy
@@ -89,9 +91,10 @@ export default defineComponent({
         return runELKLayout(graphData, { width: 120, height: 80 });
       }
     });
+    this.renderer.setLabelFormatter(this.ontologyFormatter);
 
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>, renderer: QuantitativeRenderer) => {
-      renderer.selectNode(nodeSelection);
+      renderer.selectNode(nodeSelection, '');
       this.$emit('node-sensitivity', nodeSelection.datum().data);
     });
     this.renderer.on('node-dbl-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {

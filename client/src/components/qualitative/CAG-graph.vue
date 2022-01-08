@@ -32,6 +32,7 @@ import * as d3 from 'd3';
 import Mousetrap from 'mousetrap';
 import { defineComponent, computed, ref, Ref } from 'vue';
 import { useStore } from 'vuex';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select.vue';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 import GraphSearch from '@/components/widgets/graph-search.vue';
@@ -130,6 +131,8 @@ export default defineComponent({
       newNodeX,
       newNodeY,
 
+      ontologyFormatter: useOntologyFormatter(),
+
       project,
       selectedNode
     };
@@ -150,6 +153,7 @@ export default defineComponent({
         return runELKLayout(graphData, { width: 130, height: 30 });
       }
     });
+    this.renderer.setLabelFormatter(this.ontologyFormatter);
     this.mouseTrap.bind(['backspace', 'del'], () => {
       this.$emit('delete');
     });
