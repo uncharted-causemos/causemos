@@ -18,7 +18,7 @@ import { D3SelectionINode, D3SelectionIEdge } from '@/graphs/abstract-cag-render
 import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import GraphSearch from '@/components/widgets/graph-search.vue';
-import { IGraph } from 'svg-flowgraph2';
+import { IGraph, moveToLabel } from 'svg-flowgraph2';
 import { NodeParameter, EdgeParameter } from '@/types/CAG';
 
 export default defineComponent({
@@ -73,6 +73,9 @@ export default defineComponent({
       if (this.renderer) {
         this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
       }
+    },
+    visualState() {
+      this.applyVisualState();
     }
   },
   mounted() {
@@ -122,103 +125,47 @@ export default defineComponent({
         this.renderer.setScenarioData(this.scenarioData);
         await this.renderer.render();
         this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
+        this.applyVisualState();
       }
-    }
-  }
-});
-
-
-/*
-import _ from 'lodash';
-
-import { mapGetters } from 'vuex';
-import GraphSearch from '@/components/widgets/graph-search.vue';
-import ModelRenderer from '@/graphs/model-renderer';
-import Adapter from '@/graphs/elk/adapter';
-import { layered } from '@/graphs/elk/layouts';
-// import { calculateNeighborhood } from '@/utils/graphs-util';
-import { highlightOptions } from '@/utils/graphs-util';
-import { highlight, nodeDrag, panZoom } from 'svg-flowgraph';
-
-export default {
-  name: 'ModelGraph',
-  components: {
-    GraphSearch
-  },
-  computed: {
-  },
-  watch: {
-    data() {
-      this.renderer.setData(this.data.graph);
-      this.refresh();
     },
-    scenarioProxy() {
-      // sanity check
-      const nodeScenarios = Object.values(this.scenarioData)[0].scenarios;
-      if (!_.some(nodeScenarios, d => d.id === this.selectedScenarioId)) return;
-      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
-    },
-    visualState() {
-      this.applyVisualState();
-    }
-  },
-  mounted() {
-    this.renderer.setCallback('backgroundClick', (evt, e, g) => {
-      this.$emit('background-click', e, g);
-      this.renderer.clearSelections();
-      this.renderer.hideNeighbourhood();
-    });
+    applyVisualState() {
+      const renderer = this.renderer;
+      if (renderer) {
+        renderer.resetAnnotations();
 
-    this.refresh();
-  },
-  methods: {
-    search(nodeId) {
+        // apply changes
+        const visualState = this.visualState;
+        if (visualState.selected && visualState.selected.nodes) {
+          visualState.selected.nodes.forEach((node: any) => {
+            renderer.selectNodeByConcept(node.concept, '');
+          });
+        }
+        if (visualState.highlighted) {
+          renderer.neighborhoodAnnotation(visualState.highlighted);
+        }
+        if (visualState.annotated) {
+          // FIXME: Need to be more flexible
+          if (visualState.annotated.nodes) {
+            visualState.annotated.nodes.forEach((node: any) => {
+              renderer.selectNodeByConcept(node.concept, '#8767c8');
+            });
+          }
+        }
+      }
+    },
+    search(concept: string) {
+      if (this.renderer) {
+        moveToLabel(this.renderer, concept, 2000);
+      }
+      /*
       this.renderer.moveTo(nodeId, 1500);
       this.renderer.highlight({
         nodes: [nodeId]
       }, highlightOptions);
-    },
-    async refresh() {
-      if (_.isEmpty(this.data)) return;
-      this.renderer.setData(this.data.graph);
-      this.renderer.setScenarioData(this.scenarioData);
-      await this.renderer.render();
-
-      this.renderer.hideNeighbourhood();
-      this.renderer.enableDrag(true);
-      this.renderer.enableSubInteractions();
-      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
-
-      // apply visual state
-      this.applyVisualState();
-    },
-    applyVisualState() {
-      // reset
-      this.renderer.hideNeighbourhood();
-      this.renderer.clearSelections();
-
-      // apply changes
-      const visualState = this.visualState;
-      if (visualState.selected && visualState.selected.nodes) {
-        visualState.selected.nodes.forEach(node => {
-          this.renderer.selectNodeById(node.concept);
-        });
-      }
-      if (visualState.highlighted) {
-        this.renderer.showNeighborhood(visualState.highlighted);
-      }
-      if (visualState.annotated) {
-        // FIXME: Need to be more flexible
-        if (visualState.annotated.nodes) {
-          visualState.annotated.nodes.forEach(node => {
-            this.renderer.selectNodeById(node.concept, '#8767c8');
-          });
-        }
-      }
+      */
     }
   }
-};
-*/
+});
 
 </script>
 

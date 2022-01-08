@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
 import svgUtil from '@/utils/svg-util';
-import { DeltaRenderer, IEdge, INode } from 'svg-flowgraph2';
+import { DeltaRenderer, IEdge, INode, moveTo, highlight, unHighlight } from 'svg-flowgraph2';
 import { DEFAULT_STYLE } from './cag-style';
 
 const FADED_OPACITY = 0.2;
@@ -63,4 +63,17 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
 
     this.renderEdgeControls(edge);
   }
+
+  selectNodeByConcept(concept: string, color: string) {
+    const node = this.chart.selectAll('.node').filter((node: any) => node.label === concept);
+    if (node) {
+      this.selectNode(node as any, color);
+    }
+  }
 }
+
+export {
+  moveTo,
+  highlight,
+  unHighlight
+};
