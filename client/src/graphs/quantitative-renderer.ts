@@ -1,13 +1,11 @@
 import * as d3 from 'd3';
-import { DeltaRenderer, INode, IEdge } from 'svg-flowgraph2';
-import { NodeParameter, EdgeParameter } from '@/types/CAG';
+import { NodeParameter, EdgeParameter, NodeScenarioData } from '@/types/CAG';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import svgUtil from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
-
-export type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
-export type D3SelectionIEdge<T> = d3.Selection<d3.BaseType, IEdge<T>, null, any>;
+import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
+import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 
 const DEFAULT_STYLE = {
   node: {
@@ -42,12 +40,22 @@ const DEFAULT_STYLE = {
 };
 
 const GRAPH_HEIGHT = 55;
+const GRAPH_VERTICAL_MARGIN = 6;
 const PADDING_HORIZONTAL = 5;
+const PADDING_BOTTOM = 3;
+const INDICATOR_NAME_SIZE = 7;
+const INDICATOR_NAME_COLOR = '#999';
 
+
+type ScenarioData = {
+  [concept: string]: NodeScenarioData;
+};
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
-export class QuantitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParameter> {
+export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, EdgeParameter> {
+  scenarioData: ScenarioData = {};
+
   constructor(options: any) {
     super(options);
     console.log('Quantitative Renderer');
@@ -91,6 +99,10 @@ export class QuantitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParam
     this.on('edge-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
       selection.selectAll('.edge-mouseover-handle').remove();
     });
+  }
+
+  setScenarioData(scenarioData: ScenarioData) {
+    this.scenarioData = scenarioData;
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
@@ -251,5 +263,131 @@ export class QuantitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParam
       .attr('stdDeviation', '2');
 
     return svg;
+  }
+
+
+  renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
+    this.chart.selectAll('.edge-control').selectAll('*').remove();
+    const edgeControl = selection.select('.edge-control');
+    edgeControl
+      .append('circle')
+      .attr('r', DEFAULT_STYLE.edge.controlRadius + 2)
+      .style('fill', DEFAULT_STYLE.edgeBg.stroke)
+      .attr('stroke', SELECTED_COLOR)
+      .style('cursor', 'pointer');
+
+    edgeControl
+      .append('circle')
+      .attr('r', DEFAULT_STYLE.edge.controlRadius)
+      .style('fill', d => calcEdgeColor(d.data))
+      .style('cursor', 'pointer');
+
+    const controlStyles = svgUtil.POLARITY_ICON_SVG_SETTINGS;
+
+    edgeControl
+      .append('text')
+      // @ts-ignore
+      .attr('x', d => controlStyles[d.data.polarity].x)
+      // @ts-ignore
+      .attr('y', d => controlStyles[d.data.polarity].y)
+      .style('background-color', 'red')
+      .style('font-family', 'FontAwesome')
+      // @ts-ignore
+      .style('font-size', d => controlStyles[d.data.polarity]['font-size'])
+      .style('stroke', 'none')
+      .style('fill', 'white')
+      .style('cursor', 'pointer')
+      // @ts-ignore
+      .text(d => controlStyles[d.data.polarity].text);
+  }
+
+  // FIXME: Typescript
+  renderHistoricalAndProjections(selectedScenarioId: string) {
+    const chart = this.chart;
+
+    chart.selectAll('.node-ui').each((datum: any, index, nodes) => {
+      if (datum.nodes && datum.nodes.length > 0) return; // node has children
+
+      const node = nodes[index];
+
+      const nodeWidth = datum.width;
+      const nodeHeight = datum.height;
+      const nodeBodyGroup = d3.select(node).select('.node-body-group');
+
+      d3.select(node).style('cursor', 'pointer');
+
+      // Create historical/projection chart
+      const nodeScenarioData = this.scenarioData[datum.label];
+
+      nodeBodyGroup.select('.historic-graph').remove();
+      nodeBodyGroup.select('.indicator-label').remove();
+      const graphEl = nodeBodyGroup
+        .append('g')
+        .classed('historic-graph', true)
+        .attr('transform',
+          svgUtil.translate(
+            PADDING_HORIZONTAL,
+            nodeHeight -
+              PADDING_BOTTOM -
+              INDICATOR_NAME_SIZE -
+              GRAPH_HEIGHT +
+              GRAPH_VERTICAL_MARGIN
+          )
+        );
+
+      nodeBodyGroup
+        .append('text')
+        .classed('indicator-label', true)
+        .attr('x', PADDING_HORIZONTAL)
+        .attr('y', nodeHeight - PADDING_BOTTOM)
+        .attr('width', nodeWidth)
+        .style('font-size', INDICATOR_NAME_SIZE + 'px')
+        .attr('fill', INDICATOR_NAME_COLOR)
+        .text(nodeScenarioData.indicator_name)
+        .each(function (d: any) {
+          svgUtil.truncateTextToWidth(
+            this,
+            d.width - (2 * PADDING_HORIZONTAL)
+          );
+        });
+
+      // Add a shadow to nodes that have clamps for the currently selected scenario
+      if (selectedScenarioId !== null) {
+        const selectedScenario = nodeScenarioData.scenarios.find(s => s.id === selectedScenarioId);
+        let filterEffect = null;
+        if (selectedScenario && selectedScenario.constraints) {
+          filterEffect = (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null;
+        }
+        d3.select(nodes[index]).attr('filter', filterEffect as any);
+      }
+
+      const runOptions = { selectedScenarioId };
+      const renderOptions = {
+        margin: {
+          top: 0,
+          bottom: PADDING_BOTTOM + INDICATOR_NAME_SIZE,
+          left: 0,
+          right: 0
+        },
+        width: nodeWidth - (PADDING_HORIZONTAL * 2) - (DEFAULT_STYLE.node.strokeWidth * 2),
+        height: GRAPH_HEIGHT
+      };
+
+      renderHistoricalProjectionsChart(graphEl as any, nodeScenarioData, renderOptions, runOptions);
+    });
+  }
+
+
+
+  selectEdge(evt: Event, edge: D3SelectionIEdge<EdgeParameter>) {
+    const mousePoint = d3.pointer(evt, edge.node());
+    const pathNode = edge.select('.edge-path').node();
+    const controlPoint = (svgUtil.closestPointOnPath(pathNode as any, mousePoint) as number[]);
+
+    edge.append('g')
+      .classed('edge-control', true)
+      .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
+
+    this.renderEdgeControls(edge);
   }
 }

@@ -11,9 +11,11 @@
 
 <script lang="ts">
 
+import _ from 'lodash';
 import { defineComponent, ref, Ref, computed } from 'vue';
 import { useStore } from 'vuex';
-import { QuantitativeRenderer, D3SelectionINode } from '@/graphs/quantitative-renderer';
+import { D3SelectionINode, D3SelectionIEdge } from '@/graphs/abstract-cag-renderer';
+import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import GraphSearch from '@/components/widgets/graph-search.vue';
 import { IGraph } from 'svg-flowgraph2';
@@ -61,6 +63,17 @@ export default defineComponent({
     };
   },
   watch: {
+    data() {
+      this.refresh();
+    },
+    scenarioProxy() {
+      // sanity check
+      const nodeScenarios = Object.values(this.scenarioData)[0].scenarios;
+      if (!_.some(nodeScenarios, d => d.id === this.selectedScenarioId)) return;
+      if (this.renderer) {
+        this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
+      }
+    }
   },
   mounted() {
     const containerEl = this.$refs.container;
@@ -81,6 +94,22 @@ export default defineComponent({
       this.$emit('node-drilldown', nodeSelection.datum().data);
     });
 
+    this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection: D3SelectionIEdge<EdgeParameter>, renderer: QuantitativeRenderer) => {
+      const source = edgeSelection.datum().data.source;
+      const target = edgeSelection.datum().data.target;
+      const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
+
+      renderer.resetAnnotations();
+      renderer.neighborhoodAnnotation(neighborhood);
+      renderer.selectEdge(event, edgeSelection);
+      this.$emit('edge-click', edgeSelection.datum().data);
+    });
+
+    this.renderer.on('background-click', (_evtName, _event: PointerEvent, _svgSelection, renderer: QuantitativeRenderer) => {
+      this.$emit('background-click');
+      renderer.resetAnnotations();
+    });
+
     this.refresh();
   },
   methods: {
@@ -89,7 +118,9 @@ export default defineComponent({
       if (this.renderer) {
         this.renderer.isGraphDirty = true;
         await this.renderer.setData(d);
+        this.renderer.setScenarioData(this.scenarioData);
         await this.renderer.render();
+        this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
       }
     }
   }
@@ -135,17 +166,6 @@ export default {
       this.$emit('background-click', e, g);
       this.renderer.clearSelections();
       this.renderer.hideNeighbourhood();
-    });
-    this.renderer.setCallback('edgeClick', (evt, edge) => {
-      this.$emit('edge-click', edge.datum().data);
-      const source = edge.datum().data.source;
-      const target = edge.datum().data.target;
-      const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
-
-      this.renderer.hideNeighbourhood();
-      this.renderer.clearSelections();
-      this.renderer.showNeighborhood(neighborhood);
-      this.renderer.selectEdge(evt, edge);
     });
 
     this.refresh();

@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
+import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import { NodeParameter, EdgeParameter } from '@/types/CAG';
 import {
-  DeltaRenderer, IEdge, INode,
-  getAStarPath, simplifyPath
+  INode, getAStarPath, simplifyPath
 } from 'svg-flowgraph2';
 
 import svgUtil from '@/utils/svg-util';
@@ -11,8 +11,6 @@ import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 
-type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
-type D3SelectionIEdge<T> = d3.Selection<d3.BaseType, IEdge<T>, null, any>;
 
 const REMOVE_TIMER = 1000;
 
@@ -47,16 +45,8 @@ const DEFAULT_STYLE = {
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 const distance = (a: {x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 
-const FADED_OPACITY = 0.2;
-type NeighborNode = {
-  concept: string;
-};
-type NeighborEdge = {
-  source: string;
-  target: string;
-};
 
-export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParameter> {
+export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, EdgeParameter> {
   newEdgeSourceId = '';
   newEdgeTargetId = '';
 
@@ -608,30 +598,6 @@ export class QualitativeRenderer extends DeltaRenderer<NodeParameter, EdgeParame
     this.newEdgeSourceId = '';
     this.newEdgeTargetId = '';
   }
-
-
-  neighborhoodAnnotation({ nodes, edges }: { nodes: NeighborNode[]; edges: NeighborEdge[] }) {
-    const chart = this.chart;
-
-    // FIXME: not very efficient
-    const nonNeighborNodes = chart.selectAll('.node').filter((d: any) => {
-      return !nodes.map(node => node.concept).includes(d.label);
-    });
-    nonNeighborNodes.style('opacity', FADED_OPACITY);
-
-    const nonNeighborEdges = chart.selectAll('.edge').filter((d: any) => !_.some(edges, edge => edge.source === d.data.source && edge.target === d.data.target));
-    nonNeighborEdges.style('opacity', FADED_OPACITY);
-  }
-
-  resetAnnotations() {
-    const chart = this.chart;
-    chart.selectAll('.node').style('opacity', 1);
-    chart.selectAll('.edge').style('opacity', 1);
-    chart.selectAll('.node-header').classed('node-selected', false);
-    chart.selectAll('.edge-control').remove();
-  }
-
-
 
   selectNode(node: D3SelectionINode<NodeParameter>) {
     node.select('.node-header')
