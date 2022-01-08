@@ -42,7 +42,7 @@ import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import { overlap } from '@/utils/dom-util';
 import svgUtil from '@/utils/svg-util';
 
-import { IGraph, INode } from 'svg-flowgraph2';
+import { IGraph, INode, moveToLabel } from 'svg-flowgraph';
 import { NodeParameter, EdgeParameter } from '@/types/CAG';
 import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
@@ -165,7 +165,7 @@ export default defineComponent({
 
     // Native messages
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection, renderer: QualitativeRenderer) => {
-      renderer.selectNode(nodeSelection);
+      renderer.selectNode(nodeSelection, '');
       nodeSelection.select('.node-container').classed('node-selected', true);
 
       const neighborhood = calculateNeighborhood(this.data as any, nodeSelection.datum().data.concept);
@@ -339,6 +339,17 @@ export default defineComponent({
         this.renderer.renderNodesAdded(nodeUI as any);
         this.renderer.enableEdgeInteraction(nodeUI as any, this.renderer);
       }
+    },
+    search(concept: string) {
+      if (this.renderer) {
+        moveToLabel(this.renderer, concept, 2000);
+      }
+      /*
+      this.renderer.moveTo(nodeId, 1500);
+      this.renderer.highlight({
+        nodes: [nodeId]
+      }, highlightOptions);
+      */
     }
   }
 });

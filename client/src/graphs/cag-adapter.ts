@@ -6,7 +6,7 @@
 /* Layout adapater for CAGs */
 // import { layered } from './elk/layouts';
 import { CAGGraph, NodeParameter, EdgeParameter } from '@/types/CAG';
-import { IGraph, INode, IEdge, traverseGraph } from 'svg-flowgraph2';
+import { IGraph, INode, IEdge, traverseGraph } from 'svg-flowgraph';
 import ELK from 'elkjs/lib/elk.bundled';
 
 const makeGeneralLayout = (numLeafNodes: number) => {
@@ -380,6 +380,8 @@ export const runELKLayout = async <V, E> (
   graphData: IGraph<V, E>,
   nodeSize: { width: number; height: number}
 ): Promise<IGraph<V, E>> => {
+  const R_PADDING = 10; // Edge spacer
+
   // 0. Prepare lookups
   const edgeMaps = makeEdgeMaps(graphData.edges);
 
@@ -407,6 +409,7 @@ export const runELKLayout = async <V, E> (
     if (node.children.length === 0) {
       node.width = node.width || nodeSize.width;
       node.height = node.height || nodeSize.height;
+      node.width += R_PADDING;
     } else {
       delete node.width;
       delete node.height;
@@ -456,11 +459,16 @@ export const runELKLayout = async <V, E> (
     const np = positionMaps.nodeGlobalPosition.get(node.label);
     node.x = np.x;
     node.y = np.y;
-    node.width = np.width;
+    node.width = np.width - R_PADDING;
     node.height = np.height;
   });
   for (const edge of graphData.edges) {
     const ep = positionMaps.edgeGlobalPOsition.get(edge.id);
+    const first = ep[0];
+    ep.unshift({
+      x: first.x - R_PADDING,
+      y: first.y
+    });
     edge.points = ep;
   }
   graphData.width = elkLayoutResult.width;

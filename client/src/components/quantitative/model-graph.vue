@@ -19,7 +19,7 @@ import { D3SelectionINode, D3SelectionIEdge } from '@/graphs/abstract-cag-render
 import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import GraphSearch from '@/components/widgets/graph-search.vue';
-import { IGraph, moveToLabel } from 'svg-flowgraph2';
+import { IGraph, moveToLabel } from 'svg-flowgraph';
 import { NodeParameter, EdgeParameter } from '@/types/CAG';
 
 export default defineComponent({

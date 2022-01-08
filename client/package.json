@@ -54,7 +54,7 @@
     "preact": "^8.3.1",
     "qs": "^6.5.2",
     "shepherd.js": "^8.3.1",
-    "svg-flowgraph": "0.4.8",
+    "svg-flowgraph": "0.5.0",
     "v-tooltip": "^4.0.0-alpha.1",
     "vsup": "^1.1.0",
     "vue": "^3.0.0",

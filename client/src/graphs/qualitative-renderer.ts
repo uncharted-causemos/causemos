@@ -4,7 +4,7 @@ import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstr
 import { NodeParameter, EdgeParameter } from '@/types/CAG';
 import {
   INode, getAStarPath, simplifyPath
-} from 'svg-flowgraph2';
+} from 'svg-flowgraph';
 
 import svgUtil from '@/utils/svg-util';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
