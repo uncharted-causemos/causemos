@@ -68,7 +68,7 @@ router.get('/satellite-tiles/:z/:x/:y', (req, res) => {
  * Retrieve enterprise carto stylesheet for mapbox-gl-js
  */
 router.get('/styles/default', asyncHandler(async (req, res) => {
-  const stylesheet = baseMapStyle;
+  const stylesheet = JSON.parse(JSON.stringify(baseMapStyle)); // Deep clone json file to prevent from mutation
   /**
    * Notes:
    * Mapbox tileJSON schema reference: https://github.com/mapbox/tilejson-spec/tree/master/2.0.0*

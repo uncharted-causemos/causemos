@@ -3,6 +3,7 @@
     <overlay
       v-if="overlayActivated"
       :message="overlayMessage"
+      :cancel-fn="overlayCancelFn"
     />
     <nav-bar />
     <insight-manager />
@@ -35,6 +36,7 @@ export default {
     ...mapGetters({
       overlayMessage: 'app/overlayMessage',
       overlayActivated: 'app/overlayActivated',
+      overlayCancelFn: 'app/overlayCancelFn',
       project: 'app/project',
       projectType: 'app/projectType'
     })
