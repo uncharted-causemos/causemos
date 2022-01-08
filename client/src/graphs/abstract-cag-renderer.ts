@@ -1,5 +1,8 @@
+import * as d3 from 'd3';
 import _ from 'lodash';
+import svgUtil from '@/utils/svg-util';
 import { DeltaRenderer, IEdge, INode } from 'svg-flowgraph2';
+import { DEFAULT_STYLE } from './cag-style';
 
 const FADED_OPACITY = 0.2;
 
@@ -35,5 +38,29 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     chart.selectAll('.edge').style('opacity', 1);
     chart.selectAll('.node-header').classed('node-selected', false);
     chart.selectAll('.edge-control').remove();
+
+    chart.selectAll('.node-container') // Clean up previous highlights
+      .style('border-radius', DEFAULT_STYLE.node.borderRadius)
+      .style('stroke', DEFAULT_STYLE.node.stroke)
+      .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
+  }
+
+  selectNode(node: D3SelectionINode<V>, color: string) {
+    node.select('.node-container')
+      .style('border-radius', DEFAULT_STYLE.node.highlighted.borderRadius)
+      .style('stroke', _.isEmpty(color) ? DEFAULT_STYLE.node.highlighted.stroke : color)
+      .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
+  }
+
+  selectEdge(evt: Event, edge: D3SelectionIEdge<E>) {
+    const mousePoint = d3.pointer(evt, edge.node());
+    const pathNode = edge.select('.edge-path').node();
+    const controlPoint = (svgUtil.closestPointOnPath(pathNode as any, mousePoint) as number[]);
+
+    edge.append('g')
+      .classed('edge-control', true)
+      .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
+
+    this.renderEdgeControls(edge);
   }
 }

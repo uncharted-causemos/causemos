@@ -6,38 +6,7 @@ import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
-
-const DEFAULT_STYLE = {
-  node: {
-    fill: '#FFFFFF',
-    stroke: '#999',
-    strokeWidth: 0.5,
-    borderRadius: 4,
-    cursor: 'pointer',
-    highlighted: {
-      stroke: SELECTED_COLOR,
-      borderRadius: 2,
-      strokeWidth: 2
-    }
-  },
-  edge: {
-    fill: 'none',
-    stroke: '#000',
-    strokeWidth: 5,
-    controlRadius: 6,
-    strokeDash: '3,2'
-  },
-  edgeBg: {
-    fill: 'none',
-    stroke: '#F2F2F2'
-  },
-  nodeHeader: {
-    fill: 'none',
-    stroke: '#999',
-    strokeWidth: 0,
-    borderRadius: 3
-  }
-};
+import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
 
 const GRAPH_HEIGHT = 55;
 const GRAPH_VERTICAL_MARGIN = 6;
@@ -106,7 +75,6 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
-    console.log(selection);
     selection.append('rect')
       .classed('node-container', true)
       .attr('x', 0)
@@ -282,23 +250,41 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       .style('fill', d => calcEdgeColor(d.data))
       .style('cursor', 'pointer');
 
-    const controlStyles = svgUtil.POLARITY_ICON_SVG_SETTINGS;
-
     edgeControl
       .append('text')
-      // @ts-ignore
-      .attr('x', d => controlStyles[d.data.polarity].x)
-      // @ts-ignore
-      .attr('y', d => controlStyles[d.data.polarity].y)
+      .attr('x', d => {
+        const setting = polaritySettingsMap.get(d.data.polarity || 0);
+        if (setting) {
+          return setting.x;
+        }
+        return 0;
+      })
+      .attr('y', d => {
+        const setting = polaritySettingsMap.get(d.data.polarity || 0);
+        if (setting) {
+          return setting.y;
+        }
+        return 0;
+      })
       .style('background-color', 'red')
       .style('font-family', 'FontAwesome')
-      // @ts-ignore
-      .style('font-size', d => controlStyles[d.data.polarity]['font-size'])
+      .style('font-size', d => {
+        const setting = polaritySettingsMap.get(d.data.polarity || 0);
+        if (setting) {
+          return setting.fontSize;
+        }
+        return '';
+      })
       .style('stroke', 'none')
       .style('fill', 'white')
       .style('cursor', 'pointer')
-      // @ts-ignore
-      .text(d => controlStyles[d.data.polarity].text);
+      .text(d => {
+        const setting = polaritySettingsMap.get(d.data.polarity || 0);
+        if (setting) {
+          return setting.text;
+        }
+        return '';
+      });
   }
 
   // FIXME: Typescript
@@ -375,19 +361,5 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
 
       renderHistoricalProjectionsChart(graphEl as any, nodeScenarioData, renderOptions, runOptions);
     });
-  }
-
-
-
-  selectEdge(evt: Event, edge: D3SelectionIEdge<EdgeParameter>) {
-    const mousePoint = d3.pointer(evt, edge.node());
-    const pathNode = edge.select('.edge-path').node();
-    const controlPoint = (svgUtil.closestPointOnPath(pathNode as any, mousePoint) as number[]);
-
-    edge.append('g')
-      .classed('edge-control', true)
-      .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
-
-    this.renderEdgeControls(edge);
   }
 }

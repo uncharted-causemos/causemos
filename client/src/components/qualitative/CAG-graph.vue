@@ -162,7 +162,7 @@ export default defineComponent({
     // Native messages
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection, renderer: QualitativeRenderer) => {
       renderer.selectNode(nodeSelection);
-      nodeSelection.select('.node-header').classed('node-selected', true);
+      nodeSelection.select('.node-container').classed('node-selected', true);
 
       const neighborhood = calculateNeighborhood(this.data as any, nodeSelection.datum().data.concept);
       renderer.resetAnnotations();

@@ -87,7 +87,8 @@ export default defineComponent({
       }
     });
 
-    this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
+    this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>, renderer: QuantitativeRenderer) => {
+      renderer.selectNode(nodeSelection);
       this.$emit('node-sensitivity', nodeSelection.datum().data);
     });
     this.renderer.on('node-dbl-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {

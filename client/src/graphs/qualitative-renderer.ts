@@ -10,37 +10,10 @@ import svgUtil from '@/utils/svg-util';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
-
+import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
 
 const REMOVE_TIMER = 1000;
 
-const DEFAULT_STYLE = {
-  edge: {
-    fill: 'none',
-    strokeWidth: 5,
-    controlRadius: 6,
-    strokeDash: '3,2'
-  },
-  edgeBg: {
-    fill: 'none',
-    stroke: '#F2F2F2'
-  },
-  nodeHeader: {
-    iconRadius: 6,
-    fill: '#FFFFFF',
-    stroke: '#999',
-    strokeWidth: 0.5,
-    borderRadius: 4,
-    highlighted: {
-      stroke: '#60B5E2',
-      borderRadius: 4,
-      strokeWidth: 2
-    }
-  },
-  nodeHandles: {
-    width: 15
-  }
-};
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 const distance = (a: {x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -102,16 +75,16 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     selection.append('g').classed('node-handles', true);
 
     selection.append('rect')
-      .classed('node-header', true)
+      .classed('node-container', true)
       .attr('x', 0)
       .attr('y', 0)
-      .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
+      .attr('rx', DEFAULT_STYLE.node.borderRadius)
       .attr('width', d => d.width || 0)
       .attr('height', d => d.height || 0)
-      .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
-      .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth)
+      .style('stroke', DEFAULT_STYLE.node.stroke)
+      .style('stroke-width', DEFAULT_STYLE.node.strokeWidth)
       .style('cursor', 'pointer')
-      .style('fill', DEFAULT_STYLE.nodeHeader.fill);
+      .style('fill', DEFAULT_STYLE.node.fill);
 
     selection
       .append('text')
@@ -294,18 +267,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
     this.chart.selectAll('.edge-control').selectAll('*').remove();
     const edgeControl = selection.select('.edge-control');
-    // edgeControl
-    //   .transition()
-    //   .duration(500)
-    //   .attrTween('transform', function () {
-    //     return () => {
-    //       // this is a bit odd because there is no transition per say, instead each time it just moves it back on to the line as the line is transitioned.
-    //       const translate = svgUtil.getTranslateFromSVGTransform(this.transform);
-    //       const pathNode = d3.select(this.parentNode).select('.edge-path').node();
-    //       const controlPoint = svgUtil.closestPointOnPath(pathNode, translate);
-    //       return svgUtil.translate(controlPoint[0], controlPoint[1]);
-    //     };
-    //   });
 
     edgeControl
       .append('circle')
@@ -320,23 +281,41 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .style('fill', d => calcEdgeColor(d.data))
       .style('cursor', 'pointer');
 
-    const controlStyles = svgUtil.POLARITY_ICON_SVG_SETTINGS;
-
     edgeControl
       .append('text')
-      // @ts-ignore
-      .attr('x', d => controlStyles[d.data.polarity].x)
-      // @ts-ignore
-      .attr('y', d => controlStyles[d.data.polarity].y)
+      .attr('x', d => {
+        const setting = polaritySettingsMap.get(d.data.polarity || 0);
+        if (setting) {
+          return setting.x;
+        }
+        return 0;
+      })
+      .attr('y', d => {
+        const setting = polaritySettingsMap.get(d.data.polarity || 0);
+        if (setting) {
+          return setting.y;
+        }
+        return 0;
+      })
       .style('background-color', 'red')
       .style('font-family', 'FontAwesome')
-      // @ts-ignore
-      .style('font-size', d => controlStyles[d.data.polarity]['font-size'])
+      .style('font-size', d => {
+        const setting = polaritySettingsMap.get(d.data.polarity || 0);
+        if (setting) {
+          return setting.fontSize;
+        }
+        return '';
+      })
       .style('stroke', 'none')
       .style('fill', 'white')
       .style('cursor', 'pointer')
-      // @ts-ignore
-      .text(d => controlStyles[d.data.polarity].text);
+      .text(d => {
+        const setting = polaritySettingsMap.get(d.data.polarity || 0);
+        if (setting) {
+          return setting.text;
+        }
+        return '';
+      });
   }
 
   showNodeMenu(node: D3SelectionINode<NodeParameter>) {
@@ -438,12 +417,12 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     const nodeWidth = node.datum().width || 0;
     const nodeHeight = node.datum().height || 0;
 
-    node.select('.node-header')
+    node.select('.node-container')
       .attr('width', (d) => d.width - DEFAULT_STYLE.nodeHandles.width * 2)
       .attr('x', DEFAULT_STYLE.nodeHandles.width)
-      .style('border-radius', DEFAULT_STYLE.nodeHeader.highlighted.borderRadius)
-      .style('stroke', DEFAULT_STYLE.nodeHeader.highlighted.stroke)
-      .style('stroke-width', DEFAULT_STYLE.nodeHeader.highlighted.strokeWidth);
+      .style('border-radius', DEFAULT_STYLE.node.highlighted.borderRadius)
+      .style('stroke', DEFAULT_STYLE.node.highlighted.stroke)
+      .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
 
     node.select('path')
       .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width * 2, DEFAULT_STYLE.nodeHandles.width));
@@ -515,7 +494,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
             const newEdgeStart = getNodeExit(newEdgeSource);
             const mousePoint = { x: pointerCoords[0], y: pointerCoords[1] };
 
-            if (d3.select(evt.sourceEvent.target).classed('node-header') || d3.select(evt.sourceEvent.target).classed('handle')) {
+            if (d3.select(evt.sourceEvent.target).classed('node-container') || d3.select(evt.sourceEvent.target).classed('handle')) {
               // @ts-ignore
               this.newEdgeTargetId = d3.select(evt.sourceEvent.target).datum().id;
 
@@ -525,13 +504,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
               }
 
               const pathPoints = this.getPathBetweenNodes(newEdgeSource, getLayoutNodeById(this.newEdgeTargetId));
-              // @ts-ignore: D3 weirdness
-              return pathFn(pathPoints);
+              // D3 typescript weirdness
+              return pathFn(pathPoints as any);
             } else {
               this.newEdgeTargetId = '';
 
-              // @ts-ignore: D3 weirdness
-              return pathFn(simplifyPath(getAStarPath(newEdgeStart, mousePoint, this.getNodeCollider())));
+              // D3 typescript weirdness
+              return pathFn(simplifyPath(getAStarPath(newEdgeStart, mousePoint, this.getNodeCollider())) as any);
             }
           })
           .style('pointer-events', 'none')
@@ -573,13 +552,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     const chart = this.chart;
     const nodes = chart.selectAll('.node');
 
-    nodes.select('.node-header')
+    nodes.select('.node-container')
       .attr('width', (d: any) => d.width)
       .attr('x', 0);
 
-    nodes.select('.node-header:not(.node-selected)')
-      .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
-      .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
+    nodes.select('.node-container:not(.node-selected)')
+      .style('stroke', DEFAULT_STYLE.node.stroke)
+      .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
 
     nodes.select('path')
       .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width, DEFAULT_STYLE.nodeHandles.width));
@@ -597,24 +576,5 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     chart.selectAll('.new-edge').remove();
     this.newEdgeSourceId = '';
     this.newEdgeTargetId = '';
-  }
-
-  selectNode(node: D3SelectionINode<NodeParameter>) {
-    node.select('.node-header')
-      .style('border-radius', DEFAULT_STYLE.nodeHeader.highlighted.borderRadius)
-      .style('stroke', DEFAULT_STYLE.nodeHeader.highlighted.stroke)
-      .style('stroke-width', DEFAULT_STYLE.nodeHeader.highlighted.strokeWidth);
-  }
-
-  selectEdge(evt: Event, edge: D3SelectionIEdge<EdgeParameter>) {
-    const mousePoint = d3.pointer(evt, edge.node());
-    const pathNode = edge.select('.edge-path').node();
-    const controlPoint = (svgUtil.closestPointOnPath(pathNode as any, mousePoint) as number[]);
-
-    edge.append('g')
-      .classed('edge-control', true)
-      .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
-
-    this.renderEdgeControls(edge);
   }
 }
