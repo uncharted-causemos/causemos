@@ -67,7 +67,7 @@ import {
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
-import { adminLevelToString, SOURCE_LAYERS } from '@/utils/map-util-new';
+import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
@@ -309,6 +309,11 @@ export default {
     preRenderedData() {
       // map supported overlays (received as pre-generated output) must have valid geo-coords
       return this.selection.preGeneratedOutput ? this.selection.preGeneratedOutput.filter(p => p.coords !== undefined) : [];
+    },
+    firstSymbolLayerId() {
+      return this.selectedBaseLayer === BASE_LAYER.DEFAULT
+        ? 'watername_ocean'
+        : undefined;
     }
   },
   watch: {
@@ -343,7 +348,6 @@ export default {
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
-    this.firstSymbolLayerId = 'watername_ocean';
 
     // the following are needed to render pre-generated overlay
     this.imageSourceId = 'maas-image-source';

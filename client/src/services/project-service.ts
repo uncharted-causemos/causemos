@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { startPolling } from '@/api/poller';
+import { startPolling, Poller } from '@/api/poller';
 import { Filters, FiltersOptions } from '@/types/Filters';
 import { ReaderOutputRecord } from '@/types/Dart';
 import { SourceTargetPair } from '@/types/CAG';
@@ -55,11 +55,9 @@ const createProject = async (baseId: string, projectName: string, projectDescrip
     const status = await API.get(`projects/${id}/health`);
     return status.data.indexStatus === 'green' ? [true, status] : [false, null];
   };
-  const pollerConfig = {
-    interval: 2000,
-    threshold: 10
-  };
-  await startPolling(taskFn, null, pollerConfig);
+
+  const poller = new Poller(2000, 10);
+  await startPolling(poller, taskFn, null);
   return id;
 };
 

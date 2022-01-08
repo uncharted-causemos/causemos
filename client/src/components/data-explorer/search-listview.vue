@@ -60,7 +60,7 @@
                       >
                         Processing
                       </button>
-                      <div class="text-bold">{{ d.default_feature }}</div>
+                      <div class="text-bold">{{ formatOutputName(d) }}</div>
                       <multiline-description :text="formatOutputDescription(d)" />
                       <div v-if="isExpanded(d) && d.parameters?.length > 0" class="knobs">
                         Input Knobs:<br/>
@@ -101,8 +101,9 @@ import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
 import MultilineDescription from '@/components/widgets/multiline-description';
-import { DatacubeStatus } from '@/types/Enums';
+import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { isIndicator, isModel } from '../../utils/datacube-util';
+
 
 export default {
   name: 'SearchListview',
@@ -177,6 +178,9 @@ export default {
         }
       }
     },
+    formatOutputName(d) {
+      return this.getDefaultOutput(d)?.display_name ?? d.default_feature;
+    },
     formatParameters({ parameters }) {
       const params = parameters || [];
       return params.map(p => p.name).join(', ');
@@ -184,8 +188,10 @@ export default {
     formatAdminLevels() {
       return 'Admin L1 - L2';
     },
-    formatTimeStep() {
-      return 'monthly';
+    formatTimeStep(d) {
+      const originalResolution = this.getDefaultOutput(d)?.data_resolution?.temporal_resolution;
+      // We want to display the aggregated resolution rather than the original one.
+      return originalResolution === TemporalResolution.Annual ? 'annual' : 'monthly';
     },
     formatTimeSeries(cubeRow) {
       const sparklineData = [{ series: [] }];
@@ -203,8 +209,8 @@ export default {
       }
       const min = Number(d.period.gte);
       const max = Number(d.period.lte);
-      const years = [min, max].map(t => moment(t).format('YYYY'));
-      return `${years[0]} - ${years[1]}`;
+      const period = [min, max].map(t => moment(t).format('MMM YYYY'));
+      return min === max ? period[0] : `${period[0]} - ${period[1]}`;
     },
     formatCountry(d) {
       const country = d.geography.country;
@@ -220,20 +226,13 @@ export default {
         : `${d.description.substring(0, 140)}...`;
     },
     formatOutputDescription(d) {
-      if (!d.outputs.length === 0) return '';
-      // match the default feature to it's full output info, such that we can retrieve
-      // the output description as it is distinct from the top level description that
-      // we include for each indicator/model datacube.
-      const defaultOutputDescription = d.outputs.reduce((desc, output) => {
-        // indicators and model use different information from the output for the default feature field
-        if (output.display_name === d.default_feature || output.name === d.default_feature) {
-          desc = output.description;
-        }
-        return desc;
-      }, '');
+      const defaultOutputDescription = this.getDefaultOutput(d)?.description ?? '';
       return this.isExpanded(d) || defaultOutputDescription.length < 100
         ? defaultOutputDescription
         : `${defaultOutputDescription.substring(0, 100)}...`;
+    },
+    getDefaultOutput(d) {
+      return d.outputs.find(output => output.name === d.default_feature);
     },
     getTypeIcon(d) {
       return 'fa ' + (d.type === 'model' ? 'fa-connectdevelop' : 'fa-table');
