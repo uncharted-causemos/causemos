@@ -14,8 +14,10 @@
         <h5 class="ranking-header-top">Ranking Results</h5>
         <datacube-region-ranking-composite-card
           :bars-data="globalBarsData"
+          :selected-admin-level="selectedAdminLevel"
           :selected-timestamp="globalRegionRankingTimestamp"
           :bar-chart-hover-id="barChartHoverId"
+          :map-bounds="globalBbox"
           @bar-chart-hover="onBarChartHover"
         />
         <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
@@ -118,6 +120,7 @@ import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import { BinningOptions, ComparativeAnalysisMode, DatacubeGeoAttributeVariableType, RegionRankingCompositionType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
 import { getInsightById } from '@/services/insight-service';
+import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
 
 const DRILLDOWN_TABS = [
@@ -154,10 +157,17 @@ export default defineComponent({
     const activeDrilldownTab = ref<string|null>('region-settings');
     const selectedAdminLevel = ref(0);
 
+    const globalBbox = ref<number[][] | undefined>(undefined);
+
     onMounted(async () => {
       store.dispatch('app/setAnalysisName', '');
       const result = await getAnalysis(quantitativeAnalysisId.value);
       store.dispatch('app/setAnalysisName', result.title);
+    });
+
+    watchEffect(async () => {
+      const countries = store.getters['insightPanel/dataState']?.datacubeRegions || [];
+      globalBbox.value = await computeMapBoundsForCountries(countries) || undefined;
     });
 
     watchEffect(() => {
@@ -336,6 +346,7 @@ export default defineComponent({
       allTimeseriesMap,
       allDatacubesMetadataMap,
       globalTimeseries,
+      globalBbox,
       selectedTimestamp,
       setSelectedTimestamp,
       handleTimestampRangeSelection,
