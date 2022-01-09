@@ -430,8 +430,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     node.select('.node-label')
       .attr('x', 30)
       .text(d => this.labelFormatter(d.label))
-      // @ts-ignore
-      .each(function (d) { svgUtil.truncateTextToWidth(this, d.width - 50); });
+      .each(function (d) { svgUtil.truncateTextToWidth(this as any, d.width - 50); });
 
     handles.append('rect')
       .classed('handle', true)
@@ -495,8 +494,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
             const mousePoint = { x: pointerCoords[0], y: pointerCoords[1] };
 
             if (d3.select(evt.sourceEvent.target).classed('node-container') || d3.select(evt.sourceEvent.target).classed('handle')) {
-              // @ts-ignore
-              this.newEdgeTargetId = d3.select(evt.sourceEvent.target).datum().id;
+              this.newEdgeTargetId = d3.select<SVGGElement, INode<NodeParameter>>(evt.sourceEvent.target).datum().id;
 
               if (this.newEdgeSourceId === this.newEdgeTargetId && distance(newEdgeStart, mousePoint) < 20) {
                 this.newEdgeTargetId = '';
@@ -550,10 +548,10 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   // FIXME Typescript weirdness
   hideNodeHandles() {
     const chart = this.chart;
-    const nodes = chart.selectAll('.node');
+    const nodes = chart.selectAll<SVGGElement, INode<NodeParameter>>('.node');
 
     nodes.select('.node-container')
-      .attr('width', (d: any) => d.width)
+      .attr('width', (d) => d.width)
       .attr('x', 0);
 
     nodes.select('.node-container:not(.node-selected)')
@@ -565,9 +563,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
     nodes.select('.node-label')
       .attr('x', 10)
-      .text((d: any) => this.labelFormatter(d.label))
-      // @ts-ignore
-      .each(function (d: any) { svgUtil.truncateTextToWidth(this, d.width - 20); });
+      .text(d => this.labelFormatter(d.label))
+      .each(function (d) { svgUtil.truncateTextToWidth(this as any, d.width - 20); });
     this.chart.selectAll('.node-handles').selectAll('*').remove();
   }
 

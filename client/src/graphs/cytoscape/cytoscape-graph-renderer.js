@@ -8,7 +8,7 @@ import cxtmenu from 'cytoscape-cxtmenu';
 import cola from 'cytoscape-cola';
 import expandCollapse from 'cytoscape-expand-collapse';
 
-import GraphRenderer from '@/graphs/graph-renderer';
+import GraphRenderer from '@/graphs/cytoscape/graph-renderer';
 import CytoscapeData from '@/graphs/cytoscape/cytoscape-data';
 import { WM_SEPT2019 } from '@/graphs/cytoscape/cytoscape-styles';
 
