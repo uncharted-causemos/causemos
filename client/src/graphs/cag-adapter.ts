@@ -440,7 +440,9 @@ export const runELKLayout = async <V, E> (
       p.layoutOptions = makePortLayout(p);
     });
   });
-  elkGraph.layoutOptions = makeGeneralLayout(30);
+
+  // FIXME: should consider hierarchy
+  elkGraph.layoutOptions = makeGeneralLayout(graphData.nodes.length);
 
   // 4. Run layout
   const elkEngine = new ELK();

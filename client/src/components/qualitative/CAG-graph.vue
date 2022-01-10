@@ -330,12 +330,6 @@ export default defineComponent({
       if (this.renderer) {
         moveToLabel(this.renderer, concept, 2000);
       }
-      /*
-      this.renderer.moveTo(nodeId, 1500);
-      this.renderer.highlight({
-        nodes: [nodeId]
-      }, highlightOptions);
-      */
     }
   }
 });

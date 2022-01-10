@@ -601,21 +601,6 @@ export default defineComponent({
       if (!_.isNil(this.cagGraph)) {
         this.cagGraph.deselectNodeAndEdge();
       }
-      // If this is the first node in the graph, focus it in two ticks when it's visible.
-      //  First tick after `setNewNodeVisible(true)` is called, the `CAG-graph` component is displayed.
-      //  Second tick, its children (including the new node input) are rendered.
-      // if (this.showEmptyStateInstructions) {
-      //   this.$nextTick(() => {
-      //     this.$nextTick(() => {
-      //       this.cagGraph && this.cagGraph.focusNewNodeInput();
-      //     });
-      //   });
-      // }
-      // // If newNode is already visible, refocus it
-      // if (this.showNewNode && this.cagGraph !== undefined) {
-      //   this.cagGraph.focusNewNodeInput();
-      //   return;
-      // }
       this.setNewNodeVisible(true);
     },
     onSuggestionSelected(suggestion: Suggestion) {
