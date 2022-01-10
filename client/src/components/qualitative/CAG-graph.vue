@@ -30,7 +30,7 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import Mousetrap from 'mousetrap';
-import { defineComponent, computed, ref, Ref } from 'vue';
+import { defineComponent, computed, ref, Ref, PropType } from 'vue';
 import { useStore } from 'vuex';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select.vue';
@@ -43,41 +43,13 @@ import { overlap } from '@/utils/dom-util';
 import svgUtil from '@/utils/svg-util';
 
 import { IGraph, INode, moveToLabel } from 'svg-flowgraph';
-import { NodeParameter, EdgeParameter } from '@/types/CAG';
+import { NodeParameter, EdgeParameter, CAGGraph } from '@/types/CAG';
 import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
+import { DEFAULT_STYLE } from '@/graphs/cag-style';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
-
-// FIXME: repeat in renderer
-const DEFAULT_STYLE = {
-  edge: {
-    fill: 'none',
-    strokeWidth: 5,
-    controlRadius: 6,
-    strokeDash: '3,2'
-  },
-  edgeBg: {
-    fill: 'none',
-    stroke: '#F2F2F2'
-  },
-  nodeHeader: {
-    iconRadius: 6,
-    fill: '#FFFFFF',
-    stroke: '#999',
-    strokeWidth: 0.5,
-    borderRadius: 4,
-    highlighted: {
-      stroke: '#60B5E2',
-      borderRadius: 4,
-      strokeWidth: 2
-    }
-  },
-  nodeHandles: {
-    width: 15
-  }
-};
 
 const mergeNodeColor = 'rgb(136, 255, 136)';
 
@@ -90,7 +62,7 @@ export default defineComponent({
   },
   props: {
     data: {
-      type: Object,
+      type: Object as PropType<CAGGraph>,
       default: () => ({ })
     },
     showNewNode: {
@@ -105,7 +77,7 @@ export default defineComponent({
     'new-edge', 'delete', 'rename-node', 'merge-nodes',
     'suggestion-selected', 'suggestion-duplicated'
   ],
-  setup() {
+  setup(props) {
     const store = useStore();
     const renderer = ref(null) as Ref<QualitativeRenderer | null>;
     const selectedNode = ref('');
@@ -118,6 +90,10 @@ export default defineComponent({
     const showCustomConcept = ref(false);
     const mouseTrap = new Mousetrap(document as any);
     const project = computed(() => store.getters['app/project']);
+
+    const conceptsInCag = computed(() => {
+      return props.data.nodes.map(node => node.concept);
+    });
 
     return {
       renderer,
@@ -134,7 +110,8 @@ export default defineComponent({
       ontologyFormatter: useOntologyFormatter(),
 
       project,
-      selectedNode
+      selectedNode,
+      conceptsInCag
     };
   },
   watch: {
@@ -307,15 +284,20 @@ export default defineComponent({
         await this.renderer.render();
       }
     },
-    deselectNodeAndEdge() {
-      // FIXME: todo
-    },
     onSuggestionSelected(suggestion: any) {
       if (this.data.nodes.filter((node: any) => node.concept === suggestion.concept).length > 0) {
         this.$emit('suggestion-duplicated', suggestion);
         return;
       }
       this.$emit('suggestion-selected', suggestion);
+    },
+    saveCustomConcept(value: { theme: string; process: string; theme_property: string; process_property: string }) {
+      this.$emit('suggestion-selected', {
+        concept: value.theme,
+        shortName: value.theme,
+        label: value.theme,
+        hasEvidence: false
+      });
     },
     injectNewNode(node: NodeParameter) {
       // Once in DB, create the new node at svgX/svgY, for the sake of preserving stable layout
