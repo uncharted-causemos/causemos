@@ -163,7 +163,22 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
   }
 
   renderEdgesUpdated(selection: D3SelectionIEdge<EdgeParameter>) {
-    console.log(selection);
+    selection
+      .select('.edge-path')
+      .style('stroke', d => calcEdgeColor(d.data))
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data))
+      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash);
+
+    selection
+      .select('.edge-path')
+      .attr('d', d => {
+        return pathFn(d.points as any);
+      });
+    selection
+      .select('.edge-path-bg')
+      .attr('d', d => {
+        return pathFn(d.points as any);
+      });
   }
 
   renderEdgesRemoved(selection: D3SelectionIEdge<EdgeParameter>) {

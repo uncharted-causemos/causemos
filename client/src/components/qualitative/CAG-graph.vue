@@ -177,6 +177,10 @@ export default defineComponent({
       this.$emit('node-click', nodeSelection.datum().data);
     });
     this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection, renderer: QualitativeRenderer) => {
+      const source = edgeSelection.datum().data.source;
+      const target = edgeSelection.datum().data.target;
+      const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
+      renderer.neighborhoodAnnotation(neighborhood);
       renderer.selectEdge(event, edgeSelection);
 
       this.$emit('edge-click', edgeSelection.datum().data);
