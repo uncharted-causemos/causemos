@@ -47,7 +47,7 @@
         </div>
       </div>
       <div class="datacube-map-placeholder">
-        <mini-map :data="barsData" :selected-layer-id="selectedAdminLevel" :map-bounds="bbox"></mini-map>
+        <mini-map :data="barsData" :selected-layer-id="selectedAdminLevel" :map-bounds="bbox" :selected-id="barChartHoverId"></mini-map>
       </div>
     </main>
   </div>

@@ -4,6 +4,7 @@
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
       @load="onMapLoad"
+      @mousemove="onMouseMove"
     >
       <wm-map-vector
         v-if="vectorSource"
@@ -15,6 +16,15 @@
         :layer="colorLayer"
         :before-id="firstSymbolLayerId"
         @add-layer="onAddLayer"
+      />
+      <wm-map-vector
+        v-if="vectorSource"
+        :source-id="vectorSourceId"
+        :source-layer="vectorSourceLayer"
+        :promote-id="idPropName"
+        :layer-id="borderLayerId"
+        :layer="borderLayer"
+        :before-id="firstSymbolLayerId"
       />
     </wm-map>
   </div>
@@ -29,6 +39,7 @@ import {
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 import { BASE_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';
 
 const colorLayer = () => {
@@ -41,8 +52,33 @@ const colorLayer = () => {
         ['==', null, ['feature-state', 'color']], 'rgba(0, 0, 0, 0)',
         ['feature-state', 'color']
       ],
-      'fill-outline-color': 'black',
       'fill-opacity': [
+        'case',
+        ['==', null, ['feature-state', 'label']], 0.0,
+        1
+      ]
+    }
+  });
+};
+
+const borderLayer = () => {
+  return Object.freeze({
+    type: 'line',
+    paint: {
+      'line-color': [
+        'case',
+        ['==', null, ['feature-state', 'color']], 'rgba(0, 0, 0, 0)',
+        ['==', true, ['feature-state', 'hover']], SELECTED_COLOR,
+        ['==', true, ['feature-state', 'selected']], SELECTED_COLOR,
+        'black'
+      ],
+      'line-width': [
+        'case',
+        ['==', true, ['feature-state', 'selected']], 2,
+        ['==', true, ['feature-state', 'hover']], 1,
+        0.1
+      ],
+      'line-opacity': [
         'case',
         ['==', null, ['feature-state', 'label']], 0.0,
         1
@@ -62,6 +98,10 @@ export default {
       type: Array,
       default: () => []
     },
+    selectedId: {
+      type: String,
+      default: ''
+    },
     selectedLayerId: {
       type: Number,
       default: 0
@@ -76,7 +116,8 @@ export default {
   },
   data: () => ({
     colorLayer: undefined,
-    map: undefined
+    map: undefined,
+    hoverId: undefined
   }),
   computed: {
     mapFixedOptions() {
@@ -107,14 +148,19 @@ export default {
   watch: {
     data() {
       this.debouncedRefresh();
+    },
+    selectedId() {
+      this.updateSelection();
     }
   },
   created() {
     this.vectorSourceId = 'maas-vector-source';
     this.colorLayerId = 'color-layer';
+    this.borderLayerId = 'border-layer';
     this.firstSymbolLayerId = 'watername_ocean';
     // Init layer objects
     this.colorLayer = colorLayer();
+    this.borderLayer = borderLayer();
     this.debouncedRefresh = _.debounce(function() {
       this.refresh();
     }, 50);
@@ -149,13 +195,41 @@ export default {
       this.map = map;
       event.map.showTileBoundaries = false; // set to true for debugging
 
-      // disable tilt and rotation of the map since theses are not working nicely with bound syncing
+      // disable interactions
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
+      map.dragPan.disable();
+      map.doubleClickZoom.disable();
+      map.scrollZoom.disable();
     },
     onAddLayer() {
       // Triggered when the source layer has been updated or replaced with new one eg. when selected admin level changes
       this.debouncedRefresh();
+    },
+    onMouseMove(event) {
+      const { map, mapboxEvent } = event;
+      if (_.isNil(map.getLayer(this.colorLayerId))) return;
+
+      if (this.hoverId) {
+        map.removeFeatureState({ source: this.vectorSourceId, id: this.hoverId, sourceLayer: this.vectorSourceLayer }, 'hover');
+      }
+
+      const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: [this.colorLayerId] });
+      features.forEach(feature => {
+        this.hoverId = feature.id;
+        map.setFeatureState(
+          { source: feature.source, id: feature.id, sourceLayer: this.vectorSourceLayer },
+          { hover: true }
+        );
+      });
+    },
+    updateSelection() {
+      this.data.forEach(d => {
+        this.map.removeFeatureState({ source: this.vectorSourceId, id: d.label, sourceLayer: this.vectorSourceLayer }, 'selected');
+      });
+      if (this.selectedId) {
+        this.map.setFeatureState({ source: this.vectorSourceId, id: this.selectedId, sourceLayer: this.vectorSourceLayer }, { selected: true });
+      }
     }
   }
 };

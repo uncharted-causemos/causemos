@@ -11,7 +11,7 @@
         <div class="row datacube-footer">Showing data for {{timestampFormatter(selectedTimestamp)}} (or earlier)</div>
       </div>
       <div class="datacube-map-placeholder">
-        <mini-map :data="barsData" :selected-layer-id="selectedAdminLevel" :map-bounds="mapBounds"></mini-map>
+        <mini-map :data="barsData" :selected-layer-id="selectedAdminLevel" :map-bounds="mapBounds" :selected-id="barChartHoverId"></mini-map>
       </div>
     </main>
   </div>
