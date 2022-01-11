@@ -198,6 +198,12 @@ export default {
         });
       }
     },
+    disablePanAndZoom() {
+      const map = this.map;
+      map.dragPan.disable();
+      map.doubleClickZoom.disable();
+      map.scrollZoom.disable();
+    },
     onMapLoad(event) {
       const map = event.map;
       this.map = map;
@@ -206,9 +212,7 @@ export default {
       // disable interactions
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
-      map.dragPan.disable();
-      map.doubleClickZoom.disable();
-      map.scrollZoom.disable();
+      this.disablePanAndZoom();
     },
     onAddLayer() {
       // Triggered when the source layer has been updated or replaced with new one eg. when selected admin level changes
