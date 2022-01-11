@@ -18,7 +18,8 @@ const formatDatacubeDoc = (d) => {
     name: d.name,
     familyName: d.family_name,
     category: d.category,
-    variableName: d.outputs[0].display_name
+    variableName: d.outputs[0].display_name,
+    description: d.outputs[0].description
   };
 };
 

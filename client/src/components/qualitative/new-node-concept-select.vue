@@ -25,6 +25,9 @@
       class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
         <div class="tab-row">
+          <div>
+            Filter by: &nbsp;
+          </div>
           <radio-button-group
             :buttons="[
               { label: 'Concepts', value: 'concepts' },
@@ -51,6 +54,11 @@
             >
               {{ suggestion.doc.variableName }}
             </div>
+          </div>
+          <div
+            v-if="datacubeSuggestions.length"
+            class="right-column">
+            {{ currentSuggestion.doc.description }}
           </div>
         </div>
 
@@ -151,8 +159,12 @@ export default {
       project: 'app/project'
     }),
     currentSuggestion() {
-      if (this.conceptSuggestions.length && this.focusedSuggestionIndex > -1) {
-        return this.conceptSuggestions[this.focusedSuggestionIndex];
+      const idx = this.focusedSuggestionIndex;
+      if (this.activeTab === 'concepts' && this.conceptSuggestions.length && idx > -1) {
+        return this.conceptSuggestions[idx];
+      }
+      if (this.activeTab === 'datacubes' && this.datacubeSuggestions.length && idx > -1) {
+        return this.datacubeSuggestions[idx];
       }
       return null;
     }
@@ -329,11 +341,17 @@ export default {
 }
 
 .tab-row {
-  margin: 5px;
+  margin-left: 5px;
+  margin-top: 5px;
+  padding-bottom: 5px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #DDD;
 }
 
 .left-column {
   min-width: 280px;
+  max-width: 280px;
   height: 290px;
   overflow-y: scroll;
 }
