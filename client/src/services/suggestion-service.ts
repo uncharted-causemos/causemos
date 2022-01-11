@@ -45,7 +45,7 @@ const getConceptSuggestionFunction = (projectId: string, ontology: Array<string>
  * Typically, you would pass the suggestion function into a lex search pill.
  *
  * For concept suggestions, {@see getConceptSuggestionFunction} should be used instead.
- * For datacube suggestions, {@see getDatacubeSuggestionFunction} should be used instead.
+ * For datacube suggestions, {@see getDatacubeFieldSuggestionFunction} should be used instead.
  * @param {string} projectId - project id
  * @param {string} field - the ES field to get suggestions for
  * @param {function(array<string>, string): array<string>} [postProcessFn] - optional processing on the fetched suggestions
@@ -73,7 +73,7 @@ const getSuggestionFunction = (projectId: string, field: string, postProcessFn?:
  * @param {function(array<string>, string): array<string>} [postProcessFn] - optional processing on the fetched suggestions
  * @returns {DebouncedFunc<function(*=): Promise<*>>} a function used to fetch suggestions
  */
-const getDatacubeSuggestionFunction = (field: string, postProcessFn?: Function) => {
+const getDatacubeFieldSuggestionFunction = (field: string, postProcessFn?: Function) => {
   return _.debounce(async function(hint = '') {
     let result = [];
     if (!_.isEmpty(hint)) {
@@ -102,7 +102,7 @@ const getGroupPathSuggestions = async (projectId: string, sources: string[], tar
 export default {
   getConceptSuggestionFunction,
   getSuggestionFunction,
-  getDatacubeSuggestionFunction,
+  getDatacubeFieldSuggestionFunction,
   getPathSuggestions,
   getGroupPathSuggestions
 };
