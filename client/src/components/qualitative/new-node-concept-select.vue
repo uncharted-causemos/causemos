@@ -24,10 +24,43 @@
       v-if="userInput !== ''"
       class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
-        <div style="display: flex; flex-direction: row">
+        <div class="tab-row">
+          <radio-button-group
+            :buttons="[
+              { label: 'Concepts', value: 'concepts' },
+              { label: 'Datacubes', value: 'datacubes' }
+            ]"
+            :selected-button-value="activeTab"
+            @button-clicked="setActive"
+          />
+        </div>
+
+        <!-- datacubes -->
+        <div
+          v-if="activeTab === 'datacubes'"
+          style="display: flex; flex-direction: row">
           <div class="left-column">
             <div
-              v-for="(suggestion, index) in suggestions"
+              v-for="(suggestion, index) in datacubeSuggestions"
+              :key="suggestion.doc.variableName"
+              class="dropdown-option"
+              :class="{'focused': index === focusedSuggestionIndex}"
+              @click="selectSuggestion(suggestion)"
+              @mouseenter="mouseEnter(index)"
+              @mouseleave="mouseLeave(index)"
+            >
+              {{ suggestion.doc.variableName }}
+            </div>
+          </div>
+        </div>
+
+        <!-- concepts -->
+        <div
+          v-if="activeTab === 'concepts'"
+          style="display: flex; flex-direction: row">
+          <div class="left-column">
+            <div
+              v-for="(suggestion, index) in conceptSuggestions"
               :key="suggestion.doc.key"
               class="dropdown-option"
               :class="{'focused': index === focusedSuggestionIndex, 'light': !suggestion.hasEvidence}"
@@ -39,7 +72,7 @@
             </div>
           </div>
           <div
-            v-if="suggestions.length"
+            v-if="conceptSuggestions.length"
             class="right-column">
             <div>
               <div
@@ -74,7 +107,9 @@ import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import DropdownControl from '@/components/dropdown-control';
 import HighlightText from '@/components/widgets/highlight-text';
+import RadioButtonGroup from '../widgets/radio-button-group.vue';
 import projectService from '@/services/project-service';
+import datacubeService from '@/services/new-datacube-service';
 
 const CONCEPT_SUGGESTION_COUNT = 10;
 
@@ -82,7 +117,8 @@ export default {
   name: 'NewNodeConceptSelect',
   components: {
     DropdownControl,
-    HighlightText
+    HighlightText,
+    RadioButtonGroup
   },
   props: {
     conceptsInCag: {
@@ -100,11 +136,14 @@ export default {
   ],
   data: () => ({
     userInput: '',
-    suggestions: [],
+    conceptSuggestions: [],
+    datacubeSuggestions: [],
     focusedSuggestionIndex: 0,
+
     mouseOverIndex: -1,
     dropdownLeftOffset: 0,
-    dropdownTopOffset: 4 // prevent overlap with input box
+    dropdownTopOffset: 4, // prevent overlap with input box
+    activeTab: 'concepts'
   }),
   computed: {
     ...mapGetters({
@@ -112,8 +151,8 @@ export default {
       project: 'app/project'
     }),
     currentSuggestion() {
-      if (this.suggestions.length && this.focusedSuggestionIndex > -1) {
-        return this.suggestions[this.focusedSuggestionIndex];
+      if (this.conceptSuggestions.length && this.focusedSuggestionIndex > -1) {
+        return this.conceptSuggestions[this.focusedSuggestionIndex];
       }
       return null;
     }
@@ -123,9 +162,15 @@ export default {
   },
   watch: {
     userInput() {
-      this.getSuggestions();
+      this.getConceptSuggestions();
+      this.getDatacubeSuggestions();
     },
-    suggestions(n, o) {
+    conceptSuggestions(n, o) {
+      if (!_.isEqual(n, o)) {
+        this.focusedSuggestionIndex = 0;
+      }
+    },
+    activeTab(n, o) {
       if (!_.isEqual(n, o)) {
         this.focusedSuggestionIndex = 0;
       }
@@ -136,8 +181,8 @@ export default {
     shiftFocus(delta) {
       let newFocusIndex = this.focusedSuggestionIndex + delta;
       if (newFocusIndex < 0) {
-        newFocusIndex = this.suggestions.length - 1;
-      } else if (newFocusIndex >= this.suggestions.length) {
+        newFocusIndex = this.conceptSuggestions.length - 1;
+      } else if (newFocusIndex >= this.conceptSuggestions.length) {
         newFocusIndex = 0;
       }
       this.focusedSuggestionIndex = newFocusIndex;
@@ -167,8 +212,8 @@ export default {
       }
     },
     onEnterPressed() {
-      if (this.suggestions.length === 0) return;
-      const suggestion = this.suggestions[this.focusedSuggestionIndex];
+      if (this.conceptSuggestions.length === 0) return;
+      const suggestion = this.conceptSuggestions[this.focusedSuggestionIndex];
       this.selectSuggestion(suggestion);
     },
     selectSuggestion(suggestion) {
@@ -201,14 +246,25 @@ export default {
         this.dropdownTopOffset = -dropdownHeight - (inputBoundingBox.height + 4); // +4 to prevent overlap with input box
       }
     },
-    getSuggestions: _.throttle(async function() {
+    getConceptSuggestions: _.throttle(async function() {
       if (_.isEmpty(this.userInput)) {
-        this.suggestions = [];
+        this.conceptSuggestions = [];
       } else {
-        const suggestions = await projectService.getConceptSuggestions(this.project, this.userInput);
-        this.suggestions = suggestions.splice(0, CONCEPT_SUGGESTION_COUNT);
+        const conceptSuggestions = await projectService.getConceptSuggestions(this.project, this.userInput);
+        this.conceptSuggestions = conceptSuggestions.splice(0, CONCEPT_SUGGESTION_COUNT);
       }
-    }, 500, { trailing: true, leading: false })
+    }, 500, { trailing: true, leading: false }),
+    getDatacubeSuggestions: _.throttle(async function() {
+      if (_.isEmpty(this.userInput)) {
+        this.datacubeSuggestions = [];
+      } else {
+        const datacubeSuggestions = await datacubeService.getDatacubeSuggestions(this.userInput);
+        this.datacubeSuggestions = datacubeSuggestions.splice(0, 5);
+      }
+    }, 500, { trailing: true, leading: false }),
+    setActive(tab) {
+      this.activeTab = tab;
+    }
   }
 };
 
@@ -270,6 +326,10 @@ export default {
       background: $selected;
     }
   }
+}
+
+.tab-row {
+  margin: 5px;
 }
 
 .left-column {

@@ -82,7 +82,7 @@ router.get('/suggestions', asyncHandler(async (req, res) => {
 /**
  * GET Search for data cubes based on query string
  */
-router.get('/datacube-suggestins', asyncHandler(async (req, res) => {
+router.get('/datacube-suggestions', asyncHandler(async (req, res) => {
   const q = req.query.q;
   const result = await searchService.rawDatacubeSearch(q);
   res.json(result);

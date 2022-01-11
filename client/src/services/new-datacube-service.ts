@@ -303,5 +303,6 @@ export default {
   addModelRunsTag,
   updateModelRun,
   removeModelRunsTag,
-  renameModelRunsTag
+  renameModelRunsTag,
+  getDatacubeSuggestions
 };
