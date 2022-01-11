@@ -27,6 +27,11 @@
         :layer="borderLayer"
         :before-id="firstSymbolLayerId"
       />
+      <wm-map-popup
+        :layer-id="colorLayerId"
+        :formatter-fn="popupFormatter"
+        :cursor="'default'"
+      />
     </wm-map>
   </div>
 </template>
@@ -34,7 +39,7 @@
 <script>
 
 import _ from 'lodash';
-import { WmMap, WmMapVector } from '@/wm-map';
+import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import {
   BASE_MAP_OPTIONS,
   ETHIOPIA_BOUNDING_BOX,
@@ -93,7 +98,8 @@ export default {
   emits: ['click-region'],
   components: {
     WmMap,
-    WmMapVector
+    WmMapVector,
+    WmMapPopup
   },
   props: {
     data: {
@@ -206,14 +212,16 @@ export default {
     },
     onAddLayer() {
       // Triggered when the source layer has been updated or replaced with new one eg. when selected admin level changes
+      this.hoverId = undefined;
       this.debouncedRefresh();
     },
     onMouseMove(event) {
       const { map, mapboxEvent } = event;
       if (_.isNil(map.getLayer(this.colorLayerId))) return;
 
-      if (this.hoverId) {
-        map.removeFeatureState({ source: this.vectorSourceId, id: this.hoverId, sourceLayer: this.vectorSourceLayer }, 'hover');
+      const hoverId = this.hoverId;
+      if (hoverId) {
+        map.removeFeatureState({ source: this.vectorSourceId, id: hoverId, sourceLayer: this.vectorSourceLayer }, 'hover');
       }
 
       const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: [this.colorLayerId] });
@@ -239,6 +247,11 @@ export default {
       if (this.selectedId) {
         this.map.setFeatureState({ source: this.vectorSourceId, id: this.selectedId, sourceLayer: this.vectorSourceLayer }, { selected: true });
       }
+    },
+    popupFormatter(feature) {
+      const { label } = feature.state || {};
+      if (!label) return null;
+      return label.split('__').pop();
     }
   }
 };
