@@ -171,6 +171,7 @@ export default {
   },
   mounted() {
     this.calculateDropdownOffset();
+    this.focusInput();
   },
   watch: {
     userInput() {
