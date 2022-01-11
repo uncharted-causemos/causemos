@@ -5,6 +5,7 @@
       :bounds="mapBounds"
       @load="onMapLoad"
       @mousemove="onMouseMove"
+      @click="onMapClick"
     >
       <wm-map-vector
         v-if="vectorSource"
@@ -89,6 +90,7 @@ const borderLayer = () => {
 
 export default {
   name: 'GeoSelectionMap',
+  emits: ['click-region'],
   components: {
     WmMap,
     WmMapVector
@@ -222,6 +224,13 @@ export default {
           { hover: true }
         );
       });
+    },
+    onMapClick(event) {
+      const { map, mapboxEvent } = event;
+      if (_.isNil(map.getLayer(this.colorLayerId))) return;
+      const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: [this.colorLayerId] });
+      const regionId = features[0]?.state?.label || '';
+      this.$emit('click-region', regionId);
     },
     updateSelection() {
       this.data.forEach(d => {

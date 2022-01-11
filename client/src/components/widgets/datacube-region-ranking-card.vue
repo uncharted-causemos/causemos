@@ -47,7 +47,12 @@
         </div>
       </div>
       <div class="datacube-map-placeholder">
-        <mini-map :data="barsData" :selected-layer-id="selectedAdminLevel" :map-bounds="bbox" :selected-id="barChartHoverId"></mini-map>
+        <mini-map
+          :data="barsData"
+          :selected-layer-id="selectedAdminLevel"
+          :map-bounds="bbox"
+          :selected-id="barChartHoverId"
+          @click-region="$emit('map-click-region', $event)" />
       </div>
     </main>
   </div>
@@ -90,7 +95,7 @@ export default defineComponent({
     BarChart,
     MiniMap
   },
-  emits: ['updated-bars-data', 'bar-chart-hover'],
+  emits: ['updated-bars-data', 'bar-chart-hover', 'map-click-region'],
   props: {
     id: {
       type: String,

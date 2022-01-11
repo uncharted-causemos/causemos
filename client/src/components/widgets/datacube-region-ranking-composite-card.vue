@@ -11,7 +11,7 @@
         <div class="row datacube-footer">Showing data for {{timestampFormatter(selectedTimestamp)}} (or earlier)</div>
       </div>
       <div class="datacube-map-placeholder">
-        <mini-map :data="barsData" :selected-layer-id="selectedAdminLevel" :map-bounds="mapBounds" :selected-id="barChartHoverId"></mini-map>
+        <mini-map :data="barsData" :selected-layer-id="selectedAdminLevel" :map-bounds="mapBounds" :selected-id="barChartHoverId" @click-region="$emit('map-click-region', $event)"/>
       </div>
     </main>
   </div>
@@ -30,7 +30,7 @@ export default defineComponent({
     BarChart,
     MiniMap
   },
-  emits: ['bar-chart-hover'],
+  emits: ['bar-chart-hover', 'map-click-region'],
   props: {
     barsData: {
       type: Array as PropType<BarData[]>,

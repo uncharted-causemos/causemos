@@ -19,6 +19,7 @@
           :bar-chart-hover-id="barChartHoverId"
           :map-bounds="globalBbox"
           @bar-chart-hover="onBarChartHover"
+          @map-click-region="onMapClickRegion"
         />
         <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
       </template>
@@ -52,6 +53,7 @@
             :bar-chart-hover-id="barChartHoverId"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
+          @map-click-region="onMapClickRegion"
           />
         </template>
       </div>
@@ -277,6 +279,9 @@ export default defineComponent({
     const onBarChartHover = (hoverId: string) => {
       barChartHoverId.value = hoverId;
     };
+    const onMapClickRegion = (regionId: string) => {
+      barChartHoverId.value = regionId;
+    };
 
     watch(
       () => [
@@ -377,6 +382,7 @@ export default defineComponent({
       regionRankingBinningType,
       setRegionRankingBinningType,
       onBarChartHover,
+      onMapClickRegion,
       barChartHoverId,
       ComparativeAnalysisMode,
       updateStateFromInsight
