@@ -20,16 +20,19 @@
         :promote-id="idPropName"
         :layer-id="baseLayerId"
         :layer="baseLayer"
+        :before-id="firstSymbolLayerId"
       />
       <wm-map-vector
         v-if="vectorSource && colorLayer"
         :key="layerRerenderTrigger"
+        :source="vectorSource"
         :source-id="vectorSourceId"
         :source-layer="vectorSourceLayer"
         :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="colorLayerId"
         :layer="colorLayer"
+        :before-id="firstSymbolLayerId"
         @add-layer="onAddLayer"
         @update-source="onUpdateSource"
       />
@@ -64,20 +67,11 @@ import {
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
-import { adminLevelToString } from '@/utils/map-util-new';
+import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { mapActions, mapGetters } from 'vuex';
-
-// selectedLayer cycles one by one through these layers
-const layers = Object.freeze([0, 1, 2, 3].map(i => ({
-  vectorSourceLayer: `boundaries-adm${i}`,
-  idPropName: { [`boundaries-adm${i}`]: 'id' }
-})).concat({
-  vectorSourceLayer: 'maas',
-  idPropName: { maas: 'id' }
-}));
 
 const createRangeFilter = ({ min, max }, prop) => {
   const lowerBound = ['>=', prop, Number(min)];
@@ -165,8 +159,8 @@ export default {
       default: true
     },
     selectedLayerId: {
-      type: Number,
-      default: 0
+      type: String,
+      default: SOURCE_LAYERS[0].layerId
     },
     filters: {
       type: Array,
@@ -256,20 +250,21 @@ export default {
         : this.outputSourceSpecs.find(spec => spec.id === this.relativeTo);
     },
     selectedLayer() {
-      return layers[this.selectedLayerId];
+      return SOURCE_LAYERS.find(l => l.layerId === this.selectedLayerId);
     },
     vectorSourceLayer() {
-      return this.selectedLayer?.vectorSourceLayer;
+      return this.selectedLayer.layerId;
     },
     idPropName() {
-      return this.selectedLayer?.idPropName;
+      return { [`${this.selectedLayer.layerId}`]: 'id' };
     },
     isGridMap() {
       return this.vectorSourceLayer === 'maas';
     },
     adminLevel() {
-      if (this.selectedLayerId > 3) return undefined;
-      return adminLevelToString(this.selectedLayerId);
+      if (this.isGridMap) return undefined;
+      const adminLevel = SOURCE_LAYERS.findIndex(l => this.selectedLayerId === l.layerId);
+      return adminLevelToString(adminLevel);
     },
     selectedBaseLayerEndpoint() {
       return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
@@ -293,9 +288,9 @@ export default {
               spatialAgg: spec.spatialAggregation
             };
           });
-        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/grid-output/{z}/{x}/{y}?specs=${encodeURI(JSON.stringify(outputSpecs))}`;
+        return `${window.location.protocol}/${window.location.host}/${this.selectedLayer.sourceBaseUrl}?specs=${encodeURI(JSON.stringify(outputSpecs))}`;
       } else {
-        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
+        return `${window.location.protocol}/${window.location.host}/${this.selectedLayer.sourceBaseUrl}`;
       }
     },
     heatMapColorOptions() {
@@ -314,6 +309,11 @@ export default {
     preRenderedData() {
       // map supported overlays (received as pre-generated output) must have valid geo-coords
       return this.selection.preGeneratedOutput ? this.selection.preGeneratedOutput.filter(p => p.coords !== undefined) : [];
+    },
+    firstSymbolLayerId() {
+      return this.selectedBaseLayer === BASE_LAYER.DEFAULT
+        ? 'watername_ocean'
+        : undefined;
     }
   },
   watch: {

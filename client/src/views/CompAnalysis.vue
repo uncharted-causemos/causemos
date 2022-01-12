@@ -21,9 +21,12 @@
         </div>
         <datacube-region-ranking-composite-card
           :bars-data="globalBarsData"
+          :selected-admin-level="selectedAdminLevel"
           :selected-timestamp="globalRegionRankingTimestamp"
           :bar-chart-hover-id="barChartHoverId"
+          :map-bounds="globalBbox"
           @bar-chart-hover="onBarChartHover"
+          @map-click-region="onMapClickRegion"
         />
         <div style="display: flex">
           <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
@@ -71,6 +74,7 @@
             :show-normalized-data="showNormalizedData"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
+          @map-click-region="onMapClickRegion"
           />
         </template>
       </div>
@@ -141,6 +145,7 @@ import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import { BinningOptions, ComparativeAnalysisMode, DatacubeGeoAttributeVariableType, RegionRankingCompositionType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
 import { getInsightById } from '@/services/insight-service';
+import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
 
 // TODO:
@@ -184,6 +189,8 @@ export default defineComponent({
 
     const showNormalizedData = ref(true);
     const regionRankingWeights = ref<{[key: string]: {name: string; weight: number}}>({});
+
+    const globalBbox = ref<number[][] | undefined>(undefined);
 
     onMounted(async () => {
       store.dispatch('app/setAnalysisName', '');
@@ -307,6 +314,16 @@ export default defineComponent({
     const onBarChartHover = (hoverId: string) => {
       barChartHoverId.value = hoverId;
     };
+    const onMapClickRegion = (regionId: string) => {
+      barChartHoverId.value = regionId;
+    };
+
+    watchEffect(async () => {
+      const countries = barChartHoverId.value
+        ? [barChartHoverId.value.split('__')[0]]
+        : [...new Set(globalBarsData.value.map(d => d.label.split('__')[0]))];
+      globalBbox.value = await computeMapBoundsForCountries(countries) || undefined;
+    });
 
     watch(
       () => [
@@ -395,6 +412,7 @@ export default defineComponent({
       allTimeseriesMap,
       allDatacubesMetadataMap,
       globalTimeseries,
+      globalBbox,
       selectedTimestamp,
       setSelectedTimestamp,
       handleTimestampRangeSelection,
@@ -423,6 +441,7 @@ export default defineComponent({
       regionRankingBinningType,
       setRegionRankingBinningType,
       onBarChartHover,
+      onMapClickRegion,
       barChartHoverId,
       ComparativeAnalysisMode,
       updateStateFromInsight,

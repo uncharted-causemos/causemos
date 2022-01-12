@@ -598,24 +598,9 @@ export default defineComponent({
     createNewNode() {
       this.deselectNodeAndEdge();
       this.closeDrilldown();
-      if (!_.isNil(this.cagGraph)) {
-        this.cagGraph.deselectNodeAndEdge();
-      }
-      // If this is the first node in the graph, focus it in two ticks when it's visible.
-      //  First tick after `setNewNodeVisible(true)` is called, the `CAG-graph` component is displayed.
-      //  Second tick, its children (including the new node input) are rendered.
-      if (this.showEmptyStateInstructions) {
-        this.$nextTick(() => {
-          this.$nextTick(() => {
-            this.cagGraph && this.cagGraph.focusNewNodeInput();
-          });
-        });
-      }
-      // If newNode is already visible, refocus it
-      if (this.showNewNode && this.cagGraph !== undefined) {
-        this.cagGraph.focusNewNodeInput();
-        return;
-      }
+      // if (!_.isNil(this.cagGraph)) {
+      //   this.cagGraph.deselectNodeAndEdge();
+      // }
       this.setNewNodeVisible(true);
     },
     onSuggestionSelected(suggestion: Suggestion) {
@@ -645,6 +630,12 @@ export default defineComponent({
       const { model_id, concept, label, modified_at, parameter, components } = node;
       const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter, components };
       const data = await this.addCAGComponents([cleanedNode], [], 'manual');
+
+      // HACK: Force cagGraph to inject a node to keep layout stable
+      if (data.newNode && this.cagGraph) {
+        this.cagGraph.injectNewNode(data.newNode);
+      }
+
       this.setUpdateToken(data.updateToken);
     },
     async onModalConfirm() {
@@ -678,7 +669,7 @@ export default defineComponent({
     onModalClose() {
       this.showModalConfirmation = false;
     },
-    onDelete(node: { data: NodeParameter }) {
+    onDelete(node: NodeParameter) {
       if (node) {
         this.selectNode(node);
       }
@@ -710,7 +701,7 @@ export default defineComponent({
     onBackgroundDblClick() {
       this.createNewNode();
     },
-    onNodeClick(node: { data: NodeParameter }) {
+    onNodeClick(node: NodeParameter) {
       this.selectNode(node);
     },
     onEdgeClick(edge: EdgeParameter) {
@@ -765,11 +756,11 @@ export default defineComponent({
       this.selectedEdge = edge;
       this.switchToTab(PANE_ID.EVIDENCE);
     },
-    selectNode(node: { data: NodeParameter }) {
+    selectNode(node: NodeParameter) {
       this.deselectNodeAndEdge();
       this.setNewNodeVisible(false);
       this.isDrilldownOverlayOpen = false;
-      this.selectedNode = node.data;
+      this.selectedNode = node;
       if (this.activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS) {
         // User is on Suggestions overlay for node A, clicks node B
         // We assume they want to now investigate suggestions for B
@@ -1174,17 +1165,15 @@ export default defineComponent({
       this.setUpdateToken(data.updateToken);
     },
     async renameNode(newName: string) {
-      console.log('Renaming', newName);
-
       // FIXME: Stableness hack, because the node has changed, we end up caching the
       // DOM which refers to the old values. To get it to cache new values we need to swap new/old
       // into place. Needs better support from renderer itself!!
       const oldName = this.modelComponents.nodes.find(node => node.id === this.renameNodeId)?.concept;
-      const node = this.cagGraph.renderer.layout.nodes.find((node: any) => node.id === oldName);
+      const node = this.cagGraph.renderer.graph.nodes.find((node: any) => node.label === oldName);
       node.id = newName;
       node.label = newName;
 
-      const edges = this.cagGraph.renderer.layout.edges;
+      const edges = this.cagGraph.renderer.graph.edges;
       for (const edge of edges) {
         const [source, target] = edge.id.split(':');
         if (source === oldName) {
@@ -1218,11 +1207,8 @@ export default defineComponent({
         this.setUpdateToken(data.updateToken);
       }
     },
-    async mergeNodes(mergeNode: { data: NodeParameter }, targetNode: { data: NodeParameter }) {
+    async mergeNodes(mergeData: NodeParameter, targetData: NodeParameter) {
       // 1. collect all of the relevant data for the following steps
-      const mergeData = mergeNode.data;
-      const targetData = targetNode.data;
-
       const updatedComponents = [...mergeData.components, ...targetData.components];
       const mergeNodeEdges = this.modelComponents.edges.filter(e => e.target === mergeData.concept || e.source === mergeData.concept);
       const removedEdges = mergeNodeEdges

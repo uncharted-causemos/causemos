@@ -9,19 +9,20 @@
   />
 </template>
 
-<script>
+<script lang="ts">
+
 import _ from 'lodash';
-
-import { mapGetters } from 'vuex';
+import { defineComponent, ref, Ref, computed } from 'vue';
+import { useStore } from 'vuex';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import { D3SelectionINode, D3SelectionIEdge } from '@/graphs/abstract-cag-renderer';
+import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
+import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import GraphSearch from '@/components/widgets/graph-search.vue';
-import ModelRenderer from '@/graphs/model-renderer';
-import Adapter from '@/graphs/elk/adapter';
-import { layered } from '@/graphs/elk/layouts';
-// import { calculateNeighborhood } from '@/utils/graphs-util';
-import { highlightOptions } from '@/utils/graphs-util';
-import { highlight, nodeDrag, panZoom } from 'svg-flowgraph';
+import { IGraph, moveToLabel } from 'svg-flowgraph';
+import { NodeParameter, EdgeParameter } from '@/types/CAG';
 
-export default {
+export default defineComponent({
   name: 'ModelGraph',
   components: {
     GraphSearch
@@ -45,139 +46,123 @@ export default {
     }
   },
   emits: [
-    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-sensitivity', 'node-drilldown'
+    'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-sensitivity', 'node-drilldown'
   ],
-  computed: {
-    ...mapGetters({
-      selectedScenarioId: 'model/selectedScenarioId'
-    }),
-    scenarioProxy() {
-      // Need both scenarioData and selectedScenarioId to sync up
-      return { scenarioData: this.scenarioData, selectedScenarioId: this.selectedScenarioId };
-    }
+  setup(props) {
+    const store = useStore();
+    const renderer = ref(null) as Ref<QuantitativeRenderer | null>;
+    const selectedScenarioId = computed(() => store.getters['model/selectedScenarioId']);
+    const scenarioProxy = computed(() => {
+      return { scenarioData: props.scenarioData, selectedScenarioId: selectedScenarioId.value };
+    });
+
+    return {
+      renderer,
+      ontologyFormatter: useOntologyFormatter(),
+
+      selectedScenarioId,
+      scenarioProxy
+    };
   },
   watch: {
     data() {
-      this.renderer.setData(this.data.graph);
       this.refresh();
     },
     scenarioProxy() {
       // sanity check
       const nodeScenarios = Object.values(this.scenarioData)[0].scenarios;
       if (!_.some(nodeScenarios, d => d.id === this.selectedScenarioId)) return;
-      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
+      if (this.renderer) {
+        this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
+      }
     },
     visualState() {
       this.applyVisualState();
     }
   },
-  created() {
-    this.renderer = null;
-  },
   mounted() {
-    this.renderer = new ModelRenderer({
-      el: this.$refs.container,
-      adapter: new Adapter({ nodeWidth: 120, nodeHeight: 80, layout: layered }),
-      renderMode: 'delta',
-      useEdgeControl: true,
-      useStableZoomPan: true,
+    const containerEl = this.$refs.container;
+    this.renderer = new QuantitativeRenderer({
+      el: containerEl,
+      useAStarRouting: true,
       useStableLayout: true,
-      addons: [highlight, nodeDrag, panZoom]
+      useStableZoomPan: true,
+      runLayout: (graphData: IGraph<NodeParameter, EdgeParameter>) => {
+        return runELKLayout(graphData, { width: 120, height: 80 });
+      }
+    });
+    this.renderer.setLabelFormatter(this.ontologyFormatter);
+
+    this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>, renderer: QuantitativeRenderer) => {
+      renderer.selectNode(nodeSelection, '');
+      this.$emit('node-sensitivity', nodeSelection.datum().data);
+    });
+    this.renderer.on('node-dbl-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
+      this.$emit('node-drilldown', nodeSelection.datum().data);
     });
 
-    // this.renderer.setCallback('nodeClick', (evt, node) => {
-    //   const concept = node.datum().concept;
-    //   const neighborhood = calculateNeighborhood(this.data.graph, concept);
-    //   this.renderer.hideNeighbourhood();
-    //   this.renderer.clearSelections();
-    //   this.renderer.showNeighborhood(neighborhood);
-    //   this.renderer.selectNode(node);
-    // });
-    this.renderer.setCallback('nodeClick', (event, node) => {
-      this.$emit('node-sensitivity', node.datum().data);
-    });
-    this.renderer.setCallback('nodeDblClick', (event, node) => {
-      this.$emit('node-drilldown', node.datum().data);
-    });
-
-    this.renderer.setCallback('nodeMouseEnter', (evt, node, g) => {
-      this.$emit('node-enter', node, g);
-    });
-    this.renderer.setCallback('nodeMouseLeave', (evt, node, g) => {
-      this.$emit('node-leave', node, g);
-    });
-    this.renderer.setCallback('backgroundClick', (evt, e, g) => {
-      this.$emit('background-click', e, g);
-      this.renderer.clearSelections();
-      this.renderer.hideNeighbourhood();
-    });
-    this.renderer.setCallback('edgeClick', (evt, edge) => {
-      this.$emit('edge-click', edge.datum().data);
-      const source = edge.datum().data.source;
-      const target = edge.datum().data.target;
+    this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection: D3SelectionIEdge<EdgeParameter>, renderer: QuantitativeRenderer) => {
+      const source = edgeSelection.datum().data.source;
+      const target = edgeSelection.datum().data.target;
       const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
 
-      this.renderer.hideNeighbourhood();
-      this.renderer.clearSelections();
-      this.renderer.showNeighborhood(neighborhood);
-      this.renderer.selectEdge(evt, edge);
+      renderer.resetAnnotations();
+      renderer.neighborhoodAnnotation(neighborhood);
+      renderer.selectEdge(event, edgeSelection);
+      this.$emit('edge-click', edgeSelection.datum().data);
     });
-    this.renderer.setCallback('edgeMouseEnter', (evt, edge) => {
-      this.renderer.mouseEnterEdge(evt, edge);
-    });
-    this.renderer.setCallback('edgeMouseLeave', (evt, edge) => {
-      this.renderer.mouseLeaveEdge(evt, edge);
+
+    this.renderer.on('background-click', (_evtName, _event: PointerEvent, _svgSelection, renderer: QuantitativeRenderer) => {
+      this.$emit('background-click');
+      renderer.resetAnnotations();
     });
 
     this.refresh();
   },
   methods: {
-    search(nodeId) {
-      this.renderer.moveTo(nodeId, 1500);
-      this.renderer.highlight({
-        nodes: [nodeId]
-      }, highlightOptions);
-    },
     async refresh() {
-      if (_.isEmpty(this.data)) return;
-      this.renderer.setData(this.data.graph);
-      this.renderer.setScenarioData(this.scenarioData);
-      await this.renderer.render();
-
-      this.renderer.hideNeighbourhood();
-      this.renderer.enableDrag(true);
-      this.renderer.enableSubInteractions();
-      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
-
-      // apply visual state
-      this.applyVisualState();
+      const d = buildInitialGraph(this.data.graph as any);
+      if (this.renderer) {
+        this.renderer.isGraphDirty = true;
+        await this.renderer.setData(d);
+        this.renderer.setScenarioData(this.scenarioData);
+        await this.renderer.render();
+        this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
+        this.applyVisualState();
+      }
     },
     applyVisualState() {
-      // reset
-      this.renderer.hideNeighbourhood();
-      this.renderer.clearSelections();
+      const renderer = this.renderer;
+      if (renderer) {
+        renderer.resetAnnotations();
 
-      // apply changes
-      const visualState = this.visualState;
-      if (visualState.selected && visualState.selected.nodes) {
-        visualState.selected.nodes.forEach(node => {
-          this.renderer.selectNodeById(node.concept);
-        });
-      }
-      if (visualState.highlighted) {
-        this.renderer.showNeighborhood(visualState.highlighted);
-      }
-      if (visualState.annotated) {
-        // FIXME: Need to be more flexible
-        if (visualState.annotated.nodes) {
-          visualState.annotated.nodes.forEach(node => {
-            this.renderer.selectNodeById(node.concept, '#8767c8');
+        // apply changes
+        const visualState = this.visualState;
+        if (visualState.selected && visualState.selected.nodes) {
+          visualState.selected.nodes.forEach((node: any) => {
+            renderer.selectNodeByConcept(node.concept, '');
           });
         }
+        if (visualState.highlighted) {
+          renderer.neighborhoodAnnotation(visualState.highlighted);
+        }
+        if (visualState.annotated) {
+          // FIXME: Need to be more flexible
+          if (visualState.annotated.nodes) {
+            visualState.annotated.nodes.forEach((node: any) => {
+              renderer.selectNodeByConcept(node.concept, '#8767c8');
+            });
+          }
+        }
+      }
+    },
+    search(concept: string) {
+      if (this.renderer) {
+        moveToLabel(this.renderer, concept, 2000);
       }
     }
   }
-};
+});
 
 </script>
 

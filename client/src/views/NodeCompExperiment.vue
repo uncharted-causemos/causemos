@@ -77,7 +77,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { ProjectType, DatacubeStatus } from '@/types/Enums';
-import { getValidatedOutputs } from '@/utils/datacube-util';
+import { getValidatedOutputs, STATUS } from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
 import { aggregationOptionFiltered } from '@/utils/drilldown-util';
@@ -148,6 +148,8 @@ export default defineComponent({
       if (window.history.length > 1) {
         window.history.go(-1);
       } else {
+        const filters: any = filtersUtil.newFilters();
+        filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
         router.push({
           name: 'nodeDataExplorer',
           params: {
@@ -155,7 +157,8 @@ export default defineComponent({
             nodeId: nodeId.value,
             project: project.value,
             projectType: ProjectType.Analysis
-          }
+          },
+          query: { filters }
         });
       }
     };
@@ -299,6 +302,7 @@ export default defineComponent({
       const metadataNewId = this.metadata?.new_version_data_id ?? '';
       const filters: any = filtersUtil.newFilters();
       filtersUtil.setClause(filters, 'dataId', [metadataNewId], 'or', false);
+      filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
       this.$router.push({
         name: 'nodeDataExplorer',
         params: {

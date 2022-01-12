@@ -29,6 +29,8 @@ import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { getAnalysis } from '@/services/analysis-service';
 import { ComparativeAnalysisMode } from '@/types/Enums';
 import { ref } from 'vue';
+import filtersUtil from '@/utils/filters-util';
+import { STATUS } from '@/utils/datacube-util';
 
 export default {
   name: 'ActionBar',
@@ -70,7 +72,9 @@ export default {
       setComparativeAnalysisViewSelection: 'dataAnalysis/setComparativeAnalysisViewSelection'
     }),
     openDataExplorer() {
-      this.$router.push({ name: 'dataExplorer', query: { analysisId: this.analysisId } });
+      const filters = filtersUtil.newFilters();
+      filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
+      this.$router.push({ name: 'dataExplorer', query: { analysisId: this.analysisId, filters } });
     },
     setComparativeAnalysisView(viewSelection) {
       this.setComparativeAnalysisViewSelection(viewSelection);
