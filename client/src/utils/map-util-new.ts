@@ -31,6 +31,29 @@ export function adminLevelToString(level: number) {
   return adminLevel;
 }
 
+export const SOURCE_LAYERS = [
+  {
+    layerId: 'boundaries-adm0',
+    sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm0/{z}/{x}/{y}'
+  },
+  {
+    layerId: 'boundaries-adm1',
+    sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm1/{z}/{x}/{y}'
+  },
+  {
+    layerId: 'boundaries-adm2',
+    sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm2/{z}/{x}/{y}'
+  },
+  {
+    layerId: 'boundaries-adm3',
+    sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm3/{z}/{x}/{y}'
+  },
+  {
+    layerId: 'maas',
+    sourceBaseUrl: 'api/maas/tiles/grid-output/{z}/{x}/{y}'
+  }
+];
+
 export function stringToAdminLevel(geoString: string) {
   const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
   return adminLevel;
@@ -128,7 +151,7 @@ export async function computeMapBoundsForCountries(countryList: string[]) {
   //
   // calculate the map bounds covering the geography covered by the input list of countries
   //
-  if (countryList.length > 0) {
+  if (countryList && countryList.length > 0) {
     let countries = countryList;
     if (countries.length > MAX_NUMBER_BBOX_COUNTRIES) {
       countries = countries.slice(0, MAX_NUMBER_BBOX_COUNTRIES);

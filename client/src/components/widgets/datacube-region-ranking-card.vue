@@ -47,21 +47,22 @@
         </div>
       </div>
       <div class="datacube-map-placeholder">
-        <!-- placeholder for mini map -->
-        <strong>Country</strong>
-        <div v-if="metadata" class="country-list">
-          <div
-            v-for="country in metadata.geography.country"
-            :key="country">
-              {{country}}
-          </div>
-        </div>
+        <region-map
+          :data="barsData"
+          :selected-layer-id="selectedAdminLevel"
+          :map-bounds="bbox"
+          :selected-id="barChartHoverId"
+          @click-region="$emit('map-click-region', $event)" />
       </div>
     </main>
   </div>
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
+import * as d3 from 'd3';
+import { mapActions, useStore } from 'vuex';
+import router from '@/router';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
@@ -72,10 +73,8 @@ import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType,
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import BarChart from '@/components/widgets/charts/bar-chart.vue';
+import RegionMap from '@/components/widgets/region-map.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
-import { mapActions, useStore } from 'vuex';
-import router from '@/router';
-import _ from 'lodash';
 import { DataState, ViewState } from '@/types/Insight';
 import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
@@ -85,18 +84,18 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import { adminLevelToString } from '@/utils/map-util-new';
+import { adminLevelToString, computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { RegionalAggregations } from '@/types/Runoutput';
-import * as d3 from 'd3';
 import dateFormatter from '@/formatters/date-formatter';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCard',
   components: {
     OptionsButton,
-    BarChart
+    BarChart,
+    RegionMap
   },
-  emits: ['updated-bars-data', 'bar-chart-hover'],
+  emits: ['updated-bars-data', 'bar-chart-hover', 'map-click-region'],
   props: {
     id: {
       type: String,
@@ -139,12 +138,14 @@ export default defineComponent({
       selectedAdminLevel,
       maxNumberOfChartBars,
       limitNumberOfChartBars,
-      regionRankingBinningType
+      regionRankingBinningType,
+      barChartHoverId
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+    const bbox = ref<number[][] | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
@@ -160,7 +161,7 @@ export default defineComponent({
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
-    watchEffect(() => {
+    watchEffect(async () => {
       if (metadata.value) {
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
@@ -323,6 +324,15 @@ export default defineComponent({
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
     const barsData = ref<BarData[]>([]);
+
+    // Calculate bbox
+    watchEffect(async () => {
+      const countries = barChartHoverId.value
+        ? [barChartHoverId.value.split('__')[0]]
+        : [...new Set((regionalData.value?.country || []).map(d => d.id))];
+      bbox.value = await computeMapBoundsForCountries(countries) || undefined;
+    });
+
     watch(
       () => [
         regionalData.value,
@@ -451,7 +461,8 @@ export default defineComponent({
       barsData,
       selectedTimestamp,
       timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY'),
-      showNormalizedData
+      showNormalizedData,
+      bbox
     };
   },
   methods: {
