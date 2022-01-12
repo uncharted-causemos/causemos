@@ -123,7 +123,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, Ref, ref, watch } from 'vue';
+import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
 import DatacubeRegionRankingCard from '@/components/widgets/datacube-region-ranking-card.vue';
