@@ -13,9 +13,14 @@ import {
   getSliceMonthsFromTimeScale
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
+import {
+  convertDistributionTimeseriesToRidgelines,
+  RidgelinePoint
+} from '@/utils/ridgeline-util';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_LINE_COLOR = '#999';
+const LABEL_COLOR = HISTORY_LINE_COLOR;
 
 // When creating a curve to estimate the density of the distribution, we group
 //  points into bins (necessary to convert the one-dimensional data into 2D).
@@ -58,7 +63,8 @@ function render(
     indicator_time_series,
     min,
     max,
-    projection_start
+    projection_start,
+    time_scale
   } = nodeScenarioData;
 
   // Calculate timestamp of the earliest historical time to display
@@ -69,7 +75,10 @@ function render(
   // FIXME: historical data should end 1 month (or year, depending on time
   //  scale) before projection start. "Projection start date" means the date at
   //  which the first projected timestamp will be returned.
-  const historyEnd = projection_start;
+  const historyEnd = moment
+    .utc(projection_start)
+    .subtract(1, 'months')
+    .valueOf();
 
   // Filter out timeseries points that aren't within the range we're displaying
   const filteredTimeSeries = indicator_time_series.filter(
@@ -83,7 +92,10 @@ function render(
   const selectedScenarioId = runOptions.selectedScenarioId;
   const isHistoricalDataOnlyMode = selectedScenarioId === null;
 
-  // TODO: check for off-by-1 error
+  // FIXME: I think things would be simpler if time scale timesteps were
+  //  0-indexed
+  // Time scale timesteps are 1-indexed, so subtract 1 to get the actual number
+  //  of months to add to the projection_start date
   const lastProjectedTimestamp = getTimestampAfterMonths(
     projection_start,
     getLastTimeStepFromTimeScale(nodeScenarioData.time_scale) - 1
@@ -98,11 +110,26 @@ function render(
 
   const yExtent = [min, max];
   const formatter = chartValueFormatter(...yExtent);
+
+  const xDomain = [historyStart, xScaleEndTimestamp];
+  if (!isHistoricalDataOnlyMode) {
+    // To avoid the last ridgeline plot overflowing, we need to add enough space
+    //  for another timeslice after the last one.
+    // Width won't be exactly the same between timeslices since some months/years
+    //  are longer than others, but this will serve as a useful estimate of the
+    //  maximum width a ridgeline can take up without overlapping the next one.
+    // FIXME: subtract 1 because timescale slice months are 1-indexed
+    const firstSliceMonthIndex = getSliceMonthsFromTimeScale(time_scale)[0] - 1;
+    const timeBetweenSlices =
+      getTimestampAfterMonths(projection_start, firstSliceMonthIndex) -
+      projection_start;
+
+    xDomain[1] += timeBetweenSlices;
+  }
+
   const xScale = d3
     .scaleLinear()
-    .domain([historyStart, xScaleEndTimestamp])
-    // FIXME: this will cause the last ridgeline plot to overflow. The range
-    //  should be [0, width - ridgelinePlotWidth].
+    .domain(xDomain)
     .range([0, width]);
   const yScale = d3
     .scaleLinear()
@@ -157,7 +184,7 @@ function render(
     .style('pointer-events', 'none')
     .call(yAxis)
     .style('font-size', '5px')
-    .style('color', HISTORY_LINE_COLOR);
+    .style('color', LABEL_COLOR);
   yAxisElement.select('.domain').attr('stroke-width', 0);
   yAxisElement.selectAll('text').attr('x', 0);
 
@@ -202,120 +229,62 @@ function renderScenarioProjections(
     );
     return;
   }
-  // TODO:
+  // TODO: We'll have to check if this is an abstract node when trying to use
+  //  historical data to add context to projections.
   // const isAbstractNode = indicator_id === null;
   const projectionValues = projection.result?.values ?? [];
   if (projectionValues.length === 0) {
     return;
   }
 
-  function convertDistributionToRidgeline(
-    distribution: number[],
-    min: number,
-    max: number
-  ) {
-    // Convert distribution to a histogram
-    const binWidth = (max - min) / RIDGELINE_BIN_COUNT;
-    const thresholds = [
-      ...Array.from(
-        { length: RIDGELINE_BIN_COUNT },
-        (d, i) => min + i * binWidth
-      ),
-      max
-    ];
-    const bins = d3
-      .bin()
-      .domain([min, max])
-      .thresholds(thresholds);
-    const histogram = bins(distribution).map(bin => {
-      const lower = bin.x0 ?? 0;
-      const upper = bin.x1 ?? 1;
-      return {
-        lower,
-        upper,
-        mid: lower + (upper - lower) / 2,
-        count: bin.length
-      };
-    });
-    // TODO: rename these properties?
-    // TODO: extract line point type?
-    // Add point to min and max of line so that line continues to edge of range
-    //  instead of stopping at the midpoint of the last bin
-    const smoothedLine: {
-      binMidpoint: number;
-      fractionOfTotalPoints: number;
-    }[] = [
-      { binMidpoint: min, fractionOfTotalPoints: 0 },
-      ...histogram.map(bin => ({
-        binMidpoint: bin.mid,
-        fractionOfTotalPoints: bin.count / distribution.length
-      })),
-      { binMidpoint: max, fractionOfTotalPoints: 0 }
-    ];
-    return smoothedLine;
-  }
+  // Convert distribution timeseries to line, where each point represents an
+  //  inflection point on what will eventually be a ridgeline chart
+  const smoothedLines = convertDistributionTimeseriesToRidgelines(
+    projectionValues,
+    time_scale,
+    yScale.domain()[0],
+    yScale.domain()[1],
+    RIDGELINE_BIN_COUNT
+  );
 
-  // Extract relevant timeslices //TODO: this should probably be a util function
-  // 1. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
-  // This represents how many months from "now" each displayed time slice will be
-  const relevantMonthOffsets = getSliceMonthsFromTimeScale(time_scale);
-  // TODO: 2.
-  const smoothedLines = relevantMonthOffsets
-    .map(monthOffset => ({
-      timestamp: getTimestampAfterMonths(projection_start, monthOffset - 1),
-      // FIXME: is there a neater way to do this? monthOffsets are 1 indexed, projection values are 0 indexed
-      distribution: projectionValues[monthOffset - 1].values
-    }))
-    .map(({ timestamp, distribution }) => ({
-      timestamp,
-      smoothedLine: convertDistributionToRidgeline(
-        distribution,
-        yScale.domain()[0], // min
-        yScale.domain()[1] // max
-      )
-    }));
-
-  // TODO: 3.
-  // Render one ridgeline plot for each timeslice
-  // const firstSliceTimestamp = smoothedLines[0].timestamp;
-  // Width won't be exactly the same between timeslices since some months/years
-  //  are longer than others, but this will serve as a useful estimate of the
-  //  maximum width a ridgeline can take up without overlapping the next one.
-  // FIXME: we should be able to use smoothedLines[0].timestamp and projection_start
-  //  here so that we don't have the dependency of having more than 1 relevant timeslice
+  // Calculate how wide a single ridgeline can be
+  const firstSliceMonthIndex = getSliceMonthsFromTimeScale(time_scale)[0] - 1;
+  const firstSliceMonthTimestamp = getTimestampAfterMonths(
+    projection_start,
+    firstSliceMonthIndex
+  );
   const widthBetweenTimeslices =
-    xScale(smoothedLines[1].timestamp) - xScale(smoothedLines[0].timestamp);
-
+    xScale(firstSliceMonthTimestamp) - xScale(projection_start);
   const ridgelineXScale = d3
     .scaleLinear()
     .domain([0, 1])
     .range([0, widthBetweenTimeslices]);
-
+  // Create a line generator that will be used to render the ridgeline
   const line = d3
-    .line<{ binMidpoint: number; fractionOfTotalPoints: number }>()
+    .line<RidgelinePoint>()
     // Use curveMonotoneY so that curves between points don't overshoot points
     //  in the X direction. This is necessary so that curves don't dip past the
     //  vertical line that acts as the baseline for each smoothed histogram
     .curve(d3.curveMonotoneY)
-    .x(d => ridgelineXScale(d.fractionOfTotalPoints))
-    .y(d => yScale(d.binMidpoint));
+    .x(point => ridgelineXScale(point.value))
+    .y(point => yScale(point.coordinate));
 
+  // Render one ridgeline for each timeslice
+  // Make a `g` element for each ridgeline
   const ridgeLineElements = svgGroup
     .selectAll('.ridgeline')
     .data(smoothedLines)
     .join('g')
     .classed('ridgeline', true)
     .attr('transform', d => translate(xScale(d.timestamp), 0));
-
   // Draw vertical line to act as a baseline
   ridgeLineElements
     .append('rect')
-    .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH) // TODO
+    .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH)
     .attr('height', height)
     .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
     .attr('x', 0)
     .attr('y', 0);
-
   // Draw ridgeline itslef
   ridgeLineElements
     .append('path')
@@ -324,7 +293,14 @@ function renderScenarioProjections(
     .attr('fill', RIDGELINE_FILL_COLOR)
     .attr('stroke', RIDGELINE_STROKE_COLOR)
     .attr('stroke-width', RIDGELINE_STROKE_WIDTH)
-    .attr('d', d => line(d.smoothedLine));
+    .attr('d', d => line(d.ridgeline));
+  // Draw time slice label
+  ridgeLineElements
+    .append('text')
+    .attr('transform', translate(-widthBetweenTimeslices / 2, height))
+    .attr('font-size', widthBetweenTimeslices)
+    .style('fill', LABEL_COLOR)
+    .text(d => d.label);
 
   // TODO: Render constraints
   // const constraintSummary = summarizeConstraints(
