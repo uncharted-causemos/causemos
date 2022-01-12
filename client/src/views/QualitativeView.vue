@@ -598,9 +598,9 @@ export default defineComponent({
     createNewNode() {
       this.deselectNodeAndEdge();
       this.closeDrilldown();
-      if (!_.isNil(this.cagGraph)) {
-        this.cagGraph.deselectNodeAndEdge();
-      }
+      // if (!_.isNil(this.cagGraph)) {
+      //   this.cagGraph.deselectNodeAndEdge();
+      // }
       this.setNewNodeVisible(true);
     },
     onSuggestionSelected(suggestion: Suggestion) {
