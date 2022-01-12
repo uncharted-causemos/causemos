@@ -94,7 +94,7 @@ const borderLayer = () => {
 };
 
 export default {
-  name: 'GeoSelectionMap',
+  name: 'RegionRankingMiniMap',
   emits: ['click-region'],
   components: {
     WmMap,
@@ -120,6 +120,14 @@ export default {
         [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
         [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
       ]
+    },
+    popupFormatter: {
+      type: Function,
+      default: (feature) => {
+        const { label, name, value } = feature.state || {};
+        if (!label) return null;
+        return `${label.split('__').pop()}<br> Rank: ${name}<br> Value: ${+value.toFixed(2)}`;
+      }
     }
   },
   data: () => ({
@@ -251,11 +259,6 @@ export default {
       if (this.selectedId) {
         this.map.setFeatureState({ source: this.vectorSourceId, id: this.selectedId, sourceLayer: this.vectorSourceLayer }, { selected: true });
       }
-    },
-    popupFormatter(feature) {
-      const { label } = feature.state || {};
-      if (!label) return null;
-      return label.split('__').pop();
     }
   }
 };

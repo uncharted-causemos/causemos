@@ -138,7 +138,8 @@ export default defineComponent({
       selectedAdminLevel,
       maxNumberOfChartBars,
       limitNumberOfChartBars,
-      regionRankingBinningType
+      regionRankingBinningType,
+      barChartHoverId
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -179,12 +180,6 @@ export default defineComponent({
         }
         mainModelOutput.value = outputs.value[initialOutputIndex];
       }
-    });
-
-    // Calculate bbox
-    watchEffect(async () => {
-      if (!metadata.value) return;
-      bbox.value = await computeMapBoundsForCountries(metadata.value.geography.country) || undefined;
     });
 
     const {
@@ -329,6 +324,15 @@ export default defineComponent({
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
     const barsData = ref<BarData[]>([]);
+
+    // Calculate bbox
+    watchEffect(async () => {
+      const countries = barChartHoverId.value
+        ? [barChartHoverId.value.split('__')[0]]
+        : [...new Set((regionalData.value?.country || []).map(d => d.id))];
+      bbox.value = await computeMapBoundsForCountries(countries) || undefined;
+    });
+
     watch(
       () => [
         regionalData.value,

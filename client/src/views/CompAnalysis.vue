@@ -167,11 +167,6 @@ export default defineComponent({
       store.dispatch('app/setAnalysisName', result.title);
     });
 
-    watchEffect(async () => {
-      const countries = store.getters['insightPanel/dataState']?.datacubeRegions || [];
-      globalBbox.value = await computeMapBoundsForCountries(countries) || undefined;
-    });
-
     watchEffect(() => {
       if (analysisItems.value && analysisItems.value.length > 0) {
         // set context-ids to fetch insights correctly for all datacubes in this analysis
@@ -282,6 +277,13 @@ export default defineComponent({
     const onMapClickRegion = (regionId: string) => {
       barChartHoverId.value = regionId;
     };
+
+    watchEffect(async () => {
+      const countries = barChartHoverId.value
+        ? [barChartHoverId.value.split('__')[0]]
+        : [...new Set(globalBarsData.value.map(d => d.label.split('__')[0]))];
+      globalBbox.value = await computeMapBoundsForCountries(countries) || undefined;
+    });
 
     watch(
       () => [
