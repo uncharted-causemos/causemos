@@ -16,6 +16,8 @@ const convertDistributionToRidgeline = (
 ) => {
   // Convert distribution to a histogram with `binCount` bins
   const binWidth = (max - min) / binCount;
+  // Add a threshold at min, one at max, and `binCount - 1` others evenly
+  //  spaced between them
   const thresholds = [
     ...Array.from({ length: binCount }, (d, i) => min + i * binWidth),
     max
@@ -34,7 +36,7 @@ const convertDistributionToRidgeline = (
     };
   });
   // Convert to a line with a point at the middle of each bin
-  // Add point to min and max of line so that line continues to edge of range
+  // Add point to min and max of range so that line continues to edge of range
   //  instead of stopping at the midpoint of the last bin.
   const line: RidgelinePoint[] = [
     { coordinate: min, value: 0 },
@@ -63,18 +65,20 @@ export const convertDistributionTimeseriesToRidgelines = (
   max: number,
   binCount: number
 ) => {
-  // 1. Use selected timescale to get relevant month offsets from
-  //  TIME_SCALE_OPTIONS constant .This represents how many months from "now"
+  // Use selected timescale to get relevant month offsets from
+  //  TIME_SCALE_OPTIONS constant. This represents how many months from "now"
   //  each displayed time slice will be.
   const timeSlices = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices ?? [];
   const ridgelines = timeSlices.map(timeSlice => {
-    // 2. Convert the month offset to a timestamp and extract the relevant
+    // Convert the month offset to a timestamp and extract the relevant
     //  distribution from the timeseries.
     // FIXME: is there a neater way to do this? monthOffsets are 1 indexed,
     //  projection values are 0 indexed
     const monthOffset = timeSlice.months - 1;
     const timestamp = timeseries[monthOffset].timestamp;
     const distribution = timeseries[monthOffset].values;
+    // Convert the distribution to a ridgeline, and attach the timestamp and
+    //  label for rendering later.
     return {
       timestamp,
       label: timeSlice.shortLabel,

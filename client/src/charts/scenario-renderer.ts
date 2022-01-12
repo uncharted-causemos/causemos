@@ -24,8 +24,7 @@ const LABEL_COLOR = HISTORY_LINE_COLOR;
 
 // When creating a curve to estimate the density of the distribution, we group
 //  points into bins (necessary to convert the one-dimensional data into 2D).
-// The number of bins impacts how smooth the resulting curve is, raise the
-//  bin count to make the curve less smooth.
+// Raise the bin count to make the curve less smooth.
 const RIDGELINE_BIN_COUNT = 20;
 const RIDGELINE_STROKE_WIDTH = 1;
 const RIDGELINE_STROKE_COLOR = 'none';
@@ -101,16 +100,11 @@ function render(
     getLastTimeStepFromTimeScale(nodeScenarioData.time_scale) - 1
   );
 
-  // const historicalDataWidth = isHistoricalDataOnlyMode
-  //   ? width
-  //   : HISTORY_WIDTH_PERCENTAGE * width;
   const xScaleEndTimestamp = isHistoricalDataOnlyMode
     ? historyEnd
     : lastProjectedTimestamp;
-
   const yExtent = [min, max];
   const formatter = chartValueFormatter(...yExtent);
-
   const xDomain = [historyStart, xScaleEndTimestamp];
   if (!isHistoricalDataOnlyMode) {
     // To avoid the last ridgeline plot overflowing, we need to add enough space
@@ -239,7 +233,7 @@ function renderScenarioProjections(
 
   // Convert distribution timeseries to line, where each point represents an
   //  inflection point on what will eventually be a ridgeline chart
-  const smoothedLines = convertDistributionTimeseriesToRidgelines(
+  const ridgelinePoints = convertDistributionTimeseriesToRidgelines(
     projectionValues,
     time_scale,
     yScale.domain()[0],
@@ -273,7 +267,7 @@ function renderScenarioProjections(
   // Make a `g` element for each ridgeline
   const ridgeLineElements = svgGroup
     .selectAll('.ridgeline')
-    .data(smoothedLines)
+    .data(ridgelinePoints)
     .join('g')
     .classed('ridgeline', true)
     .attr('transform', d => translate(xScale(d.timestamp), 0));
@@ -285,7 +279,7 @@ function renderScenarioProjections(
     .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
     .attr('x', 0)
     .attr('y', 0);
-  // Draw ridgeline itslef
+  // Draw ridgeline itself
   ridgeLineElements
     .append('path')
     .attr('width', widthBetweenTimeslices)
