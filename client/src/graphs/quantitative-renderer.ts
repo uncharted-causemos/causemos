@@ -101,9 +101,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
       .attr('width', d => d.width - DEFAULT_STYLE.node.strokeWidth)
       .attr('height', GRAPH_HEIGHT * 0.5)
-      .style('fill', DEFAULT_STYLE.nodeHeader.fill)
-      .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
-      .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
+      .style('fill', DEFAULT_STYLE.nodeHeader.fill);
 
     selection.append('text')
       .classed('node-label', true)
