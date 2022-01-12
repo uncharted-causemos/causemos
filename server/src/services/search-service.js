@@ -15,12 +15,15 @@ const formatOntologyDoc = (d) => {
 
 const formatDatacubeDoc = (d) => {
   return {
+    id: d.id,
     data_id: d.data_id,
     name: d.name,
-    familyName: d.family_name,
+    family_name: d.family_name,
     category: d.category,
-    variableName: d.outputs[0].display_name,
-    description: d.outputs[0].description
+    feature: d.outputs[0].name,
+    display_name: d.outputs[0].display_name,
+    description: d.outputs[0].description,
+    type: d.type
   };
 };
 

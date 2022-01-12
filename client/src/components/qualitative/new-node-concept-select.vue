@@ -52,7 +52,7 @@
               @mouseenter="mouseEnter(index)"
               @mouseleave="mouseLeave(index)"
             >
-              {{ suggestion.doc.variableName }}
+              {{ suggestion.doc.display_name }}
             </div>
           </div>
           <div
@@ -114,6 +114,7 @@
 import _ from 'lodash';
 import { defineComponent, ref, watch, Ref, computed } from 'vue';
 import { useStore } from 'vuex';
+import API from '@/api/api';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import DropdownControl from '@/components/dropdown-control.vue';
 import HighlightText from '@/components/widgets/highlight-text.vue';
@@ -124,7 +125,27 @@ import datacubeService from '@/services/new-datacube-service';
 
 const CONCEPT_SUGGESTION_COUNT = 10;
 
-// `/maas/output/timeseries?data_id=${encodeURI(dataId)}&run_id=indicator&feature=${encodeURI(feature)}&resolution=${temporalResolution}&temporal_agg=${temporalAggregation}&spatial_agg=${geospatialAggregation}`,
+const getRunId = async (id: string) => {
+  const runs = await datacubeService.getModelRunMetadata(id);
+  const defaultRun = runs.find(d => d.is_default_run === true && d.status === 'READY');
+  console.log(runs, defaultRun);
+};
+
+const getTimeseries = async (dataId: string, runId: string, feature: string) => {
+  const result = await API.get('maas/output/timeseries', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature: feature,
+      resolution: 'month',
+      temporal_agg: 'mean',
+      spatial_agg: 'mean',
+      region_id: ''
+    }
+  });
+  console.log('abc', result.data);
+  return result.data;
+};
 
 export default defineComponent({
   name: 'NewNodeConceptSelect',
@@ -217,6 +238,9 @@ export default defineComponent({
   mounted() {
     this.calculateDropdownOffset();
     this.focusInput();
+
+    // Test
+    this.test();
   },
   watch: {
     conceptSuggestions(n, o) {
@@ -326,6 +350,17 @@ export default defineComponent({
     },
     setActive(tab: string) {
       this.activeTab = tab;
+    },
+    async test() {
+      // const runs = await datacubeService.getModelRunMetadata('ad44420e-8168-438e-9ff9-0ae1b658fdb7');
+      // console.log('runs are', runs);
+
+      // http://localhost:8080/api/maas/output/timeseries?data_id=2ddd2cbe-364b-4520-a28e-a5691227db39&run_id=cd140452-7519-42bf-bbe7-cee5af7e4603&feature=Q&resolution=month&temporal_agg=mean&spatial_agg=mean
+
+      const dataId = 'ad44420e-8168-438e-9ff9-0ae1b658fdb7';
+      const feature = 'Oceanic Nino Index (total)';
+      await getTimeseries(dataId, 'indicator', feature);
+      await getRunId('ceedd3b0-f48f-43d2-b279-d74be695ed1c');
     }
   }
 });
