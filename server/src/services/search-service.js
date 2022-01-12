@@ -14,15 +14,17 @@ const formatOntologyDoc = (d) => {
 };
 
 const formatDatacubeDoc = (d) => {
+  const defaultFeature = d.outputs.find(output => output.name === d.default_feature);
+
   return {
     id: d.id,
     data_id: d.data_id,
     name: d.name,
     family_name: d.family_name,
     category: d.category,
-    feature: d.outputs[0].name,
-    display_name: d.outputs[0].display_name,
-    description: d.outputs[0].description,
+    feature: defaultFeature.name,
+    display_name: defaultFeature.display_name,
+    description: defaultFeature.description,
     type: d.type
   };
 };
