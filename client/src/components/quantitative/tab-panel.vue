@@ -171,7 +171,6 @@ export default {
     }
   },
   emits: [
-    'background-click',
     'refresh-model',
     'set-sensitivity-analysis-type',
     'tab-click',
@@ -326,7 +325,6 @@ export default {
       }
     },
     onBackgroundClick() {
-      this.$emit('background-click');
       this.closeDrilldown();
       this.selectedEdge = null;
       this.selectedNode = null;

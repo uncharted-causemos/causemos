@@ -20,7 +20,7 @@ module.exports = {
     'no-unused-vars': 'off',
     // This rule extends and replaces `eslint-no-unused-vars` to add support for
     //  TypeScript features, such as types
-    '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^h$' }],
+    '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_' }],
 
     'quote-props': ['error', 'consistent-as-needed'],
 

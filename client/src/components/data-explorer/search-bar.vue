@@ -67,7 +67,7 @@ export default {
 
     const suggestionPills = Object.values(SUGGESTION_CODE_TABLE).map(suggestInfo =>
       new DynamicValuePill(suggestInfo,
-        suggestionService.getDatacubeSuggestionFunction(
+        suggestionService.getDatacubeFieldSuggestionFunction(
           suggestInfo.field, suggestInfo.filterFunc),
         suggestInfo.searchMessage,
         true,
@@ -78,7 +78,7 @@ export default {
     this.pills = [
       new TextPill(CODE_TABLE.SEARCH),
       new DynamicValuePill(CODE_TABLE.ONTOLOGY_MATCH,
-        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.ONTOLOGY_MATCH.field),
+        suggestionService.getDatacubeFieldSuggestionFunction(CODE_TABLE.ONTOLOGY_MATCH.field),
         'Select one or more ontological concepts',
         true,
         SingleRelationState),

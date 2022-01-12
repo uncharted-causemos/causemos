@@ -206,6 +206,8 @@ import ProjectionHistograms from '@/components/node-drilldown/projection-histogr
 import moment from 'moment';
 import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
 import DropdownControl from '@/components/dropdown-control.vue';
+import filtersUtil from '@/utils/filters-util';
+import { STATUS } from '@/utils/datacube-util';
 
 const SEASONALITY_OPTIONS: DropdownItem[] = [
   {
@@ -754,6 +756,8 @@ export default defineComponent({
   },
   methods: {
     openDataExplorer() {
+      const filters: any = filtersUtil.newFilters();
+      filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
       this.$router.push({
         name: 'nodeDataExplorer',
         params: {
@@ -761,7 +765,8 @@ export default defineComponent({
           nodeId: this.nodeId,
           project: this.project,
           projectType: ProjectType.Analysis
-        }
+        },
+        query: { filters }
       });
     },
     openDataDrilldown() {

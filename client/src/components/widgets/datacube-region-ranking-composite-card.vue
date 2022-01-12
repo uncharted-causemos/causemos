@@ -10,7 +10,9 @@
         />
         <div class="row datacube-footer">Showing data for {{timestampFormatter(selectedTimestamp)}} (or earlier)</div>
       </div>
-      <div class="datacube-map-placeholder" />
+      <div class="datacube-map-placeholder">
+        <region-map :data="barsData" :selected-layer-id="selectedAdminLevel" :map-bounds="mapBounds" :selected-id="barChartHoverId" @click-region="$emit('map-click-region', $event)"/>
+      </div>
     </main>
   </div>
 </template>
@@ -20,13 +22,15 @@ import { defineComponent, PropType } from 'vue';
 import { BarData } from '@/types/BarChart';
 import dateFormatter from '@/formatters/date-formatter';
 import BarChart from '@/components/widgets/charts/bar-chart.vue';
+import RegionMap from '@/components/widgets/region-map.vue';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCompositeCard',
   components: {
-    BarChart
+    BarChart,
+    RegionMap
   },
-  emits: ['bar-chart-hover'],
+  emits: ['bar-chart-hover', 'map-click-region'],
   props: {
     barsData: {
       type: Array as PropType<BarData[]>,
@@ -36,9 +40,17 @@ export default defineComponent({
       type: Number,
       default: 0
     },
+    selectedAdminLevel: {
+      type: Number,
+      default: 0
+    },
     barChartHoverId: {
       type: String,
       default: ''
+    },
+    mapBounds: {
+      type: Array,
+      default: () => undefined
     }
   },
   setup() {

@@ -5,7 +5,7 @@ const MAX_POLL_THRESHOLD = 50;
 
 const NOOP = () => {};
 
-class Poller {
+export class Poller {
   _pollId = 0;
   _success: Function = NOOP;
   _failure: Function = NOOP;
@@ -54,6 +54,11 @@ class Poller {
     return this;
   }
 
+  stop() {
+    this._stop();
+    this._failure('manually stopped');
+  }
+
   start() {
     // Start polling
     this._isRunning = true;
@@ -86,11 +91,10 @@ class Poller {
 export default Poller;
 
 export function startPolling(
+  poller: Poller,
   taskFn: Function,
-  progressFn: Function | null,
-  { interval, threshold }: { interval: number; threshold: number }
+  progressFn: Function | null
 ) {
-  const poller = new Poller(interval, threshold);
   const taskFunction = () => Promise.resolve(taskFn());
   const promise = new Promise((resolve, reject) => {
     if (progressFn) {

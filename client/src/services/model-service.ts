@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import API from '@/api/api';
-import { startPolling } from '@/api/poller';
+import { startPolling, Poller } from '@/api/poller';
 import {
   Scenario,
   ConceptProjectionConstraints,
@@ -317,12 +317,8 @@ const runProjectionExperiment = async (
 
 /**
  * Poll for experiment
- *
- * @param {string} modelId - model identifier
- * @param {string} experimentId - eperiment id/hash
- * @param {number} threshold - optional, number of times to poll
  */
-const getExperimentResult = async (modelId: string, experimentId: string, threshold = 30, progressFn: (Function | null) = null) => {
+const getExperimentResult = async (modelId: string, experimentId: string, poller: Poller, progressFn: (Function | null) = null) => {
   const model = await getSummary(modelId);
   const taskFn = async () => {
     try {
@@ -338,10 +334,7 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
     }
   };
 
-  return startPolling(taskFn, progressFn, {
-    interval: 3000,
-    threshold: threshold
-  });
+  return startPolling(poller, taskFn, progressFn);
 };
 const getExperimentResultOnce = async (modelId: string, engine: string, experimentId: string) => {
   const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: engine, experiment_id: experimentId } });
@@ -511,12 +504,12 @@ const runPathwaySensitivityAnalysis = async (
 };
 
 
-const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
+const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Poller, progressFn: Function) => {
   const modelId = modelSummary.id;
   const numSteps = getLastTimeStepFromTimeScale(modelSummary.parameter.time_scale);
   try {
     const experimentId = await runProjectionExperiment(modelId, numSteps, cleanConstraints([]));
-    const experiment: any = await getExperimentResult(modelId, experimentId, 30);
+    const experiment: any = await getExperimentResult(modelId, experimentId, poller, progressFn);
 
     const scenario: NewScenario = {
       model_id: modelId,

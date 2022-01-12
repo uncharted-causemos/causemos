@@ -3,7 +3,7 @@ import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { MapLegendColor, AnalysisMapStats, AnalysisMapColorOptions } from '@/types/Common';
 import { OutputSpecWithId, OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
-import { computeRegionalStats, adminLevelToString, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
+import { computeRegionalStats, adminLevelToString, computeGridLayerStats, DATA_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';
 import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';
 import { getOutputStats } from '@/services/runoutput-service';
@@ -112,7 +112,7 @@ export default function useAnalysisMapStats(
     return selectedDataLayer.value === DATA_LAYER.TILES;
   });
 
-  const mapSelectedLayer = computed(() => isGridLayer.value ? 4 : selectedAdminLevel.value);
+  const mapSelectedLayer = computed(() => SOURCE_LAYERS[isGridLayer.value ? 4 : selectedAdminLevel.value].layerId);
 
   const mapLegendData = computed(() => {
     return isGridLayer.value ? gridMapLayerLegendData.value : adminMapLayerLegendData.value;

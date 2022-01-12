@@ -386,6 +386,15 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
     }
   });
 
+  // Patch Delphi's progress
+  if (engine === DELPHI) {
+    const progress = await delphiService.modelTrainingProgress(modelId);
+    modelStatus.progressPercentage = progress.progressPercentage;
+  } else if (engine === DELPHI_DEV) {
+    const progress = await delphiService.modelTrainingProgress(modelId);
+    modelStatus.progressPercentage = progress.progressPercentage;
+  }
+
   res.json(modelStatus);
 }));
 
