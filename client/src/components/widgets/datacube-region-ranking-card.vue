@@ -152,7 +152,7 @@ export default defineComponent({
       maxNumberOfChartBars,
       limitNumberOfChartBars,
       regionRankingBinningType,
-      showNormalizedData
+      showNormalizedData,
       barChartHoverId
     } = toRefs(props);
 
@@ -494,8 +494,7 @@ export default defineComponent({
       selectedTimestamp,
       timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY'),
       selectedRegionRankingScenario,
-      regionRunsScenarios
-      showNormalizedData,
+      regionRunsScenarios,
       bbox
     };
   },
