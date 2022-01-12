@@ -110,18 +110,23 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
-import { mapGetters } from 'vuex';
-import DropdownControl from '@/components/dropdown-control';
-import HighlightText from '@/components/widgets/highlight-text';
+import { defineComponent, ref, watch, Ref, computed } from 'vue';
+import { useStore } from 'vuex';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import DropdownControl from '@/components/dropdown-control.vue';
+import HighlightText from '@/components/widgets/highlight-text.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
+
 import projectService from '@/services/project-service';
 import datacubeService from '@/services/new-datacube-service';
 
 const CONCEPT_SUGGESTION_COUNT = 10;
 
-export default {
+// `/maas/output/timeseries?data_id=${encodeURI(dataId)}&run_id=indicator&feature=${encodeURI(feature)}&resolution=${temporalResolution}&temporal_agg=${temporalAggregation}&spatial_agg=${geospatialAggregation}`,
+
+export default defineComponent({
   name: 'NewNodeConceptSelect',
   components: {
     DropdownControl,
@@ -142,42 +147,78 @@ export default {
     'suggestion-selected',
     'show-custom-concept'
   ],
-  data: () => ({
-    userInput: '',
-    conceptSuggestions: [],
-    datacubeSuggestions: [],
-    focusedSuggestionIndex: 0,
+  setup() {
+    const store = useStore();
+    const userInput = ref('');
+    const focusedSuggestionIndex = ref(0);
+    const mouseOverIndex = ref(-1);
+    const activeTab = ref('concepts');
+    const conceptSuggestions = ref([]) as Ref<any[]>;
+    const datacubeSuggestions = ref([]) as Ref<any[]>;
+    const dropdownLeftOffset = ref(0);
+    const dropdownTopOffset = ref(4); // prevent overlap with input box
 
-    mouseOverIndex: -1,
-    dropdownLeftOffset: 0,
-    dropdownTopOffset: 4, // prevent overlap with input box
-    activeTab: 'concepts'
-  }),
-  computed: {
-    ...mapGetters({
-      ontologyConcepts: 'app/ontologyConcepts',
-      project: 'app/project'
-    }),
-    currentSuggestion() {
-      const idx = this.focusedSuggestionIndex;
-      if (this.activeTab === 'concepts' && this.conceptSuggestions.length && idx > -1) {
-        return this.conceptSuggestions[idx];
+    const input = ref(null) as Ref<HTMLInputElement | null>;
+    const newNodeTop = ref(null) as Ref<HTMLDivElement | null>;
+    const newNodeContainer = ref(null) as Ref<HTMLDivElement | null>;
+
+    const currentSuggestion = computed(() => {
+      const idx = focusedSuggestionIndex.value;
+      if (activeTab.value === 'concepts' && conceptSuggestions.value.length && idx > -1) {
+        return conceptSuggestions.value[idx];
       }
-      if (this.activeTab === 'datacubes' && this.datacubeSuggestions.length && idx > -1) {
-        return this.datacubeSuggestions[idx];
+      if (activeTab.value === 'datacubes' && datacubeSuggestions.value.length && idx > -1) {
+        return datacubeSuggestions.value[idx];
       }
       return null;
-    }
+    });
+
+    const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
+    const project = computed(() => store.getters['app/project']);
+
+    watch(userInput, _.debounce(async () => {
+      if (_.isEmpty(userInput.value)) {
+        conceptSuggestions.value = [];
+        datacubeSuggestions.value = [];
+      } else {
+        let results: any = null;
+        results = await projectService.getConceptSuggestions(project.value, userInput.value);
+        conceptSuggestions.value = results.splice(0, CONCEPT_SUGGESTION_COUNT);
+
+        results = await datacubeService.getDatacubeSuggestions(userInput.value);
+        datacubeSuggestions.value = results.splice(0, 5);
+      }
+    }, 300));
+
+    return {
+      // element refs
+      input,
+      newNodeTop,
+      newNodeContainer,
+
+      // Reactive
+      userInput,
+      focusedSuggestionIndex,
+      mouseOverIndex,
+      activeTab,
+      conceptSuggestions,
+      datacubeSuggestions,
+      dropdownLeftOffset,
+      dropdownTopOffset,
+
+      // Computed
+      currentSuggestion,
+      ontologyConcepts,
+      project,
+
+      ontologyFormatter: useOntologyFormatter()
+    };
   },
   mounted() {
     this.calculateDropdownOffset();
     this.focusInput();
   },
   watch: {
-    userInput() {
-      this.getConceptSuggestions();
-      this.getDatacubeSuggestions();
-    },
     conceptSuggestions(n, o) {
       if (!_.isEqual(n, o)) {
         this.focusedSuggestionIndex = 0;
@@ -191,7 +232,7 @@ export default {
   },
   methods: {
     // `delta` is 1 if moving down the list, -1 if moving up the list
-    shiftFocus(delta) {
+    shiftFocus(delta: number) {
       let newFocusIndex = this.focusedSuggestionIndex + delta;
       if (newFocusIndex < 0) {
         newFocusIndex = this.conceptSuggestions.length - 1;
@@ -200,10 +241,10 @@ export default {
       }
       this.focusedSuggestionIndex = newFocusIndex;
     },
-    onKeyDown(event) {
+    onKeyDown(event: KeyboardEvent) {
       switch (event.key) {
         case 'Enter':
-          this.onEnterPressed(event);
+          this.onEnterPressed();
           break;
         case 'ArrowUp':
           this.shiftFocus(-1);
@@ -215,11 +256,11 @@ export default {
           break;
       }
     },
-    mouseEnter(index) {
+    mouseEnter(index: number) {
       this.mouseOverIndex = index;
       this.focusedSuggestionIndex = index;
     },
-    mouseLeave(index) {
+    mouseLeave(index: number) {
       if (this.mouseOverIndex === index) {
         this.mouseOverIndex = -1;
       }
@@ -229,7 +270,7 @@ export default {
       const suggestion = this.conceptSuggestions[this.focusedSuggestionIndex];
       this.selectSuggestion(suggestion);
     },
-    selectSuggestion(suggestion) {
+    selectSuggestion(suggestion: any) {
       this.$emit('suggestion-selected', {
         concept: suggestion.doc.key,
         label: this.ontologyFormatter(suggestion.doc.key),
@@ -239,47 +280,55 @@ export default {
       this.userInput = '';
     },
     focusInput() {
-      this.$refs.input.focus();
-    },
-    conceptNotInCag(concept) {
-      return this.conceptsInCag.indexOf(concept.concept) === -1;
+      if (this.input) {
+        this.input.focus();
+      }
     },
     calculateDropdownOffset() {
       // calculate if dropdown will collide with edge of screen and then translate if required
-      const inputBoundingBox = this.$refs.newNodeTop.getBoundingClientRect();
-      const cagContainerBoundingBox = this.$refs.newNodeContainer.parentNode.getBoundingClientRect();
+      if (this.newNodeTop && this.newNodeContainer) {
+        const inputBoundingBox = this.newNodeTop.getBoundingClientRect();
+        const cagContainerBoundingBox = (this.newNodeContainer.parentNode as HTMLElement).getBoundingClientRect();
 
-      const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
-      const dropdownHeight = 290; // Match CSS
+        const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
+        const dropdownHeight = 290; // Match CSS
 
-      if (inputBoundingBox.left + dropdownWidth > cagContainerBoundingBox.right) {
-        this.dropdownLeftOffset = -dropdownWidth + inputBoundingBox.width;
-      }
-      if (inputBoundingBox.bottom + dropdownHeight > cagContainerBoundingBox.bottom) {
-        this.dropdownTopOffset = -dropdownHeight - (inputBoundingBox.height + 4); // +4 to prevent overlap with input box
+        if (inputBoundingBox.left + dropdownWidth > cagContainerBoundingBox.right) {
+          this.dropdownLeftOffset = -dropdownWidth + inputBoundingBox.width;
+        }
+        if (inputBoundingBox.bottom + dropdownHeight > cagContainerBoundingBox.bottom) {
+          this.dropdownTopOffset = -dropdownHeight - (inputBoundingBox.height + 4); // +4 to prevent overlap with input box
+        }
       }
     },
-    getConceptSuggestions: _.throttle(async function() {
-      if (_.isEmpty(this.userInput)) {
-        this.conceptSuggestions = [];
-      } else {
-        const conceptSuggestions = await projectService.getConceptSuggestions(this.project, this.userInput);
-        this.conceptSuggestions = conceptSuggestions.splice(0, CONCEPT_SUGGESTION_COUNT);
-      }
-    }, 500, { trailing: true, leading: false }),
-    getDatacubeSuggestions: _.throttle(async function() {
-      if (_.isEmpty(this.userInput)) {
-        this.datacubeSuggestions = [];
-      } else {
-        const datacubeSuggestions = await datacubeService.getDatacubeSuggestions(this.userInput);
-        this.datacubeSuggestions = datacubeSuggestions.splice(0, 5);
-      }
-    }, 500, { trailing: true, leading: false }),
-    setActive(tab) {
+    getConceptSuggestions() {
+      console.log('hihi');
+      const fetch = async () => {
+        if (_.isEmpty(this.userInput)) {
+          this.conceptSuggestions = [];
+        } else {
+          const conceptSuggestions = await projectService.getConceptSuggestions(this.project, this.userInput);
+          this.conceptSuggestions = conceptSuggestions.splice(0, CONCEPT_SUGGESTION_COUNT);
+        }
+      };
+      fetch();
+    },
+    getDatacubeSuggestions() {
+      const fetch = async () => {
+        if (_.isEmpty(this.userInput)) {
+          this.datacubeSuggestions = [];
+        } else {
+          const datacubeSuggestions = await datacubeService.getDatacubeSuggestions(this.userInput);
+          this.datacubeSuggestions = datacubeSuggestions.splice(0, 5);
+        }
+      };
+      return fetch();
+    },
+    setActive(tab: string) {
       this.activeTab = tab;
     }
   }
-};
+});
 
 </script>
 
