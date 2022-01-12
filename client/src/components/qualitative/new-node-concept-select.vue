@@ -58,6 +58,11 @@
           <div
             v-if="datacubeSuggestions.length"
             class="right-column">
+            {{ currentSuggestion.doc.display_name }}
+            <sparkline
+              :data="sparklineData"
+              :size="[200, 80]"
+            />
             {{ currentSuggestion.doc.description }}
           </div>
         </div>
@@ -119,19 +124,23 @@ import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import DropdownControl from '@/components/dropdown-control.vue';
 import HighlightText from '@/components/widgets/highlight-text.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
+import Sparkline from '@/components/widgets/charts/sparkline.vue';
+
+import { ModelRun } from '@/types/ModelRun';
+import { TimeseriesPoint } from '@/types/Timeseries';
 
 import projectService from '@/services/project-service';
 import datacubeService from '@/services/new-datacube-service';
 
 const CONCEPT_SUGGESTION_COUNT = 10;
 
-const getRunId = async (id: string) => {
+const getRunId = async (id: string): Promise<ModelRun> => {
   const runs = await datacubeService.getModelRunMetadata(id);
   const defaultRun = runs.find(d => d.is_default_run === true && d.status === 'READY');
-  console.log(runs, defaultRun);
+  return defaultRun as ModelRun;
 };
 
-const getTimeseries = async (dataId: string, runId: string, feature: string) => {
+const getTimeseries = async (dataId: string, runId: string, feature: string): Promise<TimeseriesPoint[]> => {
   const result = await API.get('maas/output/timeseries', {
     params: {
       data_id: dataId,
@@ -143,8 +152,7 @@ const getTimeseries = async (dataId: string, runId: string, feature: string) => 
       region_id: ''
     }
   });
-  console.log('abc', result.data);
-  return result.data;
+  return result.data as TimeseriesPoint[];
 };
 
 export default defineComponent({
@@ -152,7 +160,8 @@ export default defineComponent({
   components: {
     DropdownControl,
     HighlightText,
-    RadioButtonGroup
+    RadioButtonGroup,
+    Sparkline
   },
   props: {
     conceptsInCag: {
@@ -178,6 +187,9 @@ export default defineComponent({
     const datacubeSuggestions = ref([]) as Ref<any[]>;
     const dropdownLeftOffset = ref(0);
     const dropdownTopOffset = ref(4); // prevent overlap with input box
+
+    const timeseries = ref([]) as Ref<TimeseriesPoint[]>;
+    const sparklineData = ref([]) as Ref<any[]>;
 
     const input = ref(null) as Ref<HTMLInputElement | null>;
     const newNodeTop = ref(null) as Ref<HTMLDivElement | null>;
@@ -211,6 +223,29 @@ export default defineComponent({
       }
     }, 300));
 
+    watch(currentSuggestion, async () => {
+      if (currentSuggestion.value && activeTab.value === 'datacubes') {
+        const doc = currentSuggestion.value.doc;
+
+        // Figure out datacube or indicator
+        let runId = 'indicator';
+        if (doc.type !== 'indicator') {
+          runId = (await getRunId(doc.data_id)).id;
+        }
+
+        // Get the timeseries data
+        const result = await getTimeseries(doc.data_id, runId, doc.feature);
+        timeseries.value = result;
+
+        sparklineData.value = [
+          {
+            name: 'test',
+            series: result.map(d => d.value)
+          }
+        ];
+      }
+    });
+
     return {
       // element refs
       input,
@@ -226,6 +261,8 @@ export default defineComponent({
       datacubeSuggestions,
       dropdownLeftOffset,
       dropdownTopOffset,
+      timeseries,
+      sparklineData,
 
       // Computed
       currentSuggestion,
