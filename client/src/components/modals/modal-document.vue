@@ -158,7 +158,12 @@ export default {
       this.documentData = (await API.get(url)).data;
       this.textViewer = createTextViewer(this.documentData.extracted_text);
 
-      if (isPdf(this.documentData)) {
+
+      // FIXME: temporarily return false always - DART is offline and there is a strange bug where the fallover
+      // doesn't work after the code has been transpiled - issue 680.
+      const useDART = false;
+
+      if (isPdf(this.documentData) && useDART) {
         const rawDocUrl = `/api/dart/${this.documentId}/raw`;
         try {
           this.pdfViewer = await createPDFViewer({ url: rawDocUrl });
