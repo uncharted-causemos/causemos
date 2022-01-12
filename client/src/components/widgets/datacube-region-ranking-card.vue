@@ -47,7 +47,7 @@
         </div>
       </div>
       <div class="datacube-map-placeholder">
-        <mini-map
+        <region-map
           :data="barsData"
           :selected-layer-id="selectedAdminLevel"
           :map-bounds="bbox"
@@ -73,7 +73,7 @@ import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType,
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import BarChart from '@/components/widgets/charts/bar-chart.vue';
-import MiniMap from '@/components/widgets/datacube-region-ranking-mini-map.vue';
+import RegionMap from '@/components/widgets/region-map.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { DataState, ViewState } from '@/types/Insight';
 import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
@@ -93,7 +93,7 @@ export default defineComponent({
   components: {
     OptionsButton,
     BarChart,
-    MiniMap
+    RegionMap
   },
   emits: ['updated-bars-data', 'bar-chart-hover', 'map-click-region'],
   props: {
