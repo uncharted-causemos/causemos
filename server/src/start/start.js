@@ -1,10 +1,13 @@
 const Logger = rootRequire('/config/logger');
 const serverConfiguration = rootRequire('/config/yargs-wrapper');
-const { startProjectCache, refreshProjectCache } = require('./project-cache-task');
-const { startBYOD } = require('./byod-task');
+const { startProjectCache, refreshProjectCache } = rootRequire('/start/project-cache-task');
+const { startBYOD } = rootRequire('/start/byod-task');
 
 const READER_OUTPUT_POLL_INTERVAL = 20 * 60 * 1000; // in milliseconds
 const PROJECT_CACHE_UPDATE_INTERVAL = 10 * 60 * 1000;
+
+// DART services are currently disabled - DC, Jan 2022
+const useDART = false;
 
 /**
  * Runs start up jobs, e.g. any type of prefetching of sanity checks
@@ -27,6 +30,9 @@ async function runStartup() {
 
   // Periodic jobs
   startProjectCache(PROJECT_CACHE_UPDATE_INTERVAL);
-  startBYOD(READER_OUTPUT_POLL_INTERVAL);
+
+  if (useDART === true) {
+    startBYOD(READER_OUTPUT_POLL_INTERVAL);
+  }
 }
 module.exports = { runStartup };

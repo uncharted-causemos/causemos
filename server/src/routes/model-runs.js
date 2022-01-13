@@ -12,11 +12,11 @@ router.post('/', asyncHandler(async (req, res) => {
 }));
 
 /**
- * Return all model runs for a given model
+ * Return all model runs that match the specified filter
  */
 router.get('/', asyncHandler(async (req, res) => {
-  const modelId = req.query.modelId;
-  const result = await maasService.getAllModelRuns(modelId, true);
+  const filter = JSON.parse(req.query.filter);
+  const result = await maasService.getAllModelRuns(filter, true);
   res.status(200).json(result);
 }));
 
