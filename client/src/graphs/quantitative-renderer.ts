@@ -27,7 +27,6 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
 
   constructor(options: any) {
     super(options);
-    console.log('Quantitative Renderer');
 
     this.on('node-mouse-enter', (_evtName, __event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
       const node = nodeSelection.datum();
@@ -122,16 +121,13 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       .style('fill', 'transparent');
   }
 
-  renderNodesUpdated(selection: D3SelectionINode<NodeParameter>) {
-    console.log(selection);
+  renderNodesUpdated(/* selection: D3SelectionINode<NodeParameter> */) {
   }
 
-  renderNodesRemoved(selection: D3SelectionINode<NodeParameter>) {
-    console.log(selection);
+  renderNodesRemoved(/* selection: D3SelectionINode<NodeParameter> */) {
   }
 
   renderEdgesAdded(selection: D3SelectionIEdge<EdgeParameter>) {
-    console.log(selection);
     selection
       .append('path')
       .classed('edge-path-bg', true)
@@ -179,8 +175,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       });
   }
 
-  renderEdgesRemoved(selection: D3SelectionIEdge<EdgeParameter>) {
-    console.log(selection);
+  renderEdgesRemoved(/* selection: D3SelectionIEdge<EdgeParameter> */) {
   }
 
   setupDefs() {
