@@ -14,8 +14,8 @@ export const TIME_SCALE_OPTIONS: TimeScaleOption[] = [
     timeSlices: [
       { months: 3, label: '3 months', shortLabel: '3m' },
       { months: 6, label: '6 months', shortLabel: '6m' },
-      { months: 9, label: 'a few months', shortLabel: '9m' },
-      { months: 12, label: 'about a year', shortLabel: '12m' }
+      { months: 9, label: '9 months', shortLabel: '9m' },
+      { months: 12, label: '12 months', shortLabel: '12m' }
     ],
     example: 'Locust outbreaks'
   },
@@ -23,21 +23,12 @@ export const TIME_SCALE_OPTIONS: TimeScaleOption[] = [
     id: TimeScale.Years,
     label: 'Years',
     timeSlices: [
-      { months: 3, label: 'a few months', shortLabel: 'TODO' },
-      { months: 12, label: 'about a year', shortLabel: 'TODO' },
-      { months: 36, label: 'a few years', shortLabel: 'TODO' }
+      { months: 12, label: '1 year', shortLabel: '1y' },
+      { months: 24, label: '2 years', shortLabel: '2y' },
+      { months: 36, label: '3 years', shortLabel: '3y' },
+      { months: 48, label: '4 years', shortLabel: '4y' }
     ],
     example: 'Malnutrition'
-  },
-  {
-    id: TimeScale.Decades,
-    label: 'Decades',
-    timeSlices: [
-      { months: 36, label: 'a few years', shortLabel: 'TODO' },
-      { months: 120, label: 'about a decade', shortLabel: 'TODO' },
-      { months: 360, label: 'a few decades', shortLabel: 'TODO' }
-    ],
-    example: 'Climate change'
   }
 ];
 
@@ -50,21 +41,30 @@ export const TIME_SCALE_OPTIONS_MAP = TIME_SCALE_OPTIONS.reduce(
   new Map<string, TimeScaleOption>()
 );
 
-export const getSliceMonthsFromTimeScale = (timeScale: TimeScale) => {
+export const getTimeScaleOption = (timeScale: TimeScale) => {
   const timeScaleOption = TIME_SCALE_OPTIONS_MAP.get(timeScale);
   if (timeScaleOption === undefined) {
     console.error('Unable to find time scale option with ID ' + timeScale);
   }
-  return (
-    timeScaleOption?.timeSlices?.map(timeSlice => timeSlice.months) ?? [
-      3,
-      12,
-      36
-    ]
-  );
+  return TIME_SCALE_OPTIONS[0];
 };
 
-export const getLastTimeStepFromTimeScale = (timeScale: TimeScale) => {
-  const timeSliceMonths = getSliceMonthsFromTimeScale(timeScale);
+export const getSliceMonthIndicesFromTimeScale = (timeScale: TimeScale) => {
+  return getTimeScaleOption(timeScale).timeSlices.map(timeSlice => {
+    const monthCount = timeSlice.months;
+    // Time scale timesteps are 1-indexed, so subtract 1 to get the actual number
+    //  of months to add to the projection_start date
+    const monthIndex = monthCount - 1;
+    return monthIndex;
+  });
+};
+
+export const getLastTimeStepIndexFromTimeScale = (timeScale: TimeScale) => {
+  const timeSliceMonths = getSliceMonthIndicesFromTimeScale(timeScale);
   return timeSliceMonths[timeSliceMonths.length - 1];
+};
+
+export const getProjectionLengthFromTimeScale = (timeScale: TimeScale) => {
+  const timeSlices = getTimeScaleOption(timeScale).timeSlices;
+  return timeSlices[timeSlices.length - 1].months;
 };

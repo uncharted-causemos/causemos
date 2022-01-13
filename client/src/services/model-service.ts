@@ -13,7 +13,7 @@ import {
   ScenarioParameter,
   CAGModelParameter
 } from '@/types/CAG';
-import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
+import { getProjectionLengthFromTimeScale } from '@/utils/time-scale-util';
 
 const MODEL_STATUS = {
   NOT_REGISTERED: 0,
@@ -415,7 +415,7 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
 
     // FIXME: hackin parameters from modelSummary
     graphData.scenarios.forEach(scenario => {
-      const numSteps = getLastTimeStepFromTimeScale(
+      const numSteps = getProjectionLengthFromTimeScale(
         modelSummary.parameter.time_scale
       );
       if (scenario.parameter) {
@@ -447,7 +447,7 @@ const runSensitivityAnalysis = async (
   const { id: modelId } = modelSummary;
   const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
 
-  const numTimeSteps = getLastTimeStepFromTimeScale(timeScale);
+  const numTimeSteps = getProjectionLengthFromTimeScale(timeScale);
 
   const analysisParams = {
     numPath: 0,
@@ -482,7 +482,7 @@ const runPathwaySensitivityAnalysis = async (
   const { id: modelId } = modelSummary;
   const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
 
-  const numTimeSteps = getLastTimeStepFromTimeScale(timeScale);
+  const numTimeSteps = getProjectionLengthFromTimeScale(timeScale);
   const payload = {
     analysisMode: 'DYNAMIC',
     analysisType: 'PATHWAYS',
@@ -506,7 +506,7 @@ const runPathwaySensitivityAnalysis = async (
 
 const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Poller, progressFn: Function) => {
   const modelId = modelSummary.id;
-  const numSteps = getLastTimeStepFromTimeScale(modelSummary.parameter.time_scale);
+  const numSteps = getProjectionLengthFromTimeScale(modelSummary.parameter.time_scale);
   try {
     const experimentId = await runProjectionExperiment(modelId, numSteps, cleanConstraints([]));
     const experiment: any = await getExperimentResult(modelId, experimentId, poller, progressFn);
@@ -560,7 +560,7 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
 
   if (!scenario.parameter) return scenario;
 
-  const numSteps = getLastTimeStepFromTimeScale(modelParameter.time_scale);
+  const numSteps = getProjectionLengthFromTimeScale(modelParameter.time_scale);
 
   // Remove constraints if the concept is no longer in the model's topology
   _.remove(scenario.parameter.constraints, constraint => {

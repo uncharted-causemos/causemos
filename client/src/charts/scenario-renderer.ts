@@ -9,8 +9,8 @@ import { Chart } from '@/types/Chart';
 import { NodeScenarioData } from '@/types/CAG';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
 import {
-  getLastTimeStepFromTimeScale,
-  getSliceMonthsFromTimeScale
+  getLastTimeStepIndexFromTimeScale,
+  getSliceMonthIndicesFromTimeScale
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
 import {
@@ -91,13 +91,9 @@ function render(
   const selectedScenarioId = runOptions.selectedScenarioId;
   const isHistoricalDataOnlyMode = selectedScenarioId === null;
 
-  // FIXME: I think things would be simpler if time scale timesteps were
-  //  0-indexed
-  // Time scale timesteps are 1-indexed, so subtract 1 to get the actual number
-  //  of months to add to the projection_start date
   const lastProjectedTimestamp = getTimestampAfterMonths(
     projection_start,
-    getLastTimeStepFromTimeScale(nodeScenarioData.time_scale) - 1
+    getLastTimeStepIndexFromTimeScale(nodeScenarioData.time_scale)
   );
 
   const xScaleEndTimestamp = isHistoricalDataOnlyMode
@@ -112,8 +108,7 @@ function render(
     // Width won't be exactly the same between timeslices since some months/years
     //  are longer than others, but this will serve as a useful estimate of the
     //  maximum width a ridgeline can take up without overlapping the next one.
-    // FIXME: subtract 1 because timescale slice months are 1-indexed
-    const firstSliceMonthIndex = getSliceMonthsFromTimeScale(time_scale)[0] - 1;
+    const firstSliceMonthIndex = getSliceMonthIndicesFromTimeScale(time_scale)[0];
     const timeBetweenSlices =
       getTimestampAfterMonths(projection_start, firstSliceMonthIndex) -
       projection_start;
@@ -242,7 +237,7 @@ function renderScenarioProjections(
   );
 
   // Calculate how wide a single ridgeline can be
-  const firstSliceMonthIndex = getSliceMonthsFromTimeScale(time_scale)[0] - 1;
+  const firstSliceMonthIndex = getSliceMonthIndicesFromTimeScale(time_scale)[0];
   const firstSliceMonthTimestamp = getTimestampAfterMonths(
     projection_start,
     firstSliceMonthIndex
