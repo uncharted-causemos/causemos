@@ -58,12 +58,17 @@
           <div
             v-if="datacubeSuggestions.length"
             class="right-column">
-            {{ currentSuggestion.doc.display_name }}
+            <div style="font-weight: 600">{{ currentSuggestion.doc.display_name }}</div>
+            <div style="color: #888">{{ currentSuggestion.doc.name }}</div>
+            <div>&nbsp;</div>
+            <div v-if="currentSuggestion.doc.period">
+              {{ dateFormatter(currentSuggestion.doc.period.gte, 'YYYY') }} to {{ dateFormatter(currentSuggestion.doc.period.lte, 'YYYY') }}
+            </div>
             <sparkline
               :data="sparklineData"
-              :size="[200, 80]"
+              :size="[220, 90]"
             />
-            {{ currentSuggestion.doc.description }}
+            <div>{{ currentSuggestion.doc.description }}</div>
           </div>
         </div>
 
@@ -121,6 +126,7 @@ import { defineComponent, ref, watch, computed, Ref, PropType } from 'vue';
 import { useStore } from 'vuex';
 import API from '@/api/api';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import dateFormatter from '@/formatters/date-formatter';
 import DropdownControl from '@/components/dropdown-control.vue';
 import HighlightText from '@/components/widgets/highlight-text.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
@@ -269,6 +275,7 @@ export default defineComponent({
       ontologyConcepts,
       project,
 
+      dateFormatter,
       ontologyFormatter: useOntologyFormatter()
     };
   },
@@ -439,7 +446,7 @@ export default defineComponent({
 }
 
 .suggestion-dropdown {
-  width: 45vw;
+  width: 50vw;
 }
 
 .dropdown-option {

@@ -605,11 +605,13 @@ export default defineComponent({
       this.setNewNodeVisible(true);
     },
     onDatacubeSelected(datacubeParam: any) {
+      // Strip off non-alphanumeric - Engines cannot handle them
+      const cleanedName = datacubeParam.name.replace(/[^\w\s]/gi, '');
       const node = {
         id: '',
-        concept: datacubeParam.name,
-        components: [datacubeParam.name],
-        label: datacubeParam.name,
+        concept: cleanedName,
+        components: [cleanedName],
+        label: cleanedName,
         parameter: datacubeParam
       };
       this.saveNodeToGraph(node);

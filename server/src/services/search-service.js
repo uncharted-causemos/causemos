@@ -22,10 +22,12 @@ const formatDatacubeDoc = (d) => {
     name: d.name,
     family_name: d.family_name,
     category: d.category,
+    period: d.period,
+    type: d.type,
+
     feature: defaultFeature.name,
     display_name: defaultFeature.display_name,
-    description: defaultFeature.description,
-    type: d.type
+    description: defaultFeature.description
   };
 };
 
