@@ -32,6 +32,7 @@
         :selected-timestamp="selectedTimestamp"
         :selected-timestamp-range="selectedTimestampRange"
         :breakdown-option="breakdownOption"
+        @select-timestamp="setSelectedTimestamp"
       />
       <div class="datacube-map-placeholder">
         <!-- placeholder for mini map -->
@@ -69,6 +70,7 @@ import _ from 'lodash';
 import { DataState, ViewState } from '@/types/Insight';
 import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import { colorFromIndex } from '@/utils/colors-util';
 
 export default defineComponent({
   name: 'DatacubeComparativeCard',
@@ -85,6 +87,10 @@ export default defineComponent({
       type: Number,
       default: 0
     },
+    datacubeIndex: {
+      type: Number,
+      default: 0
+    },
     selectedTimestampRange: {
       type: Object as PropType<{start: number; end: number} | null>,
       default: null
@@ -94,7 +100,8 @@ export default defineComponent({
   setup(props, { emit }) {
     const {
       id,
-      selectedTimestamp
+      selectedTimestamp,
+      datacubeIndex
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -202,10 +209,10 @@ export default defineComponent({
 
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) {
-        // return;
+        return;
       }
-      // do not emit or set the timestamp since it can only be set/updated from the parent component
-      // selectedTimestamp.value = value;
+      // emit the timestamp so that the parent component can set and sync others
+      emit('select-timestamp', value);
     };
 
     const breakdownOption = ref<string | null>(null);
@@ -238,6 +245,11 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value && visibleTimeseriesData.value && visibleTimeseriesData.value.length > 0) {
+        // override the color of all loaded timeseries
+        visibleTimeseriesData.value.forEach(timeseries => {
+          timeseries.color = colorFromIndex(datacubeIndex.value);
+        });
+
         emit('loaded-timeseries', {
           id: id.value,
           timeseriesList: visibleTimeseriesData.value,
@@ -339,6 +351,10 @@ export default defineComponent({
     flex: 1;
     min-width: 0;
     margin: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+
     &:hover {
       color: $selected-dark;
 

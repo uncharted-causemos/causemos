@@ -1,0 +1,564 @@
+<template>
+  <div class="datacube-card-container">
+    <header class="datacube-header" >
+      <h5
+        v-if="metadata && mainModelOutput"
+        class="datacube-title-area"
+        @click="openDrilldown"
+      >
+        <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}} - {{ selectedRegionIdsDisplay }}</span>
+        <span class="datacube-name">{{metadata.name}}</span>
+        <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin-left: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+        <i class="fa fa-fw fa-expand drilldown-btn" />
+      </h5>
+
+      <options-button :dropdown-below="true">
+        <template #content>
+          <div
+            class="dropdown-option"
+            @click="clickRemove"
+          >
+            Remove
+          </div>
+        </template>
+      </options-button>
+    </header>
+    <main>
+      <region-map
+        :data="regionMapData"
+        :map-bounds="bbox"
+        :selected-layer-id="selectedAdminLevel"
+        :popup-Formatter="popupFormatter"
+      />
+      <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
+      <div style="display: flex; align-items: center; align-self: center">
+        <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
+        <div style="display: flex; align-items: center">
+          <div style="margin-right: 4px">Selected:</div>
+          <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
+            @change="selectedScenarioIndex = $event.target.selectedIndex"
+            :disabled="selectedScenarioIds.length === 1"
+            :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex ? regionRunsScenarios[selectedScenarioIndex].color : 'black' }"
+          >
+            <option
+              v-for="(selectedRun, indx) in regionRunsScenarios"
+              :key="selectedRun.name"
+              :selected="indx === selectedScenarioIndex"
+            >
+              {{selectedRun.name}}
+            </option>
+          </select>
+        </div>
+      </div>
+    </main>
+  </div>
+</template>
+
+<script lang="ts">
+import * as d3 from 'd3';
+import useModelMetadata from '@/services/composables/useModelMetadata';
+import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import { AnalysisItem } from '@/types/Analysis';
+import { DatacubeFeature } from '@/types/Datacube';
+import { getFilteredScenariosFromIds } from '@/utils/datacube-util';
+import { ModelRun } from '@/types/ModelRun';
+import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType, DatacubeStatus } from '@/types/Enums';
+import { computed, defineComponent, Ref, ref, toRefs, watch, watchEffect } from 'vue';
+import OptionsButton from '@/components/widgets/options-button.vue';
+import useScenarioData from '@/services/composables/useScenarioData';
+import { mapActions, useStore } from 'vuex';
+import router from '@/router';
+import _ from 'lodash';
+import { DataState, ViewState } from '@/types/Insight';
+import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
+import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import { COLOR, colorFromIndex, ColorScaleType, getColors, COLOR_SCHEME, isDiscreteScale, validateColorScaleType } from '@/utils/colors-util';
+import RegionMap from '@/components/widgets/region-map.vue';
+import { BarData } from '@/types/BarChart';
+import useRegionalData from '@/services/composables/useRegionalData';
+import { adminLevelToString, computeMapBoundsForCountries } from '@/utils/map-util-new';
+import useOutputSpecs from '@/services/composables/useOutputSpecs';
+import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import { RegionalAggregations } from '@/types/Runoutput';
+
+export default defineComponent({
+  name: 'DatacubeComparativeOverlayRegion',
+  components: {
+    OptionsButton,
+    RegionMap
+  },
+  props: {
+    id: {
+      type: String,
+      required: true
+    },
+    selectedTimestamp: {
+      type: Number,
+      default: 0
+    },
+    datacubeIndex: {
+      type: Number,
+      default: 0
+    },
+    selectedAdminLevel: {
+      type: Number,
+      default: 0
+    }
+  },
+  emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp', 'loaded-timeseries'],
+  setup(props, { emit }) {
+    const {
+      id,
+      selectedTimestamp,
+      datacubeIndex,
+      selectedAdminLevel
+    } = toRefs(props);
+
+    const metadata = useModelMetadata(id);
+
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+
+    const selectedScenarioIds = ref([] as string[]);
+    const selectedScenarios = ref([] as ModelRun[]);
+
+    const outputs = ref([]) as Ref<DatacubeFeature[]>;
+
+    const regionMapData = ref<BarData[]>([]);
+
+    const store = useStore();
+
+    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
+    const project = computed(() => store.getters['app/project']);
+    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+
+    watchEffect(() => {
+      if (metadata.value) {
+        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+
+        let initialOutputIndex = 0;
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        if (currentOutputEntry !== undefined) {
+          // we have a store entry for the default output of the current model
+          initialOutputIndex = currentOutputEntry;
+        } else {
+          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+
+          // update the store
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+        }
+        mainModelOutput.value = outputs.value[initialOutputIndex];
+      }
+    });
+
+    const {
+      dimensions
+    } = useDatacubeDimensions(metadata);
+
+    const modelRunsFetchedAt = ref(0);
+    const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
+
+    const selectedRegionIds: string[] = [];
+    let initialSelectedScenarioIds: string[] = [];
+
+    watchEffect(() => {
+      if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
+        const allScenarioIds = allModelRunData.value.map(run => run.id);
+        // do not pick the first run by default in case a run was previously selected
+        selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
+
+        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, allModelRunData.value);
+      }
+    });
+
+    watchEffect(() => {
+      if (metadata.value?.type === DatacubeType.Indicator) {
+        selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
+      }
+    });
+
+    const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
+    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
+
+    const colorSchemeReversed = ref(false);
+    const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
+    const selectedColorScaleType = ref(ColorScaleType.LinearDiscrete);
+    const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
+
+    const initialViewConfig = ref<ViewState | null>(null);
+    const initialDataConfig = ref<DataState | null>(null);
+    const datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === props.id);
+    if (datacubeAnalysisItem) {
+      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
+      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
+    }
+
+    // grab and track the view-config for this datacube
+    watchEffect(() => {
+      if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
+        if (initialViewConfig.value.temporalResolution !== undefined) {
+          selectedTemporalResolution.value = initialViewConfig.value.temporalResolution;
+        }
+        if (initialViewConfig.value.temporalAggregation !== undefined) {
+          selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation;
+        }
+        if (initialViewConfig.value.spatialAggregation !== undefined) {
+          selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation;
+        }
+        if (initialViewConfig.value.selectedOutputIndex !== undefined) {
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
+          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+        }
+        if (initialViewConfig.value.colorSchemeReversed !== undefined) {
+          colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
+        }
+        if (initialViewConfig.value.colorSchemeName !== undefined) {
+          selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
+        }
+        if (validateColorScaleType(String(initialViewConfig.value.colorScaleType))) {
+          selectedColorScaleType.value = initialViewConfig.value.colorScaleType as ColorScaleType;
+        }
+        if (initialViewConfig.value.numberOfColorBins !== undefined) {
+          numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
+        }
+      }
+
+      // apply initial data config for this datacube
+      if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+        if (initialDataConfig.value.selectedRegionIds !== undefined) {
+          initialDataConfig.value.selectedRegionIds.forEach(regionId => {
+            selectedRegionIds.push(regionId);
+          });
+        }
+        if (initialDataConfig.value.selectedScenarioIds !== undefined) {
+          initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
+        }
+      }
+    });
+
+    const breakdownOption = ref<string | null>(null);
+    const setBreakdownOption = (newValue: string | null) => {
+      breakdownOption.value = newValue;
+    };
+
+    const {
+      timeseriesData,
+      visibleTimeseriesData,
+      relativeTo,
+      baselineMetadata,
+      setRelativeTo,
+      temporalBreakdownData
+    } = useTimeseriesData(
+      metadata,
+      selectedScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      ref(null), // breakdownOption
+      selectedTimestamp,
+      () => {}, // setSelectedTimestamp
+      ref(selectedRegionIds),
+      ref(new Set()),
+      ref([]),
+      ref(false),
+      selectedScenarios
+    );
+
+    watchEffect(() => {
+      if (metadata.value && visibleTimeseriesData.value && visibleTimeseriesData.value.length > 0) {
+        // override the color of all loaded timeseries
+        visibleTimeseriesData.value.forEach(timeseries => {
+          timeseries.color = colorFromIndex(datacubeIndex.value);
+        });
+
+        regionRunsScenarios.value = visibleTimeseriesData.value.map(timeseries => ({ name: timeseries.name, color: timeseries.color }));
+
+        emit('loaded-timeseries', {
+          id: id.value,
+          timeseriesList: visibleTimeseriesData.value,
+          //
+          datacubeName: metadata.value.name,
+          datacubeOutputName: mainModelOutput.value?.display_name,
+          //
+          region: metadata.value.geography.country // FIXME: later this could be the selected region for each datacube
+        });
+      }
+    });
+
+    const selectedRegionIdsDisplay = computed(() => {
+      if (_.isEmpty(selectedRegionIds)) return 'All';
+      return selectedRegionIds.join('/');
+    });
+
+    const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
+
+    const bbox = ref<number[][] | undefined>(undefined);
+
+    const {
+      datacubeHierarchy
+      // NOTE: selectedRegionIds is already calculated above so no need to receive as a return object
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      ref(null), // breakdownOption,
+      ref([]) // initialSelectedRegionIds
+    );
+
+    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
+      ref(null), // breakdownOption,
+      timeseriesData,
+      selectedTimestamp,
+      selectedScenarioIds
+    );
+
+    const {
+      outputSpecs
+    } = useOutputSpecs(
+      id,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
+      metadata,
+      selectedTimeseriesPoints
+    );
+
+    const {
+      regionalData
+    } = useRegionalData(
+      outputSpecs,
+      ref(null), // breakdownOption,
+      datacubeHierarchy
+    );
+
+    // Calculate bbox
+    watchEffect(async () => {
+      const countries = [...new Set((regionalData.value?.country || []).map(d => d.id))];
+      bbox.value = await computeMapBoundsForCountries(countries) || undefined;
+    });
+
+    // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
+    const finalColorScheme = computed(() => {
+      const scheme = isDiscreteScale(selectedColorScaleType.value)
+        ? getColors(selectedColorSchemeName.value, numberOfColorBins.value)
+        : _.clone(COLOR_SCHEME[selectedColorSchemeName.value]);
+      return colorSchemeReversed.value ? scheme.reverse() : scheme;
+    });
+
+    const popupFormatter = (feature: any) => {
+      const { label, value, normalizedValue } = feature.state || {};
+      if (!label) return null;
+      return `${label.split('__').pop()}<br> Normalized: ${+normalizedValue.toFixed(2)}<br> Value: ${+value.toFixed(2)}`;
+    };
+
+    const selectedScenarioIndex = ref(0);
+    const regionRunsScenarios = ref([] as {name: string; color: string}[]);
+
+    watch(
+      () => [
+        regionalData.value,
+        selectedAdminLevel.value,
+        finalColorScheme.value,
+        selectedScenarioIndex.value
+      ],
+      () => {
+        const temp: BarData[] = [];
+
+        if (regionalData.value !== null) {
+          const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
+          const regionLevelData = regionalData.value[adminLevelAsString];
+
+          if (regionLevelData !== undefined && regionLevelData.length > 0) {
+            const data = regionLevelData.map(regionDataItem => ({
+              name: regionDataItem.id,
+              value: Object.values(regionDataItem.values).length > 0 && Object.values(regionDataItem.values).length > selectedScenarioIndex.value ? Object.values(regionDataItem.values)[selectedScenarioIndex.value] : 0
+            }));
+
+            if (data.length > 0) {
+              let regionIndexCounter = 0;
+
+              const allValues = data.map(regionDataItem => regionDataItem.value);
+              const scale = d3
+                .scaleLinear()
+                .domain(d3.extent(allValues) as [number, number])
+                .nice(); // 😃
+              const dataExtent = scale.domain(); // after nice() is called
+
+              const colors = finalColorScheme.value;
+
+              // @REVIEW
+              // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
+              // To receive normalized data, send transform=normalization when fetching regional data
+              const normalize = (value: number) => {
+                const minValue = dataExtent[0];
+                const maxValue = dataExtent[1];
+                if (minValue === maxValue) {
+                  // only one region, so the assumption is to use its value as the full range
+                  return 1;
+                } else {
+                  return (value - minValue) / (maxValue - minValue);
+                }
+              };
+
+              data.forEach(dataItem => {
+                const normalizedValue = normalize(dataItem.value);
+                const itemValue = dataItem.value;
+                const colorIndex = Math.trunc(normalizedValue * numberOfColorBins.value); // i.e., linear binning
+                // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
+                const clampedColorIndex = _.clamp(colorIndex, 0, colors.length - 1);
+                const regionColor = colors[clampedColorIndex];
+                temp.push({
+                  name: (regionIndexCounter + 1).toString(),
+                  label: dataItem.name,
+                  value: itemValue,
+                  normalizedValue: normalizedValue,
+                  color: regionColor
+                });
+                regionIndexCounter++;
+              });
+            }
+
+            // adjust the ranking so that the highest value will be ranked 1st
+            // REVIEW: do we need this in the Overlay mode?
+            temp.forEach((item, indx) => {
+              item.name = (temp.length - indx).toString();
+            });
+          }
+          regionMapData.value = temp;
+        }
+      });
+
+    return {
+      activeDrilldownTab: 'breakdown',
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      selectedScenarioIds,
+      selectedRegionIdsDisplay,
+      metadata,
+      mainModelOutput,
+      outputs,
+      timeseriesData,
+      baselineMetadata,
+      relativeTo,
+      setRelativeTo,
+      breakdownOption,
+      setBreakdownOption,
+      temporalBreakdownData,
+      AggregationOption,
+      visibleTimeseriesData,
+      analysisItems,
+      project,
+      analysisId,
+      props,
+      store,
+      DatacubeStatus,
+      statusColor,
+      statusLabel,
+      regionMapData,
+      bbox,
+      popupFormatter,
+      selectedScenarioIndex,
+      regionRunsScenarios
+    };
+  },
+  methods: {
+    ...mapActions({
+      removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
+    }),
+    async openDrilldown() {
+      // NOTE: instead of replacing the datacubeIDs array,
+      // ensure that the current datacubeId is at 0 index
+      const workingAnalysisItems = this.analysisItems.map((item: AnalysisItem): AnalysisItem => item);
+      const updatedAnalysisInfo = { currentAnalysisId: this.analysisId, analysisItems: workingAnalysisItems };
+      await this.store.dispatch('dataAnalysis/updateAnalysisItems', updatedAnalysisInfo);
+      router.push({
+        name: 'data',
+        params: {
+          project: this.project,
+          analysisId: this.analysisId,
+          projectType: ProjectType.Analysis
+        },
+        query: {
+          datacube_id: this.props.id
+        }
+      }).catch(() => {});
+    },
+    clickRemove() {
+      this.removeAnalysisItems([this.id]);
+    }
+  }
+});
+</script>
+
+<style lang="scss" scoped>
+@import '~styles/variables';
+
+.datacube-card-container {
+  background: $background-light-1;
+  border-radius: 2px;
+  border-width: 3px;
+  border-style: solid;
+  border-color: inherit;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-overflow: hidden;
+  white-space: nowrap;
+}
+
+.datacube-header {
+  display: flex;
+  align-items: center;
+
+  .datacube-title-area {
+    display: flex;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+
+    &:hover {
+      color: $selected-dark;
+
+      .datacube-name {
+        color: $selected-dark;
+      }
+
+      .drilldown-btn {
+        color: $selected-dark;
+      }
+    }
+  }
+}
+
+.datacube-name {
+  font-weight: normal;
+  color: $label-color;
+  margin-left: 10px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.drilldown-btn {
+  padding: 5px;
+  color: $text-color-light;
+  margin-left: 10px;
+}
+
+main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+</style>
