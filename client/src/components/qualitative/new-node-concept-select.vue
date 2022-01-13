@@ -175,6 +175,7 @@ export default defineComponent({
   },
   emits: [
     'suggestion-selected',
+    'datacube-selected',
     'show-custom-concept'
   ],
   setup() {
@@ -332,12 +333,32 @@ export default defineComponent({
       this.selectSuggestion(suggestion);
     },
     selectSuggestion(suggestion: any) {
-      this.$emit('suggestion-selected', {
-        concept: suggestion.doc.key,
-        label: this.ontologyFormatter(suggestion.doc.key),
-        shortName: '', // FIXME unused
-        hasEvidence: false // FIXME unused
-      });
+      if (this.activeTab === 'concepts') {
+        this.$emit('suggestion-selected', {
+          concept: suggestion.doc.key,
+          label: this.ontologyFormatter(suggestion.doc.key),
+          shortName: '', // FIXME unused
+          hasEvidence: false // FIXME unused
+        });
+      } else {
+        const doc = this.currentSuggestion.doc;
+        // The parameter part of node-parameter
+        // FIXME: Need to find out what exactly we need, id or data_id, name or display_name ...
+        this.$emit('datacube-selected', {
+          id: doc.id,
+          name: doc.display_name,
+          unit: '',
+          country: '',
+          admin1: '',
+          admin2: '',
+          admin3: '',
+          spatialAggregation: 'mean',
+          temporalAggregation: 'mean',
+          temporalResolution: 'month',
+          period: 12,
+          timeseries: this.timeseries
+        });
+      }
       this.userInput = '';
     },
     focusInput() {

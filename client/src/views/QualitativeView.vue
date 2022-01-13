@@ -39,6 +39,7 @@
           @delete="onDelete"
           @edge-set-user-polarity="setEdgeUserPolarity"
           @suggestion-selected="onSuggestionSelected"
+          @datacube-selected="onDatacubeSelected"
           @suggestion-duplicated="onSuggestionDuplicated"
           @rename-node="openRenameModal"
           @merge-nodes="mergeNodes"
@@ -602,6 +603,17 @@ export default defineComponent({
       //   this.cagGraph.deselectNodeAndEdge();
       // }
       this.setNewNodeVisible(true);
+    },
+    onDatacubeSelected(datacubeParam: any) {
+      const node = {
+        id: '',
+        concept: datacubeParam.name,
+        components: [datacubeParam.name],
+        label: datacubeParam.name,
+        parameter: datacubeParam
+      };
+      this.saveNodeToGraph(node);
+      this.setNewNodeVisible(false);
     },
     onSuggestionSelected(suggestion: Suggestion) {
       this.addNodeToGraph(suggestion);
