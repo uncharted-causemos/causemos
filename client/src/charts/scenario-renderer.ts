@@ -284,8 +284,6 @@ function renderScenarioProjections(
   // Draw ridgeline itself
   ridgeLineElements
     .append('path')
-    .attr('width', widthBetweenTimeslices)
-    .attr('height', height)
     .attr('fill', RIDGELINE_FILL_COLOR)
     .attr('stroke', RIDGELINE_STROKE_COLOR)
     .attr('stroke-width', RIDGELINE_STROKE_WIDTH)

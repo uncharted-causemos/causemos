@@ -39,12 +39,12 @@ const convertDistributionToRidgeline = (
   // Add point to min and max of range so that line continues to edge of range
   //  instead of stopping at the midpoint of the last bin.
   const line: RidgelinePoint[] = [
-    { coordinate: min, value: 0 },
+    { coordinate: min, value: histogram[0].normalizedCount },
     ...histogram.map(bin => ({
       coordinate: bin.midpoint,
       value: bin.normalizedCount
     })),
-    { coordinate: max, value: 0 }
+    { coordinate: max, value: histogram[histogram.length - 1].normalizedCount }
   ];
   return line;
 };
