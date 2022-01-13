@@ -19,8 +19,7 @@ const convertDistributionToRidgeline = (
   // Add a threshold at min, one at max, and `binCount - 1` others evenly
   //  spaced between them
   const thresholds = [
-    ...Array.from({ length: binCount }, (d, i) => min + i * binWidth),
-    max
+    ...Array.from({ length: binCount }, (d, i) => min + i * binWidth)
   ];
   const bins = d3
     .bin()
@@ -38,13 +37,18 @@ const convertDistributionToRidgeline = (
   // Convert to a line with a point at the middle of each bin
   // Add point to min and max of range so that line continues to edge of range
   //  instead of stopping at the midpoint of the last bin.
+  // Add a second point at each end with value 0 so that when the path is
+  //  closed it always has a flat bottom, rather than cutting diagonally
+  //  through the rest of the plot and causing visual artifacts
   const line: RidgelinePoint[] = [
+    { coordinate: min, value: 0 },
     { coordinate: min, value: histogram[0].normalizedCount },
     ...histogram.map(bin => ({
       coordinate: bin.midpoint,
       value: bin.normalizedCount
     })),
-    { coordinate: max, value: histogram[histogram.length - 1].normalizedCount }
+    { coordinate: max, value: histogram[histogram.length - 1].normalizedCount },
+    { coordinate: max, value: 0 }
   ];
   return line;
 };
@@ -72,11 +76,11 @@ export const convertDistributionTimeseriesToRidgelines = (
   const ridgelines = timeSlices.map(timeSlice => {
     // Convert the month offset to a timestamp and extract the relevant
     //  distribution from the timeseries.
-    // FIXME: is there a neater way to do this? monthOffsets are 1 indexed,
-    //  projection values are 0 indexed
-    const monthOffset = timeSlice.months - 1;
-    const timestamp = timeseries[monthOffset].timestamp;
-    const distribution = timeseries[monthOffset].values;
+    // timeSlice.months can be converted to the distribution's index by
+    //  subtracting 1
+    const monthIndex = timeSlice.months - 1;
+    const timestamp = timeseries[monthIndex].timestamp;
+    const distribution = timeseries[monthIndex].values;
     // Convert the distribution to a ridgeline, and attach the timestamp and
     //  label for rendering later.
     return {

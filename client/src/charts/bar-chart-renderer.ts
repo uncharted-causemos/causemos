@@ -120,7 +120,7 @@ function renderHoverTooltips(
   const minX = xScale(barsData[0].name) ?? 0;
   const hitboxWidth = SELECTED_BAR_WIDTH;
   const markerHeight = (height - PADDING_TOP - X_AXIS_HEIGHT);
-  const tooltipRectHeight = TOOLTIP_LINE_HEIGHT + PADDING_TOP * 2;
+  const tooltipRectHeight = (TOOLTIP_LINE_HEIGHT * 2) + PADDING_TOP * 2;
   barsData.forEach(bar => {
     const barX = xScale(bar.name) ?? 0;
     let barY = yScale(bar.value) ?? 0;
@@ -211,8 +211,7 @@ function renderHoverTooltips(
     // Render the bar name/value in the tooltip
     //
     const yPosition = tooltipContentY;
-    // max number of chars before truncating the text of each bar name
-    const maxNameLen = 20;
+    const maxNameLen = 20; // max number of chars before truncating the text of each bar name
     const barName = bar.label.length > maxNameLen ? bar.label.substring(0, maxNameLen) + '...' : bar.label;
     tooltip
       .append('text')
@@ -226,6 +225,22 @@ function renderHoverTooltips(
       .style('text-anchor', 'end')
       .style('fill', 'blue')
       .text(valueFormatter(bar.value));
+    //
+    // Render the ranking () in the tooltip
+    //
+    const yPosition2 = tooltipContentY + TOOLTIP_LINE_HEIGHT;
+    tooltip
+      .append('text')
+      .attr('transform', translate(TOOLTIP_PADDING, yPosition2))
+      .style('fill', 'blue')
+      .style('font-weight', 'bold')
+      .text('Ranking');
+    tooltip
+      .append('text')
+      .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, yPosition2))
+      .style('text-anchor', 'end')
+      .style('fill', 'blue')
+      .text(bar.name);
     // Hover hitbox
     selection
       .append('rect')

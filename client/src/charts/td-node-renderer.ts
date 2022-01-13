@@ -13,7 +13,7 @@ import {
 } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { getTimestampAfterMonths, roundToNearestMonth } from '@/utils/date-util';
-import { getLastTimeStepFromTimeScale, TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
+import { getProjectionLengthFromTimeScale, TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 
 const HISTORICAL_DATA_COLOR = '#888';
 const HISTORICAL_RANGE_OPACITY = 0.05;
@@ -231,7 +231,6 @@ export default function(
       xScaleFocus,
       yScaleFocus,
       PADDING_TOP,
-      projections,
       historicalTimeseries,
       modelSummary
     );
@@ -274,7 +273,7 @@ export default function(
     const { projection_start } = modelSummary.parameter;
     // get the correct number of steps based on the currently selected time_scale
     //  rather than the deprecated value from the parameter.num_steps
-    const num_steps = getLastTimeStepFromTimeScale(modelSummary.parameter.time_scale);
+    const num_steps = getProjectionLengthFromTimeScale(modelSummary.parameter.time_scale);
 
     const projectionLastTimestamp = getTimestampAfterMonths(
       projection_start,
@@ -357,7 +356,6 @@ const renderStaticElements = (
   xScale: D3ScaleLinear,
   yScale: D3ScaleLinear,
   offsetFromTop: number,
-  projections: ScenarioProjection[],
   historicalTimeseries: TimeseriesPoint[],
   modelSummary: CAGModelSummary
 ) => {
@@ -365,7 +363,7 @@ const renderStaticElements = (
     projection_start: projectionStartTimestamp,
     time_scale: timeScale
   } = modelSummary.parameter;
-  const stepCount = getLastTimeStepFromTimeScale(timeScale);
+  const stepCount = getProjectionLengthFromTimeScale(timeScale);
   const stepTimestamps = _.range(stepCount).map(stepIndex =>
     getTimestampAfterMonths(projectionStartTimestamp, stepIndex)
   );
