@@ -117,7 +117,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, watch, Ref, computed } from 'vue';
+import { defineComponent, ref, watch, computed, Ref, PropType } from 'vue';
 import { useStore } from 'vuex';
 import API from '@/api/api';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
@@ -168,7 +168,7 @@ export default defineComponent({
       default: () => []
     },
     placement: {
-      type: Object,
+      type: Object as PropType<{ x: number; y: number }>,
       default: () => ({ x: 0, y: 0 })
     }
   },
@@ -275,9 +275,6 @@ export default defineComponent({
   mounted() {
     this.calculateDropdownOffset();
     this.focusInput();
-
-    // Test
-    this.test();
   },
   watch: {
     conceptSuggestions(n, o) {
@@ -370,22 +367,22 @@ export default defineComponent({
     calculateDropdownOffset() {
       // calculate if dropdown will collide with edge of screen and then translate if required
       if (this.newNodeTop && this.newNodeContainer) {
+        const buffer = 100; // Discourage flipped orientation by allow bottom-boundary to exceed by buffer amount
         const inputBoundingBox = this.newNodeTop.getBoundingClientRect();
         const cagContainerBoundingBox = (this.newNodeContainer.parentNode as HTMLElement).getBoundingClientRect();
 
         const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
-        const dropdownHeight = 290; // Match CSS
+        const dropdownHeight = 330; // Match CSS
 
         if (inputBoundingBox.left + dropdownWidth > cagContainerBoundingBox.right) {
           this.dropdownLeftOffset = -dropdownWidth + inputBoundingBox.width;
         }
-        if (inputBoundingBox.bottom + dropdownHeight > cagContainerBoundingBox.bottom) {
+        if (inputBoundingBox.bottom + dropdownHeight > cagContainerBoundingBox.bottom + buffer) {
           this.dropdownTopOffset = -dropdownHeight - (inputBoundingBox.height + 4); // +4 to prevent overlap with input box
         }
       }
     },
     getConceptSuggestions() {
-      console.log('hihi');
       const fetch = async () => {
         if (_.isEmpty(this.userInput)) {
           this.conceptSuggestions = [];
@@ -409,17 +406,6 @@ export default defineComponent({
     },
     setActive(tab: string) {
       this.activeTab = tab;
-    },
-    async test() {
-      // const runs = await datacubeService.getModelRunMetadata('ad44420e-8168-438e-9ff9-0ae1b658fdb7');
-      // console.log('runs are', runs);
-
-      // http://localhost:8080/api/maas/output/timeseries?data_id=2ddd2cbe-364b-4520-a28e-a5691227db39&run_id=cd140452-7519-42bf-bbe7-cee5af7e4603&feature=Q&resolution=month&temporal_agg=mean&spatial_agg=mean
-
-      const dataId = 'ad44420e-8168-438e-9ff9-0ae1b658fdb7';
-      const feature = 'Oceanic Nino Index (total)';
-      await getTimeseries(dataId, 'indicator', feature);
-      await getRunId('ceedd3b0-f48f-43d2-b279-d74be695ed1c');
     }
   }
 });
