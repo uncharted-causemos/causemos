@@ -166,7 +166,6 @@ export default {
     curatedInsights: [],
     messageNoData: INSIGHTS.NO_DATA,
     search: '',
-    selectedInsight: null,
     VIEW_OPTIONS
   }),
   setup() {
@@ -229,7 +228,6 @@ export default {
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsight = null;
-      this.selectedInsight = null;
     },
     startDrag(evt, insight) {
       evt.currentTarget.style.border = '3px dashed black';
@@ -323,7 +321,6 @@ export default {
     },
     switchTab(id) {
       this.activeInsight = null;
-      this.selectedInsight = null;
       this.activeTabId = id;
 
       // FIXME: reload insights since questions most recent question stuff may not be up to date

@@ -32,17 +32,26 @@
           @bar-chart-hover="$emit('bar-chart-hover', $event)"
         />
         <div class="row datacube-footer">
-          <div >Showing data for {{timestampFormatter(selectedTimestamp)}}</div>
-          <div class="checkbox">
-            <label
-              @click="showNormalizedData=!showNormalizedData"
-              style="cursor: pointer; color: black;">
-              <i
-                class="fa fa-lg fa-fw"
-                :class="{ 'fa-check-square-o': showNormalizedData, 'fa-square-o': !showNormalizedData }"
-              />
-              Normalized data
-            </label>
+          <div>Showing data for {{timestampFormatter(selectedTimestamp)}}</div>
+          <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
+          <div style="display: flex; align-items: center">
+            <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
+            <div style="display: flex; align-items: center">
+              <div style="margin-right: 4px">Selected:</div>
+              <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
+                @change="selectedRegionRankingScenario = $event.target.selectedIndex"
+                :disabled="selectedScenarioIds.length === 1"
+                :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedRegionRankingScenario ? regionRunsScenarios[selectedRegionRankingScenario].color : 'black' }"
+              >
+                <option
+                  v-for="(selectedRun, indx) in regionRunsScenarios"
+                  :key="selectedRun.name"
+                  :selected="indx === selectedRegionRankingScenario"
+                >
+                  {{selectedRun.name}}
+                </option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -128,6 +137,10 @@ export default defineComponent({
     barChartHoverId: {
       type: String,
       default: ''
+    },
+    showNormalizedData: {
+      type: Boolean,
+      default: true
     }
   },
   setup(props, { emit }) {
@@ -139,6 +152,7 @@ export default defineComponent({
       maxNumberOfChartBars,
       limitNumberOfChartBars,
       regionRankingBinningType,
+      showNormalizedData,
       barChartHoverId
     } = toRefs(props);
 
@@ -149,12 +163,12 @@ export default defineComponent({
 
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
+    const selectedRegionRankingScenario = ref(0);
+    const regionRunsScenarios = ref([] as {name: string; color: string}[]);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
     const store = useStore();
-
-    const showNormalizedData = ref(true);
 
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
@@ -253,7 +267,7 @@ export default defineComponent({
       ref([])
     );
 
-    const selectedTimestamp = ref(0);
+    const selectedTimestamp = ref<number | null>(null);
 
     const {
       timeseriesData,
@@ -266,7 +280,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       ref(null), // breakdownOption
-      selectedTimestamp,
+      ref(null), // selectedTimestamp
       () => {}, // setSelectedTimestamp
       selectedRegionIds,
       ref(new Set()),
@@ -277,10 +291,22 @@ export default defineComponent({
 
     watchEffect(() => {
       if (visibleTimeseriesData.value.length > 0) {
-        const allTimestamps = visibleTimeseriesData.value
+        regionRunsScenarios.value = visibleTimeseriesData.value.map(timeseries => ({ name: timeseries.name, color: timeseries.color }));
+
+        // flatten the list of timeseries for all selected runs and extract the last timestmap
+        let allTimestamps = visibleTimeseriesData.value
           .map(timeseries => timeseries.points)
           .flat()
           .map(point => point.timestamp);
+
+        const timeseriesForSelectedRun = visibleTimeseriesData.value
+          .find((timeseries, indx) => indx === selectedRegionRankingScenario.value);
+        if (timeseriesForSelectedRun !== undefined) {
+          allTimestamps = timeseriesForSelectedRun.points
+            .flat()
+            .map(point => point.timestamp);
+        }
+
         // select the last timestamp as the initial value
         const lastTimestamp = _.max(allTimestamps);
         if (lastTimestamp !== undefined) {
@@ -342,7 +368,8 @@ export default defineComponent({
         numberOfColorBins.value,
         maxNumberOfChartBars.value,
         limitNumberOfChartBars.value,
-        regionRankingBinningType.value
+        regionRankingBinningType.value,
+        selectedRegionRankingScenario.value
       ],
       () => {
         const temp: BarData[] = [];
@@ -357,7 +384,7 @@ export default defineComponent({
           if (regionLevelData !== undefined && regionLevelData.length > 0) {
             const data = regionLevelData.map(regionDataItem => ({
               name: regionDataItem.id,
-              value: Object.values(regionDataItem.values).length > 0 ? Object.values(regionDataItem.values)[0] : 0
+              value: Object.values(regionDataItem.values).length > 0 && Object.values(regionDataItem.values).length > selectedRegionRankingScenario.value ? Object.values(regionDataItem.values)[selectedRegionRankingScenario.value] : 0
             }));
             //
             // bin data
@@ -397,16 +424,20 @@ export default defineComponent({
               const numBars = regionLevelData.length;
               // we can have many bars than the available colors, so map indices
               const slope = 1.0 * (colors.length) / (numBars);
-              bins.forEach((bin, binIndex) => {
+              bins.forEach((bin) => {
                 _.sortBy(bin, item => item.value).forEach(dataItem => {
                   const normalizedValue = normalize(dataItem.value);
                   const barValue = showNormalizedData.value ? (normalizedValue * numberOfColorBins.value) : dataItem.value;
                   let barColor = 'skyblue';
+                  let binIndex = -1;
                   if (regionRankingBinningType.value === BinningOptions.Linear) {
-                    barColor = colors[binIndex];
+                    binIndex = Math.trunc(normalizedValue * numberOfColorBins.value);
                   }
                   if (regionRankingBinningType.value === BinningOptions.Quantile) {
-                    const colorIndex = Math.trunc(slope * (regionIndexCounter));
+                    binIndex = Math.trunc(slope * (regionIndexCounter));
+                  }
+                  if (binIndex !== -1) {
+                    const colorIndex = _.clamp(binIndex, 0, colors.length - 1);
                     barColor = colors[colorIndex];
                   }
                   temp.push({
@@ -428,6 +459,7 @@ export default defineComponent({
 
             emit('updated-bars-data', {
               id: id.value,
+              name: metadata.value?.name,
               barsData: limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp,
               selectedTimestamp: selectedTimestamp.value
             });
@@ -461,7 +493,8 @@ export default defineComponent({
       barsData,
       selectedTimestamp,
       timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY'),
-      showNormalizedData,
+      selectedRegionRankingScenario,
+      regionRunsScenarios,
       bbox
     };
   },
@@ -579,20 +612,6 @@ main {
   font-size: small;
   display: flex;
   justify-content: space-around;
-}
-
-.checkbox {
-  user-select: none; /* Standard syntax */
-  display: inline-block;
-  margin: 0;
-  padding: 0;
-  label {
-    font-weight: normal;
-    margin: 0;
-    padding: 0;
-    cursor: auto;
-    color: gray;
-  }
 }
 
 </style>
