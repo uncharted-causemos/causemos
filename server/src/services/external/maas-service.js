@@ -203,16 +203,14 @@ const markModelRunFailed = async (metadata) => {
 };
 
 /**
- * Return all model runs belonging to a model
+ * Return all model runs that match the specified filter
  *
- * @param{string} modelId - model id
+ * @param{array} filter - simple ES filter
+ * @param{boolean} includeVersion - should the ES doc version be returned
  */
-const getAllModelRuns = async(modelId, includeVersion) => {
+const getAllModelRuns = async(filter, includeVersion) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  return connection.find(
-    [{ field: 'model_id', value: modelId }],
-    { size: SEARCH_LIMIT, version: includeVersion }
-  );
+  return connection.find(filter, { size: SEARCH_LIMIT, version: includeVersion });
 };
 
 /**
