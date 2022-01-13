@@ -204,7 +204,7 @@ import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
 import ProjectionHistograms from '@/components/node-drilldown/projection-histograms.vue';
 import moment from 'moment';
-import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
+import { getProjectionLengthFromTimeScale } from '@/utils/time-scale-util';
 import DropdownControl from '@/components/dropdown-control.vue';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
@@ -321,7 +321,7 @@ export default defineComponent({
         indicator_time_series_range,
         projection_start
       } = modelSummary.value.parameter;
-      const numSteps = getLastTimeStepFromTimeScale(time_scale);
+      const numSteps = getProjectionLengthFromTimeScale(time_scale);
       const updatedScenario = {
         id: selectedScenarioId.value,
         model_id: currentCAG.value,
