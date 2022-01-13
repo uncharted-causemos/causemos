@@ -356,7 +356,9 @@ export default defineComponent({
           temporalAggregation: 'mean',
           temporalResolution: 'month',
           period: 12,
-          timeseries: this.timeseries
+          timeseries: this.timeseries,
+          min: _.min(this.timeseries.map(d => d.value)),
+          max: _.max(this.timeseries.map(d => d.value))
         });
       }
       this.userInput = '';
