@@ -372,7 +372,7 @@
                       :reference-options="activeReferenceOptions"
                       :is-default-run="spec.isDefaultRun"
                       :show-tooltip="true"
-                      :selected-layer-id="mapSelectedLayer"
+                      :selected-layer-id="getSelectedLayer(spec.id)"
                       :map-bounds="mapBounds"
                       :camera-options="mapCameraOptions"
                       :region-data="regionalData"
@@ -569,7 +569,8 @@ import {
   // adminLevelToString,
   BASE_LAYER,
   DATA_LAYER,
-  DATA_LAYER_TRANSPARENCY
+  DATA_LAYER_TRANSPARENCY,
+  SOURCE_LAYERS
 } from '@/utils/map-util-new';
 
 import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
@@ -1680,19 +1681,27 @@ export default defineComponent({
     });
 
     const referenceOptions = computed(() => {
-      let currentReferenceSeries = [] as any;
+      let currentReferenceSeries: ModelRunReference[] = [];
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
         currentReferenceSeries = [
           { id: ReferenceSeriesOption.AllYears, displayName: 'Average All Years' },
           { id: ReferenceSeriesOption.SelectYears, displayName: 'Average Selected Years' }
         ];
-      // to be handled in separate PR for initial reference region series later
       } else if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        currentReferenceSeries = [
-          // { id: ReferenceSeriesOption.AllRegions, displayName: 'Average All Regions' },
-          // { id: ReferenceSeriesOption.SelectRegions, displayName: 'Average Selected Regions' }
-          // add in the individual parent regions for reference as well in future PR
-        ];
+        // add averaging options
+        if (selectedRegionIds.value.length > 1) {
+          currentReferenceSeries.push({
+            id: ReferenceSeriesOption.SelectRegions,
+            displayName: 'Average Selected Regions'
+          });
+        }
+        // if selected admin level is lower than country, add countries as references.
+        if (selectedAdminLevel.value > 0 && regionalData.value?.country) {
+          regionalData.value.country.forEach(refRegion => currentReferenceSeries.push({
+            id: refRegion.id,
+            displayName: refRegion.id
+          }));
+        }
       }
 
       return currentReferenceSeries.map((c: any) => {
@@ -1877,6 +1886,14 @@ export default defineComponent({
     }
   },
   methods: {
+    getSelectedLayer(id: string): string {
+      return this.isReferenceSeries(id) && this.breakdownOption === SpatialAggregationLevel.Region
+        ? SOURCE_LAYERS[0].layerId
+        : this.mapSelectedLayer;
+    },
+    isReferenceSeries(id: string): boolean {
+      return this.referenceOptions.filter((item) => item.id === id).length > 0;
+    },
     openGeoSelectionModal(modelParam: ModelParameter) {
       this.showGeoSelectionModal = true;
       this.geoModelParam = modelParam;

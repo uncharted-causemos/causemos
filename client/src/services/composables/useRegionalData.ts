@@ -13,7 +13,7 @@ const applySplitByRegion = (
   relativeTo?: string | null
 ) => {
   if (specs.length === 0) return regionalData;
-  const ancestorCount = specs[0].id.split(REGION_ID_DELIMETER).length - 1;
+  const ancestorCount = specs[0].id?.split(REGION_ID_DELIMETER).length - 1;
   const selectedAdminLevel = ADMIN_LEVEL_KEYS[ancestorCount];
   const clonedData = _.cloneDeep(regionalData);
   const valuesAtSelectedLevel = clonedData[selectedAdminLevel];

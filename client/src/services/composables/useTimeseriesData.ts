@@ -5,10 +5,11 @@ import {
   AggregationOption,
   TemporalResolutionOption,
   SpatialAggregationLevel,
-  TemporalAggregationLevel
+  TemporalAggregationLevel,
+  ReferenceSeriesOption
 } from '@/types/Enums';
 import { ModelRun } from '@/types/ModelRun';
-import { QualifierTimeseriesResponse, Timeseries } from '@/types/Timeseries';
+import { QualifierTimeseriesResponse, Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getYearFromTimestamp } from '@/utils/date-util';
@@ -225,25 +226,31 @@ export default function useTimeseriesData(
           : AggregationOption.Mean;
 
       let promises: Promise<{ data: any } | null>[] = [];
+
+      const allRegionIds = [...regionIds.value];
+
+      if (referenceOptions !== undefined && breakdownOption.value === SpatialAggregationLevel.Region) {
+        // 1. filter out aggregated types
+        // 2. push the non-aggregated reference regions.
+        referenceOptions.value
+          .filter(region => !Object.values(ReferenceSeriesOption).includes(region as ReferenceSeriesOption))
+          .forEach(region => allRegionIds.push(region));
+      }
+
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        promises = regionIds.value.map(regionId => {
-          return API.get('maas/output/timeseries', {
-            params: {
-              data_id: dataId,
-              run_id: modelRunIds.value[0],
-              feature: activeFeature.value,
-              resolution: temporalRes,
-              temporal_agg: temporalAgg,
-              spatial_agg: spatialAgg,
-              region_id: regionId
-            }
-          }).catch(() => {
-            // FIXME: we're getting way more regions back from the hierarchy endpoint
-            //  than we seemingly have data for
-            console.error(`Failed to fetch timeseries for ${regionId}`);
-            return null;
-          });
-        });
+        promises = [API.post('maas/output/bulk-timeseries', { region_ids: allRegionIds }, {
+          params: {
+            data_id: dataId,
+            run_id: modelRunIds.value[0],
+            feature: activeFeature.value,
+            resolution: temporalRes,
+            temporal_agg: temporalAgg,
+            spatial_agg: spatialAgg
+          }
+        }).catch(() => {
+          console.error(`Failed to fetch timeseries for ${allRegionIds.join(' ')}`);
+          return null;
+        })];
       } else if (
         breakdownOption.value === null ||
         breakdownOption.value === TemporalAggregationLevel.Year
@@ -299,14 +306,15 @@ export default function useTimeseriesData(
       // Assign a name, id, and colour to each timeseries and store it in the
       //  `rawTimeseriesData` ref
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        rawTimeseriesData.value = fetchResults.map((points, index) => {
+        rawTimeseriesData.value = fetchResults[0].map((regionalTimeseries: {region_id: string; timeseries: TimeseriesPoint[]}, index: number) => {
           // Take the last segment of the region ID to get its display name
           const name =
-            regionIds.value[index].split(REGION_ID_DELIMETER).pop() ??
-            regionIds.value[index];
+            allRegionIds[index]?.split(REGION_ID_DELIMETER).pop() ??
+            allRegionIds[index];
           const isDefaultRun = modelRuns && modelRuns.value[index] ? modelRuns.value[index].is_default_run : false;
-          const id = regionIds.value[index];
+          const id = allRegionIds[index];
           const color = colorFromIndex(index);
+          const points: TimeseriesPoint[] = regionalTimeseries.timeseries;
           return { name, id, color, points, isDefaultRun };
         });
       } else if (
