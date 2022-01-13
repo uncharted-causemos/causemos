@@ -3,11 +3,7 @@ import { TimeScale } from '@/types/Enums';
 interface TimeScaleOption {
   id: TimeScale;
   label: string;
-  timeSlices: [
-    { months: number; label: string },
-    { months: number; label: string },
-    { months: number; label: string }
-  ];
+  timeSlices: { months: number; label: string; shortLabel: string }[];
   example: string;
 }
 
@@ -16,9 +12,10 @@ export const TIME_SCALE_OPTIONS: TimeScaleOption[] = [
     id: TimeScale.Months,
     label: 'Months',
     timeSlices: [
-      { months: 1, label: 'several weeks' },
-      { months: 3, label: 'a few months' },
-      { months: 12, label: 'about a year' }
+      { months: 3, label: '3 months', shortLabel: '3m' },
+      { months: 6, label: '6 months', shortLabel: '6m' },
+      { months: 9, label: 'a few months', shortLabel: '9m' },
+      { months: 12, label: 'about a year', shortLabel: '12m' }
     ],
     example: 'Locust outbreaks'
   },
@@ -26,9 +23,9 @@ export const TIME_SCALE_OPTIONS: TimeScaleOption[] = [
     id: TimeScale.Years,
     label: 'Years',
     timeSlices: [
-      { months: 3, label: 'a few months' },
-      { months: 12, label: 'about a year' },
-      { months: 36, label: 'a few years' }
+      { months: 3, label: 'a few months', shortLabel: 'TODO' },
+      { months: 12, label: 'about a year', shortLabel: 'TODO' },
+      { months: 36, label: 'a few years', shortLabel: 'TODO' }
     ],
     example: 'Malnutrition'
   },
@@ -36,9 +33,9 @@ export const TIME_SCALE_OPTIONS: TimeScaleOption[] = [
     id: TimeScale.Decades,
     label: 'Decades',
     timeSlices: [
-      { months: 36, label: 'a few years' },
-      { months: 120, label: 'about a decade' },
-      { months: 360, label: 'a few decades' }
+      { months: 36, label: 'a few years', shortLabel: 'TODO' },
+      { months: 120, label: 'about a decade', shortLabel: 'TODO' },
+      { months: 360, label: 'a few decades', shortLabel: 'TODO' }
     ],
     example: 'Climate change'
   }
