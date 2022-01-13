@@ -223,6 +223,11 @@ export const convertTimeseriesDistributionToHistograms = (
       projectionStartTimestamp,
       monthIndex
     );
+
+    // FIXME: is there an off-by-1 bug here?
+    //  relevantMonthOffsets is 1-indexed, so we're looking at projections that
+    //  are 1 month after the projections we think we're looking at
+
     // 3. Find distribution that's nearest to this timestep
     let closestDistribution: number[] | null = null;
     let closestTimestamp: number | null = null;
