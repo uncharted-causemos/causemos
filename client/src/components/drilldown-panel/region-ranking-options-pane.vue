@@ -62,7 +62,6 @@
     <label class="header-secondary">Ranking Criteria Relative Weight:</label>
       <button
         type="button"
-        style="padding: 4px 8px"
         class="btn btn-default dropdown-button"
         @click="setEqualWeights">
           Equal Weights
@@ -253,6 +252,7 @@ export default defineComponent({
     },
     updateMaxNumberOfChartBars(event: any) {
       const newVal = parseFloat(event.target.value);
+      if (isNaN(newVal) || newVal < 0) return;
       this.$emit('set-max-number-of-chart-bars', newVal);
     },
     updateLimitNumberOfChartBars() {
@@ -326,6 +326,7 @@ h5 {
 
 .dropdown-button {
   width: max-content;
+  padding: 4px 8px;
 }
 
 .checkbox {

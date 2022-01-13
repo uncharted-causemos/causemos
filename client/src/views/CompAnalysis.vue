@@ -298,6 +298,7 @@ export default defineComponent({
 
     const maxNumberOfChartBars = ref(50);
     const setMaxNumberOfChartBars = (numBins: number) => {
+      if (isNaN(numBins)) return;
       maxNumberOfChartBars.value = numBins;
     };
     const limitNumberOfChartBars = ref(false);

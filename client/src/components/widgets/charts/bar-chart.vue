@@ -39,13 +39,18 @@ export default defineComponent({
     const svg = ref<D3Selection | null>(null);
     const initialHoverId = ref('');
     const resize = _.debounce(function({ width, height }) {
-      if (barChart.value === null || barsData.value.length === 0) return;
+      if (barChart.value === null) return;
+
       svg.value = d3.select<HTMLElement, null>(barChart.value);
       if (svg.value === null) return;
       // Set new size
       svg.value.attr('width', width).attr('height', height);
       // (Re-)render
       svg.value.selectAll('*').remove();
+      if (barsData.value.length === 0) {
+        // clear rendering since, e.g. not bars resulted from the intersection of region ranking
+        return;
+      }
       const onHover = (barLabel: string) => {
         emit('bar-chart-hover', barLabel);
       };
