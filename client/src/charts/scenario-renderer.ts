@@ -4,25 +4,41 @@ import moment from 'moment';
 import initialize from '@/charts/initialize';
 import { timeseriesLine, translate } from '@/utils/svg-util';
 import { chartValueFormatter } from '@/utils/string-util';
-import { D3GElementSelection, D3Selection } from '@/types/D3';
+import { D3GElementSelection, D3Selection, D3ScaleLinear } from '@/types/D3';
 import { Chart } from '@/types/Chart';
 import { NodeScenarioData } from '@/types/CAG';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
 import {
-  convertTimeseriesDistributionToHistograms,
-  summarizeConstraints
-} from '@/utils/histogram-util';
-import { SELECTED_COLOR } from '@/utils/colors-util';
+  getLastTimeStepFromTimeScale,
+  getSliceMonthsFromTimeScale
+} from '@/utils/time-scale-util';
+import { getTimestampAfterMonths } from '@/utils/date-util';
+import {
+  convertDistributionTimeseriesToRidgelines,
+  RidgelinePoint
+} from '@/utils/ridgeline-util';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_LINE_COLOR = '#999';
-const SPACE_BETWEEN_HISTOGRAMS = 8;
-const SPACE_BETWEEN_HISTOGRAM_BARS = 1;
-const HISTOGRAM_BACKGROUND_COLOR = HISTORY_BACKGROUND_COLOR;
-const HISTOGRAM_FOREGROUND_COLOR = HISTORY_LINE_COLOR;
-// How much of the node is taken up by the history chart
-// If all projections are hidden, this will expand to take the full height
-const HISTORY_HEIGHT_PERCENTAGE = 0.4;
+const LABEL_COLOR = HISTORY_LINE_COLOR;
+
+// When creating a curve to estimate the density of the distribution, we group
+//  points into bins (necessary to convert the one-dimensional data into 2D).
+// Raise the bin count to make the curve less smooth.
+const RIDGELINE_BIN_COUNT = 20;
+const RIDGELINE_STROKE_WIDTH = 1;
+const RIDGELINE_STROKE_COLOR = 'none';
+const RIDGELINE_FILL_COLOR = 'black';
+const RIDGELINE_VERTICAL_AXIS_WIDTH = 1;
+const RIDGELINE_VERTICAL_AXIS_COLOR = HISTORY_BACKGROUND_COLOR;
+
+// Depending on how many historical months are visible, we can add the number
+//  of projected months to get the total number of visible months and use that
+//  as the x range's domain.
+// The number of visible historical months will depend on the timescale, e.g.
+//  if timescale is months, show last 24 months or so
+//  if timescale is years, show last 60 months or so
+const VISIBLE_HISTORICAL_MONTH_COUNT = 24;
 
 export default function(
   selection: D3Selection,
@@ -42,37 +58,31 @@ function render(
   nodeScenarioData: NodeScenarioData,
   runOptions: { selectedScenarioId: string | null }
 ) {
-  const { indicator_time_series, min, max, projection_start } = nodeScenarioData;
+  const {
+    indicator_time_series,
+    min,
+    max,
+    projection_start,
+    time_scale
+  } = nodeScenarioData;
 
   // Calculate timestamp of the earliest historical time to display
-  // TODO: should this be a constant? based on time_scale? based on how many columns are hidden?
-  const historicalMonthsToDisplay = 5 * 12;
   const historyStart = moment
     .utc(projection_start)
-    .subtract(historicalMonthsToDisplay, 'months')
+    .subtract(VISIBLE_HISTORICAL_MONTH_COUNT, 'months')
     .valueOf();
-  const historyEnd = projection_start;
+  // FIXME: historical data should end 1 month (or year, depending on time
+  //  scale) before projection start. "Projection start date" means the date at
+  //  which the first projected timestamp will be returned.
+  const historyEnd = moment
+    .utc(projection_start)
+    .subtract(1, 'months')
+    .valueOf();
 
   // Filter out timeseries points that aren't within the range we're displaying
   const filteredTimeSeries = indicator_time_series.filter(
     d => d.timestamp >= historyStart && d.timestamp <= historyEnd
   );
-
-  // Choose yExtent so that mostRecentHistoricalValue value is centered
-  let yExtentMin = min;
-  let yExtentMax = max;
-  const mostRecentHistoricalValue =
-    indicator_time_series[indicator_time_series.length - 1].value;
-  const currentCenterOfRange = (yExtentMin + yExtentMax) / 2;
-  const diffToCenterOfRange = mostRecentHistoricalValue - currentCenterOfRange;
-  if (mostRecentHistoricalValue > currentCenterOfRange) {
-    // Raise max so that mostRecentHistoricalValue is centered
-    yExtentMax += 2 * diffToCenterOfRange;
-  } else {
-    // Lower min so that mostRecentHistoricalValue is centered
-    yExtentMin += 2 * diffToCenterOfRange;
-  }
-  const yExtent = [yExtentMin, yExtentMax];
 
   // Chart dimensions
   const height = chart.y2 - chart.y1;
@@ -80,19 +90,45 @@ function render(
 
   const selectedScenarioId = runOptions.selectedScenarioId;
   const isHistoricalDataOnlyMode = selectedScenarioId === null;
-  const historicalDataHeight = isHistoricalDataOnlyMode
-    ? height
-    : HISTORY_HEIGHT_PERCENTAGE * height;
 
+  // FIXME: I think things would be simpler if time scale timesteps were
+  //  0-indexed
+  // Time scale timesteps are 1-indexed, so subtract 1 to get the actual number
+  //  of months to add to the projection_start date
+  const lastProjectedTimestamp = getTimestampAfterMonths(
+    projection_start,
+    getLastTimeStepFromTimeScale(nodeScenarioData.time_scale) - 1
+  );
+
+  const xScaleEndTimestamp = isHistoricalDataOnlyMode
+    ? historyEnd
+    : lastProjectedTimestamp;
+  const yExtent = [min, max];
   const formatter = chartValueFormatter(...yExtent);
-  const historyChartXScale = d3
+  const xDomain = [historyStart, xScaleEndTimestamp];
+  if (!isHistoricalDataOnlyMode) {
+    // To avoid the last ridgeline plot overflowing, we need to add enough space
+    //  for another timeslice after the last one.
+    // Width won't be exactly the same between timeslices since some months/years
+    //  are longer than others, but this will serve as a useful estimate of the
+    //  maximum width a ridgeline can take up without overlapping the next one.
+    // FIXME: subtract 1 because timescale slice months are 1-indexed
+    const firstSliceMonthIndex = getSliceMonthsFromTimeScale(time_scale)[0] - 1;
+    const timeBetweenSlices =
+      getTimestampAfterMonths(projection_start, firstSliceMonthIndex) -
+      projection_start;
+
+    xDomain[1] += timeBetweenSlices;
+  }
+
+  const xScale = d3
     .scaleLinear()
-    .domain([historyStart, historyEnd])
+    .domain(xDomain)
     .range([0, width]);
-  const historyChartYScale = d3
+  const yScale = d3
     .scaleLinear()
     .domain(yExtent)
-    .range([historicalDataHeight, 0])
+    .range([height, 0])
     .clamp(true);
 
   const svgGroup = chart.g;
@@ -102,10 +138,10 @@ function render(
   svgGroup
     .append('rect')
     .classed('historical-rect', true)
-    .attr('x', historyChartXScale(historyStart))
+    .attr('x', xScale(historyStart))
     .attr('y', 0)
-    .attr('height', historicalDataHeight)
-    .attr('width', historyChartXScale(historyEnd))
+    .attr('height', height)
+    .attr('width', xScale(historyEnd))
     .attr('fill', HISTORY_BACKGROUND_COLOR);
 
   const historicG = svgGroup.append('g');
@@ -117,8 +153,8 @@ function render(
       // FIXME: TypeScript shenanigans are necessary because timeseriesLine()
       //  is in a JS file. See svg-util.js for more details.
       timeseriesLine(
-        historyChartXScale,
-        historyChartYScale
+        xScale,
+        yScale
       )((filteredTimeSeries as any) as [number, number][]) as string
     )
     .style('stroke', HISTORY_LINE_COLOR)
@@ -126,17 +162,9 @@ function render(
     .style('pointer-events', 'none')
     .style('fill', 'none');
 
-  // Only render yAxis ticks if isHistoricalDataMode
   const yAxis = d3
-    .axisRight(historyChartYScale)
-    .tickValues(
-      isHistoricalDataOnlyMode
-        ? calculateGenericTicks(
-          historyChartYScale.domain()[0],
-          historyChartYScale.domain()[1]
-        )
-        : []
-    )
+    .axisRight(yScale)
+    .tickValues(calculateGenericTicks(yScale.domain()[0], yScale.domain()[1]))
     .tickSize(0)
     // The type of formatter can't be more specific than `any`
     //  because under the hood d3.tickFormat requires d3.NumberType.
@@ -150,7 +178,7 @@ function render(
     .style('pointer-events', 'none')
     .call(yAxis)
     .style('font-size', '5px')
-    .style('color', HISTORY_LINE_COLOR);
+    .style('color', LABEL_COLOR);
   yAxisElement.select('.domain').attr('stroke-width', 0);
   yAxisElement.selectAll('text').attr('x', 0);
 
@@ -161,9 +189,9 @@ function render(
 
   renderScenarioProjections(
     svgGroup,
-    historicalDataHeight + 2 * SPACE_BETWEEN_HISTOGRAM_BARS,
-    width,
-    height - historicalDataHeight,
+    xScale,
+    yScale,
+    height,
     nodeScenarioData,
     // If we've reached this point, historical data only mode is not active and
     //  it's safe to assert that selectedScenarioId is not null
@@ -173,15 +201,16 @@ function render(
 
 function renderScenarioProjections(
   svgGroup: D3GElementSelection,
-  yOffset: number,
-  width: number,
+  xScale: D3ScaleLinear,
+  yScale: D3ScaleLinear,
   height: number,
   nodeScenarioData: NodeScenarioData,
   runOptions: { selectedScenarioId: string }
 ) {
   // Collect/extract all the pieces of data needed to convert projections into
-  //  histogram format.
+  //  ridgeline plot format.
   const { selectedScenarioId } = runOptions;
+  const { scenarios, time_scale, projection_start } = nodeScenarioData;
   const projection = nodeScenarioData.scenarios.find(
     scenario => scenario.id === selectedScenarioId
   );
@@ -190,89 +219,91 @@ function renderScenarioProjections(
       'Scenario renderer is unable to find selected scenario with ID',
       selectedScenarioId,
       'in scenarios list',
-      nodeScenarioData.scenarios
+      scenarios
     );
     return;
   }
-  const historicalTimeseries = nodeScenarioData.indicator_time_series;
-  const isAbstractNode = nodeScenarioData.indicator_id === null;
+  // TODO: We'll have to check if this is an abstract node when trying to use
+  //  historical data to add context to projections.
+  // const isAbstractNode = indicator_id === null;
   const projectionValues = projection.result?.values ?? [];
   if (projectionValues.length === 0) {
     return;
   }
 
-  // Convert projections into histogram format.
-  const histograms = convertTimeseriesDistributionToHistograms(
-    nodeScenarioData.time_scale,
-    isAbstractNode ? [] : historicalTimeseries,
-    projectionValues
+  // Convert distribution timeseries to line, where each point represents an
+  //  inflection point on what will eventually be a ridgeline chart
+  const ridgelinePoints = convertDistributionTimeseriesToRidgelines(
+    projectionValues,
+    time_scale,
+    yScale.domain()[0],
+    yScale.domain()[1],
+    RIDGELINE_BIN_COUNT
   );
 
-  const constraintSummary = summarizeConstraints(
-    nodeScenarioData.time_scale,
-    isAbstractNode ? [] : historicalTimeseries,
-    projectionValues[0].timestamp,
-    projection.constraints ?? []
+  // Calculate how wide a single ridgeline can be
+  const firstSliceMonthIndex = getSliceMonthsFromTimeScale(time_scale)[0] - 1;
+  const firstSliceMonthTimestamp = getTimestampAfterMonths(
+    projection_start,
+    firstSliceMonthIndex
   );
+  const widthBetweenTimeslices =
+    xScale(firstSliceMonthTimestamp) - xScale(projection_start);
+  const ridgelineXScale = d3
+    .scaleLinear()
+    .domain([0, 1])
+    .range([0, widthBetweenTimeslices]);
+  // Create a line generator that will be used to render the ridgeline
+  const line = d3
+    .line<RidgelinePoint>()
+    // Use curveMonotoneY so that curves between points don't overshoot points
+    //  in the X direction. This is necessary so that curves don't dip past the
+    //  vertical line that acts as the baseline for each smoothed histogram
+    // Other curve types are summarized in the d3 docs:
+    //  https://github.com/d3/d3-shape/blob/main/README.md#curves
+    .curve(d3.curveMonotoneY)
+    .x(point => ridgelineXScale(point.value))
+    .y(point => yScale(point.coordinate));
 
-  // Render one histogram for each selected time slice
-  // FIXME: only render some slices depending on which ones are selected
-  // FIXME: we should exit much earlier if no slices are selected
-  const widthPerHistogram = width / histograms.length;
-  const heightPerHistogramRow = height / histograms[0].binCounts.length;
-  const histogramBarHeight =
-    heightPerHistogramRow - SPACE_BETWEEN_HISTOGRAM_BARS;
-  const constraintRadius = histogramBarHeight / 2;
+  // Render one ridgeline for each timeslice
+  // Make a `g` element for each ridgeline
+  const ridgeLineElements = svgGroup
+    .selectAll('.ridgeline')
+    .data(ridgelinePoints)
+    .join('g')
+    .classed('ridgeline', true)
+    .attr('transform', d => translate(xScale(d.timestamp), 0));
+  // Draw vertical line to act as a baseline
+  ridgeLineElements
+    .append('rect')
+    .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH)
+    .attr('height', height)
+    .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
+    .attr('x', 0)
+    .attr('y', 0);
+  // Draw ridgeline itself
+  ridgeLineElements
+    .append('path')
+    .attr('fill', RIDGELINE_FILL_COLOR)
+    .attr('stroke', RIDGELINE_STROKE_COLOR)
+    .attr('stroke-width', RIDGELINE_STROKE_WIDTH)
+    .attr('d', d => line(d.ridgeline));
+  // Draw time slice label
+  ridgeLineElements
+    .append('text')
+    .attr('transform', translate(-widthBetweenTimeslices / 2, height))
+    .attr('font-size', widthBetweenTimeslices)
+    .style('fill', LABEL_COLOR)
+    .text(d => d.label);
 
-  const histogramElements = svgGroup
-    .selectAll('.histogram')
-    .data(histograms)
-    .join('g')
-    .classed('histogram', true)
-    .attr('transform', (d, i) => translate(i * widthPerHistogram, yOffset));
-  const histogramBarElements = histogramElements
-    .selectAll('.histogram-bar')
-    .data(histogramData => histogramData.binCounts)
-    .join('g')
-    .classed('histogram-bar', true);
-  // Render background of each bar
-  histogramBarElements
-    .append('rect')
-    .attr('width', widthPerHistogram - SPACE_BETWEEN_HISTOGRAMS)
-    .attr('height', histogramBarHeight)
-    .attr('fill', HISTOGRAM_BACKGROUND_COLOR)
-    .attr('transform', (d, rowIndex) =>
-      translate(SPACE_BETWEEN_HISTOGRAMS, rowIndex * heightPerHistogramRow)
-    );
-  // Render bar itself
-  histogramBarElements
-    .append('rect')
-    .attr(
-      'width',
-      // FIXME: implicit requirement that run count adds up to 100
-      barValue =>
-        (barValue / 100) * (widthPerHistogram - SPACE_BETWEEN_HISTOGRAMS)
-    )
-    .attr('height', histogramBarHeight)
-    .attr('fill', HISTOGRAM_FOREGROUND_COLOR)
-    .attr('transform', (d, rowIndex) =>
-      translate(SPACE_BETWEEN_HISTOGRAMS, rowIndex * heightPerHistogramRow)
-    );
-  // Render constraints
-  histogramElements
-    .selectAll('.constraint')
-    // Map from histogram index to the constraint summary for this time slice
-    .data((histogramData, histogramIndex) => constraintSummary[histogramIndex].binCounts)
-    .join('circle')
-    .classed('constraint', true)
-    .attr('r', constraintRadius)
-    .attr('cx', -constraintRadius)
-    .attr('cy', constraintRadius)
-    .attr('fill', constraintCount => {
-      const hasConstraints = constraintCount > 0;
-      return hasConstraints ? SELECTED_COLOR : 'none';
-    })
-    .attr('transform', (d, rowIndex) =>
-      translate(SPACE_BETWEEN_HISTOGRAMS, rowIndex * heightPerHistogramRow)
-    );
+  // TODO: Render constraints
+  // const constraintSummary = summarizeConstraints(
+  //   nodeScenarioData.time_scale,
+  //   isAbstractNode ? [] : historicalTimeseries,
+  //   projectionValues[0].timestamp,
+  //   projection.constraints ?? []
+  // );
+
+  // TODO: Calculate and render context range using:
+  // isAbstractNode ? [] : historicalTimeseries,
 }
