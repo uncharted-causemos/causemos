@@ -312,6 +312,7 @@ export default {
   getModelDatacubesCount,
   getIndicatorDatacubesCount,
   getModelRunMetadata,
+  getDefaultModelRunMetadata,
   getSuggestions,
   createModelRun,
   addModelRunsTag,

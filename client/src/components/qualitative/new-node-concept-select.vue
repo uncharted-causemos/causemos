@@ -135,9 +135,8 @@ import datacubeService from '@/services/new-datacube-service';
 const CONCEPT_SUGGESTION_COUNT = 10;
 
 const getRunId = async (id: string): Promise<ModelRun> => {
-  const runs = await datacubeService.getModelRunMetadata(id);
-  const defaultRun = runs.find(d => d.is_default_run === true && d.status === 'READY');
-  return defaultRun as ModelRun;
+  const run = await datacubeService.getDefaultModelRunMetadata(id);
+  return run;
 };
 
 const getTimeseries = async (dataId: string, runId: string, feature: string): Promise<TimeseriesPoint[]> => {
