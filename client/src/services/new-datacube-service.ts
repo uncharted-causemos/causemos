@@ -93,10 +93,24 @@ export const updateDatacube = async (datacubeId: string, metadata: Model) => {
 };
 
 export const getModelRunMetadata = async (dataId: string) => {
+  const filter = JSON.stringify([{ field: 'model_id', value: dataId }]);
   const { data } = await API.get<ModelRun[]>('/maas/model-runs', {
-    params: { modelId: dataId }
+    params: { filter }
   });
   return data;
+};
+
+export const getDefaultModelRunMetadata = async (dataId: string) => {
+  const simpleFilter = [
+    { field: 'model_id', value: dataId },
+    { field: 'status', value: 'READY' },
+    { field: 'is_default_run', value: true }
+  ];
+  const filter = JSON.stringify(simpleFilter);
+  const { data } = await API.get<ModelRun[]>('/maas/model-runs', {
+    params: { filter }
+  });
+  return data[0];
 };
 
 /**
