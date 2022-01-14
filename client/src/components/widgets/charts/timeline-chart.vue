@@ -10,15 +10,19 @@
             class="selected-data-sections"
             v-for="datacubeSection in dataAtSelectedTimestamp"
             :key="datacubeSection.header">
-          <div class="selected-data-section-header">{{datacubeSection.header}}</div>
+          <div v-if="includeSectionHeaders" class="selected-data-section-header">{{datacubeSection.header}}</div>
           <div
             v-for="timeseries in datacubeSection.items"
             :key="timeseries.id"
             class="selected-data-row"
-            :style="{ color: timeseries.color }"
+            :style="{
+              color: timeseries.color,
+              cursor: includeSectionHeaders ? 'normal' : 'pointer'
+            }"
+            v-tooltip="datacubeSection.header"
           >
             <strong>{{ timeseries.name }}</strong>
-            <span >{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
+            <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
           </div>
         </div>
       </div>
@@ -68,6 +72,7 @@ export default defineComponent({
     const { timeseriesData, breakdownOption, selectedTimestamp, selectedTemporalResolution, timeseriesToDatacubeMap } = toRefs(
       props
     );
+    const includeSectionHeaders = ref(false);
     const lineChart = ref<HTMLElement | null>(null);
     function selectTimestamp(newValue: number) {
       emit('select-timestamp', newValue);
@@ -182,7 +187,8 @@ export default defineComponent({
       lineChart,
       timestampFormatter,
       dataAtSelectedTimestamp,
-      valueFormatter
+      valueFormatter,
+      includeSectionHeaders
     };
   }
 });
@@ -229,6 +235,10 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   margin-left: 1rem;
+
+  &:hover {
+    background-color: rgb(240, 240, 240);
+  }
 }
 
 .selected-data-section-header {

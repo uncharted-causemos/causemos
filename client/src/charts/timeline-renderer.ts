@@ -372,6 +372,7 @@ function generateSelectableTimestamps(
     //
     // Display a line for each value at this timestamp (organized under datacubes)
     //
+    const includeSectionHeaders = false;
     let yPosition = 0;
     let lineCounter = 1; // +1 line because the origin point for text elements is the bottom left corner
     // max number of chars before truncating the text of each qualifier value
@@ -381,15 +382,17 @@ function generateSelectableTimestamps(
       // header; datacube name
       yPosition = TOOLTIP_LINE_HEIGHT * lineCounter;
       const header = timeseriesToDatacubeMap[ownerDatacubeId].datacubeName;
-      if (yPosition < (markerHeight - TOOLTIP_LINE_HEIGHT)) {
-        tooltip
-          .append('text')
-          .attr('transform', translate(TOOLTIP_PADDING, yPosition))
-          .style('fill', 'black')
-          .style('font-weight', 'bold')
-          .text(header.length > maxNameLen ? header.substring(0, maxNameLen) + '...' : header);
+      if (includeSectionHeaders) {
+        if (yPosition < (markerHeight - TOOLTIP_LINE_HEIGHT)) {
+          tooltip
+            .append('text')
+            .attr('transform', translate(TOOLTIP_PADDING, yPosition))
+            .style('fill', 'black')
+            .style('font-weight', 'bold')
+            .text(header.length > maxNameLen ? header.substring(0, maxNameLen) + '...' : header);
+        }
+        lineCounter += 1;
       }
-      lineCounter += 1;
       (valuesAtEachTimestamp.get(timestamp) ?? [])
         .filter(timeseriesData => timeseriesData.owner === header)
         .sort(({ value: valueA }, { value: valueB }) => {
