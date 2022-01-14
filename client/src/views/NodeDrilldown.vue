@@ -536,7 +536,7 @@ export default defineComponent({
         selectedTemporalResolution.value = temporalResolution;
         indicatorPeriod.value = period;
         indicatorRegions.value = [
-          indicator.country, indicator.admin1, indicator.admin2, indicator.admin3
+          indicator.admin3, indicator.admin2, indicator.admin1, indicator.country
         ].filter(d => d !== '').join(', ');
       }
     });
