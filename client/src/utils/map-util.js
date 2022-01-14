@@ -151,9 +151,9 @@ export function diffExpr(oldValExpr, newValExpr, showPercentChange = false) {
  * @param {Function} scaleFn - d3 scale function
  * @param {Boolean} useFeatureState - use feature state instead of a property
  */
-function colorExpr(property, domain, colorScheme, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo, showPercentChange = false, continuous = false) {
+function colorExpr(property, domain, colorScheme, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo, showPercentChange = false, continuous = false, diverging = false) {
   const colors = continuous ? d3.quantize(d3.interpolateRgbBasis(colorScheme), COLOR_PALETTE_SIZE) : colorScheme;
-  const stops = !_.isNil(relativeTo)
+  const stops = !_.isNil(relativeTo) || diverging
     ? createDivergingColorStops(domain, colors, scaleFn)
     : createColorStops(domain, colors, scaleFn);
   const getter = useFeatureState ? 'feature-state' : 'get';
@@ -233,7 +233,7 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
     type: 'fill',
     paint: {
       'fill-antialias': false,
-      'fill-color': colorExpr(property, dataDomain, colorOptions.scheme, colorOptions.scaleFn, useFeatureState, relativeTo, showPercentChange, colorOptions.isContinuous),
+      'fill-color': colorExpr(property, dataDomain, colorOptions.scheme, colorOptions.scaleFn, useFeatureState, relativeTo, showPercentChange, colorOptions.isContinuous, colorOptions.isDiverging),
       'fill-opacity': opacity
     }
   };

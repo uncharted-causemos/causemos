@@ -37,7 +37,7 @@ export default function useAnalysisMapStats(
     } else {
       const globalStats = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
       adminMapLayerLegendData.value = globalStats ? [
-        createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn)
+        createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn, colorOptions.value.isDiverging)
       ] : [];
     }
   });
@@ -103,7 +103,7 @@ export default function useAnalysisMapStats(
     } else {
       const globalStats = gridLayerStats.value?.global[String(mapCurZoom.value)];
       gridMapLayerLegendData.value = globalStats ? [
-        createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn)
+        createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn, colorOptions.value.isDiverging)
       ] : [];
     }
   });
