@@ -562,7 +562,17 @@ import {
   OutputSpecWithId
 } from '@/types/Runoutput';
 
-import { colorFromIndex, ColorScaleType, getColors, COLOR, COLOR_SCHEME, isDiscreteScale, SCALE_FUNCTION, validateColorScaleType } from '@/utils/colors-util';
+import {
+  colorFromIndex,
+  ColorScaleType,
+  getColors,
+  COLOR,
+  COLOR_SCHEME,
+  isDiscreteScale,
+  SCALE_FUNCTION,
+  validateColorScaleType,
+  isDivergingScheme
+} from '@/utils/colors-util';
 import { isIndicator, isModel, getFilteredScenariosFromIds, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
@@ -872,6 +882,9 @@ export default defineComponent({
     });
     const isContinuousScale = computed(() => {
       return !isDiscreteScale(selectedColorScaleType.value);
+    });
+    const isDivergingScale = computed(() => {
+      return isDivergingScheme(selectedColorSchemeName.value);
     });
 
     const updateTabView = (val: string) => {
@@ -1581,6 +1594,7 @@ export default defineComponent({
         relativeToSchemes: [COLOR_SCHEME.GREYS_7, COLOR_SCHEME.PIYG_7],
         scaleFn: SCALE_FUNCTION[selectedColorScaleType.value],
         isContinuous: isContinuousScale.value,
+        isDiverging: isDivergingScale.value,
         opacity: Number(selectedDataLayerTransparency.value)
       };
       return options;
@@ -1739,6 +1753,7 @@ export default defineComponent({
       hasDefaultRun,
       headerGroupButtons,
       isContinuousScale,
+      isDivergingScale,
       isModelMetadata,
       isRelativeDropdownOpen,
       mainModelOutput,

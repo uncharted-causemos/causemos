@@ -100,6 +100,7 @@ export interface AnalysisMapColorOptions {
   relativeToSchemes: string[][];
   scaleFn: Function;
   isContinuous: boolean;
+  isDiverging: boolean;
   opacity: number;
 }
 export interface AnalysisMapStats {
