@@ -81,7 +81,12 @@
                 v-if="indicatorDescription.length > 0"
                 class="description"
                 v-tooltip.top="indicatorDescription"
-              > - {{ indicatorDescription }}.</span>
+              > - {{ indicatorDescription }}</span>
+              <span
+                v-if="indicatorRegions.length > 0"
+                class="description"
+                v-tooltip.top="indicatorRegions"
+              > - {{ indicatorRegions }}.</span>
               <span> Data shows</span>
               <dropdown-button
                 :items="SEASONALITY_OPTIONS"
@@ -536,7 +541,7 @@ export default defineComponent({
         selectedTemporalResolution.value = temporalResolution;
         indicatorPeriod.value = period;
         indicatorRegions.value = [
-          indicator.country, indicator.admin1, indicator.admin2, indicator.admin3
+          indicator.admin3, indicator.admin2, indicator.admin1, indicator.country
         ].filter(d => d !== '').join(', ');
       }
     });
