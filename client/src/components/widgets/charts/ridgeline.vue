@@ -110,7 +110,6 @@ export default defineComponent({
 @import '@/styles/variables';
 
 .ridgeline-container {
-  height: 100px;
   position: relative;
 }
 </style>

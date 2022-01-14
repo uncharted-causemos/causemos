@@ -38,14 +38,23 @@
               {{ ontologyFormatter(clamp.concept) }}
             </div>
           </div>
-          <ridgeline
+          <div
+            class="ridgeline-wrapper"
             v-for="(ridgelineData, timeSliceIndex) of row.ridgelines"
             :key="timeSliceIndex"
-            :ridgeline-data="ridgelineData"
-            :comparison-baseline="row.comparisonBaseline ? row.comparisonBaseline[timeSliceIndex] : null"
-            :min="indicatorMin"
-            :max="indicatorMax"
-          />
+          >
+            <ridgeline
+              class="ridgeline"
+              :ridgeline-data="ridgelineData"
+              :comparison-baseline="
+                row.comparisonBaseline
+                  ? row.comparisonBaseline[timeSliceIndex]
+                  : null
+              "
+              :min="indicatorMin"
+              :max="indicatorMax"
+            />
+          </div>
         </div>
         <div v-if="!row.is_valid" class="stale-scenario">
           <div class="transparent"></div>
@@ -373,25 +382,18 @@ h3 {
   margin-bottom: 0;
   span {
     color: $label-color;
-    flex: 4;
+    flex: 8;
     min-width: 0;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow-x: hidden;
     cursor: pointer;
   }
-  // Add empty column at the left to align first label with first histogram.
+  // Add empty column at the left to align description with first time slice.
   &::before {
     display: block;
     content: '';
     flex: 1;
-    min-width: 0;
-  }
-  // If scenario comparison is not active, add two extra columns to the right
-  &::after {
-    display: block;
-    content: '';
-    flex: 2;
     min-width: 0;
   }
 }
@@ -481,5 +483,16 @@ h3 {
   width: max-content;
   margin-bottom: 1rem;
   margin-left: 2rem;
+}
+
+.ridgeline-wrapper {
+  height: 100px;
+  position: relative;
+}
+
+// Ridgeline plot looks too stretched out if it takes the full width
+.ridgeline {
+  height: 100%;
+  width: 50%;
 }
 </style>
