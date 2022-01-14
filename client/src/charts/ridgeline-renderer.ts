@@ -2,7 +2,6 @@ import * as d3 from 'd3';
 import { d3RidgelineWithMetadataSelection, RidgelinePoint } from '@/utils/ridgeline-util';
 import { translate } from '@/utils/svg-util';
 
-// TODO: extract some of these to colors-util?
 const RIDGELINE_STROKE_WIDTH = 1;
 const RIDGELINE_STROKE_COLOR = 'none';
 const RIDGELINE_FILL_COLOR = 'black';
