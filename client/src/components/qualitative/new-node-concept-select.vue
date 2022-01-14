@@ -62,7 +62,7 @@
             <div style="color: #888">{{ currentSuggestion.doc.name }}</div>
             <div>&nbsp;</div>
             <div v-if="currentSuggestion.doc.period">
-              {{ dateFormatter(currentSuggestion.doc.period.gte, 'YYYY') }} to {{ dateFormatter(currentSuggestion.doc.period.lte, 'YYYY') }}
+              {{ dateFormatter(currentSuggestion.doc.period.gte, 'MMM YYYY') }} to {{ dateFormatter(currentSuggestion.doc.period.lte, 'MMM YYYY') }}
             </div>
             <sparkline
               :data="sparklineData"
