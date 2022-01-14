@@ -1,7 +1,7 @@
 import { TimeScale } from '@/types/Enums';
 import { TimeseriesDistributionPoint } from '@/types/Timeseries';
 import * as d3 from 'd3';
-import { TIME_SCALE_OPTIONS_MAP } from './time-scale-util';
+import { getTimeScaleOption } from './time-scale-util';
 
 export interface RidgelinePoint {
   coordinate: number;
@@ -67,32 +67,38 @@ export const convertDistributionTimeseriesToRidgelines = (
   timeScale: TimeScale,
   min: number,
   max: number,
-  binCount: number
+  binCount: number,
+  onlyConvertTimeslices = true
 ) => {
-  // Use selected timescale to get relevant month offsets from
-  //  TIME_SCALE_OPTIONS constant. This represents how many months from "now"
-  //  each displayed time slice will be.
-  const timeSlices = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices ?? [];
-  const ridgelines = timeSlices.map(timeSlice => {
-    // Convert the month offset to a timestamp and extract the relevant
-    //  distribution from the timeseries.
-    // timeSlice.months can be converted to the distribution's index by
-    //  subtracting 1
-    const monthIndex = timeSlice.months - 1;
-    const timestamp = timeseries[monthIndex].timestamp;
-    const distribution = timeseries[monthIndex].values;
+  // Use selected timescale to get relevant month counts from the
+  //  TIME_SCALE_OPTIONS constant. This is used to provide labels and determine
+  //  which distributions will be converted to ridgelines if
+  //  `onlyConvertTimeslices` is true.
+  const timeSlices = getTimeScaleOption(timeScale).timeSlices;
+
+  const getTimeSliceAtStepIndex = (timestepIndex: number) => {
+    // Find the timeslice whose (one-indexed) month count matches (0-indexed)
+    //  timestepIndex.
+    return timeSlices.find(timeSlice => timeSlice.months === timestepIndex + 1);
+  };
+
+  const ridgelines: {
+    timestamp: number;
+    label: string;
+    ridgeline: RidgelinePoint[];
+  }[] = [];
+
+  timeseries.forEach(({ timestamp, values }, timestepIndex) => {
+    const timeSliceAtThisTimestep = getTimeSliceAtStepIndex(timestepIndex);
+    if (onlyConvertTimeslices && timeSliceAtThisTimestep === undefined) return;
     // Convert the distribution to a ridgeline, and attach the timestamp and
     //  label for rendering later.
-    return {
+    ridgelines.push({
       timestamp,
-      label: timeSlice.shortLabel,
-      ridgeline: convertDistributionToRidgeline(
-        distribution,
-        min,
-        max,
-        binCount
-      )
-    };
+      label: timeSliceAtThisTimestep?.label ?? '',
+      ridgeline: convertDistributionToRidgeline(values, min, max, binCount)
+    });
   });
+
   return ridgelines;
 };
