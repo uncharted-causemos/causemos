@@ -81,6 +81,7 @@ export default defineComponent({
       ) {
         return;
       }
+      svg.selectAll('*').remove();
       // ridgeline-renderer expects a complete RidgelineWithMetadata object
       const ridgelineWithMetadata: RidgelineWithMetadata = {
         label: '',
