@@ -3,6 +3,11 @@ import { TimeseriesDistributionPoint } from '@/types/Timeseries';
 import * as d3 from 'd3';
 import { getTimeScaleOption } from './time-scale-util';
 
+// When creating a curve to estimate the density of the distribution, we group
+//  points into bins (necessary to convert the one-dimensional data into 2D).
+// Raise the bin count to make the curve less smooth.
+const RIDGELINE_BIN_COUNT = 20;
+
 export interface RidgelinePoint {
   coordinate: number;
   value: number;
@@ -80,8 +85,8 @@ export const convertDistributionTimeseriesToRidgelines = (
   timeScale: TimeScale,
   min: number,
   max: number,
-  binCount: number,
-  onlyConvertTimeslices = true
+  onlyConvertTimeslices = true,
+  binCount = RIDGELINE_BIN_COUNT
 ) => {
   // Use selected timescale to get relevant month counts from the
   //  TIME_SCALE_OPTIONS constant. This is used to provide labels and determine

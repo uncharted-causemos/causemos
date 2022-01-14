@@ -209,9 +209,7 @@ export default defineComponent({
           projectionValues,
           this.modelSummary.parameter.time_scale,
           this.indicatorMin,
-          this.indicatorMax,
-          20, // TODO: binCount
-          true
+          this.indicatorMax
         ).map(ridgelinesWithMetadata => ridgelinesWithMetadata.ridgeline);
         return {
           scenarioId,

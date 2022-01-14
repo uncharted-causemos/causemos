@@ -23,11 +23,6 @@ const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_LINE_COLOR = '#999';
 const LABEL_COLOR = HISTORY_LINE_COLOR;
 
-// When creating a curve to estimate the density of the distribution, we group
-//  points into bins (necessary to convert the one-dimensional data into 2D).
-// Raise the bin count to make the curve less smooth.
-const RIDGELINE_BIN_COUNT = 20;
-
 // Depending on how many historical months are visible, we can add the number
 //  of projected months to get the total number of visible months and use that
 //  as the x range's domain.
@@ -230,8 +225,7 @@ function renderScenarioProjections(
     projectionValues,
     time_scale,
     yScale.domain()[0],
-    yScale.domain()[1],
-    RIDGELINE_BIN_COUNT
+    yScale.domain()[1]
   );
 
   // Calculate how wide a single ridgeline can be
