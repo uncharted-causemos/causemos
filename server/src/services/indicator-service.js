@@ -67,13 +67,14 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
 
   // 1. Check against historical matches
   for (const node of nodeParameters) {
-    const topUsedIndicator = await historyAdapter.findOne([
+    // 1.1 Check project specific history first
+    let topUsedIndicator = await historyAdapter.findOne([
       { field: 'project_id', value: model.project_id },
       { field: 'concept', value: node.concept }
     ], { sort: [{ frequency: { order: 'desc' } }] });
 
     if (!_.isNil(topUsedIndicator)) {
-      Logger.info(`Using previous selection ${node.concept} => ${topUsedIndicator.indicator_id}`);
+      Logger.info(`Using previous selection (project specific) ${node.concept} => ${topUsedIndicator.indicator_id}`);
       const cube = await datacubeAdapter.findOne({
         clauses: [
           {
@@ -85,10 +86,34 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
       if (cube) {
         result.set(node.concept, cube);
       }
-    } else {
-      nodesNotInHistory.push(node);
+      continue;
     }
+
+    // 1.2 If project specific history doesn't exist, fall back to global history
+    topUsedIndicator = await historyAdapter.findOne([
+      { field: 'concept', value: node.concept }
+    ], { sort: [{ frequency: { order: 'desc' } }] });
+
+    if (!_.isNil(topUsedIndicator)) {
+      Logger.info(`Using previous selection (not project specific) ${node.concept} => ${topUsedIndicator.indicator_id}`);
+      const cube = await datacubeAdapter.findOne({
+        clauses: [
+          {
+            field: 'id',
+            values: [topUsedIndicator.indicator_id]
+          }
+        ]
+      }, {});
+      if (cube) {
+        result.set(node.concept, cube);
+      }
+      continue;
+    }
+
+    // 1.3 Otherwise, flag the node
+    nodesNotInHistory.push(node);
   }
+
 
   // 2. Run search against datacubes
   for (const node of nodesNotInHistory) {
