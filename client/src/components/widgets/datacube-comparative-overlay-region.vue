@@ -100,10 +100,6 @@ export default defineComponent({
     datacubeIndex: {
       type: Number,
       default: 0
-    },
-    selectedAdminLevel: {
-      type: Number,
-      default: 0
     }
   },
   emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp', 'loaded-timeseries'],
@@ -111,8 +107,7 @@ export default defineComponent({
     const {
       id,
       selectedTimestamp,
-      datacubeIndex,
-      selectedAdminLevel
+      datacubeIndex
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -184,6 +179,8 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
+    const selectedAdminLevel = ref(0); // country by default
+
     const colorSchemeReversed = ref(false);
     const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
     const selectedColorScaleType = ref(ColorScaleType.LinearDiscrete);
@@ -225,6 +222,9 @@ export default defineComponent({
         }
         if (initialViewConfig.value.numberOfColorBins !== undefined) {
           numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
+        }
+        if (initialViewConfig.value.selectedAdminLevel !== undefined) {
+          selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
         }
       }
 
@@ -464,7 +464,8 @@ export default defineComponent({
       bbox,
       popupFormatter,
       selectedScenarioIndex,
-      regionRunsScenarios
+      regionRunsScenarios,
+      selectedAdminLevel
     };
   },
   methods: {

@@ -90,7 +90,6 @@
                 :datacube-index="indx"
                 :selected-timestamp="selectedTimestamp"
                 :selected-timestamp-range="selectedTimestampRange"
-                :selected-admin-level="selectedAdminLevel"
                 @loaded-timeseries="onLoadedTimeseries"
                 @select-timestamp="setSelectedTimestamp"
               />
