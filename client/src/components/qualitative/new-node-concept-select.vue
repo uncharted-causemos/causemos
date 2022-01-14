@@ -24,10 +24,61 @@
       v-if="userInput !== ''"
       class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
-        <div style="display: flex; flex-direction: row">
+        <div class="tab-row">
+          <div>
+            Filter by: &nbsp;
+          </div>
+          <radio-button-group
+            :buttons="[
+              { label: 'Concepts', value: 'concepts' },
+              { label: 'Datacubes', value: 'datacubes' }
+            ]"
+            :selected-button-value="activeTab"
+            @button-clicked="setActive"
+          />
+        </div>
+
+        <!-- datacubes -->
+        <div
+          v-if="activeTab === 'datacubes'"
+          style="display: flex; flex-direction: row">
           <div class="left-column">
             <div
-              v-for="(suggestion, index) in suggestions"
+              v-for="(suggestion, index) in datacubeSuggestions"
+              :key="suggestion.doc.variableName"
+              class="dropdown-option"
+              :class="{'focused': index === focusedSuggestionIndex}"
+              @click="selectSuggestion(suggestion)"
+              @mouseenter="mouseEnter(index)"
+              @mouseleave="mouseLeave(index)"
+            >
+              {{ suggestion.doc.display_name }}
+            </div>
+          </div>
+          <div
+            v-if="datacubeSuggestions.length"
+            class="right-column">
+            <div style="font-weight: 600">{{ currentSuggestion.doc.display_name }}</div>
+            <div style="color: #888">{{ currentSuggestion.doc.name }}</div>
+            <div>&nbsp;</div>
+            <div v-if="currentSuggestion.doc.period">
+              {{ dateFormatter(currentSuggestion.doc.period.gte, 'MMM YYYY') }} to {{ dateFormatter(currentSuggestion.doc.period.lte, 'MMM YYYY') }}
+            </div>
+            <sparkline
+              :data="sparklineData"
+              :size="[220, 90]"
+            />
+            <div>{{ currentSuggestion.doc.description }}</div>
+          </div>
+        </div>
+
+        <!-- concepts -->
+        <div
+          v-if="activeTab === 'concepts'"
+          style="display: flex; flex-direction: row">
+          <div class="left-column">
+            <div
+              v-for="(suggestion, index) in conceptSuggestions"
               :key="suggestion.doc.key"
               class="dropdown-option"
               :class="{'focused': index === focusedSuggestionIndex, 'light': !suggestion.hasEvidence}"
@@ -39,7 +90,7 @@
             </div>
           </div>
           <div
-            v-if="suggestions.length"
+            v-if="conceptSuggestions.length"
             class="right-column">
             <div>
               <div
@@ -69,20 +120,53 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
-import { mapGetters } from 'vuex';
-import DropdownControl from '@/components/dropdown-control';
-import HighlightText from '@/components/widgets/highlight-text';
+import { defineComponent, ref, watch, computed, Ref, PropType } from 'vue';
+import { useStore } from 'vuex';
+import API from '@/api/api';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import dateFormatter from '@/formatters/date-formatter';
+import DropdownControl from '@/components/dropdown-control.vue';
+import HighlightText from '@/components/widgets/highlight-text.vue';
+import RadioButtonGroup from '../widgets/radio-button-group.vue';
+import Sparkline from '@/components/widgets/charts/sparkline.vue';
+
+import { ModelRun } from '@/types/ModelRun';
+import { TimeseriesPoint } from '@/types/Timeseries';
+
 import projectService from '@/services/project-service';
+import datacubeService from '@/services/new-datacube-service';
 
 const CONCEPT_SUGGESTION_COUNT = 10;
 
-export default {
+const getRunId = async (id: string): Promise<ModelRun> => {
+  const run = await datacubeService.getDefaultModelRunMetadata(id);
+  return run;
+};
+
+const getTimeseries = async (dataId: string, runId: string, feature: string): Promise<TimeseriesPoint[]> => {
+  const result = await API.get('maas/output/timeseries', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature: feature,
+      resolution: 'month',
+      temporal_agg: 'mean',
+      spatial_agg: 'mean',
+      region_id: ''
+    }
+  });
+  return result.data as TimeseriesPoint[];
+};
+
+export default defineComponent({
   name: 'NewNodeConceptSelect',
   components: {
     DropdownControl,
-    HighlightText
+    HighlightText,
+    RadioButtonGroup,
+    Sparkline
   },
   props: {
     conceptsInCag: {
@@ -90,43 +174,122 @@ export default {
       default: () => []
     },
     placement: {
-      type: Object,
+      type: Object as PropType<{ x: number; y: number }>,
       default: () => ({ x: 0, y: 0 })
     }
   },
   emits: [
     'suggestion-selected',
+    'datacube-selected',
     'show-custom-concept'
   ],
-  data: () => ({
-    userInput: '',
-    suggestions: [],
-    focusedSuggestionIndex: 0,
-    mouseOverIndex: -1,
-    dropdownLeftOffset: 0,
-    dropdownTopOffset: 4 // prevent overlap with input box
-  }),
-  computed: {
-    ...mapGetters({
-      ontologyConcepts: 'app/ontologyConcepts',
-      project: 'app/project'
-    }),
-    currentSuggestion() {
-      if (this.suggestions.length && this.focusedSuggestionIndex > -1) {
-        return this.suggestions[this.focusedSuggestionIndex];
+  setup() {
+    const store = useStore();
+    const userInput = ref('');
+    const focusedSuggestionIndex = ref(0);
+    const mouseOverIndex = ref(-1);
+    const activeTab = ref('concepts');
+    const conceptSuggestions = ref([]) as Ref<any[]>;
+    const datacubeSuggestions = ref([]) as Ref<any[]>;
+    const dropdownLeftOffset = ref(0);
+    const dropdownTopOffset = ref(4); // prevent overlap with input box
+
+    const timeseries = ref([]) as Ref<TimeseriesPoint[]>;
+    const sparklineData = ref([]) as Ref<any[]>;
+
+    const input = ref(null) as Ref<HTMLInputElement | null>;
+    const newNodeTop = ref(null) as Ref<HTMLDivElement | null>;
+    const newNodeContainer = ref(null) as Ref<HTMLDivElement | null>;
+
+    const currentSuggestion = computed(() => {
+      const idx = focusedSuggestionIndex.value;
+      if (activeTab.value === 'concepts' && conceptSuggestions.value.length && idx > -1) {
+        return conceptSuggestions.value[idx];
+      }
+      if (activeTab.value === 'datacubes' && datacubeSuggestions.value.length && idx > -1) {
+        return datacubeSuggestions.value[idx];
       }
       return null;
-    }
+    });
+
+    const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
+    const project = computed(() => store.getters['app/project']);
+
+    watch(userInput, _.debounce(async () => {
+      if (_.isEmpty(userInput.value)) {
+        conceptSuggestions.value = [];
+        datacubeSuggestions.value = [];
+      } else {
+        let results: any = null;
+        results = await projectService.getConceptSuggestions(project.value, userInput.value);
+        conceptSuggestions.value = results.splice(0, CONCEPT_SUGGESTION_COUNT);
+
+        results = await datacubeService.getDatacubeSuggestions(userInput.value);
+        datacubeSuggestions.value = results.splice(0, 5);
+      }
+    }, 300));
+
+    watch(currentSuggestion, async () => {
+      if (currentSuggestion.value && activeTab.value === 'datacubes') {
+        const doc = currentSuggestion.value.doc;
+
+        // Figure out datacube or indicator
+        let runId = 'indicator';
+        if (doc.type !== 'indicator') {
+          runId = (await getRunId(doc.data_id)).id;
+        }
+
+        // Get the timeseries data
+        const result = await getTimeseries(doc.data_id, runId, doc.feature);
+        timeseries.value = result;
+
+        sparklineData.value = [
+          {
+            name: 'test',
+            series: result.map(d => d.value)
+          }
+        ];
+      }
+    });
+
+    return {
+      // element refs
+      input,
+      newNodeTop,
+      newNodeContainer,
+
+      // Reactive
+      userInput,
+      focusedSuggestionIndex,
+      mouseOverIndex,
+      activeTab,
+      conceptSuggestions,
+      datacubeSuggestions,
+      dropdownLeftOffset,
+      dropdownTopOffset,
+      timeseries,
+      sparklineData,
+
+      // Computed
+      currentSuggestion,
+      ontologyConcepts,
+      project,
+
+      dateFormatter,
+      ontologyFormatter: useOntologyFormatter()
+    };
   },
   mounted() {
     this.calculateDropdownOffset();
     this.focusInput();
   },
   watch: {
-    userInput() {
-      this.getSuggestions();
+    conceptSuggestions(n, o) {
+      if (!_.isEqual(n, o)) {
+        this.focusedSuggestionIndex = 0;
+      }
     },
-    suggestions(n, o) {
+    activeTab(n, o) {
       if (!_.isEqual(n, o)) {
         this.focusedSuggestionIndex = 0;
       }
@@ -134,19 +297,19 @@ export default {
   },
   methods: {
     // `delta` is 1 if moving down the list, -1 if moving up the list
-    shiftFocus(delta) {
+    shiftFocus(delta: number) {
       let newFocusIndex = this.focusedSuggestionIndex + delta;
       if (newFocusIndex < 0) {
-        newFocusIndex = this.suggestions.length - 1;
-      } else if (newFocusIndex >= this.suggestions.length) {
+        newFocusIndex = this.conceptSuggestions.length - 1;
+      } else if (newFocusIndex >= this.conceptSuggestions.length) {
         newFocusIndex = 0;
       }
       this.focusedSuggestionIndex = newFocusIndex;
     },
-    onKeyDown(event) {
+    onKeyDown(event: KeyboardEvent) {
       switch (event.key) {
         case 'Enter':
-          this.onEnterPressed(event);
+          this.onEnterPressed();
           break;
         case 'ArrowUp':
           this.shiftFocus(-1);
@@ -158,60 +321,101 @@ export default {
           break;
       }
     },
-    mouseEnter(index) {
+    mouseEnter(index: number) {
       this.mouseOverIndex = index;
       this.focusedSuggestionIndex = index;
     },
-    mouseLeave(index) {
+    mouseLeave(index: number) {
       if (this.mouseOverIndex === index) {
         this.mouseOverIndex = -1;
       }
     },
     onEnterPressed() {
-      if (this.suggestions.length === 0) return;
-      const suggestion = this.suggestions[this.focusedSuggestionIndex];
+      if (this.conceptSuggestions.length === 0) return;
+      const suggestion = this.conceptSuggestions[this.focusedSuggestionIndex];
       this.selectSuggestion(suggestion);
     },
-    selectSuggestion(suggestion) {
-      this.$emit('suggestion-selected', {
-        concept: suggestion.doc.key,
-        label: this.ontologyFormatter(suggestion.doc.key),
-        shortName: '', // FIXME unused
-        hasEvidence: false // FIXME unused
-      });
+    selectSuggestion(suggestion: any) {
+      if (this.activeTab === 'concepts') {
+        this.$emit('suggestion-selected', {
+          concept: suggestion.doc.key,
+          label: this.ontologyFormatter(suggestion.doc.key),
+          shortName: '', // FIXME unused
+          hasEvidence: false // FIXME unused
+        });
+      } else {
+        const doc = this.currentSuggestion.doc;
+        // The parameter part of node-parameter
+        // FIXME: Need to find out what exactly we need, id or data_id, name or display_name ...
+        this.$emit('datacube-selected', {
+          id: doc.id,
+          name: doc.display_name,
+          unit: '',
+          country: '',
+          admin1: '',
+          admin2: '',
+          admin3: '',
+          spatialAggregation: 'mean',
+          temporalAggregation: 'mean',
+          temporalResolution: 'month',
+          period: 12,
+          timeseries: this.timeseries,
+          min: _.min(this.timeseries.map(d => d.value)),
+          max: _.max(this.timeseries.map(d => d.value))
+        });
+      }
       this.userInput = '';
     },
     focusInput() {
-      this.$refs.input.focus();
-    },
-    conceptNotInCag(concept) {
-      return this.conceptsInCag.indexOf(concept.concept) === -1;
+      if (this.input) {
+        this.input.focus();
+      }
     },
     calculateDropdownOffset() {
       // calculate if dropdown will collide with edge of screen and then translate if required
-      const inputBoundingBox = this.$refs.newNodeTop.getBoundingClientRect();
-      const cagContainerBoundingBox = this.$refs.newNodeContainer.parentNode.getBoundingClientRect();
+      if (this.newNodeTop && this.newNodeContainer) {
+        const buffer = 100; // Discourage flipped orientation by allow bottom-boundary to exceed by buffer amount
+        const inputBoundingBox = this.newNodeTop.getBoundingClientRect();
+        const cagContainerBoundingBox = (this.newNodeContainer.parentNode as HTMLElement).getBoundingClientRect();
 
-      const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
-      const dropdownHeight = 290; // Match CSS
+        const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
+        const dropdownHeight = 330; // Match CSS
 
-      if (inputBoundingBox.left + dropdownWidth > cagContainerBoundingBox.right) {
-        this.dropdownLeftOffset = -dropdownWidth + inputBoundingBox.width;
-      }
-      if (inputBoundingBox.bottom + dropdownHeight > cagContainerBoundingBox.bottom) {
-        this.dropdownTopOffset = -dropdownHeight - (inputBoundingBox.height + 4); // +4 to prevent overlap with input box
+        if (inputBoundingBox.left + dropdownWidth > cagContainerBoundingBox.right) {
+          this.dropdownLeftOffset = -dropdownWidth + inputBoundingBox.width;
+        }
+        if (inputBoundingBox.bottom + dropdownHeight > cagContainerBoundingBox.bottom + buffer) {
+          this.dropdownTopOffset = -dropdownHeight - (inputBoundingBox.height + 4); // +4 to prevent overlap with input box
+        }
       }
     },
-    getSuggestions: _.throttle(async function() {
-      if (_.isEmpty(this.userInput)) {
-        this.suggestions = [];
-      } else {
-        const suggestions = await projectService.getConceptSuggestions(this.project, this.userInput);
-        this.suggestions = suggestions.splice(0, CONCEPT_SUGGESTION_COUNT);
-      }
-    }, 500, { trailing: true, leading: false })
+    getConceptSuggestions() {
+      const fetch = async () => {
+        if (_.isEmpty(this.userInput)) {
+          this.conceptSuggestions = [];
+        } else {
+          const conceptSuggestions = await projectService.getConceptSuggestions(this.project, this.userInput);
+          this.conceptSuggestions = conceptSuggestions.splice(0, CONCEPT_SUGGESTION_COUNT);
+        }
+      };
+      fetch();
+    },
+    getDatacubeSuggestions() {
+      const fetch = async () => {
+        if (_.isEmpty(this.userInput)) {
+          this.datacubeSuggestions = [];
+        } else {
+          const datacubeSuggestions = await datacubeService.getDatacubeSuggestions(this.userInput);
+          this.datacubeSuggestions = datacubeSuggestions.splice(0, 5);
+        }
+      };
+      return fetch();
+    },
+    setActive(tab: string) {
+      this.activeTab = tab;
+    }
   }
-};
+});
 
 </script>
 
@@ -242,7 +446,7 @@ export default {
 }
 
 .suggestion-dropdown {
-  width: 45vw;
+  width: 50vw;
 }
 
 .dropdown-option {
@@ -273,8 +477,18 @@ export default {
   }
 }
 
+.tab-row {
+  margin-left: 5px;
+  margin-top: 5px;
+  padding-bottom: 5px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #DDD;
+}
+
 .left-column {
   min-width: 280px;
+  max-width: 280px;
   height: 290px;
   overflow-y: scroll;
 }
