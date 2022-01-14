@@ -81,7 +81,12 @@
                 v-if="indicatorDescription.length > 0"
                 class="description"
                 v-tooltip.top="indicatorDescription"
-              > - {{ indicatorDescription }}.</span>
+              > - {{ indicatorDescription }}</span>
+              <span
+                v-if="indicatorRegions.length > 0"
+                class="description"
+                v-tooltip.top="indicatorRegions"
+              > - {{ indicatorRegions }}.</span>
               <span> Data shows</span>
               <dropdown-button
                 :items="SEASONALITY_OPTIONS"
