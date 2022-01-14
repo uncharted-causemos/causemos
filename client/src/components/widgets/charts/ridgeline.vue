@@ -81,6 +81,8 @@ export default defineComponent({
       ) {
         return;
       }
+      // Set new size
+      svg.attr('width', width).attr('height', height);
       svg.selectAll('*').remove();
       // ridgeline-renderer expects a complete RidgelineWithMetadata object
       const ridgelineWithMetadata: RidgelineWithMetadata = {
