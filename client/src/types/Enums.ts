@@ -113,8 +113,7 @@ export enum TemporalResolutionOption {
 
 export enum TimeScale {
   Months = 'MONTHS',
-  Years = 'YEARS',
-  Decades = 'DECADES'
+  Years = 'YEARS'
 }
 
 export enum ReferenceSeriesOption {

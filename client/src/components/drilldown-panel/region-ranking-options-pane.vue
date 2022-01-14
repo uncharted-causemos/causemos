@@ -66,6 +66,7 @@
         @click="setEqualWeights">
           Equal Weights
       </button>
+      <tag-slider :sections="regionRankingWeights" @sections-size-updated="$emit('region-ranking-weights-updated', $event)" />
     </div>
     <div class="config-sub-group">
       <div class="checkbox">
@@ -85,9 +86,8 @@
           style="margin-bottom: 1rem; margin-left: 5px;"
           min="1"
           max="50"
-          ref="max-number-of-chart-bars-slider"
           :value="maxNumberOfChartBars"
-          @change="updateMaxNumberOfChartBars"
+          @input="updateMaxNumberOfChartBars"
         />
       </div>
     </div>
@@ -100,10 +100,12 @@ import { defineComponent, PropType, ref } from 'vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import * as d3 from 'd3';
 import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
+import TagSlider from '@/components/widgets/multi-thumb-slider/tag-slider.vue';
 
 export default defineComponent({
   components: {
-    DropdownButton
+    DropdownButton,
+    TagSlider
   },
   name: 'RegionRankingOptionsPane',
   props: {
@@ -145,6 +147,10 @@ export default defineComponent({
     limitNumberOfChartBars: {
       type: Boolean,
       default: false
+    },
+    regionRankingWeights: {
+      type: Object as PropType<{[key: string]: {name: string; weight: number}}>,
+      default: () => ({})
     }
   },
   emits: [
@@ -154,7 +160,8 @@ export default defineComponent({
     'set-region-ranking-equal-weight',
     'set-max-number-of-chart-bars',
     'set-limit-number-of-chart-bars',
-    'set-region-ranking-binning-type'
+    'set-region-ranking-binning-type',
+    'region-ranking-weights-updated'
   ],
   setup() {
     const capitalize = (str: string) => {
@@ -243,10 +250,9 @@ export default defineComponent({
     setEqualWeights() {
       this.$emit('set-region-ranking-equal-weight');
     },
-    updateMaxNumberOfChartBars() {
-      const newVal = parseFloat(
-        (this.$refs['max-number-of-chart-bars-slider'] as HTMLInputElement).value
-      );
+    updateMaxNumberOfChartBars(event: any) {
+      const newVal = parseFloat(event.target.value);
+      if (isNaN(newVal) || newVal < 0) return;
       this.$emit('set-max-number-of-chart-bars', newVal);
     },
     updateLimitNumberOfChartBars() {
@@ -320,6 +326,7 @@ h5 {
 
 .dropdown-button {
   width: max-content;
+  padding: 4px 8px;
 }
 
 .checkbox {

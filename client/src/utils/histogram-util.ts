@@ -6,7 +6,7 @@ import {
 } from '@/types/Timeseries';
 import _ from 'lodash';
 import { getMonthFromTimestamp, getTimestampAfterMonths } from './date-util';
-import { getSliceMonthsFromTimeScale } from './time-scale-util';
+import { getSliceMonthIndicesFromTimeScale } from './time-scale-util';
 
 export type BinCounts = [number, number, number, number, number];
 export type BinBoundaries = [number, number, number, number];
@@ -208,25 +208,26 @@ export const convertTimeseriesDistributionToHistograms = (
 ): ProjectionHistograms => {
   // 1. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
   // This represents how many months from "now" each displayed time slice will be
-  const relevantMonthOffsets = getSliceMonthsFromTimeScale(timeScale);
+  const relevantMonthOffsets = getSliceMonthIndicesFromTimeScale(timeScale);
   const projectionStartTimestamp = projection[0].timestamp;
   const projectionStartMonth = getMonthFromTimestamp(projectionStartTimestamp);
   // For each timeslice:
   return relevantMonthOffsets.map(monthIndex => {
     // 2. Get bins from historical data using computeProjectionBins()
+    // monthIndex is 0 indexed, with a value of 0 representing the first
+    //  projected timestep. When computing projection bins we need to use an
+    //  interval length that matches the time between the last possible
+    //  historical timestep ("now") to the projected month, so we add 1.
+    const monthsElapsedSinceNow = monthIndex + 1;
     const bins = computeProjectionBins(
       historicalData,
-      monthIndex,
+      monthsElapsedSinceNow,
       projectionStartMonth
     );
     const monthTimestamp = getTimestampAfterMonths(
       projectionStartTimestamp,
       monthIndex
     );
-
-    // FIXME: is there an off-by-1 bug here?
-    //  relevantMonthOffsets is 1-indexed, so we're looking at projections that
-    //  are 1 month after the projections we think we're looking at
 
     // 3. Find distribution that's nearest to this timestep
     let closestDistribution: number[] | null = null;
@@ -309,7 +310,7 @@ export const summarizeConstraints = (
   })) as ProjectionHistograms;
   // 1. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
   // This will be used to determine which histogram the clamp should be mapped to
-  const timeSliceMonths = getSliceMonthsFromTimeScale(timeScale);
+  const timeSliceMonths = getSliceMonthIndicesFromTimeScale(timeScale);
   const projectionStartMonth = getMonthFromTimestamp(projectionStartTimestamp);
   // For each constraint:
   constraints.forEach(constraint => {
@@ -321,11 +322,13 @@ export const summarizeConstraints = (
     );
     // 3. Find which timeSlice it falls into
     let timeSliceIndex = -1;
-    if (constraint.step < timeSliceMonths[0]) {
-      //  Anything before the first time slice will be mapped to the first time slice
+    if (constraint.step <= timeSliceMonths[0]) {
+      // Anything before or on the first time slice will be mapped to the first
+      //  time slice
       timeSliceIndex = 0;
-    } else if (constraint.step < timeSliceMonths[1]) {
-      //  Anything between the first two time slices will be mapped to the second
+    } else if (constraint.step <= timeSliceMonths[1]) {
+      // Anything between the first two time slices will be mapped to the
+      //  second
       timeSliceIndex = 1;
     } else {
       //  Anything else will be mapped to the third

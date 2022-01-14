@@ -129,6 +129,19 @@ export const getSuggestions = async (field: string, queryString: string) => {
   return data;
 };
 
+
+/**
+ * Find datacubes by a query strings, returns a summaried datacube object
+ */
+export const getDatacubeSuggestions = async (queryString: string) => {
+  const { data } = await API.get('maas/datacubes/datacube-suggestions', {
+    params: {
+      q: queryString
+    }
+  });
+  return data;
+};
+
 /**
  * Fetches the lists of regions for the specified model runs or indicator.
  * For multiple model runs, the regions are combined into one list per admin level.
@@ -299,10 +312,12 @@ export default {
   getModelDatacubesCount,
   getIndicatorDatacubesCount,
   getModelRunMetadata,
+  getDefaultModelRunMetadata,
   getSuggestions,
   createModelRun,
   addModelRunsTag,
   updateModelRun,
   removeModelRunsTag,
-  renameModelRunsTag
+  renameModelRunsTag,
+  getDatacubeSuggestions
 };

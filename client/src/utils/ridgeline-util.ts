@@ -76,11 +76,11 @@ export const convertDistributionTimeseriesToRidgelines = (
   const ridgelines = timeSlices.map(timeSlice => {
     // Convert the month offset to a timestamp and extract the relevant
     //  distribution from the timeseries.
-    // FIXME: is there a neater way to do this? monthOffsets are 1 indexed,
-    //  projection values are 0 indexed
-    const monthOffset = timeSlice.months - 1;
-    const timestamp = timeseries[monthOffset].timestamp;
-    const distribution = timeseries[monthOffset].values;
+    // timeSlice.months can be converted to the distribution's index by
+    //  subtracting 1
+    const monthIndex = timeSlice.months - 1;
+    const timestamp = timeseries[monthIndex].timestamp;
+    const distribution = timeseries[monthIndex].values;
     // Convert the distribution to a ridgeline, and attach the timestamp and
     //  label for rendering later.
     return {

@@ -14,6 +14,7 @@
       :concepts-in-cag="conceptsInCag"
       :placement="{ x: newNodeX, y: newNodeY }"
       @suggestion-selected="onSuggestionSelected"
+      @datacube-selected="onDatacubeSelected"
       @show-custom-concept="showCustomConcept = true"
     />
     <modal-custom-concept
@@ -75,7 +76,7 @@ export default defineComponent({
 
     // Custom
     'new-edge', 'delete', 'rename-node', 'merge-nodes',
-    'suggestion-selected', 'suggestion-duplicated'
+    'suggestion-selected', 'suggestion-duplicated', 'datacube-selected'
   ],
   setup(props) {
     const store = useStore();
@@ -290,6 +291,9 @@ export default defineComponent({
         return;
       }
       this.$emit('suggestion-selected', suggestion);
+    },
+    onDatacubeSelected(datacubeParam: any) {
+      this.$emit('datacube-selected', datacubeParam);
     },
     saveCustomConcept(value: { theme: string; process: string; theme_property: string; process_property: string }) {
       this.$emit('suggestion-selected', {

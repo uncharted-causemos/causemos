@@ -54,7 +54,7 @@ import modelService from '@/services/model-service';
 import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { getLastTimeStepFromTimeScale } from '@/utils/time-scale-util';
+import { getProjectionLengthFromTimeScale } from '@/utils/time-scale-util';
 import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -114,7 +114,7 @@ export default defineComponent({
     },
     projectionSteps(): number {
       if (this.modelSummary === null) return 12;
-      return getLastTimeStepFromTimeScale(this.modelSummary.parameter.time_scale);
+      return getProjectionLengthFromTimeScale(this.modelSummary.parameter.time_scale);
     },
     onMatrixTab(): boolean {
       return !!(this.$route.query && this.$route.query.activeTab === 'matrix');

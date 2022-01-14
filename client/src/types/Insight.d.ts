@@ -80,6 +80,7 @@ export interface ViewState {
   regionRankingApplyingBarLimit?: boolean;
   regionRankingSelectedMaxBarLimit?: number;
   regionRankingHoverId?: string;
+  regionRankingShowNormalizedData?: boolean;
 
   // knowledge/model space specific
   sensitivityToggle?: any;
@@ -103,6 +104,9 @@ export interface DataState {
   selectedQualifierValues?: string[];
   selectedYears?: string[];
   activeReferenceOptions?: string[];
+
+  // region-ranking specific
+  regionRankingWeights?: {[key: string]: {name: string; weight: number}};
 
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
