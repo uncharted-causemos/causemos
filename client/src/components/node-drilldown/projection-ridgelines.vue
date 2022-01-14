@@ -43,6 +43,8 @@
             :key="timeSliceIndex"
             :ridgeline-data="ridgelineData"
             :comparison-baseline="row.comparisonBaseline ? row.comparisonBaseline[timeSliceIndex] : null"
+            :min="indicatorMin"
+            :max="indicatorMax"
           />
         </div>
         <div v-if="!row.is_valid" class="stale-scenario">

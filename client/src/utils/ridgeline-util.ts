@@ -8,6 +8,19 @@ export interface RidgelinePoint {
   value: number;
 }
 
+export interface RidgelineWithMetadata {
+  label: string;
+  timestamp: number;
+  ridgeline: RidgelinePoint[];
+}
+
+export type d3RidgelineWithMetadataSelection = d3.Selection<
+  any,
+  RidgelineWithMetadata,
+  any,
+  any
+>;
+
 const convertDistributionToRidgeline = (
   distribution: number[],
   min: number,
@@ -82,11 +95,7 @@ export const convertDistributionTimeseriesToRidgelines = (
     return timeSlices.find(timeSlice => timeSlice.months === timestepIndex + 1);
   };
 
-  const ridgelines: {
-    timestamp: number;
-    label: string;
-    ridgeline: RidgelinePoint[];
-  }[] = [];
+  const ridgelines: RidgelineWithMetadata[] = [];
 
   timeseries.forEach(({ timestamp, values }, timestepIndex) => {
     const timeSliceAtThisTimestep = getTimeSliceAtStepIndex(timestepIndex);
@@ -95,7 +104,7 @@ export const convertDistributionTimeseriesToRidgelines = (
     //  label for rendering later.
     ridgelines.push({
       timestamp,
-      label: timeSliceAtThisTimestep?.label ?? '',
+      label: timeSliceAtThisTimestep?.shortLabel ?? '',
       ridgeline: convertDistributionToRidgeline(values, min, max, binCount)
     });
   });

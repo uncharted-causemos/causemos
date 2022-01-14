@@ -15,8 +15,9 @@ import {
 import { getTimestampAfterMonths } from '@/utils/date-util';
 import {
   convertDistributionTimeseriesToRidgelines,
-  RidgelinePoint
+  RidgelineWithMetadata
 } from '@/utils/ridgeline-util';
+import { renderRidgelines } from './ridgeline-renderer';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_LINE_COLOR = '#999';
@@ -26,11 +27,6 @@ const LABEL_COLOR = HISTORY_LINE_COLOR;
 //  points into bins (necessary to convert the one-dimensional data into 2D).
 // Raise the bin count to make the curve less smooth.
 const RIDGELINE_BIN_COUNT = 20;
-const RIDGELINE_STROKE_WIDTH = 1;
-const RIDGELINE_STROKE_COLOR = 'none';
-const RIDGELINE_FILL_COLOR = 'black';
-const RIDGELINE_VERTICAL_AXIS_WIDTH = 1;
-const RIDGELINE_VERTICAL_AXIS_COLOR = HISTORY_BACKGROUND_COLOR;
 
 // Depending on how many historical months are visible, we can add the number
 //  of projected months to get the total number of visible months and use that
@@ -99,8 +95,6 @@ function render(
   const xScaleEndTimestamp = isHistoricalDataOnlyMode
     ? historyEnd
     : lastProjectedTimestamp;
-  const yExtent = [min, max];
-  const formatter = chartValueFormatter(...yExtent);
   const xDomain = [historyStart, xScaleEndTimestamp];
   if (!isHistoricalDataOnlyMode) {
     // To avoid the last ridgeline plot overflowing, we need to add enough space
@@ -108,7 +102,9 @@ function render(
     // Width won't be exactly the same between timeslices since some months/years
     //  are longer than others, but this will serve as a useful estimate of the
     //  maximum width a ridgeline can take up without overlapping the next one.
-    const firstSliceMonthIndex = getSliceMonthIndicesFromTimeScale(time_scale)[0];
+    const firstSliceMonthIndex = getSliceMonthIndicesFromTimeScale(
+      time_scale
+    )[0];
     const timeBetweenSlices =
       getTimestampAfterMonths(projection_start, firstSliceMonthIndex) -
       projection_start;
@@ -120,6 +116,8 @@ function render(
     .scaleLinear()
     .domain(xDomain)
     .range([0, width]);
+  const yExtent = [min, max];
+  const formatter = chartValueFormatter(...yExtent);
   const yScale = d3
     .scaleLinear()
     .domain(yExtent)
@@ -244,52 +242,22 @@ function renderScenarioProjections(
   );
   const widthBetweenTimeslices =
     xScale(firstSliceMonthTimestamp) - xScale(projection_start);
-  const ridgelineXScale = d3
-    .scaleLinear()
-    .domain([0, 1])
-    .range([0, widthBetweenTimeslices]);
-  // Create a line generator that will be used to render the ridgeline
-  const line = d3
-    .line<RidgelinePoint>()
-    // Use curveMonotoneY so that curves between points don't overshoot points
-    //  in the X direction. This is necessary so that curves don't dip past the
-    //  vertical line that acts as the baseline for each smoothed histogram
-    // Other curve types are summarized in the d3 docs:
-    //  https://github.com/d3/d3-shape/blob/main/README.md#curves
-    .curve(d3.curveMonotoneY)
-    .x(point => ridgelineXScale(point.value))
-    .y(point => yScale(point.coordinate));
 
-  // Render one ridgeline for each timeslice
   // Make a `g` element for each ridgeline
   const ridgeLineElements = svgGroup
-    .selectAll('.ridgeline')
+    .selectAll<any, RidgelineWithMetadata>('.ridgeline')
     .data(ridgelinePoints)
     .join('g')
     .classed('ridgeline', true)
     .attr('transform', d => translate(xScale(d.timestamp), 0));
-  // Draw vertical line to act as a baseline
-  ridgeLineElements
-    .append('rect')
-    .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH)
-    .attr('height', height)
-    .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
-    .attr('x', 0)
-    .attr('y', 0);
-  // Draw ridgeline itself
-  ridgeLineElements
-    .append('path')
-    .attr('fill', RIDGELINE_FILL_COLOR)
-    .attr('stroke', RIDGELINE_STROKE_COLOR)
-    .attr('stroke-width', RIDGELINE_STROKE_WIDTH)
-    .attr('d', d => line(d.ridgeline));
-  // Draw time slice label
-  ridgeLineElements
-    .append('text')
-    .attr('transform', translate(-widthBetweenTimeslices / 2, height))
-    .attr('font-size', widthBetweenTimeslices)
-    .style('fill', LABEL_COLOR)
-    .text(d => d.label);
+  // Render one ridgeline for each timeslice
+  renderRidgelines(
+    ridgeLineElements,
+    widthBetweenTimeslices,
+    height,
+    yScale.domain()[0],
+    yScale.domain()[1]
+  );
 
   // TODO: Render constraints
   // const constraintSummary = summarizeConstraints(
