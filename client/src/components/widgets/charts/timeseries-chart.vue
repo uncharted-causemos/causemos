@@ -183,7 +183,7 @@ export default defineComponent({
 
 .timeseries-chart-container {
   width: 100%;
-  height: 140px;
+  height: 130px;
   display: flex;
 }
 
