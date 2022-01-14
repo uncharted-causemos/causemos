@@ -77,9 +77,7 @@ export default function useRegionalData(
     });
     // If split by region is active, only one fetch is needed to get the data
     //  for all regions
-    const _outputSpecs = breakdownOption.value === SpatialAggregationLevel.Region
-      ? outputSpecs.value.slice(0, 1)
-      : outputSpecs.value;
+    const _outputSpecs = outputSpecs.value;
     const result = await getRegionAggregations(_outputSpecs, datacubeHierarchy.value, breakdownOption.value as string);
     if (isCancelled) return;
 
