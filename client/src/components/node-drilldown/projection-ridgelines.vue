@@ -359,7 +359,7 @@ h3 {
     width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0.7);
-    flex: 6;
+    flex: 8;
     z-index: 1;
     align-items: flex-end;
     justify-content: end;
