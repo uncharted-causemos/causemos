@@ -162,6 +162,10 @@ export default {
       type: String,
       default: SOURCE_LAYERS[0].layerId
     },
+    allActiveLayerIds: {
+      type: Array,
+      default: () => [SOURCE_LAYERS[0].layerId]
+    },
     filters: {
       type: Array,
       default: () => []
@@ -261,10 +265,14 @@ export default {
     isGridMap() {
       return this.vectorSourceLayer === 'maas';
     },
-    adminLevel() {
+    adminLevels() {
       if (this.isGridMap) return undefined;
-      const adminLevel = SOURCE_LAYERS.findIndex(l => this.selectedLayerId === l.layerId);
-      return adminLevelToString(adminLevel);
+      const adminLevels = this.allActiveLayerIds.map(
+        l => adminLevelToString(
+          SOURCE_LAYERS.findIndex(s => l === s.layerId)
+        )
+      );
+      return adminLevels;
     },
     selectedBaseLayerEndpoint() {
       return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
@@ -411,12 +419,35 @@ export default {
     },
     getAdminMapExtent() {
       if (!this.adminLayerStats) return;
-      if (this.baselineSpec) {
-        return this.adminLayerStats?.difference[this.adminLevel];
-      } else if (this.outputSelection === this.relativeTo) {
-        return this.adminLayerStats?.baseline[this.adminLevel];
+      const stats = this.adminLevels.reduce((acc, l) => {
+        if (this.baselineSpec) {
+          acc.push(this.adminLayerStats?.difference[l]);
+        } else if (this.outputSelection === this.relativeTo) {
+          acc.push(this.adminLayerStats?.baseline[length]);
+        } else {
+          acc.push(this.adminLayerStats?.global[l]);
+        }
+        return acc;
+      }, []);
+      if (stats.length === 1) {
+        return stats[0];
       } else {
-        return this.adminLayerStats?.global[this.adminLevel];
+        const extendedStats = stats.reduce((acc, stat) => {
+          if (stat) {
+            if (acc.min) {
+              if (acc.min > stat.min) acc.min = stat.min;
+            } else {
+              acc.min = stat.min;
+            }
+            if (acc.max) {
+              if (acc.max < stat.max) acc.max = stat.max;
+            } else {
+              acc.max = stat.max;
+            }
+          }
+          return acc;
+        }, { min: null, max: null });
+        return extendedStats;
       }
     },
     refreshLayers() {
@@ -435,7 +466,7 @@ export default {
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
     },
     setFeatureStates() {
-      if (!this.map || !this.adminLevel || this.isGridMap) return;
+      if (!this.map || !this.adminLevels || this.isGridMap) return;
 
       // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
       this.map.removeFeatureState({
@@ -450,15 +481,17 @@ export default {
       const featureStateBase = { _baseline: undefined };
       this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = undefined; });
 
-      this.regionData[this.adminLevel].forEach(row => {
-        this.map.setFeatureState({
-          id: row.id,
-          source: this.vectorSourceId,
-          sourceLayer: this.vectorSourceLayer
-        }, {
-          ...featureStateBase,
-          ...row.values,
-          _isHidden: this.selectedRegionIds.length === 0 ? false : !this.selectedRegionIds.includes(row.id)
+      this.adminLevels.forEach(level => {
+        this.regionData[level].forEach(row => {
+          this.map.setFeatureState({
+            id: row.id,
+            source: this.vectorSourceId,
+            sourceLayer: this.vectorSourceLayer
+          }, {
+            ...featureStateBase,
+            ...row.values,
+            _isHidden: this.selectedRegionIds.length === 0 ? false : !this.selectedRegionIds.includes(row.id)
+          });
         });
       });
     },

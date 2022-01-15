@@ -373,10 +373,11 @@
                       :is-default-run="spec.isDefaultRun"
                       :show-tooltip="true"
                       :selected-layer-id="getSelectedLayer(spec.id)"
+                      :all-active-layer-ids="allActiveLayerIds"
                       :map-bounds="mapBounds"
                       :camera-options="mapCameraOptions"
                       :region-data="regionalData"
-                      :selected-region-ids="selectedRegionIds"
+                      :selected-region-ids="allActiveRegionIds"
                       :admin-layer-stats="adminLayerStats"
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
@@ -1883,6 +1884,19 @@ export default defineComponent({
         result = result.filter(tag => tags.includes(tag));
       });
       return result;
+    },
+    hasRegionalReferenceSeries(): boolean {
+      return this.activeReferenceOptions.length > 0 && this.breakdownOption === SpatialAggregationLevel.Region;
+    },
+    allActiveLayerIds(): string[] {
+      return this.hasRegionalReferenceSeries
+        ? [SOURCE_LAYERS[0].layerId, this.mapSelectedLayer]
+        : [this.mapSelectedLayer];
+    },
+    allActiveRegionIds(): string[] {
+      return this.hasRegionalReferenceSeries
+        ? [...this.selectedRegionIds, ...this.activeReferenceOptions]
+        : this.selectedRegionIds;
     }
   },
   methods: {
