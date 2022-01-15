@@ -1,22 +1,23 @@
 <template>
   <div class="datacube-timeline-container">
-    <div class="timeseries-chart">
+    <main>
       <timeline-chart
+        class="timeseries-chart"
         :timeseries-data="timeseriesData"
+        :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
         :selected-timestamp="selectedTimestamp"
         :breakdown-option="breakdownOption"
         @select-timestamp="emitTimestampSelection"
         @select-timestamp-range="emitTimestampRangeSelection"
       />
-    </div>
-    <div class="datacube-map-placeholder" />
+    </main>
   </div>
 </template>
 
 <script lang="ts">
 import { AggregationOption } from '@/types/Enums';
 import { defineComponent, PropType, ref } from 'vue';
-import TimelineChart from '@/components/widgets/charts/context-timeseries-chart.vue';
+import TimelineChart from '@/components/widgets/charts/timeline-chart.vue';
 import { Timeseries } from '@/types/Timeseries';
 
 export default defineComponent({
@@ -28,6 +29,10 @@ export default defineComponent({
     timeseriesData: {
       type: Array as PropType<Timeseries[]>,
       default: []
+    },
+    timeseriesToDatacubeMap: {
+      type: Object as PropType<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>,
+      default: {}
     },
     selectedTimestamp: {
       type: Number,
@@ -72,24 +77,15 @@ export default defineComponent({
   padding: 10px;
 }
 
+main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
 .timeseries-chart {
   flex: 1;
   min-width: 0;
-}
-
-.datacube-map-placeholder {
-  background-color: #fafafa;
-  height: 100%;
-  width: 150px;
-  display: flex;
-  flex-direction: column;
-  padding: 5px;
-}
-
-.country-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
 }
 
 </style>

@@ -14,7 +14,7 @@
           :style="{ color: timeseries.color }"
         >
           <strong>{{ timeseries.name }}</strong>
-          <span>{{ valueFormatter(timeseries.value) }}</span>
+          <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
         </div>
       </div>
       <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
@@ -155,7 +155,6 @@ export default defineComponent({
             point => point.timestamp === selectedTimestamp.value
           )?.value
         }))
-        .filter(({ value }) => value !== undefined)
         .sort(({ value: a }, { value: b }) => {
           return (b as number) - (a as number);
         });
@@ -184,7 +183,7 @@ export default defineComponent({
 
 .timeseries-chart-container {
   width: 100%;
-  height: 140px;
+  height: 130px;
   display: flex;
 }
 
