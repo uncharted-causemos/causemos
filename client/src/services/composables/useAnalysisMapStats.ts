@@ -7,6 +7,7 @@ import { computeRegionalStats, adminLevelToString, computeGridLayerStats, DATA_L
 import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';
 import { getOutputStats } from '@/services/runoutput-service';
+import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 
 export default function useAnalysisMapStats(
   outputSourceSpecs: Ref<OutputSpecWithId[]>,
@@ -16,7 +17,8 @@ export default function useAnalysisMapStats(
   selectedAdminLevel: Ref<number>,
   showPercentChange: Ref<boolean>,
   colorOptions: Ref<AnalysisMapColorOptions>,
-  referenceOptions: Ref<string[]>
+  referenceOptions: Ref<string[]>,
+  breakdownOption: Ref<string|null>
 ) {
   const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
   const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
@@ -27,9 +29,15 @@ export default function useAnalysisMapStats(
       return;
     }
     adminLayerStats.value = computeRegionalStats(regionalData.value, relativeTo.value, showPercentChange.value);
-    if (relativeTo.value && !referenceOptions.value.includes(relativeTo.value)) {
-      const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
-      const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
+    if (relativeTo.value && breakdownOption.value !== TemporalAggregationLevel.Year) {
+      const currentAdminLevel =
+        breakdownOption.value === SpatialAggregationLevel.Region &&
+        referenceOptions.value.includes(relativeTo.value)
+          ? 0
+          : selectedAdminLevel.value;
+
+      const baseline = adminLayerStats.value.baseline[adminLevelToString(currentAdminLevel)];
+      const difference = adminLayerStats.value.difference[adminLevelToString(currentAdminLevel)];
       adminMapLayerLegendData.value = (baseline && difference) ? [
         createMapLegendData([baseline.min, baseline.max], colorOptions.value.relativeToSchemes[0], colorOptions.value.scaleFn),
         createMapLegendData([difference.min, difference.max], colorOptions.value.relativeToSchemes[1], colorOptions.value.scaleFn, true)

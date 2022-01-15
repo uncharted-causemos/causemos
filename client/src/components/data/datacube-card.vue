@@ -1511,72 +1511,6 @@ export default defineComponent({
       relativeTo
     );
 
-    /*
-      const regionsToSubregions = computed(() => {
-      const regionsToSubregionInternal: any = {};
-      referenceRegions.value.forEach(regionId => { regionsToSubregionInternal[regionId] = []; });
-      if (regionalData.value) {
-        const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
-        if (adminLevelAsString) {
-          const regionsToConsider = regionalData.value[adminLevelAsString];
-          if (regionsToConsider) {
-            regionsToConsider.map(region => region.id).forEach(regionId => {
-              const delimiter = '__';
-              const parentRegionId: string = regionId.split(delimiter).slice(0, -1).join(delimiter);
-              if (parentRegionId in regionsToSubregionInternal) {
-                regionsToSubregionInternal[parentRegionId].push(regionId);
-              }
-            });
-          }
-        }
-      }
-      const toSubregionFiltered: {[ key: string ]: string[] } = {};
-      for (const region in regionsToSubregionInternal) {
-        const subregions = regionsToSubregionInternal[region];
-        if (subregions.length < 25) {
-          toSubregionFiltered[region] = subregions;
-        }
-      }
-      return toSubregionFiltered;
-    });
-
-    const {
-      timeseriesData: subregionTimeseriesData,
-      visibleTimeseriesData: subregionVisibleTimeseriesData,
-      relativeTo: subregionRelativeToTimeseriesData,
-      baselineMetadata: subregionBaselineMetadata,
-      setRelativeTo: subregionSetRelativeTo,
-      temporalBreakdownData: subregionTemporalBreakdownData,
-      selectedYears: subregionSelectedYears,
-      toggleIsYearSelected: subregionToggleIsYearSelected
-    } = useTimeseriesData(
-      metadata,
-      selectedScenarioIds,
-      selectedTemporalResolution,
-      selectedTemporalAggregation,
-      selectedSpatialAggregation,
-      breakdownOption,
-      selectedTimestamp,
-      setSelectedTimestamp,
-      // ref<string[]>(Object.values(regionsToSubregions.value).flat()),
-      ref<string[]>([]),
-      selectedQualifierValues,
-      initialSelectedYears,
-      showPercentChange,
-      selectedScenarios
-    );
-    const regionsToTimeseries: any = {
-      subregionTimeseriesData,
-      subregionVisibleTimeseriesData,
-      subregionRelativeToTimeseriesData,
-      subregionBaselineMetadata,
-      subregionSetRelativeTo,
-      subregionTemporalBreakdownData,
-      subregionSelectedYears,
-      subregionToggleIsYearSelected
-    };
-    */
-
     const mapColorOptions = computed(() => {
       const options: AnalysisMapColorOptions = {
         scheme: finalColorScheme.value,
@@ -1603,7 +1537,8 @@ export default defineComponent({
       selectedAdminLevel,
       showPercentChange,
       mapColorOptions,
-      activeReferenceOptions
+      activeReferenceOptions,
+      breakdownOption
     );
 
     const {
