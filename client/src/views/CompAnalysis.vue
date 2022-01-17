@@ -10,6 +10,17 @@
     </analytical-questions-and-insights-panel>
     <main class="insight-capture">
       <action-bar />
+      <!-- overlay view content -->
+      <datacube-comparative-timeline-sync
+        v-if="globalTimeseries.length > 0 && comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay"
+        :timeseriesData="globalTimeseries"
+        :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
+        :selected-timestamp="selectedTimestamp"
+        :selected-timestamp-range="selectedTimestampRange"
+        @select-timestamp="setSelectedTimestamp"
+        @select-timestamp-range="handleTimestampRangeSelection"
+      />
+      <!-- region ranking view content -->
       <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking">
         <div style="display: flex">
           <h5 class="ranking-header-top">Ranking Results</h5>
@@ -43,20 +54,47 @@
           </div>
         </div>
       </template>
+      <!--
+        listing individual datacube cards
+      -->
       <div
         v-if="analysisItems.length"
-        class="column"
-        :class="{ 'sync-time-view': comparativeAnalysisViewSelection === ComparativeAnalysisMode.SyncTime, 'region-ranking-view': comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking }">
-        <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.List || comparativeAnalysisViewSelection === ComparativeAnalysisMode.SyncTime">
+        class="column">
+        <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.List">
           <datacube-comparative-card
-            v-for="item in analysisItems"
+            v-for="(item, indx) in analysisItems"
             :key="item.id"
             class="datacube-comparative-card"
             :id="item.id"
+            :datacube-index="indx"
             :selected-timestamp="selectedTimestamp"
             :selected-timestamp-range="selectedTimestampRange"
             @loaded-timeseries="onLoadedTimeseries"
+            @select-timestamp="setSelectedTimestamp"
           />
+        </template>
+        <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay">
+          <div class="card-maps-container">
+            <div
+              v-for="(item, indx) in analysisItems"
+              :key="item.id"
+              class="card-map-container"
+              :class="[
+                `card-count-${analysisItems.length < 5 ? analysisItems.length : 'n'}`
+              ]"
+            >
+              <datacube-comparative-overlay-region
+                :style="{ borderColor: colorFromIndex(indx) }"
+                class="card-map"
+                :id="item.id"
+                :datacube-index="indx"
+                :selected-timestamp="selectedTimestamp"
+                :selected-timestamp-range="selectedTimestampRange"
+                @loaded-timeseries="onLoadedTimeseries"
+                @select-timestamp="setSelectedTimestamp"
+              />
+            </div>
+          </div>
         </template>
         <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking">
           <datacube-region-ranking-card
@@ -74,18 +112,11 @@
             :show-normalized-data="showNormalizedData"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
-          @map-click-region="onMapClickRegion"
+            @map-click-region="onMapClickRegion"
           />
         </template>
       </div>
       <empty-state-instructions v-else />
-      <datacube-comparative-timeline-sync
-        v-if="globalTimeseries.length > 0 && comparativeAnalysisViewSelection === ComparativeAnalysisMode.SyncTime"
-        :timeseriesData="globalTimeseries"
-        :selected-timestamp="selectedTimestamp"
-        @select-timestamp="setSelectedTimestamp"
-        @select-timestamp-range="handleTimestampRangeSelection"
-      />
     </main>
     <drilldown-panel
       v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking"
@@ -126,6 +157,7 @@
 import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
+import DatacubeComparativeOverlayRegion from '@/components/widgets/datacube-comparative-overlay-region.vue';
 import DatacubeRegionRankingCard from '@/components/widgets/datacube-region-ranking-card.vue';
 import ActionBar from '@/components/data/action-bar.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
@@ -140,7 +172,7 @@ import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import RegionRankingOptionsPane from '@/components/drilldown-panel/region-ranking-options-pane.vue';
-import { COLOR, getColors } from '@/utils/colors-util';
+import { COLOR, getColors, colorFromIndex } from '@/utils/colors-util';
 import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import { BinningOptions, ComparativeAnalysisMode, DatacubeGeoAttributeVariableType, RegionRankingCompositionType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
@@ -165,6 +197,7 @@ export default defineComponent({
   name: 'CompAnalysis',
   components: {
     DatacubeComparativeCard,
+    DatacubeComparativeOverlayRegion,
     DatacubeRegionRankingCard,
     AnalysisCommentsButton,
     ActionBar,
@@ -227,6 +260,7 @@ export default defineComponent({
     const allDatacubesMetadataMap: {[key: string]: {datacubeName: string; datacubeOutputName: string; region: string[]}} = {};
     const globalTimeseries = ref([]) as Ref<Timeseries[]>;
     const reCalculateGlobalTimeseries = ref(true);
+    const timeseriesToDatacubeMap: {[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }} = {};
 
     const allRegionalRankingMap = ref<{[key: string]: BarData[]}>({});
     const globalBarsData = ref([]) as Ref<BarData[]>;
@@ -239,15 +273,15 @@ export default defineComponent({
     const initialSelectedTimestampRange = ref({}) as Ref<{start: number; end: number}>;
 
     const setSelectedTimestamp = (value: number) => {
-      if (selectedTimestamp.value === value || comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.List) return;
+      if (selectedTimestamp.value === value) return;
       selectedTimestamp.value = value;
     };
 
     const handleTimestampRangeSelection = (newTimestampRange: {start: number; end: number}) => {
       // we should pass the incoming (global) range to all datacube-comparative-card components
       //  so that they may zoom accordingly
-      if (comparativeAnalysisViewSelection.value !== ComparativeAnalysisMode.SyncTime) {
-        // if time-sync is disabled do nothing
+      if (comparativeAnalysisViewSelection.value !== ComparativeAnalysisMode.Overlay) {
+        // if "Overvlay" is disabled do nothing
         return;
       }
       if (selectedTimestampRange.value?.start === newTimestampRange.start &&
@@ -447,7 +481,9 @@ export default defineComponent({
       ComparativeAnalysisMode,
       updateStateFromInsight,
       regionRankingWeights,
-      showNormalizedData
+      showNormalizedData,
+      timeseriesToDatacubeMap,
+      colorFromIndex
     };
   },
   mounted() {
@@ -619,9 +655,10 @@ export default defineComponent({
 
       // clone and save the incoming timeseries in the map object
       //  where all timeseries lists will be saved
-      this.allTimeseriesMap[timeseriesInfo.id] = _.cloneDeep(timeseriesInfo.timeseriesList);
+      const datacubeKey = timeseriesInfo.id;
+      this.allTimeseriesMap[datacubeKey] = _.cloneDeep(timeseriesInfo.timeseriesList);
 
-      this.allDatacubesMetadataMap[timeseriesInfo.id] = {
+      this.allDatacubesMetadataMap[datacubeKey] = {
         datacubeName: timeseriesInfo.datacubeName,
         datacubeOutputName: timeseriesInfo.datacubeOutputName,
         region: timeseriesInfo.region
@@ -658,6 +695,16 @@ export default defineComponent({
               p.value = (p.value - minValue) / (maxValue - minValue);
             });
           }
+
+          // build a map that links each timeseries to its owner datacube
+          timeseriesList.forEach(timeseries => {
+            timeseries.id = key; // override the timeseries id to match its owner datacube
+            const info = this.allDatacubesMetadataMap[key];
+            this.timeseriesToDatacubeMap[key] = {
+              datacubeName: info.datacubeName,
+              datacubeOutputVariable: info.datacubeOutputName
+            };
+          });
 
           // add to the global list of timeseries
           flatMap.push(timeseriesList);
@@ -742,25 +789,18 @@ main {
   margin-right: 10px;
 }
 
-.datacube-comparative-card:not(:first-child) {
-  margin-top: 10px;
-}
-
 .datacube-region-ranking-card {
   margin-bottom: 10px;
 }
 
+.datacube-comparative-card:not(:first-child) {
+  margin-top: 10px;
+}
+
 .column {
   margin: 10px 0;
-}
-
-.sync-time-view {
-  padding-bottom: 80px;
   overflow-y: auto;
-}
-
-.region-ranking-view {
-  overflow-y: auto;
+  height: 100%;
 }
 
 .ranking-header-bottom {
@@ -805,6 +845,49 @@ main {
     cursor: auto;
     color: gray;
   }
+}
+
+$marginSize: 6px;
+
+.card-maps-container {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: 100%;
+  height: 100%;
+}
+
+.card-map-container {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  padding-top: 1rem;
+
+  ::v-deep(.region-map) {
+    border-style: solid;
+    border-color: inherit;
+  }
+  &.card-count-1 {
+    ::v-deep(.region-map) {
+      border: none;
+    }
+  }
+  &.card-count-2,
+  &.card-count-3,
+  &.card-count-4 {
+    min-width: calc(50% - #{$marginSize / 2});
+    max-width: calc(50% - #{$marginSize / 2});
+  }
+  &.card-count-n {
+    min-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
+    max-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
+  }
+}
+
+.card-map {
+  flex-grow: 1;
+  min-height: 0;
 }
 
 </style>

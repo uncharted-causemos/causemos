@@ -24,48 +24,31 @@
       </options-button>
     </header>
     <main>
-      <div class="chart-and-footer">
-        <timeseries-chart
-          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
-          class="timeseries-chart"
-          :timeseries-data="visibleTimeseriesData"
-          :selected-temporal-resolution="selectedTemporalResolution"
-          :selected-timestamp="selectedTimestamp"
-          :selected-timestamp-range="selectedTimestampRange"
-          :breakdown-option="breakdownOption"
-          @select-timestamp="setSelectedTimestamp"
-        />
-        <div class="row datacube-footer">
-          <div>Aggregated by: {{ selectedSpatialAggregation }}</div>
-          <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
-          <div style="display: flex; align-items: center">
-            <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
-            <div style="display: flex; align-items: center">
-              <div style="margin-right: 4px">Selected:</div>
-              <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
-                @change="selectedScenarioIndex = $event.target.selectedIndex"
-                :disabled="selectedScenarioIds.length === 1"
-                :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex ? regionRunsScenarios[selectedScenarioIndex].color : 'black' }"
-              >
-                <option
-                  v-for="(selectedRun, indx) in regionRunsScenarios"
-                  :key="selectedRun.name"
-                  :selected="indx === selectedScenarioIndex"
-                >
-                  {{selectedRun.name}}
-                </option>
-              </select>
-            </div>
-          </div>
+      <region-map
+        :data="regionMapData"
+        :map-bounds="bbox"
+        :selected-layer-id="selectedAdminLevel"
+        :popup-Formatter="popupFormatter"
+      />
+      <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
+      <div style="display: flex; align-items: center; align-self: center">
+        <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
+        <div style="display: flex; align-items: center">
+          <div style="margin-right: 4px">Selected:</div>
+          <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
+            @change="selectedScenarioIndex = $event.target.selectedIndex"
+            :disabled="selectedScenarioIds.length === 1"
+            :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex ? regionRunsScenarios[selectedScenarioIndex].color : 'black' }"
+          >
+            <option
+              v-for="(selectedRun, indx) in regionRunsScenarios"
+              :key="selectedRun.name"
+              :selected="indx === selectedScenarioIndex"
+            >
+              {{selectedRun.name}}
+            </option>
+          </select>
         </div>
-      </div>
-      <div class="datacube-map-placeholder">
-        <region-map
-          :data="regionMapData"
-          :selected-layer-id="selectedAdminLevel"
-          :map-bounds="bbox"
-          :popup-formatter="popupFormatter"
-        />
       </div>
     </main>
   </div>
@@ -80,9 +63,8 @@ import { DatacubeFeature } from '@/types/Datacube';
 import { getFilteredScenariosFromIds } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType, DatacubeStatus } from '@/types/Enums';
-import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
+import { computed, defineComponent, Ref, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
-import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { mapActions, useStore } from 'vuex';
 import router from '@/router';
@@ -90,21 +72,20 @@ import _ from 'lodash';
 import { DataState, ViewState } from '@/types/Insight';
 import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
-import { COLOR, colorFromIndex, ColorScaleType, COLOR_SCHEME, getColors, isDiscreteScale, validateColorScaleType } from '@/utils/colors-util';
+import { COLOR, colorFromIndex, ColorScaleType, getColors, COLOR_SCHEME, isDiscreteScale, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
-import { adminLevelToString, computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
 import useRegionalData from '@/services/composables/useRegionalData';
+import { adminLevelToString, computeMapBoundsForCountries } from '@/utils/map-util-new';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
-import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { RegionalAggregations } from '@/types/Runoutput';
 
 export default defineComponent({
-  name: 'DatacubeComparativeCard',
+  name: 'DatacubeComparativeOverlayRegion',
   components: {
     OptionsButton,
-    TimeseriesChart,
     RegionMap
   },
   props: {
@@ -119,10 +100,6 @@ export default defineComponent({
     datacubeIndex: {
       type: Number,
       default: 0
-    },
-    selectedTimestampRange: {
-      type: Object as PropType<{start: number; end: number} | null>,
-      default: null
     }
   },
   emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp', 'loaded-timeseries'],
@@ -141,6 +118,8 @@ export default defineComponent({
     const selectedScenarios = ref([] as ModelRun[]);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
+
+    const regionMapData = ref<BarData[]>([]);
 
     const store = useStore();
 
@@ -200,8 +179,6 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
-    const regionMapData = ref<BarData[]>([]);
-
     const selectedAdminLevel = ref(0); // country by default
 
     const colorSchemeReversed = ref(false);
@@ -217,7 +194,7 @@ export default defineComponent({
       initialDataConfig.value = datacubeAnalysisItem.dataConfig;
     }
 
-    // apply the view-config for this datacube
+    // grab and track the view-config for this datacube
     watchEffect(() => {
       if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
         if (initialViewConfig.value.temporalResolution !== undefined) {
@@ -264,14 +241,6 @@ export default defineComponent({
       }
     });
 
-    const setSelectedTimestamp = (value: number) => {
-      if (selectedTimestamp.value === value) {
-        return;
-      }
-      // emit the timestamp so that the parent component can set and sync others
-      emit('select-timestamp', value);
-    };
-
     const breakdownOption = ref<string | null>(null);
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
@@ -290,9 +259,9 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
-      breakdownOption,
+      ref(null), // breakdownOption
       selectedTimestamp,
-      setSelectedTimestamp,
+      () => {}, // setSelectedTimestamp
       ref(selectedRegionIds),
       ref(new Set()),
       ref([]),
@@ -327,6 +296,8 @@ export default defineComponent({
     });
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
+
+    const bbox = ref<number[][] | undefined>(undefined);
 
     const {
       datacubeHierarchy
@@ -366,7 +337,6 @@ export default defineComponent({
     );
 
     // Calculate bbox
-    const bbox = ref<number[][] | undefined>(undefined);
     watchEffect(async () => {
       const countries = [...new Set((regionalData.value?.country || []).map(d => d.id))];
       bbox.value = await computeMapBoundsForCountries(countries) || undefined;
@@ -380,14 +350,14 @@ export default defineComponent({
       return colorSchemeReversed.value ? scheme.reverse() : scheme;
     });
 
+    const popupFormatter = (feature: any) => {
+      const { label, value, normalizedValue } = feature.state || {};
+      if (!label) return null;
+      return `${label.split('__').pop()}<br> Normalized: ${+normalizedValue.toFixed(2)}<br> Value: ${+value.toFixed(2)}`;
+    };
+
     const selectedScenarioIndex = ref(0);
     const regionRunsScenarios = ref([] as {name: string; color: string}[]);
-
-    const popupFormatter = (feature: any) => {
-      const { label, value } = feature.state || {};
-      if (!label) return null;
-      return `${label.split('__').pop()}<br> Value: ${+value.toFixed(2)}`;
-    };
 
     watch(
       () => [
@@ -473,7 +443,6 @@ export default defineComponent({
       metadata,
       mainModelOutput,
       outputs,
-      setSelectedTimestamp,
       timeseriesData,
       baselineMetadata,
       relativeTo,
@@ -493,10 +462,10 @@ export default defineComponent({
       statusLabel,
       regionMapData,
       bbox,
-      selectedAdminLevel,
       popupFormatter,
       selectedScenarioIndex,
-      regionRunsScenarios
+      regionRunsScenarios,
+      selectedAdminLevel
     };
   },
   methods: {
@@ -533,12 +502,16 @@ export default defineComponent({
 
 .datacube-card-container {
   background: $background-light-1;
-  border-radius: 3px;
-  height: 200px;
+  border-radius: 2px;
+  border-width: 3px;
+  border-style: solid;
+  border-color: inherit;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid $background-light-3;
-  padding: 1rem;
+  overflow: hidden;
+  text-overflow: hidden;
+  white-space: nowrap;
 }
 
 .datacube-header {
@@ -546,14 +519,11 @@ export default defineComponent({
   align-items: center;
 
   .datacube-title-area {
-    display: inline-block;
+    display: flex;
     cursor: pointer;
     flex: 1;
     min-width: 0;
     margin: 0;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
 
     &:hover {
       color: $selected-dark;
@@ -573,6 +543,10 @@ export default defineComponent({
   font-weight: normal;
   color: $label-color;
   margin-left: 10px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .drilldown-btn {
@@ -585,34 +559,7 @@ main {
   display: flex;
   flex: 1;
   min-height: 0;
-}
-
-.timeseries-chart {
-  flex: 1;
-  min-width: 0;
-}
-
-.datacube-map-placeholder {
-  background-color: #fafafa;
-  height: 100%;
-  width: 150px;
-  display: flex;
   flex-direction: column;
-  padding: 5px;
-}
-
-.chart-and-footer {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-
-.datacube-footer {
-  margin-left: 2rem;
-  font-size: small;
-  display: flex;
-  justify-content: space-around;
 }
 
 </style>

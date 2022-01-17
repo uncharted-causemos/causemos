@@ -355,7 +355,7 @@ export default defineComponent({
         // FIXME: use status code
         if (r.status === 'training') {
           this.isTraining = true;
-          this.trainingPercentage = r.progressPercentage;
+          this.trainingPercentage = Math.round(100 * r.progressPercentage);
           this.scheduleRefresh();
           return;
         }
