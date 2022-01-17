@@ -27,7 +27,7 @@
             <dropdown-button
               v-if="comparisonDropdownOptions.length > 1"
               :items="comparisonDropdownOptions"
-              :selected-item="getComparisonBaselineId()"
+              :selected-item="comparisonBaselineIdWithFallback"
               :is-dropdown-left-aligned="true"
               @item-selected="(value) => comparisonBaselineId = value"
             />
@@ -150,7 +150,7 @@
               "
               class="projection-ridgelines"
               :model-summary="modelSummary"
-              :comparison-baseline-id="getComparisonBaselineId()"
+              :comparison-baseline-id="comparisonBaselineIdWithFallback"
               :baseline-scenario-id="baselineScenarioId"
               :projections="selectedNodeScenarioData.projections"
               :indicator-min="indicatorMin"
@@ -649,14 +649,14 @@ export default defineComponent({
         }))
       ];
     });
-    const getComparisonBaselineId = () => {
+    const comparisonBaselineIdWithFallback = computed(() => {
       if (comparisonBaselineId.value !== null) {
         return comparisonBaselineId.value;
       }
       // When no comparison baseline has been selected, use the baseline
       //  scenario
       return baselineScenarioId.value;
-    };
+    });
 
     const constraints = ref<ProjectionConstraint[]>([]);
     const modifyConstraints = (newConstraints: ProjectionConstraint[]) => {
@@ -757,7 +757,7 @@ export default defineComponent({
       saveParameterValueChanges,
       selectedTemporalResolution,
       comparisonBaselineId,
-      getComparisonBaselineId,
+      comparisonBaselineIdWithFallback,
       comparisonDropdownOptions,
       constraints,
       modifyConstraints,
