@@ -896,17 +896,20 @@ export default defineComponent({
       emit('on-map-load');
     };
 
-    watchEffect(() => {
-      if (temporalResolutionOptions.value !== null) {
+    watch(
+      () => temporalResolutionOptions.value,
+      () => {
+        if (temporalResolutionOptions.value !== null) {
         // ensure the initial selectedTemporalResolution is valid and respect the "temporalResolutionOptions"
         // Also, set the resolution selection
-        if (temporalResolutionOptions.value.findIndex(option => option === selectedTemporalResolution.value) < 0) {
-          if (temporalResolutionOptions.value.length > 0) {
-            setTemporalResolutionSelection(temporalResolutionOptions.value[0]);
+          if (temporalResolutionOptions.value.findIndex(option => option === selectedTemporalResolution.value) < 0) {
+            if (temporalResolutionOptions.value.length > 0) {
+              setTemporalResolutionSelection(temporalResolutionOptions.value[0]);
+            }
           }
         }
       }
-    });
+    );
 
     // apply initial view config for this datacube
     watchEffect(() => {
