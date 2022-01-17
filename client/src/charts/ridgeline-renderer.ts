@@ -6,7 +6,6 @@ import { chartValueFormatter } from '@/utils/string-util';
 
 const RIDGELINE_STROKE_WIDTH = 1;
 const RIDGELINE_STROKE_COLOR = 'none';
-const RIDGELINE_FILL_COLOR = 'black';
 const RIDGELINE_VERTICAL_AXIS_WIDTH = 1;
 const RIDGELINE_VERTICAL_AXIS_COLOR = '#F3F3F3';
 const LABEL_COLOR = '#999';
@@ -20,6 +19,7 @@ export const renderRidgelines = (
   min: number,
   max: number,
   showYAxisLabels = false,
+  fillColor = 'black',
   label = ''
 ) => {
   const gElement = selection.append('g');
@@ -47,7 +47,7 @@ export const renderRidgelines = (
     //  vertical line that acts as the baseline for each smoothed histogram
     // Other curve types are summarized in the d3 docs:
     //  https://github.com/d3/d3-shape/blob/main/README.md#curves
-    .curve(d3.curveMonotoneY)
+    .curve(d3.curveLinear)
     .x(point => xScale(point.value))
     .y(point => yScale(point.coordinate));
   // Draw vertical line to act as a baseline
@@ -61,7 +61,7 @@ export const renderRidgelines = (
   // Draw ridgeline itself
   gElement
     .append('path')
-    .attr('fill', RIDGELINE_FILL_COLOR)
+    .attr('fill', fillColor)
     .attr('stroke', RIDGELINE_STROKE_COLOR)
     .attr('stroke-width', RIDGELINE_STROKE_WIDTH)
     .attr('d', () => line(ridgeline));

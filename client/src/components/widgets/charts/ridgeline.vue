@@ -23,18 +23,22 @@ import { nextTick } from 'process';
 
 const RESIZE_DELAY = 15;
 
+const DEFAULT_RIDGELINE_COLOR = 'black';
+const COMPARISON_COLOR = '#4DAC26'; // green
+const COMPARISON_BASELINE_COLOR = '#E597B9'; // pink
+const COMPARISON_OVERLAP_COLOR = '#DDD'; // grey
+
 export default defineComponent({
-  name: 'Histogram',
+  name: 'Ridgeline',
   props: {
     ridgelineData: {
       type: Object as PropType<RidgelinePoint[]>,
       required: true
     },
-    // TODO:
-    // comparisonBaseline: {
-    //   type: Object as PropType<RidgelinePoint[] | null>,
-    //   default: null
-    // },
+    comparisonBaseline: {
+      type: Object as PropType<RidgelinePoint[] | null>,
+      default: null
+    },
     min: {
       type: Number,
       default: 0
@@ -45,7 +49,7 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const { ridgelineData, min, max } = toRefs(props);
+    const { ridgelineData, comparisonBaseline, min, max } = toRefs(props);
 
     const renderTarget = ref<SVGElement | null>(null);
 
@@ -79,7 +83,21 @@ export default defineComponent({
       // Set new size
       svg.attr('width', width).attr('height', height);
       svg.selectAll('*').remove();
-      // Render one ridgeline for each timeslice
+      // Render comparison baseline
+      const baseline = comparisonBaseline.value;
+      if (baseline !== null) {
+        renderRidgelines(
+          svg,
+          baseline,
+          width,
+          height,
+          min.value,
+          max.value,
+          false,
+          COMPARISON_BASELINE_COLOR
+        );
+      }
+      // Render ridgeline
       renderRidgelines(
         svg,
         ridgelineData.value,
@@ -87,8 +105,31 @@ export default defineComponent({
         height,
         min.value,
         max.value,
-        true
+        true,
+        baseline !== null ? COMPARISON_COLOR : DEFAULT_RIDGELINE_COLOR
       );
+      // Render overlap
+      if (baseline !== null) {
+        const overlap = ridgelineData.value.map(
+          ({ value, coordinate }, index) => {
+            const baselineValue = baseline[index].value;
+            return {
+              value: _.min([value, baselineValue]) ?? 0,
+              coordinate
+            };
+          }
+        );
+        renderRidgelines(
+          svg,
+          overlap,
+          width,
+          height,
+          min.value,
+          max.value,
+          false,
+          COMPARISON_OVERLAP_COLOR
+        );
+      }
     });
 
     const resize = _.debounce(function({ width, height }) {
