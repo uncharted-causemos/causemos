@@ -25,3 +25,13 @@ export function overlap (node1: HTMLElement, node2: HTMLElement, threshold: numb
   return hasOverlap;
 }
 
+
+export const scrollToElementWithId = (id: string) => {
+  const elm = document.getElementById(id) as HTMLElement;
+  const scrollViewOptions: ScrollIntoViewOptions = {
+    behavior: 'smooth',
+    block: 'start',
+    inline: 'nearest'
+  };
+  elm.scrollIntoView(scrollViewOptions);
+};

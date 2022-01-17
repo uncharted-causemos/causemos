@@ -112,6 +112,7 @@ import {
   convertDistributionTimeseriesToRidgelines,
   RidgelinePoint
 } from '@/utils/ridgeline-util';
+import { scrollToElementWithId } from '@/utils/dom-util';
 
 interface RidgelineRow {
   scenarioName: string;
@@ -259,22 +260,13 @@ export default defineComponent({
       if (this.selectedScenarioId === scenarioId) {
         return;
       }
-      this.scrollToSection('header-section');
+      scrollToElementWithId('header-section');
       this.setSelectedScenarioId(scenarioId);
-    },
-    scrollToSection(sectionName: string) {
-      const elm = document.getElementById(sectionName) as HTMLElement;
-      const scrollViewOptions: ScrollIntoViewOptions = {
-        behavior: 'smooth',
-        block: 'start',
-        inline: 'nearest'
-      };
-      elm.scrollIntoView(scrollViewOptions);
     },
     addNewScenario() {
       this.requestAddingNewScenario = true;
       nextTick(() => {
-        this.scrollToSection('new-scenario-row');
+        scrollToElementWithId('new-scenario-row');
       });
     },
     saveScenario(info: { name: string; description: string }) {
@@ -283,7 +275,7 @@ export default defineComponent({
         description: info.description
       });
       this.requestAddingNewScenario = false;
-      this.scrollToSection('header-section');
+      scrollToElementWithId('header-section');
     },
     switchToHistoricalOnlyScenario() {
       this.setSelectedScenarioId(null);
