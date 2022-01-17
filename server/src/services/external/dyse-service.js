@@ -158,7 +158,7 @@ const updateEdgeParameter = async (modelId, edges) => {
       Authorization: basicAuthToken,
       Accept: 'application/json'
     },
-    json: { relations: edges }
+    json: { edges: edges }
   };
   const result = await requestAsPromise(options);
   return result;
