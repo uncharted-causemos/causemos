@@ -112,7 +112,7 @@ import {
   convertDistributionTimeseriesToRidgelines,
   RidgelinePoint
 } from '@/utils/ridgeline-util';
-import { scrollToElementWithId } from '@/utils/dom-util';
+import { scrollToElement, scrollToElementWithId } from '@/utils/dom-util';
 
 interface RidgelineRow {
   scenarioName: string;
@@ -260,7 +260,7 @@ export default defineComponent({
       if (this.selectedScenarioId === scenarioId) {
         return;
       }
-      scrollToElementWithId('header-section');
+      this.scrollToTop();
       this.setSelectedScenarioId(scenarioId);
     },
     addNewScenario() {
@@ -275,7 +275,14 @@ export default defineComponent({
         description: info.description
       });
       this.requestAddingNewScenario = false;
-      scrollToElementWithId('header-section');
+      this.scrollToTop();
+    },
+    scrollToTop() {
+      const scrollables = document.getElementsByClassName('scrollable');
+      if (scrollables.length !== 1) return;
+      const rows = scrollables[0].children;
+      if (rows.length === 0) return;
+      scrollToElement(rows[0]);
     },
     switchToHistoricalOnlyScenario() {
       this.setSelectedScenarioId(null);
