@@ -86,7 +86,8 @@ export default defineComponent({
         width,
         height,
         min.value,
-        max.value
+        max.value,
+        true
       );
     });
 

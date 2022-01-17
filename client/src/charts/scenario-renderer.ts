@@ -249,6 +249,7 @@ function renderScenarioProjections(
       height,
       yScale.domain()[0],
       yScale.domain()[1],
+      false,
       label
     );
     containerElementSelection.attr('transform', () =>
