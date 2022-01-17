@@ -19,20 +19,6 @@
         </template>
       </div>
       <div class="selected-node-column">
-        <div class="scenario-selector-row">
-          <div>
-            <span v-if="comparisonDropdownOptions.length > 1">
-              Compare scenarios relative to
-            </span>
-            <dropdown-button
-              v-if="comparisonDropdownOptions.length > 1"
-              :items="comparisonDropdownOptions"
-              :selected-item="comparisonBaselineIdWithFallback"
-              :is-dropdown-left-aligned="true"
-              @item-selected="(value) => comparisonBaselineId = value"
-            />
-          </div>
-        </div>
         <div class="expanded-node insight-capture">
           <div class="expanded-node-header">
             {{ nodeConceptName }}
@@ -156,6 +142,7 @@
               :indicator-min="indicatorMin"
               :indicator-max="indicatorMax"
               @new-scenario='onCreateScenario'
+              @set-comparison-baseline-id='(value) => comparisonBaselineId = value'
             />
             <button
               v-if="
@@ -636,19 +623,6 @@ export default defineComponent({
     };
 
     const comparisonBaselineId = ref<string | null>(null);
-    const comparisonDropdownOptions = computed<DropdownItem[]>(() => {
-      const _projections = selectedNodeScenarioData.value?.projections ?? [];
-      if (_projections.length < 2) {
-        return [];
-      }
-      return [
-        { displayName: 'none', value: null },
-        ..._projections.map(({ scenarioId, scenarioName }) => ({
-          value: scenarioId,
-          displayName: scenarioName
-        }))
-      ];
-    });
     const comparisonBaselineIdWithFallback = computed(() => {
       if (comparisonBaselineId.value !== null) {
         return comparisonBaselineId.value;
@@ -758,7 +732,6 @@ export default defineComponent({
       selectedTemporalResolution,
       comparisonBaselineId,
       comparisonBaselineIdWithFallback,
-      comparisonDropdownOptions,
       constraints,
       modifyConstraints,
       nodeId,
@@ -904,7 +877,6 @@ input[type="radio"] {
   border: 1px solid #bbb;
   border-radius: 4px;
   overflow: hidden;
-  margin-top: 10px;
   display: flex;
   flex-direction: column;
   background: white;

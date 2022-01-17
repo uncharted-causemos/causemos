@@ -42,12 +42,6 @@ export const renderRidgelines = (
   // Create a line generator that will be used to render the ridgeline
   const line = d3
     .line<RidgelinePoint>()
-    // Use curveMonotoneY so that curves between points don't overshoot points
-    //  in the X direction. This is necessary so that curves don't dip past the
-    //  vertical line that acts as the baseline for each smoothed histogram
-    // Other curve types are summarized in the d3 docs:
-    //  https://github.com/d3/d3-shape/blob/main/README.md#curves
-    .curve(d3.curveLinear)
     .x(point => xScale(point.value))
     .y(point => yScale(point.coordinate));
   // Draw vertical line to act as a baseline
