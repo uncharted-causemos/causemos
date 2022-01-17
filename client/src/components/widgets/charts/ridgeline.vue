@@ -23,7 +23,6 @@ import { nextTick } from 'process';
 
 const RESIZE_DELAY = 15;
 
-const DEFAULT_RIDGELINE_COLOR = 'black';
 const COMPARISON_COLOR = '#4DAC26'; // green
 const COMPARISON_BASELINE_COLOR = '#E597B9'; // pink
 const COMPARISON_OVERLAP_COLOR = '#DDD'; // grey
@@ -106,7 +105,7 @@ export default defineComponent({
         min.value,
         max.value,
         true,
-        baseline !== null ? COMPARISON_COLOR : DEFAULT_RIDGELINE_COLOR
+        baseline !== null ? COMPARISON_COLOR : COMPARISON_OVERLAP_COLOR
       );
       // Render overlap
       if (baseline !== null) {
