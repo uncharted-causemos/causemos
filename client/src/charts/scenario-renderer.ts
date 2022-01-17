@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import * as d3 from 'd3';
 import moment from 'moment';
 
@@ -17,6 +18,7 @@ import {
   convertDistributionTimeseriesToRidgelines,
   RidgelinePoint
 } from '@/utils/ridgeline-util';
+import {TimeScale} from '@/types/Enums';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_LINE_COLOR = '#999';
@@ -59,6 +61,7 @@ function render(
   runOptions: { selectedScenarioId: string | null }
 ) {
   const {
+    indicator_name,
     indicator_time_series,
     min,
     max,
@@ -130,6 +133,27 @@ function render(
   svgGroup.selectAll('*').remove();
 
   // Backgrounds
+  // Show yellow background for uncertaint in historical data (lack of data)
+  let background = HISTORY_BACKGROUND_COLOR;
+
+  const gap = projection_start - indicator_time_series[indicator_time_series.length - 1].timestamp;
+  const approxMonth = 30 * 24 * 60 * 60 * 1000;
+  if (gap > 0) {
+    if (time_scale === TimeScale.Months) {
+      if (gap / approxMonth > 4) {
+        background = '#F4EFDB';
+      }
+    } else if (time_scale === TimeScale.Years) {
+      if (gap / (approxMonth * 12) > 4) {
+        background = '#F4EFDB';
+      }
+    }
+  }
+
+  if (indicator_name === 'Abstract') {
+    background = '#F7E6AA';
+  }
+
   svgGroup
     .append('rect')
     .classed('historical-rect', true)
@@ -137,7 +161,7 @@ function render(
     .attr('y', 0)
     .attr('height', height)
     .attr('width', xScale(historyEnd))
-    .attr('fill', HISTORY_BACKGROUND_COLOR);
+    .attr('fill', background);
 
   const historicG = svgGroup.append('g');
   historicG
