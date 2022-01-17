@@ -15,9 +15,9 @@
         class="scenario-row"
       >
         <div class="scenario-desc">
-          <span v-tooltip.top-start="row.scenarioDesc">{{
-            row.scenarioDesc
-          }}</span>
+          <span v-tooltip.top-start="row.scenarioDesc">
+            {{ row.scenarioDesc }}
+          </span>
         </div>
         <div class="grid-row">
           <div class="scenario-and-clamps">
