@@ -89,6 +89,7 @@ export default defineComponent({
     refresh() {
       if (this.chartRef === null) return;
       const el = d3.select(this.chartRef);
+      el.selectAll('*').remove();
       const renderOptions = {
         margin: {
           top: 3, bottom: 3, left: 3, right: 3
