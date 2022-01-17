@@ -4,7 +4,7 @@ import moment from 'moment';
 import initialize from '@/charts/initialize';
 import { timeseriesLine, translate } from '@/utils/svg-util';
 import { chartValueFormatter } from '@/utils/string-util';
-import { D3GElementSelection, D3Selection, D3ScaleLinear } from '@/types/D3';
+import { D3Selection, D3ScaleLinear, D3GElementSelection } from '@/types/D3';
 import { Chart } from '@/types/Chart';
 import { NodeScenarioData } from '@/types/CAG';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
@@ -13,10 +13,7 @@ import {
   getSliceMonthIndicesFromTimeScale
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
-import {
-  convertDistributionTimeseriesToRidgelines,
-  RidgelineWithMetadata
-} from '@/utils/ridgeline-util';
+import { convertDistributionTimeseriesToRidgelines } from '@/utils/ridgeline-util';
 import { renderRidgelines } from './ridgeline-renderer';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
@@ -237,21 +234,27 @@ function renderScenarioProjections(
   const widthBetweenTimeslices =
     xScale(firstSliceMonthTimestamp) - xScale(projection_start);
 
-  // Make a `g` element for each ridgeline
-  const ridgeLineElements = svgGroup
-    .selectAll<any, RidgelineWithMetadata>('.ridgeline')
-    .data(ridgelinePoints)
-    .join('g')
-    .classed('ridgeline', true)
-    .attr('transform', d => translate(xScale(d.timestamp), 0));
   // Render one ridgeline for each timeslice
-  renderRidgelines(
-    ridgeLineElements,
-    widthBetweenTimeslices,
-    height,
-    yScale.domain()[0],
-    yScale.domain()[1]
-  );
+  ridgelinePoints.forEach(({ label, ridgeline, timestamp }) => {
+    const containerElementSelection = renderRidgelines(
+      // TS error: D3GElementSelection is incompatible with
+      //  d3.Selection<SVGElement, any, any, any>
+      // According to this StackOverflow response:
+      //  https://stackoverflow.com/a/67261032
+      //  this is "a known problem with [the] D3 type library", so for now just
+      //  cast to `any`
+      svgGroup as any,
+      ridgeline,
+      widthBetweenTimeslices,
+      height,
+      yScale.domain()[0],
+      yScale.domain()[1],
+      label
+    );
+    containerElementSelection.attr('transform', () =>
+      translate(xScale(timestamp), 0)
+    );
+  });
 
   // TODO: Render constraints
   // const constraintSummary = summarizeConstraints(

@@ -19,13 +19,6 @@ export interface RidgelineWithMetadata {
   ridgeline: RidgelinePoint[];
 }
 
-export type d3RidgelineWithMetadataSelection = d3.Selection<
-  any,
-  RidgelineWithMetadata,
-  any,
-  any
->;
-
 const convertDistributionToRidgeline = (
   distribution: number[],
   min: number,

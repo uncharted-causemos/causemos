@@ -10,7 +10,7 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 
 import { renderRidgelines } from '@/charts/ridgeline-renderer';
-import { RidgelinePoint, RidgelineWithMetadata } from '@/utils/ridgeline-util';
+import { RidgelinePoint } from '@/utils/ridgeline-util';
 import {
   defineComponent,
   onMounted,
@@ -47,7 +47,7 @@ export default defineComponent({
   setup(props) {
     const { ridgelineData, min, max } = toRefs(props);
 
-    const renderTarget = ref<HTMLElement | null>(null);
+    const renderTarget = ref<SVGElement | null>(null);
 
     const chartSize = ref({ width: 0, height: 0 });
     onMounted(() => {
@@ -69,31 +69,25 @@ export default defineComponent({
 
     watchEffect(() => {
       // Rerender whenever dependencies change
-      const parentElement = renderTarget.value?.parentElement;
       const svg = renderTarget.value
-        ? d3.selectAll<any, RidgelineWithMetadata>([renderTarget.value])
+        ? d3.selectAll<SVGElement, any>([renderTarget.value])
         : null;
       const { width, height } = chartSize.value;
-      if (
-        svg === null ||
-        parentElement === undefined ||
-        parentElement === null
-      ) {
+      if (svg === null) {
         return;
       }
       // Set new size
       svg.attr('width', width).attr('height', height);
       svg.selectAll('*').remove();
-      // ridgeline-renderer expects a complete RidgelineWithMetadata object
-      const ridgelineWithMetadata: RidgelineWithMetadata = {
-        label: '',
-        ridgeline: ridgelineData.value,
-        timestamp: 0
-      };
-      // Make a `g` element for each ridgeline
-      const ridgeLineElements = svg.data([ridgelineWithMetadata]).join('g');
       // Render one ridgeline for each timeslice
-      renderRidgelines(ridgeLineElements, width, height, min.value, max.value);
+      renderRidgelines(
+        svg,
+        ridgelineData.value,
+        width,
+        height,
+        min.value,
+        max.value
+      );
     });
 
     const resize = _.debounce(function({ width, height }) {
