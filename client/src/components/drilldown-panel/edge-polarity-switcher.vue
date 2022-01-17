@@ -62,6 +62,7 @@
       in {{ ontologyFormatter(selectedRelationship.target) }}
     </div>
   </div>
+  <img src="../../assets/group1.svg">
 </template>
 
 <script lang="ts">
@@ -202,7 +203,11 @@ export default defineComponent({
         weights = [0, this.currentEdgeWeight];
       }
       this.currentEdgeType = v;
+      this.buildExplainerGlyphFilepath(this.polarity, this.currentEdgeWeight, this.currentEdgeType);
       this.$emit('edge-set-weights', this.selectedRelationship, weights);
+    },
+    buildExplainerGlyphFilepath(polarity: number, edgeWeight: number, edgeType: string) {
+      console.log(polarity, edgeWeight, edgeType);
     }
   }
 });
