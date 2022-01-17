@@ -548,6 +548,10 @@ export default defineComponent({
     flex: 1;
     min-width: 0;
     margin: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+
     &:hover {
       color: $selected-dark;
 
