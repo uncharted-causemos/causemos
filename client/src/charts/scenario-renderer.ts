@@ -19,6 +19,8 @@ import { convertDistributionTimeseriesToRidgelines } from '@/utils/ridgeline-uti
 import { renderRidgelines } from './ridgeline-renderer';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
+const HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE = '#F4EFDB';
+const HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE = '#F7E6AA';
 const HISTORY_LINE_COLOR = '#999';
 const LABEL_COLOR = HISTORY_LINE_COLOR;
 
@@ -29,6 +31,41 @@ const LABEL_COLOR = HISTORY_LINE_COLOR;
 //  if timescale is months, show last 24 months or so
 //  if timescale is years, show last 60 months or so
 const VISIBLE_HISTORICAL_MONTH_COUNT = 24;
+
+
+//
+// Yellow background for uncertaint in historical data (lack of data)
+//
+// - Do a rough calculation of how far back is the last data point from projection_start
+// - Penalize short historical data and Abstract nodes
+const getBackgroundColor = (nodeScenarioData: NodeScenarioData): string => {
+  const timeseries = nodeScenarioData.indicator_time_series;
+  const indicatorName = nodeScenarioData.indicator_name;
+  const projectionStart = nodeScenarioData.projection_start;
+  const timeScale = nodeScenarioData.time_scale;
+
+  let background = HISTORY_BACKGROUND_COLOR;
+
+  const gap = projectionStart - timeseries[timeseries.length - 1].timestamp;
+  const approxMonth = 30 * 24 * 60 * 60 * 1000;
+  if (gap > 0) {
+    if (timeScale === TimeScale.Months) {
+      if (gap / approxMonth > 4) {
+        background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
+      }
+    } else if (timeScale === TimeScale.Years) {
+      if (gap / (approxMonth * 12) > 4) {
+        background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
+      }
+    }
+  }
+
+  if (indicatorName === 'Abstract' || timeseries.length < 4) {
+    background = HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE;
+  }
+  return background;
+};
+
 
 export default function(
   selection: D3Selection,
@@ -49,7 +86,6 @@ function render(
   runOptions: { selectedScenarioId: string | null }
 ) {
   const {
-    indicator_name,
     indicator_time_series,
     min,
     max,
@@ -123,26 +159,6 @@ function render(
   svgGroup.selectAll('*').remove();
 
   // Backgrounds
-  // Show yellow background for uncertaint in historical data (lack of data)
-  let background = HISTORY_BACKGROUND_COLOR;
-
-  const gap = projection_start - indicator_time_series[indicator_time_series.length - 1].timestamp;
-  const approxMonth = 30 * 24 * 60 * 60 * 1000;
-  if (gap > 0) {
-    if (time_scale === TimeScale.Months) {
-      if (gap / approxMonth > 4) {
-        background = '#F4EFDB';
-      }
-    } else if (time_scale === TimeScale.Years) {
-      if (gap / (approxMonth * 12) > 4) {
-        background = '#F4EFDB';
-      }
-    }
-  }
-
-  if (indicator_name === 'Abstract') {
-    background = '#F7E6AA';
-  }
 
   svgGroup
     .append('rect')
@@ -151,7 +167,7 @@ function render(
     .attr('y', 0)
     .attr('height', height)
     .attr('width', xScale(historyEnd))
-    .attr('fill', background);
+    .attr('fill', getBackgroundColor(nodeScenarioData));
 
   const historicG = svgGroup.append('g');
   historicG
