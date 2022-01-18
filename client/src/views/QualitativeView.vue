@@ -605,8 +605,12 @@ export default defineComponent({
       this.setNewNodeVisible(true);
     },
     onDatacubeSelected(datacubeParam: any) {
-      // Strip off non-alphanumeric - Engines cannot handle them
-      const cleanedName = datacubeParam.name.replace(/[^\w\s]/gi, '');
+      // Strip off non-alphanumeric
+      // - Engines cannot handle them
+      // - Translation layer doesn't like consecutive spaces
+      const cleanedName = datacubeParam.name
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\s\s+/gi, ' ');
       const node = {
         id: '',
         concept: cleanedName,
