@@ -81,7 +81,7 @@ export default defineComponent({
     'edge-click', 'node-click', 'background-click', 'background-dbl-click',
 
     // Custom
-    'new-edge', 'delete', 'rename-node', 'merge-nodes',
+    'refresh', 'new-edge', 'delete', 'rename-node', 'merge-nodes',
     'suggestion-selected', 'suggestion-duplicated', 'datacube-selected'
   ],
   setup(props) {
@@ -289,6 +289,7 @@ export default defineComponent({
         this.renderer.isGraphDirty = true;
         await this.renderer.setData(d);
         await this.renderer.render();
+        this.$emit('refresh', null);
       }
     },
     onSuggestionSelected(suggestion: any) {
