@@ -30,6 +30,7 @@
           class="cagGraph insight-capture"
           :data="modelComponents"
           :show-new-node="showNewNode"
+          :selected-time-scale="modelSummary?.parameter?.time_scale"
           @refresh="captureThumbnail"
           @new-edge="addEdge"
           @background-click="onBackgroundClick"
@@ -54,6 +55,7 @@
             <strong>{{ selectedTimeScaleLabel}} </strong>
             <button
               class="btn btn-sm btn-default"
+              disabled
               @click="showModalTimeScale = true"
             >
               <i class="fa fa-fw fa-pencil" />

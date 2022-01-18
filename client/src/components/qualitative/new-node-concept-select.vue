@@ -62,7 +62,7 @@
             <div style="color: #888">{{ currentSuggestion.doc.name }}</div>
             <div>&nbsp;</div>
             <div v-if="currentSuggestion.doc.period">
-              {{ dateFormatter(currentSuggestion.doc.period.gte, 'MMM YYYY') }} to {{ dateFormatter(currentSuggestion.doc.period.lte, 'MMM YYYY') }}
+              {{ dateFormatter(currentSuggestion.doc.period.gte, temporalResolution === TemporalResolutionOption.Year ? 'YYYY' : 'MMMM YYYY') }} to {{ dateFormatter(currentSuggestion.doc.period.lte, temporalResolution === TemporalResolutionOption.Year ? 'YYYY' : 'MMMM YYYY') }}
             </div>
             <sparkline
               :data="sparklineData"
@@ -122,7 +122,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, watch, computed, Ref, PropType } from 'vue';
+import { defineComponent, ref, watch, computed, Ref, PropType, toRefs } from 'vue';
 import { useStore } from 'vuex';
 import API from '@/api/api';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
@@ -138,6 +138,8 @@ import { TimeseriesPoint } from '@/types/Timeseries';
 import projectService from '@/services/project-service';
 import datacubeService from '@/services/new-datacube-service';
 
+import { AggregationOption, TemporalResolutionOption, TimeScale } from '@/types/Enums';
+
 const CONCEPT_SUGGESTION_COUNT = 10;
 
 const getRunId = async (id: string): Promise<ModelRun> => {
@@ -145,15 +147,15 @@ const getRunId = async (id: string): Promise<ModelRun> => {
   return run;
 };
 
-const getTimeseries = async (dataId: string, runId: string, feature: string): Promise<TimeseriesPoint[]> => {
+const getTimeseries = async (dataId: string, runId: string, feature: string, temporalRes: TemporalResolutionOption): Promise<TimeseriesPoint[]> => {
   const result = await API.get('maas/output/timeseries', {
     params: {
       data_id: dataId,
       run_id: runId,
       feature: feature,
-      resolution: 'month',
-      temporal_agg: 'mean',
-      spatial_agg: 'mean',
+      resolution: temporalRes,
+      temporal_agg: AggregationOption.Mean,
+      spatial_agg: AggregationOption.Mean,
       region_id: ''
     }
   });
@@ -176,6 +178,10 @@ export default defineComponent({
     placement: {
       type: Object as PropType<{ x: number; y: number }>,
       default: () => ({ x: 0, y: 0 })
+    },
+    selectedTimeScale: {
+      type: String as PropType<string | null>,
+      default: null
     }
   },
   emits: [
@@ -183,7 +189,9 @@ export default defineComponent({
     'datacube-selected',
     'show-custom-concept'
   ],
-  setup() {
+  setup(props) {
+    const { selectedTimeScale } = toRefs(props);
+
     const store = useStore();
     const userInput = ref('');
     const focusedSuggestionIndex = ref(0);
@@ -229,6 +237,8 @@ export default defineComponent({
       }
     }, 300));
 
+    const temporalResolution = ref(TemporalResolutionOption.Month);
+
     watch(currentSuggestion, async () => {
       if (currentSuggestion.value && activeTab.value === 'datacubes') {
         const doc = currentSuggestion.value.doc;
@@ -240,7 +250,16 @@ export default defineComponent({
         }
 
         // Get the timeseries data
-        const result = await getTimeseries(doc.data_id, runId, doc.feature);
+        if (selectedTimeScale.value !== null) {
+          // convert time-scale value to TemporalResolutionOption
+          if (selectedTimeScale.value === TimeScale.Months) {
+            temporalResolution.value = TemporalResolutionOption.Month;
+          }
+          if (selectedTimeScale.value === TimeScale.Years) {
+            temporalResolution.value = TemporalResolutionOption.Year;
+          }
+        }
+        const result = await getTimeseries(doc.data_id, runId, doc.feature, temporalResolution.value);
         timeseries.value = result;
 
         sparklineData.value = [
@@ -269,6 +288,7 @@ export default defineComponent({
       dropdownTopOffset,
       timeseries,
       sparklineData,
+      temporalResolution,
 
       // Computed
       currentSuggestion,
@@ -276,7 +296,8 @@ export default defineComponent({
       project,
 
       dateFormatter,
-      ontologyFormatter: useOntologyFormatter()
+      ontologyFormatter: useOntologyFormatter(),
+      TemporalResolutionOption
     };
   },
   mounted() {

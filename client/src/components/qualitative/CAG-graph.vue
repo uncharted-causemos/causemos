@@ -13,6 +13,7 @@
       ref="newNode"
       :concepts-in-cag="conceptsInCag"
       :placement="{ x: newNodeX, y: newNodeY }"
+      :selected-time-scale="selectedTimeScale"
       @suggestion-selected="onSuggestionSelected"
       @datacube-selected="onDatacubeSelected"
       @show-custom-concept="showCustomConcept = true"
@@ -69,6 +70,10 @@ export default defineComponent({
     showNewNode: {
       type: Boolean,
       default: false
+    },
+    selectedTimeScale: {
+      type: String as PropType<string | null>,
+      default: null
     }
   },
   emits: [
@@ -149,7 +154,7 @@ export default defineComponent({
       const neighborhood = calculateNeighborhood(this.data as any, nodeSelection.datum().data.concept);
       renderer.resetAnnotations();
       renderer.neighborhoodAnnotation(neighborhood);
-      console.log(neighborhood);
+      // console.log(neighborhood);
 
       this.selectedNode = nodeSelection.datum().data.concept;
       this.$emit('node-click', nodeSelection.datum().data);
