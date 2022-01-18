@@ -42,8 +42,7 @@ const actions: ActionTree<AnalysisState, any> = {
   },
   async updateAnalysisItems({ state, commit }, { currentAnalysisId, analysisItems }: { currentAnalysisId: string; analysisItems: AnalysisItem[] }) {
     state.currentAnalysisId = currentAnalysisId;
-    const updatedAnalysisItems = analysisItems;
-    commit('setAnalysisItems', updatedAnalysisItems);
+    commit('setAnalysisItems', analysisItems);
   },
   async updateAnalysisItemsPreview({ commit }, { datacubeIDs }: { datacubeIDs: string[]}) {
     const updatedAnalysisItems = [{
@@ -53,7 +52,7 @@ const actions: ActionTree<AnalysisState, any> = {
     commit('setAnalysisItemsPreview', updatedAnalysisItems);
   },
   removeAnalysisItems({ state, commit }, analysisItemIds: string[] = []) {
-    const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.id));
+    const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.datacubeId));
     commit('setAnalysisItems', items);
   },
   setComparativeAnalysisViewSelection({ commit }, newValue: string) {

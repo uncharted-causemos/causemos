@@ -183,6 +183,41 @@ router.delete('/:modelId/', asyncHandler(async (req, res) => {
 }));
 
 
+const buildCreateModelPayload = async (modelId) => {
+  const model = await modelService.findOne(modelId);
+  const modelComponents = await cagService.getComponents(modelId);
+
+  // Sanity check
+  const allNodeConcepts = modelComponents.nodes.map(n => n.concept);
+  const allEdgeConcepts = modelComponents.edges.map(e => [e.source, e.target]).flat();
+  const extraNodes = _.difference(allNodeConcepts, allEdgeConcepts);
+
+  if (extraNodes.length > 0) {
+    Logger.warn(`Bad model structure detected. Isolated nodes: ${extraNodes}`);
+    throw new Error('Unabled to process model. Ensure the model has no isolated nodes.');
+  }
+  const payload = await modelService.buildCreateModelPayload(model, modelComponents.nodes, modelComponents.edges);
+  return payload;
+};
+
+const buildCreateModelPayloadDeprecated = async (modelId) => {
+  const model = await modelService.findOne(modelId);
+  const modelComponents = await cagService.getComponents(modelId);
+
+  // Sanity check
+  const allNodeConcepts = modelComponents.nodes.map(n => n.concept);
+  const allEdgeConcepts = modelComponents.edges.map(e => [e.source, e.target]).flat();
+  const extraNodes = _.difference(allNodeConcepts, allEdgeConcepts);
+
+  if (extraNodes.length > 0) {
+    Logger.warn(`Bad model structure detected. Isolated nodes: ${extraNodes}`);
+    throw new Error('Unabled to process model. Ensure the model has no isolated nodes.');
+  }
+  const payload = await modelService.buildCreateModelPayloadDeprecated(model, modelComponents.nodes, modelComponents.edges);
+  return payload;
+};
+
+
 
 /**
  * GET register payload as a downlodable JSON
@@ -191,41 +226,14 @@ router.delete('/:modelId/', asyncHandler(async (req, res) => {
  */
 router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
-  const modelStatements = await modelService.buildModelStatements(modelId);
-
-  // 1. Get list of node parameters and edge parameters associated to the model ID
-  const nodeParameters = await cagService.getAllComponents(modelId, RESOURCE.NODE_PARAMETER);
-  const edgeParameters = await cagService.getAllComponents(modelId, RESOURCE.EDGE_PARAMETER);
-
-
-  // Sanity check
-  const allNodeConcepts = nodeParameters.map(n => n.concept);
-  const allEdgeConcepts = edgeParameters.map(e => [e.source, e.target]).flat();
-  const extraNodes = _.difference(allNodeConcepts, allEdgeConcepts);
-
-  if (_.isEmpty(modelStatements) || extraNodes.length > 0) {
-    Logger.warn(`Bad model structure detected. Number of statements ${modelStatements.length}. Isolated nodes: ${extraNodes}`);
-    res.status(400).send('Unabled to initialize model. Ensure the model has no isolated nodes.');
-    return;
+  try {
+    const payload = await buildCreateModelPayload(modelId);
+    res.setHeader('Content-disposition', `attachment; filename=${modelId}.json`);
+    res.setHeader('Content-type', 'application/octet-stream');
+    res.send(payload);
+  } catch (err) {
+    res.status(400).send(err.message);
   }
-
-  const model = await modelService.findOne(modelId);
-
-  // 2. create payload for model creation in the modelling engine
-  const enginePayload = {
-    id: modelId,
-    statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, model),
-    edges: edgeParameters.map(d => ({
-      source: d.source,
-      target: d.target,
-      weights: _.get(d.parameter, 'weights', [0.5, 0.5])
-    }))
-  };
-
-  res.setHeader('Content-disposition', `attachment; filename=${modelId}.json`);
-  res.setHeader('Content-type', 'application/octet-stream');
-  res.send(enginePayload);
 }));
 
 
@@ -244,54 +252,31 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   }
 
   Logger.info(`Registering model ${modelId} with ${engine}`);
-  const modelStatements = await modelService.buildModelStatements(modelId);
 
-  // 1. Get list of node parameters and edge parameters associated to the model ID
-  const nodeParameters = await cagService.getAllComponents(modelId, RESOURCE.NODE_PARAMETER);
-  // const edgeParameters = await cagService.getAllComponents(modelId, RESOURCE.EDGE_PARAMETER);
+  // 1. Generate payload
 
-  const edgeParameters = (await cagService.getComponents(modelId)).edges;
-
-  // Sanity check
-  const allNodeConcepts = nodeParameters.map(n => n.concept);
-  const allEdgeConcepts = edgeParameters.map(e => [e.source, e.target]).flat();
-  const extraNodes = _.difference(allNodeConcepts, allEdgeConcepts);
-
-  if (_.isEmpty(modelStatements) || extraNodes.length > 0) {
-    Logger.warn(`Bad model structure detected. Number of statements ${modelStatements.length}. Isolated nodes: ${extraNodes}`);
-    res.status(400).send('Unabled to initialize model. Ensure the model has no isolated nodes.');
-    releaseLock(modelId);
-    return;
-  }
-
-  const model = await modelService.findOne(modelId);
-
-  // 2. create payload for model creation in the modelling engine
-  const enginePayload = {
-    id: modelId,
-    statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, model)
-  };
-
-  // 3. register model to engine
+  // 2. register model to engine
   let initialParameters;
   try {
     if (engine === DELPHI) {
+      const enginePayload = await buildCreateModelPayloadDeprecated(modelId);
       initialParameters = await delphiService.createModel(enginePayload);
     } else if (engine === DELPHI_DEV) {
+      const enginePayload = await buildCreateModelPayloadDeprecated(modelId);
       initialParameters = await delphiDevService.createModel(enginePayload);
     } else if (engine === DYSE) {
+      const enginePayload = await buildCreateModelPayload(modelId);
       initialParameters = await dyseService.createModel(enginePayload);
     }
   } catch (error) {
-    Logger.debug(error);
+    Logger.warn(error);
     res.status(400).send(`Failed to sync with ${engine} : ${modelId}`);
     return;
   }
 
-  // FIXME: move into service
-  // When the topology is changed the model is recreated, but we want to retain any prior custom
-  // parameterizations on nodes, edges if possible.
+
+  // FIXME: Redo weights logic
+  const edgeParameters = (await cagService.getComponents(modelId)).edges;
   const ts = Date.now();
   if (engine === DYSE) {
     const edgesUpdate = [];
@@ -373,11 +358,8 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   // 5. Mark scenarios as invalid
   await scenarioService.invalidateByModelEngine(modelId, engine);
 
-
   Logger.info(`registered model to ${engine}`);
-  // returns initial value, initial constraints/perturbations, and initial function used to calculate initial value
   res.status(200).send({ updateToken: moment().valueOf(), status: status });
-
   releaseLock(modelId);
 }));
 
