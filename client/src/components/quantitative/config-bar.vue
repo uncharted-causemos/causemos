@@ -2,7 +2,7 @@
   <div class="config-bar-container">
     Analysis of the
     <strong>{{ timeScaleLabel }}</strong>
-    <button class="btn btn-sm btn-default" @click="showModalTimeScale = true">
+    <button disabled class="btn btn-sm btn-default" @click="showModalTimeScale = true">
       <i class="fa fa-fw fa-pencil" />
     </button>
     following
