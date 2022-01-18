@@ -20,6 +20,13 @@
           >
             Remove
           </div>
+          <div
+            v-if="isModelMetadata"
+            class="dropdown-option"
+            @click="clickDuplicate"
+          >
+            Duplicate
+          </div>
         </template>
       </options-button>
     </header>
@@ -77,9 +84,9 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getFilteredScenariosFromIds } from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, isModel } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
-import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType, DatacubeStatus } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -99,6 +106,7 @@ import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { RegionalAggregations } from '@/types/Runoutput';
+import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 
 export default defineComponent({
   name: 'DatacubeComparativeCard',
@@ -109,6 +117,10 @@ export default defineComponent({
   },
   props: {
     id: {
+      type: String,
+      required: true
+    },
+    datacubeId: {
       type: String,
       required: true
     },
@@ -129,11 +141,14 @@ export default defineComponent({
   setup(props, { emit }) {
     const {
       id,
+      datacubeId,
       selectedTimestamp,
       datacubeIndex
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
+
+    const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -146,8 +161,16 @@ export default defineComponent({
 
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
-    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+
+    const initialViewConfig = ref<ViewState | null>(null);
+    const initialDataConfig = ref<DataState | null>(null);
+    const datacubeAnalysisItem = analysisItems.value.find(item => item.id === props.id && item.datacubeId === datacubeId.value);
+    if (datacubeAnalysisItem) {
+      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
+      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
+    }
 
     watchEffect(() => {
       if (metadata.value) {
@@ -165,6 +188,10 @@ export default defineComponent({
           const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
           defaultOutputMap[metadata.value.id] = initialOutputIndex;
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+        }
+        // override (to correctly fetch the output selection for each datacube duplication)
+        if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value) && initialViewConfig.value.selectedOutputIndex !== undefined) {
+          initialOutputIndex = initialViewConfig.value.selectedOutputIndex;
         }
         mainModelOutput.value = outputs.value[initialOutputIndex];
       }
@@ -208,14 +235,6 @@ export default defineComponent({
     const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
     const selectedColorScaleType = ref(ColorScaleType.LinearDiscrete);
     const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
-
-    const initialViewConfig = ref<ViewState | null>(null);
-    const initialDataConfig = ref<DataState | null>(null);
-    const datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === props.id);
-    if (datacubeAnalysisItem) {
-      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
-      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
-    }
 
     // apply the view-config for this datacube
     watchEffect(() => {
@@ -311,6 +330,7 @@ export default defineComponent({
 
         emit('loaded-timeseries', {
           id: id.value,
+          datacubeId: datacubeId.value,
           timeseriesList: visibleTimeseriesData.value,
           //
           datacubeName: metadata.value.name,
@@ -496,33 +516,27 @@ export default defineComponent({
       selectedAdminLevel,
       popupFormatter,
       selectedScenarioIndex,
-      regionRunsScenarios
+      regionRunsScenarios,
+      isModelMetadata
     };
   },
   methods: {
     ...mapActions({
       removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
     }),
-    async openDrilldown() {
-      // NOTE: instead of replacing the datacubeIDs array,
-      // ensure that the current datacubeId is at 0 index
-      const workingAnalysisItems = this.analysisItems.map((item: AnalysisItem): AnalysisItem => item);
-      const updatedAnalysisInfo = { currentAnalysisId: this.analysisId, analysisItems: workingAnalysisItems };
-      await this.store.dispatch('dataAnalysis/updateAnalysisItems', updatedAnalysisInfo);
-      router.push({
-        name: 'data',
-        params: {
-          project: this.project,
-          analysisId: this.analysisId,
-          projectType: ProjectType.Analysis
-        },
-        query: {
-          datacube_id: this.props.id
-        }
-      }).catch(() => {});
+    openDrilldown() {
+      openDatacubeDrilldown(this.props.id, this.datacubeId, router, this.store);
     },
     clickRemove() {
-      this.removeAnalysisItems([this.id]);
+      // when removing, it is not enough to only send the datacube id to be removed
+      //  since the datacube may have been duplicated multiple times
+      //  and we need to suport removing one at a time
+      this.removeAnalysisItems([this.datacubeId]);
+    },
+    clickDuplicate() {
+      if (this.metadata !== null) {
+        duplicateAnalysisItem(this.metadata, this.id, this.analysisId, this.store);
+      }
     }
   }
 });

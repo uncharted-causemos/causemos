@@ -93,8 +93,13 @@ export default defineComponent({
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeId = route.query.datacube_id as any;
+    const datacubeVarId = route.query.datacube_var_id as any;
     const selectedModelId = ref(datacubeId);
-    const datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === selectedModelId.value);
+    let datacubeAnalysisItem = null;
+    datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === selectedModelId.value);
+    if (datacubeVarId !== undefined) {
+      datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === selectedModelId.value && item.datacubeId === datacubeVarId);
+    }
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataState | null>(null);
     if (datacubeAnalysisItem) {
@@ -167,7 +172,11 @@ export default defineComponent({
 
     watchEffect(() => {
       const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
+      let currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
+      if (datacubeVarId !== undefined) {
+        currentAnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId && item.datacubeId === datacubeVarId);
+      }
+
       if (currentAnalysisItem.viewConfig === undefined) {
         currentAnalysisItem.viewConfig = {} as ViewState;
       }
