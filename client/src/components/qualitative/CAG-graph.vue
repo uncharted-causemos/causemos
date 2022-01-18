@@ -13,6 +13,7 @@
       ref="newNode"
       :concepts-in-cag="conceptsInCag"
       :placement="{ x: newNodeX, y: newNodeY }"
+      :selected-time-scale="selectedTimeScale"
       @suggestion-selected="onSuggestionSelected"
       @datacube-selected="onDatacubeSelected"
       @show-custom-concept="showCustomConcept = true"
@@ -49,6 +50,7 @@ import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
+import { TimeScale } from '@/types/Enums';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -69,6 +71,10 @@ export default defineComponent({
     showNewNode: {
       type: Boolean,
       default: false
+    },
+    selectedTimeScale: {
+      type: String as PropType<TimeScale>,
+      required: true
     }
   },
   emits: [
@@ -149,7 +155,7 @@ export default defineComponent({
       const neighborhood = calculateNeighborhood(this.data as any, nodeSelection.datum().data.concept);
       renderer.resetAnnotations();
       renderer.neighborhoodAnnotation(neighborhood);
-      console.log(neighborhood);
+      // console.log(neighborhood);
 
       this.selectedNode = nodeSelection.datum().data.concept;
       this.$emit('node-click', nodeSelection.datum().data);
