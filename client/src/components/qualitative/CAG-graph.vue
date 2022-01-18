@@ -50,6 +50,7 @@ import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
+import { TimeScale } from '@/types/Enums';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -72,8 +73,8 @@ export default defineComponent({
       default: false
     },
     selectedTimeScale: {
-      type: String as PropType<string | null>,
-      default: null
+      type: String as PropType<TimeScale>,
+      required: true
     }
   },
   emits: [

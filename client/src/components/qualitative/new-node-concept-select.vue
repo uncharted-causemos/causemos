@@ -180,8 +180,8 @@ export default defineComponent({
       default: () => ({ x: 0, y: 0 })
     },
     selectedTimeScale: {
-      type: String as PropType<string | null>,
-      default: null
+      type: String as PropType<TimeScale>,
+      required: true
     }
   },
   emits: [
@@ -249,15 +249,16 @@ export default defineComponent({
           runId = (await getRunId(doc.data_id)).id;
         }
 
+        //
         // Get the timeseries data
-        if (selectedTimeScale.value !== null) {
-          // convert time-scale value to TemporalResolutionOption
-          if (selectedTimeScale.value === TimeScale.Months) {
-            temporalResolution.value = TemporalResolutionOption.Month;
-          }
-          if (selectedTimeScale.value === TimeScale.Years) {
-            temporalResolution.value = TemporalResolutionOption.Year;
-          }
+        //
+
+        // convert time-scale value to TemporalResolutionOption
+        if (selectedTimeScale.value === TimeScale.Months) {
+          temporalResolution.value = TemporalResolutionOption.Month;
+        }
+        if (selectedTimeScale.value === TimeScale.Years) {
+          temporalResolution.value = TemporalResolutionOption.Year;
         }
         const result = await getTimeseries(doc.data_id, runId, doc.feature, temporalResolution.value);
         timeseries.value = result;
