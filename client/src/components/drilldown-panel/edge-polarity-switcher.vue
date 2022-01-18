@@ -62,7 +62,7 @@
       in {{ ontologyFormatter(selectedRelationship.target) }}
     </div>
   </div>
-  <img src="../../assets/group1.svg">
+  <img :src="explainerGlyphFilepath">
 </template>
 
 <script lang="ts">
@@ -158,6 +158,9 @@ export default defineComponent({
       if (this.polarity === 1) return 'increase';
       if (this.polarity === -1) return 'decrease';
       return 'unknown';
+    },
+    explainerGlyphFilepath(): string {
+      return this.buildExplainerGlyphFilepath(this.polarity, this.currentEdgeWeight, this.currentEdgeType);
     }
   },
   methods: {
@@ -203,11 +206,29 @@ export default defineComponent({
         weights = [0, this.currentEdgeWeight];
       }
       this.currentEdgeType = v;
-      this.buildExplainerGlyphFilepath(this.polarity, this.currentEdgeWeight, this.currentEdgeType);
       this.$emit('edge-set-weights', this.selectedRelationship, weights);
     },
     buildExplainerGlyphFilepath(polarity: number, edgeWeight: number, edgeType: string) {
-      console.log(polarity, edgeWeight, edgeType);
+      // builds the filepath for the relevant explainer glyph using the following format:
+      // explainerGlyph_P_W_T.svg
+      // P = (p,n), positive or negative polarity
+      // W = (s,m,l), small medium or large weight
+      // T = (l,t), level or trend type
+
+      let polarityStr = 'n';
+      let typeStr = 't';
+      let weightStr = 's';
+
+      if (polarity === 1) polarityStr = 'p';
+      if (edgeType === EDGE_TYPE_LEVEL) typeStr = 'l';
+
+      if (this.weightValueString(edgeWeight) === 'a large') weightStr = 'l';
+      else if (this.weightValueString(edgeWeight) === 'a medium') weightStr = 'm';
+
+      const fileName = 'explainerGlyphs/explainerGlyph_' + polarityStr + '_' + weightStr + '_' + typeStr + '.svg';
+
+      const assetFolder = require.context('@/assets/');
+      return assetFolder('./' + fileName);
     }
   }
 });
