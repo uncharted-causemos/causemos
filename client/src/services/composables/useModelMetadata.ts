@@ -28,6 +28,11 @@ export default function useModelMetadata(
         //  fetch results to avoid a race condition.
         return;
       }
+
+      if (!rawMetadata) {
+        return;
+      }
+
       // filter outputs and remove invalid/unsupported ones
       //  For now, saved the validated output in a new attribute.
       // @Review: Later, we could just replace the 'outputs' attribute with the validated list
