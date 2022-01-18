@@ -378,7 +378,7 @@ export default defineComponent({
           admin3: '',
           spatialAggregation: 'mean',
           temporalAggregation: 'mean',
-          temporalResolution: 'month',
+          temporalResolution: this.temporalResolution,
           period: 12,
           timeseries: this.timeseries,
           min: _.min(this.timeseries.map(d => d.value)),
