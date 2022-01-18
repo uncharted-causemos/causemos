@@ -459,6 +459,7 @@
                   :selected-spatial-aggregation="selectedSpatialAggregation"
                   :selected-temporal-aggregation="selectedTemporalAggregation"
                   :selected-unit="unit"
+                  :selected-transform="selectedTransform"
                   :selected-resolution="selectedTemporalResolution"
                   :selected-base-layer="selectedBaseLayer"
                   :selected-data-layer="selectedDataLayer"
@@ -478,6 +479,7 @@
                   @set-color-scheme-name="setColorSchemeName"
                   @set-color-scale-type="setColorScaleType"
                   @set-number-color-bins="setNumberOfColorBins"
+                  @set-transform-selection="setTransformSelection"
                 />
               </div>
             </div>
@@ -552,7 +554,8 @@ import {
   TemporalResolutionOption,
   GeoAttributeFormat,
   ReferenceSeriesOption,
-  DatacubeGenericAttributeVariableType
+  DatacubeGenericAttributeVariableType,
+  DataTransform
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -702,6 +705,7 @@ export default defineComponent({
     const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+    const selectedTransform = ref<DataTransform>(DataTransform.None);
 
     //
     // color scheme options
@@ -875,6 +879,10 @@ export default defineComponent({
       numberOfColorBins.value = numBins;
     };
 
+    const setTransformSelection = (transform: DataTransform) => {
+      selectedTransform.value = transform;
+    };
+
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
     const finalColorScheme = computed(() => {
       const scheme = isDiscreteScale(selectedColorScaleType.value)
@@ -1046,6 +1054,9 @@ export default defineComponent({
           }
           if (initialDataConfig.value.selectedYears !== undefined) {
             initialSelectedYears.value = _.clone(initialDataConfig.value.selectedYears);
+          }
+          if (initialDataConfig.value.selectedTransform !== undefined) {
+            selectedTransform.value = initialDataConfig.value.selectedTransform as DataTransform;
           }
           if (initialDataConfig.value.activeReferenceOptions !== undefined) {
             initialActiveReferenceOptions.value = _.clone(initialDataConfig.value.activeReferenceOptions);
@@ -1375,6 +1386,9 @@ export default defineComponent({
         if (loadedInsight.data_state?.relativeTo !== undefined) {
           setRelativeTo(loadedInsight.data_state?.relativeTo);
         }
+        if (loadedInsight.data_state?.selectedTransform) {
+          selectedTransform.value = loadedInsight.data_state?.selectedTransform as DataTransform;
+        }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
           selectedSpatialAggregation.value = loadedInsight.view_state?.spatialAggregation as AggregationOption;
@@ -1495,6 +1509,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
+      selectedTransform,
       setSelectedTimestamp,
       selectedRegionIds,
       selectedQualifierValues,
@@ -1525,6 +1540,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
+      selectedTransform,
       metadata,
       selectedTimeseriesPoints,
       filteredRunData
@@ -1702,6 +1718,7 @@ export default defineComponent({
         selectedScenarioIds,
         selectedTimestamp,
         selectedYears,
+        selectedTransform,
         activeReferenceOptions,
         searchFilters,
         visibleTimeseriesData
@@ -1841,6 +1858,8 @@ export default defineComponent({
       setSpatialAggregationSelection,
       setTemporalAggregationSelection,
       setTemporalResolutionSelection,
+      setTransformSelection,
+      selectedTransform,
       requestAdditionalQualifier,
       showDatasets,
       showGeoSelectionModal,

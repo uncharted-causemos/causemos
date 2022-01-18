@@ -18,7 +18,8 @@ export const getRegionAggregation = async (
         resolution: spec.temporalResolution,
         temporal_agg: spec.temporalAggregation,
         spatial_agg: spec.spatialAggregation,
-        timestamp: spec.timestamp
+        timestamp: spec.timestamp,
+        transform: spec.transform
       }
     });
     return data;
@@ -44,7 +45,8 @@ export const getRegionAggregationWithQualifiers = async (
         temporal_agg: spec.temporalAggregation,
         spatial_agg: spec.spatialAggregation,
         timestamp: spec.timestamp,
-        qualifier
+        qualifier,
+        transform: spec.transform
       }
     });
     return data;

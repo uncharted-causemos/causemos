@@ -3,9 +3,10 @@ import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
 import {
   AggregationOption,
-  TemporalResolutionOption,
+  DataTransform,
   SpatialAggregationLevel,
-  TemporalAggregationLevel
+  TemporalAggregationLevel,
+  TemporalResolutionOption
 } from '@/types/Enums';
 import { ModelRun } from '@/types/ModelRun';
 import { QualifierTimeseriesResponse, Timeseries } from '@/types/Timeseries';
@@ -64,6 +65,7 @@ export default function useTimeseriesData(
   selectedSpatialAggregation: Ref<string>,
   breakdownOption: Ref<string | null>,
   selectedTimestamp: Ref<number | null>,
+  selectedTransform: Ref<DataTransform>,
   onNewLastTimestamp: (lastTimestamp: number) => void,
   regionIds: Ref<string[]>,
   selectedQualifierValues: Ref<Set<string>>,
@@ -223,6 +225,10 @@ export default function useTimeseriesData(
         selectedSpatialAggregation.value !== ''
           ? selectedSpatialAggregation.value
           : AggregationOption.Mean;
+      const transform =
+        selectedTransform.value !== DataTransform.None
+          ? selectedTransform.value
+          : undefined;
 
       let promises: Promise<{ data: any } | null>[] = [];
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
@@ -235,6 +241,7 @@ export default function useTimeseriesData(
               resolution: temporalRes,
               temporal_agg: temporalAgg,
               spatial_agg: spatialAgg,
+              transform: transform,
               region_id: regionId
             }
           }).catch(() => {
@@ -264,6 +271,7 @@ export default function useTimeseriesData(
               resolution: temporalRes,
               temporal_agg: temporalAgg,
               spatial_agg: spatialAgg,
+              transform: transform,
               region_id: regionId
             }
           });
@@ -284,6 +292,7 @@ export default function useTimeseriesData(
             spatialAgg,
             breakdownOption.value,
             Array.from(selectedQualifierValues.value),
+            transform,
             regionId
           )
         ];

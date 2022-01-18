@@ -116,6 +116,12 @@ export enum TimeScale {
   Years = 'YEARS'
 }
 
+export enum DataTransform {
+  None = '',
+  PerCapita = 'percapita',
+  Normalization = 'normalization'
+}
+
 export enum ReferenceSeriesOption {
   AllYears = 'allYears',
   SelectYears = 'selectYears',
