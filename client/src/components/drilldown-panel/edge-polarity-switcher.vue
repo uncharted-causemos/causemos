@@ -222,8 +222,8 @@ export default defineComponent({
       if (edgeType === EDGE_TYPE_LEVEL) typeStr = 'l';
       if (polarity === 1) polarityStr = 'p';
 
-      if (this.weightValueString(edgeWeight) === 'a large') weightStr = 'l';
-      else if (this.weightValueString(edgeWeight) === 'a medium') weightStr = 'm';
+      if (edgeWeight === 0.9) weightStr = 'l';
+      else if (edgeWeight === 0.5) weightStr = 'm';
 
       const fileName = 'explainerGlyphs/explainerGlyph_' + polarityStr + '_' + weightStr + '_' + typeStr + '.svg';
 
