@@ -19,6 +19,7 @@ import {
   toRefs,
   watchEffect
 } from 'vue';
+import { useStore } from 'vuex';
 import renderChart from '@/charts/td-node-renderer';
 import { CAGModelSummary, ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3Selection } from '@/types/D3';
@@ -67,6 +68,9 @@ export default defineComponent({
     }
   },
   setup(props, { emit }) {
+    const store = useStore();
+    const selectedScenarioId = computed(() => store.getters['model/selectedScenarioId']);
+
     const {
       historicalTimeseries,
       projections,
@@ -116,6 +120,7 @@ export default defineComponent({
         width === 0 ? parentElement.clientWidth : width,
         height === 0 ? parentElement.clientHeight : height,
         _projections,
+        selectedScenarioId.value,
         _constraints,
         min,
         max,
@@ -151,6 +156,7 @@ export default defineComponent({
       width: number,
       height: number,
       projections: ScenarioProjection[],
+      selectedScenarioId: string | null,
       constraints: ProjectionConstraint[],
       min: number,
       max: number,
@@ -169,6 +175,7 @@ export default defineComponent({
         height,
         historicalTimeseriesBeforeStart.value,
         projections,
+        selectedScenarioId,
         constraints,
         min,
         max,

@@ -54,6 +54,7 @@ export default function(
   totalHeight: number,
   historicalTimeseries: TimeseriesPoint[],
   projections: ScenarioProjection[],
+  selectedScenarioId: string | null,
   constraints: ProjectionConstraint[],
   minValue: number,
   maxValue: number,
@@ -290,15 +291,17 @@ export default function(
       num_steps
     );
 
-    // FIXME: Render ridgelines
-    renderProjectionRidgelines(
-      focusGroupElement,
-      projections,
-      minValue,
-      maxValue,
-      xScaleFocus,
-      yScaleFocus
-    );
+    if (selectedScenarioId !== null) {
+      renderProjectionRidgelines(
+        focusGroupElement,
+        projections,
+        selectedScenarioId,
+        minValue,
+        maxValue,
+        xScaleFocus,
+        yScaleFocus
+      );
+    }
 
     renderConstraints(
       focusGroupElement,
@@ -505,13 +508,20 @@ const renderHistoricalTimeseries = (
 const renderProjectionRidgelines = (
   parentGroupElement: D3GElementSelection,
   projections: ScenarioProjection[],
+  selectedScenarioId: string,
   minValue: number,
   maxValue: number,
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>
 ) => {
   const ridgeLineGroup = parentGroupElement.append('g');
-  const currentProjection = projections[0]; // FIXME: Replace with selectedScenarioId
+  const currentProjection = projections.find(p => p.scenarioId === selectedScenarioId);
+
+  if (!currentProjection) {
+    console.error(`Unable to find selected scenario ${selectedScenarioId}`);
+    return;
+  }
+
   const ridgeLines = convertDistributionTimeseriesToRidgelines(
     currentProjection.values,
     TimeScale.Months,
@@ -519,12 +529,19 @@ const renderProjectionRidgelines = (
     maxValue,
     false);
 
+  // Make width proportional to 60% of a step size
+  let approximateWidth = 15;
+  if (currentProjection.values.length > 1) {
+    const vals = currentProjection.values;
+    approximateWidth = 0.6 * (xScale(vals[1].timestamp) - xScale(vals[0].timestamp));
+  }
+
   // Render each ridgeline
   for (let i = 0; i < ridgeLines.length; i++) {
     const elem = renderRidgelines(
       ridgeLineGroup as any,
       ridgeLines[i].ridgeline,
-      20,
+      approximateWidth,
       Math.abs(yScale.range()[1] - yScale.range()[0]),
       minValue,
       maxValue,
