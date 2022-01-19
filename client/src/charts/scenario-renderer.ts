@@ -14,7 +14,10 @@ import {
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
 import { TimeScale } from '@/types/Enums';
-import { convertDistributionTimeseriesToRidgelines } from '@/utils/ridgeline-util';
+import {
+  calculateTypicalChangeBracket,
+  convertDistributionTimeseriesToRidgelines
+} from '@/utils/ridgeline-util';
 import { renderRidgelines } from './ridgeline-renderer';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
@@ -30,7 +33,6 @@ const LABEL_COLOR = HISTORY_LINE_COLOR;
 //  if timescale is months, show last 48 months or so
 //  TODO: if timescale is years, show last 36 years (= 432 months) or so
 const VISIBLE_HISTORICAL_MONTH_COUNT = 48;
-
 
 //
 // Yellow background for uncertaint in historical data (lack of data)
@@ -64,7 +66,6 @@ const getBackgroundColor = (nodeScenarioData: NodeScenarioData): string => {
   }
   return background;
 };
-
 
 export default function(
   selection: D3Selection,
@@ -234,7 +235,13 @@ function renderScenarioProjections(
   // Collect/extract all the pieces of data needed to convert projections into
   //  ridgeline plot format.
   const { selectedScenarioId } = runOptions;
-  const { scenarios, time_scale, projection_start } = nodeScenarioData;
+  const {
+    scenarios,
+    time_scale,
+    projection_start,
+    indicator_id,
+    indicator_time_series
+  } = nodeScenarioData;
   const projection = nodeScenarioData.scenarios.find(
     scenario => scenario.id === selectedScenarioId
   );
@@ -247,9 +254,6 @@ function renderScenarioProjections(
     );
     return;
   }
-  // TODO: We'll have to check if this is an abstract node when trying to use
-  //  historical data to add context to projections.
-  // const isAbstractNode = indicator_id === null;
   const projectionValues = projection.result?.values ?? [];
   if (projectionValues.length === 0) {
     return;
@@ -273,8 +277,14 @@ function renderScenarioProjections(
   const widthBetweenTimeslices =
     xScale(firstSliceMonthTimestamp) - xScale(projection_start);
 
-  // Render one ridgeline for each timeslice
-  ridgelinePoints.forEach(({ label, ridgeline, timestamp }) => {
+  ridgelinePoints.forEach(({ label, ridgeline, timestamp, monthsAfterNow }) => {
+    // Calculate context range forr each timeslice
+    const isAbstractNode = indicator_id === null;
+    const contextRange = calculateTypicalChangeBracket(
+      isAbstractNode ? [] : indicator_time_series,
+      monthsAfterNow
+    );
+    // Render one ridgeline for each timeslice
     const containerElementSelection = renderRidgelines(
       // TS error: D3GElementSelection is incompatible with
       //  d3.Selection<SVGElement, any, any, any>
@@ -291,7 +301,8 @@ function renderScenarioProjections(
       false,
       true,
       'black',
-      label
+      label,
+      contextRange
     );
     containerElementSelection.attr('transform', () =>
       translate(xScale(timestamp), 0)
@@ -305,7 +316,4 @@ function renderScenarioProjections(
   //   projectionValues[0].timestamp,
   //   projection.constraints ?? []
   // );
-
-  // TODO: Calculate and render context range using:
-  // isAbstractNode ? [] : historicalTimeseries,
 }

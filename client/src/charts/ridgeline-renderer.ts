@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import * as _ from 'lodash';
 import { RidgelinePoint } from '@/utils/ridgeline-util';
 import { translate } from '@/utils/svg-util';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
@@ -10,6 +11,9 @@ const RIDGELINE_VERTICAL_AXIS_WIDTH = 1;
 const RIDGELINE_VERTICAL_AXIS_COLOR = '#F3F3F3';
 const LABEL_COLOR = '#999';
 const MAX_LABEL_SIZE = 10;
+const CONTEXT_BRACKET_WIDTH = 2;
+const CONTEXT_BRACKET_LINE_WIDTH = 1;
+const CONTEXT_BRACKET_COLOR = LABEL_COLOR;
 
 export const renderRidgelines = (
   selection: d3.Selection<SVGElement, any, any, any>,
@@ -21,7 +25,8 @@ export const renderRidgelines = (
   showYAxisLabels = false,
   showYAxisLine = true,
   fillColor = 'black',
-  label = ''
+  label = '',
+  contextRange: { min: number; max: number } | null = null
 ) => {
   const gElement = selection.append('g');
   // Calculate scales
@@ -66,7 +71,11 @@ export const renderRidgelines = (
   if (label !== '') {
     gElement
       .append('text')
-      .attr('transform', translate(-labelSize / 2, height))
+      .attr(
+        'transform',
+        // Nudge labels down a little so they're not overlapped by context range bracket
+        translate(-labelSize / 2, height + labelSize / 2)
+      )
       .attr('font-size', labelSize)
       .style('fill', LABEL_COLOR)
       .text(label);
@@ -89,6 +98,52 @@ export const renderRidgelines = (
       .attr('font-size', labelSize)
       .style('fill', LABEL_COLOR)
       .text(tickValue => formatter(tickValue));
+  }
+  // Draw context range
+  if (contextRange !== null) {
+    // Clamp context range to the node's min/max so it doesn't overflow
+    const clampedContextRange = {
+      min: _.clamp(contextRange.min, min, max),
+      max: _.clamp(contextRange.max, min, max)
+    };
+    // Vertical line
+    gElement
+      .append('rect')
+      .attr(
+        'transform',
+        translate(-CONTEXT_BRACKET_WIDTH, yScale(clampedContextRange.max))
+      )
+      .attr('width', CONTEXT_BRACKET_LINE_WIDTH)
+      .attr(
+        'height',
+        Math.abs(
+          yScale(clampedContextRange.max) - yScale(clampedContextRange.min)
+        )
+      )
+      .style('fill', CONTEXT_BRACKET_COLOR);
+    // Top tick
+    gElement
+      .append('rect')
+      .attr(
+        'transform',
+        translate(-CONTEXT_BRACKET_WIDTH, yScale(clampedContextRange.max))
+      )
+      .attr('width', CONTEXT_BRACKET_WIDTH)
+      .attr('height', CONTEXT_BRACKET_LINE_WIDTH)
+      .style('fill', CONTEXT_BRACKET_COLOR);
+    // Bottom tick
+    gElement
+      .append('rect')
+      .attr(
+        'transform',
+        translate(
+          -CONTEXT_BRACKET_WIDTH,
+          yScale(clampedContextRange.min) - CONTEXT_BRACKET_LINE_WIDTH
+        )
+      )
+      .attr('width', CONTEXT_BRACKET_WIDTH)
+      .attr('height', CONTEXT_BRACKET_LINE_WIDTH)
+      .style('fill', CONTEXT_BRACKET_COLOR);
   }
   return gElement;
 };

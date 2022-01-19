@@ -1,6 +1,11 @@
 import { TimeScale } from '@/types/Enums';
-import { TimeseriesDistributionPoint } from '@/types/Timeseries';
+import {
+  TimeseriesDistributionPoint,
+  TimeseriesPoint
+} from '@/types/Timeseries';
 import * as d3 from 'd3';
+import * as _ from 'lodash';
+import { getTimestampAfterMonths } from './date-util';
 import { getTimeScaleOption } from './time-scale-util';
 
 // When creating a curve to estimate the density of the distribution, we group
@@ -16,6 +21,7 @@ export interface RidgelinePoint {
 export interface RidgelineWithMetadata {
   label: string;
   timestamp: number;
+  monthsAfterNow: number;
   ridgeline: RidgelinePoint[];
 }
 
@@ -98,14 +104,48 @@ export const convertDistributionTimeseriesToRidgelines = (
   timeseries.forEach(({ timestamp, values }, timestepIndex) => {
     const timeSliceAtThisTimestep = getTimeSliceAtStepIndex(timestepIndex);
     if (onlyConvertTimeslices && timeSliceAtThisTimestep === undefined) return;
-    // Convert the distribution to a ridgeline, and attach the timestamp and
-    //  label for rendering later.
+    // Convert the distribution to a ridgeline, and attach more information for
+    //  rendering later.
+    const monthsAfterNow =
+      timeScale === TimeScale.Months
+        ? timestepIndex + 1
+        : (timestepIndex + 1) * 12;
     ridgelines.push({
       timestamp,
       label: timeSliceAtThisTimestep?.shortLabel ?? '',
+      monthsAfterNow,
       ridgeline: convertDistributionToRidgeline(values, min, max, binCount)
     });
   });
 
   return ridgelines;
+};
+
+export const calculateTypicalChangeBracket = (
+  historicalData: TimeseriesPoint[],
+  intervalLengthInMonths: number
+) => {
+  if (historicalData.length === 0) return null;
+  const latestHistoricalValue = _.last(historicalData)?.value ?? 0;
+  const changes: number[] = [];
+  historicalData.forEach(({ timestamp, value }) => {
+    // OPTIMIZATION: assuming historicalData is ordered chronologically, we
+    //  can just check the next few values and stop if we encounter a timestamp
+    //  that's farther away than `intervalLengthInMonths`.
+    const pointAfterInterval = historicalData.find(
+      point =>
+        point.timestamp ===
+        getTimestampAfterMonths(timestamp, intervalLengthInMonths)
+    );
+    if (pointAfterInterval !== undefined) {
+      changes.push(pointAfterInterval.value - value);
+    }
+  });
+  const min = _.min(changes);
+  const max = _.max(changes);
+  if (min === undefined || max === undefined) {
+    // No pair of points was found with the correct interval length
+    return null;
+  }
+  return { min: latestHistoricalValue + min, max: latestHistoricalValue + max };
 };
