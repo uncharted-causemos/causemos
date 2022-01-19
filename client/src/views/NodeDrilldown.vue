@@ -907,7 +907,7 @@ input[type="radio"] {
 }
 
 .scenario-chart {
-  height: 120px;
+  height: 140px;
 }
 
 .projection-ridgelines {
