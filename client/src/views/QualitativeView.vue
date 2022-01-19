@@ -85,19 +85,17 @@
             @updated-relations="resolveUpdatedRelations"
             @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
-            <div style="display: flex; margin-bottom: 10px">
+              <button
+                style="font-weight: normal; width: 100%"
+                class="btn"
+                @click="openPathFind">
+                Indirect path
+              </button>
               <edge-polarity-switcher
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity"
                 @edge-set-weights="setEdgeWeights"
               />
-              <button
-                style="margin-left: 5px; font-weight: normal"
-                class="btn"
-                @click="openPathFind">
-                Indirect path
-              </button>
-            </div>
           </evidence-pane>
           <relationships-pane
             v-if="
