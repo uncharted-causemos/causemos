@@ -45,10 +45,20 @@ export default defineComponent({
     max: {
       type: Number,
       default: 0
+    },
+    contextRange: {
+      type: Object as PropType<{ min: number; max: number } | null>,
+      default: null
     }
   },
   setup(props) {
-    const { ridgelineData, comparisonBaseline, min, max } = toRefs(props);
+    const {
+      ridgelineData,
+      comparisonBaseline,
+      min,
+      max,
+      contextRange
+    } = toRefs(props);
 
     const renderTarget = ref<SVGElement | null>(null);
 
@@ -109,7 +119,9 @@ export default defineComponent({
         // Only render the yAxis line if this is the first ridgeline to be
         //  drawn foor this chart
         baseline === null,
-        baseline !== null ? COMPARISON_COLOR : COMPARISON_OVERLAP_COLOR
+        baseline !== null ? COMPARISON_COLOR : COMPARISON_OVERLAP_COLOR,
+        '',
+        contextRange.value
       );
       // Render overlap
       if (baseline !== null) {
