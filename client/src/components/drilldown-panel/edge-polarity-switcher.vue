@@ -62,7 +62,11 @@
       in {{ ontologyFormatter(selectedRelationship.target) }}
     </div>
   </div>
-  <img v-if="polarity !== 0" :src="explainerGlyphFilepath">
+  <img
+    v-if="polarity !== 0"
+    style="padding-bottom: 15px"
+    :src="explainerGlyphFilepath"
+  >
 </template>
 
 <script lang="ts">
