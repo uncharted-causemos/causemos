@@ -51,14 +51,15 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref } from 'vue';
+import { defineComponent, PropType, ref } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
 import useToaster from '@/services/composables/useToaster';
 import modelService from '@/services/model-service';
 import { CAG } from '@/utils/messages-util';
 import ArrowButton from '@/components/widgets/arrow-button.vue';
-import { ProjectType } from '@/types/Enums';
+import { ProjectType, TemporalResolutionOption, TimeScale } from '@/types/Enums';
+import { CAGModelSummary } from '@/types/CAG';
 
 export default defineComponent({
   name: 'ActionBar',
@@ -67,7 +68,7 @@ export default defineComponent({
   },
   props: {
     modelSummary: {
-      type: Object,
+      type: Object as PropType<CAGModelSummary | null>,
       default: null
     },
     modelComponents: {
@@ -119,7 +120,16 @@ export default defineComponent({
       this.enableOverlay('Preparing & Initializing CAG nodes');
       // Quantify the model on the back end
       try {
-        await modelService.quantifyModelNodes(this.currentCAG);
+        const timeScale = this.modelSummary?.parameter.time_scale ?? TimeScale.Months;
+        let temporalResolution = TemporalResolutionOption.Month;
+        // convert time-scale value to TemporalResolutionOption
+        if (timeScale === TimeScale.Months) {
+          temporalResolution = TemporalResolutionOption.Month;
+        }
+        if (timeScale === TimeScale.Years) {
+          temporalResolution = TemporalResolutionOption.Year;
+        }
+        await modelService.quantifyModelNodes(this.currentCAG, temporalResolution);
         // Navigate to the Quantitative View
         this.$router.push({
           name: 'quantitative',

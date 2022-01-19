@@ -27,7 +27,7 @@
             <dropdown-button
               v-if="comparisonDropdownOptions.length > 1"
               :items="comparisonDropdownOptions"
-              :selected-item="comparisonBaselineId"
+              :selected-item="comparisonBaselineIdWithFallback"
               :is-dropdown-left-aligned="true"
               @item-selected="(value) => comparisonBaselineId = value"
             />
@@ -81,7 +81,12 @@
                 v-if="indicatorDescription.length > 0"
                 class="description"
                 v-tooltip.top="indicatorDescription"
-              > - {{ indicatorDescription }}.</span>
+              > - {{ indicatorDescription }}</span>
+              <span
+                v-if="indicatorRegions.length > 0"
+                class="description"
+                v-tooltip.top="indicatorRegions"
+              > - {{ indicatorRegions }}.</span>
               <span> Data shows</span>
               <dropdown-button
                 :items="SEASONALITY_OPTIONS"
@@ -138,17 +143,18 @@
               <span>Max. value:</span>
               <input class="form-control input-sm" v-model.number="indicatorMax"/>
             </div>
-            <projection-histograms
+            <projection-ridgelines
               v-if="
                 selectedScenarioId !== null &&
                 selectedNodeScenarioData !== null
               "
-              class="projection-histograms"
-              :comparison-baseline-id="comparisonBaselineId"
-              :historical-timeseries="historicalTimeseries"
-              :projections="selectedNodeScenarioData.projections"
+              class="projection-ridgelines"
               :model-summary="modelSummary"
-              :indicator-id="indicatorId"
+              :comparison-baseline-id="comparisonBaselineIdWithFallback"
+              :baseline-scenario-id="baselineScenarioId"
+              :projections="selectedNodeScenarioData.projections"
+              :indicator-min="indicatorMin"
+              :indicator-max="indicatorMax"
               @new-scenario='onCreateScenario'
             />
             <button
@@ -202,7 +208,7 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
-import ProjectionHistograms from '@/components/node-drilldown/projection-histograms.vue';
+import ProjectionRidgelines from '@/components/node-drilldown/projection-ridgelines.vue';
 import moment from 'moment';
 import { getProjectionLengthFromTimeScale } from '@/utils/time-scale-util';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -227,7 +233,7 @@ export default defineComponent({
     TdNodeChart,
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
-    ProjectionHistograms,
+    ProjectionRidgelines,
     DropdownControl
   },
   props: {},
@@ -275,6 +281,10 @@ export default defineComponent({
       );
       if (isCancelled) return;
       scenarios.value = _scenarios;
+    });
+
+    const baselineScenarioId = computed(() => {
+      return scenarios.value.find(scenario => scenario.is_baseline)?.id ?? null;
     });
 
     const saveConstraints = async (updatedConstraints: ProjectionConstraint[]) => {
@@ -531,7 +541,7 @@ export default defineComponent({
         selectedTemporalResolution.value = temporalResolution;
         indicatorPeriod.value = period;
         indicatorRegions.value = [
-          indicator.country, indicator.admin1, indicator.admin2, indicator.admin3
+          indicator.admin3, indicator.admin2, indicator.admin1, indicator.country
         ].filter(d => d !== '').join(', ');
       }
     });
@@ -639,6 +649,14 @@ export default defineComponent({
         }))
       ];
     });
+    const comparisonBaselineIdWithFallback = computed(() => {
+      if (comparisonBaselineId.value !== null) {
+        return comparisonBaselineId.value;
+      }
+      // When no comparison baseline has been selected, use the baseline
+      //  scenario
+      return baselineScenarioId.value;
+    });
 
     const constraints = ref<ProjectionConstraint[]>([]);
     const modifyConstraints = (newConstraints: ProjectionConstraint[]) => {
@@ -721,6 +739,7 @@ export default defineComponent({
       openNeighborDrilldown,
       modelComponents,
       scenarios,
+      baselineScenarioId,
       selectedNodeScenarioData,
       selectedScenarioId,
       setSelectedScenarioId,
@@ -738,6 +757,7 @@ export default defineComponent({
       saveParameterValueChanges,
       selectedTemporalResolution,
       comparisonBaselineId,
+      comparisonBaselineIdWithFallback,
       comparisonDropdownOptions,
       constraints,
       modifyConstraints,
@@ -918,7 +938,7 @@ input[type="radio"] {
   height: 120px;
 }
 
-.projection-histograms {
+.projection-ridgelines {
   flex: 3;
   min-height: 0;
   margin-top: 5px;

@@ -150,8 +150,9 @@ const ABSTRACT_INDICATOR = {
 /**
  * Attempt to set or reset default indicators for concepts
  * @param {string} modelId - model id
+ * @param {string} resolution - one of {month, year}
  */
-const setDefaultIndicators = async (modelId) => {
+const setDefaultIndicators = async (modelId, resolution) => {
   Logger.info(`Setting default indicators for: ${modelId}`);
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
   const model = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
@@ -161,7 +162,6 @@ const setDefaultIndicators = async (modelId) => {
   // Defaults
   const geospatialAgg = 'mean';
   const temporalAgg = 'mean';
-  const resolution = 'month';
 
   const updates = [];
 

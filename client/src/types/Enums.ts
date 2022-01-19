@@ -125,7 +125,7 @@ export enum ReferenceSeriesOption {
 
 export enum ComparativeAnalysisMode {
   List = 'list',
-  SyncTime = 'sync time',
+  Overlay = 'overlay',
   RegionRanking = 'region ranking'
 }
 
