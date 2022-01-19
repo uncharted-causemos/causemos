@@ -1,7 +1,7 @@
 <template>
   <div class="neighbor-node-container">
     <header>
-      {{ node.label }}
+      {{ nodeLabelTruncated }}
     </header>
     <div style="flex-grow: 1">
       <svg ref="chartRef" />
@@ -21,6 +21,7 @@
 import { ref, computed, defineComponent, PropType } from 'vue';
 import * as d3 from 'd3';
 import { ARROW, MARKER_VIEWBOX } from '@/utils/svg-util';
+import stringUtil from '@/utils/string-util';
 import { EdgeParameter, NodeParameter } from '@/types/CAG';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
@@ -51,6 +52,11 @@ export default defineComponent({
     selectedScenarioId: {
       type: String as PropType<(string | null)>,
       default: null
+    }
+  },
+  computed: {
+    nodeLabelTruncated(): string {
+      return stringUtil.truncateString(this.node.label, 20);
     }
   },
   watch: {
