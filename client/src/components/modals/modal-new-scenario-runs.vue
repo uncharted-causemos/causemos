@@ -66,7 +66,7 @@ import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
-import { isGeoParameter } from '@/utils/datacube-util';
+import { getOutputs, isGeoParameter } from '@/utils/datacube-util';
 import datacubeService from '@/services/new-datacube-service';
 import useToaster from '@/services/composables/useToaster';
 
@@ -130,7 +130,7 @@ export default defineComponent({
   },
   methods: {
     async startExecution() {
-      const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
+      const outputs = getOutputs(this.metadata);
       const drilldownParams = this.metadata.parameters.filter(d => d.is_drilldown);
 
       //

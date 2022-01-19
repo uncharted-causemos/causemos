@@ -1,6 +1,7 @@
 import { Datacube } from '@/types/Datacube';
 import { computed, Ref } from 'vue';
 import { useStore } from 'vuex';
+import { getSelectedOutput } from '@/utils/datacube-util';
 
 export default function useActiveDatacubeFeature(
   metadata: Ref<Datacube | null>
@@ -11,17 +12,12 @@ export default function useActiveDatacubeFeature(
   );
 
   const activeFeature = computed(() => {
-    let feature = '';
-    if (metadata.value === null) return feature;
+    if (metadata.value === null) return '';
     const currentOutputEntry =
       datacubeCurrentOutputsMap.value[metadata.value.id];
-    if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
-      const outputs = metadata.value.validatedOutputs ?? metadata.value.outputs;
-      feature = outputs[currentOutputEntry].name;
-    } else {
-      feature = metadata.value.default_feature ?? '';
-    }
-    return feature;
+    return currentOutputEntry !== undefined
+      ? getSelectedOutput(metadata.value, currentOutputEntry).name
+      : metadata.value.default_feature;
   });
 
   return {

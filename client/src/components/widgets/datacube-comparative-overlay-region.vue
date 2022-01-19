@@ -67,7 +67,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getFilteredScenariosFromIds, isModel } from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus } from '@/types/Enums';
 import { computed, defineComponent, Ref, ref, toRefs, watch, watchEffect } from 'vue';
@@ -153,11 +153,11 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value) {
-        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+        outputs.value = getOutputs(metadata.value);
 
         let initialOutputIndex = 0;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
-        if (currentOutputEntry !== undefined) {
+        if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the default output of the current model
           initialOutputIndex = currentOutputEntry;
         } else {
@@ -172,7 +172,7 @@ export default defineComponent({
         if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value) && initialViewConfig.value.selectedOutputIndex !== undefined) {
           initialOutputIndex = initialViewConfig.value.selectedOutputIndex;
         }
-        mainModelOutput.value = outputs.value[initialOutputIndex];
+        mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
       }
     });
 
