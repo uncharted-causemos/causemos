@@ -82,7 +82,9 @@ export const renderRidgelines = (
       .join('text')
       .classed('tick', true)
       .attr('transform', tickValue =>
-        translate(0, yScale(tickValue) + labelSize / 2)
+        // Nudge labels down a little so they're more centered on their tick
+        //  value, but not so far that the bottom label's commas are cut off.
+        translate(0, yScale(tickValue) + labelSize / 4)
       )
       .attr('font-size', labelSize)
       .style('fill', LABEL_COLOR)
