@@ -125,6 +125,7 @@ const ABSTRACT_INDICATOR = {
 /**
  * Attempt to set or reset default indicators for concepts
  * @param {string} modelId - model id
+ * @param {string} resolution - one of {month, year}
  */
 const setDefaultIndicators = async (modelId, resolution) => {
   Logger.info(`Setting default indicators for: ${modelId}`);

@@ -121,7 +121,7 @@ export default defineComponent({
       // Quantify the model on the back end
       try {
         const timeScale = this.modelSummary?.parameter.time_scale ?? TimeScale.Months;
-        let temporalResolution = 'month';
+        let temporalResolution = TemporalResolutionOption.Month;
         // convert time-scale value to TemporalResolutionOption
         if (timeScale === TimeScale.Months) {
           temporalResolution = TemporalResolutionOption.Month;
