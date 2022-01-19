@@ -4,7 +4,7 @@ import moment from 'moment';
 import initialize from '@/charts/initialize';
 import { timeseriesLine, translate } from '@/utils/svg-util';
 import { chartValueFormatter } from '@/utils/string-util';
-import { D3GElementSelection, D3Selection, D3ScaleLinear } from '@/types/D3';
+import { D3Selection, D3ScaleLinear, D3GElementSelection } from '@/types/D3';
 import { Chart } from '@/types/Chart';
 import { NodeScenarioData } from '@/types/CAG';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
@@ -13,32 +13,57 @@ import {
   getSliceMonthIndicesFromTimeScale
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
-import {
-  convertDistributionTimeseriesToRidgelines,
-  RidgelinePoint
-} from '@/utils/ridgeline-util';
+import { TimeScale } from '@/types/Enums';
+import { convertDistributionTimeseriesToRidgelines } from '@/utils/ridgeline-util';
+import { renderRidgelines } from './ridgeline-renderer';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
+const HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE = '#F4EFDB';
+const HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE = '#F7E6AA';
 const HISTORY_LINE_COLOR = '#999';
 const LABEL_COLOR = HISTORY_LINE_COLOR;
-
-// When creating a curve to estimate the density of the distribution, we group
-//  points into bins (necessary to convert the one-dimensional data into 2D).
-// Raise the bin count to make the curve less smooth.
-const RIDGELINE_BIN_COUNT = 20;
-const RIDGELINE_STROKE_WIDTH = 1;
-const RIDGELINE_STROKE_COLOR = 'none';
-const RIDGELINE_FILL_COLOR = 'black';
-const RIDGELINE_VERTICAL_AXIS_WIDTH = 1;
-const RIDGELINE_VERTICAL_AXIS_COLOR = HISTORY_BACKGROUND_COLOR;
 
 // Depending on how many historical months are visible, we can add the number
 //  of projected months to get the total number of visible months and use that
 //  as the x range's domain.
 // The number of visible historical months will depend on the timescale, e.g.
-//  if timescale is months, show last 24 months or so
-//  if timescale is years, show last 60 months or so
-const VISIBLE_HISTORICAL_MONTH_COUNT = 24;
+//  if timescale is months, show last 48 months or so
+//  TODO: if timescale is years, show last 36 years (= 432 months) or so
+const VISIBLE_HISTORICAL_MONTH_COUNT = 48;
+
+
+//
+// Yellow background for uncertaint in historical data (lack of data)
+//
+// - Do a rough calculation of how far back is the last data point from projection_start
+// - Penalize short historical data (e.g default Abstract indicator)
+const getBackgroundColor = (nodeScenarioData: NodeScenarioData): string => {
+  const timeseries = nodeScenarioData.indicator_time_series;
+  const projectionStart = nodeScenarioData.projection_start;
+  const timeScale = nodeScenarioData.time_scale;
+
+  let background = HISTORY_BACKGROUND_COLOR;
+
+  const gap = projectionStart - timeseries[timeseries.length - 1].timestamp;
+  const approxMonth = 30 * 24 * 60 * 60 * 1000;
+  if (gap > 0) {
+    if (timeScale === TimeScale.Months) {
+      if (gap / approxMonth > 4) {
+        background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
+      }
+    } else if (timeScale === TimeScale.Years) {
+      if (gap / (approxMonth * 12) > 4) {
+        background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
+      }
+    }
+  }
+
+  if (timeseries.length < 4) {
+    background = HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE;
+  }
+  return background;
+};
+
 
 export default function(
   selection: D3Selection,
@@ -99,8 +124,6 @@ function render(
   const xScaleEndTimestamp = isHistoricalDataOnlyMode
     ? historyEnd
     : lastProjectedTimestamp;
-  const yExtent = [min, max];
-  const formatter = chartValueFormatter(...yExtent);
   const xDomain = [historyStart, xScaleEndTimestamp];
   if (!isHistoricalDataOnlyMode) {
     // To avoid the last ridgeline plot overflowing, we need to add enough space
@@ -108,7 +131,9 @@ function render(
     // Width won't be exactly the same between timeslices since some months/years
     //  are longer than others, but this will serve as a useful estimate of the
     //  maximum width a ridgeline can take up without overlapping the next one.
-    const firstSliceMonthIndex = getSliceMonthIndicesFromTimeScale(time_scale)[0];
+    const firstSliceMonthIndex = getSliceMonthIndicesFromTimeScale(
+      time_scale
+    )[0];
     const timeBetweenSlices =
       getTimestampAfterMonths(projection_start, firstSliceMonthIndex) -
       projection_start;
@@ -120,6 +145,8 @@ function render(
     .scaleLinear()
     .domain(xDomain)
     .range([0, width]);
+  const yExtent = [min, max];
+  const formatter = chartValueFormatter(...yExtent);
   const yScale = d3
     .scaleLinear()
     .domain(yExtent)
@@ -130,6 +157,7 @@ function render(
   svgGroup.selectAll('*').remove();
 
   // Backgrounds
+
   svgGroup
     .append('rect')
     .classed('historical-rect', true)
@@ -137,7 +165,7 @@ function render(
     .attr('y', 0)
     .attr('height', height)
     .attr('width', xScale(historyEnd))
-    .attr('fill', HISTORY_BACKGROUND_COLOR);
+    .attr('fill', getBackgroundColor(nodeScenarioData));
 
   const historicG = svgGroup.append('g');
   historicG
@@ -232,8 +260,7 @@ function renderScenarioProjections(
     projectionValues,
     time_scale,
     yScale.domain()[0],
-    yScale.domain()[1],
-    RIDGELINE_BIN_COUNT
+    yScale.domain()[1]
   );
 
   // Calculate how wide a single ridgeline can be
@@ -244,52 +271,31 @@ function renderScenarioProjections(
   );
   const widthBetweenTimeslices =
     xScale(firstSliceMonthTimestamp) - xScale(projection_start);
-  const ridgelineXScale = d3
-    .scaleLinear()
-    .domain([0, 1])
-    .range([0, widthBetweenTimeslices]);
-  // Create a line generator that will be used to render the ridgeline
-  const line = d3
-    .line<RidgelinePoint>()
-    // Use curveMonotoneY so that curves between points don't overshoot points
-    //  in the X direction. This is necessary so that curves don't dip past the
-    //  vertical line that acts as the baseline for each smoothed histogram
-    // Other curve types are summarized in the d3 docs:
-    //  https://github.com/d3/d3-shape/blob/main/README.md#curves
-    .curve(d3.curveMonotoneY)
-    .x(point => ridgelineXScale(point.value))
-    .y(point => yScale(point.coordinate));
 
   // Render one ridgeline for each timeslice
-  // Make a `g` element for each ridgeline
-  const ridgeLineElements = svgGroup
-    .selectAll('.ridgeline')
-    .data(ridgelinePoints)
-    .join('g')
-    .classed('ridgeline', true)
-    .attr('transform', d => translate(xScale(d.timestamp), 0));
-  // Draw vertical line to act as a baseline
-  ridgeLineElements
-    .append('rect')
-    .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH)
-    .attr('height', height)
-    .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
-    .attr('x', 0)
-    .attr('y', 0);
-  // Draw ridgeline itself
-  ridgeLineElements
-    .append('path')
-    .attr('fill', RIDGELINE_FILL_COLOR)
-    .attr('stroke', RIDGELINE_STROKE_COLOR)
-    .attr('stroke-width', RIDGELINE_STROKE_WIDTH)
-    .attr('d', d => line(d.ridgeline));
-  // Draw time slice label
-  ridgeLineElements
-    .append('text')
-    .attr('transform', translate(-widthBetweenTimeslices / 2, height))
-    .attr('font-size', widthBetweenTimeslices)
-    .style('fill', LABEL_COLOR)
-    .text(d => d.label);
+  ridgelinePoints.forEach(({ label, ridgeline, timestamp }) => {
+    const containerElementSelection = renderRidgelines(
+      // TS error: D3GElementSelection is incompatible with
+      //  d3.Selection<SVGElement, any, any, any>
+      // According to this StackOverflow response:
+      //  https://stackoverflow.com/a/67261032
+      //  this is "a known problem with [the] D3 type library", so for now just
+      //  cast to `any`
+      svgGroup as any,
+      ridgeline,
+      widthBetweenTimeslices,
+      height,
+      yScale.domain()[0],
+      yScale.domain()[1],
+      false,
+      true,
+      'black',
+      label
+    );
+    containerElementSelection.attr('transform', () =>
+      translate(xScale(timestamp), 0)
+    );
+  });
 
   // TODO: Render constraints
   // const constraintSummary = summarizeConstraints(

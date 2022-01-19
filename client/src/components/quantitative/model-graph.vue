@@ -88,7 +88,7 @@ export default defineComponent({
       useStableLayout: true,
       useStableZoomPan: true,
       runLayout: (graphData: IGraph<NodeParameter, EdgeParameter>) => {
-        return runELKLayout(graphData, { width: 120, height: 80 });
+        return runELKLayout(graphData, { width: 160, height: 80 });
       }
     });
     this.renderer.setLabelFormatter(this.ontologyFormatter);

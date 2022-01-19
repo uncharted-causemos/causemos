@@ -30,6 +30,7 @@
           class="cagGraph insight-capture"
           :data="modelComponents"
           :show-new-node="showNewNode"
+          :selected-time-scale="modelSummary?.parameter?.time_scale"
           @refresh="captureThumbnail"
           @new-edge="addEdge"
           @background-click="onBackgroundClick"
@@ -54,6 +55,7 @@
             <strong>{{ selectedTimeScaleLabel}} </strong>
             <button
               class="btn btn-sm btn-default"
+              disabled
               @click="showModalTimeScale = true"
             >
               <i class="fa fa-fw fa-pencil" />
@@ -603,8 +605,12 @@ export default defineComponent({
       this.setNewNodeVisible(true);
     },
     onDatacubeSelected(datacubeParam: any) {
-      // Strip off non-alphanumeric - Engines cannot handle them
-      const cleanedName = datacubeParam.name.replace(/[^\w\s]/gi, '');
+      // Strip off non-alphanumeric
+      // - Engines cannot handle them
+      // - Translation layer doesn't like consecutive spaces
+      const cleanedName = datacubeParam.name
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\s\s+/gi, ' ');
       const node = {
         id: '',
         concept: cleanedName,

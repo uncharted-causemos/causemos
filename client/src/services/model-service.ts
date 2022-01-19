@@ -192,8 +192,10 @@ const newModel = async (projectId: string, name = 'untitled') => {
 };
 
 // This sets the default indicators for each node in the model
-const quantifyModelNodes = async (modelId: string) => {
-  const result = await API.post(`models/${modelId}/quantify-nodes`);
+const quantifyModelNodes = async (modelId: string, temporalResolution: string) => {
+  const result = await API.post(`models/${modelId}/quantify-nodes`, {
+    resolution: temporalResolution
+  });
   return result.data;
 };
 
