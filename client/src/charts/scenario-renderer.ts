@@ -27,9 +27,9 @@ const LABEL_COLOR = HISTORY_LINE_COLOR;
 //  of projected months to get the total number of visible months and use that
 //  as the x range's domain.
 // The number of visible historical months will depend on the timescale, e.g.
-//  if timescale is months, show last 24 months or so
-//  if timescale is years, show last 60 months or so
-const VISIBLE_HISTORICAL_MONTH_COUNT = 24;
+//  if timescale is months, show last 48 months or so
+//  TODO: if timescale is years, show last 36 years (= 432 months) or so
+const VISIBLE_HISTORICAL_MONTH_COUNT = 48;
 
 
 //
