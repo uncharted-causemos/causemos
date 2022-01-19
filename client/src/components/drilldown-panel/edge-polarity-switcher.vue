@@ -62,7 +62,7 @@
       in {{ ontologyFormatter(selectedRelationship.target) }}
     </div>
   </div>
-  <img :src="explainerGlyphFilepath">
+  <img v-if="polarity !== 0" :src="explainerGlyphFilepath">
 </template>
 
 <script lang="ts">
@@ -219,8 +219,8 @@ export default defineComponent({
       let typeStr = 't';
       let weightStr = 's';
 
-      if (polarity === 1) polarityStr = 'p';
       if (edgeType === EDGE_TYPE_LEVEL) typeStr = 'l';
+      if (polarity === 1) polarityStr = 'p';
 
       if (this.weightValueString(edgeWeight) === 'a large') weightStr = 'l';
       else if (this.weightValueString(edgeWeight) === 'a medium') weightStr = 'm';
