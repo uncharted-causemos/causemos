@@ -14,11 +14,6 @@
         :key="row.scenarioId"
         class="scenario-row"
       >
-        <div class="scenario-desc">
-          <span v-tooltip.top-start="row.scenarioDesc">
-            {{ row.scenarioDesc }}
-          </span>
-        </div>
         <div class="grid-row">
           <div class="scenario-and-clamps">
             <div class="scenario-name" @click="selectScenario(row.scenarioId)">
@@ -38,22 +33,53 @@
               {{ ontologyFormatter(clamp.concept) }}
             </div>
           </div>
-          <div
-            class="ridgeline-wrapper"
-            v-for="(ridgelineData, timeSliceIndex) of row.ridgelines"
-            :key="timeSliceIndex"
-          >
-            <ridgeline
-              class="ridgeline"
-              :ridgeline-data="ridgelineData"
-              :comparison-baseline="
-                row.comparisonBaseline
-                  ? row.comparisonBaseline[timeSliceIndex]
-                  : null
-              "
-              :min="indicatorMin"
-              :max="indicatorMax"
-            />
+          <div style="flex: 8; display: flex; flex-direction: column;">
+            <div style="display: flex; min-height: 3rem;">
+              <span
+                class="scenario-desc"
+                v-tooltip.top-start="row.scenarioDesc"
+              >
+                {{ row.scenarioDesc }}
+              </span>
+              <!-- If there is more than one scenario and this is the comparison
+            baseline, label it -->
+              <span
+                v-if="
+                  rowsToDisplay.length > 1 &&
+                    row.scenarioId === comparisonBaselineId
+                "
+              >
+                Comparison baseline</span
+              >
+              <!-- Else if there is more than one scenario, show a button to make
+            this the comparison baseline-->
+              <button
+                v-else-if="rowsToDisplay.length > 1"
+                class="btn btn-sm btn-default"
+                @click="$emit('set-comparison-baseline-id', row.scenarioId)"
+              >
+                Use as comparison baseline
+              </button>
+            </div>
+            <div style="display: flex;">
+              <div
+                class="ridgeline-wrapper"
+                v-for="(ridgelineData, timeSliceIndex) of row.ridgelines"
+                :key="timeSliceIndex"
+              >
+                <ridgeline
+                  class="ridgeline"
+                  :ridgeline-data="ridgelineData"
+                  :comparison-baseline="
+                    row.comparisonBaseline
+                      ? row.comparisonBaseline[timeSliceIndex]
+                      : null
+                  "
+                  :min="indicatorMin"
+                  :max="indicatorMax"
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div v-if="!row.is_valid" class="stale-scenario">
@@ -127,7 +153,7 @@ interface RidgelineRow {
 export default defineComponent({
   components: { Ridgeline, CagScenarioForm },
   name: 'ProjectionRidgelines',
-  emits: ['new-scenario'],
+  emits: ['new-scenario', 'set-comparison-baseline-id'],
   props: {
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
@@ -227,25 +253,22 @@ export default defineComponent({
       return rows;
     },
     rowsToDisplay(): RidgelineRow[] {
-      // Move comparison baseline to the top first
-      // Note that the "comparison baseline scenario" may not be the scenario
-      //  without clamps (also referred to as the "baseline scenario")
-      let rows = this.moveRidgelineRowToTop(
-        this.comparisonBaselineId,
+      // Move selected scenario to othe top
+      const rows = this.moveRidgelineRowToTop(
+        this.selectedScenarioId,
         this.ridgelinesAtTimeslices
       );
-      // Then move selected scenario above that
-      rows = this.moveRidgelineRowToTop(this.selectedScenarioId, rows);
-      // Inject comparison baseline to each other row for rendering within
+      // Inject comparison baseline into each other row for rendering within
       //  `ridgeline.vue`
+      // Note that the "comparison baseline scenario" may not be the scenario
+      //  without clamps (also referred to as the "baseline scenario")
+      const baselineId = this.comparisonBaselineId;
       const comparisonBaselineRidgelines =
-        rows.find(row => row.scenarioId === this.comparisonBaselineId)
-          ?.ridgelines ?? null;
-      rows
-        .filter(row => row.scenarioId !== this.comparisonBaselineId)
-        .forEach(
-          row => (row.comparisonBaseline = comparisonBaselineRidgelines)
-        );
+        rows.find(row => row.scenarioId === baselineId)?.ridgelines ?? null;
+      rows.forEach(row => {
+        row.comparisonBaseline =
+          row.scenarioId === baselineId ? null : comparisonBaselineRidgelines;
+      });
       return rows;
     }
   },
@@ -375,24 +398,13 @@ h3 {
 }
 
 .scenario-desc {
-  display: flex;
-  margin-bottom: 0;
-  span {
-    color: $label-color;
-    flex: 8;
-    min-width: 0;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow-x: hidden;
-    cursor: pointer;
-  }
-  // Add empty column at the left to align description with first time slice.
-  &::before {
-    display: block;
-    content: '';
-    flex: 1;
-    min-width: 0;
-  }
+  color: $label-color;
+  flex: 8;
+  min-width: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow-x: hidden;
+  cursor: pointer;
 }
 
 .slice-labels {
@@ -485,6 +497,9 @@ h3 {
 .ridgeline-wrapper {
   height: 100px;
   position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
 }
 
 // Ridgeline plot looks too stretched out if it takes the full width

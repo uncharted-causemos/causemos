@@ -289,6 +289,8 @@ function renderScenarioProjections(
       yScale.domain()[0],
       yScale.domain()[1],
       false,
+      true,
+      'black',
       label
     );
     containerElementSelection.attr('transform', () =>
