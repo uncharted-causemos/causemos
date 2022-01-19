@@ -36,10 +36,9 @@ const VISIBLE_HISTORICAL_MONTH_COUNT = 48;
 // Yellow background for uncertaint in historical data (lack of data)
 //
 // - Do a rough calculation of how far back is the last data point from projection_start
-// - Penalize short historical data and Abstract nodes
+// - Penalize short historical data (e.g default Abstract indicator)
 const getBackgroundColor = (nodeScenarioData: NodeScenarioData): string => {
   const timeseries = nodeScenarioData.indicator_time_series;
-  const indicatorName = nodeScenarioData.indicator_name;
   const projectionStart = nodeScenarioData.projection_start;
   const timeScale = nodeScenarioData.time_scale;
 
@@ -59,7 +58,7 @@ const getBackgroundColor = (nodeScenarioData: NodeScenarioData): string => {
     }
   }
 
-  if (indicatorName === 'Abstract' || timeseries.length < 4) {
+  if (timeseries.length < 4) {
     background = HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE;
   }
   return background;
