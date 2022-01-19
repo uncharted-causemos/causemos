@@ -19,6 +19,7 @@ export const renderRidgelines = (
   min: number,
   max: number,
   showYAxisLabels = false,
+  showYAxisLine = true,
   fillColor = 'black',
   label = ''
 ) => {
@@ -45,13 +46,15 @@ export const renderRidgelines = (
     .x(point => xScale(point.value))
     .y(point => yScale(point.coordinate));
   // Draw vertical line to act as a baseline
-  gElement
-    .append('rect')
-    .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH)
-    .attr('height', height)
-    .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
-    .attr('x', 0)
-    .attr('y', 0);
+  if (showYAxisLine) {
+    gElement
+      .append('rect')
+      .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH)
+      .attr('height', height)
+      .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
+      .attr('x', 0)
+      .attr('y', 0);
+  }
   // Draw ridgeline itself
   gElement
     .append('path')
@@ -60,12 +63,14 @@ export const renderRidgelines = (
     .attr('stroke-width', RIDGELINE_STROKE_WIDTH)
     .attr('d', () => line(ridgeline));
   // Draw time slice label
-  gElement
-    .append('text')
-    .attr('transform', translate(-labelSize / 2, height))
-    .attr('font-size', labelSize)
-    .style('fill', LABEL_COLOR)
-    .text(label);
+  if (label !== '') {
+    gElement
+      .append('text')
+      .attr('transform', translate(-labelSize / 2, height))
+      .attr('font-size', labelSize)
+      .style('fill', LABEL_COLOR)
+      .text(label);
+  }
   // Draw Y Axis labels
   if (showYAxisLabels) {
     const domain = yScale.domain();

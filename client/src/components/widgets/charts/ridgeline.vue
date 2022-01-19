@@ -93,6 +93,7 @@ export default defineComponent({
           min.value,
           max.value,
           false,
+          true,
           COMPARISON_BASELINE_COLOR
         );
       }
@@ -105,6 +106,9 @@ export default defineComponent({
         min.value,
         max.value,
         true,
+        // Only render the yAxis line if this is the first ridgeline to be
+        //  drawn foor this chart
+        baseline === null,
         baseline !== null ? COMPARISON_COLOR : COMPARISON_OVERLAP_COLOR
       );
       // Render overlap
@@ -125,6 +129,7 @@ export default defineComponent({
           height,
           min.value,
           max.value,
+          false,
           false,
           COMPARISON_OVERLAP_COLOR
         );
