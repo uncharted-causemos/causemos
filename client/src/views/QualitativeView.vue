@@ -87,17 +87,17 @@
             @updated-relations="resolveUpdatedRelations"
             @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
+              <edge-polarity-switcher
+                :selected-relationship="selectedEdge"
+                @edge-set-user-polarity="setEdgeUserPolarity"
+                @edge-set-weights="setEdgeWeights"
+              />
               <button
                 style="font-weight: normal; width: 100%"
                 class="btn"
                 @click="openPathFind">
                 Indirect path
               </button>
-              <edge-polarity-switcher
-                :selected-relationship="selectedEdge"
-                @edge-set-user-polarity="setEdgeUserPolarity"
-                @edge-set-weights="setEdgeWeights"
-              />
           </evidence-pane>
           <relationships-pane
             v-if="
