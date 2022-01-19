@@ -15,6 +15,13 @@ import { SELECTED_COLOR } from '@/utils/colors-util';
 import { getTimestampAfterMonths, roundToNearestMonth } from '@/utils/date-util';
 import { getProjectionLengthFromTimeScale, TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 
+import {
+  convertDistributionTimeseriesToRidgelines
+} from '@/utils/ridgeline-util';
+
+import { TimeScale } from '@/types/Enums';
+import { renderRidgelines } from './ridgeline-renderer';
+
 const HISTORICAL_DATA_COLOR = '#888';
 const HISTORICAL_RANGE_OPACITY = 0.05;
 const SCROLL_BAR_HEIGHT_PERCENTAGE = 0.13;
@@ -166,12 +173,14 @@ export default function(
     .attr('opacity', SCROLL_BAR_RANGE_OPACITY);
 
   // Add clipping mask to hide elements that are outside the focus chart area when zoomed in
+  // Note We need a little extra buffer to accommodate extra visuals in the last projected timestamp
+  const buffer = isClampAreaHidden ? 0 : 20;
   selection
     .append('defs')
     .append('clipPath')
     .attr('id', 'clipping-mask')
     .append('rect')
-    .attr('width', xScaleFocus.range()[1] - xScaleFocus.range()[0])
+    .attr('width', buffer + xScaleFocus.range()[1] - xScaleFocus.range()[0])
     .attr('height', yScaleFocus.range()[0] - yScaleFocus.range()[1])
     .attr('transform', translate(PADDING_RIGHT, PADDING_TOP));
 
@@ -224,6 +233,7 @@ export default function(
     const [x0, x1] = selection.map(xScaleScrollbar.invert);
     xScaleFocus.domain([x0, x1]);
     focusGroupElement.selectAll('*').remove();
+
     renderStaticElements(
       focusGroupElement,
       scrollBarGroupElement,
@@ -279,6 +289,17 @@ export default function(
       projection_start,
       num_steps
     );
+
+    // FIXME: Render ridgelines
+    renderProjectionRidgelines(
+      focusGroupElement,
+      projections,
+      minValue,
+      maxValue,
+      xScaleFocus,
+      yScaleFocus
+    );
+
     renderConstraints(
       focusGroupElement,
       historicalTimeseries,
@@ -479,6 +500,40 @@ const renderHistoricalTimeseries = (
     yScale,
     HISTORICAL_DATA_COLOR
   );
+};
+
+const renderProjectionRidgelines = (
+  parentGroupElement: D3GElementSelection,
+  projections: ScenarioProjection[],
+  minValue: number,
+  maxValue: number,
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>
+) => {
+  const ridgeLineGroup = parentGroupElement.append('g');
+  const currentProjection = projections[0]; // FIXME: Replace with selectedScenarioId
+  const ridgeLines = convertDistributionTimeseriesToRidgelines(
+    currentProjection.values,
+    TimeScale.Months,
+    minValue,
+    maxValue,
+    false);
+
+  // Render each ridgeline
+  for (let i = 0; i < ridgeLines.length; i++) {
+    const elem = renderRidgelines(
+      ridgeLineGroup as any,
+      ridgeLines[i].ridgeline,
+      20,
+      Math.abs(yScale.range()[1] - yScale.range()[0]),
+      minValue,
+      maxValue,
+      false,
+      false,
+      'black',
+      '');
+    elem.attr('transform', translate(xScale(currentProjection.values[i].timestamp), 0));
+  }
 };
 
 const renderConstraints = (
