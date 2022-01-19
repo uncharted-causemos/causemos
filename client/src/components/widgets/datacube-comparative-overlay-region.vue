@@ -214,51 +214,55 @@ export default defineComponent({
     const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
 
     // grab and track the view-config for this datacube
-    watchEffect(() => {
-      if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
-        if (initialViewConfig.value.temporalResolution !== undefined) {
-          selectedTemporalResolution.value = initialViewConfig.value.temporalResolution;
+    watch(
+      () => [
+        initialViewConfig.value
+      ],
+      () => {
+        if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
+          if (initialViewConfig.value.temporalResolution !== undefined) {
+            selectedTemporalResolution.value = initialViewConfig.value.temporalResolution;
+          }
+          if (initialViewConfig.value.temporalAggregation !== undefined) {
+            selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation;
+          }
+          if (initialViewConfig.value.spatialAggregation !== undefined) {
+            selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation;
+          }
+          if (initialViewConfig.value.selectedOutputIndex !== undefined) {
+            const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+            defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
+            store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+          }
+          if (initialViewConfig.value.colorSchemeReversed !== undefined) {
+            colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
+          }
+          if (initialViewConfig.value.colorSchemeName !== undefined) {
+            selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
+          }
+          if (validateColorScaleType(String(initialViewConfig.value.colorScaleType))) {
+            selectedColorScaleType.value = initialViewConfig.value.colorScaleType as ColorScaleType;
+          }
+          if (initialViewConfig.value.numberOfColorBins !== undefined) {
+            numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
+          }
+          if (initialViewConfig.value.selectedAdminLevel !== undefined) {
+            selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
+          }
         }
-        if (initialViewConfig.value.temporalAggregation !== undefined) {
-          selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation;
-        }
-        if (initialViewConfig.value.spatialAggregation !== undefined) {
-          selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation;
-        }
-        if (initialViewConfig.value.selectedOutputIndex !== undefined) {
-          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
-          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
-        }
-        if (initialViewConfig.value.colorSchemeReversed !== undefined) {
-          colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
-        }
-        if (initialViewConfig.value.colorSchemeName !== undefined) {
-          selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
-        }
-        if (validateColorScaleType(String(initialViewConfig.value.colorScaleType))) {
-          selectedColorScaleType.value = initialViewConfig.value.colorScaleType as ColorScaleType;
-        }
-        if (initialViewConfig.value.numberOfColorBins !== undefined) {
-          numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
-        }
-        if (initialViewConfig.value.selectedAdminLevel !== undefined) {
-          selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
-        }
-      }
 
-      // apply initial data config for this datacube
-      if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
-        if (initialDataConfig.value.selectedRegionIds !== undefined) {
-          initialDataConfig.value.selectedRegionIds.forEach(regionId => {
-            selectedRegionIds.push(regionId);
-          });
+        // apply initial data config for this datacube
+        if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+          if (initialDataConfig.value.selectedRegionIds !== undefined) {
+            initialDataConfig.value.selectedRegionIds.forEach(regionId => {
+              selectedRegionIds.push(regionId);
+            });
+          }
+          if (initialDataConfig.value.selectedScenarioIds !== undefined) {
+            initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
+          }
         }
-        if (initialDataConfig.value.selectedScenarioIds !== undefined) {
-          initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
-        }
-      }
-    });
+      });
 
     const breakdownOption = ref<string | null>(null);
     const setBreakdownOption = (newValue: string | null) => {

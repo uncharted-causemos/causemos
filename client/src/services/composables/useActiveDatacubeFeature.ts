@@ -11,14 +11,17 @@ export default function useActiveDatacubeFeature(
   );
 
   const activeFeature = computed(() => {
-    if (metadata.value === null) return '';
+    let feature = '';
+    if (metadata.value === null) return feature;
     const currentOutputEntry =
       datacubeCurrentOutputsMap.value[metadata.value.id];
-    if (currentOutputEntry !== undefined) {
+    if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
       const outputs = metadata.value.validatedOutputs ?? metadata.value.outputs;
-      return outputs[currentOutputEntry].name;
+      feature = outputs[currentOutputEntry].name;
+    } else {
+      feature = metadata.value.default_feature ?? '';
     }
-    return metadata.value.default_feature ?? '';
+    return feature;
   });
 
   return {
