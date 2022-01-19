@@ -580,7 +580,7 @@ import {
   getFilteredScenariosFromIds,
   TAGS,
   DEFAULT_DATE_RANGE_DELIMETER,
-  getOutputs, getSelectedOutput
+  getSelectedOutput
 } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
