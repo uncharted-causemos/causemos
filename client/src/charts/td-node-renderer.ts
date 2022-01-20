@@ -313,8 +313,7 @@ export default function(
       historicalTimeseries,
       constraints,
       projection_start,
-      projectionLastTimestamp,
-      num_steps,
+      time_scale,
       xScaleFocus,
       yScaleFocus
     );
@@ -571,16 +570,10 @@ const renderConstraints = (
   historicalTimeseries: TimeseriesPoint[],
   constraints: ProjectionConstraint[],
   projectionStartTimestamp: number,
-  projectionLastTimestamp: number,
-  projectionStepCount: number,
+  timeScale: TimeScale,
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>
 ) => {
-  const projectionRectWidth =
-    xScale(projectionLastTimestamp) - xScale(projectionStartTimestamp);
-  // Subtract one from step count because half a clickable area is outside
-  //  of the projection rect on the left and the right
-  const spaceBetweenSteps = projectionRectWidth / (projectionStepCount - 1);
   // Map historical timeseries and projection constraints to the same format
   const circles = [
     ...historicalTimeseries.map(({ timestamp, value }) => ({
@@ -588,11 +581,15 @@ const renderConstraints = (
       cy: yScale(value),
       color: HISTORICAL_DATA_COLOR
     })),
-    ...constraints.map(({ step, value }) => ({
-      cx: xScale(projectionStartTimestamp) + step * spaceBetweenSteps,
-      cy: yScale(value),
-      color: SELECTED_COLOR
-    }))
+    ...constraints.map(({ step, value }) => {
+      const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+      const constraintTimestamp = getTimestampAfterMonths(projectionStartTimestamp, monthsPerTimestep * step);
+      return {
+        cx: xScale(constraintTimestamp),
+        cy: yScale(value),
+        color: SELECTED_COLOR
+      };
+    })
   ];
   // Render circles
   parentGroupElement
@@ -655,13 +652,12 @@ const generateClickableAreas = (
   timelineRect.on('mousemove', function(event: MouseEvent) {
     const { step, yPositionIndex } = getDiscreteIndicesFromMouseEvent(
       event,
-      xScale(projectionStartTimestamp),
       PADDING_TOP,
-      projectionRectWidth,
       timelineRectHeight,
       projectionStepCount,
       xScale,
-      projectionStartTimestamp
+      projectionStartTimestamp,
+      timeScale
     );
     const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
     const discreteTimestamp = getTimestampAfterMonths(projectionStartTimestamp, monthsPerTimestep * step);
@@ -708,13 +704,12 @@ const generateClickableAreas = (
   timelineRect.on('click', function(event) {
     const { step, yPositionIndex } = getDiscreteIndicesFromMouseEvent(
       event,
-      xScale(projectionStartTimestamp),
       PADDING_TOP,
-      projectionRectWidth,
       timelineRectHeight,
       projectionStepCount,
       xScale,
-      projectionStartTimestamp
+      projectionStartTimestamp,
+      timeScale
     );
     const value = yScale.invert(
       PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues
@@ -762,19 +757,17 @@ const generateClickableAreas = (
 
 const getDiscreteIndicesFromMouseEvent = (
   event: MouseEvent,
-  projectionRectX: number,
   timelineRectY: number,
-  projectionRectWidth: number,
   timelineRectHeight: number,
   projectionStepCount: number,
   xScale: D3ScaleLinear,
-  projectionStartTimestamp: number
+  projectionStartTimestamp: number,
+  timeScale: TimeScale
 ) => {
   const [pointerX, pointerY] = d3.pointer(event);
   const timestampAtMouse = xScale.invert(pointerX);
   // Start at last projection step and travel backwards until distanceFromMouse starts increasing
-  // TODO: make monthsPerTimestep a function
-  const monthsPerTimestep = 1; // TODO: 12 for years
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
   let distanceFromLastStep = Number.POSITIVE_INFINITY;
   let closestStepIndex = projectionStepCount;
   let isGettingCloser = true;
