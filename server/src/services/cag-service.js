@@ -728,7 +728,7 @@ const getStatementsByNode = async (modelId, concept) => {
 const changeConcept = async (modelId, change) => {
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const nodeAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
-  const scenarioAdapater = Adapter.get(RESOURCE.SCENARIO);
+  const scenarioAdapter = Adapter.get(RESOURCE.SCENARIO);
 
   const newConcept = change.concept;
   const nodeId = change.id;
@@ -759,7 +759,7 @@ const changeConcept = async (modelId, change) => {
 
   // FIX scenario constraints
   const scenariosToUpdate = [];
-  const scenarios = await scenarioAdapater.find([
+  const scenarios = await scenarioAdapter.find([
     { field: 'model_id', value: modelId }
   ], { size: SEARCH_LIMIT });
   for (const scenario of scenarios) {
@@ -795,7 +795,7 @@ const changeConcept = async (modelId, change) => {
   await edgeAdapter.update(edges, d => d.id);
 
   if (scenariosToUpdate.length > 0) {
-    await scenarioAdapater.update(scenariosToUpdate, d => d.id);
+    await scenarioAdapter.update(scenariosToUpdate, d => d.id);
   }
 };
 
