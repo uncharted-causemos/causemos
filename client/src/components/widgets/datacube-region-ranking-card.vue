@@ -258,7 +258,6 @@ export default defineComponent({
     const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
-    const selectedTransform = ref<DataTransform>(DataTransform.None);
 
     // apply the view-config for this datacube
     watch(
@@ -287,9 +286,6 @@ export default defineComponent({
         if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
             initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
-          }
-          if (initialDataConfig.value.selectedTransform !== undefined) {
-            selectedTransform.value = initialDataConfig.value.selectedTransform;
           }
         }
       });
