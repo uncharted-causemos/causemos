@@ -1,7 +1,7 @@
 import { Indicator, Model, ModelParameter } from '../../types/Datacube';
 import { computed, ref, Ref } from 'vue';
 import { useStore } from 'vuex';
-import { isModel } from '@/utils/datacube-util';
+import { getOutputs, isModel } from '@/utils/datacube-util';
 
 /**
  * Takes a model ID, transforms it into several structures that various components may utilize, for example the PC chart.
@@ -24,7 +24,7 @@ export default function useDatacubeDimensions(
     if (metadata.value === null || !isModel(metadata.value)) {
       return undefined;
     }
-    const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+    const outputs = getOutputs(metadata.value);
     // Restructure the output parameter
     const outputDimension = outputs[currentOutputIndex.value];
     if (outputDimension === undefined) {
