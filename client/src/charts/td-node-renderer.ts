@@ -13,7 +13,12 @@ import {
 } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { getTimestampAfterMonths, roundToNearestMonth } from '@/utils/date-util';
-import { getProjectionLengthFromTimeScale, TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
+import {
+  getMonthsPerTimestepFromTimeScale,
+  getProjectionLengthFromTimeScale,
+  getSliceMonthIndicesFromTimeScale,
+  getTimeScaleOption
+} from '@/utils/time-scale-util';
 
 import {
   convertDistributionTimeseriesToRidgelines
@@ -281,7 +286,7 @@ export default function(
       xScaleFocus,
       yScaleFocus
     );
-    const { projection_start } = modelSummary.parameter;
+    const { projection_start, time_scale } = modelSummary.parameter;
     // get the correct number of steps based on the currently selected time_scale
     //  rather than the deprecated value from the parameter.num_steps
     const num_steps = getProjectionLengthFromTimeScale(modelSummary.parameter.time_scale);
@@ -323,6 +328,7 @@ export default function(
       projection_start,
       projectionLastTimestamp,
       num_steps,
+      time_scale,
       setConstraints,
       setHistoricalTimeseries
     );
@@ -431,11 +437,18 @@ const renderStaticElements = (
     .attr('fill-opacity', HISTORICAL_RANGE_OPACITY);
 
   // render timeslices indicating major temporal marks, e.g., now, in a few month, in a few years
-  const timeSlicesRaw = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
-  const timeSlices = timeSlicesRaw?.map(timeslice =>
-    getTimestampAfterMonths(projectionStartTimestamp, timeslice.months)
+  const timeSlicesRaw = getTimeScaleOption(timeScale).timeSlices;
+  const timeSliceTimestamps = getSliceMonthIndicesFromTimeScale(
+    timeScale
+  ).map(monthIndex =>
+    getTimestampAfterMonths(projectionStartTimestamp, monthIndex)
   );
-  const timeSlicesValues = [projectionStartTimestamp, ...timeSlices ?? []];
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+  const nowTimestamp = getTimestampAfterMonths(
+    projectionStartTimestamp,
+    -1 * monthsPerTimestep
+  );
+  const timeSlicesValues = [nowTimestamp, ...timeSliceTimestamps ?? []];
   const timeSlicesRawLabels = timeSlicesRaw?.map(timeslice => timeslice.label) ?? [];
   const timeSlicesLabels = ['now', ...timeSlicesRawLabels];
   const timeSlicesLabelsOffset = 10;
@@ -549,7 +562,7 @@ const renderProjectionRidgelines = (
       false,
       'black',
       '');
-    elem.attr('transform', translate(xScale(currentProjection.values[i].timestamp), 0));
+    elem.attr('transform', translate(xScale(currentProjection.values[i].timestamp), yScale(maxValue)));
   }
 };
 
@@ -607,6 +620,7 @@ const generateClickableAreas = (
   projectionStartTimestamp: number,
   projectionLastTimestamp: number,
   projectionStepCount: number,
+  timeScale: TimeScale,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) => {
@@ -645,10 +659,13 @@ const generateClickableAreas = (
       PADDING_TOP,
       projectionRectWidth,
       timelineRectHeight,
-      projectionStepCount
+      projectionStepCount,
+      xScale,
+      projectionStartTimestamp
     );
-    const discreteXPosition =
-      xScale(projectionStartTimestamp) + step * spaceBetweenSteps;
+    const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+    const discreteTimestamp = getTimestampAfterMonths(projectionStartTimestamp, monthsPerTimestep * step);
+    const discreteXPosition = xScale(discreteTimestamp);
     const discreteYPosition =
       PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues;
     parentGroupElement.select('.constraint-selector').remove();
@@ -695,7 +712,9 @@ const generateClickableAreas = (
       PADDING_TOP,
       projectionRectWidth,
       timelineRectHeight,
-      projectionStepCount
+      projectionStepCount,
+      xScale,
+      projectionStartTimestamp
     );
     const value = yScale.invert(
       PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues
@@ -747,21 +766,40 @@ const getDiscreteIndicesFromMouseEvent = (
   timelineRectY: number,
   projectionRectWidth: number,
   timelineRectHeight: number,
-  projectionStepCount: number
+  projectionStepCount: number,
+  xScale: D3ScaleLinear,
+  projectionStartTimestamp: number
 ) => {
   const [pointerX, pointerY] = d3.pointer(event);
-  // Subtract 1 from projectionStepCount and Y position count to get indices from 0 to
-  // (step count or position count) - 1
-  const step = Math.round(
-    ((pointerX - projectionRectX) / projectionRectWidth) *
-      (projectionStepCount - 1)
-  );
+  const timestampAtMouse = xScale.invert(pointerX);
+  // Start at last projection step and travel backwards until distanceFromMouse starts increasing
+  // TODO: make monthsPerTimestep a function
+  const monthsPerTimestep = 1; // TODO: 12 for years
+  let distanceFromLastStep = Number.POSITIVE_INFINITY;
+  let closestStepIndex = projectionStepCount;
+  let isGettingCloser = true;
+  while (isGettingCloser) {
+    // Check next step
+    const timestampAtStep = getTimestampAfterMonths(
+      projectionStartTimestamp,
+      (closestStepIndex - 1) * monthsPerTimestep
+    );
+    const distanceFromMouse = Math.abs(timestampAtMouse - timestampAtStep);
+    if (distanceFromMouse > distanceFromLastStep) {
+      isGettingCloser = false;
+    } else {
+      distanceFromLastStep = distanceFromMouse;
+      closestStepIndex -= 1;
+    }
+  }
+  // Subtract 1 from Y position count to get indices from 0 to
+  //  position count - 1
   const yPositionIndex = Math.round(
     ((pointerY - timelineRectY) / timelineRectHeight) *
       (DISCRETE_Y_POSITION_COUNT - 1)
   );
   return {
-    step,
+    step: closestStepIndex,
     yPositionIndex
   };
 };
