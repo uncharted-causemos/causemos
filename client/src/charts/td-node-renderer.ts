@@ -13,7 +13,12 @@ import {
 } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { getTimestampAfterMonths, roundToNearestMonth } from '@/utils/date-util';
-import { getProjectionLengthFromTimeScale, TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
+import {
+  getMonthsPerTimestepFromTimeScale,
+  getProjectionLengthFromTimeScale,
+  getSliceMonthIndicesFromTimeScale,
+  getTimeScaleOption
+} from '@/utils/time-scale-util';
 
 import {
   convertDistributionTimeseriesToRidgelines
@@ -32,7 +37,8 @@ const SCROLL_BAR_BACKGROUND_COLOR = HISTORICAL_DATA_COLOR;
 const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
 const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
 const GRIDLINE_COLOR = '#eee';
-const TIMESLICE_COLOR = '#A9A9A9';
+const MAJOR_TICK_COLOR = '#A9A9A9';
+const MAJOR_TICK_LABEL_SIZE = 10;
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -281,7 +287,7 @@ export default function(
       xScaleFocus,
       yScaleFocus
     );
-    const { projection_start } = modelSummary.parameter;
+    const { projection_start, time_scale } = modelSummary.parameter;
     // get the correct number of steps based on the currently selected time_scale
     //  rather than the deprecated value from the parameter.num_steps
     const num_steps = getProjectionLengthFromTimeScale(modelSummary.parameter.time_scale);
@@ -298,6 +304,7 @@ export default function(
         selectedScenarioId,
         minValue,
         maxValue,
+        PADDING_TOP,
         xScaleFocus,
         yScaleFocus
       );
@@ -308,8 +315,7 @@ export default function(
       historicalTimeseries,
       constraints,
       projection_start,
-      projectionLastTimestamp,
-      num_steps,
+      time_scale,
       xScaleFocus,
       yScaleFocus
     );
@@ -323,6 +329,7 @@ export default function(
       projection_start,
       projectionLastTimestamp,
       num_steps,
+      time_scale,
       setConstraints,
       setHistoricalTimeseries
     );
@@ -431,17 +438,24 @@ const renderStaticElements = (
     .attr('fill-opacity', HISTORICAL_RANGE_OPACITY);
 
   // render timeslices indicating major temporal marks, e.g., now, in a few month, in a few years
-  const timeSlicesRaw = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
-  const timeSlices = timeSlicesRaw?.map(timeslice =>
-    getTimestampAfterMonths(projectionStartTimestamp, timeslice.months)
+  const timeSliceTimestamps = getSliceMonthIndicesFromTimeScale(
+    timeScale
+  ).map(monthIndex =>
+    getTimestampAfterMonths(projectionStartTimestamp, monthIndex)
   );
-  const timeSlicesValues = [projectionStartTimestamp, ...timeSlices ?? []];
-  const timeSlicesRawLabels = timeSlicesRaw?.map(timeslice => timeslice.label) ?? [];
-  const timeSlicesLabels = ['now', ...timeSlicesRawLabels];
-  const timeSlicesLabelsOffset = 10;
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+  const nowTimestamp = getTimestampAfterMonths(
+    projectionStartTimestamp,
+    -1 * monthsPerTimestep
+  );
+  const majorTickTimestamps = [nowTimestamp, ...timeSliceTimestamps];
+  const timeSliceLabels = getTimeScaleOption(timeScale).timeSlices.map(
+    timeslice => timeslice.label
+  );
+  const majorTickLabels = ['now', ...timeSliceLabels];
   groupElement
     .selectAll('.grid-timeslice-line')
-    .data(timeSlicesValues)
+    .data(majorTickTimestamps)
     .join('path')
     .attr('d', timestamp =>
       lineGenerator([
@@ -451,18 +465,18 @@ const renderStaticElements = (
     )
     .classed('grid-timeslice-line', true)
     .style('fill', 'none')
-    .style('stroke', TIMESLICE_COLOR);
+    .style('stroke', MAJOR_TICK_COLOR);
   groupElement
     .selectAll('.grid-timeslice-label')
-    .data(timeSlicesValues)
+    .data(majorTickTimestamps)
     .join('text')
     .classed('grid-timeslice-label', true)
     .attr('x', (d) => xScale(d))
-    .attr('y', offsetFromTop + timeSlicesLabelsOffset)
+    .attr('y', offsetFromTop + MAJOR_TICK_LABEL_SIZE)
     .style('text-anchor', 'start')
-    .style('font-size', 'x-small')
+    .style('font-size', MAJOR_TICK_LABEL_SIZE)
     .style('fill', 'gray')
-    .text((d, i) => timeSlicesLabels[i]);
+    .text((d, i) => majorTickLabels[i]);
 
   // render scrollbar data range labels
   const scrollbarLabelYOffset = 10;
@@ -511,6 +525,7 @@ const renderProjectionRidgelines = (
   selectedScenarioId: string,
   minValue: number,
   maxValue: number,
+  offsetFromTop: number,
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>
 ) => {
@@ -549,7 +564,10 @@ const renderProjectionRidgelines = (
       false,
       'black',
       '');
-    elem.attr('transform', translate(xScale(currentProjection.values[i].timestamp), 0));
+    elem.attr('transform', translate(
+      xScale(currentProjection.values[i].timestamp),
+      offsetFromTop
+    ));
   }
 };
 
@@ -558,16 +576,10 @@ const renderConstraints = (
   historicalTimeseries: TimeseriesPoint[],
   constraints: ProjectionConstraint[],
   projectionStartTimestamp: number,
-  projectionLastTimestamp: number,
-  projectionStepCount: number,
+  timeScale: TimeScale,
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>
 ) => {
-  const projectionRectWidth =
-    xScale(projectionLastTimestamp) - xScale(projectionStartTimestamp);
-  // Subtract one from step count because half a clickable area is outside
-  //  of the projection rect on the left and the right
-  const spaceBetweenSteps = projectionRectWidth / (projectionStepCount - 1);
   // Map historical timeseries and projection constraints to the same format
   const circles = [
     ...historicalTimeseries.map(({ timestamp, value }) => ({
@@ -575,11 +587,15 @@ const renderConstraints = (
       cy: yScale(value),
       color: HISTORICAL_DATA_COLOR
     })),
-    ...constraints.map(({ step, value }) => ({
-      cx: xScale(projectionStartTimestamp) + step * spaceBetweenSteps,
-      cy: yScale(value),
-      color: SELECTED_COLOR
-    }))
+    ...constraints.map(({ step, value }) => {
+      const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+      const constraintTimestamp = getTimestampAfterMonths(projectionStartTimestamp, monthsPerTimestep * step);
+      return {
+        cx: xScale(constraintTimestamp),
+        cy: yScale(value),
+        color: SELECTED_COLOR
+      };
+    })
   ];
   // Render circles
   parentGroupElement
@@ -607,6 +623,7 @@ const generateClickableAreas = (
   projectionStartTimestamp: number,
   projectionLastTimestamp: number,
   projectionStepCount: number,
+  timeScale: TimeScale,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) => {
@@ -641,14 +658,16 @@ const generateClickableAreas = (
   timelineRect.on('mousemove', function(event: MouseEvent) {
     const { step, yPositionIndex } = getDiscreteIndicesFromMouseEvent(
       event,
-      xScale(projectionStartTimestamp),
       PADDING_TOP,
-      projectionRectWidth,
       timelineRectHeight,
-      projectionStepCount
+      projectionStepCount,
+      xScale,
+      projectionStartTimestamp,
+      timeScale
     );
-    const discreteXPosition =
-      xScale(projectionStartTimestamp) + step * spaceBetweenSteps;
+    const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+    const discreteTimestamp = getTimestampAfterMonths(projectionStartTimestamp, monthsPerTimestep * step);
+    const discreteXPosition = xScale(discreteTimestamp);
     const discreteYPosition =
       PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues;
     parentGroupElement.select('.constraint-selector').remove();
@@ -691,11 +710,12 @@ const generateClickableAreas = (
   timelineRect.on('click', function(event) {
     const { step, yPositionIndex } = getDiscreteIndicesFromMouseEvent(
       event,
-      xScale(projectionStartTimestamp),
       PADDING_TOP,
-      projectionRectWidth,
       timelineRectHeight,
-      projectionStepCount
+      projectionStepCount,
+      xScale,
+      projectionStartTimestamp,
+      timeScale
     );
     const value = yScale.invert(
       PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues
@@ -743,25 +763,42 @@ const generateClickableAreas = (
 
 const getDiscreteIndicesFromMouseEvent = (
   event: MouseEvent,
-  projectionRectX: number,
   timelineRectY: number,
-  projectionRectWidth: number,
   timelineRectHeight: number,
-  projectionStepCount: number
+  projectionStepCount: number,
+  xScale: D3ScaleLinear,
+  projectionStartTimestamp: number,
+  timeScale: TimeScale
 ) => {
   const [pointerX, pointerY] = d3.pointer(event);
-  // Subtract 1 from projectionStepCount and Y position count to get indices from 0 to
-  // (step count or position count) - 1
-  const step = Math.round(
-    ((pointerX - projectionRectX) / projectionRectWidth) *
-      (projectionStepCount - 1)
-  );
+  const timestampAtMouse = xScale.invert(pointerX);
+  // Start at last projection step and travel backwards until distanceFromMouse starts increasing
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+  let distanceFromLastStep = Number.POSITIVE_INFINITY;
+  let closestStepIndex = projectionStepCount;
+  let isGettingCloser = true;
+  while (isGettingCloser) {
+    // Check next step
+    const timestampAtStep = getTimestampAfterMonths(
+      projectionStartTimestamp,
+      (closestStepIndex - 1) * monthsPerTimestep
+    );
+    const distanceFromMouse = Math.abs(timestampAtMouse - timestampAtStep);
+    if (distanceFromMouse > distanceFromLastStep) {
+      isGettingCloser = false;
+    } else {
+      distanceFromLastStep = distanceFromMouse;
+      closestStepIndex -= 1;
+    }
+  }
+  // Subtract 1 from Y position count to get indices from 0 to
+  //  position count - 1
   const yPositionIndex = Math.round(
     ((pointerY - timelineRectY) / timelineRectHeight) *
       (DISCRETE_Y_POSITION_COUNT - 1)
   );
   return {
-    step,
+    step: closestStepIndex,
     yPositionIndex
   };
 };
