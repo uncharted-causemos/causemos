@@ -4,7 +4,7 @@ import {
   TimeseriesPoint
 } from '@/types/Timeseries';
 import * as d3 from 'd3';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { getTimestampAfterMonths } from './date-util';
 import {
   getMonthsPerTimestepFromTimeScale,

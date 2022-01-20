@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { RidgelinePoint } from '@/utils/ridgeline-util';
 import { translate } from '@/utils/svg-util';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
