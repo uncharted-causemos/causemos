@@ -728,6 +728,7 @@ const getStatementsByNode = async (modelId, concept) => {
 const changeConcept = async (modelId, change) => {
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const nodeAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+  const scenarioAdapater = Adapter.get(RESOURCE.SCENARIO);
 
   const newConcept = change.concept;
   const nodeId = change.id;
@@ -756,6 +757,28 @@ const changeConcept = async (modelId, change) => {
 
   Logger.info(`Change concept ${node.concept} to ${newConcept} in ${modelId}, affecting ${edges.length} edges`);
 
+  // FIX scenario constraints
+  const scenariosToUpdate = [];
+  const scenarios = await scenarioAdapater.find([
+    { field: 'model_id', value: modelId }
+  ], { size: SEARCH_LIMIT });
+  for (const scenario of scenarios) {
+    let needToUpdate = false;
+    const constraints = _.get(scenario, 'parameter.constraints', []);
+    if (constraints.length === 0) continue;
+
+    for (const c of constraints) {
+      if (c.concept === node.concept) {
+        c.concept = newConcept;
+        needToUpdate = true;
+      }
+    }
+    if (needToUpdate === true) {
+      scenariosToUpdate.push(scenario);
+    }
+  }
+  Logger.info(`Change concept ${node.concept} to ${newConcept} in ${modelId}, affecting ${scenariosToUpdate.length} scenarios`);
+
   // Apply concept updates
   for (let i = 0; i < edges.length; i++) {
     const edge = edges[i];
@@ -770,6 +793,10 @@ const changeConcept = async (modelId, change) => {
   // Reindex
   await nodeAdapter.update(node, d => d.id);
   await edgeAdapter.update(edges, d => d.id);
+
+  if (scenariosToUpdate.length > 0) {
+    await scenarioAdapater.update(scenariosToUpdate, d => d.id);
+  }
 };
 
 module.exports = {
