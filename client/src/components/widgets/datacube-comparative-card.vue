@@ -285,11 +285,11 @@ export default defineComponent({
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
             initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
           }
-        if (initialDataConfig.value.selectedTransform !== undefined) {
-          selectedTransform.value = initialDataConfig.value.selectedTransform;
+          if (initialDataConfig.value.selectedTransform !== undefined) {
+            selectedTransform.value = initialDataConfig.value.selectedTransform;
+          }
         }
-      }
-    });
+      });
 
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) {
