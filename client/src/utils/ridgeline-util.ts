@@ -6,7 +6,10 @@ import {
 import * as d3 from 'd3';
 import * as _ from 'lodash';
 import { getTimestampAfterMonths } from './date-util';
-import { getTimeScaleOption } from './time-scale-util';
+import {
+  getMonthsPerTimestepFromTimeScale,
+  getTimeScaleOption
+} from './time-scale-util';
 
 // When creating a curve to estimate the density of the distribution, we group
 //  points into bins (necessary to convert the one-dimensional data into 2D).
@@ -106,10 +109,8 @@ export const convertDistributionTimeseriesToRidgelines = (
     if (onlyConvertTimeslices && timeSliceAtThisTimestep === undefined) return;
     // Convert the distribution to a ridgeline, and attach more information for
     //  rendering later.
-    const monthsAfterNow =
-      timeScale === TimeScale.Months
-        ? timestepIndex + 1
-        : (timestepIndex + 1) * 12;
+    const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+    const monthsAfterNow = (timestepIndex + 1) * monthsPerTimestep;
     ridgelines.push({
       timestamp,
       label: timeSliceAtThisTimestep?.shortLabel ?? '',
