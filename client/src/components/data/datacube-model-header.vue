@@ -30,6 +30,7 @@
 import { Model } from '@/types/Datacube';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { mapActions, useStore } from 'vuex';
+import { getOutputs } from '@/utils/datacube-util';
 
 export default defineComponent({
   name: 'DatacubeModelHeader',
@@ -47,7 +48,7 @@ export default defineComponent({
     });
 
     const modelOutputs = computed<string[]>(() => {
-      const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+      const outputs = metadata.value && getOutputs(metadata.value);
       return outputs?.map(o => o.display_name) ?? [];
     });
 

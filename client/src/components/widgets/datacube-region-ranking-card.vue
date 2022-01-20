@@ -83,7 +83,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getFilteredScenariosFromIds, isModel } from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
 import {
   AggregationOption,
@@ -207,11 +207,11 @@ export default defineComponent({
 
     watchEffect(async () => {
       if (metadata.value) {
-        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+        outputs.value = getOutputs(metadata.value);
 
         let initialOutputIndex = 0;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
-        if (currentOutputEntry !== undefined) {
+        if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the default output of the current model
           initialOutputIndex = currentOutputEntry;
         } else {
@@ -226,7 +226,7 @@ export default defineComponent({
         if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value) && initialViewConfig.value.selectedOutputIndex !== undefined) {
           initialOutputIndex = initialViewConfig.value.selectedOutputIndex;
         }
-        mainModelOutput.value = outputs.value[initialOutputIndex];
+        mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
       }
     });
 
@@ -261,29 +261,33 @@ export default defineComponent({
     const selectedTransform = ref<DataTransform>(DataTransform.None);
 
     // apply the view-config for this datacube
-    watchEffect(() => {
-      if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
-        if (initialViewConfig.value.temporalResolution !== undefined) {
-          selectedTemporalResolution.value = initialViewConfig.value.temporalResolution;
+    watch(
+      () => [
+        initialViewConfig.value
+      ],
+      () => {
+        if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
+          if (initialViewConfig.value.temporalResolution !== undefined) {
+            selectedTemporalResolution.value = initialViewConfig.value.temporalResolution;
+          }
+          if (initialViewConfig.value.temporalAggregation !== undefined) {
+            selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation;
+          }
+          if (initialViewConfig.value.spatialAggregation !== undefined) {
+            selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation;
+          }
+          if (initialViewConfig.value.selectedOutputIndex !== undefined) {
+            const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+            defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
+            store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+          }
         }
-        if (initialViewConfig.value.temporalAggregation !== undefined) {
-          selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation;
-        }
-        if (initialViewConfig.value.spatialAggregation !== undefined) {
-          selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation;
-        }
-        if (initialViewConfig.value.selectedOutputIndex !== undefined) {
-          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
-          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
-        }
-      }
 
-      // apply initial data config for this datacube
-      if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
-        if (initialDataConfig.value.selectedScenarioIds !== undefined) {
-          initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
-        }
+        // apply initial data config for this datacube
+        if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+          if (initialDataConfig.value.selectedScenarioIds !== undefined) {
+            initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
+          }
         if (initialDataConfig.value.selectedTransform !== undefined) {
           selectedTransform.value = initialDataConfig.value.selectedTransform;
         }

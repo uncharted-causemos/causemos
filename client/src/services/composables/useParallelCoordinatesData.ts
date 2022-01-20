@@ -4,7 +4,7 @@ import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import { useStore } from 'vuex';
-import { getAggregationKey } from '@/utils/datacube-util';
+import { getAggregationKey, getOutputs } from '@/utils/datacube-util';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -23,7 +23,7 @@ export default function useParallelCoordinatesData(
     if (modelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {
       return [];
     }
-    const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+    const outputs = getOutputs(metadata.value);
     const outputParameterName = outputs[currentOutputIndex.value].name ?? 'Undefined output parameter';
     return modelRunData.value.map(modelRun => {
       const run_id = modelRun.id;

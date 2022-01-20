@@ -13,10 +13,13 @@ import {
   getSliceMonthIndicesFromTimeScale
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
+import { TimeScale } from '@/types/Enums';
 import { convertDistributionTimeseriesToRidgelines } from '@/utils/ridgeline-util';
 import { renderRidgelines } from './ridgeline-renderer';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
+const HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE = '#F4EFDB';
+const HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE = '#F7E6AA';
 const HISTORY_LINE_COLOR = '#999';
 const LABEL_COLOR = HISTORY_LINE_COLOR;
 
@@ -24,9 +27,43 @@ const LABEL_COLOR = HISTORY_LINE_COLOR;
 //  of projected months to get the total number of visible months and use that
 //  as the x range's domain.
 // The number of visible historical months will depend on the timescale, e.g.
-//  if timescale is months, show last 24 months or so
-//  if timescale is years, show last 60 months or so
-const VISIBLE_HISTORICAL_MONTH_COUNT = 24;
+//  if timescale is months, show last 48 months or so
+//  TODO: if timescale is years, show last 36 years (= 432 months) or so
+const VISIBLE_HISTORICAL_MONTH_COUNT = 48;
+
+
+//
+// Yellow background for uncertaint in historical data (lack of data)
+//
+// - Do a rough calculation of how far back is the last data point from projection_start
+// - Penalize short historical data (e.g default Abstract indicator)
+const getBackgroundColor = (nodeScenarioData: NodeScenarioData): string => {
+  const timeseries = nodeScenarioData.indicator_time_series;
+  const projectionStart = nodeScenarioData.projection_start;
+  const timeScale = nodeScenarioData.time_scale;
+
+  let background = HISTORY_BACKGROUND_COLOR;
+
+  const gap = projectionStart - timeseries[timeseries.length - 1].timestamp;
+  const approxMonth = 30 * 24 * 60 * 60 * 1000;
+  if (gap > 0) {
+    if (timeScale === TimeScale.Months) {
+      if (gap / approxMonth > 4) {
+        background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
+      }
+    } else if (timeScale === TimeScale.Years) {
+      if (gap / (approxMonth * 12) > 4) {
+        background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
+      }
+    }
+  }
+
+  if (timeseries.length < 4) {
+    background = HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE;
+  }
+  return background;
+};
+
 
 export default function(
   selection: D3Selection,
@@ -120,6 +157,7 @@ function render(
   svgGroup.selectAll('*').remove();
 
   // Backgrounds
+
   svgGroup
     .append('rect')
     .classed('historical-rect', true)
@@ -127,7 +165,7 @@ function render(
     .attr('y', 0)
     .attr('height', height)
     .attr('width', xScale(historyEnd))
-    .attr('fill', HISTORY_BACKGROUND_COLOR);
+    .attr('fill', getBackgroundColor(nodeScenarioData));
 
   const historicG = svgGroup.append('g');
   historicG
@@ -250,6 +288,8 @@ function renderScenarioProjections(
       yScale.domain()[0],
       yScale.domain()[1],
       false,
+      true,
+      'black',
       label
     );
     containerElementSelection.attr('transform', () =>

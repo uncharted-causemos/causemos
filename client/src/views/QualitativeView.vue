@@ -30,6 +30,7 @@
           class="cagGraph insight-capture"
           :data="modelComponents"
           :show-new-node="showNewNode"
+          :selected-time-scale="modelSummary?.parameter?.time_scale"
           @refresh="captureThumbnail"
           @new-edge="addEdge"
           @background-click="onBackgroundClick"
@@ -54,6 +55,7 @@
             <strong>{{ selectedTimeScaleLabel}} </strong>
             <button
               class="btn btn-sm btn-default"
+              disabled
               @click="showModalTimeScale = true"
             >
               <i class="fa fa-fw fa-pencil" />
@@ -85,19 +87,17 @@
             @updated-relations="resolveUpdatedRelations"
             @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
-            <div style="display: flex; margin-bottom: 10px">
               <edge-polarity-switcher
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity"
                 @edge-set-weights="setEdgeWeights"
               />
               <button
-                style="margin-left: 5px; font-weight: normal"
+                style="font-weight: normal; width: 100%"
                 class="btn"
                 @click="openPathFind">
                 Indirect path
               </button>
-            </div>
           </evidence-pane>
           <relationships-pane
             v-if="

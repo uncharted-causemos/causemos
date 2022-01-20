@@ -173,6 +173,7 @@ import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-uti
 import { DatacubeFeature, Model } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
 import { COLOR_SCHEME, ColorScaleType, COLOR, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
+import { getOutputs } from '@/utils/datacube-util';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.RDYLBU_7, COLOR.OTHER]);
 const TRANSFORMS: DropdownItem[] = [
@@ -319,8 +320,7 @@ export default defineComponent({
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined && datacubeCurrentOutputsMap.value[metadata.value?.id] ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const modelOutputs = computed<DatacubeFeature[]>(() => {
-      const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-      return outputs ?? [];
+      return metadata.value ? getOutputs(metadata.value) : [];
     });
 
     const modelOutputsDisplayNames = computed(() => {
