@@ -1538,7 +1538,8 @@ export default defineComponent({
       outputSpecs,
       breakdownOption,
       datacubeHierarchy,
-      relativeTo
+      relativeTo,
+      activeReferenceOptions
     );
 
     const mapColorOptions = computed(() => {
@@ -1655,13 +1656,15 @@ export default defineComponent({
           { id: ReferenceSeriesOption.SelectYears, displayName: 'Average Selected Years' }
         ];
       } else if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        // add averaging options
+        // add averaging options -- in a later iteration.
+        /*
         if (selectedRegionIds.value.length > 1) {
           currentReferenceSeries.push({
             id: ReferenceSeriesOption.SelectRegions,
             displayName: 'Average Selected Regions'
           });
         }
+        */
         // if selected admin level is lower than country, add countries as references.
         if (selectedAdminLevel.value > 0 && regionalData.value?.country) {
           regionalData.value.country.forEach(refRegion => currentReferenceSeries.push({
