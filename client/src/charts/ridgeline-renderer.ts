@@ -13,7 +13,7 @@ const LABEL_COLOR = '#999';
 const MAX_LABEL_SIZE = 10;
 const CONTEXT_BRACKET_LINE_WIDTH = 1;
 const CONTEXT_BRACKET_COLOR = LABEL_COLOR;
-export const CONTEXT_BRACKET_WIDTH = 2;
+export const CONTEXT_BRACKET_WIDTH = 4;
 
 export const renderRidgelines = (
   selection: d3.Selection<SVGElement, any, any, any>,
