@@ -37,7 +37,8 @@ const SCROLL_BAR_BACKGROUND_COLOR = HISTORICAL_DATA_COLOR;
 const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
 const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
 const GRIDLINE_COLOR = '#eee';
-const TIMESLICE_COLOR = '#A9A9A9';
+const MAJOR_TICK_COLOR = '#A9A9A9';
+const MAJOR_TICK_LABEL_SIZE = 10;
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -436,7 +437,6 @@ const renderStaticElements = (
     .attr('fill-opacity', HISTORICAL_RANGE_OPACITY);
 
   // render timeslices indicating major temporal marks, e.g., now, in a few month, in a few years
-  const timeSlicesRaw = getTimeScaleOption(timeScale).timeSlices;
   const timeSliceTimestamps = getSliceMonthIndicesFromTimeScale(
     timeScale
   ).map(monthIndex =>
@@ -447,13 +447,14 @@ const renderStaticElements = (
     projectionStartTimestamp,
     -1 * monthsPerTimestep
   );
-  const timeSlicesValues = [nowTimestamp, ...timeSliceTimestamps ?? []];
-  const timeSlicesRawLabels = timeSlicesRaw?.map(timeslice => timeslice.label) ?? [];
-  const timeSlicesLabels = ['now', ...timeSlicesRawLabels];
-  const timeSlicesLabelsOffset = 10;
+  const majorTickTimestamps = [nowTimestamp, ...timeSliceTimestamps];
+  const timeSliceLabels = getTimeScaleOption(timeScale).timeSlices.map(
+    timeslice => timeslice.label
+  );
+  const majorTickLabels = ['now', ...timeSliceLabels];
   groupElement
     .selectAll('.grid-timeslice-line')
-    .data(timeSlicesValues)
+    .data(majorTickTimestamps)
     .join('path')
     .attr('d', timestamp =>
       lineGenerator([
@@ -463,18 +464,18 @@ const renderStaticElements = (
     )
     .classed('grid-timeslice-line', true)
     .style('fill', 'none')
-    .style('stroke', TIMESLICE_COLOR);
+    .style('stroke', MAJOR_TICK_COLOR);
   groupElement
     .selectAll('.grid-timeslice-label')
-    .data(timeSlicesValues)
+    .data(majorTickTimestamps)
     .join('text')
     .classed('grid-timeslice-label', true)
     .attr('x', (d) => xScale(d))
-    .attr('y', offsetFromTop + timeSlicesLabelsOffset)
+    .attr('y', offsetFromTop + MAJOR_TICK_LABEL_SIZE)
     .style('text-anchor', 'start')
-    .style('font-size', 'x-small')
+    .style('font-size', MAJOR_TICK_LABEL_SIZE)
     .style('fill', 'gray')
-    .text((d, i) => timeSlicesLabels[i]);
+    .text((d, i) => majorTickLabels[i]);
 
   // render scrollbar data range labels
   const scrollbarLabelYOffset = 10;
