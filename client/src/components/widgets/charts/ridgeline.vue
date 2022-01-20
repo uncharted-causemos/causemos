@@ -9,7 +9,10 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
 
-import { renderRidgelines } from '@/charts/ridgeline-renderer';
+import {
+  CONTEXT_BRACKET_WIDTH,
+  renderRidgelines
+} from '@/charts/ridgeline-renderer';
 import { RidgelinePoint } from '@/utils/ridgeline-util';
 import {
   defineComponent,
@@ -20,6 +23,7 @@ import {
   watchEffect
 } from 'vue';
 import { nextTick } from 'process';
+import { translate } from '@/utils/svg-util';
 
 const RESIZE_DELAY = 15;
 
@@ -92,26 +96,32 @@ export default defineComponent({
       // Set new size
       svg.attr('width', width).attr('height', height);
       svg.selectAll('*').remove();
+      // Context ranges start `CONTEXT_BRACKET_WIDTH` pixels(SVG units?) to the
+      //  left of the `g` element that's created in `renderRidgelines`.
+      // To keep it within this component's `svg` element, we
+      //  - pass a smaller width to `renderRidgelines`
+      //  - shift the resulting `g` element to the right
+      const widthWithoutContextRanges = width - CONTEXT_BRACKET_WIDTH;
       // Render comparison baseline
       const baseline = comparisonBaseline.value;
       if (baseline !== null) {
         renderRidgelines(
           svg,
           baseline,
-          width,
+          widthWithoutContextRanges,
           height,
           min.value,
           max.value,
           false,
           true,
           COMPARISON_BASELINE_COLOR
-        );
+        ).attr('transform', translate(CONTEXT_BRACKET_WIDTH, 0));
       }
       // Render ridgeline
       renderRidgelines(
         svg,
         ridgelineData.value,
-        width,
+        widthWithoutContextRanges,
         height,
         min.value,
         max.value,
@@ -122,7 +132,7 @@ export default defineComponent({
         baseline !== null ? COMPARISON_COLOR : COMPARISON_OVERLAP_COLOR,
         '',
         contextRange.value
-      );
+      ).attr('transform', translate(CONTEXT_BRACKET_WIDTH, 0));
       // Render overlap
       if (baseline !== null) {
         const overlap = ridgelineData.value.map(
@@ -137,14 +147,14 @@ export default defineComponent({
         renderRidgelines(
           svg,
           overlap,
-          width,
+          widthWithoutContextRanges,
           height,
           min.value,
           max.value,
           false,
           false,
           COMPARISON_OVERLAP_COLOR
-        );
+        ).attr('transform', translate(CONTEXT_BRACKET_WIDTH, 0));
       }
     });
 

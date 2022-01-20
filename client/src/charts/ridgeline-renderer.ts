@@ -11,9 +11,9 @@ const RIDGELINE_VERTICAL_AXIS_WIDTH = 1;
 const RIDGELINE_VERTICAL_AXIS_COLOR = '#F3F3F3';
 const LABEL_COLOR = '#999';
 const MAX_LABEL_SIZE = 10;
-const CONTEXT_BRACKET_WIDTH = 2;
 const CONTEXT_BRACKET_LINE_WIDTH = 1;
 const CONTEXT_BRACKET_COLOR = LABEL_COLOR;
+export const CONTEXT_BRACKET_WIDTH = 2;
 
 export const renderRidgelines = (
   selection: d3.Selection<SVGElement, any, any, any>,
