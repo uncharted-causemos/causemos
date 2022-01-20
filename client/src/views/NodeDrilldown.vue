@@ -141,6 +141,7 @@
               :projections="selectedNodeScenarioData.projections"
               :indicator-min="indicatorMin"
               :indicator-max="indicatorMax"
+              :historical-timeseries="historicalTimeseries"
               @new-scenario='onCreateScenario'
               @set-comparison-baseline-id='(value) => comparisonBaselineId = value'
             />
