@@ -304,6 +304,7 @@ export default function(
         selectedScenarioId,
         minValue,
         maxValue,
+        PADDING_TOP,
         xScaleFocus,
         yScaleFocus
       );
@@ -524,6 +525,7 @@ const renderProjectionRidgelines = (
   selectedScenarioId: string,
   minValue: number,
   maxValue: number,
+  offsetFromTop: number,
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>
 ) => {
@@ -562,7 +564,10 @@ const renderProjectionRidgelines = (
       false,
       'black',
       '');
-    elem.attr('transform', translate(xScale(currentProjection.values[i].timestamp), yScale(maxValue)));
+    elem.attr('transform', translate(
+      xScale(currentProjection.values[i].timestamp),
+      offsetFromTop
+    ));
   }
 };
 
