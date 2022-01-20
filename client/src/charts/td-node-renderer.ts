@@ -447,11 +447,6 @@ const renderStaticElements = (
   const timeSliceTimestamps = timeSlices.map(({ months }) => {
     return getTimestampAfterMonths(nowTimestamp, months);
   });
-  // const timeSliceTimestamps = getSliceMonthIndicesFromTimeScale(
-  //   timeScale
-  // ).map(monthIndex =>
-  //   getTimestampAfterMonths(nowTimestamp, monthIndex)
-  // );
   const majorTickTimestamps = [nowTimestamp, ...timeSliceTimestamps];
   const timeSliceLabels = getTimeScaleOption(timeScale).timeSlices.map(
     timeslice => timeslice.label
