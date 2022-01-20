@@ -30,6 +30,7 @@
           class="cagGraph insight-capture"
           :data="modelComponents"
           :show-new-node="showNewNode"
+          :selected-time-scale="modelSummary?.parameter?.time_scale"
           @refresh="captureThumbnail"
           @new-edge="addEdge"
           @background-click="onBackgroundClick"
@@ -39,6 +40,7 @@
           @delete="onDelete"
           @edge-set-user-polarity="setEdgeUserPolarity"
           @suggestion-selected="onSuggestionSelected"
+          @datacube-selected="onDatacubeSelected"
           @suggestion-duplicated="onSuggestionDuplicated"
           @rename-node="openRenameModal"
           @merge-nodes="mergeNodes"
@@ -53,6 +55,7 @@
             <strong>{{ selectedTimeScaleLabel}} </strong>
             <button
               class="btn btn-sm btn-default"
+              disabled
               @click="showModalTimeScale = true"
             >
               <i class="fa fa-fw fa-pencil" />
@@ -84,19 +87,17 @@
             @updated-relations="resolveUpdatedRelations"
             @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
-            <div style="display: flex; margin-bottom: 10px">
               <edge-polarity-switcher
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity"
                 @edge-set-weights="setEdgeWeights"
               />
               <button
-                style="margin-left: 5px; font-weight: normal"
+                style="font-weight: normal; width: 100%"
                 class="btn"
                 @click="openPathFind">
                 Indirect path
               </button>
-            </div>
           </evidence-pane>
           <relationships-pane
             v-if="
@@ -602,6 +603,23 @@ export default defineComponent({
       //   this.cagGraph.deselectNodeAndEdge();
       // }
       this.setNewNodeVisible(true);
+    },
+    onDatacubeSelected(datacubeParam: any) {
+      // Strip off non-alphanumeric
+      // - Engines cannot handle them
+      // - Translation layer doesn't like consecutive spaces
+      const cleanedName = datacubeParam.name
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\s\s+/gi, ' ');
+      const node = {
+        id: '',
+        concept: cleanedName,
+        components: [cleanedName],
+        label: cleanedName,
+        parameter: datacubeParam
+      };
+      this.saveNodeToGraph(node);
+      this.setNewNodeVisible(false);
     },
     onSuggestionSelected(suggestion: Suggestion) {
       this.addNodeToGraph(suggestion);

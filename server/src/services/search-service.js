@@ -13,6 +13,24 @@ const formatOntologyDoc = (d) => {
   };
 };
 
+const formatDatacubeDoc = (d) => {
+  const defaultFeature = d.outputs.find(output => output.name === d.default_feature);
+
+  return {
+    id: d.id,
+    data_id: d.data_id,
+    name: d.name,
+    family_name: d.family_name,
+    category: d.category,
+    period: d.period,
+    type: d.type,
+
+    feature: defaultFeature.name,
+    display_name: defaultFeature.display_name,
+    description: defaultFeature.description
+  };
+};
+
 // Search against ontology concepts
 const rawConceptEntitySearch = async (projectId, queryString) => {
   const filters = [{
@@ -44,6 +62,35 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
       doc_type: 'concept',
       score: d._score,
       doc: formatOntologyDoc(d._source),
+      highlight: d.highlight
+    };
+  });
+};
+
+const rawDatacubeSearch = async (queryString) => {
+  const filters = [];
+  const reserved = ['or', 'and'];
+  const builder = queryStringBuilder()
+    .setOperator('OR')
+    .setFields([
+      'outputs.description'
+    ]);
+
+  queryString
+    .split(' ')
+    .filter(s => {
+      return !reserved.includes(s.toLowerCase());
+    })
+    .forEach(v => builder.addWildCard(v));
+
+  const results = await searchAndHighlight(RESOURCE.DATA_DATACUBE, builder.build(), filters, [
+  ]);
+
+  return results.map(d => {
+    return {
+      doc_type: 'data_cube',
+      score: d._score,
+      doc: formatDatacubeDoc(d._source),
       highlight: d.highlight
     };
   });
@@ -250,9 +297,6 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
     delete finalResults[i].doc.tokenCounter;
   }
 
-
-
-  // FIXME: Also attach concept matches
   return finalResults;
 };
 
@@ -334,5 +378,6 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
 module.exports = {
   statementConceptEntitySearch,
   rawConceptEntitySearch,
+  rawDatacubeSearch,
   indicatorSearchByConcepts
 };

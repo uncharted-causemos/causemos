@@ -31,88 +31,71 @@
       </options-button>
     </header>
     <main>
-      <div class="chart-and-footer">
-        <bar-chart
-          class="bar-chart"
-          :bars-data="barsData"
-          :hover-id="barChartHoverId"
-          @bar-chart-hover="$emit('bar-chart-hover', $event)"
-        />
-        <div class="row datacube-footer">
-          <div>Showing data for {{timestampFormatter(selectedTimestamp)}}</div>
-          <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
-          <div style="display: flex; align-items: center">
-            <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
-            <div style="display: flex; align-items: center">
-              <div style="margin-right: 4px">Selected:</div>
-              <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
-                @change="selectedRegionRankingScenario = $event.target.selectedIndex"
-                :disabled="selectedScenarioIds.length === 1"
-                :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedRegionRankingScenario ? regionRunsScenarios[selectedRegionRankingScenario].color : 'black' }"
-              >
-                <option
-                  v-for="(selectedRun, indx) in regionRunsScenarios"
-                  :key="selectedRun.name"
-                  :selected="indx === selectedRegionRankingScenario"
-                >
-                  {{selectedRun.name}}
-                </option>
-              </select>
-            </div>
-          </div>
+      <region-map
+        :data="regionMapData"
+        :map-bounds="bbox"
+        :selected-layer-id="selectedAdminLevel"
+        :popup-Formatter="popupFormatter"
+      />
+      <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
+      <div style="display: flex; align-items: center; align-self: center">
+        <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
+        <div style="display: flex; align-items: center">
+          <div style="margin-right: 4px">Selected:</div>
+          <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
+            @change="selectedScenarioIndex = $event.target.selectedIndex"
+            :disabled="selectedScenarioIds.length === 1"
+            :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex ? regionRunsScenarios[selectedScenarioIndex].color : 'black' }"
+          >
+            <option
+              v-for="(selectedRun, indx) in regionRunsScenarios"
+              :key="selectedRun.name"
+              :selected="indx === selectedScenarioIndex"
+            >
+              {{selectedRun.name}}
+            </option>
+          </select>
         </div>
-      </div>
-      <div class="datacube-map-placeholder">
-        <region-map
-          :data="barsData"
-          :selected-layer-id="selectedAdminLevel"
-          :map-bounds="bbox"
-          :selected-id="barChartHoverId"
-          @click-region="$emit('map-click-region', $event)" />
       </div>
     </main>
   </div>
 </template>
 
 <script lang="ts">
-import _ from 'lodash';
 import * as d3 from 'd3';
-import { mapActions, useStore } from 'vuex';
-import router from '@/router';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { getFilteredScenariosFromIds, isModel } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
-import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, BinningOptions } from '@/types/Enums';
-import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
+import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus } from '@/types/Enums';
+import { computed, defineComponent, Ref, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
-import BarChart from '@/components/widgets/charts/bar-chart.vue';
-import RegionMap from '@/components/widgets/region-map.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
+import { mapActions, useStore } from 'vuex';
+import router from '@/router';
+import _ from 'lodash';
 import { DataState, ViewState } from '@/types/Insight';
 import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import { COLOR, colorFromIndex, ColorScaleType, getColors, COLOR_SCHEME, isDiscreteScale, validateColorScaleType } from '@/utils/colors-util';
+import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
-import { COLOR_SCHEME } from '@/utils/colors-util';
 import useRegionalData from '@/services/composables/useRegionalData';
-import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import { adminLevelToString, computeMapBoundsForCountries } from '@/utils/map-util-new';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import { adminLevelToString, computeMapBoundsForCountries } from '@/utils/map-util-new';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { RegionalAggregations } from '@/types/Runoutput';
-import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 
 export default defineComponent({
-  name: 'DatacubeRegionRankingCard',
+  name: 'DatacubeComparativeOverlayRegion',
   components: {
     OptionsButton,
-    BarChart,
     RegionMap
   },
-  emits: ['updated-bars-data', 'bar-chart-hover', 'map-click-region'],
   props: {
     id: {
       type: String,
@@ -122,51 +105,22 @@ export default defineComponent({
       type: String,
       required: true
     },
-    selectedAdminLevel: {
+    selectedTimestamp: {
       type: Number,
-      required: true
+      default: 0
     },
-    numberOfColorBins: {
+    datacubeIndex: {
       type: Number,
-      default: 5
-    },
-    selectedColorScheme: {
-      type: Array as PropType<string[]>,
-      default: COLOR_SCHEME.PRIORITIZATION
-    },
-    maxNumberOfChartBars: {
-      type: Number,
-      default: 20
-    },
-    limitNumberOfChartBars: {
-      type: Boolean,
-      default: false
-    },
-    regionRankingBinningType: {
-      type: String,
-      default: BinningOptions.Linear
-    },
-    barChartHoverId: {
-      type: String,
-      default: ''
-    },
-    showNormalizedData: {
-      type: Boolean,
-      default: true
+      default: 0
     }
   },
+  emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp', 'loaded-timeseries'],
   setup(props, { emit }) {
     const {
       id,
       datacubeId,
-      selectedColorScheme,
-      numberOfColorBins,
-      selectedAdminLevel,
-      maxNumberOfChartBars,
-      limitNumberOfChartBars,
-      regionRankingBinningType,
-      showNormalizedData,
-      barChartHoverId
+      selectedTimestamp,
+      datacubeIndex
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -174,14 +128,13 @@ export default defineComponent({
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
-    const bbox = ref<number[][] | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
-    const selectedRegionRankingScenario = ref(0);
-    const regionRunsScenarios = ref([] as {name: string; color: string}[]);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
+
+    const regionMapData = ref<BarData[]>([]);
 
     const store = useStore();
 
@@ -198,7 +151,7 @@ export default defineComponent({
       initialDataConfig.value = datacubeAnalysisItem.dataConfig;
     }
 
-    watchEffect(async () => {
+    watchEffect(() => {
       if (metadata.value) {
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
@@ -230,6 +183,7 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
     const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
 
+    const selectedRegionIds: string[] = [];
     let initialSelectedScenarioIds: string[] = [];
 
     watchEffect(() => {
@@ -252,7 +206,14 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
-    // apply the view-config for this datacube
+    const selectedAdminLevel = ref(0); // country by default
+
+    const colorSchemeReversed = ref(false);
+    const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
+    const selectedColorScaleType = ref(ColorScaleType.LinearDiscrete);
+    const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
+
+    // grab and track the view-config for this datacube
     watchEffect(() => {
       if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
         if (initialViewConfig.value.temporalResolution !== undefined) {
@@ -269,32 +230,47 @@ export default defineComponent({
           defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
+        if (initialViewConfig.value.colorSchemeReversed !== undefined) {
+          colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
+        }
+        if (initialViewConfig.value.colorSchemeName !== undefined) {
+          selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
+        }
+        if (validateColorScaleType(String(initialViewConfig.value.colorScaleType))) {
+          selectedColorScaleType.value = initialViewConfig.value.colorScaleType as ColorScaleType;
+        }
+        if (initialViewConfig.value.numberOfColorBins !== undefined) {
+          numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
+        }
+        if (initialViewConfig.value.selectedAdminLevel !== undefined) {
+          selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
+        }
       }
 
       // apply initial data config for this datacube
       if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+        if (initialDataConfig.value.selectedRegionIds !== undefined) {
+          initialDataConfig.value.selectedRegionIds.forEach(regionId => {
+            selectedRegionIds.push(regionId);
+          });
+        }
         if (initialDataConfig.value.selectedScenarioIds !== undefined) {
           initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
         }
       }
     });
 
-    const {
-      datacubeHierarchy,
-      selectedRegionIds
-    } = useDatacubeHierarchy(
-      selectedScenarioIds,
-      metadata,
-      selectedAdminLevel,
-      ref(null), // breakdownOption,
-      ref([])
-    );
-
-    const selectedTimestamp = ref<number | null>(null);
+    const breakdownOption = ref<string | null>(null);
+    const setBreakdownOption = (newValue: string | null) => {
+      breakdownOption.value = newValue;
+    };
 
     const {
       timeseriesData,
       visibleTimeseriesData,
+      relativeTo,
+      baselineMetadata,
+      setRelativeTo,
       temporalBreakdownData
     } = useTimeseriesData(
       metadata,
@@ -303,9 +279,9 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       ref(null), // breakdownOption
-      ref(null), // selectedTimestamp
+      selectedTimestamp,
       () => {}, // setSelectedTimestamp
-      selectedRegionIds,
+      ref(selectedRegionIds),
       ref(new Set()),
       ref([]),
       ref(false),
@@ -313,31 +289,46 @@ export default defineComponent({
     );
 
     watchEffect(() => {
-      if (visibleTimeseriesData.value.length > 0) {
+      if (metadata.value && visibleTimeseriesData.value && visibleTimeseriesData.value.length > 0) {
+        // override the color of all loaded timeseries
+        visibleTimeseriesData.value.forEach(timeseries => {
+          timeseries.color = colorFromIndex(datacubeIndex.value);
+        });
+
         regionRunsScenarios.value = visibleTimeseriesData.value.map(timeseries => ({ name: timeseries.name, color: timeseries.color }));
 
-        // flatten the list of timeseries for all selected runs and extract the last timestmap
-        let allTimestamps = visibleTimeseriesData.value
-          .map(timeseries => timeseries.points)
-          .flat()
-          .map(point => point.timestamp);
-
-        const timeseriesForSelectedRun = visibleTimeseriesData.value
-          .find((timeseries, indx) => indx === selectedRegionRankingScenario.value);
-        if (timeseriesForSelectedRun !== undefined) {
-          allTimestamps = timeseriesForSelectedRun.points
-            .flat()
-            .map(point => point.timestamp);
-        }
-
-        // select the last timestamp as the initial value
-        const lastTimestamp = _.max(allTimestamps);
-        if (lastTimestamp !== undefined) {
-          // set initial timestamp selection
-          selectedTimestamp.value = lastTimestamp;
-        }
+        emit('loaded-timeseries', {
+          id: id.value,
+          datacubeId: datacubeId.value,
+          timeseriesList: visibleTimeseriesData.value,
+          //
+          datacubeName: metadata.value.name,
+          datacubeOutputName: mainModelOutput.value?.display_name,
+          //
+          region: metadata.value.geography.country // FIXME: later this could be the selected region for each datacube
+        });
       }
     });
+
+    const selectedRegionIdsDisplay = computed(() => {
+      if (_.isEmpty(selectedRegionIds)) return 'All';
+      return selectedRegionIds.join('/');
+    });
+
+    const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
+
+    const bbox = ref<number[][] | undefined>(undefined);
+
+    const {
+      datacubeHierarchy
+      // NOTE: selectedRegionIds is already calculated above so no need to receive as a return object
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      ref(null), // breakdownOption,
+      ref([]) // initialSelectedRegionIds
+    );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
       ref(null), // breakdownOption,
@@ -365,40 +356,38 @@ export default defineComponent({
       datacubeHierarchy
     );
 
-    const selectedRegionIdsDisplay = computed(() => {
-      if (_.isEmpty(selectedRegionIds.value)) return 'All';
-      return selectedRegionIds.value.join('/');
-    });
-
-    const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
-
-    const barsData = ref<BarData[]>([]);
-
     // Calculate bbox
     watchEffect(async () => {
-      const countries = barChartHoverId.value
-        ? [barChartHoverId.value.split('__')[0]]
-        : [...new Set((regionalData.value?.country || []).map(d => d.id))];
+      const countries = [...new Set((regionalData.value?.country || []).map(d => d.id))];
       bbox.value = await computeMapBoundsForCountries(countries) || undefined;
     });
+
+    // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
+    const finalColorScheme = computed(() => {
+      const scheme = isDiscreteScale(selectedColorScaleType.value)
+        ? getColors(selectedColorSchemeName.value, numberOfColorBins.value)
+        : _.clone(COLOR_SCHEME[selectedColorSchemeName.value]);
+      return colorSchemeReversed.value ? scheme.reverse() : scheme;
+    });
+
+    const popupFormatter = (feature: any) => {
+      const { label, value, normalizedValue } = feature.state || {};
+      if (!label) return null;
+      return `${label.split('__').pop()}<br> Normalized: ${+normalizedValue.toFixed(2)}<br> Value: ${+value.toFixed(2)}`;
+    };
+
+    const selectedScenarioIndex = ref(0);
+    const regionRunsScenarios = ref([] as {name: string; color: string}[]);
 
     watch(
       () => [
         regionalData.value,
         selectedAdminLevel.value,
-        selectedColorScheme.value,
-        showNormalizedData.value,
-        numberOfColorBins.value,
-        maxNumberOfChartBars.value,
-        limitNumberOfChartBars.value,
-        regionRankingBinningType.value,
-        selectedRegionRankingScenario.value
+        finalColorScheme.value,
+        selectedScenarioIndex.value
       ],
       () => {
         const temp: BarData[] = [];
-        // if either color bins, the list of scheme colors, or regional data has changed,
-        // then reconstruct the bar chart data
-        const colors = selectedColorScheme.value;
 
         if (regionalData.value !== null) {
           const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
@@ -407,29 +396,20 @@ export default defineComponent({
           if (regionLevelData !== undefined && regionLevelData.length > 0) {
             const data = regionLevelData.map(regionDataItem => ({
               name: regionDataItem.id,
-              value: Object.values(regionDataItem.values).length > 0 && Object.values(regionDataItem.values).length > selectedRegionRankingScenario.value ? Object.values(regionDataItem.values)[selectedRegionRankingScenario.value] : 0
+              value: Object.values(regionDataItem.values).length > 0 && Object.values(regionDataItem.values).length > selectedScenarioIndex.value ? Object.values(regionDataItem.values)[selectedScenarioIndex.value] : 0
             }));
-            //
-            // bin data
-            //
+
             if (data.length > 0) {
+              let regionIndexCounter = 0;
+
               const allValues = data.map(regionDataItem => regionDataItem.value);
               const scale = d3
                 .scaleLinear()
                 .domain(d3.extent(allValues) as [number, number])
                 .nice(); // 😃
               const dataExtent = scale.domain(); // after nice() is called
-              const binGenerator = d3.bin<{name: string;value: number}, number>()
-                .domain(scale.domain() as [number, number]) // omit to use the default domain/extent from data
-                // use a custom threshold generator to ensure
-                //  bucket count that matches the required number of bins
-                .thresholds((data, min, max) =>
-                  d3.range(numberOfColorBins.value).map(t => min + (t / numberOfColorBins.value) * (max - min))
-                )
-                .value(function(d) { return d.value; })
-              ;
-              const bins = binGenerator(data);
-              let regionIndexCounter = 0;
+
+              const colors = finalColorScheme.value;
 
               // @REVIEW
               // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
@@ -438,62 +418,43 @@ export default defineComponent({
                 const minValue = dataExtent[0];
                 const maxValue = dataExtent[1];
                 if (minValue === maxValue) {
-                  // only one bar, so the assumption is to use its value as the full range
+                  // only one region, so the assumption is to use its value as the full range
                   return 1;
                 } else {
                   return (value - minValue) / (maxValue - minValue);
                 }
               };
-              const numBars = regionLevelData.length;
-              // we can have many bars than the available colors, so map indices
-              const slope = 1.0 * (colors.length) / (numBars);
-              bins.forEach((bin) => {
-                _.sortBy(bin, item => item.value).forEach(dataItem => {
-                  const normalizedValue = normalize(dataItem.value);
-                  const barValue = showNormalizedData.value ? (normalizedValue * numberOfColorBins.value) : dataItem.value;
-                  let barColor = 'skyblue';
-                  let binIndex = -1;
-                  if (regionRankingBinningType.value === BinningOptions.Linear) {
-                    binIndex = Math.trunc(normalizedValue * numberOfColorBins.value);
-                  }
-                  if (regionRankingBinningType.value === BinningOptions.Quantile) {
-                    binIndex = Math.trunc(slope * (regionIndexCounter));
-                  }
-                  if (binIndex !== -1) {
-                    const colorIndex = _.clamp(binIndex, 0, colors.length - 1);
-                    barColor = colors[colorIndex];
-                  }
-                  temp.push({
-                    name: (regionIndexCounter + 1).toString(),
-                    label: dataItem.name,
-                    value: barValue,
-                    normalizedValue: normalizedValue,
-                    color: barColor
-                  });
-                  regionIndexCounter++;
+
+              data.forEach(dataItem => {
+                const normalizedValue = normalize(dataItem.value);
+                const itemValue = dataItem.value;
+                const colorIndex = Math.trunc(normalizedValue * numberOfColorBins.value); // i.e., linear binning
+                // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
+                const clampedColorIndex = _.clamp(colorIndex, 0, colors.length - 1);
+                const regionColor = colors[clampedColorIndex];
+                temp.push({
+                  name: (regionIndexCounter + 1).toString(),
+                  label: dataItem.name,
+                  value: itemValue,
+                  normalizedValue: normalizedValue,
+                  color: regionColor
                 });
+                regionIndexCounter++;
               });
             }
 
-            // adjust the bar ranking so that the highest bar value will be ranked 1st
-            temp.forEach((barItem, indx) => {
-              barItem.name = (temp.length - indx).toString();
-            });
-
-            emit('updated-bars-data', {
-              id: id.value,
-              datacubeId: datacubeId.value,
-              name: metadata.value?.name + ' : ' + mainModelOutput.value?.display_name,
-              barsData: limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp,
-              selectedTimestamp: selectedTimestamp.value
+            // adjust the ranking so that the highest value will be ranked 1st
+            // REVIEW: do we need this in the Overlay mode?
+            temp.forEach((item, indx) => {
+              item.name = (temp.length - indx).toString();
             });
           }
-          // limit the number of bars to the selected maximum
-          barsData.value = limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp;
+          regionMapData.value = temp;
         }
       });
 
     return {
+      activeDrilldownTab: 'breakdown',
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
@@ -503,6 +464,11 @@ export default defineComponent({
       mainModelOutput,
       outputs,
       timeseriesData,
+      baselineMetadata,
+      relativeTo,
+      setRelativeTo,
+      breakdownOption,
+      setBreakdownOption,
       temporalBreakdownData,
       AggregationOption,
       visibleTimeseriesData,
@@ -514,12 +480,12 @@ export default defineComponent({
       DatacubeStatus,
       statusColor,
       statusLabel,
-      barsData,
-      selectedTimestamp,
-      timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY'),
-      selectedRegionRankingScenario,
-      regionRunsScenarios,
+      regionMapData,
       bbox,
+      popupFormatter,
+      selectedScenarioIndex,
+      regionRunsScenarios,
+      selectedAdminLevel,
       isModelMetadata
     };
   },
@@ -550,12 +516,16 @@ export default defineComponent({
 
 .datacube-card-container {
   background: $background-light-1;
-  border-radius: 3px;
-  height: 200px;
+  border-radius: 2px;
+  border-width: 3px;
+  border-style: solid;
+  border-color: inherit;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid $background-light-3;
-  padding: 1rem;
+  overflow: hidden;
+  text-overflow: hidden;
+  white-space: nowrap;
 }
 
 .datacube-header {
@@ -563,14 +533,11 @@ export default defineComponent({
   align-items: center;
 
   .datacube-title-area {
-    display: inline-block;
+    display: flex;
     cursor: pointer;
     flex: 1;
     min-width: 0;
     margin: 0;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
 
     &:hover {
       color: $selected-dark;
@@ -590,6 +557,10 @@ export default defineComponent({
   font-weight: normal;
   color: $label-color;
   margin-left: 10px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .drilldown-btn {
@@ -602,40 +573,7 @@ main {
   display: flex;
   flex: 1;
   min-height: 0;
-}
-
-.bar-chart {
-  flex: 1;
-  min-width: 0;
-}
-
-.chart-and-footer {
-  display: flex;
   flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-
-.datacube-map-placeholder {
-  background-color: #fafafa;
-  height: 100%;
-  width: 150px;
-  display: flex;
-  flex-direction: column;
-  padding: 5px;
-}
-
-.country-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.datacube-footer {
-  margin-left: 2rem;
-  font-size: small;
-  display: flex;
-  justify-content: space-around;
 }
 
 </style>

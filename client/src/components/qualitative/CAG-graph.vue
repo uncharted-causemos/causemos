@@ -13,7 +13,9 @@
       ref="newNode"
       :concepts-in-cag="conceptsInCag"
       :placement="{ x: newNodeX, y: newNodeY }"
+      :selected-time-scale="selectedTimeScale"
       @suggestion-selected="onSuggestionSelected"
+      @datacube-selected="onDatacubeSelected"
       @show-custom-concept="showCustomConcept = true"
     />
     <modal-custom-concept
@@ -48,6 +50,7 @@ import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
+import { TimeScale } from '@/types/Enums';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -68,14 +71,18 @@ export default defineComponent({
     showNewNode: {
       type: Boolean,
       default: false
+    },
+    selectedTimeScale: {
+      type: String as PropType<TimeScale>,
+      required: true
     }
   },
   emits: [
     'edge-click', 'node-click', 'background-click', 'background-dbl-click',
 
     // Custom
-    'new-edge', 'delete', 'rename-node', 'merge-nodes',
-    'suggestion-selected', 'suggestion-duplicated'
+    'refresh', 'new-edge', 'delete', 'rename-node', 'merge-nodes',
+    'suggestion-selected', 'suggestion-duplicated', 'datacube-selected'
   ],
   setup(props) {
     const store = useStore();
@@ -148,7 +155,7 @@ export default defineComponent({
       const neighborhood = calculateNeighborhood(this.data as any, nodeSelection.datum().data.concept);
       renderer.resetAnnotations();
       renderer.neighborhoodAnnotation(neighborhood);
-      console.log(neighborhood);
+      // console.log(neighborhood);
 
       this.selectedNode = nodeSelection.datum().data.concept;
       this.$emit('node-click', nodeSelection.datum().data);
@@ -282,6 +289,7 @@ export default defineComponent({
         this.renderer.isGraphDirty = true;
         await this.renderer.setData(d);
         await this.renderer.render();
+        this.$emit('refresh', null);
       }
     },
     onSuggestionSelected(suggestion: any) {
@@ -290,6 +298,9 @@ export default defineComponent({
         return;
       }
       this.$emit('suggestion-selected', suggestion);
+    },
+    onDatacubeSelected(datacubeParam: any) {
+      this.$emit('datacube-selected', datacubeParam);
     },
     saveCustomConcept(value: { theme: string; process: string; theme_property: string; process_property: string }) {
       this.$emit('suggestion-selected', {

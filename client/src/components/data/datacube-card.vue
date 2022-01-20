@@ -456,6 +456,7 @@
                 <viz-options-pane
                   :metadata="metadata"
                   :aggregation-options="aggregationOptions"
+                  :resolution-options="temporalResolutionOptions"
                   :selected-spatial-aggregation="selectedSpatialAggregation"
                   :selected-temporal-aggregation="selectedTemporalAggregation"
                   :selected-unit="unit"
@@ -563,7 +564,17 @@ import {
   OutputSpecWithId
 } from '@/types/Runoutput';
 
-import { colorFromIndex, ColorScaleType, getColors, COLOR, COLOR_SCHEME, isDiscreteScale, SCALE_FUNCTION, validateColorScaleType } from '@/utils/colors-util';
+import {
+  colorFromIndex,
+  ColorScaleType,
+  getColors,
+  COLOR,
+  COLOR_SCHEME,
+  isDiscreteScale,
+  SCALE_FUNCTION,
+  validateColorScaleType,
+  isDivergingScheme
+} from '@/utils/colors-util';
 import { isIndicator, isModel, getFilteredScenariosFromIds, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
@@ -623,8 +634,8 @@ export default defineComponent({
       default: []
     },
     temporalResolutionOptions: {
-      type: Array as PropType<AggregationOption[]>,
-      default: []
+      type: Array as PropType<TemporalResolutionOption[] | null>,
+      default: null
     }
   },
   components: {
@@ -658,7 +669,8 @@ export default defineComponent({
       initialDataConfig,
       initialViewConfig,
       metadata,
-      tabState
+      tabState,
+      temporalResolutionOptions
     } = toRefs(props);
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -875,6 +887,9 @@ export default defineComponent({
     const isContinuousScale = computed(() => {
       return !isDiscreteScale(selectedColorScaleType.value);
     });
+    const isDivergingScale = computed(() => {
+      return isDivergingScheme(selectedColorSchemeName.value);
+    });
 
     const updateTabView = (val: string) => {
       currentTabView.value = val;
@@ -882,6 +897,21 @@ export default defineComponent({
     const onMapLoad = () => {
       emit('on-map-load');
     };
+
+    watch(
+      () => temporalResolutionOptions.value,
+      () => {
+        if (temporalResolutionOptions.value !== null) {
+        // ensure the initial selectedTemporalResolution is valid and respect the "temporalResolutionOptions"
+        // Also, set the resolution selection
+          if (temporalResolutionOptions.value.findIndex(option => option === selectedTemporalResolution.value) < 0) {
+            if (temporalResolutionOptions.value.length > 0) {
+              setTemporalResolutionSelection(temporalResolutionOptions.value[0]);
+            }
+          }
+        }
+      }
+    );
 
     // apply initial view config for this datacube
     watchEffect(() => {
@@ -1517,6 +1547,7 @@ export default defineComponent({
         relativeToSchemes: [COLOR_SCHEME.GREYS_7, COLOR_SCHEME.PIYG_7],
         scaleFn: SCALE_FUNCTION[selectedColorScaleType.value],
         isContinuous: isContinuousScale.value,
+        isDiverging: isDivergingScale.value,
         opacity: Number(selectedDataLayerTransparency.value)
       };
       return options;
@@ -1684,6 +1715,7 @@ export default defineComponent({
       hasDefaultRun,
       headerGroupButtons,
       isContinuousScale,
+      isDivergingScale,
       isModelMetadata,
       isRelativeDropdownOpen,
       mainModelOutput,

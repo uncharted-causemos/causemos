@@ -3,16 +3,19 @@ import * as d3 from 'd3';
 export enum COLOR {
   GREYS_7 = 'GREYS_7',
   PIYG_7 = 'PIYG_7',
+  RDYLBU_7 = 'DIVERGING',
   DEFAULT = 'DEFAULT',
   VEGETATION = 'VEGETATION',
   WATER = 'WATER',
   PRIORITIZATION = 'PRIORITIZATION',
+
   OTHER = 'OTHER'
 }
 
 export const COLOR_SCHEME: { [key in COLOR ]: string[] } = Object.freeze({
   [COLOR.GREYS_7]: ['#f7f7f7', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525'], // https://colorbrewer2.org/?type=sequential&scheme=Greys&n=7
   [COLOR.PIYG_7]: ['#c51b7d', '#e9a3c9', '#fde0ef', '#f7f7f7', '#e6f5d0', '#a1d76a', '#4d9221'], // https://colorbrewer2.org/#type=diverging&scheme=PiYG&n=7
+  [COLOR.RDYLBU_7]: ['#d73027', '#fc8d59', '#fee090', '#ffffbf', '#e0f3f8', '#91bfdb', '#4575b4'], // https://colorbrewer2.org/#type=diverging&scheme=RdYlBu&n=7
   [COLOR.DEFAULT]: ['#f2f0f7', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#4a1486'],
   [COLOR.VEGETATION]: ['#edf8e9', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#005a32'],
   [COLOR.WATER]: ['#eff3ff', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#084594'],
@@ -94,6 +97,11 @@ export const DISCRETE_SCALES = [
   ColorScaleType.LogDiscrete
 ];
 
+export const DIVERGING_SCALES = [
+  COLOR.PIYG_7,
+  COLOR.RDYLBU_7
+];
+
 export const SCALE_FUNCTION = {
   [ColorScaleType.Linear]: d3.scaleLinear,
   [ColorScaleType.Log]: d3.scaleSymlog,
@@ -103,6 +111,10 @@ export const SCALE_FUNCTION = {
 
 export function isDiscreteScale(scaleType: ColorScaleType) {
   return Boolean(DISCRETE_SCALES.find(v => v === scaleType));
+}
+
+export function isDivergingScheme(schemeName: COLOR) {
+  return DIVERGING_SCALES.includes(schemeName);
 }
 
 export default {

@@ -1,0 +1,158 @@
+<template>
+  <div class="ridgeline-container">
+    <svg ref="renderTarget"></svg>
+    <resize-observer @notify="resize" />
+  </div>
+</template>
+
+<script lang="ts">
+import * as d3 from 'd3';
+import _ from 'lodash';
+
+import { renderRidgelines } from '@/charts/ridgeline-renderer';
+import { RidgelinePoint } from '@/utils/ridgeline-util';
+import {
+  defineComponent,
+  onMounted,
+  PropType,
+  ref,
+  toRefs,
+  watchEffect
+} from 'vue';
+import { nextTick } from 'process';
+
+const RESIZE_DELAY = 15;
+
+const COMPARISON_COLOR = '#4DAC26'; // green
+const COMPARISON_BASELINE_COLOR = '#E597B9'; // pink
+const COMPARISON_OVERLAP_COLOR = '#DDD'; // grey
+
+export default defineComponent({
+  name: 'Ridgeline',
+  props: {
+    ridgelineData: {
+      type: Object as PropType<RidgelinePoint[]>,
+      required: true
+    },
+    comparisonBaseline: {
+      type: Object as PropType<RidgelinePoint[] | null>,
+      default: null
+    },
+    min: {
+      type: Number,
+      default: 0
+    },
+    max: {
+      type: Number,
+      default: 0
+    }
+  },
+  setup(props) {
+    const { ridgelineData, comparisonBaseline, min, max } = toRefs(props);
+
+    const renderTarget = ref<SVGElement | null>(null);
+
+    const chartSize = ref({ width: 0, height: 0 });
+    onMounted(() => {
+      // Set initial chart size
+      const parentElement = renderTarget.value?.parentElement;
+      if (parentElement === null || parentElement === undefined) {
+        return;
+      }
+      // Seems to be a Vue reactivity bug: effect doesn't trigger
+      //  unless chartSize is set next frame, likely because it has
+      //  already run this frame before onMounted.
+      nextTick(() => {
+        chartSize.value = {
+          width: parentElement.clientWidth,
+          height: parentElement.clientHeight
+        };
+      });
+    });
+
+    watchEffect(() => {
+      // Rerender whenever dependencies change
+      const svg = renderTarget.value
+        ? d3.selectAll<SVGElement, any>([renderTarget.value])
+        : null;
+      const { width, height } = chartSize.value;
+      if (svg === null) {
+        return;
+      }
+      // Set new size
+      svg.attr('width', width).attr('height', height);
+      svg.selectAll('*').remove();
+      // Render comparison baseline
+      const baseline = comparisonBaseline.value;
+      if (baseline !== null) {
+        renderRidgelines(
+          svg,
+          baseline,
+          width,
+          height,
+          min.value,
+          max.value,
+          false,
+          true,
+          COMPARISON_BASELINE_COLOR
+        );
+      }
+      // Render ridgeline
+      renderRidgelines(
+        svg,
+        ridgelineData.value,
+        width,
+        height,
+        min.value,
+        max.value,
+        true,
+        // Only render the yAxis line if this is the first ridgeline to be
+        //  drawn foor this chart
+        baseline === null,
+        baseline !== null ? COMPARISON_COLOR : COMPARISON_OVERLAP_COLOR
+      );
+      // Render overlap
+      if (baseline !== null) {
+        const overlap = ridgelineData.value.map(
+          ({ value, coordinate }, index) => {
+            const baselineValue = baseline[index].value;
+            return {
+              value: _.min([value, baselineValue]) ?? 0,
+              coordinate
+            };
+          }
+        );
+        renderRidgelines(
+          svg,
+          overlap,
+          width,
+          height,
+          min.value,
+          max.value,
+          false,
+          false,
+          COMPARISON_OVERLAP_COLOR
+        );
+      }
+    });
+
+    const resize = _.debounce(function({ width, height }) {
+      if (renderTarget.value === null) return;
+      chartSize.value = { width, height };
+    }, RESIZE_DELAY);
+
+    return {
+      renderTarget,
+      resize
+    };
+  }
+});
+</script>
+
+<style lang="scss" scoped>
+@import '@/styles/variables';
+
+.ridgeline-container {
+  position: relative;
+}
+</style>

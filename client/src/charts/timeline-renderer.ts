@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import _ from 'lodash';
 import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
@@ -8,6 +7,7 @@ import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
 import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
+import _ from 'lodash';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -18,6 +18,14 @@ const CONTEXT_RANGE_FILL = SELECTED_COLOR;
 const CONTEXT_RANGE_STROKE = SELECTED_COLOR_DARK;
 const CONTEXT_RANGE_OPACITY = 0.4;
 const CONTEXT_TIMESERIES_OPACITY = 0.2;
+const TOOLTIP_WIDTH = 150;
+const TOOLTIP_BG_COLOUR = 'white';
+const TOOLTIP_BORDER_COLOUR = 'grey';
+const TOOLTIP_BORDER_WIDTH = 1.5;
+const TOOLTIP_FONT_SIZE = 10;
+const TOOLTIP_PADDING = TOOLTIP_FONT_SIZE / 2;
+const TOOLTIP_LINE_HEIGHT = TOOLTIP_FONT_SIZE + TOOLTIP_PADDING;
+
 
 // The type of value can't be more specific than `any`
 //  because under the hood d3.tickFormat requires d3.NumberType.
@@ -58,6 +66,7 @@ export default function(
   height: number,
   selectedTimestamp: number,
   breakdownOption: string | null,
+  timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} },
   onTimestampSelected: (timestamp: number) => void,
   onTimestampRangeSelected: (start: number, end: number) => void
 ) {
@@ -184,19 +193,22 @@ export default function(
     groupElement.select('.brush').call(brushHandle as any, selection);
   }
 
-  generateSelectableTimestamps(
-    groupElement,
-    timeseriesList,
-    xScale,
-    height,
-    onTimestampSelected
-  );
-
   const timestampElements = generateSelectedTimestampElements(
     groupElement,
     height,
     width,
     timeseriesList
+  );
+
+  generateSelectableTimestamps(
+    groupElement,
+    timeseriesList,
+    xScale,
+    height,
+    timeseriesToDatacubeMap,
+    timestampFormatter,
+    onTimestampSelected,
+    valueFormatter
   );
 
   // Set timestamp elements to reflect the initially selected
@@ -253,14 +265,36 @@ function generateSelectableTimestamps(
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
   height: number,
-  onTimestampSelected: (timestamp: number) => void
+  timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} },
+  timestampFormatter: (timestamp: number) => string,
+  onTimestampSelected: (timestamp: number) => void,
+  valueFormatter: (value: number) => string
 ) {
   const timestampGroup = selection.append('g');
-  const allTimestamps = timeseriesList
-    .map(timeSeries => timeSeries.points)
-    .flat()
-    .map(point => point.timestamp);
-  const uniqueTimestamps = _.sortBy(_.uniq(allTimestamps));
+  const valuesAtEachTimestamp = new Map<number, { owner: string; color: string; name: string; value: number | string}[]>();
+  const allTimestamps = _.uniq(
+    timeseriesList
+      .map(timeSeries => timeSeries.points)
+      .flat()
+      .map(point => point.timestamp));
+  allTimestamps.forEach(timestamp => {
+    timeseriesList.forEach(timeseries => {
+      const { color, name, points } = timeseries;
+      const ownerDatacube = timeseriesToDatacubeMap[timeseries.id].datacubeName; // FIXME: consider adding output name in the header
+      const pointAtTimestamp = points.find(p => p.timestamp === timestamp);
+      if (!valuesAtEachTimestamp.has(timestamp)) {
+        valuesAtEachTimestamp.set(timestamp, []);
+      }
+      // current timeseries has data for the timestamp
+      const valuesAtThisTimestamp = valuesAtEachTimestamp.get(timestamp);
+      if (valuesAtThisTimestamp === undefined) {
+        return;
+      }
+      valuesAtThisTimestamp.push({ owner: ownerDatacube, color, name, value: pointAtTimestamp !== undefined ? pointAtTimestamp.value : 'no data' });
+    });
+  });
+
+  const uniqueTimestamps = Array.from(valuesAtEachTimestamp.keys()).sort();
   // FIXME: We assume that all timestamps are evenly spaced when determining
   //  how wide the hover/click hitbox should be. This may not always be the case.
 
@@ -270,18 +304,129 @@ function generateSelectableTimestamps(
     uniqueTimestamps.length > 1
       ? xScale(uniqueTimestamps[1]) - xScale(uniqueTimestamps[0])
       : SELECTED_TIMESTAMP_WIDTH * 5;
+  const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
+  const [minTimestamp, maxTimestamp] = xScale.domain();
+  const centerTimestamp = minTimestamp + (maxTimestamp - minTimestamp) / 2;
   uniqueTimestamps.forEach(timestamp => {
-    const timestampMarker = timestampGroup
-      .append('rect')
-      .attr('width', SELECTED_TIMESTAMP_WIDTH)
-      .attr('height', height - PADDING_TOP - X_AXIS_HEIGHT)
+    // Display tooltip on the left of the hovered timestamp if that timestamp
+    //  is on the right side of the chart to avoid the tooltip overflowing
+    //  or being clipped.
+    const isRightOfCenter = timestamp > centerTimestamp;
+    const markerAndTooltip = timestampGroup
+      .append('g')
       .attr(
         'transform',
         translate(xScale(timestamp) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
       )
-      .attr('fill', SELECTED_COLOR)
-      .attr('fill-opacity', SELECTABLE_TIMESTAMP_OPACITY)
       .attr('visibility', 'hidden');
+    markerAndTooltip
+      .append('rect')
+      .attr('width', SELECTED_TIMESTAMP_WIDTH)
+      .attr('height', markerHeight)
+      .attr('fill', SELECTED_COLOR)
+      .attr('fill-opacity', SELECTABLE_TIMESTAMP_OPACITY);
+    // How far the tooltip is shifted horizontally from the hovered timestamp
+    //  also the "radius" of the notch diamond
+    const offset = 10;
+    const notchSideLength = Math.sqrt(offset * offset + offset * offset);
+    const tooltip = markerAndTooltip.append('g')
+      .attr('transform', translate(
+        isRightOfCenter
+          ? -offset - TOOLTIP_WIDTH
+          : offset
+        , 0)
+      );
+    tooltip
+      .append('rect')
+      .attr('width', TOOLTIP_WIDTH)
+      .attr('height', markerHeight)
+      .attr('fill', TOOLTIP_BG_COLOUR)
+      .attr('stroke', TOOLTIP_BORDER_COLOUR);
+    // Notch border
+    tooltip
+      .append('rect')
+      .attr('width', notchSideLength + TOOLTIP_BORDER_WIDTH)
+      .attr('height', notchSideLength + TOOLTIP_BORDER_WIDTH)
+      .attr(
+        'transform',
+        isRightOfCenter
+          ? translate(TOOLTIP_WIDTH - offset - TOOLTIP_BORDER_WIDTH, markerHeight / 2) + 'rotate(-45)'
+          : translate(-TOOLTIP_BORDER_WIDTH - offset, markerHeight / 2) + 'rotate(-45)'
+      )
+      .attr('fill', TOOLTIP_BORDER_COLOUR);
+    // Notch background
+    // Extend side length of notch background to make sure it covers the right
+    //  half of the border rect
+    tooltip
+      .append('rect')
+      .attr('width', notchSideLength * 2)
+      .attr('height', notchSideLength * 2)
+      .attr(
+        'transform',
+        isRightOfCenter
+          ? translate(TOOLTIP_WIDTH - 3 * offset, markerHeight / 2) + 'rotate(-45)'
+          : translate(-offset, markerHeight / 2) + 'rotate(-45)'
+      )
+      .attr('fill', TOOLTIP_BG_COLOUR);
+
+    //
+    // Display a line for each value at this timestamp (organized under datacubes)
+    //
+    const includeSectionHeaders = false;
+    let yPosition = 0;
+    let lineCounter = 1; // +1 line because the origin point for text elements is the bottom left corner
+    // max number of chars before truncating the text of each qualifier value
+    // FIXME: this is a simplification rather than calculating the actual name/value pixel width and truncate accordingly
+    const maxNameLen = 16;
+    Object.keys(timeseriesToDatacubeMap).forEach((ownerDatacubeId) => {
+      // header; datacube name
+      yPosition = TOOLTIP_LINE_HEIGHT * lineCounter;
+      const header = timeseriesToDatacubeMap[ownerDatacubeId].datacubeName;
+      if (includeSectionHeaders) {
+        if (yPosition < (markerHeight - TOOLTIP_LINE_HEIGHT)) {
+          tooltip
+            .append('text')
+            .attr('transform', translate(TOOLTIP_PADDING, yPosition))
+            .style('fill', 'black')
+            .style('font-weight', 'bold')
+            .text(header.length > maxNameLen ? header.substring(0, maxNameLen) + '...' : header);
+        }
+        lineCounter += 1;
+      }
+      (valuesAtEachTimestamp.get(timestamp) ?? [])
+        .filter(timeseriesData => timeseriesData.owner === header)
+        .sort(({ value: valueA }, { value: valueB }) => {
+          // strings should always be sorted at the bottom
+          return (typeof valueA === 'number' && typeof valueB === 'number') ? (valueB - valueA) : 1;
+        })
+        .forEach(({ color, name, value }) => {
+          yPosition = lineCounter * TOOLTIP_LINE_HEIGHT;
+          if (yPosition < (markerHeight - TOOLTIP_LINE_HEIGHT)) {
+            // list of timeseries names/values
+            tooltip
+              .append('text')
+              .attr('transform', translate(TOOLTIP_PADDING * 2, yPosition))
+              .style('fill', color)
+              .style('font-weight', 'bold')
+              .text(name.length > maxNameLen ? name.substring(0, maxNameLen) + '...' : name);
+            tooltip
+              .append('text')
+              .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, yPosition))
+              .style('text-anchor', 'end')
+              .style('fill', color)
+              .text(typeof value === 'string' ? value : valueFormatter(value));
+          }
+          lineCounter += 1;
+        });
+    });
+    // Display hovered timestamp
+    tooltip
+      .append('text')
+      .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, markerHeight - TOOLTIP_PADDING))
+      .style('text-anchor', 'end')
+      .style('fill', SELECTED_COLOR_DARK)
+      .text(timestampFormatter(timestamp));
+
     // Hover hitbox
     timestampGroup
       .append('rect')
@@ -293,8 +438,8 @@ function generateSelectableTimestamps(
       )
       .attr('fill-opacity', 0)
       .style('cursor', 'pointer')
-      .on('mouseenter', () => timestampMarker.attr('visibility', 'visible'))
-      .on('mouseleave', () => timestampMarker.attr('visibility', 'hidden'))
+      .on('mouseenter', () => markerAndTooltip.attr('visibility', 'visible'))
+      .on('mouseleave', () => markerAndTooltip.attr('visibility', 'hidden'))
       .on('mousedown', () => onTimestampSelected(timestamp));
   });
 }
