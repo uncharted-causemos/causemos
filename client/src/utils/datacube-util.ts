@@ -191,6 +191,21 @@ export function isIndicator(datacube: Datacube): datacube is Indicator {
   return datacube.type === DatacubeType.Indicator;
 }
 
+export function getOutputs(metadata: Datacube) {
+  if (metadata.validatedOutputs && metadata.validatedOutputs.length > 0) {
+    return metadata.validatedOutputs;
+  }
+  return metadata.outputs;
+}
+
+export function getSelectedOutput(metadata: Datacube, index: number) {
+  const outputs = getOutputs(metadata);
+  if (index >= 0 && index < outputs.length) {
+    return outputs[index];
+  }
+  return outputs.find((o: DatacubeFeature) => o.name === metadata.default_feature) ?? outputs[0];
+}
+
 // supported pre-rendered datacube images
 export function isImage(url: string) {
   url = url.toLowerCase();

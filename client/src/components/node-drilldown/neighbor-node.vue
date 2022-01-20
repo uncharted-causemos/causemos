@@ -132,6 +132,9 @@ $border-width: 1px;
 header {
   padding: 1px 3px;
   border-radius: 2px 2px 0 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .arrow {

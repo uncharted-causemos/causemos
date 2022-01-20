@@ -78,7 +78,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { ProjectType, DatacubeStatus, TemporalResolutionOption, TimeScale } from '@/types/Enums';
-import { getValidatedOutputs, STATUS } from '@/utils/datacube-util';
+import { getOutputs, getSelectedOutput, getValidatedOutputs, STATUS } from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
@@ -248,8 +248,8 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
-        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-        mainModelOutput.value = outputs.value[currentOutputIndex.value];
+        outputs.value = getOutputs(metadata.value);
+        mainModelOutput.value = getSelectedOutput(metadata.value, currentOutputIndex.value);
       }
     });
 
