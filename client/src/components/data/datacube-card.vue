@@ -574,7 +574,14 @@ import {
   validateColorScaleType,
   isDivergingScheme
 } from '@/utils/colors-util';
-import { isIndicator, isModel, getFilteredScenariosFromIds, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
+import {
+  isIndicator,
+  isModel,
+  getFilteredScenariosFromIds,
+  TAGS,
+  DEFAULT_DATE_RANGE_DELIMETER,
+  getSelectedOutput
+} from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
   // adminLevelToString,
@@ -1656,8 +1663,7 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
-        const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-        mainModelOutput.value = outputs[currentOutputIndex.value];
+        mainModelOutput.value = getSelectedOutput(metadata.value, currentOutputIndex.value);
       }
 
       if (isIndicatorDatacube.value) {

@@ -68,3 +68,14 @@ export const getProjectionLengthFromTimeScale = (timeScale: TimeScale) => {
   const timeSlices = getTimeScaleOption(timeScale).timeSlices;
   return timeSlices[timeSlices.length - 1].months;
 };
+
+export const getMonthsPerTimestepFromTimeScale = (timeScale: TimeScale) => {
+  switch (timeScale) {
+    case TimeScale.Months:
+      return 1;
+    case TimeScale.Years:
+      return 12;
+    default:
+      return 1;
+  }
+};

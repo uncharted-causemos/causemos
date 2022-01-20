@@ -73,7 +73,7 @@ import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { DatacubeStatus, ProjectType } from '@/types/Enums';
 import { DataState, ViewState } from '@/types/Insight';
 
-import { DATASET_NAME, isIndicator, getValidatedOutputs } from '@/utils/datacube-util';
+import { DATASET_NAME, isIndicator, getValidatedOutputs, getOutputs, getSelectedOutput } from '@/utils/datacube-util';
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import filtersUtil from '@/utils/filters-util';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
@@ -132,11 +132,11 @@ export default defineComponent({
       if (metadata.value) {
         store.dispatch('insightPanel/setContextId', [metadata.value.id]);
 
-        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+        outputs.value = getOutputs(metadata.value);
 
         let initialOutputIndex = 0;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
-        if (currentOutputEntry !== undefined) {
+        if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the selected output of the current model
           initialOutputIndex = currentOutputEntry;
         } else {
@@ -147,7 +147,7 @@ export default defineComponent({
           defaultOutputMap[metadata.value.id] = initialOutputIndex;
           setDatacubeCurrentOutputsMap(defaultOutputMap);
         }
-        mainModelOutput.value = outputs.value[initialOutputIndex];
+        mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
       }
     });
 
