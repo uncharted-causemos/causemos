@@ -16,6 +16,7 @@ import { getTimestampAfterMonths, roundToNearestMonth } from '@/utils/date-util'
 import { getProjectionLengthFromTimeScale, TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 
 import {
+  calculateTypicalChangeBracket,
   convertDistributionTimeseriesToRidgelines
 } from '@/utils/ridgeline-util';
 
@@ -298,6 +299,7 @@ export default function(
         selectedScenarioId,
         minValue,
         maxValue,
+        historicalTimeseries,
         xScaleFocus,
         yScaleFocus
       );
@@ -511,6 +513,7 @@ const renderProjectionRidgelines = (
   selectedScenarioId: string,
   minValue: number,
   maxValue: number,
+  historicalTimeseries: TimeseriesPoint[],
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>
 ) => {
@@ -537,10 +540,15 @@ const renderProjectionRidgelines = (
   }
 
   // Render each ridgeline
-  for (let i = 0; i < ridgeLines.length; i++) {
+  ridgeLines.forEach(ridgelineWithMetadata => {
+    const { ridgeline, timestamp, monthsAfterNow } = ridgelineWithMetadata;
+    const contextRange = calculateTypicalChangeBracket(
+      historicalTimeseries,
+      monthsAfterNow
+    );
     const elem = renderRidgelines(
       ridgeLineGroup as any,
-      ridgeLines[i].ridgeline,
+      ridgeline,
       approximateWidth,
       Math.abs(yScale.range()[1] - yScale.range()[0]),
       minValue,
@@ -548,9 +556,11 @@ const renderProjectionRidgelines = (
       false,
       false,
       'black',
-      '');
-    elem.attr('transform', translate(xScale(currentProjection.values[i].timestamp), 0));
-  }
+      '',
+      contextRange
+    );
+    elem.attr('transform', translate(xScale(timestamp), 0));
+  });
 };
 
 const renderConstraints = (
