@@ -129,17 +129,18 @@ export const calculateTypicalChangeBracket = (
   if (historicalData.length === 0) return null;
   const latestHistoricalValue = _.last(historicalData)?.value ?? 0;
   const changes: number[] = [];
+  const historicalDataMap = new Map<number, number>();
+  // As an optimization, convert historical data into a map for faster lookup
+  //  within the next loop
   historicalData.forEach(({ timestamp, value }) => {
-    // OPTIMIZATION: assuming historicalData is ordered chronologically, we
-    //  can just check the next few values and stop if we encounter a timestamp
-    //  that's farther away than `intervalLengthInMonths`.
-    const pointAfterInterval = historicalData.find(
-      point =>
-        point.timestamp ===
-        getTimestampAfterMonths(timestamp, intervalLengthInMonths)
+    historicalDataMap.set(timestamp, value);
+  });
+  historicalData.forEach(({ timestamp, value }) => {
+    const pointAfterInterval = historicalDataMap.get(
+      getTimestampAfterMonths(timestamp, intervalLengthInMonths)
     );
     if (pointAfterInterval !== undefined) {
-      changes.push(pointAfterInterval.value - value);
+      changes.push(pointAfterInterval - value);
     }
   });
   const min = _.min(changes);
