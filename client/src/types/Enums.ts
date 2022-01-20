@@ -119,6 +119,8 @@ export enum TimeScale {
 export enum DataTransform {
   None = '',
   PerCapita = 'percapita',
+  PerCapita1K = 'percapita1k',
+  PerCapita1M = 'percapita1m',
   Normalization = 'normalization'
 }
 

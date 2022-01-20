@@ -221,6 +221,10 @@ export function getUnitString(unit: string|null, transform: DataTransform) {
   switch (transform) {
     case DataTransform.PerCapita:
       return unit + ' per capita';
+    case DataTransform.PerCapita1K:
+      return unit + ' per 1000 people';
+    case DataTransform.PerCapita1M:
+      return unit + ' per 1M people';
     case DataTransform.Normalization:
       return unit + ' (normalized 0-1)';
     case DataTransform.None:

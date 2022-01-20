@@ -38,7 +38,7 @@ const defaultValueFormatter = (v: number) => {
 
 // Anything absolute value more than 999 or less than 0.0001
 // becomes an exponent, otherwise it's a string
-const exponentFormatter = (v: number) => {
+export const exponentFormatter = (v: number) => {
   if (v === 0) return '0';
   return Math.abs(v) < 0.0001 || Math.abs(v) > 999 ? v.toExponential(2) : rangedFormatter(v);
 };
@@ -66,7 +66,7 @@ export const chartValueFormatter = (...range: number[]) => {
   }
 
   // Guard against skewed ranges. e.g. [0.103, 888888]
-  if (Math.abs(range[1]) < 1000000 && (range[0] === 0 || Math.abs(range[0]) > 0.00001)) {
+  if (Math.abs(range[1]) > 0.00001 && Math.abs(range[1]) < 1000000 && (range[0] === 0 || Math.abs(range[0]) > 0.00001)) {
     return rangedFormatter;
   }
   return exponentFormatter;
@@ -88,5 +88,6 @@ export default {
   containsInternalVowel,
   dropOneInternalVowel,
   chartValueFormatter,
+  exponentFormatter,
   isValidUrl
 };

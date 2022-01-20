@@ -321,7 +321,7 @@
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
-                :unit="(relativeTo && showPercentChange) ? '%' : unit"
+                :unit="timeseriesUnit"
                 @select-timestamp="setSelectedTimestamp"
               />
               <p
@@ -543,56 +543,49 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
 import { getInsightById } from '@/services/insight-service';
 
-import { GeoRegionDetail, ScenarioData, AnalysisMapColorOptions } from '@/types/Common';
+import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
+  DatacubeGenericAttributeVariableType,
   DatacubeType,
+  DataTransform,
+  GeoAttributeFormat,
   ModelRunStatus,
+  ReferenceSeriesOption,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
-  TemporalResolutionOption,
-  GeoAttributeFormat,
-  ReferenceSeriesOption,
-  DatacubeGenericAttributeVariableType,
-  DataTransform
+  TemporalResolutionOption
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import {
-  // RegionalAggregations,
-  OutputSpecWithId
-} from '@/types/Runoutput';
+import { OutputSpecWithId } from '@/types/Runoutput';
 
 import {
+  COLOR,
+  COLOR_SCHEME,
   colorFromIndex,
   ColorScaleType,
   getColors,
-  COLOR,
-  COLOR_SCHEME,
   isDiscreteScale,
+  isDivergingScheme,
   SCALE_FUNCTION,
-  validateColorScaleType,
-  isDivergingScheme
+  validateColorScaleType
 } from '@/utils/colors-util';
 import {
+  DEFAULT_DATE_RANGE_DELIMETER,
+  getFilteredScenariosFromIds,
+  getSelectedOutput,
+  getUnitString,
   isIndicator,
   isModel,
-  getFilteredScenariosFromIds,
-  TAGS,
-  DEFAULT_DATE_RANGE_DELIMETER,
-  getSelectedOutput, getUnitString
+  TAGS
 } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
-import {
-  // adminLevelToString,
-  BASE_LAYER,
-  DATA_LAYER,
-  DATA_LAYER_TRANSPARENCY
-} from '@/utils/map-util-new';
+import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 
-import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
+import { addModelRunsTag, createModelRun, removeModelRunsTag, updateModelRun } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
@@ -1308,11 +1301,6 @@ export default defineComponent({
       }
     });
 
-
-    const unit = computed(() =>
-      getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value)
-    );
-
     const someVizOptionsInvalid = computed(() =>
       isPublishing.value && (selectedSpatialAggregation.value === AggregationOption.None ||
           selectedTemporalAggregation.value === AggregationOption.None ||
@@ -1558,6 +1546,26 @@ export default defineComponent({
       relativeTo
     );
 
+    const unit = computed(() =>
+      getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value)
+    );
+
+    const timeseriesUnit = computed(() => {
+      if (relativeTo.value && showPercentChange.value) {
+        return '%';
+      }
+      if (breakdownOption.value === null ||
+        breakdownOption.value === TemporalAggregationLevel.Year ||
+        selectedTransform.value === DataTransform.Normalization
+      ) {
+        return mainModelOutput?.value?.unit ?? '';
+      }
+      // If split by region or split by qualifier with regions selected
+      if (breakdownOption.value === SpatialAggregationLevel.Region || selectedRegionIds.value.length > 0) {
+        return getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value);
+      }
+      return mainModelOutput?.value?.unit ?? '';
+    });
     /*
       const regionsToSubregions = computed(() => {
       const regionsToSubregionInternal: any = {};
@@ -1882,6 +1890,7 @@ export default defineComponent({
       toggleNewRunsMode,
       toggleReferenceOptions,
       unit,
+      timeseriesUnit,
       updatePotentialScenarioDates,
       updateStateFromInsight,
       updateGeneratedScenarios,

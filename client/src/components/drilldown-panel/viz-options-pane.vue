@@ -178,7 +178,9 @@ import { getOutputs } from '@/utils/datacube-util';
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.RDYLBU_7, COLOR.OTHER]);
 const TRANSFORMS: DropdownItem[] = [
   { value: DataTransform.PerCapita, displayName: 'Per Capita' },
-  { value: DataTransform.Normalization, displayName: 'Normalized' }
+  { value: DataTransform.PerCapita1K, displayName: 'Per Capita (per 1K people)' },
+  { value: DataTransform.PerCapita1M, displayName: 'Per Capita (per 1M people)' },
+  { value: DataTransform.Normalization, displayName: 'Normalized Regional Data' }
 ];
 
 export default defineComponent({
