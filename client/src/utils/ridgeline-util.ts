@@ -99,7 +99,9 @@ export const convertDistributionTimeseriesToRidgelines = (
   const getTimeSliceAtStepIndex = (timestepIndex: number) => {
     // Find the timeslice whose (one-indexed) month count matches (0-indexed)
     //  timestepIndex.
-    return timeSlices.find(timeSlice => timeSlice.months === timestepIndex + 1);
+    const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+    const monthsAfterNow = (timestepIndex + 1) * monthsPerTimestep;
+    return timeSlices.find(timeSlice => timeSlice.months === monthsAfterNow);
   };
 
   const ridgelines: RidgelineWithMetadata[] = [];

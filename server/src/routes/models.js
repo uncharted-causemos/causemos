@@ -402,11 +402,18 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
 router.post('/:modelId/projection', asyncHandler(async (req, res) => {
   // 1. Initialize
   const { modelId } = req.params;
-  const { projectionStart, numTimeSteps, parameters, engine } = req.body;
+  const { projectionStart, projectionEnd, numTimeSteps, parameters, engine } = req.body;
   if (_.isNil(numTimeSteps)) throw new Error('time step cannot be empty');
 
   // 2. Build experiment request payload
-  const payload = await modelService.buildProjectionPayload(modelId, engine, projectionStart, numTimeSteps, parameters);
+  const payload = await modelService.buildProjectionPayload(
+    modelId,
+    engine,
+    projectionStart,
+    projectionEnd,
+    numTimeSteps,
+    parameters
+  );
 
   // 3. Create experiment (experiment) in modelling engine
   let result;
@@ -431,14 +438,14 @@ router.post('/:modelId/sensitivity-analysis', asyncHandler(async (req, res) => {
   // 1. Initialize
   const { modelId } = req.params;
   const {
-    experimentStart, numTimeSteps, constraints, engine,
+    experimentStart, experimentEnd, numTimeSteps, constraints, engine,
     analysisType, analysisMode, analysisParams, analysisMethodology
   } = req.body;
 
   if (_.isNil(numTimeSteps)) throw new Error('time step cannot be empty');
   // 2. Build experiment request payload
   const payload = await modelService.buildSensitivityPayload(engine,
-    experimentStart, numTimeSteps, constraints, analysisType, analysisMode, analysisParams, analysisMethodology);
+    experimentStart, experimentEnd, numTimeSteps, constraints, analysisType, analysisMode, analysisParams, analysisMethodology);
 
   // 3. Create experiment (experiment) in modelling engine
   let result;
