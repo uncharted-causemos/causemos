@@ -1,5 +1,13 @@
 import { DatacubeFeature, Model, Indicator, Datacube, ModelParameter, DimensionInfo } from '@/types/Datacube';
-import { AggregationOption, DatacubeGenericAttributeVariableType, DatacubeGeoAttributeVariableType, DatacubeStatus, DatacubeType, ModelParameterDataType } from '@/types/Enums';
+import {
+  AggregationOption,
+  DatacubeGenericAttributeVariableType,
+  DatacubeGeoAttributeVariableType,
+  DatacubeStatus,
+  DatacubeType,
+  DataTransform,
+  ModelParameterDataType
+} from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
 import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service';
 import domainProjectService from '@/services/domain-project-service';
@@ -204,6 +212,21 @@ export function getSelectedOutput(metadata: Datacube, index: number) {
     return outputs[index];
   }
   return outputs.find((o: DatacubeFeature) => o.name === metadata.default_feature) ?? outputs[0];
+}
+
+export function getUnitString(unit: string|null, transform: DataTransform) {
+  if (!unit) {
+    unit = '???';
+  }
+  switch (transform) {
+    case DataTransform.PerCapita:
+      return unit + ' per capita';
+    case DataTransform.Normalization:
+      return unit + ' (normalized 0-1)';
+    case DataTransform.None:
+    default:
+      return unit;
+  }
 }
 
 // supported pre-rendered datacube images

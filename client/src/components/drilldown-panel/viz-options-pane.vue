@@ -196,10 +196,6 @@ export default defineComponent({
       type: String,
       default: AggregationOption.Mean
     },
-    selectedUnit: {
-      type: String,
-      default: ''
-    },
     selectedTransform: {
       type: String as PropType<DataTransform>,
       default: DataTransform.None
@@ -271,7 +267,6 @@ export default defineComponent({
       metadata,
       resolutionOptions,
       selectedResolution,
-      selectedUnit,
       selectedTransform
     } = toRefs(props);
 
@@ -335,14 +330,17 @@ export default defineComponent({
       return currentOutput.value.display_name;
     });
 
+    const outputUnit = computed<string>(() => {
+      return currentOutput.value.unit ?? '';
+    });
+
     const unitOptions = computed<DropdownItem[]>(() => {
-      const unit = currentOutput.value.unit ?? '';
-      return [{ value: unit, displayName: unit }, ...TRANSFORMS];
+      return [{ value: outputUnit.value, displayName: outputUnit.value }, ...TRANSFORMS];
     });
 
     const selectedUnitOption = computed<string>(() => {
       return selectedTransform.value === DataTransform.None
-        ? selectedUnit.value
+        ? outputUnit.value
         : selectedTransform.value;
     });
 

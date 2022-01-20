@@ -458,7 +458,6 @@
                   :resolution-options="temporalResolutionOptions"
                   :selected-spatial-aggregation="selectedSpatialAggregation"
                   :selected-temporal-aggregation="selectedTemporalAggregation"
-                  :selected-unit="unit"
                   :selected-transform="selectedTransform"
                   :selected-resolution="selectedTemporalResolution"
                   :selected-base-layer="selectedBaseLayer"
@@ -583,7 +582,7 @@ import {
   getFilteredScenariosFromIds,
   TAGS,
   DEFAULT_DATE_RANGE_DELIMETER,
-  getSelectedOutput
+  getSelectedOutput, getUnitString
 } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
@@ -1311,10 +1310,7 @@ export default defineComponent({
 
 
     const unit = computed(() =>
-      mainModelOutput?.value?.unit &&
-        mainModelOutput.value.unit !== ''
-        ? mainModelOutput.value.unit
-        : null
+      getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value)
     );
 
     const someVizOptionsInvalid = computed(() =>
