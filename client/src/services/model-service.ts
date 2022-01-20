@@ -315,7 +315,6 @@ const runProjectionExperiment = async (
   } = modelSummary.parameter;
   const numTimeSteps = getStepCountFromTimeScale(timeScale);
   const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
-  // const monthsInProjection = getProjectionLengthFromTimeScale(timeScale);
   // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
   //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
   // endTime should be thought of as the last timestamp that will be returned.
