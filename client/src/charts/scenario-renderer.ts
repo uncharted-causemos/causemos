@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import moment from 'moment';
 
 import initialize from '@/charts/initialize';
 import { timeseriesLine, translate } from '@/utils/svg-util';
@@ -10,7 +9,8 @@ import { NodeScenarioData } from '@/types/CAG';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
 import {
   getLastTimeStepIndexFromTimeScale,
-  getSliceMonthIndicesFromTimeScale
+  getMonthsPerTimestepFromTimeScale,
+  getTimeScaleOption
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
 import { TimeScale } from '@/types/Enums';
@@ -31,8 +31,11 @@ const LABEL_COLOR = HISTORY_LINE_COLOR;
 //  as the x range's domain.
 // The number of visible historical months will depend on the timescale, e.g.
 //  if timescale is months, show last 48 months or so
-//  TODO: if timescale is years, show last 36 years (= 432 months) or so
-const VISIBLE_HISTORICAL_MONTH_COUNT = 48;
+//  if timescale is years, show last 36 years (= 432 months) or so
+const getVisibleHistoricalMonthCount = (timeScale: TimeScale) => {
+  if (timeScale === TimeScale.Years) return 432;
+  return 48;
+};
 
 //
 // Yellow background for uncertaint in historical data (lack of data)
@@ -93,17 +96,21 @@ function render(
   } = nodeScenarioData;
 
   // Calculate timestamp of the earliest historical time to display
-  const historyStart = moment
-    .utc(projection_start)
-    .subtract(VISIBLE_HISTORICAL_MONTH_COUNT, 'months')
-    .valueOf();
-  // FIXME: historical data should end 1 month (or year, depending on time
+  const visibleHistoricalMonthCount = getVisibleHistoricalMonthCount(
+    time_scale
+  );
+  const historyStart = getTimestampAfterMonths(
+    projection_start,
+    -visibleHistoricalMonthCount
+  );
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(time_scale);
+  // Historical data should end 1 month (or year, depending on time
   //  scale) before projection start. "Projection start date" means the date at
   //  which the first projected timestamp will be returned.
-  const historyEnd = moment
-    .utc(projection_start)
-    .subtract(1, 'months')
-    .valueOf();
+  const historyEnd = getTimestampAfterMonths(
+    projection_start,
+    -monthsPerTimestep
+  );
 
   // Filter out timeseries points that aren't within the range we're displaying
   const filteredTimeSeries = indicator_time_series.filter(
@@ -132,12 +139,10 @@ function render(
     // Width won't be exactly the same between timeslices since some months/years
     //  are longer than others, but this will serve as a useful estimate of the
     //  maximum width a ridgeline can take up without overlapping the next one.
-    const firstSliceMonthIndex = getSliceMonthIndicesFromTimeScale(
-      time_scale
-    )[0];
+    const firstSliceMonths = getTimeScaleOption(time_scale).timeSlices[0]
+      .months;
     const timeBetweenSlices =
-      getTimestampAfterMonths(projection_start, firstSliceMonthIndex) -
-      projection_start;
+      getTimestampAfterMonths(historyEnd, firstSliceMonths) - historyEnd;
 
     xDomain[1] += timeBetweenSlices;
   }
@@ -268,13 +273,10 @@ function renderScenarioProjections(
   );
 
   // Calculate how wide a single ridgeline can be
-  const firstSliceMonthIndex = getSliceMonthIndicesFromTimeScale(time_scale)[0];
-  const firstSliceMonthTimestamp = getTimestampAfterMonths(
-    projection_start,
-    firstSliceMonthIndex
-  );
+  const firstSliceMonths = getTimeScaleOption(time_scale).timeSlices[0].months;
   const widthBetweenTimeslices =
-    xScale(firstSliceMonthTimestamp) - xScale(projection_start);
+    xScale(getTimestampAfterMonths(projection_start, firstSliceMonths)) -
+    xScale(projection_start);
 
   ridgelinePoints.forEach(({ label, ridgeline, timestamp, monthsAfterNow }) => {
     // Calculate context range forr each timeslice

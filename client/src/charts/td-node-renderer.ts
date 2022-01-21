@@ -15,8 +15,7 @@ import { SELECTED_COLOR } from '@/utils/colors-util';
 import { getTimestampAfterMonths, roundToNearestMonth } from '@/utils/date-util';
 import {
   getMonthsPerTimestepFromTimeScale,
-  getProjectionLengthFromTimeScale,
-  getSliceMonthIndicesFromTimeScale,
+  getStepCountFromTimeScale,
   getTimeScaleOption
 } from '@/utils/time-scale-util';
 
@@ -291,12 +290,7 @@ export default function(
     const { projection_start, time_scale } = modelSummary.parameter;
     // get the correct number of steps based on the currently selected time_scale
     //  rather than the deprecated value from the parameter.num_steps
-    const num_steps = getProjectionLengthFromTimeScale(modelSummary.parameter.time_scale);
-
-    const projectionLastTimestamp = getTimestampAfterMonths(
-      projection_start,
-      num_steps
-    );
+    const num_steps = getStepCountFromTimeScale(modelSummary.parameter.time_scale);
 
     if (selectedScenarioId !== null) {
       renderProjectionRidgelines(
@@ -306,6 +300,7 @@ export default function(
         minValue,
         maxValue,
         historicalTimeseries,
+        time_scale,
         PADDING_TOP,
         xScaleFocus,
         yScaleFocus
@@ -329,7 +324,6 @@ export default function(
       constraints,
       unit,
       projection_start,
-      projectionLastTimestamp,
       num_steps,
       time_scale,
       setConstraints,
@@ -396,9 +390,13 @@ const renderStaticElements = (
     projection_start: projectionStartTimestamp,
     time_scale: timeScale
   } = modelSummary.parameter;
-  const stepCount = getProjectionLengthFromTimeScale(timeScale);
+  const stepCount = getStepCountFromTimeScale(timeScale);
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
   const stepTimestamps = _.range(stepCount).map(stepIndex =>
-    getTimestampAfterMonths(projectionStartTimestamp, stepIndex)
+    getTimestampAfterMonths(
+      projectionStartTimestamp,
+      stepIndex * monthsPerTimestep
+    )
   );
   // Draw a vertical line at each step
   const bottomYValue = offsetFromTop + yScale.range()[0] - yScale.range()[1];
@@ -439,17 +437,16 @@ const renderStaticElements = (
     .attr('fill', HISTORICAL_DATA_COLOR)
     .attr('fill-opacity', HISTORICAL_RANGE_OPACITY);
 
-  // render timeslices indicating major temporal marks, e.g., now, in a few month, in a few years
-  const timeSliceTimestamps = getSliceMonthIndicesFromTimeScale(
-    timeScale
-  ).map(monthIndex =>
-    getTimestampAfterMonths(projectionStartTimestamp, monthIndex)
-  );
-  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+  // Render major ticks
+  // "Now" is one timestep before projection start
   const nowTimestamp = getTimestampAfterMonths(
     projectionStartTimestamp,
     -1 * monthsPerTimestep
   );
+  const timeSlices = getTimeScaleOption(timeScale).timeSlices;
+  const timeSliceTimestamps = timeSlices.map(({ months }) => {
+    return getTimestampAfterMonths(nowTimestamp, months);
+  });
   const majorTickTimestamps = [nowTimestamp, ...timeSliceTimestamps];
   const timeSliceLabels = getTimeScaleOption(timeScale).timeSlices.map(
     timeslice => timeslice.label
@@ -528,6 +525,7 @@ const renderProjectionRidgelines = (
   minValue: number,
   maxValue: number,
   historicalTimeseries: TimeseriesPoint[],
+  timeScale: TimeScale,
   offsetFromTop: number,
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>
@@ -542,10 +540,11 @@ const renderProjectionRidgelines = (
 
   const ridgeLines = convertDistributionTimeseriesToRidgelines(
     currentProjection.values,
-    TimeScale.Months,
+    timeScale,
     minValue,
     maxValue,
-    false);
+    false
+  );
 
   // Make width proportional to 60% of a step size
   let approximateWidth = 15;
@@ -628,13 +627,19 @@ const generateClickableAreas = (
   constraints: ProjectionConstraint[],
   unit: string,
   projectionStartTimestamp: number,
-  projectionLastTimestamp: number,
   projectionStepCount: number,
   timeScale: TimeScale,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) => {
   const startTimestamp = historicalTimeseries[0].timestamp;
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+  const stepsInProjection = getStepCountFromTimeScale(timeScale);
+  const monthsInProjection = (stepsInProjection - 1) * monthsPerTimestep;
+  const projectionLastTimestamp = getTimestampAfterMonths(
+    projectionStartTimestamp,
+    monthsInProjection
+  );
   const timelineRectWidth = xScale(projectionLastTimestamp) - xScale(startTimestamp);
   const timelineRectHeight = yScale.range()[0] - yScale.range()[1];
   const timelineRect = parentGroupElement

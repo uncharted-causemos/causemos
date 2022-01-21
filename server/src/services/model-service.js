@@ -260,22 +260,14 @@ const setInitialParameters = async (modelParameters, nodeMap, edgeMap) => {
  * @param {integer}  numTimeSteps - number of time steps
  * @param {array}   parameters - existing clamp parameters
  */
-const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeSteps, parameters) => {
-  const projectionStartDate = moment.utc(projectionStart);
-
-  let payload = {};
-  const startTime = projectionStartDate.valueOf();
-  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
-  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
-  // endTime should be thought of as the last timestamp that will be returned.
-  const endTime = projectionStartDate.add(numTimeSteps - 1, 'M').valueOf();
+const buildProjectionPayload = async (modelId, engine, projectionStart, projectionEnd, numTimeSteps, parameters) => {
   const constraints = _.isEmpty(parameters) ? [] : parameters;
-  payload = {
+  const payload = {
     experimentType: EXPERIMENT_TYPE.PROJECTION,
     experimentParam: {
       numTimesteps: numTimeSteps,
-      startTime,
-      endTime,
+      startTime: projectionStart,
+      endTime: projectionEnd,
       constraints
     }
   };
@@ -294,23 +286,19 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeS
  * @param {object}   analysisParams - parameters for analysis
  * @param {object}   analysisMethodology - one of HYBRID or FUNCTION
  */
-const buildSensitivityPayload = async (engine, experimentStart, numTimeSteps,
+const buildSensitivityPayload = async (engine, experimentStart, experimentEnd, numTimeSteps,
   constraintParams, analysisType, analysisMode, analysisParams, analysisMethodology) => {
-  const experimentStartDate = moment.utc(experimentStart);
-
   let payload;
   if (engine === 'delphi' || engine === 'delphi_dev') {
     payload = {};
   } else if (engine === 'dyse') {
-    const startTime = experimentStartDate.valueOf();
-    const endTime = experimentStartDate.add(numTimeSteps, 'M').valueOf();
     const constraints = _.isEmpty(constraintParams) ? [] : constraintParams;
     payload = {
       experimentType: EXPERIMENT_TYPE.SENSITIVITY_ANALYSIS,
       experimentParam: {
         numTimesteps: numTimeSteps,
-        startTime,
-        endTime,
+        startTime: experimentStart,
+        endTime: experimentEnd,
         constraints,
         analysisType,
         analysisMode,

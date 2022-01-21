@@ -131,7 +131,8 @@ export default defineComponent({
         baseline === null,
         baseline !== null ? COMPARISON_COLOR : COMPARISON_OVERLAP_COLOR,
         '',
-        contextRange.value
+        contextRange.value,
+        10
       ).attr('transform', translate(CONTEXT_BRACKET_WIDTH, 0));
       // Render overlap
       if (baseline !== null) {

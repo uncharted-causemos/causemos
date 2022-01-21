@@ -386,7 +386,7 @@ export default {
       const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
       const start = scenario.parameter.projection_start;
       const numTimeSteps = scenario.parameter.num_steps;
-
+      // FIXME: endTime depends on time scale
       const experimentPayload = {
         experimentType: 'PROJECTION',
         experimentParams: {
