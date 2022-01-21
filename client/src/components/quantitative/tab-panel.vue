@@ -39,6 +39,7 @@
             <cag-legend
               :are-ridgelines-visible="selectedScenarioId !== null"
               :time-scale="timeScale"
+              :show-data-warnings="true"
             />
             <config-bar
               class="config-bar"

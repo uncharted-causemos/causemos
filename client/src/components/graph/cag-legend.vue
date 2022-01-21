@@ -21,11 +21,11 @@
           <span>No evidence</span>
         </div>
       </div>
-      <div class="column data-warnings">
+      <div v-if="showDataWarnings" class="column data-warnings">
         <div class="data-warning old-data">Old data</div>
         <div class="data-warning no-data">Insufficient data</div>
       </div>
-      <div v-if="areRidgelinesVisible" class="column ridgeline-column">
+      <div v-if="areRidgelinesVisible" class="column">
         <img :src="ridgelineFilepath" />
       </div>
     </div>
@@ -45,6 +45,10 @@ export default defineComponent({
     timeScale: {
       type: String as PropType<TimeScale>,
       default: TimeScale.Months
+    },
+    showDataWarnings: {
+      type: Boolean,
+      default: false
     },
     areRidgelinesVisible: {
       type: Boolean,
