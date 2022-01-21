@@ -32,8 +32,8 @@ const DELPHI_DEV = 'delphi_dev';
  */
 router.post('/:modelId/quantify-nodes', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
-  const { resolution } = req.body.resolution;
-  Logger.info(`Quantifying model ${modelId} nodes`);
+  const { resolution } = req.body;
+  Logger.info(`Quantifying model ${modelId} nodes with ${resolution}`);
 
   // Set indicator to node groundings
   await indicatorService.setDefaultIndicators(modelId, resolution);
