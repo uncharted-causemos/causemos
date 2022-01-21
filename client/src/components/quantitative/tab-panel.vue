@@ -36,7 +36,11 @@
             @edge-click="showRelation"
           />
           <div class="legend-config-row">
-            <cag-legend :histogram-time-slice-labels="histogramTimeSliceLabels" />
+            <cag-legend
+              :are-ridgelines-visible="selectedScenarioId !== null"
+              :time-scale="timeScale"
+              :show-data-warnings="true"
+            />
             <config-bar
               class="config-bar"
               :model-summary="modelSummary"
@@ -107,7 +111,6 @@ import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagLegend from '@/components/graph/cag-legend.vue';
-import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import { findPaths } from '@/utils/graphs-util';
 
 const PANE_ID = {
@@ -207,17 +210,8 @@ export default {
     showComponent() {
       return this.currentEngine !== PROJECTION_ENGINES.DELPHI;
     },
-    histogramTimeSliceLabels() {
-      // If "historical data only" mode is active, don't display histograms in the legend
-      if (this.selectedScenarioId === null) {
-        return [];
-      }
-      const timeScale = TIME_SCALE_OPTIONS_MAP.get(this.modelSummary.parameter.time_scale);
-      if (timeScale === undefined) {
-        console.error('Unable to find time scale data for ', this.modelSummary.parameter.time_scale);
-        return [];
-      }
-      return timeScale.timeSlices.map(slice => slice.label);
+    timeScale() {
+      return this.modelSummary.parameter.time_scale;
     }
   },
   watch: {
@@ -386,7 +380,7 @@ export default {
       const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
       const start = scenario.parameter.projection_start;
       const numTimeSteps = scenario.parameter.num_steps;
-
+      // FIXME: endTime depends on time scale
       const experimentPayload = {
         experimentType: 'PROJECTION',
         experimentParams: {

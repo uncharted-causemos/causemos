@@ -62,6 +62,25 @@
       in {{ ontologyFormatter(selectedRelationship.target) }}
     </div>
   </div>
+  <div
+    v-if="currentEdgeType === 'trend'"
+    style="color: #888">
+    A decrease of&nbsp;
+    {{ ontologyFormatter(selectedRelationship.source) }} leads to
+    {{ weightValueString(currentEdgeWeight) }}
+    {{ inversePolarityLabel }}
+    in {{ ontologyFormatter(selectedRelationship.target) }}
+  </div>
+  <div
+    v-if="currentEdgeType === 'level'"
+    style="color: #888">
+    A low amount of&nbsp;
+    {{ ontologyFormatter(selectedRelationship.source) }} leads to
+    a smaller
+    {{ polarityLabel }}
+    in {{ ontologyFormatter(selectedRelationship.target) }}
+  </div>
+
   <img
     v-if="polarity !== 0"
     style="padding-bottom: 15px"
@@ -163,6 +182,11 @@ export default defineComponent({
       if (this.polarity === -1) return 'decrease';
       return 'unknown';
     },
+    inversePolarityLabel(): string {
+      if (this.polarity === 1) return 'decrease';
+      if (this.polarity === -1) return 'increase';
+      return 'unknown';
+    },
     explainerGlyphFilepath(): string {
       return this.buildExplainerGlyphFilepath(this.polarity, this.currentEdgeWeight, this.currentEdgeType);
     }
@@ -186,7 +210,7 @@ export default defineComponent({
       return 'a small';
     },
     weightTypeString(v: string): string {
-      if (v === EDGE_TYPE_LEVEL) return 'The presence of';
+      if (v === EDGE_TYPE_LEVEL) return 'A high amount of';
       return 'An increase of';
     },
     setPolarity(v: number) {
