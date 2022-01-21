@@ -10,7 +10,7 @@ const RIDGELINE_STROKE_COLOR = 'none';
 const RIDGELINE_VERTICAL_AXIS_WIDTH = 1;
 const RIDGELINE_VERTICAL_AXIS_COLOR = '#F3F3F3';
 const LABEL_COLOR = '#999';
-const MAX_LABEL_SIZE = 10;
+const LABEL_SIZE = 5;
 const CONTEXT_BRACKET_LINE_WIDTH = 1;
 const CONTEXT_BRACKET_COLOR = LABEL_COLOR;
 export const CONTEXT_BRACKET_WIDTH = 4;
@@ -26,7 +26,8 @@ export const renderRidgelines = (
   showYAxisLine = true,
   fillColor = 'black',
   label = '',
-  contextRange: { min: number; max: number } | null = null
+  contextRange: { min: number; max: number } | null = null,
+  labelSize = LABEL_SIZE
 ) => {
   const gElement = selection.append('g');
   // Calculate scales
@@ -36,7 +37,6 @@ export const renderRidgelines = (
     .range([0, width]);
   // If yAxis labels are visible, leave padding of size `labelSize / 2` at the
   //  top and bottom so the labels aren't clipped
-  const labelSize = width > MAX_LABEL_SIZE ? MAX_LABEL_SIZE : width;
   const yRange = showYAxisLabels
     ? [height - labelSize / 2, labelSize / 2]
     : [height, 0];
