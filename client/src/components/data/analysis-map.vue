@@ -423,7 +423,7 @@ export default {
         if (this.baselineSpec) {
           acc.push(this.adminLayerStats?.difference[l]);
         } else if (this.outputSelection === this.relativeTo) {
-          acc.push(this.adminLayerStats?.baseline[length]);
+          acc.push(this.adminLayerStats?.baseline[l]);
         } else {
           acc.push(this.adminLayerStats?.global[l]);
         }

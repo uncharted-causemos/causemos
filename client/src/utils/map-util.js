@@ -258,9 +258,7 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
       ['==', true, ['feature-state', '_isHidden']], 0.0,
       opacity
     ];
-    console.log(style, propertyGetter, baselineValueExpr, missingProperty, useFeatureState);
   }
-  console.log(style, useFeatureState, property, dataDomain, filterDomain, colorOptions, opacity);
   return style;
 }
 
