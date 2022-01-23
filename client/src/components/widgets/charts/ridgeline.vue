@@ -20,9 +20,9 @@ import {
   PropType,
   ref,
   toRefs,
-  watchEffect
+  watchEffect,
+  nextTick
 } from 'vue';
-import { nextTick } from 'process';
 import { translate } from '@/utils/svg-util';
 
 const RESIZE_DELAY = 15;
