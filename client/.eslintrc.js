@@ -38,9 +38,12 @@ module.exports = {
     // Annoying vue defult
     'vue/require-valid-default-prop': 'off',
     'vue/multi-word-component-names': 'off',
+    'vue/no-useless-template-attributes': 'off', // FIXME: might want to address
+    '@typescript-eslint/ban-types': 'off', // FIXME: might want to address
 
     'camelcase': 'off',
     'multiline-ternary': 'off',
+    'prefer-regex-literals': 'off',
 
     // '@typescript-eslint/naming-convention': 'off',
     // Enforce semicolon

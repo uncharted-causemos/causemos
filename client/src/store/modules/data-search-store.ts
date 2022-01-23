@@ -5,6 +5,12 @@ import FiltersUtil from '@/utils/filters-util';
 import { Datacube } from '@/types/Datacubes';
 import { Filters } from '@/types/Filters';
 
+interface DataSearchState {
+  selectedDatacubes: Datacube[];
+  ontologyConcepts: string[];
+  searchResultsCount: number;
+}
+
 const updateQuery = (getters: GetterTree<DataSearchState, any>, { filters }: { filters: Filters }) => {
   const query: any = {
     filters: Object.assign(
@@ -15,12 +21,6 @@ const updateQuery = (getters: GetterTree<DataSearchState, any>, { filters }: { f
   };
   return query;
 };
-
-interface DataSearchState {
-  selectedDatacubes: Datacube[];
-  ontologyConcepts: string[];
-  searchResultsCount: number;
-}
 
 const state: DataSearchState = {
   selectedDatacubes: [],

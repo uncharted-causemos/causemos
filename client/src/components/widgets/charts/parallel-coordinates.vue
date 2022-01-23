@@ -72,7 +72,7 @@ export default defineComponent({
     initialDataSelection(): void {
       if (!this.newRunsMode) {
         // do not make initial line selection override existing user selections
-        if (this.lastSelectedLines.length === 0 || this.initialDataSelection.length === 0 ||
+        if (this.lastSelectedLines.length === 0 || this.initialDataSelection?.length === 0 ||
             !_.isEqual(this.lastSelectedLines, this.initialDataSelection)) {
           this.lastSelectedLines.length = 0;
           this.render(undefined);

@@ -372,7 +372,7 @@ export default defineComponent({
       target: string;
     } | null,
     PANE_ID,
-    timerId: null as NodeJS.Timeout | null,
+    timerId: null as number | null,
     cagsToImport: [] as CAGGraphInterface[],
     prevStabilitySetting: true // matching CAG Renderer init
   }),
@@ -703,7 +703,7 @@ export default defineComponent({
       // To compensate for animiated transitions in the graph, we need to wait a little bit for the graph
       // components to move into their rightful positions.
       this.clearThumbnailTimer();
-      this.timerId = setTimeout(async () => {
+      this.timerId = window.setTimeout(async () => {
         const el = this.$el.querySelector('.CAG-graph-container');
         const thumbnailSource = (
           await html2canvas(el, { scale: 0.5 })
