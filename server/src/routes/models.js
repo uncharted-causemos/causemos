@@ -276,6 +276,29 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   }
 
 
+  // Sort out weights
+  // Engine will come back with default weight that are inferred
+  // 1. if edge has no weights, then we need to update both engine-weights and weights
+  const components = await cagService.getComponents(modelId);
+
+  for (const edgeParameter of components.edges) {
+    const key = `${edgeParameter.source}///${edgeParameter.target}`;
+    const engineEdge = initialParameters.edges[key];
+    const engineWeights = engineEdge.weights;
+
+    const currentWeights = _.get(edgeParameter, 'parameter.weights', []);
+    const currentEngineWeights = _.get(edgeParameter, 'parameter.engine_weights', {});
+
+    const parameter = edgeParameter.parameter;
+
+    // Check if we need to update engine-weight
+    if (_.isEmpty(currentEngineWeights)) {
+    } else if (currentEngineWeights[engine] && _.isEqual(currentEngineWeights[engine], engineWeights)) {
+    }
+  }
+
+
+
   // FIXME: Redo weights logic
   const edgeParameters = (await cagService.getComponents(modelId)).edges;
   const ts = Date.now();
