@@ -191,6 +191,11 @@ export default defineComponent({
       return this.buildExplainerGlyphFilepath(this.polarity, this.currentEdgeWeight, this.currentEdgeType);
     }
   },
+  watch: {
+    selectedRelationship () {
+      this.currentEdgeWeight = getEdgeWeight(this.$props.selectedRelationship as EdgeParameter);
+    }
+  },
   methods: {
     closeAll() {
       this.dropDown = DROPDOWN.NONE;
