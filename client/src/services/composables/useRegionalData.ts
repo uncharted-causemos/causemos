@@ -97,10 +97,10 @@ export default function useRegionalData(
     onInvalidate(() => {
       isCancelled = true;
     });
-    // If split by region is active, only one fetch is needed to get the data
-    //  for all regions
-    const _outputSpecs = outputSpecs.value;
-    const result = await getRegionAggregations(_outputSpecs, datacubeHierarchy.value, breakdownOption.value as string);
+
+    // all output specs are sent to the getRegionAggregations where it will optimize
+    // the number of calls made based on the context like breakdownOption sent with it.
+    const result = await getRegionAggregations(outputSpecs.value, datacubeHierarchy.value, breakdownOption.value as string);
     if (isCancelled) return;
 
     regionalData.value = breakdownOption.value === SpatialAggregationLevel.Region

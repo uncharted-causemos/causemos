@@ -63,6 +63,10 @@ export const getRegionAggregations = async (
 
   if (isSplitByQualifierActive(breakdownOption)) {
     results = await Promise.all(specs.map((spec) => getRegionAggregationWithQualifiers(spec, breakdownOption)));
+  // reduce duplicate calls without branching the more complex result processing logic.
+  } else if (breakdownOption === SpatialAggregationLevel.Region) {
+    const ret = await getRegionAggregation(specs[0]);
+    results = new Array(specs.length).fill(ret) as RegionalAggregation[];
   } else {
     results = await Promise.all(specs.map(getRegionAggregation));
   }
