@@ -54,7 +54,7 @@ import modelService from '@/services/model-service';
 import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { getProjectionLengthFromTimeScale } from '@/utils/time-scale-util';
+import { getStepCountFromTimeScale } from '@/utils/time-scale-util';
 import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -114,7 +114,7 @@ export default defineComponent({
     },
     projectionSteps(): number {
       if (this.modelSummary === null) return 12;
-      return getProjectionLengthFromTimeScale(this.modelSummary.parameter.time_scale);
+      return getStepCountFromTimeScale(this.modelSummary.parameter.time_scale);
     },
     onMatrixTab(): boolean {
       return !!(this.$route.query && this.$route.query.activeTab === 'matrix');
@@ -515,9 +515,9 @@ export default defineComponent({
 
           this.currentScenarioName = scenario.name;
           this.enableOverlayWithCancel({ message: `Running ${this.currentScenarioName} on ${this.currentEngine}`, cancelFn: cancelFn });
+
           const experimentId = await modelService.runProjectionExperiment(
             this.currentCAG,
-            this.projectionSteps,
             modelService.cleanConstraints(scenario.parameter?.constraints ?? [])
           );
 

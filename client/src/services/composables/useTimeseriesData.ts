@@ -111,7 +111,7 @@ export default function useTimeseriesData(
       breakdownOption.value === TemporalAggregationLevel.Year
         ? rawTimeseriesData.value
         : timeseriesData.value;
-    timeseriesListToUse.map(({ id: timeseriesId, points }) => {
+    timeseriesListToUse.forEach(({ id: timeseriesId, points }) => {
       // Group points by year
       const brokenDownByYear = _.groupBy(points, point =>
         getYearFromTimestamp(point.timestamp)

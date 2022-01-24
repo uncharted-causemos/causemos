@@ -77,6 +77,8 @@
                   "
                   :min="indicatorMin"
                   :max="indicatorMax"
+                  :historical-timeseries="historicalTimeseries"
+                  :context-range="row.contextRanges[timeSliceIndex]"
                 />
               </div>
             </div>
@@ -135,10 +137,12 @@ import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { mapActions, mapGetters } from 'vuex';
 import CagScenarioForm from '@/components/cag/cag-scenario-form.vue';
 import {
+  calculateTypicalChangeBracket,
   convertDistributionTimeseriesToRidgelines,
   RidgelinePoint
 } from '@/utils/ridgeline-util';
 import { scrollToElement, scrollToElementWithId } from '@/utils/dom-util';
+import { TimeseriesPoint } from '@/types/Timeseries';
 
 interface RidgelineRow {
   scenarioName: string;
@@ -148,6 +152,7 @@ interface RidgelineRow {
   parameter: ScenarioParameter;
   ridgelines: RidgelinePoint[][];
   comparisonBaseline: RidgelinePoint[][] | null;
+  contextRanges: ({ min: number; max: number } | null)[];
 }
 
 export default defineComponent({
@@ -178,6 +183,10 @@ export default defineComponent({
     indicatorMax: {
       type: Number,
       required: true
+    },
+    historicalTimeseries: {
+      type: Array as PropType<TimeseriesPoint[]>,
+      default: []
     }
   },
   data: () => ({
@@ -231,13 +240,24 @@ export default defineComponent({
           values.length > 0 ? values : baselineProjections.values;
 
         // Convert the distributions at each timeslice to ridgelines with
-        //  metadata for each slice, then map to remove the metadata
-        const ridgelines = convertDistributionTimeseriesToRidgelines(
+        //  metadata for each slice
+        const ridgelines: RidgelinePoint[][] = [];
+        const contextRanges: ({ min: number; max: number } | null)[] = [];
+        convertDistributionTimeseriesToRidgelines(
           projectionValues,
           this.modelSummary.parameter.time_scale,
           this.indicatorMin,
           this.indicatorMax
-        ).map(ridgelinesWithMetadata => ridgelinesWithMetadata.ridgeline);
+        ).forEach(ridgelinesWithMetadata => {
+          // Remove metadata
+          ridgelines.push(ridgelinesWithMetadata.ridgeline);
+          // Calculate context range
+          const contextRange = calculateTypicalChangeBracket(
+            this.historicalTimeseries,
+            ridgelinesWithMetadata.monthsAfterNow
+          );
+          contextRanges.push(contextRange);
+        });
         return {
           scenarioId,
           scenarioName,
@@ -247,7 +267,8 @@ export default defineComponent({
           ridgelines,
           // Comparison baseline will be injected in `rowsToDisplay` after all
           //  projections have been converted to ridgelines
-          comparisonBaseline: null
+          comparisonBaseline: null,
+          contextRanges
         };
       });
       return rows;

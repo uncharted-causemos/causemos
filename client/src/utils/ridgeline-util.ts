@@ -1,7 +1,15 @@
 import { TimeScale } from '@/types/Enums';
-import { TimeseriesDistributionPoint } from '@/types/Timeseries';
+import {
+  TimeseriesDistributionPoint,
+  TimeseriesPoint
+} from '@/types/Timeseries';
 import * as d3 from 'd3';
-import { getTimeScaleOption } from './time-scale-util';
+import _ from 'lodash';
+import { getTimestampAfterMonths } from './date-util';
+import {
+  getMonthsPerTimestepFromTimeScale,
+  getTimeScaleOption
+} from './time-scale-util';
 
 // When creating a curve to estimate the density of the distribution, we group
 //  points into bins (necessary to convert the one-dimensional data into 2D).
@@ -16,6 +24,7 @@ export interface RidgelinePoint {
 export interface RidgelineWithMetadata {
   label: string;
   timestamp: number;
+  monthsAfterNow: number;
   ridgeline: RidgelinePoint[];
 }
 
@@ -90,7 +99,9 @@ export const convertDistributionTimeseriesToRidgelines = (
   const getTimeSliceAtStepIndex = (timestepIndex: number) => {
     // Find the timeslice whose (one-indexed) month count matches (0-indexed)
     //  timestepIndex.
-    return timeSlices.find(timeSlice => timeSlice.months === timestepIndex + 1);
+    const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+    const monthsAfterNow = (timestepIndex + 1) * monthsPerTimestep;
+    return timeSlices.find(timeSlice => timeSlice.months === monthsAfterNow);
   };
 
   const ridgelines: RidgelineWithMetadata[] = [];
@@ -98,14 +109,47 @@ export const convertDistributionTimeseriesToRidgelines = (
   timeseries.forEach(({ timestamp, values }, timestepIndex) => {
     const timeSliceAtThisTimestep = getTimeSliceAtStepIndex(timestepIndex);
     if (onlyConvertTimeslices && timeSliceAtThisTimestep === undefined) return;
-    // Convert the distribution to a ridgeline, and attach the timestamp and
-    //  label for rendering later.
+    // Convert the distribution to a ridgeline, and attach more information for
+    //  rendering later.
+    const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+    const monthsAfterNow = (timestepIndex + 1) * monthsPerTimestep;
     ridgelines.push({
       timestamp,
       label: timeSliceAtThisTimestep?.shortLabel ?? '',
+      monthsAfterNow,
       ridgeline: convertDistributionToRidgeline(values, min, max, binCount)
     });
   });
 
   return ridgelines;
+};
+
+export const calculateTypicalChangeBracket = (
+  historicalData: TimeseriesPoint[],
+  intervalLengthInMonths: number
+) => {
+  if (historicalData.length === 0) return null;
+  const latestHistoricalValue = _.last(historicalData)?.value ?? 0;
+  const changes: number[] = [];
+  const historicalDataMap = new Map<number, number>();
+  // As an optimization, convert historical data into a map for faster lookup
+  //  within the next loop
+  historicalData.forEach(({ timestamp, value }) => {
+    historicalDataMap.set(timestamp, value);
+  });
+  historicalData.forEach(({ timestamp, value }) => {
+    const pointAfterInterval = historicalDataMap.get(
+      getTimestampAfterMonths(timestamp, intervalLengthInMonths)
+    );
+    if (pointAfterInterval !== undefined) {
+      changes.push(pointAfterInterval - value);
+    }
+  });
+  const min = _.min(changes);
+  const max = _.max(changes);
+  if (min === undefined || max === undefined) {
+    // No pair of points was found with the correct interval length
+    return null;
+  }
+  return { min: latestHistoricalValue + min, max: latestHistoricalValue + max };
 };

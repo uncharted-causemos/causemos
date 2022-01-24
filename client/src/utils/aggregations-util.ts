@@ -85,7 +85,8 @@ const groupDataArray = <T>(dataArray: T[], configs: AggConfig<T>[]) => {
   if (configs.length > 0) {
     children.forEach(c => {
       c.children = groupDataArray(c.dataArray, _.cloneDeep(configs));
-      delete c.dataArray; // FIXME: should make this optional to allow keeping intermediate results
+      // delete c.dataArray; // FIXME: should make this optional to allow keeping intermediate results
+      c.dataArray = [];
     });
   }
   return config.sortFn ? _.sortBy(children, config.sortFn) : children;
