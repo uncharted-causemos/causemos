@@ -9,6 +9,12 @@ import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { getQualifierBreakdown } from '../new-datacube-service';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
+interface QualifierVariableInfo {
+  count: number;
+  displayName: string;
+  fetchByDefault: boolean;
+}
+
 const convertResponsesToBreakdownData = (
   existingData: NamedBreakdownData[],
   responses: QualifierBreakdownResponse[][],
@@ -88,12 +94,6 @@ const convertResponsesToBreakdownData = (
   }
   return breakdownDataList;
 };
-
-interface QualifierVariableInfo {
-  count: number;
-  displayName: string;
-  fetchByDefault: boolean;
-}
 
 export default function useQualifiers(
   metadata: Ref<Model | Indicator | null>,

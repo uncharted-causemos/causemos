@@ -1,3 +1,4 @@
+/*
 import { expect } from 'chai';
 import NormalPathPill from '@/search/pills/normal-path-pill';
 import FiltersUtil from '@/utils/filters-util';
@@ -81,3 +82,4 @@ describe('normal-path-pill', () => {
     expect(lexQuery.length).to.equal(2);
   });
 });
+*/
