@@ -29,6 +29,11 @@ export default function useAnalysisMapStats(
       return;
     }
     adminLayerStats.value = computeRegionalStats(regionalData.value, relativeTo.value, showPercentChange.value);
+    /*
+      If we are using a relative time series and it's not a temporal reference series then retrieve the map stats.
+      We exclude temporal reference series as aren't using the aggregated endpoints for that scenario yet, so we can't
+      retrieve any relative map data for say 2017 as a concept yet.
+    */
     if (relativeTo.value && breakdownOption.value !== TemporalAggregationLevel.Year) {
       const currentAdminLevel =
         breakdownOption.value === SpatialAggregationLevel.Region &&

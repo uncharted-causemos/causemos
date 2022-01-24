@@ -17,6 +17,12 @@ const applySplitByRegion = (
   const ancestorCount = specs[0].id?.split(REGION_ID_DELIMETER).length - 1;
   const selectedAdminLevels = [ADMIN_LEVEL_KEYS[ancestorCount]];
 
+  /*
+    If we have reference options (which this case will always be country option as we
+    don't get to this split when other splits with other reference options are selected),
+    then we add country to the selected admin regions, so we can get the correct data
+    for each active admin level.
+  */
   if (referenceOptions && referenceOptions.length > 0) {
     selectedAdminLevels.push(ADMIN_LEVEL_KEYS[0]);
   }

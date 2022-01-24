@@ -1861,14 +1861,25 @@ export default defineComponent({
       });
       return result;
     },
+
+    // Check if we have active regional reference series by looking at the current breakdown option
+    // and the lenght of active reference options
     hasRegionalReferenceSeries(): boolean {
       return this.activeReferenceOptions.length > 0 && this.breakdownOption === SpatialAggregationLevel.Region;
     },
+
+    // If we have active regional reference series, then we need to provide layer ids for all active
+    // regions/layers. As we currently only allow country level reference series, we add the country
+    // to the list of selected layers.
     allActiveLayerIds(): string[] {
       return this.hasRegionalReferenceSeries
         ? [SOURCE_LAYERS[0].layerId, this.mapSelectedLayer]
         : [this.mapSelectedLayer];
     },
+
+    // If we have active regional reference series, then we need to provide region ids for all active
+    // regions/layers. As we currently only allow country level reference series, we add the selected
+    // to the country region ids from the active reference options to the list of selected region ids.
     allActiveRegionIds(): string[] {
       return this.hasRegionalReferenceSeries
         ? [...this.selectedRegionIds, ...this.activeReferenceOptions]
