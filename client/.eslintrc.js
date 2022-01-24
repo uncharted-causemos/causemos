@@ -45,7 +45,6 @@ module.exports = {
     'multiline-ternary': 'off',
     'prefer-regex-literals': 'off',
 
-    // '@typescript-eslint/naming-convention': 'off',
     // Enforce semicolon
     'semi': [2, 'always'],
     'no-extra-semi': 2
