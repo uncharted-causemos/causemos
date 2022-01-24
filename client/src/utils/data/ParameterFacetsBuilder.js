@@ -309,6 +309,7 @@ export class ParameterFacetsBuilder {
             ? val >= bound[0] && val <= bound[1]
             : val >= bound[0] && val < bound[1];
         }
+        return false;
       });
       return matchAll;
     });
@@ -427,6 +428,7 @@ export class StoriesFacetsBuilder extends ParameterFacetsBuilder {
           }]
         };
       }
+      return {}; // Shouldn't reach
     });
     return selection;
   }

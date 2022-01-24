@@ -1,6 +1,6 @@
 import moment from 'moment';
 
-export default function (milliseconds: number) {
+export default function (milliseconds: number | null) {
   if (!milliseconds) {
     return '';
   }

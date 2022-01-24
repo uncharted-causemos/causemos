@@ -1,4 +1,4 @@
-image: docker-hub.uncharted.software/mhart/alpine-node:12
+image: docker-hub.uncharted.software/mhart/alpine-node:16
 
 # Cache modules in between builds
 cache:

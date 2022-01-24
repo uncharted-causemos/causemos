@@ -118,6 +118,7 @@ import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { mapActions, mapGetters } from 'vuex';
 import CagScenarioForm from '@/components/cag/cag-scenario-form.vue';
+import { scrollToElement } from '@/utils/dom-util';
 
 /**
  * `base`: these values represent the grey part of each histogram bar.
@@ -369,12 +370,7 @@ export default defineComponent({
     },
     scrollToSection(sectionName: string) {
       const elm = document.getElementById(sectionName) as HTMLElement;
-      const scrollViewOptions: ScrollIntoViewOptions = {
-        behavior: 'smooth',
-        block: 'start',
-        inline: 'nearest'
-      };
-      elm.scrollIntoView(scrollViewOptions);
+      scrollToElement(elm);
     },
     addNewScenario() {
       this.requestAddingNewScenario = true;

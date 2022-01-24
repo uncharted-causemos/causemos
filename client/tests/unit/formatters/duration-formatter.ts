@@ -13,6 +13,6 @@ describe('duration-formatter', () => {
   });
 
   it('null input', () => {
-    expect(DurationFormatter('')).to.equal('');
+    expect(DurationFormatter(null)).to.equal('');
   });
 });

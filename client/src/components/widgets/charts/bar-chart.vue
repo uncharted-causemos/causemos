@@ -55,7 +55,7 @@ export default defineComponent({
         emit('bar-chart-hover', barLabel);
       };
       renderBarChart(
-        svg.value,
+        svg.value as any,
         barsData.value,
         width,
         height,
@@ -89,7 +89,7 @@ export default defineComponent({
         if (svg.value === null || hoverId.value === null) {
           return;
         }
-        updateHover(svg.value, hoverId.value);
+        updateHover(svg.value as any, hoverId.value);
       },
       { immediate: true }
     );

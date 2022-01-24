@@ -166,7 +166,7 @@ $icon-font-path: '~@uncharted/uncharted-bootstrap/dist/fonts/bootstrap-sass/asse
 @import "~@uncharted/uncharted-bootstrap/scss/uncharted-bootstrap";
 
 /* Sass entrypoint */
-@import "/styles/wm";
+@import "./styles/wm";
 
 @import '~pdfjs-dist/legacy/web/pdf_viewer.css';
 </style>
