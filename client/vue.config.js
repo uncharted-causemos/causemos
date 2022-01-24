@@ -24,6 +24,7 @@ module.exports = {
     }
   },
   configureWebpack: config => {
+    // console.log(JSON.stringify(config));
     // tweak webpack configurations, noting this will be merged with the final webpack configs
     if (process.env.NODE_ENV === 'development') {
       config.devtool = 'inline-source-map';
@@ -55,7 +56,7 @@ module.exports = {
       // It looks like `URL.createObjectURL` is not defined in the current
       // test environment (we are using Jsdom under the hood I believe and https://github.com/jsdom/jsdom/issues/1721).
       // So we stub this function so that tests pass.
-      window.URL.createObjectURL = () => {};
+      // window.URL.createObjectURL = () => {};
     }
   }
 };

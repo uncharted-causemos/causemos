@@ -13,6 +13,7 @@ describe('aggregation-util', () => {
     {
       key: 'odd',
       count: 5,
+      dataArray: [],
       children: [
         { key: 'small', count: 3, dataArray: [1, 3, 5] },
         { key: 'large', count: 2, dataArray: [7, 9] }]
@@ -20,6 +21,7 @@ describe('aggregation-util', () => {
     {
       key: 'even',
       count: 4,
+      dataArray: [],
       children: [
         { key: 'small', count: 2, dataArray: [2, 4] },
         { key: 'large', count: 2, dataArray: [6, 8] }
