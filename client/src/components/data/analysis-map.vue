@@ -432,21 +432,11 @@ export default {
       if (stats.length === 1) {
         return stats[0];
       } else {
-        const extendedStats = stats.reduce((acc, stat) => {
-          if (stat) {
-            if (acc.min) {
-              if (acc.min > stat.min) acc.min = stat.min;
-            } else {
-              acc.min = stat.min;
-            }
-            if (acc.max) {
-              if (acc.max < stat.max) acc.max = stat.max;
-            } else {
-              acc.max = stat.max;
-            }
-          }
-          return acc;
-        }, { min: null, max: null });
+        const extendedStats = {
+          min: _.minBy(stats, (s) => s && s.min).min,
+          max: _.maxBy(stats, (s) => s && s.max).max
+        };
+        console.log(extendedStats);
         return extendedStats;
       }
     },
