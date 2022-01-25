@@ -262,6 +262,21 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
   return style;
 }
 
+export function createPointsLayerStyle(property, dataDomain, colorOptions, filter = ['all']) {
+  const cExpr = colorExpr(property, dataDomain, colorOptions.scheme, colorOptions.scaleFn, false, undefined, false, colorOptions.isContinuous, colorOptions.isDiverging);
+  return {
+    type: 'circle',
+    paint: {
+      'circle-radius': 10,
+      'circle-color': cExpr,
+      'circle-stroke-color': cExpr,
+      'circle-opacity': colorOptions.opacity,
+      'circle-stroke-width': 2
+    },
+    filter: filter
+  };
+}
+
 /**
  * Transfrom map data to map points data
  * @param {Object[]} mapData.geoJSON - geoJSON object

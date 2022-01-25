@@ -4,7 +4,6 @@
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
       :camera-options="cameraOptions"
-      :class="{isDefaultRun: isDefaultRun}"
       @load="onMapLoad"
       @move="onMapMove"
       @mousemove="onMouseMove"
@@ -16,7 +15,7 @@
         :key="layerRerenderTrigger"
         :source="vectorSource"
         :source-id="vectorSourceId"
-        :source-layer="vectorSourceLayer"
+        :source-layer="sourceLayer"
         :promote-id="idPropName"
         :layer-id="baseLayerId"
         :layer="baseLayer"
@@ -27,7 +26,7 @@
         :key="layerRerenderTrigger"
         :source="vectorSource"
         :source-id="vectorSourceId"
-        :source-layer="vectorSourceLayer"
+        :source-layer="sourceLayer"
         :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="colorLayerId"
@@ -35,6 +34,13 @@
         :before-id="firstSymbolLayerId"
         @add-layer="onAddLayer"
         @update-source="onUpdateSource"
+      />
+      <wm-map-geojson
+        v-if="isPointsMap"
+        :source-id="pointsSource"
+        :source="rawData"
+        :layer-id="pointsLayerId"
+        :layer="colorLayer"
       />
       <template v-if="showPreRenderedViz">
         <wm-map-image
@@ -59,15 +65,16 @@
 
 import _ from 'lodash';
 import * as d3 from 'd3';
-import { WmMap, WmMapVector, WmMapImage, WmMapPopup } from '@/wm-map';
+import { WmMap, WmMapVector, WmMapImage, WmMapPopup, WmMapGeojson } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
   createHeatmapLayerStyle,
+  createPointsLayerStyle,
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
-import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';
+import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
@@ -116,13 +123,15 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
   }
 };
 
+
 export default {
   name: 'AnalysisMapSimple',
   components: {
     WmMap,
     WmMapVector,
     WmMapImage,
-    WmMapPopup
+    WmMapPopup,
+    WmMapGeojson
   },
   emits: [
     'on-map-load',
@@ -181,6 +190,54 @@ export default {
       type: Object,
       default: () => undefined
     },
+    rawData: {
+      type: Object,
+      default: () => ({
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [13.3567762374878, 39.7517890930176] },
+            properties: { timestamp: '1388534400000', value: 800 }
+          },
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [13.3567762374878, 39.7517890930176] },
+            properties: { timestamp: '1388534400000', value: 600 }
+          },
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [13.3567762374878, 39.7517890930176] },
+            properties: { timestamp: '1388534400000', value: 300 }
+          },
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [13.3567762374878, 39.7517890930176] },
+            properties: { timestamp: '1388534400000', value: 100 }
+          },
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [39.7517890930176, 13.3567762374878] },
+            properties: { timestamp: '1388534400000', value: 400 }
+          },
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [39.0012016296387, 13.6231002807617] },
+            properties: { timestamp: '1388534400000', value: 200 }
+          },
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [39.8567008972168, 8.59323978424072] },
+            properties: { timestamp: '1388534400000', value: 400 }
+          },
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [38.7667007446289, 9.03332996368408] },
+            properties: { timestamp: '1388534400000', value: 900 }
+          }
+        ]
+      })
+    },
     selectedRegionIds: {
       type: Array,
       default: () => []
@@ -200,10 +257,6 @@ export default {
     unit: {
       type: String,
       default: null
-    },
-    isDefaultRun: {
-      type: Boolean,
-      default: false
     },
     showPercentChange: {
       type: Boolean,
@@ -252,17 +305,23 @@ export default {
     selectedLayer() {
       return SOURCE_LAYERS.find(l => l.layerId === this.selectedLayerId);
     },
-    vectorSourceLayer() {
+    sourceLayer() {
       return this.selectedLayer.layerId;
     },
     idPropName() {
       return { [`${this.selectedLayer.layerId}`]: 'id' };
     },
+    isAdminMap() {
+      return [SOURCE_LAYER.COUNTRY, SOURCE_LAYER.ADMIN1, SOURCE_LAYER.ADMIN2, SOURCE_LAYER.ADMIN3].includes(this.sourceLayer);
+    },
     isGridMap() {
-      return this.vectorSourceLayer === 'maas';
+      return this.sourceLayer === SOURCE_LAYER.GRID;
+    },
+    isPointsMap() {
+      return this.sourceLayer === SOURCE_LAYER.POINTS;
     },
     adminLevel() {
-      if (this.isGridMap) return undefined;
+      if (!this.isAdminMap) return undefined;
       const adminLevel = SOURCE_LAYERS.findIndex(l => this.selectedLayerId === l.layerId);
       return adminLevelToString(adminLevel);
     },
@@ -274,6 +333,7 @@ export default {
       return (this.selection && this.selection.id) || '';
     },
     vectorSource() {
+      if (this.isPointsMap) return;
       if (this.isGridMap) {
         const outputSpecs = this.outputSourceSpecs
           .map(spec => {
@@ -349,6 +409,9 @@ export default {
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
 
+    this.pointsSource = 'points-data-source';
+    this.pointsLayerId = 'points-layer';
+
     // the following are needed to render pre-generated overlay
     this.imageSourceId = 'maas-image-source';
     this.imageLayerId = 'image-layer';
@@ -390,8 +453,11 @@ export default {
     getExtent() {
       if (this.isGridMap) {
         return this.getGridMapExtent();
+      } else if (this.isAdminMap) {
+        return this.getAdminMapExtent();
+      } else if (this.isPointsMap) {
+        return this.getPointsMapExtent();
       }
-      return this.getAdminMapExtent();
     },
     getGridMapExtent() {
       if (!this.gridLayerStats) return;
@@ -419,8 +485,11 @@ export default {
         return this.adminLayerStats?.global[this.adminLevel];
       }
     },
+    getPointsMapExtent() {
+      return { min: 200, max: 900 };
+    },
     refreshLayers() {
-      const useFeatureState = !this.isGridMap;
+      const useFeatureState = this.isAdminMap;
       this.baseLayer = baseLayer(this.valueProp, useFeatureState, this.baselineSpec?.id);
       this.refreshColorLayer(useFeatureState);
     },
@@ -432,15 +501,17 @@ export default {
       }
       const { min, max } = this.extent;
       const relativeToProp = this.baselineSpec?.id;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
+      this.colorLayer = this.isPointsMap
+        ? createPointsLayerStyle('value', [min, max], this.colorOptions)
+        : createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
     },
     setFeatureStates() {
-      if (!this.map || !this.adminLevel || this.isGridMap) return;
+      if (!this.map || !this.isAdminMap) return;
 
       // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
       this.map.removeFeatureState({
         source: this.vectorSourceId,
-        sourceLayer: this.vectorSourceLayer
+        sourceLayer: this.sourceLayer
       });
       // Note: RemoveFeatureState doesn't seem very reliable.
       // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and make it undefined
@@ -454,7 +525,7 @@ export default {
         this.map.setFeatureState({
           id: row.id,
           source: this.vectorSourceId,
-          sourceLayer: this.vectorSourceLayer
+          sourceLayer: this.sourceLayer
         }, {
           ...featureStateBase,
           ...row.values,
@@ -550,14 +621,14 @@ export default {
     _setLayerHover(map, feature) {
       // unset previous state and hoveredId can be 0
       map.setFeatureState(
-        { source: feature.source, id: feature.id, sourceLayer: this.vectorSourceLayer },
+        { source: feature.source, id: feature.id, sourceLayer: this.sourceLayer },
         { hover: true }
       );
       this.hoverId = feature.id;
     },
     _unsetHover(map) {
       if (!this.hoverId) return;
-      map.removeFeatureState({ source: this.vectorSourceId, id: this.hoverId, sourceLayer: this.vectorSourceLayer }, 'hover');
+      map.removeFeatureState({ source: this.vectorSourceId, id: this.hoverId, sourceLayer: this.sourceLayer }, 'hover');
       this.hoverId = undefined;
     },
     onMouseMove(event) {
@@ -614,8 +685,5 @@ export default {
 <style lang="scss" scoped>
 .analysis-map-container {
   position: relative;
-  .isDefaultRun {
-    border-width: 8px;
-  }
 }
 </style>

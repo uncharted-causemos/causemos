@@ -354,6 +354,7 @@
                     :key="spec.id"
                     class="card-map-container"
                     :class="[
+                       {'is-default-run': spec.isDefaultRun },
                       `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
                     ]"
                   >
@@ -370,9 +371,8 @@
                       :output-selection=spec.id
                       :relative-to="relativeTo"
                       :reference-options="activeReferenceOptions"
-                      :is-default-run="spec.isDefaultRun"
                       :show-tooltip="true"
-                      :selected-layer-id="mapSelectedLayer"
+                      :selected-layer-id="mapSelectedLayer && 'points'"
                       :map-bounds="mapBounds"
                       :camera-options="mapCameraOptions"
                       :region-data="regionalData"
@@ -2202,6 +2202,11 @@ $marginSize: 5px;
   ::v-deep(.wm-map) {
     border-style: solid;
     border-color: inherit;
+  }
+  &.is-default-run {
+    ::v-deep(.wm-map) {
+      border-width: 8px;
+    }
   }
   &.card-count-1 {
     ::v-deep(.wm-map) {
