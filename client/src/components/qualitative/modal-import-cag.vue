@@ -42,14 +42,20 @@
   </modal>
 </template>
 
-<script>
+<script lang="ts">
 
-import { mapGetters } from 'vuex';
-import Modal from '@/components/modals/modal';
-import Card from '@/components/widgets/card';
+import { defineComponent, ref, computed, Ref } from 'vue';
+import { useStore } from 'vuex';
+import Modal from '@/components/modals/modal.vue';
+import Card from '@/components/widgets/card.vue';
 import modelService from '@/services/model-service';
+import { CAGModelSummary } from '@/types/CAG';
 
-export default {
+interface SelectableCAGModelSummary extends CAGModelSummary {
+  selected?: boolean;
+}
+
+export default defineComponent({
   name: 'ModalImportCag',
   components: {
     Modal,
@@ -58,17 +64,23 @@ export default {
   emits: [
     'import-cag', 'close'
   ],
-  data: () => ({
-    availableCAGs: []
-  }),
-  computed: {
-    ...mapGetters({
-      project: 'app/project',
-      currentCAG: 'app/currentCAG'
-    }),
-    selectedCAGIds() {
-      return this.availableCAGs.filter(d => d.selected === true).map(d => d.id);
-    }
+  setup() {
+    const store = useStore();
+    const availableCAGs = ref([]) as Ref<SelectableCAGModelSummary[]>;
+
+    const project = computed(() => store.getters['app/project']);
+    const currentCAG = computed(() => store.getters['app/currentCAG']);
+    const selectedCAGIds = computed(() => {
+      return availableCAGs.value.filter(d => d.selected === true).map(d => d.id);
+    });
+
+    return {
+      project,
+      currentCAG,
+
+      availableCAGs,
+      selectedCAGIds
+    };
   },
   mounted() {
     this.refresh();
@@ -79,7 +91,7 @@ export default {
         this.availableCAGs = result.models.filter(d => d.id !== this.currentCAG);
       });
     },
-    toggleCAGSelection(cag) {
+    toggleCAGSelection(cag: SelectableCAGModelSummary) {
       if (!cag.selected) {
         cag.selected = true;
       } else {
@@ -94,7 +106,7 @@ export default {
       this.$emit('close', null);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
