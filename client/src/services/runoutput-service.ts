@@ -1,6 +1,6 @@
 import API from '@/api/api';
 import { DatacubeGeography } from '@/types/Common';
-import { AdminLevel } from '@/types/Enums';
+import { AdminLevel, SpatialAggregationLevel } from '@/types/Enums';
 import { OutputSpec, OutputSpecWithId, RegionalAggregations, RegionAgg, RegionalAggregation, OutputStatWithZoom, OutputStatsResult } from '@/types/Runoutput';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
 
@@ -63,6 +63,10 @@ export const getRegionAggregations = async (
 
   if (isSplitByQualifierActive(breakdownOption)) {
     results = await Promise.all(specs.map((spec) => getRegionAggregationWithQualifiers(spec, breakdownOption)));
+  // reduce duplicate calls without branching the more complex result processing logic.
+  } else if (breakdownOption === SpatialAggregationLevel.Region) {
+    const ret = await getRegionAggregation(specs[0]);
+    results = new Array(specs.length).fill(ret) as RegionalAggregation[];
   } else {
     results = await Promise.all(specs.map(getRegionAggregation));
   }
@@ -110,9 +114,16 @@ export const getRegionAggregations = async (
           );
           return;
         }
-        // if we have item value, as in the normal regional aggregation, use that.
+
+        // if we have item value, as in the normal regional aggregation use that.
         if ((item as {id: string; value: number}).value) {
-          dict[level][item.id].values[specs[index].id] = (item as {id: string; value: number}).value;
+          // but only use that if we're not in regional aggregation, or we are and the specs id and item id match
+          if (
+            breakdownOption !== SpatialAggregationLevel.Region ||
+            (breakdownOption === SpatialAggregationLevel.Region && specs[index].id === item.id)
+          ) {
+            dict[level][item.id].values[specs[index].id] = (item as {id: string; value: number}).value;
+          }
         // otherwise use the qualifier info to look up the data in item.values
         } else if ((item as RegionAgg).values?.[specs[index].id]) {
           dict[level][item.id].values[specs[index].id] = (item as RegionAgg).values?.[specs[index].id];
