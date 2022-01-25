@@ -28,50 +28,52 @@ const convertResponsesToBreakdownData = (
     const runId = modelRunIds[index];
     breakdownVariables.forEach(breakdownVariable => {
       const { name: breakdownVariableId, options } = breakdownVariable;
-      const breakdownVariableDisplayName =
-        qualifierInfoMap.get(breakdownVariableId)?.displayName ?? breakdownVariableId;
-      let potentiallyExistingEntry = breakdownDataList.find(
-        breakdownData => breakdownData.id === breakdownVariableId
-      );
-      if (potentiallyExistingEntry === undefined) {
-        potentiallyExistingEntry = {
-          id: breakdownVariableId,
-          name: breakdownVariableDisplayName,
-          totalDataLength: qualifierInfoMap.get(breakdownVariableId)?.count ?? 0,
-          data: {}
-        };
-        breakdownDataList.push(potentiallyExistingEntry);
-      }
-      // We've confirmed that potentiallyExistingEntry is not undefined, so
-      //  rename and strengthen Typescript type
-      const existingEntry = potentiallyExistingEntry;
-      if (existingEntry.data[breakdownVariableId] === undefined) {
-        existingEntry.data[breakdownVariableId] = [];
-      }
-      options.forEach(option => {
-        const { name: optionId, value } = option;
-        let potentiallyExistingOption = existingEntry.data[
-          breakdownVariableId
-        ].find(option => option.id === optionId);
-        if (potentiallyExistingOption === undefined) {
-          potentiallyExistingOption = { id: optionId, values: {} };
-          existingEntry.data[breakdownVariableId].push(
-            potentiallyExistingOption
-          );
+      if (options !== undefined && breakdownVariableId !== undefined) {
+        const breakdownVariableDisplayName =
+          qualifierInfoMap.get(breakdownVariableId)?.displayName ?? breakdownVariableId;
+        let potentiallyExistingEntry = breakdownDataList.find(
+          breakdownData => breakdownData.id === breakdownVariableId
+        );
+        if (potentiallyExistingEntry === undefined) {
+          potentiallyExistingEntry = {
+            id: breakdownVariableId,
+            name: breakdownVariableDisplayName,
+            totalDataLength: qualifierInfoMap.get(breakdownVariableId)?.count ?? 0,
+            data: {}
+          };
+          breakdownDataList.push(potentiallyExistingEntry);
         }
-        // Value is null if a qualifier option doesn't have a value at the
-        //  selected timestamp. We still include an entry in the breakdown
-        //  data list so that the user can select that qualifier option to see
-        //  its timeseries.
-        if (value !== null && value !== undefined) {
-          if (breakdownOption) {
-            // Key values here will change when we implement the missing functionality for these key values.
-            potentiallyExistingOption.values[optionId] = value;
-          } else {
-            potentiallyExistingOption.values[runId] = value;
+        // We've confirmed that potentiallyExistingEntry is not undefined, so
+        //  rename and strengthen Typescript type
+        const existingEntry = potentiallyExistingEntry;
+        if (existingEntry.data[breakdownVariableId] === undefined) {
+          existingEntry.data[breakdownVariableId] = [];
+        }
+        options.forEach(option => {
+          const { name: optionId, value } = option;
+          let potentiallyExistingOption = existingEntry.data[
+            breakdownVariableId
+          ].find(option => option.id === optionId);
+          if (potentiallyExistingOption === undefined) {
+            potentiallyExistingOption = { id: optionId, values: {} };
+            existingEntry.data[breakdownVariableId].push(
+              potentiallyExistingOption
+            );
           }
-        }
-      });
+          // Value is null if a qualifier option doesn't have a value at the
+          //  selected timestamp. We still include an entry in the breakdown
+          //  data list so that the user can select that qualifier option to see
+          //  its timeseries.
+          if (value !== null && value !== undefined) {
+            if (breakdownOption) {
+              // Key values here will change when we implement the missing functionality for these key values.
+              potentiallyExistingOption.values[optionId] = value;
+            } else {
+              potentiallyExistingOption.values[runId] = value;
+            }
+          }
+        });
+      }
     });
   });
 
