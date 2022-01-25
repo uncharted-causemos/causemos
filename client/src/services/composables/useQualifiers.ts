@@ -64,7 +64,7 @@ const convertResponsesToBreakdownData = (
           //  selected timestamp. We still include an entry in the breakdown
           //  data list so that the user can select that qualifier option to see
           //  its timeseries.
-          if (value !== null) {
+          if (value !== null && value !== undefined) {
             if (breakdownOption) {
               // Key values here will change when we implement the missing functionality for these key values.
               potentiallyExistingOption.values[optionId] = value;

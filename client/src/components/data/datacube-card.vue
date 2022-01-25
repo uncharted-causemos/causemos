@@ -321,7 +321,7 @@
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
-                :unit="(relativeTo && showPercentChange) ? '%' : unit"
+                :unit="timeseriesUnit"
                 @select-timestamp="setSelectedTimestamp"
               />
               <p
@@ -459,7 +459,7 @@
                   :resolution-options="temporalResolutionOptions"
                   :selected-spatial-aggregation="selectedSpatialAggregation"
                   :selected-temporal-aggregation="selectedTemporalAggregation"
-                  :selected-unit="unit"
+                  :selected-transform="selectedTransform"
                   :selected-resolution="selectedTemporalResolution"
                   :selected-base-layer="selectedBaseLayer"
                   :selected-data-layer="selectedDataLayer"
@@ -479,6 +479,7 @@
                   @set-color-scheme-name="setColorSchemeName"
                   @set-color-scale-type="setColorScaleType"
                   @set-number-color-bins="setNumberOfColorBins"
+                  @set-transform-selection="setTransformSelection"
                 />
               </div>
             </div>
@@ -543,45 +544,44 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
 import { getInsightById } from '@/services/insight-service';
 
-import { GeoRegionDetail, ScenarioData, AnalysisMapColorOptions } from '@/types/Common';
+import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
+  DatacubeGenericAttributeVariableType,
   DatacubeType,
+  DataTransform,
+  GeoAttributeFormat,
   ModelRunStatus,
+  ReferenceSeriesOption,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
-  TemporalResolutionOption,
-  GeoAttributeFormat,
-  ReferenceSeriesOption,
-  DatacubeGenericAttributeVariableType
+  TemporalResolutionOption
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import {
-  // RegionalAggregations,
-  OutputSpecWithId
-} from '@/types/Runoutput';
+import { OutputSpecWithId } from '@/types/Runoutput';
 
 import {
+  COLOR,
+  COLOR_SCHEME,
   colorFromIndex,
   ColorScaleType,
   getColors,
-  COLOR,
-  COLOR_SCHEME,
   isDiscreteScale,
+  isDivergingScheme,
   SCALE_FUNCTION,
-  validateColorScaleType,
-  isDivergingScheme
+  validateColorScaleType
 } from '@/utils/colors-util';
 import {
+  DEFAULT_DATE_RANGE_DELIMETER,
+  getFilteredScenariosFromIds,
+  getSelectedOutput,
+  getUnitString,
   isIndicator,
   isModel,
-  getFilteredScenariosFromIds,
-  TAGS,
-  DEFAULT_DATE_RANGE_DELIMETER,
-  getSelectedOutput
+  TAGS
 } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
@@ -592,7 +592,7 @@ import {
   SOURCE_LAYERS
 } from '@/utils/map-util-new';
 
-import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
+import { addModelRunsTag, createModelRun, removeModelRunsTag, updateModelRun } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
@@ -711,6 +711,7 @@ export default defineComponent({
     const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+    const selectedTransform = ref<DataTransform>(DataTransform.None);
 
     //
     // color scheme options
@@ -884,6 +885,10 @@ export default defineComponent({
       numberOfColorBins.value = numBins;
     };
 
+    const setTransformSelection = (transform: DataTransform) => {
+      selectedTransform.value = transform;
+    };
+
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
     const finalColorScheme = computed(() => {
       const scheme = isDiscreteScale(selectedColorScaleType.value)
@@ -1055,6 +1060,9 @@ export default defineComponent({
           }
           if (initialDataConfig.value.selectedYears !== undefined) {
             initialSelectedYears.value = _.clone(initialDataConfig.value.selectedYears);
+          }
+          if (initialDataConfig.value.selectedTransform !== undefined) {
+            selectedTransform.value = initialDataConfig.value.selectedTransform as DataTransform;
           }
           if (initialDataConfig.value.activeReferenceOptions !== undefined) {
             initialActiveReferenceOptions.value = _.clone(initialDataConfig.value.activeReferenceOptions);
@@ -1300,14 +1308,6 @@ export default defineComponent({
       }
     });
 
-
-    const unit = computed(() =>
-      mainModelOutput?.value?.unit &&
-        mainModelOutput.value.unit !== ''
-        ? mainModelOutput.value.unit
-        : null
-    );
-
     const someVizOptionsInvalid = computed(() =>
       isPublishing.value && (selectedSpatialAggregation.value === AggregationOption.None ||
           selectedTemporalAggregation.value === AggregationOption.None ||
@@ -1383,6 +1383,9 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.relativeTo !== undefined) {
           setRelativeTo(loadedInsight.data_state?.relativeTo);
+        }
+        if (loadedInsight.data_state?.selectedTransform) {
+          selectedTransform.value = loadedInsight.data_state?.selectedTransform as DataTransform;
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
@@ -1504,6 +1507,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
+      selectedTransform,
       setSelectedTimestamp,
       selectedRegionIds,
       selectedQualifierValues,
@@ -1534,6 +1538,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
+      selectedTransform,
       metadata,
       selectedTimeseriesPoints,
       filteredRunData
@@ -1548,6 +1553,27 @@ export default defineComponent({
       relativeTo,
       activeReferenceOptions
     );
+
+    const unit = computed(() =>
+      getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value)
+    );
+
+    const timeseriesUnit = computed(() => {
+      if (relativeTo.value && showPercentChange.value) {
+        return '%';
+      }
+      if (breakdownOption.value === null ||
+        breakdownOption.value === TemporalAggregationLevel.Year ||
+        selectedTransform.value === DataTransform.Normalization
+      ) {
+        return mainModelOutput?.value?.unit ?? '';
+      }
+      // If split by region or split by qualifier with regions selected
+      if (breakdownOption.value === SpatialAggregationLevel.Region || selectedRegionIds.value.length > 0) {
+        return getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value);
+      }
+      return mainModelOutput?.value?.unit ?? '';
+    });
 
     const mapColorOptions = computed(() => {
       const options: AnalysisMapColorOptions = {
@@ -1646,6 +1672,7 @@ export default defineComponent({
         selectedScenarioIds,
         selectedTimestamp,
         selectedYears,
+        selectedTransform,
         activeReferenceOptions,
         searchFilters,
         visibleTimeseriesData
@@ -1795,6 +1822,8 @@ export default defineComponent({
       setSpatialAggregationSelection,
       setTemporalAggregationSelection,
       setTemporalResolutionSelection,
+      setTransformSelection,
+      selectedTransform,
       requestAdditionalQualifier,
       showDatasets,
       showGeoSelectionModal,
@@ -1815,6 +1844,7 @@ export default defineComponent({
       toggleNewRunsMode,
       toggleReferenceOptions,
       unit,
+      timeseriesUnit,
       updatePotentialScenarioDates,
       updateStateFromInsight,
       updateGeneratedScenarios,

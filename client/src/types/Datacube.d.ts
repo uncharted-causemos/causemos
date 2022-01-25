@@ -128,7 +128,7 @@ export interface QualifierThresholds {
 
 export interface QualifierBreakdownResponse {
   name: string;
-  options: { name: string; value: number? }[];
+  options: { name: string; value?: number }[];
 }
 
 export interface QualifierCountsResponse {

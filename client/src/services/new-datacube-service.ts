@@ -219,6 +219,7 @@ export const getQualifierTimeseries = async (
   spatialAggregation: string,
   qualifierVariableId: string,
   qualifierOptions: string[],
+  transform?: string,
   regionId?: string
 ) => {
   return await API.get('maas/output/qualifier-timeseries', {
@@ -230,6 +231,7 @@ export const getQualifierTimeseries = async (
       temporal_agg: temporalAggregation,
       spatial_agg: spatialAggregation,
       region_id: regionId,
+      transform: transform,
       qualifier: qualifierVariableId,
       q_opt: qualifierOptions
     }

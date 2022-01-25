@@ -17,8 +17,8 @@
           :is-dropdown-left-aligned="true"
           :inner-button-label="'Unit'"
           :items="unitOptions"
-          :selected-item="selectedUnit"
-          @item-selected="setUnitSelection"
+          :selected-item="selectedUnitOption"
+          @item-selected="setTransformSelection"
         />
         <div class="aggregation-row">
           <dropdown-button
@@ -166,8 +166,8 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
-import DropdownButton from '@/components/dropdown-button.vue';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import { AggregationOption, TemporalResolutionOption, DataTransform } from '@/types/Enums';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
@@ -176,6 +176,12 @@ import { COLOR_SCHEME, ColorScaleType, COLOR, COLOR_PALETTE_SIZE, isDiscreteScal
 import { getOutputs } from '@/utils/datacube-util';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.RDYLBU_7, COLOR.OTHER]);
+const TRANSFORMS: DropdownItem[] = [
+  { value: DataTransform.PerCapita, displayName: 'Per Capita' },
+  { value: DataTransform.PerCapita1K, displayName: 'Per Capita (per 1K people)' },
+  { value: DataTransform.PerCapita1M, displayName: 'Per Capita (per 1M people)' },
+  { value: DataTransform.Normalization, displayName: 'Normalized Regional Data' }
+];
 
 export default defineComponent({
   components: {
@@ -192,9 +198,9 @@ export default defineComponent({
       type: String,
       default: AggregationOption.Mean
     },
-    selectedUnit: {
-      type: String,
-      default: ''
+    selectedTransform: {
+      type: String as PropType<DataTransform>,
+      default: DataTransform.None
     },
     selectedResolution: {
       type: String,
@@ -248,7 +254,7 @@ export default defineComponent({
   emits: [
     'set-spatial-aggregation-selection',
     'set-temporal-aggregation-selection',
-    'set-unit-selection',
+    'set-transform-selection',
     'set-resolution-selection',
     'set-base-layer-selection',
     'set-data-layer-selection',
@@ -262,7 +268,8 @@ export default defineComponent({
     const {
       metadata,
       resolutionOptions,
-      selectedResolution
+      selectedResolution,
+      selectedTransform
     } = toRefs(props);
 
     const capitalize = (str: string) => {
@@ -325,9 +332,18 @@ export default defineComponent({
       return currentOutput.value.display_name;
     });
 
-    const unitOptions = computed<string[]>(() => {
-      const unit = currentOutput.value.unit ?? '';
-      return [unit];
+    const outputUnit = computed<string>(() => {
+      return currentOutput.value.unit ?? '';
+    });
+
+    const unitOptions = computed<DropdownItem[]>(() => {
+      return [{ value: outputUnit.value, displayName: outputUnit.value }, ...TRANSFORMS];
+    });
+
+    const selectedUnitOption = computed<string>(() => {
+      return selectedTransform.value === DataTransform.None
+        ? outputUnit.value
+        : selectedTransform.value;
     });
 
     return {
@@ -341,6 +357,7 @@ export default defineComponent({
       isDiscreteScale,
       dataLayerTransparencyOptions,
       unitOptions,
+      selectedUnitOption,
       TemporalResolutionOption,
       AggregationOption,
       setResolutionSelection
@@ -416,8 +433,11 @@ export default defineComponent({
         this.setTemporalAggregationSelection(this.selectedSpatialAggregation);
       }
     },
-    setUnitSelection(unit: string) {
-      this.$emit('set-unit-selection', unit);
+    setTransformSelection(unit: string) {
+      const transform = TRANSFORMS.map(t => t.value).includes(unit)
+        ? unit as DataTransform
+        : DataTransform.None;
+      this.$emit('set-transform-selection', transform);
     },
     setBaseLayerSelection(baseLayer: string) {
       this.$emit('set-base-layer-selection', baseLayer);

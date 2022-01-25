@@ -26,6 +26,7 @@ export interface OutputSpec {
   temporalAggregation: string;
   spatialAggregation: string;
   timestamp: number;
+  transform?: string
   preGeneratedOutput?: PreGeneratedModelRunData[];
   isDefaultRun: boolean;
 }
