@@ -75,21 +75,24 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
-import { mapGetters, mapActions } from 'vuex';
+import { defineComponent, PropType, ref, computed } from 'vue';
+import { useStore } from 'vuex';
 
-import DropdownControl from '../dropdown-control';
+import DropdownControl from '@/components/dropdown-control.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
+
+import { CAGModelSummary, Scenario } from '@/types/CAG';
 
 const PROJECTION_ENGINES = {
   DELPHI: 'delphi',
   DYSE: 'dyse'
 };
 
-export default {
+export default defineComponent({
   name: 'QuantitativeActionBar',
   components: {
     DropdownControl,
@@ -102,11 +105,11 @@ export default {
       default: null
     },
     modelSummary: {
-      type: Object,
+      type: Object as PropType<CAGModelSummary>,
       required: true
     },
     scenarios: {
-      type: Array,
+      type: Array as PropType<Scenario[]>,
       default: () => []
     }
   },
@@ -115,15 +118,28 @@ export default {
     'reset-cag',
     'tab-click'
   ],
-  data: () => ({
-    isScendarioDropdownOpen: false
-  }),
+  setup() {
+    const store = useStore();
+    const isScendarioDropdownOpen = ref(false);
+    const selectedScenarioId = computed(() => store.getters['model/selectedScenarioId']);
+    const project = computed(() => store.getters['app/project']);
+    const currentCAG = computed(() => store.getters['app/currentCAG']);
+
+    const setSelectedScenarioId = (id: string) => {
+      store.dispatch('model/setSelectedScenarioId', id);
+    };
+
+    return {
+      isScendarioDropdownOpen,
+      selectedScenarioId,
+      project,
+      currentCAG,
+
+      // actions
+      setSelectedScenarioId
+    };
+  },
   computed: {
-    ...mapGetters({
-      selectedScenarioId: 'model/selectedScenarioId',
-      project: 'app/project',
-      currentCAG: 'app/currentCAG'
-    }),
     selectedScenario() {
       const found = this.scenarioOptions.find(
         scenario => scenario.id === this.selectedScenarioId
@@ -158,9 +174,6 @@ export default {
     }
   },
   methods: {
-    ...mapActions({
-      setSelectedScenarioId: 'model/setSelectedScenarioId'
-    }),
     runModel() {
       this.$emit('run-model');
     },
@@ -170,7 +183,7 @@ export default {
     toggleScenarioDropdownOpen() {
       this.isScendarioDropdownOpen = !this.isScendarioDropdownOpen;
     },
-    onClickScenario(scenarioId) {
+    onClickScenario(scenarioId: string) {
       if (scenarioId === this.selectedScenarioId) return;
       this.isScendarioDropdownOpen = false;
       this.setSelectedScenarioId(scenarioId);
@@ -185,12 +198,12 @@ export default {
         }
       });
     },
-    setActive(activeTab) {
+    setActive(activeTab: string) {
       this.$router.push({ query: { activeTab } }).catch(() => {});
       this.$emit('tab-click', activeTab);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

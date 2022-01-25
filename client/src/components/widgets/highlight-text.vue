@@ -4,10 +4,11 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent, ref, Ref } from 'vue';
 
-export default {
+export default defineComponent({
   name: 'HighlightText',
   props: {
     text: {
@@ -27,15 +28,23 @@ export default {
       this.refresh();
     }
   },
+  setup() {
+    const highlightRef = ref(null) as Ref<HTMLDivElement | null>;
+
+    return {
+      highlightRef
+    };
+  },
   mounted() {
     this.refresh();
   },
   methods: {
     refresh() {
+      if (!this.highlightRef) return;
       if (_.isEmpty(this.text) === false && _.isEmpty(this.highlights) === false) {
         let text = this.text;
 
-        this.highlights.forEach(high => {
+        this.highlights.forEach((high: any) => {
           let token = null;
           let color = null;
           if (typeof high === 'object') {
@@ -54,14 +63,13 @@ export default {
           const regex = new RegExp(token, 'gi');
           text = text.replace(regex, hElement);
         });
-
-        this.$refs.highlight.innerHTML = text;
+        this.highlightRef.innerHTML = text;
       } else {
-        this.$refs.highlight.innerHTML = this.text;
+        this.highlightRef.innerHTML = this.text;
       }
     }
   }
-};
+});
 </script>
 
 <style lang='scss' scoped>
