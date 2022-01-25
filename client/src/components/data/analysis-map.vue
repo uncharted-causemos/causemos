@@ -436,7 +436,6 @@ export default {
           min: _.minBy(stats, (s) => s && s.min).min,
           max: _.maxBy(stats, (s) => s && s.max).max
         };
-        console.log(extendedStats);
         return extendedStats;
       }
     },
