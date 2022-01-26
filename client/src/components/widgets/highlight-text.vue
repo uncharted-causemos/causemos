@@ -1,6 +1,6 @@
 <template>
   <div class="highlight-container">
-    <div ref="highlight" />
+    <div ref="highlightRef" />
   </div>
 </template>
 

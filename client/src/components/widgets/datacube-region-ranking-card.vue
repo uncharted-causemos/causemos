@@ -237,13 +237,13 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
     const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
 
-    let initialSelectedScenarioIds: string[] = [];
+    const initialSelectedScenarioIds = ref<string[]>([]);
 
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
         const allScenarioIds = allModelRunData.value.map(run => run.id);
         // do not pick the first run by default in case a run was previously selected
-        selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
+        selectedScenarioIds.value = initialSelectedScenarioIds.value.length > 0 ? initialSelectedScenarioIds.value : [allScenarioIds[0]];
 
         selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, allModelRunData.value);
       }
@@ -262,7 +262,8 @@ export default defineComponent({
     // apply the view-config for this datacube
     watch(
       () => [
-        initialViewConfig.value
+        initialViewConfig.value,
+        initialDataConfig.value
       ],
       () => {
         if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
@@ -285,9 +286,12 @@ export default defineComponent({
         // apply initial data config for this datacube
         if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
-            initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
+            initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
           }
         }
+      },
+      {
+        immediate: true
       });
 
     const {
