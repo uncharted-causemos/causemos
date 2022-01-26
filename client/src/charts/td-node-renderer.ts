@@ -26,6 +26,7 @@ import {
 
 import { TimeScale } from '@/types/Enums';
 import { renderRidgelines } from './ridgeline-renderer';
+import { historicalDataUncertaintyColor } from '@/services/model-service';
 
 const HISTORICAL_DATA_COLOR = '#888';
 const HISTORICAL_RANGE_OPACITY = 0.05;
@@ -444,8 +445,7 @@ const renderStaticElements = (
       xScale(historicalEndTimestamp) - xScale(historicalStartTimestamp)
     )
     .attr('stroke', 'none')
-    .attr('fill', HISTORICAL_DATA_COLOR)
-    .attr('fill-opacity', HISTORICAL_RANGE_OPACITY);
+    .attr('fill', historicalDataUncertaintyColor(historicalTimeseries, projectionStartTimestamp, timeScale));
 
   // Render major ticks
   // "Now" is one timestep before projection start
