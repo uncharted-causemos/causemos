@@ -308,7 +308,7 @@ function generateSelectableTimestamps(
           .attr('transform', translate(TOOLTIP_PADDING, yPosition))
           .style('fill', color)
           .style('font-weight', 'bold')
-          .text(name.length > maxNameLen ? name.substring(0, maxNameLen) + '...' : name);
+          .text(name?.length > maxNameLen ? name.substring(0, maxNameLen) + '...' : name);
         tooltip
           .append('text')
           .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, yPosition))

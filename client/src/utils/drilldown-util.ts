@@ -2,7 +2,7 @@
 import { ComputedRef, Ref } from 'vue';
 import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { DataState, ViewState } from '@/types/Insight';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/types/Enums';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new';
 import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
@@ -21,6 +21,7 @@ export function initDataStateFromRefs (
   selectedScenarioIds: Ref<string[]>,
   selectedTimestamp: Ref<number|null>,
   selectedYears: Ref<Set<string>>,
+  selectedTransform: Ref<DataTransform>,
   activeReferenceOptions: Ref<string[]>,
   searchFilters: Ref<any>,
   visibleTimeseriesData?: Ref<Timeseries[]> // useful for the node view's validation, but ignoreable by everything else, so optional
@@ -39,6 +40,7 @@ export function initDataStateFromRefs (
     nonDefaultQualifiers: [...nonDefaultQualifiers.value],
     selectedQualifierValues: [...selectedQualifierValues.value],
     selectedYears: [...selectedYears.value],
+    selectedTransform: selectedTransform.value,
     activeReferenceOptions: activeReferenceOptions.value,
     visibleTimeseriesData: visibleTimeseriesData?.value,
     searchFilters: searchFilters.value

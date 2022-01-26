@@ -69,7 +69,7 @@ import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
-import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, DataTransform } from '@/types/Enums';
 import { computed, defineComponent, Ref, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
@@ -184,13 +184,13 @@ export default defineComponent({
     const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
 
     const selectedRegionIds: string[] = [];
-    let initialSelectedScenarioIds: string[] = [];
+    const initialSelectedScenarioIds = ref<string[]>([]);
 
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
         const allScenarioIds = allModelRunData.value.map(run => run.id);
         // do not pick the first run by default in case a run was previously selected
-        selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
+        selectedScenarioIds.value = initialSelectedScenarioIds.value.length > 0 ? initialSelectedScenarioIds.value : [allScenarioIds[0]];
 
         selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, allModelRunData.value);
       }
@@ -205,6 +205,7 @@ export default defineComponent({
     const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
+    const selectedTransform = ref<DataTransform>(DataTransform.None);
 
     const selectedAdminLevel = ref(0); // country by default
 
@@ -216,7 +217,8 @@ export default defineComponent({
     // grab and track the view-config for this datacube
     watch(
       () => [
-        initialViewConfig.value
+        initialViewConfig.value,
+        initialDataConfig.value
       ],
       () => {
         if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
@@ -259,9 +261,15 @@ export default defineComponent({
             });
           }
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
-            initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
+            initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
+          }
+          if (initialDataConfig.value.selectedTransform !== undefined) {
+            selectedTransform.value = initialDataConfig.value.selectedTransform;
           }
         }
+      },
+      {
+        immediate: true
       });
 
     const breakdownOption = ref<string | null>(null);
@@ -284,6 +292,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       ref(null), // breakdownOption
       selectedTimestamp,
+      selectedTransform,
       () => {}, // setSelectedTimestamp
       ref(selectedRegionIds),
       ref(new Set()),
@@ -348,6 +357,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
+      selectedTransform,
       metadata,
       selectedTimeseriesPoints
     );

@@ -5,12 +5,14 @@ import { OutputSpecWithId } from '@/types/Runoutput';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 import { ModelRun } from '@/types/ModelRun';
+import { DataTransform } from '@/types/Enums';
 
 export default function useOutputSpecs(
   selectedModelId: Ref<string | null>,
   selectedSpatialAggregation: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,
+  selectedTransform: Ref<DataTransform>,
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
   modelRunData?: Ref<ModelRun[]>
@@ -26,6 +28,9 @@ export default function useOutputSpecs(
     }
 
     const activeModelId = modelMetadata.data_id ?? '';
+    const transform = selectedTransform.value !== DataTransform.None
+      ? selectedTransform.value
+      : undefined;
     return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => {
       const outputSpec: OutputSpecWithId = {
         id: timeseriesId,
@@ -33,6 +38,7 @@ export default function useOutputSpecs(
         runId: scenarioId,
         outputVariable: activeFeature.value,
         timestamp,
+        transform,
         temporalResolution: selectedTemporalResolution.value,
         temporalAggregation: selectedTemporalAggregation.value,
         spatialAggregation: selectedSpatialAggregation.value,

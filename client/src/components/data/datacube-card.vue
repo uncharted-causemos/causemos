@@ -321,7 +321,7 @@
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
-                :unit="(relativeTo && showPercentChange) ? '%' : unit"
+                :unit="timeseriesUnit"
                 @select-timestamp="setSelectedTimestamp"
               />
               <p
@@ -372,11 +372,12 @@
                       :reference-options="activeReferenceOptions"
                       :is-default-run="spec.isDefaultRun"
                       :show-tooltip="true"
-                      :selected-layer-id="mapSelectedLayer"
+                      :selected-layer-id="getSelectedLayer(spec.id)"
+                      :all-active-layer-ids="allActiveLayerIds"
                       :map-bounds="mapBounds"
                       :camera-options="mapCameraOptions"
                       :region-data="regionalData"
-                      :selected-region-ids="selectedRegionIds"
+                      :selected-region-ids="allActiveRegionIds"
                       :admin-layer-stats="adminLayerStats"
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
@@ -458,7 +459,7 @@
                   :resolution-options="temporalResolutionOptions"
                   :selected-spatial-aggregation="selectedSpatialAggregation"
                   :selected-temporal-aggregation="selectedTemporalAggregation"
-                  :selected-unit="unit"
+                  :selected-transform="selectedTransform"
                   :selected-resolution="selectedTemporalResolution"
                   :selected-base-layer="selectedBaseLayer"
                   :selected-data-layer="selectedDataLayer"
@@ -478,6 +479,7 @@
                   @set-color-scheme-name="setColorSchemeName"
                   @set-color-scale-type="setColorScaleType"
                   @set-number-color-bins="setNumberOfColorBins"
+                  @set-transform-selection="setTransformSelection"
                 />
               </div>
             </div>
@@ -542,55 +544,55 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
 import { getInsightById } from '@/services/insight-service';
 
-import { GeoRegionDetail, ScenarioData, AnalysisMapColorOptions } from '@/types/Common';
+import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
+  DatacubeGenericAttributeVariableType,
   DatacubeType,
+  DataTransform,
+  GeoAttributeFormat,
   ModelRunStatus,
+  ReferenceSeriesOption,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
-  TemporalResolutionOption,
-  GeoAttributeFormat,
-  ReferenceSeriesOption,
-  DatacubeGenericAttributeVariableType
+  TemporalResolutionOption
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import {
-  // RegionalAggregations,
-  OutputSpecWithId
-} from '@/types/Runoutput';
+import { OutputSpecWithId } from '@/types/Runoutput';
 
 import {
+  COLOR,
+  COLOR_SCHEME,
   colorFromIndex,
   ColorScaleType,
   getColors,
-  COLOR,
-  COLOR_SCHEME,
   isDiscreteScale,
+  isDivergingScheme,
   SCALE_FUNCTION,
-  validateColorScaleType,
-  isDivergingScheme
+  validateColorScaleType
 } from '@/utils/colors-util';
 import {
+  DEFAULT_DATE_RANGE_DELIMETER,
+  getFilteredScenariosFromIds,
+  getSelectedOutput,
+  getUnitString,
   isIndicator,
   isModel,
-  getFilteredScenariosFromIds,
-  TAGS,
-  DEFAULT_DATE_RANGE_DELIMETER,
-  getSelectedOutput
+  TAGS
 } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
   // adminLevelToString,
   BASE_LAYER,
   DATA_LAYER,
-  DATA_LAYER_TRANSPARENCY
+  DATA_LAYER_TRANSPARENCY,
+  SOURCE_LAYERS
 } from '@/utils/map-util-new';
 
-import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
+import { addModelRunsTag, createModelRun, removeModelRunsTag, updateModelRun } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
@@ -709,6 +711,7 @@ export default defineComponent({
     const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+    const selectedTransform = ref<DataTransform>(DataTransform.None);
 
     //
     // color scheme options
@@ -882,6 +885,10 @@ export default defineComponent({
       numberOfColorBins.value = numBins;
     };
 
+    const setTransformSelection = (transform: DataTransform) => {
+      selectedTransform.value = transform;
+    };
+
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
     const finalColorScheme = computed(() => {
       const scheme = isDiscreteScale(selectedColorScaleType.value)
@@ -1053,6 +1060,9 @@ export default defineComponent({
           }
           if (initialDataConfig.value.selectedYears !== undefined) {
             initialSelectedYears.value = _.clone(initialDataConfig.value.selectedYears);
+          }
+          if (initialDataConfig.value.selectedTransform !== undefined) {
+            selectedTransform.value = initialDataConfig.value.selectedTransform as DataTransform;
           }
           if (initialDataConfig.value.activeReferenceOptions !== undefined) {
             initialActiveReferenceOptions.value = _.clone(initialDataConfig.value.activeReferenceOptions);
@@ -1298,14 +1308,6 @@ export default defineComponent({
       }
     });
 
-
-    const unit = computed(() =>
-      mainModelOutput?.value?.unit &&
-        mainModelOutput.value.unit !== ''
-        ? mainModelOutput.value.unit
-        : null
-    );
-
     const someVizOptionsInvalid = computed(() =>
       isPublishing.value && (selectedSpatialAggregation.value === AggregationOption.None ||
           selectedTemporalAggregation.value === AggregationOption.None ||
@@ -1381,6 +1383,9 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.relativeTo !== undefined) {
           setRelativeTo(loadedInsight.data_state?.relativeTo);
+        }
+        if (loadedInsight.data_state?.selectedTransform) {
+          selectedTransform.value = loadedInsight.data_state?.selectedTransform as DataTransform;
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
@@ -1502,6 +1507,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
+      selectedTransform,
       setSelectedTimestamp,
       selectedRegionIds,
       selectedQualifierValues,
@@ -1532,6 +1538,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
+      selectedTransform,
       metadata,
       selectedTimeseriesPoints,
       filteredRunData
@@ -1543,74 +1550,30 @@ export default defineComponent({
       outputSpecs,
       breakdownOption,
       datacubeHierarchy,
-      relativeTo
+      relativeTo,
+      activeReferenceOptions
     );
 
-    /*
-      const regionsToSubregions = computed(() => {
-      const regionsToSubregionInternal: any = {};
-      referenceRegions.value.forEach(regionId => { regionsToSubregionInternal[regionId] = []; });
-      if (regionalData.value) {
-        const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
-        if (adminLevelAsString) {
-          const regionsToConsider = regionalData.value[adminLevelAsString];
-          if (regionsToConsider) {
-            regionsToConsider.map(region => region.id).forEach(regionId => {
-              const delimiter = '__';
-              const parentRegionId: string = regionId.split(delimiter).slice(0, -1).join(delimiter);
-              if (parentRegionId in regionsToSubregionInternal) {
-                regionsToSubregionInternal[parentRegionId].push(regionId);
-              }
-            });
-          }
-        }
+    const unit = computed(() =>
+      getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value)
+    );
+
+    const timeseriesUnit = computed(() => {
+      if (relativeTo.value && showPercentChange.value) {
+        return '%';
       }
-      const toSubregionFiltered: {[ key: string ]: string[] } = {};
-      for (const region in regionsToSubregionInternal) {
-        const subregions = regionsToSubregionInternal[region];
-        if (subregions.length < 25) {
-          toSubregionFiltered[region] = subregions;
-        }
+      if (breakdownOption.value === null ||
+        breakdownOption.value === TemporalAggregationLevel.Year ||
+        selectedTransform.value === DataTransform.Normalization
+      ) {
+        return mainModelOutput?.value?.unit ?? '';
       }
-      return toSubregionFiltered;
+      // If split by region or split by qualifier with regions selected
+      if (breakdownOption.value === SpatialAggregationLevel.Region || selectedRegionIds.value.length > 0) {
+        return getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value);
+      }
+      return mainModelOutput?.value?.unit ?? '';
     });
-
-    const {
-      timeseriesData: subregionTimeseriesData,
-      visibleTimeseriesData: subregionVisibleTimeseriesData,
-      relativeTo: subregionRelativeToTimeseriesData,
-      baselineMetadata: subregionBaselineMetadata,
-      setRelativeTo: subregionSetRelativeTo,
-      temporalBreakdownData: subregionTemporalBreakdownData,
-      selectedYears: subregionSelectedYears,
-      toggleIsYearSelected: subregionToggleIsYearSelected
-    } = useTimeseriesData(
-      metadata,
-      selectedScenarioIds,
-      selectedTemporalResolution,
-      selectedTemporalAggregation,
-      selectedSpatialAggregation,
-      breakdownOption,
-      selectedTimestamp,
-      setSelectedTimestamp,
-      // ref<string[]>(Object.values(regionsToSubregions.value).flat()),
-      ref<string[]>([]),
-      selectedQualifierValues,
-      initialSelectedYears,
-      showPercentChange,
-      selectedScenarios
-    );
-    const regionsToTimeseries: any = {
-      subregionTimeseriesData,
-      subregionVisibleTimeseriesData,
-      subregionRelativeToTimeseriesData,
-      subregionBaselineMetadata,
-      subregionSetRelativeTo,
-      subregionTemporalBreakdownData,
-      subregionSelectedYears,
-      subregionToggleIsYearSelected
-    };
-    */
 
     const mapColorOptions = computed(() => {
       const options: AnalysisMapColorOptions = {
@@ -1639,7 +1602,8 @@ export default defineComponent({
       selectedAdminLevel,
       showPercentChange,
       mapColorOptions,
-      activeReferenceOptions
+      activeReferenceOptions,
+      breakdownOption
     );
 
     const {
@@ -1708,6 +1672,7 @@ export default defineComponent({
         selectedScenarioIds,
         selectedTimestamp,
         selectedYears,
+        selectedTransform,
         activeReferenceOptions,
         searchFilters,
         visibleTimeseriesData
@@ -1717,19 +1682,29 @@ export default defineComponent({
     });
 
     const referenceOptions = computed(() => {
-      let currentReferenceSeries = [] as any;
+      let currentReferenceSeries: ModelRunReference[] = [];
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
         currentReferenceSeries = [
           { id: ReferenceSeriesOption.AllYears, displayName: 'Average All Years' },
           { id: ReferenceSeriesOption.SelectYears, displayName: 'Average Selected Years' }
         ];
-      // to be handled in separate PR for initial reference region series later
       } else if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        currentReferenceSeries = [
-          // { id: ReferenceSeriesOption.AllRegions, displayName: 'Average All Regions' },
-          // { id: ReferenceSeriesOption.SelectRegions, displayName: 'Average Selected Regions' }
-          // add in the individual parent regions for reference as well in future PR
-        ];
+        // add averaging options -- in a later iteration.
+        /*
+        if (selectedRegionIds.value.length > 1) {
+          currentReferenceSeries.push({
+            id: ReferenceSeriesOption.SelectRegions,
+            displayName: 'Average Selected Regions'
+          });
+        }
+        */
+        // if selected admin level is lower than country, add countries as references.
+        if (selectedAdminLevel.value > 0 && regionalData.value?.country) {
+          regionalData.value.country.forEach(refRegion => currentReferenceSeries.push({
+            id: refRegion.id,
+            displayName: refRegion.id
+          }));
+        }
       }
 
       return currentReferenceSeries.map((c: any) => {
@@ -1847,6 +1822,8 @@ export default defineComponent({
       setSpatialAggregationSelection,
       setTemporalAggregationSelection,
       setTemporalResolutionSelection,
+      setTransformSelection,
+      selectedTransform,
       requestAdditionalQualifier,
       showDatasets,
       showGeoSelectionModal,
@@ -1867,6 +1844,7 @@ export default defineComponent({
       toggleNewRunsMode,
       toggleReferenceOptions,
       unit,
+      timeseriesUnit,
       updatePotentialScenarioDates,
       updateStateFromInsight,
       updateGeneratedScenarios,
@@ -1912,9 +1890,41 @@ export default defineComponent({
         result = result.filter(tag => tags.includes(tag));
       });
       return result;
+    },
+
+    // Check if we have active regional reference series by looking at the current breakdown option
+    // and the lenght of active reference options
+    hasRegionalReferenceSeries(): boolean {
+      return this.activeReferenceOptions.length > 0 && this.breakdownOption === SpatialAggregationLevel.Region;
+    },
+
+    // If we have active regional reference series, then we need to provide layer ids for all active
+    // regions/layers. As we currently only allow country level reference series, we add the country
+    // to the list of selected layers.
+    allActiveLayerIds(): string[] {
+      return this.hasRegionalReferenceSeries
+        ? [SOURCE_LAYERS[0].layerId, this.mapSelectedLayer]
+        : [this.mapSelectedLayer];
+    },
+
+    // If we have active regional reference series, then we need to provide region ids for all active
+    // regions/layers. As we currently only allow country level reference series, we add the selected
+    // to the country region ids from the active reference options to the list of selected region ids.
+    allActiveRegionIds(): string[] {
+      return this.hasRegionalReferenceSeries
+        ? [...this.selectedRegionIds, ...this.activeReferenceOptions]
+        : this.selectedRegionIds;
     }
   },
   methods: {
+    getSelectedLayer(id: string): string {
+      return this.isReferenceSeries(id) && this.breakdownOption === SpatialAggregationLevel.Region
+        ? SOURCE_LAYERS[0].layerId
+        : this.mapSelectedLayer;
+    },
+    isReferenceSeries(id: string): boolean {
+      return this.referenceOptions.filter((item) => item.id === id).length > 0;
+    },
     openGeoSelectionModal(modelParam: ModelParameter) {
       this.showGeoSelectionModal = true;
       this.geoModelParam = modelParam;
