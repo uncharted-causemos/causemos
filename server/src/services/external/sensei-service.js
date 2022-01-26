@@ -41,12 +41,6 @@ const createModel = async (payload) => {
     }
     const w = edge.weights.map(parseFloat);
     acc[key].weights = w.map(v => Math.abs(v));
-
-    // FIXME: getting weird weights from Jataware translation layer, as far as we are concerned
-    // weights should be positive.
-    // if (w[0] !== 0) {
-    //   acc[key].weights = w.map(v => Math.abs(v));
-    // }
     return acc;
   }, {});
   return { nodes, edges, status: result.status };
@@ -92,7 +86,7 @@ const createExperiment = async (modelId, payload) => {
     json: payload
   };
 
-  console.log('!!!');
+  console.log('!!! sensei experiment');
   console.log(JSON.stringify(payload, null, 2));
   console.log('!!!');
 
