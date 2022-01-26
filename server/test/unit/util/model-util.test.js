@@ -25,7 +25,7 @@ describe('model-util', function() {
 
   it('min/max range - regular case', function() {
     const normal = modelUtil.projectionValueRange([1, 2, 3]);
-    expect(normal).to.deep.equal({ max: 5, min: -1 });
+    expect(normal).to.deep.equal({ max: 5, min: 0 });
 
     const negative = modelUtil.projectionValueRange([-1, -2, -3]);
     expect(negative).to.deep.equal({ max: 1, min: -5 });
