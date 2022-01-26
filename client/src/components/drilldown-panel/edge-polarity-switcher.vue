@@ -193,7 +193,7 @@ export default defineComponent({
   },
   watch: {
     selectedRelationship () {
-      this.currentEdgeWeight = getEdgeWeight(this.$props.selectedRelationship as EdgeParameter);
+      this.currentEdgeWeight = getEdgeWeight(this.selectedRelationship as EdgeParameter);
     }
   },
   methods: {
