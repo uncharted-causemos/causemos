@@ -313,7 +313,7 @@ export default {
             target: selectedEdge.target,
             reference_ids: selectedEdgesData[edgeId],
             parameter: {
-              weights: [0.0, 0.5]
+              // weights: [0.0, 0.5]
             }
           };
         } else {

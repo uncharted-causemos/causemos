@@ -24,7 +24,7 @@
       leads to&nbsp;
     </div>
     <div
-      v-if="selectedRelationship.parameter"
+      v-if="selectedRelationship.parameter.weights"
       style="display: inline-block">
       <span
         class="clickable-dropdown"
@@ -100,7 +100,7 @@ const EDGE_TYPE_TREND = 'trend';
 
 const getEdgeTypeString = (edge: EdgeParameter): string => {
   const param = edge.parameter;
-  if (param) {
+  if (param && param.weights) {
     return param.weights[0] > param.weights[1] ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
   }
   return '';
@@ -111,7 +111,7 @@ const getEdgeTypeString = (edge: EdgeParameter): string => {
 const getEdgeWeight = (edge: EdgeParameter): number => {
   const type = getEdgeTypeString(edge);
   const param = edge.parameter;
-  if (param) {
+  if (param && param.weights) {
     const w = type === EDGE_TYPE_TREND ? param.weights[1] : param.weights[0];
     if (w > 0.7) return 0.9;
     if (w > 0.3) return 0.5;

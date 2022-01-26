@@ -16,6 +16,7 @@ const historyService = rootRequire('/services/history-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
 const delphiDevService = rootRequire('/services/external/delphi_dev-service');
+const senseiService = rootRequire('/services/external/sensei-service');
 
 const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 const modelUtil = rootRequire('util/model-util');
@@ -24,6 +25,7 @@ const modelUtil = rootRequire('util/model-util');
 const DYSE = 'dyse';
 const DELPHI = 'delphi';
 const DELPHI_DEV = 'delphi_dev';
+const SENSEI = 'sensei';
 
 // const esLock = {};
 
@@ -268,6 +270,9 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     } else if (engine === DYSE) {
       const enginePayload = await buildCreateModelPayload(modelId);
       initialParameters = await dyseService.createModel(enginePayload);
+    } else if (engine === SENSEI) {
+      const enginePayload = await buildCreateModelPayload(modelId);
+      initialParameters = await senseiService.createModel(enginePayload);
     }
   } catch (error) {
     Logger.warn(error);
@@ -349,6 +354,8 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     }
     if (engine === DYSE) {
       await dyseService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
+    } else if (engine === SENSEI) {
+      await senseiService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
     }
   }
 
@@ -439,6 +446,8 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
       result = await delphiDevService.createExperiment(modelId, payload);
     } else if (engine === DYSE) {
       result = await dyseService.createExperiment(modelId, payload);
+    } else if (engine === SENSEI) {
+      result = await senseiService.createExperiment(modelId, payload);
     } else {
       throw new Error('Unsupported engine type');
     }
@@ -466,29 +475,31 @@ router.post('/:modelId/sensitivity-analysis', asyncHandler(async (req, res) => {
   let result;
   if (engine === DYSE) {
     result = await dyseService.createExperiment(modelId, payload);
+  } else if (engine === SENSEI) {
+    result = await senseiService.createExperiment(modelId, payload);
   } else {
     throw new Error(`sensitivity-analysis not implemented for ${engine}`);
   }
   res.json(result);
 }));
 
-router.post('/:modelId/goal-optimization', asyncHandler(async (req, res) => {
-  // 1. Initialize
-  const { modelId } = req.params;
-  const { engine, goals } = req.body;
-
-  // 2. Build experiment request payload
-  const payload = await modelService.buildGoalOptimizationPayload(modelId, engine, goals);
-
-  // 3. Create experiment (experiment) in modelling engine
-  let result;
-  if (engine === DYSE) {
-    result = await dyseService.createExperiment(modelId, payload);
-  } else {
-    throw new Error(`goal-optimization not implemented for ${engine}`);
-  }
-  res.json(result);
-}));
+// router.post('/:modelId/goal-optimization', asyncHandler(async (req, res) => {
+//   // 1. Initialize
+//   const { modelId } = req.params;
+//   const { engine, goals } = req.body;
+//
+//   // 2. Build experiment request payload
+//   const payload = await modelService.buildGoalOptimizationPayload(modelId, engine, goals);
+//
+//   // 3. Create experiment (experiment) in modelling engine
+//   let result;
+//   if (engine === DYSE) {
+//     result = await dyseService.createExperiment(modelId, payload);
+//   } else {
+//     throw new Error(`goal-optimization not implemented for ${engine}`);
+//   }
+//   res.json(result);
+// }));
 
 router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
@@ -501,6 +512,8 @@ router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
     result = await delphiDevService.findExperiment(modelId, experimentId);
   } else if (engine === DYSE) {
     result = await dyseService.findExperiment(modelId, experimentId);
+  } else if (engine === SENSEI) {
+    result = await senseiService.findExperiment(modelId, experimentId);
   }
   res.json(result);
 }));
@@ -548,6 +561,8 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   // Register update with engine and retrieve new value
   if (engine === DYSE) {
     await dyseService.updateNodeParameter(modelId, payload);
+  } else if (engine === SENSEI) {
+    await senseiService.updateNodeParameter(modelId, payload);
   } else {
     Logger.warn(`Update node-parameter is undefined for ${engine}`);
   }
@@ -645,6 +660,8 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
 
   if (engine === DYSE) {
     await dyseService.updateEdgeParameter(modelId, payload);
+  } else if (engine === SENSEI) {
+    await senseiService.updateEdgeParameter(modelId, payload);
   } else {
     throw new Error(`updateEdgeParameter not implemented for ${engine}`);
   }
