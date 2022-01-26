@@ -62,6 +62,30 @@
       in {{ ontologyFormatter(selectedRelationship.target) }}
     </div>
   </div>
+  <div
+    v-if="currentEdgeType === 'trend'"
+    style="color: #888">
+    A decrease of&nbsp;
+    {{ ontologyFormatter(selectedRelationship.source) }} leads to
+    {{ weightValueString(currentEdgeWeight) }}
+    {{ inversePolarityLabel }}
+    in {{ ontologyFormatter(selectedRelationship.target) }}
+  </div>
+  <div
+    v-if="currentEdgeType === 'level'"
+    style="color: #888">
+    A low amount of&nbsp;
+    {{ ontologyFormatter(selectedRelationship.source) }} leads to
+    a smaller
+    {{ polarityLabel }}
+    in {{ ontologyFormatter(selectedRelationship.target) }}
+  </div>
+
+  <img
+    v-if="polarity !== 0"
+    style="padding-bottom: 15px"
+    :src="explainerGlyphFilepath"
+  >
 </template>
 
 <script lang="ts">
@@ -157,6 +181,14 @@ export default defineComponent({
       if (this.polarity === 1) return 'increase';
       if (this.polarity === -1) return 'decrease';
       return 'unknown';
+    },
+    inversePolarityLabel(): string {
+      if (this.polarity === 1) return 'decrease';
+      if (this.polarity === -1) return 'increase';
+      return 'unknown';
+    },
+    explainerGlyphFilepath(): string {
+      return this.buildExplainerGlyphFilepath(this.polarity, this.currentEdgeWeight, this.currentEdgeType);
     }
   },
   methods: {
@@ -178,7 +210,7 @@ export default defineComponent({
       return 'a small';
     },
     weightTypeString(v: string): string {
-      if (v === EDGE_TYPE_LEVEL) return 'The presence of';
+      if (v === EDGE_TYPE_LEVEL) return 'A high amount of';
       return 'An increase of';
     },
     setPolarity(v: number) {
@@ -203,6 +235,28 @@ export default defineComponent({
       }
       this.currentEdgeType = v;
       this.$emit('edge-set-weights', this.selectedRelationship, weights);
+    },
+    buildExplainerGlyphFilepath(polarity: number, edgeWeight: number, edgeType: string) {
+      // builds the filepath for the relevant explainer glyph using the following format:
+      // explainerGlyph_P_W_T.svg
+      // P = (p,n), positive or negative polarity
+      // W = (s,m,l), small medium or large weight
+      // T = (l,t), level or trend type
+
+      let polarityStr = 'n';
+      let typeStr = 't';
+      let weightStr = 's';
+
+      if (edgeType === EDGE_TYPE_LEVEL) typeStr = 'l';
+      if (polarity === 1) polarityStr = 'p';
+
+      if (edgeWeight === 0.9) weightStr = 'l';
+      else if (edgeWeight === 0.5) weightStr = 'm';
+
+      const fileName = 'explainerGlyphs/explainerGlyph_' + polarityStr + '_' + weightStr + '_' + typeStr + '.svg';
+
+      const assetFolder = require.context('@/assets/');
+      return assetFolder('./' + fileName);
     }
   }
 });

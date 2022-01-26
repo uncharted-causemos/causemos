@@ -5,6 +5,28 @@ import FiltersUtil from '@/utils/filters-util';
 import { Filters } from '@/types/Filters';
 import { LAYOUTS } from '@/graphs/cytoscape/cytoscape-layouts';
 
+type View = 'documents' | 'statements' | 'audits';
+const DEFAULT_VIEW: View = 'documents';
+
+interface Pagination {
+  from: number;
+  size?: number;
+  sort?: { [key: string]: string };
+}
+
+interface QueryUpdate {
+  filters?: Filters;
+  view?: View;
+  layout?: any; // FIXME
+  documents?: Pagination;
+  statements?: Pagination;
+  audits?: Pagination;
+}
+
+interface QueryState {
+  lastQuery: Filters;
+}
+
 /**
  * Builds a query object withy any of the options available
  */
@@ -60,27 +82,7 @@ const START_ZERO = {
 };
 
 
-interface Pagination {
-  from: number;
-  size?: number;
-  sort?: { [key: string]: string };
-}
 
-type View = 'documents' | 'statements' | 'audits';
-const DEFAULT_VIEW: View = 'documents';
-
-interface QueryUpdate {
-  filters?: Filters;
-  view?: View;
-  layout?: any; // FIXME
-  documents?: Pagination;
-  statements?: Pagination;
-  audits?: Pagination;
-}
-
-interface QueryState {
-  lastQuery: Filters;
-}
 
 /**
  * Handles query manipulation, the state and mutations are via

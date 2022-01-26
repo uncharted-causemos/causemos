@@ -17,7 +17,6 @@ export interface OutputStatsResult {
   outputSpecId: string;
   stats: OutputStatWithZoom[];
 }
-
 export interface OutputSpec {
   modelId: string;
   runId: string;
@@ -26,6 +25,7 @@ export interface OutputSpec {
   temporalAggregation: string;
   spatialAggregation: string;
   timestamp: number;
+  transform?: string
   preGeneratedOutput?: PreGeneratedModelRunData[];
   isDefaultRun: boolean;
 }

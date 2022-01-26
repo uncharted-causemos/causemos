@@ -1,5 +1,13 @@
 import { DatacubeFeature, Model, Indicator, Datacube, ModelParameter, DimensionInfo } from '@/types/Datacube';
-import { AggregationOption, DatacubeGenericAttributeVariableType, DatacubeGeoAttributeVariableType, DatacubeStatus, DatacubeType, ModelParameterDataType } from '@/types/Enums';
+import {
+  AggregationOption,
+  DatacubeGenericAttributeVariableType,
+  DatacubeGeoAttributeVariableType,
+  DatacubeStatus,
+  DatacubeType,
+  DataTransform,
+  ModelParameterDataType
+} from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
 import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service';
 import domainProjectService from '@/services/domain-project-service';
@@ -189,6 +197,40 @@ export function isModel(datacube: Datacube): datacube is Model {
 
 export function isIndicator(datacube: Datacube): datacube is Indicator {
   return datacube.type === DatacubeType.Indicator;
+}
+
+export function getOutputs(metadata: Datacube) {
+  if (metadata.validatedOutputs && metadata.validatedOutputs.length > 0) {
+    return metadata.validatedOutputs;
+  }
+  return metadata.outputs;
+}
+
+export function getSelectedOutput(metadata: Datacube, index: number) {
+  const outputs = getOutputs(metadata);
+  if (index >= 0 && index < outputs.length) {
+    return outputs[index];
+  }
+  return outputs.find((o: DatacubeFeature) => o.name === metadata.default_feature) ?? outputs[0];
+}
+
+export function getUnitString(unit: string|null, transform: DataTransform) {
+  if (!unit) {
+    unit = '???';
+  }
+  switch (transform) {
+    case DataTransform.PerCapita:
+      return unit + ' per capita';
+    case DataTransform.PerCapita1K:
+      return unit + ' per 1000 people';
+    case DataTransform.PerCapita1M:
+      return unit + ' per 1M people';
+    case DataTransform.Normalization:
+      return unit + ' (normalized 0-1)';
+    case DataTransform.None:
+    default:
+      return unit;
+  }
 }
 
 // supported pre-rendered datacube images

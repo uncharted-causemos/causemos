@@ -17,8 +17,8 @@
           :is-dropdown-left-aligned="true"
           :inner-button-label="'Unit'"
           :items="unitOptions"
-          :selected-item="selectedUnit"
-          @item-selected="setUnitSelection"
+          :selected-item="selectedUnitOption"
+          @item-selected="setTransformSelection"
         />
         <div class="aggregation-row">
           <dropdown-button
@@ -165,16 +165,23 @@
 <script lang="ts">
 import _ from 'lodash';
 import * as d3 from 'd3';
-import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
-import DropdownButton from '@/components/dropdown-button.vue';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
+import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import { AggregationOption, TemporalResolutionOption, DataTransform } from '@/types/Enums';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
 import { COLOR_SCHEME, ColorScaleType, COLOR, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
+import { getOutputs } from '@/utils/datacube-util';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.RDYLBU_7, COLOR.OTHER]);
+const TRANSFORMS: DropdownItem[] = [
+  { value: DataTransform.PerCapita, displayName: 'Per Capita' },
+  { value: DataTransform.PerCapita1K, displayName: 'Per Capita (per 1K people)' },
+  { value: DataTransform.PerCapita1M, displayName: 'Per Capita (per 1M people)' },
+  { value: DataTransform.Normalization, displayName: 'Normalized Regional Data' }
+];
 
 export default defineComponent({
   components: {
@@ -191,9 +198,9 @@ export default defineComponent({
       type: String,
       default: AggregationOption.Mean
     },
-    selectedUnit: {
-      type: String,
-      default: ''
+    selectedTransform: {
+      type: String as PropType<DataTransform>,
+      default: DataTransform.None
     },
     selectedResolution: {
       type: String,
@@ -202,6 +209,10 @@ export default defineComponent({
     aggregationOptions: {
       type: Array as PropType<AggregationOption[]>,
       default: []
+    },
+    resolutionOptions: {
+      type: Array as PropType<TemporalResolutionOption[] | null>,
+      default: null
     },
     selectedBaseLayer: {
       type: String,
@@ -243,7 +254,7 @@ export default defineComponent({
   emits: [
     'set-spatial-aggregation-selection',
     'set-temporal-aggregation-selection',
-    'set-unit-selection',
+    'set-transform-selection',
     'set-resolution-selection',
     'set-base-layer-selection',
     'set-data-layer-selection',
@@ -253,16 +264,40 @@ export default defineComponent({
     'set-color-scale-type',
     'set-number-color-bins'
   ],
-  setup(props) {
+  setup(props, { emit }) {
     const {
-      metadata
+      metadata,
+      resolutionOptions,
+      selectedResolution,
+      selectedTransform
     } = toRefs(props);
 
     const capitalize = (str: string) => {
       return str[0].toUpperCase() + str.slice(1);
     };
-    const resolutionGroupButtons = ref(Object.values(TemporalResolutionOption).filter(val => val.length > 0)
-      .map(val => ({ label: capitalize(val), value: val })));
+    const resolutionGroupButtons = ref(Object.values(TemporalResolutionOption)
+      .filter(val => val.length > 0)
+      .map(val => ({ label: capitalize(val), value: val }))
+    );
+
+    const setResolutionSelection = (resolution: string) => {
+      emit('set-resolution-selection', resolution);
+    };
+
+    watchEffect(() => {
+      if (resolutionOptions.value !== null) {
+        // requeste to restrict available temporal resolution options
+        const resButtons = _.cloneDeep(resolutionGroupButtons.value);
+        resolutionGroupButtons.value = resButtons.filter(btn => resolutionOptions.value?.includes(btn.value));
+        // Also, set the resolution selection
+        if (resolutionGroupButtons.value.findIndex(btn => btn.value === selectedResolution.value) < 0) {
+          if (resolutionGroupButtons.value.length > 0) {
+            setResolutionSelection(resolutionGroupButtons.value[0].value);
+          }
+        }
+      }
+    });
+
     const baseLayerGroupButtons = ref(Object.values(BASE_LAYER)
       .map(val => ({ label: capitalize(val), value: val })));
     const dataLayerGroupButtons = ref(Object.values(DATA_LAYER)
@@ -282,8 +317,7 @@ export default defineComponent({
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined && datacubeCurrentOutputsMap.value[metadata.value?.id] ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const modelOutputs = computed<DatacubeFeature[]>(() => {
-      const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-      return outputs ?? [];
+      return metadata.value ? getOutputs(metadata.value) : [];
     });
 
     const modelOutputsDisplayNames = computed(() => {
@@ -298,9 +332,18 @@ export default defineComponent({
       return currentOutput.value.display_name;
     });
 
-    const unitOptions = computed<string[]>(() => {
-      const unit = currentOutput.value.unit ?? '';
-      return [unit];
+    const outputUnit = computed<string>(() => {
+      return currentOutput.value.unit ?? '';
+    });
+
+    const unitOptions = computed<DropdownItem[]>(() => {
+      return [{ value: outputUnit.value, displayName: outputUnit.value }, ...TRANSFORMS];
+    });
+
+    const selectedUnitOption = computed<string>(() => {
+      return selectedTransform.value === DataTransform.None
+        ? outputUnit.value
+        : selectedTransform.value;
     });
 
     return {
@@ -314,8 +357,10 @@ export default defineComponent({
       isDiscreteScale,
       dataLayerTransparencyOptions,
       unitOptions,
+      selectedUnitOption,
       TemporalResolutionOption,
-      AggregationOption
+      AggregationOption,
+      setResolutionSelection
     };
   },
   watch: {
@@ -388,11 +433,11 @@ export default defineComponent({
         this.setTemporalAggregationSelection(this.selectedSpatialAggregation);
       }
     },
-    setUnitSelection(unit: string) {
-      this.$emit('set-unit-selection', unit);
-    },
-    setResolutionSelection(resolution: string) {
-      this.$emit('set-resolution-selection', resolution);
+    setTransformSelection(unit: string) {
+      const transform = TRANSFORMS.map(t => t.value).includes(unit)
+        ? unit as DataTransform
+        : DataTransform.None;
+      this.$emit('set-transform-selection', transform);
     },
     setBaseLayerSelection(baseLayer: string) {
       this.$emit('set-base-layer-selection', baseLayer);

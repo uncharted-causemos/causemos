@@ -23,10 +23,10 @@ export const TIME_SCALE_OPTIONS: TimeScaleOption[] = [
     id: TimeScale.Years,
     label: 'Years',
     timeSlices: [
-      { months: 12, label: '1 year', shortLabel: '1y' },
-      { months: 24, label: '2 years', shortLabel: '2y' },
-      { months: 36, label: '3 years', shortLabel: '3y' },
-      { months: 48, label: '4 years', shortLabel: '4y' }
+      { months: 3 * 12, label: '3 years', shortLabel: '3y' },
+      { months: 6 * 12, label: '6 years', shortLabel: '6y' },
+      { months: 9 * 12, label: '9 years', shortLabel: '9y' },
+      { months: 12 * 12, label: '12 years', shortLabel: '12y' }
     ],
     example: 'Malnutrition'
   }
@@ -45,8 +45,9 @@ export const getTimeScaleOption = (timeScale: TimeScale) => {
   const timeScaleOption = TIME_SCALE_OPTIONS_MAP.get(timeScale);
   if (timeScaleOption === undefined) {
     console.error('Unable to find time scale option with ID ' + timeScale);
+    return TIME_SCALE_OPTIONS[0];
   }
-  return TIME_SCALE_OPTIONS[0];
+  return timeScaleOption;
 };
 
 export const getSliceMonthIndicesFromTimeScale = (timeScale: TimeScale) => {
@@ -67,4 +68,22 @@ export const getLastTimeStepIndexFromTimeScale = (timeScale: TimeScale) => {
 export const getProjectionLengthFromTimeScale = (timeScale: TimeScale) => {
   const timeSlices = getTimeScaleOption(timeScale).timeSlices;
   return timeSlices[timeSlices.length - 1].months;
+};
+
+export const getMonthsPerTimestepFromTimeScale = (timeScale: TimeScale) => {
+  switch (timeScale) {
+    case TimeScale.Months:
+      return 1;
+    case TimeScale.Years:
+      return 12;
+    default:
+      return 1;
+  }
+};
+
+export const getStepCountFromTimeScale = (timeScale: TimeScale) => {
+  // Divide number of months by number of months per step to get number of
+  //  steps
+  const monthsInProjection = getProjectionLengthFromTimeScale(timeScale);
+  return monthsInProjection / getMonthsPerTimestepFromTimeScale(timeScale);
 };

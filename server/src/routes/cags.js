@@ -217,6 +217,12 @@ router.post('/:mid/change-concept', asyncHandler(async (req, res) => {
 
   await cagService.changeConcept(modelId, change);
   await scenarioService.invalidateByModel(modelId);
+
+  await cagService.updateCAGMetadata(modelId, {
+    status: MODEL_STATUS.NOT_REGISTERED,
+    engine_status: RESET_ALL_ENGINE_STATUS
+  });
+
   const editTime = Date.now();
   res.status(200).send({ updateToken: editTime });
 }));

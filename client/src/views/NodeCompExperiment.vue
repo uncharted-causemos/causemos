@@ -25,6 +25,7 @@
         :initial-view-config="initialViewConfig"
         :metadata="metadata"
         :aggregation-options="aggregationOptionFiltered"
+        :temporal-resolution-options="temporalResolutionOption"
         @update-model-parameter="onModelParamUpdated"
       >
         <template #datacube-model-header>
@@ -76,11 +77,11 @@ import modelService from '@/services/model-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { ProjectType, DatacubeStatus } from '@/types/Enums';
-import { getValidatedOutputs, STATUS } from '@/utils/datacube-util';
+import { ProjectType, DatacubeStatus, TemporalResolutionOption, TimeScale } from '@/types/Enums';
+import { getOutputs, getSelectedOutput, getValidatedOutputs, STATUS } from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
-import { aggregationOptionFiltered } from '@/utils/drilldown-util';
+import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 
 
 export default defineComponent({
@@ -113,6 +114,16 @@ export default defineComponent({
       ? datacubeCurrentOutputsMap.value[metadata.value?.id]
       : 0
     );
+
+    const temporalResolutionOption = computed(() => {
+      if (modelComponents.value === null) {
+        return temporalResolutionOptionFiltered;
+      }
+      if (modelComponents.value.parameter.time_scale === TimeScale.Years) {
+        return Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.Year as string === tro);
+      }
+      return temporalResolutionOptionFiltered;
+    });
 
     const selectedNode = computed(() => {
       if (nodeId.value === undefined || modelComponents.value === null) {
@@ -237,8 +248,8 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
-        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-        mainModelOutput.value = outputs.value[currentOutputIndex.value];
+        outputs.value = getOutputs(metadata.value);
+        mainModelOutput.value = getSelectedOutput(metadata.value, currentOutputIndex.value);
       }
     });
 
@@ -285,13 +296,15 @@ export default defineComponent({
       statusColor,
       statusLabel,
       stepsBeforeCanConfirm,
-      onModelParamUpdated
+      onModelParamUpdated,
+      temporalResolutionOption
     };
   },
   mounted() {
     // Load the CAG so we can find relevant components
     modelService.getComponents(this.currentCAG).then(_modelComponents => {
       this.modelComponents = _modelComponents;
+      console.log(this.modelComponents);
     });
   },
   methods: {

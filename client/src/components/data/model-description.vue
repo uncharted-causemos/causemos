@@ -219,6 +219,8 @@ import { mapActions, useStore } from 'vuex';
 import { DatacubeGenericAttributeVariableType, FeatureQualifierRoles, ModelParameterDataType } from '@/types/Enums';
 import ModalEditParamChoices from '@/components/modals/modal-edit-param-choices.vue';
 import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
+import { getOutputs } from '@/utils/datacube-util';
+import { scrollToElement } from '@/utils/dom-util';
 
 export default defineComponent({
   name: 'ModelDescription',
@@ -249,10 +251,7 @@ export default defineComponent({
     });
 
     const validatedOutputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
-      if (metadata.value) {
-        return metadata.value.validatedOutputs ?? metadata.value.outputs;
-      }
-      return [];
+      return metadata.value ? getOutputs(metadata.value) : [];
     });
 
     const currentOutputFeature = computed(() => {
@@ -325,12 +324,7 @@ export default defineComponent({
     },
     scrollToSection(sectionName: string) {
       const elm = document.getElementById(sectionName) as HTMLElement;
-      const scrollViewOptions: ScrollIntoViewOptions = {
-        behavior: 'smooth',
-        block: 'start',
-        inline: 'nearest'
-      };
-      elm.scrollIntoView(scrollViewOptions);
+      scrollToElement(elm);
     },
     editParamOptions(param: ModelParameter) {
       // show a modal to edit param options

@@ -42,7 +42,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'vue';
+import { computed, ComputedRef, defineComponent, ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
@@ -55,7 +55,7 @@ import { updateDatacube } from '@/services/new-datacube-service';
 import { DatacubeFeature, Model, ModelParameter, ModelPublishingStep } from '@/types/Datacube';
 import { AggregationOption, TemporalResolutionOption, DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
 import { DataState, Insight, ViewState } from '@/types/Insight';
-import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
+import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import domainProjectService from '@/services/domain-project-service';
 import InsightUtil from '@/utils/insight-util';
 import useToaster from '@/services/composables/useToaster';
@@ -117,7 +117,6 @@ export default defineComponent({
         completed: false
       }
     ]);
-    const outputs = ref([]) as Ref<DatacubeFeature[]>;
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = computed(() => dataState.value.selectedScenarioIds);
@@ -129,11 +128,9 @@ export default defineComponent({
       if (metadata.value) {
         store.dispatch('insightPanel/setContextId', [metadata.value.id]);
 
-        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-
         let initialOutputIndex = 0;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
-        if (currentOutputEntry !== undefined) {
+        if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the selected output of the current model
           initialOutputIndex = currentOutputEntry;
         } else {
@@ -144,7 +141,7 @@ export default defineComponent({
           defaultOutputMap[metadata.value.id] = initialOutputIndex;
           setDatacubeCurrentOutputsMap(defaultOutputMap);
         }
-        mainModelOutput.value = outputs.value[initialOutputIndex];
+        mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
       }
     });
 

@@ -55,7 +55,7 @@ module.exports = {
       // It looks like `URL.createObjectURL` is not defined in the current
       // test environment (we are using Jsdom under the hood I believe and https://github.com/jsdom/jsdom/issues/1721).
       // So we stub this function so that tests pass.
-      window.URL.createObjectURL = () => {};
+      // window.URL.createObjectURL = () => {};
     }
   }
 };

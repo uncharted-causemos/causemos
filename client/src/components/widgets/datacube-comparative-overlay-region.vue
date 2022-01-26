@@ -20,6 +20,13 @@
           >
             Remove
           </div>
+          <div
+            v-if="isModelMetadata"
+            class="dropdown-option"
+            @click="clickDuplicate"
+          >
+            Duplicate
+          </div>
         </template>
       </options-button>
     </header>
@@ -60,9 +67,9 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getFilteredScenariosFromIds } from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
-import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType, DatacubeStatus } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, DataTransform } from '@/types/Enums';
 import { computed, defineComponent, Ref, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
@@ -81,6 +88,7 @@ import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { RegionalAggregations } from '@/types/Runoutput';
+import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 
 export default defineComponent({
   name: 'DatacubeComparativeOverlayRegion',
@@ -90,6 +98,10 @@ export default defineComponent({
   },
   props: {
     id: {
+      type: String,
+      required: true
+    },
+    datacubeId: {
       type: String,
       required: true
     },
@@ -106,11 +118,14 @@ export default defineComponent({
   setup(props, { emit }) {
     const {
       id,
+      datacubeId,
       selectedTimestamp,
       datacubeIndex
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
+
+    const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -125,16 +140,24 @@ export default defineComponent({
 
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
-    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+
+    const initialViewConfig = ref<ViewState | null>(null);
+    const initialDataConfig = ref<DataState | null>(null);
+    const datacubeAnalysisItem = analysisItems.value.find(item => item.id === props.id && item.datacubeId === datacubeId.value);
+    if (datacubeAnalysisItem) {
+      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
+      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
+    }
 
     watchEffect(() => {
       if (metadata.value) {
-        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+        outputs.value = getOutputs(metadata.value);
 
         let initialOutputIndex = 0;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
-        if (currentOutputEntry !== undefined) {
+        if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the default output of the current model
           initialOutputIndex = currentOutputEntry;
         } else {
@@ -145,7 +168,11 @@ export default defineComponent({
           defaultOutputMap[metadata.value.id] = initialOutputIndex;
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
-        mainModelOutput.value = outputs.value[initialOutputIndex];
+        // override (to correctly fetch the output selection for each datacube duplication)
+        if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value) && initialViewConfig.value.selectedOutputIndex !== undefined) {
+          initialOutputIndex = initialViewConfig.value.selectedOutputIndex;
+        }
+        mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
       }
     });
 
@@ -178,6 +205,7 @@ export default defineComponent({
     const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
+    const selectedTransform = ref<DataTransform>(DataTransform.None);
 
     const selectedAdminLevel = ref(0); // country by default
 
@@ -186,60 +214,59 @@ export default defineComponent({
     const selectedColorScaleType = ref(ColorScaleType.LinearDiscrete);
     const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
 
-    const initialViewConfig = ref<ViewState | null>(null);
-    const initialDataConfig = ref<DataState | null>(null);
-    const datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === props.id);
-    if (datacubeAnalysisItem) {
-      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
-      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
-    }
-
     // grab and track the view-config for this datacube
-    watchEffect(() => {
-      if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
-        if (initialViewConfig.value.temporalResolution !== undefined) {
-          selectedTemporalResolution.value = initialViewConfig.value.temporalResolution;
+    watch(
+      () => [
+        initialViewConfig.value
+      ],
+      () => {
+        if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
+          if (initialViewConfig.value.temporalResolution !== undefined) {
+            selectedTemporalResolution.value = initialViewConfig.value.temporalResolution;
+          }
+          if (initialViewConfig.value.temporalAggregation !== undefined) {
+            selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation;
+          }
+          if (initialViewConfig.value.spatialAggregation !== undefined) {
+            selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation;
+          }
+          if (initialViewConfig.value.selectedOutputIndex !== undefined) {
+            const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+            defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
+            store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+          }
+          if (initialViewConfig.value.colorSchemeReversed !== undefined) {
+            colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
+          }
+          if (initialViewConfig.value.colorSchemeName !== undefined) {
+            selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
+          }
+          if (validateColorScaleType(String(initialViewConfig.value.colorScaleType))) {
+            selectedColorScaleType.value = initialViewConfig.value.colorScaleType as ColorScaleType;
+          }
+          if (initialViewConfig.value.numberOfColorBins !== undefined) {
+            numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
+          }
+          if (initialViewConfig.value.selectedAdminLevel !== undefined) {
+            selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
+          }
         }
-        if (initialViewConfig.value.temporalAggregation !== undefined) {
-          selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation;
-        }
-        if (initialViewConfig.value.spatialAggregation !== undefined) {
-          selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation;
-        }
-        if (initialViewConfig.value.selectedOutputIndex !== undefined) {
-          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
-          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
-        }
-        if (initialViewConfig.value.colorSchemeReversed !== undefined) {
-          colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
-        }
-        if (initialViewConfig.value.colorSchemeName !== undefined) {
-          selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
-        }
-        if (validateColorScaleType(String(initialViewConfig.value.colorScaleType))) {
-          selectedColorScaleType.value = initialViewConfig.value.colorScaleType as ColorScaleType;
-        }
-        if (initialViewConfig.value.numberOfColorBins !== undefined) {
-          numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
-        }
-        if (initialViewConfig.value.selectedAdminLevel !== undefined) {
-          selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
-        }
-      }
 
-      // apply initial data config for this datacube
-      if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
-        if (initialDataConfig.value.selectedRegionIds !== undefined) {
-          initialDataConfig.value.selectedRegionIds.forEach(regionId => {
-            selectedRegionIds.push(regionId);
-          });
+        // apply initial data config for this datacube
+        if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+          if (initialDataConfig.value.selectedRegionIds !== undefined) {
+            initialDataConfig.value.selectedRegionIds.forEach(regionId => {
+              selectedRegionIds.push(regionId);
+            });
+          }
+          if (initialDataConfig.value.selectedScenarioIds !== undefined) {
+            initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
+          }
+          if (initialDataConfig.value.selectedTransform !== undefined) {
+            selectedTransform.value = initialDataConfig.value.selectedTransform;
+          }
         }
-        if (initialDataConfig.value.selectedScenarioIds !== undefined) {
-          initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
-        }
-      }
-    });
+      });
 
     const breakdownOption = ref<string | null>(null);
     const setBreakdownOption = (newValue: string | null) => {
@@ -261,6 +288,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       ref(null), // breakdownOption
       selectedTimestamp,
+      selectedTransform,
       () => {}, // setSelectedTimestamp
       ref(selectedRegionIds),
       ref(new Set()),
@@ -280,6 +308,7 @@ export default defineComponent({
 
         emit('loaded-timeseries', {
           id: id.value,
+          datacubeId: datacubeId.value,
           timeseriesList: visibleTimeseriesData.value,
           //
           datacubeName: metadata.value.name,
@@ -324,6 +353,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
+      selectedTransform,
       metadata,
       selectedTimeseriesPoints
     );
@@ -465,33 +495,27 @@ export default defineComponent({
       popupFormatter,
       selectedScenarioIndex,
       regionRunsScenarios,
-      selectedAdminLevel
+      selectedAdminLevel,
+      isModelMetadata
     };
   },
   methods: {
     ...mapActions({
       removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
     }),
-    async openDrilldown() {
-      // NOTE: instead of replacing the datacubeIDs array,
-      // ensure that the current datacubeId is at 0 index
-      const workingAnalysisItems = this.analysisItems.map((item: AnalysisItem): AnalysisItem => item);
-      const updatedAnalysisInfo = { currentAnalysisId: this.analysisId, analysisItems: workingAnalysisItems };
-      await this.store.dispatch('dataAnalysis/updateAnalysisItems', updatedAnalysisInfo);
-      router.push({
-        name: 'data',
-        params: {
-          project: this.project,
-          analysisId: this.analysisId,
-          projectType: ProjectType.Analysis
-        },
-        query: {
-          datacube_id: this.props.id
-        }
-      }).catch(() => {});
+    openDrilldown() {
+      openDatacubeDrilldown(this.props.id, this.datacubeId, router, this.store);
     },
     clickRemove() {
-      this.removeAnalysisItems([this.id]);
+      // when removing, it is not enough to only send the datacube id to be removed
+      //  since the datacube may have been duplicated multiple times
+      //  and we need to suport removing one at a time
+      this.removeAnalysisItems([this.datacubeId]);
+    },
+    clickDuplicate() {
+      if (this.metadata !== null) {
+        duplicateAnalysisItem(this.metadata, this.id, this.analysisId, this.store);
+      }
     }
   }
 });

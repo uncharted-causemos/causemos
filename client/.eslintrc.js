@@ -1,18 +1,21 @@
 module.exports = {
   root: true,
+
   env: {
     node: true
   },
+
   extends: [
     'plugin:vue/vue3-essential',
     '@vue/standard',
-    '@vue/typescript/recommended',
+    '@vue/typescript/recommended'
   ],
+
   rules: {
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-use-before-define': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    "@typescript-eslint/ban-ts-ignore": "warn",
+    '@typescript-eslint/ban-ts-comment': 'warn',
 
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
@@ -31,12 +34,27 @@ module.exports = {
     'vue/singleline-html-element-content-newline': 'off',
     'vue/multiline-html-element-content-newline': 'off',
     'vue/component-name-in-template-casing': 'off',
-    '@typescript-eslint/camelcase': 'off',
+
+    // Annoying vue defult
+    'vue/require-valid-default-prop': 'off',
+    'vue/multi-word-component-names': 'off',
+    'vue/no-useless-template-attributes': 'off', // FIXME: might want to address
+    '@typescript-eslint/ban-types': 'off', // FIXME: might want to address
+
+    'camelcase': 'off',
+    'multiline-ternary': 'off',
+    'prefer-regex-literals': 'off',
+
     // Enforce semicolon
     'semi': [2, 'always'],
     'no-extra-semi': 2
   },
+
   globals: {
     d3: true
+  },
+
+  parserOptions: {
+    parser: '@typescript-eslint/parser'
   }
 };

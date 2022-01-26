@@ -13,7 +13,8 @@ import {
   ScenarioParameter,
   CAGModelParameter
 } from '@/types/CAG';
-import { getProjectionLengthFromTimeScale } from '@/utils/time-scale-util';
+import { getMonthsPerTimestepFromTimeScale, getStepCountFromTimeScale } from '@/utils/time-scale-util';
+import { getTimestampAfterMonths } from '@/utils/date-util';
 
 const MODEL_STATUS = {
   NOT_REGISTERED: 0,
@@ -192,8 +193,10 @@ const newModel = async (projectId: string, name = 'untitled') => {
 };
 
 // This sets the default indicators for each node in the model
-const quantifyModelNodes = async (modelId: string) => {
-  const result = await API.post(`models/${modelId}/quantify-nodes`);
+const quantifyModelNodes = async (modelId: string, temporalResolution: string) => {
+  const result = await API.post(`models/${modelId}/quantify-nodes`, {
+    resolution: temporalResolution
+  });
   return result.data;
 };
 
@@ -302,14 +305,29 @@ const initializeModel = async (modelId: string) => {
  */
 const runProjectionExperiment = async (
   modelId: string,
-  steps: number,
-  constraints: ConceptProjectionConstraints[]) => {
-  const model = await getSummary(modelId);
+  constraints: ConceptProjectionConstraints[]
+) => {
+  const modelSummary = await getSummary(modelId);
+  const {
+    time_scale: timeScale,
+    engine,
+    projection_start: projectionStart
+  } = modelSummary.parameter;
+  const numTimeSteps = getStepCountFromTimeScale(timeScale);
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
+  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
+  // endTime should be thought of as the last timestamp that will be returned.
+  const projectionEnd = getTimestampAfterMonths(
+    projectionStart,
+    (numTimeSteps - 1) * monthsPerTimestep
+  );
   const result = await API.post(`models/${modelId}/projection`, {
-    engine: model.parameter.engine,
+    engine,
     parameters: constraints,
-    numTimeSteps: steps,
-    projectionStart: model.parameter.projection_start
+    numTimeSteps,
+    projectionStart,
+    projectionEnd
   });
   return result.data.experimentId;
 };
@@ -415,7 +433,7 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
 
     // FIXME: hackin parameters from modelSummary
     graphData.scenarios.forEach(scenario => {
-      const numSteps = getProjectionLengthFromTimeScale(
+      const numSteps = getStepCountFromTimeScale(
         modelSummary.parameter.time_scale
       );
       if (scenario.parameter) {
@@ -447,7 +465,15 @@ const runSensitivityAnalysis = async (
   const { id: modelId } = modelSummary;
   const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
 
-  const numTimeSteps = getProjectionLengthFromTimeScale(timeScale);
+  const numTimeSteps = getStepCountFromTimeScale(timeScale);
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
+  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
+  // endTime should be thought of as the last timestamp that will be returned.
+  const experimentEnd = getTimestampAfterMonths(
+    experimentStart,
+    (numTimeSteps - 1) * monthsPerTimestep
+  );
 
   const analysisParams = {
     numPath: 0,
@@ -466,6 +492,7 @@ const runSensitivityAnalysis = async (
       constraints,
       engine,
       experimentStart,
+      experimentEnd,
       numTimeSteps
     }
   );
@@ -482,7 +509,7 @@ const runPathwaySensitivityAnalysis = async (
   const { id: modelId } = modelSummary;
   const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
 
-  const numTimeSteps = getProjectionLengthFromTimeScale(timeScale);
+  const numTimeSteps = getStepCountFromTimeScale(timeScale);
   const payload = {
     analysisMode: 'DYNAMIC',
     analysisType: 'PATHWAYS',
@@ -506,9 +533,9 @@ const runPathwaySensitivityAnalysis = async (
 
 const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Poller, progressFn: Function) => {
   const modelId = modelSummary.id;
-  const numSteps = getProjectionLengthFromTimeScale(modelSummary.parameter.time_scale);
+  const numSteps = getStepCountFromTimeScale(modelSummary.parameter.time_scale);
   try {
-    const experimentId = await runProjectionExperiment(modelId, numSteps, cleanConstraints([]));
+    const experimentId = await runProjectionExperiment(modelId, cleanConstraints([]));
     const experiment: any = await getExperimentResult(modelId, experimentId, poller, progressFn);
 
     const scenario: NewScenario = {
@@ -560,7 +587,7 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
 
   if (!scenario.parameter) return scenario;
 
-  const numSteps = getProjectionLengthFromTimeScale(modelParameter.time_scale);
+  const numSteps = getStepCountFromTimeScale(modelParameter.time_scale);
 
   // Remove constraints if the concept is no longer in the model's topology
   _.remove(scenario.parameter.constraints, constraint => {

@@ -89,6 +89,7 @@ export default defineComponent({
     refresh() {
       if (this.chartRef === null) return;
       const el = d3.select(this.chartRef);
+      el.selectAll('*').remove();
       const renderOptions = {
         margin: {
           top: 3, bottom: 3, left: 3, right: 3
@@ -131,6 +132,9 @@ $border-width: 1px;
 header {
   padding: 1px 3px;
   border-radius: 2px 2px 0 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .arrow {

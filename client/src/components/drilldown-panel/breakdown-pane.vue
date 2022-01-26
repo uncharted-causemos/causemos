@@ -27,7 +27,7 @@
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
       :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
-      :show-references="selectedBreakdownOption === SpatialAggregationLevel.Region"
+      :show-references="selectedBreakdownOption === SpatialAggregationLevel.Region && selectedAdminLevel > 0"
       :allow-collapsing="false"
       :reference-options="referenceOptions"
       @toggle-reference-options="toggleReferenceOptions"

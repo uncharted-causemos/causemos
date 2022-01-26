@@ -28,6 +28,9 @@ export default defineComponent({
       required: true
     }
   },
+  emits: [
+    'toggle-reference-options'
+  ],
   setup(props, { emit }) {
     const handleToggle = (value: string) => {
       emit('toggle-reference-options', value);

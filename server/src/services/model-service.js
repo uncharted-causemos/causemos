@@ -260,22 +260,14 @@ const setInitialParameters = async (modelParameters, nodeMap, edgeMap) => {
  * @param {integer}  numTimeSteps - number of time steps
  * @param {array}   parameters - existing clamp parameters
  */
-const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeSteps, parameters) => {
-  const projectionStartDate = moment.utc(projectionStart);
-
-  let payload = {};
-  const startTime = projectionStartDate.valueOf();
-  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
-  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
-  // endTime should be thought of as the last timestamp that will be returned.
-  const endTime = projectionStartDate.add(numTimeSteps - 1, 'M').valueOf();
+const buildProjectionPayload = async (modelId, engine, projectionStart, projectionEnd, numTimeSteps, parameters) => {
   const constraints = _.isEmpty(parameters) ? [] : parameters;
-  payload = {
+  const payload = {
     experimentType: EXPERIMENT_TYPE.PROJECTION,
     experimentParam: {
       numTimesteps: numTimeSteps,
-      startTime,
-      endTime,
+      startTime: projectionStart,
+      endTime: projectionEnd,
       constraints
     }
   };
@@ -294,23 +286,19 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeS
  * @param {object}   analysisParams - parameters for analysis
  * @param {object}   analysisMethodology - one of HYBRID or FUNCTION
  */
-const buildSensitivityPayload = async (engine, experimentStart, numTimeSteps,
+const buildSensitivityPayload = async (engine, experimentStart, experimentEnd, numTimeSteps,
   constraintParams, analysisType, analysisMode, analysisParams, analysisMethodology) => {
-  const experimentStartDate = moment.utc(experimentStart);
-
   let payload;
   if (engine === 'delphi' || engine === 'delphi_dev') {
     payload = {};
   } else if (engine === 'dyse') {
-    const startTime = experimentStartDate.valueOf();
-    const endTime = experimentStartDate.add(numTimeSteps, 'M').valueOf();
     const constraints = _.isEmpty(constraintParams) ? [] : constraintParams;
     payload = {
       experimentType: EXPERIMENT_TYPE.SENSITIVITY_ANALYSIS,
       experimentParam: {
         numTimesteps: numTimeSteps,
-        startTime,
-        endTime,
+        startTime: experimentStart,
+        endTime: experimentEnd,
         constraints,
         analysisType,
         analysisMode,
@@ -380,6 +368,134 @@ const clearNodeParameter = async (modelId, nodeId) => {
  *
  */
 const buildNodeParametersPayload = (nodeParameters, model) => {
+  const r = [];
+
+  const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
+
+  nodeParameters.forEach((np, idx) => {
+    if (_.isEmpty(np.parameter)) {
+      throw new Error(`${np.concept} is not parameterized`);
+    } else {
+      let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
+      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
+
+      if (_.isEmpty(indicatorTimeSeries)) {
+        // FIXME: Temporary fallback so engines don't blow up - July 2021
+        indicatorTimeSeries = [
+          { value: 0.0, timestamp: Date.UTC(2017, 0) },
+          { value: 0.0, timestamp: Date.UTC(2017, 1) },
+          { value: 0.0, timestamp: Date.UTC(2017, 2) }
+        ];
+      }
+
+      // More hack: DySE needs at least 2 data points
+      if (indicatorTimeSeries.length === 1) {
+        const timestamp = indicatorTimeSeries[0].timestamp;
+        const prevTimestamp = moment.utc(timestamp).subtract(1, 'months').valueOf();
+        indicatorTimeSeries.unshift({
+          value: indicatorTimeSeries[0].value,
+          timestamp: prevTimestamp
+        });
+      }
+
+      r.push({
+        concept: np.concept,
+        indicator: np.parameter.name + ` ${idx}`, // Delphi doesn't like duplicate indicators across nodes
+        minValue: _.get(np.parameter, 'min', 0),
+        maxValue: _.get(np.parameter, 'max', 1),
+        values: indicatorTimeSeries,
+        numLevels: NUM_LEVELS,
+        resolution: _.get(np.parameter, 'temporalResolution', 'month'),
+        period: _.get(np.parameter, 'period', 12)
+      });
+    }
+  });
+  return r;
+};
+
+
+const buildEdgeParametersPayload = (edgeParameters) => {
+  const r = [];
+  edgeParameters.forEach(edge => {
+    if (edge.polarity === 0) return; // Engine logic tends to be undefined if we update an ambiguous edge (DySE)
+
+    r.push({
+      source: edge.source,
+      target: edge.target,
+      polarity: edge.polarity,
+      weights: edge.parameter.weights
+    });
+  });
+  return r;
+};
+
+
+// Build create-model payload
+// FIXME
+// - Need to determine if we want to override weights
+const buildCreateModelPayload = async (model, nodeParameters, edgeParameters) => {
+  const projectId = model.project_id;
+  const statementAdapter = Adapter.get(RESOURCE.STATEMENT, projectId);
+
+  const nodesPayload = buildNodeParametersPayload(nodeParameters, model);
+
+  const edgesPayload = [];
+  for (let i = 0; i < edgeParameters.length; i++) {
+    const edge = edgeParameters[i];
+    const source = edge.source;
+    const target = edge.target;
+    const referenceIds = edge.reference_ids;
+    const polarity = edge.polarity;
+
+    const filters = {
+      clauses: [
+        { field: 'id', values: referenceIds, operand: 'OR', isNot: false }
+      ]
+    };
+
+    // If not ambiguous we can apply additional filter
+    if (polarity !== 0) {
+      filters.clauses.push({ field: 'statementPolarity', values: [polarity], operand: 'OR', isNot: false });
+    }
+    const statements = await statementAdapter.find(filters, statementOptions);
+    if (statements.length === 0) {
+      statements.push(_edge2statement(edge, polarity));
+    }
+    edgesPayload.push({
+      source,
+      target,
+      polarity,
+      statements
+    });
+  }
+
+  return {
+    id: model.id,
+    nodes: nodesPayload,
+    edges: edgesPayload
+  };
+};
+
+
+const buildCreateModelPayloadDeprecated = async (model, nodeParameters, edgeParameters) => {
+  const modelStatements = await buildModelStatements(model.id);
+
+  // Sanity check
+  const allNodeConcepts = nodeParameters.map(n => n.concept);
+  const allEdgeConcepts = edgeParameters.map(e => [e.source, e.target]).flat();
+  const extraNodes = _.difference(allNodeConcepts, allEdgeConcepts);
+  if (_.isEmpty(modelStatements) || extraNodes.length > 0) {
+    throw new Error('Unabled to process model. Ensure the model has no isolated nodes.');
+  }
+
+  return {
+    id: model.id,
+    statements: modelStatements,
+    conceptIndicators: buildNodeParametersPayloadDeprecated(nodeParameters, model)
+  };
+};
+
+const buildNodeParametersPayloadDeprecated = (nodeParameters, model) => {
   const r = {};
 
   const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
@@ -429,21 +545,6 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
 };
 
 
-const buildEdgeParametersPayload = (edgeParameters) => {
-  const r = [];
-  edgeParameters.forEach(edge => {
-    if (edge.polarity === 0) return; // Engine logic tends to be undefined if we update an ambiguous edge (DySE)
-
-    r.push({
-      source: edge.source,
-      target: edge.target,
-      polarity: edge.polarity,
-      weights: edge.parameter.weights
-    });
-  });
-  return r;
-};
-
 module.exports = {
   find,
   findOne,
@@ -455,5 +556,11 @@ module.exports = {
   buildGoalOptimizationPayload,
   buildNodeParametersPayload,
   buildEdgeParametersPayload,
-  clearNodeParameter
+  clearNodeParameter,
+
+  buildCreateModelPayload,
+
+  // To deprecated once Graph-like api is in
+  buildCreateModelPayloadDeprecated,
+  buildNodeParametersPayloadDeprecated
 };

@@ -30,6 +30,7 @@
           class="cagGraph insight-capture"
           :data="modelComponents"
           :show-new-node="showNewNode"
+          :selected-time-scale="modelSummary?.parameter?.time_scale"
           @refresh="captureThumbnail"
           @new-edge="addEdge"
           @background-click="onBackgroundClick"
@@ -54,6 +55,7 @@
             <strong>{{ selectedTimeScaleLabel}} </strong>
             <button
               class="btn btn-sm btn-default"
+              disabled
               @click="showModalTimeScale = true"
             >
               <i class="fa fa-fw fa-pencil" />
@@ -85,19 +87,17 @@
             @updated-relations="resolveUpdatedRelations"
             @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
-            <div style="display: flex; margin-bottom: 10px">
               <edge-polarity-switcher
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity"
                 @edge-set-weights="setEdgeWeights"
               />
               <button
-                style="margin-left: 5px; font-weight: normal"
+                style="font-weight: normal; width: 100%"
                 class="btn"
                 @click="openPathFind">
                 Indirect path
               </button>
-            </div>
           </evidence-pane>
           <relationships-pane
             v-if="
@@ -372,7 +372,7 @@ export default defineComponent({
       target: string;
     } | null,
     PANE_ID,
-    timerId: null as NodeJS.Timeout | null,
+    timerId: null as number | null,
     cagsToImport: [] as CAGGraphInterface[],
     prevStabilitySetting: true // matching CAG Renderer init
   }),
@@ -605,8 +605,12 @@ export default defineComponent({
       this.setNewNodeVisible(true);
     },
     onDatacubeSelected(datacubeParam: any) {
-      // Strip off non-alphanumeric - Engines cannot handle them
-      const cleanedName = datacubeParam.name.replace(/[^\w\s]/gi, '');
+      // Strip off non-alphanumeric
+      // - Engines cannot handle them
+      // - Translation layer doesn't like consecutive spaces
+      const cleanedName = datacubeParam.name
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\s\s+/gi, ' ');
       const node = {
         id: '',
         concept: cleanedName,
@@ -699,7 +703,7 @@ export default defineComponent({
       // To compensate for animiated transitions in the graph, we need to wait a little bit for the graph
       // components to move into their rightful positions.
       this.clearThumbnailTimer();
-      this.timerId = setTimeout(async () => {
+      this.timerId = window.setTimeout(async () => {
         const el = this.$el.querySelector('.CAG-graph-container');
         const thumbnailSource = (
           await html2canvas(el, { scale: 0.5 })
