@@ -85,7 +85,14 @@ import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
-import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, BinningOptions } from '@/types/Enums';
+import {
+  AggregationOption,
+  BinningOptions,
+  DatacubeStatus,
+  DatacubeType,
+  DataTransform,
+  TemporalResolutionOption
+} from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import BarChart from '@/components/widgets/charts/bar-chart.vue';
@@ -308,6 +315,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       ref(null), // breakdownOption
       ref(null), // selectedTimestamp
+      ref(DataTransform.None), // Transforms are NOT used for region ranking
       () => {}, // setSelectedTimestamp
       selectedRegionIds,
       ref(new Set()),
@@ -357,6 +365,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
+      ref(DataTransform.None), // Transforms are NOT used for region ranking
       metadata,
       selectedTimeseriesPoints
     );

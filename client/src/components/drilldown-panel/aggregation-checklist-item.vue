@@ -97,6 +97,7 @@ import * as d3 from 'd3';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { defineComponent, PropType } from '@vue/runtime-core';
 import AggregationChecklistBar from '@/components/drilldown-panel/aggregation-checklist-bar.vue';
+import { exponentFormatter } from '@/utils/string-util';
 
 interface AggregationChecklistItemPropType {
   name: string;
@@ -179,8 +180,10 @@ export default defineComponent({
     }
   },
   methods: {
-    valueFormatter(value: number | null): string {
-      return value !== null ? d3.format(',.2~f')(value) : 'missing';
+    valueFormatter(v: number | null): string {
+      if (v === null) return 'missing';
+      if (v === 0 || Math.abs(v) >= 1) return d3.format(',.2~f')(v);
+      return exponentFormatter(v);
     },
     toggleExpanded() {
       this.$emit('toggle-expanded');

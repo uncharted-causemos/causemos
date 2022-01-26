@@ -86,7 +86,7 @@ import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
-import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, DataTransform } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -226,6 +226,7 @@ export default defineComponent({
     const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
+    const selectedTransform = ref<DataTransform>(DataTransform.None);
 
     const regionMapData = ref<BarData[]>([]);
 
@@ -284,6 +285,9 @@ export default defineComponent({
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
             initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
           }
+          if (initialDataConfig.value.selectedTransform !== undefined) {
+            selectedTransform.value = initialDataConfig.value.selectedTransform;
+          }
         }
       });
 
@@ -315,6 +319,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
+      selectedTransform,
       setSelectedTimestamp,
       ref(selectedRegionIds),
       ref(new Set()),
@@ -377,6 +382,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
+      selectedTransform,
       metadata,
       selectedTimeseriesPoints
     );
