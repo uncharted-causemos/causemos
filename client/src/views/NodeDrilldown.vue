@@ -555,8 +555,9 @@ export default defineComponent({
             { value: 0.5, timestamp: Date.UTC(2017, 1) },
             { value: 0.5, timestamp: Date.UTC(2017, 2) }
           ],
-          max: null, // filled in by server
-          min: null // filled in by server
+          // Let server determine min/max
+          max: null,
+          min: null
         },
         components
       };
