@@ -7,12 +7,10 @@
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import _ from 'lodash';
-import { defineComponent, ref, Ref } from 'vue';
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 import { mapActions, mapGetters } from 'vuex';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 import KeyValuePill from '@/search/pills/key-value-pill';
 import ValuePill from '@/search/pills/value-pill';
@@ -29,7 +27,6 @@ import filtersUtil from '@/utils/filters-util';
 import polarityUtil from '@/utils/polarity-util';
 
 import suggestionService from '@/services/suggestion-service';
-import { Clause } from '@/types/Filters';
 
 const CODE_TABLE = codeUtil.CODE_TABLE;
 const CONCEPTS_MSG = 'Select one or more ontological concepts';
@@ -46,19 +43,13 @@ const QUALITY = [
   'Vetted'
 ];
 
-export default defineComponent({
+// const EVIDENCE_SOURCE = [
+//   'User',
+//   'Document'
+// ];
+
+export default {
   name: 'SearchBar',
-  setup() {
-    const pills = ref([]) as Ref<any[]>;
-    const lexRef = ref(null) as Ref<any>;
-
-    return {
-      pills,
-      lexRef,
-
-      ontologyFormatter: useOntologyFormatter()
-    };
-  },
   computed: {
     ...mapGetters({
       filters: 'query/filters',
@@ -74,6 +65,7 @@ export default defineComponent({
   },
   created() {
     this.lexRef = null;
+    this.pills = [];
   },
   mounted() {
     const topicPill = new DynamicValuePill(
@@ -133,6 +125,12 @@ export default defineComponent({
         'Select one or more hedging categories'
       ),
 
+      // TODO: Disabled for now. Check if evidence source search is required
+      // new ValuePill(
+      //   CODE_TABLE.EVIDENCE_SOURCE,
+      //   EVIDENCE_SOURCE,
+      //   'Select one or more evidence source categories'
+      // ),
       new ValuePill(
         CODE_TABLE.QUALITY,
         QUALITY,
@@ -204,7 +202,7 @@ export default defineComponent({
         pill.makeOption()
       ),
       suggestionLimit: 30,
-      icon: (v: any) => {
+      icon: v => {
         if (_.isNil(v)) return '<i class="fa fa-search"></i>';
         const pill = this.pills.find(
           pill => pill.searchKey === v.meta.searchKey
@@ -219,11 +217,11 @@ export default defineComponent({
       tokenXIcon: '<i class="fa fa-remove"></i>'
     });
 
-    this.lexRef.on('query changed', (...args: any[]) => {
+    this.lexRef.on('query changed', (...args) => {
       const model = args[0];
       const newFilters = filtersUtil.newFilters();
 
-      model.forEach((item: any) => {
+      model.forEach(item => {
         const pill = this.pills.find(
           pill => pill.searchKey === item.field.meta.searchKey
         );
@@ -242,8 +240,8 @@ export default defineComponent({
           newFilters,
           enableClause.field,
           enableClause.values,
-          enableClause.operand ?? 'or',
-          enableClause.isNot ?? false
+          enableClause.operand,
+          enableClause.isNot
         );
       }
 
@@ -266,8 +264,8 @@ export default defineComponent({
     }),
     setQuery() {
       if (!this.lexRef) return;
-      const lexQuery: any[] = [];
-      this.filters.clauses.forEach((clause: Clause) => {
+      const lexQuery = [];
+      this.filters.clauses.forEach(clause => {
         const pill = this.pills.find(pill => pill.searchKey === clause.field);
         if (!_.isNil(pill)) {
           const selectedPill = pill.makeOption();
@@ -280,7 +278,7 @@ export default defineComponent({
       this.lexRef.reset();
     }
   }
-});
+};
 </script>
 
 <style lang="scss" scoped>
