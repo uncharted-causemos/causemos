@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const auth = rootRequire('/util/auth-util');
@@ -29,7 +30,6 @@ const createModel = async (payload) => {
     throw new Error(JSON.stringify(result));
   }
 
-  console.log(payload.edges);
   Logger.warn(JSON.stringify(result.edges, null, 2));
 
   // Transform result to node/edge initialization maps
@@ -86,10 +86,6 @@ const createExperiment = async (modelId, payload) => {
     json: payload
   };
 
-  console.log('!!! sensei experiment');
-  console.log(JSON.stringify(payload, null, 2));
-  console.log('!!!');
-
   const result = await requestAsPromise(options);
   return result;
 };
@@ -111,6 +107,13 @@ const findExperiment = async (modelId, experimentId) => {
     json: {}
   };
   const result = await requestAsPromise(options);
+
+  // FIXME: Sensei should just sort timestamps by default for projections
+  if (_.isArray(result.results)) {
+    result.results.forEach(nodeResult => {
+      nodeResult.values = _.orderBy(nodeResult.values, d => d.timestamp);
+    });
+  }
   return result;
 };
 
