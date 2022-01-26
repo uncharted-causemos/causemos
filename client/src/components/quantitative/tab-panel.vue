@@ -200,7 +200,7 @@ export default defineComponent({
   },
   data: () => ({
     graphData: {},
-    scenarioData: {} as { [concept: string]: NodeScenarioData },
+    scenarioData: null as { [concept: string]: NodeScenarioData } | null,
     sensitivityResult: null,
 
     drilldownTabs: NODE_DRILLDOWN_TABS,
