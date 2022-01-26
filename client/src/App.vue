@@ -11,12 +11,13 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
-import NavBar from '@/components/nav-bar';
-import Overlay from '@/components/overlay';
+import NavBar from '@/components/nav-bar.vue';
+import Overlay from '@/components/overlay.vue';
 import projectService from '@/services/project-service';
 import domainProjectService from '@/services/domain-project-service';
 import { ProjectType } from '@/types/Enums';
@@ -25,7 +26,7 @@ import InsightManager from '@/components/insight-manager/insight-manager.vue';
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
 
-export default {
+export default defineComponent({
   name: 'App',
   components: {
     NavBar,
@@ -86,10 +87,10 @@ export default {
         type: 'model'
       };
       const existingProjects = await domainProjectService.getProjects(domainProjectSearchFields);
-      const domainProjectNames = existingProjects.map(p => p.name);
+      const domainProjectNames = existingProjects.map((p: any) => p.name);
       if (domainProjectNames.includes(this.project)) {
         // this is a special case where Jataware has redirected to a given domain-project page
-        projectId = existingProjects.find(p => p.name === this.project).id;
+        projectId = existingProjects.find((p: any) => p.name === this.project).id;
       }
 
       domainProjectService.getProject(projectId).then(project => {
@@ -112,7 +113,7 @@ export default {
       });
     }
   }
-};
+});
 </script>
 
 <style lang="scss">

@@ -4,7 +4,6 @@
 // as of this writing (Dec 2021) and ts-ignore render the code unreadable.
 
 /* Layout adapater for CAGs */
-// import { layered } from './elk/layouts';
 import { CAGGraph, NodeParameter, EdgeParameter } from '@/types/CAG';
 import { IGraph, INode, IEdge, traverseGraph } from 'svg-flowgraph';
 import ELK from 'elkjs/lib/elk.bundled';
