@@ -20,6 +20,9 @@
       <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
     </div>
   </div>
+  <span style="justify-content: right; text-align: right; padding-right: 120px">
+    {{timeseriesData.map(t => t.correctiveAction)}}
+  </span>
 </template>
 
 <script lang="ts">

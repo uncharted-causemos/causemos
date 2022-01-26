@@ -147,3 +147,11 @@ export enum BinningOptions {
   Quantile = 'Quantile (equal counts)',
   Linear = 'linear'
 }
+
+export enum IncompleteDataCorrectiveAction {
+  OutOfScopeData = 'Data is Out of Scope (No Change)',
+  NotRequired = 'No Changes Required',
+  CompleteData = 'Complete Data (No Change)',
+  DataRemoved = 'Data Removed',
+  DataExtrapolated = 'Data Extrapolated'
+}

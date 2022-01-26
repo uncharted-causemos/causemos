@@ -7,6 +7,7 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption,
+  TemporalResolution,
   ReferenceSeriesOption
 } from '@/types/Enums';
 import { ModelRun } from '@/types/ModelRun';
@@ -18,6 +19,8 @@ import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain 
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
 import { getQualifierTimeseries } from '../new-datacube-service';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
+import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 
 
 const applyBreakdown = (
@@ -96,6 +99,18 @@ export default function useTimeseriesData(
     allTimeseriesData.value.filter(
       timeseries => timeseries.id !== relativeTo.value
     )
+  );
+
+  const temporalRes = computed(() =>
+    selectedTemporalResolution.value !== ''
+      ? selectedTemporalResolution.value
+      : TemporalResolutionOption.Month
+  );
+
+  const temporalAgg = computed(() =>
+    selectedTemporalAggregation.value !== ''
+      ? selectedTemporalAggregation.value
+      : AggregationOption.Sum
   );
 
   const temporalBreakdownData = computed<BreakdownData | null>(() => {
@@ -187,19 +202,27 @@ export default function useTimeseriesData(
         timeseriesData: []
       };
     }
+
     const breakdownTimeseriesData = applyBreakdown(
       rawTimeseriesData.value,
       breakdownOption.value,
       selectedYears.value
     );
 
+    const output = metadata.value?.outputs.find(output => output.name === activeFeature.value);
+    const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+    const finalRawDate = new Date(metadata.value?.period?.lte ?? 0);
+
+    const correctedTimeseriesData = correctIncompleteTimeseries(breakdownTimeseriesData,
+      rawResolution, temporalRes.value as TemporalResolutionOption,
+      temporalAgg.value as AggregationOption, finalRawDate);
+    console.log('>>> Corrected timeseries', JSON.stringify(correctedTimeseriesData.map(ts => ts.correctiveAction)));
+
     const referencedTimeseriesData = referenceOptions && referenceOptions.value && referenceOptions.value.length > 0
-      ? applyReference(breakdownTimeseriesData, rawTimeseriesData.value, breakdownOption.value, referenceOptions.value)
-      : breakdownTimeseriesData;
+      ? applyReference(correctedTimeseriesData, rawTimeseriesData.value, breakdownOption.value, referenceOptions.value)
+      : correctedTimeseriesData;
 
     const relativeTimeseriesData = applyRelativeTo(referencedTimeseriesData, relativeTo.value, showPercentChange.value);
-
-
     return relativeTimeseriesData;
   });
 
@@ -213,14 +236,6 @@ export default function useTimeseriesData(
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
-      const temporalRes =
-        selectedTemporalResolution.value !== ''
-          ? selectedTemporalResolution.value
-          : TemporalResolutionOption.Month;
-      const temporalAgg =
-        selectedTemporalAggregation.value !== ''
-          ? selectedTemporalAggregation.value
-          : AggregationOption.Sum;
       const spatialAgg =
         selectedSpatialAggregation.value !== ''
           ? selectedSpatialAggregation.value
@@ -248,8 +263,8 @@ export default function useTimeseriesData(
             data_id: dataId,
             run_id: modelRunIds.value[0],
             feature: activeFeature.value,
-            resolution: temporalRes,
-            temporal_agg: temporalAgg,
+            resolution: temporalRes.value,
+            temporal_agg: temporalAgg.value,
             spatial_agg: spatialAgg,
             transform: transform
           }
@@ -274,8 +289,8 @@ export default function useTimeseriesData(
               data_id: dataId,
               run_id: runId,
               feature: activeFeature.value,
-              resolution: temporalRes,
-              temporal_agg: temporalAgg,
+              resolution: temporalRes.value,
+              temporal_agg: temporalAgg.value,
               spatial_agg: spatialAgg,
               transform: transform,
               region_id: regionId
@@ -293,8 +308,8 @@ export default function useTimeseriesData(
             dataId,
             modelRunIds.value[0],
             activeFeature.value,
-            temporalRes,
-            temporalAgg,
+            temporalRes.value,
+            temporalAgg.value,
             spatialAgg,
             breakdownOption.value,
             Array.from(selectedQualifierValues.value),
