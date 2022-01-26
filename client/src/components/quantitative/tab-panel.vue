@@ -94,24 +94,27 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent, ref, PropType, Ref } from 'vue';
 import { mapGetters } from 'vuex';
 import moment from 'moment';
 
-import ConfigBar from '@/components/quantitative/config-bar';
-import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis';
-import ModelGraph from '@/components/quantitative/model-graph';
+import ConfigBar from '@/components/quantitative/config-bar.vue';
+import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis.vue';
+import ModelGraph from '@/components/quantitative/model-graph.vue';
+import DrilldownPanel from '@/components/drilldown-panel.vue';
+import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher.vue';
+import EvidencePane from '@/components/drilldown-panel/evidence-pane.vue';
+import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane.vue';
 import modelService from '@/services/model-service';
-import DrilldownPanel from '@/components/drilldown-panel';
-import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
-import EvidencePane from '@/components/drilldown-panel/evidence-pane';
-import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagLegend from '@/components/graph/cag-legend.vue';
 import { findPaths } from '@/utils/graphs-util';
+import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter } from '@/types/CAG';
+import { Statement } from '@/types/Statement';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -137,7 +140,7 @@ const PROJECTION_ENGINES = {
   DYSE: 'dyse'
 };
 
-export default {
+export default defineComponent({
   name: 'TabPanel',
   components: {
     ConfigBar,
@@ -157,15 +160,15 @@ export default {
       default: null
     },
     modelSummary: {
-      type: Object,
+      type: Object as PropType<CAGModelSummary>,
       required: true
     },
     modelComponents: {
-      type: Object,
+      type: Object as PropType<CAGGraph>,
       required: true
     },
     scenarios: {
-      type: Array,
+      type: Array as PropType<Scenario[]>,
       required: true
     },
     resetLayoutToken: {
@@ -183,18 +186,28 @@ export default {
     'delete-scenario',
     'delete-scenario-clamp'
   ],
+  setup() {
+    const selectedNode = ref(null) as Ref<NodeParameter | null>;
+    const selectedEdge = ref(null) as Ref<EdgeParameter | null>;
+    const selectedStatements = ref([]) as Ref<Statement[]>;
+
+    return {
+      selectedNode,
+      selectedEdge,
+      selectedStatements,
+      PANE_ID
+    };
+  },
   data: () => ({
     graphData: {},
-    scenarioData: null,
+    scenarioData: {} as { [concept: string]: NodeScenarioData },
     sensitivityResult: null,
 
     drilldownTabs: NODE_DRILLDOWN_TABS,
     activeDrilldownTab: PANE_ID.EVIDENCE,
     isDrilldownOpen: false,
     isFetchingStatements: false,
-    selectedEdge: null,
-    visualState: {},
-    selectedNode: null
+    visualState: {}
   }),
   computed: {
     ...mapGetters({
@@ -229,9 +242,6 @@ export default {
       this.refresh();
     }
   },
-  created() {
-    this.PANE_ID = PANE_ID;
-  },
   mounted() {
     this.refresh();
   },
@@ -247,11 +257,11 @@ export default {
       // Get sensitivity results, note these results may still be pending
       if (this.currentEngine === 'dyse') {
         modelService.getScenarioSensitivity(this.currentCAG, this.currentEngine).then(sensitivityResults => {
-          this.sensitivityResult = sensitivityResults.find(d => d.scenario_id === this.selectedScenarioId);
+          this.sensitivityResult = sensitivityResults.find((d: any) => d.scenario_id === this.selectedScenarioId);
         });
       }
     },
-    onNodeSensitivity(node) {
+    onNodeSensitivity(node: NodeParameter) {
       this.drilldownTabs = NODE_DRILLDOWN_TABS;
       this.activeDrilldownTab = PANE_ID.SENSITIVITY;
       this.openDrilldown();
@@ -262,7 +272,7 @@ export default {
         }
       };
     },
-    openNodeDrilldownView(node) {
+    openNodeDrilldownView(node: NodeParameter) {
       this.onBackgroundClick();
       this.$router.push({
         name: 'nodeDrilldown',
@@ -274,7 +284,9 @@ export default {
         }
       });
     },
-    highlightNodePaths(node, type) {
+    highlightNodePaths(node: { concept: string }, type: string) {
+      if (!this.selectedNode) return;
+
       let paths = [];
       if (type === 'source') {
         paths = findPaths(node.concept, this.selectedNode.concept, this.modelComponents.edges);
@@ -329,7 +341,7 @@ export default {
     closeDrilldown() {
       this.isDrilldownOpen = false;
     },
-    showRelation(edgeData) {
+    showRelation(edgeData: EdgeParameter) {
       this.isFetchingStatements = true;
       this.drilldownTabs = EDGE_DRILLDOWN_TABS;
       this.activeDrilldownTab = PANE_ID.EVIDENCE;
@@ -341,16 +353,17 @@ export default {
         this.isFetchingStatements = false;
       });
     },
-    onDrilldownTabClick(tab) {
+    onDrilldownTabClick(tab: string) {
       this.activeDrilldownTab = tab;
     },
-    async setEdgeUserPolarity(edge, polarity) {
+    async setEdgeUserPolarity(edge: EdgeParameter, polarity: number) {
+      if (!this.selectedEdge) return;
       await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
       this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
       this.closeDrilldown();
       this.$emit('refresh-model');
     },
-    async setEdgeWeights(edgeData, weights) {
+    async setEdgeWeights(edgeData: EdgeParameter, weights: [number, number]) {
       const payload = {
         id: edgeData.id,
         source: edgeData.source,
@@ -360,15 +373,18 @@ export default {
           weights
         }
       };
-      await modelService.updateEdgeParameter(this.currentCAG, payload);
-      this.selectedEdge.parameter.weights = edgeData.parameter.weights;
+      await modelService.updateEdgeParameter(this.currentCAG, payload as any);
+      if (this.selectedEdge?.parameter) {
+        this.selectedEdge.parameter.weights = weights;
+      }
       this.$emit('refresh-model');
     },
-    setSensitivityAnalysisType(analysisType) {
+    setSensitivityAnalysisType(analysisType: string) {
+      // FIXME: can propbably remove
       this.$emit('set-sensitivity-analysis-type', analysisType);
     },
     async resetCAGLayout() {
-      const modelGraph = this.$refs.modelGraph;
+      const modelGraph: any = this.$refs.modelGraph;
       if (modelGraph === undefined) return;
       const graphOptions = modelGraph.renderer.options;
       const prevStabilitySetting = graphOptions.useStableLayout;
@@ -378,6 +394,8 @@ export default {
     },
     downloadExperiment() {
       const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      if (!scenario) return;
+
       const start = scenario.parameter.projection_start;
       const numTimeSteps = scenario.parameter.num_steps;
       // FIXME: endTime depends on time scale
@@ -393,9 +411,9 @@ export default {
       const file = new Blob([JSON.stringify(experimentPayload)], {
         type: 'application/json'
       });
-      window.saveAs(file, 'experiment.json');
+      (window as any).saveAs(file, 'experiment.json');
     },
-    showPath(item) {
+    showPath(item: any) {
       const path = item.path;
       const highlightEdges = [];
       const highlightNode = _.uniq(path).map(d => {
@@ -418,7 +436,7 @@ export default {
       };
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

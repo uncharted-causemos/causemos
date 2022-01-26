@@ -10,28 +10,35 @@
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex';
-import ListInsightsModal from '@/components/insight-manager/list-insights-modal';
-import ReviewInsightModal from '@/components/insight-manager/review-insight-modal';
+<script lang="ts">
+import { useStore } from 'vuex';
+import { defineComponent, computed } from 'vue';
+import ListInsightsModal from '@/components/insight-manager/list-insights-modal.vue';
+import ReviewInsightModal from '@/components/insight-manager/review-insight-modal.vue';
 
 
-export default {
+export default defineComponent({
   name: 'InsightManager',
   components: {
     ListInsightsModal,
     ReviewInsightModal
   },
-  computed: {
-    ...mapGetters({
-      isPanelOpen: 'insightPanel/isPanelOpen',
-      currentPane: 'insightPanel/currentPane'
-    }),
-    isOpen() {
-      return this.isPanelOpen === true;
-    }
+  setup() {
+    const store = useStore();
+    const isPanelOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
+    const currentPane = computed(() => store.getters['insightPanel/currentPane']);
+
+    const isOpen = computed(() => {
+      return isPanelOpen.value === true;
+    });
+
+    return {
+      isPanelOpen,
+      currentPane,
+      isOpen
+    };
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
