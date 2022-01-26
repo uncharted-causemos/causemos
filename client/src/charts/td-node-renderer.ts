@@ -81,6 +81,7 @@ export default function(
 
   if (projections.length === 0) return;
   const [xExtent, yExtent] = calculateExtents(
+    modelSummary,
     historicalTimeseries,
     projections,
     minValue,
@@ -337,22 +338,31 @@ export default function(
 }
 
 const calculateExtents = (
+  modelSummary: CAGModelSummary,
   historicalTimeseries: TimeseriesPoint[],
   projections: ScenarioProjection[],
   minValue: number,
   maxValue: number,
   isClampAreaHidden: boolean
 ) => {
+  let xExtent: [number, number] = [0, 1];
   const getTimestampFromPoint = (point: { timestamp: number }) => point.timestamp;
-  // Don't include projection timesteps if isClampAreaHidden
-  const projectedPoints = isClampAreaHidden
-    ? []
-    : projections.flatMap(projection => projection.values);
-  const projectedTimestamps = projectedPoints.map(getTimestampFromPoint);
-  const xExtent = d3.extent([
-    ...historicalTimeseries.map(getTimestampFromPoint),
-    ...projectedTimestamps
-  ]);
+
+  if (!isClampAreaHidden) {
+    const projectedPoints = projections.flatMap(projection => projection.values);
+    const projectedTimestamps = projectedPoints.map(getTimestampFromPoint);
+    xExtent = d3.extent([
+      ...historicalTimeseries.map(getTimestampFromPoint),
+      ...projectedTimestamps
+    ]) as [number, number];
+  } else {
+    // if clamps are hidden, go up to the first projected points (basically projection_start)
+    console.log('hihiihi');
+    xExtent = d3.extent([
+      ...historicalTimeseries.map(getTimestampFromPoint),
+      modelSummary.parameter.projection_start
+    ]) as [number, number];
+  }
   const yExtent = d3.extent([minValue, maxValue]);
   return [xExtent, yExtent];
 };
