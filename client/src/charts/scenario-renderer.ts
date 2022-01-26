@@ -20,6 +20,8 @@ import {
 } from '@/utils/ridgeline-util';
 import { renderRidgelines } from './ridgeline-renderer';
 
+import { SELECTED_COLOR } from '@/utils/colors-util';
+
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE = '#F4EFDB';
 const HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE = '#F7E6AA';
@@ -309,6 +311,18 @@ function renderScenarioProjections(
       translate(xScale(timestamp), 0)
     );
   });
+
+  // Apply constraints to the graph
+  const constraints = projection.constraints ?? [];
+  for (const constraint of constraints) {
+    const ts = projectionValues[constraint.step].timestamp;
+
+    svgGroup.append('circle')
+      .attr('cx', xScale(ts))
+      .attr('cy', yScale(constraint.value))
+      .attr('r', 1.75)
+      .style('fill', SELECTED_COLOR);
+  }
 
   // TODO: Render constraints
   // const constraintSummary = summarizeConstraints(
