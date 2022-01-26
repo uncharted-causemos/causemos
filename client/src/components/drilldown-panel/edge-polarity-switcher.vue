@@ -24,7 +24,7 @@
       leads to&nbsp;
     </div>
     <div
-      v-if="selectedRelationship.parameter.weights"
+      v-if="selectedRelationship.parameter && selectedRelationship.parameter.weights"
       style="display: inline-block">
       <span
         class="clickable-dropdown"
