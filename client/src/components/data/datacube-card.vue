@@ -541,8 +541,10 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 import { getInsightById } from '@/services/insight-service';
+import { getRawTimeseriesData } from '@/services/runoutput-service';
 
 import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
@@ -1516,6 +1518,22 @@ export default defineComponent({
       selectedScenarios,
       activeReferenceOptions
     );
+
+    const { activeFeature } = useActiveDatacubeFeature(metadata);
+    watchEffect(() => {
+      const dataId = metadata.value?.data_id;
+      const runId = selectedScenarioIds.value[0];
+      const outputVariable = activeFeature.value;
+
+      if (!dataId || !runId || !outputVariable) return;
+
+      // const rawData = getRawOutputData({ dataId, runId, outputVariable });
+      const rawData = getRawTimeseriesData({ dataId, runId, outputVariable, spatialAgg: 'mean', regionId: 'Ethiopia__Amhara' });
+      rawData.then(data => {
+        console.log(data);
+      });
+    });
+
 
     watchEffect(() => {
       if (initialActiveReferenceOptions.value && initialActiveReferenceOptions.value.length > 0) {

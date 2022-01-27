@@ -18,6 +18,7 @@ import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain 
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
 import { getQualifierTimeseries } from '../new-datacube-service';
+import { getRawTimeseriesData } from '../runoutput-service';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 
@@ -270,6 +271,8 @@ export default function useTimeseriesData(
         const regionId =
           regionIds.value.length > 0 ? regionIds.value[0] : undefined;
         promises = modelRunIds.value.map(runId => {
+          // return getRawTimeseriesData({ dataId, runId, regionId: (regionId || ''), outputVariable: activeFeature.value, spatialAgg }).then(result => ({ data: result }));
+          console.log(getRawTimeseriesData);
           return API.get('maas/output/timeseries', {
             params: {
               data_id: dataId,

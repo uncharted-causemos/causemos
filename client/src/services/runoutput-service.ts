@@ -1,19 +1,67 @@
+import _ from 'lodash';
 import API from '@/api/api';
 import { DatacubeGeography } from '@/types/Common';
 import { AdminLevel, SpatialAggregationLevel } from '@/types/Enums';
 import { OutputSpec, OutputSpecWithId, RegionalAggregations, RegionAgg, RegionalAggregation, OutputStatWithZoom, OutputStatsResult } from '@/types/Runoutput';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
+const filterRawDataByRegionId = (data: any, regionId: string) => {
+  if (!regionId) return data;
+  const adminLevels = regionId.split(REGION_ID_DELIMETER);
+  const level = adminLevels.length - 1;
+  return data.filter((d: any) => {
+    const macthing = [d.country === adminLevels[0], d.admin1 === adminLevels[1], d.admin2 === adminLevels[2], d.admin3 === adminLevels[3]];
+    return macthing.slice(0, level + 1).reduce((prev, cur) => prev && cur, true);
+  });
+};
 
 export const getRawOutputData = async (param: { dataId: string, runId: string, outputVariable: string}): Promise<any> => {
-  const { data } = await API.get('/maas/output/raw-data', {
+  // Fetching raw data is expensive, so cache the request and retrieve the result for the same request from the cache.
+  const promise = API.get('/maas/output/raw-data', {
     params: {
       data_id: param.dataId,
       run_id: param.runId,
       feature: param.outputVariable
     }
   });
-  return data;
+  const res = await promise;
+  return res.data;
+};
+
+export const getRawTimeseriesData = async (param: { dataId: string, runId: string, outputVariable: string, spatialAgg: string, regionId: string}): Promise<any> => {
+  const rawData = await getRawOutputData(param);
+  const filteredData = filterRawDataByRegionId(rawData, param.regionId);
+
+  // Aggregate spatially and derive timeseries data
+  const dataByTs = _.groupBy(filteredData, 'timestamp');
+  const timeseries = Object.values(dataByTs).map((dataPoints: any) => {
+    const sum = dataPoints.reduce((prev: any, cur: any) => prev + cur.value, 0);
+    return { timestamp: dataPoints[0].timestamp, value: param.spatialAgg === 'sum' ? sum : sum / dataPoints.length };
+  });
+  const result = _.sortBy(timeseries, 'timestamp');
+  return result;
+};
+
+export const getRawOutputDataByTimestamp = async (param: { dataId: string, runId: string, outputVariable: string, timestamp: number }) => {
+  const rawData = await getRawOutputData(param);
+  return rawData.filter((d: any) => d.timestamp === param.timestamp);
+};
+
+export const getRawOutputGeoJsonByTimestamp = async (param: { dataId: string, runId: string, outputVariable: string, timestamp: number }) => {
+  const data = await getRawOutputDataByTimestamp(param);
+  const geoJson = {
+    type: 'FeatureCollection',
+    features: <any>[]
+  };
+  for (const d of data) {
+    geoJson.features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [d.lng, d.lat] },
+      properties: { ...d }
+    });
+  }
+  return geoJson;
 };
 
 export const getRegionAggregation = async (
