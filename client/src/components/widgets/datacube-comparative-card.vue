@@ -107,6 +107,7 @@ import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimes
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { RegionalAggregations } from '@/types/Runoutput';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
   name: 'DatacubeComparativeCard',
@@ -308,6 +309,8 @@ export default defineComponent({
       breakdownOption.value = newValue;
     };
 
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
+
     const {
       timeseriesData,
       visibleTimeseriesData,
@@ -329,6 +332,7 @@ export default defineComponent({
       ref(new Set()),
       ref([]),
       ref(false),
+      activeFeature,
       selectedScenarios
     );
 

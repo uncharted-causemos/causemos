@@ -18,7 +18,6 @@ import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain 
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
 import { getQualifierTimeseries } from '../new-datacube-service';
-import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 
 const applyBreakdown = (
@@ -72,11 +71,11 @@ export default function useTimeseriesData(
   selectedQualifierValues: Ref<Set<string>>,
   initialSelectedYears: Ref<string[]>,
   showPercentChange: Ref<boolean>,
+  activeFeature: Ref<string>,
   modelRuns?: Ref<ModelRun[]>,
   referenceOptions?: Ref<string[]>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
-  const { activeFeature } = useActiveDatacubeFeature(metadata);
   const referenceTimeseries = ref<Timeseries[]>([]);
   const relativeTo = ref<string | null>(null);
   const selectedYears = shallowRef(new Set<string>());

@@ -541,7 +541,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
-
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { getInsightById } from '@/services/insight-service';
 
 import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
@@ -1490,6 +1490,8 @@ export default defineComponent({
       initialNonDefaultQualifiers
     );
 
+    const { activeFeature } = useActiveDatacubeFeature(metadata);
+
     const {
       timeseriesData,
       visibleTimeseriesData,
@@ -1513,6 +1515,7 @@ export default defineComponent({
       selectedQualifierValues,
       initialSelectedYears,
       showPercentChange,
+      activeFeature,
       selectedScenarios,
       activeReferenceOptions
     );
