@@ -303,7 +303,8 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      ref([])
+      ref([]), // initialSelectedRegionIds
+      mainModelOutput
     );
 
     const selectedTimestamp = ref<number | null>(null);
@@ -374,7 +375,8 @@ export default defineComponent({
       selectedTemporalResolution,
       ref(DataTransform.None), // Transforms are NOT used for region ranking
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      mainModelOutput
     );
 
     const {

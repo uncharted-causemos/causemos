@@ -1,5 +1,5 @@
 import { DatacubeGeography } from '@/types/Common';
-import { Indicator, Model } from '@/types/Datacube';
+import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { AdminRegionSets } from '@/types/Datacubes';
 import _ from 'lodash';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
@@ -24,7 +24,8 @@ export default function useDatacubeHierarchy(
   metadata: Ref<Model | Indicator | null>,
   selectedAdminLevel: Ref<number>,
   breakdownOption: Ref<string | null>,
-  initialSelectedRegionIds: Ref<string[]>
+  initialSelectedRegionIds: Ref<string[]>,
+  selectedOutput: Ref<DatacubeFeature | undefined>
 ) {
   /**
    * Contains the lists of regions at each admin level across all timestamps
@@ -37,7 +38,7 @@ export default function useDatacubeHierarchy(
     () => breakdownOption.value === SpatialAggregationLevel.Region
   );
 
-  const { activeFeature } = useActiveDatacubeFeature(metadata);
+  const { activeFeature } = useActiveDatacubeFeature(metadata, selectedOutput);
 
   watchEffect(async onInvalidate => {
     let isCancelled = false;

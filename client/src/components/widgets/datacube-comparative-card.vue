@@ -373,7 +373,8 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      ref([]) // initialSelectedRegionIds
+      ref([]), // initialSelectedRegionIds
+      mainModelOutput
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -392,7 +393,8 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTransform,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      mainModelOutput
     );
 
     const {

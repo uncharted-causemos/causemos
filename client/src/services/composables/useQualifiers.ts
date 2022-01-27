@@ -1,4 +1,4 @@
-import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
+import { DatacubeFeature, Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { QualifierInfo, NamedBreakdownData } from '@/types/Datacubes';
 import {
   AggregationOption,
@@ -105,10 +105,11 @@ export default function useQualifiers(
   selectedTimestamp: Ref<number | null>,
   availableQualifiers: Ref<Map<string, QualifierInfo>>,
   initialSelectedQualifierValues: Ref<string[]>,
-  initialNonDefaultQualifiers: Ref<string[]>
+  initialNonDefaultQualifiers: Ref<string[]>,
+  selectedOutput: Ref<DatacubeFeature | undefined>
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
-  const { activeFeature } = useActiveDatacubeFeature(metadata);
+  const { activeFeature } = useActiveDatacubeFeature(metadata, selectedOutput);
 
   const requestedQualifier = ref<string|null>(null);
   const additionalQualifiersRequested = ref<Set<string>>(new Set());

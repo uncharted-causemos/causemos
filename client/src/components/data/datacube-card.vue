@@ -1466,10 +1466,11 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       breakdownOption,
-      initialSelectedRegionIds
+      initialSelectedRegionIds,
+      mainModelOutput
     );
 
-    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds);
+    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, mainModelOutput);
 
     const {
       qualifierBreakdownData,
@@ -1487,10 +1488,11 @@ export default defineComponent({
       selectedTimestamp,
       availableQualifiers,
       initialSelectedQualifierValues,
-      initialNonDefaultQualifiers
+      initialNonDefaultQualifiers,
+      mainModelOutput
     );
 
-    const { activeFeature } = useActiveDatacubeFeature(metadata);
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       timeseriesData,
@@ -1544,6 +1546,7 @@ export default defineComponent({
       selectedTransform,
       metadata,
       selectedTimeseriesPoints,
+      mainModelOutput,
       filteredRunData
     );
 

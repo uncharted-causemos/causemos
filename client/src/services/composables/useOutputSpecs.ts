@@ -1,6 +1,6 @@
 import { Ref } from '@vue/reactivity';
 import { computed } from '@vue/runtime-core';
-import { Indicator, Model } from '@/types/Datacube';
+import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId } from '@/types/Runoutput';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
@@ -15,9 +15,10 @@ export default function useOutputSpecs(
   selectedTransform: Ref<DataTransform>,
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
+  selectedOutput: Ref<DatacubeFeature | undefined>,
   modelRunData?: Ref<ModelRun[]>
 ) {
-  const { activeFeature } = useActiveDatacubeFeature(metadata);
+  const { activeFeature } = useActiveDatacubeFeature(metadata, selectedOutput);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
     const modelMetadata = metadata.value;
     if (

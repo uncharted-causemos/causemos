@@ -5,7 +5,7 @@ import { getSelectedOutput } from '@/utils/datacube-util';
 
 export default function useActiveDatacubeFeature(
   metadata: Ref<Datacube | null>,
-  selectedOutput?: Ref<DatacubeFeature | undefined>
+  selectedOutput: Ref<DatacubeFeature | undefined>
 ) {
   const store = useStore();
   const datacubeCurrentOutputsMap = computed(
@@ -16,7 +16,7 @@ export default function useActiveDatacubeFeature(
     if (metadata.value === null) return '';
     const currentOutputEntry =
       datacubeCurrentOutputsMap.value[metadata.value.id];
-    if (selectedOutput && selectedOutput.value) {
+    if (selectedOutput.value) {
       return selectedOutput.value.name;
     }
     return currentOutputEntry !== undefined
