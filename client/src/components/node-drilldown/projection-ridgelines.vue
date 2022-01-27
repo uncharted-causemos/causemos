@@ -254,7 +254,8 @@ export default defineComponent({
           // Calculate context range
           const contextRange = calculateTypicalChangeBracket(
             this.historicalTimeseries,
-            ridgelinesWithMetadata.monthsAfterNow
+            ridgelinesWithMetadata.monthsAfterNow,
+            this.modelSummary.parameter.projection_start
           );
           contextRanges.push(contextRange);
         });
