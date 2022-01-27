@@ -358,7 +358,6 @@ const calculateExtents = (
     ]) as [number, number];
   } else {
     // if clamps are hidden, go up to the first projected points (basically projection_start)
-    console.log('hihiihi');
     xExtent = d3.extent([
       ...historicalTimeseries.map(getTimestampFromPoint),
       modelSummary.parameter.projection_start
