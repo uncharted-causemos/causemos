@@ -295,6 +295,8 @@ export default defineComponent({
         immediate: true
       });
 
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
+
     const {
       datacubeHierarchy,
       selectedRegionIds
@@ -304,11 +306,10 @@ export default defineComponent({
       selectedAdminLevel,
       ref(null), // breakdownOption,
       ref([]), // initialSelectedRegionIds
-      mainModelOutput
+      activeFeature
     );
 
     const selectedTimestamp = ref<number | null>(null);
-    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       timeseriesData,
@@ -376,7 +377,7 @@ export default defineComponent({
       ref(DataTransform.None), // Transforms are NOT used for region ranking
       metadata,
       selectedTimeseriesPoints,
-      mainModelOutput
+      activeFeature
     );
 
     const {

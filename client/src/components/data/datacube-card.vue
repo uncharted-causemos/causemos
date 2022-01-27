@@ -741,6 +741,8 @@ export default defineComponent({
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
     const isIndicatorDatacube = computed(() => metadata.value !== null && isIndicator(metadata.value));
 
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
+
     const {
       dimensions,
       ordinalDimensionNames
@@ -1467,10 +1469,10 @@ export default defineComponent({
       selectedAdminLevel,
       breakdownOption,
       initialSelectedRegionIds,
-      mainModelOutput
+      activeFeature
     );
 
-    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, mainModelOutput);
+    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, activeFeature);
 
     const {
       qualifierBreakdownData,
@@ -1489,10 +1491,8 @@ export default defineComponent({
       availableQualifiers,
       initialSelectedQualifierValues,
       initialNonDefaultQualifiers,
-      mainModelOutput
+      activeFeature
     );
-
-    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       timeseriesData,
@@ -1546,7 +1546,7 @@ export default defineComponent({
       selectedTransform,
       metadata,
       selectedTimeseriesPoints,
-      mainModelOutput,
+      activeFeature,
       filteredRunData
     );
 

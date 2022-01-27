@@ -1,8 +1,7 @@
-import { DatacubeFeature, Indicator, Model, QualifierCountsResponse, QualifierThresholds } from '@/types/Datacube';
+import { Indicator, Model, QualifierCountsResponse, QualifierThresholds } from '@/types/Datacube';
 import { QualifierInfo } from '@/types/Datacubes';
 import { Ref, ref, watchEffect } from 'vue';
 import { getQualifierCounts } from '../new-datacube-service';
-import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const FETCH_BY_DEFAULT_LIMIT = 100;
 
@@ -58,10 +57,9 @@ const convertResponsesToAvailableQualifiers = (
 export default function useQualifierCounts(
   metadata: Ref<Model | Indicator | null>,
   selectedScenarioIds: Ref<string[]>,
-  selectedOutput: Ref<DatacubeFeature | undefined>
+  activeFeature: Ref<string>
 ) {
   const availableQualifiers = ref<Map<string, QualifierInfo>>(new Map<string, QualifierInfo>());
-  const { activeFeature } = useActiveDatacubeFeature(metadata, selectedOutput);
 
   watchEffect(async onInvalidate => {
     if (metadata.value === null) return;

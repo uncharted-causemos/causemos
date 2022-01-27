@@ -1,4 +1,4 @@
-import { DatacubeFeature, Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
+import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { QualifierInfo, NamedBreakdownData } from '@/types/Datacubes';
 import {
   AggregationOption,
@@ -7,7 +7,6 @@ import {
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { getQualifierBreakdown } from '../new-datacube-service';
-import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 interface QualifierVariableInfo {
   count: number;
@@ -106,10 +105,9 @@ export default function useQualifiers(
   availableQualifiers: Ref<Map<string, QualifierInfo>>,
   initialSelectedQualifierValues: Ref<string[]>,
   initialNonDefaultQualifiers: Ref<string[]>,
-  selectedOutput: Ref<DatacubeFeature | undefined>
+  activeFeature: Ref<string>
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
-  const { activeFeature } = useActiveDatacubeFeature(metadata, selectedOutput);
 
   const requestedQualifier = ref<string|null>(null);
   const additionalQualifiersRequested = ref<Set<string>>(new Set());
