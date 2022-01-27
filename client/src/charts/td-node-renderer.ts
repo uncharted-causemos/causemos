@@ -26,6 +26,7 @@ import {
 
 import { TimeScale } from '@/types/Enums';
 import { renderRidgelines } from './ridgeline-renderer';
+import { historicalDataUncertaintyColor } from '@/services/model-service';
 
 const HISTORICAL_DATA_COLOR = '#888';
 const HISTORICAL_RANGE_OPACITY = 0.05;
@@ -81,6 +82,7 @@ export default function(
 
   if (projections.length === 0) return;
   const [xExtent, yExtent] = calculateExtents(
+    modelSummary,
     historicalTimeseries,
     projections,
     minValue,
@@ -337,22 +339,30 @@ export default function(
 }
 
 const calculateExtents = (
+  modelSummary: CAGModelSummary,
   historicalTimeseries: TimeseriesPoint[],
   projections: ScenarioProjection[],
   minValue: number,
   maxValue: number,
   isClampAreaHidden: boolean
 ) => {
+  let xExtent: [number, number] = [0, 1];
   const getTimestampFromPoint = (point: { timestamp: number }) => point.timestamp;
-  // Don't include projection timesteps if isClampAreaHidden
-  const projectedPoints = isClampAreaHidden
-    ? []
-    : projections.flatMap(projection => projection.values);
-  const projectedTimestamps = projectedPoints.map(getTimestampFromPoint);
-  const xExtent = d3.extent([
-    ...historicalTimeseries.map(getTimestampFromPoint),
-    ...projectedTimestamps
-  ]);
+
+  if (!isClampAreaHidden) {
+    const projectedPoints = projections.flatMap(projection => projection.values);
+    const projectedTimestamps = projectedPoints.map(getTimestampFromPoint);
+    xExtent = d3.extent([
+      ...historicalTimeseries.map(getTimestampFromPoint),
+      ...projectedTimestamps
+    ]) as [number, number];
+  } else {
+    // if clamps are hidden, go up to the first projected points (basically projection_start)
+    xExtent = d3.extent([
+      ...historicalTimeseries.map(getTimestampFromPoint),
+      modelSummary.parameter.projection_start
+    ]) as [number, number];
+  }
   const yExtent = d3.extent([minValue, maxValue]);
   return [xExtent, yExtent];
 };
@@ -422,8 +432,7 @@ const renderStaticElements = (
 
   // Render rectangle to delineate between historical data and projection data
   const historicalStartTimestamp = historicalTimeseries[0].timestamp;
-  const historicalEndTimestamp =
-    historicalTimeseries[historicalTimeseries.length - 1].timestamp;
+  const historicalEndTimestamp = getTimestampAfterMonths(projectionStartTimestamp, -monthsPerTimestep);
   groupElement
     .append('rect')
     .attr('y', offsetFromTop)
@@ -434,8 +443,7 @@ const renderStaticElements = (
       xScale(historicalEndTimestamp) - xScale(historicalStartTimestamp)
     )
     .attr('stroke', 'none')
-    .attr('fill', HISTORICAL_DATA_COLOR)
-    .attr('fill-opacity', HISTORICAL_RANGE_OPACITY);
+    .attr('fill', historicalDataUncertaintyColor(historicalTimeseries, projectionStartTimestamp, timeScale));
 
   // Render major ticks
   // "Now" is one timestep before projection start
