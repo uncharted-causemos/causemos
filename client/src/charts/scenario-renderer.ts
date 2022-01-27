@@ -247,9 +247,11 @@ function renderScenarioProjections(
     xScale(projection_start);
 
   ridgelinePoints.forEach(({ label, ridgeline, timestamp, monthsAfterNow }) => {
-    // Calculate context range for each timeslice
+    // Calculate context range for each timeslice, unless this is an abstract
+    //  node where the analyst hasn't filled in the historical data.
+    const hideContextRanges = indicator_time_series.length < 4;
     const contextRange = calculateTypicalChangeBracket(
-      indicator_time_series,
+      hideContextRanges ? [] : indicator_time_series,
       monthsAfterNow,
       projection_start
     );
