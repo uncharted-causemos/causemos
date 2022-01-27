@@ -432,8 +432,7 @@ const renderStaticElements = (
 
   // Render rectangle to delineate between historical data and projection data
   const historicalStartTimestamp = historicalTimeseries[0].timestamp;
-  const historicalEndTimestamp =
-    historicalTimeseries[historicalTimeseries.length - 1].timestamp;
+  const historicalEndTimestamp = getTimestampAfterMonths(projectionStartTimestamp, -monthsPerTimestep);
   groupElement
     .append('rect')
     .attr('y', offsetFromTop)
