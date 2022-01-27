@@ -15,6 +15,8 @@ import {
 } from '@/types/CAG';
 import { getMonthsPerTimestepFromTimeScale, getStepCountFromTimeScale } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
+import { TimeScale } from '@/types/Enums';
+import { TimeseriesPoint } from '@/types/Timeseries';
 
 const MODEL_STATUS = {
   NOT_REGISTERED: 0,
@@ -790,6 +792,36 @@ const updateScenarioSensitivityResult = async (
   });
 };
 
+const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
+const HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE = '#F4EFDB';
+const HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE = '#F7E6AA';
+
+//
+// Yellow background for uncertaint in historical data (lack of data)
+//
+// - Do a rough calculation of how far back is the last data point from projection_start
+// - Penalize short historical data (e.g default Abstract indicator)
+export const historicalDataUncertaintyColor = (timeseries: TimeseriesPoint[], projectionStart: number, timeScale: TimeScale) => {
+  let background = HISTORY_BACKGROUND_COLOR;
+  const gap = projectionStart - timeseries[timeseries.length - 1].timestamp;
+  const approxMonth = 30 * 24 * 60 * 60 * 1000;
+  if (gap > 0) {
+    if (timeScale === TimeScale.Months) {
+      if (gap / approxMonth > 4) {
+        background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
+      }
+    } else if (timeScale === TimeScale.Years) {
+      if (gap / (approxMonth * 12) > 4) {
+        background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
+      }
+    }
+  }
+  if (timeseries.length < 4) {
+    background = HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE;
+  }
+  return background;
+};
+
 export default {
   getProjectModels,
   getSummary,
@@ -843,6 +875,7 @@ export default {
 
   cleanConstraints,
 
+  historicalDataUncertaintyColor,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,
