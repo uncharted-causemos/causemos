@@ -77,13 +77,6 @@ export default defineComponent({
     };
   },
   data: () => ({
-    // States
-    isEditIndicatorModalOpen: false,
-    isEditConstraintsOpen: false,
-
-    // Data for drilldown
-    selectedStatements: [],
-
     // Core data relating to model and projections
     modelSummary: null as CAGModelSummary | null,
     modelComponents: null as CAGGraph | null,
@@ -93,7 +86,7 @@ export default defineComponent({
     isTraining: false,
     trainingPercentage: 0,
     refreshTimer: 0,
-    currentScenarioName: '' as string
+    currentScenarioName: ''
   }),
   computed: {
     ...mapGetters({
@@ -111,21 +104,9 @@ export default defineComponent({
     },
     currentEngine(): string {
       return this.modelSummary?.parameter?.engine ?? 'dyse';
-    },
-    projectionSteps(): number {
-      if (this.modelSummary === null) return 12;
-      return getStepCountFromTimeScale(this.modelSummary.parameter.time_scale);
-    },
-    onMatrixTab(): boolean {
-      return !!(this.$route.query && this.$route.query.activeTab === 'matrix');
     }
   },
   watch: {
-    // selectedScenarioId() {
-    //   if (this.onMatrixTab) {
-    //     this.fetchSensitivityAnalysisResults();
-    //   }
-    // },
     currentCAG() {
       this.refresh();
     },
@@ -300,6 +281,9 @@ export default defineComponent({
       this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
     },
     async refresh() {
+      // Used to kick off scenario refreshes from a training state
+      const trainingInPreviousCycle = this.isTraining === true;
+
       this.isTraining = false;
       this.enableOverlay('Loading');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
@@ -395,18 +379,14 @@ export default defineComponent({
       }
 
       // 5. Rebuild scenarios' result if necessary
-      if (hasEmptyScenarioResults) {
+      // If we had training in the previous cycle, it means most likely analysts want to rerfresh scenarios anyway.
+      if (hasEmptyScenarioResults || trainingInPreviousCycle === true) {
         scenarios = await this.runScenarios(scenarios);
       }
 
       // 6. Finally we are done and kick off the relevant events
       this.setSelectedScenarioId(scenarioId);
       this.scenarios = scenarios;
-
-      // FIXME: Restore sensitivity insight
-      // if (this.onMatrixTab) {
-      //   this.fetchSensitivityAnalysisResults();
-      // }
 
       this.updateDataState();
     },
@@ -427,9 +407,6 @@ export default defineComponent({
         nodesCount: this.modelComponents.nodes.length
       };
       this.setDataState(dataState);
-    },
-    closeEditIndicatorModal() {
-      this.isEditIndicatorModalOpen = false;
     },
     async runScenariosWrapper() {
       if (!this.scenarios) return;
@@ -452,10 +429,6 @@ export default defineComponent({
       }
       if (this.modelComponents === null) {
         console.error('Failed to run scenario, modelComponents is null.');
-        return [];
-      }
-      if (this.projectionSteps === undefined) {
-        console.error('Failed to run scenario, projectionSteps is undefined.');
         return [];
       }
 
@@ -557,9 +530,6 @@ export default defineComponent({
       // 4. Cycle the scenarios to force reactive to trigger
       this.disableOverlay();
       return scenarios;
-    },
-    closeEditConstraints() {
-      this.isEditConstraintsOpen = false;
     },
     _getGraphDensity() {
       if (_.isNil(this.modelComponents)) return 1;
