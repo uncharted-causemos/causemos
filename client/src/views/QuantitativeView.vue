@@ -54,7 +54,6 @@ import modelService from '@/services/model-service';
 import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { getStepCountFromTimeScale } from '@/utils/time-scale-util';
 import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
