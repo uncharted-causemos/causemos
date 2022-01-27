@@ -41,10 +41,7 @@ const convertDistributionToRidgeline = (
   const thresholds = [
     ...Array.from({ length: binCount }, (d, i) => min + i * binWidth)
   ];
-  const bins = d3
-    .bin()
-    .domain([min, max])
-    .thresholds(thresholds);
+  const bins = d3.bin().domain([min, max]).thresholds(thresholds);
   const histogram = bins(distribution).map(bin => {
     const lower = bin.x0 ?? 0;
     const upper = bin.x1 ?? 1;
@@ -126,10 +123,10 @@ export const convertDistributionTimeseriesToRidgelines = (
 
 export const calculateTypicalChangeBracket = (
   historicalData: TimeseriesPoint[],
-  intervalLengthInMonths: number
+  intervalLengthInMonths: number,
+  projectionStart: number
 ) => {
   if (historicalData.length === 0) return null;
-  const latestHistoricalValue = _.last(historicalData)?.value ?? 0;
   const changes: number[] = [];
   const historicalDataMap = new Map<number, number>();
   // As an optimization, convert historical data into a map for faster lookup
@@ -151,5 +148,9 @@ export const calculateTypicalChangeBracket = (
     // No pair of points was found with the correct interval length
     return null;
   }
+  const dataBeforeProjectionStart = historicalData.filter(
+    point => point.timestamp < projectionStart
+  );
+  const latestHistoricalValue = _.last(dataBeforeProjectionStart)?.value ?? 0;
   return { min: latestHistoricalValue + min, max: latestHistoricalValue + max };
 };

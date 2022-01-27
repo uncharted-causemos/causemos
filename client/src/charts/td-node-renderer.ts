@@ -304,6 +304,7 @@ export default function(
         historicalTimeseries,
         time_scale,
         PADDING_TOP,
+        projection_start,
         xScaleFocus,
         yScaleFocus
       );
@@ -535,6 +536,7 @@ const renderProjectionRidgelines = (
   historicalTimeseries: TimeseriesPoint[],
   timeScale: TimeScale,
   offsetFromTop: number,
+  projectionStartTimestamp: number,
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>
 ) => {
@@ -566,7 +568,8 @@ const renderProjectionRidgelines = (
     const { ridgeline, timestamp, monthsAfterNow } = ridgelineWithMetadata;
     const contextRange = calculateTypicalChangeBracket(
       historicalTimeseries,
-      monthsAfterNow
+      monthsAfterNow,
+      projectionStartTimestamp
     );
     const elem = renderRidgelines(
       ridgeLineGroup as any,

@@ -252,7 +252,8 @@ function renderScenarioProjections(
     const isAbstractNode = indicator_id === null;
     const contextRange = calculateTypicalChangeBracket(
       isAbstractNode ? [] : indicator_time_series,
-      monthsAfterNow
+      monthsAfterNow,
+      projection_start
     );
     // Render one ridgeline for each timeslice
     const containerElementSelection = renderRidgelines(
