@@ -212,7 +212,6 @@ function renderScenarioProjections(
     scenarios,
     time_scale,
     projection_start,
-    indicator_id,
     indicator_time_series
   } = nodeScenarioData;
   const projection = nodeScenarioData.scenarios.find(
@@ -248,10 +247,9 @@ function renderScenarioProjections(
     xScale(projection_start);
 
   ridgelinePoints.forEach(({ label, ridgeline, timestamp, monthsAfterNow }) => {
-    // Calculate context range forr each timeslice
-    const isAbstractNode = indicator_id === null;
+    // Calculate context range for each timeslice
     const contextRange = calculateTypicalChangeBracket(
-      isAbstractNode ? [] : indicator_time_series,
+      indicator_time_series,
       monthsAfterNow,
       projection_start
     );
