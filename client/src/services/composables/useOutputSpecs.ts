@@ -3,7 +3,6 @@ import { computed } from '@vue/runtime-core';
 import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId } from '@/types/Runoutput';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 import { ModelRun } from '@/types/ModelRun';
 import { DataTransform } from '@/types/Enums';
 
@@ -15,9 +14,9 @@ export default function useOutputSpecs(
   selectedTransform: Ref<DataTransform>,
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
+  activeFeature: Ref<string>,
   modelRunData?: Ref<ModelRun[]>
 ) {
-  const { activeFeature } = useActiveDatacubeFeature(metadata);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
     const modelMetadata = metadata.value;
     if (

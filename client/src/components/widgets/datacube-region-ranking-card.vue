@@ -81,6 +81,7 @@ import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
@@ -294,6 +295,8 @@ export default defineComponent({
         immediate: true
       });
 
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
+
     const {
       datacubeHierarchy,
       selectedRegionIds
@@ -302,7 +305,8 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      ref([])
+      ref([]), // initialSelectedRegionIds
+      activeFeature
     );
 
     const selectedTimestamp = ref<number | null>(null);
@@ -325,6 +329,7 @@ export default defineComponent({
       ref(new Set()),
       ref([]),
       ref(false),
+      activeFeature,
       selectedScenarios
     );
 
@@ -371,7 +376,8 @@ export default defineComponent({
       selectedTemporalResolution,
       ref(DataTransform.None), // Transforms are NOT used for region ranking
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      activeFeature
     );
 
     const {
