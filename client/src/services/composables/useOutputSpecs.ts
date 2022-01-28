@@ -15,13 +15,15 @@ export default function useOutputSpecs(
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
   activeFeature: Ref<string>,
-  modelRunData?: Ref<ModelRun[]>
+  modelRunData?: Ref<ModelRun[]>,
+  breakdownOption?: Ref<string | null>
 ) {
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
     const modelMetadata = metadata.value;
     if (
       selectedModelId.value === null ||
-      modelMetadata === null
+      modelMetadata === null ||
+      breakdownOption?.value === 'variable'
     ) {
       return [];
     }
