@@ -21,7 +21,7 @@
             }"
             v-tooltip="datacubeSection.header"
           >
-            <strong>{{ timeseries.name }}</strong>
+            <strong>{{ timeseries.name.length > MAX_TIMESERIES_LABEL_CHAR_LENGTH ? timeseries.name.substring(0, MAX_TIMESERIES_LABEL_CHAR_LENGTH) + '...' : timeseries.name }}</strong>
             <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
           </div>
         </div>
@@ -40,6 +40,7 @@ import { defineComponent, PropType, onMounted, ref, watch, toRefs, computed } fr
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { TemporalResolutionOption } from '@/types/Enums';
 import { chartValueFormatter } from '@/utils/string-util';
+import { MAX_TIMESERIES_LABEL_CHAR_LENGTH } from '@/utils/timeseries-util';
 
 const RESIZE_DELAY = 15;
 
@@ -188,7 +189,8 @@ export default defineComponent({
       timestampFormatter,
       dataAtSelectedTimestamp,
       valueFormatter,
-      includeSectionHeaders
+      includeSectionHeaders,
+      MAX_TIMESERIES_LABEL_CHAR_LENGTH
     };
   }
 });
