@@ -377,9 +377,11 @@
                       :map-bounds="mapBounds"
                       :camera-options="mapCameraOptions"
                       :region-data="regionalData"
+                      :raw-data="rawData"
                       :selected-region-ids="allActiveRegionIds"
                       :admin-layer-stats="adminLayerStats"
                       :grid-layer-stats="gridLayerStats"
+                      :points-layer-stats="pointsLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
                       :color-options="mapColorOptions"
@@ -544,7 +546,7 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 import { getInsightById } from '@/services/insight-service';
-import { getRawTimeseriesData } from '@/services/runoutput-service';
+import { getRawOutputGeoJsonByTimestamp } from '@/services/runoutput-service';
 
 import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
@@ -563,7 +565,7 @@ import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datac
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import { OutputSpecWithId } from '@/types/Runoutput';
+import { OutputSpecWithId, RawOutputGeoJson } from '@/types/Runoutput';
 
 import {
   COLOR,
@@ -591,7 +593,8 @@ import {
   BASE_LAYER,
   DATA_LAYER,
   DATA_LAYER_TRANSPARENCY,
-  SOURCE_LAYERS
+  SOURCE_LAYERS,
+  getMapSourceLayer
 } from '@/utils/map-util-new';
 
 import { addModelRunsTag, createModelRun, removeModelRunsTag, updateModelRun } from '@/services/new-datacube-service';
@@ -1520,18 +1523,23 @@ export default defineComponent({
     );
 
     const { activeFeature } = useActiveDatacubeFeature(metadata);
-    watchEffect(() => {
+    const emptyRawGeojson: RawOutputGeoJson = {
+      type: 'FeatureCollection',
+      features: []
+    };
+    const rawData = ref<RawOutputGeoJson>(emptyRawGeojson);
+    watchEffect(async () => {
       const dataId = metadata.value?.data_id;
       const runId = selectedScenarioIds.value[0];
       const outputVariable = activeFeature.value;
+      const timestamp = selectedTimestamp.value;
 
-      if (!dataId || !runId || !outputVariable) return;
-
-      // const rawData = getRawOutputData({ dataId, runId, outputVariable });
-      const rawData = getRawTimeseriesData({ dataId, runId, outputVariable, spatialAgg: 'mean', regionId: 'Ethiopia__Amhara' });
-      rawData.then(data => {
-        console.log(data);
-      });
+      if (!dataId || !runId || !outputVariable || timestamp === null) {
+        rawData.value = emptyRawGeojson;
+        return;
+      }
+      const data = await getRawOutputGeoJsonByTimestamp({ dataId, runId, outputVariable, timestamp });
+      rawData.value = data;
     });
 
 
@@ -1610,8 +1618,8 @@ export default defineComponent({
       recalculateGridMapDiffStats,
       adminLayerStats,
       gridLayerStats,
-      mapLegendData,
-      mapSelectedLayer
+      pointsLayerStats,
+      mapLegendData
     } = useAnalysisMapStats(
       outputSpecs,
       regionalData,
@@ -1621,8 +1629,13 @@ export default defineComponent({
       showPercentChange,
       mapColorOptions,
       activeReferenceOptions,
-      breakdownOption
+      breakdownOption,
+      rawData
     );
+
+    const mapSelectedLayerId = computed(() => {
+      return getMapSourceLayer(selectedDataLayer.value, selectedAdminLevel.value).layerId;
+    });
 
     const {
       onSyncMapBounds,
@@ -1778,7 +1791,7 @@ export default defineComponent({
       mapColorOptions,
       mapLegendData,
       mapReady,
-      mapSelectedLayer,
+      mapSelectedLayerId,
       modelRunsSearchData,
       newRunsMode,
       onMapLoad,
@@ -1789,11 +1802,13 @@ export default defineComponent({
       onUpdateScenarioSelection,
       ordinalDimensionNames,
       outputSpecs,
+      pointsLayerStats,
       potentialScenarios,
       potentialScenarioCount,
       projectType,
       preGenDataItems,
       qualifierBreakdownData,
+      rawData,
       recalculateGridMapDiffStats,
       regionalData,
       // regionsToSubregions,
@@ -1921,8 +1936,8 @@ export default defineComponent({
     // to the list of selected layers.
     allActiveLayerIds(): string[] {
       return this.hasRegionalReferenceSeries
-        ? [SOURCE_LAYERS[0].layerId, this.mapSelectedLayer]
-        : [this.mapSelectedLayer];
+        ? [SOURCE_LAYERS[0].layerId, this.mapSelectedLayerId]
+        : [this.mapSelectedLayerId];
     },
 
     // If we have active regional reference series, then we need to provide region ids for all active
@@ -1936,9 +1951,10 @@ export default defineComponent({
   },
   methods: {
     getSelectedLayer(id: string): string {
-      return this.isReferenceSeries(id) && this.breakdownOption === SpatialAggregationLevel.Region
+      const layerId = this.isReferenceSeries(id) && this.breakdownOption === SpatialAggregationLevel.Region
         ? SOURCE_LAYERS[0].layerId
-        : this.mapSelectedLayer;
+        : this.mapSelectedLayerId;
+      return layerId;
     },
     isReferenceSeries(id: string): boolean {
       return this.referenceOptions.filter((item) => item.id === id).length > 0;

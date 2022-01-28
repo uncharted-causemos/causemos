@@ -2,22 +2,41 @@ import _ from 'lodash';
 import API from '@/api/api';
 import { DatacubeGeography } from '@/types/Common';
 import { AdminLevel, SpatialAggregationLevel } from '@/types/Enums';
-import { OutputSpec, OutputSpecWithId, RegionalAggregations, RegionAgg, RegionalAggregation, OutputStatWithZoom, OutputStatsResult } from '@/types/Runoutput';
+import {
+  OutputSpec,
+  OutputSpecWithId,
+  RegionalAggregations,
+  RegionAgg,
+  RegionalAggregation,
+  OutputStatWithZoom,
+  OutputStatsResult,
+  RawOutputDataPoint,
+  RawOutputGeoJson
+} from '@/types/Runoutput';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { TimeseriesPoint } from '@/types/Timeseries';
 
-const filterRawDataByRegionId = (data: any, regionId: string) => {
+const filterRawDataByRegionId = (data: RawOutputDataPoint[], regionId: string): RawOutputDataPoint[] => {
   if (!regionId) return data;
   const adminLevels = regionId.split(REGION_ID_DELIMETER);
   const level = adminLevels.length - 1;
-  return data.filter((d: any) => {
-    const macthing = [d.country === adminLevels[0], d.admin1 === adminLevels[1], d.admin2 === adminLevels[2], d.admin3 === adminLevels[3]];
-    return macthing.slice(0, level + 1).reduce((prev, cur) => prev && cur, true);
+  return data.filter(d => {
+    const matches = [d.country === adminLevels[0], d.admin1 === adminLevels[1], d.admin2 === adminLevels[2], d.admin3 === adminLevels[3]];
+    return matches.slice(0, level + 1).reduce((prev, cur) => prev && cur, true);
   });
 };
 
-export const getRawOutputData = async (param: { dataId: string, runId: string, outputVariable: string}): Promise<any> => {
-  // Fetching raw data is expensive, so cache the request and retrieve the result for the same request from the cache.
+export const getRawOutputData = async (
+  param: {
+    dataId: string,
+    runId: string,
+    outputVariable: string
+  }
+): Promise<RawOutputDataPoint[]> => {
+  // Fetching raw data is expensive and this function can be called by multiple functions in multiple places
+  // simultaneously with same parameter set, cache the request and retrieve the result for the same request
+  // from the cache to avoid overhead.
   const promise = API.get('/maas/output/raw-data', {
     params: {
       data_id: param.dataId,
@@ -29,31 +48,55 @@ export const getRawOutputData = async (param: { dataId: string, runId: string, o
   return res.data;
 };
 
-export const getRawTimeseriesData = async (param: { dataId: string, runId: string, outputVariable: string, spatialAgg: string, regionId: string}): Promise<any> => {
+export const getRawTimeseriesData = async (
+  param: {
+    dataId: string,
+    runId: string,
+    outputVariable: string,
+    spatialAgg: string,
+    regionId: string
+  }
+): Promise<TimeseriesPoint[]> => {
   const rawData = await getRawOutputData(param);
+  console.log('raw data');
+  console.log(rawData);
   const filteredData = filterRawDataByRegionId(rawData, param.regionId);
 
   // Aggregate spatially and derive timeseries data
   const dataByTs = _.groupBy(filteredData, 'timestamp');
-  const timeseries = Object.values(dataByTs).map((dataPoints: any) => {
-    const sum = dataPoints.reduce((prev: any, cur: any) => prev + cur.value, 0);
+  const timeseries = Object.values(dataByTs).map(dataPoints => {
+    const sum = dataPoints.reduce((prev, cur) => prev + cur.value, 0);
     return { timestamp: dataPoints[0].timestamp, value: param.spatialAgg === 'sum' ? sum : sum / dataPoints.length };
   });
   const result = _.sortBy(timeseries, 'timestamp');
   return result;
 };
 
-export const getRawOutputDataByTimestamp = async (param: { dataId: string, runId: string, outputVariable: string, timestamp: number }) => {
+export const getRawOutputDataByTimestamp = async (
+  param: {
+    dataId: string,
+    runId: string,
+    outputVariable: string,
+    timestamp: number
+  }
+): Promise<RawOutputDataPoint[]> => {
   const rawData = await getRawOutputData(param);
-  return rawData.filter((d: any) => d.timestamp === param.timestamp);
+  return rawData.filter(d => d.timestamp === param.timestamp);
 };
 
-export const getRawOutputGeoJsonByTimestamp = async (param: { dataId: string, runId: string, outputVariable: string, timestamp: number }) => {
-  const data = await getRawOutputDataByTimestamp(param);
+export const getRawOutputGeoJsonByTimestamp = async (
+  param: {
+    dataId: string,
+    runId: string,
+    outputVariable: string,
+    timestamp: number
+  }
+): Promise<RawOutputGeoJson> => {
   const geoJson = {
     type: 'FeatureCollection',
-    features: <any>[]
-  };
+    features: []
+  } as RawOutputGeoJson;
+  const data = await getRawOutputDataByTimestamp(param);
   for (const d of data) {
     geoJson.features.push({
       type: 'Feature',

@@ -22,7 +22,7 @@
         :before-id="firstSymbolLayerId"
       />
       <wm-map-vector
-        v-if="vectorSource && colorLayer"
+        v-if="vectorSource && vectorColorLayer"
         :key="layerRerenderTrigger"
         :source="vectorSource"
         :source-id="vectorSourceId"
@@ -30,17 +30,17 @@
         :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="colorLayerId"
-        :layer="colorLayer"
+        :layer="vectorColorLayer"
         :before-id="firstSymbolLayerId"
         @add-layer="onAddLayer"
         @update-source="onUpdateSource"
       />
       <wm-map-geojson
-        v-if="isPointsMap"
+        v-if="isPointsMap && pointsColorLayer"
         :source-id="pointsSource"
         :source="rawData"
         :layer-id="pointsLayerId"
-        :layer="colorLayer"
+        :layer="pointsColorLayer"
       />
       <template v-if="showPreRenderedViz">
         <wm-map-image
@@ -198,48 +198,7 @@ export default {
       type: Object,
       default: () => ({
         type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [13.3567762374878, 39.7517890930176] },
-            properties: { timestamp: '1388534400000', value: 800 }
-          },
-          {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [13.3567762374878, 39.7517890930176] },
-            properties: { timestamp: '1388534400000', value: 600 }
-          },
-          {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [13.3567762374878, 39.7517890930176] },
-            properties: { timestamp: '1388534400000', value: 300 }
-          },
-          {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [13.3567762374878, 39.7517890930176] },
-            properties: { timestamp: '1388534400000', value: 100 }
-          },
-          {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [39.7517890930176, 13.3567762374878] },
-            properties: { timestamp: '1388534400000', value: 400 }
-          },
-          {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [39.0012016296387, 13.6231002807617] },
-            properties: { timestamp: '1388534400000', value: 200 }
-          },
-          {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [39.8567008972168, 8.59323978424072] },
-            properties: { timestamp: '1388534400000', value: 400 }
-          },
-          {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [38.7667007446289, 9.03332996368408] },
-            properties: { timestamp: '1388534400000', value: 900 }
-          }
-        ]
+        features: []
       })
     },
     selectedRegionIds: {
@@ -251,6 +210,10 @@ export default {
       default: () => undefined
     },
     gridLayerStats: {
+      type: Object,
+      default: () => undefined
+    },
+    pointsLayerStats: {
       type: Object,
       default: () => undefined
     },
@@ -279,7 +242,8 @@ export default {
   data: () => ({
     baseLayer: undefined,
     layerRerenderTrigger: undefined, // This is used specifically to trigger data layer re-rendering.
-    colorLayer: undefined,
+    vectorColorLayer: undefined,
+    pointsColorLayer: undefined,
     hoverId: undefined,
     map: undefined,
     curZoom: 0,
@@ -395,6 +359,9 @@ export default {
     regionData() {
       this.debouncedRefresh();
     },
+    rawData() {
+      this.debouncedRefresh();
+    },
     selectedLayer() {
       this.debouncedRefresh();
     },
@@ -402,6 +369,9 @@ export default {
       this.debouncedRefresh();
     },
     gridLayerStats() {
+      this.debouncedRefresh();
+    },
+    pointsLayerStats() {
       this.debouncedRefresh();
     },
     selectedRegionIds() {
@@ -506,7 +476,9 @@ export default {
       }
     },
     getPointsMapExtent() {
-      return { min: 200, max: 900 };
+      console.log('points layer stats');
+      console.log(this.pointsLayerStats);
+      return this.pointsLayerStats?.global.all;
     },
     refreshLayers() {
       const useFeatureState = this.isAdminMap;
@@ -516,14 +488,16 @@ export default {
     refreshColorLayer(useFeatureState = false) {
       this.extent = this.getExtent();
       if (!this.extent) {
-        this.colorLayer = undefined;
+        this.vectorColorLayer = undefined;
         return;
       }
       const { min, max } = this.extent;
       const relativeToProp = this.baselineSpec?.id;
-      this.colorLayer = this.isPointsMap
-        ? createPointsLayerStyle('value', [min, max], this.colorOptions)
-        : createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
+      if (this.isPointsMap) {
+        this.pointsColorLayer = createPointsLayerStyle('value', [min, max], this.colorOptions);
+      } else {
+        this.vectorColorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
+      }
     },
     setFeatureStates() {
       if (!this.map || !this.isAdminMap) return;
@@ -624,7 +598,7 @@ export default {
       });
     },
     updateLayerFilter() {
-      if (!this.colorLayer) return;
+      if (!this.vectorColorLayer) return;
       // Merge filter for the current map and all globally applied filters together
       if (this.isGridMap) {
         const filter = this.filters.reduce((prev, cur) => {
@@ -635,7 +609,7 @@ export default {
         if (relativeToProp) filter.unshift(['has', relativeToProp]);
         const hasProperty = ['has', this.valueProp];
         const notNaN = ['!=', 'NaN', ['to-string', ['get', this.valueProp]]];
-        this.colorLayer.filter = ['all', hasProperty, notNaN, ...filter];
+        this.vectorColorLayer.filter = ['all', hasProperty, notNaN, ...filter];
       } else {
         this.refreshLayers();
       }

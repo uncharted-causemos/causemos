@@ -267,11 +267,11 @@ export function createPointsLayerStyle(property, dataDomain, colorOptions, filte
   return {
     type: 'circle',
     paint: {
-      'circle-radius': 10,
+      'circle-radius': 5,
       'circle-color': cExpr,
       'circle-stroke-color': cExpr,
       'circle-opacity': colorOptions.opacity,
-      'circle-stroke-width': 2
+      'circle-stroke-width': 1
     },
     filter: filter
   };

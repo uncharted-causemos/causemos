@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
+import { OutputStatsResult, RegionalAggregations, RawOutputGeoJson } from '@/types/Runoutput';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
 import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
@@ -24,7 +24,7 @@ export enum DATA_LAYER_TRANSPARENCY {
 export enum DATA_LAYER {
   ADMIN = 'admin',
   TILES = 'tiles',
-  RAW = 'raw'
+  RAW = 'dot'
 }
 
 export function adminLevelToString(level: number) {
@@ -69,6 +69,24 @@ export const SOURCE_LAYERS = [
     sourceBaseUrl: ''
   }
 ];
+
+export function getSourceLayerById(layerId: SOURCE_LAYER) {
+  return SOURCE_LAYERS.find(l => l.layerId === layerId) || SOURCE_LAYERS[0];
+}
+
+export function getMapSourceLayer (dataLayer: DATA_LAYER, adminLevel = 0) {
+  const sLayers = [SOURCE_LAYER.COUNTRY, SOURCE_LAYER.ADMIN1, SOURCE_LAYER.ADMIN2, SOURCE_LAYER.ADMIN3];
+  switch (dataLayer) {
+    case DATA_LAYER.ADMIN:
+      return getSourceLayerById(sLayers[adminLevel]);
+    case DATA_LAYER.TILES:
+      return getSourceLayerById(SOURCE_LAYER.GRID);
+    case DATA_LAYER.RAW:
+      return getSourceLayerById(SOURCE_LAYER.POINTS);
+    default:
+      return getSourceLayerById(sLayers[adminLevel]);
+  }
+}
 
 export function stringToAdminLevel(geoString: string) {
   const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
@@ -159,6 +177,24 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
   return {
     global: globalStats,
     baseline,
+    difference: {}
+  };
+}
+
+// Compute min/max stats for raw data
+export function computeRawDataStats(data: RawOutputGeoJson): AnalysisMapStats {
+  const globalStats: MapLayerStats = {};
+  const values = [];
+  for (const d of data.features) {
+    values.push(d.properties.value);
+  }
+  if (values.length) {
+    globalStats.all = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
+  }
+  return {
+    global: globalStats,
+    // baseline and difference is not applicable with raw data
+    baseline: {},
     difference: {}
   };
 }
