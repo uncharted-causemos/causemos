@@ -15,7 +15,8 @@ export default function isSplitByQualifierActive(breakdownOption: string | null)
   if (
     breakdownOption === null ||
     breakdownOption === SpatialAggregationLevel.Region ||
-    breakdownOption === TemporalAggregationLevel.Year
+    breakdownOption === TemporalAggregationLevel.Year ||
+    breakdownOption === 'variable'
   ) return false;
   return true;
 }
