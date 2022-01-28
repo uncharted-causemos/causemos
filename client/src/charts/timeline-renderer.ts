@@ -49,6 +49,8 @@ const DASHED_LINE = {
 const SELECTED_TIMESTAMP_WIDTH = 2;
 const SELECTABLE_TIMESTAMP_OPACITY = 0.5;
 
+const TIMESERIES_HEADER_SEPARATOR = ' | ';
+
 // A collection of elements that are used to dynamically show details about the selected
 //  timestamp
 // - selectedTimestampGroup: the vertical line and label to show the timestamp itself
@@ -60,7 +62,6 @@ interface TimestampElements {
 }
 
 // FIXME: range selection/brushing is not working
-// FIXME: in the Overlay view, the hover info is duplicated
 export default function(
   selection: D3Selection,
   timeseriesList: Timeseries[],
@@ -287,7 +288,7 @@ function generateSelectableTimestamps(
   allTimestamps.forEach(timestamp => {
     timeseriesList.forEach(timeseries => {
       const { color, name, points } = timeseries;
-      const ownerDatacube = timeseriesToDatacubeMap[timeseries.id].datacubeName; // FIXME: consider adding output name in the header
+      const ownerDatacube = timeseriesToDatacubeMap[timeseries.id].datacubeName + TIMESERIES_HEADER_SEPARATOR + timeseriesToDatacubeMap[timeseries.id].datacubeOutputVariable;
       const pointAtTimestamp = points.find(p => p.timestamp === timestamp);
       if (!valuesAtEachTimestamp.has(timestamp)) {
         valuesAtEachTimestamp.set(timestamp, []);
@@ -387,7 +388,7 @@ function generateSelectableTimestamps(
     Object.keys(timeseriesToDatacubeMap).forEach((ownerDatacubeId) => {
       // header; datacube name
       yPosition = TOOLTIP_LINE_HEIGHT * lineCounter;
-      const header = timeseriesToDatacubeMap[ownerDatacubeId].datacubeName;
+      const header = timeseriesToDatacubeMap[ownerDatacubeId].datacubeName + TIMESERIES_HEADER_SEPARATOR + timeseriesToDatacubeMap[ownerDatacubeId].datacubeOutputVariable;
       if (includeSectionHeaders) {
         if (yPosition < (markerHeight - TOOLTIP_LINE_HEIGHT)) {
           tooltip
