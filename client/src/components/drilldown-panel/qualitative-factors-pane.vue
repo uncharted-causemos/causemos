@@ -326,8 +326,13 @@ export default {
       projectService.getProjectOntologyComposition(this.project, this.selectedItem.concept).then(d => {
         this.ontologyComposition = d;
       });
-      getSimilarConcepts(this.project, this.selectedItem.components[0] ?? this.selectedItem.concept).then(d => {
-        this.similarConcepts = d.similar_concepts;
+
+      // for each component concept get similar concepts
+      const allSimilarConcepts = this.componentConcepts.map(concept => getSimilarConcepts(this.project, concept));
+      Promise.all(allSimilarConcepts).then((values) => {
+        const allSc = values.reduce((acc, val) => acc.concat(val.similar_concepts), []);
+        // filter those that match the existing concepts
+        this.similarConcepts = allSc.filter(sc => !this.componentConcepts.includes(sc.concept));
       });
     },
     openDocumentModal(evidence) {

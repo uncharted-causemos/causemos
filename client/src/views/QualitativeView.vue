@@ -1206,6 +1206,11 @@ export default defineComponent({
 
       this.showModalRename = false;
       await modelService.renameNode(this.currentCAG, this.renameNodeId, newName);
+
+      // if we have a selected node and it's the same as the one being renamed, update the label there too.
+      if (this.selectedNode && this.selectedNode.id === this.renameNodeId) {
+        this.selectedNode.concept = newName;
+      }
       this.refresh();
     },
     openRenameModal(node: NodeParameter) {
