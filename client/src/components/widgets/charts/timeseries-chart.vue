@@ -20,10 +20,10 @@
       <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
     </div>
   </div>
-  <div style="justify-content: flex-end; display:flex" >
-    <slot name="timeseries-footer" />
-    <div style="text-align: right">
-      {{footnotes}} foo foo foo foo
+  <div class="timeseries-footer" >
+    <slot name="timeseries-footer-contents" />
+    <div v-if="footnotes" style="text-align: right">
+      {{footnotes}}
     </div>
   </div>
 </template>
@@ -239,6 +239,11 @@ export default defineComponent({
 
 .timestamp {
   color: $selected-dark
+}
+
+.timeseries-footer {
+  justify-content: flex-end;
+  display:flex
 }
 
 ::v-deep(.xAxis .domain) {
