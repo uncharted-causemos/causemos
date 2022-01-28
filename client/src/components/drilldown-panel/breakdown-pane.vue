@@ -136,6 +136,28 @@
         </p>
       </template>
     </aggregation-checklist-pane>
+    <aggregation-checklist-pane
+      ref="variable_ref"
+      v-if="isOutputVariableBreakdownDataValid"
+      class="checklist-section"
+      :aggregation-level-count="Object.keys(outputVariableBreakdownData).length"
+      :aggregation-level="0"
+      :aggregation-level-title="'Variable'"
+      :ordered-aggregation-level-keys="['Variable']"
+      :raw-data="outputVariableBreakdownData"
+      :should-show-deselected-bars="selectedBreakdownOption !== 'variable'"
+      :show-references="false"
+      :allow-collapsing="false"
+      :selected-timeseries-points="selectedTimeseriesPoints"
+      :checkbox-type="
+        selectedBreakdownOption === 'variable'
+          ? 'checkbox'
+          : null
+      "
+      :selected-item-ids="Array.from(selectedBreakdownOutputVariables)"
+      @toggle-is-item-selected="toggleIsOutputVariableSelected"
+    >
+    </aggregation-checklist-pane>
   </div>
 </template>
 
@@ -199,6 +221,10 @@ export default defineComponent({
       type: Object as PropType<BreakdownData | null>,
       default: null
     },
+    outputVariableBreakdownData: {
+      type: Object as PropType<BreakdownData | null>,
+      default: null
+    },
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       default: []
@@ -212,6 +238,10 @@ export default defineComponent({
       default: () => new Set()
     },
     selectedYears: {
+      type: Object as PropType<Set<string>>,
+      default: () => new Set()
+    },
+    selectedBreakdownOutputVariables: {
       type: Object as PropType<Set<string>>,
       default: () => new Set()
     },
@@ -233,6 +263,7 @@ export default defineComponent({
     'toggle-is-region-selected',
     'toggle-is-qualifier-selected',
     'toggle-is-year-selected',
+    'toggle-is-output-variable-selected',
     'toggle-reference-options',
     'set-breakdown-option',
     'request-qualifier-data'
@@ -243,7 +274,8 @@ export default defineComponent({
       temporalBreakdownData,
       selectedBreakdownOption,
       selectedTemporalResolution,
-      qualifierBreakdownData
+      qualifierBreakdownData,
+      outputVariableBreakdownData
     } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
@@ -262,6 +294,10 @@ export default defineComponent({
 
     const toggleIsYearSelected = (title: string, year: string) => {
       emit('toggle-is-year-selected', year);
+    };
+
+    const toggleIsOutputVariableSelected = (title: string, variable: string) => {
+      emit('toggle-is-output-variable-selected', variable);
     };
 
     const toggleReferenceOptions = (value: string) => {
@@ -300,6 +336,13 @@ export default defineComponent({
         Object.keys(temporalBreakdownData.value).length !== 0
     );
 
+    const isOutputVariableBreakdownDataValid = computed(
+      () =>
+
+        outputVariableBreakdownData.value !== null &&
+        Object.keys(outputVariableBreakdownData.value).length !== 0
+    );
+
     const breakdownOptions = computed(() => {
       const options: DropdownItem[] = [];
       options.push({ value: null, displayName: 'none' });
@@ -311,6 +354,10 @@ export default defineComponent({
         options.push({
           value: selectedTemporalAggregationLevel,
           displayName: 'Split by year'
+        });
+        options.push({
+          value: 'variable',
+          displayName: 'Split by variable'
         });
         options.push(
           ...qualifierBreakdownData.value.map(({ id, name }) => ({
@@ -335,6 +382,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsQualifierSelected,
       toggleIsYearSelected,
+      toggleIsOutputVariableSelected,
       toggleReferenceOptions,
       availableAdminLevelTitles,
       timestampFormatter,
@@ -344,6 +392,7 @@ export default defineComponent({
       breakdownOptions,
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
+      isOutputVariableBreakdownDataValid,
       AggregationOption,
       SpatialAggregationLevel,
       TemporalAggregationLevel

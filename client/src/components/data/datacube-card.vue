@@ -315,7 +315,7 @@
             <!-- Data tab content -->
             <div v-if="currentTabView === 'data'" class="column">
               <timeseries-chart
-                v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
+                v-if="visibleTimeseriesData.length > 0 && breakdownOption !== 'variable'"
                 class="timeseries-chart"
                 :timeseries-data="timeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
@@ -324,11 +324,21 @@
                 :unit="timeseriesUnit"
                 @select-timestamp="setSelectedTimestamp"
               />
+              <datacube-comparative-timeline-sync
+                v-if="breakdownOption === 'variable' && selectedBreakdownOutputVariables.size > 0 && globalTimeseries.length > 0"
+                :timeseriesData="globalTimeseries"
+                :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
+                :selected-timestamp="selectedGlobalTimestamp"
+                :selected-timestamp-range="selectedGlobalTimestampRange"
+                :breakdown-option="breakdownOption"
+                @select-timestamp="setSelectedGlobalTimestamp"
+                @select-timestamp-range="setSelectedGlobalTimestampRange"
+              />
               <p
                 v-if="
-                  currentTabView === 'data' &&
                   breakdownOption !== null &&
-                  visibleTimeseriesData.length === 0
+                  ((visibleTimeseriesData.length === 0 && breakdownOption !== 'variable') ||
+                  (selectedBreakdownOutputVariables.size === 0 && breakdownOption === 'variable'))
                 "
               >
                 Please select one or more
@@ -337,11 +347,13 @@
                     ? 'regions'
                     : breakdownOption === TemporalAggregationLevel.Year
                     ? 'years'
+                    : breakdownOption === 'variable'
+                    ? 'variables'
                     : 'qualifier values'
                 }}
                 , or choose 'Split by none'.
               </p>
-              <div class="card-maps-box">
+              <div class="card-maps-box" v-if="breakdownOption !== 'variable'">
                 <div v-if="outputSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
                   <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :isContinuos="isContinuousScale" />
@@ -422,6 +434,7 @@
                   :qualifier-breakdown-data="qualifierBreakdownData"
                   :regional-data="regionalData"
                   :temporal-breakdown-data="temporalBreakdownData"
+                  :output-variable-breakdown-data="outputVariableBreakdownData"
                   :selected-spatial-aggregation="selectedSpatialAggregation"
                   :selected-temporal-aggregation="selectedTemporalAggregation"
                   :selected-temporal-resolution="selectedTemporalResolution"
@@ -432,11 +445,13 @@
                   :selected-breakdown-option="breakdownOption"
                   :selected-timeseries-points="selectedTimeseriesPoints"
                   :selected-years="selectedYears"
+                  :selected-breakdown-output-variables="selectedBreakdownOutputVariables"
                   :reference-options="referenceOptions"
                   :unit="unit"
                   @toggle-is-region-selected="toggleIsRegionSelected"
                   @toggle-is-qualifier-selected="toggleIsQualifierSelected"
                   @toggle-is-year-selected="toggleIsYearSelected"
+                  @toggle-is-output-variable-selected="toggleIsOutputVariableSelected"
                   @toggle-reference-options="toggleReferenceOptions"
                   @set-selected-admin-level="setSelectedAdminLevel"
                   @set-breakdown-option="setBreakdownOption"
@@ -541,8 +556,10 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import useMultiTimeseriesData from '@/services/composables/useMultiTimeseriesData';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { getInsightById } from '@/services/insight-service';
+import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 
 import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
@@ -575,13 +592,14 @@ import {
   validateColorScaleType
 } from '@/utils/colors-util';
 import {
-  DEFAULT_DATE_RANGE_DELIMETER,
-  getFilteredScenariosFromIds,
-  getSelectedOutput,
   getUnitString,
   isIndicator,
   isModel,
-  TAGS
+  getFilteredScenariosFromIds,
+  TAGS,
+  DEFAULT_DATE_RANGE_DELIMETER,
+  getSelectedOutput,
+  getOutputs
 } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
@@ -597,6 +615,8 @@ import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCachi
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
 import useQualifierCounts from '@/services/composables/useQualifierCounts';
+import { BreakdownData } from '@/types/Datacubes';
+import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -665,7 +685,8 @@ export default defineComponent({
     RenameModal,
     SmallTextButton,
     TemporalFacet,
-    timeseriesChart
+    timeseriesChart,
+    DatacubeComparativeTimelineSync
   },
   setup(props, { emit }) {
     const timeInterval = 10000;
@@ -712,6 +733,51 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
     const selectedTransform = ref<DataTransform>(DataTransform.None);
+
+    const outputs = computed(() => {
+      const modelMetadata = metadata.value;
+      if (modelMetadata === null || !isModel(modelMetadata)) return null;
+      const currOutputs = getOutputs(modelMetadata);
+      return currOutputs.length > 1 ? currOutputs : null;
+    });
+
+    const outputVariableBreakdownData = ref<BreakdownData | null>(null);
+    watch(
+      () => [outputs.value],
+      () => {
+        if (outputs.value === null) return;
+        const result: {
+          id: string;
+          values: { [variableId: string]: number };
+        }[] = [];
+        outputs.value.forEach(datacubeFeature => {
+          result.push({
+            id: datacubeFeature.display_name,
+            values: { [datacubeFeature.name]: 0 }
+          });
+        });
+        outputVariableBreakdownData.value = {
+          Variable: result
+        };
+      }
+    );
+
+    const selectedBreakdownOutputVariables = ref(new Set<string>());
+    const toggleIsOutputVariableSelected = (outputVariable: string) => {
+      const isOutputVariableSelected = selectedBreakdownOutputVariables.value.has(outputVariable);
+      const updatedList = _.clone(selectedBreakdownOutputVariables.value);
+
+      if (isOutputVariableSelected) {
+        // If an output variable is currently selected, remove it from the list
+        updatedList.delete(outputVariable);
+      } else {
+        // Else add it to the list of selected output variables.
+        updatedList.add(outputVariable);
+      }
+
+      // Assign new object to selectedBreakdownOutputVariables.value to trigger reactivity updates.
+      selectedBreakdownOutputVariables.value = updatedList;
+    };
 
     //
     // color scheme options
@@ -1458,6 +1524,65 @@ export default defineComponent({
       }
     };
 
+    const activeFeatures = computed(() => {
+      if (outputs.value === null || selectedBreakdownOutputVariables.value.size === 0) return [];
+      return outputs.value
+        .filter(output => selectedBreakdownOutputVariables.value.has(output.display_name))
+        .map(output => ({ name: output.name, display_name: output.display_name }));
+    });
+    const activeFeaturesNames = computed(() => {
+      return activeFeatures.value.map(f => f.name);
+    });
+
+    const timeseriesToDatacubeMap = ref<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>({});
+
+    const {
+      globalTimeseries,
+      selectedGlobalTimestamp,
+      selectedGlobalTimestampRange,
+      setSelectedGlobalTimestamp,
+      setSelectedGlobalTimestampRange
+    } = useMultiTimeseriesData(
+      metadata,
+      selectedScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      breakdownOption,
+      selectedTransform,
+      activeFeaturesNames
+    );
+
+    watch(
+      () => [globalTimeseries.value, activeFeatures.value, selectedGlobalTimestamp.value],
+      () => {
+        if (activeFeatures.value.length === globalTimeseries.value.length) {
+          globalTimeseries.value.forEach((timeseries, indx) => {
+            // normalize the values of each timeseries in the list independently
+            // i.e., re-map all timestamp point values to a range of [0: 1]
+            normalizeTimeseriesList([timeseries]);
+
+            // re-create the map that relates between datacube and timeseries
+            timeseriesToDatacubeMap.value[timeseries.id] = {
+              datacubeName: activeFeatures.value[indx].name,
+              datacubeOutputVariable: activeFeatures.value[indx].display_name
+            };
+
+            // update the value of each timeseries in the breakdown data
+            if (outputVariableBreakdownData.value !== null) {
+              const valueAtGlobalTimestamp = timeseries.points.find(p => p.timestamp === selectedGlobalTimestamp.value);
+              outputVariableBreakdownData.value.Variable.forEach(breakdownLine => {
+                // only update the breakdown line that correspond to the current timeseries
+                if (timeseries.name in breakdownLine.values) {
+                  breakdownLine.values[timeseries.name] = valueAtGlobalTimestamp !== undefined ? valueAtGlobalTimestamp.value : 0;
+                }
+              });
+            }
+          });
+        }
+      }
+    );
+
     const {
       datacubeHierarchy,
       selectedRegionIds,
@@ -1528,10 +1653,13 @@ export default defineComponent({
       }
     });
 
+    const timeseriesDataForSelection = computed(() => breakdownOption.value === 'variable' ? globalTimeseries.value : timeseriesData.value);
+    const timestampForSelection = computed(() => breakdownOption.value === 'variable' ? selectedGlobalTimestamp.value : selectedTimestamp.value);
+
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
       breakdownOption,
-      timeseriesData,
-      selectedTimestamp,
+      timeseriesDataForSelection,
+      timestampForSelection,
       selectedScenarioIds
     );
 
@@ -1547,7 +1675,8 @@ export default defineComponent({
       metadata,
       selectedTimeseriesPoints,
       activeFeature,
-      filteredRunData
+      filteredRunData,
+      breakdownOption
     );
 
     const {
@@ -1782,6 +1911,7 @@ export default defineComponent({
       projectType,
       preGenDataItems,
       qualifierBreakdownData,
+      outputVariableBreakdownData,
       recalculateGridMapDiffStats,
       regionalData,
       // regionsToSubregions,
@@ -1818,6 +1948,7 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedTimestamp,
       selectedYears,
+      selectedBreakdownOutputVariables,
       setSelectedAdminLevel,
       setBreakdownOption,
       setBaseLayer,
@@ -1847,6 +1978,7 @@ export default defineComponent({
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
+      toggleIsOutputVariableSelected,
       toggleNewRunsMode,
       toggleReferenceOptions,
       unit,
@@ -1858,7 +1990,13 @@ export default defineComponent({
       updateScenarioSelection,
       visibleTimeseriesData,
       showPercentChange,
-      someVizOptionsInvalid
+      someVizOptionsInvalid,
+      globalTimeseries,
+      selectedGlobalTimestamp,
+      selectedGlobalTimestampRange,
+      timeseriesToDatacubeMap,
+      setSelectedGlobalTimestampRange,
+      setSelectedGlobalTimestamp
     };
   },
   watch: {
