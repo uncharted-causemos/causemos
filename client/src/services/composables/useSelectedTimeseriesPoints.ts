@@ -67,7 +67,7 @@ export default function useSelectedTimeseriesPoints(
         points
       );
       return {
-        timeseriesId: id,
+        timeseriesId: breakdownOption.value === 'variable' ? name : id,
         scenarioId,
         timestamp,
         isTimestampInTimeseries,
