@@ -16,7 +16,7 @@
 
 <script lang="ts">
 import { AggregationOption } from '@/types/Enums';
-import { defineComponent, PropType, ref } from 'vue';
+import { defineComponent, PropType } from 'vue';
 import TimelineChart from '@/components/widgets/charts/timeline-chart.vue';
 import { Timeseries } from '@/types/Timeseries';
 
@@ -37,6 +37,10 @@ export default defineComponent({
     selectedTimestamp: {
       type: Number,
       default: 0
+    },
+    breakdownOption: {
+      type: String as PropType<string | null>,
+      default: null
     }
   },
   emits: ['select-timestamp', 'select-timestamp-range'],
@@ -49,14 +53,7 @@ export default defineComponent({
       emit('select-timestamp-range', newTimestampRange);
     };
 
-    const breakdownOption = ref<string | null>(null);
-    const setBreakdownOption = (newValue: string | null) => {
-      breakdownOption.value = newValue;
-    };
-
     return {
-      breakdownOption,
-      setBreakdownOption,
       AggregationOption,
       emitTimestampSelection,
       emitTimestampRangeSelection
