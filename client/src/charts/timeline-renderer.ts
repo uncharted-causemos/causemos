@@ -61,7 +61,7 @@ interface TimestampElements {
   valueGroups: D3GElementSelection[];
 }
 
-// FIXME: range selection/brushing is not working
+// FIXME: add range selection/brushing support
 export default function(
   selection: D3Selection,
   timeseriesList: Timeseries[],
