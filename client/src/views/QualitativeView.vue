@@ -116,7 +116,7 @@
               openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)
             "
           />
-          <factors-pane
+          <qualitative-factors-pane
             v-if="
               activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null
             "
@@ -129,6 +129,7 @@
             @show-factor-recommendations="onShowFactorRecommendations"
             @updated-relations="resolveUpdatedRelations"
             @add-to-CAG="onAddToCAG"
+            @rename-node="openRenameModal"
           />
         </template>
         <template #overlay-pane>
@@ -236,7 +237,7 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane.vue';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher.vue';
 import RelationshipsPane from '@/components/drilldown-panel/relationships-pane.vue';
-import FactorsPane from '@/components/drilldown-panel/factors-pane.vue';
+import QualitativeFactorsPane from '@/components/drilldown-panel/qualitative-factors-pane.vue';
 import NodeSuggestionsPane from '@/components/drilldown-panel/node-suggestions-pane.vue';
 import FactorsRecommendationsPane from '@/components/drilldown-panel/factors-recommendations-pane.vue';
 
@@ -313,7 +314,7 @@ export default defineComponent({
     EvidencePane,
     EdgePolaritySwitcher,
     RelationshipsPane,
-    FactorsPane,
+    QualitativeFactorsPane,
     NodeSuggestionsPane,
     FactorsRecommendationsPane,
     ModalConfirmation,

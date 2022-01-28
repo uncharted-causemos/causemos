@@ -7,10 +7,53 @@
       @close="documentModalData = null"
     />
     <div class="pane-summary">
-      {{ ontologyFormatter(selectedItem.concept) }} ({{ numberFormatter(factorCount) }})
+      {{ ontologyFormatter(selectedItem.concept) }}
       <i
-        v-tooltip.top="compositionDefinitions"
-        class="fa fa-info-circle concept-examples-icon" />
+        class="fa fa-fw fa-pencil"
+        @click="renameNode"
+      ></i>
+    </div>
+
+    <div v-if="componentConcepts.length > 0">
+      <div class="qual-pane-summary">
+        Concepts ({{componentConcepts.length}})
+      </div>
+
+      <div v-for="component in componentConcepts" :key="component">
+        {{ ontologyFormatter(component) }}
+      </div>
+    </div>
+
+    <div v-if="componentDatacubes.length > 0">
+      <div class="qual-pane-summary">
+        Datacubes ({{componentDatacubes.length}})
+      </div>
+
+      <div v-for="datacube in componentDatacubes" :key="datacube">
+        {{ datacube }}
+      </div>
+    </div>
+
+    <div v-if="similarConcepts.length > 0">
+      <div class="qual-pane-summary">
+        Similar Concepts ({{similarConcepts.length}})
+      </div>
+      <div>
+        <div v-for="sc in similarConcepts" :key="sc.concept" class="inline-group-justified">
+          {{ ontologyFormatter(sc.concept) }}
+          <div
+            v-tooltip.top="'Add ' + sc.concept"
+            @click="addToCag(sc.concept)"
+          >
+            <i
+              class="fa fa-plus concept-examples-icon" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="qual-pane-summary">
+      Documents Grouped by {{ factorCount }} Factor(s)
     </div>
     <collapsible-list-header
       @expand-all="expandAll={value: true}"
@@ -41,7 +84,6 @@
         <i class="fa fa-trash fa-lg" />
       </small-icon-button>
     </collapsible-list-header>
-
     <ontology-editor
       v-if="currentItem === null && activeCorrection === CORRECTION_TYPES.ONTOLOGY_ALL"
       :concept="selectedItem.concept"
@@ -112,6 +154,7 @@
     <div v-else-if="numberRelationships === 0">
       <message-display :message="messageNoData" />
     </div>
+
     <div
       v-if="isFetchingStatements"
       class="pane-loading-message"
@@ -135,7 +178,15 @@
 <script>
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
-import { getFactorConceptSuggestions, groupByConceptFactor, discardStatements, updateStatementsFactorGrounding, getFactorGroundingRecommendations, CORRECTION_TYPES } from '@/services/curation-service';
+import {
+  getFactorConceptSuggestions,
+  groupByConceptFactor,
+  discardStatements,
+  updateStatementsFactorGrounding,
+  getFactorGroundingRecommendations,
+  getSimilarConcepts,
+  CORRECTION_TYPES
+} from '@/services/curation-service';
 import projectService from '@/services/project-service';
 import ModalDocument from '@/components/modals/modal-document';
 import EvidenceItem from '@/components/evidence-item';
@@ -152,7 +203,7 @@ const SIDE_PANEL = messagesUtil.SIDE_PANEL;
 const SERVICE_NOT_AVAILABLE = messagesUtil.SERVICE_NOT_AVAILABLE;
 
 export default {
-  name: 'FactorsPane',
+  name: 'QualitativeFactorsPane',
   components: {
     EvidenceItem,
     CollapsibleItem,
@@ -202,6 +253,7 @@ export default {
     curationConfirmedCallback: () => null,
     messageNoData: SIDE_PANEL.FACTORS_NO_DATA,
     suggestions: [],
+    similarConcepts: [],
     ontologyComposition: {}
   }),
   computed: {
@@ -231,9 +283,17 @@ export default {
     },
     factorCount() {
       return this.summaryData.children.length;
+    },
+    componentConcepts() {
+      // filters component datacubes out as they'll match their formatted name
+      return this.selectedItem.components.filter(c => c !== this.ontologyFormatter(c));
+    },
+    componentDatacubes() {
+      // filters component concepts out as they'll not match their formatted name
+      return this.selectedItem.components.filter(c => c === this.ontologyFormatter(c));
     }
   },
-  emits: ['updated-relations'],
+  emits: ['updated-relations', 'add-to-CAG', 'rename-node'],
   watch: {
     statements(n, o) {
       if (_.isEqual(n, o)) return;
@@ -265,6 +325,9 @@ export default {
 
       projectService.getProjectOntologyComposition(this.project, this.selectedItem.concept).then(d => {
         this.ontologyComposition = d;
+      });
+      getSimilarConcepts(this.project, this.selectedItem.components[0] ?? this.selectedItem.concept).then(d => {
+        this.similarConcepts = d.similar_concepts;
       });
     },
     openDocumentModal(evidence) {
@@ -450,6 +513,23 @@ export default {
     closeConfirmCurationModal() {
       this.curationConfirmedCallback = () => null;
       this.showConfirmCurationModal = false;
+    },
+    addToCag(concept) {
+      const payload = {
+        nodes: [
+          {
+            concept,
+            id: '',
+            label: this.ontologyFormatter(concept),
+            components: [concept]
+          }
+        ],
+        edges: []
+      };
+      this.$emit('add-to-CAG', payload);
+    },
+    renameNode() {
+      this.$emit('rename-node', this.selectedItem);
     }
   }
 };
@@ -510,5 +590,22 @@ export default {
     margin-right: 2px;
   }
 }
+.inline-group-justified {
+  display: inline-flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 3px;
+  &:hover {
+    cursor: pointer;
+    background-color: $background-light-2;
+  }
+}
 
+.qual-pane-summary {
+  border-top: 1px $background-light-3 solid;
+  border-bottom: 1px $background-light-3 solid;
+  padding: 5px 0;
+  font-size: $font-size-large;
+  font-weight: 600;
+}
 </style>
