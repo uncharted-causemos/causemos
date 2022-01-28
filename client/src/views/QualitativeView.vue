@@ -128,6 +128,7 @@
             :should-confirm-curations="true"
             @show-factor-recommendations="onShowFactorRecommendations"
             @updated-relations="resolveUpdatedRelations"
+            @add-to-CAG="onAddToCAG"
           />
         </template>
         <template #overlay-pane>

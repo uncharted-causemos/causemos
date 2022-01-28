@@ -41,7 +41,6 @@
         <i class="fa fa-trash fa-lg" />
       </small-icon-button>
     </collapsible-list-header>
-
     <ontology-editor
       v-if="currentItem === null && activeCorrection === CORRECTION_TYPES.ONTOLOGY_ALL"
       :concept="selectedItem.concept"
@@ -112,6 +111,23 @@
     <div v-else-if="numberRelationships === 0">
       <message-display :message="messageNoData" />
     </div>
+
+    <div class="pane-summary">
+      Similar Concepts
+    </div>
+    <hr />
+    <div>
+      <div v-for="sc in similarConcepts" :key="sc.concept" class="inline-group-justified">
+        {{ ontologyFormatter(sc.concept) }}
+        <div
+          v-tooltip.top="'Add ' + sc.concept"
+          @click="addToCag(sc.concept)"
+        >
+          <i
+            class="fa fa-plus concept-examples-icon" />
+        </div>
+      </div>
+    </div>
     <div
       v-if="isFetchingStatements"
       class="pane-loading-message"
@@ -135,7 +151,15 @@
 <script>
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
-import { getFactorConceptSuggestions, groupByConceptFactor, discardStatements, updateStatementsFactorGrounding, getFactorGroundingRecommendations, CORRECTION_TYPES } from '@/services/curation-service';
+import {
+  getFactorConceptSuggestions,
+  groupByConceptFactor,
+  discardStatements,
+  updateStatementsFactorGrounding,
+  getFactorGroundingRecommendations,
+  getSimilarConcepts,
+  CORRECTION_TYPES
+} from '@/services/curation-service';
 import projectService from '@/services/project-service';
 import ModalDocument from '@/components/modals/modal-document';
 import EvidenceItem from '@/components/evidence-item';
@@ -202,6 +226,7 @@ export default {
     curationConfirmedCallback: () => null,
     messageNoData: SIDE_PANEL.FACTORS_NO_DATA,
     suggestions: [],
+    similarConcepts: [],
     ontologyComposition: {}
   }),
   computed: {
@@ -233,7 +258,7 @@ export default {
       return this.summaryData.children.length;
     }
   },
-  emits: ['updated-relations'],
+  emits: ['updated-relations', 'add-to-CAG'],
   watch: {
     statements(n, o) {
       if (_.isEqual(n, o)) return;
@@ -265,6 +290,9 @@ export default {
 
       projectService.getProjectOntologyComposition(this.project, this.selectedItem.concept).then(d => {
         this.ontologyComposition = d;
+      });
+      getSimilarConcepts(this.project, this.selectedItem.concept).then(d => {
+        this.similarConcepts = d.similar_concepts;
       });
     },
     openDocumentModal(evidence) {
@@ -450,6 +478,20 @@ export default {
     closeConfirmCurationModal() {
       this.curationConfirmedCallback = () => null;
       this.showConfirmCurationModal = false;
+    },
+    addToCag(concept) {
+      const payload = {
+        nodes: [
+          {
+            concept,
+            id: '',
+            label: this.ontologyFormatter(concept),
+            components: concept
+          }
+        ],
+        edges: []
+      };
+      this.$emit('add-to-CAG', payload);
     }
   }
 };
@@ -508,6 +550,16 @@ export default {
 
   &:last-child {
     margin-right: 2px;
+  }
+}
+.inline-group-justified {
+  display: inline-flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 3px;
+  &:hover {
+    cursor: pointer;
+    background-color: $background-light-2;
   }
 }
 

@@ -32,6 +32,15 @@ interface PolarityChange {
   newValue: number;
 }
 
+interface SimilarConcept {
+  concept: string;
+  score: number;
+}
+
+interface SimilarConceptData {
+  similar_concepts: SimilarConcept[];
+}
+
 
 /**
  * Helpers
@@ -350,4 +359,15 @@ export const getEvidenceRecommendations = async (projectId: string, subjConcept:
   };
   const result = await (API.get('curation_recommendations/edge-regrounding', { params: payload }));
   return result.data;
+};
+
+
+export const getSimilarConcepts = async (projectId: string, concept: string): Promise<SimilarConceptData> => {
+  const payload = {
+    project_id: projectId,
+    num_recommendations: 10,
+    concept
+  };
+  const result = await (API.get('curation_recommendations/similar-concepts', { params: payload }));
+  return result.data as SimilarConceptData;
 };
