@@ -23,7 +23,7 @@ const NO_CHANGE_ABOVE = 0.9;
  * @param {TemporalResolution} rawResolution - Resolution of the raw data
  * @param {TemporalResolutionOption} temporalResolution - Resolution of the aggregated data
  * @param {AggregationOption} temporalAggregation - Temporal aggregation function
- * @param {Date} periodEndDate - Final date from the raw data
+ * @param {Date} finalRawDate - Final date from the raw data
  *
  * @returns {object} An updated list of Timeseries objects with the correctiveAction field set.
  */
@@ -32,11 +32,11 @@ export function correctIncompleteTimeseries(
   rawResolution: TemporalResolution,
   temporalResolution: TemporalResolutionOption,
   temporalAggregation: AggregationOption,
-  periodEndDate: Date
+  finalRawDate: Date
 ): Timeseries[] {
   return timeseriesData.map((timeseries: Timeseries) => {
     const { action, points } = correctIncompleteData(timeseries.points, rawResolution,
-      temporalResolution, temporalAggregation, periodEndDate);
+      temporalResolution, temporalAggregation, finalRawDate);
     return {
       ...timeseries,
       points,
@@ -57,7 +57,7 @@ export function correctIncompleteTimeseries(
  * @param {TemporalResolution} rawResolution - Resolution of the raw data
  * @param {TemporalResolutionOption} temporalResolution - Resolution of the aggregated data
  * @param {AggregationOption} temporalAggregation - Temporal aggregation function
- * @param {Date} periodEndDate - Final date from the raw data
+ * @param {Date} finalRawDate - Final date from the raw data
  *
  * @returns {object} The adjusted list of points and the action that was performed.
  */
@@ -66,22 +66,30 @@ export function correctIncompleteData(
   rawResolution: TemporalResolution,
   temporalResolution: TemporalResolutionOption,
   temporalAggregation: AggregationOption,
-  periodEndDate: Date
+  finalRawDate: Date
 ): { action: IncompleteDataCorrectiveAction, points: TimeseriesPoint[] } {
   const sortedPoints = _.cloneDeep(_.sortBy(timeseries, 'timestamp'));
   const lastPoint = _.last(sortedPoints);
 
   if (temporalAggregation !== AggregationOption.Sum) {
     return { action: IncompleteDataCorrectiveAction.NotRequired, points: sortedPoints };
-  } else if (lastPoint === undefined || lastPoint.timestamp > periodEndDate.getTime()) {
+  } else if (lastPoint === undefined || lastPoint.timestamp > finalRawDate.getTime()) {
     return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points: sortedPoints };
   }
 
-  const lastPointDate = new Date(lastPoint.timestamp);
-  const coverage = computeCoverage(lastPointDate, periodEndDate, rawResolution, temporalResolution);
-  if (coverage < 0) {
+  const lastAggDate = new Date(lastPoint.timestamp);
+  const validDates = lastAggDate.getUTCFullYear() === finalRawDate.getUTCFullYear() &&
+    (temporalResolution === TemporalResolutionOption.Year ||
+      (temporalResolution === TemporalResolutionOption.Month &&
+        lastAggDate.getUTCMonth() === finalRawDate.getUTCMonth()));
+
+  // Check if we're looking at the correct month/year (in case the metadata was invalid)
+  if (!validDates) {
     return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points: sortedPoints };
-  } else if (coverage < REMOVE_BELOW) {
+  }
+
+  const coverage = computeCoverage(finalRawDate, rawResolution, temporalResolution);
+  if (coverage < REMOVE_BELOW) {
     sortedPoints.pop();
     return { action: IncompleteDataCorrectiveAction.DataRemoved, points: sortedPoints };
   } else if (coverage < NO_CHANGE_ABOVE) {
@@ -109,57 +117,46 @@ export function correctIncompleteData(
  * - All months have 4 weeks
  * - All months have 30 days
  *
- * @param {Date} lastPointDate - model id
- * @param {Date} finalRawDate - resource
- * @param {TemporalResolution} rawRes - components
- * @param {TemporalResolutionOption} aggRes - components
+ * @param {Date} finalRawDate - Final date from the raw data
+ * @param {TemporalResolution} rawRes - Resolution of the raw data
+ * @param {TemporalResolutionOption} aggRes - Resolution of the aggregated data
  *
  * @returns {number} The percentage of the final month/year that was covered by the raw data.
  * Negative values indicate inconsistent raw data and aggregated data timestamps.
  * Since approximations are used, the value could be greater than 1.
  */
-const computeCoverage = (lastPointDate: Date, finalRawDate: Date,
-  rawRes: TemporalResolution, aggRes: TemporalResolutionOption) => {
-  const lastMonth = lastPointDate.getUTCMonth();
+const computeCoverage = (finalRawDate: Date, rawRes: TemporalResolution, aggRes: TemporalResolutionOption) => {
+  const lastMonth = finalRawDate.getUTCMonth();
 
-  // Check if we're looking at the correct month/year (in case the metadata was invalid)
-  if (lastPointDate.getUTCFullYear() === finalRawDate.getUTCFullYear() &&
-    (aggRes === TemporalResolutionOption.Year ||
-      (aggRes === TemporalResolutionOption.Month && lastMonth === finalRawDate.getUTCMonth()))
-  ) {
-    // Calculate coverage
-    if (aggRes === TemporalResolutionOption.Year) {
-      const lastMonthNum = lastMonth + 1; // range 1-12
-      const lastDayOfYear = (lastMonth * 30) + lastPointDate.getUTCDate();
-      switch (rawRes) {
-        case TemporalResolution.Other:
-        case TemporalResolution.Annual:
-          return 1;
-        case TemporalResolution.Monthly: // 12 months in a year
-          return lastMonthNum / 12;
-        case TemporalResolution.Dekad: // 36 dekad in a year
-          return (lastDayOfYear / 10) / 36;
-        case TemporalResolution.Weekly: // 52 weeks in a year
-          return (lastDayOfYear / 7) / 52;
-        case TemporalResolution.Daily: // 365 days in a year
-          return lastDayOfYear / 365;
-      }
-    } else {
-      const lastDayOfMonth = lastPointDate.getUTCDate();
-      switch (rawRes) {
-        case TemporalResolution.Other:
-        case TemporalResolution.Annual:
-        case TemporalResolution.Monthly:
-          return 1;
-        case TemporalResolution.Dekad: // 3 dekad in a month
-          return (lastDayOfMonth / 10) / 3;
-        case TemporalResolution.Weekly: // 4 weeks in a month
-          return (lastDayOfMonth / 7) / 4;
-        case TemporalResolution.Daily: // 30 days in a month
-          return lastDayOfMonth / 30;
-      }
+  if (aggRes === TemporalResolutionOption.Year) {
+    const lastMonthNum = lastMonth + 1; // range 1-12
+    const lastDayOfYear = (lastMonth * 30) + finalRawDate.getUTCDate();
+    switch (rawRes) {
+      case TemporalResolution.Other:
+      case TemporalResolution.Annual:
+        return 1;
+      case TemporalResolution.Monthly: // 12 months in a year
+        return lastMonthNum / 12;
+      case TemporalResolution.Dekad: // 36 dekad in a year
+        return (lastDayOfYear / 10) / 36;
+      case TemporalResolution.Weekly: // 52 weeks in a year
+        return (lastDayOfYear / 7) / 52;
+      case TemporalResolution.Daily: // 365 days in a year
+        return lastDayOfYear / 365;
     }
   } else {
-    return -1;
+    const lastDayOfMonth = finalRawDate.getUTCDate();
+    switch (rawRes) {
+      case TemporalResolution.Other:
+      case TemporalResolution.Annual:
+      case TemporalResolution.Monthly:
+        return 1;
+      case TemporalResolution.Dekad: // 3 dekad in a month
+        return (lastDayOfMonth / 10) / 3;
+      case TemporalResolution.Weekly: // 4 weeks in a month
+        return (lastDayOfMonth / 7) / 4;
+      case TemporalResolution.Daily: // 30 days in a month
+        return lastDayOfMonth / 30;
+    }
   }
 };

@@ -152,6 +152,6 @@ export enum IncompleteDataCorrectiveAction {
   OutOfScopeData = 'Data is Out of Scope (No Change)',
   NotRequired = 'No Changes Required',
   CompleteData = 'Complete Data (No Change)',
-  DataRemoved = 'Data Removed',
-  DataExtrapolated = 'Data Extrapolated'
+  DataRemoved = ' Final data point was removed',
+  DataExtrapolated = 'Final data point contains extrapolated data'
 }

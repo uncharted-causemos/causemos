@@ -13,16 +13,19 @@
           class="selected-data-row"
           :style="{ color: timeseries.color }"
         >
-          <strong>{{ timeseries.name }}</strong>
+          <strong>{{ timeseries.name }}<sup>{{timeseries.superscript}}</sup></strong>
           <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
         </div>
       </div>
       <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
     </div>
   </div>
-  <span style="justify-content: right; text-align: right; padding-right: 120px">
-    {{timeseriesData.map(t => t.correctiveAction)}}
-  </span>
+  <div style="justify-content: flex-end; display:flex" >
+    <slot name="timeseries-footer" />
+    <div style="text-align: right">
+      {{footnotes}} foo foo foo foo
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -39,11 +42,16 @@ import {
   toRefs,
   computed
 } from 'vue';
-import { TemporalResolutionOption } from '@/types/Enums';
+import { IncompleteDataCorrectiveAction, TemporalResolutionOption } from '@/types/Enums';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { chartValueFormatter } from '@/utils/string-util';
 
 const RESIZE_DELAY = 15;
+
+const SUPERSCRIPTS = new Map([
+  [IncompleteDataCorrectiveAction.DataRemoved, '*'],
+  [IncompleteDataCorrectiveAction.DataExtrapolated, '\u2020'] // dagger
+]);
 
 export default defineComponent({
   name: 'TimeseriesChart',
@@ -150,10 +158,11 @@ export default defineComponent({
     });
     const dataAtSelectedTimestamp = computed(() => {
       return timeseriesData.value
-        .map(({ id, name, color, points }) => ({
+        .map(({ id, name, color, points, correctiveAction }) => ({
           id,
           name,
           color,
+          superscript: SUPERSCRIPTS.get(correctiveAction ?? IncompleteDataCorrectiveAction.NotRequired),
           value: points.find(
             point => point.timestamp === selectedTimestamp.value
           )?.value
@@ -161,6 +170,14 @@ export default defineComponent({
         .sort(({ value: a }, { value: b }) => {
           return (b as number) - (a as number);
         });
+    });
+    const footnotes = computed(() => {
+      const actions = _.uniq(timeseriesData.value.map(({ correctiveAction }) => correctiveAction));
+      return actions.map((action: IncompleteDataCorrectiveAction|undefined) =>
+        action === undefined || !SUPERSCRIPTS.has(action)
+          ? undefined
+          : `${SUPERSCRIPTS.get(action)}${action}`
+      ).filter(a => a !== undefined).join('  ');
     });
     onMounted(() => {
       const parentElement = lineChart.value?.parentElement;
@@ -174,6 +191,7 @@ export default defineComponent({
       resize,
       lineChart,
       dataAtSelectedTimestamp,
+      footnotes,
       timestampFormatter,
       valueFormatter
     };
