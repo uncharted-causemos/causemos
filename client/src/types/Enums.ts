@@ -149,3 +149,4 @@ export enum BinningOptions {
 }
 
 export const SPLIT_BY_VARIABLE = 'variable';
+export const TIMESERIES_HEADER_SEPARATOR = ' | ';

@@ -22,8 +22,7 @@ export default function useOutputSpecs(
     const modelMetadata = metadata.value;
     if (
       selectedModelId.value === null ||
-      modelMetadata === null ||
-      breakdownOption?.value === SPLIT_BY_VARIABLE
+      modelMetadata === null
     ) {
       return [];
     }
@@ -37,7 +36,7 @@ export default function useOutputSpecs(
         id: timeseriesId,
         modelId: activeModelId,
         runId: scenarioId,
-        outputVariable: activeFeature.value,
+        outputVariable: breakdownOption?.value !== SPLIT_BY_VARIABLE ? activeFeature.value : timeseriesId,
         timestamp,
         transform,
         temporalResolution: selectedTemporalResolution.value,

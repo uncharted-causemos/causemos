@@ -38,7 +38,7 @@ import renderTimeline from '@/charts/timeline-renderer';
 import { Timeseries } from '@/types/Timeseries';
 import { defineComponent, PropType, onMounted, ref, watch, toRefs, computed } from 'vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
-import { TemporalResolutionOption } from '@/types/Enums';
+import { TemporalResolutionOption, TIMESERIES_HEADER_SEPARATOR } from '@/types/Enums';
 import { chartValueFormatter } from '@/utils/string-util';
 import { MAX_TIMESERIES_LABEL_CHAR_LENGTH } from '@/utils/timeseries-util';
 
@@ -103,7 +103,7 @@ export default defineComponent({
       const legendData: {header: string; items: {id: string; name: string; color: string; value: number|undefined}[]}[] = [];
       timeseriesData.value.forEach(timeseries => {
         const timeseriesId = timeseries.id;
-        const ownerDatacube = timeseriesToDatacubeMap.value[timeseriesId].datacubeName + ' | ' + timeseriesToDatacubeMap.value[timeseriesId].datacubeOutputVariable;
+        const ownerDatacube = timeseriesToDatacubeMap.value[timeseriesId].datacubeName + TIMESERIES_HEADER_SEPARATOR + timeseriesToDatacubeMap.value[timeseriesId].datacubeOutputVariable;
         const existingDatacubeSection = legendData.find(item => item.header === ownerDatacube);
         if (existingDatacubeSection !== undefined) {
           // datacube section already exists

@@ -5,7 +5,7 @@ import { chartValueFormatter } from '@/utils/string-util';
 import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
-import { TemporalAggregationLevel } from '@/types/Enums';
+import { TemporalAggregationLevel, TIMESERIES_HEADER_SEPARATOR } from '@/types/Enums';
 import { MAX_TIMESERIES_LABEL_CHAR_LENGTH, renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 import _ from 'lodash';
 
@@ -48,8 +48,6 @@ const DASHED_LINE = {
 
 const SELECTED_TIMESTAMP_WIDTH = 2;
 const SELECTABLE_TIMESTAMP_OPACITY = 0.5;
-
-const TIMESERIES_HEADER_SEPARATOR = ' | ';
 
 // A collection of elements that are used to dynamically show details about the selected
 //  timestamp

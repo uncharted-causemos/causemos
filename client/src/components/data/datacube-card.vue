@@ -353,6 +353,48 @@
                 }}
                 , or choose 'Split by none'.
               </p>
+              <div class="card-maps-box" v-if="breakdownOption === SPLIT_BY_VARIABLE">
+                <div v-if="activeFeaturesNames.length > 0" class="card-maps-legend-container">
+                  <span v-if="activeFeaturesNames.length > 1" class="top-padding"></span>
+                </div>
+                <div
+                  v-if="regionalData !== null"
+                  class="card-maps-container">
+                  <div
+                    v-for="(featureName, indx) in activeFeaturesNames"
+                    :key="featureName"
+                    class="card-map-container"
+                    :class="[
+                      `card-count-${activeFeaturesNames.length < 5 ? activeFeaturesNames.length : 'n'}`
+                    ]"
+                  >
+                    <span
+                      v-if="activeFeaturesNames.length > 1"
+                      :style="{ color: colorFromIndex(indx)}"
+                    >
+                      {{ featureName }}
+                    </span>
+                    <region-map
+                      class="card-map"
+                      :style="{ borderColor: colorFromIndex(indx) }"
+                      :data="regionMapData[featureName]"
+                      :map-bounds="mapBounds"
+                      :selected-layer-id="selectedAdminLevel"
+                      :popup-Formatter="popupFormatter"
+                    />
+                  </div>
+                </div>
+                <div
+                  v-else-if="currentTabView === 'data'"
+                  class="card-maps-container"
+                >
+                  <!-- Empty div to reduce jumpiness when the maps are loading -->
+                  <div class="card-map" />
+                </div>
+                <div v-if="activeFeaturesNames.length > 0" class="card-maps-legend-container">
+                  <span v-if="activeFeaturesNames.length > 1" class="top-padding"></span>
+                </div>
+              </div>
               <div class="card-maps-box" v-if="breakdownOption !== SPLIT_BY_VARIABLE">
                 <div v-if="outputSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
@@ -521,7 +563,7 @@ import _ from 'lodash';
 import { computed, defineComponent, nextTick, PropType, ref, Ref, toRefs, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
-
+import * as d3 from 'd3';
 import flatpickr from 'flatpickr';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
@@ -579,7 +621,7 @@ import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datac
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import { OutputSpecWithId } from '@/types/Runoutput';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 
 import {
   COLOR,
@@ -602,9 +644,10 @@ import {
   getSelectedOutput,
   getOutputs
 } from '@/utils/datacube-util';
+import { normalize } from '@/utils/value-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import {
-  // adminLevelToString,
+  adminLevelToString,
   BASE_LAYER,
   DATA_LAYER,
   DATA_LAYER_TRANSPARENCY,
@@ -618,6 +661,8 @@ import useToaster from '@/services/composables/useToaster';
 import useQualifierCounts from '@/services/composables/useQualifierCounts';
 import { BreakdownData } from '@/types/Datacubes';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
+import RegionMap from '@/components/widgets/region-map.vue';
+import { BarData } from '@/types/BarChart';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -687,7 +732,8 @@ export default defineComponent({
     SmallTextButton,
     TemporalFacet,
     timeseriesChart,
-    DatacubeComparativeTimelineSync
+    DatacubeComparativeTimelineSync,
+    RegionMap
   },
   setup(props, { emit }) {
     const timeInterval = 10000;
@@ -1564,7 +1610,8 @@ export default defineComponent({
             normalizeTimeseriesList([timeseries]);
 
             // re-create the map that relates between datacube and timeseries
-            timeseriesToDatacubeMap.value[timeseries.id] = {
+            const key = timeseries.id;
+            timeseriesToDatacubeMap.value[key] = {
               datacubeName: activeFeatures.value[indx].name,
               datacubeOutputVariable: activeFeatures.value[indx].display_name
             };
@@ -1693,6 +1740,69 @@ export default defineComponent({
     const unit = computed(() =>
       getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value)
     );
+
+    const popupFormatter = (feature: any) => {
+      const { label, value, normalizedValue } = feature.state || {};
+      if (!label) return null;
+      return `${label.split('__').pop()}<br> Normalized: ${+normalizedValue.toFixed(2)}<br> Value: ${+value.toFixed(2)}`;
+    };
+
+    const regionMapData = ref<{[variableName: string]: BarData[]}>({});
+    watch(
+      () => [
+        regionalData.value,
+        breakdownOption.value,
+        finalColorScheme.value,
+        selectedAdminLevel.value
+      ],
+      () => {
+        if (breakdownOption.value === SPLIT_BY_VARIABLE) {
+          activeFeaturesNames.value.forEach(selectedOutputVariable => {
+            if (regionalData.value !== null) {
+              const temp: BarData[] = [];
+              const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
+              const regionLevelData = regionalData.value[adminLevelAsString];
+
+              if (regionLevelData !== undefined && regionLevelData.length > 0) {
+                const data = regionLevelData.map(regionDataItem => ({
+                  name: regionDataItem.id,
+                  value: Object.values(regionDataItem.values).length > 0 && regionDataItem.values[selectedOutputVariable] ? regionDataItem.values[selectedOutputVariable] : 0
+                }));
+
+                if (data.length > 0) {
+                  let regionIndexCounter = 0;
+
+                  const allValues = data.map(regionDataItem => regionDataItem.value);
+                  const scale = d3
+                    .scaleLinear()
+                    .domain(d3.extent(allValues) as [number, number])
+                    .nice(); // 😃
+                  const dataExtent = scale.domain(); // after nice() is called
+
+                  const colors = finalColorScheme.value;
+                  data.forEach(dataItem => {
+                    const normalizedValue = normalize(dataItem.value, dataExtent[0], dataExtent[1]);
+                    const itemValue = dataItem.value;
+                    const colorIndex = Math.trunc(normalizedValue * numberOfColorBins.value); // i.e., linear binning
+                    // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
+                    const clampedColorIndex = _.clamp(colorIndex, 0, colors.length - 1);
+                    const regionColor = colors[clampedColorIndex];
+                    temp.push({
+                      name: (regionIndexCounter + 1).toString(),
+                      label: dataItem.name,
+                      value: itemValue,
+                      normalizedValue: normalizedValue,
+                      color: regionColor
+                    });
+                    regionIndexCounter++;
+                  });
+                }
+              }
+              regionMapData.value[selectedOutputVariable] = temp;
+            }
+          });
+        }
+      });
 
     const timeseriesUnit = computed(() => {
       if (relativeTo.value && showPercentChange.value) {
@@ -1998,7 +2108,10 @@ export default defineComponent({
       timeseriesToDatacubeMap,
       setSelectedGlobalTimestampRange,
       setSelectedGlobalTimestamp,
-      SPLIT_BY_VARIABLE
+      SPLIT_BY_VARIABLE,
+      regionMapData,
+      popupFormatter,
+      activeFeaturesNames
     };
   },
   watch: {
