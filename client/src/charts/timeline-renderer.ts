@@ -6,7 +6,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
-import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
+import { MAX_TIMESERIES_LABEL_CHAR_LENGTH, renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 import _ from 'lodash';
 
 const X_AXIS_HEIGHT = 20;
@@ -59,6 +59,8 @@ interface TimestampElements {
   valueGroups: D3GElementSelection[];
 }
 
+// FIXME: range selection/brushing is not working
+// FIXME: in the Overlay view, the hover info is duplicated
 export default function(
   selection: D3Selection,
   timeseriesList: Timeseries[],
@@ -109,11 +111,16 @@ export default function(
     X_AXIS_HEIGHT
   );
   timeseriesList.forEach(timeseries => {
+    const normalizedPoints = _.cloneDeep(timeseries.points);
+    normalizedPoints
+      .forEach(p => {
+        p.value = p.normalizedValue !== undefined ? p.normalizedValue : p.value;
+      });
     if (timeseries.points.length > 1) { // draw a line for time series longer than 1
-      renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color, 1);
-      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+      renderLine(groupElement, normalizedPoints, xScale, yScale, timeseries.color, 1);
+      renderPoint(groupElement, normalizedPoints, xScale, yScale, timeseries.color);
     } else { // draw a spot for timeseries that are only 1 long
-      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+      renderPoint(groupElement, normalizedPoints, xScale, yScale, timeseries.color);
     }
   });
 
@@ -234,7 +241,7 @@ export default function(
 function calculateExtents(timeseriesList: Timeseries[]) {
   const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
   const xExtent = d3.extent(allPoints.map(point => point.timestamp));
-  const yExtent = d3.extent(allPoints.map(point => point.value));
+  const yExtent = d3.extent(allPoints.map(point => (point.normalizedValue !== undefined ? point.normalizedValue : point.value)));
   return [xExtent, yExtent];
 }
 
@@ -290,7 +297,7 @@ function generateSelectableTimestamps(
       if (valuesAtThisTimestamp === undefined) {
         return;
       }
-      valuesAtThisTimestamp.push({ owner: ownerDatacube, color, name, value: pointAtTimestamp !== undefined ? pointAtTimestamp.value : 'no data' });
+      valuesAtThisTimestamp.push({ owner: ownerDatacube, color, name, value: pointAtTimestamp !== undefined ? (pointAtTimestamp.normalizedValue !== undefined ? pointAtTimestamp.normalizedValue : pointAtTimestamp.value) : 'no data' });
     });
   });
 
@@ -377,7 +384,6 @@ function generateSelectableTimestamps(
     let lineCounter = 1; // +1 line because the origin point for text elements is the bottom left corner
     // max number of chars before truncating the text of each qualifier value
     // FIXME: this is a simplification rather than calculating the actual name/value pixel width and truncate accordingly
-    const maxNameLen = 16;
     Object.keys(timeseriesToDatacubeMap).forEach((ownerDatacubeId) => {
       // header; datacube name
       yPosition = TOOLTIP_LINE_HEIGHT * lineCounter;
@@ -389,7 +395,7 @@ function generateSelectableTimestamps(
             .attr('transform', translate(TOOLTIP_PADDING, yPosition))
             .style('fill', 'black')
             .style('font-weight', 'bold')
-            .text(header.length > maxNameLen ? header.substring(0, maxNameLen) + '...' : header);
+            .text(header.length > MAX_TIMESERIES_LABEL_CHAR_LENGTH ? header.substring(0, MAX_TIMESERIES_LABEL_CHAR_LENGTH) + '...' : header);
         }
         lineCounter += 1;
       }
@@ -408,7 +414,7 @@ function generateSelectableTimestamps(
               .attr('transform', translate(TOOLTIP_PADDING * 2, yPosition))
               .style('fill', color)
               .style('font-weight', 'bold')
-              .text(name.length > maxNameLen ? name.substring(0, maxNameLen) + '...' : name);
+              .text(name.length > MAX_TIMESERIES_LABEL_CHAR_LENGTH ? name.substring(0, MAX_TIMESERIES_LABEL_CHAR_LENGTH) + '...' : name);
             tooltip
               .append('text')
               .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, yPosition))
