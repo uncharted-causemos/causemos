@@ -145,12 +145,12 @@
       :aggregation-level-title="'Variable'"
       :ordered-aggregation-level-keys="['Variable']"
       :raw-data="outputVariableBreakdownData"
-      :should-show-deselected-bars="selectedBreakdownOption !== 'variable'"
+      :should-show-deselected-bars="selectedBreakdownOption !== SPLIT_BY_VARIABLE"
       :show-references="false"
       :allow-collapsing="false"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :checkbox-type="
-        selectedBreakdownOption === 'variable'
+        selectedBreakdownOption === SPLIT_BY_VARIABLE
           ? 'checkbox'
           : null
       "
@@ -174,7 +174,8 @@ import {
   TemporalAggregationLevel,
   SpatialAggregationLevel,
   TemporalResolutionOption,
-  AdminLevel
+  AdminLevel,
+  SPLIT_BY_VARIABLE
 } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 
@@ -356,7 +357,7 @@ export default defineComponent({
           displayName: 'Split by year'
         });
         options.push({
-          value: 'variable',
+          value: SPLIT_BY_VARIABLE,
           displayName: 'Split by variable'
         });
         options.push(
@@ -395,7 +396,8 @@ export default defineComponent({
       isOutputVariableBreakdownDataValid,
       AggregationOption,
       SpatialAggregationLevel,
-      TemporalAggregationLevel
+      TemporalAggregationLevel,
+      SPLIT_BY_VARIABLE
     };
   },
   methods: {

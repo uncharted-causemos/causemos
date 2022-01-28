@@ -1,6 +1,6 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
-import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/types/Enums';
+import { AggregationOption, DataTransform, TemporalResolutionOption, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import _ from 'lodash';
@@ -30,7 +30,7 @@ export default function useMultiTimeseriesData(
 
   watchEffect(onInvalidate => {
     const datacubeMetadata = metadata.value;
-    if (modelRunIds.value.length === 0 || datacubeMetadata === null || breakdownOption.value !== 'variable' || activeFeatures.value.length === 0) {
+    if (modelRunIds.value.length === 0 || datacubeMetadata === null || breakdownOption.value !== SPLIT_BY_VARIABLE || activeFeatures.value.length === 0) {
       // Don't have the information needed to fetch the data
       return;
     }
@@ -57,7 +57,7 @@ export default function useMultiTimeseriesData(
 
       let promises: Promise<{ data: any } | null>[] = [];
 
-      // NOTE: we will always have one scenario selected if we breakdown by 'variable'
+      // NOTE: we will always have one scenario selected if we breakdown by variable
       // since upon the selection on more than one run, the breakdown options are disabled
       const allFeaturesAndRunIds: {runId: string; featureName: string}[] = [];
       modelRunIds.value.forEach(runId => {

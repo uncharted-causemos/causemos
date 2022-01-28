@@ -1,4 +1,4 @@
-import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
+import { SpatialAggregationLevel, TemporalAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 
 export const QUALIFIERS_TO_EXCLUDE = [
@@ -16,7 +16,7 @@ export default function isSplitByQualifierActive(breakdownOption: string | null)
     breakdownOption === null ||
     breakdownOption === SpatialAggregationLevel.Region ||
     breakdownOption === TemporalAggregationLevel.Year ||
-    breakdownOption === 'variable'
+    breakdownOption === SPLIT_BY_VARIABLE
   ) return false;
   return true;
 }

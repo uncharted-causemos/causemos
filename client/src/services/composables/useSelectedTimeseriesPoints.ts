@@ -1,4 +1,4 @@
-import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
+import { SpatialAggregationLevel, TemporalAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import {
   Timeseries,
   TimeseriesPoint,
@@ -67,7 +67,7 @@ export default function useSelectedTimeseriesPoints(
         points
       );
       return {
-        timeseriesId: breakdownOption.value === 'variable' ? name : id,
+        timeseriesId: breakdownOption.value === SPLIT_BY_VARIABLE ? name : id,
         scenarioId,
         timestamp,
         isTimestampInTimeseries,

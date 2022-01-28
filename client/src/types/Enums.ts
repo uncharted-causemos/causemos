@@ -147,3 +147,5 @@ export enum BinningOptions {
   Quantile = 'Quantile (equal counts)',
   Linear = 'linear'
 }
+
+export const SPLIT_BY_VARIABLE = 'variable';

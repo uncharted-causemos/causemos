@@ -4,7 +4,7 @@ import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId } from '@/types/Runoutput';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { ModelRun } from '@/types/ModelRun';
-import { DataTransform } from '@/types/Enums';
+import { DataTransform, SPLIT_BY_VARIABLE } from '@/types/Enums';
 
 export default function useOutputSpecs(
   selectedModelId: Ref<string | null>,
@@ -23,7 +23,7 @@ export default function useOutputSpecs(
     if (
       selectedModelId.value === null ||
       modelMetadata === null ||
-      breakdownOption?.value === 'variable'
+      breakdownOption?.value === SPLIT_BY_VARIABLE
     ) {
       return [];
     }

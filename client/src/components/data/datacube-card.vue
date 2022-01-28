@@ -315,7 +315,7 @@
             <!-- Data tab content -->
             <div v-if="currentTabView === 'data'" class="column">
               <timeseries-chart
-                v-if="visibleTimeseriesData.length > 0 && breakdownOption !== 'variable'"
+                v-if="visibleTimeseriesData.length > 0 && breakdownOption !== SPLIT_BY_VARIABLE"
                 class="timeseries-chart"
                 :timeseries-data="timeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
@@ -325,7 +325,7 @@
                 @select-timestamp="setSelectedTimestamp"
               />
               <datacube-comparative-timeline-sync
-                v-if="breakdownOption === 'variable' && selectedBreakdownOutputVariables.size > 0 && globalTimeseries.length > 0"
+                v-if="breakdownOption === SPLIT_BY_VARIABLE && selectedBreakdownOutputVariables.size > 0 && globalTimeseries.length > 0"
                 :timeseriesData="globalTimeseries"
                 :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
                 :selected-timestamp="selectedGlobalTimestamp"
@@ -337,8 +337,8 @@
               <p
                 v-if="
                   breakdownOption !== null &&
-                  ((visibleTimeseriesData.length === 0 && breakdownOption !== 'variable') ||
-                  (selectedBreakdownOutputVariables.size === 0 && breakdownOption === 'variable'))
+                  ((visibleTimeseriesData.length === 0 && breakdownOption !== SPLIT_BY_VARIABLE) ||
+                  (selectedBreakdownOutputVariables.size === 0 && breakdownOption === SPLIT_BY_VARIABLE))
                 "
               >
                 Please select one or more
@@ -347,13 +347,13 @@
                     ? 'regions'
                     : breakdownOption === TemporalAggregationLevel.Year
                     ? 'years'
-                    : breakdownOption === 'variable'
+                    : breakdownOption === SPLIT_BY_VARIABLE
                     ? 'variables'
                     : 'qualifier values'
                 }}
                 , or choose 'Split by none'.
               </p>
-              <div class="card-maps-box" v-if="breakdownOption !== 'variable'">
+              <div class="card-maps-box" v-if="breakdownOption !== SPLIT_BY_VARIABLE">
                 <div v-if="outputSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
                   <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :isContinuos="isContinuousScale" />
@@ -572,7 +572,8 @@ import {
   ReferenceSeriesOption,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
-  TemporalResolutionOption
+  TemporalResolutionOption,
+  SPLIT_BY_VARIABLE
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -1653,8 +1654,8 @@ export default defineComponent({
       }
     });
 
-    const timeseriesDataForSelection = computed(() => breakdownOption.value === 'variable' ? globalTimeseries.value : timeseriesData.value);
-    const timestampForSelection = computed(() => breakdownOption.value === 'variable' ? selectedGlobalTimestamp.value : selectedTimestamp.value);
+    const timeseriesDataForSelection = computed(() => breakdownOption.value === SPLIT_BY_VARIABLE ? globalTimeseries.value : timeseriesData.value);
+    const timestampForSelection = computed(() => breakdownOption.value === SPLIT_BY_VARIABLE ? selectedGlobalTimestamp.value : selectedTimestamp.value);
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
       breakdownOption,
@@ -1996,7 +1997,8 @@ export default defineComponent({
       selectedGlobalTimestampRange,
       timeseriesToDatacubeMap,
       setSelectedGlobalTimestampRange,
-      setSelectedGlobalTimestamp
+      setSelectedGlobalTimestamp,
+      SPLIT_BY_VARIABLE
     };
   },
   watch: {
