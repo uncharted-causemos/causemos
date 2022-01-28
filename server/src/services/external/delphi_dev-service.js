@@ -26,8 +26,7 @@ const createModel = async (payload) => {
   const edges = result.relations.reduce((acc, edge) => {
     const key = `${edge.source}///${edge.target}`;
     acc[key] = {};
-    // FIXME: Delphi returns distributions, for now just default [0.5, 0.5]
-    acc[key].weights = [0.5, 0.5];
+    acc[key].weights = [0.0, 0.5]; // placeholder, Delphi returns weights after training
     return acc;
   }, {});
   return { nodes, edges, status: result.status };
