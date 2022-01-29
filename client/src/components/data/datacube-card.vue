@@ -541,7 +541,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
-
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { getInsightById } from '@/services/insight-service';
 
 import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
@@ -740,6 +740,8 @@ export default defineComponent({
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
     const isIndicatorDatacube = computed(() => metadata.value !== null && isIndicator(metadata.value));
+
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       dimensions,
@@ -1466,10 +1468,11 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       breakdownOption,
-      initialSelectedRegionIds
+      initialSelectedRegionIds,
+      activeFeature
     );
 
-    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds);
+    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, activeFeature);
 
     const {
       qualifierBreakdownData,
@@ -1487,7 +1490,8 @@ export default defineComponent({
       selectedTimestamp,
       availableQualifiers,
       initialSelectedQualifierValues,
-      initialNonDefaultQualifiers
+      initialNonDefaultQualifiers,
+      activeFeature
     );
 
     const {
@@ -1513,6 +1517,7 @@ export default defineComponent({
       selectedQualifierValues,
       initialSelectedYears,
       showPercentChange,
+      activeFeature,
       selectedScenarios,
       activeReferenceOptions
     );
@@ -1541,6 +1546,7 @@ export default defineComponent({
       selectedTransform,
       metadata,
       selectedTimeseriesPoints,
+      activeFeature,
       filteredRunData
     );
 
