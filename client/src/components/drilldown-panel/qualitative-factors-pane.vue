@@ -17,28 +17,54 @@
     <div v-if="componentConcepts.length > 0">
       <div class="qual-pane-summary">
         Concepts ({{componentConcepts.length}})
+        <i
+          class="icon-centered unit-width fa fa-fw"
+          :class="{
+            'fa-angle-down': showConcepts,
+            'fa-angle-right': !showConcepts
+          }"
+          :onClick="toggleConcepts"
+        />
       </div>
-
-      <div v-for="component in componentConcepts" :key="component">
-        {{ ontologyFormatter(component) }}
+      <div v-if="showConcepts">
+        <div v-for="component in componentConcepts" :key="component">
+          {{ ontologyFormatter(component) }}
+        </div>
       </div>
     </div>
 
     <div v-if="componentDatacubes.length > 0">
       <div class="qual-pane-summary">
         Datacubes ({{componentDatacubes.length}})
+        <i
+          class="icon-centered unit-width fa fa-fw"
+          :class="{
+            'fa-angle-down': showDatacubes,
+            'fa-angle-right': !showDatacubes
+          }"
+          :onClick="toggleDatacubes"
+        />
       </div>
-
-      <div v-for="datacube in componentDatacubes" :key="datacube">
-        {{ datacube }}
+      <div v-if="showDatacubes">
+        <div v-for="datacube in componentDatacubes" :key="datacube">
+          {{ datacube }}
+        </div>
       </div>
     </div>
 
     <div v-if="similarConcepts.length > 0">
       <div class="qual-pane-summary">
         Similar Concepts ({{similarConcepts.length}})
+        <i
+          class="icon-centered unit-width fa fa-fw"
+          :class="{
+            'fa-angle-down': showSimilarConcepts,
+            'fa-angle-right': !showSimilarConcepts
+          }"
+          :onClick="toggleSimilarConcepts"
+        />
       </div>
-      <div>
+      <div v-if="showSimilarConcepts">
         <div v-for="sc in similarConcepts" :key="sc.concept" class="inline-group-justified">
           {{ ontologyFormatter(sc.concept) }}
           <div
@@ -254,7 +280,10 @@ export default {
     messageNoData: SIDE_PANEL.FACTORS_NO_DATA,
     suggestions: [],
     similarConcepts: [],
-    ontologyComposition: {}
+    ontologyComposition: {},
+    showConcepts: true,
+    showDatacubes: true,
+    showSimilarConcepts: true
   }),
   computed: {
     ...mapGetters({
@@ -535,6 +564,15 @@ export default {
     },
     renameNode() {
       this.$emit('rename-node', this.selectedItem);
+    },
+    toggleConcepts() {
+      this.showConcepts = !this.showConcepts;
+    },
+    toggleDatacubes() {
+      this.showDatacubes = !this.showDatacubes;
+    },
+    toggleSimilarConcepts() {
+      this.showSimilarConcepts = !this.showSimilarConcepts;
     }
   }
 };
