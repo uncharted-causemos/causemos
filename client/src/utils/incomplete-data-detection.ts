@@ -68,13 +68,13 @@ export function correctIncompleteTimeseries(
   temporalAggregation: AggregationOption,
   finalRawDate: Date
 ): { action: IncompleteDataCorrectiveAction, points: TimeseriesPoint[] } {
-  const points = _.cloneDeep(timeseries);
-  const lastPoint = _.last(points);
+  const sortedPoints = _.cloneDeep(_.sortBy(timeseries, 'timestamp'));
+  const lastPoint = _.last(sortedPoints);
 
   if (temporalAggregation !== AggregationOption.Sum) {
-    return { action: IncompleteDataCorrectiveAction.NotRequired, points };
+    return { action: IncompleteDataCorrectiveAction.NotRequired, points: sortedPoints };
   } else if (lastPoint === undefined || lastPoint.timestamp > finalRawDate.getTime()) {
-    return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points };
+    return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points: sortedPoints };
   }
 
   const lastAggDate = new Date(lastPoint.timestamp);
@@ -85,18 +85,18 @@ export function correctIncompleteTimeseries(
 
   // Check if we're looking at the correct month/year (in case the metadata was invalid)
   if (!areDatesValid) {
-    return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points };
+    return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points: sortedPoints };
   }
 
   const coverage = computeCoverage(finalRawDate, rawResolution, temporalResolution);
   if (coverage < REMOVE_BELOW) {
-    points.pop();
-    return { action: IncompleteDataCorrectiveAction.DataRemoved, points };
+    sortedPoints.pop();
+    return { action: IncompleteDataCorrectiveAction.DataRemoved, points: sortedPoints };
   } else if (coverage < NO_CHANGE_ABOVE) {
     lastPoint.value *= (1 / coverage);
-    return { action: IncompleteDataCorrectiveAction.DataExtrapolated, points };
+    return { action: IncompleteDataCorrectiveAction.DataExtrapolated, points: sortedPoints };
   } else {
-    return { action: IncompleteDataCorrectiveAction.CompleteData, points };
+    return { action: IncompleteDataCorrectiveAction.CompleteData, points: sortedPoints };
   }
 }
 
