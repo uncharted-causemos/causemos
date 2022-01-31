@@ -14,40 +14,21 @@
       ></i>
     </div>
 
-    <div v-if="componentConcepts.length > 0">
+    <div v-if="selectedItem.components.length > 0">
       <div class="qual-pane-summary">
-        Concepts ({{componentConcepts.length}})
+        Concepts & Datacubes ({{selectedItem.components.length}})
         <i
           class="icon-centered unit-width fa fa-fw"
           :class="{
-            'fa-angle-down': showConcepts,
-            'fa-angle-right': !showConcepts
+            'fa-angle-down': showComponents,
+            'fa-angle-right': !showComponents
           }"
-          :onClick="toggleConcepts"
+          :onClick="toggleComponents"
         />
       </div>
-      <div v-if="showConcepts">
-        <div v-for="component in componentConcepts" :key="component">
+      <div v-if="showComponents">
+        <div v-for="component in selectedItem.components" :key="component">
           {{ ontologyFormatter(component) }}
-        </div>
-      </div>
-    </div>
-
-    <div v-if="componentDatacubes.length > 0">
-      <div class="qual-pane-summary">
-        Datacubes ({{componentDatacubes.length}})
-        <i
-          class="icon-centered unit-width fa fa-fw"
-          :class="{
-            'fa-angle-down': showDatacubes,
-            'fa-angle-right': !showDatacubes
-          }"
-          :onClick="toggleDatacubes"
-        />
-      </div>
-      <div v-if="showDatacubes">
-        <div v-for="datacube in componentDatacubes" :key="datacube">
-          {{ datacube }}
         </div>
       </div>
     </div>
@@ -281,8 +262,7 @@ export default {
     suggestions: [],
     similarConcepts: [],
     ontologyComposition: {},
-    showConcepts: true,
-    showDatacubes: true,
+    showComponents: true,
     showSimilarConcepts: true
   }),
   computed: {
@@ -312,14 +292,6 @@ export default {
     },
     factorCount() {
       return this.summaryData.children.length;
-    },
-    componentConcepts() {
-      // filters component datacubes out as they'll match their formatted name
-      return this.selectedItem.components.filter(c => c !== this.ontologyFormatter(c));
-    },
-    componentDatacubes() {
-      // filters component concepts out as they'll not match their formatted name
-      return this.selectedItem.components.filter(c => c === this.ontologyFormatter(c));
     }
   },
   emits: ['updated-relations', 'add-to-CAG', 'rename-node'],
@@ -356,11 +328,11 @@ export default {
       });
 
       // for each component concept get similar concepts
-      const allSimilarConcepts = this.componentConcepts.map(concept => getSimilarConcepts(this.project, concept));
+      const allSimilarConcepts = this.selectedItem.components.map(concept => getSimilarConcepts(this.project, concept));
       Promise.all(allSimilarConcepts).then((values) => {
         const allSc = values.reduce((acc, val) => acc.concat(val.similar_concepts), []);
         // filter those that match the existing concepts
-        this.similarConcepts = allSc.filter(sc => !this.componentConcepts.includes(sc.concept));
+        this.similarConcepts = allSc.filter(sc => !this.selectedItem.components.includes(sc.concept));
       });
     },
     openDocumentModal(evidence) {
@@ -564,11 +536,8 @@ export default {
     renameNode() {
       this.$emit('rename-node', this.selectedItem);
     },
-    toggleConcepts() {
-      this.showConcepts = !this.showConcepts;
-    },
-    toggleDatacubes() {
-      this.showDatacubes = !this.showDatacubes;
+    toggleComponents() {
+      this.showComponents = !this.showComponents;
     },
     toggleSimilarConcepts() {
       this.showSimilarConcepts = !this.showSimilarConcepts;
