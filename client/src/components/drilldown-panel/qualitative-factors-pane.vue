@@ -330,9 +330,7 @@ export default {
     },
     selectedItem() {
       if (!this.selectedItem) return;
-      projectService.getProjectOntologyComposition(this.project, this.selectedItem.concept).then(d => {
-        this.ontologyComposition = d;
-      });
+      this.refresh();
     }
   },
   mounted() {
@@ -341,6 +339,7 @@ export default {
   methods: {
     numberFormatter,
     initializeData() {
+      this.similarConcepts = [];
       this.currentItem = null;
       this.activeCorrection = null;
       this.expandAll = null;

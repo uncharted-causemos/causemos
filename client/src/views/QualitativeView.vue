@@ -1290,6 +1290,11 @@ export default defineComponent({
       this.prevStabilitySetting = graphOptions.useStableLayout;
       graphOptions.useStableLayout = false;
 
+      // 4. if either target or merge node are currently selected, then select the updated node.
+      if (targetData.concept !== this.selectedNode?.concept || mergeData.concept !== this.selectedNode?.concept) {
+        this.selectedNode = updatedNode;
+      }
+
       this.setUpdateToken(result.updateToken);
     },
     openPathFind() {
