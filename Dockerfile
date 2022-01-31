@@ -1,6 +1,6 @@
 # docker build -t docker.uncharted.software/worldmodeler/wm-server:latest .
 
-FROM mhart/alpine-node:12
+FROM mhart/alpine-node:16
 # ENV LOG_LEVEL="warn"
 
 RUN apk update && apk add curl

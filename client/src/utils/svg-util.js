@@ -529,12 +529,6 @@ export const MARKER_VIEWBOX = '-5 -5 10 10';
 export const ARROW = 'M 0,-3.25 L 5 ,0 L 0,3.25';
 export const ARROW_SHARP = 'M 0,-3 L 5 ,0 L 0,3 L 1 0';
 
-export const POLARITY_ICON_SVG_SETTINGS = Object.freeze({
-  '-1': { 'text': '\uf063', 'x': -3, 'y': 2.5, 'font-size': '6.5px' },
-  '0': { 'text': '\uf128', 'x': -2.5, 'y': 3, 'font-size': '8px' },
-  '1': { 'text': '\uf062', 'x': -3, 'y': 2.2, 'font-size': '6.5px' }
-});
-
 export default {
   createChart,
   translate,
@@ -561,6 +555,5 @@ export default {
 
   MARKER_VIEWBOX,
   ARROW,
-  ARROW_SHARP,
-  POLARITY_ICON_SVG_SETTINGS
+  ARROW_SHARP
 };

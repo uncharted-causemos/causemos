@@ -4,12 +4,12 @@
   </svg>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 
-export default {
+export default defineComponent({
   name: 'aggregation-checklist-rectangle'
-};
-
+});
 </script>
 
 <style lang="scss" scoped>

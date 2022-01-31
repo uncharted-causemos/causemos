@@ -75,8 +75,7 @@ import {
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
 import {
-  convertRawDataToGeoJson,
-  filterRawDataByRegionIds
+  convertRawDataToGeoJson
 } from '@/utils/outputdata-util';
 import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
@@ -348,7 +347,7 @@ export default {
         : undefined;
     },
     rawGeoJson() {
-      const data = convertRawDataToGeoJson(filterRawDataByRegionIds(this.rawData, this.selectedRegionIds));
+      const data = convertRawDataToGeoJson(this.rawData);
       return data;
     }
   },
@@ -480,8 +479,6 @@ export default {
       }
     },
     getPointsMapExtent() {
-      console.log('points layer stats');
-      console.log(this.pointsLayerStats);
       return this.pointsLayerStats?.global.all;
     },
     refreshLayers() {

@@ -81,6 +81,7 @@ import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
@@ -237,13 +238,13 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
     const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
 
-    let initialSelectedScenarioIds: string[] = [];
+    const initialSelectedScenarioIds = ref<string[]>([]);
 
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
         const allScenarioIds = allModelRunData.value.map(run => run.id);
         // do not pick the first run by default in case a run was previously selected
-        selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
+        selectedScenarioIds.value = initialSelectedScenarioIds.value.length > 0 ? initialSelectedScenarioIds.value : [allScenarioIds[0]];
 
         selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, allModelRunData.value);
       }
@@ -262,7 +263,8 @@ export default defineComponent({
     // apply the view-config for this datacube
     watch(
       () => [
-        initialViewConfig.value
+        initialViewConfig.value,
+        initialDataConfig.value
       ],
       () => {
         if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
@@ -285,10 +287,15 @@ export default defineComponent({
         // apply initial data config for this datacube
         if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
-            initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
+            initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
           }
         }
+      },
+      {
+        immediate: true
       });
+
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       datacubeHierarchy,
@@ -298,7 +305,8 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      ref([])
+      ref([]), // initialSelectedRegionIds
+      activeFeature
     );
 
     const selectedTimestamp = ref<number | null>(null);
@@ -321,6 +329,7 @@ export default defineComponent({
       ref(new Set()),
       ref([]),
       ref(false),
+      activeFeature,
       selectedScenarios
     );
 
@@ -367,7 +376,8 @@ export default defineComponent({
       selectedTemporalResolution,
       ref(DataTransform.None), // Transforms are NOT used for region ranking
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      activeFeature
     );
 
     const {

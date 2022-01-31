@@ -19,7 +19,7 @@ export default function useAnalysisMapStats(
   colorOptions: Ref<AnalysisMapColorOptions>,
   referenceOptions: Ref<string[]>,
   breakdownOption: Ref<string | null>,
-  rawDataPoints: Ref<RawOutputDataPoint[]>
+  rawDataPointsList: Ref<RawOutputDataPoint[][]>
 ) {
   // ===== Set up stats and legend for the admin layer ===== //
 
@@ -131,7 +131,7 @@ export default function useAnalysisMapStats(
   const pointsMapLayerLegendData = ref<MapLegendColor[][]>([]);
   const pointsLayerStats = ref<AnalysisMapStats>();
   watchEffect(() => {
-    pointsLayerStats.value = computeRawDataStats(rawDataPoints.value);
+    pointsLayerStats.value = computeRawDataStats(rawDataPointsList.value);
     const globalStats = pointsLayerStats.value.global.all;
     pointsMapLayerLegendData.value = globalStats ? [
       createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn, colorOptions.value.isDiverging)

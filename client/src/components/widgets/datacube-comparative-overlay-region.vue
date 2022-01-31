@@ -89,6 +89,7 @@ import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { RegionalAggregations } from '@/types/Runoutput';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
   name: 'DatacubeComparativeOverlayRegion',
@@ -184,13 +185,13 @@ export default defineComponent({
     const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
 
     const selectedRegionIds: string[] = [];
-    let initialSelectedScenarioIds: string[] = [];
+    const initialSelectedScenarioIds = ref<string[]>([]);
 
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
         const allScenarioIds = allModelRunData.value.map(run => run.id);
         // do not pick the first run by default in case a run was previously selected
-        selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
+        selectedScenarioIds.value = initialSelectedScenarioIds.value.length > 0 ? initialSelectedScenarioIds.value : [allScenarioIds[0]];
 
         selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, allModelRunData.value);
       }
@@ -217,7 +218,8 @@ export default defineComponent({
     // grab and track the view-config for this datacube
     watch(
       () => [
-        initialViewConfig.value
+        initialViewConfig.value,
+        initialDataConfig.value
       ],
       () => {
         if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
@@ -260,18 +262,23 @@ export default defineComponent({
             });
           }
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
-            initialSelectedScenarioIds = initialDataConfig.value.selectedScenarioIds;
+            initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
           }
           if (initialDataConfig.value.selectedTransform !== undefined) {
             selectedTransform.value = initialDataConfig.value.selectedTransform;
           }
         }
+      },
+      {
+        immediate: true
       });
 
     const breakdownOption = ref<string | null>(null);
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
+
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       timeseriesData,
@@ -294,6 +301,7 @@ export default defineComponent({
       ref(new Set()),
       ref([]),
       ref(false),
+      activeFeature,
       selectedScenarios
     );
 
@@ -336,7 +344,8 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      ref([]) // initialSelectedRegionIds
+      ref([]), // initialSelectedRegionIds
+      activeFeature // initialSelectedRegionIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -355,7 +364,8 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTransform,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      activeFeature
     );
 
     const {

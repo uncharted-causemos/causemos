@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
@@ -5,6 +6,7 @@ const cagService = rootRequire('/services/cag-service');
 const historyService = rootRequire('/services/history-service');
 const scenarioService = rootRequire('/services/scenario-service');
 const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
+const modelUtil = rootRequire('util/model-util');
 
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 
@@ -114,6 +116,19 @@ router.put('/:mid/components/', asyncHandler(async (req, res) => {
   let returnNodeIdHack = false;
   if (nodes && nodes.length === 1 && nodes[0].id === '') {
     returnNodeIdHack = true;
+  }
+
+  if (nodes && nodes.length > 0) {
+    for (const node of nodes) {
+      if (node.parameter && node.parameter.timeseries) {
+        const parameter = node.parameter;
+        if (_.isNil(parameter.min) || _.isNil(parameter.max)) {
+          const { min, max } = modelUtil.projectionValueRange(node.parameter.timeseries.map(d => d.value));
+          parameter.min = min;
+          parameter.max = max;
+        }
+      }
+    }
   }
 
   // Perform the specified operation, or if it's not a supported operation

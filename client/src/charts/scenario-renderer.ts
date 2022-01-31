@@ -7,6 +7,7 @@ import { D3Selection, D3ScaleLinear, D3GElementSelection } from '@/types/D3';
 import { Chart } from '@/types/Chart';
 import { NodeScenarioData } from '@/types/CAG';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
+import { historicalDataUncertaintyColor } from '@/services/model-service';
 import {
   getLastTimeStepIndexFromTimeScale,
   getMonthsPerTimestepFromTimeScale,
@@ -20,9 +21,8 @@ import {
 } from '@/utils/ridgeline-util';
 import { renderRidgelines } from './ridgeline-renderer';
 
-const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
-const HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE = '#F4EFDB';
-const HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE = '#F7E6AA';
+import { SELECTED_COLOR } from '@/utils/colors-util';
+
 const HISTORY_LINE_COLOR = '#999';
 const LABEL_COLOR = HISTORY_LINE_COLOR;
 
@@ -35,38 +35,6 @@ const LABEL_COLOR = HISTORY_LINE_COLOR;
 const getVisibleHistoricalMonthCount = (timeScale: TimeScale) => {
   if (timeScale === TimeScale.Years) return 432;
   return 48;
-};
-
-//
-// Yellow background for uncertaint in historical data (lack of data)
-//
-// - Do a rough calculation of how far back is the last data point from projection_start
-// - Penalize short historical data (e.g default Abstract indicator)
-const getBackgroundColor = (nodeScenarioData: NodeScenarioData): string => {
-  const timeseries = nodeScenarioData.indicator_time_series;
-  const projectionStart = nodeScenarioData.projection_start;
-  const timeScale = nodeScenarioData.time_scale;
-
-  let background = HISTORY_BACKGROUND_COLOR;
-
-  const gap = projectionStart - timeseries[timeseries.length - 1].timestamp;
-  const approxMonth = 30 * 24 * 60 * 60 * 1000;
-  if (gap > 0) {
-    if (timeScale === TimeScale.Months) {
-      if (gap / approxMonth > 4) {
-        background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
-      }
-    } else if (timeScale === TimeScale.Years) {
-      if (gap / (approxMonth * 12) > 4) {
-        background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
-      }
-    }
-  }
-
-  if (timeseries.length < 4) {
-    background = HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE;
-  }
-  return background;
 };
 
 export default function(
@@ -163,7 +131,6 @@ function render(
   svgGroup.selectAll('*').remove();
 
   // Backgrounds
-
   svgGroup
     .append('rect')
     .classed('historical-rect', true)
@@ -171,7 +138,11 @@ function render(
     .attr('y', 0)
     .attr('height', height)
     .attr('width', xScale(historyEnd))
-    .attr('fill', getBackgroundColor(nodeScenarioData));
+    .attr('fill', historicalDataUncertaintyColor(
+      nodeScenarioData.indicator_time_series,
+      nodeScenarioData.projection_start,
+      nodeScenarioData.time_scale)
+    );
 
   const historicG = svgGroup.append('g');
   historicG
@@ -243,7 +214,6 @@ function renderScenarioProjections(
     scenarios,
     time_scale,
     projection_start,
-    indicator_id,
     indicator_time_series
   } = nodeScenarioData;
   const projection = nodeScenarioData.scenarios.find(
@@ -279,11 +249,13 @@ function renderScenarioProjections(
     xScale(projection_start);
 
   ridgelinePoints.forEach(({ label, ridgeline, timestamp, monthsAfterNow }) => {
-    // Calculate context range forr each timeslice
-    const isAbstractNode = indicator_id === null;
+    // Calculate context range for each timeslice, unless this is an abstract
+    //  node where the analyst hasn't filled in the historical data.
+    const hideContextRanges = indicator_time_series.length < 4;
     const contextRange = calculateTypicalChangeBracket(
-      isAbstractNode ? [] : indicator_time_series,
-      monthsAfterNow
+      hideContextRanges ? [] : indicator_time_series,
+      monthsAfterNow,
+      projection_start
     );
     // Render one ridgeline for each timeslice
     const containerElementSelection = renderRidgelines(
@@ -309,6 +281,18 @@ function renderScenarioProjections(
       translate(xScale(timestamp), 0)
     );
   });
+
+  // Apply constraints to the graph
+  const constraints = projection.constraints ?? [];
+  for (const constraint of constraints) {
+    const ts = projectionValues[constraint.step].timestamp;
+
+    svgGroup.append('circle')
+      .attr('cx', xScale(ts))
+      .attr('cy', yScale(constraint.value))
+      .attr('r', 1.75)
+      .style('fill', SELECTED_COLOR);
+  }
 
   // TODO: Render constraints
   // const constraintSummary = summarizeConstraints(

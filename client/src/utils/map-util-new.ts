@@ -182,11 +182,13 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
 }
 
 // Compute min/max stats for raw data
-export function computeRawDataStats(data: RawOutputDataPoint[]): AnalysisMapStats {
+export function computeRawDataStats(data: RawOutputDataPoint[][]): AnalysisMapStats {
   const globalStats: MapLayerStats = {};
   const values = [];
   for (const d of data) {
-    values.push(d.value);
+    for (const p of d) {
+      values.push(p.value);
+    }
   }
   if (values.length) {
     globalStats.all = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });

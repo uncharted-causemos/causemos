@@ -377,7 +377,7 @@
                       :map-bounds="mapBounds"
                       :camera-options="mapCameraOptions"
                       :region-data="regionalData"
-                      :raw-data="rawDataPoints"
+                      :raw-data="rawDataPointsList[indx]"
                       :selected-region-ids="allActiveRegionIds"
                       :admin-layer-stats="adminLayerStats"
                       :grid-layer-stats="gridLayerStats"
@@ -568,6 +568,9 @@ import { ModelRunReference } from '@/types/ModelRunReference';
 import { OutputSpecWithId, RawOutputDataPoint } from '@/types/Runoutput';
 
 import {
+  filterRawDataByRegionIds
+} from '@/utils/outputdata-util';
+import {
   COLOR,
   COLOR_SCHEME,
   colorFromIndex,
@@ -745,6 +748,8 @@ export default defineComponent({
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
     const isIndicatorDatacube = computed(() => metadata.value !== null && isIndicator(metadata.value));
+
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       dimensions,
@@ -1471,10 +1476,11 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       breakdownOption,
-      initialSelectedRegionIds
+      initialSelectedRegionIds,
+      activeFeature
     );
 
-    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds);
+    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, activeFeature);
 
     const {
       qualifierBreakdownData,
@@ -1492,7 +1498,8 @@ export default defineComponent({
       selectedTimestamp,
       availableQualifiers,
       initialSelectedQualifierValues,
-      initialNonDefaultQualifiers
+      initialNonDefaultQualifiers,
+      activeFeature
     );
 
     const {
@@ -1518,6 +1525,7 @@ export default defineComponent({
       selectedQualifierValues,
       initialSelectedYears,
       showPercentChange,
+      activeFeature,
       selectedScenarios,
       activeReferenceOptions
     );
@@ -1546,6 +1554,7 @@ export default defineComponent({
       selectedTransform,
       metadata,
       selectedTimeseriesPoints,
+      activeFeature,
       filteredRunData
     );
 
@@ -1592,21 +1601,28 @@ export default defineComponent({
       return options;
     });
 
-    const { activeFeature } = useActiveDatacubeFeature(metadata);
-
-    // Fetch raw data points
-    const rawDataPoints = ref<RawOutputDataPoint[]>([]);
+    // Fetch raw data points for for each output spec
+    const rawDataPointsListOrigin = ref<RawOutputDataPoint[][]>([]);
     watchEffect(async () => {
-      const dataId = metadata.value?.data_id;
-      const runId = selectedScenarioIds.value[0];
-      const outputVariable = activeFeature.value;
-      const timestamp = selectedTimestamp.value;
+      // Fetch raw output data for each output spec
+      const rawDataPromises = outputSpecs.value.map(spec => {
+        const { modelId, runId, outputVariable, timestamp } = spec;
+        return timestamp === null
+          ? Promise.resolve([])
+          : getRawOutputDataByTimestamp({ dataId: modelId, runId, outputVariable, timestamp });
+      });
+      rawDataPointsListOrigin.value = await Promise.all(rawDataPromises);
+    });
+    const rawDataPointsList = computed(() => {
+      // Apply region filter for each raw output data
+      return rawDataPointsListOrigin.value.map((points, index) => {
+        // If split by region, use output spec id which is region id as region filter.
+        const regionFilter = breakdownOption.value === SpatialAggregationLevel.Region
+          ? [outputSpecs.value[index].id].filter(id => !!id) // filter out null or undefined ids
+          : selectedRegionIds.value;
 
-      if (!dataId || !runId || !outputVariable || timestamp === null) {
-        rawDataPoints.value = [];
-        return;
-      }
-      rawDataPoints.value = await getRawOutputDataByTimestamp({ dataId, runId, outputVariable, timestamp });
+        return filterRawDataByRegionIds(points, regionFilter);
+      });
     });
 
     const {
@@ -1626,7 +1642,7 @@ export default defineComponent({
       mapColorOptions,
       activeReferenceOptions,
       breakdownOption,
-      rawDataPoints
+      rawDataPointsList
     );
 
     const mapSelectedLayerId = computed(() => {
@@ -1831,7 +1847,7 @@ export default defineComponent({
       projectType,
       preGenDataItems,
       qualifierBreakdownData,
-      rawDataPoints,
+      rawDataPointsList,
       recalculateGridMapDiffStats,
       regionalData,
       // regionsToSubregions,

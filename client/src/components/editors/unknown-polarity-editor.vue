@@ -63,13 +63,14 @@
   </dropdown-control>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
 
-import DropdownControl from '@/components/dropdown-control';
+import DropdownControl from '@/components/dropdown-control.vue';
 import messagesUtil from '@/utils/messages-util';
+import { defineComponent } from 'vue';
 
-export default {
+export default defineComponent({
   name: 'UnknownPolarityEditor',
   components: {
     DropdownControl
@@ -80,14 +81,14 @@ export default {
       default: false
     }
   },
-  emits: ['close', 'confirmUpdate', 'cancelUpdate'],
+  emits: ['select', 'close', 'confirmUpdate', 'cancelUpdate'],
   data: () => ({
     selected: '',
     noSelectionMessage: false,
     UNKNOWN_POLARITY_BULK_MESSAGE: messagesUtil.UNKNOWN_POLARITY_BULK_MESSAGE
   }),
   methods: {
-    select(type) {
+    select(type: string) {
       this.selected = type;
       this.noSelectionMessage = false;
       this.$emit('select', type);
@@ -95,7 +96,7 @@ export default {
     close() {
       this.$emit('close');
     },
-    selectedOption(index) {
+    selectedOption(index: string) {
       if (index === this.selected) {
         return {
           opacity: '1'
@@ -106,7 +107,7 @@ export default {
         };
       }
     },
-    confirmUpdate(selected) {
+    confirmUpdate(selected: string) {
       if (_.isEmpty(selected)) {
         this.noSelectionMessage = true;
       }
@@ -116,7 +117,7 @@ export default {
       this.$emit('cancelUpdate');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
