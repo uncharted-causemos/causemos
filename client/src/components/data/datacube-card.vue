@@ -533,6 +533,7 @@ import TemporalFacet from '@/components/facets/temporal-facet.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
 import useMapBounds from '@/services/composables/useMapBounds';
+import useRawPointsData from '@/services/composables/useRawPointsData';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
@@ -546,7 +547,6 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 import { getInsightById } from '@/services/insight-service';
-import { getRawOutputDataByTimestamp } from '@/services/runoutput-service';
 
 import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
@@ -565,11 +565,8 @@ import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datac
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import { OutputSpecWithId, RawOutputDataPoint } from '@/types/Runoutput';
+import { OutputSpecWithId } from '@/types/Runoutput';
 
-import {
-  filterRawDataByRegionIds
-} from '@/utils/outputdata-util';
 import {
   COLOR,
   COLOR_SCHEME,
@@ -1601,29 +1598,9 @@ export default defineComponent({
       return options;
     });
 
-    // Fetch raw data points for for each output spec
-    const rawDataPointsListOrigin = ref<RawOutputDataPoint[][]>([]);
-    watchEffect(async () => {
-      // Fetch raw output data for each output spec
-      const rawDataPromises = outputSpecs.value.map(spec => {
-        const { modelId, runId, outputVariable, timestamp } = spec;
-        return timestamp === null
-          ? Promise.resolve([])
-          : getRawOutputDataByTimestamp({ dataId: modelId, runId, outputVariable, timestamp });
-      });
-      rawDataPointsListOrigin.value = await Promise.all(rawDataPromises);
-    });
-    const rawDataPointsList = computed(() => {
-      // Apply region filter for each raw output data
-      return rawDataPointsListOrigin.value.map((points, index) => {
-        // If split by region, use output spec id which is region id as region filter.
-        const regionFilter = breakdownOption.value === SpatialAggregationLevel.Region
-          ? [outputSpecs.value[index].id].filter(id => !!id) // filter out null or undefined ids
-          : selectedRegionIds.value;
-
-        return filterRawDataByRegionIds(points, regionFilter);
-      });
-    });
+    const {
+      rawDataPointsList
+    } = useRawPointsData(outputSpecs, selectedRegionIds, breakdownOption);
 
     const {
       updateMapCurSyncedZoom,
