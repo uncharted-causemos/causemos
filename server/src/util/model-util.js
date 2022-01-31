@@ -31,6 +31,8 @@ function isEdgeAmbiguous(polarities) {
 const projectionValueRange = (values) => {
   if (_.isEmpty(values)) return { max: 1, min: 0 };
 
+  const hasNegative = _.some(values, v => v < 0);
+
   let max = _.max(values);
   let min = _.min(values);
 
@@ -40,11 +42,19 @@ const projectionValueRange = (values) => {
   } else if (max === min) {
     const magnitude = Math.abs(max);
     max += magnitude;
-    min -= magnitude;
+    if (hasNegative) {
+      min -= magnitude;
+    } else {
+      min = 0;
+    }
   } else {
     const magnitude = Math.abs(max - min);
     max += magnitude;
-    min -= magnitude;
+    if (hasNegative) {
+      min -= magnitude;
+    } else {
+      min = 0;
+    }
   }
   return { max, min };
 };
