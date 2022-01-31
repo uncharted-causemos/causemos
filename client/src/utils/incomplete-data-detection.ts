@@ -27,7 +27,7 @@ const NO_CHANGE_ABOVE = 0.9;
  *
  * @returns {object} An updated list of Timeseries objects with the correctiveAction field set.
  */
-export function correctIncompleteTimeseries(
+export function correctIncompleteTimeseriesLists(
   timeseriesData: Timeseries[],
   rawResolution: TemporalResolution,
   temporalResolution: TemporalResolutionOption,
@@ -35,7 +35,7 @@ export function correctIncompleteTimeseries(
   finalRawDate: Date
 ): Timeseries[] {
   return timeseriesData.map((timeseries: Timeseries) => {
-    const { action, points } = correctIncompleteData(timeseries.points, rawResolution,
+    const { action, points } = correctIncompleteTimeseries(timeseries.points, rawResolution,
       temporalResolution, temporalAggregation, finalRawDate);
     return {
       ...timeseries,
@@ -61,7 +61,7 @@ export function correctIncompleteTimeseries(
  *
  * @returns {object} The adjusted list of points and the action that was performed.
  */
-export function correctIncompleteData(
+export function correctIncompleteTimeseries(
   timeseries: TimeseriesPoint[],
   rawResolution: TemporalResolution,
   temporalResolution: TemporalResolutionOption,
@@ -78,13 +78,13 @@ export function correctIncompleteData(
   }
 
   const lastAggDate = new Date(lastPoint.timestamp);
-  const validDates = lastAggDate.getUTCFullYear() === finalRawDate.getUTCFullYear() &&
+  const areDatesValid = lastAggDate.getUTCFullYear() === finalRawDate.getUTCFullYear() &&
     (temporalResolution === TemporalResolutionOption.Year ||
       (temporalResolution === TemporalResolutionOption.Month &&
         lastAggDate.getUTCMonth() === finalRawDate.getUTCMonth()));
 
   // Check if we're looking at the correct month/year (in case the metadata was invalid)
-  if (!validDates) {
+  if (!areDatesValid) {
     return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points: sortedPoints };
   }
 

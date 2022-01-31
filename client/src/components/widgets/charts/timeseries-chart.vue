@@ -13,7 +13,9 @@
           class="selected-data-row"
           :style="{ color: timeseries.color }"
         >
-          <strong>{{ timeseries.name }}<sup>{{timeseries.superscript}}</sup></strong>
+          <strong v-tooltip="{ content: timeseries.tooltip, html: true }" >{{ timeseries.name }}
+            <sup>{{timeseries.superscript}}</sup>
+          </strong>
           <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
         </div>
       </div>
@@ -22,7 +24,7 @@
   </div>
   <div class="timeseries-footer" >
     <slot name="timeseries-footer-contents" />
-    <div v-if="footnotes" style="text-align: right">
+    <div v-if="footnotes" v-tooltip="{ content: footnoteTooltip, html: true }" style="text-align: right">
       {{footnotes}}
     </div>
   </div>
@@ -33,15 +35,7 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import renderTimeseries from '@/charts/timeseries-renderer';
 import { Timeseries } from '@/types/Timeseries';
-import {
-  defineComponent,
-  PropType,
-  onMounted,
-  ref,
-  watch,
-  toRefs,
-  computed
-} from 'vue';
+import { computed, defineComponent, onMounted, PropType, ref, toRefs, watch } from 'vue';
 import { IncompleteDataCorrectiveAction, TemporalResolutionOption } from '@/types/Enums';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { chartValueFormatter } from '@/utils/string-util';
@@ -51,6 +45,15 @@ const RESIZE_DELAY = 15;
 const SUPERSCRIPTS = new Map([
   [IncompleteDataCorrectiveAction.DataRemoved, '*'],
   [IncompleteDataCorrectiveAction.DataExtrapolated, '\u2020'] // dagger
+]);
+const TOOLTIPS = new Map([
+  [IncompleteDataCorrectiveAction.DataRemoved,
+    '* There was insufficient data to produce an accurate aggregate value for the final timeframe.' +
+    '<br>\u2002 The outlier point has been removed from the time series.'],
+  [IncompleteDataCorrectiveAction.DataExtrapolated,
+    '\u2020 The final timeframe contained fewer data points than required to produce an accurate ' +
+    'aggregate value.<br>\u2002 The final point in the time series has been scaled based on the ' +
+    'number of data points.']
 ]);
 
 export default defineComponent({
@@ -163,6 +166,7 @@ export default defineComponent({
           name,
           color,
           superscript: SUPERSCRIPTS.get(correctiveAction ?? IncompleteDataCorrectiveAction.NotRequired),
+          tooltip: TOOLTIPS.get(correctiveAction ?? IncompleteDataCorrectiveAction.NotRequired),
           value: points.find(
             point => point.timestamp === selectedTimestamp.value
           )?.value
@@ -179,6 +183,12 @@ export default defineComponent({
           : `${SUPERSCRIPTS.get(action)}${action}`
       ).filter(a => a !== undefined).join('  ');
     });
+    const footnoteTooltip = computed(() => {
+      const actions = _.uniq(timeseriesData.value.map(({ correctiveAction }) => correctiveAction));
+      return actions.map((action: IncompleteDataCorrectiveAction|undefined) =>
+        action === undefined || !TOOLTIPS.has(action) ? undefined : TOOLTIPS.get(action)
+      ).filter(a => a !== undefined).join('<br><br>');
+    });
     onMounted(() => {
       const parentElement = lineChart.value?.parentElement;
       if (parentElement === null || parentElement === undefined) return;
@@ -192,6 +202,7 @@ export default defineComponent({
       lineChart,
       dataAtSelectedTimestamp,
       footnotes,
+      footnoteTooltip,
       timestampFormatter,
       valueFormatter
     };

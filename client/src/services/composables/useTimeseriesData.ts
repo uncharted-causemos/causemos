@@ -19,7 +19,7 @@ import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain 
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
 import { getQualifierTimeseries } from '../new-datacube-service';
-import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
+import { correctIncompleteTimeseriesLists } from '@/utils/incomplete-data-detection';
 
 
 const applyBreakdown = (
@@ -212,7 +212,7 @@ export default function useTimeseriesData(
     const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
     const finalRawDate = new Date(metadata.value?.period?.lte ?? 0);
 
-    const correctedTimeseriesData = correctIncompleteTimeseries(breakdownTimeseriesData,
+    const correctedTimeseriesData = correctIncompleteTimeseriesLists(breakdownTimeseriesData,
       rawResolution, temporalRes.value as TemporalResolutionOption,
       temporalAgg.value as AggregationOption, finalRawDate);
 

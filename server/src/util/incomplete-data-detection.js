@@ -6,7 +6,7 @@ const NO_CHANGE_ABOVE = 0.9;
 /**
  * THIS IS A COPY OF incomplete-data-detection.ts in client
  */
-const correctIncompleteData = (timeseries, rawResolution, temporalResolution, temporalAggregation, finalRawDate) => {
+const correctIncompleteTimeseries = (timeseries, rawResolution, temporalResolution, temporalAggregation, finalRawDate) => {
   const sortedPoints = _.cloneDeep(_.sortBy(timeseries, 'timestamp'));
   const lastPoint = _.last(sortedPoints);
 
@@ -72,5 +72,5 @@ const computeCoverage = (finalRawDate, rawRes, aggRes) => {
 };
 
 module.exports = {
-  correctIncompleteData
+  correctIncompleteTimeseries
 };

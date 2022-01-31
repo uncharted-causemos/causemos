@@ -139,7 +139,7 @@ import projectService from '@/services/project-service';
 import datacubeService from '@/services/new-datacube-service';
 
 import { AggregationOption, TemporalResolution, TemporalResolutionOption, TimeScale } from '@/types/Enums';
-import { correctIncompleteData } from '@/utils/incomplete-data-detection';
+import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 
 const CONCEPT_SUGGESTION_COUNT = 10;
 
@@ -267,7 +267,7 @@ export default defineComponent({
         const agg = AggregationOption.Mean;
 
         const result = await getTimeseries(doc.data_id, runId, doc.feature, temporalResolution.value, agg);
-        const { points } = correctIncompleteData(result, rawResolution, temporalResolution.value, agg, periodEndDate);
+        const { points } = correctIncompleteTimeseries(result, rawResolution, temporalResolution.value, agg, periodEndDate);
 
         timeseries.value = points;
         sparklineData.value = [
