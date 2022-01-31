@@ -7,13 +7,13 @@ const NO_CHANGE_ABOVE = 0.9;
  * THIS IS A COPY OF incomplete-data-detection.ts in client
  */
 const correctIncompleteTimeseries = (timeseries, rawResolution, temporalResolution, temporalAggregation, finalRawDate) => {
-  const sortedPoints = _.cloneDeep(_.sortBy(timeseries, 'timestamp'));
-  const lastPoint = _.last(sortedPoints);
+  const points = _.cloneDeep(timeseries);
+  const lastPoint = _.last(points);
 
   if (temporalAggregation !== 'sum') {
-    return sortedPoints;
+    return points;
   } else if (lastPoint === undefined || lastPoint.timestamp > finalRawDate.getTime()) {
-    return sortedPoints;
+    return points;
   }
 
   const lastAggDate = new Date(lastPoint.timestamp);
@@ -23,16 +23,16 @@ const correctIncompleteTimeseries = (timeseries, rawResolution, temporalResoluti
 
   // Check if we're looking at the correct month/year (in case the metadata was invalid)
   if (!validDates) {
-    return sortedPoints;
+    return points;
   }
 
   const coverage = computeCoverage(finalRawDate, rawResolution, temporalResolution);
   if (coverage >= 0 && coverage < REMOVE_BELOW) {
-    sortedPoints.pop();
+    points.pop();
   } else if (coverage < NO_CHANGE_ABOVE) {
     lastPoint.value *= (1 / coverage);
   }
-  return sortedPoints;
+  return points;
 };
 
 const computeCoverage = (finalRawDate, rawRes, aggRes) => {

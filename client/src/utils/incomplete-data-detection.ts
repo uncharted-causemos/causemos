@@ -68,13 +68,13 @@ export function correctIncompleteTimeseries(
   temporalAggregation: AggregationOption,
   finalRawDate: Date
 ): { action: IncompleteDataCorrectiveAction, points: TimeseriesPoint[] } {
-  const sortedPoints = _.cloneDeep(_.sortBy(timeseries, 'timestamp'));
-  const lastPoint = _.last(sortedPoints);
+  const points = _.cloneDeep(timeseries);
+  const lastPoint = _.last(points);
 
   if (temporalAggregation !== AggregationOption.Sum) {
-    return { action: IncompleteDataCorrectiveAction.NotRequired, points: sortedPoints };
+    return { action: IncompleteDataCorrectiveAction.NotRequired, points };
   } else if (lastPoint === undefined || lastPoint.timestamp > finalRawDate.getTime()) {
-    return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points: sortedPoints };
+    return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points };
   }
 
   const lastAggDate = new Date(lastPoint.timestamp);
@@ -85,18 +85,18 @@ export function correctIncompleteTimeseries(
 
   // Check if we're looking at the correct month/year (in case the metadata was invalid)
   if (!areDatesValid) {
-    return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points: sortedPoints };
+    return { action: IncompleteDataCorrectiveAction.OutOfScopeData, points };
   }
 
   const coverage = computeCoverage(finalRawDate, rawResolution, temporalResolution);
   if (coverage < REMOVE_BELOW) {
-    sortedPoints.pop();
-    return { action: IncompleteDataCorrectiveAction.DataRemoved, points: sortedPoints };
+    points.pop();
+    return { action: IncompleteDataCorrectiveAction.DataRemoved, points };
   } else if (coverage < NO_CHANGE_ABOVE) {
     lastPoint.value *= (1 / coverage);
-    return { action: IncompleteDataCorrectiveAction.DataExtrapolated, points: sortedPoints };
+    return { action: IncompleteDataCorrectiveAction.DataExtrapolated, points };
   } else {
-    return { action: IncompleteDataCorrectiveAction.CompleteData, points: sortedPoints };
+    return { action: IncompleteDataCorrectiveAction.CompleteData, points };
   }
 }
 
