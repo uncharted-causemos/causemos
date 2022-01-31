@@ -370,7 +370,6 @@
                       :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
-                      :reference-options="activeReferenceOptions"
                       :show-tooltip="true"
                       :selected-layer-id="getSelectedLayer(spec.id)"
                       :all-active-layer-ids="allActiveLayerIds"
@@ -1463,6 +1462,8 @@ export default defineComponent({
       }
     };
 
+    const isRawDataLayerSelected = computed(() => selectedDataLayer.value === DATA_LAYER.RAW);
+
     const {
       datacubeHierarchy,
       selectedRegionIds,
@@ -1524,7 +1525,8 @@ export default defineComponent({
       showPercentChange,
       activeFeature,
       selectedScenarios,
-      activeReferenceOptions
+      activeReferenceOptions,
+      isRawDataLayerSelected
     );
 
     watchEffect(() => {
@@ -1943,7 +1945,7 @@ export default defineComponent({
   },
   methods: {
     getSelectedLayer(id: string): string {
-      const layerId = this.isReferenceSeries(id) && this.breakdownOption === SpatialAggregationLevel.Region
+      const layerId = this.isReferenceSeries(id) && this.breakdownOption === SpatialAggregationLevel.Region && this.selectedDataLayer === DATA_LAYER.ADMIN
         ? SOURCE_LAYERS[0].layerId
         : this.mapSelectedLayerId;
       return layerId;

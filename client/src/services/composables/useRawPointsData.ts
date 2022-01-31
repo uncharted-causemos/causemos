@@ -18,26 +18,25 @@ export default function useRawPointsData(
   breakdownOption: Ref<string | null>
 ) {
   // Fetch raw data points for for each output spec
-  const rawDataPointsListOrigin = ref<RawOutputDataPoint[][]>([]);
+  const rawDataPointsListOrigin = ref<{ id: string, points: RawOutputDataPoint[] }[]>([]);
   watchEffect(async () => {
     // Fetch raw output data for each output spec
     const rawDataPromises = outputSpecs.value.map(spec => {
       const { modelId, runId, outputVariable, timestamp } = spec;
-      return timestamp === null
-        ? Promise.resolve([])
-        : getRawOutputDataByTimestamp({ dataId: modelId, runId, outputVariable, timestamp });
+      return getRawOutputDataByTimestamp({ dataId: modelId, runId, outputVariable, timestamp })
+        .then(points => ({ points, id: spec.id }));
     });
     rawDataPointsListOrigin.value = await Promise.all(rawDataPromises);
   });
   const rawDataPointsList = computed(() => {
     // Apply region filter for each raw output data
-    return rawDataPointsListOrigin.value.map((points, index) => {
+    return rawDataPointsListOrigin.value.map(data => {
       // If split by region, use output spec id which is region id as region filter.
       const regionFilter = breakdownOption.value === SpatialAggregationLevel.Region
-        ? [outputSpecs.value[index].id].filter(id => !!id) // filter out null or undefined ids
+        ? [data.id].filter(d => !!d)
         : selectedRegionIds.value;
 
-      return filterRawDataByRegionIds(points, regionFilter);
+      return filterRawDataByRegionIds(data.points, regionFilter);
     });
   });
 

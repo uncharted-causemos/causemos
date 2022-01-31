@@ -74,7 +74,8 @@ export default function useTimeseriesData(
   showPercentChange: Ref<boolean>,
   activeFeature: Ref<string>,
   modelRuns?: Ref<ModelRun[]>,
-  referenceOptions?: Ref<string[]>
+  referenceOptions?: Ref<string[]>,
+  isRawDataResolution?: Ref<Boolean>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
   const referenceTimeseries = ref<Timeseries[]>([]);
@@ -270,20 +271,20 @@ export default function useTimeseriesData(
         const regionId =
           regionIds.value.length > 0 ? regionIds.value[0] : undefined;
         promises = modelRunIds.value.map(runId => {
-          return getRawTimeseriesData({ dataId, runId, regionId: (regionId || ''), outputVariable: activeFeature.value, spatialAgg }).then(result => ({ data: result }));
-          // console.log(getRawTimeseriesData);
-          // return API.get('maas/output/timeseries', {
-          //   params: {
-          //     data_id: dataId,
-          //     run_id: runId,
-          //     feature: activeFeature.value,
-          //     resolution: temporalRes,
-          //     temporal_agg: temporalAgg,
-          //     spatial_agg: spatialAgg,
-          //     transform: transform,
-          //     region_id: regionId
-          //   }
-          // });
+          return isRawDataResolution?.value
+            ? getRawTimeseriesData({ dataId, runId, regionId: (regionId || ''), outputVariable: activeFeature.value, spatialAgg }).then(result => ({ data: result }))
+            : API.get('maas/output/timeseries', {
+              params: {
+                data_id: dataId,
+                run_id: runId,
+                feature: activeFeature.value,
+                resolution: temporalRes,
+                temporal_agg: temporalAgg,
+                spatial_agg: spatialAgg,
+                transform: transform,
+                region_id: regionId
+              }
+            });
         });
       } else {
         // Breakdown by qualifier

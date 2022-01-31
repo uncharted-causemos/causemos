@@ -127,7 +127,7 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
 };
 
 export default {
-  name: 'AnalysisMapSimple',
+  name: 'AnalysisMap',
   components: {
     WmMap,
     WmMapVector,
@@ -156,10 +156,6 @@ export default {
     relativeTo: {
       type: String,
       default: null
-    },
-    referenceOptions: {
-      type: Array,
-      default: () => []
     },
     showTooltip: {
       type: Boolean,
