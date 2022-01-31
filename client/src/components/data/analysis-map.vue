@@ -38,7 +38,7 @@
       <wm-map-geojson
         v-if="isPointsMap && pointsColorLayer"
         :source-id="pointsSource"
-        :source="rawData"
+        :source="rawGeoJson"
         :layer-id="pointsLayerId"
         :layer="pointsColorLayer"
       />
@@ -74,6 +74,10 @@ import {
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
+import {
+  convertRawDataToGeoJson,
+  filterRawDataByRegionIds
+} from '@/utils/outputdata-util';
 import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { chartValueFormatter } from '@/utils/string-util';
@@ -122,7 +126,6 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
     });
   }
 };
-
 
 export default {
   name: 'AnalysisMapSimple',
@@ -196,10 +199,7 @@ export default {
     },
     rawData: {
       type: Object,
-      default: () => ({
-        type: 'FeatureCollection',
-        features: []
-      })
+      default: () => ([])
     },
     selectedRegionIds: {
       type: Array,
@@ -346,6 +346,10 @@ export default {
       return this.selectedBaseLayer === BASE_LAYER.DEFAULT
         ? 'watername_ocean'
         : undefined;
+    },
+    rawGeoJson() {
+      const data = convertRawDataToGeoJson(filterRawDataByRegionIds(this.rawData, this.selectedRegionIds));
+      return data;
     }
   },
   watch: {

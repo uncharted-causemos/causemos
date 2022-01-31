@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { OutputStatsResult, RegionalAggregations, RawOutputGeoJson } from '@/types/Runoutput';
+import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Runoutput';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
 import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
@@ -182,11 +182,11 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
 }
 
 // Compute min/max stats for raw data
-export function computeRawDataStats(data: RawOutputGeoJson): AnalysisMapStats {
+export function computeRawDataStats(data: RawOutputDataPoint[]): AnalysisMapStats {
   const globalStats: MapLayerStats = {};
   const values = [];
-  for (const d of data.features) {
-    values.push(d.properties.value);
+  for (const d of data) {
+    values.push(d.value);
   }
   if (values.length) {
     globalStats.all = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });

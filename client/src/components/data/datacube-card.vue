@@ -377,7 +377,7 @@
                       :map-bounds="mapBounds"
                       :camera-options="mapCameraOptions"
                       :region-data="regionalData"
-                      :raw-data="rawData"
+                      :raw-data="rawDataPoints"
                       :selected-region-ids="allActiveRegionIds"
                       :admin-layer-stats="adminLayerStats"
                       :grid-layer-stats="gridLayerStats"
@@ -546,7 +546,7 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 import { getInsightById } from '@/services/insight-service';
-import { getRawOutputGeoJsonByTimestamp } from '@/services/runoutput-service';
+import { getRawOutputDataByTimestamp } from '@/services/runoutput-service';
 
 import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
@@ -565,7 +565,7 @@ import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datac
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import { OutputSpecWithId, RawOutputGeoJson } from '@/types/Runoutput';
+import { OutputSpecWithId, RawOutputDataPoint } from '@/types/Runoutput';
 
 import {
   COLOR,
@@ -1522,27 +1522,6 @@ export default defineComponent({
       activeReferenceOptions
     );
 
-    const { activeFeature } = useActiveDatacubeFeature(metadata);
-    const emptyRawGeojson: RawOutputGeoJson = {
-      type: 'FeatureCollection',
-      features: []
-    };
-    const rawData = ref<RawOutputGeoJson>(emptyRawGeojson);
-    watchEffect(async () => {
-      const dataId = metadata.value?.data_id;
-      const runId = selectedScenarioIds.value[0];
-      const outputVariable = activeFeature.value;
-      const timestamp = selectedTimestamp.value;
-
-      if (!dataId || !runId || !outputVariable || timestamp === null) {
-        rawData.value = emptyRawGeojson;
-        return;
-      }
-      const data = await getRawOutputGeoJsonByTimestamp({ dataId, runId, outputVariable, timestamp });
-      rawData.value = data;
-    });
-
-
     watchEffect(() => {
       if (initialActiveReferenceOptions.value && initialActiveReferenceOptions.value.length > 0) {
         activeReferenceOptions.value = initialActiveReferenceOptions.value;
@@ -1613,6 +1592,23 @@ export default defineComponent({
       return options;
     });
 
+    const { activeFeature } = useActiveDatacubeFeature(metadata);
+
+    // Fetch raw data points
+    const rawDataPoints = ref<RawOutputDataPoint[]>([]);
+    watchEffect(async () => {
+      const dataId = metadata.value?.data_id;
+      const runId = selectedScenarioIds.value[0];
+      const outputVariable = activeFeature.value;
+      const timestamp = selectedTimestamp.value;
+
+      if (!dataId || !runId || !outputVariable || timestamp === null) {
+        rawDataPoints.value = [];
+        return;
+      }
+      rawDataPoints.value = await getRawOutputDataByTimestamp({ dataId, runId, outputVariable, timestamp });
+    });
+
     const {
       updateMapCurSyncedZoom,
       recalculateGridMapDiffStats,
@@ -1630,7 +1626,7 @@ export default defineComponent({
       mapColorOptions,
       activeReferenceOptions,
       breakdownOption,
-      rawData
+      rawDataPoints
     );
 
     const mapSelectedLayerId = computed(() => {
@@ -1755,9 +1751,35 @@ export default defineComponent({
       }
     };
 
+    // Check if we have active regional reference series by looking at the current breakdown option
+    // and the lenght of active reference options
+    const hasRegionalReferenceSeries = computed(() => {
+      return activeReferenceOptions.value.length > 0 && breakdownOption.value === SpatialAggregationLevel.Region;
+    });
+
+    // If we have active regional reference series, then we need to provide layer ids for all active
+    // regions/layers. As we currently only allow country level reference series, we add the country
+    // to the list of selected layers.
+    const allActiveLayerIds = computed(() => {
+      return hasRegionalReferenceSeries.value
+        ? [SOURCE_LAYERS[0].layerId, mapSelectedLayerId.value]
+        : [mapSelectedLayerId.value];
+    });
+
+    // If we have active regional reference series, then we need to provide region ids for all active
+    // regions/layers. As we currently only allow country level reference series, we add the selected
+    // to the country region ids from the active reference options to the list of selected region ids.
+    const allActiveRegionIds = computed(() => {
+      return hasRegionalReferenceSeries.value
+        ? [...selectedRegionIds.value, ...activeReferenceOptions.value]
+        : selectedRegionIds.value;
+    });
+
     return {
       activeReferenceOptions,
       addNewTag,
+      allActiveLayerIds,
+      allActiveRegionIds,
       allModelRunData,
       activeDrilldownTab,
       activeVizOptionsTab,
@@ -1781,6 +1803,7 @@ export default defineComponent({
       gridLayerStats,
       hasDefaultRun,
       headerGroupButtons,
+      hasRegionalReferenceSeries,
       isContinuousScale,
       isDivergingScale,
       isModelMetadata,
@@ -1808,7 +1831,7 @@ export default defineComponent({
       projectType,
       preGenDataItems,
       qualifierBreakdownData,
-      rawData,
+      rawDataPoints,
       recalculateGridMapDiffStats,
       regionalData,
       // regionsToSubregions,
@@ -1923,30 +1946,6 @@ export default defineComponent({
         result = result.filter(tag => tags.includes(tag));
       });
       return result;
-    },
-
-    // Check if we have active regional reference series by looking at the current breakdown option
-    // and the lenght of active reference options
-    hasRegionalReferenceSeries(): boolean {
-      return this.activeReferenceOptions.length > 0 && this.breakdownOption === SpatialAggregationLevel.Region;
-    },
-
-    // If we have active regional reference series, then we need to provide layer ids for all active
-    // regions/layers. As we currently only allow country level reference series, we add the country
-    // to the list of selected layers.
-    allActiveLayerIds(): string[] {
-      return this.hasRegionalReferenceSeries
-        ? [SOURCE_LAYERS[0].layerId, this.mapSelectedLayerId]
-        : [this.mapSelectedLayerId];
-    },
-
-    // If we have active regional reference series, then we need to provide region ids for all active
-    // regions/layers. As we currently only allow country level reference series, we add the selected
-    // to the country region ids from the active reference options to the list of selected region ids.
-    allActiveRegionIds(): string[] {
-      return this.hasRegionalReferenceSeries
-        ? [...this.selectedRegionIds, ...this.activeReferenceOptions]
-        : this.selectedRegionIds;
     }
   },
   methods: {

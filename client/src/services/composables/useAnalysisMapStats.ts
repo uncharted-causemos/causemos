@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { MapLegendColor, AnalysisMapStats, AnalysisMapColorOptions } from '@/types/Common';
-import { OutputSpecWithId, OutputStatsResult, RegionalAggregations, RawOutputGeoJson } from '@/types/Runoutput';
+import { OutputSpecWithId, OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Runoutput';
 import { computeRegionalStats, computeRawDataStats, adminLevelToString, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
 import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';
@@ -19,7 +19,7 @@ export default function useAnalysisMapStats(
   colorOptions: Ref<AnalysisMapColorOptions>,
   referenceOptions: Ref<string[]>,
   breakdownOption: Ref<string | null>,
-  rawData: Ref<RawOutputGeoJson>
+  rawDataPoints: Ref<RawOutputDataPoint[]>
 ) {
   // ===== Set up stats and legend for the admin layer ===== //
 
@@ -131,7 +131,7 @@ export default function useAnalysisMapStats(
   const pointsMapLayerLegendData = ref<MapLegendColor[][]>([]);
   const pointsLayerStats = ref<AnalysisMapStats>();
   watchEffect(() => {
-    pointsLayerStats.value = computeRawDataStats(rawData.value);
+    pointsLayerStats.value = computeRawDataStats(rawDataPoints.value);
     const globalStats = pointsLayerStats.value.global.all;
     pointsMapLayerLegendData.value = globalStats ? [
       createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn, colorOptions.value.isDiverging)

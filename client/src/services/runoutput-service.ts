@@ -14,18 +14,8 @@ import {
   RawOutputGeoJson
 } from '@/types/Runoutput';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
-import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { filterRawDataByRegionIds } from '@/utils/outputdata-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
-
-const filterRawDataByRegionId = (data: RawOutputDataPoint[], regionId: string): RawOutputDataPoint[] => {
-  if (!regionId) return data;
-  const adminLevels = regionId.split(REGION_ID_DELIMETER);
-  const level = adminLevels.length - 1;
-  return data.filter(d => {
-    const matches = [d.country === adminLevels[0], d.admin1 === adminLevels[1], d.admin2 === adminLevels[2], d.admin3 === adminLevels[3]];
-    return matches.slice(0, level + 1).reduce((prev, cur) => prev && cur, true);
-  });
-};
 
 export const getRawOutputData = async (
   param: {
@@ -60,7 +50,7 @@ export const getRawTimeseriesData = async (
   const rawData = await getRawOutputData(param);
   console.log('raw data');
   console.log(rawData);
-  const filteredData = filterRawDataByRegionId(rawData, param.regionId);
+  const filteredData = param.regionId ? filterRawDataByRegionIds(rawData, [param.regionId]) : rawData;
 
   // Aggregate spatially and derive timeseries data
   const dataByTs = _.groupBy(filteredData, 'timestamp');
