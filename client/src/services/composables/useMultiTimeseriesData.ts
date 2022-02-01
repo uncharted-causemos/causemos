@@ -28,6 +28,8 @@ export default function useMultiTimeseriesData(
   const selectedGlobalTimestamp: Ref<number | null> = ref(null);
   const selectedGlobalTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
 
+  // REVIEW: consider refactoring the fetchTimeseries() outside the watchEffect
+  //  see https://gitlab.uncharted.software/WM/causemos/-/merge_requests/809
   watchEffect(onInvalidate => {
     const datacubeMetadata = metadata.value;
     if (modelRunIds.value.length === 0 || datacubeMetadata === null || breakdownOption.value !== SPLIT_BY_VARIABLE || activeFeatures.value.length === 0) {
