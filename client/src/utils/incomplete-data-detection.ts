@@ -10,6 +10,20 @@ import _ from 'lodash';
 const REMOVE_BELOW = 0.25;
 const NO_CHANGE_ABOVE = 0.9;
 
+const SUPERSCRIPTS = new Map([
+  [IncompleteDataCorrectiveAction.DataRemoved, '*'],
+  [IncompleteDataCorrectiveAction.DataExtrapolated, '\u2020'] // dagger
+]);
+const TOOLTIPS = new Map([
+  [IncompleteDataCorrectiveAction.DataRemoved,
+    '* There was insufficient data to produce an accurate aggregate value for the final timeframe.' +
+    '<br>\u2002 The outlier point has been removed from the time series.'],
+  [IncompleteDataCorrectiveAction.DataExtrapolated,
+    '\u2020 The final timeframe contained fewer data points than required to produce an accurate ' +
+    'aggregate value.<br>\u2002 The final point in the time series has been scaled based on the ' +
+    'number of data points.']
+]);
+
 /**
  * Checks the final point in each of the timeseries and adjusts
  * them based on information about the raw data.
@@ -159,4 +173,26 @@ const computeCoverage = (finalRawDate: Date, rawRes: TemporalResolution, aggRes:
         return lastDayOfMonth / 30;
     }
   }
+};
+
+export const getActionSuperscript = (action?: IncompleteDataCorrectiveAction) => {
+  return SUPERSCRIPTS.get(action ?? IncompleteDataCorrectiveAction.NotRequired);
+};
+
+export const getActionTooltip = (action?: IncompleteDataCorrectiveAction) => {
+  return TOOLTIPS.get(action ?? IncompleteDataCorrectiveAction.NotRequired);
+};
+
+export const getFootnotes = (actionList: (IncompleteDataCorrectiveAction | undefined)[]) => {
+  return _.uniq(actionList).map((action: IncompleteDataCorrectiveAction|undefined) =>
+    action === undefined || !SUPERSCRIPTS.has(action)
+      ? undefined
+      : `${SUPERSCRIPTS.get(action)}${action}`
+  ).filter(a => a !== undefined).join('  ');
+};
+
+export const getFootnoteTooltip = (actionList: (IncompleteDataCorrectiveAction | undefined)[]) => {
+  return _.uniq(actionList).map((action: IncompleteDataCorrectiveAction|undefined) =>
+    action === undefined || !TOOLTIPS.has(action) ? undefined : TOOLTIPS.get(action)
+  ).filter(a => a !== undefined).join('<br><br>');
 };
