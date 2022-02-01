@@ -1,10 +1,11 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
-import { AggregationOption, DataTransform, TemporalResolutionOption, SPLIT_BY_VARIABLE } from '@/types/Enums';
+import { AggregationOption, DataTransform, TemporalResolutionOption, TemporalResolution, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import _ from 'lodash';
-import { Ref, ref, watch, watchEffect } from 'vue';
+import { computed, Ref, ref, watch, watchEffect } from 'vue';
+import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 
 /**
  * Takes a list of variable names, and fetches the timeseries data for each,
@@ -28,6 +29,18 @@ export default function useMultiTimeseriesData(
   const selectedGlobalTimestamp: Ref<number | null> = ref(null);
   const selectedGlobalTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
 
+  const temporalRes = computed(() =>
+    selectedTemporalResolution.value !== ''
+      ? selectedTemporalResolution.value
+      : TemporalResolutionOption.Month
+  );
+
+  const temporalAgg = computed(() =>
+    selectedTemporalAggregation.value !== ''
+      ? selectedTemporalAggregation.value
+      : AggregationOption.Sum
+  );
+
   // REVIEW: consider refactoring the fetchTimeseries() outside the watchEffect
   //  see https://gitlab.uncharted.software/WM/causemos/-/merge_requests/809
   watchEffect(onInvalidate => {
@@ -40,14 +53,6 @@ export default function useMultiTimeseriesData(
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
-      const temporalRes =
-        selectedTemporalResolution.value !== ''
-          ? selectedTemporalResolution.value
-          : TemporalResolutionOption.Month;
-      const temporalAgg =
-        selectedTemporalAggregation.value !== ''
-          ? selectedTemporalAggregation.value
-          : AggregationOption.Sum;
       const spatialAgg =
         selectedSpatialAggregation.value !== ''
           ? selectedSpatialAggregation.value
@@ -79,8 +84,8 @@ export default function useMultiTimeseriesData(
             data_id: dataId,
             run_id: runAndFeature.runId,
             feature: runAndFeature.featureName,
-            resolution: temporalRes,
-            temporal_agg: temporalAgg,
+            resolution: temporalRes.value,
+            temporal_agg: temporalAgg.value,
             spatial_agg: spatialAgg,
             transform: transform,
             region_id: undefined
@@ -95,13 +100,23 @@ export default function useMultiTimeseriesData(
         //  fetch results to avoid a race condition.
         return;
       }
+
       const modelRunIndx = 0; // REVIEW
-      timeseriesData.value = fetchResults.map((points, indx) => {
+      timeseriesData.value = fetchResults.map((rawPoints, indx) => {
         const name = activeFeatures.value[indx];
         const id = modelRunIds.value[modelRunIndx];
         const color = colorFromIndex(indx);
         const isDefaultRun = false;
-        return { name, id, color, points, isDefaultRun };
+
+        const output = metadata.value?.outputs.find(output => output.name === name);
+        const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+        const finalRawDate = new Date(metadata.value?.period?.lte ?? 0);
+
+        const { points, action } = correctIncompleteTimeseries(rawPoints, rawResolution,
+          temporalRes.value as TemporalResolutionOption,
+          temporalAgg.value as AggregationOption, finalRawDate);
+
+        return { name, id, color, points, isDefaultRun, correctiveAction: action };
       });
     }
     onInvalidate(() => {
