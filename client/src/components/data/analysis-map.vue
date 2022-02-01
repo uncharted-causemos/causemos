@@ -53,7 +53,7 @@
       </template>
       <wm-map-popup
         v-if="showTooltip"
-        :layer-id="baseLayerId"
+        :layer-id="isPointsMap ? pointsLayerId : baseLayerId"
         :formatter-fn="popupValueFormatter"
         :cursor="'default'"
       />
@@ -297,6 +297,7 @@ export default {
     },
     valueProp() {
       // Name of the value property of the feature to be rendered
+      if (this.isPointsMap) return 'value';
       return (this.selection && this.selection.id) || '';
     },
     vectorSource() {
@@ -491,7 +492,7 @@ export default {
       const { min, max } = this.extent;
       const relativeToProp = this.baselineSpec?.id;
       if (this.isPointsMap) {
-        this.pointsColorLayer = createPointsLayerStyle('value', [min, max], this.colorOptions);
+        this.pointsColorLayer = createPointsLayerStyle(this.valueProp, [min, max], this.colorOptions);
       } else {
         this.vectorColorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
       }
@@ -653,13 +654,12 @@ export default {
       }, 200);
     },
     popupValueFormatter(feature) {
-      const prop = this.isGridMap ? feature?.properties : feature?.state;
+      const prop = this.isAdminMap ? feature?.state : feature?.properties;
       if (_.isNil(prop && prop[this.valueProp])) return null;
-
-      const value = prop[this.valueProp];
       const format = v => this.extnet
         ? chartValueFormatter(this.extent.min, this.extent.max)(v)
         : chartValueFormatter()(v);
+      const value = prop[this.valueProp];
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
         const baselineValue = _.isFinite(prop[this.baselineSpec.id]) ? prop[this.baselineSpec.id] : prop._baseline;
@@ -668,7 +668,7 @@ export default {
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data or is zero for this area' : 'Diff: ' + diffString;
         rows.push(text);
       }
-      if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
+      if (this.isAdminMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
     }
   }
