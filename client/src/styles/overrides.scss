@@ -1,6 +1,25 @@
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins/_vendor-prefixes.scss";
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins/_forms.scss";
 
+*,
+:after,
+:before {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 10px;
+}
+
+body {
+  margin: 0;
+  font-family: Source Sans Pro,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
+  font-size: 14px;
+  line-height: 1.42857;
+  color: rgba(0,0,0,.89);
+  background-color: #f2f2f2;
+}
+
 /*
   This file contains styles to override or reset the appearance
   of native elements (like removing margins from <hr>) and elements
@@ -15,7 +34,7 @@
 */
 
 .form-control {
-  border: 1px solid $color-border-light;
+  border: 1px solid lightgray;
   box-shadow: none;
   &:focus {
     border: 1px solid $label-color;
@@ -24,7 +43,7 @@
     border-radius: 2px;
   }
   &::placeholder {
-    color: $input-color-placeholder;
+    color: lightgray;
   }
 }
 
@@ -39,14 +58,14 @@
     &:focus,
     &.focus {
       outline: 2px solid;
-      outline-color: darken($color-btn-default-hover, 10%);
+      outline-color: darken(grey, 10%);
     }
   }
   &:hover,
   &:focus,
   &.focus {
-    background-color: $color-btn-default-hover;
-    border-color: $color-btn-default-hover;
+    background-color: grey;
+    border-color: grey;
   }
 }
 
@@ -58,7 +77,7 @@
     &:focus,
     &.focus {
       outline: 2px solid;
-      outline-color: darken($color-btn-default-hover, 10%);
+      outline-color: darken(grey, 10%);
     }
   }
   &:hover,
@@ -105,7 +124,7 @@ table,
   // Bottom align for column headings
   > thead > tr > th {
     vertical-align: bottom;
-    border-bottom: 2px solid $table-border-color;
+    border-bottom: 2px solid $separator;
   }
 }
 
