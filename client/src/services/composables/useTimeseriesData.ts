@@ -18,7 +18,7 @@ import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain 
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
 import { getQualifierTimeseries } from '../new-datacube-service';
-import { getRawTimeseriesData } from '../outputdata-service';
+import { getRawTimeseriesData, getRawTimeseriesDataBulk } from '../outputdata-service';
 
 
 const applyBreakdown = (
@@ -245,20 +245,23 @@ export default function useTimeseriesData(
       }
 
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        promises = [API.post('maas/output/bulk-timeseries', { region_ids: allRegionIds }, {
-          params: {
-            data_id: dataId,
-            run_id: modelRunIds.value[0],
-            feature: activeFeature.value,
-            resolution: temporalRes,
-            temporal_agg: temporalAgg,
-            spatial_agg: spatialAgg,
-            transform: transform
-          }
-        }).catch(() => {
-          console.error(`Failed to fetch timeseries for ${allRegionIds.join(' ')}`);
-          return null;
-        })];
+        const runId = modelRunIds.value[0];
+        promises = isRawDataResolution?.value
+          ? [getRawTimeseriesDataBulk({ dataId, runId, outputVariable: activeFeature.value, spatialAgg }, allRegionIds).then(result => ({ data: result }))]
+          : [API.post('maas/output/bulk-timeseries', { region_ids: allRegionIds }, {
+              params: {
+                data_id: dataId,
+                run_id: runId,
+                feature: activeFeature.value,
+                resolution: temporalRes,
+                temporal_agg: temporalAgg,
+                spatial_agg: spatialAgg,
+                transform: transform
+              }
+            }).catch(() => {
+              console.error(`Failed to fetch timeseries for ${allRegionIds.join(' ')}`);
+              return null;
+            })];
       } else if (
         breakdownOption.value === null ||
         breakdownOption.value === TemporalAggregationLevel.Year

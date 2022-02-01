@@ -33,9 +33,12 @@ export const getRawOutputData = async (
       run_id: param.runId,
       feature: param.outputVariable
     }
+  }).then(res => {
+    // Remove invalid data points and make sure all values are number
+    return res.data.filter((d: RawOutputDataPoint) => _.isNumber(d.value));
   });
-  const res = await promise;
-  return res.data;
+  const data = await promise;
+  return data;
 };
 
 export const getRawTimeseriesData = async (
@@ -58,8 +61,23 @@ export const getRawTimeseriesData = async (
     const sum = dataPoints.reduce((prev, cur) => prev + cur.value, 0);
     return { timestamp: dataPoints[0].timestamp, value: param.spatialAgg === 'sum' ? sum : sum / dataPoints.length };
   });
+  // TODO: sorting can be expensive for large number of datapoints, further investigate if there's more efficient way to keep the timestamp order.
   const result = _.sortBy(timeseries, 'timestamp');
   return result;
+};
+
+export const getRawTimeseriesDataBulk = async (
+  param: {
+    dataId: string,
+    runId: string,
+    outputVariable: string,
+    spatialAgg: string,
+  },
+  regionIds: string[]
+) => {
+  const promises = regionIds.map(regionId => getRawTimeseriesData({ regionId, ...param }));
+  const data = await Promise.all(promises);
+  return data.map((series, index) => ({ region_id: regionIds[index], timeseries: series }));
 };
 
 export const getRawOutputDataByTimestamp = async (
