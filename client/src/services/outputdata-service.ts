@@ -17,8 +17,12 @@ import {
   RawOutputDataPoint
 } from '@/types/Runoutput';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
+import { FIFOCache } from '@/utils/cache-util';
 import { filterRawDataByRegionIds } from '@/utils/outputdata-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
+
+const RAW_DATA_REQUEST_CACHE_SIZE = 20;
+const rawDataRequestCache = new FIFOCache<Promise<RawOutputDataPoint[]>>(RAW_DATA_REQUEST_CACHE_SIZE);
 
 export const getRawOutputData = async (
   param: {
@@ -29,18 +33,31 @@ export const getRawOutputData = async (
 ): Promise<RawOutputDataPoint[]> => {
   // Fetching raw data is expensive and this function can be called by multiple functions in multiple places
   // simultaneously with same parameter set, cache the request and retrieve the result for the same request
-  // from the cache to avoid overhead.
-  const promise = API.get('/maas/output/raw-data', {
-    params: {
-      data_id: param.dataId,
-      run_id: param.runId,
-      feature: param.outputVariable
-    }
-  }).then(res => {
-    // Remove invalid data points and make sure all values are number
-    return res.data.filter((d: RawOutputDataPoint) => _.isNumber(d.value));
-  });
-  const data = await promise;
+  // from the cache to avoid overheads.
+  const cacheKey = [param.dataId, param.runId, param.outputVariable].join(':');
+
+  let requestPromise = rawDataRequestCache.get(cacheKey);
+
+  if (!requestPromise) {
+    requestPromise = API.get('/maas/output/raw-data', {
+      params: {
+        data_id: param.dataId,
+        run_id: param.runId,
+        feature: param.outputVariable
+      }
+    }).then(res => {
+      // Remove invalid data points and make sure all values are number
+      return res.data.filter((d: RawOutputDataPoint) => _.isNumber(d.value));
+    }).catch(() => {
+      // if there was an error in the request, remove itself from the cache.
+      rawDataRequestCache.remove(cacheKey);
+      return [];
+    });
+    // Add the request to the cache
+    rawDataRequestCache.set(cacheKey, requestPromise);
+  }
+
+  const data = await requestPromise;
   return data;
 };
 
@@ -54,8 +71,6 @@ export const getRawTimeseriesData = async (
   }
 ): Promise<TimeseriesPoint[]> => {
   const rawData = await getRawOutputData(param);
-  console.log('raw data');
-  console.log(rawData);
   const filteredData = param.regionId ? filterRawDataByRegionIds(rawData, [param.regionId]) : rawData;
 
   // Aggregate spatially and derive timeseries data
