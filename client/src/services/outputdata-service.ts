@@ -1,7 +1,11 @@
 import _ from 'lodash';
 import API from '@/api/api';
 import { DatacubeGeography } from '@/types/Common';
-import { AdminLevel, SpatialAggregationLevel } from '@/types/Enums';
+import {
+  AdminLevel,
+  SpatialAggregationLevel,
+  AggregationOption
+} from '@/types/Enums';
 import {
   OutputSpec,
   OutputSpecWithId,
@@ -58,7 +62,7 @@ export const getRawTimeseriesData = async (
   const dataByTs = _.groupBy(filteredData, 'timestamp');
   const timeseries = Object.values(dataByTs).map(dataPoints => {
     const sum = dataPoints.reduce((prev, cur) => prev + cur.value, 0);
-    return { timestamp: dataPoints[0].timestamp, value: param.spatialAgg === 'sum' ? sum : sum / dataPoints.length };
+    return { timestamp: dataPoints[0].timestamp, value: param.spatialAgg === AggregationOption.Sum ? sum : sum / dataPoints.length };
   });
   // TODO: sorting can be expensive for large number of datapoints, further investigate if there's more efficient way to keep the timestamp order.
   const result = _.sortBy(timeseries, 'timestamp');
