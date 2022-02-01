@@ -18,7 +18,7 @@ import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain 
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
 import { getQualifierTimeseries } from '../new-datacube-service';
-import { getRawTimeseriesData } from '../runoutput-service';
+import { getRawTimeseriesData } from '../outputdata-service';
 
 
 const applyBreakdown = (

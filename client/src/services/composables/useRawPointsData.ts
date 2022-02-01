@@ -9,7 +9,7 @@ import {
   OutputSpecWithId,
   RawOutputDataPoint
 } from '@/types/Runoutput';
-import { getRawOutputDataByTimestamp } from '@/services/runoutput-service';
+import { getRawOutputDataByTimestamp } from '@/services/outputdata-service';
 import { filterRawDataByRegionIds } from '@/utils/outputdata-util';
 
 export default function useRawPointsData(
