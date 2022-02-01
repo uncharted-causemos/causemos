@@ -144,7 +144,6 @@ export default function useMultiTimeseriesData(
       selectedGlobalTimestampRange.value?.end === newTimestampRange.end) {
       return;
     }
-    console.log(newTimestampRange);
     selectedGlobalTimestampRange.value = newTimestampRange;
   };
 
