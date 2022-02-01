@@ -668,7 +668,8 @@ export default {
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data or is zero for this area' : 'Diff: ' + diffString;
         rows.push(text);
       }
-      if (this.isAdminMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
+      if (this.isAdminMap) rows.push('Region: ' + prop.id.replaceAll(REGION_ID_DELIMETER, '/'));
+      if (this.isPointsMap) rows.push('Region: ' + [prop.country, prop.admin1, prop.admin2, prop.admin3].filter(v => !!v).join('/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
     }
   }
