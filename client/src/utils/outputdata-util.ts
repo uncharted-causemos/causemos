@@ -28,11 +28,14 @@ export const convertRawDataToGeoJson = (data: RawOutputDataPoint[]) => {
     features: []
   } as RawOutputGeoJson;
   for (const d of data) {
-    geoJson.features.push({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [d.lng, d.lat] },
-      properties: { ...d }
-    });
+    // Check for invalid coordinates and filter out
+    if (_.isNumber(d.lng) && _.isNumber(d.lat)) {
+      geoJson.features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [d.lng, d.lat] },
+        properties: { ...d }
+      });
+    }
   }
   return geoJson;
 };

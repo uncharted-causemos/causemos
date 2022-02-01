@@ -10,8 +10,7 @@ import {
   RegionalAggregation,
   OutputStatWithZoom,
   OutputStatsResult,
-  RawOutputDataPoint,
-  RawOutputGeoJson
+  RawOutputDataPoint
 } from '@/types/Runoutput';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
 import { filterRawDataByRegionIds } from '@/utils/outputdata-util';
@@ -92,29 +91,6 @@ export const getRawOutputDataByTimestamp = async (
   return rawData.filter(d => d.timestamp === param.timestamp);
 };
 
-export const getRawOutputGeoJsonByTimestamp = async (
-  param: {
-    dataId: string,
-    runId: string,
-    outputVariable: string,
-    timestamp: number
-  }
-): Promise<RawOutputGeoJson> => {
-  const geoJson = {
-    type: 'FeatureCollection',
-    features: []
-  } as RawOutputGeoJson;
-  const data = await getRawOutputDataByTimestamp(param);
-  for (const d of data) {
-    geoJson.features.push({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [d.lng, d.lat] },
-      properties: { ...d }
-    });
-  }
-  return geoJson;
-};
-
 export const getRegionAggregation = async (
   spec: OutputSpec
 ): Promise<RegionalAggregation> => {
@@ -138,7 +114,6 @@ export const getRegionAggregation = async (
     return { country: [], admin1: [], admin2: [], admin3: [] };
   }
 };
-
 
 export const getRegionAggregationWithQualifiers = async (
   spec: OutputSpec,
