@@ -116,7 +116,7 @@
               openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)
             "
           />
-          <factors-pane
+          <qualitative-factors-pane
             v-if="
               activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null
             "
@@ -128,6 +128,8 @@
             :should-confirm-curations="true"
             @show-factor-recommendations="onShowFactorRecommendations"
             @updated-relations="resolveUpdatedRelations"
+            @add-to-CAG="onAddToCAG"
+            @rename-node="openRenameModal"
           />
         </template>
         <template #overlay-pane>
@@ -235,7 +237,7 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane.vue';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher.vue';
 import RelationshipsPane from '@/components/drilldown-panel/relationships-pane.vue';
-import FactorsPane from '@/components/drilldown-panel/factors-pane.vue';
+import QualitativeFactorsPane from '@/components/drilldown-panel/qualitative-factors-pane.vue';
 import NodeSuggestionsPane from '@/components/drilldown-panel/node-suggestions-pane.vue';
 import FactorsRecommendationsPane from '@/components/drilldown-panel/factors-recommendations-pane.vue';
 
@@ -312,7 +314,7 @@ export default defineComponent({
     EvidencePane,
     EdgePolaritySwitcher,
     RelationshipsPane,
-    FactorsPane,
+    QualitativeFactorsPane,
     NodeSuggestionsPane,
     FactorsRecommendationsPane,
     ModalConfirmation,
@@ -1204,6 +1206,11 @@ export default defineComponent({
 
       this.showModalRename = false;
       await modelService.renameNode(this.currentCAG, this.renameNodeId, newName);
+
+      // if we have a selected node and it's the same as the one being renamed, update the label there too.
+      if (this.selectedNode && this.selectedNode.id === this.renameNodeId) {
+        this.selectedNode.concept = newName;
+      }
       this.refresh();
     },
     openRenameModal(node: NodeParameter) {
@@ -1282,6 +1289,11 @@ export default defineComponent({
       const graphOptions = this.cagGraph.renderer.options;
       this.prevStabilitySetting = graphOptions.useStableLayout;
       graphOptions.useStableLayout = false;
+
+      // 4. if either target or merge node are currently selected, then select the updated node.
+      if (targetData.concept !== this.selectedNode?.concept || mergeData.concept !== this.selectedNode?.concept) {
+        this.selectedNode = updatedNode;
+      }
 
       this.setUpdateToken(result.updateToken);
     },

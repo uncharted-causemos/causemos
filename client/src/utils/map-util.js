@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import * as d3 from 'd3';
 import mapboxgl from 'mapbox-gl';
 import { BASE_LAYER } from '@/utils/map-util-new';
 import { chartValueFormatter } from '@/utils/string-util';

@@ -58,6 +58,7 @@
     </div>
     <div v-else >
       <button
+        v-if="totalDataLength > 0"
         class="btn btn-sm"
         @click="requestData">Load {{numberFormatter(totalDataLength)}} values</button>
     </div>
@@ -547,7 +548,7 @@ export default defineComponent({
       return allowCollapsing.value ? rowsWithData.value : possibleRows.value;
     });
 
-    const hasData = computed(() => possibleRows.value.length > 0);
+    const hasData = computed(() => rowsWithData.value.length > 0);
 
     const isAllSelected = computed(() => {
       return selectedItemIds.value.length === 0;

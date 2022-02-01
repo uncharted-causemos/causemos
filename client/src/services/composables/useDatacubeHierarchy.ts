@@ -14,10 +14,6 @@ const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
   admin3: new Set()
 };
 
-// interface HierarchyNode {
-//   [key: string]: null | HierarchyNode;
-// }
-
 export default function useDatacubeHierarchy(
   selectedScenarioIds: Ref<string[]>,
   metadata: Ref<Model | Indicator | null>,

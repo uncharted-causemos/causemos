@@ -7,7 +7,8 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption,
-  ReferenceSeriesOption
+  ReferenceSeriesOption,
+  SPLIT_BY_VARIABLE
 } from '@/types/Enums';
 import { ModelRun } from '@/types/ModelRun';
 import { QualifierTimeseriesResponse, Timeseries, TimeseriesPoint } from '@/types/Timeseries';
@@ -289,6 +290,10 @@ export default function useTimeseriesData(
               }
             });
         });
+      } else if (
+        breakdownOption.value === SPLIT_BY_VARIABLE
+      ) {
+        return;
       } else {
         // Breakdown by qualifier
         // ASSUMPTION: we'll only need to fetch the qualifier timeseries when
