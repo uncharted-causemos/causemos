@@ -183,6 +183,7 @@ import { getInsightById } from '@/services/insight-service';
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
 import { AnalysisItem } from '@/types/Analysis';
+import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 
 // TODO:
 //
@@ -683,23 +684,12 @@ export default defineComponent({
           // normalize the timeseries values for better y-axis scaling when multiple
           //  timeseries from different datacubes are shown together
           // i.e., re-map all timestamp point values to a range of [0: 1]
-          const allTimestampsPoints = timeseriesList
-            .map(timeseries => timeseries.points)
-            .flat();
-          const allTimestampsValues = allTimestampsPoints
-            .map(point => point.value);
-          const minValue = _.min(allTimestampsValues) as number;
-          const maxValue = _.max(allTimestampsValues) as number;
-          if (minValue === maxValue) {
-            // minValue === maxValue, so vertically align its value in the center
-            allTimestampsPoints.forEach(p => {
-              p.value = 0.5;
-            });
-          } else {
-            allTimestampsPoints.forEach(p => {
-              p.value = (p.value - minValue) / (maxValue - minValue);
-            });
-          }
+          //
+          // NOTE: each timeseriesList represents the list of timeseries,
+          //  where each timeseries in that list reflects the timeseries of one model run,
+          //  and also noting that all the timeseries in that list share
+          //  the same scale/range since they all relate to a single datacube (variable)
+          normalizeTimeseriesList(timeseriesList);
 
           // build a map that links each timeseries to its owner datacube
           timeseriesList.forEach(timeseries => {
