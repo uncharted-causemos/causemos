@@ -10,3 +10,12 @@ export function calculateDiff(oldVal: number, newVal: number, showPercentChange 
   }
   return newVal - oldVal;
 }
+
+export function normalize(value: number, minValue: number, maxValue: number) {
+  if (minValue === maxValue) {
+    // only one value, so the assumption is to normalize it as the full range
+    return 1;
+  } else {
+    return (value - minValue) / (maxValue - minValue);
+  }
+}

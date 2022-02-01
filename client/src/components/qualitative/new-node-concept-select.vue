@@ -389,8 +389,9 @@ export default defineComponent({
           temporalResolution: this.temporalResolution,
           period: 12,
           timeseries: this.timeseries,
-          min: _.min(this.timeseries.map(d => d.value)),
-          max: _.max(this.timeseries.map(d => d.value))
+          // Filled in by server
+          min: null,
+          max: null
         });
       }
       this.userInput = '';

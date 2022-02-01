@@ -377,3 +377,25 @@ export function renderPoint(
     .style('stroke-width', 1.5)
     .style('fill', color || DEFAULT_LINE_COLOR);
 }
+
+export function normalizeTimeseriesList(timeseriesList: Timeseries[]) {
+  const allTimestampsPoints = timeseriesList
+    .map(timeseries => timeseries.points)
+    .flat();
+  const allTimestampsValues = allTimestampsPoints
+    .map(point => point.value);
+  const minValue = _.min(allTimestampsValues) as number;
+  const maxValue = _.max(allTimestampsValues) as number;
+  if (minValue === maxValue) {
+    // minValue === maxValue, so vertically align its value in the center
+    allTimestampsPoints.forEach(p => {
+      p.normalizedValue = 0.5;
+    });
+  } else {
+    allTimestampsPoints.forEach(p => {
+      p.normalizedValue = (p.value - minValue) / (maxValue - minValue);
+    });
+  }
+}
+
+export const MAX_TIMESERIES_LABEL_CHAR_LENGTH = 10;

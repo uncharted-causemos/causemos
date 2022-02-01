@@ -115,6 +115,16 @@ router.get('/edge-regrounding', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
+router.get('/similar-concepts', asyncHandler(async (req, res) => {
+  const q = req.query;
+  const projectId = q.project_id;
+  const numRecommendations = q.num_recommendations;
+  const concept = q.concept;
+
+  const result = await curationRecommendationsService.getSimilarConcepts(projectId, concept, numRecommendations);
+  res.json(result);
+}));
+
 router.put('/tracking/:trackingId', asyncHandler(async (req, res) => {
   const payload = req.body.payload;
   const trackingId = req.params.trackingId;

@@ -112,6 +112,7 @@ import { adminLevelToString, computeMapBoundsForCountries } from '@/utils/map-ut
 import { RegionalAggregations } from '@/types/Runoutput';
 import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
+import { normalize } from '@/utils/value-util';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCard',
@@ -457,22 +458,12 @@ export default defineComponent({
               // @REVIEW
               // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
               // To receive normalized data, send transform=normalization when fetching regional data
-              const normalize = (value: number) => {
-                const minValue = dataExtent[0];
-                const maxValue = dataExtent[1];
-                if (minValue === maxValue) {
-                  // only one bar, so the assumption is to use its value as the full range
-                  return 1;
-                } else {
-                  return (value - minValue) / (maxValue - minValue);
-                }
-              };
               const numBars = regionLevelData.length;
               // we can have many bars than the available colors, so map indices
               const slope = 1.0 * (colors.length) / (numBars);
               bins.forEach((bin) => {
                 _.sortBy(bin, item => item.value).forEach(dataItem => {
-                  const normalizedValue = normalize(dataItem.value);
+                  const normalizedValue = normalize(dataItem.value, dataExtent[0], dataExtent[1]);
                   const barValue = showNormalizedData.value ? (normalizedValue * numberOfColorBins.value) : dataItem.value;
                   let barColor = 'skyblue';
                   let binIndex = -1;

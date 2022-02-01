@@ -155,3 +155,6 @@ export enum IncompleteDataCorrectiveAction {
   DataRemoved = ' Final data point was removed',
   DataExtrapolated = 'Final data point contains extrapolated data'
 }
+
+export const SPLIT_BY_VARIABLE = 'variable';
+export const TIMESERIES_HEADER_SEPARATOR = ' | ';

@@ -2,6 +2,7 @@ import { IncompleteDataCorrectiveAction } from "@/types/Enums";
 
 export interface TimeseriesPoint {
   value: number;
+  normalizedValue?: number;
   timestamp: number;
 }
 

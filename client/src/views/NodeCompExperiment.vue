@@ -224,8 +224,9 @@ export default defineComponent({
           admin3,
           period: 12,
           timeseries,
-          max: null, // filled in by server
-          min: null // filled in by server
+          // Filled in by server
+          max: null,
+          min: null
         },
         components: selectedNode?.value?.components
       };
