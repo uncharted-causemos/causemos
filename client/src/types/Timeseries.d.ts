@@ -1,5 +1,6 @@
 export interface TimeseriesPoint {
   value: number;
+  normalizedValue?: number;
   timestamp: number;
 }
 

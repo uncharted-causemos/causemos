@@ -4,7 +4,7 @@ import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId } from '@/types/Runoutput';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { ModelRun } from '@/types/ModelRun';
-import { DataTransform } from '@/types/Enums';
+import { DataTransform, SPLIT_BY_VARIABLE } from '@/types/Enums';
 
 export default function useOutputSpecs(
   selectedModelId: Ref<string | null>,
@@ -15,7 +15,8 @@ export default function useOutputSpecs(
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
   activeFeature: Ref<string>,
-  modelRunData?: Ref<ModelRun[]>
+  modelRunData?: Ref<ModelRun[]>,
+  breakdownOption?: Ref<string | null>
 ) {
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
     const modelMetadata = metadata.value;
@@ -35,7 +36,7 @@ export default function useOutputSpecs(
         id: timeseriesId,
         modelId: activeModelId,
         runId: scenarioId,
-        outputVariable: activeFeature.value,
+        outputVariable: breakdownOption?.value !== SPLIT_BY_VARIABLE ? activeFeature.value : timeseriesId,
         timestamp,
         transform,
         temporalResolution: selectedTemporalResolution.value,

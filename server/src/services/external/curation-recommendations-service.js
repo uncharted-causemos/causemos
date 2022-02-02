@@ -143,6 +143,40 @@ const trackCuration = async(trackingId, payload) => {
   curationTracking.insert(newDoc, idFn);
 };
 
+
+/**
+ * Get similar concepts from the knowledge base given a concept
+ *
+ * @param {string} concept - concept to find similar concepts too
+ * @param {string} projectId - project identifier
+ * @param {number} numRecommendations
+ *
+ * returns {similar_concepts: [{concept: string, score: float}]}
+ */
+const getSimilarConcepts = async(projectId, concept, numRecommendations) => {
+  const payload = {
+    knowledge_base_id: getCache(projectId).kb_id,
+    concept: concept,
+    num_recommendations: numRecommendations
+  };
+
+  const options = {
+    url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/similar-concepts',
+    method: 'POST',
+    headers: headers,
+    json: payload
+  };
+
+  let result = { similar_concepts: [] };
+  try {
+    result = await requestAsPromise(options);
+  } catch (err) {
+    Logger.error(err);
+  }
+  return result;
+};
+
+
 const _mapRegroundingRecommendationsToStatementIds = async (projectId, statementIds, recommendations) => {
   const statementDocs = await _getStatementsForRegroundingRecommendations(projectId, statementIds, recommendations);
   if (_.isEmpty(statementDocs)) return [];
@@ -312,6 +346,7 @@ module.exports = {
   getFactorRecommendations,
   getPolarityRecommendations,
   getEmptyEdgeRecommendations,
+  getSimilarConcepts,
   trackCuration
 };
 
