@@ -3,7 +3,7 @@ const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const modelUtil = rootRequire('/util/model-util');
 const searchService = rootRequire('/services/search-service');
-
+const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 
 const getIndicatorData = async (dataId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
@@ -197,7 +197,10 @@ const setDefaultIndicators = async (modelId, resolution) => {
           parameter.min = 0;
           parameter.max = 1;
         } else {
-          parameter.timeseries = timeseries;
+          const rawResolution = cube.outputs[0].data_resolution.temporal_resolution;
+          const finalRawDate = new Date(cube.period.lte ?? 0);
+          const points = correctIncompleteTimeseries(timeseries, rawResolution, resolution, temporalAgg, finalRawDate);
+          parameter.timeseries = points;
           const values = timeseries.map(d => d.value);
           const { max, min } = modelUtil.projectionValueRange(values);
           parameter.min = min;
