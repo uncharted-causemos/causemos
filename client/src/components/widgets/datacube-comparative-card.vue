@@ -353,6 +353,7 @@ export default defineComponent({
           //
           datacubeName: metadata.value.name,
           datacubeOutputName: mainModelOutput.value?.display_name,
+          source: metadata.value.maintainer.organization,
           //
           region: metadata.value.geography.country // FIXME: later this could be the selected region for each datacube
         });

@@ -1,4 +1,4 @@
-import { Timeseries } from '@/types/Timeseries';
+import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { ComparativeAnalysisMode, BinningOptions, RegionRankingCompositionType, DataTransform } from '@/types/Enums';
@@ -110,7 +110,7 @@ export interface DataState {
   regionRankingWeights?: {[key: string]: {name: string; weight: number}};
 
   //
-  datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
+  datacubeTitles?: {datacubeName: string; datacubeOutputName: string; source: string}[];
   datacubeRegions?: string[];
   relativeTo?: string | null;
   visibleTimeseriesData?: Timeseries[];
@@ -128,3 +128,26 @@ export interface DataState {
   // ...
   [propName: string]: any; // allow other properties to be added
 }
+
+export interface InsightMetadata {
+  projectName: string;
+  insightLastUpdate: number;
+  datacubes?: {datasetName: string; outputName: string; source: string}[];
+
+  // data space specific
+  analysisName?: string;
+
+  // CAG specific
+  cagName?: string;
+  ontology?: string;
+  ontology_created_at?: number;
+  ontology_modified_at?: number;
+  corpus_id?: string;
+  filters?: string;
+  selectedNode?: string;
+  selectedEdge?: string;
+  nodesCount?: string;
+  currentEngine?: string;
+  selectedCAGScenario?: string;
+}
+
