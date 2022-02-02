@@ -27,7 +27,8 @@ const formatDatacubeDoc = (d) => {
 
     feature: defaultFeature.name,
     display_name: defaultFeature.display_name,
-    description: defaultFeature.description
+    description: defaultFeature.description,
+    raw_temporal_resolution: defaultFeature.data_resolution.temporal_resolution
   };
 };
 
