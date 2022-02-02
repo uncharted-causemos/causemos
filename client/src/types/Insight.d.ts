@@ -27,6 +27,8 @@ export interface Snapshot {
   pre_actions?: any; // e.g., remove noisy UI elements that should not be part of the snapshot image/context
   post_actions?: any; // e.g., highlight a sub-graph
   // components may be flagged to react to the actions in a given mode -> Karl's suggestion (editable, displayable, etc.)
+
+  modified_at?: Date | number | string;
 }
 
 export interface AnnotationState {
@@ -43,6 +45,7 @@ export interface Insight extends Snapshot {
   analytical_question: string[]; // question(s) this insight may answer
   thumbnail: string; // e.g., image url or base64 encoding
   annotation_state?: AnnotationState;
+  modified_at?: Date | number | string;
 }
 
 // @concrete type
@@ -50,6 +53,7 @@ export interface AnalyticalQuestion extends Snapshot {
   question: string;
   linked_insights: string[]; // has some insight (using their names/IDs) been linked to satisfy/answer this question?
   tour_name?: string;
+  modified_at?: Date | number | string;
 }
 
 // view-specific values (no data dependency)
