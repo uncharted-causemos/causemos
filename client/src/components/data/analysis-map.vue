@@ -656,7 +656,7 @@ export default {
     popupValueFormatter(feature) {
       const prop = this.isAdminMap ? feature?.state : feature?.properties;
       if (_.isNil(prop && prop[this.valueProp])) return null;
-      const format = v => this.extnet
+      const format = v => this.extent
         ? chartValueFormatter(this.extent.min, this.extent.max)(v)
         : chartValueFormatter()(v);
       const value = prop[this.valueProp];
