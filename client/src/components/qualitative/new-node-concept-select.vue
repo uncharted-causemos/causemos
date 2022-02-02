@@ -122,7 +122,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, watch, computed, Ref, PropType, toRefs } from 'vue';
+import { computed, defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
 import { useStore } from 'vuex';
 import API from '@/api/api';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
@@ -138,7 +138,8 @@ import { TimeseriesPoint } from '@/types/Timeseries';
 import projectService from '@/services/project-service';
 import datacubeService from '@/services/new-datacube-service';
 
-import { AggregationOption, TemporalResolutionOption, TimeScale } from '@/types/Enums';
+import { AggregationOption, TemporalResolution, TemporalResolutionOption, TimeScale } from '@/types/Enums';
+import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 
 const CONCEPT_SUGGESTION_COUNT = 10;
 
@@ -147,15 +148,16 @@ const getRunId = async (id: string): Promise<ModelRun> => {
   return run;
 };
 
-const getTimeseries = async (dataId: string, runId: string, feature: string, temporalRes: TemporalResolutionOption): Promise<TimeseriesPoint[]> => {
+const getTimeseries = async (dataId: string, runId: string, feature: string,
+  temporalRes: TemporalResolutionOption, agg: AggregationOption): Promise<TimeseriesPoint[]> => {
   const result = await API.get('maas/output/timeseries', {
     params: {
       data_id: dataId,
       run_id: runId,
       feature: feature,
       resolution: temporalRes,
-      temporal_agg: AggregationOption.Mean,
-      spatial_agg: AggregationOption.Mean,
+      temporal_agg: agg,
+      spatial_agg: agg,
       region_id: ''
     }
   });
@@ -260,9 +262,14 @@ export default defineComponent({
         if (selectedTimeScale.value === TimeScale.Years) {
           temporalResolution.value = TemporalResolutionOption.Year;
         }
-        const result = await getTimeseries(doc.data_id, runId, doc.feature, temporalResolution.value);
-        timeseries.value = result;
+        const rawResolution = doc.raw_temporal_resolution ?? TemporalResolution.Other;
+        const periodEndDate = new Date(doc.period?.lte ?? 0);
+        const agg = AggregationOption.Mean;
 
+        const result = await getTimeseries(doc.data_id, runId, doc.feature, temporalResolution.value, agg);
+        const { points } = correctIncompleteTimeseries(result, rawResolution, temporalResolution.value, agg, periodEndDate);
+
+        timeseries.value = points;
         sparklineData.value = [
           {
             name: 'test',
