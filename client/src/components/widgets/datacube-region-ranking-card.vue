@@ -497,7 +497,7 @@ export default defineComponent({
             emit('updated-bars-data', {
               id: id.value,
               datacubeId: datacubeId.value,
-              name: metadata.value?.name + ' : ' + mainModelOutput.value?.display_name,
+              name: mainModelOutput.value?.display_name + ' : ' + metadata.value?.name,
               barsData: limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp,
               selectedTimestamp: selectedTimestamp.value
             });
