@@ -322,7 +322,6 @@ export default {
       this.summaryData.children.forEach(polartyGroup => {
         polartyGroup.children.forEach(factorGroup => {
           factorGroup.dataArray.forEach(stmt => {
-            console.log('!!', stmt);
             stmt.evidence.forEach(evidence => {
               docs.push(evidence.document_context.doc_id);
             });
@@ -365,8 +364,6 @@ export default {
         children: groupByPolarityAllFactors(this.statements),
         meta: { checked: false, isSomeChildChecked: false }
       };
-
-      console.log('!!!', this.summaryData.children);
 
       if (_.isEmpty(this.statements) && this.showEdgeRecommendations === true) {
         this.getRecommendations().then(r => {
