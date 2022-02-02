@@ -76,10 +76,16 @@ export default defineComponent({
   .output-name {
     font-size: x-small;
     padding-right: 4px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
   }
 
   .dataset-and-source {
     padding-left: 12px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
   }
 }
 </style>
