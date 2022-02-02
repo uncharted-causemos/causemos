@@ -270,7 +270,7 @@ export function createPointsLayerStyle(property, dataDomain, colorOptions, filte
     paint: {
       'circle-radius': 5,
       'circle-color': cExpr,
-      'circle-stroke-color': cExpr,
+      'circle-stroke-color': colorOptions.scheme[colorOptions.scheme.length - 1],
       'circle-opacity': colorOptions.opacity,
       'circle-stroke-width': 1
     },
