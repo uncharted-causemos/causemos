@@ -41,30 +41,33 @@
           :selected-timestamp-range="selectedTimestampRange"
           :breakdown-option="breakdownOption"
           @select-timestamp="setSelectedTimestamp"
-        />
-        <div class="row datacube-footer">
-          <div>Aggregated by: {{ selectedSpatialAggregation }}</div>
-          <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
-          <div style="display: flex; align-items: center">
-            <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
-            <div style="display: flex; align-items: center">
-              <div style="margin-right: 4px">Selected:</div>
-              <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
-                @change="selectedScenarioIndex = $event.target.selectedIndex"
-                :disabled="selectedScenarioIds.length === 1"
-                :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex ? regionRunsScenarios[selectedScenarioIndex].color : 'black' }"
-              >
-                <option
-                  v-for="(selectedRun, indx) in regionRunsScenarios"
-                  :key="selectedRun.name"
-                  :selected="indx === selectedScenarioIndex"
-                >
-                  {{selectedRun.name}}
-                </option>
-              </select>
+        >
+          <template #timeseries-footer-contents>
+            <div class="row datacube-footer">
+              <div>Aggregated by: {{ selectedSpatialAggregation }}</div>
+              <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
+              <div style="display: flex; align-items: center">
+                <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
+                <div style="display: flex; align-items: center">
+                  <div style="margin-right: 4px">Selected:</div>
+                  <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
+                          @change="selectedScenarioIndex = $event.target.selectedIndex"
+                          :disabled="selectedScenarioIds.length === 1"
+                          :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex ? regionRunsScenarios[selectedScenarioIndex].color : 'black' }"
+                  >
+                    <option
+                      v-for="(selectedRun, indx) in regionRunsScenarios"
+                      :key="selectedRun.name"
+                      :selected="indx === selectedScenarioIndex"
+                    >
+                      {{selectedRun.name}}
+                    </option>
+                  </select>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </template>
+        </timeseries-chart>
       </div>
       <div class="datacube-map-placeholder">
         <region-map
@@ -638,6 +641,7 @@ main {
   font-size: small;
   display: flex;
   justify-content: space-around;
+  flex: 1;
 }
 
 </style>
