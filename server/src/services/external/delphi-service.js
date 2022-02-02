@@ -102,10 +102,24 @@ const modelTrainingProgress = async (modelId) => {
   return result;
 };
 
+const updateEdgeParameter = async (modelId, edges) => {
+  const options = {
+    url: process.env.DELPHI_URL + `/models/${modelId}/edit-edges`,
+    method: 'POST',
+    headers: {
+      Accept: 'application/json'
+    },
+    json: { relations: edges }
+  };
+  const result = await requestAsPromise(options);
+  return result;
+};
+
 module.exports = {
   createModel,
   createExperiment,
   modelStatus,
   findExperiment,
-  modelTrainingProgress
+  modelTrainingProgress,
+  updateEdgeParameter
 };
