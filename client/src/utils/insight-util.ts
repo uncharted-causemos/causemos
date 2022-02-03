@@ -6,16 +6,12 @@ import { deleteInsight, fetchInsights, InsightFilterFields } from '@/services/in
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
-import { AnalyticalQuestion, Insight } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, InsightMetadata } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
-
-export interface MetadataSummary {
-  key: string;
-  value: string | number | null;
-}
+import { ProjectType } from '@/types/Enums';
 
 function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId: string | undefined) {
   const separator = '?';
@@ -57,125 +53,51 @@ function isQuantitativeView(currentView: string) {
 function parseMetadataDetails (
   dataState: any,
   projectMetadata: any,
+  analysisName: string,
   formattedFilterString: string,
-  currentView: string
-): MetadataSummary[] {
-  //
-  // currentView dictates what kind of metadata should be visible
-  //
-  // common (from projectMetadata)
-  //  - project name
-  //  - analysis name
-  //
-  // datacube drilldown:
-  //  - datacube titles
-  //  - selected scenario counts
-  //  - region(s): top 5
-  //
-  // comparative analysis
-  //  - datacube titles
-  //  - region(s): top 5
-  //
-  // CAG-based views
-  //  - corpus
-  //  - ontology
-  //  - selected scenario id (if any)
-  //  - selected node/edge (if any)
-  //  - last modified date
-  //  - filters (if any)
+  currentView: string,
+  projectType: string,
+  insightLastUpdate?: number
+): InsightMetadata {
   const quantitativeView = isQuantitativeView(currentView);
-  const arr = [] as MetadataSummary[];
+  const summary: InsightMetadata = {
+    projectName: projectMetadata.name,
+    insightLastUpdate: insightLastUpdate ?? Date.now()
+  };
+  if (!dataState || !projectMetadata) return summary;
 
-  if (!dataState || !projectMetadata) return arr;
-
-  // @Review: The content of this function needs to be revised and cleaned
-  arr.push({
-    key: 'Project Name:',
-    value: projectMetadata.name
-  });
+  if (quantitativeView) {
+    if (projectType === ProjectType.Analysis) {
+      summary.analysisName = analysisName;
+    }
+  } else {
+    summary.cagName = dataState.modelName;
+    summary.ontology = projectMetadata.ontology;
+    summary.ontology_created_at = projectMetadata.created_at;
+    summary.ontology_modified_at = projectMetadata.modified_at;
+    summary.corpus_id = projectMetadata.corpus_id;
+    if (formattedFilterString.length > 0) {
+      summary.filters = formattedFilterString;
+    }
+    summary.nodesCount = dataState.nodesCount ?? undefined;
+    summary.selectedNode = dataState.selectedNode ?? undefined;
+    summary.selectedEdge = dataState.selectedEdge ?? undefined;
+    summary.selectedCAGScenario = dataState.selectedScenarioId ?? undefined;
+    summary.currentEngine = dataState.currentEngine ?? undefined;
+    summary.selectedNode = dataState.selectedNode ?? undefined;
+  }
 
   if (dataState.datacubeTitles) {
-    dataState.datacubeTitles.forEach((title: any, indx: number) => {
-      arr.push({
-        key: 'Name(' + indx.toString() + '):',
-        value: title.datacubeOutputName + ' | ' + title.datacubeName
+    summary.datacubes = [];
+    dataState.datacubeTitles.forEach((title: any) => {
+      summary.datacubes?.push({
+        datasetName: title.datacubeName,
+        outputName: title.datacubeOutputName,
+        source: title.source
       });
     });
   }
-  if (dataState.selectedScenarioIds) {
-    arr.push({
-      key: 'Selected Scenarios: ',
-      value: dataState.selectedScenarioIds.length
-    });
-  }
-  if (dataState.datacubeRegions) {
-    arr.push({
-      key: 'Region(s): ',
-      value: dataState.datacubeRegions
-    });
-  }
-  if (dataState.modelName) {
-    arr.push({
-      key: 'CAG: ',
-      value: dataState.modelName
-    });
-  }
-  if (dataState.nodesCount) {
-    arr.push({
-      key: 'Nodes Count: ',
-      value: dataState.nodesCount
-    });
-  }
-  if (dataState.selectedNode) {
-    arr.push({
-      key: 'Selected Node: ',
-      value: dataState.selectedNode
-    });
-  }
-  if (dataState.selectedEdge) {
-    arr.push({
-      key: 'Selected Edge: ',
-      value: dataState.selectedEdge
-    });
-  }
-  if (dataState.selectedScenarioId) {
-    arr.push({
-      key: 'Selected Scenario: ',
-      value: dataState.selectedScenarioId
-    });
-  }
-  if (dataState.currentEngine) {
-    arr.push({
-      key: 'Engine: ',
-      value: dataState.currentEngine
-    });
-  }
-
-  if (!quantitativeView) {
-    arr.push({
-      key: 'Ontology:',
-      value: projectMetadata.ontology
-    });
-    arr.push({
-      key: 'Created:',
-      value: projectMetadata.created_at
-    });
-    arr.push({
-      key: 'Modified:',
-      value: projectMetadata.modified_at
-    });
-    arr.push({
-      key: 'Corpus:',
-      value: projectMetadata.corpus_id
-    });
-    if (formattedFilterString.length > 0) {
-      arr.push({
-        key: 'Filters:',
-        value: formattedFilterString
-      });
-    }
-  }
-  return arr;
+  return summary;
 }
 
 function removeInsight(id: string, store?: any) {

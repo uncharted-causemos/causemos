@@ -134,15 +134,10 @@
               @close="showMetadataPanel=false"
             >
               <template #content>
-                <div>
-                  <ul>
-                    <li
-                      v-for="metadataAttr in metadataDetails"
-                      :key="metadataAttr.key">
-                      <b>{{metadataAttr.key}}</b> {{ metadataAttr.value }}
-                    </li>
-                  </ul>
-                </div>
+                <insight-summary
+                  v-if="metadataDetails"
+                  :metadata-details="metadataDetails"
+                />
               </template>
             </drilldown-panel>
           </div>
@@ -169,8 +164,8 @@ import {
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
-import InsightUtil, { MetadataSummary } from '@/utils/insight-util';
-import { Insight } from '@/types/Insight';
+import InsightUtil from '@/utils/insight-util';
+import { Insight, InsightMetadata } from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { addInsight, updateInsight } from '@/services/insight-service';
@@ -181,6 +176,7 @@ import _ from 'lodash';
 import { ProjectType } from '@/types/Enums';
 import { MarkerArea, MarkerAreaState } from 'markerjs2';
 import { CropArea, CropAreaState } from 'cropro';
+import InsightSummary from './insight-summary.vue';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
@@ -198,7 +194,8 @@ export default defineComponent({
   components: {
     FullScreenModalHeader,
     Disclaimer,
-    DrilldownPanel
+    DrilldownPanel,
+    InsightSummary
   },
   props: {
     editMode: {
@@ -315,7 +312,8 @@ export default defineComponent({
       updatedInsight: 'insightPanel/updatedInsight',
       insightList: 'insightPanel/insightList',
       countInsights: 'insightPanel/countInsights',
-      filters: 'dataSearch/filters'
+      filters: 'dataSearch/filters',
+      analysisName: 'app/analysisName'
     }),
     nextInsight(): Insight | null {
       if (this.updatedInsight) {
@@ -340,9 +338,11 @@ export default defineComponent({
     formattedFilterString(): string {
       return InsightUtil.getFormattedFilterString(this.filters);
     },
-    metadataDetails(): MetadataSummary[] {
+    metadataDetails(): InsightMetadata {
       const dState = this.newMode || this.updatedInsight === null ? this.dataState : this.updatedInsight.data_state;
-      return InsightUtil.parseMetadataDetails(dState, this.projectMetadata, this.formattedFilterString, this.currentView);
+      const insightLastUpdate = this.newMode || this.updatedInsight === null ? undefined : this.updatedInsight.modified_at;
+      const insightSummary = InsightUtil.parseMetadataDetails(dState, this.projectMetadata, this.analysisName, this.formattedFilterString, this.currentView, this.projectType, insightLastUpdate);
+      return insightSummary;
     },
     previewInsightTitle(): string {
       if (this.loadingImage) return '';
