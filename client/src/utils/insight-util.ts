@@ -260,112 +260,6 @@ function getMetadataSummary(projectMetadata: any) {
     `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${projectMetadata.corpus_id}`;
 }
 
-function exportDOCX(
-  insights: Insight[],
-  projectMetadata: any,
-  questions?: AnalyticalQuestion[]
-) {
-  if (questions) {
-    console.log(questions, insights);
-    return;
-  }
-
-  // 72dpi * 8.5 inches width, as word perplexingly uses pixels
-  // same height as width so that we can attempt to be consistent with the layout.
-  const docxMaxImageSize = 612;
-  const insightSet = insights;
-  const metadataSummary = getMetadataSummary(projectMetadata);
-  const sections = insightSet.map((i) => {
-    const datacubeId = _.first(i.context_id);
-    const imageSize = scaleImage(i.thumbnail, docxMaxImageSize, docxMaxImageSize);
-    const insightDate = dateFormatter((i as any).modified_at); // FIXME: add modified_at field to type
-    return {
-      footers: {
-        default: new Footer({
-          children: [
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              children: [
-                new TextRun({
-                  size: 14,
-                  text: metadataSummary
-                })
-              ]
-            })
-          ]
-        })
-      },
-      properties: {
-        type: SectionType.NEXT_PAGE
-      },
-      children: [
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          heading: HeadingLevel.HEADING_2,
-          text: `${i.name}`
-        }),
-        new Paragraph({
-          // break: 1, // REVIEW
-          alignment: AlignmentType.CENTER,
-          children: [
-            new ImageRun({
-              data: i.thumbnail,
-              transformation: {
-                height: imageSize.height,
-                width: imageSize.width
-              }
-            })
-          ]
-        }),
-        new Paragraph({
-          alignment: AlignmentType.LEFT,
-          children: [
-            new TextRun({
-              break: 1,
-              bold: true,
-              size: 24,
-              text: 'Description: '
-            }),
-            new TextRun({
-              size: 24,
-              text: `${i.description}`
-            }),
-            new TextRun({
-              bold: true,
-              break: 1,
-              size: 24,
-              text: 'Metadata: '
-            }),
-            new TextRun({
-              size: 24,
-              text: `Captured on: ${insightDate} - ${metadataSummary} - `
-            }),
-            new ExternalHyperlink({
-              child: new TextRun({
-                size: 24,
-                text: '(View Source on Causemos)',
-                underline: {
-                  type: UnderlineType.SINGLE
-                }
-              }),
-              link: slideURL(getSourceUrlForExport(i.url, i.id as string, datacubeId as string))
-            })
-          ]
-        })
-      ]
-    };
-  });
-
-  const doc = new Document({
-    sections,
-    title: projectMetadata.name,
-    description: metadataSummary
-  });
-
-  Packer.toBlob(doc).then(blob => {
-    saveAs(blob, `${getFileName(projectMetadata)}.docx`);
-  });
-}
 
 // creates a new array of insights out of the questions and insights passed to
 // the function that can be used to export something in the order expected from
@@ -389,6 +283,165 @@ function parseReportFromQuestionsAndInsights(
   });
 
   return report;
+}
+
+function instanceOfInsight(data: any): data is Insight {
+  return 'thumbnail' in data;
+}
+
+function instanceOfQuestion(data: any): data is AnalyticalQuestion {
+  return 'question' in data;
+}
+
+function generateFooterDOCX (metadataSummary: string) {
+  return {
+    default: new Footer({
+      children: [
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new TextRun({
+              size: 14,
+              text: metadataSummary
+            })
+          ]
+        })
+      ]
+    })
+  };
+}
+
+function generateInsightDOCX (
+  insight: Insight,
+  metadataSummary: string,
+  newPage: boolean
+) {
+  // 72dpi * 8.5 inches width, as word perplexingly uses pixels
+  // same height as width so that we can attempt to be consistent with the layout.
+  const docxMaxImageSize = 612;
+  const datacubeId = _.first(insight.context_id);
+  const imageSize = scaleImage(insight.thumbnail, docxMaxImageSize, docxMaxImageSize);
+  const insightDate = dateFormatter(insight.modified_at); // FIXME: add modified_at field to type
+  const footers = generateFooterDOCX(metadataSummary);
+  const children = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      heading: HeadingLevel.HEADING_2,
+      text: `${insight.name}`
+    }),
+    new Paragraph({
+      // break: 1, // REVIEW
+      alignment: AlignmentType.CENTER,
+      children: [
+        new ImageRun({
+          data: insight.thumbnail,
+          transformation: {
+            height: imageSize.height,
+            width: imageSize.width
+          }
+        })
+      ]
+    }),
+    new Paragraph({
+      alignment: AlignmentType.LEFT,
+      children: [
+        new TextRun({
+          break: 1,
+          bold: true,
+          size: 24,
+          text: 'Description: '
+        }),
+        new TextRun({
+          size: 24,
+          text: `${insight.description}`
+        }),
+        new TextRun({
+          bold: true,
+          break: 1,
+          size: 24,
+          text: 'Metadata: '
+        }),
+        new TextRun({
+          size: 24,
+          text: `Captured on: ${insightDate} - ${metadataSummary} - `
+        }),
+        new ExternalHyperlink({
+          child: new TextRun({
+            size: 24,
+            text: '(View Source on Causemos)',
+            underline: {
+              type: UnderlineType.SINGLE
+            }
+          }),
+          link: slideURL(getSourceUrlForExport(insight.url, insight.id as string, datacubeId as string))
+        })
+      ]
+    })
+  ];
+  const properties = {
+    type: newPage ? SectionType.NEXT_PAGE : SectionType.CONTINUOUS
+  };
+  return newPage ? {
+    footers,
+    children,
+    properties
+  } : {
+    children,
+    properties
+  };
+}
+
+function generateQuestionDOCX (
+  question: AnalyticalQuestion,
+  metadataSummary: string
+) {
+  const children = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      heading: HeadingLevel.HEADING_1,
+      text: `${question.question}`
+    })
+  ];
+  const properties = {
+    type: SectionType.NEXT_PAGE
+  };
+  const footers = generateFooterDOCX(metadataSummary);
+  return {
+    children,
+    properties,
+    footers
+  };
+}
+
+function exportDOCX(
+  insights: Insight[],
+  projectMetadata: any,
+  questions?: AnalyticalQuestion[]
+) {
+  const allData = questions
+    ? parseReportFromQuestionsAndInsights(insights, questions)
+    : insights;
+
+  const metadataSummary = getMetadataSummary(projectMetadata);
+  const sections = allData.reduce((acc, item, index) => {
+    if (instanceOfInsight(item)) {
+      const newPage = index > 0 && !instanceOfQuestion(allData[index - 1]);
+      acc.push(generateInsightDOCX(item, metadataSummary, newPage));
+    } else if (instanceOfQuestion(item)) {
+      acc.push(generateQuestionDOCX(item, metadataSummary));
+    }
+    return acc;
+  }, <any>[]);
+
+  const doc = new Document({
+    sections,
+    title: projectMetadata.name,
+    description: metadataSummary
+  });
+
+  Packer.toBlob(doc).then(blob => {
+    saveAs(blob, `${getFileName(projectMetadata)}.docx`);
+  });
 }
 
 function generateInsightPPTX (
@@ -486,14 +539,6 @@ function generateQuestionPPTX (question: AnalyticalQuestion, pres: pptxgen) {
     fontSize: 30,
     align: pres.AlignH.center
   });
-}
-
-function instanceOfInsight(data: any): data is Insight {
-  return 'thumbnail' in data;
-}
-
-function instanceOfQuestion(data: any): data is AnalyticalQuestion {
-  return 'question' in data;
 }
 
 function exportPPTX(
