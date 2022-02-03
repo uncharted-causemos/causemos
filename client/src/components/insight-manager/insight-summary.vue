@@ -3,13 +3,14 @@
     <div><b>Project</b>: {{metadataDetails.projectName}}</div>
 
     <div v-if="metadataDetails.analysisName !== undefined"><b>Analysis</b>: {{metadataDetails.analysisName}}</div>
-    <template v-if="metadataDetails.datacubes !== undefined"></template>
-    <div><b>Datacubes</b>:</div>
-    <div v-for="(datacube, indx) in metadataDetails.datacubes" :key="indx" class="datacube-items">
-        <div><i class="fa fa-circle output-name" />{{datacube.outputName}}</div>
-        <div class="dataset-and-source">{{datacube.datasetName}}</div>
-        <div class="dataset-and-source">{{datacube.source}}</div>
-    </div>
+    <template v-if="metadataDetails.datacubes !== undefined">
+      <div><b>Datacubes</b>:</div>
+      <div v-for="(datacube, indx) in metadataDetails.datacubes" :key="indx" class="datacube-items">
+          <div><i class="fa fa-circle output-name" />{{datacube.outputName}}</div>
+          <div class="dataset-and-source">{{datacube.datasetName}}</div>
+          <div class="dataset-and-source">{{datacube.source}}</div>
+      </div>
+    </template>
 
     <div v-if="metadataDetails.cagName !== undefined"><b>CAG</b>: {{metadataDetails.cagName}}</div>
     <div v-if="metadataDetails.ontology !== undefined"><b>Ontology</b>: {{metadataDetails.ontology}}</div>
