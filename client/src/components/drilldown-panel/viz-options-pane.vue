@@ -78,6 +78,7 @@
           :buttons="resolutionGroupButtons"
           @button-clicked="setResolutionSelection"
         />
+        <label class="temporal-res-note" v-if="isDotMapSelected">Using raw data resolution. Timeseries data is not temporally aggregated when Dot map is used.</label>
       </div>
     </div>
 
@@ -269,7 +270,8 @@ export default defineComponent({
       metadata,
       resolutionOptions,
       selectedResolution,
-      selectedTransform
+      selectedTransform,
+      selectedDataLayer
     } = toRefs(props);
 
     const capitalize = (str: string) => {
@@ -346,6 +348,8 @@ export default defineComponent({
         : selectedTransform.value;
     });
 
+    const isDotMapSelected = computed<boolean>(() => selectedDataLayer.value === DATA_LAYER.RAW);
+
     return {
       resolutionGroupButtons,
       baseLayerGroupButtons,
@@ -355,6 +359,7 @@ export default defineComponent({
       currentOutputDisplayName,
       colorSchemes,
       isDiscreteScale,
+      isDotMapSelected,
       dataLayerTransparencyOptions,
       unitOptions,
       selectedUnitOption,
@@ -535,6 +540,10 @@ export default defineComponent({
 .header-secondary {
   @include header-secondary;
   margin: 0;
+}
+
+.temporal-res-note {
+  color: #d55e00
 }
 
 </style>

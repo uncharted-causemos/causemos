@@ -20,6 +20,7 @@ import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain 
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
 import { getQualifierTimeseries } from '../new-datacube-service';
+import { getRawTimeseriesData, getRawTimeseriesDataBulk } from '../outputdata-service';
 import { correctIncompleteTimeseriesLists } from '@/utils/incomplete-data-detection';
 
 
@@ -76,7 +77,8 @@ export default function useTimeseriesData(
   showPercentChange: Ref<boolean>,
   activeFeature: Ref<string>,
   modelRuns?: Ref<ModelRun[]>,
-  referenceOptions?: Ref<string[]>
+  referenceOptions?: Ref<string[]>,
+  isRawDataResolution?: Ref<Boolean>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
   const referenceTimeseries = ref<Timeseries[]>([]);
@@ -257,20 +259,23 @@ export default function useTimeseriesData(
       }
 
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        promises = [API.post('maas/output/bulk-timeseries', { region_ids: allRegionIds }, {
-          params: {
-            data_id: dataId,
-            run_id: modelRunIds.value[0],
-            feature: activeFeature.value,
-            resolution: temporalRes.value,
-            temporal_agg: temporalAgg.value,
-            spatial_agg: spatialAgg,
-            transform: transform
-          }
-        }).catch(() => {
-          console.error(`Failed to fetch timeseries for ${allRegionIds.join(' ')}`);
-          return null;
-        })];
+        const runId = modelRunIds.value[0];
+        promises = isRawDataResolution?.value
+          ? [getRawTimeseriesDataBulk({ dataId, runId, outputVariable: activeFeature.value, spatialAgg }, allRegionIds).then(result => ({ data: result }))]
+          : [API.post('maas/output/bulk-timeseries', { region_ids: allRegionIds }, {
+              params: {
+                data_id: dataId,
+                run_id: runId,
+                feature: activeFeature.value,
+                resolution: temporalRes.value,
+                temporal_agg: temporalAgg.value,
+                spatial_agg: spatialAgg,
+                transform: transform
+              }
+            }).catch(() => {
+              console.error(`Failed to fetch timeseries for ${allRegionIds.join(' ')}`);
+              return null;
+            })];
       } else if (
         breakdownOption.value === null ||
         breakdownOption.value === TemporalAggregationLevel.Year
@@ -283,18 +288,20 @@ export default function useTimeseriesData(
         const regionId =
           regionIds.value.length > 0 ? regionIds.value[0] : undefined;
         promises = modelRunIds.value.map(runId => {
-          return API.get('maas/output/timeseries', {
-            params: {
-              data_id: dataId,
-              run_id: runId,
-              feature: activeFeature.value,
-              resolution: temporalRes.value,
-              temporal_agg: temporalAgg.value,
-              spatial_agg: spatialAgg,
-              transform: transform,
-              region_id: regionId
-            }
-          });
+          return isRawDataResolution?.value
+            ? getRawTimeseriesData({ dataId, runId, regionId: (regionId || ''), outputVariable: activeFeature.value, spatialAgg }).then(result => ({ data: result }))
+            : API.get('maas/output/timeseries', {
+              params: {
+                data_id: dataId,
+                run_id: runId,
+                feature: activeFeature.value,
+                resolution: temporalRes.value,
+                temporal_agg: temporalAgg.value,
+                spatial_agg: spatialAgg,
+                transform: transform,
+                region_id: regionId
+              }
+            });
         });
       } else if (
         breakdownOption.value === SPLIT_BY_VARIABLE

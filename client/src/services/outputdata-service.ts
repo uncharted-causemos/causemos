@@ -1,8 +1,114 @@
+import _ from 'lodash';
 import API from '@/api/api';
 import { DatacubeGeography } from '@/types/Common';
-import { AdminLevel, SpatialAggregationLevel } from '@/types/Enums';
-import { OutputSpec, OutputSpecWithId, RegionalAggregations, RegionAgg, RegionalAggregation, OutputStatWithZoom, OutputStatsResult } from '@/types/Runoutput';
+import {
+  AdminLevel,
+  SpatialAggregationLevel,
+  AggregationOption
+} from '@/types/Enums';
+import {
+  OutputSpec,
+  OutputSpecWithId,
+  RegionalAggregations,
+  RegionAgg,
+  RegionalAggregation,
+  OutputStatWithZoom,
+  OutputStatsResult,
+  RawOutputDataPoint
+} from '@/types/Runoutput';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
+import { FIFOCache } from '@/utils/cache-util';
+import { filterRawDataByRegionIds } from '@/utils/outputdata-util';
+import { TimeseriesPoint } from '@/types/Timeseries';
+
+const RAW_DATA_REQUEST_CACHE_SIZE = 20;
+const rawDataRequestCache = new FIFOCache<Promise<RawOutputDataPoint[]>>(RAW_DATA_REQUEST_CACHE_SIZE);
+
+export const getRawOutputData = async (
+  param: {
+    dataId: string,
+    runId: string,
+    outputVariable: string
+  }
+): Promise<RawOutputDataPoint[]> => {
+  // Fetching raw data is expensive and this function can be called by multiple functions in multiple places
+  // simultaneously with same parameter set, cache the request and retrieve the result for the same request
+  // from the cache to avoid overheads.
+  const cacheKey = [param.dataId, param.runId, param.outputVariable].join(':');
+
+  let requestPromise = rawDataRequestCache.get(cacheKey);
+
+  if (!requestPromise) {
+    requestPromise = API.get('/maas/output/raw-data', {
+      params: {
+        data_id: param.dataId,
+        run_id: param.runId,
+        feature: param.outputVariable
+      }
+    }).then(res => {
+      // Remove invalid data points and make sure all values are number
+      return res.data.filter((d: RawOutputDataPoint) => _.isNumber(d.value));
+    }).catch(() => {
+      // if there was an error in the request, remove itself from the cache.
+      rawDataRequestCache.remove(cacheKey);
+      return [];
+    });
+    // Add the request to the cache
+    rawDataRequestCache.set(cacheKey, requestPromise);
+  }
+
+  const data = await requestPromise;
+  return data;
+};
+
+export const getRawTimeseriesData = async (
+  param: {
+    dataId: string,
+    runId: string,
+    outputVariable: string,
+    spatialAgg: string,
+    regionId: string
+  }
+): Promise<TimeseriesPoint[]> => {
+  const rawData = await getRawOutputData(param);
+  const filteredData = param.regionId ? filterRawDataByRegionIds(rawData, [param.regionId]) : rawData;
+
+  // Aggregate spatially and derive timeseries data
+  const dataByTs = _.groupBy(filteredData, 'timestamp');
+  const timeseries = Object.values(dataByTs).map(dataPoints => {
+    const sum = dataPoints.reduce((prev, cur) => prev + cur.value, 0);
+    return { timestamp: dataPoints[0].timestamp, value: param.spatialAgg === AggregationOption.Sum ? sum : sum / dataPoints.length };
+  });
+  // TODO: sorting can be expensive for large number of datapoints, further investigate if there's more efficient way to keep the timestamps in order.
+  const result = _.sortBy(timeseries, 'timestamp');
+  return result;
+};
+
+export const getRawTimeseriesDataBulk = async (
+  param: {
+    dataId: string,
+    runId: string,
+    outputVariable: string,
+    spatialAgg: string,
+  },
+  regionIds: string[]
+): Promise<{ region_id: string, timeseries: TimeseriesPoint[] }[]> => {
+  const promises = regionIds.map(regionId => getRawTimeseriesData({ regionId, ...param }));
+  const data = await Promise.all(promises);
+  return data.map((series, index) => ({ region_id: regionIds[index], timeseries: series }));
+};
+
+export const getRawOutputDataByTimestamp = async (
+  param: {
+    dataId: string,
+    runId: string,
+    outputVariable: string,
+    timestamp: number
+  }
+): Promise<RawOutputDataPoint[]> => {
+  const rawData = await getRawOutputData(param);
+  return rawData.filter(d => d.timestamp === param.timestamp);
+};
 
 export const getRegionAggregation = async (
   spec: OutputSpec
@@ -27,7 +133,6 @@ export const getRegionAggregation = async (
     return { country: [], admin1: [], admin2: [], admin3: [] };
   }
 };
-
 
 export const getRegionAggregationWithQualifiers = async (
   spec: OutputSpec,
