@@ -194,7 +194,7 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
     const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
 
-    const selectedRegionIds: string[] = [];
+    const selectedRegionIds = ref<string[]>([]);
     const initialSelectedScenarioIds = ref<string[]>([]);
 
     watchEffect(() => {
@@ -278,7 +278,7 @@ export default defineComponent({
         if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
           if (initialDataConfig.value.selectedRegionIds !== undefined) {
             initialDataConfig.value.selectedRegionIds.forEach(regionId => {
-              selectedRegionIds.push(regionId);
+              selectedRegionIds.value.push(regionId);
             });
           }
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
@@ -317,7 +317,7 @@ export default defineComponent({
       selectedTimestamp,
       selectedTransform,
       () => {}, // setSelectedTimestamp
-      ref(selectedRegionIds),
+      selectedRegionIds,
       ref(new Set()),
       ref([]),
       showPercentChange,
@@ -349,8 +349,8 @@ export default defineComponent({
     });
 
     const selectedRegionIdsDisplay = computed(() => {
-      if (_.isEmpty(selectedRegionIds)) return 'All';
-      return selectedRegionIds.join('/');
+      if (_.isEmpty(selectedRegionIds.value)) return 'All';
+      return selectedRegionIds.value.join('/');
     });
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
@@ -365,7 +365,7 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      ref([]), // initialSelectedRegionIds
+      selectedRegionIds, // initialSelectedRegionIds
       activeFeature // initialSelectedRegionIds
     );
 
@@ -435,8 +435,12 @@ export default defineComponent({
 
     // Calculate bbox
     watchEffect(async () => {
-      const countries = [...new Set((regionalData.value?.country || []).map(d => d.id))];
-      bbox.value = await computeMapBoundsForCountries(countries) || undefined;
+      if (selectedRegionIds.value.length > 0) {
+        bbox.value = await computeMapBoundsForCountries(selectedRegionIds.value) || undefined;
+      } else {
+        const countries = [...new Set((regionalData.value?.country || []).map(d => d.id))];
+        bbox.value = await computeMapBoundsForCountries(countries) || undefined;
+      }
     });
 
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
