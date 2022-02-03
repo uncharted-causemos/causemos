@@ -672,7 +672,7 @@ main {
   user-select: none;
   display: inline-block;
   align-self: center;
-  margin-bottom: -1rem;
+  margin: 0;
 
   label {
     font-weight: normal;
