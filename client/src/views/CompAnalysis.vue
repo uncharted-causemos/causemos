@@ -263,7 +263,7 @@ export default defineComponent({
     );
 
     const allTimeseriesMap: {[key: string]: Timeseries[]} = {};
-    const allDatacubesMetadataMap: {[key: string]: {datacubeName: string; datacubeOutputName: string; region: string[]}} = {};
+    const allDatacubesMetadataMap: {[key: string]: {datacubeName: string; datacubeOutputName: string; source: string; region: string[]}} = {};
     const globalTimeseries = ref([]) as Ref<Timeseries[]>;
     const reCalculateGlobalTimeseries = ref(true);
     const timeseriesToDatacubeMap: {[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }} = {};
@@ -654,7 +654,7 @@ export default defineComponent({
       // limit the number of bars to the selected maximum
       this.globalBarsData = this.limitNumberOfChartBars ? compositeDataSorted.slice(-this.maxNumberOfChartBars) : compositeDataSorted;
     },
-    onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; region: string[]}) {
+    onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; source: string; region: string[]}) {
       // we should only set the global timeseries one time
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
@@ -667,6 +667,7 @@ export default defineComponent({
       this.allDatacubesMetadataMap[datacubeKey] = {
         datacubeName: timeseriesInfo.datacubeName,
         datacubeOutputName: timeseriesInfo.datacubeOutputName,
+        source: timeseriesInfo.source,
         region: timeseriesInfo.region
       };
       //
@@ -744,7 +745,8 @@ export default defineComponent({
         Object.keys(this.allDatacubesMetadataMap).forEach(key => {
           const title = {
             datacubeName: this.allDatacubesMetadataMap[key].datacubeName,
-            datacubeOutputName: this.allDatacubesMetadataMap[key].datacubeOutputName
+            datacubeOutputName: this.allDatacubesMetadataMap[key].datacubeOutputName,
+            source: this.allDatacubesMetadataMap[key].source
           };
           // for each datacube, save its name and output-name
           datacubeTitles.push(title);

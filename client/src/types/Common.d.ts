@@ -111,3 +111,4 @@ export interface AnalysisMapStats {
 export interface MapLayerStats {
   [key: string]: AnalysisMapRange;
 }
+
