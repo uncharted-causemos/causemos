@@ -60,6 +60,17 @@
               </select>
             </div>
           </div>
+          <div class="checkbox">
+            <label
+              @click="invertData=!invertData"
+              style="cursor: pointer; color: black;">
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{ 'fa-check-square-o': invertData, 'fa-square-o': !invertData }"
+              />
+              Invert data
+            </label>
+          </div>
         </div>
       </div>
       <div class="datacube-map-placeholder">
@@ -406,6 +417,8 @@ export default defineComponent({
       bbox.value = await computeMapBoundsForCountries(countries) || undefined;
     });
 
+    const invertData = ref(false);
+
     watch(
       () => [
         regionalData.value,
@@ -416,7 +429,8 @@ export default defineComponent({
         maxNumberOfChartBars.value,
         limitNumberOfChartBars.value,
         regionRankingBinningType.value,
-        selectedRegionRankingScenario.value
+        selectedRegionRankingScenario.value,
+        invertData.value
       ],
       () => {
         const temp: BarData[] = [];
@@ -464,11 +478,12 @@ export default defineComponent({
               bins.forEach((bin) => {
                 _.sortBy(bin, item => item.value).forEach(dataItem => {
                   const normalizedValue = normalize(dataItem.value, dataExtent[0], dataExtent[1]);
-                  const barValue = showNormalizedData.value ? (normalizedValue * numberOfColorBins.value) : dataItem.value;
+                  const finalNormalizedValue = invertData.value && showNormalizedData.value ? (1 - normalizedValue) : normalizedValue;
+                  const barValue = showNormalizedData.value ? (finalNormalizedValue * numberOfColorBins.value) : dataItem.value;
                   let barColor = 'skyblue';
                   let binIndex = -1;
                   if (regionRankingBinningType.value === BinningOptions.Linear) {
-                    binIndex = Math.trunc(normalizedValue * numberOfColorBins.value);
+                    binIndex = Math.trunc(finalNormalizedValue * numberOfColorBins.value);
                   }
                   if (regionRankingBinningType.value === BinningOptions.Quantile) {
                     binIndex = Math.trunc(slope * (regionIndexCounter));
@@ -481,7 +496,7 @@ export default defineComponent({
                     name: (regionIndexCounter + 1).toString(),
                     label: dataItem.name,
                     value: barValue,
-                    normalizedValue: normalizedValue,
+                    normalizedValue: finalNormalizedValue,
                     color: barColor
                   });
                   regionIndexCounter++;
@@ -497,7 +512,7 @@ export default defineComponent({
             emit('updated-bars-data', {
               id: id.value,
               datacubeId: datacubeId.value,
-              name: metadata.value?.name + ' : ' + mainModelOutput.value?.display_name,
+              name: mainModelOutput.value?.display_name + ' : ' + metadata.value?.name,
               barsData: limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp,
               selectedTimestamp: selectedTimestamp.value
             });
@@ -534,7 +549,8 @@ export default defineComponent({
       selectedRegionRankingScenario,
       regionRunsScenarios,
       bbox,
-      isModelMetadata
+      isModelMetadata,
+      invertData
     };
   },
   methods: {
@@ -650,6 +666,21 @@ main {
   font-size: small;
   display: flex;
   justify-content: space-around;
+}
+
+.checkbox {
+  user-select: none;
+  display: inline-block;
+  align-self: center;
+  margin: 0;
+
+  label {
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    cursor: auto;
+    color: gray;
+  }
 }
 
 </style>

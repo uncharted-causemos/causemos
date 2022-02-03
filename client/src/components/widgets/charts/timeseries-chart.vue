@@ -1,23 +1,33 @@
 <template>
-  <div class="timeseries-chart-container">
-    <div class="chart">
-      <svg ref="lineChart" />
-      <resize-observer @notify="resize" />
-    </div>
-    <div class="selected-data">
-      <span class="unit">{{ unit }}</span>
-      <div class="selected-data-rows">
-        <div
-          v-for="timeseries in dataAtSelectedTimestamp"
-          :key="timeseries.id"
-          class="selected-data-row"
-          :style="{ color: timeseries.color }"
-        >
-          <strong>{{ timeseries.name }}</strong>
-          <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
-        </div>
+  <div>
+    <div class="timeseries-chart-container">
+      <div class="chart">
+        <svg ref="lineChart" />
+        <resize-observer @notify="resize" />
       </div>
-      <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
+      <div class="selected-data">
+        <span class="unit">{{ unit }}</span>
+        <div class="selected-data-rows">
+          <div
+            v-for="timeseries in dataAtSelectedTimestamp"
+            :key="timeseries.id"
+            class="selected-data-row"
+            :style="{ color: timeseries.color }"
+          >
+            <strong v-tooltip="{ content: timeseries.tooltip, html: true }" >{{ timeseries.name }}
+              <sup>{{timeseries.superscript}}</sup>
+            </strong>
+            <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
+          </div>
+        </div>
+        <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
+      </div>
+    </div>
+    <div class="timeseries-footer" >
+      <slot name="timeseries-footer-contents" />
+      <div v-if="footnotes" v-tooltip="{ content: footnoteTooltip, html: true }" style="text-align: right">
+        {{footnotes}}
+      </div>
     </div>
   </div>
 </template>
@@ -27,18 +37,16 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import renderTimeseries from '@/charts/timeseries-renderer';
 import { Timeseries } from '@/types/Timeseries';
-import {
-  defineComponent,
-  PropType,
-  onMounted,
-  ref,
-  watch,
-  toRefs,
-  computed
-} from 'vue';
+import { computed, defineComponent, onMounted, PropType, ref, toRefs, watch } from 'vue';
 import { TemporalResolutionOption } from '@/types/Enums';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { chartValueFormatter } from '@/utils/string-util';
+import {
+  getActionSuperscript,
+  getActionTooltip,
+  getFootnotes,
+  getFootnoteTooltip
+} from '@/utils/incomplete-data-detection';
 
 const RESIZE_DELAY = 15;
 
@@ -147,10 +155,12 @@ export default defineComponent({
     });
     const dataAtSelectedTimestamp = computed(() => {
       return timeseriesData.value
-        .map(({ id, name, color, points }) => ({
+        .map(({ id, name, color, points, correctiveAction }) => ({
           id,
           name,
           color,
+          superscript: getActionSuperscript(correctiveAction),
+          tooltip: getActionTooltip(correctiveAction),
           value: points.find(
             point => point.timestamp === selectedTimestamp.value
           )?.value
@@ -158,6 +168,12 @@ export default defineComponent({
         .sort(({ value: a }, { value: b }) => {
           return (b as number) - (a as number);
         });
+    });
+    const footnotes = computed(() => {
+      return getFootnotes(timeseriesData.value.map(({ correctiveAction }) => correctiveAction));
+    });
+    const footnoteTooltip = computed(() => {
+      return getFootnoteTooltip(timeseriesData.value.map(({ correctiveAction }) => correctiveAction));
     });
     onMounted(() => {
       const parentElement = lineChart.value?.parentElement;
@@ -171,6 +187,8 @@ export default defineComponent({
       resize,
       lineChart,
       dataAtSelectedTimestamp,
+      footnotes,
+      footnoteTooltip,
       timestampFormatter,
       valueFormatter
     };
@@ -218,6 +236,11 @@ export default defineComponent({
 
 .timestamp {
   color: $selected-dark
+}
+
+.timeseries-footer {
+  justify-content: flex-end;
+  display:flex
 }
 
 ::v-deep(.xAxis .domain) {

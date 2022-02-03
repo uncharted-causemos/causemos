@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
+import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Runoutput';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
 import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
@@ -23,36 +23,70 @@ export enum DATA_LAYER_TRANSPARENCY {
 
 export enum DATA_LAYER {
   ADMIN = 'admin',
-  TILES = 'tiles'
+  TILES = 'tiles',
+  RAW = 'dot'
 }
 
 export function adminLevelToString(level: number) {
   const adminLevel = level === 0 ? 'country' : 'admin' + level;
   return adminLevel;
 }
-
+export enum SOURCE_LAYER {
+  // Note: Vector tile source data for each layer (we currently have 4 different vector data source)
+  // has to be referenced by following ids, 'boundaries-adm0' to 'boundaries-adm3' and `maas`.
+  // For example, grid vector tile data has a single layer with id `maas` and the layer data can be referenced by `maas`
+  // We don't use vector tile for points data (since data is provided by geojson), so `points` is just a made up id.
+  COUNTRY = 'boundaries-adm0',
+  ADMIN1 = 'boundaries-adm1',
+  ADMIN2 = 'boundaries-adm2',
+  ADMIN3 = 'boundaries-adm3',
+  GRID = 'maas',
+  POINTS = 'points'
+}
 export const SOURCE_LAYERS = [
   {
-    layerId: 'boundaries-adm0',
+    layerId: SOURCE_LAYER.COUNTRY,
     sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm0/{z}/{x}/{y}'
   },
   {
-    layerId: 'boundaries-adm1',
+    layerId: SOURCE_LAYER.ADMIN1,
     sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm1/{z}/{x}/{y}'
   },
   {
-    layerId: 'boundaries-adm2',
+    layerId: SOURCE_LAYER.ADMIN2,
     sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm2/{z}/{x}/{y}'
   },
   {
-    layerId: 'boundaries-adm3',
+    layerId: SOURCE_LAYER.ADMIN3,
     sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm3/{z}/{x}/{y}'
   },
   {
-    layerId: 'maas',
+    layerId: SOURCE_LAYER.GRID,
     sourceBaseUrl: 'api/maas/tiles/grid-output/{z}/{x}/{y}'
+  },
+  {
+    layerId: SOURCE_LAYER.POINTS, // dummy layer for the points data which will be provided as geojson
+    sourceBaseUrl: ''
   }
 ];
+
+export function getSourceLayerById(layerId: SOURCE_LAYER) {
+  return SOURCE_LAYERS.find(l => l.layerId === layerId) || SOURCE_LAYERS[0];
+}
+
+export function getMapSourceLayer (dataLayer: DATA_LAYER, adminLevel = 0) {
+  const sLayers = [SOURCE_LAYER.COUNTRY, SOURCE_LAYER.ADMIN1, SOURCE_LAYER.ADMIN2, SOURCE_LAYER.ADMIN3];
+  switch (dataLayer) {
+    case DATA_LAYER.ADMIN:
+      return getSourceLayerById(sLayers[adminLevel]);
+    case DATA_LAYER.TILES:
+      return getSourceLayerById(SOURCE_LAYER.GRID);
+    case DATA_LAYER.RAW:
+      return getSourceLayerById(SOURCE_LAYER.POINTS);
+    default:
+      return getSourceLayerById(sLayers[adminLevel]);
+  }
+}
 
 export function stringToAdminLevel(geoString: string) {
   const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
@@ -143,6 +177,26 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
   return {
     global: globalStats,
     baseline,
+    difference: {}
+  };
+}
+
+// Compute min/max stats for raw data
+export function computeRawDataStats(data: RawOutputDataPoint[][]): AnalysisMapStats {
+  const globalStats: MapLayerStats = {};
+  const values = [];
+  for (const d of data) {
+    for (const p of d) {
+      values.push(p.value);
+    }
+  }
+  if (values.length) {
+    globalStats.all = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
+  }
+  return {
+    global: globalStats,
+    // baseline and difference is not applicable with raw data
+    baseline: {},
     difference: {}
   };
 }
