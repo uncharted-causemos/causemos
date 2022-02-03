@@ -1,31 +1,33 @@
 <template>
-  <div class="timeseries-chart-container">
-    <div class="chart">
-      <svg ref="lineChart" />
-      <resize-observer @notify="resize" />
-    </div>
-    <div class="selected-data">
-      <span class="unit">{{ unit }}</span>
-      <div class="selected-data-rows">
-        <div
-          v-for="timeseries in dataAtSelectedTimestamp"
-          :key="timeseries.id"
-          class="selected-data-row"
-          :style="{ color: timeseries.color }"
-        >
-          <strong v-tooltip="{ content: timeseries.tooltip, html: true }" >{{ timeseries.name }}
-            <sup>{{timeseries.superscript}}</sup>
-          </strong>
-          <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
-        </div>
+  <div>
+    <div class="timeseries-chart-container">
+      <div class="chart">
+        <svg ref="lineChart" />
+        <resize-observer @notify="resize" />
       </div>
-      <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
+      <div class="selected-data">
+        <span class="unit">{{ unit }}</span>
+        <div class="selected-data-rows">
+          <div
+            v-for="timeseries in dataAtSelectedTimestamp"
+            :key="timeseries.id"
+            class="selected-data-row"
+            :style="{ color: timeseries.color }"
+          >
+            <strong v-tooltip="{ content: timeseries.tooltip, html: true }" >{{ timeseries.name }}
+              <sup>{{timeseries.superscript}}</sup>
+            </strong>
+            <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
+          </div>
+        </div>
+        <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
+      </div>
     </div>
-  </div>
-  <div class="timeseries-footer" >
-    <slot name="timeseries-footer-contents" />
-    <div v-if="footnotes" v-tooltip="{ content: footnoteTooltip, html: true }" style="text-align: right">
-      {{footnotes}}
+    <div class="timeseries-footer" >
+      <slot name="timeseries-footer-contents" />
+      <div v-if="footnotes" v-tooltip="{ content: footnoteTooltip, html: true }" style="text-align: right">
+        {{footnotes}}
+      </div>
     </div>
   </div>
 </template>
