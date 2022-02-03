@@ -1744,9 +1744,10 @@ export default defineComponent({
       activeReferenceOptions
     );
 
-    const unit = computed(() =>
-      getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value)
-    );
+    const unit = computed(() => {
+      const transform = isRawDataLayerSelected.value ? DataTransform.None : selectedTransform.value;
+      return getUnitString(mainModelOutput?.value?.unit || null, transform);
+    });
 
     const popupFormatter = (feature: any) => {
       const { label, value, normalizedValue } = feature.state || {};

@@ -79,7 +79,7 @@ export const getRawTimeseriesData = async (
     const sum = dataPoints.reduce((prev, cur) => prev + cur.value, 0);
     return { timestamp: dataPoints[0].timestamp, value: param.spatialAgg === AggregationOption.Sum ? sum : sum / dataPoints.length };
   });
-  // TODO: sorting can be expensive for large number of datapoints, further investigate if there's more efficient way to keep the timestamp order.
+  // TODO: sorting can be expensive for large number of datapoints, further investigate if there's more efficient way to keep the timestamps in order.
   const result = _.sortBy(timeseries, 'timestamp');
   return result;
 };
@@ -92,7 +92,7 @@ export const getRawTimeseriesDataBulk = async (
     spatialAgg: string,
   },
   regionIds: string[]
-) => {
+): Promise<{ region_id: string, timeseries: TimeseriesPoint[] }[]> => {
   const promises = regionIds.map(regionId => getRawTimeseriesData({ regionId, ...param }));
   const data = await Promise.all(promises);
   return data.map((series, index) => ({ region_id: regionIds[index], timeseries: series }));
