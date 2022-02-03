@@ -97,7 +97,7 @@ export function applyRelativeTo(
   const returnValue: Timeseries[] = [];
   timeseriesData.forEach(timeseries => {
     // Adjust values
-    const { id, name, color, points, isDefaultRun } = timeseries;
+    const { id, name, color, points, isDefaultRun, correctiveAction } = timeseries;
     const adjustedPoints = points.map(({ timestamp, value }) => {
       const baselineValue =
         baselineData.points.find(point => point.timestamp === timestamp)
@@ -112,7 +112,8 @@ export function applyRelativeTo(
       isDefaultRun,
       name,
       color,
-      points: adjustedPoints.filter(point => !Number.isNaN(point.value))
+      points: adjustedPoints.filter(point => !Number.isNaN(point.value)),
+      correctiveAction
     });
   });
   const baselineMetadata = {
@@ -376,3 +377,25 @@ export function renderPoint(
     .style('stroke-width', 1.5)
     .style('fill', color || DEFAULT_LINE_COLOR);
 }
+
+export function normalizeTimeseriesList(timeseriesList: Timeseries[]) {
+  const allTimestampsPoints = timeseriesList
+    .map(timeseries => timeseries.points)
+    .flat();
+  const allTimestampsValues = allTimestampsPoints
+    .map(point => point.value);
+  const minValue = _.min(allTimestampsValues) as number;
+  const maxValue = _.max(allTimestampsValues) as number;
+  if (minValue === maxValue) {
+    // minValue === maxValue, so vertically align its value in the center
+    allTimestampsPoints.forEach(p => {
+      p.normalizedValue = 0.5;
+    });
+  } else {
+    allTimestampsPoints.forEach(p => {
+      p.normalizedValue = (p.value - minValue) / (maxValue - minValue);
+    });
+  }
+}
+
+export const MAX_TIMESERIES_LABEL_CHAR_LENGTH = 10;

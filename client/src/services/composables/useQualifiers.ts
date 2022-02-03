@@ -7,7 +7,6 @@ import {
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { getQualifierBreakdown } from '../new-datacube-service';
-import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 interface QualifierVariableInfo {
   count: number;
@@ -105,10 +104,10 @@ export default function useQualifiers(
   selectedTimestamp: Ref<number | null>,
   availableQualifiers: Ref<Map<string, QualifierInfo>>,
   initialSelectedQualifierValues: Ref<string[]>,
-  initialNonDefaultQualifiers: Ref<string[]>
+  initialNonDefaultQualifiers: Ref<string[]>,
+  activeFeature: Ref<string>
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
-  const { activeFeature } = useActiveDatacubeFeature(metadata);
 
   const requestedQualifier = ref<string|null>(null);
   const additionalQualifiersRequested = ref<Set<string>>(new Set());

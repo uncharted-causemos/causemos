@@ -21,7 +21,9 @@
             }"
             v-tooltip="datacubeSection.header"
           >
-            <strong>{{ timeseries.name }}</strong>
+            <strong>{{ timeseries.name.length > MAX_TIMESERIES_LABEL_CHAR_LENGTH ? timeseries.name.substring(0, MAX_TIMESERIES_LABEL_CHAR_LENGTH) + '...' : timeseries.name }}
+              <sup>{{timeseries.superscript}}</sup>
+            </strong>
             <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
           </div>
         </div>
@@ -38,8 +40,10 @@ import renderTimeline from '@/charts/timeline-renderer';
 import { Timeseries } from '@/types/Timeseries';
 import { defineComponent, PropType, onMounted, ref, watch, toRefs, computed } from 'vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
-import { TemporalResolutionOption } from '@/types/Enums';
+import { TemporalResolutionOption, TIMESERIES_HEADER_SEPARATOR } from '@/types/Enums';
 import { chartValueFormatter } from '@/utils/string-util';
+import { MAX_TIMESERIES_LABEL_CHAR_LENGTH } from '@/utils/timeseries-util';
+import { getActionSuperscript } from '@/utils/incomplete-data-detection';
 
 const RESIZE_DELAY = 15;
 
@@ -99,10 +103,10 @@ export default defineComponent({
     const dataAtSelectedTimestamp = computed(() => {
       // array of sections, each for a datacube,
       //  with header representing this unique datacube as well as all the timeseries info
-      const legendData: {header: string; items: {id: string; name: string; color: string; value: number|undefined}[]}[] = [];
+      const legendData: {header: string; items: {id: string; name: string; color: string; value: number|undefined; superscript: string|undefined}[]}[] = [];
       timeseriesData.value.forEach(timeseries => {
         const timeseriesId = timeseries.id;
-        const ownerDatacube = timeseriesToDatacubeMap.value[timeseriesId].datacubeName + ' | ' + timeseriesToDatacubeMap.value[timeseriesId].datacubeOutputVariable;
+        const ownerDatacube = timeseriesToDatacubeMap.value[timeseriesId].datacubeName + TIMESERIES_HEADER_SEPARATOR + timeseriesToDatacubeMap.value[timeseriesId].datacubeOutputVariable;
         const existingDatacubeSection = legendData.find(item => item.header === ownerDatacube);
         if (existingDatacubeSection !== undefined) {
           // datacube section already exists
@@ -110,6 +114,7 @@ export default defineComponent({
             id: timeseries.id,
             name: timeseries.name,
             color: timeseries.color,
+            superscript: getActionSuperscript(timeseries.correctiveAction),
             value: timeseries.points.find(
               point => point.timestamp === selectedTimestamp.value
             )?.value
@@ -122,6 +127,7 @@ export default defineComponent({
                 id: timeseries.id,
                 name: timeseries.name,
                 color: timeseries.color,
+                superscript: getActionSuperscript(timeseries.correctiveAction),
                 value: timeseries.points.find(
                   point => point.timestamp === selectedTimestamp.value
                 )?.value
@@ -188,7 +194,8 @@ export default defineComponent({
       timestampFormatter,
       dataAtSelectedTimestamp,
       valueFormatter,
-      includeSectionHeaders
+      includeSectionHeaders,
+      MAX_TIMESERIES_LABEL_CHAR_LENGTH
     };
   }
 });

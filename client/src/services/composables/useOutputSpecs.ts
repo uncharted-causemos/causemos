@@ -3,9 +3,8 @@ import { computed } from '@vue/runtime-core';
 import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId } from '@/types/Runoutput';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 import { ModelRun } from '@/types/ModelRun';
-import { DataTransform } from '@/types/Enums';
+import { DataTransform, SPLIT_BY_VARIABLE } from '@/types/Enums';
 
 export default function useOutputSpecs(
   selectedModelId: Ref<string | null>,
@@ -15,9 +14,10 @@ export default function useOutputSpecs(
   selectedTransform: Ref<DataTransform>,
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
-  modelRunData?: Ref<ModelRun[]>
+  activeFeature: Ref<string>,
+  modelRunData?: Ref<ModelRun[]>,
+  breakdownOption?: Ref<string | null>
 ) {
-  const { activeFeature } = useActiveDatacubeFeature(metadata);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
     const modelMetadata = metadata.value;
     if (
@@ -36,7 +36,7 @@ export default function useOutputSpecs(
         id: timeseriesId,
         modelId: activeModelId,
         runId: scenarioId,
-        outputVariable: activeFeature.value,
+        outputVariable: breakdownOption?.value !== SPLIT_BY_VARIABLE ? activeFeature.value : timeseriesId,
         timestamp,
         transform,
         temporalResolution: selectedTemporalResolution.value,

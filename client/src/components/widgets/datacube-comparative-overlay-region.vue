@@ -89,6 +89,8 @@ import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { RegionalAggregations } from '@/types/Runoutput';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import { normalize } from '@/utils/value-util';
 
 export default defineComponent({
   name: 'DatacubeComparativeOverlayRegion',
@@ -277,6 +279,8 @@ export default defineComponent({
       breakdownOption.value = newValue;
     };
 
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
+
     const {
       timeseriesData,
       visibleTimeseriesData,
@@ -298,6 +302,7 @@ export default defineComponent({
       ref(new Set()),
       ref([]),
       ref(false),
+      activeFeature,
       selectedScenarios
     );
 
@@ -340,7 +345,8 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      ref([]) // initialSelectedRegionIds
+      ref([]), // initialSelectedRegionIds
+      activeFeature // initialSelectedRegionIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -359,7 +365,8 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTransform,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      activeFeature
     );
 
     const {
@@ -428,19 +435,8 @@ export default defineComponent({
               // @REVIEW
               // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
               // To receive normalized data, send transform=normalization when fetching regional data
-              const normalize = (value: number) => {
-                const minValue = dataExtent[0];
-                const maxValue = dataExtent[1];
-                if (minValue === maxValue) {
-                  // only one region, so the assumption is to use its value as the full range
-                  return 1;
-                } else {
-                  return (value - minValue) / (maxValue - minValue);
-                }
-              };
-
               data.forEach(dataItem => {
-                const normalizedValue = normalize(dataItem.value);
+                const normalizedValue = normalize(dataItem.value, dataExtent[0], dataExtent[1]);
                 const itemValue = dataItem.value;
                 const colorIndex = Math.trunc(normalizedValue * numberOfColorBins.value); // i.e., linear binning
                 // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
