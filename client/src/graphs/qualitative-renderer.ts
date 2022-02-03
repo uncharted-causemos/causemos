@@ -72,8 +72,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
-    selection.append('g').classed('node-handles', true);
-
     selection.append('rect')
       .classed('node-container', true)
       .attr('x', 0)
@@ -98,6 +96,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
           svgUtil.truncateTextToWidth(this, d.width - 20);
         }
       });
+
+    selection.append('g').classed('node-handles', true);
   }
 
   renderNodesUpdated(selection: D3SelectionINode<NodeParameter>) {
@@ -412,56 +412,75 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   showNodeHandles(node: D3SelectionINode<NodeParameter>) {
     const chart = this.chart;
     const svg = d3.select(this.svgEl);
-    const handles = node.select('.node-handles').append('g');
+    const leftHandle = node.select('.node-handles').append('g');
+    const rightHandle = node.select('.node-handles').append('g');
 
     const nodeWidth = node.datum().width || 0;
     const nodeHeight = node.datum().height || 0;
+    const handleWidth = DEFAULT_STYLE.nodeHandles.width;
 
     node.select('.node-container')
-      .attr('width', (d) => d.width - DEFAULT_STYLE.nodeHandles.width * 2)
-      .attr('x', DEFAULT_STYLE.nodeHandles.width)
       .style('border-radius', DEFAULT_STYLE.node.highlighted.borderRadius)
       .style('stroke', DEFAULT_STYLE.node.highlighted.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
 
     node.select('path')
-      .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width * 2, DEFAULT_STYLE.nodeHandles.width));
+      .attr('transform', svgUtil.translate(handleWidth * 2, handleWidth));
 
+    const handleWidthPlusPadding = handleWidth + 5;
     node.select('.node-label')
-      .attr('x', 30)
+      .attr('x', handleWidthPlusPadding)
       .text(d => this.labelFormatter(d.label))
-      .each(function (d) { svgUtil.truncateTextToWidth(this as any, d.width - 50); });
+      .each(function (d) { svgUtil.truncateTextToWidth(this as any, d.width - handleWidthPlusPadding * 2); });
 
-    handles.append('rect')
-      .classed('handle', true)
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('rx', 5)
-      .attr('ry', 5)
-      .attr('width', nodeWidth)
-      .attr('height', nodeHeight)
-      .style('cursor', 'pointer')
-      .style('fill', '#4E4F51');
+    const addHandleElements = (
+      handleGroupSelection: d3.Selection<
+        SVGGElement,
+        INode<NodeParameter>,
+        null,
+        any>,
+      xOffset: number
+    ) => {
+      // Add invisible rect to detect mouse events
+      handleGroupSelection.append('rect')
+        .classed('handle', true)
+        .attr('x', xOffset)
+        .attr('y', 0)
+        .attr('width', handleWidth)
+        .attr('height', nodeHeight)
+        .style('cursor', 'pointer')
+        .style('fill', 'transparent');
 
-    handles.append('text')
-      .attr('x', DEFAULT_STYLE.nodeHandles.width * 0.2)
-      .attr('y', nodeHeight * 0.625)
-      .style('font-family', 'FontAwesome')
-      .style('font-size', '12px')
-      .style('stroke', 'none')
-      .style('fill', 'white')
-      .style('pointer-events', 'none')
-      .text('\uf061');
+      // Add arrow
+      handleGroupSelection.append('text')
+        .attr('x', xOffset + handleWidth * 0.2)
+        .attr('y', nodeHeight * 0.625)
+        .style('font-family', 'FontAwesome')
+        .style('font-size', '12px')
+        .style('stroke', 'none')
+        .style('fill', 'grey')
+        .style('pointer-events', 'none')
+        .text('\uf061');
+    };
 
-    handles.append('text')
-      .attr('x', nodeWidth - DEFAULT_STYLE.nodeHandles.width * 0.85)
-      .attr('y', nodeHeight * 0.625)
-      .style('font-family', 'FontAwesome')
-      .style('font-size', '12px')
-      .style('stroke', 'none')
-      .style('fill', 'white')
-      .style('pointer-events', 'none')
-      .text('\uf061');
+    addHandleElements(leftHandle, 0);
+    addHandleElements(rightHandle, nodeWidth - handleWidth);
+
+    const onHandleHover = (mouseEvent: any) => {
+      // mouseEvent.target is rect.handle, parentNode is g element that contains both rectangles and both text elements
+      d3.select(mouseEvent.target.parentNode).select('text').style('fill', 'black');
+    };
+
+    const onHandleLeave = (mouseEvent: any) => {
+      // mouseEvent.target is leftHandle or rightHandle g element
+      d3.select(mouseEvent.target).select('text').style('fill', 'grey');
+    };
+
+    leftHandle.on('mouseover', onHandleHover);
+    leftHandle.on('mouseleave', onHandleLeave);
+    rightHandle.on('mouseover', onHandleHover);
+    rightHandle.on('mouseleave', onHandleLeave);
+
 
     // FIXME need to flatten
     const getLayoutNodeById = (id: string) => {
@@ -542,7 +561,10 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         });
         this.handleBeingDragged = false;
       });
-    handles.call(drag as any);
+    rightHandle.call(drag as any);
+    leftHandle.on('click', () => {
+      this.emit('fetch-suggested-impacts', node.datum());
+    });
   }
 
   // FIXME Typescript weirdness
