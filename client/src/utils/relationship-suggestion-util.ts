@@ -6,6 +6,14 @@ import filtersUtil from './filters-util';
 import { STATEMENT_POLARITY } from './polarity-util';
 import { calcEdgeColor } from './scales-util';
 
+export interface EdgeSuggestion {
+  source: string;
+  target: string;
+  color: string;
+  numEvidence: number;
+  statements: Statement[];
+}
+
 // TODO: give a clearer name and move somewhere more generic? projectService?
 export const getStatementsInKB = (
   concepts: string[],
@@ -21,7 +29,8 @@ export const getStatementsInKB = (
   });
 };
 
-const edgeSorter = (a: any, b: any) => b.meta.numEvidence - a.meta.numEvidence;
+const edgeSorter = (a: EdgeSuggestion, b: EdgeSuggestion) =>
+  b.numEvidence - a.numEvidence;
 
 // Extract edge attributes
 const statementsToEdgeAttributes = (statements: Statement[]) => {
@@ -61,7 +70,7 @@ export const extractTopEdgesFromStatements = (
   node: NodeParameter,
   graphData: CAGGraph,
   isLookingForDriverEdges = false
-) => {
+): EdgeSuggestion[] => {
   const concepts = node.components;
   // Filter out the outgoing/incoming edges depending on isLookingForDriverEdges
   const filteredStatements = statements.filter(statement => {
@@ -113,20 +122,15 @@ export const extractTopEdgesFromStatements = (
     }
   });
   const mapEntries = [...conceptToStatementsMap.entries()];
-  const edges = mapEntries.map(([key, statements]) => {
+  const edges: EdgeSuggestion[] = mapEntries.map(([key, statements]) => {
     const source = isLookingForDriverEdges ? key : node.concept;
     const target = isLookingForDriverEdges ? node.concept : key;
     return {
-      meta: {
-        checked: false,
-        source,
-        target,
-        style: {
-          color: calcEdgeColor(statementsToEdgeAttributes(statements))
-        },
-        numEvidence: _.sumBy(statements, s => s.wm.num_evidence)
-      },
-      dataArray: statements
+      source,
+      target,
+      color: calcEdgeColor(statementsToEdgeAttributes(statements)),
+      numEvidence: _.sumBy(statements, s => s.wm.num_evidence),
+      statements
     };
   });
   return edges.sort(edgeSorter);

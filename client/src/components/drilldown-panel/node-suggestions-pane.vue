@@ -101,6 +101,22 @@ const RELATIONSHIP_GROUP_KEY = {
 
 const MSG_EMPTY_SELECTION = 'There are no selected relationships';
 
+const convertEdgeSuggestionToChecklistItem = (suggestion) => {
+  const { source, target, statements, color } = suggestion;
+  return {
+    meta: {
+      checked: false,
+      source,
+      target,
+      style: {
+        color
+      },
+      numEvidence: _.sumBy(statements, s => s.wm.num_evidence)
+    },
+    dataArray: statements
+  };
+};
+
 export default {
   name: 'NodeSuggestionsPane',
   props: {
@@ -173,8 +189,12 @@ export default {
         this.graphData,
         false
       );
-      const topCauseEdges = _.take(causeEdges, 5);
-      const topEffectEdges = _.take(effectEdges, 5);
+      const topCauseEdges = _.take(causeEdges, 5).map(
+        convertEdgeSuggestionToChecklistItem
+      );
+      const topEffectEdges = _.take(effectEdges, 5).map(
+        convertEdgeSuggestionToChecklistItem
+      );
       this.summaryData = {
         children: [
           {

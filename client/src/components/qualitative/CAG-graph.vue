@@ -51,6 +51,7 @@ import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
 import { TimeScale } from '@/types/Enums';
+import { extractTopEdgesFromStatements, getStatementsInKB } from '@/utils/relationship-suggestion-util';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -276,6 +277,15 @@ export default defineComponent({
         });
       });
     });
+
+    this.renderer.on(
+      'fetch-suggested-impacts',
+      async (eventName: any, node: INode<NodeParameter>) => {
+        const statements = await getStatementsInKB(node.data.components, this.project);
+        const topImpactEdges = _.take(extractTopEdgesFromStatements(statements, node.data, this.data, false), 5);
+        this.renderer?.renderRectangles(topImpactEdges);
+      }
+    );
 
     this.refresh();
   },

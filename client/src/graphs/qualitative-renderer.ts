@@ -6,11 +6,12 @@ import {
   INode, getAStarPath, simplifyPath
 } from 'svg-flowgraph';
 
-import svgUtil from '@/utils/svg-util';
+import svgUtil, { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
+import { EdgeSuggestion } from '@/utils/relationship-suggestion-util';
 
 const REMOVE_TIMER = 1000;
 
@@ -68,6 +69,52 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
     this.on('edge-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
       selection.selectAll('.edge-mouseover-handle').remove();
+    });
+  }
+
+  renderRectangles(suggestions: EdgeSuggestion[]) {
+    // Add property to track selection state
+    const selectableSuggestions = suggestions.map(suggestion => ({
+      ...suggestion,
+      isSelected: false
+    }));
+    // Add a `g` to the dom for each suggestion
+    const suggestionGroups = this.chart
+      .selectAll<any, EdgeSuggestion & { isSelected: boolean }>('.node-suggestion')
+      .data(selectableSuggestions, suggestion => suggestion.target)
+      .join('g')
+      .classed('node-suggestion', true)
+      .attr('transform', (suggestion, i) => translate(100, 100 + i * 100))
+      .style('cursor', 'pointer');
+    // Render node background
+    suggestionGroups.selectAll('rect')
+      .data(d => [d])
+      .join('rect')
+      .attr('width', 200)
+      .attr('height', 30)
+      .attr('transform', translate(0, 0))
+      .style('stroke-width', 2)
+      .style('stroke', 'black')
+      .style('fill', 'white');
+    // Render node label
+    suggestionGroups.selectAll('text')
+      .data(suggestion => [this.labelFormatter(suggestion.target)])
+      .join('text')
+      .attr('transform', translate(10, 20))
+      .text(target => target);
+    // On click, toggle whether the node is selected
+    suggestionGroups.on('click', (event, suggestion) => {
+      suggestion.isSelected = !suggestion.isSelected;
+      const rect = d3.select(event.target.closest('g')).select('rect');
+      rect.style(
+        'stroke',
+        suggestion.isSelected ? 'dodgerblue' : 'black'
+      );
+    });
+
+    // Don't trigger double click handler that is used to create a new node
+    suggestionGroups.on('dblclick', (event) => {
+      console.log('event', event.stopPropagation());
     });
   }
 
