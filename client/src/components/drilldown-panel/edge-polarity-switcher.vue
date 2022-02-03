@@ -83,7 +83,7 @@
 
   <img
     v-if="polarity !== 0"
-    style="padding-bottom: 15px"
+    style="padding-bottom: 15px; height: 85px"
     :src="explainerGlyphFilepath"
   >
 </template>

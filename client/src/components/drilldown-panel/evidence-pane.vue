@@ -14,7 +14,7 @@
       /> &nbsp;{{ ontologyFormatter(selectedRelationship.target) }}
     </div>
     <slot />
-    <div class="pane-summary">Evidence ({{ numberFormatter(evidenceCount) }})</div>
+    <div class="pane-summary">Evidence ({{ numberFormatter(evidenceCount) }}), Documents ({{ documentCount }})</div>
     <collapsible-list-header
       v-if="summaryData.children.length"
       @expand-all="expandAll={value: true}"
@@ -312,20 +312,23 @@ export default {
       });
       return (this.numSelectedItems > 0 && numUnknownItemsChecked === 0);
     },
-    reducedStatements() {
-      const result = this.statements.reduce((accumulator, s) => {
-        const p = s.wm.statement_polarity;
-        accumulator.belief_score += s.belief;
-        accumulator.same += p === STATEMENT_POLARITY.SAME ? 1 : 0;
-        accumulator.opposite += p === STATEMENT_POLARITY.OPPOSITE ? 1 : 0;
-        accumulator.unknown += p === STATEMENT_POLARITY.UNKNOWN ? 1 : 0;
-        return accumulator;
-      }, { same: 0, opposite: 0, unknown: 0, belief_score: 0 });
-      result.belief_score = result.belief_score / this.statements.length;
-      return result;
-    },
     evidenceCount() {
       return _.sumBy(this.statements, d => d.wm.num_evidence);
+    },
+    documentCount() {
+      const docs = [];
+      if (this.summaryData.children.length === 0) return 0;
+
+      this.summaryData.children.forEach(polartyGroup => {
+        polartyGroup.children.forEach(factorGroup => {
+          factorGroup.dataArray.forEach(stmt => {
+            stmt.evidence.forEach(evidence => {
+              docs.push(evidence.document_context.doc_id);
+            });
+          });
+        });
+      });
+      return _.uniq(docs).length;
     },
     polarity() {
       return this.selectedRelationship.polarity;
