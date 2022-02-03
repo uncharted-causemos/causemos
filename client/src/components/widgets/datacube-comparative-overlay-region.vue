@@ -92,12 +92,11 @@ import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER, DATA_LAYE
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
-import { RegionalAggregations } from '@/types/Runoutput';
+import { RawOutputDataPoint, RegionalAggregations } from '@/types/Runoutput';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { normalize } from '@/utils/value-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
-import useRawPointsData from '@/services/composables/useRawPointsData';
 import { AnalysisMapColorOptions } from '@/types/Common';
 import MapLegend from '@/components/widgets/map-legend.vue';
 
@@ -397,9 +396,7 @@ export default defineComponent({
       datacubeHierarchy
     );
 
-    const {
-      rawDataPointsList
-    } = useRawPointsData(outputSpecs, ref(selectedRegionIds), breakdownOption, selectedDataLayer);
+    const rawDataPointsList = ref<RawOutputDataPoint[][]>([]);
 
     const isContinuousScale = computed(() => {
       return !isDiscreteScale(selectedColorScaleType.value);
