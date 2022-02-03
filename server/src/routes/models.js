@@ -425,8 +425,8 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
     const inferredEdgeMap = modelStatus.relations.reduce((acc, edge) => {
       const key = `${edge.source}///${edge.target}`;
       acc[key] = {};
-      // FIXME: Delphi returns a distribution, we don't handle this currently - Jan 2022
-      acc[key].weights = [0.0, 0.5];
+
+      acc[key].weights = [0.0, Math.abs(edge.weights[0])];
       return acc;
     }, {});
 
