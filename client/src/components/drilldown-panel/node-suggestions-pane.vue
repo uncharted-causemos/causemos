@@ -91,9 +91,8 @@
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
-import { STATEMENT_POLARITY } from '@/utils/polarity-util';
-import { calcEdgeColor } from '@/utils/scales-util';
 import filtersUtil from '@/utils/filters-util';
+import { extractTopEdgesFromStatements } from '@/utils/relationship-suggestion-util';
 
 const RELATIONSHIP_GROUP_KEY = {
   CAUSE: 'cause',
@@ -101,24 +100,6 @@ const RELATIONSHIP_GROUP_KEY = {
 };
 
 const MSG_EMPTY_SELECTION = 'There are no selected relationships';
-
-// Extract edge attributes
-const statementsToEdgeAttributes = (statements) => {
-  const edgeAttributes = statements.reduce((accumulator, s) => {
-    const wm = s.wm;
-    const p = wm.statement_polarity;
-
-    accumulator.belief_score += s.belief;
-    accumulator.same += p === STATEMENT_POLARITY.SAME ? 1 : 0;
-    accumulator.opposite += p === STATEMENT_POLARITY.OPPOSITE ? 1 : 0;
-    accumulator.unknown += p === STATEMENT_POLARITY.UNKNOWN ? 1 : 0;
-    return accumulator;
-  }, { same: 0, opposite: 0, unknown: 0, belief_score: 0 });
-
-  edgeAttributes.belief_score = edgeAttributes.belief_score / statements.length;
-  return edgeAttributes;
-};
-
 
 export default {
   name: 'NodeSuggestionsPane',
@@ -180,99 +161,20 @@ export default {
       setSearchClause: 'query/setSearchClause'
     }),
     refresh() {
-      const graphData = this.graphData;
-      const components = this.selectedNode.components;
-
-      const causeStatements = this.statements.filter(s => components.includes(s.obj.concept));
-      const effectStatements = this.statements.filter(s => components.includes(s.subj.concept));
-
-      // Helper
-      const addToMap = (map, key, val) => {
-        if (!map.has(key)) {
-          map.set(key, []);
-        }
-        map.get(key).push(val);
-      };
-      const edgeSorter = (a, b) => b.meta.numEvidence - a.meta.numEvidence;
-
-      // Map to node-container level if applicable
-      const causeMap = new Map();
-      for (let i = 0; i < causeStatements.length; i++) {
-        const statement = causeStatements[i];
-        const nodeContainters = graphData.nodes.filter(n => n.components.includes(statement.subj.concept));
-        if (nodeContainters.length === 0) {
-          addToMap(causeMap, statement.subj.concept, statement);
-        } else {
-          for (let j = 0; j < nodeContainters.length; j++) {
-            const causeConcept = nodeContainters[j].concept;
-
-            /* Skip if edge exists and statement exists on edge */
-            const exist = graphData.edges.find(edge => edge.source === causeConcept && edge.target === this.selectedNode.concept);
-            if (exist && exist.reference_ids.includes(statement.id)) {
-              continue;
-            }
-            addToMap(causeMap, causeConcept, statement);
-          }
-        }
-      }
-
-      // Map to node-container level if applicable
-      const effectMap = new Map();
-      for (let i = 0; i < effectStatements.length; i++) {
-        const statement = effectStatements[i];
-        const nodeContainters = graphData.nodes.filter(n => n.components.includes(statement.obj.concept));
-        if (nodeContainters.length === 0) {
-          addToMap(effectMap, statement.obj.concept, statement);
-        } else {
-          for (let j = 0; j < nodeContainters.length; j++) {
-            const effectConcept = nodeContainters[j].concept;
-
-            /* Skip if edge exists and statement exists on edge */
-            const exist = graphData.edges.find(edge => edge.source === this.selectedNode.concept && edge.target === effectConcept);
-            if (exist && exist.reference_ids.includes(statement.id)) {
-              continue;
-            }
-            addToMap(effectMap, effectConcept, statement);
-          }
-        }
-      }
-
-      const causeEntries = [...causeMap.entries()];
-      const causeEdges = [];
-      for (let i = 0; i < causeEntries.length; i++) {
-        const [key, statements] = causeEntries[i];
-        causeEdges.push({
-          meta: {
-            checked: false,
-            source: key,
-            target: this.selectedNode.concept,
-            style: { color: calcEdgeColor(statementsToEdgeAttributes(statements)) },
-            numEvidence: _.sumBy(statements, s => s.wm.num_evidence)
-          },
-          dataArray: statements
-        });
-      }
-
-      const effectEntries = [...effectMap.entries()];
-      const effectEdges = [];
-      for (let i = 0; i < effectEntries.length; i++) {
-        const [key, statements] = effectEntries[i];
-        effectEdges.push({
-          meta: {
-            checked: false,
-            source: this.selectedNode.concept,
-            target: key,
-            style: { color: calcEdgeColor(statementsToEdgeAttributes(statements)) },
-            numEvidence: _.sumBy(statements, s => s.wm.num_evidence)
-          },
-          dataArray: statements
-        });
-      }
-
-      // Get "top" edges by number of evidence
-      const topCauseEdges = _.take(causeEdges.sort(edgeSorter), 5);
-      const topEffectEdges = _.take(effectEdges.sort(edgeSorter), 5);
-
+      const causeEdges = extractTopEdgesFromStatements(
+        this.statements,
+        this.selectedNode,
+        this.graphData,
+        true
+      );
+      const effectEdges = extractTopEdgesFromStatements(
+        this.statements,
+        this.selectedNode,
+        this.graphData,
+        false
+      );
+      const topCauseEdges = _.take(causeEdges, 5);
+      const topEffectEdges = _.take(effectEdges, 5);
       this.summaryData = {
         children: [
           {

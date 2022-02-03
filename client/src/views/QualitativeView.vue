@@ -268,6 +268,8 @@ import ModalTimeScale from '@/components/qualitative/modal-time-scale.vue';
 import { TimeScale } from '@/types/Enums';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import CagLegend from '@/components/graph/cag-legend.vue';
+import { getStatementsInKB } from '@/utils/relationship-suggestion-util';
+import { Statement } from '@/types/Statement';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -358,7 +360,7 @@ export default defineComponent({
     activeDrilldownTab: null as string | null,
     selectedNode: null as NodeParameter | null,
     selectedEdge: null as EdgeParameter | null,
-    selectedStatements: [],
+    selectedStatements: [] as Statement[],
     showNewNode: false,
     correction: null as {
       factor: any;
@@ -874,25 +876,15 @@ export default defineComponent({
           this.isFetchingStatements = false;
         });
     },
-    loadStatementsKB() {
+    async loadStatementsKB() {
       this.selectedStatements = [];
       if (this.selectedNode === null) return;
-      const searchFilters = filtersUtil.newFilters();
-      // const concept = this.selectedNode.concept;
       const concepts = this.selectedNode.components;
-      for (let i = 0; i < concepts.length; i++) {
-        filtersUtil.addSearchTerm(searchFilters, 'topic', concepts[i], 'or', false);
-      }
       this.isFetchingStatements = true;
 
-      projectService
-        .getProjectStatements(this.project, searchFilters, {
-          size: projectService.STATEMENT_LIMIT
-        })
-        .then(result => {
-          this.selectedStatements = result;
-          this.isFetchingStatements = false;
-        });
+      const statements = await getStatementsInKB(concepts, this.project);
+      this.selectedStatements = statements;
+      this.isFetchingStatements = false;
     },
     async onAddToCAG(subgraph: CAGGraphInterface) {
       const data = await this.addCAGComponents(subgraph.nodes, subgraph.edges, 'suggestion');
