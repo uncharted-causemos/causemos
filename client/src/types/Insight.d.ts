@@ -45,7 +45,7 @@ export interface Insight extends Snapshot {
   analytical_question: string[]; // question(s) this insight may answer
   thumbnail: string; // e.g., image url or base64 encoding
   annotation_state?: AnnotationState;
-  modified_at?: Date | number | string;
+  modified_at?: number;
 }
 
 // @concrete type
@@ -53,7 +53,7 @@ export interface AnalyticalQuestion extends Snapshot {
   question: string;
   linked_insights: string[]; // has some insight (using their names/IDs) been linked to satisfy/answer this question?
   tour_name?: string;
-  modified_at?: Date | number | string;
+  modified_at?: number;
 }
 
 // view-specific values (no data dependency)
