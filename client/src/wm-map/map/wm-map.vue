@@ -65,7 +65,7 @@ export default {
     },
     bounds(value) {
       if (!this.cameraMoveEnabled) return;
-      this.map.fitBounds(value, this.cameraOptions);
+      this.map.fitBounds(value);
     },
     mapStyle(value) {
       this.map.setStyle(value);
@@ -102,6 +102,9 @@ export default {
         //  closed when switching from the 'Graph' tab in the KB-Explorer). This fix technically
         //  relies on a race condition, that the layout will be settled by the time the map loads.
         this.map.resize();
+        // It appears that bound set by `new mapboxgl.Map({ bounds })` and this.map.fitBounds (which is also called in bounds watcher)
+        // behave differently. So make sure  `fitBounds` is called for the consistency
+        this.map.fitBounds(this.bounds, { duration: 0 });
       });
       this.handleResize = _.debounce(() => {
         this.map.resize();
