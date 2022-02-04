@@ -6,7 +6,7 @@ import { deleteInsight, fetchInsights, InsightFilterFields } from '@/services/in
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
-import { Insight, InsightMetadata } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, InsightMetadata } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -182,92 +182,178 @@ function getMetadataSummary(projectMetadata: any) {
     `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${projectMetadata.corpus_id}`;
 }
 
-function exportDOCX(selectedInsights: Insight[], projectMetadata: any) {
-  // 72dpi * 8.5 inches width, as word perplexingly uses pixels
-  // same height as width so that we can attempt to be consistent with the layout.
-  const docxMaxImageSize = 612;
-  const insightSet = selectedInsights;
-  const metadataSummary = getMetadataSummary(projectMetadata);
-  const sections = insightSet.map((i) => {
-    const datacubeId = _.first(i.context_id);
-    const imageSize = scaleImage(i.thumbnail, docxMaxImageSize, docxMaxImageSize);
-    const insightDate = dateFormatter((i as any).modified_at); // FIXME: add modified_at field to type
-    return {
-      footers: {
-        default: new Footer({
-          children: [
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              children: [
-                new TextRun({
-                  size: 14,
-                  text: metadataSummary
-                })
-              ]
-            })
-          ]
-        })
-      },
-      properties: {
-        type: SectionType.NEXT_PAGE
-      },
+
+// creates a new array of insights out of the questions and insights passed to
+// the function that can be used to export something in the order expected from
+// analysis checklist.
+function parseReportFromQuestionsAndInsights(
+  insights: Insight[],
+  questions: AnalyticalQuestion[]
+): (AnalyticalQuestion|Insight)[] {
+  if (questions.length === 0) return insights;
+
+  const report: (Insight|AnalyticalQuestion)[] = [];
+  const insightMap = new Map<string, Insight>();
+  insights.forEach(i => insightMap.set(i.id ?? '', i));
+
+  questions.forEach((question) => {
+    report.push(question);
+    question.linked_insights.forEach(li => {
+      const i = insightMap.get(li);
+      i && report.push(i);
+    });
+  });
+
+  return report;
+}
+
+function instanceOfInsight(data: any): data is Insight {
+  return 'thumbnail' in data;
+}
+
+function instanceOfQuestion(data: any): data is AnalyticalQuestion {
+  return 'question' in data;
+}
+
+function generateFooterDOCX (metadataSummary: string) {
+  return {
+    default: new Footer({
       children: [
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          heading: HeadingLevel.HEADING_2,
-          text: `${i.name}`
-        }),
-        new Paragraph({
-          // break: 1, // REVIEW
-          alignment: AlignmentType.CENTER,
-          children: [
-            new ImageRun({
-              data: i.thumbnail,
-              transformation: {
-                height: imageSize.height,
-                width: imageSize.width
-              }
-            })
-          ]
-        }),
-        new Paragraph({
-          alignment: AlignmentType.LEFT,
           children: [
             new TextRun({
-              break: 1,
-              bold: true,
-              size: 24,
-              text: 'Description: '
-            }),
-            new TextRun({
-              size: 24,
-              text: `${i.description}`
-            }),
-            new TextRun({
-              bold: true,
-              break: 1,
-              size: 24,
-              text: 'Metadata: '
-            }),
-            new TextRun({
-              size: 24,
-              text: `Captured on: ${insightDate} - ${metadataSummary} - `
-            }),
-            new ExternalHyperlink({
-              child: new TextRun({
-                size: 24,
-                text: '(View Source on Causemos)',
-                underline: {
-                  type: UnderlineType.SINGLE
-                }
-              }),
-              link: slideURL(getSourceUrlForExport(i.url, i.id as string, datacubeId as string))
+              size: 14,
+              text: metadataSummary
             })
           ]
         })
       ]
-    };
-  });
+    })
+  };
+}
+
+function generateInsightDOCX (
+  insight: Insight,
+  metadataSummary: string,
+  newPage: boolean
+) {
+  // 72dpi * 8.5 inches width, as word perplexingly uses pixels
+  // same height as width so that we can attempt to be consistent with the layout.
+  const docxMaxImageSize = 612;
+  const datacubeId = _.first(insight.context_id);
+  const imageSize = scaleImage(insight.thumbnail, docxMaxImageSize, docxMaxImageSize);
+  const insightDate = dateFormatter(insight.modified_at);
+  const footers = generateFooterDOCX(metadataSummary);
+  const children = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      heading: HeadingLevel.HEADING_2,
+      text: `${insight.name}`
+    }),
+    new Paragraph({
+      // break: 1, // REVIEW
+      alignment: AlignmentType.CENTER,
+      children: [
+        new ImageRun({
+          data: insight.thumbnail,
+          transformation: {
+            height: imageSize.height,
+            width: imageSize.width
+          }
+        })
+      ]
+    }),
+    new Paragraph({
+      alignment: AlignmentType.LEFT,
+      children: [
+        new TextRun({
+          break: 1,
+          bold: true,
+          size: 24,
+          text: 'Description: '
+        }),
+        new TextRun({
+          size: 24,
+          text: `${insight.description}`
+        }),
+        new TextRun({
+          bold: true,
+          break: 1,
+          size: 24,
+          text: 'Metadata: '
+        }),
+        new TextRun({
+          size: 24,
+          text: `Captured on: ${insightDate} - ${metadataSummary} - `
+        }),
+        new ExternalHyperlink({
+          child: new TextRun({
+            size: 24,
+            text: '(View Source on Causemos)',
+            underline: {
+              type: UnderlineType.SINGLE
+            }
+          }),
+          link: slideURL(getSourceUrlForExport(insight.url, insight.id as string, datacubeId as string))
+        })
+      ]
+    })
+  ];
+  const properties = {
+    type: newPage ? SectionType.NEXT_PAGE : SectionType.CONTINUOUS
+  };
+  return newPage ? {
+    footers,
+    children,
+    properties
+  } : {
+    children,
+    properties
+  };
+}
+
+function generateQuestionDOCX (
+  question: AnalyticalQuestion,
+  metadataSummary: string
+) {
+  const children = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      heading: HeadingLevel.HEADING_1,
+      text: `${question.question}`
+    })
+  ];
+  const properties = {
+    type: SectionType.NEXT_PAGE
+  };
+  const footers = generateFooterDOCX(metadataSummary);
+  return {
+    children,
+    properties,
+    footers
+  };
+}
+
+function exportDOCX(
+  insights: Insight[],
+  projectMetadata: any,
+  questions?: AnalyticalQuestion[]
+) {
+  const allData = questions
+    ? parseReportFromQuestionsAndInsights(insights, questions)
+    : insights;
+
+  const metadataSummary = getMetadataSummary(projectMetadata);
+  const sections = allData.reduce((acc, item, index) => {
+    if (instanceOfInsight(item)) {
+      const newPage = index > 0 && !instanceOfQuestion(allData[index - 1]);
+      acc.push(generateInsightDOCX(item, metadataSummary, newPage));
+    } else if (instanceOfQuestion(item)) {
+      acc.push(generateQuestionDOCX(item, metadataSummary));
+    }
+    return acc;
+  }, <any>[]);
 
   const doc = new Document({
     sections,
@@ -280,10 +366,112 @@ function exportDOCX(selectedInsights: Insight[], projectMetadata: any) {
   });
 }
 
-function exportPPTX(selectedInsights: Insight[], projectMetadata: any) {
+function generateInsightPPTX (
+  insight: Insight,
+  pres: pptxgen,
+  metadataSummary: string
+) {
   // some PPTX consts as powerpoint does everything in inches & has hard boundaries
   const widthLimitImage = 10;
   const heightLimitImage = 4.75;
+
+  const datacubeId = _.first(insight.context_id);
+  const imageSize = scaleImage(insight.thumbnail, widthLimitImage, heightLimitImage);
+  const insightDate = dateFormatter(insight.modified_at);
+  const slide = pres.addSlide();
+  const notes = `Title: ${insight.name}\nDescription: ${insight.description}\nCaptured on: ${insightDate}\n${metadataSummary}`;
+
+  /*
+    PPTXGEN BUG WORKAROUND - library level function slide.addNotes(notes) doesn't insert notes
+    correctly at the moment, placing an object array doesn't get parse back out to a string
+    so we manually push a SlideObject representing a note in this slides' _slideObject array,
+    so that only a string is set.
+  */
+  (slide as any)._slideObjects.push({
+    _type: 'notes',
+    text: notes
+  });
+  slide.addImage({
+    data: insight.thumbnail,
+    // centering image code for x & y limited by consts for max content size
+    // plus base offsets needed to stay clear of other elements
+    x: (widthLimitImage - imageSize.width) / 2,
+    y: (heightLimitImage - imageSize.height) / 2,
+    w: imageSize.width,
+    h: imageSize.height
+  });
+  slide.addText([
+    {
+      text: `${insight.name}: `,
+      options: {
+        bold: true,
+        color: '000088',
+        hyperlink: {
+          url: slideURL(getSourceUrlForExport(insight.url, insight.id as string, datacubeId as string))
+        }
+      }
+    },
+    {
+      text: `${insight.description} `,
+      options: {
+        // break: false
+      }
+    },
+    {
+      text: `\n(Captured on: ${insightDate} - ${metadataSummary} `,
+      options: {
+        // break: false // REVIEW
+      }
+    },
+    {
+      text: 'View On Causemos',
+      options: {
+        // break: false, // REVIEW
+        color: '000088',
+        hyperlink: {
+          url: slideURL(getSourceUrlForExport(insight.url, insight.id as string, datacubeId as string))
+        }
+      }
+    },
+    {
+      text: '.)',
+      options: {
+        // break: false // REVIEW
+      }
+    }
+  ], {
+    x: 0,
+    y: 4.75,
+    w: 10,
+    h: 0.75,
+    color: '363636',
+    fontSize: 10,
+    align: pres.AlignH.left
+  });
+}
+
+function generateQuestionPPTX (question: AnalyticalQuestion, pres: pptxgen) {
+  const slide = pres.addSlide();
+  slide.addText(question.question, {
+    x: 0,
+    y: 2.375,
+    w: 10,
+    h: 0.75,
+    color: '363636',
+    fontSize: 30,
+    align: pres.AlignH.center
+  });
+}
+
+function exportPPTX(
+  insights: Insight[],
+  projectMetadata: any,
+  questions?: AnalyticalQuestion[]
+) {
+  const allData = questions
+    ? parseReportFromQuestionsAndInsights(insights, questions)
+    : insights;
+
   const Pptxgen = pptxgen;
   const pres = new Pptxgen();
 
@@ -296,83 +484,15 @@ function exportPPTX(selectedInsights: Insight[], projectMetadata: any) {
     background: { fill: 'FFFFFF' },
     slideNumber: { x: 9.75, y: 5.375, color: '000000', fontSize: 8, align: pres.AlignH.right }
   });
-  const insightSet = selectedInsights;
-  insightSet.forEach((i) => {
-    const datacubeId = _.first(i.context_id);
-    const imageSize = scaleImage(i.thumbnail, widthLimitImage, heightLimitImage);
-    const insightDate = dateFormatter((i as any).modified_at); // FIXME
-    const slide = pres.addSlide();
-    const notes = `Title: ${i.name}\nDescription: ${i.description}\nCaptured on: ${insightDate}\n${metadataSummary}`;
 
-    /*
-      PPTXGEN BUG WORKAROUND - library level function slide.addNotes(notes) doesn't insert notes
-      correctly at the moment, placing an object array doesn't get parse back out to a string
-      so we manually push a SlideObject representing a note in this slides' _slideObject array,
-      so that only a string is set.
-    */
-    (slide as any)._slideObjects.push({
-      _type: 'notes',
-      text: notes
-    });
-
-    slide.addImage({
-      data: i.thumbnail,
-      // centering image code for x & y limited by consts for max content size
-      // plus base offsets needed to stay clear of other elements
-      x: (widthLimitImage - imageSize.width) / 2,
-      y: (heightLimitImage - imageSize.height) / 2,
-      w: imageSize.width,
-      h: imageSize.height
-    });
-    slide.addText([
-      {
-        text: `${i.name}: `,
-        options: {
-          bold: true,
-          color: '000088',
-          hyperlink: {
-            url: slideURL(getSourceUrlForExport(i.url, i.id as string, datacubeId as string))
-          }
-        }
-      },
-      {
-        text: `${i.description} `,
-        options: {
-          // break: false
-        }
-      },
-      {
-        text: `\n(Captured on: ${insightDate} - ${metadataSummary} `,
-        options: {
-          // break: false // REVIEW
-        }
-      },
-      {
-        text: 'View On Causemos',
-        options: {
-          // break: false, // REVIEW
-          color: '000088',
-          hyperlink: {
-            url: slideURL(getSourceUrlForExport(i.url, i.id as string, datacubeId as string))
-          }
-        }
-      },
-      {
-        text: '.)',
-        options: {
-          // break: false // REVIEW
-        }
-      }
-    ], {
-      x: 0,
-      y: 4.75,
-      w: 10,
-      h: 0.75,
-      color: '363636',
-      fontSize: 10,
-      align: pres.AlignH.left
-    });
+  allData.forEach((item) => {
+    if (instanceOfInsight(item)) {
+      generateInsightPPTX(item, pres, metadataSummary);
+    } else if (instanceOfQuestion(item)) {
+      generateQuestionPPTX(item, pres);
+    }
   });
+
   pres.writeFile({
     fileName: getFileName(projectMetadata)
   });

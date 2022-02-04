@@ -20,22 +20,21 @@
             @button-clicked="switchTab"
           />
           <div class="export">
-            <span>
-              Export
-              {{ insightsToExport.length }}
-              {{ curatedInsights.length > 0 ? 'selected' : '' }}
-              insight{{ insightsToExport.length !== 1 ? 's' : '' }}
-              as
-            </span>
+            <radio-button-group
+              :buttons="exportOptions"
+              :selected-button-value="activeExportOption"
+              @button-clicked="toggleExport"
+            />
+            <span> as </span>
             <button
               class="btn btn-sm btn-default"
-              @click="() => exportSelectedInsights('Powerpoint')"
+              @click="() => exportInsights('Powerpoint')"
             >
               PowerPoint
             </button>
             <button
               class="btn btn-sm btn-default"
-              @click="() => exportSelectedInsights('Word')"
+              @click="() => exportInsights('Word')"
             >
               Word
             </button>
@@ -150,6 +149,10 @@ const VIEW_OPTIONS = [
   }
 ];
 
+const EXPORT_OPTIONS = {
+  insights: 'insights',
+  questions: 'questions'
+};
 
 export default {
   name: 'ListInsightsModal',
@@ -161,6 +164,7 @@ export default {
     RadioButtonGroup
   },
   data: () => ({
+    activeExportOption: EXPORT_OPTIONS.insights,
     activeInsight: null,
     activeTabId: VIEW_OPTIONS[0].value,
     curatedInsights: [],
@@ -188,6 +192,18 @@ export default {
       countInsights: 'insightPanel/countInsights',
       projectId: 'app/project'
     }),
+    exportOptions() {
+      const insightLabel = `Export ${this.insightsToExport.length}` +
+      ` ${this.curatedInsights.length > 0 ? 'selected' : ''}` +
+      ` insight${this.insightsToExport.length !== 1 ? 's' : ''}`;
+      return [{
+        value: EXPORT_OPTIONS.insights,
+        label: insightLabel
+      }, {
+        value: EXPORT_OPTIONS.questions,
+        label: 'Export All Questions & Insights'
+      }];
+    },
     searchedInsights() {
       if (this.search.length > 0) {
         const result = this.listInsights.filter((insight) => {
@@ -285,13 +301,19 @@ export default {
       // refresh the latest list from the server
       this.reFetchInsights();
     },
-    exportSelectedInsights(item) {
+    exportInsights(item) {
+      const props = [];
+      if (this.activeExportOption === EXPORT_OPTIONS.questions) {
+        props.push(this.listInsights, this.projectMetadata, this.questions);
+      } else {
+        props.push(this.selectedInsights, this.projectMetadata);
+      }
       switch (item) {
         case 'Word':
-          InsightUtil.exportDOCX(this.selectedInsights, this.projectMetadata);
+          InsightUtil.exportDOCX(...props);
           break;
         case 'Powerpoint':
-          InsightUtil.exportPPTX(this.selectedInsights, this.projectMetadata);
+          InsightUtil.exportPPTX(...props);
           break;
         default:
           break;
@@ -324,6 +346,9 @@ export default {
       this.activeTabId = id;
 
       // FIXME: reload insights since questions most recent question stuff may not be up to date
+    },
+    toggleExport(id) {
+      this.activeExportOption = id;
     },
     updateCuration(id) {
       if (this.isCuratedInsight(id)) {
