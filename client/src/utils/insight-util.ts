@@ -243,7 +243,7 @@ function generateInsightDOCX (
   const docxMaxImageSize = 612;
   const datacubeId = _.first(insight.context_id);
   const imageSize = scaleImage(insight.thumbnail, docxMaxImageSize, docxMaxImageSize);
-  const insightDate = dateFormatter(insight.modified_at);
+  const insightDate = dateFormatter(insight.modified_at); // FIXME: add modified_at field to type
   const footers = generateFooterDOCX(metadataSummary);
   const children = [
     new Paragraph({
@@ -377,7 +377,8 @@ function generateInsightPPTX (
 
   const datacubeId = _.first(insight.context_id);
   const imageSize = scaleImage(insight.thumbnail, widthLimitImage, heightLimitImage);
-  const insightDate = dateFormatter(insight.modified_at);
+  const insightDate = dateFormatter(insight.modified_at); // FIXME
+  const slide = pres.addSlide();
   const notes = `Title: ${insight.name}\nDescription: ${insight.description}\nCaptured on: ${insightDate}\n${metadataSummary}`;
 
   /*
