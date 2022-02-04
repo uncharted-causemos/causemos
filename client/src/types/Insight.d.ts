@@ -28,7 +28,7 @@ export interface Snapshot {
   post_actions?: any; // e.g., highlight a sub-graph
   // components may be flagged to react to the actions in a given mode -> Karl's suggestion (editable, displayable, etc.)
 
-  modified_at?: Date | number | string;
+  modified_at?: number;
 }
 
 export interface AnnotationState {
