@@ -509,6 +509,8 @@ export default defineComponent({
               temp.forEach((barItem, indx) => {
                 barItem.name = (temp.length - indx).toString();
               });
+            } else {
+              temp.reverse();
             }
 
             emit('updated-bars-data', {
