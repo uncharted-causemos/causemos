@@ -45,7 +45,7 @@ $hover-nudge-height: 25px;
 $padding: 10px;
 
 .hideable-legend-container {
-  box-shadow: $shadow-level-1;
+  border: 2px solid $background-light-3;
   padding: $padding;
   padding-bottom: $padding + $hover-nudge-height;
   z-index: 20;
