@@ -17,7 +17,7 @@
               class="tr-item"
               v-for="d in datacubes"
               :key="d.id"
-              :class="{ selected: isSelected(d), deactive: !d.isAvailable }"
+              :class="{ selected: isSelected(d) }"
               @click="updateExpandedRow(d)"
             >
               <td class="output-col">
@@ -320,10 +320,6 @@ $selected-background: #EBF1FC;
     td {
       background-color: $selected-background;
     }
-  }
-  .tr-item.deactive {
-    opacity: 0.5;
-    pointer-events: none;
   }
   .text-bold {
     font-size: $font-size-large;
