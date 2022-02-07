@@ -16,6 +16,37 @@ const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodele
 
 const TIMEOUT = 3 * 1000;
 
+const getOntologyById = async (id) => {
+  Logger.info(`Calling ${DART_SERVICE_URL}/ontologies`);
+  const options = {
+    url: `${DART_SERVICE_URL}/ontologies?id=${id}`,
+    method: 'GET',
+    headers: {
+      Authorization: basicAuthToken
+    },
+    timeout: TIMEOUT
+  };
+  const result = await requestAsPromise(options);
+  return result.ontology ? result.ontology : '';
+};
+
+/**
+ * Returns the ontology yaml string
+ */
+const getOntologyByTenant = async (tenantId) => {
+  Logger.info(`Calling ${DART_SERVICE_URL}/ontologies`);
+  const options = {
+    url: `${DART_SERVICE_URL}/ontologies?tenant=${tenantId}`,
+    method: 'GET',
+    headers: {
+      Authorization: basicAuthToken
+    },
+    timeout: TIMEOUT
+  };
+  const result = await requestAsPromise(options);
+  return result.ontology ? result.ontology : '';
+};
+
 /**
  * Returns the stream of the raw document of document with corresponding id
  * @param {string} docId
@@ -33,7 +64,6 @@ const getRawDoc = async (docId) => {
   };
   return request(options);
 };
-
 
 /**
  * Sends a file to the DART server for parsing and returns document meta text.
@@ -69,7 +99,7 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
  */
 const queryReadersStatus = async (timestamp) => {
   // Format timestamp to yyyy-mm-dd hh:mm:ss
-  const t = moment.utc(+timestamp).format('YYYY-MM-DD HH:mm:ss');
+  const t = moment.utc(+timestamp).format('YYYY-MM-DDTHH:mm:ss');
 
   const formData = {
     metadata: JSON.stringify({
@@ -78,6 +108,8 @@ const queryReadersStatus = async (timestamp) => {
       }
     })
   };
+
+  Logger.info('Sending to DART ' + JSON.stringify(formData));
 
   const options = {
     url: `${DART_READER_URL}/query`,
@@ -94,6 +126,8 @@ const queryReadersStatus = async (timestamp) => {
 };
 
 module.exports = {
+  getOntologyById,
+  getOntologyByTenant,
   getRawDoc,
   uploadDocument,
   queryReadersStatus
