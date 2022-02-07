@@ -7,7 +7,7 @@ import { translate } from './svg-util';
 
 // TODO: document that existing children with the supplied classname will be replaced
 // TODO: change default styles, consider which styling options need to be exposed
-export const createButton = (
+export const createOrUpdateButton = (
   text: string,
   className: string,
   parent: D3Selection,

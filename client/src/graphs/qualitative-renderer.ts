@@ -12,7 +12,7 @@ import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
 import { EdgeSuggestion } from '@/utils/relationship-suggestion-util';
-import { createButton } from '@/utils/svg-util-new';
+import { createOrUpdateButton } from '@/utils/svg-util-new';
 import { D3Selection } from '@/types/D3';
 
 const REMOVE_TIMER = 1000;
@@ -110,9 +110,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     suggestionGroups.on('click', (event, suggestion) => {
       suggestion.isSelected = !suggestion.isSelected;
       const rect = d3.select(event.target.closest('g')).select('rect');
-      rect.style(
-        'stroke',
-        suggestion.isSelected ? 'dodgerblue' : 'black'
+      rect.style('stroke', suggestion.isSelected ? 'dodgerblue' : 'black');
+      this.createOrUpdateAddButton(
+        selectableSuggestions.filter(suggestion => suggestion.isSelected)
       );
     });
 
@@ -122,27 +122,21 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     });
 
     // Show a button for adding selected edges to CAG
-    // TODO: extract to function that takes # of selected edges and updates button text
-    const selectedRelationshipCount = suggestionGroups ? 3 : 1;
-    const addRelationshipsButtonLabel = `Add ${selectedRelationshipCount} relationship${
-      selectedRelationshipCount !== 1 ? 's' : ''
+    this.createOrUpdateAddButton([]).attr('transform', translate(500, 100));
+  }
+
+  createOrUpdateAddButton(selectedSuggestions: (EdgeSuggestion)[]) {
+    const addRelationshipsButtonLabel = `Add ${selectedSuggestions.length} relationship${
+      selectedSuggestions.length !== 1 ? 's' : ''
     }`;
-    const addRelationshipsButton = createButton(
+    const addRelationshipsButton = createOrUpdateButton(
       addRelationshipsButtonLabel,
       'add-relationships-button',
       this.chart as unknown as D3Selection,
       () => {
-        console.log(
-          selectedRelationshipCount,
-          selectableSuggestions,
-          selectableSuggestions.filter(suggestion => suggestion.isSelected)
-        );
-        const selectedSuggestions = selectableSuggestions.filter(
-          suggestion => suggestion.isSelected
-        );
         this.emit('add-selected-suggestions', selectedSuggestions);
       });
-    addRelationshipsButton.attr('transform', translate(500, 100));
+    return addRelationshipsButton;
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
