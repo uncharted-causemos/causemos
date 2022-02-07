@@ -33,10 +33,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
+import { defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
+import useToaster from '@/services/composables/useToaster';
 import FacetsPanel from '../components/data-explorer/facets-panel.vue';
 import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '../components/data-explorer/search.vue';
@@ -50,13 +52,18 @@ import { FACET_FIELDS } from '@/utils/datacube-util';
 import { ANALYSIS } from '@/utils/messages-util';
 import { ProjectType } from '@/types/Enums';
 
-export default {
+export default defineComponent({
   name: 'DataExplorer',
   components: {
     Search,
     FacetsPanel,
     ModalHeader,
     SimplePagination
+  },
+  setup() {
+    return {
+      toaster: useToaster()
+    };
   },
   data: () => ({
     facets: null,
@@ -77,7 +84,7 @@ export default {
       analysisItems: 'dataAnalysis/analysisItems'
     }),
     navBackLabel() {
-      return 'Back to ' + (this.analysis ? this.analysis.title : 'analysis');
+      return 'Back to ' + (this.analysis ? (this.analysis as any).title : 'analysis');
     },
     initialDatacubeSelection() {
       return this.analysisItems;
@@ -119,7 +126,6 @@ export default {
         size: this.pageSize
       };
       this.filteredDatacubes = await getDatacubes(this.filters, options);
-      this.filteredDatacubes.forEach(item => (item.isAvailable = true));
       this.disableOverlay();
     },
 
@@ -167,7 +173,7 @@ export default {
       });
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

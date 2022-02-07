@@ -39,7 +39,7 @@ import _ from 'lodash';
  * ]
  */
 
-interface AggChild<T> {
+export interface AggChild<T> {
   key: string;
   count: number;
   dataArray: T[];

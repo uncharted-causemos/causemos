@@ -17,7 +17,7 @@
               class="tr-item"
               v-for="d in datacubes"
               :key="d.id"
-              :class="{ selected: isSelected(d), deactive: !d.isAvailable }"
+              :class="{ selected: isSelected(d) }"
               @click="updateExpandedRow(d)"
             >
               <td class="output-col">
@@ -80,6 +80,8 @@
               <td class="region-col">
                 <div> {{ formatCountry(d) }} </div>
               </td>
+              <!-- FIXME: do we still have timeseries here?? -->
+              <!--
               <td
                 v-if="d.timeseries"
                 class="timeseries-col"
@@ -88,6 +90,7 @@
                   <sparkline :data="formatTimeSeries(d)" />
                 </div>
               </td>
+              -->
             </tr>
         </tbody>
       </table>
@@ -95,20 +98,22 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
 import moment from 'moment';
-import { mapActions, mapGetters } from 'vuex';
-import Sparkline from '@/components/widgets/charts/sparkline';
-import MultilineDescription from '@/components/widgets/multiline-description';
+import { defineComponent, ref, computed } from 'vue';
+import { useStore } from 'vuex';
+// import Sparkline from '@/components/widgets/charts/sparkline.vue';
+import MultilineDescription from '@/components/widgets/multiline-description.vue';
 import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { isIndicator, isModel } from '../../utils/datacube-util';
+import { Datacube, ModelParameter } from '@/types/Datacube';
 
 
-export default {
+export default defineComponent({
   name: 'SearchListview',
   components: {
-    Sparkline,
+    // Sparkline,
     MultilineDescription
   },
   props: {
@@ -121,44 +126,48 @@ export default {
       default: false
     }
   },
-  data() {
+  setup() {
+    const store = useStore();
+    const expandedRowId = ref('');
+    const selectedDatacubes = computed<Datacube[]>(() => {
+      return store.getters['dataSearch/selectedDatacubes'];
+    });
+    const setSelectedDatacubes = (items: Datacube[]) => {
+      store.dispatch('dataSearch/setSelectedDatacubes', items);
+    };
+
     return {
-      expandedRowId: ''
+      expandedRowId,
+
+      selectedDatacubes,
+      setSelectedDatacubes
     };
   },
-  computed: {
-    ...mapGetters({
-      selectedDatacubes: 'dataSearch/selectedDatacubes',
-      filters: 'dataSearch/filters'
-    })
-  },
   methods: {
-    ...mapActions({
-      setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
-    }),
-    isDisabled(datacube) {
+    isDisabled(datacube: Datacube) {
       return datacube.status === DatacubeStatus.Deprecated || (isModel(datacube) && datacube.status !== DatacubeStatus.Ready);
     },
-    isProcessing(datacube) {
+    isProcessing(datacube: Datacube) {
       return datacube.status === DatacubeStatus.Processing && isIndicator(datacube);
     },
-    isNotPublished(datacube) {
+    isNotPublished(datacube: Datacube) {
       return datacube.status === DatacubeStatus.Registered && isModel(datacube);
     },
-    isDeprecated(datacube) {
+    isDeprecated(datacube: Datacube) {
       return datacube.status === DatacubeStatus.Deprecated;
     },
-    isExpanded(datacube) {
+    isExpanded(datacube: Datacube) {
       return this.expandedRowId === datacube.id;
     },
-    updateExpandedRow(datacube) {
+    updateExpandedRow(datacube: Datacube) {
       this.expandedRowId === datacube.id ? this.expandedRowId = '' : this.expandedRowId = datacube.id;
     },
-    isSelected(datacube) {
+    isSelected(datacube: Datacube) {
       return this.selectedDatacubes.find(sd => sd.id === datacube.id) !== undefined;
     },
-    updateSelection(datacube) {
+    updateSelection(datacube: Datacube) {
       if (!this.isDisabled(datacube)) {
+        // FIXME: item is not Datacube type
         const item = { // AnalysisItem
           datacubeId: datacube.data_id,
           id: datacube.id,
@@ -170,40 +179,37 @@ export default {
             const newSelectedDatacubes = this.selectedDatacubes.filter(sd => sd.id !== item.id);
             this.setSelectedDatacubes(newSelectedDatacubes);
           } else {
-            this.setSelectedDatacubes([item, ...this.selectedDatacubes]);
+            this.setSelectedDatacubes([item as any, ...this.selectedDatacubes]);
           }
         } else {
           // only one selection is allowed, so replace the selected datacubes array
-          this.setSelectedDatacubes([item]);
+          this.setSelectedDatacubes([item as any]);
         }
       }
     },
-    formatOutputName(d) {
+    formatOutputName(d: Datacube) {
       return this.getDefaultOutput(d)?.display_name ?? d.default_feature;
     },
-    formatParameters({ parameters }) {
+    formatParameters({ parameters } : { parameters: ModelParameter[] }) {
       const params = parameters || [];
       return params.map(p => p.name).join(', ');
     },
-    formatAdminLevels() {
-      return 'Admin L1 - L2';
-    },
-    formatTimeStep(d) {
+    formatTimeStep(d: Datacube) {
       const originalResolution = this.getDefaultOutput(d)?.data_resolution?.temporal_resolution;
       // We want to display the aggregated resolution rather than the original one.
       return originalResolution === TemporalResolution.Annual ? 'annual' : 'monthly';
     },
-    formatTimeSeries(cubeRow) {
-      const sparklineData = [{ series: [] }];
-      if (cubeRow.timeseries) {
-        sparklineData[0].series = cubeRow.timeseries;
-      } else {
-        // empty case
-        sparklineData[0].series = [0];
-      }
-      return sparklineData;
-    },
-    formatPeriod(d) {
+    // formatTimeSeries(cubeRow) {
+    //   const sparklineData = [{ series: [] }];
+    //   if (cubeRow.timeseries) {
+    //     sparklineData[0].series = cubeRow.timeseries;
+    //   } else {
+    //     // empty case
+    //     sparklineData[0].series = [0];
+    //   }
+    //   return sparklineData;
+    // },
+    formatPeriod(d: Datacube) {
       if (!d.period) {
         return '';
       }
@@ -212,33 +218,33 @@ export default {
       const period = [min, max].map(t => moment(t).format('MMM YYYY'));
       return min === max ? period[0] : `${period[0]} - ${period[1]}`;
     },
-    formatCountry(d) {
+    formatCountry(d: Datacube) {
       const country = d.geography.country;
       if (!country) return '';
       return this.isExpanded(d) || country.length < 4
         ? country.join(', ')
         : `${country.slice(0, 3).join(', ')} and ${country.length - 4} more.`;
     },
-    formatDescription(d) {
+    formatDescription(d: Datacube) {
       if (!d.description) return '';
       return this.isExpanded(d) || d.description.length < 140
         ? d.description
         : `${d.description.substring(0, 140)}...`;
     },
-    formatOutputDescription(d) {
+    formatOutputDescription(d: Datacube) {
       const defaultOutputDescription = this.getDefaultOutput(d)?.description ?? '';
       return this.isExpanded(d) || defaultOutputDescription.length < 100
         ? defaultOutputDescription
         : `${defaultOutputDescription.substring(0, 100)}...`;
     },
-    getDefaultOutput(d) {
+    getDefaultOutput(d: Datacube) {
       return d.outputs.find(output => output.name === d.default_feature);
     },
-    getTypeIcon(d) {
+    getTypeIcon(d: Datacube) {
       return 'fa ' + (d.type === 'model' ? 'fa-connectdevelop' : 'fa-table');
     }
   }
-};
+});
 </script>
 
 <style lang='scss' scoped>
@@ -314,10 +320,6 @@ $selected-background: #EBF1FC;
     td {
       background-color: $selected-background;
     }
-  }
-  .tr-item.deactive {
-    opacity: 0.5;
-    pointer-events: none;
   }
   .text-bold {
     font-size: $font-size-large;
