@@ -27,6 +27,8 @@ export const createOrUpdateButton = (
     .classed('button-background', true)
     .attr('width', 150) // TODO: dynamic based on text width
     .attr('height', 30)
+    .attr('rx', 2)
+    .attr('ry', 2)
     .style('fill', 'white');
 
   buttonSelection

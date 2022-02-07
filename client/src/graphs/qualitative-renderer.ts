@@ -74,6 +74,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     });
   }
 
+  /* TODO: setSuggestionData(
+    suggestions: EdgeSuggestion[]
+    targetNode: coordinates? concept?
+    isLoading: boolean,
+  )
+  */
+
   renderRectangles(suggestions: EdgeSuggestion[]) {
     // Add property to track selection state
     const selectableSuggestions = suggestions.map(suggestion => ({
@@ -123,6 +130,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
     // Show a button for adding selected edges to CAG
     this.createOrUpdateAddButton([]).attr('transform', translate(500, 100));
+    // Show a button for exiting suggestion mode
+    createOrUpdateButton(
+      'Cancel',
+      'cancel-suggestion-mode-button',
+      this.chart as unknown as D3Selection,
+      this.exitSuggestionMode.bind(this)
+    ).attr('transform', translate(500, 200));
   }
 
   createOrUpdateAddButton(selectedSuggestions: (EdgeSuggestion)[]) {
@@ -135,8 +149,15 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       this.chart as unknown as D3Selection,
       () => {
         this.emit('add-selected-suggestions', selectedSuggestions);
+        this.exitSuggestionMode();
       });
     return addRelationshipsButton;
+  }
+
+  exitSuggestionMode() {
+    this.chart.selectAll('.add-relationships-button').remove();
+    this.chart.selectAll('.cancel-suggestion-mode-button').remove();
+    this.chart.selectAll('.node-suggestion').remove();
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
