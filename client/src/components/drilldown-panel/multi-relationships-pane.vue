@@ -43,20 +43,33 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent, PropType, ref } from 'vue';
 import { mapActions } from 'vuex';
 
 import { calcEdgeColor } from '@/utils/scales-util';
 import numberFormatter from '@/formatters/number-formatter';
 
-export default {
+interface RelationEdge {
+  source: string;
+  target: string;
+  belief_score: number;
+}
+
+type SummaryData = {
+  children: (RelationEdge & { meta: any })[];
+  meta: any;
+};
+
+
+export default defineComponent({
   name: 'MultiRelationshipsPane',
   components: {
   },
   props: {
     relationships: {
-      type: Array,
+      type: Array as PropType<RelationEdge[]>,
       default: () => []
     },
     graphData: {
@@ -64,9 +77,13 @@ export default {
       default: () => ({ })
     }
   },
-  data: () => ({
-    summaryData: { children: [], meta: { checked: false } }
-  }),
+  setup() {
+    const summaryData = ref<SummaryData>({ children: [], meta: { checked: false } });
+
+    return {
+      summaryData
+    };
+  },
   computed: {
     numselectedRelationships() {
       let cnt = 0;
@@ -97,7 +114,16 @@ export default {
     numberFormatter,
     refresh() {
       // Massage the structure to include checked states and styles
-      let children = this.relationships.map(relationship => Object.assign({}, relationship, { meta: { checked: true, style: { color: calcEdgeColor(relationship), disabled: this.isEdgeinCAG({ source: relationship.source, target: relationship.target }) } } }));
+      let children = this.relationships.map(relationship => Object.assign({}, relationship, {
+        meta: {
+          checked: true,
+          style: {
+            color: calcEdgeColor(relationship),
+            disabled: this.isEdgeinCAG({ source: relationship.source, target: relationship.target })
+          }
+        }
+      }));
+
       children = _.orderBy(children, d => d.belief_score, ['desc']);
 
       this.summaryData = {
@@ -106,7 +132,7 @@ export default {
       };
     },
     updateSelectedSubgraphEdges() {
-      const edges = [];
+      const edges: RelationEdge[] = [];
       this.summaryData.children.forEach(relationship => {
         if (relationship.meta.checked === true) {
           edges.push(relationship);
@@ -114,18 +140,18 @@ export default {
       });
       this.setSelectedSubgraphEdges(edges);
     },
-    toggle(item) {
+    toggle(item: any) {
       // Recursive helpers
-      const recursiveDown = (item, newState) => {
+      const recursiveDown = (item: any, newState: any) => {
         item.meta.checked = newState;
         if (!item.children) return;
-        item.children.forEach(child => recursiveDown(child, newState));
+        item.children.forEach((child: any) => recursiveDown(child, newState));
       };
 
-      const recursiveUp = (item) => {
+      const recursiveUp = (item: any) => {
         if (!_.isEmpty(item.children)) {
-          item.children.forEach(child => recursiveUp(child));
-          const numChecked = item.children.filter(d => d.meta.checked || d.meta.isSomeChildChecked).length;
+          item.children.forEach((child: any) => recursiveUp(child));
+          const numChecked = item.children.filter((d: any) => d.meta.checked || d.meta.isSomeChildChecked).length;
           item.meta.checked = numChecked === item.children.length;
           item.meta.isSomeChildChecked = numChecked > 0;
         }
@@ -141,21 +167,21 @@ export default {
 
       this.updateSelectedSubgraphEdges();
     },
-    isEdgeinCAG(edge) {
+    isEdgeinCAG(edge: { source: string; target: string }) {
       if (_.isEmpty(this.graphData)) return;
       const graphData = this.graphData;
-      const edges = graphData.edges.map(edge => edge.source + '///' + edge.target);
+      const edges = graphData.edges.map((edge : any) => edge.source + '///' + edge.target);
       return edges.indexOf(edge.source + '///' + edge.target) !== -1;
     },
     addToCAG() {
       this.updateSelectedSubgraphEdges();
       this.$emit('add-to-CAG');
     },
-    handleClick(edge) {
+    handleClick(edge: RelationEdge) {
       this.$emit('select-edge', edge);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

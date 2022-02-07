@@ -22,27 +22,16 @@ export default function useMapBounds(
     if (!regionalData.value || !selectedRegionIds.value) {
       return;
     }
-    if (selectedAdminLevel.value === 0) {
-      // only support fitting map bounds when the selectedAdminLevel is 'country'
-      const countriesAgg = regionalData.value.country;
-      if (countriesAgg !== undefined && countriesAgg.length > 0) {
-        let countries = countriesAgg.map(countryAgg => countryAgg.id);
-        // do we have a sub-selection
-        if (selectedRegionIds.value.length === 0) {
-          // all regions selected
-        } else {
-          countries = selectedRegionIds.value;
-        }
-
-        //
-        // calculate the initial map bounds covering the model geography
-        //
-        const newBounds = await computeMapBoundsForCountries(countries);
-        if (newBounds !== null) {
-          // ask the map to fit the new map bounds
-          mapBounds.value = newBounds;
-        }
-      }
+    const regionIds = selectedRegionIds.value.length === 0
+      ? (regionalData.value.country || []).map(item => item.id)
+      : selectedRegionIds.value;
+    //
+    // calculate the initial map bounds covering the model geography
+    //
+    const newBounds = await computeMapBoundsForCountries(regionIds);
+    if (newBounds !== null) {
+      // ask the map to fit the new map bounds
+      mapBounds.value = newBounds;
     }
   });
 

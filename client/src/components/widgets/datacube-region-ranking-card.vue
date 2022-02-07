@@ -505,9 +505,13 @@ export default defineComponent({
             }
 
             // adjust the bar ranking so that the highest bar value will be ranked 1st
-            temp.forEach((barItem, indx) => {
-              barItem.name = (temp.length - indx).toString();
-            });
+            if (!invertData.value) {
+              temp.forEach((barItem, indx) => {
+                barItem.name = (temp.length - indx).toString();
+              });
+            } else {
+              temp.reverse();
+            }
 
             emit('updated-bars-data', {
               id: id.value,
