@@ -51,7 +51,7 @@ import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
 import { TimeScale } from '@/types/Enums';
-import { extractTopEdgesFromStatements, getStatementsInKB } from '@/utils/relationship-suggestion-util';
+import { calculateNewNodesAndEdges, EdgeSuggestion, extractTopEdgesFromStatements, getStatementsInKB } from '@/utils/relationship-suggestion-util';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -83,7 +83,8 @@ export default defineComponent({
 
     // Custom
     'refresh', 'new-edge', 'delete', 'rename-node', 'merge-nodes',
-    'suggestion-selected', 'suggestion-duplicated', 'datacube-selected'
+    'suggestion-selected', 'suggestion-duplicated', 'datacube-selected',
+    'add-to-CAG'
   ],
   setup(props) {
     const store = useStore();
@@ -284,6 +285,23 @@ export default defineComponent({
         const statements = await getStatementsInKB(node.data.components, this.project);
         const topImpactEdges = _.take(extractTopEdgesFromStatements(statements, node.data, this.data, false), 5);
         this.renderer?.renderRectangles(topImpactEdges);
+      }
+    );
+
+    this.renderer.on(
+      'add-selected-suggestions',
+      (eventName: any, selectedSuggestions: EdgeSuggestion[]) => {
+        const simplifiedSuggestions = selectedSuggestions.map(({ source, target, statements }) => ({
+          source,
+          target,
+          reference_ids: statements.map(statement => statement.id)
+        }));
+        const newSubgraph = calculateNewNodesAndEdges(
+          simplifiedSuggestions,
+          this.data,
+          this.ontologyFormatter
+        );
+        this.$emit('add-to-CAG', newSubgraph);
       }
     );
 

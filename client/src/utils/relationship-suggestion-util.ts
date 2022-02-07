@@ -135,3 +135,63 @@ export const extractTopEdgesFromStatements = (
   });
   return edges.sort(edgeSorter);
 };
+
+export const calculateNewNodesAndEdges = (
+  selectedSuggestions: {
+    source: string;
+    target: string;
+    reference_ids: string[];
+  }[],
+  graphData: CAGGraph,
+  ontologyFormatter: (concept: string) => string
+) => {
+  // Calculate if there are new nodes
+  const graphNodes = graphData.nodes;
+  const newNodes: NodeParameter[] = [];
+
+  selectedSuggestions.forEach(({ source, target }) => {
+    // Check source
+    if (!_.some(graphNodes, d => d.concept === source)) {
+      if (!_.some(newNodes, d => d.concept === source)) {
+        newNodes.push({
+          id: '',
+          concept: source,
+          label: ontologyFormatter(source),
+          components: [source]
+        });
+      }
+    }
+
+    // Check target
+    if (!_.some(graphNodes, d => d.concept === target)) {
+      if (!_.some(newNodes, d => d.concept === target)) {
+        newNodes.push({
+          id: '',
+          concept: target,
+          label: ontologyFormatter(target),
+          components: [target]
+        });
+      }
+    }
+  });
+
+  // Combine new edges with existing ones to ensure we don't create duplicates
+  const graphEdges = graphData.edges;
+  const deduplicatedEdges = selectedSuggestions.map(newEdge => {
+    const existingEdge = graphEdges.find(e => {
+      return e.source === newEdge.source && e.target === newEdge.target;
+    });
+    if (existingEdge) {
+      return {
+        id: existingEdge.id,
+        source: existingEdge.source,
+        target: existingEdge.target,
+        reference_ids: existingEdge.reference_ids.concat(newEdge.reference_ids)
+      };
+    } else {
+      return newEdge;
+    }
+  });
+
+  return { nodes: newNodes, edges: deduplicatedEdges };
+};

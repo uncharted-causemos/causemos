@@ -44,6 +44,7 @@
           @suggestion-duplicated="onSuggestionDuplicated"
           @rename-node="openRenameModal"
           @merge-nodes="mergeNodes"
+          @add-to-CAG="onAddToCAG"
         />
         <div class="legend-config-row">
           <cag-legend
