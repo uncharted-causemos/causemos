@@ -59,9 +59,18 @@ function render(
     indicator_time_series,
     min,
     max,
-    projection_start,
     time_scale
   } = nodeScenarioData;
+
+  let projection_start = nodeScenarioData.projection_start;
+  // Let projection override model's projection_start, as it can be in a temporary stale state that can mess up the renderer
+  if (nodeScenarioData.scenarios) {
+    const scenario1 = nodeScenarioData.scenarios[0];
+    if (scenario1.result) {
+      projection_start = scenario1.result.values[0].timestamp;
+    }
+  }
+
 
   // Calculate timestamp of the earliest historical time to display
   const visibleHistoricalMonthCount = getVisibleHistoricalMonthCount(
