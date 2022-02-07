@@ -72,8 +72,6 @@ export default {
     },
     bounds(value) {
       if (!this.cameraMoveEnabled || !this.map) return;
-      // if the value is an object is with options, call fits bound with the options,
-      // otherwise treat the value as the array representing the bounds
       const params = getFitBoundsParams(value);
       this.map.fitBounds(...params);
     },
