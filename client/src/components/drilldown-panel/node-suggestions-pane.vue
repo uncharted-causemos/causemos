@@ -92,7 +92,7 @@ import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
 import filtersUtil from '@/utils/filters-util';
-import { extractTopEdgesFromStatements } from '@/utils/relationship-suggestion-util';
+import { calculateNewNodesAndEdges, extractTopEdgesFromStatements } from '@/utils/relationship-suggestion-util';
 
 const RELATIONSHIP_GROUP_KEY = {
   CAUSE: 'cause',
@@ -288,60 +288,8 @@ export default {
       }
 
       // Calculate if there are new nodes
-      const graphNodes = this.graphData.nodes;
-      const newNodes = [];
-
-      for (let i = 0; i < newEdges.length; i++) {
-        const edge = newEdges[i];
-        const source = edge.source;
-        const target = edge.target;
-
-        // Check source
-        if (!_.some(graphNodes, d => d.concept === source)) {
-          if (!_.some(newNodes, d => d.concept === source)) {
-            newNodes.push({
-              id: '',
-              concept: source,
-              label: this.ontologyFormatter(source),
-              components: [source]
-            });
-          }
-        }
-
-        // Check target
-        if (!_.some(graphNodes, d => d.concept === target)) {
-          if (!_.some(newNodes, d => d.concept === target)) {
-            newNodes.push({
-              id: '',
-              concept: target,
-              label: this.ontologyFormatter(target),
-              components: [target]
-            });
-          }
-        }
-      }
-
-      // Normalize edges to ensure no duplicates
-      const normalizedEdges = [];
-      const graphEdges = this.graphData.edges;
-      for (let i = 0; i < newEdges.length; i++) {
-        const newEdge = newEdges[i];
-        const existingEdge = graphEdges.find(e => {
-          return e.source === newEdge.source && e.target === newEdge.target;
-        });
-        if (existingEdge) {
-          normalizedEdges.push({
-            id: existingEdge.id,
-            source: existingEdge.source,
-            target: existingEdge.target,
-            reference_ids: existingEdge.reference_ids.concat(newEdge.reference_ids)
-          });
-        } else {
-          normalizedEdges.push(newEdge);
-        }
-      }
-
-      this.$emit('add-to-CAG', { nodes: newNodes, edges: normalizedEdges });
+      const newSubgraph = calculateNewNodesAndEdges(newEdges, this.graphData, this.ontologyFormatter);
+      this.$emit('add-to-CAG', newSubgraph);
     }
   }
 };

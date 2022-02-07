@@ -136,6 +136,7 @@ export const extractTopEdgesFromStatements = (
   return edges.sort(edgeSorter);
 };
 
+// TODO: document
 export const calculateNewNodesAndEdges = (
   selectedSuggestions: {
     source: string;
