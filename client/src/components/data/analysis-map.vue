@@ -3,7 +3,6 @@
     <wm-map
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
-      :camera-options="cameraOptions"
       @load="onMapLoad"
       @move="onMapMove"
       @mousemove="onMouseMove"
@@ -178,15 +177,11 @@ export default {
       default: () => []
     },
     mapBounds: {
-      type: Array,
+      type: [Array, Object],
       default: () => [ // Default bounds to Ethiopia
         [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
         [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
       ]
-    },
-    cameraOptions: {
-      type: Object,
-      default: () => {}
     },
     regionData: {
       type: Object,
