@@ -24,6 +24,7 @@ const getOntologyById = async (id) => {
     headers: {
       Authorization: basicAuthToken
     },
+    json: {},
     timeout: TIMEOUT
   };
   const result = await requestAsPromise(options);
@@ -41,6 +42,7 @@ const getOntologyByTenant = async (tenantId) => {
     headers: {
       Authorization: basicAuthToken
     },
+    json: {},
     timeout: TIMEOUT
   };
   const result = await requestAsPromise(options);
