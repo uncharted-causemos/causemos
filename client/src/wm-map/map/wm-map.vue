@@ -97,7 +97,8 @@ export default {
     _loadMap() {
       // rename mapStyle to style
       const { mapStyle: style, ...options } = this.$props;
-      // Re-assign bounds value only to options.bounds
+      // Re-assign bounds value to options.bounds
+      // getFitBoundsParams return `[bounds, options]` and we want to assign only `bounds` to options.bounds here.
       options.bounds = getFitBoundsParams(options.bounds)[0];
       this.map = new mapboxgl.Map({
         container: this.$refs.wmmap,
