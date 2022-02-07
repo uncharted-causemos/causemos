@@ -31,10 +31,6 @@ const mapBoxOptions = {
     type: [Object, Array],
     default: undefined
   },
-  cameraOptions: {
-    type: Object,
-    default: () => {}
-  },
   // Mapbox style option: 'style' is a reserved prop for vue, so use 'mapStyle' intead
   mapStyle: {
     type: [Object, String],

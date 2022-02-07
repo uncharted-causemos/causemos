@@ -9,7 +9,7 @@ export default function useMapBounds(
   selectedAdminLevel: Ref<number>,
   selectedRegionIds: ComputedRef<string[]>
 ) {
-  const mapBounds = ref<number[][]>([
+  const mapBounds = ref<number[][] | { value: number[][], options: any }>([
     [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
     [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
   ]);
@@ -31,7 +31,12 @@ export default function useMapBounds(
     const newBounds = await computeMapBoundsForCountries(regionIds);
     if (newBounds !== null) {
       // ask the map to fit the new map bounds
-      mapBounds.value = newBounds;
+      const options = {
+        padding: 20, // pixels
+        duration: 1000, // milliseconds
+        essential: true // this animation is considered essential with respect to prefers-reduced-motion
+      };
+      mapBounds.value = { value: newBounds, options };
     }
   });
 
