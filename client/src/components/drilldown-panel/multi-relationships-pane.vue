@@ -45,7 +45,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, PropType, ref, Ref } from 'vue';
+import { defineComponent, PropType, ref } from 'vue';
 import { mapActions } from 'vuex';
 
 import { calcEdgeColor } from '@/utils/scales-util';
@@ -78,7 +78,7 @@ export default defineComponent({
     }
   },
   setup() {
-    const summaryData = ref({ children: [], meta: { checked: false } }) as Ref<SummaryData>;
+    const summaryData = ref<SummaryData>({ children: [], meta: { checked: false } });
 
     return {
       summaryData
