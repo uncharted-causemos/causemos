@@ -74,14 +74,25 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     });
   }
 
-  /* TODO: setSuggestionData(
-    suggestions: EdgeSuggestion[]
-    targetNode: coordinates? concept?
-    isLoading: boolean,
-  )
-  */
+  setSuggestionData(
+    suggestions: EdgeSuggestion[],
+    node: INode<NodeParameter>,
+    isLoading: boolean
+  ) {
+    this.renderSuggestionLoadingIndicator(isLoading, node.x, node.y);
+    this.renderEdgeSuggestions(suggestions, node.x, node.y);
+  }
 
-  renderRectangles(suggestions: EdgeSuggestion[]) {
+  renderSuggestionLoadingIndicator(isLoading: boolean, nodeX: number, nodeY: number) {
+    this.chart.selectAll<any, boolean>('.suggestion-loading-indicator')
+      .data(isLoading ? [true] : [])
+      .join('text')
+      .classed('suggestion-loading-indicator', true)
+      .attr('transform', () => translate(nodeX + 100, nodeY + 100))
+      .text('Loading...');
+  }
+
+  renderEdgeSuggestions(suggestions: EdgeSuggestion[], nodeX: number, nodeY: number) {
     // Add property to track selection state
     const selectableSuggestions = suggestions.map(suggestion => ({
       ...suggestion,
@@ -95,7 +106,10 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .classed('node-suggestion', true)
       // TODO: should be offset from the node which is being used to generate
       //  suggestions
-      .attr('transform', (suggestion, i) => translate(100, 100 + i * 100))
+      .attr(
+        'transform',
+        (suggestion, i) => translate(nodeX + 100, nodeY + 100 + i * 100)
+      )
       .style('cursor', 'pointer');
     // Render node background
     suggestionGroups.selectAll('rect')
@@ -129,14 +143,17 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     });
 
     // Show a button for adding selected edges to CAG
-    this.createOrUpdateAddButton([]).attr('transform', translate(500, 100));
+    this.createOrUpdateAddButton([]).attr(
+      'transform',
+      translate(nodeX + 500, nodeY + 100)
+    );
     // Show a button for exiting suggestion mode
     createOrUpdateButton(
       'Cancel',
       'cancel-suggestion-mode-button',
       this.chart as unknown as D3Selection,
       this.exitSuggestionMode.bind(this)
-    ).attr('transform', translate(500, 200));
+    ).attr('transform', translate(nodeX + 500, nodeY + 200));
   }
 
   createOrUpdateAddButton(selectedSuggestions: (EdgeSuggestion)[]) {
@@ -158,6 +175,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     this.chart.selectAll('.add-relationships-button').remove();
     this.chart.selectAll('.cancel-suggestion-mode-button').remove();
     this.chart.selectAll('.node-suggestion').remove();
+    this.chart.selectAll('.suggestion-loading-indicator').remove();
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {

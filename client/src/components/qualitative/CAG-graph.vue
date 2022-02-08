@@ -282,9 +282,10 @@ export default defineComponent({
     this.renderer.on(
       'fetch-suggested-impacts',
       async (eventName: any, node: INode<NodeParameter>) => {
+        this.renderer?.setSuggestionData([], node, true);
         const statements = await getStatementsInKB(node.data.components, this.project);
         const topImpactEdges = _.take(extractTopEdgesFromStatements(statements, node.data, this.data, false), 5);
-        this.renderer?.renderRectangles(topImpactEdges);
+        this.renderer?.setSuggestionData(topImpactEdges, node, false);
       }
     );
 
