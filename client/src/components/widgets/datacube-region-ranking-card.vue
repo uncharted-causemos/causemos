@@ -124,6 +124,7 @@ import { RegionalAggregations } from '@/types/Runoutput';
 import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCard',
@@ -272,6 +273,9 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
+    const selectedRegionIds = ref<string[]>([]);
+    const selectedRegionIdsAtAllLevels = ref<null | { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }>(null);
+
     // apply the view-config for this datacube
     watch(
       () => [
@@ -301,6 +305,17 @@ export default defineComponent({
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
             initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
           }
+          if (initialDataConfig.value.selectedRegionIds !== undefined) {
+            initialDataConfig.value.selectedRegionIds.forEach(regionId => {
+              selectedRegionIds.value.push(regionId);
+            });
+          }
+          if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
+            selectedRegionIdsAtAllLevels.value = Object.assign(
+              {},
+              initialDataConfig.value.selectedRegionIdsAtAllLevels
+            );
+          }
         }
       },
       {
@@ -310,8 +325,8 @@ export default defineComponent({
     const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
-      datacubeHierarchy,
-      selectedRegionIds
+      datacubeHierarchy
+      // NOTE: selectedRegionIds is already calculated above so no need to receive as a return object
     } = useDatacubeHierarchy(
       selectedScenarioIds,
       metadata,
@@ -430,7 +445,8 @@ export default defineComponent({
         limitNumberOfChartBars.value,
         regionRankingBinningType.value,
         selectedRegionRankingScenario.value,
-        invertData.value
+        invertData.value,
+        selectedRegionIdsAtAllLevels.value
       ],
       () => {
         const temp: BarData[] = [];
@@ -438,10 +454,46 @@ export default defineComponent({
         // then reconstruct the bar chart data
         const colors = selectedColorScheme.value;
 
-        if (regionalData.value !== null) {
+        if (regionalData.value) {
           const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
-          const regionLevelData = regionalData.value[adminLevelAsString];
+          const filteredRegionLevelData = _.cloneDeep(regionalData.value);
 
+          //
+          // filter regional data based on any regional selection captured as part of the datacube config
+          //
+          ADMIN_LEVEL_KEYS.forEach((adminKey, adminIndx) => {
+            if (filteredRegionLevelData[adminKey]) {
+              const filteredDataAtCurrentLevel: any = [];
+              const previousAdminLevelKey = adminIndx === 0 ? adminKey : ADMIN_LEVEL_KEYS[adminIndx - 1];
+              // note that we also filter the "country" level
+              if (previousAdminLevelKey !== 'admin4' && previousAdminLevelKey !== 'admin5' && adminKey !== 'admin4' && adminKey !== 'admin5') {
+                // do we have an explicit selection (i.e., from selectedRegionIdsAtAllLevels) for the previous admin level?
+                //  if yes, then use it to filter
+                //  if no, then consider the (filtered) data already at the previous level
+                let selectedRegionsAtPrevLevel: string[] = selectedRegionIdsAtAllLevels.value !== null ? Array.from(selectedRegionIdsAtAllLevels.value[previousAdminLevelKey]) : filteredRegionLevelData[previousAdminLevelKey]?.map(regionItem => regionItem.id) as string [];
+                const selectedRegionsAtCurrLevel: string[] = selectedRegionIdsAtAllLevels.value !== null ? Array.from(selectedRegionIdsAtAllLevels.value[adminKey]) : [];
+
+                // if no selection was found at the previous level
+                //  then consider the (filtered) data already at the previous level
+                if (selectedRegionsAtPrevLevel.length === 0) {
+                  selectedRegionsAtPrevLevel = filteredRegionLevelData[previousAdminLevelKey]?.map(regionItem => regionItem.id) as string[];
+                }
+                // we now have either all the regions of the previous level
+                //  or a subet of them in case there was a valid selection
+                //
+                // use the selectedRegionsAtPrevLevel to filter the current level
+                selectedRegionsAtPrevLevel.forEach(regionAtPrevLevel => {
+                  const temp = filteredRegionLevelData[adminKey]?.filter(regionItem => regionItem.id.startsWith(regionAtPrevLevel));
+                  if (temp !== undefined) {
+                    filteredDataAtCurrentLevel.push(...temp.filter(region => selectedRegionsAtCurrLevel.length > 0 ? selectedRegionsAtCurrLevel.includes(region.id) : true));
+                  }
+                });
+                filteredRegionLevelData[adminKey] = filteredDataAtCurrentLevel;
+              }
+            }
+          });
+
+          const regionLevelData = filteredRegionLevelData[adminLevelAsString];
           if (regionLevelData !== undefined && regionLevelData.length > 0) {
             const data = regionLevelData.map(regionDataItem => ({
               name: regionDataItem.id,

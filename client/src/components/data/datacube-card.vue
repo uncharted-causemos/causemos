@@ -1920,6 +1920,7 @@ export default defineComponent({
         nonDefaultQualifiers,
         selectedQualifierValues,
         selectedRegionIds,
+        selectedRegionIdsAtAllLevels,
         selectedScenarioIds,
         selectedTimestamp,
         selectedYears,
