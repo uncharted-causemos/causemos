@@ -161,6 +161,7 @@ export default function useDatacubeHierarchy(
   return {
     datacubeHierarchy,
     selectedRegionIds,
+    selectedRegionIdsAtAllLevels,
     referenceRegions,
     toggleIsRegionSelected
   };

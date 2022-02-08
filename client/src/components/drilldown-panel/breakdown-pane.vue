@@ -22,7 +22,7 @@
       :aggregation-level="selectedAdminLevel"
       :aggregation-level-title="availableAdminLevelTitles[selectedAdminLevel]"
       :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
-      :raw-data="regionalData"
+      :raw-data="filteredRegionalData"
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
@@ -162,11 +162,11 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
-import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
 import { ModelRunReference } from '@/types/ModelRunReference';
 import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import {
@@ -178,6 +178,7 @@ import {
   SPLIT_BY_VARIABLE
 } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
+import _ from 'lodash';
 
 // FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
@@ -234,6 +235,10 @@ export default defineComponent({
       type: Object as PropType<string[] | null>,
       default: null
     },
+    selectedRegionIdsAtAllLevels: {
+      type: Object as PropType<AdminRegionSets | null>,
+      default: null
+    },
     selectedQualifierValues: {
       type: Object as PropType<Set<string>>,
       default: () => new Set()
@@ -276,7 +281,8 @@ export default defineComponent({
       selectedBreakdownOption,
       selectedTemporalResolution,
       qualifierBreakdownData,
-      outputVariableBreakdownData
+      outputVariableBreakdownData,
+      selectedRegionIdsAtAllLevels
     } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
@@ -329,6 +335,55 @@ export default defineComponent({
       () =>
         regionalData.value !== null &&
         Object.keys(regionalData.value).length !== 0
+    );
+
+    const filteredRegionalData = ref<BreakdownData | null>(null);
+    watch(
+      () => [
+        regionalData.value,
+        selectedRegionIdsAtAllLevels.value
+      ],
+      () => {
+        const clonedRegionalData = _.cloneDeep(regionalData.value);
+        if (isRegionalDataValid.value && clonedRegionalData !== null && selectedRegionIdsAtAllLevels.value !== null) {
+          // apply filtering to all levels starting from the admin1 (i.e., adminIndx > 0)
+          ADMIN_LEVEL_KEYS.forEach((adminKey, adminIndx) => {
+            if (clonedRegionalData[adminKey]) {
+              const filteredDataAtCurrentLevel: any = [];
+              const previousAdminLevelKey = adminIndx === 0 ? adminKey : ADMIN_LEVEL_KEYS[adminIndx - 1];
+              if (adminIndx > 0 && previousAdminLevelKey !== 'admin4' && previousAdminLevelKey !== 'admin5') {
+                // do we have an explicit selection (i.e., from selectedRegionIdsAtAllLevels) for the current admin level?
+                //  if yes, then use it to filter
+                //  if no, then consider the (filtered) data already at the previous level
+                let selectedRegionsAtPrevLevel: string[] = selectedRegionIdsAtAllLevels.value !== null ? Array.from(selectedRegionIdsAtAllLevels.value[previousAdminLevelKey]) : clonedRegionalData[previousAdminLevelKey].map(regionItem => regionItem.id);
+                // we do have a selection at the previous level, but is it valid?
+                if (selectedRegionsAtPrevLevel.length > 0) {
+                  // note the case where a previous selection at admin1 conflicts
+                  //  with a more recent selection on the country level
+                  // e.g., consider a previous selecction of Tanzania_Arusha at admin1
+                  //  followed by a selection of Kenya at the country level
+                  const filteredRegionsAtPrevLevel = clonedRegionalData[previousAdminLevelKey].map(regionItem => regionItem.id);
+                  selectedRegionsAtPrevLevel = filteredRegionsAtPrevLevel.filter(region => selectedRegionsAtPrevLevel.some(r => r.startsWith(region)));
+                }
+                // if no valid selection was found at the previous level
+                //  then consider the (filtered) data already at the previous level
+                if (selectedRegionsAtPrevLevel.length === 0) {
+                  selectedRegionsAtPrevLevel = clonedRegionalData[previousAdminLevelKey].map(regionItem => regionItem.id);
+                }
+                // we now have either all the regions of the previous level
+                //  or a subet of them in case there was a valid selection
+                // use the selectedRegionsAtPrevLevel to filter the current level
+                selectedRegionsAtPrevLevel.forEach(regionAtPrevLevel => {
+                  const temp = clonedRegionalData[adminKey].filter(regionItem => regionItem.id.startsWith(regionAtPrevLevel));
+                  filteredDataAtCurrentLevel.push(...temp);
+                });
+                clonedRegionalData[adminKey] = filteredDataAtCurrentLevel;
+              }
+            }
+          });
+        }
+        filteredRegionalData.value = clonedRegionalData;
+      }
     );
 
     const isTemporalBreakdownDataValid = computed(
@@ -397,7 +452,8 @@ export default defineComponent({
       AggregationOption,
       SpatialAggregationLevel,
       TemporalAggregationLevel,
-      SPLIT_BY_VARIABLE
+      SPLIT_BY_VARIABLE,
+      filteredRegionalData
     };
   },
   methods: {
