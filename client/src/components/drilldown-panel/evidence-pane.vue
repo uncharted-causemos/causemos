@@ -17,10 +17,12 @@
     <div class="pane-summary">Evidence ({{ numberFormatter(evidenceCount) }}), Documents ({{ documentCount }})</div>
     <div>
       Map goes here
-      <map-points
-        :map-data="mapData"
-        :formatterFn="mapFormatter"
-      />
+      <div style="height:180px">
+        <map-points
+          :map-data="mapData"
+          :formatterFn="mapFormatter"
+        />
+      </div>
     </div>
     <collapsible-list-header
       v-if="summaryData.children.length"
@@ -389,12 +391,12 @@ export default defineComponent({
             const objGeo = stmt.obj.geo_context;
 
             if (!_.isEmpty(subjGeo)) {
-              const key = subjGeo?.name + ':' + subjGeo?.location.lat + subjGeo?.location.lon;
+              const key = subjGeo?.name + ':' + subjGeo?.location.lat + ':' + subjGeo?.location.lon;
               const n = tracker.get(key) || 0;
               tracker.set(key, n + 1);
             }
             if (!_.isEmpty(objGeo)) {
-              const key = objGeo?.name + ':' + objGeo?.location.lat + objGeo?.location.lon;
+              const key = objGeo?.name + ':' + objGeo?.location.lat + ':' + objGeo?.location.lon;
               const n = tracker.get(key) || 0;
               tracker.set(key, n + 1);
             }
@@ -403,7 +405,7 @@ export default defineComponent({
       });
 
       // Make geojson
-      const baseSize = 2000;
+      const baseSize = 10;
       const max = Math.max(...tracker.values());
       const min = Math.min(...tracker.values());
 
@@ -428,11 +430,12 @@ export default defineComponent({
           },
           geometry: {
             type: 'Point',
-            coordinates: [lon, lat]
+            coordinates: [+lon, +lat]
           }
         });
       }
 
+      console.log('!!', result);
       return result;
     },
     polarity() {
