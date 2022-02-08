@@ -114,6 +114,28 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
     nodesNotInHistory.push(node);
   }
 
+  nodesNotInUAz
+  // Get matches from UAz
+  for (const node of nodesNotInHistory) {
+
+    const options = {
+      method: 'GET',
+      url: 'http://linking.cs.arizona.edu/v1/compositionalSearch?maxHits=1&threshold=0.7',
+      headers: {
+        'Content-type': 'application/json',
+        'Accept': 'application/json'
+      },
+      json: {
+        'homeId': {
+          'concept': 'wm/concept/population_demographics/age'
+        },
+        'awayId': []
+      }
+    };
+    const response = await requestAsPromise(options);
+    result.set(node.concept, response)
+  }
+
 
   // 2. Run search against datacubes
   for (const node of nodesNotInHistory) {
