@@ -87,6 +87,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     node: INode<NodeParameter>,
     isLoading: boolean
   ) {
+    this.renderSearchBox(node.x, node.y);
     this.renderSuggestionLoadingIndicator(isLoading, node.x, node.y);
     this.renderEdgeSuggestions(suggestions, node.x, node.y);
   }
@@ -99,10 +100,40 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('transform', () =>
         translate(
           nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
-          nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING
+          nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING + 20
         )
       )
       .text('Loading suggestions...');
+  }
+
+  renderSearchBox(nodeX: number, nodeY: number) {
+    const foreignElement = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'foreignObject'
+    );
+    foreignElement.classList.add('suggestion-search-box');
+    foreignElement.setAttribute('width', '200px');
+    foreignElement.setAttribute('height', '30px');
+    foreignElement.setAttribute(
+      'transform',
+      translate(nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING, nodeY)
+    );
+
+    const textInput = document.createElement('input');
+    textInput.setAttribute('type', 'text');
+    textInput.style.width = '200px';
+    textInput.style.height = '30px';
+    textInput.style.border = '1px solid black';
+    textInput.style.borderRadius = '3px';
+    textInput.addEventListener('keyup', (event) => {
+      console.log('search for concept:', (event.target as any).value);
+    });
+
+    foreignElement.appendChild(textInput);
+
+    (this.chart.node() as Element).appendChild(foreignElement);
+
+    textInput.focus();
   }
 
   renderEdgeSuggestions(suggestions: EdgeSuggestion[], nodeX: number, nodeY: number) {
@@ -199,6 +230,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   }
 
   exitSuggestionMode() {
+    this.chart.selectAll('.suggestion-search-box').remove();
     this.chart.selectAll('.add-relationships-button').remove();
     this.chart.selectAll('.cancel-suggestion-mode-button').remove();
     this.chart.selectAll('.node-suggestion').remove();
