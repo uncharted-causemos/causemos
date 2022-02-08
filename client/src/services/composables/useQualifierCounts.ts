@@ -1,5 +1,5 @@
 import { Indicator, Model, QualifierThresholds } from '@/types/Datacube';
-import { QualifierCountsResponse } from '@/types/Runoutput';
+import { QualifierCountsResponse } from '@/types/Outputdata';
 import { QualifierInfo } from '@/types/Datacubes';
 import { Ref, ref, watchEffect } from 'vue';
 import { getQualifierCounts } from '@/services/outputdata-service';

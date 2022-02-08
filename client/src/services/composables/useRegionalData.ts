@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Ref, ref } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { SpatialAggregationLevel } from '@/types/Enums';
-import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Outputdata';
 import { getRegionAggregations } from '../outputdata-service';
 import { DatacubeGeography } from '@/types/Common';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';

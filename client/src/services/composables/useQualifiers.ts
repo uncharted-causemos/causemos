@@ -1,6 +1,6 @@
 import { Indicator, Model } from '@/types/Datacube';
 import { NamedBreakdownData, QualifierInfo } from '@/types/Datacubes';
-import { QualifierBreakdownResponse } from '@/types/Runoutput';
+import { QualifierBreakdownResponse } from '@/types/Outputdata';
 import {
   AggregationOption,
   TemporalResolutionOption
