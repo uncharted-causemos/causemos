@@ -11,10 +11,12 @@ let timeId = null;
  */
 const logRequest = async (req) => {
   let parameters = null;
-  if (req.method === 'GET' && req.query.filters) {
-    parameters = JSON.parse(req.query.filters);
-  } else {
-    parameters = Object.keys(req.body);
+
+  // Only know how to parse GET requests for sure
+  if (req.method === 'GET') {
+    if (req.query.filters) parameters = JSON.parse(req.query.filters);
+    else if (req.query.filter) parameters = JSON.parse(req.query.filter);
+    else parameters = [];
   }
 
   buffer.push({
@@ -28,11 +30,16 @@ const logRequest = async (req) => {
   // Buffer up the logs so we don't put too much strain, wait 30 seconds before flushing to datastore
   if (!timeId) {
     timeId = setTimeout(() => {
-      Logger.info(`Flushing ${buffer.length} session activity entries`);
-      sessionLogAdapter.insert(buffer, () => uuid());
-      buffer = [];
-      timeId = null;
-    }, 30000);
+      try {
+        Logger.info(`Flushing ${buffer.length} session activity entries`);
+        sessionLogAdapter.insert(buffer, () => uuid());
+      } catch (err) {
+        Logger.warn(err);
+      } finally {
+        buffer = [];
+        timeId = null;
+      }
+    }, 45000);
   }
 };
 
