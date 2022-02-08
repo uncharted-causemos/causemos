@@ -15,8 +15,7 @@
     </div>
     <slot />
     <div class="pane-summary">Evidence ({{ numberFormatter(evidenceCount) }}), Documents ({{ documentCount }})</div>
-    <div>
-      Map goes here
+    <div v-if="mapData.features.length > 0">
       <div style="height:180px">
         <map-points
           :map-data="mapData"
@@ -373,7 +372,6 @@ export default defineComponent({
       return _.uniq(docs).length;
     },
     mapData() {
-      // TODO
       const result: { type: string; features: any[] } = {
         type: 'FeatureCollection',
         features: [
@@ -381,7 +379,7 @@ export default defineComponent({
       };
       if (this.summaryData.children.length === 0) return result;
 
-      // Collect counts
+      // Collect events counts
       const tracker: Map<string, number> = new Map();
       this.summaryData.children.forEach(polarityGroup => {
         if (!polarityGroup.children) return;
@@ -434,8 +432,6 @@ export default defineComponent({
           }
         });
       }
-
-      console.log('!!', result);
       return result;
     },
     polarity() {
