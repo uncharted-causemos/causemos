@@ -356,16 +356,7 @@ export default defineComponent({
                 //  if yes, then use it to filter
                 //  if no, then consider the (filtered) data already at the previous level
                 let selectedRegionsAtPrevLevel: string[] = selectedRegionIdsAtAllLevels.value !== null ? Array.from(selectedRegionIdsAtAllLevels.value[previousAdminLevelKey]) : clonedRegionalData[previousAdminLevelKey].map(regionItem => regionItem.id);
-                // we do have a selection at the previous level, but is it valid?
-                if (selectedRegionsAtPrevLevel.length > 0) {
-                  // note the case where a previous selection at admin1 conflicts
-                  //  with a more recent selection on the country level
-                  // e.g., consider a previous selecction of Tanzania_Arusha at admin1
-                  //  followed by a selection of Kenya at the country level
-                  const filteredRegionsAtPrevLevel = clonedRegionalData[previousAdminLevelKey].map(regionItem => regionItem.id);
-                  selectedRegionsAtPrevLevel = filteredRegionsAtPrevLevel.filter(region => selectedRegionsAtPrevLevel.some(r => r.startsWith(region)));
-                }
-                // if no valid selection was found at the previous level
+                // if no selection was found at the previous level
                 //  then consider the (filtered) data already at the previous level
                 if (selectedRegionsAtPrevLevel.length === 0) {
                   selectedRegionsAtPrevLevel = clonedRegionalData[previousAdminLevelKey].map(regionItem => regionItem.id);
