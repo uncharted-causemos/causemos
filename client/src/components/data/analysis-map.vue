@@ -508,6 +508,8 @@ export default {
       const featureStateBase = { _baseline: undefined };
       this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = undefined; });
 
+      console.log('hello');
+
       this.adminLevels.forEach(level => {
         this.regionData[level].forEach(row => {
           this.map.setFeatureState({
