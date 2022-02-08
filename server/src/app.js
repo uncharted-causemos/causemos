@@ -37,6 +37,7 @@ const indicatorsRouter = rootRequire('/routes/indicators');
 const datacubeRouter = rootRequire('/routes/datacubes');
 const gadmRouter = rootRequire('/routes/gadm');
 const pipelineReportingRouter = rootRequire('/routes/pipeline-reporting');
+const bibliographyRouter = rootRequire('/routes/bibliography');
 const fetchFileService = rootRequire('/services/external/fetch-file-service');
 const asyncHandler = require('express-async-handler');
 
@@ -197,6 +198,8 @@ app.use('/api/projects', projectsRouter);
 app.use('/api/kbs', kbsRouter);
 
 app.use('/api/domain-projects', DomainProjectsRouter);
+
+app.use('/api/bibliography', bibliographyRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
