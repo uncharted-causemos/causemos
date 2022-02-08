@@ -17,6 +17,14 @@ import { D3Selection } from '@/types/D3';
 
 const REMOVE_TIMER = 1000;
 
+// TODO: can we access the original node size constants rather than copying
+//  them here?
+const NODE_WIDTH = 130;
+const NODE_HEIGHT = 30;
+
+const EDGE_SUGGESTION_WIDTH = 200;
+const EDGE_SUGGESTION_SPACING = 10;
+
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 const distance = (a: {x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -88,8 +96,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .data(isLoading ? [true] : [])
       .join('text')
       .classed('suggestion-loading-indicator', true)
-      .attr('transform', () => translate(nodeX + 100, nodeY + 100))
-      .text('Loading...');
+      .attr('transform', () =>
+        translate(
+          nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
+          nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING
+        )
+      )
+      .text('Loading suggestions...');
   }
 
   renderEdgeSuggestions(suggestions: EdgeSuggestion[], nodeX: number, nodeY: number) {
@@ -104,9 +117,11 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .data(selectableSuggestions, suggestion => suggestion.target)
       .join('g')
       .classed('node-suggestion', true)
-      .attr(
-        'transform',
-        (suggestion, i) => translate(nodeX + 100, nodeY + 100 + i * 100)
+      .attr('transform', (suggestion, i) =>
+        translate(
+          nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
+          nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING + i * NODE_HEIGHT
+        )
       )
       .style('cursor', 'pointer');
     // Render node background
@@ -114,7 +129,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .data(d => [d])
       .join('rect')
       .attr('width', 200)
-      .attr('height', 30)
+      .attr('height', NODE_HEIGHT)
       .attr('transform', translate(0, 0))
       .style('stroke-width', 2)
       .style('stroke', 'black')
@@ -140,18 +155,32 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       console.log('event', event.stopPropagation());
     });
 
-    // Show a button for adding selected edges to CAG
-    this.createOrUpdateAddButton([]).attr(
-      'transform',
-      translate(nodeX + 500, nodeY + 100)
-    );
+    const cancelButtonX =
+      nodeX +
+      NODE_WIDTH +
+      EDGE_SUGGESTION_SPACING +
+      EDGE_SUGGESTION_WIDTH +
+      EDGE_SUGGESTION_SPACING;
     // Show a button for exiting suggestion mode
-    createOrUpdateButton(
+    const {
+      buttonSelection: cancelButton,
+      dynamicWidth: cancelButtonWidth
+    } = createOrUpdateButton(
       'Cancel',
       'cancel-suggestion-mode-button',
       this.chart as unknown as D3Selection,
       this.exitSuggestionMode.bind(this)
-    ).attr('transform', translate(nodeX + 500, nodeY + 200));
+    );
+    cancelButton.attr('transform', translate(cancelButtonX, nodeY));
+    // Show a button for adding selected edges to CAG
+    const { buttonSelection: addButton } = this.createOrUpdateAddButton([]);
+    addButton.attr(
+      'transform',
+      translate(
+        cancelButtonX + cancelButtonWidth + EDGE_SUGGESTION_SPACING,
+        nodeY
+      )
+    );
   }
 
   createOrUpdateAddButton(selectedSuggestions: (EdgeSuggestion)[]) {
