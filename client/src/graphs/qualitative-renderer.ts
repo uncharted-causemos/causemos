@@ -104,8 +104,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .data(selectableSuggestions, suggestion => suggestion.target)
       .join('g')
       .classed('node-suggestion', true)
-      // TODO: should be offset from the node which is being used to generate
-      //  suggestions
       .attr(
         'transform',
         (suggestion, i) => translate(nodeX + 100, nodeY + 100 + i * 100)
