@@ -124,7 +124,7 @@ import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimes
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
-import { RegionalAggregations } from '@/types/Runoutput';
+import { RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
