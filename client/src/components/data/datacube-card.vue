@@ -483,6 +483,7 @@
                   :selected-timestamp="selectedTimestamp"
                   :selected-scenario-ids="selectedScenarioIds"
                   :selected-region-ids="selectedRegionIds"
+                  :selected-region-ids-at-all-levels="selectedRegionIdsAtAllLevels"
                   :selected-qualifier-values="selectedQualifierValues"
                   :selected-breakdown-option="breakdownOption"
                   :selected-timeseries-points="selectedTimeseriesPoints"
@@ -1654,6 +1655,7 @@ export default defineComponent({
     const {
       datacubeHierarchy,
       selectedRegionIds,
+      selectedRegionIdsAtAllLevels,
       referenceRegions,
       toggleIsRegionSelected
     } = useDatacubeHierarchy(
@@ -1933,6 +1935,7 @@ export default defineComponent({
         nonDefaultQualifiers,
         selectedQualifierValues,
         selectedRegionIds,
+        selectedRegionIdsAtAllLevels,
         selectedBreakdownOutputVariables,
         selectedScenarioIds,
         selectedTimestamp,
@@ -2097,6 +2100,7 @@ export default defineComponent({
       selectedPreGenDataItem,
       selectedQualifierValues,
       selectedRegionIds,
+      selectedRegionIdsAtAllLevels,
       referenceRegions,
       selectedScenarioIds,
       selectedScenarios,
