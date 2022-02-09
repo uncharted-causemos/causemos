@@ -4,11 +4,18 @@
       v-if="selectedRelationship.parameter"
       style="display: inline-block">
       <span
+        v-if="currentView === 'quantitative'"
         class="clickable-dropdown"
         @click.stop="openEdgeTypeDropdown()">
         <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
         {{ weightTypeString(currentEdgeType) }}
         <i class="fa fa-fw fa-caret-down" />
+      </span>
+      <span
+        v-if="currentView === 'qualitative'"
+        class="clickable-dropdown">
+        <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
+        {{ weightTypeString(currentEdgeType) }} &nbsp;
       </span>
       <dropdown-control
         v-if="isEdgeTypeOpen"
@@ -27,11 +34,18 @@
       v-if="selectedRelationship.parameter && selectedRelationship.parameter.weights"
       style="display: inline-block">
       <span
+        v-if="currentView === 'quantitative'"
         class="clickable-dropdown"
         @click.stop="openEdgeWeightDropdown()">
         {{ weightValueString(currentEdgeWeight) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
+      <span
+        v-if="currentView === 'qualitative'"
+        class="clickable-dropdown">
+        {{ weightValueString(currentEdgeWeight) }} &nbsp;
+      </span>
+
       <dropdown-control
         v-if="isEdgeWeightOpen"
         class="edge-type-dropdown">
@@ -97,6 +111,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed, PropType } from 'vue';
+import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
@@ -153,6 +168,8 @@ export default defineComponent({
   },
   setup(props) {
     const ontologyFormatter = useOntologyFormatter();
+    const store = useStore();
+    const currentView = computed(() => store.getters['app/currentView']);
 
     const dropDown = ref(DROPDOWN.NONE);
     const isEdgeTypeOpen = computed(() => {
@@ -179,7 +196,9 @@ export default defineComponent({
 
 
     return {
+      currentView,
       ontologyFormatter,
+
       isEdgeTypeOpen,
       isEdgeWeightOpen,
       isEdgePolarityOpen,
