@@ -51,7 +51,7 @@ import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
 import { TimeScale } from '@/types/Enums';
-import { calculateNewNodesAndEdges, EdgeSuggestion, extractTopEdgesFromStatements, getStatementsInKB } from '@/utils/relationship-suggestion-util';
+import { calculateNewNodesAndEdges, EdgeSuggestion, extractTopEdgesFromStatements, getEdgesFromConcepts, getStatementsInKB } from '@/utils/relationship-suggestion-util';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -293,6 +293,8 @@ export default defineComponent({
       'search-for-concepts',
       async (eventName: any, node: INode<NodeParameter>, userInput: string) => {
         // TODO: debounce?
+        // FIXME: race condition, we should disregard any results that come
+        //  back that are for a different userInput
         if (_.isEmpty(userInput)) {
           // TODO: show previously fetched top impacts
           // Maybe if we're storing the previously fetched top impacts we can
@@ -305,17 +307,9 @@ export default defineComponent({
             userInput
           );
           // TODO: we can just fetch this once (when calculating impacts), we really don't need to fetch on every key press
-          // const statements = await getStatementsInKB(node.data.components, this.project);
-          // const topImpactEdges = _.take(extractTopEdgesFromStatements(statements, node.data, this.data, false), 5);
-          const edgeSuggestions: EdgeSuggestion[] = conceptSuggestions.map((suggestion: any) => {
-            return {
-              source: node.data.concept,
-              target: suggestion.doc.key,
-              color: 'transparent',
-              numEvidence: 0,
-              statements: []
-            };
-          });
+          const statements = await getStatementsInKB(node.data.components, this.project);
+          const concepts = conceptSuggestions.map((suggestion: any) => suggestion.doc.key);
+          const edgeSuggestions = getEdgesFromConcepts(concepts, statements, node.data, this.data, false);
           this.renderer?.setSuggestionData(edgeSuggestions.splice(0, 5), node, false);
         }
       }

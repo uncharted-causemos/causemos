@@ -64,7 +64,7 @@ const addToMap = (
   entry.push(val);
 };
 
-// TODO: mention output is sorted
+// TODO: mention output is sorted, remove "top" from name
 export const extractTopEdgesFromStatements = (
   statements: Statement[],
   node: NodeParameter,
@@ -134,6 +134,35 @@ export const extractTopEdgesFromStatements = (
     };
   });
   return edges.sort(edgeSorter);
+};
+
+export const getEdgesFromConcepts = (
+  concepts: string[],
+  statements: Statement[],
+  node: NodeParameter,
+  graphData: CAGGraph,
+  isLookingForDriverEdges = false
+): EdgeSuggestion[] => {
+  const edges = extractTopEdgesFromStatements(
+    statements,
+    node,
+    graphData,
+    isLookingForDriverEdges
+  );
+  return concepts.map(concept => {
+    // TODO: check sourcetarget depending on isLookingForDriverEdges
+    const edge = edges.find(edge => edge.target === concept);
+    if (edge !== undefined) {
+      return edge;
+    }
+    return {
+      source: node.concept,
+      target: concept,
+      color: 'black',
+      numEvidence: 0,
+      statements: []
+    };
+  });
 };
 
 // TODO: document
