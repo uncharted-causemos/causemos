@@ -417,8 +417,6 @@ async function exportDOCX(
 
 
   const bibliographyPages = await generateAppendixDOCX(insights, metadataSummary);
-  console.log(bibliographyPages);
-
   sections.push(bibliographyPages);
 
   const doc = new Document({
