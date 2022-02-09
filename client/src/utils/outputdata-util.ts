@@ -6,6 +6,17 @@ import {
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { AggregationOption } from '@/types/Enums';
 
+export const RAWDATA_REQUIRED_FIELDS = [
+  'country',
+  'admin1',
+  'admin2',
+  'admin3',
+  'lat',
+  'lng',
+  'timestamp',
+  'value'
+];
+
 // Filter raw data so that the result will contain data points where each data point matches with at least one of the provided regionId
 // i.e return data points where each data point matches with regionId[0] or regionId[1] or regionId[n]
 export const filterRawDataByRegionIds = (data: RawOutputDataPoint[], regionIds: string[]): RawOutputDataPoint[] => {
@@ -51,4 +62,8 @@ export const computeTimeseriesFromRawData = (data: RawOutputDataPoint[], aggrega
   // TODO: sorting can be expensive for large number of datapoints, further investigate if there's more efficient way to keep the timestamps in order.
   const result = _.sortBy(timeseries, 'timestamp');
   return result;
+};
+
+export const pickQualifiers = (dataPoint: RawOutputDataPoint): { [qualifier: string]: string } => {
+  return _.omit(dataPoint, RAWDATA_REQUIRED_FIELDS);
 };

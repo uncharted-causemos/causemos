@@ -72,6 +72,10 @@ export const chartValueFormatter = (...range: number[]) => {
   return exponentFormatter;
 };
 
+export const capitalize = (str: string) => {
+  return str.charAt(0).toLocaleUpperCase() + str.slice(1);
+};
+
 const isValidUrl = (value: string) => {
   let url;
   try {
@@ -89,5 +93,6 @@ export default {
   dropOneInternalVowel,
   chartValueFormatter,
   exponentFormatter,
-  isValidUrl
+  isValidUrl,
+  capitalize
 };
