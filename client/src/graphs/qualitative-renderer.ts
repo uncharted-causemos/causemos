@@ -224,14 +224,32 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       ...selectedSuggestionsToDisplay,
       ...otherSuggestionsToDisplay
     ];
-    // Add a `g` to the dom for each suggestion
+    // Add a `g` to the dom for each suggestion, along with snazzy transitions
     const suggestionGroups = this.chart
       .selectAll<any, EdgeSuggestionDisplayData>('.node-suggestion')
       .data(suggestionsToDisplay, entry => entry.suggestion.target)
-      .join('g')
-      .classed('node-suggestion', true)
-      .attr('transform', suggestion => translate(suggestion.x, suggestion.y))
-      .style('cursor', 'pointer');
+      .join(
+        enter => enter.append('g')
+          .classed('node-suggestion', true)
+          .style('cursor', 'pointer')
+          .attr('transform', suggestion => translate(suggestion.x, suggestion.y + 10))
+          .style('opacity', 0.5)
+          .call(enter => enter.transition()
+            .attr('transform', suggestion => translate(suggestion.x, suggestion.y))
+            .style('opacity', 1)
+          ),
+        update => update
+          .call(update => update.transition()
+            .attr('transform', suggestion => translate(suggestion.x, suggestion.y))
+          ),
+        exit => exit
+          .style('opacity', 1)
+          .call(exit => exit.transition()
+            .attr('transform', suggestion => translate(suggestion.x, suggestion.y + 30))
+            .style('opacity', 0)
+            .remove()
+          )
+      );
     // Render node background
     suggestionGroups.selectAll('rect')
       .data(d => [d])
@@ -239,7 +257,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('width', 200)
       .attr('height', NODE_HEIGHT)
       .attr('transform', translate(0, 0))
-      .style('stroke-width', 2)
+      .style('stroke-width', 1)
       .style('stroke', 'black')
       .style('fill', 'white');
     // Render node label
