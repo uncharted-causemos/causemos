@@ -29,6 +29,11 @@ const EDGE_SUGGESTION_SPACING = 10;
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 const distance = (a: {x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 
+interface EdgeSuggestionDisplayData {
+  suggestion: EdgeSuggestion;
+  x: number;
+  y: number;
+}
 
 export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, EdgeParameter> {
   newEdgeSourceId = '';
@@ -84,12 +89,50 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
   setSuggestionData(
     suggestions: EdgeSuggestion[],
+    selectedSuggestions: EdgeSuggestion[],
     node: INode<NodeParameter>,
     isLoading: boolean
   ) {
+    // Show a button for exiting suggestion mode
+    const cancelButtonX =
+      node.x +
+      NODE_WIDTH +
+      EDGE_SUGGESTION_SPACING +
+      EDGE_SUGGESTION_WIDTH +
+      EDGE_SUGGESTION_SPACING;
+    const {
+      buttonSelection: cancelButton,
+      dynamicWidth: cancelButtonWidth
+    } = createOrUpdateButton(
+      'Cancel',
+      'cancel-suggestion-mode-button',
+      this.chart as unknown as D3Selection,
+      this.exitSuggestionMode.bind(this)
+    );
+    cancelButton.attr('transform', translate(cancelButtonX, node.y));
+    // Show a button for adding selected edges to CAG
+    const { buttonSelection: addButton } = this.createOrUpdateAddButton(selectedSuggestions.length);
+    const addButtonStartX = cancelButtonX + cancelButtonWidth + EDGE_SUGGESTION_SPACING;
+    addButton.attr(
+      'transform',
+      translate(
+        addButtonStartX,
+        node.y
+      )
+    );
     this.renderSearchBox(node, node.x, node.y);
-    this.renderSuggestionLoadingIndicator(isLoading, node.x, node.y);
-    this.renderEdgeSuggestions(suggestions, node.x, node.y);
+    this.renderSuggestionLoadingIndicator(
+      isLoading,
+      node.x,
+      node.y
+    );
+    this.renderEdgeSuggestions(
+      suggestions,
+      selectedSuggestions,
+      node.x,
+      node.y,
+      addButtonStartX
+    );
   }
 
   renderSuggestionLoadingIndicator(isLoading: boolean, nodeX: number, nodeY: number) {
@@ -135,31 +178,59 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     textInput.addEventListener('keyup', (event) => {
       // On keypress, trigger a new search
       // TODO: security? escape event.target.value
-      this.emit('search-for-concepts', node, (event.target as any).value);
+      this.emit('search-for-concepts', (event.target as any).value);
     });
     foreignElement.appendChild(textInput);
     (this.chart.node() as Element).appendChild(foreignElement);
     textInput.focus();
   }
 
-  renderEdgeSuggestions(suggestions: EdgeSuggestion[], nodeX: number, nodeY: number) {
-    // Add property to track selection state
-    const selectableSuggestions = suggestions.map(suggestion => ({
-      ...suggestion,
-      isSelected: false
+  renderEdgeSuggestions(
+    suggestions: EdgeSuggestion[],
+    selectedSuggestions: EdgeSuggestion[],
+    nodeX: number,
+    nodeY: number,
+    selectedColumnX: number
+  ) {
+    const suggestionStartX = nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING;
+    const suggestionStartY = nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING;
+    // Render all selectedSuggestions and up to 5 other suggestions
+    const selectedSuggestionsToDisplay = selectedSuggestions.map((s, i) => ({
+      suggestion: s,
+      x: selectedColumnX,
+      y: suggestionStartY + i * (NODE_HEIGHT + EDGE_SUGGESTION_SPACING)
     }));
+    const otherSuggestionsToDisplay: EdgeSuggestionDisplayData[] = [];
+    let i = 0;
+    while (otherSuggestionsToDisplay.length < 5 && i < suggestions.length) {
+      const suggestion = suggestions[i];
+      const selectedSuggestionWithSameTarget = selectedSuggestions.find(
+        selectedSuggestion => selectedSuggestion.target === suggestion.target
+      );
+      if (selectedSuggestionWithSameTarget === undefined) {
+        // Suggestion is not already displayed in the selected column
+        otherSuggestionsToDisplay.push({
+          suggestion: suggestion,
+          x: suggestionStartX,
+          y:
+            suggestionStartY +
+            otherSuggestionsToDisplay.length *
+              (NODE_HEIGHT + EDGE_SUGGESTION_SPACING)
+        });
+      }
+      i++;
+    }
+    const suggestionsToDisplay: EdgeSuggestionDisplayData[] = [
+      ...selectedSuggestionsToDisplay,
+      ...otherSuggestionsToDisplay
+    ];
     // Add a `g` to the dom for each suggestion
     const suggestionGroups = this.chart
-      .selectAll<any, EdgeSuggestion & { isSelected: boolean }>('.node-suggestion')
-      .data(selectableSuggestions, suggestion => suggestion.target)
+      .selectAll<any, EdgeSuggestionDisplayData>('.node-suggestion')
+      .data(suggestionsToDisplay, entry => entry.suggestion.target)
       .join('g')
       .classed('node-suggestion', true)
-      .attr('transform', (suggestion, i) =>
-        translate(
-          nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
-          nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING + i * NODE_HEIGHT
-        )
-      )
+      .attr('transform', suggestion => translate(suggestion.x, suggestion.y))
       .style('cursor', 'pointer');
     // Render node background
     suggestionGroups.selectAll('rect')
@@ -173,7 +244,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .style('fill', 'white');
     // Render node label
     suggestionGroups.selectAll('text')
-      .data(suggestion => [this.labelFormatter(suggestion.target)])
+      .data(entry => [this.labelFormatter(entry.suggestion.target)])
       .join('text')
       .attr('transform', translate(10, 20))
       .text(target => target)
@@ -183,7 +254,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       });
     // Render incoming edge arrowhead
     suggestionGroups.selectAll('edge-possibility-indicator')
-      .data(suggestion => [suggestion.color])
+      .data(entry => [entry.suggestion.color])
       .join('svg:path')
       .classed('edge-possibility-indicator', true)
       .attr('d', svgUtil.ARROW)
@@ -191,58 +262,26 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('fill', color => color)
       .style('pointer-events', 'none');
     // On click, toggle whether the node is selected
-    suggestionGroups.on('click', (event, suggestion) => {
-      suggestion.isSelected = !suggestion.isSelected;
-      const rect = d3.select(event.target.closest('g')).select('rect');
-      rect.style('stroke', suggestion.isSelected ? 'dodgerblue' : 'black');
-      this.createOrUpdateAddButton(
-        selectableSuggestions.filter(suggestion => suggestion.isSelected)
-      );
+    suggestionGroups.on('click', (event, entry) => {
+      this.emit('toggle-suggestion-selected', entry.suggestion);
     });
 
     // Don't trigger double click handler that is used to create a new node
     suggestionGroups.on('dblclick', (event) => {
       event.stopPropagation();
     });
-
-    const cancelButtonX =
-      nodeX +
-      NODE_WIDTH +
-      EDGE_SUGGESTION_SPACING +
-      EDGE_SUGGESTION_WIDTH +
-      EDGE_SUGGESTION_SPACING;
-    // Show a button for exiting suggestion mode
-    const {
-      buttonSelection: cancelButton,
-      dynamicWidth: cancelButtonWidth
-    } = createOrUpdateButton(
-      'Cancel',
-      'cancel-suggestion-mode-button',
-      this.chart as unknown as D3Selection,
-      this.exitSuggestionMode.bind(this)
-    );
-    cancelButton.attr('transform', translate(cancelButtonX, nodeY));
-    // Show a button for adding selected edges to CAG
-    const { buttonSelection: addButton } = this.createOrUpdateAddButton([]);
-    addButton.attr(
-      'transform',
-      translate(
-        cancelButtonX + cancelButtonWidth + EDGE_SUGGESTION_SPACING,
-        nodeY
-      )
-    );
   }
 
-  createOrUpdateAddButton(selectedSuggestions: (EdgeSuggestion)[]) {
-    const addRelationshipsButtonLabel = `Add ${selectedSuggestions.length} relationship${
-      selectedSuggestions.length !== 1 ? 's' : ''
+  createOrUpdateAddButton(selectedSuggestionCount: number) {
+    const addRelationshipsButtonLabel = `Add ${selectedSuggestionCount} relationship${
+      selectedSuggestionCount !== 1 ? 's' : ''
     }`;
     const addRelationshipsButton = createOrUpdateButton(
       addRelationshipsButtonLabel,
       'add-relationships-button',
       this.chart as unknown as D3Selection,
       () => {
-        this.emit('add-selected-suggestions', selectedSuggestions);
+        this.emit('add-selected-suggestions');
         this.exitSuggestionMode();
       });
     return addRelationshipsButton;

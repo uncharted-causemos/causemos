@@ -104,7 +104,13 @@ export default defineComponent({
       return props.data.nodes.map(node => node.concept);
     });
 
-    const potentialEdges = ref<EdgeSuggestion[] | null>(null);
+    const suggestionNode = ref<INode<NodeParameter> | null>(null);
+    const allEdgeSuggestions = ref<{
+      node: INode<NodeParameter>;
+      suggestions: EdgeSuggestion[]
+    } | null>(null);
+    const searchSuggestions = ref<EdgeSuggestion[] | null>(null);
+    const selectedEdgeSuggestions = ref<EdgeSuggestion[]>([]);
 
     return {
       renderer,
@@ -119,7 +125,10 @@ export default defineComponent({
       newNodeY,
 
       // Tracking edge suggestions
-      potentialEdges,
+      suggestionNode,
+      allEdgeSuggestions,
+      searchSuggestions,
+      selectedEdgeSuggestions,
 
       ontologyFormatter: useOntologyFormatter(),
 
@@ -291,10 +300,11 @@ export default defineComponent({
         //  that if the suggestion search box already exists it won't be
         //  rerendered next to the newly-selected node.
         this.renderer?.exitSuggestionMode();
-        this.potentialEdges = null;
+        this.allEdgeSuggestions = null;
+        this.selectedEdgeSuggestions = [];
         // Load statements that include the components in the selected
         //  node-container
-        this.renderer?.setSuggestionData([], node, true);
+        this.renderer?.setSuggestionData([], [], node, true);
         const statements = await getStatementsInKB(node.data.components, this.project);
         const edges = extractTopEdgesFromStatements(
           statements,
@@ -302,24 +312,64 @@ export default defineComponent({
           this.data,
           false
         );
-        this.potentialEdges = edges;
-        // Pull out the top 5 outgoing edges
-        const topImpactEdges = _.take(edges, 5);
+        // Store suggestions along with the node they belong to
+        this.allEdgeSuggestions = { node, suggestions: edges };
         // Pass them to the renderer to generate SVG elements for each one
-        this.renderer?.setSuggestionData(topImpactEdges, node, false);
+        this.renderer?.setSuggestionData(edges, [], node, false);
+      }
+    );
+
+    this.renderer.on(
+      'toggle-suggestion-selected',
+      (eventName: any, suggestion: EdgeSuggestion) => {
+        const withoutSuggestion = this.selectedEdgeSuggestions.filter(
+          selectedSuggestion => selectedSuggestion !== suggestion
+        );
+        if (withoutSuggestion.length === this.selectedEdgeSuggestions.length) {
+          // Not previously selected, so add it
+          this.selectedEdgeSuggestions = [...withoutSuggestion, suggestion];
+        } else {
+          // Was already selected, so remove it from selected suggestions
+          this.selectedEdgeSuggestions = withoutSuggestion;
+        }
+        if (this.allEdgeSuggestions === null) return;
+        // If searchSuggestions !== null, we're displaying search results
+        const suggestionsToDisplay = this.searchSuggestions !== null
+          ? this.searchSuggestions
+          : this.allEdgeSuggestions.suggestions;
+        this.renderer?.setSuggestionData(
+          suggestionsToDisplay,
+          this.selectedEdgeSuggestions,
+          this.allEdgeSuggestions.node,
+          false // Possible race condition if toggle occurs during load
+        );
       }
     );
 
     this.renderer.on(
       'search-for-concepts',
-      async (eventName: any, node: INode<NodeParameter>, userInput: string) => {
+      async (eventName: any, userInput: string) => {
+        if (this.allEdgeSuggestions === null) return;
         // TODO: debounce?
         // FIXME: race condition, we should disregard any results that come
         //  back that are for a different userInput
         if (_.isEmpty(userInput)) {
-          const topImpactEdges = _.take(this.potentialEdges, 5);
-          this.renderer?.setSuggestionData(topImpactEdges, node, false);
+          this.searchSuggestions = null;
+          this.renderer?.setSuggestionData(
+            this.allEdgeSuggestions.suggestions,
+            this.selectedEdgeSuggestions,
+            this.allEdgeSuggestions.node,
+            false
+          );
         } else {
+          // Show loading indicator
+          this.renderer?.setSuggestionData(
+            [],
+            this.selectedEdgeSuggestions,
+            this.allEdgeSuggestions.node,
+            true
+          );
+          // Fetch concepts based on user input
           const conceptSuggestions = await projectService.getConceptSuggestions(
             this.project,
             userInput
@@ -327,32 +377,39 @@ export default defineComponent({
           const concepts = conceptSuggestions.map(
             (suggestion: any) => suggestion.doc.key
           );
-          const edgeSuggestions = getEdgesFromConcepts(
+          // Convert to edge suggestions, assigning each concept to an edge
+          //  suggestion that was fetched earlier if possible
+          this.searchSuggestions = getEdgesFromConcepts(
             concepts,
-            this.potentialEdges ?? [],
-            node.data.concept
+            this.allEdgeSuggestions.suggestions,
+            this.allEdgeSuggestions.node.data.concept
           );
-          this.renderer?.setSuggestionData(edgeSuggestions.splice(0, 5), node, false);
+          // Update the suggestions that are being rendered
+          this.renderer?.setSuggestionData(
+            this.searchSuggestions,
+            this.selectedEdgeSuggestions,
+            this.allEdgeSuggestions.node,
+            false
+          );
         }
       }
     );
 
-    this.renderer.on(
-      'add-selected-suggestions',
-      (eventName: any, selectedSuggestions: EdgeSuggestion[]) => {
-        const simplifiedSuggestions = selectedSuggestions.map(({ source, target, statements }) => ({
+    this.renderer.on('add-selected-suggestions', () => {
+      const simplifiedSuggestions = this.selectedEdgeSuggestions.map(
+        ({ source, target, statements }) => ({
           source,
           target,
           reference_ids: statements.map(statement => statement.id)
-        }));
-        const newSubgraph = calculateNewNodesAndEdges(
-          simplifiedSuggestions,
-          this.data,
-          this.ontologyFormatter
-        );
-        this.$emit('add-to-CAG', newSubgraph);
-      }
-    );
+        })
+      );
+      const newSubgraph = calculateNewNodesAndEdges(
+        simplifiedSuggestions,
+        this.data,
+        this.ontologyFormatter
+      );
+      this.$emit('add-to-CAG', newSubgraph);
+    });
 
     this.refresh();
   },
