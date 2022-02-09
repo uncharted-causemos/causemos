@@ -108,8 +108,6 @@
             :selected-admin-level="selectedAdminLevel"
             :number-of-color-bins="numberOfColorBins"
             :selected-color-scheme="finalColorScheme"
-            :max-number-of-chart-bars="maxNumberOfChartBars"
-            :limit-number-of-chart-bars="limitNumberOfChartBars"
             :region-ranking-binning-type="regionRankingBinningType"
             :bar-chart-hover-id="barChartHoverId"
             :show-normalized-data="showNormalizedData"
@@ -503,6 +501,12 @@ export default defineComponent({
   },
   watch: {
     regionRankingCompositionType() {
+      this.updateGlobalRegionRankingData();
+    },
+    limitNumberOfChartBars() {
+      this.updateGlobalRegionRankingData();
+    },
+    maxNumberOfChartBars() {
       this.updateGlobalRegionRankingData();
     },
     $route: {

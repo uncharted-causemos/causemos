@@ -154,14 +154,6 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       default: COLOR_SCHEME.PRIORITIZATION
     },
-    maxNumberOfChartBars: {
-      type: Number,
-      default: 20
-    },
-    limitNumberOfChartBars: {
-      type: Boolean,
-      default: false
-    },
     regionRankingBinningType: {
       type: String,
       default: BinningOptions.Linear
@@ -182,8 +174,6 @@ export default defineComponent({
       selectedColorScheme,
       numberOfColorBins,
       selectedAdminLevel,
-      maxNumberOfChartBars,
-      limitNumberOfChartBars,
       regionRankingBinningType,
       showNormalizedData,
       barChartHoverId
@@ -426,8 +416,6 @@ export default defineComponent({
         selectedColorScheme.value,
         showNormalizedData.value,
         numberOfColorBins.value,
-        maxNumberOfChartBars.value,
-        limitNumberOfChartBars.value,
         regionRankingBinningType.value,
         selectedRegionRankingScenario.value,
         invertData.value
@@ -517,12 +505,12 @@ export default defineComponent({
               id: id.value,
               datacubeId: datacubeId.value,
               name: mainModelOutput.value?.display_name + ' : ' + metadata.value?.name,
-              barsData: limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp,
+              barsData: temp,
               selectedTimestamp: selectedTimestamp.value
             });
           }
           // limit the number of bars to the selected maximum
-          barsData.value = limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp;
+          barsData.value = temp;
         }
       });
 
