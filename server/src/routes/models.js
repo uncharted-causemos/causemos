@@ -422,6 +422,7 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
       const key = `${edge.source}///${edge.target}`;
       acc[key] = {};
 
+      // FIXME Need to differentiate signs
       acc[key].weights = [0.0, Math.abs(edge.weights[0])];
       return acc;
     }, {});
@@ -729,7 +730,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
     // throw new Error(`updateEdgeParameter not implemented for ${engine}`);
   }
 
-  // For Delphi we will artificially set the model into a training state
+  // For Delphi we will artificially set the model into unregistered state
   // so the detection loop will find it and actually send the edge weights
   if (engine === DELPHI || engine === DELPHI_DEV) {
     Logger.info(`Defer edge upate for ${engine} until next refresh cycle`);
@@ -737,9 +738,9 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
     await modelAdapter.update([
       {
         id: model.id,
-        status: MODEL_STATUS.TRAINING,
+        status: MODEL_STATUS.NOT_REGISTERED,
         engine_status: {
-          [engine]: MODEL_STATUS.TRAINING
+          [engine]: MODEL_STATUS.NOT_REGISTERED
         }
       }
     ], d => d.id);
