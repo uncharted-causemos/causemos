@@ -428,7 +428,6 @@
                       :selected-layer-id="getSelectedLayer(spec.id)"
                       :all-active-layer-ids="allActiveLayerIds"
                       :map-bounds="mapBounds"
-                      :camera-options="mapCameraOptions"
                       :region-data="regionalData"
                       :raw-data="rawDataPointsList[indx]"
                       :selected-region-ids="allActiveRegionIds"
@@ -624,7 +623,7 @@ import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datac
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Outputdata';
 
 import {
   COLOR,
@@ -1874,19 +1873,6 @@ export default defineComponent({
       mapBounds
     } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIds);
 
-    const mapCameraOptions = computed(() => {
-      const cameraOptions = {
-        padding: 20, // pixels
-        duration: 1000, // milliseconds
-        essential: true // this animation is considered essential with respect to prefers-reduced-motion
-      };
-      if (outputSpecs.value.length > 1) {
-        // if more than one map is shown, e.g., when relativeTo is active
-        //  disable animation since the multiple maps are supposed to sync together on move
-        return { duration: 0 };
-      }
-      return cameraOptions;
-    });
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
@@ -2046,7 +2032,6 @@ export default defineComponent({
       isRelativeDropdownOpen,
       mainModelOutput,
       mapBounds,
-      mapCameraOptions,
       mapColorOptions,
       mapLegendData,
       mapReady,

@@ -14,8 +14,11 @@ import {
   RegionalAggregation,
   OutputStatWithZoom,
   OutputStatsResult,
-  RawOutputDataPoint
-} from '@/types/Runoutput';
+  RawOutputDataPoint,
+  QualifierBreakdownResponse,
+  QualifierCountsResponse,
+  QualifierListsResponse
+} from '@/types/Outputdata';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
 import { filterRawDataByRegionIds } from '@/utils/outputdata-util';
@@ -108,6 +111,127 @@ export const getRawOutputDataByTimestamp = async (
 ): Promise<RawOutputDataPoint[]> => {
   const rawData = await getRawOutputData(param);
   return rawData.filter(d => d.timestamp === param.timestamp);
+};
+
+/**
+ * Fetches the number of values in each qualifier for a given model run or indicator.
+ * Also returns the limits used then computing the data.
+ * @param dataId indicator or model ID
+ * @param runId the ID of the model run. If this is an indicator, should be 'indicator'
+ * @param feature the output feature
+ */
+export const getQualifierCounts = async (
+  dataId: string,
+  runId: string,
+  feature: string
+) => {
+  const { data } = await API.get('maas/output/qualifier-counts', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature
+    }
+  });
+  return data as QualifierCountsResponse;
+};
+
+/**
+ * Fetches the lists of all qualifier values for the specified qualifiers in the model run or indicator.
+ * @param dataId indicator or model ID
+ * @param runId the ID of the model run. If this is an indicator, should be ['indicator']
+ * @param feature the output feature
+ * @param qualifiers the qualifier names
+ */
+export const getQualifierLists = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  qualifiers: string[]
+) => {
+  const { data } = await API.get('maas/output/qualifier-lists', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature,
+      qlf: qualifiers
+    }
+  });
+  return data as QualifierListsResponse;
+};
+
+export const getQualifierTimeseries = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  temporalResolution: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  qualifierVariableId: string,
+  qualifierOptions: string[],
+  transform?: string,
+  regionId?: string
+) => {
+  return await API.get('maas/output/qualifier-timeseries', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature: feature,
+      resolution: temporalResolution,
+      temporal_agg: temporalAggregation,
+      spatial_agg: spatialAggregation,
+      region_id: regionId,
+      transform: transform,
+      qualifier: qualifierVariableId,
+      q_opt: qualifierOptions
+    }
+  });
+};
+
+export const getQualifierBreakdown = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  qualifierVariableIds: string[],
+  temporalResolution: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  timestamp: number
+) : Promise<QualifierBreakdownResponse[]> => {
+  const { data } = await API.get('maas/output/qualifier-data', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature: feature,
+      resolution: temporalResolution,
+      temporal_agg: temporalAggregation,
+      spatial_agg: spatialAggregation,
+      timestamp,
+      qlf: qualifierVariableIds
+    }
+  });
+  return data as QualifierBreakdownResponse[];
+};
+
+/**
+ * Fetches the lists of regions for the specified model runs or indicator.
+ * For multiple model runs, the regions are combined into one list per admin level.
+ * @param dataId indicator or model ID
+ * @param runIds the IDs of the model runs. If this is an indicator, should be ['indicator']
+ * @param feature the output feature
+ */
+export const getRegionLists = async (
+  dataId: string,
+  runIds: string[],
+  feature: string
+) => {
+  const { data } = await API.get('maas/output/region-lists', {
+    params: {
+      data_id: dataId,
+      run_ids: runIds,
+      feature
+    }
+  });
+  return data;
 };
 
 export const getRegionAggregation = async (
@@ -277,7 +401,17 @@ export const getOutputStats = async (specs: OutputSpecWithId[]): Promise<OutputS
 };
 
 export default {
+  getRawOutputData,
+  getRawTimeseriesData,
+  getRawTimeseriesDataBulk,
+  getRawOutputDataByTimestamp,
+  getQualifierCounts,
+  getQualifierLists,
+  getQualifierTimeseries,
+  getQualifierBreakdown,
+  getRegionLists,
   getRegionAggregation,
+  getRegionAggregationWithQualifiers,
   getRegionAggregations,
   getOutputStat,
   getOutputStats

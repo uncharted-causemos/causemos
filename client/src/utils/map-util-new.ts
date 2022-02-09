@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Runoutput';
+import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
 import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
