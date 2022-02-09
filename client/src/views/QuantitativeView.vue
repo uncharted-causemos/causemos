@@ -341,6 +341,20 @@ export default defineComponent({
           this.trainingPercentage = Math.round(100 * r.progressPercentage);
           this.scheduleRefresh();
           return;
+        } else {
+          if (trainingInPreviousCycle === true) {
+            // Artificially inflate waiting time for Delphi to workaround race-conditions
+            const waitTime = 20000;
+            if (this.currentEngine === 'delphi' || this.currentEngine === 'delphi_dev') {
+              this.enableOverlay(`Waiting for ${this.currentEngine} DB`);
+              await new Promise((resolve) => {
+                window.setTimeout(() => {
+                  resolve(true);
+                }, waitTime);
+              });
+              this.disableOverlay();
+            }
+          }
         }
       }
 
