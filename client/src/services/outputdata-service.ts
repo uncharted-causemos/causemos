@@ -481,6 +481,8 @@ export default {
   getRawTimeseriesData,
   getRawTimeseriesDataBulk,
   getRawOutputDataByTimestamp,
+  getRawQualifierTimeseries,
+  getRawQualifierBreakdown,
   getQualifierCounts,
   getQualifierLists,
   getQualifierTimeseries,
