@@ -57,11 +57,6 @@
           @item-selected="setTemporalAggregationSelection"
         />
       </div>
-      <div class="config-sub-group">
-        <a class="add-second-variable">
-          <i class="fa fa-plus-circle"></i> Add a second variable
-        </a>
-      </div>
     </div>
 
     <div class="config-group">

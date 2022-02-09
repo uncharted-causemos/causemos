@@ -6,6 +6,7 @@ import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/ty
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new';
 import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
+import { OutputVariableSpecs } from '@/types/Outputdata';
 
 export const aggregationOptionFiltered = Object.values(AggregationOption).filter(ao => AggregationOption.None as string !== ao);
 export const temporalResolutionOptionFiltered = Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.None as string !== tro);
@@ -20,6 +21,7 @@ export function initDataStateFromRefs (
   selectedRegionIds: Ref<string[]>,
   selectedRegionIdsAtAllLevels: Ref<{ country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }>,
   selectedOutputVariables: Ref<Set<string>>,
+  activeFeatures: Ref<OutputVariableSpecs[]>,
   selectedScenarioIds: Ref<string[]>,
   selectedTimestamp: Ref<number|null>,
   selectedYears: Ref<Set<string>>,
@@ -41,6 +43,7 @@ export function initDataStateFromRefs (
     selectedRegionIds: selectedRegionIds.value,
     selectedRegionIdsAtAllLevels: selectedRegionIdsAtAllLevels.value,
     selectedOutputVariables: Array.from(selectedOutputVariables.value),
+    activeFeatures: activeFeatures.value,
     relativeTo: relativeTo.value,
     nonDefaultQualifiers: [...nonDefaultQualifiers.value],
     selectedQualifierValues: [...selectedQualifierValues.value],

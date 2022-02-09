@@ -1,7 +1,7 @@
 
 // Types related to model/indicator run outputs
 
-import { AdminLevel } from '@/types/Enums';
+import { AdminLevel, TemporalResolutionOption, AggregationOption, DataTransform } from '@/types/Enums';
 import { AnalysisMapRange } from './Common';
 import { PreGeneratedModelRunData } from './ModelRun';
 
@@ -72,5 +72,14 @@ export interface RawOutputGeoJsonFeature {
 export interface RawOutputGeoJson {
   type: 'FeatureCollection';
   features: RawOutputGeoJsonFeature[]
+}
+
+export interface OutputVariableSpecs {
+  name: string;
+  display_name: string;
+  temporalResolution: TemporalResolutionOption;
+  temporalAggregation: AggregationOption;
+  spatialAggregation: AggregationOption;
+  transform: DataTransform;
 }
 
