@@ -34,6 +34,7 @@
           :bars-data="globalBarsData"
           :selected-admin-level="selectedAdminLevel"
           :selected-timestamp="globalRegionRankingTimestamp"
+          :selected-color-scheme="finalColorScheme"
           :bar-chart-hover-id="barChartHoverId"
           :map-bounds="globalBbox"
           @bar-chart-hover="onBarChartHover"
@@ -225,7 +226,7 @@ export default defineComponent({
     const activeDrilldownTab = ref<string|null>('region-settings');
     const selectedAdminLevel = ref(0);
 
-    const showNormalizedData = ref(true);
+    const showNormalizedData = ref(false);
     const regionRankingWeights = ref<{[key: string]: {name: string; weight: number}}>({});
 
     const globalBbox = ref<number[][] | undefined>(undefined);

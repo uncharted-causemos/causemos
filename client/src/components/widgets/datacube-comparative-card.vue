@@ -108,7 +108,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import { RegionalAggregations } from '@/types/Runoutput';
+import { RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { normalize } from '@/utils/value-util';
