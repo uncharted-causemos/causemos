@@ -337,6 +337,8 @@ export default defineComponent({
         Object.keys(regionalData.value).length !== 0
     );
 
+    // Pull out the regions at the current level that are selected,
+    //  or which have an ancestor that's selected.
     const filteredRegionalData = ref<BreakdownData | null>(null);
     watch(
       () => [
