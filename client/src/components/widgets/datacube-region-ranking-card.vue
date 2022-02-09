@@ -73,13 +73,17 @@
           </div>
         </div>
       </div>
-      <div class="datacube-map-placeholder">
+      <div class="card-maps-box">
         <region-map
+          class="region-map-container"
           :data="barsData"
           :selected-layer-id="selectedAdminLevel"
           :map-bounds="bbox"
           :selected-id="barChartHoverId"
           @click-region="$emit('map-click-region', $event)" />
+        <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
+          <map-legend :ramp="mapLegendData[0]" :label-position="{ top: false, right: true }" :isContinuos="false" />
+        </div>
       </div>
     </main>
   </div>
@@ -114,23 +118,27 @@ import { DataState, ViewState } from '@/types/Insight';
 import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { BarData } from '@/types/BarChart';
-import { COLOR_SCHEME } from '@/utils/colors-util';
+import { COLOR_SCHEME, SCALE_FUNCTION, ColorScaleType } from '@/utils/colors-util';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import { adminLevelToString, computeMapBoundsForCountries } from '@/utils/map-util-new';
+import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
+import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
+import { AnalysisMapColorOptions } from '@/types/Common';
+import MapLegend from '@/components/widgets/map-legend.vue';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCard',
   components: {
     OptionsButton,
     BarChart,
-    RegionMap
+    RegionMap,
+    MapLegend
   },
   emits: ['updated-bars-data', 'bar-chart-hover', 'map-click-region'],
   props: {
@@ -154,14 +162,6 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       default: COLOR_SCHEME.PRIORITIZATION
     },
-    maxNumberOfChartBars: {
-      type: Number,
-      default: 20
-    },
-    limitNumberOfChartBars: {
-      type: Boolean,
-      default: false
-    },
     regionRankingBinningType: {
       type: String,
       default: BinningOptions.Linear
@@ -182,8 +182,6 @@ export default defineComponent({
       selectedColorScheme,
       numberOfColorBins,
       selectedAdminLevel,
-      maxNumberOfChartBars,
-      limitNumberOfChartBars,
       regionRankingBinningType,
       showNormalizedData,
       barChartHoverId
@@ -272,6 +270,9 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
+    const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
+
     // apply the view-config for this datacube
     watch(
       () => [
@@ -293,6 +294,12 @@ export default defineComponent({
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
             defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
             store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+          }
+          if (initialViewConfig.value.selectedMapDataLayer !== undefined) {
+            selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
+          }
+          if (initialViewConfig.value.baseLayerTransparency !== undefined) {
+            selectedDataLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
           }
         }
 
@@ -400,6 +407,33 @@ export default defineComponent({
       datacubeHierarchy
     );
 
+    const mapColorOptions = computed(() => {
+      const options: AnalysisMapColorOptions = {
+        scheme: selectedColorScheme.value,
+        relativeToSchemes: [],
+        scaleFn: SCALE_FUNCTION[ColorScaleType.LinearDiscrete],
+        isContinuous: false,
+        isDiverging: false,
+        opacity: Number(selectedDataLayerTransparency.value)
+      };
+      return options;
+    });
+
+    const {
+      mapLegendData
+    } = useAnalysisMapStats(
+      outputSpecs,
+      regionalData,
+      ref(null), // relativeTo
+      selectedDataLayer,
+      selectedAdminLevel,
+      ref(false), // showPercentChange
+      mapColorOptions,
+      ref([]), // activeReferenceOptions
+      ref(null), // breakdownOption
+      ref([]) // rawDataPointsList
+    );
+
     const selectedRegionIdsDisplay = computed(() => {
       if (_.isEmpty(selectedRegionIds.value)) return 'All';
       return selectedRegionIds.value.join('/');
@@ -426,8 +460,6 @@ export default defineComponent({
         selectedColorScheme.value,
         showNormalizedData.value,
         numberOfColorBins.value,
-        maxNumberOfChartBars.value,
-        limitNumberOfChartBars.value,
         regionRankingBinningType.value,
         selectedRegionRankingScenario.value,
         invertData.value
@@ -517,12 +549,12 @@ export default defineComponent({
               id: id.value,
               datacubeId: datacubeId.value,
               name: mainModelOutput.value?.display_name + ' : ' + metadata.value?.name,
-              barsData: limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp,
+              barsData: temp,
               selectedTimestamp: selectedTimestamp.value
             });
           }
           // limit the number of bars to the selected maximum
-          barsData.value = limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp;
+          barsData.value = temp;
         }
       });
 
@@ -554,7 +586,8 @@ export default defineComponent({
       regionRunsScenarios,
       bbox,
       isModelMetadata,
-      invertData
+      invertData,
+      mapLegendData
     };
   },
   methods: {
@@ -650,15 +683,6 @@ main {
   min-width: 0;
 }
 
-.datacube-map-placeholder {
-  background-color: #fafafa;
-  height: 100%;
-  width: 150px;
-  display: flex;
-  flex-direction: column;
-  padding: 5px;
-}
-
 .country-list {
   flex: 1;
   min-height: 0;
@@ -685,6 +709,26 @@ main {
     cursor: auto;
     color: gray;
   }
+}
+
+.card-maps-legend-container {
+  display: flex;
+  flex-direction: column;
+  width: 25%;
+  .top-padding {
+    height: 19px;
+  }
+}
+
+.card-maps-box {
+  display: flex;
+  width: 180px;
+  height: 100%;
+  padding: 5px;
+}
+
+.region-map-container {
+  width: 75%;
 }
 
 </style>
