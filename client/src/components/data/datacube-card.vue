@@ -1571,6 +1571,9 @@ export default defineComponent({
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
           initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
         }
+        if (loadedInsight.data_state?.selectedOutputVariables !== undefined) {
+          initialSelectedOutputVariables.value = _.clone(loadedInsight.data_state?.selectedOutputVariables);
+        }
         // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
         if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
           initialSelectedQualifierValues.value = _.clone(loadedInsight.data_state?.selectedQualifierValues);
