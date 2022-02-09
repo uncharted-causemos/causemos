@@ -87,7 +87,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     node: INode<NodeParameter>,
     isLoading: boolean
   ) {
-    this.renderSearchBox(node.x, node.y);
+    this.renderSearchBox(node, node.x, node.y);
     this.renderSuggestionLoadingIndicator(isLoading, node.x, node.y);
     this.renderEdgeSuggestions(suggestions, node.x, node.y);
   }
@@ -106,7 +106,14 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .text('Loading suggestions...');
   }
 
-  renderSearchBox(nodeX: number, nodeY: number) {
+  renderSearchBox(node: INode<NodeParameter>, nodeX: number, nodeY: number) {
+    if (
+      (this.chart.node() as Element).querySelector('.suggestion-search-box') !==
+      null
+    ) {
+      // Don't rerender search box if it already exists
+      return;
+    }
     const foreignElement = document.createElementNS(
       'http://www.w3.org/2000/svg',
       'foreignObject'
@@ -126,7 +133,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     textInput.style.border = '1px solid black';
     textInput.style.borderRadius = '3px';
     textInput.addEventListener('keyup', (event) => {
-      console.log('search for concept:', (event.target as any).value);
+      // On keypress, trigger a new search
+      // TODO: security? escape event.target.value
+      this.emit('search-for-concepts', node, (event.target as any).value);
     });
 
     foreignElement.appendChild(textInput);

@@ -290,6 +290,38 @@ export default defineComponent({
     );
 
     this.renderer.on(
+      'search-for-concepts',
+      async (eventName: any, node: INode<NodeParameter>, userInput: string) => {
+        // TODO: debounce?
+        if (_.isEmpty(userInput)) {
+          // TODO: show previously fetched top impacts
+          // Maybe if we're storing the previously fetched top impacts we can
+          //  also store the node that they belong to, so we don't have to keep
+          //  passing node back and forth.
+          this.renderer?.setSuggestionData([], node, true);
+        } else {
+          const conceptSuggestions = await projectService.getConceptSuggestions(
+            this.project,
+            userInput
+          );
+          // TODO: we can just fetch this once (when calculating impacts), we really don't need to fetch on every key press
+          // const statements = await getStatementsInKB(node.data.components, this.project);
+          // const topImpactEdges = _.take(extractTopEdgesFromStatements(statements, node.data, this.data, false), 5);
+          const edgeSuggestions: EdgeSuggestion[] = conceptSuggestions.map((suggestion: any) => {
+            return {
+              source: node.data.concept,
+              target: suggestion.doc.key,
+              color: 'transparent',
+              numEvidence: 0,
+              statements: []
+            };
+          });
+          this.renderer?.setSuggestionData(edgeSuggestions.splice(0, 5), node, false);
+        }
+      }
+    );
+
+    this.renderer.on(
       'add-selected-suggestions',
       (eventName: any, selectedSuggestions: EdgeSuggestion[]) => {
         const simplifiedSuggestions = selectedSuggestions.map(({ source, target, statements }) => ({
