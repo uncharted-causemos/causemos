@@ -104,6 +104,7 @@ export interface DataState {
   selectedScenarioIds?: string[];
   selectedTimestamp?: number | null;
   selectedRegionIds?: string[];
+  selectedOutputVariables?: string[];
   nonDefaultQualifiers?: string[];
   selectedQualifierValues?: string[];
   selectedYears?: string[];
