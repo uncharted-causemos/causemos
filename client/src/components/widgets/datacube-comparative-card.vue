@@ -75,6 +75,7 @@
           :selected-layer-id="selectedAdminLevel"
           :map-bounds="bbox"
           :popup-formatter="popupFormatter"
+          :selected-region-ids="selectedRegionIds"
         />
       </div>
     </main>
@@ -102,7 +103,7 @@ import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions'
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { COLOR, colorFromIndex, ColorScaleType, COLOR_SCHEME, getColors, isDiscreteScale, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
-import { adminLevelToString, computeMapBoundsForCountries } from '@/utils/map-util-new';
+import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
@@ -161,6 +162,8 @@ export default defineComponent({
     const selectedScenarios = ref([] as ModelRun[]);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
+
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
 
     const store = useStore();
 
@@ -278,6 +281,9 @@ export default defineComponent({
           }
           if (initialViewConfig.value.selectedAdminLevel !== undefined) {
             selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
+          }
+          if (initialViewConfig.value.baseLayerTransparency !== undefined) {
+            selectedDataLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
           }
         }
 
@@ -439,7 +445,8 @@ export default defineComponent({
         regionalData.value,
         selectedAdminLevel.value,
         finalColorScheme.value,
-        selectedScenarioIndex.value
+        selectedScenarioIndex.value,
+        selectedDataLayerTransparency.value
       ],
       () => {
         const temp: BarData[] = [];
@@ -481,7 +488,8 @@ export default defineComponent({
                   label: dataItem.name,
                   value: itemValue,
                   normalizedValue: normalizedValue,
-                  color: regionColor
+                  color: regionColor,
+                  opacity: Number(selectedDataLayerTransparency.value)
                 });
                 regionIndexCounter++;
               });
@@ -503,6 +511,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedScenarioIds,
+      selectedRegionIds,
       selectedRegionIdsDisplay,
       metadata,
       mainModelOutput,

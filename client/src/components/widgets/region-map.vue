@@ -61,7 +61,9 @@ const colorLayer = () => {
       'fill-opacity': [
         'case',
         ['==', null, ['feature-state', 'label']], 0.0,
-        1
+        ['==', null, ['feature-state', 'opacity']], 1,
+        ['==', true, ['feature-state', '_isHidden']], 0.0,
+        ['feature-state', 'opacity']
       ]
     }
   });
@@ -128,6 +130,10 @@ export default {
         if (!label) return null;
         return `${label.split('__').pop()}<br> Rank: ${name}<br> Value: ${+value.toFixed(2)}`;
       }
+    },
+    selectedRegionIds: {
+      type: Array,
+      default: () => []
     }
   },
   data: () => ({
@@ -202,7 +208,8 @@ export default {
           source: this.vectorSourceId,
           sourceLayer: this.vectorSourceLayer
         }, {
-          ...d
+          ...d,
+          _isHidden: this.selectedRegionIds.length === 0 ? false : !this.selectedRegionIds.includes(d.label)
         });
       }
     },
