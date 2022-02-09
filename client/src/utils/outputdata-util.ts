@@ -2,7 +2,7 @@ import _ from 'lodash';
 import {
   RawOutputDataPoint,
   RawOutputGeoJson
-} from '@/types/Runoutput';
+} from '@/types/Outputdata';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 // Filter raw data so that the result will contain data points where each data point matches with at least one of the provided regionId

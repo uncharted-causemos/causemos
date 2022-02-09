@@ -19,8 +19,7 @@ import { getYearFromTimestamp } from '@/utils/date-util';
 import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain } from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
-import { getQualifierTimeseries } from '../new-datacube-service';
-import { getRawTimeseriesData, getRawTimeseriesDataBulk } from '../outputdata-service';
+import { getQualifierTimeseries, getRawTimeseriesData, getRawTimeseriesDataBulk } from '../outputdata-service';
 import { correctIncompleteTimeseriesLists } from '@/utils/incomplete-data-detection';
 
 

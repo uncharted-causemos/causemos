@@ -92,7 +92,7 @@ import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER, DATA_LAYE
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
-import { RawOutputDataPoint, RegionalAggregations } from '@/types/Runoutput';
+import { RawOutputDataPoint, RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { normalize } from '@/utils/value-util';
