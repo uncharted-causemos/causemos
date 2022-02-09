@@ -104,6 +104,8 @@ export default defineComponent({
       return props.data.nodes.map(node => node.concept);
     });
 
+    const potentialEdges = ref<EdgeSuggestion[] | null>(null);
+
     return {
       renderer,
       mouseTrap,
@@ -115,6 +117,9 @@ export default defineComponent({
       svgY,
       newNodeX,
       newNodeY,
+
+      // Tracking edge suggestions
+      potentialEdges,
 
       ontologyFormatter: useOntologyFormatter(),
 
@@ -270,7 +275,7 @@ export default defineComponent({
             .classed('edge-possibility-indicator', true)
             .attr('transform', `translate(${pointerX}, ${pointerY}) scale(2.5)`)
             .attr('fill', calcEdgeColor(edge))
-            .attr('opactiy', 0)
+            .attr('opacity', 0)
             .style('pointer-events', 'none')
             .transition()
             .duration(300)
@@ -282,9 +287,25 @@ export default defineComponent({
     this.renderer.on(
       'fetch-suggested-impacts',
       async (eventName: any, node: INode<NodeParameter>) => {
+        // Clear up any previous suggestion state. Skipping this step means
+        //  that if the suggestion search box already exists it won't be
+        //  rerendered next to the newly-selected node.
+        this.renderer?.exitSuggestionMode();
+        this.potentialEdges = null;
+        // Load statements that include the components in the selected
+        //  node-container
         this.renderer?.setSuggestionData([], node, true);
         const statements = await getStatementsInKB(node.data.components, this.project);
-        const topImpactEdges = _.take(extractTopEdgesFromStatements(statements, node.data, this.data, false), 5);
+        const edges = extractTopEdgesFromStatements(
+          statements,
+          node.data,
+          this.data,
+          false
+        );
+        this.potentialEdges = edges;
+        // Pull out the top 5 outgoing edges
+        const topImpactEdges = _.take(edges, 5);
+        // Pass them to the renderer to generate SVG elements for each one
         this.renderer?.setSuggestionData(topImpactEdges, node, false);
       }
     );
@@ -296,20 +317,21 @@ export default defineComponent({
         // FIXME: race condition, we should disregard any results that come
         //  back that are for a different userInput
         if (_.isEmpty(userInput)) {
-          // TODO: show previously fetched top impacts
-          // Maybe if we're storing the previously fetched top impacts we can
-          //  also store the node that they belong to, so we don't have to keep
-          //  passing node back and forth.
-          this.renderer?.setSuggestionData([], node, true);
+          const topImpactEdges = _.take(this.potentialEdges, 5);
+          this.renderer?.setSuggestionData(topImpactEdges, node, false);
         } else {
           const conceptSuggestions = await projectService.getConceptSuggestions(
             this.project,
             userInput
           );
-          // TODO: we can just fetch this once (when calculating impacts), we really don't need to fetch on every key press
-          const statements = await getStatementsInKB(node.data.components, this.project);
-          const concepts = conceptSuggestions.map((suggestion: any) => suggestion.doc.key);
-          const edgeSuggestions = getEdgesFromConcepts(concepts, statements, node.data, this.data, false);
+          const concepts = conceptSuggestions.map(
+            (suggestion: any) => suggestion.doc.key
+          );
+          const edgeSuggestions = getEdgesFromConcepts(
+            concepts,
+            this.potentialEdges ?? [],
+            node.data.concept
+          );
           this.renderer?.setSuggestionData(edgeSuggestions.splice(0, 5), node, false);
         }
       }

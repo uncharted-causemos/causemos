@@ -180,6 +180,15 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .join('text')
       .attr('transform', translate(10, 20))
       .text(target => target);
+    // Render incoming edge arrowhead
+    suggestionGroups.selectAll('edge-possibility-indicator')
+      .data(suggestion => [suggestion.color])
+      .join('svg:path')
+      .classed('edge-possibility-indicator', true)
+      .attr('d', svgUtil.ARROW)
+      .attr('transform', translate(-5, NODE_HEIGHT / 2) + ' scale(2.5)')
+      .attr('fill', color => color)
+      .style('pointer-events', 'none');
     // On click, toggle whether the node is selected
     suggestionGroups.on('click', (event, suggestion) => {
       suggestion.isSelected = !suggestion.isSelected;

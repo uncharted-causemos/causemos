@@ -138,17 +138,9 @@ export const extractTopEdgesFromStatements = (
 
 export const getEdgesFromConcepts = (
   concepts: string[],
-  statements: Statement[],
-  node: NodeParameter,
-  graphData: CAGGraph,
-  isLookingForDriverEdges = false
+  edges: EdgeSuggestion[],
+  sourceConcept: string
 ): EdgeSuggestion[] => {
-  const edges = extractTopEdgesFromStatements(
-    statements,
-    node,
-    graphData,
-    isLookingForDriverEdges
-  );
   return concepts.map(concept => {
     // TODO: check sourcetarget depending on isLookingForDriverEdges
     const edge = edges.find(edge => edge.target === concept);
@@ -156,7 +148,7 @@ export const getEdgesFromConcepts = (
       return edge;
     }
     return {
-      source: node.concept,
+      source: sourceConcept,
       target: concept,
       color: 'black',
       numEvidence: 0,
