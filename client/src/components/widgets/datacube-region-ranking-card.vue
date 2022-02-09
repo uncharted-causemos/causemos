@@ -128,6 +128,7 @@ import { RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
+import { filterRegionalLevelData } from '@/utils/admin-level-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import { AnalysisMapColorOptions } from '@/types/Common';
 import MapLegend from '@/components/widgets/map-legend.vue';
@@ -270,6 +271,9 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
+    const selectedRegionIds = ref<string[]>([]);
+    const selectedRegionIdsAtAllLevels = ref<null | { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }>(null);
+
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
 
@@ -308,6 +312,17 @@ export default defineComponent({
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
             initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
           }
+          if (initialDataConfig.value.selectedRegionIds !== undefined) {
+            initialDataConfig.value.selectedRegionIds.forEach(regionId => {
+              selectedRegionIds.value.push(regionId);
+            });
+          }
+          if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
+            selectedRegionIdsAtAllLevels.value = Object.assign(
+              {},
+              initialDataConfig.value.selectedRegionIdsAtAllLevels
+            );
+          }
         }
       },
       {
@@ -317,8 +332,8 @@ export default defineComponent({
     const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
-      datacubeHierarchy,
-      selectedRegionIds
+      datacubeHierarchy
+      // NOTE: selectedRegionIds is already calculated above so no need to receive as a return object
     } = useDatacubeHierarchy(
       selectedScenarioIds,
       metadata,
@@ -462,7 +477,8 @@ export default defineComponent({
         numberOfColorBins.value,
         regionRankingBinningType.value,
         selectedRegionRankingScenario.value,
-        invertData.value
+        invertData.value,
+        selectedRegionIdsAtAllLevels.value
       ],
       () => {
         const temp: BarData[] = [];
@@ -470,10 +486,15 @@ export default defineComponent({
         // then reconstruct the bar chart data
         const colors = selectedColorScheme.value;
 
-        if (regionalData.value !== null) {
+        if (regionalData.value) {
           const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
-          const regionLevelData = regionalData.value[adminLevelAsString];
 
+          //
+          // filter regional data based on any regional selection captured as part of the datacube config
+          //
+          const filteredRegionLevelData = filterRegionalLevelData(regionalData.value, selectedRegionIdsAtAllLevels.value, true /* apply filtering to country level */);
+
+          const regionLevelData = filteredRegionLevelData[adminLevelAsString];
           if (regionLevelData !== undefined && regionLevelData.length > 0) {
             const data = regionLevelData.map(regionDataItem => ({
               name: regionDataItem.id,

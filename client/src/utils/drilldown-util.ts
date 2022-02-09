@@ -18,6 +18,7 @@ export function initDataStateFromRefs (
   nonDefaultQualifiers: Ref<Set<string>>,
   selectedQualifierValues: Ref<Set<string>>,
   selectedRegionIds: Ref<string[]>,
+  selectedRegionIdsAtAllLevels: Ref<{ country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }>,
   selectedScenarioIds: Ref<string[]>,
   selectedTimestamp: Ref<number|null>,
   selectedYears: Ref<Set<string>>,
@@ -37,6 +38,7 @@ export function initDataStateFromRefs (
     }],
     datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
     selectedRegionIds: selectedRegionIds.value,
+    selectedRegionIdsAtAllLevels: selectedRegionIdsAtAllLevels.value,
     relativeTo: relativeTo.value,
     nonDefaultQualifiers: [...nonDefaultQualifiers.value],
     selectedQualifierValues: [...selectedQualifierValues.value],
