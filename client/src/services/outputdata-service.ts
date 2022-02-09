@@ -121,15 +121,16 @@ export const getRawQualifierTimeseries = async (
   const rawData = await getRawOutputData(param);
   const filteredData = param.regionId ? filterRawDataByRegionIds(rawData, [param.regionId]) : rawData;
 
-  // If there are multiple qualifier options
+  // Init an object to store raw data points grouped by each qualifier option provided by param
   const dataByOptions: { [opt: string]: RawOutputDataPoint[] } = {};
   for (const opt of param.qualifierOptions) {
     dataByOptions[opt] = [];
   }
+
   for (const d of filteredData) {
     // Filter by qualifier variable Id and bucket by qualifier option/value
     const qualOption = d[param.qualifierVariableId];
-    if (qualOption) {
+    if (qualOption && dataByOptions[qualOption]) {
       dataByOptions[qualOption].push(d);
     }
   }
