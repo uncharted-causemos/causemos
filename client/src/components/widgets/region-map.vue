@@ -117,7 +117,7 @@ export default {
       default: 0
     },
     mapBounds: { // initial map bounds; default bounds to the bbox of the model country/countries
-      type: Array,
+      type: [Array, Object],
       default: () => [
         [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
         [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
