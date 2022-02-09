@@ -21,8 +21,16 @@
         v-if="isEdgeTypeOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option" @click="setType('level')">{{ weightTypeString('level') }}</div>
-          <div class="dropdown-option" @click="setType('trend')">{{ weightTypeString('trend') }}</div>
+          <div class="dropdown-option" @click="setType('level')">
+            <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            {{ weightTypeString('level') }}
+          </div>
+          <div class="dropdown-option" @click="setType('trend')">
+            <i v-if="currentEdgeType === 'trend'" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            {{ weightTypeString('trend') }}
+          </div>
         </template>
       </dropdown-control>
     </div>
@@ -50,14 +58,27 @@
         v-if="isEdgeWeightOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option" @click="setWeight(0.1)">{{ weightValueString(0.1) }}</div>
-          <div class="dropdown-option" @click="setWeight(0.5)">{{ weightValueString(0.5) }}</div>
-          <div class="dropdown-option" @click="setWeight(0.9)">{{ weightValueString(0.9) }}</div>
+          <div class="dropdown-option" @click="setWeight(0.1)">
+            <i v-if="currentEdgeWeight === 0.1" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            {{ weightValueString(0.1) }} (0.1)
+          </div>
+          <div class="dropdown-option" @click="setWeight(0.5)">
+            <i v-if="currentEdgeWeight === 0.5" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            {{ weightValueString(0.5) }} (0.5)
+          </div>
+          <div class="dropdown-option" @click="setWeight(0.9)">
+            <i v-if="currentEdgeWeight === 0.9" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            {{ weightValueString(0.9) }} (0.9)
+          </div>
           <div class="dropdown-option" @click="setWeight(inferredWeightValue)">
-            <div> suggested  </div>
+            <i v-if="currentEdgeWeight === inferredWeightValue" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            <div> Inferred </div>
             <div>
-              {{ weightValueString(inferredWeightValue) }}
-              {{ inferredWeightValue }}
+              {{ weightValueString(inferredWeightValue) }} ({{ inferredWeightValue.toFixed(3) }})
             </div>
           </div>
         </template>
@@ -330,7 +351,7 @@ export default defineComponent({
   font-weight: normal;
   cursor: default;
   position: absolute;
-  margin: -10px 0 0 4px;
+  margin: -5px 0 0 4px;
 }
 
 .polarity-same {
