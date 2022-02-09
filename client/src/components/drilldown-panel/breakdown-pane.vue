@@ -168,7 +168,7 @@ import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
+import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES, filterRegionalLevelData } from '@/utils/admin-level-util';
 import {
   AggregationOption,
   TemporalAggregationLevel,
@@ -346,36 +346,11 @@ export default defineComponent({
         selectedRegionIdsAtAllLevels.value
       ],
       () => {
-        const clonedRegionalData = _.cloneDeep(regionalData.value);
-        if (isRegionalDataValid.value && clonedRegionalData !== null && selectedRegionIdsAtAllLevels.value !== null) {
+        if (regionalData.value && isRegionalDataValid.value && selectedRegionIdsAtAllLevels.value !== null) {
           // apply filtering to all levels starting from the admin1 (i.e., adminIndx > 0)
-          ADMIN_LEVEL_KEYS.forEach((adminKey, adminIndx) => {
-            if (clonedRegionalData[adminKey]) {
-              const filteredDataAtCurrentLevel: any = [];
-              const previousAdminLevelKey = adminIndx === 0 ? adminKey : ADMIN_LEVEL_KEYS[adminIndx - 1];
-              if (adminIndx > 0 && previousAdminLevelKey !== 'admin4' && previousAdminLevelKey !== 'admin5') {
-                // do we have an explicit selection (i.e., from selectedRegionIdsAtAllLevels) for the current admin level?
-                //  if yes, then use it to filter
-                //  if no, then consider the (filtered) data already at the previous level
-                let selectedRegionsAtPrevLevel: string[] = selectedRegionIdsAtAllLevels.value !== null ? Array.from(selectedRegionIdsAtAllLevels.value[previousAdminLevelKey]) : clonedRegionalData[previousAdminLevelKey].map(regionItem => regionItem.id);
-                // if no selection was found at the previous level
-                //  then consider the (filtered) data already at the previous level
-                if (selectedRegionsAtPrevLevel.length === 0) {
-                  selectedRegionsAtPrevLevel = clonedRegionalData[previousAdminLevelKey].map(regionItem => regionItem.id);
-                }
-                // we now have either all the regions of the previous level
-                //  or a subet of them in case there was a valid selection
-                // use the selectedRegionsAtPrevLevel to filter the current level
-                selectedRegionsAtPrevLevel.forEach(regionAtPrevLevel => {
-                  const temp = clonedRegionalData[adminKey].filter(regionItem => regionItem.id.startsWith(regionAtPrevLevel));
-                  filteredDataAtCurrentLevel.push(...temp);
-                });
-                clonedRegionalData[adminKey] = filteredDataAtCurrentLevel;
-              }
-            }
-          });
+          const filteredRegionLevelData = filterRegionalLevelData(regionalData.value, selectedRegionIdsAtAllLevels.value, false /* apply filtering to country level */);
+          filteredRegionalData.value = filteredRegionLevelData as BreakdownData | null;
         }
-        filteredRegionalData.value = clonedRegionalData;
       }
     );
 

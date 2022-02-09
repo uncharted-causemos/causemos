@@ -128,7 +128,7 @@ import { RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
-import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import { filterRegionalLevelData } from '@/utils/admin-level-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import { AnalysisMapColorOptions } from '@/types/Common';
 import MapLegend from '@/components/widgets/map-legend.vue';
@@ -500,42 +500,11 @@ export default defineComponent({
 
         if (regionalData.value) {
           const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
-          const filteredRegionLevelData = _.cloneDeep(regionalData.value);
 
           //
           // filter regional data based on any regional selection captured as part of the datacube config
           //
-          ADMIN_LEVEL_KEYS.forEach((adminKey, adminIndx) => {
-            if (filteredRegionLevelData[adminKey]) {
-              const filteredDataAtCurrentLevel: any = [];
-              const previousAdminLevelKey = adminIndx === 0 ? adminKey : ADMIN_LEVEL_KEYS[adminIndx - 1];
-              // note that we also filter the "country" level
-              if (previousAdminLevelKey !== 'admin4' && previousAdminLevelKey !== 'admin5' && adminKey !== 'admin4' && adminKey !== 'admin5') {
-                // do we have an explicit selection (i.e., from selectedRegionIdsAtAllLevels) for the previous admin level?
-                //  if yes, then use it to filter
-                //  if no, then consider the (filtered) data already at the previous level
-                let selectedRegionsAtPrevLevel: string[] = selectedRegionIdsAtAllLevels.value !== null ? Array.from(selectedRegionIdsAtAllLevels.value[previousAdminLevelKey]) : filteredRegionLevelData[previousAdminLevelKey]?.map(regionItem => regionItem.id) as string [];
-                const selectedRegionsAtCurrLevel: string[] = selectedRegionIdsAtAllLevels.value !== null ? Array.from(selectedRegionIdsAtAllLevels.value[adminKey]) : [];
-
-                // if no selection was found at the previous level
-                //  then consider the (filtered) data already at the previous level
-                if (selectedRegionsAtPrevLevel.length === 0) {
-                  selectedRegionsAtPrevLevel = filteredRegionLevelData[previousAdminLevelKey]?.map(regionItem => regionItem.id) as string[];
-                }
-                // we now have either all the regions of the previous level
-                //  or a subet of them in case there was a valid selection
-                //
-                // use the selectedRegionsAtPrevLevel to filter the current level
-                selectedRegionsAtPrevLevel.forEach(regionAtPrevLevel => {
-                  const temp = filteredRegionLevelData[adminKey]?.filter(regionItem => regionItem.id.startsWith(regionAtPrevLevel));
-                  if (temp !== undefined) {
-                    filteredDataAtCurrentLevel.push(...temp.filter(region => selectedRegionsAtCurrLevel.length > 0 ? selectedRegionsAtCurrLevel.includes(region.id) : true));
-                  }
-                });
-                filteredRegionLevelData[adminKey] = filteredDataAtCurrentLevel;
-              }
-            }
-          });
+          const filteredRegionLevelData = filterRegionalLevelData(regionalData.value, selectedRegionIdsAtAllLevels.value, true /* apply filtering to country level */);
 
           const regionLevelData = filteredRegionLevelData[adminLevelAsString];
           if (regionLevelData !== undefined && regionLevelData.length > 0) {
