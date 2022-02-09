@@ -93,23 +93,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     node: INode<NodeParameter>,
     isLoading: boolean
   ) {
-    // Show a button for exiting suggestion mode
-    const cancelButtonX =
-      node.x +
-      NODE_WIDTH +
-      EDGE_SUGGESTION_SPACING +
-      EDGE_SUGGESTION_WIDTH +
-      EDGE_SUGGESTION_SPACING;
-    const {
-      buttonSelection: cancelButton,
-      dynamicWidth: cancelButtonWidth
-    } = createOrUpdateButton(
-      'Cancel',
-      'cancel-suggestion-mode-button',
-      this.chart as unknown as D3Selection,
-      this.exitSuggestionMode.bind(this)
-    );
-    cancelButton.attr('transform', translate(cancelButtonX, node.y));
+    const { cancelButtonX, cancelButtonWidth } = this.renderStaticSuggestionUI(node);
     // Show a button for adding selected edges to CAG
     const { buttonSelection: addButton } = this.createOrUpdateAddButton(selectedSuggestions.length);
     const addButtonStartX = cancelButtonX + cancelButtonWidth + EDGE_SUGGESTION_SPACING;
@@ -133,6 +117,39 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       node.y,
       addButtonStartX
     );
+  }
+
+  renderStaticSuggestionUI(node: INode<NodeParameter>) {
+    // Show a button for exiting suggestion mode
+    const cancelButtonX =
+      node.x +
+      NODE_WIDTH +
+      EDGE_SUGGESTION_SPACING +
+      EDGE_SUGGESTION_WIDTH +
+      EDGE_SUGGESTION_SPACING;
+    const {
+      buttonSelection: cancelButton,
+      dynamicWidth: cancelButtonWidth
+    } = createOrUpdateButton(
+      'Cancel',
+      'cancel-suggestion-mode-button',
+      this.chart as unknown as D3Selection,
+      this.exitSuggestionMode.bind(this)
+    );
+    cancelButton.attr('transform', translate(cancelButtonX, node.y));
+    // Show label
+    this.chart.append('text')
+      .classed('suggestion-column-label', true)
+      .text('Add impacts')
+      .style('fill', 'grey')
+      .style('font-weight', '600')
+      .style('letter-spacing', '1.05')
+      .style('text-transform', 'uppercase')
+      .attr('transform', translate(
+        node.x + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
+        node.y - EDGE_SUGGESTION_SPACING
+      ));
+    return { cancelButtonX, cancelButtonWidth };
   }
 
   renderSuggestionLoadingIndicator(isLoading: boolean, nodeX: number, nodeY: number) {
@@ -162,8 +179,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       'foreignObject'
     );
     foreignElement.classList.add('suggestion-search-box');
-    foreignElement.setAttribute('width', '200px');
-    foreignElement.setAttribute('height', '30px');
+    foreignElement.setAttribute('width', `${EDGE_SUGGESTION_WIDTH}px`);
+    foreignElement.setAttribute('height', `${NODE_HEIGHT}px`);
     foreignElement.setAttribute(
       'transform',
       translate(nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING, nodeY)
@@ -171,9 +188,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
     const textInput = document.createElement('input');
     textInput.setAttribute('type', 'text');
-    textInput.style.width = '200px';
-    textInput.style.height = '30px';
-    textInput.style.border = '1px solid black';
+    textInput.style.width = `${EDGE_SUGGESTION_WIDTH}px`;
+    textInput.style.height = `${NODE_HEIGHT}px`;
+    textInput.style.border = '1px solid dodgerblue';
     textInput.style.borderRadius = '3px';
     textInput.addEventListener('keyup', (event) => {
       // On keypress, trigger a new search
@@ -309,6 +326,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     this.chart.selectAll('.suggestion-search-box').remove();
     this.chart.selectAll('.add-relationships-button').remove();
     this.chart.selectAll('.cancel-suggestion-mode-button').remove();
+    this.chart.selectAll('.suggestion-column-label').remove();
     this.chart.selectAll('.node-suggestion').remove();
     this.chart.selectAll('.suggestion-loading-indicator').remove();
   }
