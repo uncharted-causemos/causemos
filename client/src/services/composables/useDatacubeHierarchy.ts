@@ -126,14 +126,39 @@ export default function useDatacubeHierarchy(
       updatedList.clear();
       updatedList.add(regionId);
     }
-    // Assign new object to selectedRegionIdsAtAllLevels.value to trigger reactivity updates.
-    selectedRegionIdsAtAllLevels.value = Object.assign(
+    const updatedSelectedRegionIdsAtAllLevels = Object.assign(
       {},
       selectedRegionIdsAtAllLevels.value,
       {
         [adminLevel]: updatedList
       }
     );
+    // The new de/selection at the current adminLevel
+    // may invalidate existing selections at subsequent admin levels
+    // e.g., the case where a previous selection at admin1 (e.g., Tanzania_Arusha) conflicts
+    //  with a more recent selection on the country level (e.g. Kenya)
+    ADMIN_LEVEL_KEYS.forEach((adminKey, adminIndx) => {
+      const previousAdminKey = adminIndx === 0 ? adminKey : ADMIN_LEVEL_KEYS[adminIndx - 1];
+      if (adminKey !== 'admin4' && adminKey !== 'admin5') {
+        // do we have an explicit selection (i.e., from selectedRegionIdsAtAllLevels) for the previous admin level?
+        //  if yes, then use it check all subsequent existing selection, if any, for compatibility
+        const selectedAtPrevLevel = updatedSelectedRegionIdsAtAllLevels[previousAdminKey];
+        const selectedAtCurrLevel = updatedSelectedRegionIdsAtAllLevels[adminKey];
+        // we do have a selection at the previous level, but is it valid?
+        if (selectedAtPrevLevel.size > 0) {
+          // note the case where a previous selection at admin1 conflicts
+          //  with a more recent selection on the country level
+          // e.g., consider a previous selecction of Tanzania_Arusha at admin1
+          //  followed by a selection of Kenya at the country level
+          const regionsArrAtPrevLevel = Array.from(selectedAtPrevLevel);
+          const validRegionsAtCurrentLevel = Array.from(selectedAtCurrLevel).filter(region => regionsArrAtPrevLevel.some(r => region.startsWith(r)));
+          updatedSelectedRegionIdsAtAllLevels[adminKey] = new Set<string>(validRegionsAtCurrentLevel);
+        }
+      }
+    });
+
+    // Assign new object to selectedRegionIdsAtAllLevels.value to trigger reactivity updates.
+    selectedRegionIdsAtAllLevels.value = updatedSelectedRegionIdsAtAllLevels;
   };
 
   const selectedRegionIds = computed(() => {
@@ -161,6 +186,7 @@ export default function useDatacubeHierarchy(
   return {
     datacubeHierarchy,
     selectedRegionIds,
+    selectedRegionIdsAtAllLevels,
     referenceRegions,
     toggleIsRegionSelected
   };
