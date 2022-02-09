@@ -137,11 +137,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       // TODO: security? escape event.target.value
       this.emit('search-for-concepts', node, (event.target as any).value);
     });
-
     foreignElement.appendChild(textInput);
-
     (this.chart.node() as Element).appendChild(foreignElement);
-
     textInput.focus();
   }
 
@@ -205,7 +202,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
     // Don't trigger double click handler that is used to create a new node
     suggestionGroups.on('dblclick', (event) => {
-      console.log('event', event.stopPropagation());
+      event.stopPropagation();
     });
 
     const cancelButtonX =
