@@ -3,12 +3,13 @@ import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import { Clause, Filters } from '@/types/Filters';
 import _ from 'lodash';
 import { deleteInsight, fetchInsights, InsightFilterFields } from '@/services/insight-service';
+import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-service';
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
 import { AnalyticalQuestion, Insight, InsightMetadata } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
-import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
+import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions } from 'docx';
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
 import { ProjectType } from '@/types/Enums';
@@ -237,7 +238,7 @@ function generateInsightDOCX (
   insight: Insight,
   metadataSummary: string,
   newPage: boolean
-) {
+): ISectionOptions {
   // 72dpi * 8.5 inches width, as word perplexingly uses pixels
   // same height as width so that we can attempt to be consistent with the layout.
   const docxMaxImageSize = 612;
@@ -316,7 +317,7 @@ function generateInsightDOCX (
 function generateQuestionDOCX (
   question: AnalyticalQuestion,
   metadataSummary: string
-) {
+): ISectionOptions {
   const children = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -335,7 +336,66 @@ function generateQuestionDOCX (
   };
 }
 
-function exportDOCX(
+function targetViewsContainCAG(targetViews: string[]): boolean {
+  const validBibiographyTypes = ['quantitative', 'qualitative'];
+  return targetViews.some(v => validBibiographyTypes.includes(v));
+}
+
+async function generateAppendixDOCX(
+  insights: Insight[],
+  metadataSummary: string
+) {
+  const cagIds = Array.from(insights.reduce((acc, item) => {
+    if (
+      item.context_id &&
+      item.context_id.length > 0 &&
+      targetViewsContainCAG(item.target_view)
+    ) {
+      acc.add(item.context_id[0]);
+    }
+    return acc;
+  }, new Set<string>()));
+
+  const result = await getBibiographyFromCagIds(cagIds);
+
+  const children = cagIds
+    .map(id => result.data[id])
+    .flat()
+    .map((bibliography: Bibliography) => {
+      return new Paragraph({
+        alignment: AlignmentType.LEFT,
+        children: [
+          new TextRun({
+            break: 1,
+            size: 24,
+            text: `Title: ${bibliography.title || 'N/A'} ` +
+            `Author: ${bibliography.author || 'N/A'} ` +
+            `Publisher: ${bibliography.publisher_name || 'N/A'} ` +
+            `Publication Date: ${dateFormatter(bibliography.publication_date.date)}`
+          })
+        ]
+      });
+    });
+
+  const bibliographyHeader = new Paragraph({
+    alignment: AlignmentType.CENTER,
+    heading: HeadingLevel.HEADING_2,
+    text: 'Bibliography'
+  });
+  children.unshift(bibliographyHeader);
+
+  const properties = {
+    type: SectionType.NEXT_PAGE
+  };
+  const footers = generateFooterDOCX(metadataSummary);
+  return {
+    children,
+    properties,
+    footers
+  };
+}
+
+async function exportDOCX(
   insights: Insight[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[]
@@ -353,7 +413,13 @@ function exportDOCX(
       acc.push(generateQuestionDOCX(item, metadataSummary));
     }
     return acc;
-  }, <any>[]);
+  }, <ISectionOptions[]>[]);
+
+
+  const bibliographyPages = await generateAppendixDOCX(insights, metadataSummary);
+  console.log(bibliographyPages);
+
+  sections.push(bibliographyPages);
 
   const doc = new Document({
     sections,
