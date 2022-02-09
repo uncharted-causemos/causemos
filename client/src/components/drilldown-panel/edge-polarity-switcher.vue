@@ -39,6 +39,13 @@
           <div class="dropdown-option" @click="setWeight(0.1)">{{ weightValueString(0.1) }}</div>
           <div class="dropdown-option" @click="setWeight(0.5)">{{ weightValueString(0.5) }}</div>
           <div class="dropdown-option" @click="setWeight(0.9)">{{ weightValueString(0.9) }}</div>
+          <div class="dropdown-option" @click="setWeight(inferredWeightValue)">
+            <div> suggested  </div>
+            <div>
+              {{ weightValueString(inferredWeightValue) }}
+              {{ inferredWeightValue }}
+            </div>
+          </div>
         </template>
       </dropdown-control>
     </div>
@@ -89,11 +96,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, ref, computed, PropType } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { EdgeParameter } from '@/types/CAG';
+import { CAGModelSummary, EdgeParameter } from '@/types/CAG';
 
 const EDGE_TYPE_LEVEL = 'level';
 const EDGE_TYPE_TREND = 'trend';
@@ -135,6 +142,10 @@ export default defineComponent({
   },
   emits: ['edge-set-user-polarity', 'edge-set-weights'],
   props: {
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      required: true
+    },
     selectedRelationship: {
       type: Object,
       required: true
@@ -157,6 +168,16 @@ export default defineComponent({
     const currentEdgeType = ref(getEdgeTypeString(props.selectedRelationship as EdgeParameter));
     const currentEdgeWeight = ref(getEdgeWeight(props.selectedRelationship as EdgeParameter));
 
+    const engineWeights = (props.selectedRelationship as EdgeParameter).parameter?.engine_weights;
+
+    const inferredWeights = engineWeights
+      ? engineWeights[props.modelSummary.parameter.engine]
+      : [0, 0];
+
+    const inferredWeightType = inferredWeights[0] > inferredWeights[1] ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
+    const inferredWeightValue = inferredWeights[0] > inferredWeights[1] ? inferredWeights[0] : inferredWeights[1];
+
+
     return {
       ontologyFormatter,
       isEdgeTypeOpen,
@@ -167,6 +188,8 @@ export default defineComponent({
       currentEdgeType,
       currentEdgeWeight,
 
+      inferredWeightType,
+      inferredWeightValue,
       STATEMENT_POLARITY
     };
   },
