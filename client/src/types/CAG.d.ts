@@ -111,6 +111,7 @@ export interface EdgeParameter {
   modified_at?: number;
   parameter?: {
     weights: number[];
+    engine_weights: { [key: string]: any };
   };
   // User polarity is taken into account when the user sets an edge's polarity manually
   user_polarity: number | null; // FIXME: need better ways to handle special case nulls
