@@ -139,7 +139,7 @@ export default function useDatacubeHierarchy(
     //  with a more recent selection on the country level (e.g. Kenya)
     ADMIN_LEVEL_KEYS.forEach((adminKey, adminIndx) => {
       const previousAdminKey = adminIndx === 0 ? adminKey : ADMIN_LEVEL_KEYS[adminIndx - 1];
-      if (previousAdminKey !== 'admin4' && previousAdminKey !== 'admin5' && adminKey !== 'admin4' && adminKey !== 'admin5') {
+      if (adminKey !== 'admin4' && adminKey !== 'admin5') {
         // do we have an explicit selection (i.e., from selectedRegionIdsAtAllLevels) for the previous admin level?
         //  if yes, then use it check all subsequent existing selection, if any, for compatibility
         const selectedAtPrevLevel = updatedSelectedRegionIdsAtAllLevels[previousAdminKey];
