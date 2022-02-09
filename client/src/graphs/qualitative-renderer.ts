@@ -179,7 +179,11 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .data(suggestion => [this.labelFormatter(suggestion.target)])
       .join('text')
       .attr('transform', translate(10, 20))
-      .text(target => target);
+      .text(target => target)
+      .each(function() {
+        // FIXME any
+        svgUtil.truncateTextToWidth(this as any, EDGE_SUGGESTION_WIDTH - 20);
+      });
     // Render incoming edge arrowhead
     suggestionGroups.selectAll('edge-possibility-indicator')
       .data(suggestion => [suggestion.color])
