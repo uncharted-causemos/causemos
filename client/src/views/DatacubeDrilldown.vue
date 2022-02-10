@@ -19,6 +19,7 @@
             >
               <select name="outputs" id="outputs"
                 v-if="outputs.length > 1"
+                :disabled="canChangeOutputVariable === false"
                 @change="onOutputSelectionChange($event)"
               >
                 <option
@@ -57,7 +58,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
+import { computed, defineComponent, Ref, ref, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { mapActions, useStore } from 'vuex';
 import router from '@/router';
@@ -70,7 +71,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { DatacubeStatus, ProjectType } from '@/types/Enums';
+import { DatacubeStatus, ProjectType, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { DataState, ViewState } from '@/types/Insight';
 
 import { DATASET_NAME, isIndicator, getValidatedOutputs, getOutputs, getSelectedOutput } from '@/utils/datacube-util';
@@ -95,22 +96,50 @@ export default defineComponent({
     const datacubeId = route.query.datacube_id as any;
     const datacubeVarId = route.query.datacube_var_id as any;
     const selectedModelId = ref(datacubeId);
+    const dataState = computed(() => store.getters['insightPanel/dataState']);
+    const viewState = computed(() => store.getters['insightPanel/viewState']);
+
+    const initialViewConfig = ref<ViewState | null>(null);
+    const initialDataConfig = ref<DataState | null>(null);
     let datacubeAnalysisItem = null;
     datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === selectedModelId.value);
     if (datacubeVarId !== undefined) {
       datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === selectedModelId.value && item.datacubeId === datacubeVarId);
     }
-    const initialViewConfig = ref<ViewState | null>(null);
-    const initialDataConfig = ref<DataState | null>(null);
     if (datacubeAnalysisItem) {
       initialViewConfig.value = datacubeAnalysisItem.viewConfig;
       initialDataConfig.value = datacubeAnalysisItem.dataConfig;
     }
+
+    watch(
+      () => [
+        viewState.value,
+        dataState.value
+      ],
+      () => {
+        const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+        let currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
+        if (datacubeVarId !== undefined) {
+          currentAnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId && item.datacubeId === datacubeVarId);
+        }
+
+        if (currentAnalysisItem.viewConfig === undefined) {
+          currentAnalysisItem.viewConfig = {} as ViewState;
+        }
+
+        if (currentAnalysisItem.dataConfig === undefined) {
+          currentAnalysisItem.dataConfig = {} as DataState;
+        }
+
+        currentAnalysisItem.viewConfig = viewState.value;
+        currentAnalysisItem.dataConfig = dataState.value;
+        store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+      }
+    );
+
     const metadata = useModelMetadata(selectedModelId);
     const project = computed(() => store.getters['app/project']);
     const projectType = computed(() => store.getters['app/projectType']);
-    const dataState = computed(() => store.getters['insightPanel/dataState']);
-    const viewState = computed(() => store.getters['insightPanel/viewState']);
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
@@ -170,26 +199,6 @@ export default defineComponent({
       setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     };
 
-    watchEffect(() => {
-      const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-      let currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
-      if (datacubeVarId !== undefined) {
-        currentAnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId && item.datacubeId === datacubeVarId);
-      }
-
-      if (currentAnalysisItem.viewConfig === undefined) {
-        currentAnalysisItem.viewConfig = {} as ViewState;
-      }
-
-      if (currentAnalysisItem.dataConfig === undefined) {
-        currentAnalysisItem.dataConfig = {} as DataState;
-      }
-
-      currentAnalysisItem.viewConfig = viewState.value;
-      currentAnalysisItem.dataConfig = dataState.value;
-      store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
-    });
-
     const refreshMetadata = () => {
       if (metadata.value !== null) {
         const cloneMetadata = _.cloneDeep(metadata.value);
@@ -211,6 +220,13 @@ export default defineComponent({
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
+    const canChangeOutputVariable = computed(() => {
+      if (viewState.value && viewState.value.breakdownOption === SPLIT_BY_VARIABLE) {
+        return false;
+      }
+      return true;
+    });
+
     return {
       aggregationOptionFiltered,
       analysisId,
@@ -230,7 +246,8 @@ export default defineComponent({
       onModelParamUpdated,
       DatacubeStatus,
       statusColor,
-      statusLabel
+      statusLabel,
+      canChangeOutputVariable
     };
   },
   data: () => ({

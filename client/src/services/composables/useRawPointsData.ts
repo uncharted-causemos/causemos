@@ -8,7 +8,7 @@ import { SpatialAggregationLevel } from '@/types/Enums';
 import {
   OutputSpecWithId,
   RawOutputDataPoint
-} from '@/types/Runoutput';
+} from '@/types/Outputdata';
 import { getRawOutputDataByTimestamp } from '@/services/outputdata-service';
 import { filterRawDataByRegionIds } from '@/utils/outputdata-util';
 import { DATA_LAYER } from '@/utils/map-util-new';

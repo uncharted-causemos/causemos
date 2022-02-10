@@ -1,12 +1,13 @@
-import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
-import { QualifierInfo, NamedBreakdownData } from '@/types/Datacubes';
+import { Indicator, Model } from '@/types/Datacube';
+import { NamedBreakdownData, QualifierInfo } from '@/types/Datacubes';
+import { QualifierBreakdownResponse } from '@/types/Outputdata';
 import {
   AggregationOption,
   TemporalResolutionOption
 } from '@/types/Enums';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
-import { getQualifierBreakdown } from '../new-datacube-service';
+import { getQualifierBreakdown } from '../outputdata-service';
 
 interface QualifierVariableInfo {
   count: number;

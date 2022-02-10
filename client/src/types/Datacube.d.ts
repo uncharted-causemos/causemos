@@ -125,17 +125,3 @@ export interface QualifierThresholds {
   // No regional timeseries at admin levels greater than this number
   regional_timeseries_max_level: number;
 }
-
-export interface QualifierBreakdownResponse {
-  name: string;
-  options: { name: string; value?: number }[];
-}
-
-export interface QualifierCountsResponse {
-  thresholds: QualifierThresholds;
-  counts: { [key: string]: number }; // Map of qualifier name to number of values
-}
-
-export interface QualifierListsResponse {
-  [key: string]: string[]; // Map of qualifier names to a list of all values for that qualifier
-}

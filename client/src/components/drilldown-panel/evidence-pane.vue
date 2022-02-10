@@ -15,6 +15,14 @@
     </div>
     <slot />
     <div class="pane-summary">Evidence ({{ numberFormatter(evidenceCount) }}), Documents ({{ documentCount }})</div>
+    <div v-if="mapData.features.length > 0">
+      <div style="height:180px">
+        <map-points
+          :map-data="mapData"
+          :formatterFn="mapFormatter"
+        />
+      </div>
+    </div>
     <collapsible-list-header
       v-if="summaryData.children.length"
       @expand-all="expandAll={value: true}"
@@ -195,8 +203,10 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent, ref, PropType, Ref } from 'vue';
+
 import {
   CORRECTION_TYPES,
   getStatementConceptSuggestions,
@@ -209,23 +219,32 @@ import {
   getEvidenceRecommendations
 } from '@/services/curation-service';
 
-import OntologyEditor from '@/components/editors/ontology-editor';
-import PolarityEditor from '@/components/editors/polarity-editor';
-import UnknownPolarityEditor from '@/components/editors/unknown-polarity-editor';
-import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header';
-import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
-import EvidenceGroup from '@/components/drilldown-panel/evidence-group';
-import ModalDocument from '@/components/modals/modal-document';
-import SmallIconButton from '@/components/widgets/small-icon-button';
+import MapPoints from '@/components/kb-explorer/map-points.vue';
+import OntologyEditor from '@/components/editors/ontology-editor.vue';
+import PolarityEditor from '@/components/editors/polarity-editor.vue';
+import UnknownPolarityEditor from '@/components/editors/unknown-polarity-editor.vue';
+import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header.vue';
+import CollapsibleItem from '@/components/drilldown-panel/collapsible-item.vue';
+import EvidenceGroup from '@/components/drilldown-panel/evidence-group.vue';
+import ModalDocument from '@/components/modals/modal-document.vue';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import { CORRECTIONS, CURATIONS, SIDE_PANEL } from '@/utils/messages-util';
-import MessageDisplay from '@/components/widgets/message-display';
-import ModalConfirmation from '@/components/modals/modal-confirmation';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import numberFormatter from '@/formatters/number-formatter';
+import useToaster from '@/services/composables/useToaster';
 
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
+import { Statement, Evidence, DocumentContext } from '@/types/Statement';
+import { AggChild } from '@/utils/aggregations-util';
 
-export default {
+type SummaryData = {
+  children: AggChild<Statement>[],
+  meta: any
+};
+
+export default defineComponent({
   name: 'EvidencePane',
   components: {
     ModalDocument,
@@ -237,13 +256,14 @@ export default {
     EvidenceGroup,
     MessageDisplay,
     SmallIconButton,
-    ModalConfirmation
+    ModalConfirmation,
+    MapPoints
   },
   props: {
     selectedRelationship: {
       type: Object,
       default: null,
-      validator(selectedRelationship) {
+      validator(selectedRelationship: any) {
         return (selectedRelationship !== undefined &&
           selectedRelationship.source !== undefined &&
           selectedRelationship.target !== undefined
@@ -251,7 +271,7 @@ export default {
       }
     },
     statements: {
-      type: Array,
+      type: Array as PropType<Statement[]>,
       default: () => []
     },
     project: {
@@ -275,40 +295,60 @@ export default {
       default: false
     }
   },
-  data: () => ({
-    // Input data
-    activeCorrection: null,
-    activeItem: null,
-    documentModalData: null,
-    textFragment: null,
-
-
+  setup() {
     // Evidence recommendations
-    recommendations: null,
+    const recommendations = ref([]) as Ref<any[]>;
 
+    const summaryData = ref({ children: [], meta: { checked: false } }) as Ref<SummaryData>;
+    const suggestions = ref([]) as Ref<{ name: string; score: number }[]>;
+    const textFragment = ref('');
+    const activeItem = ref(null) as Ref<AggChild<Statement> | null>;
+    const documentModalData = ref(null) as Ref<DocumentContext | null>;
+    const activeCorrection = ref(null) as Ref<CORRECTION_TYPES | null>;
+
+    return {
+      recommendations,
+      summaryData,
+      suggestions,
+      textFragment,
+      activeItem,
+      documentModalData,
+      activeCorrection,
+
+      CORRECTION_TYPES,
+      STATEMENT_POLARITY,
+      messageNoData: SIDE_PANEL.EVIDENCE_NO_DATA,
+
+      toaster: useToaster(),
+
+      mapFormatter: () => ''
+    };
+  },
+  data: () => ({
     // States
     expandAll: null,
     loadingMessage: 'Loading evidence...',
-    summaryData: { children: [], meta: { checked: false } },
-    messageNoData: SIDE_PANEL.EVIDENCE_NO_DATA,
     showConfirmCurationModal: false,
-    curationConfirmedCallback: () => null,
-    suggestions: []
+    curationConfirmedCallback: () => null as any // FIXME
   }),
   computed: {
     numSelectedItems() {
       let cnt = 0;
       this.summaryData.children.forEach(polarityGroup => {
-        cnt += polarityGroup.children.filter(d => d.meta.checked === true).length;
+        if (polarityGroup.children) {
+          cnt += polarityGroup.children.filter((d: AggChild<Statement>) => d.meta.checked === true).length;
+        }
       });
       return cnt;
     },
     canPerformBulkVetting() {
       let numUnknownItemsChecked = 0;
       this.summaryData.children.forEach(polarityGroup => {
-        numUnknownItemsChecked += polarityGroup.children.filter(d => {
-          return d.meta.checked === true && d.meta.polarity === this.STATEMENT_POLARITY.UNKNOWN;
-        }).length;
+        if (polarityGroup.children) {
+          numUnknownItemsChecked += polarityGroup.children.filter((d: AggChild<Statement>) => {
+            return d.meta.checked === true && d.meta.polarity === this.STATEMENT_POLARITY.UNKNOWN;
+          }).length;
+        }
       });
       return (this.numSelectedItems > 0 && numUnknownItemsChecked === 0);
     },
@@ -316,11 +356,12 @@ export default {
       return _.sumBy(this.statements, d => d.wm.num_evidence);
     },
     documentCount() {
-      const docs = [];
+      const docs: string[] = [];
       if (this.summaryData.children.length === 0) return 0;
 
-      this.summaryData.children.forEach(polartyGroup => {
-        polartyGroup.children.forEach(factorGroup => {
+      this.summaryData.children.forEach(polarityGroup => {
+        if (!polarityGroup.children) return;
+        polarityGroup.children.forEach(factorGroup => {
           factorGroup.dataArray.forEach(stmt => {
             stmt.evidence.forEach(evidence => {
               docs.push(evidence.document_context.doc_id);
@@ -329,6 +370,69 @@ export default {
         });
       });
       return _.uniq(docs).length;
+    },
+    mapData() {
+      const result: { type: string; features: any[] } = {
+        type: 'FeatureCollection',
+        features: [
+        ]
+      };
+      if (this.summaryData.children.length === 0) return result;
+
+      // Collect events counts
+      const tracker: Map<string, number> = new Map();
+      this.summaryData.children.forEach(polarityGroup => {
+        if (!polarityGroup.children) return;
+        polarityGroup.children.forEach(factorGroup => {
+          factorGroup.dataArray.forEach(stmt => {
+            const subjGeo = stmt.subj.geo_context;
+            const objGeo = stmt.obj.geo_context;
+
+            if (!_.isEmpty(subjGeo)) {
+              const key = subjGeo?.name + ':' + subjGeo?.location.lat + ':' + subjGeo?.location.lon;
+              const n = tracker.get(key) || 0;
+              tracker.set(key, n + 1);
+            }
+            if (!_.isEmpty(objGeo)) {
+              const key = objGeo?.name + ':' + objGeo?.location.lat + ':' + objGeo?.location.lon;
+              const n = tracker.get(key) || 0;
+              tracker.set(key, n + 1);
+            }
+          });
+        });
+      });
+
+      // Make geojson
+      const baseSize = 10;
+      const max = Math.max(...tracker.values());
+      const min = Math.min(...tracker.values());
+
+      const sizeFn = (count: number, min: number, max: number) => {
+        if (max === min) return baseSize;
+        const size = Math.sqrt((count / (max - min)) * baseSize);
+        return Math.max(size, 3); // keep the smallest radius to 3
+      };
+
+      for (const key of tracker.keys()) {
+        const [name, lat, lon] = key.split(':');
+        const count = tracker.get(key) || 1;
+        const size = sizeFn(count, max, min);
+
+        result.features.push({
+          type: 'Feature',
+          properties: {
+            name: name,
+            count: count,
+            radius: size,
+            color: '#f80'
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [+lon, +lat]
+          }
+        });
+      }
+      return result;
     },
     polarity() {
       return this.selectedRelationship.polarity;
@@ -343,10 +447,6 @@ export default {
       if (_.isEqual(n, o)) return;
       this.refresh();
     }
-  },
-  created() {
-    this.CORRECTION_TYPES = CORRECTION_TYPES;
-    this.STATEMENT_POLARITY = STATEMENT_POLARITY;
   },
   mounted() {
     this.refresh();
@@ -367,43 +467,43 @@ export default {
 
       if (_.isEmpty(this.statements) && this.showEdgeRecommendations === true) {
         this.getRecommendations().then(r => {
-          r.recommendations.forEach(s => {
+          r.recommendations.forEach((s: any) => {
             s.isSelected = false;
           });
           this.recommendations = r.recommendations;
         });
       }
     },
-    shouldShowStatementGroup(polarity) {
+    shouldShowStatementGroup(polarity: any) {
       // this.selectedRelationship.polarity === undefined in knowledge space
       // this.selectedRelationship.polarity === 0 when it's an ambigious edge (show all statement groups)
       return +polarity === this.selectedRelationship.polarity || this.selectedRelationship.polarity === undefined || this.selectedRelationship.polarity === 0;
     },
-    override(value) {
+    override(value: AggChild<Statement>) {
       if (this.expandAll !== null) return this.expandAll;
       else return { value: this.shouldShowStatementGroup(value.key) };
     },
-    unusedStatementsStyle(value) {
+    unusedStatementsStyle(value: AggChild<Statement>) {
       return (this.shouldShowStatementGroup(value.key) === false) ? { opacity: 0.4 } : null;
     },
-    unusedStatementsNotice(value) {
+    unusedStatementsNotice(value: AggChild<Statement>) {
       if (this.shouldShowStatementGroup(value.key)) return '';
       else return '(' + value.count + ' statement' + (value.count !== 1 ? 's' : '') + ', not used in analysis)';
     },
-    openDocumentModal(evidence) {
+    openDocumentModal(evidence: Evidence) {
       this.documentModalData = evidence.document_context;
       this.textFragment = evidence.evidence_context.text;
     },
-    toggle(item) {
+    toggle(item: AggChild<Statement>) {
       // Recursive helpers
-      const recursiveDown = (item, newState) => {
+      const recursiveDown = (item: AggChild<Statement>, newState: any) => {
         item.meta.checked = newState;
         if (!item.children) return;
         item.children.forEach(child => recursiveDown(child, newState));
       };
 
-      const recursiveUp = (item) => {
-        if (!_.isEmpty(item.children)) {
+      const recursiveUp = (item: AggChild<Statement>) => {
+        if (item.children && !_.isEmpty(item.children)) {
           item.children.forEach(child => recursiveUp(child));
           const numChecked = item.children.filter(d => d.meta.checked || d.meta.isSomeChildChecked).length;
           item.meta.checked = numChecked === item.children.length;
@@ -417,9 +517,9 @@ export default {
 
       // Traverse down to change children, then traverse up to update parents
       recursiveDown(item, item.meta.checked);
-      recursiveUp(this.summaryData);
+      recursiveUp(this.summaryData as AggChild<Statement>);
     },
-    async openEditor(item, type) {
+    async openEditor(item: AggChild<Statement>, type: CORRECTION_TYPES) {
       if (item === this.activeItem && type === this.activeCorrection) {
         this.activeItem = null;
         this.activeCorrection = null;
@@ -436,26 +536,26 @@ export default {
       this.activeItem = null;
       this.activeCorrection = null;
     },
-    async getSuggestions(item, correctionType) {
+    async getSuggestions(item: AggChild<Statement>, correctionType: CORRECTION_TYPES) {
       const ids = item.dataArray.map(d => d.id);
       const suggestions = await getStatementConceptSuggestions(this.project, ids, correctionType);
       return suggestions;
     },
-    checkResult(result, successMsg, errorMsg) {
+    checkResult(result: any, successMsg: string, errorMsg: string) {
       if (result.status === 200) {
         this.toaster(successMsg, 'success', false);
       } else {
         this.toaster(errorMsg, 'error', true);
       }
     },
-    confirmUpdatePolarity(item, newPolarity) {
+    confirmUpdatePolarity(item: AggChild<Statement>, newPolarity: any) {
       if (!this.shouldConfirmCurations) {
         this.updatePolarity(item, newPolarity);
         return;
       }
       this.openConfirmCurationModal(() => { this.updatePolarity(item, newPolarity); });
     },
-    async updatePolarity(item, newPolarity) {
+    async updatePolarity(item: AggChild<Statement>, newPolarity: any) {
       const subj = {
         oldValue: item.meta.subj_polarity,
         newValue: newPolarity.subjPolarity
@@ -468,22 +568,22 @@ export default {
       const result = await updateStatementsPolarity(this.project, statementIds, subj, obj);
       this.checkResult(result, CORRECTIONS.SUCCESSFUL_CORRECTION, CORRECTIONS.ERRONEOUS_CORRECTION);
     },
-    confirmDiscardStatements(item) {
+    confirmDiscardStatements(item: AggChild<Statement>) {
       if (!this.shouldConfirmCurations) {
         this.discardStatements(item);
         return;
       }
       this.openConfirmCurationModal(() => { this.discardStatements(item); });
     },
-    async discardStatements(item) {
-      let statementIds = [];
-      let selectedItems = [];
+    async discardStatements(item: AggChild<Statement>) {
+      let statementIds: string[] = [];
+      let selectedItems: AggChild<Statement>[] = [];
       if (!_.isNil(item)) {
         selectedItems = [item];
       } else {
-        this.summaryData.children.forEach(polarityGroup => {
-          if (!_.isEmpty(polarityGroup.children)) {
-            polarityGroup.children.forEach(item => {
+        this.summaryData.children.forEach((polarityGroup: AggChild<Statement>) => {
+          if (polarityGroup.children && !_.isEmpty(polarityGroup.children)) {
+            polarityGroup.children.forEach((item: AggChild<Statement>) => {
               if (item.meta.checked) {
                 selectedItems.push(item);
               }
@@ -499,6 +599,7 @@ export default {
       const updateResult = await discardStatements(this.project, statementIds);
       this.checkResult(updateResult, CORRECTIONS.SUCCESSFUL_CORRECTION, CORRECTIONS.ERRONEOUS_CORRECTION);
     },
+    /* Not currently used Feb 2022
     confirmUpdateUnknownBulk(bulkType) {
       if (!this.shouldConfirmCurations) {
         this.updateUnknownBulk(bulkType);
@@ -520,14 +621,15 @@ export default {
       const result = await updateStatementsPolarity(this.project, statementIds, subj, obj);
       this.checkResult(result, CORRECTIONS.SUCCESSFUL_CORRECTION, CORRECTIONS.ERRONEOUS_CORRECTION);
     },
-    confirmUpdateGrounding(item, curGrounding, newGrounding, resourceType) {
+    */
+    confirmUpdateGrounding(item: AggChild<Statement>, curGrounding: string, newGrounding: string, resourceType: number) {
       if (!this.shouldConfirmCurations) {
         this.updateGrounding(item, curGrounding, newGrounding, resourceType);
         return;
       }
       this.openConfirmCurationModal(() => { this.updateGrounding(item, curGrounding, newGrounding, resourceType); });
     },
-    async updateGrounding(item, curGrounding, newGrounding, resourceType) {
+    async updateGrounding(item: AggChild<Statement>, curGrounding: string, newGrounding: string, resourceType: number) {
       let subj = {};
       let obj = {};
       if (resourceType === CORRECTION_TYPES.ONTOLOGY_SUBJ) {
@@ -542,10 +644,14 @@ export default {
         };
       }
       const statementIds = item.dataArray.map(statement => statement.id);
-      const result = await updateStatementsFactorGrounding(this.project, statementIds, subj, obj);
+      const result = await updateStatementsFactorGrounding(
+        this.project,
+        statementIds,
+        subj,
+        obj);
 
       // Emit the updated relations - use in CAG space to retain newly grounded data
-      const relation = { id: '' };
+      const relation: any = { id: '' };
       if (resourceType === CORRECTION_TYPES.ONTOLOGY_SUBJ) {
         relation.source = newGrounding;
         relation.target = item.dataArray[0].obj.concept;
@@ -558,20 +664,20 @@ export default {
 
       this.checkResult(result, CORRECTIONS.SUCCESSFUL_CORRECTION, CORRECTIONS.ERRONEOUS_CORRECTION);
     },
-    confirmVet(item) {
+    confirmVet(item: AggChild<Statement>) {
       if (!this.shouldConfirmCurations) {
         this.vet(item);
         return;
       }
       this.openConfirmCurationModal(() => { this.vet(item); });
     },
-    async vet(item) {
-      let statementIds = [];
+    async vet(item: AggChild<Statement>) {
+      let statementIds: string[] = [];
       if (!_.isEmpty(item)) {
         statementIds = item.dataArray.map(statement => statement.id);
       } else {
         this.summaryData.children.forEach(group => {
-          if (group.key !== 0) {
+          if ((group.key as any) !== 0 && group.children) {
             group.children.forEach(child => {
               if (child.meta.checked) {
                 statementIds = statementIds.concat(child.dataArray.map(s => s.id));
@@ -584,19 +690,19 @@ export default {
       const result = await vetStatements(this.project, statementIds);
       this.checkResult(result, CURATIONS.SUCCESSFUL_CURATION, CURATIONS.ERRONEOUS_CURATION);
     },
-    confirmReverseRelation(item) {
+    confirmReverseRelation(item: AggChild<Statement>) {
       if (!this.shouldConfirmCurations) {
         this.reverseRelation(item);
         return;
       }
       this.openConfirmCurationModal(() => { this.reverseRelation(item); });
     },
-    async reverseRelation(item) {
+    async reverseRelation(item: AggChild<Statement>) {
       const statementIds = item.dataArray.map(statement => statement.id);
       const result = await reverseStatementsRelation(this.project, statementIds);
       this.checkResult(result, CURATIONS.SUCCESSFUL_CURATION, CURATIONS.ERRONEOUS_CURATION);
     },
-    openConfirmCurationModal(confirmedCallback) {
+    openConfirmCurationModal(confirmedCallback: any) {
       // Store handler for when the user confirms the curation
       this.curationConfirmedCallback = () => {
         confirmedCallback();
@@ -614,9 +720,9 @@ export default {
       const statements = await getEvidenceRecommendations(this.project, source, target);
       return statements;
     },
-    toggleRecommendation(idx) {
+    toggleRecommendation(idx: number) {
       if (this.recommendations) {
-        this.recommendations[idx].isSelected = !this.recommendations.isSelected;
+        this.recommendations[idx].isSelected = !this.recommendations[idx].isSelected;
       }
     },
     addRecommendations() {
@@ -624,7 +730,7 @@ export default {
       this.$emit('add-edge-evidence-recommendations', ids);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

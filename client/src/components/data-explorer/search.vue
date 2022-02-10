@@ -9,7 +9,6 @@
           class="tab-bar"
           :tabs="tabs"
           :active-tab-id="view"
-          @tab-click="setActive"
         />
         <div class="tab-content">
           <div class="tab-pane active">
@@ -23,14 +22,15 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
-import SearchBar from '@/components/data-explorer/search-bar';
-import SearchListview from '@/components/data-explorer/search-listview';
+import SearchBar from '@/components/data-explorer/search-bar.vue';
+import SearchListview from '@/components/data-explorer/search-listview.vue';
 import TabBar from '../widgets/tab-bar.vue';
+import { defineComponent, ref } from 'vue';
 
-export default {
+export default defineComponent({
   name: 'Search',
   components: {
     SearchBar,
@@ -68,13 +68,19 @@ export default {
       default: () => []
     }
   },
+  setup() {
+    const view = ref('list');
+
+    return {
+      view
+    };
+  },
   computed: {
     ...mapGetters({
       filters: 'dataSearch/filters'
     })
   },
   created() {
-    this.view = 'list';
     // Noote: Since `beforeRouteUpdate` or beforeRouteLeave isn't triggering, use $Watch on route instead.
     // Although this is an valid implementation. further investigation on `beforeRoute` hooks might be needed.
     this.$watch(
@@ -92,15 +98,12 @@ export default {
       setSearchFilters: 'dataSearch/setSearchFilters',
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
-    setActive(tabId) {
-      this.setView(tabId);
-    },
     syncStateFromRoute() {
       const filters = _.get(this.$route, 'query.filters', {});
       this.setSearchFilters(filters);
     }
   }
-};
+});
 </script>
 
 <style lang='scss' scoped>

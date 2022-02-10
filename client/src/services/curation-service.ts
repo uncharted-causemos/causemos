@@ -22,12 +22,12 @@ export enum CURATION_STATES {
 
 type StatementsPromise = Promise<Statement[]>
 
-interface ConceptChange {
-  oldValue: string;
-  newValue: string;
+export interface ConceptChange {
+  oldValue?: string;
+  newValue?: string;
 }
 
-interface PolarityChange {
+export interface PolarityChange {
   oldValue: number;
   newValue: number;
 }

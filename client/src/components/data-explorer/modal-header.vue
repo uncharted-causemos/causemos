@@ -21,11 +21,12 @@
   </full-screen-modal-header>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapGetters } from 'vuex';
-import FullScreenModalHeader from '../widgets/full-screen-modal-header';
+import FullScreenModalHeader from '../widgets/full-screen-modal-header.vue';
 
-export default {
+export default defineComponent({
   name: 'DataExplorerModalHeader',
   components: {
     FullScreenModalHeader
@@ -47,8 +48,6 @@ export default {
   emits: ['close', 'selection'],
   computed: {
     ...mapGetters({
-      analysisId: 'dataAnalysis/analysisId',
-      project: 'app/project',
       selectedDatacubes: 'dataSearch/selectedDatacubes',
       searchResultsCount: 'dataSearch/searchResultsCount'
     })
@@ -61,7 +60,7 @@ export default {
       this.$emit('close');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

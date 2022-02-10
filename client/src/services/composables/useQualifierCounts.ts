@@ -1,7 +1,8 @@
-import { Indicator, Model, QualifierCountsResponse, QualifierThresholds } from '@/types/Datacube';
+import { Indicator, Model, QualifierThresholds } from '@/types/Datacube';
+import { QualifierCountsResponse } from '@/types/Outputdata';
 import { QualifierInfo } from '@/types/Datacubes';
 import { Ref, ref, watchEffect } from 'vue';
-import { getQualifierCounts } from '../new-datacube-service';
+import { getQualifierCounts } from '@/services/outputdata-service';
 
 const FETCH_BY_DEFAULT_LIMIT = 100;
 

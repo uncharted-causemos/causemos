@@ -21,75 +21,77 @@
           <cag-comments-button :model-summary="modelSummary" />
         </template>
       </cag-side-panel>
-      <main class="insight-capture">
-        <div
-          v-if="activeTab === 'flow' && scenarioData && graphData"
-          class="model-graph-layout-container">
-          <model-graph
-            :data="graphData"
-            :scenario-data="scenarioData"
-            :visual-state="visualState"
-            ref="modelGraph"
-            @background-click="onBackgroundClick"
-            @node-sensitivity="onNodeSensitivity"
-            @node-drilldown="openNodeDrilldownView"
-            @edge-click="showRelation"
-          />
-          <div class="legend-config-row">
-            <cag-legend
-              :are-ridgelines-visible="selectedScenarioId !== null"
-              :time-scale="timeScale"
-              :show-data-warnings="true"
+      <div class="insight-capture tab-content">
+        <main>
+          <div
+            v-if="activeTab === 'flow' && scenarioData && graphData"
+            class="model-graph-layout-container">
+            <model-graph
+              :data="graphData"
+              :scenario-data="scenarioData"
+              :visual-state="visualState"
+              ref="modelGraph"
+              @background-click="onBackgroundClick"
+              @node-sensitivity="onNodeSensitivity"
+              @node-drilldown="openNodeDrilldownView"
+              @edge-click="showRelation"
             />
-            <config-bar
-              class="config-bar"
-              :model-summary="modelSummary"
-              @model-parameter-changed="$emit('model-parameter-changed')"
-            />
+            <div class="legend-config-row">
+              <cag-legend
+                :are-ridgelines-visible="selectedScenarioId !== null"
+                :time-scale="timeScale"
+                :show-data-warnings="true"
+              />
+              <config-bar
+                class="config-bar"
+                :model-summary="modelSummary"
+                @model-parameter-changed="$emit('model-parameter-changed')"
+              />
+            </div>
           </div>
-        </div>
-        <sensitivity-analysis
-          v-if="activeTab === 'matrix'"
-          :model-summary="modelSummary"
-          :sensitivity-result="sensitivityResult"
-          @set-analysis-type="setSensitivityAnalysisType"
-        />
-      </main>
-      <drilldown-panel
-        class="quantitative-drilldown"
-        :is-open="isDrilldownOpen"
-        :tabs="drilldownTabs"
-        :active-tab-id="activeDrilldownTab"
-        @close="closeDrilldown"
-        @tab-click="onDrilldownTabClick">
-
-        <template #content>
-          <evidence-pane
-            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-            :show-curation-actions="false"
-            :selected-relationship="selectedEdge"
-            :statements="selectedStatements"
-            :project="project"
-            :is-fetching-statements="isFetchingStatements"
-            :should-confirm-curations="true">
-            <edge-polarity-switcher
-              :selected-relationship="selectedEdge"
-              @edge-set-user-polarity="setEdgeUserPolarity"
-              @edge-set-weights="setEdgeWeights"
-            />
-          </evidence-pane>
-          <!-- make this a component later-->
-          <sensitivity-pane
-            v-else-if="activeDrilldownTab === PANE_ID.SENSITIVITY && selectedNode !== null"
-            :model-components="modelComponents"
-            :selected-node="selectedNode"
+          <sensitivity-analysis
+            v-if="activeTab === 'matrix'"
+            :model-summary="modelSummary"
             :sensitivity-result="sensitivityResult"
-            @open-drilldown="openNodeDrilldownView"
-            @highlight-node-paths="highlightNodePaths"
-          >
-          </sensitivity-pane>
-        </template>
-      </drilldown-panel>
+            @set-analysis-type="setSensitivityAnalysisType"
+          />
+        </main>
+        <drilldown-panel
+          class="quantitative-drilldown"
+          :is-open="isDrilldownOpen"
+          :tabs="drilldownTabs"
+          :active-tab-id="activeDrilldownTab"
+          @close="closeDrilldown"
+          @tab-click="onDrilldownTabClick">
+
+          <template #content>
+            <evidence-pane
+              v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
+              :show-curation-actions="false"
+              :selected-relationship="selectedEdge"
+              :statements="selectedStatements"
+              :project="project"
+              :is-fetching-statements="isFetchingStatements"
+              :should-confirm-curations="true">
+              <edge-polarity-switcher
+                :selected-relationship="selectedEdge"
+                @edge-set-user-polarity="setEdgeUserPolarity"
+                @edge-set-weights="setEdgeWeights"
+              />
+            </evidence-pane>
+            <!-- make this a component later-->
+            <sensitivity-pane
+              v-else-if="activeDrilldownTab === PANE_ID.SENSITIVITY && selectedNode !== null"
+              :model-components="modelComponents"
+              :selected-node="selectedNode"
+              :sensitivity-result="sensitivityResult"
+              @open-drilldown="openNodeDrilldownView"
+              @highlight-node-paths="highlightNodePaths"
+            >
+            </sensitivity-pane>
+          </template>
+        </drilldown-panel>
+      </div>
     </div>
   </div>
 </template>
@@ -401,8 +403,8 @@ export default defineComponent({
       // FIXME: endTime depends on time scale
       const experimentPayload = {
         experimentType: 'PROJECTION',
-        experimentParams: {
-          numTimeSteps: numTimeSteps,
+        experimentParam: {
+          numTimesteps: numTimeSteps,
           startTime: start,
           endTime: moment(start).add(numTimeSteps - 1, 'M').valueOf(),
           constraints: scenario.parameter.constraints
@@ -498,7 +500,7 @@ main {
 .legend-config-row {
   position: absolute;
   bottom: 0;
-  left: -$navbar-outer-height;
+  left: 0;
   display: flex;
   gap: 10px;
   align-items: flex-end;

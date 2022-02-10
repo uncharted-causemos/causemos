@@ -22,142 +22,144 @@
           <cag-comments-button :model-summary="modelSummary" />
         </template>
       </cag-side-panel>
-      <div class="graph-container" @dblclick="onBackgroundDblClick">
-        <empty-state-instructions v-if="showEmptyStateInstructions" />
-        <CAG-graph
-          v-else
-          ref="cagGraph"
-          class="cagGraph insight-capture"
-          :data="modelComponents"
-          :show-new-node="showNewNode"
-          :selected-time-scale="modelSummary?.parameter?.time_scale"
-          @refresh="captureThumbnail"
-          @new-edge="addEdge"
-          @background-click="onBackgroundClick"
-          @background-dbl-click="onBackgroundDblClick"
-          @node-click="onNodeClick"
-          @edge-click="onEdgeClick"
-          @delete="onDelete"
-          @edge-set-user-polarity="setEdgeUserPolarity"
-          @suggestion-selected="onSuggestionSelected"
-          @datacube-selected="onDatacubeSelected"
-          @suggestion-duplicated="onSuggestionDuplicated"
-          @rename-node="openRenameModal"
-          @merge-nodes="mergeNodes"
-        />
-        <div class="legend-config-row">
-          <cag-legend
-            v-if="!showEmptyStateInstructions"
-            :histogram-time-slice-labels="[]"
+      <div class="insight-capture tab-content">
+        <div class="graph-container" @dblclick="onBackgroundDblClick">
+          <empty-state-instructions v-if="showEmptyStateInstructions" />
+          <CAG-graph
+            v-else
+            ref="cagGraph"
+            class="cagGraph"
+            :data="modelComponents"
+            :show-new-node="showNewNode"
+            :selected-time-scale="modelSummary?.parameter?.time_scale"
+            @refresh="captureThumbnail"
+            @new-edge="addEdge"
+            @background-click="onBackgroundClick"
+            @background-dbl-click="onBackgroundDblClick"
+            @node-click="onNodeClick"
+            @edge-click="onEdgeClick"
+            @delete="onDelete"
+            @edge-set-user-polarity="setEdgeUserPolarity"
+            @suggestion-selected="onSuggestionSelected"
+            @datacube-selected="onDatacubeSelected"
+            @suggestion-duplicated="onSuggestionDuplicated"
+            @rename-node="openRenameModal"
+            @merge-nodes="mergeNodes"
           />
-          <div class="config-bar" v-if="selectedTimeScaleLabel !== null">
-            Time scale of interest:
-            <strong>{{ selectedTimeScaleLabel}} </strong>
-            <button
-              class="btn btn-sm btn-default"
-              disabled
-              @click="showModalTimeScale = true"
-            >
-              <i class="fa fa-fw fa-pencil" />
-            </button>
-            .
+          <div class="legend-config-row">
+            <cag-legend
+              v-if="!showEmptyStateInstructions"
+              :histogram-time-slice-labels="[]"
+            />
+            <div class="config-bar" v-if="selectedTimeScaleLabel !== null">
+              Time scale of interest:
+              <strong>{{ selectedTimeScaleLabel}} </strong>
+              <button
+                class="btn btn-sm btn-default"
+                disabled
+                @click="showModalTimeScale = true"
+              >
+                <i class="fa fa-fw fa-pencil" />
+              </button>
+              .
+            </div>
           </div>
         </div>
+        <drilldown-panel
+          class="qualitative-drilldown"
+          :is-open="isDrilldownOpen"
+          :tabs="drilldownTabs"
+          :active-tab-id="activeDrilldownTab"
+          :overlay-pane-title="overlayPaneTitle"
+          :is-overlay-open="isDrilldownOverlayOpen"
+          @close="closeDrilldown"
+          @tab-click="onTabClick"
+          @overlay-back="onDrilldownOverlayBack"
+        >
+          <template #content>
+            <evidence-pane
+              v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
+              :selected-relationship="selectedEdge"
+              :statements="selectedStatements"
+              :project="project"
+              :is-fetching-statements="isFetchingStatements"
+              :should-confirm-curations="true"
+              :show-edge-recommendations="true"
+              @updated-relations="resolveUpdatedRelations"
+              @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
+            >
+                <edge-polarity-switcher
+                  :selected-relationship="selectedEdge"
+                  @edge-set-user-polarity="setEdgeUserPolarity"
+                  @edge-set-weights="setEdgeWeights"
+                />
+                <button
+                  style="font-weight: normal; width: 100%"
+                  class="btn"
+                  @click="openPathFind">
+                  Indirect path
+                </button>
+            </evidence-pane>
+            <relationships-pane
+              v-if="
+                activeDrilldownTab === PANE_ID.RELATIONSHIPS &&
+                  selectedNode !== null
+              "
+              :selected-node="selectedNode"
+              :model-components="modelComponents"
+              :statements="selectedStatements"
+              :project="project"
+              :is-fetching-statements="isFetchingStatements"
+              :show-get-suggestions-button="true"
+              @select-edge="onRelationshipClick"
+              @remove-edge="onRemoveRelationship"
+              @show-relationship-suggestions="
+                openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)
+              "
+            />
+            <qualitative-factors-pane
+              v-if="
+                activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null
+              "
+              :selected-item="selectedNode"
+              :number-relationships="countNodeRelationships"
+              :statements="selectedStatements"
+              :project="project"
+              :is-fetching-statements="isFetchingStatements"
+              :should-confirm-curations="true"
+              @show-factor-recommendations="onShowFactorRecommendations"
+              @updated-relations="resolveUpdatedRelations"
+              @add-to-CAG="onAddToCAG"
+              @rename-node="openRenameModal"
+            />
+          </template>
+          <template #overlay-pane>
+            <node-suggestions-pane
+              v-if="
+                activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS &&
+                  selectedNode !== null
+              "
+              :selected-node="selectedNode"
+              :statements="selectedStatements"
+              :graph-data="modelComponents"
+              :is-fetching-statements="isFetchingStatements"
+              @add-to-CAG="onAddToCAG"
+            />
+            <factors-recommendations-pane
+              v-if="
+                activeDrilldownTab === PANE_ID.FACTOR_RECOMMENDATIONS &&
+                  selectedNode !== null &&
+                  factorRecommendationsList.length > 0
+              "
+              :correction="correction"
+              :recommendations="factorRecommendationsList"
+              :curationTrackingId="curationTrackingId"
+              :is-fetching-statements="isFetchingStatements"
+              @close-overlay="onDrilldownOverlayBack"
+            />
+          </template>
+        </drilldown-panel>
       </div>
-      <drilldown-panel
-        class="qualitative-drilldown"
-        :is-open="isDrilldownOpen"
-        :tabs="drilldownTabs"
-        :active-tab-id="activeDrilldownTab"
-        :overlay-pane-title="overlayPaneTitle"
-        :is-overlay-open="isDrilldownOverlayOpen"
-        @close="closeDrilldown"
-        @tab-click="onTabClick"
-        @overlay-back="onDrilldownOverlayBack"
-      >
-        <template #content>
-          <evidence-pane
-            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-            :selected-relationship="selectedEdge"
-            :statements="selectedStatements"
-            :project="project"
-            :is-fetching-statements="isFetchingStatements"
-            :should-confirm-curations="true"
-            :show-edge-recommendations="true"
-            @updated-relations="resolveUpdatedRelations"
-            @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
-          >
-              <edge-polarity-switcher
-                :selected-relationship="selectedEdge"
-                @edge-set-user-polarity="setEdgeUserPolarity"
-                @edge-set-weights="setEdgeWeights"
-              />
-              <button
-                style="font-weight: normal; width: 100%"
-                class="btn"
-                @click="openPathFind">
-                Indirect path
-              </button>
-          </evidence-pane>
-          <relationships-pane
-            v-if="
-              activeDrilldownTab === PANE_ID.RELATIONSHIPS &&
-                selectedNode !== null
-            "
-            :selected-node="selectedNode"
-            :model-components="modelComponents"
-            :statements="selectedStatements"
-            :project="project"
-            :is-fetching-statements="isFetchingStatements"
-            :show-get-suggestions-button="true"
-            @select-edge="onRelationshipClick"
-            @remove-edge="onRemoveRelationship"
-            @show-relationship-suggestions="
-              openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)
-            "
-          />
-          <qualitative-factors-pane
-            v-if="
-              activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null
-            "
-            :selected-item="selectedNode"
-            :number-relationships="countNodeRelationships"
-            :statements="selectedStatements"
-            :project="project"
-            :is-fetching-statements="isFetchingStatements"
-            :should-confirm-curations="true"
-            @show-factor-recommendations="onShowFactorRecommendations"
-            @updated-relations="resolveUpdatedRelations"
-            @add-to-CAG="onAddToCAG"
-            @rename-node="openRenameModal"
-          />
-        </template>
-        <template #overlay-pane>
-          <node-suggestions-pane
-            v-if="
-              activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS &&
-                selectedNode !== null
-            "
-            :selected-node="selectedNode"
-            :statements="selectedStatements"
-            :graph-data="modelComponents"
-            :is-fetching-statements="isFetchingStatements"
-            @add-to-CAG="onAddToCAG"
-          />
-          <factors-recommendations-pane
-            v-if="
-              activeDrilldownTab === PANE_ID.FACTOR_RECOMMENDATIONS &&
-                selectedNode !== null &&
-                factorRecommendationsList.length > 0
-            "
-            :correction="correction"
-            :recommendations="factorRecommendationsList"
-            :curationTrackingId="curationTrackingId"
-            :is-fetching-statements="isFetchingStatements"
-            @close-overlay="onDrilldownOverlayBack"
-          />
-        </template>
-      </drilldown-panel>
     </main>
     <modal-time-scale
       v-if="showModalTimeScale"
@@ -1321,7 +1323,7 @@ export default defineComponent({
 });
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 @import '@/styles/variables';
 
 .qualitative-view-container {
@@ -1364,7 +1366,7 @@ export default defineComponent({
 .legend-config-row {
   position: absolute;
   bottom: 0;
-  left: -$navbar-outer-height;
+  left: 0;
   display: flex;
   gap: 10px;
   align-items: flex-end;
@@ -1380,6 +1382,15 @@ export default defineComponent({
 .side-panel {
   isolation: isolate;
   z-index: 1;
+}
+.tab-content {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  display: flex;
+  background-color: $background-light-2;
 }
 
 .qualitative-drilldown {

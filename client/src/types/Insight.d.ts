@@ -1,4 +1,4 @@
-import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
+import { Timeseries } from '@/types/Timeseries';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { ComparativeAnalysisMode, BinningOptions, RegionRankingCompositionType, DataTransform } from '@/types/Enums';
@@ -104,6 +104,8 @@ export interface DataState {
   selectedScenarioIds?: string[];
   selectedTimestamp?: number | null;
   selectedRegionIds?: string[];
+  selectedRegionIdsAtAllLevels?: { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; };
+  selectedOutputVariables?: string[];
   nonDefaultQualifiers?: string[];
   selectedQualifierValues?: string[];
   selectedYears?: string[];
