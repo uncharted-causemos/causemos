@@ -7,9 +7,9 @@ import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
-import { AnalyticalQuestion, Insight, InsightMetadata } from '@/types/Insight';
+import { AnalyticalQuestion, DataState, Insight, InsightMetadata } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
-import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions } from 'docx';
+import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
 import { ProjectType } from '@/types/Enums';
@@ -341,46 +341,92 @@ function targetViewsContainCAG(targetViews: string[]): boolean {
   return targetViews.some(v => validBibiographyTypes.includes(v));
 }
 
+function generateAPACiteDOCX(b: Bibliography): TextRun[] {
+  const cite = <TextRun[]>[];
+  // line break, author
+  cite.push(new TextRun({
+    break: 1,
+    size: 24,
+    text: b.author.length > 0 ? `${b.author} ` : ''
+  }));
+
+  // date
+  cite.push(new TextRun({
+    size: 24,
+    text: `(${b.publication_date.year}). `
+  }));
+
+  // title
+  const title = b.title.length > 0 ? b.title : `Document: ${b.doc_id}`;
+  cite.push(new TextRun({
+    size: 24,
+    text: `${title}. `
+  }));
+
+  // publisher name
+  if (b.publisher_name.length > 0) {
+    cite.push(new TextRun({
+      italics: true,
+      size: 24,
+      text: `${b.publisher_name}.`
+    }));
+  }
+
+  return cite;
+}
+
 async function generateAppendixDOCX(
   insights: Insight[],
   metadataSummary: string
 ) {
-  const cagIds = Array.from(insights.reduce((acc, item) => {
+  const cags = insights.reduce((acc, item) => {
     if (
       item.context_id &&
       item.context_id.length > 0 &&
       targetViewsContainCAG(item.target_view)
     ) {
-      acc.add(item.context_id[0]);
+      if (!acc.has(item.context_id[0]) && item.data_state) {
+        acc.set(item.context_id[0], item.data_state);
+      }
     }
     return acc;
-  }, new Set<string>()));
-
+  }, new Map<string, DataState>());
+  const cagIds = Array.from(cags.keys());
   const result = await getBibiographyFromCagIds(cagIds);
+  const children = <Paragraph[]>[];
+  console.log(insights);
 
-  const children = cagIds
-    .map(id => result.data[id])
-    .flat()
-    .map((bibliography: Bibliography) => {
-      return new Paragraph({
+  cagIds.forEach(id => {
+    const cagInfo = cags.get(id);
+
+    children.push(new Paragraph({
+      alignment: AlignmentType.LEFT,
+      heading: HeadingLevel.HEADING_2,
+      children: [
+        new TextRun({
+          break: 1,
+          text: `${cagInfo?.modelName}`
+        })
+      ]
+    }));
+
+    result.data[id].forEach((b: Bibliography) => {
+      children.push(new Paragraph({
+        indent: {
+          start: 0,
+          left: 0,
+          hanging: convertInchesToTwip(0.5)
+        },
         alignment: AlignmentType.LEFT,
-        children: [
-          new TextRun({
-            break: 1,
-            size: 24,
-            text: `Title: ${bibliography.title || 'N/A'} ` +
-            `Author: ${bibliography.author || 'N/A'} ` +
-            `Publisher: ${bibliography.publisher_name || 'N/A'} ` +
-            `Publication Date: ${dateFormatter(bibliography.publication_date.date)}`
-          })
-        ]
-      });
+        children: generateAPACiteDOCX(b)
+      }));
     });
+  });
 
   const bibliographyHeader = new Paragraph({
-    alignment: AlignmentType.CENTER,
-    heading: HeadingLevel.HEADING_2,
-    text: 'Bibliography'
+    alignment: AlignmentType.LEFT,
+    heading: HeadingLevel.HEADING_1,
+    text: 'References'
   });
   children.unshift(bibliographyHeader);
 
