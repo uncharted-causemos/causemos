@@ -86,7 +86,7 @@ const createProject = async (kbId, name, description) => {
     ontologyId = r.id;
 
     await projectAdapter.update(
-      [{ id: projectId, ontology: ontologyId }],
+      [{ id: projectId, ontology: ontologyId, tenant_id: tenantId }],
       d => d.id
     );
 
@@ -105,7 +105,7 @@ const createProject = async (kbId, name, description) => {
     ontologyMetadata = await parseOntology(BACKUP_ONTOLOGY_URL);
 
     await projectAdapter.update(
-      [{ id: projectId, ontology: 'default' }],
+      [{ id: projectId, ontology: 'default', tenant_id: tenantId }],
       d => d.id
     );
   }
