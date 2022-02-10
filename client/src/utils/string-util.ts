@@ -1,4 +1,5 @@
 import numberFormatter from '@/formatters/number-formatter';
+import { RuntimeStage } from '@/types/Common';
 
 const cleanTextFragment = (text: string) => {
   return text
@@ -72,6 +73,16 @@ export const chartValueFormatter = (...range: number[]) => {
   return exponentFormatter;
 };
 
+export const runtimeFormatter = (runtime: RuntimeStage) => {
+  if (!runtime || !runtime.start_time || !runtime.end_time || runtime.start_time > runtime.end_time) {
+    return 'unknown';
+  }
+
+  const hhmmss = new Date(runtime.end_time - runtime.start_time).toISOString().substr(11, 8);
+  const trimmed00 = hhmmss.startsWith('00') ? hhmmss.substr(3) : hhmmss;
+  return trimmed00.startsWith('0') ? trimmed00.substr(1) : trimmed00;
+};
+
 const isValidUrl = (value: string) => {
   let url;
   try {
@@ -89,5 +100,6 @@ export default {
   dropOneInternalVowel,
   chartValueFormatter,
   exponentFormatter,
+  runtimeFormatter,
   isValidUrl
 };

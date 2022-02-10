@@ -30,7 +30,7 @@
         <textarea
           v-model="editedDataset.description"
           type="text"
-          rows="6"
+          rows="4"
           class="edit-desc"
         />
         <div style="display: flex">
@@ -177,9 +177,9 @@ import { DatacubeStatus } from '@/types/Enums';
 import { Dataset, DatasetEditable, Indicator } from '@/types/Datacube';
 import { defineComponent } from 'vue';
 import router from '@/router';
-import { RuntimeStage } from '@/types/Common';
 import moment from 'moment';
 import useToaster from '@/services/composables/useToaster';
+import { runtimeFormatter } from '@/utils/string-util';
 
 const MAX_COUNTRIES = 40;
 
@@ -278,7 +278,7 @@ export default defineComponent({
     async fetchIndicators() {
       this.enableOverlay('Loading indicators');
 
-      // fetch model instances
+      // fetch indicators
       const options = {
         excludes: [
           'outputs.ontologies',
@@ -307,15 +307,7 @@ export default defineComponent({
       this.disableOverlay();
     },
     getDatacubeStatusInfo,
-    runtimeFormatter(runtime: RuntimeStage) {
-      if (!runtime || !runtime.start_time || !runtime.end_time || runtime.start_time > runtime.end_time) {
-        return 'unknown';
-      }
-
-      const hhmmss = new Date(runtime.end_time - runtime.start_time).toISOString().substr(11, 8);
-      const trimmed00 = hhmmss.startsWith('00') ? hhmmss.substr(3) : hhmmss;
-      return trimmed00.startsWith('0') ? trimmed00.substr(1) : trimmed00;
-    },
+    runtimeFormatter,
     async saveChanges() {
       const toaster = useToaster();
       this.dataset.name = this.editedDataset.name;

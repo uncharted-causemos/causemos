@@ -41,7 +41,7 @@ export const getDatacubeById = async (datacubeId: string) => {
   const filters = fu.newFilters();
   fu.setClause(filters, 'id', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
-  return cubes && cubes[0];
+  return cubes && cubes.length > 0 && cubes[0];
 };
 
 /**
@@ -122,7 +122,7 @@ export const getDataset = async (dataId: string) => {
     size: 1
   };
   const cubes = await getDatacubes(filters, options);
-  return cubes && cubes[0];
+  return cubes && cubes.length > 0 && cubes[0];
 };
 
 export const getModelRunMetadata = async (dataId: string) => {

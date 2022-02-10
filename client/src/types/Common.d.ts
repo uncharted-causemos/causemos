@@ -46,6 +46,7 @@ export interface DatasetInfo {
   source?: string
 }
 
+// Used as a common interface between DomainProject and DatasetInfo with simplified fields
 export interface DatacubeFamily {
   id: string;
   name: string;
