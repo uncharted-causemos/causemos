@@ -366,10 +366,9 @@ export default defineComponent({
       'search-for-concepts',
       async (eventName: any, userInput: string) => {
         if (this.allEdgeSuggestions === null) return;
-        // TODO: debounce?
         // FIXME: race condition, we should disregard any results that come
-        //  back that are for a different userInput. Or if suggestion mode has
-        //  been exited already
+        //  back that are for a different userInput, or if suggestion mode has
+        //  been exited already.
         if (_.isEmpty(userInput)) {
           this.searchSuggestions = null;
           this.renderer?.setSuggestionData(
