@@ -4,18 +4,8 @@ import {
   RawOutputGeoJson
 } from '@/types/Outputdata';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import { AggregationOption } from '@/types/Enums';
-
-export const RAWDATA_REQUIRED_FIELDS = [
-  'country',
-  'admin1',
-  'admin2',
-  'admin3',
-  'lat',
-  'lng',
-  'timestamp',
-  'value'
-];
 
 // Filter raw data so that the result will contain data points where each data point matches with at least one of the provided regionId
 // i.e return data points where each data point matches with regionId[0] or regionId[1] or regionId[n]
@@ -65,5 +55,5 @@ export const computeTimeseriesFromRawData = (data: RawOutputDataPoint[], aggrega
 };
 
 export const pickQualifiers = (dataPoint: RawOutputDataPoint): { [qualifier: string]: string } => {
-  return _.omit(dataPoint, RAWDATA_REQUIRED_FIELDS);
+  return _.omit(dataPoint, QUALIFIERS_TO_EXCLUDE);
 };

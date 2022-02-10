@@ -11,6 +11,7 @@ import {
 } from '@/types/Outputdata';
 import { getRawOutputDataByTimestamp } from '@/services/outputdata-service';
 import { filterRawDataByRegionIds } from '@/utils/outputdata-util';
+import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
 
 // This fetches raw data points for the analysis map for each output spec
@@ -43,8 +44,13 @@ export default function useRawPointsData(
       const regionFilter = breakdownOption.value === SpatialAggregationLevel.Region
         ? [data.id].filter(d => !!d)
         : selectedRegionIds.value;
+      let result = filterRawDataByRegionIds(data.points, regionFilter);
 
-      return filterRawDataByRegionIds(data.points, regionFilter);
+      // If Split by qualifier, filter data again by qualifier option which is output spec id
+      if (isSplitByQualifierActive(breakdownOption.value)) {
+        result = result.filter(d => d[breakdownOption.value as string] === data.id);
+      }
+      return result;
     });
   });
 
