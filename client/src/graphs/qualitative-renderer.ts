@@ -137,33 +137,48 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       this.exitSuggestionMode.bind(this)
     );
     cancelButton.attr('transform', translate(cancelButtonX, node.y));
-    // Show label
-    this.chart.append('text')
-      .classed('suggestion-column-label', true)
-      .text('Add impacts')
-      .style('fill', 'grey')
-      .style('font-weight', '600')
-      .style('letter-spacing', '1.05')
-      .style('text-transform', 'uppercase')
-      .attr('transform', translate(
-        node.x + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
-        node.y - EDGE_SUGGESTION_SPACING
-      ));
+    // Render label if it doesn't already exist
+    if (
+      (
+        this.chart.node() as Element).querySelector('.suggestion-column-label'
+      ) === null
+    ) {
+      this.chart.append('text')
+        .classed('suggestion-column-label', true)
+        .text('Add impacts')
+        .style('fill', 'grey')
+        .style('font-weight', '600')
+        .style('letter-spacing', '1.05')
+        .style('text-transform', 'uppercase')
+        .attr('transform', translate(
+          node.x + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
+          node.y - EDGE_SUGGESTION_SPACING
+        ));
+    }
     return { cancelButtonX, cancelButtonWidth };
   }
 
   renderSuggestionLoadingIndicator(isLoading: boolean, nodeX: number, nodeY: number) {
     this.chart.selectAll<any, boolean>('.suggestion-loading-indicator')
       .data(isLoading ? [true] : [])
-      .join('text')
-      .classed('suggestion-loading-indicator', true)
-      .attr('transform', () =>
-        translate(
-          nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
-          nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING + 20
-        )
-      )
-      .text('Loading suggestions...');
+      .join(
+        enter => enter.append('text')
+          .classed('suggestion-loading-indicator', true)
+          .attr('transform', () =>
+            translate(
+              nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
+              nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING + 20
+            )
+          )
+          .text('Loading suggestions...')
+          .style('opacity', 0)
+          .call(enter => enter.transition()
+            .delay(1000)
+            .style('opacity', 1)
+          ),
+        update => update,
+        exit => exit.remove()
+      );
   }
 
   renderSearchBox(node: INode<NodeParameter>, nodeX: number, nodeY: number) {
@@ -250,33 +265,33 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
           .classed('node-suggestion', true)
           .style('cursor', 'pointer')
           .attr('transform', suggestion => translate(suggestion.x, suggestion.y + 10))
-          .style('opacity', 0.5)
-          .call(enter => enter.transition()
-            .attr('transform', suggestion => translate(suggestion.x, suggestion.y))
-            .style('opacity', 1)
-          ),
-        update => update
-          .call(update => update.transition()
-            .attr('transform', suggestion => translate(suggestion.x, suggestion.y))
-          ),
+          .style('opacity', 0.5),
+        update => update,
         exit => exit
-          .style('opacity', 1)
           .call(exit => exit.transition()
-            .attr('transform', suggestion => translate(suggestion.x, suggestion.y + 30))
             .style('opacity', 0)
             .remove()
           )
+      )
+      // Apply transition to all elements (enter & update & exit) to ensure
+      //  that they all end up in full opacity at the right place. This
+      //  addresses an issue where elements that were fading out and then
+      //  re-added would keep their half-gone position and opacity values.
+      .call(join => join.transition()
+        .attr('transform', suggestion => translate(suggestion.x, suggestion.y))
+        .style('opacity', 1)
       );
     // Render node background
     suggestionGroups.selectAll('rect')
       .data(d => [d])
       .join('rect')
-      .attr('width', 200)
+      .attr('width', EDGE_SUGGESTION_WIDTH)
       .attr('height', NODE_HEIGHT)
       .attr('transform', translate(0, 0))
-      .style('stroke-width', 1)
-      .style('stroke', 'black')
-      .style('fill', 'white');
+      .style('stroke', DEFAULT_STYLE.node.stroke)
+      .style('fill', DEFAULT_STYLE.node.fill)
+      .style('border-radius', DEFAULT_STYLE.node.borderRadius)
+      .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
     // Render node label
     suggestionGroups.selectAll('text')
       .data(entry => [this.labelFormatter(entry.suggestion.target)])
