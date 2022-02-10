@@ -350,12 +350,12 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       });
   }
 
-  createOrUpdateAddButton(selectedSuggestionCount: number) {
-    const addRelationshipsButtonLabel = `Add ${selectedSuggestionCount} relationship${
-      selectedSuggestionCount !== 1 ? 's' : ''
+  createOrUpdateAddButton(selectedCount: number) {
+    const text = `Add ${selectedCount} relationship${
+      selectedCount !== 1 ? 's' : ''
     }`;
     const addRelationshipsButton = createOrUpdateButton(
-      addRelationshipsButtonLabel,
+      text,
       'add-relationships-button',
       this.chart as unknown as D3Selection,
       (event: any) => {

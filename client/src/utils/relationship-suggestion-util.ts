@@ -141,7 +141,11 @@ export const getEdgesFromConcepts = (
   });
 };
 
-// TODO: document
+/**
+ * Checks the `graphData` to see which of the suggestions will require new nodes,
+ *  which will require new edges, and which will simply need to add evidence to
+ *  existing edges.
+ */
 export const calculateNewNodesAndEdges = (
   selectedSuggestions: {
     source: string;
@@ -154,7 +158,6 @@ export const calculateNewNodesAndEdges = (
   // Calculate if there are new nodes
   const graphNodes = graphData.nodes;
   const newNodes: NodeParameter[] = [];
-
   selectedSuggestions.forEach(({ source, target }) => {
     // Check source
     if (!_.some(graphNodes, d => d.concept === source)) {
@@ -167,7 +170,6 @@ export const calculateNewNodesAndEdges = (
         });
       }
     }
-
     // Check target
     if (!_.some(graphNodes, d => d.concept === target)) {
       if (!_.some(newNodes, d => d.concept === target)) {
@@ -180,7 +182,6 @@ export const calculateNewNodesAndEdges = (
       }
     }
   });
-
   // Combine new edges with existing ones to ensure we don't create duplicates
   const graphEdges = graphData.edges;
   const deduplicatedEdges = selectedSuggestions.map(newEdge => {
@@ -198,6 +199,5 @@ export const calculateNewNodesAndEdges = (
       return newEdge;
     }
   });
-
   return { nodes: newNodes, edges: deduplicatedEdges };
 };
