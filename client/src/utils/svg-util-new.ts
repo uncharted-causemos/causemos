@@ -26,7 +26,13 @@ const STYLES = {
   }
 };
 
-// TODO: document that existing children with the supplied classname will be replaced
+/**
+ * Creates a button with a dynamically calculated width based on the button text.
+ * If an element with class name `className` already exists, it will be updated.
+ * @param parent the D3Selection to add the button to
+ * @param style one of SVG_BUTTON_STYLES
+ * @returns an object with the `buttonSelection` and `dynamicWidth`
+ */
 export const createOrUpdateButton = (
   text: string,
   className: string,
@@ -68,7 +74,7 @@ export const createOrUpdateButton = (
     .attr('rx', 2)
     .attr('ry', 2)
     .style('fill', selectedStyle.fill);
-
+  // Hover styles
   buttonSelection
     .on('mouseenter', function() {
       d3.select(this).select('.button-background')
@@ -80,8 +86,6 @@ export const createOrUpdateButton = (
     });
   // Move the label in front of the button background
   label.raise();
-
   buttonSelection.on('click', clickHandler);
-
   return { buttonSelection, dynamicWidth };
 };
