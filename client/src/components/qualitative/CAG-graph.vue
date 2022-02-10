@@ -188,6 +188,7 @@ export default defineComponent({
 
     this.renderer.on('background-click', () => {
       rendererRef.resetAnnotations();
+      rendererRef.exitSuggestionMode();
       this.$emit('background-click');
     });
 
