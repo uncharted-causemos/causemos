@@ -379,19 +379,9 @@ async function generateAppendixDOCX(
   insights: Insight[],
   metadataSummary: string
 ) {
-  const cags = insights.reduce((acc, item) => {
-    if (
-      item.context_id &&
-      item.context_id.length > 0 &&
-      targetViewsContainCAG(item.target_view)
-    ) {
-      if (!acc.has(item.context_id[0]) && item.data_state) {
-        acc.set(item.context_id[0], item.data_state);
-      }
-    }
-    return acc;
-  }, new Map<string, DataState>());
+  const cags = getCagMapFromInsights(insights);
   const cagIds = Array.from(cags.keys());
+  // FIXME: Not an ideal place to make this call, but generally need consider overhauling this with insights
   const result = await getBibiographyFromCagIds(cagIds);
   const children = <Paragraph[]>[];
 
@@ -436,6 +426,22 @@ async function generateAppendixDOCX(
     properties,
     footers
   };
+}
+
+function getCagMapFromInsights (insights: Insight[]): Map<string, DataState> {
+  const cags = insights.reduce((acc, item) => {
+    if (
+      item.context_id &&
+      item.context_id.length > 0 &&
+      targetViewsContainCAG(item.target_view)
+    ) {
+      if (!acc.has(item.context_id[0]) && item.data_state) {
+        acc.set(item.context_id[0], item.data_state);
+      }
+    }
+    return acc;
+  }, new Map<string, DataState>());
+  return cags;
 }
 
 async function exportDOCX(
