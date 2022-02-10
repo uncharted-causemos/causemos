@@ -24,6 +24,8 @@ const INCREMENTAL_ASSEMBLY_FLOW_ID = '90a09440-e504-4db9-ad89-9db370933c8b';
 
 const queryUtil = new StatementQueryUtil();
 
+const dartService = rootRequire('/services/external/dart-service');
+
 /**
  * Returns projects summary
  */
@@ -42,6 +44,7 @@ const findProject = async (projectId) => {
 };
 
 
+const BACKUP_ONTOLOGY_URL = 'https://raw.githubusercontent.com/WorldModelers/Ontologies/master/CompositionalOntology_metadata.yml';
 /**
  * Creates the metadata and invokes cloning.
  * Note this will return immedately with the new index identifier, but
@@ -52,6 +55,7 @@ const findProject = async (projectId) => {
  * @param {string} name - the human-friendly new index name
  * @param {string} description - description of the project
  */
+
 const createProject = async (kbId, name, description) => {
   const projectAdapter = Adapter.get(RESOURCE.PROJECT);
   const result = await projectAdapter.clone(kbId, name, description);
@@ -67,12 +71,60 @@ const createProject = async (kbId, name, description) => {
   ], () => projectId);
 
   const projectData = await projectAdapter.findOne([{ field: 'id', value: projectId }], {});
+  let ontologyId = '';
 
   Logger.info(`Cached ${projectId}`);
 
-  // Ontology
-  Logger.info(`Processing ontology ${projectData.ontology}`);
-  const ontologyMetadata = await parseOntology(projectData.ontology);
+  /*
+   *
+   *   {
+   *     "id": {UUID},
+   *     "tenant_id": {String},
+   *     "version": {Int},
+   *     "staging_version": {Int},
+   *     "ontology": {String (this is the yml contents)},
+   *     "tags": {Array of String},
+   *     "timestamp": {Double}
+   *   }
+   *
+  */
+
+
+  // Ontology.
+  // 1 - try to get ontology information from DART
+  // 2 - try to get backup ontology
+  Logger.info('Processing ontology');
+  const tenantId = projectData.tenant_id || 'dsmt-e';
+  let ontologyMetadata = {};
+  try {
+    Logger.info('Getting ontology data from DART');
+    const r = await dartService.getOntologyByTenant(tenantId);
+    ontologyId = r.id;
+
+    await projectAdapter.update(
+      [{ id: projectData.id, ontology: ontologyId }],
+      d => d.id
+    );
+
+    const ontology = yaml.safeLoad(r.ontology);
+    if (_.isArray(ontology)) {
+      for (let i = 0; i < ontology.length; i++) {
+        conceptUtil.extractOntologyMetadata(ontologyMetadata, ontology[i].node, '');
+      }
+    }
+  } catch (err) {
+    ontologyMetadata = {};
+  }
+
+  if (_.isEmpty(ontologyMetadata)) {
+    Logger.info('Getting backup ontology');
+    ontologyMetadata = await parseOntology(BACKUP_ONTOLOGY_URL);
+
+    await projectAdapter.update(
+      [{ id: projectData.id, ontology: 'default' }],
+      d => d.id
+    );
+  }
 
   // FIXME: May need idempotent id to support ontology updates from upstream
   const conceptsPayload = Object.keys(ontologyMetadata).map(key => {
@@ -89,9 +141,11 @@ const createProject = async (kbId, name, description) => {
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
   await ontologyAdapter.insert(conceptsPayload, d => d.id);
 
+  // Register new project with INDRA if available
   try {
     await indraService.sendNewProject(result.index, name, projectData.corpus_id);
   } catch (err) {
+    Logger.warn('Failed to register project with Indra');
     console.log(err);
   }
 

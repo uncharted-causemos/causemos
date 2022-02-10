@@ -28,7 +28,7 @@ const getOntologyById = async (id) => {
     timeout: TIMEOUT
   };
   const result = await requestAsPromise(options);
-  return result.ontology ? result.ontology : '';
+  return result;
 };
 
 /**
@@ -46,7 +46,7 @@ const getOntologyByTenant = async (tenantId) => {
     timeout: TIMEOUT
   };
   const result = await requestAsPromise(options);
-  return result.ontology ? result.ontology : '';
+  return result;
 };
 
 /**
