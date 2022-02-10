@@ -72,7 +72,7 @@
       </div>
       <div class="project-column">
         <div class="title">
-          <h3>Domain Model Projects</h3>
+          <h3>Domain Models and Datasets</h3>
           <button
             v-tooltip.top-center="'Create a new domain family project'"
             type="button"
@@ -81,21 +81,29 @@
           >New Domain Model Project</button>
         </div>
         <div class="controls">
+          <radio-button-group
+            :selected-button-value="selectedDataType"
+            :buttons="[
+              { label: 'Domain Models', value: 'models' },
+              { label: 'Datasets', value: 'datasets' }
+            ]"
+            @button-clicked="setDataType"
+          />
           <input
             v-model="searchDomainDatacubes"
             type="text"
-            placeholder="Search projects..."
+            :placeholder="`Search ${selectedDataType}...`"
             class="form-control"
           >
           <dropdown-button
             :inner-button-label="'Sort by'"
             :items="sortingOptions"
-            :selected-item="selectedSortingOptionDomainDatacube"
-            @item-selected="sortDomainDatacubes"
+            :selected-item="selectedDatacubeSortingOption"
+            @item-selected="setDatacubeSort"
           />
         </div>
         <div class="projects-list">
-          <div class="projects-list-header">
+          <div v-if="selectedDataType === 'models'" class="projects-list-header">
             <div class="table-column extra-wide">
               Family name
             </div>
@@ -115,9 +123,23 @@
               <!-- no title necessary for delete button column -->
             </div>
           </div>
+          <div v-else class="projects-list-header">
+            <div class="table-column extra-wide">
+              Dataset name
+            </div>
+            <div class="table-column">
+              Indicators
+            </div>
+            <div class="table-column extra-wide">
+              Source
+            </div>
+            <div class="table-column">
+              Registered
+            </div>
+          </div>
           <div class="projects-list-elements">
             <domain-datacube-project-card
-              v-for="project in filteredDomainProjects"
+              v-for="project in filteredFamilyList"
               :key="project.id"
               :project="project"
               @delete="deleteDomainProject"
@@ -136,10 +158,14 @@ import { mapActions } from 'vuex';
 import projectService from '@/services/project-service';
 import ProjectCard from '@/components/project-card.vue';
 import DomainDatacubeProjectCard from '@/components/domain-datacube-project-card.vue';
+import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
-import { Project, DomainProject, KnowledgeBase } from '@/types/Common';
+import { Project, DomainProject, KnowledgeBase, DatasetInfo, DatacubeFamily } from '@/types/Common';
 import domainProjectService from '@/services/domain-project-service';
 import DropdownButton from '@/components/dropdown-button.vue';
+import API from '@/api/api';
+
+const DISPLAYED_FAMILY_LIMIT = 100;
 
 export default defineComponent({
   name: 'Home',
@@ -147,7 +173,8 @@ export default defineComponent({
     ProjectCard,
     DomainDatacubeProjectCard,
     MessageDisplay,
-    DropdownButton
+    DropdownButton,
+    RadioButtonGroup
   },
   data: () => ({
     search: '',
@@ -158,8 +185,10 @@ export default defineComponent({
     newKnowledgeBase: false,
     searchDomainDatacubes: '',
     projectsListDomainDatacubes: [] as DomainProject[],
+    datasetsList: [] as DatasetInfo[],
     showSortingDropdownDomainDatacubes: false,
-    selectedSortingOptionDomainDatacube: 'Most recent'
+    selectedDatacubeSortingOption: 'Most recent',
+    selectedDataType: 'models'
   }),
   computed: {
     filteredProjects(): Project[] {
@@ -167,13 +196,32 @@ export default defineComponent({
         return project.name.toLowerCase().includes(this.search.toLowerCase());
       });
     },
-    filteredDomainProjects(): DomainProject[] {
-      return this.projectsListDomainDatacubes.filter(project => {
-        const matchesSearchQuery = _.get(project, 'name', '')
-          .toLowerCase()
-          .includes(this.searchDomainDatacubes.toLowerCase());
-        return matchesSearchQuery;
-      });
+    filteredFamilyList(): DatacubeFamily[] {
+      const familyList: DatacubeFamily[] = this.selectedDataType === 'models'
+        ? this.projectsListDomainDatacubes.map(domainModel => ({
+          id: domainModel.id || '',
+          name: domainModel.name || '',
+          type: domainModel.type,
+          numReady: domainModel.ready_instances.length,
+          numDraft: domainModel.draft_instances.length,
+          source: (domainModel.source || (domainModel.maintainer && domainModel.maintainer[0]?.organization)) ?? '',
+          modifiedAt: domainModel.modified_at || domainModel.created_at || 0
+        }))
+        : this.datasetsList.map(dataset => ({
+          id: dataset.data_id,
+          name: dataset.name,
+          type: 'dataset',
+          numReady: dataset.indicator_count,
+          numDraft: 0,
+          source: dataset.source ?? '',
+          modifiedAt: dataset.created_at
+        }));
+      const filtered = familyList.filter(family => family.name.toLowerCase()
+        .includes(this.searchDomainDatacubes.toLowerCase()));
+
+      const sortFunc = this.sortingOptions.indexOf(this.selectedDatacubeSortingOption) === 1
+        ? 'asc' : 'desc';
+      return _.orderBy(filtered, 'modifiedAt', sortFunc).slice(0, DISPLAYED_FAMILY_LIMIT);
     }
   },
   mounted() {
@@ -230,8 +278,8 @@ export default defineComponent({
 
       this.projectsListDomainDatacubes = existingProjects;
 
-      // Sort by modified_at date with latest on top
-      this.sortDomainDatacubesByMostRecentDate();
+      const { data } = await API.get('maas/datacubes/datasets');
+      this.datasetsList = data;
 
       this.disableOverlay();
     },
@@ -247,27 +295,14 @@ export default defineComponent({
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
-    toggleSortingDropdownDomainDatacubes() {
-      this.showSortingDropdownDomainDatacubes = !this.showSortingDropdownDomainDatacubes;
-    },
     sortByMostRecentDate() {
       this.projectsList.sort((a, b) => {
         return b.modified_at - a.modified_at;
       });
     },
-    sortDomainDatacubesByMostRecentDate() {
-      this.projectsListDomainDatacubes.sort((a, b) => {
-        return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
-      });
-    },
     sortByEarliestDate() {
       this.projectsList.sort((a, b) => {
         return a.modified_at - b.modified_at;
-      });
-    },
-    sortDomainDatacubesByEarliestDate() {
-      this.projectsListDomainDatacubes.sort((a, b) => {
-        return a.modified_at && b.modified_at ? a.modified_at - b.modified_at : 0;
       });
     },
     sort(option: string) {
@@ -284,19 +319,12 @@ export default defineComponent({
           this.sortByMostRecentDate();
       }
     },
-    sortDomainDatacubes(option: string) {
-      this.selectedSortingOptionDomainDatacube = option;
+    setDatacubeSort(option: string) {
+      this.selectedDatacubeSortingOption = option;
       this.showSortingDropdownDomainDatacubes = false;
-      switch (option) {
-        case this.sortingOptions[0]:
-          this.sortDomainDatacubesByMostRecentDate();
-          break;
-        case this.sortingOptions[1]:
-          this.sortDomainDatacubesByEarliestDate();
-          break;
-        default:
-          this.sortDomainDatacubesByMostRecentDate();
-      }
+    },
+    setDataType(type: string) {
+      this.selectedDataType = type;
     }
   }
 });

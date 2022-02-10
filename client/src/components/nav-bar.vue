@@ -105,6 +105,7 @@ export default defineComponent({
       home: [],
       newDomainProject: [],
       domainDatacubeOverview: [datacubeProjectItem.value],
+      datasetOverview: [datacubeProjectItem.value],
       modelPublishingExperiment: [
         datacubeProjectItem.value,
         { icon: 'fa-cube', route: null, text: 'Instance' }

@@ -18,7 +18,7 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const paragraphs = computed(() => props.text.split(/\r|\n/).filter(d => d !== ''));
+    const paragraphs = computed(() => props.text?.split(/\r|\n/).filter(d => d !== '') ?? []);
     return {
       paragraphs
     };
