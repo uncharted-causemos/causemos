@@ -180,6 +180,7 @@ export default defineComponent({
 
     // Native messages
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection, renderer: QualitativeRenderer) => {
+      renderer.exitSuggestionMode();
       renderer.selectNode(nodeSelection, '');
       nodeSelection.select('.node-container').classed('node-selected', true);
 
@@ -370,6 +371,7 @@ export default defineComponent({
         //  back that are for a different userInput, or if suggestion mode has
         //  been exited already.
         if (_.isEmpty(userInput)) {
+          // Cleared search bar, show top suggestions from `allEdgeSuggestions`
           this.searchSuggestions = null;
           this.renderer?.setSuggestionData(
             this.allEdgeSuggestions.suggestions,

@@ -101,7 +101,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     isLoading: boolean
   ) {
     const { cancelButtonX, cancelButtonWidth } = this.renderStaticSuggestionUI(node);
-    // Show a button for adding selected edges to CAG
+    // Show(or update if it exists) the button for adding selected edges to CAG
     const { buttonSelection: addButton } = this.createOrUpdateAddButton(selectedSuggestions.length);
     const addButtonStartX = cancelButtonX + cancelButtonWidth + EDGE_SUGGESTION_SPACING;
     addButton.attr(
@@ -111,7 +111,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         node.y
       )
     );
-    this.renderSearchBox(node, node.x, node.y);
+    this.renderSearchBox(node.x, node.y);
     this.renderSuggestionLoadingIndicator(
       isLoading,
       node.x,
@@ -124,7 +124,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       node.y,
       addButtonStartX
     );
-
     this.setOtherNodesAndEdgesOpacity(node.id, 0.1);
   }
 
@@ -158,11 +157,10 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     );
     cancelButton.attr('transform', translate(cancelButtonX, node.y));
     // Render label if it doesn't already exist
-    if (
-      (
-        this.chart.node() as Element).querySelector('.suggestion-column-label'
-      ) === null
-    ) {
+    const existingLabel = (this.chart.node() as Element).querySelector(
+      '.suggestion-column-label'
+    );
+    if (existingLabel === null) {
       this.chart.append('text')
         .classed('suggestion-column-label', true)
         .text('Add impacts')
@@ -200,14 +198,12 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       );
   }
 
-  renderSearchBox(node: INode<NodeParameter>, nodeX: number, nodeY: number) {
-    if (
-      (this.chart.node() as Element).querySelector('.suggestion-search-box') !==
-      null
-    ) {
-      // Don't rerender search box if it already exists
-      return;
-    }
+  renderSearchBox(nodeX: number, nodeY: number) {
+    const existingSearchBox = (this.chart.node() as Element).querySelector(
+      '.suggestion-search-box'
+    );
+    // Don't rerender search box if it already exists
+    if (existingSearchBox !== null) return;
     const foreignElement = document.createElementNS(
       'http://www.w3.org/2000/svg',
       'foreignObject'
@@ -227,8 +223,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     textInput.style.border = '1px solid dodgerblue';
     textInput.style.borderRadius = '3px';
     textInput.addEventListener('keyup', (event) => {
-      // On keypress, trigger a new search
-      // TODO: security? escape event.target.value
       this.emit('search-for-concepts', (event.target as any).value);
     });
     foreignElement.appendChild(textInput);
