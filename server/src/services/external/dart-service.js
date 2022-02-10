@@ -6,16 +6,23 @@ const Logger = rootRequire('/config/logger');
 
 const basicAuthToken = auth.getBasicAuthToken(process.env.DART_SERVICE_USERNAME, process.env.DART_SERVICE_PASSWORD);
 
-
 const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
 const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
 
-// UAT DART - for testing only
-// const DART_SERVICE_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
-// const DART_READER_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
-
 const TIMEOUT = 3 * 1000;
 
+/** Ontology from DART
+ *
+ *   {
+ *     "id": {UUID},
+ *     "tenant_id": {String},
+ *     "version": {Int},
+ *     "staging_version": {Int},
+ *     "ontology": {String (this is the yml contents)},
+ *     "tags": {Array of String},
+ *     "timestamp": {Double}
+ *   }
+*/
 const getOntologyById = async (id) => {
   Logger.info(`Calling ${DART_SERVICE_URL}/ontologies`);
   const options = {

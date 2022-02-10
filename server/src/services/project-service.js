@@ -55,7 +55,6 @@ const BACKUP_ONTOLOGY_URL = 'https://raw.githubusercontent.com/WorldModelers/Ont
  * @param {string} name - the human-friendly new index name
  * @param {string} description - description of the project
  */
-
 const createProject = async (kbId, name, description) => {
   const projectAdapter = Adapter.get(RESOURCE.PROJECT);
   const result = await projectAdapter.clone(kbId, name, description);
@@ -75,24 +74,9 @@ const createProject = async (kbId, name, description) => {
 
   Logger.info(`Cached ${projectId}`);
 
-  /*
-   *
-   *   {
-   *     "id": {UUID},
-   *     "tenant_id": {String},
-   *     "version": {Int},
-   *     "staging_version": {Int},
-   *     "ontology": {String (this is the yml contents)},
-   *     "tags": {Array of String},
-   *     "timestamp": {Double}
-   *   }
-   *
-  */
-
-
-  // Ontology.
-  // 1 - try to get ontology information from DART
-  // 2 - try to get backup ontology
+  // Get the latest ontology
+  // 1 - Try to get ontology information from DART, if this fails
+  // 2 - Try to get backup ontology
   Logger.info('Processing ontology');
   const tenantId = projectData.tenant_id || 'dsmt-e';
   let ontologyMetadata = {};
@@ -102,7 +86,7 @@ const createProject = async (kbId, name, description) => {
     ontologyId = r.id;
 
     await projectAdapter.update(
-      [{ id: projectData.id, ontology: ontologyId }],
+      [{ id: projectId, ontology: ontologyId }],
       d => d.id
     );
 
@@ -121,7 +105,7 @@ const createProject = async (kbId, name, description) => {
     ontologyMetadata = await parseOntology(BACKUP_ONTOLOGY_URL);
 
     await projectAdapter.update(
-      [{ id: projectData.id, ontology: 'default' }],
+      [{ id: projectId, ontology: 'default' }],
       d => d.id
     );
   }
@@ -145,7 +129,7 @@ const createProject = async (kbId, name, description) => {
   try {
     await indraService.sendNewProject(result.index, name, projectData.corpus_id);
   } catch (err) {
-    Logger.warn('Failed to register project with Indra');
+    Logger.warn(`Failed to register project ${projectId} with Indra`);
     console.log(err);
   }
 
@@ -203,7 +187,7 @@ const checkIndexStatus = async (projectId) => {
  * - model metadata
  * - edge
  * - node
- * - project metadat
+ * - project metadata
  * - project
  *
  * @param {string} projectId - project identifier
