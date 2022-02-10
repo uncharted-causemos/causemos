@@ -3,7 +3,7 @@ import _ from 'lodash';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import { NodeParameter, EdgeParameter } from '@/types/CAG';
 import {
-  INode, getAStarPath, simplifyPath
+  INode, getAStarPath, simplifyPath, IEdge
 } from 'svg-flowgraph';
 
 import svgUtil, { translate } from '@/utils/svg-util';
@@ -117,6 +117,15 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       node.y,
       addButtonStartX
     );
+
+    this.setOtherNodesAndEdgesOpacity(node.id, 0.1);
+  }
+
+  setOtherNodesAndEdgesOpacity(nodeId: string, opacity: number) {
+    this.chart.selectAll<any, INode<NodeParameter>>('.node-container')
+      .style('opacity', node => node.id === nodeId ? 1 : opacity);
+    this.chart.selectAll<any, IEdge<EdgeParameter>>('.edge-path')
+      .style('opacity', opacity);
   }
 
   renderStaticSuggestionUI(node: INode<NodeParameter>) {
@@ -357,6 +366,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     this.chart.selectAll('.suggestion-column-label').remove();
     this.chart.selectAll('.node-suggestion').remove();
     this.chart.selectAll('.suggestion-loading-indicator').remove();
+    // Restore all nodes to full opacity
+    this.setOtherNodesAndEdgesOpacity('_invalid_node_id', 1);
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {

@@ -353,7 +353,8 @@ export default defineComponent({
         if (this.allEdgeSuggestions === null) return;
         // TODO: debounce?
         // FIXME: race condition, we should disregard any results that come
-        //  back that are for a different userInput
+        //  back that are for a different userInput. Or if suggestion mode has
+        //  been exited already
         if (_.isEmpty(userInput)) {
           this.searchSuggestions = null;
           this.renderer?.setSuggestionData(
