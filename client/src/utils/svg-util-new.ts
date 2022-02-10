@@ -27,12 +27,11 @@ const STYLES = {
 };
 
 // TODO: document that existing children with the supplied classname will be replaced
-// TODO: change default styles, consider which styling options need to be exposed
 export const createOrUpdateButton = (
   text: string,
   className: string,
   parent: D3Selection,
-  clickHandler: () => void,
+  clickHandler: (event: any) => void,
   style = SVG_BUTTON_STYLES.DEFAULT
 ) => {
   const selectedStyle = STYLES[style];

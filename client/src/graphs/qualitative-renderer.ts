@@ -150,7 +150,11 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       'Cancel',
       'cancel-suggestion-mode-button',
       this.chart as unknown as D3Selection,
-      this.exitSuggestionMode.bind(this)
+      event => {
+        // Don't trigger background click handler
+        event.stopPropagation();
+        this.exitSuggestionMode();
+      }
     );
     cancelButton.attr('transform', translate(cancelButtonX, node.y));
     // Render label if it doesn't already exist
@@ -230,6 +234,10 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     foreignElement.appendChild(textInput);
     (this.chart.node() as Element).appendChild(foreignElement);
     textInput.focus();
+    textInput.addEventListener('click', event => {
+      // Don't trigger background click handler
+      event.stopPropagation();
+    });
   }
 
   renderEdgeSuggestions(
@@ -341,6 +349,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
           .attr('transform', ({ x, y }) => translate(x, y));
       })
       .on('click', (event, entry) => {
+        // Don't trigger background click handler
+        event.stopPropagation();
         this.emit('toggle-suggestion-selected', entry.suggestion);
       })
       // Don't trigger double click handler that is used to create a new node
@@ -357,7 +367,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       addRelationshipsButtonLabel,
       'add-relationships-button',
       this.chart as unknown as D3Selection,
-      () => {
+      (event: any) => {
+        // Don't trigger background click handler
+        event.stopPropagation();
         this.emit('add-selected-suggestions');
         this.exitSuggestionMode();
       },
