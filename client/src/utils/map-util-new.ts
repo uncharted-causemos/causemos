@@ -1,12 +1,13 @@
 import _ from 'lodash';
-import { OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
+import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
 import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { getGADMSuggestions } from '@/services/suggestion-service';
+import { REGION_ID_DELIMETER } from './admin-level-util';
 
-// only allow fetching a maximum number of bbox for of a list of countries
-const MAX_NUMBER_BBOX_COUNTRIES = 10;
+// only allow fetching a maximum number of bbox for of a list of regions
+const MAX_NUMBER_BBOX_REGIONS = 10;
 
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
@@ -23,36 +24,70 @@ export enum DATA_LAYER_TRANSPARENCY {
 
 export enum DATA_LAYER {
   ADMIN = 'admin',
-  TILES = 'tiles'
+  TILES = 'tiles',
+  RAW = 'dot'
 }
 
 export function adminLevelToString(level: number) {
   const adminLevel = level === 0 ? 'country' : 'admin' + level;
   return adminLevel;
 }
-
+export enum SOURCE_LAYER {
+  // Note: Vector tile source data for each layer (we currently have 4 different vector data source)
+  // has to be referenced by following ids, 'boundaries-adm0' to 'boundaries-adm3' and `maas`.
+  // For example, grid vector tile data has a single layer with id `maas` and the layer data can be referenced by `maas`
+  // We don't use vector tile for points data (since data is provided by geojson), so `points` is just a made up id.
+  COUNTRY = 'boundaries-adm0',
+  ADMIN1 = 'boundaries-adm1',
+  ADMIN2 = 'boundaries-adm2',
+  ADMIN3 = 'boundaries-adm3',
+  GRID = 'maas',
+  POINTS = 'points'
+}
 export const SOURCE_LAYERS = [
   {
-    layerId: 'boundaries-adm0',
+    layerId: SOURCE_LAYER.COUNTRY,
     sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm0/{z}/{x}/{y}'
   },
   {
-    layerId: 'boundaries-adm1',
+    layerId: SOURCE_LAYER.ADMIN1,
     sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm1/{z}/{x}/{y}'
   },
   {
-    layerId: 'boundaries-adm2',
+    layerId: SOURCE_LAYER.ADMIN2,
     sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm2/{z}/{x}/{y}'
   },
   {
-    layerId: 'boundaries-adm3',
+    layerId: SOURCE_LAYER.ADMIN3,
     sourceBaseUrl: 'api/maas/tiles/cm-boundaries-adm3/{z}/{x}/{y}'
   },
   {
-    layerId: 'maas',
+    layerId: SOURCE_LAYER.GRID,
     sourceBaseUrl: 'api/maas/tiles/grid-output/{z}/{x}/{y}'
+  },
+  {
+    layerId: SOURCE_LAYER.POINTS, // dummy layer for the points data which will be provided as geojson
+    sourceBaseUrl: ''
   }
 ];
+
+export function getSourceLayerById(layerId: SOURCE_LAYER) {
+  return SOURCE_LAYERS.find(l => l.layerId === layerId) || SOURCE_LAYERS[0];
+}
+
+export function getMapSourceLayer (dataLayer: DATA_LAYER, adminLevel = 0) {
+  const sLayers = [SOURCE_LAYER.COUNTRY, SOURCE_LAYER.ADMIN1, SOURCE_LAYER.ADMIN2, SOURCE_LAYER.ADMIN3];
+  switch (dataLayer) {
+    case DATA_LAYER.ADMIN:
+      return getSourceLayerById(sLayers[adminLevel]);
+    case DATA_LAYER.TILES:
+      return getSourceLayerById(SOURCE_LAYER.GRID);
+    case DATA_LAYER.RAW:
+      return getSourceLayerById(SOURCE_LAYER.POINTS);
+    default:
+      return getSourceLayerById(sLayers[adminLevel]);
+  }
+}
 
 export function stringToAdminLevel(geoString: string) {
   const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
@@ -147,20 +182,61 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
   };
 }
 
-export async function computeMapBoundsForCountries(countryList: string[]) {
+// Compute min/max stats for raw data
+export function computeRawDataStats(data: RawOutputDataPoint[][]): AnalysisMapStats {
+  const globalStats: MapLayerStats = {};
+  const values = [];
+  for (const d of data) {
+    for (const p of d) {
+      values.push(p.value);
+    }
+  }
+  if (values.length) {
+    globalStats.all = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
+  }
+  return {
+    global: globalStats,
+    // baseline and difference is not applicable with raw data
+    baseline: {},
+    difference: {}
+  };
+}
+
+export async function computeMapBoundsForCountries(regionIds: string[]) {
   //
   // calculate the map bounds covering the geography covered by the input list of countries
   //
-  if (countryList && countryList.length > 0) {
-    let countries = countryList;
-    if (countries.length > MAX_NUMBER_BBOX_COUNTRIES) {
-      countries = countries.slice(0, MAX_NUMBER_BBOX_COUNTRIES);
+  if (regionIds && regionIds.length > 0) {
+    // Parse region ids
+    let items = regionIds.map(regionId => {
+      const names = regionId.split(REGION_ID_DELIMETER);
+      let level = DatacubeGeoAttributeVariableType.Country;
+      switch (names.length) {
+        // FIXME: Currently getGADMSuggestions is not reliable for searching admin1-n region bbox
+        // since it could return multiple results for a admin region name if there are same regions in different countries.
+        // For now just return corresponding country of the given admin region name. Later we could implement api endpoint that does exact match for any admin region name.
+        case 2:
+          level = DatacubeGeoAttributeVariableType.Country;
+          break;
+        case 3:
+          level = DatacubeGeoAttributeVariableType.Country;
+          break;
+        case 4:
+          level = DatacubeGeoAttributeVariableType.Country;
+          break;
+      }
+      // return { name: names[names.length - 1], level };
+      return { name: names[0], level };
+    });
+
+    if (items.length > MAX_NUMBER_BBOX_REGIONS) {
+      items = items.slice(0, MAX_NUMBER_BBOX_REGIONS);
     }
 
     const allBBox: any = [];
     // fetch the bbox for country of the input geography
-    const promises = countries.map(country => {
-      const debouncedFetchFunction = getGADMSuggestions(DatacubeGeoAttributeVariableType.Country, country);
+    const promises = items.map(item => {
+      const debouncedFetchFunction = getGADMSuggestions(item.level, item.name);
       return debouncedFetchFunction(); // NOTE: a debounced function may return undefined
     });
     const allResults = await Promise.all(promises);

@@ -1,3 +1,5 @@
+import { IncompleteDataCorrectiveAction } from "@/types/Enums";
+
 export interface TimeseriesPoint {
   value: number;
   normalizedValue?: number;
@@ -15,6 +17,7 @@ export interface Timeseries {
   color: string;
   points: TimeseriesPoint[];
   isDefaultRun: boolean;
+  correctiveAction?: IncompleteDataCorrectiveAction;
 }
 
 /**

@@ -20,16 +20,18 @@
   </side-panel>
 </template>
 
-<script>
+<script lang="ts">
 
-import { mapActions, mapGetters } from 'vuex';
+import { defineComponent, PropType } from 'vue';
+import { mapGetters } from 'vuex';
 
-import CategoricalFacet from '@/components/facets/categorical-facet';
-
-import SidePanel from '@/components/side-panel/side-panel';
+import CategoricalFacet from '@/components/facets/categorical-facet.vue';
+import SidePanel from '@/components/side-panel/side-panel.vue';
 import datacubeUtil from '@/utils/datacube-util';
 
-export default {
+import { Facets, FacetBucket } from '@/types/Common';
+
+export default defineComponent({
   name: 'FacetsPanel',
   components: {
     CategoricalFacet,
@@ -43,11 +45,11 @@ export default {
   }),
   props: {
     facets: {
-      type: Object,
+      type: Object as PropType<Facets>,
       default: () => {}
     },
     filteredFacets: {
-      type: Object,
+      type: Object as PropType<Facets>,
       default: () => {}
     }
   },
@@ -62,14 +64,15 @@ export default {
 
       // mux the filtered data and base data into facets.
       const facetList = keys.map((key) => {
-        const baseData = [];
-        const filteredData = [];
+        const baseData: FacetBucket[] = [];
+        const filteredData: FacetBucket[] = [];
+
         const filteredFacetDict = this.filteredFacets[key] ? this.filteredFacets[key].reduce((dict, category) => {
           dict[category.key] = category.value;
           return dict;
-        }, {}) : {};
+        }, {} as { [key: string]: number }) : {};
 
-        this.facets[key].forEach((category) => {
+        this.facets[key].forEach(category => {
           baseData.push({
             key: category.key,
             value: category.value
@@ -91,14 +94,11 @@ export default {
     }
   },
   methods: {
-    ...mapActions({
-      disableOverlay: 'app/disableOverlay'
-    }),
-    setActive(tab) {
+    setActive(tab: string) {
       this.currentTab = tab;
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

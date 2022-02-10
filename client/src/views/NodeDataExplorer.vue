@@ -32,8 +32,9 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent, ref, Ref } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
 import FacetsPanel from '../components/data-explorer/facets-panel.vue';
@@ -48,8 +49,9 @@ import { ProjectType } from '@/types/Enums';
 
 import filtersUtil from '@/utils/filters-util';
 import { NODE_FACET_FIELDS } from '@/utils/datacube-util';
+import { CAGGraph } from '@/types/CAG';
 
-export default {
+export default defineComponent({
   name: 'NodeDataExplorer',
   components: {
     Search,
@@ -57,12 +59,19 @@ export default {
     ModalHeader,
     SimplePagination
   },
+  setup() {
+    const modelComponents = ref(null) as Ref<CAGGraph | null>;
+    const selectLabel = 'Quantify Node';
+
+    return {
+      modelComponents,
+      selectLabel
+    };
+  },
   data: () => ({
     facets: null,
     filteredDatacubes: [],
     filteredFacets: null,
-    selectLabel: 'Quantify Node',
-    modelComponents: null,
     pageCount: 0,
     pageSize: 100
   }),
@@ -130,7 +139,6 @@ export default {
         size: this.pageSize
       };
       this.filteredDatacubes = await getDatacubes(searchFilters, options);
-      this.filteredDatacubes.forEach(item => (item.isAvailable = true));
       this.disableOverlay();
     },
 
@@ -141,7 +149,7 @@ export default {
       this.enableOverlay();
       const searchFilters = this.getSearchFilters();
       const defaultFilters = { clauses: [{ field: 'type', operand: 'and', isNot: false, values: ['indicator'] }] };
-      this.facets = await getDatacubeFacets(NODE_FACET_FIELDS, defaultFilters);
+      this.facets = await getDatacubeFacets(NODE_FACET_FIELDS, defaultFilters as any);
       this.filteredFacets = await getDatacubeFacets(NODE_FACET_FIELDS, searchFilters);
 
       this.disableOverlay();
@@ -180,7 +188,7 @@ export default {
       });
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

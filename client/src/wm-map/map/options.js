@@ -27,13 +27,11 @@ const mapBoxOptions = {
     type: Number,
     default: 16
   },
+  // bounds can either be number[][] representing the map bounds array or { value: number[][], options }
+  // where options is the mapbox fitBounds option.
   bounds: {
     type: [Object, Array],
     default: undefined
-  },
-  cameraOptions: {
-    type: Object,
-    default: () => {}
   },
   // Mapbox style option: 'style' is a reserved prop for vue, so use 'mapStyle' intead
   mapStyle: {

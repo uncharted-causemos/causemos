@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import * as d3 from 'd3';
 import mapboxgl from 'mapbox-gl';
 import { BASE_LAYER } from '@/utils/map-util-new';
 import { chartValueFormatter } from '@/utils/string-util';
@@ -260,6 +261,21 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
     ];
   }
   return style;
+}
+
+export function createPointsLayerStyle(property, dataDomain, colorOptions, filter = ['all']) {
+  const cExpr = colorExpr(property, dataDomain, colorOptions.scheme, colorOptions.scaleFn, false, undefined, false, colorOptions.isContinuous, colorOptions.isDiverging);
+  return {
+    type: 'circle',
+    paint: {
+      'circle-radius': 5,
+      'circle-color': cExpr,
+      'circle-stroke-color': colorOptions.scheme[colorOptions.scheme.length - 1],
+      'circle-opacity': colorOptions.opacity,
+      'circle-stroke-width': 1
+    },
+    filter: filter
+  };
 }
 
 /**

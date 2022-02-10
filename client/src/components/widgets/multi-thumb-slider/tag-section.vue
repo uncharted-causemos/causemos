@@ -15,8 +15,8 @@
     </div>
     <!-- right side -->
     <div class="label-area">
-      <label v-if="size > 0">{{name}}</label>
-      <label>{{size + '%'}}</label>
+      <div class="line-content" v-if="size > 0">{{name}}</div>
+      <label class="line-content">{{size + '%'}}</label>
     </div>
   </div>
 </template>
@@ -64,11 +64,15 @@ $slider-section-rounding: 4px;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    overflow: auto;
 
-    label {
+    .line-content {
       margin-bottom: 0;
       margin-left: 1rem;
       line-height: 1;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
     }
   }
 

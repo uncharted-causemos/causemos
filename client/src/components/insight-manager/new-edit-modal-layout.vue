@@ -95,15 +95,10 @@
           only-display-icons
         >
           <template #content>
-            <div>
-              <ul>
-                <li
-                  v-for="metadataAttr in metadataDetails"
-                  :key="metadataAttr.key">
-                  <b>{{metadataAttr.key}}</b> {{ metadataAttr.value }}
-                </li>
-              </ul>
-            </div>
+            <insight-summary
+              v-if="metadataDetails"
+              :metadata-details="metadataDetails"
+            />
           </template>
         </drilldown-panel>
 
@@ -115,13 +110,16 @@
 <script lang="ts">
 import {
   defineComponent,
-  nextTick
+  nextTick,
+  PropType
 } from 'vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { MarkerArea, MarkerAreaState } from 'markerjs2';
 import { CropArea, CropAreaState } from 'cropro';
+import { InsightMetadata } from '@/types/Insight';
+import InsightSummary from './insight-summary.vue';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 
@@ -138,7 +136,8 @@ export default defineComponent({
   components: {
     DrilldownPanel,
     FullScreenModalHeader,
-    Disclaimer
+    Disclaimer,
+    InsightSummary
   },
   props: {
     description: {
@@ -154,8 +153,8 @@ export default defineComponent({
       default: true
     },
     metadataDetails: {
-      type: Array,
-      default: () => []
+      type: Object as PropType<InsightMetadata>,
+      required: true
     },
     name: {
       type: String,

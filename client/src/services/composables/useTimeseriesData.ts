@@ -7,6 +7,7 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption,
+  TemporalResolution,
   ReferenceSeriesOption,
   SPLIT_BY_VARIABLE
 } from '@/types/Enums';
@@ -18,7 +19,8 @@ import { getYearFromTimestamp } from '@/utils/date-util';
 import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain } from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
-import { getQualifierTimeseries } from '../new-datacube-service';
+import { getQualifierTimeseries, getRawTimeseriesData, getRawTimeseriesDataBulk } from '../outputdata-service';
+import { correctIncompleteTimeseriesLists } from '@/utils/incomplete-data-detection';
 
 
 const applyBreakdown = (
@@ -74,7 +76,8 @@ export default function useTimeseriesData(
   showPercentChange: Ref<boolean>,
   activeFeature: Ref<string>,
   modelRuns?: Ref<ModelRun[]>,
-  referenceOptions?: Ref<string[]>
+  referenceOptions?: Ref<string[]>,
+  isRawDataResolution?: Ref<Boolean>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
   const referenceTimeseries = ref<Timeseries[]>([]);
@@ -97,6 +100,18 @@ export default function useTimeseriesData(
     allTimeseriesData.value.filter(
       timeseries => timeseries.id !== relativeTo.value
     )
+  );
+
+  const temporalRes = computed(() =>
+    selectedTemporalResolution.value !== ''
+      ? selectedTemporalResolution.value
+      : TemporalResolutionOption.Month
+  );
+
+  const temporalAgg = computed(() =>
+    selectedTemporalAggregation.value !== ''
+      ? selectedTemporalAggregation.value
+      : AggregationOption.Sum
   );
 
   const temporalBreakdownData = computed<BreakdownData | null>(() => {
@@ -188,19 +203,26 @@ export default function useTimeseriesData(
         timeseriesData: []
       };
     }
+
     const breakdownTimeseriesData = applyBreakdown(
       rawTimeseriesData.value,
       breakdownOption.value,
       selectedYears.value
     );
 
+    const output = metadata.value?.outputs.find(output => output.name === activeFeature.value);
+    const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+    const finalRawDate = new Date(metadata.value?.period?.lte ?? 0);
+
+    const correctedTimeseriesData = correctIncompleteTimeseriesLists(breakdownTimeseriesData,
+      rawResolution, temporalRes.value as TemporalResolutionOption,
+      temporalAgg.value as AggregationOption, finalRawDate);
+
     const referencedTimeseriesData = referenceOptions && referenceOptions.value && referenceOptions.value.length > 0
-      ? applyReference(breakdownTimeseriesData, rawTimeseriesData.value, breakdownOption.value, referenceOptions.value)
-      : breakdownTimeseriesData;
+      ? applyReference(correctedTimeseriesData, rawTimeseriesData.value, breakdownOption.value, referenceOptions.value)
+      : correctedTimeseriesData;
 
     const relativeTimeseriesData = applyRelativeTo(referencedTimeseriesData, relativeTo.value, showPercentChange.value);
-
-
     return relativeTimeseriesData;
   });
 
@@ -214,14 +236,6 @@ export default function useTimeseriesData(
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
-      const temporalRes =
-        selectedTemporalResolution.value !== ''
-          ? selectedTemporalResolution.value
-          : TemporalResolutionOption.Month;
-      const temporalAgg =
-        selectedTemporalAggregation.value !== ''
-          ? selectedTemporalAggregation.value
-          : AggregationOption.Sum;
       const spatialAgg =
         selectedSpatialAggregation.value !== ''
           ? selectedSpatialAggregation.value
@@ -244,20 +258,23 @@ export default function useTimeseriesData(
       }
 
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        promises = [API.post('maas/output/bulk-timeseries', { region_ids: allRegionIds }, {
-          params: {
-            data_id: dataId,
-            run_id: modelRunIds.value[0],
-            feature: activeFeature.value,
-            resolution: temporalRes,
-            temporal_agg: temporalAgg,
-            spatial_agg: spatialAgg,
-            transform: transform
-          }
-        }).catch(() => {
-          console.error(`Failed to fetch timeseries for ${allRegionIds.join(' ')}`);
-          return null;
-        })];
+        const runId = modelRunIds.value[0];
+        promises = isRawDataResolution?.value
+          ? [getRawTimeseriesDataBulk({ dataId, runId, outputVariable: activeFeature.value, spatialAgg }, allRegionIds).then(result => ({ data: result }))]
+          : [API.post('maas/output/bulk-timeseries', { region_ids: allRegionIds }, {
+              params: {
+                data_id: dataId,
+                run_id: runId,
+                feature: activeFeature.value,
+                resolution: temporalRes.value,
+                temporal_agg: temporalAgg.value,
+                spatial_agg: spatialAgg,
+                transform: transform
+              }
+            }).catch(() => {
+              console.error(`Failed to fetch timeseries for ${allRegionIds.join(' ')}`);
+              return null;
+            })];
       } else if (
         breakdownOption.value === null ||
         breakdownOption.value === TemporalAggregationLevel.Year
@@ -270,18 +287,20 @@ export default function useTimeseriesData(
         const regionId =
           regionIds.value.length > 0 ? regionIds.value[0] : undefined;
         promises = modelRunIds.value.map(runId => {
-          return API.get('maas/output/timeseries', {
-            params: {
-              data_id: dataId,
-              run_id: runId,
-              feature: activeFeature.value,
-              resolution: temporalRes,
-              temporal_agg: temporalAgg,
-              spatial_agg: spatialAgg,
-              transform: transform,
-              region_id: regionId
-            }
-          });
+          return isRawDataResolution?.value
+            ? getRawTimeseriesData({ dataId, runId, regionId: (regionId || ''), outputVariable: activeFeature.value, spatialAgg }).then(result => ({ data: result }))
+            : API.get('maas/output/timeseries', {
+              params: {
+                data_id: dataId,
+                run_id: runId,
+                feature: activeFeature.value,
+                resolution: temporalRes.value,
+                temporal_agg: temporalAgg.value,
+                spatial_agg: spatialAgg,
+                transform: transform,
+                region_id: regionId
+              }
+            });
         });
       } else if (
         breakdownOption.value === SPLIT_BY_VARIABLE
@@ -298,8 +317,8 @@ export default function useTimeseriesData(
             dataId,
             modelRunIds.value[0],
             activeFeature.value,
-            temporalRes,
-            temporalAgg,
+            temporalRes.value,
+            temporalAgg.value,
             spatialAgg,
             breakdownOption.value,
             Array.from(selectedQualifierValues.value),

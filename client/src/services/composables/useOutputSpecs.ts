@@ -1,7 +1,7 @@
 import { Ref } from '@vue/reactivity';
 import { computed } from '@vue/runtime-core';
 import { Indicator, Model } from '@/types/Datacube';
-import { OutputSpecWithId } from '@/types/Runoutput';
+import { OutputSpecWithId } from '@/types/Outputdata';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { ModelRun } from '@/types/ModelRun';
 import { DataTransform, SPLIT_BY_VARIABLE } from '@/types/Enums';

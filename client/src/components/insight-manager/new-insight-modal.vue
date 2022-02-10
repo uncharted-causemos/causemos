@@ -49,7 +49,8 @@ export default {
       viewState: 'insightPanel/viewState',
       contextId: 'insightPanel/contextId',
       project: 'app/project',
-      filters: 'dataSearch/filters'
+      filters: 'dataSearch/filters',
+      analysisName: 'app/analysisName'
     }),
     formattedFilterString() {
       return insightUtil.getFormattedFilterString(this.filters);
@@ -66,9 +67,8 @@ export default {
       // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
       return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
     },
-
     metadataDetails() {
-      return insightUtil.parseMetadataDetails(this.dataState, this.projectMetadata, this.formattedFilterString, this.currentView);
+      return insightUtil.parseMetadataDetails(this.dataState, this.projectMetadata, this.analysisName, this.formattedFilterString, this.currentView, this.projectType);
     }
   },
   watch: {

@@ -148,5 +148,13 @@ export enum BinningOptions {
   Linear = 'linear'
 }
 
+export enum IncompleteDataCorrectiveAction {
+  OutOfScopeData = 'Data is Out of Scope (No Change)',
+  NotRequired = 'No Changes Required',
+  CompleteData = 'Complete Data (No Change)',
+  DataRemoved = ' Final data point was removed',
+  DataExtrapolated = 'Final data point contains extrapolated data'
+}
+
 export const SPLIT_BY_VARIABLE = 'variable';
 export const TIMESERIES_HEADER_SEPARATOR = ' | ';

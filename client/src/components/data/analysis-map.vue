@@ -3,8 +3,6 @@
     <wm-map
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
-      :camera-options="cameraOptions"
-      :class="{isDefaultRun: isDefaultRun}"
       @load="onMapLoad"
       @move="onMapMove"
       @mousemove="onMouseMove"
@@ -16,25 +14,32 @@
         :key="layerRerenderTrigger"
         :source="vectorSource"
         :source-id="vectorSourceId"
-        :source-layer="vectorSourceLayer"
+        :source-layer="sourceLayer"
         :promote-id="idPropName"
         :layer-id="baseLayerId"
         :layer="baseLayer"
         :before-id="firstSymbolLayerId"
       />
       <wm-map-vector
-        v-if="vectorSource && colorLayer"
+        v-if="vectorSource && vectorColorLayer"
         :key="layerRerenderTrigger"
         :source="vectorSource"
         :source-id="vectorSourceId"
-        :source-layer="vectorSourceLayer"
+        :source-layer="sourceLayer"
         :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="colorLayerId"
-        :layer="colorLayer"
+        :layer="vectorColorLayer"
         :before-id="firstSymbolLayerId"
         @add-layer="onAddLayer"
         @update-source="onUpdateSource"
+      />
+      <wm-map-geojson
+        v-if="isPointsMap && pointsColorLayer"
+        :source-id="pointsSource"
+        :source="rawGeoJson"
+        :layer-id="pointsLayerId"
+        :layer="pointsColorLayer"
       />
       <template v-if="showPreRenderedViz">
         <wm-map-image
@@ -47,7 +52,7 @@
       </template>
       <wm-map-popup
         v-if="showTooltip"
-        :layer-id="baseLayerId"
+        :layer-id="isPointsMap ? pointsLayerId : baseLayerId"
         :formatter-fn="popupValueFormatter"
         :cursor="'default'"
       />
@@ -59,15 +64,19 @@
 
 import _ from 'lodash';
 import * as d3 from 'd3';
-import { WmMap, WmMapVector, WmMapImage, WmMapPopup } from '@/wm-map';
+import { WmMap, WmMapVector, WmMapImage, WmMapPopup, WmMapGeojson } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
   createHeatmapLayerStyle,
+  createPointsLayerStyle,
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
-import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';
+import {
+  convertRawDataToGeoJson
+} from '@/utils/outputdata-util';
+import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
@@ -117,12 +126,13 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
 };
 
 export default {
-  name: 'AnalysisMapSimple',
+  name: 'AnalysisMap',
   components: {
     WmMap,
     WmMapVector,
     WmMapImage,
-    WmMapPopup
+    WmMapPopup,
+    WmMapGeojson
   },
   emits: [
     'on-map-load',
@@ -146,10 +156,6 @@ export default {
       type: String,
       default: null
     },
-    referenceOptions: {
-      type: Array,
-      default: () => []
-    },
     showTooltip: {
       type: Boolean,
       default: false
@@ -171,19 +177,19 @@ export default {
       default: () => []
     },
     mapBounds: {
-      type: Array,
+      type: [Array, Object],
       default: () => [ // Default bounds to Ethiopia
         [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
         [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
       ]
     },
-    cameraOptions: {
-      type: Object,
-      default: () => {}
-    },
     regionData: {
       type: Object,
       default: () => undefined
+    },
+    rawData: {
+      type: Object,
+      default: () => ([])
     },
     selectedRegionIds: {
       type: Array,
@@ -197,6 +203,10 @@ export default {
       type: Object,
       default: () => undefined
     },
+    pointsLayerStats: {
+      type: Object,
+      default: () => undefined
+    },
     selectedBaseLayer: {
       type: String,
       required: true
@@ -204,10 +214,6 @@ export default {
     unit: {
       type: String,
       default: null
-    },
-    isDefaultRun: {
-      type: Boolean,
-      default: false
     },
     showPercentChange: {
       type: Boolean,
@@ -226,7 +232,8 @@ export default {
   data: () => ({
     baseLayer: undefined,
     layerRerenderTrigger: undefined, // This is used specifically to trigger data layer re-rendering.
-    colorLayer: undefined,
+    vectorColorLayer: undefined,
+    pointsColorLayer: undefined,
     hoverId: undefined,
     map: undefined,
     curZoom: 0,
@@ -256,14 +263,20 @@ export default {
     selectedLayer() {
       return SOURCE_LAYERS.find(l => l.layerId === this.selectedLayerId);
     },
-    vectorSourceLayer() {
+    sourceLayer() {
       return this.selectedLayer.layerId;
     },
     idPropName() {
       return { [`${this.selectedLayer.layerId}`]: 'id' };
     },
+    isAdminMap() {
+      return [SOURCE_LAYER.COUNTRY, SOURCE_LAYER.ADMIN1, SOURCE_LAYER.ADMIN2, SOURCE_LAYER.ADMIN3].includes(this.sourceLayer);
+    },
     isGridMap() {
-      return this.vectorSourceLayer === 'maas';
+      return this.sourceLayer === SOURCE_LAYER.GRID;
+    },
+    isPointsMap() {
+      return this.sourceLayer === SOURCE_LAYER.POINTS;
     },
     adminLevels() {
       if (this.isGridMap) return undefined;
@@ -279,9 +292,11 @@ export default {
     },
     valueProp() {
       // Name of the value property of the feature to be rendered
+      if (this.isPointsMap) return 'value';
       return (this.selection && this.selection.id) || '';
     },
     vectorSource() {
+      if (this.isPointsMap) return;
       if (this.isGridMap) {
         const outputSpecs = this.outputSourceSpecs
           .map(spec => {
@@ -322,6 +337,10 @@ export default {
       return this.selectedBaseLayer === BASE_LAYER.DEFAULT
         ? 'watername_ocean'
         : undefined;
+    },
+    rawGeoJson() {
+      const data = convertRawDataToGeoJson(this.rawData);
+      return data;
     }
   },
   watch: {
@@ -335,6 +354,9 @@ export default {
     regionData() {
       this.debouncedRefresh();
     },
+    rawData() {
+      this.debouncedRefresh();
+    },
     selectedLayer() {
       this.debouncedRefresh();
     },
@@ -342,6 +364,9 @@ export default {
       this.debouncedRefresh();
     },
     gridLayerStats() {
+      this.debouncedRefresh();
+    },
+    pointsLayerStats() {
       this.debouncedRefresh();
     },
     selectedRegionIds() {
@@ -356,6 +381,9 @@ export default {
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
+
+    this.pointsSource = 'points-data-source';
+    this.pointsLayerId = 'points-layer';
 
     // the following are needed to render pre-generated overlay
     this.imageSourceId = 'maas-image-source';
@@ -398,8 +426,11 @@ export default {
     getExtent() {
       if (this.isGridMap) {
         return this.getGridMapExtent();
+      } else if (this.isAdminMap) {
+        return this.getAdminMapExtent();
+      } else if (this.isPointsMap) {
+        return this.getPointsMapExtent();
       }
-      return this.getAdminMapExtent();
     },
     getGridMapExtent() {
       if (!this.gridLayerStats) return;
@@ -439,28 +470,35 @@ export default {
         return extendedStats;
       }
     },
+    getPointsMapExtent() {
+      return this.pointsLayerStats?.global.all;
+    },
     refreshLayers() {
-      const useFeatureState = !this.isGridMap;
+      const useFeatureState = this.isAdminMap;
       this.baseLayer = baseLayer(this.valueProp, useFeatureState, this.baselineSpec?.id);
       this.refreshColorLayer(useFeatureState);
     },
     refreshColorLayer(useFeatureState = false) {
       this.extent = this.getExtent();
       if (!this.extent) {
-        this.colorLayer = undefined;
+        this.vectorColorLayer = undefined;
         return;
       }
       const { min, max } = this.extent;
       const relativeToProp = this.baselineSpec?.id;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
+      if (this.isPointsMap) {
+        this.pointsColorLayer = createPointsLayerStyle(this.valueProp, [min, max], this.colorOptions);
+      } else {
+        this.vectorColorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
+      }
     },
     setFeatureStates() {
-      if (!this.map || !this.adminLevels || this.isGridMap) return;
+      if (!this.map || !this.isAdminMap) return;
 
       // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
       this.map.removeFeatureState({
         source: this.vectorSourceId,
-        sourceLayer: this.vectorSourceLayer
+        sourceLayer: this.sourceLayer
       });
       // Note: RemoveFeatureState doesn't seem very reliable.
       // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and make it undefined
@@ -475,7 +513,7 @@ export default {
           this.map.setFeatureState({
             id: row.id,
             source: this.vectorSourceId,
-            sourceLayer: this.vectorSourceLayer
+            sourceLayer: this.sourceLayer
           }, {
             ...featureStateBase,
             ...row.values,
@@ -553,7 +591,7 @@ export default {
       });
     },
     updateLayerFilter() {
-      if (!this.colorLayer) return;
+      if (!this.vectorColorLayer) return;
       // Merge filter for the current map and all globally applied filters together
       if (this.isGridMap) {
         const filter = this.filters.reduce((prev, cur) => {
@@ -564,7 +602,7 @@ export default {
         if (relativeToProp) filter.unshift(['has', relativeToProp]);
         const hasProperty = ['has', this.valueProp];
         const notNaN = ['!=', 'NaN', ['to-string', ['get', this.valueProp]]];
-        this.colorLayer.filter = ['all', hasProperty, notNaN, ...filter];
+        this.vectorColorLayer.filter = ['all', hasProperty, notNaN, ...filter];
       } else {
         this.refreshLayers();
       }
@@ -572,14 +610,14 @@ export default {
     _setLayerHover(map, feature) {
       // unset previous state and hoveredId can be 0
       map.setFeatureState(
-        { source: feature.source, id: feature.id, sourceLayer: this.vectorSourceLayer },
+        { source: feature.source, id: feature.id, sourceLayer: this.sourceLayer },
         { hover: true }
       );
       this.hoverId = feature.id;
     },
     _unsetHover(map) {
       if (!this.hoverId) return;
-      map.removeFeatureState({ source: this.vectorSourceId, id: this.hoverId, sourceLayer: this.vectorSourceLayer }, 'hover');
+      map.removeFeatureState({ source: this.vectorSourceId, id: this.hoverId, sourceLayer: this.sourceLayer }, 'hover');
       this.hoverId = undefined;
     },
     onMouseMove(event) {
@@ -611,13 +649,12 @@ export default {
       }, 200);
     },
     popupValueFormatter(feature) {
-      const prop = this.isGridMap ? feature?.properties : feature?.state;
+      const prop = this.isAdminMap ? feature?.state : feature?.properties;
       if (_.isNil(prop && prop[this.valueProp])) return null;
-
-      const value = prop[this.valueProp];
-      const format = v => this.extnet
+      const format = v => this.extent
         ? chartValueFormatter(this.extent.min, this.extent.max)(v)
         : chartValueFormatter()(v);
+      const value = prop[this.valueProp];
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
         const baselineValue = _.isFinite(prop[this.baselineSpec.id]) ? prop[this.baselineSpec.id] : prop._baseline;
@@ -626,7 +663,8 @@ export default {
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data or is zero for this area' : 'Diff: ' + diffString;
         rows.push(text);
       }
-      if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
+      if (this.isAdminMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
+      if (this.isPointsMap) rows.push('Region: ' + [prop.country, prop.admin1, prop.admin2, prop.admin3].filter(v => !!v).join('/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
     }
   }
@@ -636,8 +674,5 @@ export default {
 <style lang="scss" scoped>
 .analysis-map-container {
   position: relative;
-  .isDefaultRun {
-    border-width: 8px;
-  }
 }
 </style>

@@ -30,6 +30,12 @@ export default {
   data: () => ({
     popup: null
   }),
+  watch: {
+    layerId(val, oldVal) {
+      this.removeEvents(oldVal);
+      this.addEvents(val);
+    }
+  },
   mounted() {
     this.mapComponent = this.$parent;
     if (!this.mapComponent.map) {
@@ -40,8 +46,7 @@ export default {
       closeButton: false,
       closeOnClick: false
     });
-    this.map.on('mousemove', this.layerId, this.onMouseMove);
-    this.map.on('mouseleave', this.layerId, this.onMouseLeave);
+    this.addEvents(this.layerId);
   },
   unmounted() {
     this.finish();
@@ -66,9 +71,16 @@ export default {
       // remove popup
       this.popup.remove();
     },
+    removeEvents(layerId) {
+      this.map.off('mousemove', layerId, this.onMouseMove);
+      this.map.off('mouseleave', layerId, this.onMouseLeave);
+    },
+    addEvents(layerId) {
+      this.map.on('mousemove', layerId, this.onMouseMove);
+      this.map.on('mouseleave', layerId, this.onMouseLeave);
+    },
     finish() {
-      this.map.off('mousemove', this.layerId, this.onMouseMove);
-      this.map.off('mouseleave', this.layerId, this.onMouseLeave);
+      this.removeEvents(this.layerId);
       this.popup.remove();
     }
   }

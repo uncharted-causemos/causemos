@@ -1,6 +1,16 @@
 import { DatacubeType } from '@/types/Enums';
 import { DatacubeMaintainer } from './Datacube';
 
+// Facet
+export interface FacetBucket {
+  key: string;
+  value: number;
+}
+
+export interface Facets {
+  [key: string]: FacetBucket[]
+}
+
 // Project metadata
 export interface Project {
   id: string;
@@ -82,14 +92,15 @@ export interface ScenarioData {
   [key: string]: string | number;
 }
 
-export interface AnalysisMapFilter {
-  id: string;
-  range: AnalysisMapRange;
-}
 export interface AnalysisMapRange {
   min: number;
   max: number;
 }
+export interface AnalysisMapFilter {
+  id: string;
+  range: AnalysisMapRange;
+}
+
 export interface MapLegendColor {
   color: string;
   label?: string;
@@ -103,11 +114,15 @@ export interface AnalysisMapColorOptions {
   isDiverging: boolean;
   opacity: number;
 }
+
+export interface MapLayerStats {
+  [key: string]: AnalysisMapRange;
+}
+
 export interface AnalysisMapStats {
   global: MapLayerStats;
   baseline: MapLayerStats;
   difference: MapLayerStats;
 }
-export interface MapLayerStats {
-  [key: string]: AnalysisMapRange;
-}
+
+

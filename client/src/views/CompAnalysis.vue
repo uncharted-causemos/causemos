@@ -34,6 +34,7 @@
           :bars-data="globalBarsData"
           :selected-admin-level="selectedAdminLevel"
           :selected-timestamp="globalRegionRankingTimestamp"
+          :selected-color-scheme="finalColorScheme"
           :bar-chart-hover-id="barChartHoverId"
           :map-bounds="globalBbox"
           @bar-chart-hover="onBarChartHover"
@@ -108,8 +109,6 @@
             :selected-admin-level="selectedAdminLevel"
             :number-of-color-bins="numberOfColorBins"
             :selected-color-scheme="finalColorScheme"
-            :max-number-of-chart-bars="maxNumberOfChartBars"
-            :limit-number-of-chart-bars="limitNumberOfChartBars"
             :region-ranking-binning-type="regionRankingBinningType"
             :bar-chart-hover-id="barChartHoverId"
             :show-normalized-data="showNormalizedData"
@@ -225,7 +224,7 @@ export default defineComponent({
     const activeDrilldownTab = ref<string|null>('region-settings');
     const selectedAdminLevel = ref(0);
 
-    const showNormalizedData = ref(true);
+    const showNormalizedData = ref(false);
     const regionRankingWeights = ref<{[key: string]: {name: string; weight: number}}>({});
 
     const globalBbox = ref<number[][] | undefined>(undefined);
@@ -263,7 +262,7 @@ export default defineComponent({
     );
 
     const allTimeseriesMap: {[key: string]: Timeseries[]} = {};
-    const allDatacubesMetadataMap: {[key: string]: {datacubeName: string; datacubeOutputName: string; region: string[]}} = {};
+    const allDatacubesMetadataMap: {[key: string]: {datacubeName: string; datacubeOutputName: string; source: string; region: string[]}} = {};
     const globalTimeseries = ref([]) as Ref<Timeseries[]>;
     const reCalculateGlobalTimeseries = ref(true);
     const timeseriesToDatacubeMap: {[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }} = {};
@@ -505,6 +504,12 @@ export default defineComponent({
     regionRankingCompositionType() {
       this.updateGlobalRegionRankingData();
     },
+    limitNumberOfChartBars() {
+      this.updateGlobalRegionRankingData();
+    },
+    maxNumberOfChartBars() {
+      this.updateGlobalRegionRankingData();
+    },
     $route: {
       handler(/* newValue, oldValue */) {
         // NOTE:  this is only valid when the route is focused on the 'dataComparative' space
@@ -654,7 +659,7 @@ export default defineComponent({
       // limit the number of bars to the selected maximum
       this.globalBarsData = this.limitNumberOfChartBars ? compositeDataSorted.slice(-this.maxNumberOfChartBars) : compositeDataSorted;
     },
-    onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; region: string[]}) {
+    onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; source: string; region: string[]}) {
       // we should only set the global timeseries one time
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
@@ -667,6 +672,7 @@ export default defineComponent({
       this.allDatacubesMetadataMap[datacubeKey] = {
         datacubeName: timeseriesInfo.datacubeName,
         datacubeOutputName: timeseriesInfo.datacubeOutputName,
+        source: timeseriesInfo.source,
         region: timeseriesInfo.region
       };
       //
@@ -744,7 +750,8 @@ export default defineComponent({
         Object.keys(this.allDatacubesMetadataMap).forEach(key => {
           const title = {
             datacubeName: this.allDatacubesMetadataMap[key].datacubeName,
-            datacubeOutputName: this.allDatacubesMetadataMap[key].datacubeOutputName
+            datacubeOutputName: this.allDatacubesMetadataMap[key].datacubeOutputName,
+            source: this.allDatacubesMetadataMap[key].source
           };
           // for each datacube, save its name and output-name
           datacubeTitles.push(title);

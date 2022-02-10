@@ -32,6 +32,13 @@ const MAPBOX_EVENTS = [
 
 const RESIZE_DELAY = 50;
 
+const getFitBoundsParams = (bounds) => {
+  const params = (bounds?.value && bounds?.options)
+    ? [bounds.value, bounds.options]
+    : [bounds, { duration: 0 }];
+  return params;
+};
+
 export default {
   name: 'WmMap',
   mixins: [eventEmitter],
@@ -64,8 +71,9 @@ export default {
       this.map.setMaxZoom(value);
     },
     bounds(value) {
-      if (!this.cameraMoveEnabled) return;
-      this.map.fitBounds(value, this.cameraOptions);
+      if (!this.cameraMoveEnabled || !this.map) return;
+      const params = getFitBoundsParams(value);
+      this.map.fitBounds(...params);
     },
     mapStyle(value) {
       this.map.setStyle(value);
@@ -89,6 +97,9 @@ export default {
     _loadMap() {
       // rename mapStyle to style
       const { mapStyle: style, ...options } = this.$props;
+      // Re-assign bounds value to options.bounds
+      // getFitBoundsParams return `[bounds, options]` and we want to assign only `bounds` to options.bounds here.
+      options.bounds = getFitBoundsParams(options.bounds)[0];
       this.map = new mapboxgl.Map({
         container: this.$refs.wmmap,
         style,
@@ -102,6 +113,10 @@ export default {
         //  closed when switching from the 'Graph' tab in the KB-Explorer). This fix technically
         //  relies on a race condition, that the layout will be settled by the time the map loads.
         this.map.resize();
+        // It appears that bound set by `new mapboxgl.Map({ bounds })` and this.map.fitBounds (which is also called in bounds watcher)
+        // behave differently. So make sure  `fitBounds` is called for the consistency
+        if (!this.bounds) return;
+        this.map.fitBounds(...getFitBoundsParams(this.bounds));
       });
       this.handleResize = _.debounce(() => {
         this.map.resize();

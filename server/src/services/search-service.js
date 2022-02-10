@@ -15,6 +15,7 @@ const formatOntologyDoc = (d) => {
 
 const formatDatacubeDoc = (d) => {
   const defaultFeature = d.outputs.find(output => output.name === d.default_feature);
+  const res = defaultFeature.data_resolution ? defaultFeature.data_resolution.temporal_resolution : undefined;
 
   return {
     id: d.id,
@@ -27,7 +28,8 @@ const formatDatacubeDoc = (d) => {
 
     feature: defaultFeature.name,
     display_name: defaultFeature.display_name,
-    description: defaultFeature.description
+    description: defaultFeature.description,
+    raw_temporal_resolution: res
   };
 };
 

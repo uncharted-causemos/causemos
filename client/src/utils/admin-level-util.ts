@@ -1,4 +1,7 @@
+import { AdminRegionSets, BreakdownData } from '@/types/Datacubes';
 import { AdminLevel } from '@/types/Enums';
+import { RegionalAggregations } from '@/types/Outputdata';
+import _ from 'lodash';
 
 export const ADMIN_LEVEL_TITLES: { [key in AdminLevel]: string } = {
   country: 'Country',
@@ -14,3 +17,45 @@ export const ADMIN_LEVEL_KEYS = Object.values(AdminLevel);
 
 export const REGION_ID_DELIMETER = '__'; // Used to construct full GADM path as the shape file vector source for map rendering
 export const REGION_ID_DISPLAY_DELIMETER = ', '; // Used for nicer display of GADM name/path in the UI
+
+// Pull out the regions at the current level that are selected, or which have an ancestor that's selected.
+export function filterRegionalLevelData(regionalData: BreakdownData | RegionalAggregations, selectedRegionIdsAtAllLevels: AdminRegionSets | null, applyFilteringToCountryLevel: boolean) {
+  const filteredRegionLevelData = _.cloneDeep(regionalData);
+
+  ADMIN_LEVEL_KEYS.forEach((adminKey, adminIndx) => {
+    if (filteredRegionLevelData[adminKey]) {
+      const filteredDataAtCurrentLevel: any = [];
+      const previousAdminLevelKey = adminIndx === 0 ? adminKey : ADMIN_LEVEL_KEYS[adminIndx - 1];
+      // should we filter data at all levels starting from "Country" or the "Admin1" level
+      //  i.e., in datacube-drilldown, breakdown data should not filter regional data at the country level
+      //        while data at the country level should be filtered within the region-ranking view
+      if ((applyFilteringToCountryLevel || adminIndx > 0) && previousAdminLevelKey !== 'admin4' && previousAdminLevelKey !== 'admin5' && adminKey !== 'admin4' && adminKey !== 'admin5') {
+        // do we have an explicit selection (i.e., from selectedRegionIdsAtAllLevels) for the previous admin level?
+        //  if yes, then use it to filter
+        //  if no, then consider the (filtered) data already at the previous level
+        let selectedRegionsAtPrevLevel: string[] = selectedRegionIdsAtAllLevels !== null ? Array.from(selectedRegionIdsAtAllLevels[previousAdminLevelKey]) : filteredRegionLevelData[previousAdminLevelKey]?.map(regionItem => regionItem.id) as string [];
+        const selectedRegionsAtCurrLevel: string[] = selectedRegionIdsAtAllLevels !== null ? Array.from(selectedRegionIdsAtAllLevels[adminKey]) : [];
+
+        // if no selection was found at the previous level
+        //  then consider the (filtered) data already at the previous level
+        if (selectedRegionsAtPrevLevel.length === 0) {
+          selectedRegionsAtPrevLevel = filteredRegionLevelData[previousAdminLevelKey]?.map(regionItem => regionItem.id) as string[];
+        }
+        // we now have either all the regions of the previous level
+        //  or a subet of them in case there was a valid selection
+        //
+        // use the selectedRegionsAtPrevLevel to filter the current level
+        selectedRegionsAtPrevLevel.forEach(regionAtPrevLevel => {
+          const temp = filteredRegionLevelData[adminKey]?.filter(regionItem => regionItem.id.startsWith(regionAtPrevLevel));
+          if (temp !== undefined) {
+            const filterCurrLevel = temp.filter(region => selectedRegionsAtCurrLevel.length > 0 ? selectedRegionsAtCurrLevel.includes(region.id) : true);
+            filteredDataAtCurrentLevel.push(...(applyFilteringToCountryLevel ? filterCurrLevel : temp));
+          }
+        });
+        filteredRegionLevelData[adminKey] = filteredDataAtCurrentLevel;
+      }
+    }
+  });
+
+  return filteredRegionLevelData;
+}

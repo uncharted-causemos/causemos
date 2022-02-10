@@ -1,6 +1,6 @@
 import { ref } from '@vue/reactivity';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
-import { RegionalAggregations } from '@/types/Runoutput';
+import { RegionalAggregations } from '@/types/Outputdata';
 import { ComputedRef, Ref, watchEffect } from 'vue';
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 
@@ -9,7 +9,7 @@ export default function useMapBounds(
   selectedAdminLevel: Ref<number>,
   selectedRegionIds: ComputedRef<string[]>
 ) {
-  const mapBounds = ref<number[][]>([
+  const mapBounds = ref<number[][] | { value: number[][], options: any }>([
     [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
     [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
   ]);
@@ -22,27 +22,21 @@ export default function useMapBounds(
     if (!regionalData.value || !selectedRegionIds.value) {
       return;
     }
-    if (selectedAdminLevel.value === 0) {
-      // only support fitting map bounds when the selectedAdminLevel is 'country'
-      const countriesAgg = regionalData.value.country;
-      if (countriesAgg !== undefined && countriesAgg.length > 0) {
-        let countries = countriesAgg.map(countryAgg => countryAgg.id);
-        // do we have a sub-selection
-        if (selectedRegionIds.value.length === 0) {
-          // all regions selected
-        } else {
-          countries = selectedRegionIds.value;
-        }
-
-        //
-        // calculate the initial map bounds covering the model geography
-        //
-        const newBounds = await computeMapBoundsForCountries(countries);
-        if (newBounds !== null) {
-          // ask the map to fit the new map bounds
-          mapBounds.value = newBounds;
-        }
-      }
+    const regionIds = selectedRegionIds.value.length === 0
+      ? (regionalData.value.country || []).map(item => item.id)
+      : selectedRegionIds.value;
+    //
+    // calculate the initial map bounds covering the model geography
+    //
+    const newBounds = await computeMapBoundsForCountries(regionIds);
+    if (newBounds !== null) {
+      // ask the map to fit the new map bounds
+      const options = {
+        padding: 20, // pixels
+        duration: 1000, // milliseconds
+        essential: true // this animation is considered essential with respect to prefers-reduced-motion
+      };
+      mapBounds.value = { value: newBounds, options };
     }
   });
 

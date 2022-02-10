@@ -27,6 +27,8 @@ export interface Snapshot {
   pre_actions?: any; // e.g., remove noisy UI elements that should not be part of the snapshot image/context
   post_actions?: any; // e.g., highlight a sub-graph
   // components may be flagged to react to the actions in a given mode -> Karl's suggestion (editable, displayable, etc.)
+
+  modified_at?: number;
 }
 
 export interface AnnotationState {
@@ -43,6 +45,7 @@ export interface Insight extends Snapshot {
   analytical_question: string[]; // question(s) this insight may answer
   thumbnail: string; // e.g., image url or base64 encoding
   annotation_state?: AnnotationState;
+  modified_at?: number;
 }
 
 // @concrete type
@@ -50,6 +53,7 @@ export interface AnalyticalQuestion extends Snapshot {
   question: string;
   linked_insights: string[]; // has some insight (using their names/IDs) been linked to satisfy/answer this question?
   tour_name?: string;
+  modified_at?: number;
 }
 
 // view-specific values (no data dependency)
@@ -100,6 +104,8 @@ export interface DataState {
   selectedScenarioIds?: string[];
   selectedTimestamp?: number | null;
   selectedRegionIds?: string[];
+  selectedRegionIdsAtAllLevels?: { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; };
+  selectedOutputVariables?: string[];
   nonDefaultQualifiers?: string[];
   selectedQualifierValues?: string[];
   selectedYears?: string[];
@@ -110,7 +116,7 @@ export interface DataState {
   regionRankingWeights?: {[key: string]: {name: string; weight: number}};
 
   //
-  datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
+  datacubeTitles?: {datacubeName: string; datacubeOutputName: string; source: string}[];
   datacubeRegions?: string[];
   relativeTo?: string | null;
   visibleTimeseriesData?: Timeseries[];
@@ -128,3 +134,26 @@ export interface DataState {
   // ...
   [propName: string]: any; // allow other properties to be added
 }
+
+export interface InsightMetadata {
+  projectName: string;
+  insightLastUpdate: number;
+  datacubes?: {datasetName: string; outputName: string; source: string}[];
+
+  // data space specific
+  analysisName?: string;
+
+  // CAG specific
+  cagName?: string;
+  ontology?: string;
+  ontology_created_at?: number;
+  ontology_modified_at?: number;
+  corpus_id?: string;
+  filters?: string;
+  selectedNode?: string;
+  selectedEdge?: string;
+  nodesCount?: string;
+  currentEngine?: string;
+  selectedCAGScenario?: string;
+}
+

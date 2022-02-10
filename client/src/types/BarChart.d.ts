@@ -5,4 +5,5 @@ export interface BarData {
   value: number;
   normalizedValue: number;
   color?: string;
+  opacity?: number;
 }

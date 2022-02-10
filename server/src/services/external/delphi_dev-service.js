@@ -26,8 +26,7 @@ const createModel = async (payload) => {
   const edges = result.relations.reduce((acc, edge) => {
     const key = `${edge.source}///${edge.target}`;
     acc[key] = {};
-    // FIXME: Delphi returns distributions, for now just default [0.5, 0.5]
-    acc[key].weights = [0.5, 0.5];
+    acc[key].weights = [0.0, 0.5]; // placeholder, Delphi returns weights after training
     return acc;
   }, {});
   return { nodes, edges, status: result.status };
@@ -99,7 +98,18 @@ const modelTrainingProgress = async (modelId) => {
   return result;
 };
 
-
+const updateEdgeParameter = async (modelId, edges) => {
+  const options = {
+    url: process.env.DELPHI_URL + `/models/${modelId}/edit-edges`,
+    method: 'POST',
+    headers: {
+      Accept: 'application/json'
+    },
+    json: { relations: edges }
+  };
+  const result = await requestAsPromise(options);
+  return result;
+};
 
 module.exports = {
   createModel,
@@ -107,5 +117,6 @@ module.exports = {
   modelStatus,
   findExperiment,
 
-  modelTrainingProgress
+  modelTrainingProgress,
+  updateEdgeParameter
 };

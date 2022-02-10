@@ -2,26 +2,28 @@ import _ from 'lodash';
 import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { MapLegendColor, AnalysisMapStats, AnalysisMapColorOptions } from '@/types/Common';
-import { OutputSpecWithId, OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
-import { computeRegionalStats, adminLevelToString, computeGridLayerStats, DATA_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';
+import { OutputSpecWithId, OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
+import { computeRegionalStats, computeRawDataStats, adminLevelToString, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
 import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';
-import { getOutputStats } from '@/services/runoutput-service';
+import { getOutputStats } from '@/services/outputdata-service';
 import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 
 export default function useAnalysisMapStats(
   outputSourceSpecs: Ref<OutputSpecWithId[]>,
   regionalData: Ref<RegionalAggregations | null>,
   relativeTo: Ref<string | null>,
-  selectedDataLayer: Ref<string>,
+  selectedDataLayer: Ref<DATA_LAYER>,
   selectedAdminLevel: Ref<number>,
   showPercentChange: Ref<boolean>,
   colorOptions: Ref<AnalysisMapColorOptions>,
   referenceOptions: Ref<string[]>,
-  breakdownOption: Ref<string|null>
+  breakdownOption: Ref<string | null>,
+  rawDataPointsList: Ref<RawOutputDataPoint[][]>
 ) {
+  // ===== Set up stats and legend for the admin layer ===== //
+
   const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
-  const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
   const adminLayerStats = ref<AnalysisMapStats>();
   watchEffect(() => {
     if (!regionalData.value) {
@@ -55,6 +57,9 @@ export default function useAnalysisMapStats(
     }
   });
 
+  // ===== Calculate stats and legend for the grid layer dynamically ===== //
+
+  const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
   const outputStats = ref<OutputStatsResult[]>([]);
   const gridLayerStats = ref<AnalysisMapStats>();
   const mapCurZoom = ref<number>(0);
@@ -121,14 +126,31 @@ export default function useAnalysisMapStats(
     }
   });
 
-  const isGridLayer = computed(() => {
-    return selectedDataLayer.value === DATA_LAYER.TILES;
+  // ===== Set up stats and legend for raw points layer ===== //
+
+  const pointsMapLayerLegendData = ref<MapLegendColor[][]>([]);
+  const pointsLayerStats = ref<AnalysisMapStats>();
+  watchEffect(() => {
+    pointsLayerStats.value = computeRawDataStats(rawDataPointsList.value);
+    const globalStats = pointsLayerStats.value.global.all;
+    pointsMapLayerLegendData.value = globalStats ? [
+      createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn, colorOptions.value.isDiverging)
+    ] : [];
   });
 
-  const mapSelectedLayer = computed(() => SOURCE_LAYERS[isGridLayer.value ? 4 : selectedAdminLevel.value].layerId);
+  // ======================================================================== //
 
   const mapLegendData = computed(() => {
-    return isGridLayer.value ? gridMapLayerLegendData.value : adminMapLayerLegendData.value;
+    switch (selectedDataLayer.value) {
+      case DATA_LAYER.ADMIN:
+        return adminMapLayerLegendData.value;
+      case DATA_LAYER.TILES:
+        return gridMapLayerLegendData.value;
+      case DATA_LAYER.RAW:
+        return pointsMapLayerLegendData.value;
+      default:
+        return adminMapLayerLegendData.value;
+    }
   });
 
   return {
@@ -136,10 +158,7 @@ export default function useAnalysisMapStats(
     recalculateGridMapDiffStats,
     adminLayerStats,
     gridLayerStats,
-    gridMapLayerLegendData,
-    adminMapLayerLegendData,
-    mapLegendData,
-    isGridLayer,
-    mapSelectedLayer
+    pointsLayerStats,
+    mapLegendData
   };
 }

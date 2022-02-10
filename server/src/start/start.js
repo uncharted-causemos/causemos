@@ -23,6 +23,7 @@ async function runStartup() {
   Logger.info(`\tQueue Service URL: ${process.env.WM_QUEUE_SERVICE_URL}`);
   Logger.info(`\tDELPHI_URL: ${process.env.DELPHI_URL}`);
   Logger.info(`\tDYSE_URL: ${process.env.DYSE_URL}`);
+  Logger.info(`\tSENSEI_URL: ${process.env.SENSEI_URL}`);
   Logger.info(`\tWM_CURATION_SERVICE_URL: ${process.env.WM_CURATION_SERVICE_URL}`);
 
   // Force project cache to refresh the first time around

@@ -408,6 +408,7 @@
                     :key="spec.id"
                     class="card-map-container"
                     :class="[
+                       {'is-default-run': spec.isDefaultRun },
                       `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
                     ]"
                   >
@@ -423,17 +424,16 @@
                       :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
-                      :reference-options="activeReferenceOptions"
-                      :is-default-run="spec.isDefaultRun"
                       :show-tooltip="true"
                       :selected-layer-id="getSelectedLayer(spec.id)"
                       :all-active-layer-ids="allActiveLayerIds"
                       :map-bounds="mapBounds"
-                      :camera-options="mapCameraOptions"
                       :region-data="regionalData"
+                      :raw-data="rawDataPointsList[indx]"
                       :selected-region-ids="allActiveRegionIds"
                       :admin-layer-stats="adminLayerStats"
                       :grid-layer-stats="gridLayerStats"
+                      :points-layer-stats="pointsLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
                       :color-options="mapColorOptions"
@@ -483,6 +483,7 @@
                   :selected-timestamp="selectedTimestamp"
                   :selected-scenario-ids="selectedScenarioIds"
                   :selected-region-ids="selectedRegionIds"
+                  :selected-region-ids-at-all-levels="selectedRegionIdsAtAllLevels"
                   :selected-qualifier-values="selectedQualifierValues"
                   :selected-breakdown-option="breakdownOption"
                   :selected-timeseries-points="selectedTimeseriesPoints"
@@ -588,6 +589,7 @@ import TemporalFacet from '@/components/facets/temporal-facet.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
 import useMapBounds from '@/services/composables/useMapBounds';
+import useRawPointsData from '@/services/composables/useRawPointsData';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
@@ -600,6 +602,7 @@ import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimes
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useMultiTimeseriesData from '@/services/composables/useMultiTimeseriesData';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+
 import { getInsightById } from '@/services/insight-service';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 
@@ -621,7 +624,7 @@ import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datac
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Outputdata';
 
 import {
   COLOR,
@@ -651,7 +654,8 @@ import {
   BASE_LAYER,
   DATA_LAYER,
   DATA_LAYER_TRANSPARENCY,
-  SOURCE_LAYERS
+  SOURCE_LAYERS,
+  getMapSourceLayer
 } from '@/utils/map-util-new';
 
 import { addModelRunsTag, createModelRun, removeModelRunsTag, updateModelRun } from '@/services/new-datacube-service';
@@ -809,23 +813,6 @@ export default defineComponent({
       }
     );
 
-    const selectedBreakdownOutputVariables = ref(new Set<string>());
-    const toggleIsOutputVariableSelected = (outputVariable: string) => {
-      const isOutputVariableSelected = selectedBreakdownOutputVariables.value.has(outputVariable);
-      const updatedList = _.clone(selectedBreakdownOutputVariables.value);
-
-      if (isOutputVariableSelected) {
-        // If an output variable is currently selected, remove it from the list
-        updatedList.delete(outputVariable);
-      } else {
-        // Else add it to the list of selected output variables.
-        updatedList.add(outputVariable);
-      }
-
-      // Assign new object to selectedBreakdownOutputVariables.value to trigger reactivity updates.
-      selectedBreakdownOutputVariables.value = updatedList;
-    };
-
     //
     // color scheme options
     //
@@ -904,10 +891,36 @@ export default defineComponent({
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
+    const initialSelectedOutputVariables = ref<string[]>([]);
     const initialNonDefaultQualifiers = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
     const initialSelectedYears = ref<string[]>([]);
     const initialActiveReferenceOptions = ref<string[]>([]);
+
+    const selectedBreakdownOutputVariables = ref(new Set<string>());
+    const toggleIsOutputVariableSelected = (outputVariable: string) => {
+      const isOutputVariableSelected = selectedBreakdownOutputVariables.value.has(outputVariable);
+      const updatedList = _.clone(selectedBreakdownOutputVariables.value);
+
+      if (isOutputVariableSelected) {
+        // If an output variable is currently selected, remove it from the list
+        updatedList.delete(outputVariable);
+      } else {
+        // Else add it to the list of selected output variables.
+        updatedList.add(outputVariable);
+      }
+
+      // Assign new object to selectedBreakdownOutputVariables.value to trigger reactivity updates.
+      selectedBreakdownOutputVariables.value = updatedList;
+    };
+    watch(
+      () => [
+        initialSelectedOutputVariables.value
+      ],
+      () => {
+        selectedBreakdownOutputVariables.value = new Set(initialSelectedOutputVariables.value);
+      }
+    );
 
     const addNewTag = (tagName: string) => {
       let numAdded = 0;
@@ -1172,6 +1185,9 @@ export default defineComponent({
           }
           if (initialDataConfig.value.selectedRegionIds !== undefined) {
             initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
+          }
+          if (initialDataConfig.value.selectedOutputVariables !== undefined) {
+            initialSelectedOutputVariables.value = _.clone(initialDataConfig.value.selectedOutputVariables);
           }
           if (initialDataConfig.value.selectedYears !== undefined) {
             initialSelectedYears.value = _.clone(initialDataConfig.value.selectedYears);
@@ -1556,6 +1572,9 @@ export default defineComponent({
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
           initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
         }
+        if (loadedInsight.data_state?.selectedOutputVariables !== undefined) {
+          initialSelectedOutputVariables.value = _.clone(loadedInsight.data_state?.selectedOutputVariables);
+        }
         // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
         if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
           initialSelectedQualifierValues.value = _.clone(loadedInsight.data_state?.selectedQualifierValues);
@@ -1570,6 +1589,8 @@ export default defineComponent({
         }
       }
     };
+
+    const isRawDataLayerSelected = computed(() => selectedDataLayer.value === DATA_LAYER.RAW);
 
     const activeFeatures = computed(() => {
       if (outputs.value === null || selectedBreakdownOutputVariables.value.size === 0) return [];
@@ -1634,6 +1655,7 @@ export default defineComponent({
     const {
       datacubeHierarchy,
       selectedRegionIds,
+      selectedRegionIdsAtAllLevels,
       referenceRegions,
       toggleIsRegionSelected
     } = useDatacubeHierarchy(
@@ -1692,7 +1714,8 @@ export default defineComponent({
       showPercentChange,
       activeFeature,
       selectedScenarios,
-      activeReferenceOptions
+      activeReferenceOptions,
+      isRawDataLayerSelected
     );
 
     watchEffect(() => {
@@ -1737,9 +1760,10 @@ export default defineComponent({
       activeReferenceOptions
     );
 
-    const unit = computed(() =>
-      getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value)
-    );
+    const unit = computed(() => {
+      const transform = isRawDataLayerSelected.value ? DataTransform.None : selectedTransform.value;
+      return getUnitString(mainModelOutput?.value?.unit || null, transform);
+    });
 
     const popupFormatter = (feature: any) => {
       const { label, value, normalizedValue } = feature.state || {};
@@ -1834,12 +1858,16 @@ export default defineComponent({
     });
 
     const {
+      rawDataPointsList
+    } = useRawPointsData(outputSpecs, selectedRegionIds, breakdownOption, selectedDataLayer);
+
+    const {
       updateMapCurSyncedZoom,
       recalculateGridMapDiffStats,
       adminLayerStats,
       gridLayerStats,
-      mapLegendData,
-      mapSelectedLayer
+      pointsLayerStats,
+      mapLegendData
     } = useAnalysisMapStats(
       outputSpecs,
       regionalData,
@@ -1849,27 +1877,19 @@ export default defineComponent({
       showPercentChange,
       mapColorOptions,
       activeReferenceOptions,
-      breakdownOption
+      breakdownOption,
+      rawDataPointsList
     );
+
+    const mapSelectedLayerId = computed(() => {
+      return getMapSourceLayer(selectedDataLayer.value, selectedAdminLevel.value).layerId;
+    });
 
     const {
       onSyncMapBounds,
       mapBounds
     } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIds);
 
-    const mapCameraOptions = computed(() => {
-      const cameraOptions = {
-        padding: 20, // pixels
-        duration: 1000, // milliseconds
-        essential: true // this animation is considered essential with respect to prefers-reduced-motion
-      };
-      if (outputSpecs.value.length > 1) {
-        // if more than one map is shown, e.g., when relativeTo is active
-        //  disable animation since the multiple maps are supposed to sync together on move
-        return { duration: 0 };
-      }
-      return cameraOptions;
-    });
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
@@ -1915,6 +1935,8 @@ export default defineComponent({
         nonDefaultQualifiers,
         selectedQualifierValues,
         selectedRegionIds,
+        selectedRegionIdsAtAllLevels,
+        selectedBreakdownOutputVariables,
         selectedScenarioIds,
         selectedTimestamp,
         selectedYears,
@@ -1970,9 +1992,35 @@ export default defineComponent({
       }
     };
 
+    // Check if we have active regional reference series by looking at the current breakdown option
+    // and the lenght of active reference options
+    const hasRegionalReferenceSeries = computed(() => {
+      return activeReferenceOptions.value.length > 0 && breakdownOption.value === SpatialAggregationLevel.Region;
+    });
+
+    // If we have active regional reference series, then we need to provide layer ids for all active
+    // regions/layers. As we currently only allow country level reference series, we add the country
+    // to the list of selected layers.
+    const allActiveLayerIds = computed(() => {
+      return hasRegionalReferenceSeries.value
+        ? [SOURCE_LAYERS[0].layerId, mapSelectedLayerId.value]
+        : [mapSelectedLayerId.value];
+    });
+
+    // If we have active regional reference series, then we need to provide region ids for all active
+    // regions/layers. As we currently only allow country level reference series, we add the selected
+    // to the country region ids from the active reference options to the list of selected region ids.
+    const allActiveRegionIds = computed(() => {
+      return hasRegionalReferenceSeries.value
+        ? [...selectedRegionIds.value, ...activeReferenceOptions.value]
+        : selectedRegionIds.value;
+    });
+
     return {
       activeReferenceOptions,
       addNewTag,
+      allActiveLayerIds,
+      allActiveRegionIds,
       allModelRunData,
       activeDrilldownTab,
       activeVizOptionsTab,
@@ -1996,17 +2044,17 @@ export default defineComponent({
       gridLayerStats,
       hasDefaultRun,
       headerGroupButtons,
+      hasRegionalReferenceSeries,
       isContinuousScale,
       isDivergingScale,
       isModelMetadata,
       isRelativeDropdownOpen,
       mainModelOutput,
       mapBounds,
-      mapCameraOptions,
       mapColorOptions,
       mapLegendData,
       mapReady,
-      mapSelectedLayer,
+      mapSelectedLayerId,
       modelRunsSearchData,
       newRunsMode,
       onMapLoad,
@@ -2017,11 +2065,13 @@ export default defineComponent({
       onUpdateScenarioSelection,
       ordinalDimensionNames,
       outputSpecs,
+      pointsLayerStats,
       potentialScenarios,
       potentialScenarioCount,
       projectType,
       preGenDataItems,
       qualifierBreakdownData,
+      rawDataPointsList,
       outputVariableBreakdownData,
       recalculateGridMapDiffStats,
       regionalData,
@@ -2050,6 +2100,7 @@ export default defineComponent({
       selectedPreGenDataItem,
       selectedQualifierValues,
       selectedRegionIds,
+      selectedRegionIdsAtAllLevels,
       referenceRegions,
       selectedScenarioIds,
       selectedScenarios,
@@ -2149,37 +2200,14 @@ export default defineComponent({
         result = result.filter(tag => tags.includes(tag));
       });
       return result;
-    },
-
-    // Check if we have active regional reference series by looking at the current breakdown option
-    // and the lenght of active reference options
-    hasRegionalReferenceSeries(): boolean {
-      return this.activeReferenceOptions.length > 0 && this.breakdownOption === SpatialAggregationLevel.Region;
-    },
-
-    // If we have active regional reference series, then we need to provide layer ids for all active
-    // regions/layers. As we currently only allow country level reference series, we add the country
-    // to the list of selected layers.
-    allActiveLayerIds(): string[] {
-      return this.hasRegionalReferenceSeries
-        ? [SOURCE_LAYERS[0].layerId, this.mapSelectedLayer]
-        : [this.mapSelectedLayer];
-    },
-
-    // If we have active regional reference series, then we need to provide region ids for all active
-    // regions/layers. As we currently only allow country level reference series, we add the selected
-    // to the country region ids from the active reference options to the list of selected region ids.
-    allActiveRegionIds(): string[] {
-      return this.hasRegionalReferenceSeries
-        ? [...this.selectedRegionIds, ...this.activeReferenceOptions]
-        : this.selectedRegionIds;
     }
   },
   methods: {
     getSelectedLayer(id: string): string {
-      return this.isReferenceSeries(id) && this.breakdownOption === SpatialAggregationLevel.Region
+      const layerId = this.isReferenceSeries(id) && this.breakdownOption === SpatialAggregationLevel.Region && this.selectedDataLayer === DATA_LAYER.ADMIN
         ? SOURCE_LAYERS[0].layerId
-        : this.mapSelectedLayer;
+        : this.mapSelectedLayerId;
+      return layerId;
     },
     isReferenceSeries(id: string): boolean {
       return this.referenceOptions.filter((item) => item.id === id).length > 0;
@@ -2494,6 +2522,11 @@ $marginSize: 5px;
   ::v-deep(.wm-map) {
     border-style: solid;
     border-color: inherit;
+  }
+  &.is-default-run {
+    ::v-deep(.wm-map) {
+      border-width: 8px;
+    }
   }
   &.card-count-1 {
     ::v-deep(.wm-map) {

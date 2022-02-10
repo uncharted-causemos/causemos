@@ -41,30 +41,33 @@
           :selected-timestamp-range="selectedTimestampRange"
           :breakdown-option="breakdownOption"
           @select-timestamp="setSelectedTimestamp"
-        />
-        <div class="row datacube-footer">
-          <div>Aggregated by: {{ selectedSpatialAggregation }}</div>
-          <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
-          <div style="display: flex; align-items: center">
-            <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
-            <div style="display: flex; align-items: center">
-              <div style="margin-right: 4px">Selected:</div>
-              <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
-                @change="selectedScenarioIndex = $event.target.selectedIndex"
-                :disabled="selectedScenarioIds.length === 1"
-                :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex ? regionRunsScenarios[selectedScenarioIndex].color : 'black' }"
-              >
-                <option
-                  v-for="(selectedRun, indx) in regionRunsScenarios"
-                  :key="selectedRun.name"
-                  :selected="indx === selectedScenarioIndex"
-                >
-                  {{selectedRun.name}}
-                </option>
-              </select>
+        >
+          <template #timeseries-footer-contents>
+            <div class="row datacube-footer">
+              <div>Aggregated by: {{ selectedSpatialAggregation }}</div>
+              <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
+              <div style="display: flex; align-items: center">
+                <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
+                <div style="display: flex; align-items: center">
+                  <div style="margin-right: 4px">Selected:</div>
+                  <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
+                          @change="selectedScenarioIndex = $event.target.selectedIndex"
+                          :disabled="selectedScenarioIds.length === 1"
+                          :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex ? regionRunsScenarios[selectedScenarioIndex].color : 'black' }"
+                  >
+                    <option
+                      v-for="(selectedRun, indx) in regionRunsScenarios"
+                      :key="selectedRun.name"
+                      :selected="indx === selectedScenarioIndex"
+                    >
+                      {{selectedRun.name}}
+                    </option>
+                  </select>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </template>
+        </timeseries-chart>
       </div>
       <div class="datacube-map-placeholder">
         <region-map
@@ -72,6 +75,7 @@
           :selected-layer-id="selectedAdminLevel"
           :map-bounds="bbox"
           :popup-formatter="popupFormatter"
+          :selected-region-ids="selectedRegionIds"
         />
       </div>
     </main>
@@ -99,13 +103,13 @@ import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions'
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { COLOR, colorFromIndex, ColorScaleType, COLOR_SCHEME, getColors, isDiscreteScale, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
-import { adminLevelToString, computeMapBoundsForCountries } from '@/utils/map-util-new';
+import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import { RegionalAggregations } from '@/types/Runoutput';
+import { RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { normalize } from '@/utils/value-util';
@@ -158,6 +162,8 @@ export default defineComponent({
     const selectedScenarios = ref([] as ModelRun[]);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
+
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
 
     const store = useStore();
 
@@ -276,6 +282,9 @@ export default defineComponent({
           if (initialViewConfig.value.selectedAdminLevel !== undefined) {
             selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
           }
+          if (initialViewConfig.value.baseLayerTransparency !== undefined) {
+            selectedDataLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
+          }
         }
 
         // apply initial data config for this datacube
@@ -353,6 +362,7 @@ export default defineComponent({
           //
           datacubeName: metadata.value.name,
           datacubeOutputName: mainModelOutput.value?.display_name,
+          source: metadata.value.maintainer.organization,
           //
           region: metadata.value.geography.country // FIXME: later this could be the selected region for each datacube
         });
@@ -435,7 +445,8 @@ export default defineComponent({
         regionalData.value,
         selectedAdminLevel.value,
         finalColorScheme.value,
-        selectedScenarioIndex.value
+        selectedScenarioIndex.value,
+        selectedDataLayerTransparency.value
       ],
       () => {
         const temp: BarData[] = [];
@@ -477,7 +488,8 @@ export default defineComponent({
                   label: dataItem.name,
                   value: itemValue,
                   normalizedValue: normalizedValue,
-                  color: regionColor
+                  color: regionColor,
+                  opacity: Number(selectedDataLayerTransparency.value)
                 });
                 regionIndexCounter++;
               });
@@ -499,6 +511,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedScenarioIds,
+      selectedRegionIds,
       selectedRegionIdsDisplay,
       metadata,
       mainModelOutput,
@@ -637,6 +650,7 @@ main {
   font-size: small;
   display: flex;
   justify-content: space-around;
+  flex: 1;
 }
 
 </style>

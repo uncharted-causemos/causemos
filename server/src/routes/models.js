@@ -224,8 +224,6 @@ const buildCreateModelPayloadDeprecated = async (modelId) => {
 
 /**
  * GET register payload as a downlodable JSON
- *
- * FIXME: Overlap logic with register end point, should consolidate
  */
 router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
@@ -238,6 +236,73 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
     res.status(400).send(err.message);
   }
 }));
+
+
+
+// Engine will come back with default weight that are inferred, in all cases engine-weights
+// are updated.
+//
+// 1. if edge has no weights, it takes the engine's inferred weights
+// 2. if edge has weights, it retains the values and will send back "overrides"
+const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
+  const components = await cagService.getComponents(modelId);
+  const edgesToUpdate = [];
+  const edgesToOverride = [];
+
+  for (const edgeParameter of components.edges) {
+    const key = `${edgeParameter.source}///${edgeParameter.target}`;
+
+    const parameter = _.get(edgeParameter, 'parameter', {});
+    const currentEngineWeightsConfig = _.get(edgeParameter, 'parameter.engine_weights', {});
+
+    const engineInferredWeights = _.get(inferredEdgeMap[key], 'weights', [0.0, 0.5]);
+    const currentWeights = _.get(edgeParameter, 'parameter.weights', []);
+    const currentEngineWeights = currentEngineWeightsConfig[engine];
+
+    let updateEngineConfig = false;
+    let updateWeights = false;
+    let overrideWeights = false;
+
+    // Update inferred engine weights
+    if (!_.isEqual(engineInferredWeights, currentEngineWeights)) {
+      updateEngineConfig = true;
+      currentEngineWeightsConfig[engine] = engineInferredWeights;
+      parameter.engine_weights = currentEngineWeightsConfig;
+    }
+
+    if (_.isEmpty(currentWeights)) {
+      updateWeights = true;
+      parameter.weights = engineInferredWeights;
+    } else {
+      overrideWeights = true;
+    }
+
+    // Resolve state - update on ourside
+    if (updateEngineConfig || updateWeights) {
+      edgesToUpdate.push({
+        id: edgeParameter.id,
+        parameter: parameter
+      });
+    }
+
+    // Resolve state - update to engine
+    if (overrideWeights) {
+      edgesToOverride.push({
+        source: edgeParameter.source,
+        target: edgeParameter.target,
+        polarity: edgeParameter.polarity,
+        parameter: {
+          weights: currentWeights
+        }
+      });
+    }
+  }
+
+  return {
+    edgesToUpdate,
+    edgesToOverride
+  };
+};
 
 
 /**
@@ -280,66 +345,12 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     return;
   }
 
-
   // Sort out weights
-  //
-  // Engine will come back with default weight that are inferred, in all cases engine-weights
-  // are updated.
-  //
-  // 1. if edge has no weights, it takes the engine's inferred weights
-  // 2. if edge has weights, it retains the values and will send back "overrides"
-  const components = await cagService.getComponents(modelId);
-
-  const edgesToUpdate = [];
-  const edgesToOverride = [];
-  for (const edgeParameter of components.edges) {
-    const key = `${edgeParameter.source}///${edgeParameter.target}`;
-
-    const parameter = _.get(edgeParameter, 'parameter', {});
-    const currentEngineWeightsConfig = _.get(edgeParameter, 'parameter.engine_weights', {});
-
-    const engineInferredWeights = _.get(initialParameters.edges[key], 'weights', [0.0, 0.5]);
-    const currentWeights = _.get(edgeParameter, 'parameter.weights', []);
-    const currentEngineWeights = currentEngineWeightsConfig[engine];
-
-    let updateEngineConfig = false;
-    let updateWeights = false;
-    let overrideWeights = false;
-
-    // Update inferred engine weights
-    if (!_.isEqual(engineInferredWeights, currentEngineWeights)) {
-      updateEngineConfig = true;
-      currentEngineWeightsConfig[engine] = engineInferredWeights;
-      parameter.engine_weights = currentEngineWeightsConfig;
-    }
-
-    if (_.isEmpty(currentWeights)) {
-      updateWeights = true;
-      parameter.weights = engineInferredWeights;
-    } else {
-      overrideWeights = true;
-    }
-
-    // Resolve state - update on ourside
-    if (updateEngineConfig || updateWeights) {
-      edgesToUpdate.push({
-        id: edgeParameter.id,
-        parameter: parameter
-      });
-    }
-
-    // Resolve state - update to engine
-    if (overrideWeights) {
-      edgesToOverride.push({
-        source: edgeParameter.source,
-        target: edgeParameter.target,
-        polarity: edgeParameter.polarity,
-        parameter: {
-          weights: currentWeights
-        }
-      });
-    }
-  }
+  const { edgesToUpdate, edgesToOverride } = await processInferredEdgeWeights(
+    modelId,
+    engine,
+    initialParameters.edges
+  );
 
   if (edgesToUpdate.length > 0) {
     const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
@@ -408,6 +419,39 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
       [engine]: v
     }
   });
+
+  // Patch Delphi's inferred weights
+  if ((engine === DELPHI || engine === DELPHI_DEV) && modelStatus.status === 'ready') {
+    const inferredEdgeMap = modelStatus.relations.reduce((acc, edge) => {
+      const key = `${edge.source}///${edge.target}`;
+      acc[key] = {};
+
+      acc[key].weights = [0.0, Math.abs(edge.weights[0])];
+      return acc;
+    }, {});
+
+    // Sort out weights
+    const { edgesToUpdate, edgesToOverride } = await processInferredEdgeWeights(
+      modelId,
+      engine,
+      inferredEdgeMap
+    );
+
+    if (edgesToUpdate.length > 0) {
+      const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+      const r = await edgeParameterAdapter.update(edgesToUpdate, d => d.id, 'wait_for');
+      if (r.errors) {
+        throw new Error(JSON.stringify(r.items[0]));
+      }
+    }
+    if (edgesToOverride.length > 0) {
+      if (engine === DELPHI) {
+        await delphiService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
+      } else if (engine === DELPHI_DEV) {
+        await delphiDevService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
+      }
+    }
+  }
 
   // Patch Delphi's progress
   if (engine === DELPHI) {
@@ -682,13 +726,9 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
 
   await scenarioService.invalidateByModel(modelId);
 
-  // FIXME: double check we do not need to flag cag as unregistered
-  // await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.NOT_REGISTERED });
-
   historyService.logHistory(modelId, 'set weights', [], [{ source, target, parameter }]);
 
   res.status(200).send({ updateToken: moment().valueOf() });
-
   releaseLock(modelId);
 }));
 

@@ -4,18 +4,33 @@
       v-if="selectedRelationship.parameter"
       style="display: inline-block">
       <span
+        v-if="currentView === 'quantitative'"
         class="clickable-dropdown"
         @click.stop="openEdgeTypeDropdown()">
         <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
         {{ weightTypeString(currentEdgeType) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
+      <span
+        v-if="currentView === 'qualitative'"
+        class="clickable-dropdown">
+        <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
+        {{ weightTypeString(currentEdgeType) }} &nbsp;
+      </span>
       <dropdown-control
         v-if="isEdgeTypeOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option" @click="setType('level')">{{ weightTypeString('level') }}</div>
-          <div class="dropdown-option" @click="setType('trend')">{{ weightTypeString('trend') }}</div>
+          <div class="dropdown-option" @click="setType('level')">
+            <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            {{ weightTypeString('level') }}
+          </div>
+          <div class="dropdown-option" @click="setType('trend')">
+            <i v-if="currentEdgeType === 'trend'" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            {{ weightTypeString('trend') }}
+          </div>
         </template>
       </dropdown-control>
     </div>
@@ -27,18 +42,45 @@
       v-if="selectedRelationship.parameter && selectedRelationship.parameter.weights"
       style="display: inline-block">
       <span
+        v-if="currentView === 'quantitative'"
         class="clickable-dropdown"
         @click.stop="openEdgeWeightDropdown()">
         {{ weightValueString(currentEdgeWeight) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
+      <span
+        v-if="currentView === 'qualitative'"
+        class="clickable-dropdown">
+        {{ weightValueString(currentEdgeWeight) }} &nbsp;
+      </span>
+
       <dropdown-control
         v-if="isEdgeWeightOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option" @click="setWeight(0.1)">{{ weightValueString(0.1) }}</div>
-          <div class="dropdown-option" @click="setWeight(0.5)">{{ weightValueString(0.5) }}</div>
-          <div class="dropdown-option" @click="setWeight(0.9)">{{ weightValueString(0.9) }}</div>
+          <div class="dropdown-option" @click="setWeight(0.1)">
+            <i v-if="currentEdgeWeight === 0.1" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            {{ weightValueString(0.1) }} (0.1)
+          </div>
+          <div class="dropdown-option" @click="setWeight(0.5)">
+            <i v-if="currentEdgeWeight === 0.5" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            {{ weightValueString(0.5) }} (0.5)
+          </div>
+          <div class="dropdown-option" @click="setWeight(0.9)">
+            <i v-if="currentEdgeWeight === 0.9" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            {{ weightValueString(0.9) }} (0.9)
+          </div>
+          <div class="dropdown-option" @click="setWeight(inferredWeightValue)">
+            <i v-if="currentEdgeWeight === inferredWeightValue" class="fa fa-fw fa-circle"></i>
+            <i v-else class="fa fa-fw fa-circle-o"></i>
+            <div> Inferred </div>
+            <div>
+              {{ weightValueString(inferredWeightValue) }} ({{ inferredWeightValue.toFixed(3) }})
+            </div>
+          </div>
         </template>
       </dropdown-control>
     </div>
@@ -83,17 +125,18 @@
 
   <img
     v-if="polarity !== 0"
-    style="padding-bottom: 15px"
+    style="padding-bottom: 15px; height: 85px"
     :src="explainerGlyphFilepath"
   >
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, ref, computed, PropType } from 'vue';
+import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { EdgeParameter } from '@/types/CAG';
+import { CAGModelSummary, EdgeParameter } from '@/types/CAG';
 
 const EDGE_TYPE_LEVEL = 'level';
 const EDGE_TYPE_TREND = 'trend';
@@ -135,6 +178,10 @@ export default defineComponent({
   },
   emits: ['edge-set-user-polarity', 'edge-set-weights'],
   props: {
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      required: true
+    },
     selectedRelationship: {
       type: Object,
       required: true
@@ -142,6 +189,8 @@ export default defineComponent({
   },
   setup(props) {
     const ontologyFormatter = useOntologyFormatter();
+    const store = useStore();
+    const currentView = computed(() => store.getters['app/currentView']);
 
     const dropDown = ref(DROPDOWN.NONE);
     const isEdgeTypeOpen = computed(() => {
@@ -157,8 +206,20 @@ export default defineComponent({
     const currentEdgeType = ref(getEdgeTypeString(props.selectedRelationship as EdgeParameter));
     const currentEdgeWeight = ref(getEdgeWeight(props.selectedRelationship as EdgeParameter));
 
+    const engineWeights = (props.selectedRelationship as EdgeParameter).parameter?.engine_weights;
+
+    const inferredWeights = engineWeights
+      ? engineWeights[props.modelSummary.parameter.engine]
+      : [0, 0];
+
+    const inferredWeightType = inferredWeights[0] > inferredWeights[1] ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
+    const inferredWeightValue = inferredWeights[0] > inferredWeights[1] ? inferredWeights[0] : inferredWeights[1];
+
+
     return {
+      currentView,
       ontologyFormatter,
+
       isEdgeTypeOpen,
       isEdgeWeightOpen,
       isEdgePolarityOpen,
@@ -167,6 +228,8 @@ export default defineComponent({
       currentEdgeType,
       currentEdgeWeight,
 
+      inferredWeightType,
+      inferredWeightValue,
       STATEMENT_POLARITY
     };
   },
@@ -288,7 +351,7 @@ export default defineComponent({
   font-weight: normal;
   cursor: default;
   position: absolute;
-  margin: -10px 0 0 4px;
+  margin: -5px 0 0 4px;
 }
 
 .polarity-same {

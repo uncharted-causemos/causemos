@@ -41,13 +41,15 @@ export default {
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
       updatedInsight: 'insightPanel/updatedInsight',
-      filters: 'dataSearch/filters'
+      filters: 'dataSearch/filters',
+      analysisName: 'app/analysisName',
+      projectType: 'app/projectType'
     }),
     formattedFilterString() {
       return insightUtil.getFormattedFilterString(this.filters);
     },
     metadataDetails() {
-      return insightUtil.parseMetadataDetails(this.updatedInsight.data_state, this.projectMetadata, this.formattedFilterString, this.currentView);
+      return insightUtil.parseMetadataDetails(this.updatedInsight.data_state, this.projectMetadata, this.analysisName, this.formattedFilterString, this.currentView, this.projectType, this.updatedInsight.modified_at);
     }
   },
   watch: {
