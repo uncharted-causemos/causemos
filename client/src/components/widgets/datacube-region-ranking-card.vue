@@ -124,7 +124,7 @@ import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimes
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
-import { RegionalAggregations } from '@/types/Outputdata';
+import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
@@ -401,17 +401,24 @@ export default defineComponent({
       selectedScenarioIds
     );
 
+    const activeFeatures = computed<OutputVariableSpecs[]>(() => {
+      return selectedTimeseriesPoints.value.map(() => ({
+        temporalAggregation: selectedTemporalAggregation.value as AggregationOption,
+        temporalResolution: selectedTemporalResolution.value as TemporalResolutionOption,
+        spatialAggregation: selectedSpatialAggregation.value as AggregationOption,
+        transform: DataTransform.None, // Transforms are NOT used for region ranking
+        name: activeFeature.value,
+        display_name: activeFeature.value
+      }));
+    });
+
     const {
       outputSpecs
     } = useOutputSpecs(
       id,
-      selectedSpatialAggregation,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      ref(DataTransform.None), // Transforms are NOT used for region ranking
       metadata,
       selectedTimeseriesPoints,
-      activeFeature
+      activeFeatures
     );
 
     const {

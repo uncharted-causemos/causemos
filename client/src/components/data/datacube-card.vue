@@ -1793,13 +1793,9 @@ export default defineComponent({
       outputSpecs
     } = useOutputSpecs(
       selectedModelId,
-      selectedSpatialAggregation,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      selectedTransform,
       metadata,
       selectedTimeseriesPoints,
-      activeFeature,
+      activeFeatures,
       filteredRunData,
       breakdownOption
     );

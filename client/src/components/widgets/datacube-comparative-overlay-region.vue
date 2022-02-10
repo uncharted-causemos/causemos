@@ -93,7 +93,7 @@ import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER, DATA_LAYE
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
-import { RawOutputDataPoint, RegionalAggregations } from '@/types/Outputdata';
+import { OutputVariableSpecs, RawOutputDataPoint, RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { normalize } from '@/utils/value-util';
@@ -377,17 +377,24 @@ export default defineComponent({
       selectedScenarioIds
     );
 
+    const activeFeatures = computed<OutputVariableSpecs[]>(() => {
+      return selectedTimeseriesPoints.value.map(() => ({
+        temporalAggregation: selectedTemporalAggregation.value as AggregationOption,
+        temporalResolution: selectedTemporalResolution.value as TemporalResolutionOption,
+        spatialAggregation: selectedSpatialAggregation.value as AggregationOption,
+        transform: selectedTransform.value,
+        name: activeFeature.value,
+        display_name: activeFeature.value
+      }));
+    });
+
     const {
       outputSpecs
     } = useOutputSpecs(
       id,
-      selectedSpatialAggregation,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      selectedTransform,
       metadata,
       selectedTimeseriesPoints,
-      activeFeature
+      activeFeatures
     );
 
     const {
