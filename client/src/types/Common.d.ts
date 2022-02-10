@@ -38,6 +38,46 @@ export interface DomainProject {
   draft_instances: string[];
 }
 
+export interface DatasetInfo {
+  data_id: string,
+  indicator_count: number,
+  name: string,
+  created_at: number,
+  source?: string
+}
+
+export interface DatacubeFamily {
+  id: string;
+  name: string;
+  type: string;
+  numReady: number;
+  numDraft: number;
+  source: string;
+  modifiedAt: number;
+}
+
+export interface RuntimeStage {
+  start_time: number;
+  end_time: number;
+}
+
+export interface DataPipelineInfo {
+  num_rows: number;
+  num_missing_ts: number;
+  num_invalid_ts: number;
+  num_missing_val: number;
+  region_levels?: string[];
+  features?: string[];
+  raw_count_threshold: number;
+  has_tiles: boolean;
+  has_monthly: number;
+  has_annual: number;
+  month_timeseries_size: { [feature: string]: number };
+  year_timeseries_size: { [feature: string]: number };
+  num_rows_per_feature: { [feature: string]: number };
+}
+
+
 // Side panel
 export interface SidePanelTab {
   name: string;

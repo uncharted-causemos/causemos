@@ -1,4 +1,5 @@
 import { ModelRunStatus } from '@/types/Enums';
+import { DataPipelineInfo, RuntimeStage } from "@/types/Common";
 
 export interface ModelRunParameter {
   name: string;
@@ -8,11 +9,6 @@ export interface ModelRunParameter {
 export interface ModelRunOutputAggregate {
   name: string;
   [key: string]: number;
-}
-
-export interface ModelRunRuntimeStage {
-  start: number;
-  end: number;
 }
 
 export interface PreGeneratedModelRunData {
@@ -43,9 +39,10 @@ export interface ModelRun {
   parameters: ModelRunParameter[];
   output_agg_values: ModelRunOutputAggregate[];
   runtimes: {
-    execution: ModelRunRuntimeStage;
-    post_processing: ModelRunRuntimeStage;
+    execution: RuntimeStage;
+    post_processing: RuntimeStage;
   };
+  data_info?: DataPipelineInfo;
   _version?: number
 }
 
