@@ -829,7 +829,10 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
         const targetNode = getLayoutNodeById(this.newEdgeTargetId);
 
-        this.hideNodeHandles();
+        // Hiding(removing) node handles here means that no click event will be
+        //  sent, so in-situ suggestions cannot be triggered. As a workaround,
+        //  remove the handles after a tick once the click handler has executed
+        setTimeout(this.hideNodeHandles.bind(this), 0);
         this.resetDragState();
 
         // remove edge indicators
@@ -849,10 +852,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         });
         this.handleBeingDragged = false;
       });
-    rightHandle.call(drag as any);
-    leftHandle.on('click', () => {
-      this.emit('fetch-suggested-impacts', node.datum());
-    });
+    rightHandle
+      .call(drag as any)
+      .on('click', (event) => {
+        this.emit('fetch-suggested-impacts', node.datum());
+        // Don't open the side panel
+        event.stopPropagation();
+      });
   }
 
   // FIXME Typescript weirdness
