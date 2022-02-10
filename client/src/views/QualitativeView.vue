@@ -271,7 +271,6 @@ import ModalTimeScale from '@/components/qualitative/modal-time-scale.vue';
 import { TimeScale } from '@/types/Enums';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import CagLegend from '@/components/graph/cag-legend.vue';
-import { getStatementsInKB } from '@/utils/relationship-suggestion-util';
 import { Statement } from '@/types/Statement';
 
 const PANE_ID = {
@@ -885,7 +884,7 @@ export default defineComponent({
       const concepts = this.selectedNode.components;
       this.isFetchingStatements = true;
 
-      const statements = await getStatementsInKB(concepts, this.project);
+      const statements = await projectService.getProjectStatementsForConcepts(concepts, this.project);
       this.selectedStatements = statements;
       this.isFetchingStatements = false;
     },

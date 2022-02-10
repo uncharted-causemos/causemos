@@ -92,7 +92,7 @@ import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
 import filtersUtil from '@/utils/filters-util';
-import { calculateNewNodesAndEdges, extractTopEdgesFromStatements } from '@/utils/relationship-suggestion-util';
+import { calculateNewNodesAndEdges, extractEdgesFromStatements, sortSuggestionsByEvidenceCount } from '@/utils/relationship-suggestion-util';
 
 const RELATIONSHIP_GROUP_KEY = {
   CAUSE: 'cause',
@@ -177,24 +177,26 @@ export default {
       setSearchClause: 'query/setSearchClause'
     }),
     refresh() {
-      const causeEdges = extractTopEdgesFromStatements(
+      const causeEdges = extractEdgesFromStatements(
         this.statements,
         this.selectedNode,
         this.graphData,
         true
       );
-      const effectEdges = extractTopEdgesFromStatements(
+      const effectEdges = extractEdgesFromStatements(
         this.statements,
         this.selectedNode,
         this.graphData,
         false
       );
-      const topCauseEdges = _.take(causeEdges, 5).map(
-        convertEdgeSuggestionToChecklistItem
-      );
-      const topEffectEdges = _.take(effectEdges, 5).map(
-        convertEdgeSuggestionToChecklistItem
-      );
+      const topCauseEdges = _.take(
+        sortSuggestionsByEvidenceCount(causeEdges),
+        5
+      ).map(convertEdgeSuggestionToChecklistItem);
+      const topEffectEdges = _.take(
+        sortSuggestionsByEvidenceCount(effectEdges),
+        5
+      ).map(convertEdgeSuggestionToChecklistItem);
       this.summaryData = {
         children: [
           {

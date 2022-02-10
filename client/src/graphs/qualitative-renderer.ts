@@ -87,6 +87,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     });
   }
 
+  /**
+   * Creates or updates all UI related to in-situ suggestions.
+   * @param suggestions The list of potential suggestions to present.
+   * @param selectedSuggestions Displayed in a separate column
+   * @param node Position UI relative to this. Other nodes will be faded out.
+   * @param isLoading If `true`, a loading indicator will be displayed instead of `suggestions`.
+   */
   setSuggestionData(
     suggestions: EdgeSuggestion[],
     selectedSuggestions: EdgeSuggestion[],

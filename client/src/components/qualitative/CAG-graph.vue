@@ -51,7 +51,13 @@ import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
 import { TimeScale } from '@/types/Enums';
-import { calculateNewNodesAndEdges, EdgeSuggestion, extractTopEdgesFromStatements, getEdgesFromConcepts, getStatementsInKB } from '@/utils/relationship-suggestion-util';
+import {
+  calculateNewNodesAndEdges,
+  EdgeSuggestion,
+  extractEdgesFromStatements,
+  getEdgesFromConcepts,
+  sortSuggestionsByEvidenceCount
+} from '@/utils/relationship-suggestion-util';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -104,12 +110,22 @@ export default defineComponent({
       return props.data.nodes.map(node => node.concept);
     });
 
-    const suggestionNode = ref<INode<NodeParameter> | null>(null);
+    // The node for which we're fetching/storing suggestions, as well as a
+    //  Cached copy of all of the statements related to the node, converted to
+    //  `EdgeSuggestion`s.
+    // Has a value of `null` when statements haven't been fetched yet.
     const allEdgeSuggestions = ref<{
       node: INode<NodeParameter>;
-      suggestions: EdgeSuggestion[]
+      suggestions: EdgeSuggestion[];
     } | null>(null);
+    // The `EdgeSuggestion`s for the current search query.
+    // Has a value of `null` when search text is empty or results haven't been
+    //  fetched yet.
     const searchSuggestions = ref<EdgeSuggestion[] | null>(null);
+    // The `EdgeSuggestion`s that have been selected to add to the CAG.
+    //  We have to store the whole suggestion instead of just an ID since
+    //  selected searchSuggestions won't appear in `allEdgeSuggestions` and
+    //  vice versa.
     const selectedEdgeSuggestions = ref<EdgeSuggestion[]>([]);
 
     return {
@@ -125,7 +141,6 @@ export default defineComponent({
       newNodeY,
 
       // Tracking edge suggestions
-      suggestionNode,
       allEdgeSuggestions,
       searchSuggestions,
       selectedEdgeSuggestions,
@@ -303,15 +318,15 @@ export default defineComponent({
         this.renderer?.exitSuggestionMode();
         this.allEdgeSuggestions = null;
         this.selectedEdgeSuggestions = [];
-        // Load statements that include the components in the selected
-        //  node-container
+        // Load all statements that include any of the components in the
+        //  selected node-container.
         this.renderer?.setSuggestionData([], [], node, true);
-        const statements = await getStatementsInKB(node.data.components, this.project);
-        const edges = extractTopEdgesFromStatements(
-          statements,
-          node.data,
-          this.data,
-          false
+        const statements = await projectService.getProjectStatementsForConcepts(
+          node.data.components,
+          this.project
+        );
+        const edges = sortSuggestionsByEvidenceCount(
+          extractEdgesFromStatements(statements, node.data, this.data, false)
         );
         // Store suggestions along with the node they belong to
         this.allEdgeSuggestions = { node, suggestions: edges };

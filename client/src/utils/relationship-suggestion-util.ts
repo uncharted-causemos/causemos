@@ -1,8 +1,6 @@
-import projectService from '@/services/project-service';
 import { CAGGraph, NodeParameter } from '@/types/CAG';
 import { Statement } from '@/types/Statement';
 import _ from 'lodash';
-import filtersUtil from './filters-util';
 import { STATEMENT_POLARITY } from './polarity-util';
 import { calcEdgeColor } from './scales-util';
 
@@ -13,24 +11,6 @@ export interface EdgeSuggestion {
   numEvidence: number;
   statements: Statement[];
 }
-
-// TODO: give a clearer name and move somewhere more generic? projectService?
-export const getStatementsInKB = (
-  concepts: string[],
-  projectId: string
-): Promise<Statement[]> => {
-  const searchFilters = filtersUtil.newFilters();
-  for (let i = 0; i < concepts.length; i++) {
-    filtersUtil.addSearchTerm(searchFilters, 'topic', concepts[i], 'or', false);
-  }
-
-  return projectService.getProjectStatements(projectId, searchFilters, {
-    size: projectService.STATEMENT_LIMIT
-  });
-};
-
-const edgeSorter = (a: EdgeSuggestion, b: EdgeSuggestion) =>
-  b.numEvidence - a.numEvidence;
 
 // Extract edge attributes
 const statementsToEdgeAttributes = (statements: Statement[]) => {
@@ -64,8 +44,11 @@ const addToMap = (
   entry.push(val);
 };
 
-// TODO: mention output is sorted, remove "top" from name
-export const extractTopEdgesFromStatements = (
+/**
+ * Takes a list of statements and calculates either the incoming or outgoing
+ * potential edges for a given node.
+ */
+export const extractEdgesFromStatements = (
   statements: Statement[],
   node: NodeParameter,
   graphData: CAGGraph,
@@ -80,13 +63,16 @@ export const extractTopEdgesFromStatements = (
     }
     return concepts.includes(statement.subj.concept);
   });
-  // TODO: more detail
-  // Map to node-container level if applicable
-  // Create a map from the concept to the statements that represent it
+  // The graph might already include node containers with multiple concepts.
+  // For a given statement, if a node container exists that contains the other
+  //  concept in the statement, we want the new edge to use the concept that
+  //  represents that node container instead.
+  // E.g. if we have a node called "precipitation" that includes "rain" and
+  //  "snow", then a statement that has "rain" as the other concept should
+  //  instead be assigned to the "precipitation" concept.
   const conceptToStatementsMap = new Map<string, Statement[]>();
   filteredStatements.forEach(statement => {
-    // For each statement, find any node containers in the graph that contain
-    //  the other concept in this statement
+    // Find any node containers in the graph that contain the other concept
     const otherConcept = isLookingForDriverEdges
       ? statement.subj.concept
       : statement.obj.concept;
@@ -94,14 +80,13 @@ export const extractTopEdgesFromStatements = (
       n.components.includes(otherConcept)
     );
     if (nodeContainers.length === 0) {
-      // No node containers contain this concept, so it should be used to
+      // No node containers contain otherConcept, so it should be used to
       //  represent the statement
       addToMap(conceptToStatementsMap, otherConcept, statement);
     } else {
       // One or more node containers contain this concept
       nodeContainers.forEach(nodeContainer => {
         const otherConcept = nodeContainer.concept;
-
         // Skip if edge exists in graph and statement exists on edge
         const edgeToLookFor = isLookingForDriverEdges
           ? { source: otherConcept, target: node.concept }
@@ -122,18 +107,17 @@ export const extractTopEdgesFromStatements = (
     }
   });
   const mapEntries = [...conceptToStatementsMap.entries()];
-  const edges: EdgeSuggestion[] = mapEntries.map(([key, statements]) => {
-    const source = isLookingForDriverEdges ? key : node.concept;
-    const target = isLookingForDriverEdges ? node.concept : key;
-    return {
-      source,
-      target,
-      color: calcEdgeColor(statementsToEdgeAttributes(statements)),
-      numEvidence: _.sumBy(statements, s => s.wm.num_evidence),
-      statements
-    };
-  });
-  return edges.sort(edgeSorter);
+  return mapEntries.map(([key, statements]) => ({
+    source: isLookingForDriverEdges ? key : node.concept,
+    target: isLookingForDriverEdges ? node.concept : key,
+    color: calcEdgeColor(statementsToEdgeAttributes(statements)),
+    numEvidence: _.sumBy(statements, s => s.wm.num_evidence),
+    statements
+  })) as EdgeSuggestion[];
+};
+
+export const sortSuggestionsByEvidenceCount = (edges: EdgeSuggestion[]) => {
+  return edges.sort((a, b) => b.numEvidence - a.numEvidence);
 };
 
 export const getEdgesFromConcepts = (
