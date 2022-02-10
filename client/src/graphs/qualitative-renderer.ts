@@ -149,11 +149,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       'Cancel',
       'cancel-suggestion-mode-button',
       this.chart as unknown as D3Selection,
-      event => {
-        // Don't trigger background click handler
-        event.stopPropagation();
-        this.exitSuggestionMode();
-      }
+      // No click handler necessary, event will propagate to background
+      () => {}
     );
     cancelButton.attr('transform', translate(cancelButtonX, node.y));
     // Render label if it doesn't already exist
@@ -365,7 +362,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         // Don't trigger background click handler
         event.stopPropagation();
         this.emit('add-selected-suggestions');
-        this.exitSuggestionMode();
       },
       SVG_BUTTON_STYLES.PRIMARY
     );

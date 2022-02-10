@@ -115,16 +115,17 @@ export default defineComponent({
     //  `EdgeSuggestion`s.
     // Has a value of `null` when statements haven't been fetched yet.
     const allEdgeSuggestions = ref<{
-      node: INode<NodeParameter>;
-      suggestions: EdgeSuggestion[];
-    } | null>(null);
+      node: INode<NodeParameter> | null;
+      suggestions: EdgeSuggestion[] | null;
+    }>({ node: null, suggestions: null });
+    const searchQuery = ref('');
     // The `EdgeSuggestion`s for the current search query.
     // Has a value of `null` when search text is empty or results haven't been
     //  fetched yet.
     const searchSuggestions = ref<EdgeSuggestion[] | null>(null);
     // The `EdgeSuggestion`s that have been selected to add to the CAG.
     //  We have to store the whole suggestion instead of just an ID since
-    //  selected searchSuggestions won't appear in `allEdgeSuggestions` and
+    //  selected `searchSuggestions` won't appear in `allEdgeSuggestions` and
     //  vice versa.
     const selectedEdgeSuggestions = ref<EdgeSuggestion[]>([]);
 
@@ -142,6 +143,7 @@ export default defineComponent({
 
       // Tracking edge suggestions
       allEdgeSuggestions,
+      searchQuery,
       searchSuggestions,
       selectedEdgeSuggestions,
 
@@ -180,7 +182,7 @@ export default defineComponent({
 
     // Native messages
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection, renderer: QualitativeRenderer) => {
-      renderer.exitSuggestionMode();
+      this.exitSuggestionMode();
       renderer.selectNode(nodeSelection, '');
       nodeSelection.select('.node-container').classed('node-selected', true);
 
@@ -204,7 +206,7 @@ export default defineComponent({
 
     this.renderer.on('background-click', () => {
       rendererRef.resetAnnotations();
-      rendererRef.exitSuggestionMode();
+      this.exitSuggestionMode();
       this.$emit('background-click');
     });
 
@@ -316,8 +318,8 @@ export default defineComponent({
         // Clear up any previous suggestion state. Skipping this step means
         //  that if the suggestion search box already exists it won't be
         //  rerendered next to the newly-selected node.
-        this.renderer?.exitSuggestionMode();
-        this.allEdgeSuggestions = null;
+        this.exitSuggestionMode();
+        this.allEdgeSuggestions = { node, suggestions: [] };
         this.selectedEdgeSuggestions = [];
         // Load all statements that include any of the components in the
         //  selected node-container.
@@ -326,13 +328,17 @@ export default defineComponent({
           node.data.components,
           this.project
         );
-        const edges = sortSuggestionsByEvidenceCount(
+        const suggestions = sortSuggestionsByEvidenceCount(
           extractEdgesFromStatements(statements, node.data, this.data, false)
         );
-        // Store suggestions along with the node they belong to
-        this.allEdgeSuggestions = { node, suggestions: edges };
-        // Pass them to the renderer to generate SVG elements for each one
-        this.renderer?.setSuggestionData(edges, [], node, false);
+        // If suggestion mode is still active for `node`, store suggestions
+        if (this.allEdgeSuggestions.node === node) {
+          this.allEdgeSuggestions = { node, suggestions };
+          if (this.searchQuery.length === 0) {
+            // Pass them to the renderer to generate SVG elements for each one
+            this.renderer?.setSuggestionData(suggestions, [], node, false);
+          }
+        }
       }
     );
 
@@ -349,7 +355,13 @@ export default defineComponent({
           // Was already selected, so remove it from selected suggestions
           this.selectedEdgeSuggestions = withoutSuggestion;
         }
-        if (this.allEdgeSuggestions === null) return;
+        // Edge case: if user searches results and selects one befor
+        //  `allEdgeSuggestions` is populated, UI won't update. I think this is
+        //  safe to ignore.
+        if (
+          this.allEdgeSuggestions.node === null ||
+          this.allEdgeSuggestions.suggestions === null
+        ) return;
         // If searchSuggestions !== null, we're displaying search results
         const suggestionsToDisplay = this.searchSuggestions !== null
           ? this.searchSuggestions
@@ -366,11 +378,12 @@ export default defineComponent({
     this.renderer.on(
       'search-for-concepts',
       async (eventName: any, userInput: string) => {
-        if (this.allEdgeSuggestions === null) return;
-        // FIXME: race condition, we should disregard any results that come
-        //  back that are for a different userInput, or if suggestion mode has
-        //  been exited already.
+        if (this.allEdgeSuggestions.node === null) return;
+        // Store latest userInput for later use detecting out-of-order results
+        this.searchQuery = userInput;
+        const suggestionNode = this.allEdgeSuggestions.node;
         if (_.isEmpty(userInput)) {
+          if (this.allEdgeSuggestions.suggestions === null) return;
           // Cleared search bar, show top suggestions from `allEdgeSuggestions`
           this.searchSuggestions = null;
           this.renderer?.setSuggestionData(
@@ -387,11 +400,20 @@ export default defineComponent({
             this.allEdgeSuggestions.node,
             true
           );
+          if (this.allEdgeSuggestions.suggestions === null) return;
           // Fetch concepts based on user input
           const conceptSuggestions = await projectService.getConceptSuggestions(
             this.project,
             userInput
           );
+          // Stop if we're no longer looking at suggestions for suggestionNode
+          //  or if the query has changed
+          if (
+            this.allEdgeSuggestions.node !== suggestionNode ||
+            this.searchQuery !== userInput
+          ) {
+            return;
+          }
           const concepts = conceptSuggestions.map(
             (suggestion: any) => suggestion.doc.key
           );
@@ -426,6 +448,7 @@ export default defineComponent({
         this.data,
         this.ontologyFormatter
       );
+      this.exitSuggestionMode();
       this.$emit('add-to-CAG', newSubgraph);
     });
 
@@ -450,6 +473,13 @@ export default defineComponent({
         return;
       }
       this.$emit('suggestion-selected', suggestion);
+    },
+    exitSuggestionMode() {
+      this.allEdgeSuggestions = { node: null, suggestions: null };
+      this.searchSuggestions = null;
+      this.searchQuery = '';
+      this.selectedEdgeSuggestions = [];
+      this.renderer?.exitSuggestionMode();
     },
     onDatacubeSelected(datacubeParam: any) {
       this.$emit('datacube-selected', datacubeParam);
