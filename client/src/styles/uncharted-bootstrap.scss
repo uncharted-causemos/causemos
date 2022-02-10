@@ -3,50 +3,56 @@
 
 // TODO: remove import
 // @import "~bootstrap-sass/assets/stylesheets/_bootstrap";
-
-h3, h4 {
-  letter-spacing: -.01em;
+h1, h2 {
+  letter-spacing: -0.015em;
 }
-.h3, h3 {
+h3, h4 {
+  letter-spacing: -0.01em;
+}
+h3 {
   font-size: 25px;
 }
-.h1, .h2, .h3, h1, h2, h3 {
+h1, h2, h3 {
   margin-top: 19px;
   margin-bottom: 9.5px;
 }
-.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6 {
   font-family: inherit;
   font-weight: 600;
   line-height: 1.42857;
   color: inherit;
 }
 
-button, input, select, textarea {
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-}
-button, html input[type=button], input[type=reset], input[type=submit] {
-  -webkit-appearance: button;
-  cursor: pointer;
-}
-button, select {
-  text-transform: none;
-}
-button {
-  overflow: visible;
-}
-button, input, optgroup, select, textarea {
-  color: inherit;
-  font: inherit;
-  margin: 0;
-}
+
+// Typography
+// --------------------------------------------------
+
+// button, input, select, textarea {
+//   font-family: inherit;
+//   font-size: inherit;
+//   line-height: inherit;
+// }
+// button, html input[type=button], input[type=reset], input[type=submit] {
+//   -webkit-appearance: button;
+//   cursor: pointer;
+// }
+// button, select {
+//   text-transform: none;
+// }
+// button {
+//   overflow: visible;
+// }
+// button, input, optgroup, select, textarea {
+//   color: inherit;
+//   font: inherit;
+// }
 
 // Button variants
 //
 // Easily pump out default styles, as well as :hover, :focus, :active,
 // and disabled options for all buttons
 
+// TODO: simplify and distribute this
 @mixin button-variant($color, $background, $border) {
   color: $color;
   background-color: $background;
@@ -99,15 +105,6 @@ button, input, optgroup, select, textarea {
     background-color: $color;
   }
 }
-
-// Button sizes
-@mixin button-size($padding-vertical, $padding-horizontal, $font-size, $line-height, $border-radius) {
-  padding: $padding-vertical $padding-horizontal;
-  font-size: $font-size;
-  line-height: $line-height;
-  border-radius: $border-radius;
-}
-
 
 // TODO: uncharted base
 
@@ -210,28 +207,10 @@ $headings-color: inherit !default;
 
 //== Components
 //
-//## Define common padding and border radius sizes and more. Values based on 14px text and 1.428 line-height (~20px to start).
-
-$padding-large-vertical: 12px !default;
-$padding-large-horizontal: 20px !default;
-
-$padding-small-vertical: 4px !default;
-$padding-small-horizontal: 8px !default;
-
-$padding-xs-vertical: 1px !default;
-$padding-xs-horizontal: 4px !default;
-
-$line-height-large: $line-height-base !default; // extra decimals for Win 8.1 Chrome
-$line-height-small: $line-height-base !default;
 
 //== Tables
 //
-//** Background color used for `.table-hover`.
-$table-bg-hover: $color-btn-default-hover !default;
-$table-bg-active: $color-btn-primary !default;
-
 //** Border color for table and cell borders.
-$table-border-color: $color-border-light !default;
 
 //== Buttons
 //
@@ -246,18 +225,6 @@ $btn-primary-color: white !default;
 $btn-primary-bg: $color-btn-primary !default;
 $btn-primary-border: $color-btn-primary !default;
 
-$btn-success-color: rgba(0, 0, 0, 0.89) !default;
-$btn-success-bg: $color-success !default;
-$btn-success-border: $color-success !default;
-
-$btn-info-color: rgba(0, 0, 0, 0.89) !default;
-$btn-info-bg: $color-info !default;
-$btn-info-border: $color-info !default;
-
-$btn-warning-color: rgba(0, 0, 0, 0.89) !default;
-$btn-warning-bg: $color-warning !default;
-$btn-warning-border: $color-warning !default;
-
 $btn-danger-color: rgba(0, 0, 0, 0.89) !default;
 $btn-danger-bg: $color-danger !default;
 $btn-danger-border: $color-danger !default;
@@ -270,6 +237,15 @@ $btn-danger-border: $color-danger !default;
 
 // Base styles
 // --------------------------------------------------
+
+
+// Button sizes
+@mixin button-size($padding-vertical, $padding-horizontal, $font-size, $line-height, $border-radius) {
+  padding: $padding-vertical $padding-horizontal;
+  font-size: $font-size;
+  line-height: $line-height;
+  border-radius: $border-radius;
+}
 
 .btn {
   display: inline-block;
@@ -296,7 +272,6 @@ $btn-danger-border: $color-danger !default;
   &.active {
     outline: 0;
     background-image: none;
-    // TODO: remove@include box-shadow(inset 0 3px 5px rgba(0,0,0,.125));
     box-shadow: inset 0 3px 5px rgba(0,0,0,.125);
   }
 
@@ -308,7 +283,6 @@ $btn-danger-border: $color-danger !default;
     box-shadow: none;
   }
 
-  // [converter] extracted a& to a.btn
 }
 
 a.btn {
@@ -327,18 +301,6 @@ a.btn {
 }
 .btn-primary {
   @include button-variant($btn-primary-color, $btn-primary-bg, $btn-primary-border);
-}
-// Success appears as green
-.btn-success {
-  @include button-variant($btn-success-color, $btn-success-bg, $btn-success-border);
-}
-// Info appears as blue-green
-.btn-info {
-  @include button-variant($btn-info-color, $btn-info-bg, $btn-info-border);
-}
-// Warning appears as orange
-.btn-warning {
-  @include button-variant($btn-warning-color, $btn-warning-bg, $btn-warning-border);
 }
 // Danger and error appear as red
 .btn-danger {
@@ -389,16 +351,9 @@ a.btn {
 // Button Sizes
 // --------------------------------------------------
 
-.btn-lg {
-  // line-height: ensure even-numbered height of button next to large input
-  @include button-size($padding-large-vertical, $padding-large-horizontal, $font-size-large, $line-height-large, 2px);
-}
 .btn-sm {
   // line-height: ensure proper height of button next to small input
-  @include button-size($padding-small-vertical, $padding-small-horizontal, $font-size-small, $line-height-small, 1px);
-}
-.btn-xs {
-  @include button-size($padding-xs-vertical, $padding-xs-horizontal, $font-size-small, $line-height-small, 1px);
+  @include button-size(4px, 8px, $font-size-small, $line-height-base, 1px);
 }
 
 
@@ -506,36 +461,10 @@ table,
   // Bottom align for column headings
   > thead > tr > th {
     vertical-align: bottom;
-    border-bottom: 2px solid $table-border-color;
+    border-bottom: 2px solid $color-border-light;
   }
 }
 
-// Typography
-// --------------------------------------------------
-
-body {
-  -webkit-font-smoothing: antialiased; /* Chrome, Safari */
-  -moz-osx-font-smoothing: grayscale; /* Firefox */
-}
-h1,
-h2 {
-  letter-spacing: -0.015em;
-}
-h3,
-h4 {
-  letter-spacing: -0.01em;
-}
-.body-large {
-  font-size: $font-size-large;
-  line-height: $line-height-large;
-}
-.navbar {
-  ul,
-  li,
-  a {
-    font-size: $font-size-large;
-  }
-}
 
 // Text color overrides
 // --------------------------------------------------
