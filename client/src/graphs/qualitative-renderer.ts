@@ -12,7 +12,7 @@ import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
 import { EdgeSuggestion } from '@/utils/relationship-suggestion-util';
-import { createOrUpdateButton } from '@/utils/svg-util-new';
+import { createOrUpdateButton, SVG_BUTTON_STYLES } from '@/utils/svg-util-new';
 import { D3Selection } from '@/types/D3';
 
 const REMOVE_TIMER = 1000;
@@ -277,6 +277,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       //  addresses an issue where elements that were fading out and then
       //  re-added would keep their half-gone position and opacity values.
       .call(join => join.transition()
+        .duration(100)
         .attr('transform', suggestion => translate(suggestion.x, suggestion.y))
         .style('opacity', 1)
       );
@@ -311,14 +312,25 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('fill', color => color)
       .style('pointer-events', 'none');
     // On click, toggle whether the node is selected
-    suggestionGroups.on('click', (event, entry) => {
-      this.emit('toggle-suggestion-selected', entry.suggestion);
-    });
-
-    // Don't trigger double click handler that is used to create a new node
-    suggestionGroups.on('dblclick', (event) => {
-      event.stopPropagation();
-    });
+    suggestionGroups
+      .on('mouseenter', function() {
+        // Expand suggestions slightly on hover
+        d3.select<any, EdgeSuggestionDisplayData>(this).transition()
+          .duration(50)
+          .attr('transform', ({ x, y }) => translate(x, y) + ' scale(1.05)');
+      })
+      .on('mouseleave', function() {
+        d3.select<any, EdgeSuggestionDisplayData>(this).transition()
+          .duration(50)
+          .attr('transform', ({ x, y }) => translate(x, y));
+      })
+      .on('click', (event, entry) => {
+        this.emit('toggle-suggestion-selected', entry.suggestion);
+      })
+      // Don't trigger double click handler that is used to create a new node
+      .on('dblclick', (event) => {
+        event.stopPropagation();
+      });
   }
 
   createOrUpdateAddButton(selectedSuggestionCount: number) {
@@ -332,7 +344,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       () => {
         this.emit('add-selected-suggestions');
         this.exitSuggestionMode();
-      });
+      },
+      SVG_BUTTON_STYLES.PRIMARY
+    );
     return addRelationshipsButton;
   }
 

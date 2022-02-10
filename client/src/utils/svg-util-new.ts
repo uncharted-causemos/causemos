@@ -2,10 +2,29 @@
 //  file, then rename this file to `svg-util.ts` so that existing imports work
 //  correctly.
 
+import * as d3 from 'd3';
 import { D3Selection } from '@/types/D3';
 import { translate } from './svg-util';
 
 const BUTTON_PADDING = 10;
+
+export enum SVG_BUTTON_STYLES {
+  DEFAULT = 'DEFAULT',
+  PRIMARY = 'PRIMARY'
+}
+
+const STYLES = {
+  [SVG_BUTTON_STYLES.DEFAULT]: {
+    fill: '#dedede',
+    hoverFill: '#e8e8e8',
+    textColor: 'black'
+  },
+  [SVG_BUTTON_STYLES.PRIMARY]: {
+    fill: '#2255BB',
+    hoverFill: '#4c7fe6',
+    textColor: 'white'
+  }
+};
 
 // TODO: document that existing children with the supplied classname will be replaced
 // TODO: change default styles, consider which styling options need to be exposed
@@ -13,8 +32,10 @@ export const createOrUpdateButton = (
   text: string,
   className: string,
   parent: D3Selection,
-  clickHandler: () => void
+  clickHandler: () => void,
+  style = SVG_BUTTON_STYLES.DEFAULT
 ) => {
+  const selectedStyle = STYLES[style];
   // Create group to hold button
   const buttonSelection = parent
     .selectAll(`.${className}`)
@@ -29,6 +50,7 @@ export const createOrUpdateButton = (
     .join('text')
     .classed('button-label', true)
     .attr('transform', translate(BUTTON_PADDING, 20))
+    .style('fill', selectedStyle.textColor)
     .text(text => text);
   // Get the text length in pixels to set the background width accordingly
   let labelWidth = 150;
@@ -46,7 +68,17 @@ export const createOrUpdateButton = (
     .attr('height', 30)
     .attr('rx', 2)
     .attr('ry', 2)
-    .style('fill', 'white');
+    .style('fill', selectedStyle.fill);
+
+  buttonSelection
+    .on('mouseenter', function() {
+      d3.select(this).select('.button-background')
+        .style('fill', selectedStyle.hoverFill);
+    })
+    .on('mouseleave', function() {
+      d3.select(this).select('.button-background')
+        .style('fill', selectedStyle.fill);
+    });
   // Move the label in front of the button background
   label.raise();
 
