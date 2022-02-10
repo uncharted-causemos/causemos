@@ -394,7 +394,6 @@ async function generateAppendixDOCX(
   const cagIds = Array.from(cags.keys());
   const result = await getBibiographyFromCagIds(cagIds);
   const children = <Paragraph[]>[];
-  console.log(insights);
 
   cagIds.forEach(id => {
     const cagInfo = cags.get(id);
@@ -413,9 +412,7 @@ async function generateAppendixDOCX(
     result.data[id].forEach((b: Bibliography) => {
       children.push(new Paragraph({
         indent: {
-          start: 0,
-          left: 0,
-          hanging: convertInchesToTwip(0.5)
+          start: convertInchesToTwip(0.5)
         },
         alignment: AlignmentType.LEFT,
         children: generateAPACiteDOCX(b)
