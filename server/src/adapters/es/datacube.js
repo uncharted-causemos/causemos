@@ -259,7 +259,7 @@ class Datacube {
           created_at: doc._source.created_at,
           source: _.get(doc, '_source.maintainer.organization')
         };
-      }).filter(item => item);
+      }).filter(item => item); // filter out the undefined
 
     return datasets;
   }
