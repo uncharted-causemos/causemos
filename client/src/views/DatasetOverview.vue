@@ -266,7 +266,6 @@ export default defineComponent({
 
     if (this.$route.query.template_id) {
       this.showApplyToAllModal = true;
-      console.log('Saw template id', this.$route.query.template_id);
     }
   },
   methods: {
