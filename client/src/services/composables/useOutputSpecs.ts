@@ -11,6 +11,7 @@ export default function useOutputSpecs(
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
   activeFeatures: Ref<OutputVariableSpecs[]>,
+  activeFeature?: Ref<string>,
   modelRunData?: Ref<ModelRun[]>,
   breakdownOption?: Ref<string | null>
 ) {
@@ -27,19 +28,21 @@ export default function useOutputSpecs(
 
     return selectedTimeseriesPoints.value.map((timeseriesInfo, indx) => {
       const { timeseriesId, scenarioId, timestamp } = timeseriesInfo;
-      const transform = activeFeatures.value[indx].transform !== DataTransform.None
-        ? activeFeatures.value[indx].transform
+      const featureInfo = (breakdownOption?.value === SPLIT_BY_VARIABLE ? activeFeatures.value[indx] : activeFeatures.value.find(f => f.name === activeFeature?.value)) ?? activeFeatures.value[indx];
+      const transform = featureInfo.transform !== DataTransform.None
+        ? featureInfo.transform
         : undefined;
+      const outputVariable = breakdownOption?.value === SPLIT_BY_VARIABLE ? timeseriesId : activeFeature?.value ?? activeFeatures.value[indx].name;
       const outputSpec: OutputSpecWithId = {
         id: timeseriesId,
         modelId: activeModelId,
         runId: scenarioId,
-        outputVariable: breakdownOption?.value !== SPLIT_BY_VARIABLE ? activeFeatures.value[indx].name : timeseriesId,
+        outputVariable,
         timestamp,
         transform,
-        temporalResolution: activeFeatures.value[indx].temporalResolution,
-        temporalAggregation: activeFeatures.value[indx].temporalAggregation,
-        spatialAggregation: activeFeatures.value[indx].spatialAggregation,
+        temporalResolution: featureInfo.temporalResolution,
+        temporalAggregation: featureInfo.temporalAggregation,
+        spatialAggregation: featureInfo.spatialAggregation,
         preGeneratedOutput: undefined,
         isDefaultRun: false
       };

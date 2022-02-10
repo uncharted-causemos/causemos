@@ -1796,6 +1796,7 @@ export default defineComponent({
       metadata,
       selectedTimeseriesPoints,
       activeFeatures,
+      activeFeature,
       filteredRunData,
       breakdownOption
     );
