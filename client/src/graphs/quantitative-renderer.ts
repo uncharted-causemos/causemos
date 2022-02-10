@@ -6,7 +6,7 @@ import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
-import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
+import { DEFAULT_STYLE } from './cag-style';
 
 const GRAPH_HEIGHT = 55;
 const GRAPH_VERTICAL_MARGIN = 6;
@@ -242,9 +242,16 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
   }
 
 
+  /**
+   * In this context, edge controls are used to denote
+   * warnings, where the user-specified values conflicts with
+   * automatically inferred valeus
+   */
   renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
     this.chart.selectAll('.edge-control').selectAll('*').remove();
     const edgeControl = selection.select('.edge-control');
+    const EXCLAMATION_TIRANGE = '\uf071';
+
     edgeControl
       .append('circle')
       .attr('r', DEFAULT_STYLE.edge.controlRadius + 2)
@@ -260,38 +267,43 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
 
     edgeControl
       .append('text')
-      .attr('x', d => {
+      .attr('x', () => {
+        /*
         const setting = polaritySettingsMap.get(d.data.polarity || 0);
         if (setting) {
           return setting.x;
         }
         return 0;
+        */
+        return -5.5;
       })
-      .attr('y', d => {
+      .attr('y', () => {
+        /*
         const setting = polaritySettingsMap.get(d.data.polarity || 0);
         if (setting) {
           return setting.y;
         }
         return 0;
+        */
+        return 3.5;
       })
       .style('background-color', 'red')
       .style('font-family', 'FontAwesome')
-      .style('font-size', d => {
+      .style('font-size', () => {
+        /*
         const setting = polaritySettingsMap.get(d.data.polarity || 0);
         if (setting) {
           return setting.fontSize;
         }
         return '';
+        */
+        return '11px';
       })
       .style('stroke', 'none')
       .style('fill', 'white')
       .style('cursor', 'pointer')
-      .text(d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.text;
-        }
-        return '';
+      .text(() => {
+        return EXCLAMATION_TIRANGE;
       });
   }
 
