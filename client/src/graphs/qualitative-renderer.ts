@@ -173,7 +173,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
           .text('Loading suggestions...')
           .style('opacity', 0)
           .call(enter => enter.transition()
-            .delay(1000)
             .style('opacity', 1)
           ),
         update => update,
