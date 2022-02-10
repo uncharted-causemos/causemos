@@ -375,6 +375,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     this.chart.selectAll('.suggestion-column-label').remove();
     this.chart.selectAll('.node-suggestion').remove();
     this.chart.selectAll('.suggestion-loading-indicator').remove();
+    // Clicking the right handle shows possible edges on existing nodes
+    this.chart.selectAll('.edge-possibility-indicator').remove();
     // Restore all nodes to full opacity
     this.setOtherNodesAndEdgesOpacity('_invalid_node_id', 1);
   }
