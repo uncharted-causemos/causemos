@@ -104,14 +104,14 @@ export default defineComponent({
       this.$emit('node-drilldown', nodeSelection.datum().data);
     });
 
-    this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection: D3SelectionIEdge<EdgeParameter>, renderer: QuantitativeRenderer) => {
+    this.renderer.on('edge-click', (_evtName, _event: PointerEvent, edgeSelection: D3SelectionIEdge<EdgeParameter>, renderer: QuantitativeRenderer) => {
       const source = edgeSelection.datum().data.source;
       const target = edgeSelection.datum().data.target;
       const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
 
       renderer.resetAnnotations();
       renderer.neighborhoodAnnotation(neighborhood);
-      renderer.selectEdge(event, edgeSelection);
+      // renderer.selectEdge(event, edgeSelection);
       this.$emit('edge-click', edgeSelection.datum().data);
     });
 

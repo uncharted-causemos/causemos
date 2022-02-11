@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { NodeParameter, EdgeParameter, NodeScenarioData } from '@/types/CAG';
-import { SELECTED_COLOR } from '@/utils/colors-util';
+// import { SELECTED_COLOR } from '@/utils/colors-util';
 import svgUtil from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
@@ -251,52 +251,31 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     this.chart.selectAll('.edge-control').selectAll('*').remove();
     const edgeControl = selection.select('.edge-control');
     const EXCLAMATION_TIRANGE = '\uf071';
+    const WARN = '#f80';
 
     edgeControl
       .append('circle')
       .attr('r', DEFAULT_STYLE.edge.controlRadius + 2)
       .style('fill', DEFAULT_STYLE.edgeBg.stroke)
-      .attr('stroke', SELECTED_COLOR)
+      .attr('stroke', WARN)
       .style('cursor', 'pointer');
 
     edgeControl
       .append('circle')
       .attr('r', DEFAULT_STYLE.edge.controlRadius)
-      .style('fill', d => calcEdgeColor(d.data))
+      .style('fill', WARN)
       .style('cursor', 'pointer');
 
     edgeControl
       .append('text')
       .attr('x', () => {
-        /*
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.x;
-        }
-        return 0;
-        */
         return -5.5;
       })
       .attr('y', () => {
-        /*
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.y;
-        }
-        return 0;
-        */
         return 3.5;
       })
-      .style('background-color', 'red')
       .style('font-family', 'FontAwesome')
       .style('font-size', () => {
-        /*
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.fontSize;
-        }
-        return '';
-        */
         return '11px';
       })
       .style('stroke', 'none')
