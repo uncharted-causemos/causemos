@@ -35,7 +35,7 @@ export const DEFAULT_STYLE = {
     }
   },
   nodeHandles: {
-    width: 15
+    width: 20
   }
 };
 

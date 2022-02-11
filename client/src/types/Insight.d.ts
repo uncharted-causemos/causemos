@@ -106,6 +106,7 @@ export interface DataState {
   selectedRegionIds?: string[];
   selectedRegionIdsAtAllLevels?: { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; };
   selectedOutputVariables?: string[];
+  activeFeatures?: OutputVariableSpecs[];
   nonDefaultQualifiers?: string[];
   selectedQualifierValues?: string[];
   selectedYears?: string[];

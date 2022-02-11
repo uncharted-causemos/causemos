@@ -109,7 +109,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import { RegionalAggregations } from '@/types/Outputdata';
+import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { normalize } from '@/utils/value-util';
@@ -282,8 +282,8 @@ export default defineComponent({
           if (initialViewConfig.value.selectedAdminLevel !== undefined) {
             selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
           }
-          if (initialViewConfig.value.baseLayerTransparency !== undefined) {
-            selectedDataLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
+          if (initialViewConfig.value.dataLayerTransparency !== undefined) {
+            selectedDataLayerTransparency.value = initialViewConfig.value.dataLayerTransparency;
           }
         }
 
@@ -395,17 +395,24 @@ export default defineComponent({
       selectedScenarioIds
     );
 
+    const activeFeatures = computed<OutputVariableSpecs[]>(() => {
+      return selectedTimeseriesPoints.value.map(() => ({
+        temporalAggregation: selectedTemporalAggregation.value as AggregationOption,
+        temporalResolution: selectedTemporalResolution.value as TemporalResolutionOption,
+        spatialAggregation: selectedSpatialAggregation.value as AggregationOption,
+        transform: selectedTransform.value,
+        name: activeFeature.value,
+        display_name: activeFeature.value
+      }));
+    });
+
     const {
       outputSpecs
     } = useOutputSpecs(
       id,
-      selectedSpatialAggregation,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      selectedTransform,
       metadata,
       selectedTimeseriesPoints,
-      activeFeature
+      activeFeatures
     );
 
     const {

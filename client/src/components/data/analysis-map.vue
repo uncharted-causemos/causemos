@@ -74,11 +74,12 @@ import {
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
 import {
-  convertRawDataToGeoJson
+  convertRawDataToGeoJson,
+  pickQualifiers
 } from '@/utils/outputdata-util';
 import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
-import { chartValueFormatter } from '@/utils/string-util';
+import { chartValueFormatter, capitalize } from '@/utils/string-util';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { mapActions, mapGetters } from 'vuex';
 
@@ -664,7 +665,14 @@ export default {
         rows.push(text);
       }
       if (this.isAdminMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
-      if (this.isPointsMap) rows.push('Region: ' + [prop.country, prop.admin1, prop.admin2, prop.admin3].filter(v => !!v).join('/'));
+      if (this.isPointsMap) {
+        rows.push('Region: ' + [prop.country, prop.admin1, prop.admin2, prop.admin3].filter(v => !!v).join('/'));
+        // Add qualifiers
+        Object.entries(pickQualifiers(prop))
+          .forEach(([key, val]) => {
+            rows.push(`${capitalize(key)}: ${val}`);
+          });
+      }
       return rows.filter(field => !_.isNil(field)).join('<br />');
     }
   }

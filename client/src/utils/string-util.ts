@@ -73,6 +73,10 @@ export const chartValueFormatter = (...range: number[]) => {
   return exponentFormatter;
 };
 
+export const capitalize = (str: string) => {
+  return str.charAt(0).toLocaleUpperCase() + str.slice(1);
+};
+
 export const runtimeFormatter = (runtime: RuntimeStage) => {
   if (!runtime || !runtime.start_time || !runtime.end_time || runtime.start_time > runtime.end_time) {
     return 'unknown';
@@ -83,7 +87,7 @@ export const runtimeFormatter = (runtime: RuntimeStage) => {
   return trimmed00.startsWith('0') ? trimmed00.substr(1) : trimmed00;
 };
 
-const isValidUrl = (value: string) => {
+export const isValidUrl = (value: string) => {
   let url;
   try {
     url = new URL(value);
@@ -100,6 +104,7 @@ export default {
   dropOneInternalVowel,
   chartValueFormatter,
   exponentFormatter,
+  capitalize,
   runtimeFormatter,
   isValidUrl
 };
