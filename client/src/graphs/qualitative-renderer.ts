@@ -630,7 +630,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   showNodeMenu(node: D3SelectionINode<NodeParameter>) {
     const H = node.datum().height || 50;
     const control = node.selectAll('.node-control')
-      .data([node])
+      .data([node.datum()])
       .join('g')
       .classed('node-control', true);
 
