@@ -282,8 +282,8 @@ export default defineComponent({
           if (initialViewConfig.value.selectedAdminLevel !== undefined) {
             selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
           }
-          if (initialViewConfig.value.baseLayerTransparency !== undefined) {
-            selectedDataLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
+          if (initialViewConfig.value.dataLayerTransparency !== undefined) {
+            selectedDataLayerTransparency.value = initialViewConfig.value.dataLayerTransparency;
           }
         }
 

@@ -302,8 +302,8 @@ export default defineComponent({
           if (initialViewConfig.value.selectedMapDataLayer !== undefined) {
             selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
           }
-          if (initialViewConfig.value.baseLayerTransparency !== undefined) {
-            selectedDataLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
+          if (initialViewConfig.value.dataLayerTransparency !== undefined) {
+            selectedDataLayerTransparency.value = initialViewConfig.value.dataLayerTransparency;
           }
         }
 

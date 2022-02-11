@@ -1078,8 +1078,8 @@ export default defineComponent({
         if (initialViewConfig.value.selectedAdminLevel !== undefined) {
           selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
         }
-        if (initialViewConfig.value.baseLayerTransparency !== undefined) {
-          selectedDataLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
+        if (initialViewConfig.value.dataLayerTransparency !== undefined) {
+          selectedDataLayerTransparency.value = initialViewConfig.value.dataLayerTransparency;
         }
         if (initialViewConfig.value.colorSchemeReversed !== undefined) {
           colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
@@ -1554,8 +1554,8 @@ export default defineComponent({
         if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
           setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
         }
-        if (loadedInsight.view_state?.baseLayerTransparency !== undefined) {
-          setDataLayerTransparency(loadedInsight.view_state?.baseLayerTransparency);
+        if (loadedInsight.view_state?.dataLayerTransparency !== undefined) {
+          setDataLayerTransparency(loadedInsight.view_state?.dataLayerTransparency);
         }
         if (loadedInsight.view_state?.colorSchemeReversed !== undefined) {
           setColorSchemeReversed(loadedInsight.view_state?.colorSchemeReversed);
