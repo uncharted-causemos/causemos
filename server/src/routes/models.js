@@ -422,8 +422,15 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
       const key = `${edge.source}///${edge.target}`;
       acc[key] = {};
 
-      // FIXME Need to differentiate signs
-      acc[key].weights = [0.0, Math.abs(edge.weights[0])];
+      // Level, trend, polarity sign
+      const normalizedW = +(edge.weights[0].toFixed(3));
+      let polarity = 0;
+      if (normalizedW > 0) {
+        polarity = 1;
+      } else if (normalizedW < 0) {
+        polarity = -1;
+      }
+      acc[key].weights = [0.0, Math.abs(normalizedW), polarity];
       return acc;
     }, {});
 

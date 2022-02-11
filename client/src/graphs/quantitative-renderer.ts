@@ -269,14 +269,17 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
           return true;
         }
 
-        // If inferred and current have different polarity
-        const polarity = e.data.polarity || 0;
-        if (param.engine_weights[this.engine][1] * polarity < 0) {
+        if (Math.abs(inferred.weightValue - current.weightValue) > 0.5) {
           return true;
         }
 
-        if (Math.abs(inferred.weightValue - current.weightValue) > 0.25) {
-          return true;
+        // If inferred and current have different polarity, Delphi only
+        const polarity = e.data.polarity || 0;
+        if (this.engine === 'delphi' || this.engine === 'delphi_dev') {
+          const w = param.engine_weights[this.engine];
+          if (w[2] && w[2] * polarity < 0) {
+            return true;
+          }
         }
         return false;
       })

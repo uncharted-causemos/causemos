@@ -3,8 +3,19 @@
     <div
       class="warning-message"
       v-if="typeInconsistency === true">
-      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship typs is different than selected type.
+      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship type is different than selected type.
     </div>
+    <div
+      class="warning-message"
+      v-if="valueInconsistency=== true">
+      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship strength is different than selected strength.
+    </div>
+    <div
+      class="warning-message"
+      v-if="polarityInconsistency=== true">
+      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred polarity conflicts with existing polarity.
+    </div>
+
     <div
       v-if="selectedRelationship.parameter"
       style="display: inline-block">
@@ -213,10 +224,13 @@ export default defineComponent({
     const currentEdgeWeight = ref(getEdgeWeight(props.selectedRelationship as EdgeParameter));
     const engineWeights = ref((props.selectedRelationship as EdgeParameter).parameter?.engine_weights);
 
-    const inferredWeights = engineWeights.value
-      ? engineWeights.value[props.modelSummary.parameter.engine]
-      : [0, 0];
-    const inferred = ref(decodeWeights(inferredWeights));
+    const inferredWeights = computed(() => {
+      return engineWeights.value
+        ? engineWeights.value[props.modelSummary.parameter.engine]
+        : [0, 0];
+    });
+
+    const inferred = ref(decodeWeights(inferredWeights.value));
 
     const inferredWeightType = computed(() => {
       return inferred.value.weightType === 'level' ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
@@ -228,6 +242,17 @@ export default defineComponent({
 
     const typeInconsistency = computed(() => {
       return inferredWeightType.value !== currentEdgeType.value;
+    });
+
+    const valueInconsistency = computed(() => {
+      return Math.abs(inferredWeightValue.value - currentEdgeWeight.value) > 0.5;
+    });
+
+    const polarityInconsistency = computed(() => {
+      if (['delphi', 'delphi_dev'].includes(props.modelSummary.parameter.engine) && inferredWeights.value[2]) {
+        return inferredWeights.value[2] * props.selectedRelationship.polarity < 0;
+      }
+      return false;
     });
 
     return {
@@ -247,6 +272,8 @@ export default defineComponent({
       inferredWeightValue,
 
       typeInconsistency,
+      valueInconsistency,
+      polarityInconsistency,
 
       STATEMENT_POLARITY
     };
