@@ -50,7 +50,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         this.showNodeHandles(selection);
       }
       if (this.handleBeingDragged === true) return;
-
       this.showNodeMenu(selection);
     });
 
@@ -630,7 +629,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
   showNodeMenu(node: D3SelectionINode<NodeParameter>) {
     const H = node.datum().height || 50;
-    const control = node.append('g')
+    const control = node.selectAll('.node-control')
+      .data([node])
+      .join('g')
       .classed('node-control', true);
 
     control.append('rect')
@@ -865,6 +866,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
           .style('opacity', 0)
           .remove();
 
+        this.handleBeingDragged = false;
         if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
         this.temporaryNewEdge = { sourceNode, targetNode };
 
@@ -872,7 +874,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
           source: sourceNode.data,
           target: targetNode.data
         });
-        this.handleBeingDragged = false;
       });
     rightHandle
       .call(drag as any)
