@@ -41,7 +41,7 @@ export const getDatacubeById = async (datacubeId: string) => {
   const filters = fu.newFilters();
   fu.setClause(filters, 'id', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
-  return cubes && cubes[0];
+  return cubes && cubes.length > 0 && cubes[0];
 };
 
 /**
@@ -84,12 +84,45 @@ const _getDatacubesCount = async (datacubeType: string) => {
 /**
  * Update an existing model metadata
  * @param datacubeId datacube or model id
- * @param fields an object of all metadata fields and their new values
+ * @param metadata an object of all metadata fields and their new values
  * @returns success or error on failure
  */
 export const updateDatacube = async (datacubeId: string, metadata: Model) => {
   const result = await API.put(`maas/datacubes/${datacubeId}`, metadata);
   return result.data;
+};
+
+/**
+ * Update multiple indicators. Each delta object must contain the document id that should be updated.
+ * @param metaDeltas an array of metadata delta objects and the document id
+ * @returns success or error on failure
+ */
+export const updateIndicatorsBulk = async (metaDeltas: { id: string; [key: string]: any }[]) => {
+  const result = await API.post('maas/datacubes/bulk-update', { deltas: metaDeltas });
+  return result.data;
+};
+
+/**
+ * Get the fields that represent a dataset from the first indicator with the provided data_id
+ * @param {string} dataId
+ */
+export const getDataset = async (dataId: string) => {
+  const filters = fu.newFilters();
+  fu.setClause(filters, 'type', ['indicator'], 'or', false);
+  fu.setClause(filters, 'dataId', [dataId], 'or', false);
+  const options = {
+    excludes: [
+      'outputs',
+      'qualifier_outputs',
+      'ontology_matches',
+      'geography.admin1',
+      'geography.admin2',
+      'geography.admin3'
+    ],
+    size: 1
+  };
+  const cubes = await getDatacubes(filters, options);
+  return cubes && cubes.length > 0 && cubes[0];
 };
 
 export const getModelRunMetadata = async (dataId: string) => {
