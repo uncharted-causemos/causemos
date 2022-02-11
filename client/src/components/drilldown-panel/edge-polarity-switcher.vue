@@ -1,6 +1,11 @@
 <template>
   <div @click="closeAll()">
     <div
+      class="warning-message"
+      v-if="typeInconsistency === true">
+      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship typs is different than selected type.
+    </div>
+    <div
       v-if="selectedRelationship.parameter"
       style="display: inline-block">
       <span
@@ -136,6 +141,7 @@ import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import { decodeWeights } from '@/services/model-service';
 import { CAGModelSummary, EdgeParameter } from '@/types/CAG';
 
 const EDGE_TYPE_LEVEL = 'level';
@@ -205,16 +211,24 @@ export default defineComponent({
 
     const currentEdgeType = ref(getEdgeTypeString(props.selectedRelationship as EdgeParameter));
     const currentEdgeWeight = ref(getEdgeWeight(props.selectedRelationship as EdgeParameter));
+    const engineWeights = ref((props.selectedRelationship as EdgeParameter).parameter?.engine_weights);
 
-    const engineWeights = (props.selectedRelationship as EdgeParameter).parameter?.engine_weights;
-
-    const inferredWeights = engineWeights
-      ? engineWeights[props.modelSummary.parameter.engine]
+    const inferredWeights = engineWeights.value
+      ? engineWeights.value[props.modelSummary.parameter.engine]
       : [0, 0];
+    const inferred = ref(decodeWeights(inferredWeights));
 
-    const inferredWeightType = inferredWeights[0] > inferredWeights[1] ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
-    const inferredWeightValue = inferredWeights[0] > inferredWeights[1] ? inferredWeights[0] : inferredWeights[1];
+    const inferredWeightType = computed(() => {
+      return inferred.value.weightType === 'level' ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
+    });
 
+    const inferredWeightValue = computed(() => {
+      return inferred.value.weightValue;
+    });
+
+    const typeInconsistency = computed(() => {
+      return inferredWeightType.value !== currentEdgeType.value;
+    });
 
     return {
       currentView,
@@ -228,8 +242,12 @@ export default defineComponent({
       currentEdgeType,
       currentEdgeWeight,
 
+      inferred,
       inferredWeightType,
       inferredWeightValue,
+
+      typeInconsistency,
+
       STATEMENT_POLARITY
     };
   },
@@ -257,6 +275,12 @@ export default defineComponent({
   watch: {
     selectedRelationship () {
       this.currentEdgeWeight = getEdgeWeight(this.selectedRelationship as EdgeParameter);
+      this.currentEdgeType = getEdgeTypeString(this.selectedRelationship as EdgeParameter);
+      const engineWeights = (this.selectedRelationship as EdgeParameter).parameter?.engine_weights;
+      const inferredWeights = engineWeights
+        ? engineWeights[this.modelSummary.parameter.engine]
+        : [0, 0];
+      this.inferred = decodeWeights(inferredWeights);
     }
   },
   methods: {
@@ -359,5 +383,9 @@ export default defineComponent({
 }
 .polarity-opposite {
   color: $negative;
+}
+
+.warning-message {
+  color: #f80;
 }
 </style>
