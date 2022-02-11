@@ -320,7 +320,7 @@ export default defineComponent({
         //  that if the suggestion search box already exists it won't be
         //  rerendered next to the newly-selected node.
         this.exitSuggestionMode();
-        this.allEdgeSuggestions = { node, suggestions: [] };
+        this.allEdgeSuggestions = { node, suggestions: null };
         this.selectedEdgeSuggestions = [];
         // Load all statements that include any of the components in the
         //  selected node-container.
@@ -384,9 +384,19 @@ export default defineComponent({
         this.searchQuery = userInput;
         const suggestionNode = this.allEdgeSuggestions.node;
         if (_.isEmpty(userInput)) {
-          if (this.allEdgeSuggestions.suggestions === null) return;
-          // Cleared search bar, show top suggestions from `allEdgeSuggestions`
+          // Cleared search bar
           this.searchSuggestions = null;
+          if (this.allEdgeSuggestions.suggestions === null) {
+            // Top suggestions are still loading
+            this.renderer?.setSuggestionData(
+              [],
+              this.selectedEdgeSuggestions,
+              this.allEdgeSuggestions.node,
+              true
+            );
+            return;
+          }
+          // Show top suggestions from `allEdgeSuggestions`
           this.renderer?.setSuggestionData(
             this.allEdgeSuggestions.suggestions,
             this.selectedEdgeSuggestions,
@@ -401,37 +411,8 @@ export default defineComponent({
             this.allEdgeSuggestions.node,
             true
           );
-          if (this.allEdgeSuggestions.suggestions === null) return;
           // Fetch concepts based on user input
-          const conceptSuggestions = await projectService.getConceptSuggestions(
-            this.project,
-            userInput
-          );
-          // Stop if we're no longer looking at suggestions for suggestionNode
-          //  or if the query has changed
-          if (
-            this.allEdgeSuggestions.node !== suggestionNode ||
-            this.searchQuery !== userInput
-          ) {
-            return;
-          }
-          const concepts = conceptSuggestions.map(
-            (suggestion: any) => suggestion.doc.key
-          );
-          // Convert to edge suggestions, assigning each concept to an edge
-          //  suggestion that was fetched earlier if possible
-          this.searchSuggestions = getEdgesFromConcepts(
-            concepts,
-            this.allEdgeSuggestions.suggestions,
-            this.allEdgeSuggestions.node.data.concept
-          );
-          // Update the suggestions that are being rendered
-          this.renderer?.setSuggestionData(
-            this.searchSuggestions,
-            this.selectedEdgeSuggestions,
-            this.allEdgeSuggestions.node,
-            false
-          );
+          this.fetchSearchSuggestions(userInput, suggestionNode, this);
         }
       }
     );
@@ -468,6 +449,46 @@ export default defineComponent({
         this.$emit('refresh', null);
       }
     },
+    fetchSearchSuggestions: _.debounce(async (
+      userInput: string,
+      suggestionNode: INode<NodeParameter>,
+      cagGraphThis: any
+    ) => {
+      const conceptSuggestions = await projectService.getConceptSuggestions(
+        cagGraphThis.project,
+        userInput
+      );
+      // Stop if we haven't fetched all edge suggestions yet
+      //  or we're no longer looking at suggestions for suggestionNode
+      //  or if the query has changed
+      // FIXME: Edge case here where search results return before all edge
+      //  suggestions, we currently keep showing loading indicator until user
+      //  changes their query.
+      if (
+        cagGraphThis.allEdgeSuggestions.suggestions === null ||
+        cagGraphThis.allEdgeSuggestions.node !== suggestionNode ||
+        cagGraphThis.searchQuery !== userInput
+      ) {
+        return;
+      }
+      const concepts = conceptSuggestions.map(
+        (suggestion: any) => suggestion.doc.key
+      );
+      // Convert to edge suggestions, assigning each concept to an edge
+      //  suggestion that was fetched earlier if possible
+      cagGraphThis.searchSuggestions = getEdgesFromConcepts(
+        concepts,
+        cagGraphThis.allEdgeSuggestions.suggestions,
+        cagGraphThis.allEdgeSuggestions.node.data.concept
+      );
+      // Update the suggestions that are being rendered
+      cagGraphThis.renderer?.setSuggestionData(
+        cagGraphThis.searchSuggestions,
+        cagGraphThis.selectedEdgeSuggestions,
+        cagGraphThis.allEdgeSuggestions.node,
+        false
+      );
+    }, 300),
     onSuggestionSelected(suggestion: any) {
       if (this.data.nodes.filter((node: any) => node.concept === suggestion.concept).length > 0) {
         this.$emit('suggestion-duplicated', suggestion);
