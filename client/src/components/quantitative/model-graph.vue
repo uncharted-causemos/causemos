@@ -12,7 +12,7 @@
 <script lang="ts">
 
 import _ from 'lodash';
-import { defineComponent, ref, Ref, computed } from 'vue';
+import { defineComponent, ref, Ref, PropType, computed } from 'vue';
 import { useStore } from 'vuex';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { D3SelectionINode, D3SelectionIEdge } from '@/graphs/abstract-cag-renderer';
@@ -20,7 +20,7 @@ import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import GraphSearch from '@/components/widgets/graph-search.vue';
 import { IGraph, moveToLabel } from 'svg-flowgraph';
-import { NodeParameter, EdgeParameter } from '@/types/CAG';
+import { NodeParameter, EdgeParameter, CAGModelSummary } from '@/types/CAG';
 
 export default defineComponent({
   name: 'ModelGraph',
@@ -28,6 +28,10 @@ export default defineComponent({
     GraphSearch
   },
   props: {
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      required: true
+    },
     data: {
       type: Object,
       default: () => ({})
@@ -128,6 +132,7 @@ export default defineComponent({
       if (this.renderer) {
         this.renderer.isGraphDirty = true;
         await this.renderer.setData(d);
+        this.renderer.setEngine(this.modelSummary.parameter.engine);
         this.renderer.setScenarioData(this.scenarioData);
         await this.renderer.render();
         this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);

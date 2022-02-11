@@ -6,14 +6,14 @@ export interface GraphPath {
   score?: number;
 }
 
-export interface ConceptProjectionConstraints {
-  concept: string;
-  values: ProjectionConstraint[];
-}
-
 export interface ProjectionConstraint {
   step: number;
   value: number;
+}
+
+export interface ConceptProjectionConstraints {
+  concept: string;
+  values: ProjectionConstraint[];
 }
 
 export interface ScenarioParameter {
@@ -57,7 +57,7 @@ export interface Scenario {
   modified_at: number;
   created_at: number;
   model_id: string;
-  engine: string;
+  engine: string; // Deprecated
   is_valid: boolean;
   is_baseline: boolean;
   parameter: ScenarioParameter;

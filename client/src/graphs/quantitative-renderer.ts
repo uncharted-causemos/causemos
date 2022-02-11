@@ -24,6 +24,7 @@ const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
 export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, EdgeParameter> {
   scenarioData: ScenarioData = {};
+  engine = 'dyse';
 
   constructor(options: any) {
     super(options);
@@ -71,6 +72,10 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
 
   setScenarioData(scenarioData: ScenarioData) {
     this.scenarioData = scenarioData;
+  }
+
+  setEngine(engine: string) {
+    this.engine = engine;
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
@@ -241,7 +246,6 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     return svg;
   }
 
-
   /**
    * In this context, edge controls are used to denote
    * warnings, where the user-specified values conflicts with
@@ -249,7 +253,29 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
    */
   renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
     this.chart.selectAll('.edge-control').selectAll('*').remove();
-    const edgeControl = selection.select('.edge-control');
+
+    const decodeWeights = (weights: number[]) => {
+      const weightType = weights[0] > weights[1] ? 'level' : 'trend';
+      const weightValue = weights[0] > weights[1] ? weights[0] : weights[1];
+      return { weightType, weightValue };
+    };
+
+    const edgeControl = selection
+      .filter(e => {
+        const param = e.data.parameter;
+        if (!param) {
+          return false;
+        }
+        const inferred = decodeWeights(param.engine_weights[this.engine]);
+        const current = decodeWeights(param.weights);
+
+        if (inferred.weightType !== current.weightType) {
+          return true;
+        }
+        return false;
+      })
+      .select('.edge-control');
+
     const EXCLAMATION_TIRANGE = '\uf071';
     const WARN = '#f80';
 
@@ -263,23 +289,23 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     edgeControl
       .append('circle')
       .attr('r', DEFAULT_STYLE.edge.controlRadius)
-      .style('fill', WARN)
+      .style('fill', 'none')
       .style('cursor', 'pointer');
 
     edgeControl
       .append('text')
       .attr('x', () => {
-        return -5.5;
+        return -6;
       })
       .attr('y', () => {
         return 3.5;
       })
       .style('font-family', 'FontAwesome')
       .style('font-size', () => {
-        return '11px';
+        return '12px';
       })
       .style('stroke', 'none')
-      .style('fill', 'white')
+      .style('fill', WARN)
       .style('cursor', 'pointer')
       .text(() => {
         return EXCLAMATION_TIRANGE;
