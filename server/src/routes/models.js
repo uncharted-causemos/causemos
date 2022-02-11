@@ -412,23 +412,22 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
 
   // FIXME: Different engines have slightly different status codes
   // Update model
-  const v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
-  await cagService.updateCAGMetadata(modelId, {
-    status: v,
-    engine_status: {
-      [engine]: v
-    }
-  });
+  let v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
 
   // Patch Delphi's inferred weights
+  let edgeTrainingDelphi = false;
   if ((engine === DELPHI || engine === DELPHI_DEV) && modelStatus.status === 'ready') {
+    Logger.info('Processing Delphi edge weights');
     const inferredEdgeMap = modelStatus.relations.reduce((acc, edge) => {
       const key = `${edge.source}///${edge.target}`;
       acc[key] = {};
 
+      // FIXME Need to differentiate signs
       acc[key].weights = [0.0, Math.abs(edge.weights[0])];
       return acc;
     }, {});
+
+    console.log(inferredEdgeMap, modelStatus.relations);
 
     // Sort out weights
     const { edgesToUpdate, edgesToOverride } = await processInferredEdgeWeights(
@@ -445,6 +444,8 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
       }
     }
     if (edgesToOverride.length > 0) {
+      Logger.info(`Sending ${edgesToOverride.length} edge-weight overrides to Delphi`);
+      edgeTrainingDelphi = true;
       if (engine === DELPHI) {
         await delphiService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
       } else if (engine === DELPHI_DEV) {
@@ -452,6 +453,20 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
       }
     }
   }
+
+  // We sent edge-weigts back to Delphi, so it will need to be retrained
+  if (edgeTrainingDelphi === true) {
+    v = MODEL_STATUS.TRAINING;
+  }
+
+  // Update model status
+  await cagService.updateCAGMetadata(modelId, {
+    status: v,
+    engine_status: {
+      [engine]: v
+    }
+  });
+
 
   // Patch Delphi's progress
   if (engine === DELPHI) {
@@ -499,6 +514,11 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
     res.status(400).send(`Failed to run projection ${engine} : ${modelId}`);
     return;
   }
+
+  console.log('!!');
+  console.log(result);
+  console.log('!!');
+
   res.json(result);
 }));
 
@@ -707,7 +727,23 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
   } else if (engine === SENSEI) {
     await senseiService.updateEdgeParameter(modelId, payload);
   } else {
-    throw new Error(`updateEdgeParameter not implemented for ${engine}`);
+    // throw new Error(`updateEdgeParameter not implemented for ${engine}`);
+  }
+
+  // For Delphi we will artificially set the model into unregistered state
+  // so the detection loop will find it and actually send the edge weights
+  if (engine === DELPHI || engine === DELPHI_DEV) {
+    Logger.info(`Defer edge upate for ${engine} until next refresh cycle`);
+    const modelAdapter = Adapter.get(RESOURCE.MODEL);
+    await modelAdapter.update([
+      {
+        id: model.id,
+        status: MODEL_STATUS.NOT_REGISTERED,
+        engine_status: {
+          [engine]: MODEL_STATUS.NOT_REGISTERED
+        }
+      }
+    ], d => d.id);
   }
 
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
