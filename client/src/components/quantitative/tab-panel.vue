@@ -74,6 +74,7 @@
               :is-fetching-statements="isFetchingStatements"
               :should-confirm-curations="true">
               <edge-polarity-switcher
+                :model-summary="modelSummary"
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity"
                 @edge-set-weights="setEdgeWeights"

@@ -3,12 +3,13 @@ import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import { Clause, Filters } from '@/types/Filters';
 import _ from 'lodash';
 import { deleteInsight, fetchInsights, InsightFilterFields } from '@/services/insight-service';
+import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-service';
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
-import { AnalyticalQuestion, Insight, InsightMetadata } from '@/types/Insight';
+import { AnalyticalQuestion, DataState, Insight, InsightMetadata } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
-import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
+import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
 import { ProjectType } from '@/types/Enums';
@@ -237,7 +238,7 @@ function generateInsightDOCX (
   insight: Insight,
   metadataSummary: string,
   newPage: boolean
-) {
+): ISectionOptions {
   // 72dpi * 8.5 inches width, as word perplexingly uses pixels
   // same height as width so that we can attempt to be consistent with the layout.
   const docxMaxImageSize = 612;
@@ -316,7 +317,7 @@ function generateInsightDOCX (
 function generateQuestionDOCX (
   question: AnalyticalQuestion,
   metadataSummary: string
-) {
+): ISectionOptions {
   const children = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -335,7 +336,115 @@ function generateQuestionDOCX (
   };
 }
 
-function exportDOCX(
+function targetViewsContainCAG(targetViews: string[]): boolean {
+  const validBibiographyTypes = ['quantitative', 'qualitative'];
+  return targetViews.some(v => validBibiographyTypes.includes(v));
+}
+
+function generateAPACiteDOCX(b: Bibliography): TextRun[] {
+  const cite = <TextRun[]>[];
+  // line break, author
+  cite.push(new TextRun({
+    break: 1,
+    size: 24,
+    text: b.author.length > 0 ? `${b.author} ` : ''
+  }));
+
+  // date
+  cite.push(new TextRun({
+    size: 24,
+    text: `(${b.publication_date.year}). `
+  }));
+
+  // title
+  const title = b.title.length > 0 ? b.title : `Document: ${b.doc_id}`;
+  cite.push(new TextRun({
+    size: 24,
+    text: `${title}. `
+  }));
+
+  // publisher name
+  if (b.publisher_name.length > 0) {
+    cite.push(new TextRun({
+      italics: true,
+      size: 24,
+      text: `${b.publisher_name}.`
+    }));
+  }
+
+  return cite;
+}
+
+async function generateAppendixDOCX(
+  insights: Insight[],
+  metadataSummary: string
+) {
+  const cags = getCagMapFromInsights(insights);
+  const cagIds = Array.from(cags.keys());
+  // FIXME: Not an ideal place to make this call, but generally need consider overhauling this with insights
+  const result = await getBibiographyFromCagIds(cagIds);
+  const children = <Paragraph[]>[];
+
+  cagIds.forEach(id => {
+    const cagInfo = cags.get(id);
+
+    children.push(new Paragraph({
+      alignment: AlignmentType.LEFT,
+      heading: HeadingLevel.HEADING_2,
+      children: [
+        new TextRun({
+          break: 1,
+          text: `${cagInfo?.modelName}`
+        })
+      ]
+    }));
+
+    result.data[id].forEach((b: Bibliography) => {
+      children.push(new Paragraph({
+        indent: {
+          start: convertInchesToTwip(0.5)
+        },
+        alignment: AlignmentType.LEFT,
+        children: generateAPACiteDOCX(b)
+      }));
+    });
+  });
+
+  const bibliographyHeader = new Paragraph({
+    alignment: AlignmentType.LEFT,
+    heading: HeadingLevel.HEADING_1,
+    text: 'References'
+  });
+  children.unshift(bibliographyHeader);
+
+  const properties = {
+    type: SectionType.NEXT_PAGE
+  };
+  const footers = generateFooterDOCX(metadataSummary);
+  return {
+    children,
+    properties,
+    footers
+  };
+}
+
+function getCagMapFromInsights (insights: Insight[]): Map<string, DataState> {
+  const cags = insights.reduce((acc, item) => {
+    if (
+      item.context_id &&
+      item.context_id.length > 0 &&
+      targetViewsContainCAG(item.target_view)
+    ) {
+      if (!acc.has(item.context_id[0]) && item.data_state) {
+        acc.set(item.context_id[0], item.data_state);
+      }
+    }
+    return acc;
+  }, new Map<string, DataState>());
+  return cags;
+}
+
+async function exportDOCX(
   insights: Insight[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[]
@@ -353,7 +462,11 @@ function exportDOCX(
       acc.push(generateQuestionDOCX(item, metadataSummary));
     }
     return acc;
-  }, <any>[]);
+  }, <ISectionOptions[]>[]);
+
+
+  const bibliographyPages = await generateAppendixDOCX(insights, metadataSummary);
+  sections.push(bibliographyPages);
 
   const doc = new Document({
     sections,

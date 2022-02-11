@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
 import DomainProjectOverview from '@/views/DomainProjectOverview.vue';
+import DatasetOverview from '@/views/DatasetOverview.vue';
 import AnalysisProjectOverview from '@/views/AnalysisProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import NewDomainProject from '@/views/NewDomainProject.vue';
@@ -71,6 +72,11 @@ const routes = [
     path: '/:projectType/:project/domainDatacubeOverview',
     name: 'domainDatacubeOverview',
     component: DomainProjectOverview
+  },
+  {
+    path: '/:projectType/:project/datasetOverview',
+    name: 'datasetOverview',
+    component: DatasetOverview
   },
   {
     path: '/:projectType/:project/data/:analysisId',

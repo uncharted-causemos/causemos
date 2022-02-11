@@ -813,23 +813,6 @@ export default defineComponent({
       }
     );
 
-    const selectedBreakdownOutputVariables = ref(new Set<string>());
-    const toggleIsOutputVariableSelected = (outputVariable: string) => {
-      const isOutputVariableSelected = selectedBreakdownOutputVariables.value.has(outputVariable);
-      const updatedList = _.clone(selectedBreakdownOutputVariables.value);
-
-      if (isOutputVariableSelected) {
-        // If an output variable is currently selected, remove it from the list
-        updatedList.delete(outputVariable);
-      } else {
-        // Else add it to the list of selected output variables.
-        updatedList.add(outputVariable);
-      }
-
-      // Assign new object to selectedBreakdownOutputVariables.value to trigger reactivity updates.
-      selectedBreakdownOutputVariables.value = updatedList;
-    };
-
     //
     // color scheme options
     //
@@ -908,10 +891,36 @@ export default defineComponent({
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
+    const initialSelectedOutputVariables = ref<string[]>([]);
     const initialNonDefaultQualifiers = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
     const initialSelectedYears = ref<string[]>([]);
     const initialActiveReferenceOptions = ref<string[]>([]);
+
+    const selectedBreakdownOutputVariables = ref(new Set<string>());
+    const toggleIsOutputVariableSelected = (outputVariable: string) => {
+      const isOutputVariableSelected = selectedBreakdownOutputVariables.value.has(outputVariable);
+      const updatedList = _.clone(selectedBreakdownOutputVariables.value);
+
+      if (isOutputVariableSelected) {
+        // If an output variable is currently selected, remove it from the list
+        updatedList.delete(outputVariable);
+      } else {
+        // Else add it to the list of selected output variables.
+        updatedList.add(outputVariable);
+      }
+
+      // Assign new object to selectedBreakdownOutputVariables.value to trigger reactivity updates.
+      selectedBreakdownOutputVariables.value = updatedList;
+    };
+    watch(
+      () => [
+        initialSelectedOutputVariables.value
+      ],
+      () => {
+        selectedBreakdownOutputVariables.value = new Set(initialSelectedOutputVariables.value);
+      }
+    );
 
     const addNewTag = (tagName: string) => {
       let numAdded = 0;
@@ -1176,6 +1185,9 @@ export default defineComponent({
           }
           if (initialDataConfig.value.selectedRegionIds !== undefined) {
             initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
+          }
+          if (initialDataConfig.value.selectedOutputVariables !== undefined) {
+            initialSelectedOutputVariables.value = _.clone(initialDataConfig.value.selectedOutputVariables);
           }
           if (initialDataConfig.value.selectedYears !== undefined) {
             initialSelectedYears.value = _.clone(initialDataConfig.value.selectedYears);
@@ -1560,6 +1572,9 @@ export default defineComponent({
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
           initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
         }
+        if (loadedInsight.data_state?.selectedOutputVariables !== undefined) {
+          initialSelectedOutputVariables.value = _.clone(loadedInsight.data_state?.selectedOutputVariables);
+        }
         // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
         if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
           initialSelectedQualifierValues.value = _.clone(loadedInsight.data_state?.selectedQualifierValues);
@@ -1921,6 +1936,7 @@ export default defineComponent({
         selectedQualifierValues,
         selectedRegionIds,
         selectedRegionIdsAtAllLevels,
+        selectedBreakdownOutputVariables,
         selectedScenarioIds,
         selectedTimestamp,
         selectedYears,
