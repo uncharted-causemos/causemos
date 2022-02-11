@@ -98,14 +98,8 @@ export interface Dataset extends DatasetEditable {
 export interface Datacube extends DatasetEditable {
   id: string;
   data_id: string; // this is the actual one to be used to fetch data
-  name: string;
-  family_name: string;
-  description: string;
   created_at: number;
   type: DatacubeType;
-  category: string[];
-  maintainer: DatacubeMaintainer;
-  tags: string[];
   ontology_matches: OntologyMatch[];
   geography: DatacubeGeography;
   period: DatacubePeriod;

@@ -67,14 +67,17 @@ export default defineComponent({
       icon: 'fa-clone',
       route: { name: 'overview', params: { project: project.value } }
     }));
-    const datacubeProjectItem = computed<NavBarItem>(() => ({
-      text: projectMetadata.value.name,
-      icon: 'fa-connectdevelop',
-      route: {
-        name: 'domainDatacubeOverview',
-        params: { project: project.value }
-      }
-    }));
+    const datacubeProjectItem = computed<NavBarItem>(() => {
+      const navBarItem = {
+        text: projectMetadata.value.name,
+        icon: 'fa-connectdevelop',
+        route: {
+          name: projectMetadata.value.type === 'model' ? 'domainDatacubeOverview' : 'datasetOverview',
+          params: { project: project.value }
+        }
+      };
+      return navBarItem;
+    });
 
     const quantitativeAnalysisItem = computed(() => ({
       text: analysisName.value,
@@ -109,6 +112,10 @@ export default defineComponent({
       modelPublishingExperiment: [
         datacubeProjectItem.value,
         { icon: 'fa-cube', route: null, text: 'Instance' }
+      ],
+      indicatorPublishingExperiment: [
+        datacubeProjectItem.value,
+        { icon: 'fa-cube', route: null, text: 'Indicator' }
       ],
       overview: [analysisProjectItem.value],
       dataComparative: [
