@@ -76,7 +76,7 @@ export default defineComponent({
 
     const initialViewConfig = ref<ViewState | null>({
       temporalAggregation: AggregationOption.Mean,
-      spatialAggregation: AggregationOption.Sum,
+      spatialAggregation: AggregationOption.Mean,
       temporalResolution: TemporalResolutionOption.Month
     });
 
@@ -128,20 +128,19 @@ export default defineComponent({
           }));
         try {
           await updateIndicatorsBulk(deltas);
-          toast(`Updated ${deltas.length} indicators`, 'success');
+          toast('Indicator updated', 'success');
+          // redirect to dataset family page
+          router.push({
+            name: 'datasetOverview',
+            query: { template_id: selectedIndicatorId.value },
+            params: {
+              project: projectId.value,
+              projectType: projectType.value
+            }
+          });
         } catch {
           toast('The was an issue with applying the settings', 'error');
         }
-
-        // redirect to dataset family page
-        router.push({
-          name: 'datasetOverview',
-          query: { template_id: selectedIndicatorId.value },
-          params: {
-            project: projectId.value,
-            projectType: projectType.value
-          }
-        });
       }
     };
 
