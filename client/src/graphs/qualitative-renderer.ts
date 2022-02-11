@@ -761,10 +761,10 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         .attr('height', nodeHeight)
         .style('cursor', 'pointer')
         .style('fill', 'transparent');
-
       // Add arrow
+      const approximateArrowWidth = 10;
       handleGroupSelection.append('text')
-        .attr('x', xOffset + handleWidth * 0.2)
+        .attr('x', xOffset + (handleWidth - approximateArrowWidth) / 2)
         .attr('y', nodeHeight * 0.625)
         .style('font-family', 'FontAwesome')
         .style('font-size', '12px')
@@ -778,13 +778,18 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     addHandleElements(rightHandle, nodeWidth - handleWidth);
 
     const onHandleHover = (mouseEvent: any) => {
-      // mouseEvent.target is rect.handle, parentNode is g element that contains both rectangles and both text elements
-      d3.select(mouseEvent.target.parentNode).select('text').style('fill', 'black');
+      // mouseEvent.target is rect.handle, parentNode is g element that
+      //  contains rectangle and text element
+      const gElement = d3.select(mouseEvent.target.parentNode);
+      gElement.select('rect').style('fill', SELECTED_COLOR);
+      gElement.select('text').style('fill', 'black');
     };
 
     const onHandleLeave = (mouseEvent: any) => {
       // mouseEvent.target is leftHandle or rightHandle g element
-      d3.select(mouseEvent.target).select('text').style('fill', 'grey');
+      const gElement = d3.select(mouseEvent.target);
+      gElement.select('rect').style('fill', 'transparent');
+      gElement.select('text').style('fill', 'grey');
     };
 
     leftHandle.on('mouseover', onHandleHover);
