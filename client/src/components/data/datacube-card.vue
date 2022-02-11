@@ -1828,7 +1828,8 @@ export default defineComponent({
         regionalData.value,
         breakdownOption.value,
         finalColorScheme.value,
-        selectedAdminLevel.value
+        selectedAdminLevel.value,
+        selectedDataLayerTransparency.value
       ],
       () => {
         if (breakdownOption.value === SPLIT_BY_VARIABLE) {
@@ -1867,7 +1868,8 @@ export default defineComponent({
                       label: dataItem.name,
                       value: itemValue,
                       normalizedValue: normalizedValue,
-                      color: regionColor
+                      color: regionColor,
+                      opacity: Number(selectedDataLayerTransparency.value)
                     });
                     regionIndexCounter++;
                   });
