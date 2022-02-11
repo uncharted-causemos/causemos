@@ -822,6 +822,15 @@ export const historicalDataUncertaintyColor = (timeseries: TimeseriesPoint[], pr
   return background;
 };
 
+export const decodeWeights = (weights: number[]) => {
+  const w1 = Math.abs(weights[0]);
+  const w2 = Math.abs(weights[1]);
+  const weightType = w1 > w2 ? 'level' : 'trend';
+  const weightValue = w1 > w2 ? w1 : w2;
+  return { weightType, weightValue };
+};
+
+
 export default {
   getProjectModels,
   getSummary,
@@ -876,6 +885,8 @@ export default {
   cleanConstraints,
 
   historicalDataUncertaintyColor,
+
+  decodeWeights,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,

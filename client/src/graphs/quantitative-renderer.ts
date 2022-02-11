@@ -4,6 +4,7 @@ import { NodeParameter, EdgeParameter, NodeScenarioData } from '@/types/CAG';
 import svgUtil from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
+import { decodeWeights } from '@/services/model-service';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { DEFAULT_STYLE } from './cag-style';
@@ -254,12 +255,6 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
   renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
     this.chart.selectAll('.edge-control').selectAll('*').remove();
 
-    const decodeWeights = (weights: number[]) => {
-      const weightType = weights[0] > weights[1] ? 'level' : 'trend';
-      const weightValue = weights[0] > weights[1] ? weights[0] : weights[1];
-      return { weightType, weightValue };
-    };
-
     const edgeControl = selection
       .filter(e => {
         const param = e.data.parameter;
@@ -269,7 +264,18 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
         const inferred = decodeWeights(param.engine_weights[this.engine]);
         const current = decodeWeights(param.weights);
 
+        // If inferred and current have different types
         if (inferred.weightType !== current.weightType) {
+          return true;
+        }
+
+        // If inferred and current have different polarity
+        const polarity = e.data.polarity || 0;
+        if (param.engine_weights[this.engine][1] * polarity < 0) {
+          return true;
+        }
+
+        if (Math.abs(inferred.weightValue - current.weightValue) > 0.25) {
           return true;
         }
         return false;
