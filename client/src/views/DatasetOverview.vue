@@ -217,7 +217,7 @@ export default defineComponent({
 
       const sortFunc = this.sortingOptions.indexOf(this.selectedSortingOption) === 1
         ? 'asc' : 'desc';
-      return _.orderBy(filtered, '???', sortFunc);
+      return _.orderBy(filtered, 'created_at', sortFunc);
     },
     isReady() {
       return this.dataset.status === DatacubeStatus.Ready;

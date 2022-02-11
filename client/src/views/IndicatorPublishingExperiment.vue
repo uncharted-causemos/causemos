@@ -93,7 +93,6 @@ export default defineComponent({
       if (metadata.value) {
         outputs.value = getOutputs(metadata.value);
 
-        console.log('hello 1');
         if (!_.isEmpty(metadata.value.default_view)) {
           initialViewConfig.value = _.cloneDeep(metadata.value.default_view);
         }
