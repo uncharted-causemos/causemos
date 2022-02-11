@@ -110,7 +110,7 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       project: 'app/project',
-      projectMetadata: 'app/projectMetadata'
+      projectType: 'app/projectType'
     })
   },
   setup() {
@@ -124,15 +124,14 @@ export default defineComponent({
   methods: {
     dateFormatter,
     edit(id: string) {
-      console.log('TODO: Open indicator publishing page for ' + id);
-      // this.$router.push({
-      //   name: 'modelPublishingExperiment',
-      //   query: { datacube_id: id },
-      //   params: {
-      //     project: this.project,
-      //     projectType: this.projectMetadata.type
-      //   }
-      // });
+      this.$router.push({
+        name: 'indicatorPublishingExperiment',
+        query: { datacube_id: id },
+        params: {
+          project: this.project,
+          projectType: this.projectType
+        }
+      });
     },
     applyToAll() {
       this.showApplyToAllModal = false;
