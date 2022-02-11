@@ -1,4 +1,4 @@
-import { DatacubeGeography, DatacubePeriod } from './Common';
+import { DatacubeGeography, DatacubePeriod, DataPipelineInfo, RuntimeStage } from './Common';
 import {
   DatacubeAttributeVariableType,
   DatacubeStatus,
@@ -74,7 +74,28 @@ export interface DatacubeFeature extends DatacubeAttribute {
   };
 }
 
-export interface Datacube {
+export interface DatasetEditable {
+  name: string,
+  family_name: string;
+  description: string,
+  category: string[],
+  maintainer: DatacubeMaintainer,
+  tags: string[],
+}
+
+export interface Dataset extends DatasetEditable {
+  created_at: number,
+  geography: DatacubeGeography,
+  period: DatacubePeriod,
+  status: DatacubeStatus,
+  runtimes: {
+    queued: RuntimeStage;
+    post_processing: RuntimeStage;
+  };
+  data_info?: DataPipelineInfo;
+}
+
+export interface Datacube extends DatasetEditable {
   id: string;
   data_id: string; // this is the actual one to be used to fetch data
   name: string;
@@ -109,6 +130,11 @@ export interface Model extends Datacube {
 
 export interface Indicator extends Datacube {
   data_paths: string[];
+  runtimes: {
+    queued: RuntimeStage;
+    post_processing: RuntimeStage;
+  };
+  data_info?: DataPipelineInfo;
 }
 
 export interface ModelPublishingStep {

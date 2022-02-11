@@ -5,14 +5,6 @@ const { processFilteredData, removeUnwantedData } = rootRequire('util/post-proce
 const Logger = rootRequire('/config/logger');
 
 /**
- * Return all datacubes
- */
-const getAllDatacubes = async() => {
-  const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  return await connection.find([], { size: SEARCH_LIMIT });
-};
-
-/**
  * Return datacubes that match the provided filter
  */
 const getDatacubes = async(filter, options) => {
@@ -28,6 +20,15 @@ const getDatacubes = async(filter, options) => {
     ];
   }
   return await connection.find(filter, options);
+};
+
+/**
+ * Return datacubes grouped by their data_id. This represents the concept of datasets.
+ */
+const getDatasets = async(type, limit) => {
+  const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+  const searchLimit = limit > 0 && limit <= SEARCH_LIMIT ? limit : SEARCH_LIMIT;
+  return await connection.searchDatasets(type, searchLimit);
 };
 
 /**
@@ -109,7 +110,7 @@ const updateDatacube = async(metadataDelta) => {
  */
 const updateDatacubes = async(metadataDeltas) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  return await connection.update(metadataDeltas);
+  return await connection.update(metadataDeltas, 'wait_for');
 };
 
 /**
@@ -182,7 +183,7 @@ const searchFields = async (searchField, queryString) => {
 
 module.exports = {
   getDatacubes,
-  getAllDatacubes,
+  getDatasets,
   countDatacubes,
 
   insertDatacube,

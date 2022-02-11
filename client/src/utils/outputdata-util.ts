@@ -4,6 +4,8 @@ import {
   RawOutputGeoJson
 } from '@/types/Outputdata';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
+import { AggregationOption } from '@/types/Enums';
 
 // Filter raw data so that the result will contain data points where each data point matches with at least one of the provided regionId
 // i.e return data points where each data point matches with regionId[0] or regionId[1] or regionId[n]
@@ -38,4 +40,20 @@ export const convertRawDataToGeoJson = (data: RawOutputDataPoint[]) => {
     }
   }
   return geoJson;
+};
+
+export const computeTimeseriesFromRawData = (data: RawOutputDataPoint[], aggregation: AggregationOption): { timestamp: number; value: number }[] => {
+  // Aggregate spatially and derive timeseries data
+  const dataByTs = _.groupBy(data, 'timestamp');
+  const timeseries = Object.values(dataByTs).map(dataPoints => {
+    const sum = dataPoints.reduce((prev, cur) => prev + cur.value, 0);
+    return { timestamp: dataPoints[0].timestamp, value: aggregation === AggregationOption.Sum ? sum : sum / dataPoints.length };
+  });
+  // TODO: sorting can be expensive for large number of datapoints, further investigate if there's more efficient way to keep the timestamps in order.
+  const result = _.sortBy(timeseries, 'timestamp');
+  return result;
+};
+
+export const pickQualifiers = (dataPoint: RawOutputDataPoint): { [qualifier: string]: string } => {
+  return _.omit(dataPoint, QUALIFIERS_TO_EXCLUDE);
 };
