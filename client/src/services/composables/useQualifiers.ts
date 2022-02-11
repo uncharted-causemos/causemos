@@ -7,7 +7,7 @@ import {
 } from '@/types/Enums';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
-import { getQualifierBreakdown } from '../outputdata-service';
+import { getQualifierBreakdown, getRawQualifierBreakdown } from '../outputdata-service';
 
 interface QualifierVariableInfo {
   count: number;
@@ -106,7 +106,8 @@ export default function useQualifiers(
   availableQualifiers: Ref<Map<string, QualifierInfo>>,
   initialSelectedQualifierValues: Ref<string[]>,
   initialNonDefaultQualifiers: Ref<string[]>,
-  activeFeature: Ref<string>
+  activeFeature: Ref<string>,
+  isRawDataResolution?: Ref<Boolean>
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
 
@@ -212,16 +213,25 @@ export default function useQualifiers(
       ? [requestedQualifier.value ?? '']
       : defaultQualifierIds;
     const promises = selectedScenarioIds.value.map(runId =>
-      getQualifierBreakdown(
-        data_id,
-        runId,
-        activeFeature.value,
-        qualifiersToRequest,
-        temporalResolution.value,
-        temporalAggregation.value,
-        spatialAggregation.value,
-        timestamp
-      )
+      isRawDataResolution?.value
+        ? getRawQualifierBreakdown(
+          data_id,
+          runId,
+          activeFeature.value,
+          qualifiersToRequest,
+          spatialAggregation.value,
+          timestamp
+        )
+        : getQualifierBreakdown(
+          data_id,
+          runId,
+          activeFeature.value,
+          qualifiersToRequest,
+          temporalResolution.value,
+          temporalAggregation.value,
+          spatialAggregation.value,
+          timestamp
+        )
     );
     // FIXME: OPTIMIZATION: Placing a separate request for each run eats into
     //  the maximum number of concurrent requests, resulting in closer to

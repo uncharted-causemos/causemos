@@ -90,6 +90,7 @@
               @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
             >
                 <edge-polarity-switcher
+                  :model-summary="modelSummary"
                   :selected-relationship="selectedEdge"
                   @edge-set-user-polarity="setEdgeUserPolarity"
                   @edge-set-weights="setEdgeWeights"
