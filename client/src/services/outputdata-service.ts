@@ -21,7 +21,7 @@ import {
 } from '@/types/Outputdata';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
-import { filterRawDataByRegionIds } from '@/utils/outputdata-util';
+import { filterRawDataByRegionIds, computeTimeseriesFromRawData } from '@/utils/outputdata-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
 
 const RAW_DATA_REQUEST_CACHE_SIZE = 20;
@@ -75,15 +75,7 @@ export const getRawTimeseriesData = async (
 ): Promise<TimeseriesPoint[]> => {
   const rawData = await getRawOutputData(param);
   const filteredData = param.regionId ? filterRawDataByRegionIds(rawData, [param.regionId]) : rawData;
-
-  // Aggregate spatially and derive timeseries data
-  const dataByTs = _.groupBy(filteredData, 'timestamp');
-  const timeseries = Object.values(dataByTs).map(dataPoints => {
-    const sum = dataPoints.reduce((prev, cur) => prev + cur.value, 0);
-    return { timestamp: dataPoints[0].timestamp, value: param.spatialAgg === AggregationOption.Sum ? sum : sum / dataPoints.length };
-  });
-  // TODO: sorting can be expensive for large number of datapoints, further investigate if there's more efficient way to keep the timestamps in order.
-  const result = _.sortBy(timeseries, 'timestamp');
+  const result = computeTimeseriesFromRawData(filteredData, param.spatialAgg as AggregationOption);
   return result;
 };
 
@@ -111,6 +103,91 @@ export const getRawOutputDataByTimestamp = async (
 ): Promise<RawOutputDataPoint[]> => {
   const rawData = await getRawOutputData(param);
   return rawData.filter(d => d.timestamp === param.timestamp);
+};
+
+export const getRawQualifierTimeseries = async (
+  param: {
+    dataId: string,
+    runId: string,
+    outputVariable: string,
+    aggregation: string,
+    qualifierVariableId: string,
+    qualifierOptions: string[],
+    regionId?: string
+}) => {
+  if (param.qualifierOptions.length === 0) {
+    return [];
+  }
+  const rawData = await getRawOutputData(param);
+  const filteredData = param.regionId ? filterRawDataByRegionIds(rawData, [param.regionId]) : rawData;
+
+  // Init an object to store raw data points grouped by each qualifier option provided by param
+  const dataByOptions: { [opt: string]: RawOutputDataPoint[] } = {};
+  for (const opt of param.qualifierOptions) {
+    dataByOptions[opt] = [];
+  }
+
+  for (const d of filteredData) {
+    // Filter by qualifier variable Id and bucket by qualifier option/value
+    const qualOption = d[param.qualifierVariableId];
+    if (qualOption && dataByOptions[qualOption]) {
+      dataByOptions[qualOption].push(d);
+    }
+  }
+
+  const result = Object.keys(dataByOptions).map(option => {
+    const timeseries = computeTimeseriesFromRawData(dataByOptions[option], param.aggregation as AggregationOption);
+    return { name: option, timeseries };
+  });
+
+  return result;
+};
+
+export const getRawQualifierBreakdown = async (
+  dataId: string,
+  runId: string,
+  outputVariable: string,
+  qualifierVariableIds: string[],
+  aggregation: string,
+  timestamp: number
+) : Promise<QualifierBreakdownResponse[]> => {
+  const rawDataByTs = await getRawOutputDataByTimestamp({
+    dataId,
+    runId,
+    outputVariable,
+    timestamp
+  });
+  interface qualifierAgg {
+    [qualVal: string]: { count: number; sum: number };
+  }
+  interface qualifierAggs {
+    [qualifierVarId: string]: qualifierAgg
+  }
+  const aggs: qualifierAggs = {};
+  // Init aggs object
+  for (const varId of qualifierVariableIds) {
+    aggs[varId] = {};
+  }
+  // Compute aggregation by qualifier value for each qualifier variable Id
+  for (const dataPoint of rawDataByTs) {
+    for (const varId of qualifierVariableIds) {
+      const qualVal = dataPoint[varId];
+      if (!aggs[varId][qualVal]) aggs[varId][qualVal] = { count: 0, sum: 0 };
+      aggs[varId][qualVal].count += 1;
+      aggs[varId][qualVal].sum += dataPoint.value;
+    }
+  }
+  // For each qualifier variable Id, compute QualifierBreakdownResponse
+  const result = qualifierVariableIds.map(varId => {
+    const options = Object.keys(aggs[varId]).map(qualVal => {
+      const count = aggs[varId][qualVal].count;
+      const sum = aggs[varId][qualVal].sum;
+      const value = aggregation === AggregationOption.Sum ? sum : (sum / count);
+      return { name: qualVal, value };
+    });
+    return { name: varId, options } as QualifierBreakdownResponse;
+  });
+  return result;
 };
 
 /**
@@ -405,6 +482,8 @@ export default {
   getRawTimeseriesData,
   getRawTimeseriesDataBulk,
   getRawOutputDataByTimestamp,
+  getRawQualifierTimeseries,
+  getRawQualifierBreakdown,
   getQualifierCounts,
   getQualifierLists,
   getQualifierTimeseries,
