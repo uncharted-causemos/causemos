@@ -161,9 +161,7 @@ class Datacube {
 
     const searchBodies = [];
     fieldNames.forEach((field, idx) => {
-      searchBodies.push({ index: 'data-datacube' });
-      // ^^ from adapter.js RESOURCE.DATA_DATACUBE
-      // can't use it directly because that would be circular dependency, yay!
+      searchBodies.push({ index: this.index });
       searchBodies.push({
         size: 0,
         aggs: this._createNestedQuery(field, {
@@ -210,6 +208,60 @@ class Datacube {
       .value();
 
     return matchedTerms;
+  }
+
+  /**
+   * Group datacubes of the provided type by the data_id. This is useful to group
+   * indicators into the "datasets" that they came from.
+   *
+   * @param {string} datacubeType - the datacube type to restrict our search to
+   * @param {number} limit - number of results to return
+   */
+  async searchDatasets(datacubeType, limit) {
+    const aggFieldName = (FIELDS.dataId.aggFields || FIELDS.dataId.fields)[0];
+
+    const query = {
+      size: 0,
+      query: { bool: { filter: { term: { type: datacubeType } } } },
+      aggs: {
+        data_id_agg: {
+          terms: {
+            field: aggFieldName,
+            size: limit
+          },
+          aggs: {
+            one_doc: {
+              top_hits: {
+                size: 1,
+                _source: ['data_id', 'name', 'created_at', 'maintainer.organization']
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const { body } = await this.client.search({
+      index: this.index,
+      body: query
+    });
+
+    const aggBuckets = body.aggregations.data_id_agg.buckets;
+
+    // Return just the fields we're interested in. Sorting is done on the client
+    const datasets = aggBuckets
+      .map(item => {
+        const doc = item.one_doc.hits.hits[0];
+        return !doc ? undefined : {
+          data_id: item.key,
+          indicator_count: item.doc_count,
+          name: doc._source.name,
+          created_at: doc._source.created_at,
+          source: _.get(doc, '_source.maintainer.organization')
+        };
+      }).filter(item => item); // filter out the undefined
+
+    return datasets;
   }
 
   /**

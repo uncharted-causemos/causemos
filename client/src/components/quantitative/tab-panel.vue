@@ -74,6 +74,7 @@
               :is-fetching-statements="isFetchingStatements"
               :should-confirm-curations="true">
               <edge-polarity-switcher
+                :model-summary="modelSummary"
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity"
                 @edge-set-weights="setEdgeWeights"
@@ -403,8 +404,8 @@ export default defineComponent({
       // FIXME: endTime depends on time scale
       const experimentPayload = {
         experimentType: 'PROJECTION',
-        experimentParams: {
-          numTimeSteps: numTimeSteps,
+        experimentParam: {
+          numTimesteps: numTimeSteps,
           startTime: start,
           endTime: moment(start).add(numTimeSteps - 1, 'M').valueOf(),
           constraints: scenario.parameter.constraints

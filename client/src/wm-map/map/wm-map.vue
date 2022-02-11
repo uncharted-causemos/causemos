@@ -115,6 +115,7 @@ export default {
         this.map.resize();
         // It appears that bound set by `new mapboxgl.Map({ bounds })` and this.map.fitBounds (which is also called in bounds watcher)
         // behave differently. So make sure  `fitBounds` is called for the consistency
+        if (!this.bounds) return;
         this.map.fitBounds(...getFitBoundsParams(this.bounds));
       });
       this.handleResize = _.debounce(() => {

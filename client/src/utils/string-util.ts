@@ -1,4 +1,5 @@
 import numberFormatter from '@/formatters/number-formatter';
+import { RuntimeStage } from '@/types/Common';
 
 const cleanTextFragment = (text: string) => {
   return text
@@ -76,7 +77,17 @@ export const capitalize = (str: string) => {
   return str.charAt(0).toLocaleUpperCase() + str.slice(1);
 };
 
-const isValidUrl = (value: string) => {
+export const runtimeFormatter = (runtime: RuntimeStage) => {
+  if (!runtime || !runtime.start_time || !runtime.end_time || runtime.start_time > runtime.end_time) {
+    return 'unknown';
+  }
+
+  const hhmmss = new Date(runtime.end_time - runtime.start_time).toISOString().substr(11, 8);
+  const trimmed00 = hhmmss.startsWith('00') ? hhmmss.substr(3) : hhmmss;
+  return trimmed00.startsWith('0') ? trimmed00.substr(1) : trimmed00;
+};
+
+export const isValidUrl = (value: string) => {
   let url;
   try {
     url = new URL(value);
@@ -93,6 +104,7 @@ export default {
   dropOneInternalVowel,
   chartValueFormatter,
   exponentFormatter,
-  isValidUrl,
-  capitalize
+  capitalize,
+  runtimeFormatter,
+  isValidUrl
 };

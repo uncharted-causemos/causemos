@@ -171,6 +171,10 @@ export const getDatacubeStatusInfo = (status: DatacubeStatus) => {
       return { label: 'Published', color: 'lightgreen' };
     case DatacubeStatus.Registered:
       return { label: 'Registered', color: 'lightgray' };
+    case DatacubeStatus.Processing:
+      return { label: 'Processing', color: 'lightgray' };
+    case DatacubeStatus.ProcessingFailed:
+      return { label: 'Processing Failed', color: 'red' };
     case DatacubeStatus.Deprecated:
       return { label: 'Deprecated', color: 'lightblue' };
     default:

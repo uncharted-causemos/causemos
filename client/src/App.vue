@@ -25,6 +25,7 @@ import InsightManager from '@/components/insight-manager/insight-manager.vue';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
+import { getDataset } from '@/services/new-datacube-service';
 
 export default defineComponent({
   name: 'App',
@@ -48,10 +49,19 @@ export default defineComponent({
         this.setProjectMetadata({});
         return;
       }
-      if (this.projectType === ProjectType.Analysis) {
-        this.refresh();
-      } else {
-        this.refreshDomainProject();
+      switch (this.projectType) {
+        case ProjectType.Analysis:
+          this.refresh();
+          break;
+        case ProjectType.Dataset:
+          this.refreshDatasetProject();
+          break;
+        case ProjectType.Model:
+          this.refreshDomainProject();
+          break;
+        default:
+          console.error('Unknown project type', this.projectType);
+          break;
       }
     }
   },
@@ -61,10 +71,19 @@ export default defineComponent({
       this.setProjectMetadata({});
       return;
     }
-    if (this.projectType === ProjectType.Analysis) {
-      this.refresh();
-    } else {
-      this.refreshDomainProject();
+    switch (this.projectType) {
+      case ProjectType.Analysis:
+        this.refresh();
+        break;
+      case ProjectType.Dataset:
+        this.refreshDatasetProject();
+        break;
+      case ProjectType.Model:
+        this.refreshDomainProject();
+        break;
+      default:
+        console.error('Unknown project type', this.projectType);
+        break;
     }
   },
   methods: {
@@ -96,6 +115,15 @@ export default defineComponent({
       domainProjectService.getProject(projectId).then(project => {
         this.setProjectMetadata(project);
       });
+    },
+    async refreshDatasetProject() {
+      if (_.isEmpty(this.project)) {
+        return;
+      }
+
+      const dataId = this.project;
+      const dataset = await getDataset(dataId);
+      this.setProjectMetadata(dataset);
     },
     refresh() {
       if (_.isEmpty(this.project)) {
