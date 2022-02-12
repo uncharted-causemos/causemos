@@ -55,12 +55,12 @@
 </template>
 
 <script>
-import API from '@/api/api';
 import Modal from '@/components/modals/modal';
 import { mapActions } from 'vuex';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
 import dateFormatter from '@/formatters/date-formatter';
+import { getDocument } from '@/services/document-service';
 
 const isPdf = (data) => {
   const fileType = data && data.file_type;
@@ -154,8 +154,7 @@ export default {
       this.fetchReaderContent();
     },
     async fetchReaderContent() {
-      const url = `documents/${this.documentId}`;
-      this.documentData = (await API.get(url)).data;
+      this.documentData = (await getDocument(this.documentId)).data;
       this.textViewer = createTextViewer(this.documentData.extracted_text);
 
 

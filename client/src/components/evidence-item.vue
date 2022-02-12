@@ -1,16 +1,23 @@
 <template>
   <div
     class="evidence-item-container"
-    @click="onClick(evidence)"
   >
     <evidence-highlights
       :evidence="evidence"
       :resource-type="resourceType"
     />
     <div class="evidence-item-metadata">
-      <span>{{ metadataDisplayString }}</span>
       <small-icon-button
+        class="edit"
+        v-tooltip.top="'Edit document info'"
+      >
+        <i class="fa fa-fw fa-lg fa-edit" />
+      </small-icon-button>
+      <div class="doc-title">{{ metadataDisplayString }}</div>
+      <small-icon-button
+        class="open"
         v-tooltip.top="'Open source document'"
+        @click="onClick(evidence)"
       >
         <i class="fa fa-fw fa-lg"
            :class="fileIcon" />
@@ -87,14 +94,15 @@ export default defineComponent({
 .evidence-item-metadata {
   margin-top: 4px;
   display: flex;
-  justify-content: flex-end;
+  align-content: stretch;
+  align-items: flex-end;
 
-  span {
+  .doc-title {
     font-style: italic;
-  }
-
-  button {
-    margin-left: 8px;
+    flex: 1 1 auto;
+    text-align: right;
+    margin: 0 8px;
+    overflow: hidden;
   }
 }
 
