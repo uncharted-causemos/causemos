@@ -11,8 +11,8 @@ const modelUtil = rootRequire('/util/model-util');
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
 const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;
 
-const HISTORY_START_DATE = '2015-01-01';
-const HISTORY_END_DATE = '2020-12-01';
+// const HISTORY_START_DATE = '2015-01-01';
+// const HISTORY_END_DATE = '2020-12-01';
 const PROJECTION_START_DATE = '2021-01-01';
 const DEFAULT_NUM_STEPS = 12;
 
@@ -194,8 +194,6 @@ const createCAG = async (modelFields, edges, nodes) => {
   const CAGId = uuid();
   Logger.info('Creating CAG entry: ' + CAGId);
 
-  const defaultTimeSeriesStart = moment.utc(HISTORY_START_DATE).valueOf();
-  const defaultTimeSeriesEnd = moment.utc(HISTORY_END_DATE).valueOf();
   const defaultProjectionStartDate = moment.utc(PROJECTION_START_DATE).valueOf();
 
   const CAGConnection = Adapter.get(RESOURCE.CAG);
@@ -210,10 +208,6 @@ const createCAG = async (modelFields, edges, nodes) => {
     status: MODEL_STATUS.NOT_REGISTERED,
     engine_status: RESET_ALL_ENGINE_STATUS,
     parameter: {
-      indicator_time_series_range: {
-        start: defaultTimeSeriesStart,
-        end: defaultTimeSeriesEnd
-      },
       num_steps: DEFAULT_NUM_STEPS,
       projection_start: defaultProjectionStartDate,
       engine: 'dyse',

@@ -74,7 +74,7 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   const {
     engine,
     projection_start: projectionStart,
-    indicator_time_series_range: indicatorTimeSeriesRange,
+    history_range: historyRange,
     num_steps: numSteps,
     time_scale: timeScale
   } = req.body;
@@ -92,8 +92,8 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
     parameter.projection_start = projectionStart;
     invalidateScenarios = true;
   }
-  if (indicatorTimeSeriesRange) {
-    parameter.indicator_time_series_range = indicatorTimeSeriesRange;
+  if (historyRange) {
+    parameter.history_range = historyRange;
   }
   if (numSteps) {
     parameter.num_steps = numSteps;

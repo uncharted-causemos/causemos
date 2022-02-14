@@ -19,6 +19,15 @@
       @item-selected="setEngine"
     />
     engine.
+    &nbsp;
+    Display the last
+    <dropdown-button
+      :items="historyOptions"
+      :selected-item="''"
+      :is-dropdown-above="true"
+      :is-dropdown-left-aligned="true"
+      @item-selected="setHistory"
+    />
     <modal-time-scale
       v-if="showModalTimeScale"
       :initially-selected-time-scale="modelSummary?.parameter?.time_scale"
@@ -38,6 +47,19 @@ import { CAGModelParameter, CAGModelSummary } from '@/types/CAG';
 import { mapGetters } from 'vuex';
 import { TimeScale } from '@/types/Enums';
 import ModalTimeScale from '../qualitative/modal-time-scale.vue';
+
+const historyConfigs = {
+  [TimeScale.Months]: [
+    { displayName: '12 months', value: 12 },
+    { displayName: '24 months', value: 24 },
+    { displayName: '48 months', value: 48 }
+  ],
+  [TimeScale.Years]: [
+    { displayName: '10 years', value: 12 * 10 },
+    { displayName: '20 years', value: 12 * 20 },
+    { displayName: '40 years', value: 12 * 40 }
+  ]
+};
 
 export default defineComponent({
   components: { dropdownButton, DateDropdown, ModalTimeScale },
@@ -66,13 +88,18 @@ export default defineComponent({
       selectedEngine,
       selectedTimeScale,
       projectionStartDate,
-      showModalTimeScale: ref(false)
+      showModalTimeScale: ref(false),
+      historyConfigs
     };
   },
   computed: {
     ...mapGetters({
       currentCAG: 'app/currentCAG'
     }),
+    historyOptions(): DropdownItem[] {
+      const timeScale = this.modelSummary.parameter.time_scale;
+      return historyConfigs[timeScale];
+    },
     engineOptions(): DropdownItem[] {
       return ENGINE_OPTIONS.map(option => ({
         displayName: option.value,
@@ -84,6 +111,9 @@ export default defineComponent({
     }
   },
   methods: {
+    async setHistory() {
+      console.log('!!');
+    },
     async setEngine(newEngine: string) {
       this.selectedEngine = newEngine;
       await modelService.updateModelParameter(this.currentCAG, {
