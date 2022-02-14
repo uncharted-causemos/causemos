@@ -144,7 +144,7 @@
         <div
           v-for="(choice, indx) in updatedParameter.choices"
           :key="choice"
-          class="row" style="padding-bottom: 1rem;">
+          class="row" style="padding-bottom: 1rem; display: flex;">
           <label class="col-md-7">{{choice}}</label>
           <input
             v-model="updatedParameter.choices_labels[indx]"
