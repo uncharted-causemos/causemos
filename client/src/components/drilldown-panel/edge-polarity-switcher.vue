@@ -2,17 +2,17 @@
   <div @click="closeAll()">
     <div
       class="warning-message"
-      v-if="typeInconsistency === true">
+      v-if="typeInconsistency === true && view === 'quantitative'">
       <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship type is different than selected type.
     </div>
     <div
       class="warning-message"
-      v-if="valueInconsistency=== true">
+      v-if="valueInconsistency=== true && view === 'quantitative'">
       <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship strength is different than selected strength.
     </div>
     <div
       class="warning-message"
-      v-if="polarityInconsistency=== true">
+      v-if="polarityInconsistency=== true && view === 'quantitative'">
       <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred polarity conflicts with existing polarity.
     </div>
 
@@ -22,6 +22,7 @@
       <span
         v-if="currentView === 'quantitative'"
         class="clickable-dropdown"
+        :class="{'warning-message': typeInconsistency}"
         @click.stop="openEdgeTypeDropdown()">
         <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
         {{ weightTypeString(currentEdgeType) }}
@@ -60,6 +61,7 @@
       <span
         v-if="currentView === 'quantitative'"
         class="clickable-dropdown"
+        :class="{'warning-message': valueInconsistency}"
         @click.stop="openEdgeWeightDropdown()">
         {{ weightValueString(currentEdgeWeight) }}
         <i class="fa fa-fw fa-caret-down" />
@@ -77,24 +79,24 @@
           <div class="dropdown-option" @click="setWeight(0.1)">
             <i v-if="currentEdgeWeight === 0.1" class="fa fa-fw fa-circle"></i>
             <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightValueString(0.1) }} (0.1)
+            {{ weightValueString(0.1) }} <span class="secondary">(0.1)</span>
           </div>
           <div class="dropdown-option" @click="setWeight(0.5)">
             <i v-if="currentEdgeWeight === 0.5" class="fa fa-fw fa-circle"></i>
             <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightValueString(0.5) }} (0.5)
+            {{ weightValueString(0.5) }} <span class="secondary">(0.5)</span>
           </div>
           <div class="dropdown-option" @click="setWeight(0.9)">
             <i v-if="currentEdgeWeight === 0.9" class="fa fa-fw fa-circle"></i>
             <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightValueString(0.9) }} (0.9)
+            {{ weightValueString(0.9) }} <span class="secondary">(0.9)</span>
           </div>
           <div class="dropdown-option" @click="setWeight(inferredWeightValue)">
             <i v-if="currentEdgeWeight === inferredWeightValue" class="fa fa-fw fa-circle"></i>
             <i v-else class="fa fa-fw fa-circle-o"></i>
             <div> Inferred </div>
             <div>
-              {{ weightValueString(inferredWeightValue) }} ({{ inferredWeightValue.toFixed(3) }})
+              {{ weightValueString(inferredWeightValue) }} <span class="secondary">({{ inferredWeightValue.toFixed(3) }})</span>
             </div>
           </div>
         </template>
@@ -103,6 +105,7 @@
     <div style="display: inline-block">
       <span
         class="clickable-dropdown"
+        :class="{'warning-message': polarityInconsistency}"
         @click.stop="openEdgePolarityDropdown()">
         {{ polarityLabel }}
         <i class="fa fa-fw fa-caret-down" />
@@ -410,6 +413,10 @@ export default defineComponent({
 }
 .polarity-opposite {
   color: $negative;
+}
+
+.secondary {
+  color: #888;
 }
 
 .warning-message {
