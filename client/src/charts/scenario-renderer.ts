@@ -276,13 +276,13 @@ function renderScenarioProjections(
       //  cast to `any`
       svgGroup as any,
       ridgeline,
+      null,
       widthBetweenTimeslices,
       height,
       yScale.domain()[0],
       yScale.domain()[1],
       false,
       true,
-      'black',
       label,
       contextRange
     );
