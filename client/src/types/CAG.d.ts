@@ -19,10 +19,7 @@ export interface ProjectionConstraint {
 export interface ScenarioParameter {
   projection_start: number;
   num_steps: number;
-  indicator_time_series_range: {
-    start: number;
-    end: number;
-  };
+
   // A list of constraints across all concepts
   constraints: ConceptProjectionConstraints[];
 }
@@ -69,13 +66,10 @@ export interface NodeScenarioData {
   indicator_name: string;
   indicator_id: string | null;
   indicator_time_series: TimeseriesPoint[];
-  indicator_time_series_range: {
-    start: number;
-    end: number;
-  };
   min: number;
   max: number;
   projection_start: number;
+  history_range: number;
   time_scale: TimeScale;
   scenarios: {
     id: string;
@@ -131,10 +125,6 @@ export interface SourceTargetPair {
 
 export interface CAGModelParameter {
   num_steps: number; // Deprecated, should now be derived from time_scale
-  indicator_time_series_range: { // Deprecated
-    start: number;
-    end: number;
-  };
   history_range: number; // number in months
   projection_start: number;
   engine: string;

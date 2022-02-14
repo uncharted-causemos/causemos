@@ -14,7 +14,7 @@ import {
   getTimeScaleOption
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
-import { TimeScale } from '@/types/Enums';
+// import { TimeScale } from '@/types/Enums';
 import {
   calculateTypicalChangeBracket,
   convertDistributionTimeseriesToRidgelines
@@ -26,16 +26,6 @@ import { SELECTED_COLOR } from '@/utils/colors-util';
 const HISTORY_LINE_COLOR = '#999';
 const LABEL_COLOR = HISTORY_LINE_COLOR;
 
-// Depending on how many historical months are visible, we can add the number
-//  of projected months to get the total number of visible months and use that
-//  as the x range's domain.
-// The number of visible historical months will depend on the timescale, e.g.
-//  if timescale is months, show last 48 months or so
-//  if timescale is years, show last 36 years (= 432 months) or so
-const getVisibleHistoricalMonthCount = (timeScale: TimeScale) => {
-  if (timeScale === TimeScale.Years) return 432;
-  return 48;
-};
 
 export default function(
   selection: D3Selection,
@@ -73,9 +63,11 @@ function render(
 
 
   // Calculate timestamp of the earliest historical time to display
-  const visibleHistoricalMonthCount = getVisibleHistoricalMonthCount(
-    time_scale
-  );
+  // const visibleHistoricalMonthCount = getVisibleHistoricalMonthCount(
+  //   time_scale
+  // );
+
+  const visibleHistoricalMonthCount = nodeScenarioData.history_range;
   const historyStart = getTimestampAfterMonths(
     projection_start,
     -visibleHistoricalMonthCount

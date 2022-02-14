@@ -23,12 +23,13 @@
     Display the last
     <dropdown-button
       :items="historyOptions"
-      :selected-item="''"
+      :selected-item="selectedHistoryRange"
       :is-dropdown-above="true"
       :is-dropdown-left-aligned="true"
       @item-selected="setHistory"
     />
     <modal-time-scale
+
       v-if="showModalTimeScale"
       :initially-selected-time-scale="modelSummary?.parameter?.time_scale"
       @save-time-scale="saveTimeScale"
@@ -78,9 +79,15 @@ export default defineComponent({
     const projectionStartDate = ref(
       modelSummary.value.parameter.projection_start
     );
+    const selectedHistoryRange = ref(
+      modelSummary.value.parameter.history_range
+    );
+
+
     watchEffect(() => {
       // Whenever modelSummary changes, update local state variables
       selectedEngine.value = modelSummary.value.parameter.engine;
+      selectedHistoryRange.value = modelSummary.value.parameter.history_range;
       selectedTimeScale.value = modelSummary.value.parameter.time_scale;
       projectionStartDate.value = modelSummary.value.parameter.projection_start;
     });
@@ -88,6 +95,7 @@ export default defineComponent({
       selectedEngine,
       selectedTimeScale,
       projectionStartDate,
+      selectedHistoryRange,
       showModalTimeScale: ref(false),
       historyConfigs
     };
@@ -111,8 +119,12 @@ export default defineComponent({
     }
   },
   methods: {
-    async setHistory() {
-      console.log('!!');
+    async setHistory(range: number) {
+      const newParameter: Partial<CAGModelParameter> = {
+        history_range: range
+      };
+      await modelService.updateModelParameter(this.currentCAG, newParameter);
+      this.$emit('model-parameter-changed');
     },
     async setEngine(newEngine: string) {
       this.selectedEngine = newEngine;

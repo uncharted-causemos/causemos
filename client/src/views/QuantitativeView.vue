@@ -241,7 +241,6 @@ export default defineComponent({
             conceptConstraints => conceptConstraints.concept !== selectedConcept
           ),
           num_steps: selectedScenario.parameter.num_steps,
-          indicator_time_series_range: selectedScenario.parameter.indicator_time_series_range,
           projection_start: selectedScenario.parameter.projection_start
         }
       };
