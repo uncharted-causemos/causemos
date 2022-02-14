@@ -111,12 +111,32 @@
           <label class="col-md-6" style="font-style: italic; margin-left: 1rem;">example</label>
           <label style="font-style: italic">{{geoFormatExample}}</label>
         </div>
-    </div>
+      </div>
       <!-- choices -->
+      <div class="row" style="padding: 2rem;">
+        <label><b>Data value/Label choices:</b></label>
+        <br />
+        Value:
+        <input
+          type="text"
+          :value="newChoiceInput"
+          @input="newChoiceInput = $event.target.value"
+        >
+        Label:
+        <input
+          type="text"
+          :value="newChoiceLabelInput"
+          @input="newChoiceLabelInput = $event.target.value"
+        >
+        <button
+          type="button"
+          class="btn first-button"
+          style="padding: 0; margin-left: 4px;"
+          @click.stop="updatedParameter.choices.push(newChoiceInput); updatedParameter.choices_labels.push(newChoiceLabelInput)">
+            Add
+        </button>
+      </div>
       <div v-if="updatedParameter.choices && updatedParameter.choices.length > 0" class="param-choices-container">
-        <label>
-          <b>Data value/Label choices:</b>
-        </label>
         <div class="row">
           <label class="col-md-7"><b>Value(s)</b></label>
           <label><b>Label(s)</b></label>
@@ -127,9 +147,10 @@
           class="row" style="padding-bottom: 1rem;">
           <label class="col-md-7">{{choice}}</label>
           <input
-              v-model="updatedParameter.choices_labels[indx]"
-              type="text"
+            v-model="updatedParameter.choices_labels[indx]"
+            type="text"
           >
+          <i class="fa fa-fw fa-close delete-choice" @click="deleteChoice(choice)" />
         </div>
       </div>
     </template>
@@ -183,9 +204,14 @@ export default defineComponent({
     const dateMinPickerElement = ref<HTMLElement | null>(null);
     const dateMaxPickerElement = ref<HTMLElement | null>(null);
 
+    const newChoiceInput = ref('');
+    const newChoiceLabelInput = ref('');
+
     return {
       dateMinPickerElement,
-      dateMaxPickerElement
+      dateMaxPickerElement,
+      newChoiceInput,
+      newChoiceLabelInput
     };
   },
   computed: {
@@ -282,6 +308,13 @@ export default defineComponent({
     }
   },
   methods: {
+    deleteChoice(choice: string) {
+      if (this.updatedParameter && this.updatedParameter.choices) {
+        const choiceIndex = this.updatedParameter?.choices?.findIndex(c => c === choice);
+        this.updatedParameter.choices.splice(choiceIndex, 1);
+        this.updatedParameter.choices_labels?.splice(choiceIndex, 1);
+      }
+    },
     toggleOmitGADMCodeVersion() {
       if (this.updatedParameter) {
         this.updatedParameter.additional_options.geo_omit_gadm_code_version = !this.updatedParameter.additional_options.geo_omit_gadm_code_version;
@@ -395,6 +428,22 @@ export default defineComponent({
     padding: 0;
     cursor: auto;
     color: gray;
+  }
+}
+
+.delete-choice {
+  font-size: $font-size-large;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  color: #ff6955;
+  cursor: pointer;
+
+  &:hover {
+    color: #850f00;
   }
 }
 

@@ -40,6 +40,13 @@
               class="model-attribute-text"
               placeholder="unit"
             >
+            <dropdown-button
+              class="dropdown-button"
+              :inner-button-label="'Type'"
+              :items="getValidDataTypesForParam(param.type)"
+              :selected-item="getDataTypeDisplayName(param.data_type)"
+              @item-selected="setParamDataType($event, param)"
+            />
           </td>
           <td>
             <textarea
@@ -48,6 +55,31 @@
               class="model-attribute-desc"
               :class="{ 'attribute-invalid': !isValid(param.description) }"
             />
+            <dropdown-button
+              v-if="canChangeType(param.type)"
+              class="dropdown-button"
+              :inner-button-label="'Field Type'"
+              :items="paramTypeGroupButtons"
+              :selected-item="param.type"
+              @item-selected="setParamType($event, param)"
+            />
+            <div v-if="param.data_type === ModelParameterDataType.Numerical" class="numeric-param-range">
+              <input
+                v-model="param.min"
+                type="text"
+                class="model-param-range-text"
+                placeholder="min"
+                @keyup.enter="onParamRangeUpdated"
+              >
+              <input
+                v-model="param.max"
+                type="text"
+                class="model-param-range-text"
+                style="margin-left: 4px"
+                placeholder="max"
+                @keyup.enter="onParamRangeUpdated"
+              >
+            </div>
           </td>
           <td style="padding-right: 0; padding-left: 0; display: flex; flex-direction: column">
             <div v-if="isDateParam(param) === false" class="checkbox">
@@ -221,11 +253,13 @@ import ModalEditParamChoices from '@/components/modals/modal-edit-param-choices.
 import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import { getOutputs } from '@/utils/datacube-util';
 import { scrollToElement } from '@/utils/dom-util';
+import DropdownButton from '@/components/dropdown-button.vue';
 
 export default defineComponent({
   name: 'ModelDescription',
   components: {
-    ModalEditParamChoices
+    ModalEditParamChoices,
+    DropdownButton
   },
   props: {
     metadata: {
@@ -237,9 +271,89 @@ export default defineComponent({
     'check-model-metadata-validity',
     'refresh-metadata'
   ],
-  setup(props) {
+  setup(props, { emit }) {
     const { metadata } = toRefs(props);
     const store = useStore();
+
+    const getDataTypeDisplayName = (name: string) => {
+      if (name === ModelParameterDataType.Nominal || name === ModelParameterDataType.Ordinal) {
+        return 'Discrete';
+      } else if (name === ModelParameterDataType.Numerical) {
+        return 'Continuous';
+      } else {
+        return 'Freeform';
+      }
+    };
+
+    // because nominal and ordinal are both mapped to discrete, we need to filter one of them out
+    const paramDataTypeGroupButtons = _.uniqBy(
+      Object.values(ModelParameterDataType)
+        .map(val => ({ displayName: getDataTypeDisplayName(val), value: val })), 'displayName'
+    );
+
+    const getValidDataTypesForParam = (paramType: DatacubeGenericAttributeVariableType) => {
+      // remove freeform from numeric types
+      if (paramType === DatacubeGenericAttributeVariableType.Int || paramType === DatacubeGenericAttributeVariableType.Float) {
+        return paramDataTypeGroupButtons.filter(item => item.value !== ModelParameterDataType.Freeform);
+      }
+      // remove continuous from string param
+      if (paramType === DatacubeGenericAttributeVariableType.String) {
+        return paramDataTypeGroupButtons.filter(item => item.value !== ModelParameterDataType.Numerical);
+      }
+      return paramDataTypeGroupButtons;
+    };
+
+    const setParamDataType = (newDataType: ModelParameterDataType, param: ModelParameter) => {
+      // convert continuous to discrete
+      if (newDataType === ModelParameterDataType.Nominal || newDataType === ModelParameterDataType.Ordinal || newDataType === ModelParameterDataType.Freeform) {
+        param.choices = []; // this will trigger loading choices from existing runs
+        param.choices_labels = _.clone(param.choices);
+        param.data_type = newDataType;
+      }
+      // convert discrete to numeric/continuous
+      //  requires an initial (valid) range: min and max values
+      if ((param.data_type === ModelParameterDataType.Nominal || param.data_type === ModelParameterDataType.Ordinal || param.data_type === ModelParameterDataType.Freeform) && (param.type === DatacubeGenericAttributeVariableType.Int || param.type === DatacubeGenericAttributeVariableType.Float) && newDataType === ModelParameterDataType.Numerical && param.min !== undefined && param.max !== undefined && param.min !== null && param.max !== null) {
+        param.choices = undefined;
+        param.choices_labels = undefined;
+        param.data_type = newDataType;
+      }
+
+      // need to emit an event for the metadata to refresh the sync with all components
+      emit('refresh-metadata');
+    };
+
+    // only the following type are convertable to each other
+    //  i.e., a geo can be converted to string
+    const validParamType = [
+      DatacubeGenericAttributeVariableType.String,
+      DatacubeGenericAttributeVariableType.Geo,
+      DatacubeGenericAttributeVariableType.Date,
+      DatacubeGenericAttributeVariableType.DateRange
+    ];
+    // REVIEW: this may be simplified as a direct map; i.e. Object.Keys(DatacubeGenericAttributeVariableType)
+    const getTypeDisplayName = (name: string) => {
+      if (name === DatacubeGenericAttributeVariableType.String) {
+        return 'String';
+      } else if (name === DatacubeGenericAttributeVariableType.Geo) {
+        return 'Geo';
+      } else if (name === DatacubeGenericAttributeVariableType.Date) {
+        return 'Date';
+      } else if (name === DatacubeGenericAttributeVariableType.DateRange) {
+        return 'Date range';
+      }
+    };
+    const paramTypeGroupButtons = ref(
+      validParamType.map(val => ({ displayName: getTypeDisplayName(val), value: val }))
+    );
+
+    const setParamType = (newType: DatacubeGenericAttributeVariableType, param: ModelParameter) => {
+      param.type = newType;
+      // need to emit an event for the metadata to refresh the sync with all components
+      emit('refresh-metadata');
+    };
+    const canChangeType = (type: DatacubeGenericAttributeVariableType) => {
+      return validParamType.includes(type);
+    };
 
     // NOTE: this index is mostly driven from the component 'datacube-model-header'
     //       which may list either all outputs or only the validated ones
@@ -270,7 +384,13 @@ export default defineComponent({
       FeatureQualifierRoles,
       ModelParameterDataType,
       showEditParamOptionsModal,
-      selectedParameter
+      selectedParameter,
+      paramTypeGroupButtons,
+      setParamDataType,
+      getDataTypeDisplayName,
+      canChangeType,
+      setParamType,
+      getValidDataTypesForParam
     };
   },
   computed: {
@@ -415,6 +535,9 @@ export default defineComponent({
       //  for example to allow the Breakdown panel to show/hide
       //  the relevant drilldown-dimension based on the updated visibility
       this.$emit('refresh-metadata');
+    },
+    onParamRangeUpdated() {
+      this.$emit('refresh-metadata');
     }
   }
 });
@@ -496,6 +619,15 @@ table.model-table thead tr th {
   flex-basis: 100%;
 }
 
+.numeric-param-range {
+  display: flex;
+  margin-top: 1rem;
+}
+.model-param-range-text {
+  border-width: 1px;
+  border-color: rgb(216, 214, 214);
+}
+
 .model-attribute-desc {
   border-width: 1px;
   border-color: rgb(216, 214, 214);
@@ -530,6 +662,13 @@ table.model-table thead tr th {
   padding: 0;
   margin: 0;
   color: black;
+}
+
+.dropdown-button {
+  width: 100%;
+}
+::v-deep(.dropdown-btn) {
+  width: 100%;
 }
 
 </style>
