@@ -2,17 +2,17 @@
   <div @click="closeAll()">
     <div
       class="warning-message"
-      v-if="typeInconsistency === true && view === 'quantitative'">
+      v-if="typeInconsistency === true && currentView === 'quantitative'">
       <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship type is different than selected type.
     </div>
     <div
       class="warning-message"
-      v-if="valueInconsistency=== true && view === 'quantitative'">
+      v-if="valueInconsistency=== true && currentView === 'quantitative'">
       <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship strength is different than selected strength.
     </div>
     <div
       class="warning-message"
-      v-if="polarityInconsistency=== true && view === 'quantitative'">
+      v-if="polarityInconsistency=== true && currentView === 'quantitative'">
       <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred polarity conflicts with existing polarity.
     </div>
 
