@@ -23,7 +23,6 @@ router.get('/:docId', asyncHandler(async (req, res) => {
 */
 router.post('/:docId', asyncHandler(async (req, res) => {
   const documentAdapter = Adapter.get(RESOURCE.DOCUMENT);
-  console.log(req.body);
   const r = await documentAdapter.update([req.body], d => d.id);
   if (r.errors) {
     Logger.warn(JSON.stringify(r));
