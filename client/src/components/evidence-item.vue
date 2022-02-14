@@ -7,12 +7,6 @@
       :resource-type="resourceType"
     />
     <div class="evidence-item-metadata">
-      <small-icon-button
-        class="edit"
-        v-tooltip.top="'Edit document info'"
-      >
-        <i class="fa fa-fw fa-lg fa-edit" />
-      </small-icon-button>
       <div class="doc-title">{{ metadataDisplayString }}</div>
       <small-icon-button
         class="open"
