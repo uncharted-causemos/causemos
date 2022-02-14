@@ -27,6 +27,10 @@
             <td class="doc-label">Author</td>
             <td class="doc-value">{{ documentData.author }}</td>
           </tr>
+           <tr>
+            <td class="doc-label">Title</td>
+            <td class="doc-value">{{ documentData.doc_title }}</td>
+          </tr>
           <tr>
             <td class="doc-label">Locations</td>
             <td class="doc-value">{{ documentData.ner_analytics.loc.join(', ') }} </td>
@@ -40,6 +44,10 @@
     </template>
     <template #footer>
       <div>
+        <button
+          class="btn btn-md btn-primary"
+          @click="edit()"
+        >Edit</button>
         <button
           class="btn btn-md btn-primary"
           @click="close()"
@@ -60,7 +68,7 @@ import { mapActions } from 'vuex';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
 import dateFormatter from '@/formatters/date-formatter';
-import { getDocument } from '@/services/document-service';
+import { getDocument, updateDocument } from '@/services/document-service';
 
 const isPdf = (data) => {
   const fileType = data && data.file_type;
@@ -205,6 +213,11 @@ export default {
     },
     close() {
       this.$emit('close', null);
+    },
+    edit() {
+      this.documentData.author = 'BY ' + this.documentData.author;
+      console.log(this.documentData, updateDocument);
+      updateDocument(this.documentData);
     }
   }
 };

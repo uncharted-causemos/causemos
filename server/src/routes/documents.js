@@ -21,7 +21,7 @@ router.get('/:docId', asyncHandler(async (req, res) => {
 /**
  * Update Document Info
 */
-router.post('/docId', asyncHandler(async (req, res) => {
+router.post('/:docId', asyncHandler(async (req, res) => {
   const documentAdapter = Adapter.get(RESOURCE.DOCUMENT);
   console.log(req.body);
   const r = await documentAdapter.update([req.body], d => d.id);
