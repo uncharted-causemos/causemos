@@ -150,7 +150,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, PropType } from 'vue';
+import { defineComponent, ref, computed, watch, toRefs, PropType } from 'vue';
 import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
@@ -212,6 +212,8 @@ export default defineComponent({
     const store = useStore();
     const currentView = computed(() => store.getters['app/currentView']);
 
+    const { selectedRelationship } = toRefs(props);
+
     const dropDown = ref(DROPDOWN.NONE);
     const isEdgeTypeOpen = computed(() => {
       return dropDown.value === DROPDOWN.EDGE_TYPE;
@@ -258,6 +260,17 @@ export default defineComponent({
       return false;
     });
 
+    watch(
+      [selectedRelationship.value],
+      () => {
+        console.log('hihihi');
+        engineWeights.value = (props.selectedRelationship as EdgeParameter).parameter?.engine_weights;
+        currentEdgeWeight.value = getEdgeWeight(props.selectedRelationship as EdgeParameter);
+        currentEdgeType.value = getEdgeTypeString(props.selectedRelationship as EdgeParameter);
+      },
+      { immediate: true }
+    );
+
     return {
       currentView,
       ontologyFormatter,
@@ -302,17 +315,6 @@ export default defineComponent({
       return this.buildExplainerGlyphFilepath(this.polarity, this.currentEdgeWeight, this.currentEdgeType);
     }
   },
-  watch: {
-    selectedRelationship () {
-      this.currentEdgeWeight = getEdgeWeight(this.selectedRelationship as EdgeParameter);
-      this.currentEdgeType = getEdgeTypeString(this.selectedRelationship as EdgeParameter);
-      const engineWeights = (this.selectedRelationship as EdgeParameter).parameter?.engine_weights;
-      const inferredWeights = engineWeights
-        ? engineWeights[this.modelSummary.parameter.engine]
-        : [0, 0];
-      this.inferred = decodeWeights(inferredWeights);
-    }
-  },
   methods: {
     closeAll() {
       this.dropDown = DROPDOWN.NONE;
@@ -327,8 +329,9 @@ export default defineComponent({
       this.dropDown = DROPDOWN.EDGE_POLARITY;
     },
     weightValueString(v: number): string {
-      if (v === 0.9) return 'a large';
-      if (v === 0.5) return 'a medium';
+      const normalizedV = +v.toFixed(3);
+      if (normalizedV >= 0.9) return 'a large';
+      if (normalizedV >= 0.5) return 'a medium';
       return 'a small';
     },
     weightTypeString(v: string): string {

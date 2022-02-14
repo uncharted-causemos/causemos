@@ -285,7 +285,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       })
       .select('.edge-control');
 
-    const EXCLAMATION_TIRANGE = '\uf071';
+    const EXCLAMATION_TRIANGLE = '\uf071';
     const WARN = '#f80';
 
     edgeControl
@@ -317,7 +317,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       .style('fill', WARN)
       .style('cursor', 'pointer')
       .text(() => {
-        return EXCLAMATION_TIRANGE;
+        return EXCLAMATION_TRIANGLE;
       });
   }
 
