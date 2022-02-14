@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import _, { uniqueId } from 'lodash';
+import _ from 'lodash';
 import { RidgelinePoint } from '@/utils/ridgeline-util';
 import { translate } from '@/utils/svg-util';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
@@ -61,7 +61,7 @@ export const renderRidgelines = (
 
   if (comparisonBaseline !== null) {
     // Draw comparison baseline
-    const uid = uniqueId();
+    const uid = _.uniqueId();
     // Hatching pattern
     // From: https://stackoverflow.com/questions/13069446/simple-fill-pattern-in-svg-diagonal-hatching
     // OPTIMIZE: we don't need to add this element for every ridgeline as long
