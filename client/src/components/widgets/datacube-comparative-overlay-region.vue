@@ -37,6 +37,7 @@
           :map-bounds="bbox"
           :selected-layer-id="selectedAdminLevel"
           :popup-Formatter="popupFormatter"
+          :selected-region-ids="selectedRegionIds"
         />
         <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
           <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :isContinuos="isContinuousScale" />
@@ -92,7 +93,7 @@ import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER, DATA_LAYE
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
-import { RawOutputDataPoint, RegionalAggregations } from '@/types/Runoutput';
+import { OutputVariableSpecs, RawOutputDataPoint, RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { normalize } from '@/utils/value-util';
@@ -269,8 +270,8 @@ export default defineComponent({
           if (initialViewConfig.value.selectedMapDataLayer !== undefined) {
             selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
           }
-          if (initialViewConfig.value.baseLayerTransparency !== undefined) {
-            selectedDataLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
+          if (initialViewConfig.value.dataLayerTransparency !== undefined) {
+            selectedDataLayerTransparency.value = initialViewConfig.value.dataLayerTransparency;
           }
         }
 
@@ -376,17 +377,24 @@ export default defineComponent({
       selectedScenarioIds
     );
 
+    const activeFeatures = computed<OutputVariableSpecs[]>(() => {
+      return selectedTimeseriesPoints.value.map(() => ({
+        temporalAggregation: selectedTemporalAggregation.value as AggregationOption,
+        temporalResolution: selectedTemporalResolution.value as TemporalResolutionOption,
+        spatialAggregation: selectedSpatialAggregation.value as AggregationOption,
+        transform: selectedTransform.value,
+        name: activeFeature.value,
+        display_name: activeFeature.value
+      }));
+    });
+
     const {
       outputSpecs
     } = useOutputSpecs(
       id,
-      selectedSpatialAggregation,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      selectedTransform,
       metadata,
       selectedTimeseriesPoints,
-      activeFeature
+      activeFeatures
     );
 
     const {
@@ -465,7 +473,8 @@ export default defineComponent({
         regionalData.value,
         selectedAdminLevel.value,
         finalColorScheme.value,
-        selectedScenarioIndex.value
+        selectedScenarioIndex.value,
+        selectedDataLayerTransparency.value
       ],
       () => {
         const temp: BarData[] = [];
@@ -507,7 +516,8 @@ export default defineComponent({
                   label: dataItem.name,
                   value: itemValue,
                   normalizedValue: normalizedValue,
-                  color: regionColor
+                  color: regionColor,
+                  opacity: Number(selectedDataLayerTransparency.value)
                 });
                 regionIndexCounter++;
               });
@@ -529,6 +539,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedScenarioIds,
+      selectedRegionIds,
       selectedRegionIdsDisplay,
       metadata,
       mainModelOutput,

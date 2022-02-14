@@ -1,7 +1,7 @@
 
 // Types related to model/indicator run outputs
 
-import { AdminLevel } from '@/types/Enums';
+import { AdminLevel, TemporalResolutionOption, AggregationOption, DataTransform } from '@/types/Enums';
 import { AnalysisMapRange } from './Common';
 import { PreGeneratedModelRunData } from './ModelRun';
 
@@ -40,6 +40,18 @@ export type RegionalAggregations = {
   [key in AdminLevel]?: RegionAgg[];
 }
 
+export interface QualifierBreakdownResponse {
+  name: string;
+  options: { name: string; value?: number }[];
+}
+export interface QualifierCountsResponse {
+  thresholds: QualifierThresholds;
+  counts: { [key: string]: number }; // Map of qualifier name to number of values
+}
+export interface QualifierListsResponse {
+  [key: string]: string[]; // Map of qualifier names to a list of all values for that qualifier
+}
+
 export interface RawOutputDataPoint {
   country: string;
   admin1: string;
@@ -60,5 +72,14 @@ export interface RawOutputGeoJsonFeature {
 export interface RawOutputGeoJson {
   type: 'FeatureCollection';
   features: RawOutputGeoJsonFeature[]
+}
+
+export interface OutputVariableSpecs {
+  name: string;
+  display_name: string;
+  temporalResolution: TemporalResolutionOption;
+  temporalAggregation: AggregationOption;
+  spatialAggregation: AggregationOption;
+  transform: DataTransform;
 }
 

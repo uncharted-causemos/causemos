@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { MapLegendColor, AnalysisMapStats, AnalysisMapColorOptions } from '@/types/Common';
-import { OutputSpecWithId, OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Runoutput';
+import { OutputSpecWithId, OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
 import { computeRegionalStats, computeRawDataStats, adminLevelToString, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
 import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';

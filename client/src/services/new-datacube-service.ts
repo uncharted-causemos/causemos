@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { Model, QualifierBreakdownResponse, QualifierCountsResponse, QualifierListsResponse } from '@/types/Datacube';
+import { Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
@@ -41,7 +41,7 @@ export const getDatacubeById = async (datacubeId: string) => {
   const filters = fu.newFilters();
   fu.setClause(filters, 'id', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
-  return cubes && cubes[0];
+  return cubes && cubes.length > 0 && cubes[0];
 };
 
 /**
@@ -84,12 +84,45 @@ const _getDatacubesCount = async (datacubeType: string) => {
 /**
  * Update an existing model metadata
  * @param datacubeId datacube or model id
- * @param fields an object of all metadata fields and their new values
+ * @param metadata an object of all metadata fields and their new values
  * @returns success or error on failure
  */
 export const updateDatacube = async (datacubeId: string, metadata: Model) => {
   const result = await API.put(`maas/datacubes/${datacubeId}`, metadata);
   return result.data;
+};
+
+/**
+ * Update multiple indicators. Each delta object must contain the document id that should be updated.
+ * @param metaDeltas an array of metadata delta objects and the document id
+ * @returns success or error on failure
+ */
+export const updateIndicatorsBulk = async (metaDeltas: { id: string; [key: string]: any }[]) => {
+  const result = await API.post('maas/datacubes/bulk-update', { deltas: metaDeltas });
+  return result.data;
+};
+
+/**
+ * Get the fields that represent a dataset from the first indicator with the provided data_id
+ * @param {string} dataId
+ */
+export const getDataset = async (dataId: string) => {
+  const filters = fu.newFilters();
+  fu.setClause(filters, 'type', ['indicator'], 'or', false);
+  fu.setClause(filters, 'dataId', [dataId], 'or', false);
+  const options = {
+    excludes: [
+      'outputs',
+      'qualifier_outputs',
+      'ontology_matches',
+      'geography.admin1',
+      'geography.admin2',
+      'geography.admin3'
+    ],
+    size: 1
+  };
+  const cubes = await getDatacubes(filters, options);
+  return cubes && cubes.length > 0 && cubes[0];
 };
 
 export const getModelRunMetadata = async (dataId: string) => {
@@ -140,127 +173,6 @@ export const getDatacubeSuggestions = async (queryString: string) => {
     }
   });
   return data;
-};
-
-/**
- * Fetches the lists of regions for the specified model runs or indicator.
- * For multiple model runs, the regions are combined into one list per admin level.
- * @param dataId indicator or model ID
- * @param runIds the IDs of the model runs. If this is an indicator, should be ['indicator']
- * @param feature the output feature
- */
-export const getRegionLists = async (
-  dataId: string,
-  runIds: string[],
-  feature: string
-) => {
-  const { data } = await API.get('maas/output/region-lists', {
-    params: {
-      data_id: dataId,
-      run_ids: runIds,
-      feature
-    }
-  });
-  return data;
-};
-
-/**
- * Fetches the number of values in each qualifier for a given model run or indicator.
- * Also returns the limits used then computing the data.
- * @param dataId indicator or model ID
- * @param runId the ID of the model run. If this is an indicator, should be 'indicator'
- * @param feature the output feature
- */
-export const getQualifierCounts = async (
-  dataId: string,
-  runId: string,
-  feature: string
-) => {
-  const { data } = await API.get('maas/output/qualifier-counts', {
-    params: {
-      data_id: dataId,
-      run_id: runId,
-      feature
-    }
-  });
-  return data as QualifierCountsResponse;
-};
-
-/**
- * Fetches the lists of all qualifier values for the specified qualifiers in the model run or indicator.
- * @param dataId indicator or model ID
- * @param runId the ID of the model run. If this is an indicator, should be ['indicator']
- * @param feature the output feature
- * @param qualifiers the qualifier names
- */
-export const getQualifierLists = async (
-  dataId: string,
-  runId: string,
-  feature: string,
-  qualifiers: string[]
-) => {
-  const { data } = await API.get('maas/output/qualifier-lists', {
-    params: {
-      data_id: dataId,
-      run_id: runId,
-      feature,
-      qlf: qualifiers
-    }
-  });
-  return data as QualifierListsResponse;
-};
-
-export const getQualifierTimeseries = async (
-  dataId: string,
-  runId: string,
-  feature: string,
-  temporalResolution: string,
-  temporalAggregation: string,
-  spatialAggregation: string,
-  qualifierVariableId: string,
-  qualifierOptions: string[],
-  transform?: string,
-  regionId?: string
-) => {
-  return await API.get('maas/output/qualifier-timeseries', {
-    params: {
-      data_id: dataId,
-      run_id: runId,
-      feature: feature,
-      resolution: temporalResolution,
-      temporal_agg: temporalAggregation,
-      spatial_agg: spatialAggregation,
-      region_id: regionId,
-      transform: transform,
-      qualifier: qualifierVariableId,
-      q_opt: qualifierOptions
-    }
-  });
-};
-
-export const getQualifierBreakdown = async (
-  dataId: string,
-  runId: string,
-  feature: string,
-  qualifierVariableIds: string[],
-  temporalResolution: string,
-  temporalAggregation: string,
-  spatialAggregation: string,
-  timestamp: number
-) => {
-  const { data } = await API.get('maas/output/qualifier-data', {
-    params: {
-      data_id: dataId,
-      run_id: runId,
-      feature: feature,
-      resolution: temporalResolution,
-      temporal_agg: temporalAggregation,
-      spatial_agg: spatialAggregation,
-      timestamp,
-      qlf: qualifierVariableIds
-    }
-  });
-  return data as QualifierBreakdownResponse[];
 };
 
 export const updateModelRun = async (modelRun: ModelRun) => {

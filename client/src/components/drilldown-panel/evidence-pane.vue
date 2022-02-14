@@ -15,6 +15,14 @@
     </div>
     <slot />
     <div class="pane-summary">Evidence ({{ numberFormatter(evidenceCount) }}), Documents ({{ documentCount }})</div>
+    <div v-if="mapData.features.length > 0">
+      <div style="height:180px">
+        <map-points
+          :map-data="mapData"
+          :formatterFn="mapFormatter"
+        />
+      </div>
+    </div>
     <collapsible-list-header
       v-if="summaryData.children.length"
       @expand-all="expandAll={value: true}"
@@ -211,6 +219,7 @@ import {
   getEvidenceRecommendations
 } from '@/services/curation-service';
 
+import MapPoints from '@/components/kb-explorer/map-points.vue';
 import OntologyEditor from '@/components/editors/ontology-editor.vue';
 import PolarityEditor from '@/components/editors/polarity-editor.vue';
 import UnknownPolarityEditor from '@/components/editors/unknown-polarity-editor.vue';
@@ -247,7 +256,8 @@ export default defineComponent({
     EvidenceGroup,
     MessageDisplay,
     SmallIconButton,
-    ModalConfirmation
+    ModalConfirmation,
+    MapPoints
   },
   props: {
     selectedRelationship: {
@@ -309,7 +319,9 @@ export default defineComponent({
       STATEMENT_POLARITY,
       messageNoData: SIDE_PANEL.EVIDENCE_NO_DATA,
 
-      toaster: useToaster()
+      toaster: useToaster(),
+
+      mapFormatter: () => ''
     };
   },
   data: () => ({
@@ -358,6 +370,69 @@ export default defineComponent({
         });
       });
       return _.uniq(docs).length;
+    },
+    mapData() {
+      const result: { type: string; features: any[] } = {
+        type: 'FeatureCollection',
+        features: [
+        ]
+      };
+      if (this.summaryData.children.length === 0) return result;
+
+      // Collect events counts
+      const tracker: Map<string, number> = new Map();
+      this.summaryData.children.forEach(polarityGroup => {
+        if (!polarityGroup.children) return;
+        polarityGroup.children.forEach(factorGroup => {
+          factorGroup.dataArray.forEach(stmt => {
+            const subjGeo = stmt.subj.geo_context;
+            const objGeo = stmt.obj.geo_context;
+
+            if (!_.isEmpty(subjGeo)) {
+              const key = subjGeo?.name + ':' + subjGeo?.location.lat + ':' + subjGeo?.location.lon;
+              const n = tracker.get(key) || 0;
+              tracker.set(key, n + 1);
+            }
+            if (!_.isEmpty(objGeo)) {
+              const key = objGeo?.name + ':' + objGeo?.location.lat + ':' + objGeo?.location.lon;
+              const n = tracker.get(key) || 0;
+              tracker.set(key, n + 1);
+            }
+          });
+        });
+      });
+
+      // Make geojson
+      const baseSize = 10;
+      const max = Math.max(...tracker.values());
+      const min = Math.min(...tracker.values());
+
+      const sizeFn = (count: number, min: number, max: number) => {
+        if (max === min) return baseSize;
+        const size = Math.sqrt((count / (max - min)) * baseSize);
+        return Math.max(size, 3); // keep the smallest radius to 3
+      };
+
+      for (const key of tracker.keys()) {
+        const [name, lat, lon] = key.split(':');
+        const count = tracker.get(key) || 1;
+        const size = sizeFn(count, max, min);
+
+        result.features.push({
+          type: 'Feature',
+          properties: {
+            name: name,
+            count: count,
+            radius: size,
+            color: '#f80'
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [+lon, +lat]
+          }
+        });
+      }
+      return result;
     },
     polarity() {
       return this.selectedRelationship.polarity;
