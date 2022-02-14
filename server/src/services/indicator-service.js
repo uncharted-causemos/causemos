@@ -84,7 +84,7 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
         ]
       }, {});
       if (cube) {
-        result.set(node.concept, cube);
+        result.set(node.concept, [cube]);
       }
       continue;
     }
@@ -105,7 +105,7 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
         ]
       }, {});
       if (cube) {
-        result.set(node.concept, cube);
+        result.set(node.concept, [cube]);
       }
       continue;
     }
@@ -114,35 +114,26 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
     nodesNotInHistory.push(node);
   }
 
-  nodesNotInUAz
+  nodesNotInConceptAligner = [];
+  // get top k matches
+  k = 3;
   // Get matches from UAz
   for (const node of nodesNotInHistory) {
-
-    const options = {
-      method: 'GET',
-      url: 'http://linking.cs.arizona.edu/v1/compositionalSearch?maxHits=1&threshold=0.7',
-      headers: {
-        'Content-type': 'application/json',
-        'Accept': 'application/json'
-      },
-      json: {
-        'homeId': {
-          'concept': 'wm/concept/population_demographics/age'
-        },
-        'awayId': []
-      }
-    };
-    const response = await requestAsPromise(options);
-    result.set(node.concept, response)
+    indicators = await searchService.indicatorSearchConceptAligner(model.project_id, node, k);
+    if (indicators.length === 0) {
+      nodesNotInConceptAligner.push(node);
+    } else {
+      result.set(node.concept, indicators);
+    }
   }
 
 
   // 2. Run search against datacubes
-  for (const node of nodesNotInHistory) {
+  for (const node of nodesNotInConceptAligner) {
     const concepts = node.components;
     const candidates = await searchService.indicatorSearchByConcepts(model.project_id, concepts);
     if (!_.isEmpty(candidates)) {
-      result.set(node.concept, candidates[0]);
+      result.set(node.concept, [candidates[0]]);
     }
   }
   return result;
@@ -192,7 +183,7 @@ const setDefaultIndicators = async (modelId, resolution) => {
       id: node.id
     };
     if (conceptIndicatorMap.has(node.concept)) {
-      const cube = conceptIndicatorMap.get(node.concept);
+      const cube = conceptIndicatorMap.get(node.concept)[0];
       updatePayload.parameter = {
         id: cube.id,
         name: cube.outputs[0].display_name,
