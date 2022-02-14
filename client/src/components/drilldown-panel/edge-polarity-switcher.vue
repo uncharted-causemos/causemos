@@ -263,7 +263,6 @@ export default defineComponent({
     watch(
       [selectedRelationship.value],
       () => {
-        console.log('hihihi');
         engineWeights.value = (props.selectedRelationship as EdgeParameter).parameter?.engine_weights;
         currentEdgeWeight.value = getEdgeWeight(props.selectedRelationship as EdgeParameter);
         currentEdgeType.value = getEdgeTypeString(props.selectedRelationship as EdgeParameter);
