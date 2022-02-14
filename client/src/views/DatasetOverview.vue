@@ -150,6 +150,7 @@
             :allow-editing="isReady"
             @apply-to-all="applyVizToAll(indicator.id)"
             @toggle-hidden="toggleHiddenState(indicator)"
+            @update-meta="updateIndicator"
           />
           <message-display
             v-if="filteredIndicators.length === 0"
@@ -174,7 +175,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { getDatacubeStatusInfo } from '@/utils/datacube-util';
 import { DatacubeStatus } from '@/types/Enums';
-import { Dataset, DatasetEditable, Indicator } from '@/types/Datacube';
+import { DatacubeFeature, Dataset, DatasetEditable, Indicator } from '@/types/Datacube';
 import { defineComponent } from 'vue';
 import router from '@/router';
 import moment from 'moment';
@@ -217,7 +218,7 @@ export default defineComponent({
 
       const sortFunc = this.sortingOptions.indexOf(this.selectedSortingOption) === 1
         ? 'asc' : 'desc';
-      return _.orderBy(filtered, 'created_at', sortFunc);
+      return _.orderBy(filtered, ['created_at', 'name'], [sortFunc, 'asc']);
     },
     isReady() {
       return this.dataset.status === DatacubeStatus.Ready;
@@ -323,7 +324,7 @@ export default defineComponent({
         await updateIndicatorsBulk(deltas);
         toaster(`Updated ${deltas.length} indicators`, 'success');
       } catch {
-        toaster('The was an issue with updating the indicators', 'error');
+        toaster('There was an issue with updating the indicators', 'error');
       }
       await this.fetchIndicators();
     },
@@ -374,6 +375,19 @@ export default defineComponent({
           template_id: undefined
         }
       }).catch(() => {});
+    },
+    async updateIndicator({ id, meta }: { id: string, meta: DatacubeFeature}) {
+      const toaster = useToaster();
+      try {
+        await updateIndicatorsBulk([{
+          id: id,
+          outputs: [meta]
+        }]);
+        toaster('Indicator updated successfully', 'success');
+      } catch {
+        toaster('There was an issue with saving the changes', 'error');
+      }
+      await this.fetchIndicators();
     },
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;

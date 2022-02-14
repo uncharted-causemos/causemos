@@ -15,77 +15,121 @@
         />
       </template>
     </modal-confirmation>
-    <div>
-      <b>
-        {{datacube.outputs[0].display_name}}
-<!--        <span v-if="datacube.status === DatacubeStatus.Deprecated" style="padding: 4px; background-color: lightgray" >Hidden</span>-->
-      </b>
+    <div v-if="!isEditingMeta" style="margin-bottom: 10px">
+      <b>{{datacube.outputs[0].display_name}}</b>
     </div>
-
+    <div v-else>
+      <textarea
+        v-model="editedMeta.display_name"
+        type="text"
+        wrap="off"
+        rows="1"
+        style="font-weight: bold; width: 75%; overflow-x: hidden"
+      />
+    </div>
     <div class="card-body">
-      <div class="card-column card-column-wider">
-        {{datacube.outputs[0].description}}
+      <div v-if="!isEditingMeta" class="card-column card-column-wider" style="display: flex; flex-direction: column; justify-content: space-between">
+        <multiline-description :text="datacube.outputs[0].description" />
+        <div>
+          <b>{{datacube.outputs[0].unit}}</b> {{datacube.outputs[0].unit_description}}
+        </div>
       </div>
-      <div class="card-column">
-        <div class="column-title">Unit</div>
-        <b>{{datacube.outputs[0].unit}}</b>
-        <br>
-        {{datacube.outputs[0].unit_description}}
+      <div v-else class="card-column card-column-wider" style="overflow: visible">
+        <textarea
+          v-model="editedMeta.description"
+          type="text"
+          rows="4"
+          style="width: 100%; padding: 0"
+        />
+        <div style="display: flex">
+          <textarea
+            v-model="editedMeta.unit"
+            type="text"
+            wrap="off"
+            rows="1"
+            style="font-weight: bold; width: 40%; overflow-x: hidden"
+          />
+          <textarea
+            v-model="editedMeta.unit_description"
+            type="text"
+            rows="1"
+            style="width: 60%"
+          />
+        </div>
+      </div>
+      <div class="card-column card-column-wider" style="display: flex; flex-direction: column">
+        <div class="column-title">Qualifiers</div>
+        <div style="display: flex; flex-direction: column; overflow-y: auto">
+          <div v-for="qualifier in visibleQualifiers" :key="qualifier.name">
+            <b>{{qualifier.display_name}}</b> {{qualifier.description}}
+          </div>
+        </div>
       </div>
       <div class="card-column" style="display: flex; flex-direction: column">
         <div class="column-title">Data Size</div>
-        <div><b>Resolution: </b>{{datacube.outputs[0].data_resolution?.temporal_resolution}}</div>
-        <div><b>Raw Points: </b>{{(datacube.data_info?.num_rows_per_feature ?? {})[datacube.default_feature] ?? 'unknown'}}</div>
+        <div><b>Data Resolution: </b>{{datacube.outputs[0].data_resolution?.temporal_resolution}}</div>
+        <div v-if="datacube.data_info?.num_rows_per_feature"><b>Raw Points: </b>{{(datacube.data_info?.num_rows_per_feature ?? {})[datacube.default_feature] ?? 'unknown'}}</div>
         <div><b>Months: </b>{{(datacube.data_info?.month_timeseries_size ?? {})[datacube.default_feature] ?? 'unknown'}}</div>
         <div><b>Years: </b>{{(datacube.data_info?.year_timeseries_size ?? {})[datacube.default_feature] ?? 'unknown'}}</div>
       </div>
     </div>
 
-    <div class="button-row">
+    <div class="button-row" v-if="!isEditingMeta">
       <button
-        v-tooltip.top-center="'Edit the metadata and visualization'"
+        v-tooltip.top-center="'Edit the metadata'"
         type="button"
-        class="btn btn-primary btn-call-for-action"
+        class="btn btn-primary"
         :disabled="!allowEditing"
-        @click="edit(datacube.id)"
+        @click="startEditingMeta"
       >
         <i class="fa fa-edit" />
         Edit
       </button>
       <button
-        v-tooltip.top-center="'Apply the visualization from this indicator to all others from this dataset'"
+        v-tooltip.top-center="'Set visualization options'"
+        type="button"
+        class="btn btn-primary btn-call-for-action"
+        :disabled="!allowEditing"
+        @click="edit(datacube.id)"
+      >
+        <i class="fa fa-chart-line" />
+        Edit visualization
+      </button>
+    </div>
+    <div v-else class="button-row editing-meta">
+      <button
+        v-tooltip.top-center="'Save changes'"
+        type="button"
+        class="btn btn-primary btn-call-for-action"
+        @click="saveMetaChanges"
+      >
+        Save
+      </button>
+      <button
+        v-tooltip.top-center="'Discard changes'"
         type="button"
         class="btn btn-primary"
-        :disabled="!allowEditing"
-        @click="showApplyToAllModal = true"
+        @click="isEditingMeta = false"
       >
-        Apply Settings To All
+        Cancel
       </button>
-<!--      <button-->
-<!--        v-tooltip.top-center="'Hide/Show the indicator'"-->
-<!--        type="button"-->
-<!--        class="remove-button"-->
-<!--        :disabled="!allowEditing"-->
-<!--        @click.stop="toggleHiddenState()"-->
-<!--      >-->
-<!--        <i class="fa" :class="{ 'fa-eye': datacube.status === DatacubeStatus.Deprecated, 'fa-eye-slash': datacube.status !== DatacubeStatus.Deprecated }" />-->
-<!--        {{datacube.status === DatacubeStatus.Deprecated ? 'Show' : 'Hide'}}-->
-<!--      </button>-->
     </div>
   </div>
 </template>
 
 <script lang="ts">
 
-import { defineComponent, ref, PropType } from 'vue';
+import { defineComponent, ref, PropType, Ref } from 'vue';
 import { mapGetters } from 'vuex';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
-
+import MultilineDescription from '@/components/widgets/multiline-description.vue';
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { Indicator } from '@/types/Datacube';
+import { DatacubeFeature, FeatureQualifier, Indicator } from '@/types/Datacube';
 import { DatacubeStatus } from '@/types/Enums';
+import _ from 'lodash';
+import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 
 /**
  * A card-styled widget to view project summary
@@ -94,9 +138,10 @@ export default defineComponent({
   name: 'IndicatorCard',
   components: {
     ModalConfirmation,
-    MessageDisplay
+    MessageDisplay,
+    MultilineDescription
   },
-  emits: ['apply-to-all', 'toggle-hidden'],
+  emits: ['apply-to-all', 'toggle-hidden', 'update-meta'],
   props: {
     datacube: {
       type: Object as PropType<Indicator>,
@@ -111,13 +156,20 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       projectType: 'app/projectType'
-    })
+    }),
+    visibleQualifiers(): FeatureQualifier[] {
+      return this.datacube?.qualifier_outputs?.filter(q => !QUALIFIERS_TO_EXCLUDE.includes(q.name)) ?? [];
+    }
   },
   setup() {
     const showApplyToAllModal = ref(false);
+    const isEditingMeta = ref(false);
+    const editedMeta = ref({}) as Ref<DatacubeFeature>;
 
     return {
       showApplyToAllModal,
+      isEditingMeta,
+      editedMeta,
       DatacubeStatus
     };
   },
@@ -139,6 +191,17 @@ export default defineComponent({
     },
     toggleHiddenState() {
       this.$emit('toggle-hidden');
+    },
+    startEditingMeta() {
+      const outputs = this.datacube?.outputs;
+      if (outputs && outputs.length === 1) {
+        this.isEditingMeta = true;
+        this.editedMeta = _.cloneDeep(outputs[0]);
+      }
+    },
+    saveMetaChanges() {
+      this.$emit('update-meta', { id: this.datacube?.id, meta: this.editedMeta });
+      this.isEditingMeta = false;
     }
   }
 });
@@ -176,7 +239,6 @@ export default defineComponent({
   flex: 1;
   min-height: 0;
   display: flex;
-  margin: 10px 0;
 }
 
 .card-column {
