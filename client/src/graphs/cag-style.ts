@@ -16,7 +16,7 @@ export const DEFAULT_STYLE = {
   edge: {
     fill: 'none',
     strokeWidth: 5,
-    controlRadius: 6,
+    controlRadius: 9,
     strokeDash: '3,2'
   },
   edgeBg: {

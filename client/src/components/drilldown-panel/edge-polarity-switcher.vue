@@ -1,11 +1,28 @@
 <template>
   <div @click="closeAll()">
     <div
+      class="warning-message"
+      v-if="typeInconsistency === true && currentView === 'quantitative'">
+      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship type is different than selected type.
+    </div>
+    <div
+      class="warning-message"
+      v-if="valueInconsistency=== true && currentView === 'quantitative'">
+      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship strength is different than selected strength.
+    </div>
+    <div
+      class="warning-message"
+      v-if="polarityInconsistency=== true && currentView === 'quantitative'">
+      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred polarity conflicts with existing polarity.
+    </div>
+
+    <div
       v-if="selectedRelationship.parameter"
       style="display: inline-block">
       <span
         v-if="currentView === 'quantitative'"
         class="clickable-dropdown"
+        :class="{'warning-message': typeInconsistency}"
         @click.stop="openEdgeTypeDropdown()">
         <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
         {{ weightTypeString(currentEdgeType) }}
@@ -44,6 +61,7 @@
       <span
         v-if="currentView === 'quantitative'"
         class="clickable-dropdown"
+        :class="{'warning-message': valueInconsistency}"
         @click.stop="openEdgeWeightDropdown()">
         {{ weightValueString(currentEdgeWeight) }}
         <i class="fa fa-fw fa-caret-down" />
@@ -61,24 +79,24 @@
           <div class="dropdown-option" @click="setWeight(0.1)">
             <i v-if="currentEdgeWeight === 0.1" class="fa fa-fw fa-circle"></i>
             <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightValueString(0.1) }} (0.1)
+            {{ weightValueString(0.1) }} <span class="secondary">(0.1)</span>
           </div>
           <div class="dropdown-option" @click="setWeight(0.5)">
             <i v-if="currentEdgeWeight === 0.5" class="fa fa-fw fa-circle"></i>
             <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightValueString(0.5) }} (0.5)
+            {{ weightValueString(0.5) }} <span class="secondary">(0.5)</span>
           </div>
           <div class="dropdown-option" @click="setWeight(0.9)">
             <i v-if="currentEdgeWeight === 0.9" class="fa fa-fw fa-circle"></i>
             <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightValueString(0.9) }} (0.9)
+            {{ weightValueString(0.9) }} <span class="secondary">(0.9)</span>
           </div>
           <div class="dropdown-option" @click="setWeight(inferredWeightValue)">
             <i v-if="currentEdgeWeight === inferredWeightValue" class="fa fa-fw fa-circle"></i>
             <i v-else class="fa fa-fw fa-circle-o"></i>
             <div> Inferred </div>
             <div>
-              {{ weightValueString(inferredWeightValue) }} ({{ inferredWeightValue.toFixed(3) }})
+              {{ weightValueString(inferredWeightValue) }} <span class="secondary">({{ inferredWeightValue.toFixed(3) }})</span>
             </div>
           </div>
         </template>
@@ -87,6 +105,7 @@
     <div style="display: inline-block">
       <span
         class="clickable-dropdown"
+        :class="{'warning-message': polarityInconsistency}"
         @click.stop="openEdgePolarityDropdown()">
         {{ polarityLabel }}
         <i class="fa fa-fw fa-caret-down" />
@@ -131,11 +150,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, PropType } from 'vue';
+import { defineComponent, ref, computed, watch, toRefs, PropType } from 'vue';
 import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import { decodeWeights } from '@/services/model-service';
 import { CAGModelSummary, EdgeParameter } from '@/types/CAG';
 
 const EDGE_TYPE_LEVEL = 'level';
@@ -192,6 +212,8 @@ export default defineComponent({
     const store = useStore();
     const currentView = computed(() => store.getters['app/currentView']);
 
+    const { selectedRelationship } = toRefs(props);
+
     const dropDown = ref(DROPDOWN.NONE);
     const isEdgeTypeOpen = computed(() => {
       return dropDown.value === DROPDOWN.EDGE_TYPE;
@@ -205,16 +227,48 @@ export default defineComponent({
 
     const currentEdgeType = ref(getEdgeTypeString(props.selectedRelationship as EdgeParameter));
     const currentEdgeWeight = ref(getEdgeWeight(props.selectedRelationship as EdgeParameter));
+    const engineWeights = ref((props.selectedRelationship as EdgeParameter).parameter?.engine_weights);
 
-    const engineWeights = (props.selectedRelationship as EdgeParameter).parameter?.engine_weights;
+    const inferredWeights = computed(() => {
+      return engineWeights.value
+        ? engineWeights.value[props.modelSummary.parameter.engine]
+        : [0, 0];
+    });
 
-    const inferredWeights = engineWeights
-      ? engineWeights[props.modelSummary.parameter.engine]
-      : [0, 0];
+    const inferred = ref(decodeWeights(inferredWeights.value));
 
-    const inferredWeightType = inferredWeights[0] > inferredWeights[1] ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
-    const inferredWeightValue = inferredWeights[0] > inferredWeights[1] ? inferredWeights[0] : inferredWeights[1];
+    const inferredWeightType = computed(() => {
+      return inferred.value.weightType === 'level' ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
+    });
 
+    const inferredWeightValue = computed(() => {
+      return inferred.value.weightValue;
+    });
+
+    const typeInconsistency = computed(() => {
+      return inferredWeightType.value !== currentEdgeType.value;
+    });
+
+    const valueInconsistency = computed(() => {
+      return Math.abs(inferredWeightValue.value - currentEdgeWeight.value) > 0.5;
+    });
+
+    const polarityInconsistency = computed(() => {
+      if (['delphi', 'delphi_dev'].includes(props.modelSummary.parameter.engine) && inferredWeights.value[2]) {
+        return inferredWeights.value[2] * props.selectedRelationship.polarity < 0;
+      }
+      return false;
+    });
+
+    watch(
+      [selectedRelationship.value],
+      () => {
+        engineWeights.value = (props.selectedRelationship as EdgeParameter).parameter?.engine_weights;
+        currentEdgeWeight.value = getEdgeWeight(props.selectedRelationship as EdgeParameter);
+        currentEdgeType.value = getEdgeTypeString(props.selectedRelationship as EdgeParameter);
+      },
+      { immediate: true }
+    );
 
     return {
       currentView,
@@ -228,8 +282,14 @@ export default defineComponent({
       currentEdgeType,
       currentEdgeWeight,
 
+      inferred,
       inferredWeightType,
       inferredWeightValue,
+
+      typeInconsistency,
+      valueInconsistency,
+      polarityInconsistency,
+
       STATEMENT_POLARITY
     };
   },
@@ -254,11 +314,6 @@ export default defineComponent({
       return this.buildExplainerGlyphFilepath(this.polarity, this.currentEdgeWeight, this.currentEdgeType);
     }
   },
-  watch: {
-    selectedRelationship () {
-      this.currentEdgeWeight = getEdgeWeight(this.selectedRelationship as EdgeParameter);
-    }
-  },
   methods: {
     closeAll() {
       this.dropDown = DROPDOWN.NONE;
@@ -273,8 +328,9 @@ export default defineComponent({
       this.dropDown = DROPDOWN.EDGE_POLARITY;
     },
     weightValueString(v: number): string {
-      if (v === 0.9) return 'a large';
-      if (v === 0.5) return 'a medium';
+      const normalizedV = +v.toFixed(3);
+      if (normalizedV >= 0.9) return 'a large';
+      if (normalizedV >= 0.5) return 'a medium';
       return 'a small';
     },
     weightTypeString(v: string): string {
@@ -359,5 +415,13 @@ export default defineComponent({
 }
 .polarity-opposite {
   color: $negative;
+}
+
+.secondary {
+  color: #888;
+}
+
+.warning-message {
+  color: #f80;
 }
 </style>
