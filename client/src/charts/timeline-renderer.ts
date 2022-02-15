@@ -60,7 +60,6 @@ interface TimestampElements {
   valueGroups: D3GElementSelection[];
 }
 
-// FIXME: add range selection/brushing support
 export default function(
   selection: D3Selection,
   timeseriesList: Timeseries[],
@@ -140,6 +139,32 @@ export default function(
   const uniqueTimestamps = getUniqueTimeStamps(valuesAtEachTimestamp);
   const closestTimestamps = getClosestTimestamps(uniqueTimestamps);
 
+  generateSelectableTimestamps(
+    groupElement,
+    xScale,
+    height,
+    timeseriesToDatacubeMap,
+    valuesAtEachTimestamp,
+    uniqueTimestamps,
+    timestampFormatter,
+    onTimestampSelected,
+    valueFormatter
+  );
+
+  // Set timestamp elements to reflect the initially selected
+  //  timestamp
+  updateTimestampElements(
+    selectedTimestamp,
+    timestampElements,
+    xScale,
+    timestampFormatter
+  );
+
+  // Cache selections
+  const pointsSelection = groupElement.selectAll('circle.circle');
+  const hitBoxSelection = groupElement.selectAll('.timestamp-group .hitbox');
+  const markerAndTooltipSelection = groupElement.selectAll('.timestamp-group .marker-tooltip');
+
   //
   // render brush
   //
@@ -210,6 +235,7 @@ export default function(
       .join(enterFn as any)
       .attr('transform', (d, i) => translate(selection[i], 0));
   }
+
   function brushed({ selection }: { selection: number[] }) {
     if (selection === null) return;
     const [x0, x1] = selection.map(xScale.invert);
@@ -226,7 +252,7 @@ export default function(
     // Update x Axis
     xAxisSelection.call(xAxis(xScaleBrushed, timestampFormatter));
     // Update points
-    groupElement.selectAll('circle.circle').attr('cx', (d: any) => xScaleBrushed(d.timestamp));
+    pointsSelection.attr('cx', (d: any) => xScaleBrushed(d.timestamp));
     // Update lines
     lineSelections.forEach(({ points, lineSelection }) => {
       lineSelection.attr('d', () => line(points as TimeseriesPoint[]));
@@ -234,7 +260,7 @@ export default function(
 
     // Update Selectable timestamp
     const hitboxWidth = calculateHitboxWidth(closestTimestamps, xScaleBrushed);
-    groupElement.selectAll('.timestamp-group .hitbox')
+    hitBoxSelection
       .attr('width', hitboxWidth)
       .attr(
         'transform',
@@ -242,7 +268,7 @@ export default function(
       );
 
     // Update tooltip position
-    updateTooltipPosition(groupElement.select('.timestamp-group'), xScaleBrushed, height);
+    updateTooltipPosition(markerAndTooltipSelection, xScaleBrushed, height);
 
     // Update selection
     updateTimestampElements(
@@ -253,26 +279,6 @@ export default function(
     );
   }
 
-  generateSelectableTimestamps(
-    groupElement,
-    xScale,
-    height,
-    timeseriesToDatacubeMap,
-    valuesAtEachTimestamp,
-    uniqueTimestamps,
-    timestampFormatter,
-    onTimestampSelected,
-    valueFormatter
-  );
-
-  // Set timestamp elements to reflect the initially selected
-  //  timestamp
-  updateTimestampElements(
-    selectedTimestamp,
-    timestampElements,
-    xScale,
-    timestampFormatter
-  );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
   return (timestamp: number | null) => {
@@ -393,7 +399,7 @@ function getCenterValue(scale: d3.ScaleLinear<number, number>) {
   return center;
 }
 
-function updateTooltipPosition(selection: D3GElementSelection, xScale: d3.ScaleLinear<number, number>, height: number) {
+function updateTooltipPosition(markerTooltipSelection: d3.Selection<d3.BaseType, unknown, SVGGElement, any>, xScale: d3.ScaleLinear<number, number>, height: number) {
   const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
   const centerValue = getCenterValue(xScale);
 
@@ -402,21 +408,21 @@ function updateTooltipPosition(selection: D3GElementSelection, xScale: d3.ScaleL
   //  or being clipped.
   const isRightOfCenter = (ts: number) => ts > centerValue;
 
-  selection.selectAll('.timestamp-group .marker-tooltip').attr(
+  markerTooltipSelection.attr(
     'transform',
     ts => translate(xScale(ts as number) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
   );
-  selection.selectAll('.hover-tooltip').attr(
+  markerTooltipSelection.select('.hover-tooltip').attr(
     'transform',
     ts => translate(isRightOfCenter(ts as number) ? (-TOOLTIP_OFFSET - TOOLTIP_WIDTH) : TOOLTIP_OFFSET, 0)
   );
-  selection.selectAll('.notch-border').attr(
+  markerTooltipSelection.select('.notch-border').attr(
     'transform',
     ts => isRightOfCenter(ts as number)
       ? translate(TOOLTIP_WIDTH - TOOLTIP_OFFSET - TOOLTIP_BORDER_WIDTH, markerHeight / 2) + 'rotate(-45)'
       : translate(-TOOLTIP_BORDER_WIDTH - TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
   );
-  selection.selectAll('.notch-background').attr(
+  markerTooltipSelection.select('.notch-background').attr(
     'transform',
     ts => isRightOfCenter(ts as number)
       ? translate(TOOLTIP_WIDTH - 3 * TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
@@ -558,7 +564,7 @@ function generateSelectableTimestamps(
       .on('mouseleave', () => markerAndTooltip.attr('visibility', 'hidden'))
       .on('mousedown', () => onTimestampSelected(timestamp));
   });
-  updateTooltipPosition(selection.select('.timestamp-group'), xScale, height);
+  updateTooltipPosition(selection.selectAll('.timestamp-group .marker-tooltip'), xScale, height);
 }
 
 function calculateLabelDimensions(
