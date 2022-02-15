@@ -74,6 +74,18 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
+    selection.filter(d => d.data.components.length > 1)
+      .append('rect')
+      .classed('node-container-outer', true)
+      .attr('x', -3)
+      .attr('y', -3)
+      .attr('rx', DEFAULT_STYLE.node.borderRadius + 1)
+      .attr('width', d => d.width + 6)
+      .attr('height', d => d.height + 6)
+      .style('fill', DEFAULT_STYLE.node.fill)
+      .style('stroke', DEFAULT_STYLE.node.stroke)
+      .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
+
     selection.append('rect')
       .classed('node-container', true)
       .attr('x', 0)
