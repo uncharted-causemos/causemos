@@ -136,7 +136,8 @@ export default function(
   );
 
   const valuesAtEachTimestamp = getValuesAtEachTimestampMap(timeseriesList, timeseriesToDatacubeMap);
-  const uniqueTimeStamps = getUniqueTimeStamps(valuesAtEachTimestamp);
+  const uniqueTimestamps = getUniqueTimeStamps(valuesAtEachTimestamp);
+  const closestTimestamps = getClosestTimestamps(uniqueTimestamps);
 
   //
   // render brush
@@ -230,7 +231,7 @@ export default function(
     });
 
     // Update Selectable timestamp
-    const hitboxWidth = calculateHitboxWidth(uniqueTimeStamps, xScaleNew);
+    const hitboxWidth = calculateHitboxWidth(closestTimestamps, xScaleNew);
     groupElement.selectAll('.timestamp-group .hitbox')
       .attr('width', hitboxWidth)
       .attr(
@@ -258,7 +259,7 @@ export default function(
     height,
     timeseriesToDatacubeMap,
     valuesAtEachTimestamp,
-    uniqueTimeStamps,
+    uniqueTimestamps,
     timestampFormatter,
     onTimestampSelected,
     valueFormatter
@@ -352,21 +353,38 @@ function getValuesAtEachTimestampMap(
 }
 
 function getUniqueTimeStamps(valuesAtEachTimestamp: Map<number, { owner: string; color: string; name: string; value: number | string}[]>) {
-  const uniqueTimestamps = Array.from(valuesAtEachTimestamp.keys()).sort();
+  const uniqueTimestamps = Array.from(valuesAtEachTimestamp.keys()).sort((b, a) => +b - +a);
   return uniqueTimestamps;
 }
 
-function calculateHitboxWidth(uniqueTimestamps: number[], xScale: d3.ScaleLinear<number, number>) {
-  // FIXME: We assume that all timestamps are evenly spaced when determining
-  //  how wide the hover/click hitbox should be. This may not always be the case.
+function getClosestTimestamps(uniqueTimestamps: number[]) {
+  // Assume uniqueTimestamps are sorted
+  if (uniqueTimestamps.length < 2) {
+    return [...uniqueTimestamps];
+  }
+  const minResult = { pair: [0, 0], diff: Infinity };
+  for (let index = 1; index < uniqueTimestamps.length; index++) {
+    const tsA = uniqueTimestamps[index - 1];
+    const tsB = uniqueTimestamps[index];
+    const diff = tsB - tsA;
+    console.log(tsB > tsA);
+    if (diff > 0 && diff < minResult.diff) {
+      minResult.pair = [tsA, tsB];
+      minResult.diff = diff;
+    }
+  }
+  return minResult.pair;
+}
+
+function calculateHitboxWidth(timestamps: number[], xScale: d3.ScaleLinear<number, number>) {
+  // Calculate hit box width based on the distance of the provided pair of timestamps
 
   // Arbitrarily choose how wide the hitbox should be if there's only one unique
   //  timestamp
   const hitboxWidth =
-    uniqueTimestamps.length > 1
-      ? xScale(uniqueTimestamps[1]) - xScale(uniqueTimestamps[0])
+    timestamps.length > 1
+      ? xScale(timestamps[1]) - xScale(timestamps[0])
       : SELECTED_TIMESTAMP_WIDTH * 5;
-  debugger;
   return hitboxWidth;
 }
 
@@ -383,12 +401,8 @@ function generateSelectableTimestamps(
 ) {
   const timestampGroup = selection.append('g').classed('timestamp-group', true);
 
-  // FIXME: We assume that all timestamps are evenly spaced when determining
-  //  how wide the hover/click hitbox should be. This may not always be the case.
-
-  // Arbitrarily choose how wide the hitbox should be if there's only one unique
-  //  timestamp
-  const hitboxWidth = calculateHitboxWidth(uniqueTimestamps, xScale);
+  const closestTimestamps = getClosestTimestamps(uniqueTimestamps);
+  const hitboxWidth = calculateHitboxWidth(closestTimestamps, xScale);
   const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
   const [minTimestamp, maxTimestamp] = xScale.domain();
   const centerTimestamp = minTimestamp + (maxTimestamp - minTimestamp) / 2;
