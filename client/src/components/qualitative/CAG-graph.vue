@@ -221,7 +221,7 @@ export default defineComponent({
 
     this.renderer.on('node-drag-move', (_evtName, _event, nodeSelection: D3SelectionINode<NodeParameter>, renderer: QualitativeRenderer) => {
       const nodeUI = nodeSelection.select('.node-ui');
-      const rect = nodeUI.select('rect');
+      const rect = nodeUI.select('.node-container');
       const nodeUIRect = rect.node();
 
       const others = renderer.chart.selectAll('.node-ui')
@@ -236,7 +236,7 @@ export default defineComponent({
 
       others.each(function () {
         const otherNodeUI = d3.select(this);
-        const otherRect = otherNodeUI.select('rect');
+        const otherRect = otherNodeUI.select('.node-container');
         const otherNodeUIRect = otherRect.node();
 
         if (overlap(otherNodeUIRect as HTMLElement, nodeUIRect as HTMLElement, 0.5)) {
@@ -444,6 +444,7 @@ export default defineComponent({
       const d = buildInitialGraph(this.data as any);
       if (this.renderer) {
         this.renderer.isGraphDirty = true;
+        console.log('settng data!!!!!!!!!!!11', d);
         await this.renderer.setData(d);
         await this.renderer.render();
         this.$emit('refresh', null);

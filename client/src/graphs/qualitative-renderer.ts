@@ -382,7 +382,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
     selection
-      .filter(d => d.data.components.length > 1)
       .append('rect')
       .classed('node-container-outer', true)
       .attr('x', -3)
@@ -393,8 +392,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .style('stroke', DEFAULT_STYLE.node.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth)
       .style('cursor', 'pointer')
+      .style('display', 'none')
       .style('fill', DEFAULT_STYLE.node.fill);
 
+    selection
+      .selectAll<any, INode<NodeParameter>>('.node-container-outer')
+      .filter(d => d.data.components.length > 1)
+      .style('display', null);
 
     selection.append('rect')
       .classed('node-container', true)
@@ -425,6 +429,12 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   }
 
   renderNodesUpdated(selection: D3SelectionINode<NodeParameter>) {
+    console.log(d3.selectAll('.node-ui').data());
+    selection
+      .selectAll<any, INode<NodeParameter>>('.node-container-outer')
+      .filter(d => d.data.components.length > 1)
+      .style('display', null);
+
     selection
       .select('.node-label')
       .text(d => this.labelFormatter(d.label))
