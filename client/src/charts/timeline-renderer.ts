@@ -1,13 +1,13 @@
 import * as d3 from 'd3';
+import _ from 'lodash';
 import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import dateFormatter from '@/formatters/date-formatter';
-import { Timeseries } from '@/types/Timeseries';
+import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel, TIMESERIES_HEADER_SEPARATOR } from '@/types/Enums';
-import { MAX_TIMESERIES_LABEL_CHAR_LENGTH, renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
-import _ from 'lodash';
+import { MAX_TIMESERIES_LABEL_CHAR_LENGTH, renderAxes, renderLine, renderPoint, xAxis } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -89,15 +89,14 @@ export default function(
   const [xScale, yScale] = calculateScales(
     width,
     height,
-    xExtent,
-    yExtent,
-    breakdownOption
+    (breakdownOption === TemporalAggregationLevel.Year ? [0, 11] : xExtent),
+    yExtent
   );
   const timestampFormatter =
     breakdownOption === TemporalAggregationLevel.Year
       ? BY_YEAR_DATE_FORMATTER
       : DATE_FORMATTER;
-  renderAxes(
+  const [xAxisSelection, _] = renderAxes(
     groupElement,
     xScale,
     yScale,
@@ -109,18 +108,19 @@ export default function(
     PADDING_RIGHT,
     X_AXIS_HEIGHT
   );
-  timeseriesList.forEach(timeseries => {
-    const normalizedPoints = _.cloneDeep(timeseries.points);
-    normalizedPoints
-      .forEach(p => {
-        p.value = p.normalizedValue !== undefined ? p.normalizedValue : p.value;
-      });
-    if (timeseries.points.length > 1) { // draw a line for time series longer than 1
-      renderLine(groupElement, normalizedPoints, xScale, yScale, timeseries.color, 1);
-      renderPoint(groupElement, normalizedPoints, xScale, yScale, timeseries.color);
-    } else { // draw a spot for timeseries that are only 1 long
-      renderPoint(groupElement, normalizedPoints, xScale, yScale, timeseries.color);
-    }
+
+  const timeseriesListValueCorrected = timeseriesList.map(timeseries => {
+    const points = timeseries.points.map(p => ({ timestamp: p.timestamp, value: p.normalizedValue !== undefined ? p.normalizedValue : p.value }));
+    return { ...timeseries, points };
+  });
+  // Render lines
+  const lineSelections = timeseriesListValueCorrected.filter(timeseries => timeseries.points.length > 1).map(timeseries => {
+    const lineSelection = renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color, 1);
+    return { lineSelection, points: timeseries.points };
+  });
+  // Render points
+  timeseriesListValueCorrected.forEach(timeseries => {
+    renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
   });
 
   //
@@ -197,6 +197,21 @@ export default function(
     const [x0, x1] = selection.map(xScale.invert);
     onTimestampRangeSelected(x0, x1);
     groupElement.select('.brush').call(brushHandle as any, selection);
+
+    const xScaleNew = calculateXScale(width, [x0, x1]);
+    const line = d3
+      .line<TimeseriesPoint>()
+      .x(d => xScaleNew(d.timestamp))
+      .y(d => yScale(d.value));
+
+    // Update x Axis
+    xAxisSelection.call(xAxis(xScaleNew, timestampFormatter));
+    // Update points
+    groupElement.selectAll('circle.circle').attr('cx', (d: any) => xScaleNew(d.timestamp));
+    // Update lines
+    lineSelections.forEach(({ points, lineSelection }) => {
+      lineSelection.attr('d', () => line(points as TimeseriesPoint[]));
+    });
   }
 
   const timestampElements = generateSelectedTimestampElements(
@@ -248,22 +263,28 @@ function calculateScales(
   width: number,
   height: number,
   xExtent: [number, number],
-  yExtent: [number, number],
-  breakdownOption: string | null
+  yExtent: [number, number]
 ) {
-  const xScaleDomain =
-    breakdownOption === TemporalAggregationLevel.Year
-      ? [0, 11] // January === 0, December === 11
-      : xExtent;
+  return [
+    calculateXScale(width, xExtent),
+    calculateYScale(height, yExtent)
+  ];
+}
+
+function calculateXScale(width: number, xExtent: [number, number]) {
   const xScale = d3
     .scaleLinear()
-    .domain(xScaleDomain)
+    .domain(xExtent)
     .range([Y_AXIS_WIDTH, width - PADDING_RIGHT]);
+  return xScale;
+}
+
+function calculateYScale(height: number, yExtent: [number, number]) {
   const yScale = d3
     .scaleLinear()
     .domain(yExtent)
     .range([height - X_AXIS_HEIGHT, PADDING_TOP]);
-  return [xScale, yScale];
+  return yScale;
 }
 
 function generateSelectableTimestamps(
