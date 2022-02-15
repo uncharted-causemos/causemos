@@ -1308,7 +1308,14 @@ export default defineComponent({
       }
     },
     async saveTimeScale(newTimeScale: TimeScale) {
-      const newParameter: Partial<CAGModelParameter> = { time_scale: newTimeScale };
+      let historyRange = 24;
+      if (newTimeScale === TimeScale.Months) {
+        historyRange = 24;
+      } else if (newTimeScale === TimeScale.Years) {
+        historyRange = 12 * 20;
+      }
+
+      const newParameter: Partial<CAGModelParameter> = { time_scale: newTimeScale, history_range: historyRange };
       await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.refresh();
     }

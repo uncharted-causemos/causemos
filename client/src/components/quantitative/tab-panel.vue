@@ -27,6 +27,7 @@
             v-if="activeTab === 'flow' && scenarioData && graphData"
             class="model-graph-layout-container">
             <model-graph
+              :model-summary="modelSummary"
               :data="graphData"
               :scenario-data="scenarioData"
               :visual-state="visualState"

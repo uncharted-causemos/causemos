@@ -100,7 +100,7 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     chart.selectAll('.node').style('opacity', 1);
     chart.selectAll('.edge').style('opacity', 1);
     chart.selectAll('.node-header').classed('node-selected', false);
-    chart.selectAll('.edge-control').remove();
+    // chart.selectAll('.edge-control-temp').remove();
 
     chart.selectAll('.node-container, .node-container-outer') // Clean up previous highlights
       .style('border-radius', DEFAULT_STYLE.node.borderRadius)
@@ -115,16 +115,18 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
   }
 
-  selectEdge(evt: Event, edge: D3SelectionIEdge<E>) {
+  selectEdge(/* evt: Event, edge: D3SelectionIEdge<E> */) {
+    /*
     const mousePoint = d3.pointer(evt, edge.node());
     const pathNode = edge.select('.edge-path').node();
     const controlPoint = (svgUtil.closestPointOnPath(pathNode as any, mousePoint) as number[]);
 
     edge.append('g')
-      .classed('edge-control', true)
+      .classed('edge-control-temp', true)
       .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
 
     this.renderEdgeControls(edge);
+   */
   }
 
   selectNodeByConcept(concept: string, color: string) {
