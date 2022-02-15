@@ -787,9 +787,9 @@ export default defineComponent({
 
     const outputs = computed(() => {
       const modelMetadata = metadata.value;
-      if (modelMetadata === null || !isModel(modelMetadata)) return null;
+      if (modelMetadata === null) return null;
       const currOutputs = getOutputs(modelMetadata);
-      return currOutputs.length > 1 ? currOutputs : null;
+      return currOutputs.length >= 1 ? currOutputs : null;
     });
 
     const outputVariableBreakdownData = ref<BreakdownData | null>(null);
