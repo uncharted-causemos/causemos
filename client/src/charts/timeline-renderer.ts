@@ -217,38 +217,38 @@ export default function(
     onTimestampRangeSelected(...state.selectionDomain);
     groupElement.select('.brush').call(brushHandle as any, selection);
 
-    const xScaleNew = calculateXScale(width, state.selectionDomain);
+    const xScaleBrushed = calculateXScale(width, state.selectionDomain);
     const line = d3
       .line<TimeseriesPoint>()
-      .x(d => xScaleNew(d.timestamp))
+      .x(d => xScaleBrushed(d.timestamp))
       .y(d => yScale(d.value));
 
     // Update x Axis
-    xAxisSelection.call(xAxis(xScaleNew, timestampFormatter));
+    xAxisSelection.call(xAxis(xScaleBrushed, timestampFormatter));
     // Update points
-    groupElement.selectAll('circle.circle').attr('cx', (d: any) => xScaleNew(d.timestamp));
+    groupElement.selectAll('circle.circle').attr('cx', (d: any) => xScaleBrushed(d.timestamp));
     // Update lines
     lineSelections.forEach(({ points, lineSelection }) => {
       lineSelection.attr('d', () => line(points as TimeseriesPoint[]));
     });
 
     // Update Selectable timestamp
-    const hitboxWidth = calculateHitboxWidth(closestTimestamps, xScaleNew);
+    const hitboxWidth = calculateHitboxWidth(closestTimestamps, xScaleBrushed);
     groupElement.selectAll('.timestamp-group .hitbox')
       .attr('width', hitboxWidth)
       .attr(
         'transform',
-        ts => translate(xScaleNew(ts as number) - hitboxWidth / 2, PADDING_TOP)
+        ts => translate(xScaleBrushed(ts as number) - hitboxWidth / 2, PADDING_TOP)
       );
 
     // Update tooltip position
-    updateTooltipPosition(groupElement.select('.timestamp-group'), xScaleNew, height);
+    updateTooltipPosition(groupElement.select('.timestamp-group'), xScaleBrushed, height);
 
     // Update selection
     updateTimestampElements(
       state.selectedTimestamp,
       timestampElements,
-      xScaleNew,
+      xScaleBrushed,
       timestampFormatter
     );
   }
