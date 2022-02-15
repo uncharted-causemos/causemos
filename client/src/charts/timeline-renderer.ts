@@ -393,7 +393,6 @@ function getCenterValue(scale: d3.ScaleLinear<number, number>) {
   return center;
 }
 
-// function updateTooltipTransform(tooltip: d3.Selection<d3.BaseType, number, SVGAElement, any>, xScale: d3.ScaleLinear<number, number>, height: number) {
 function updateTooltipPosition(selection: D3GElementSelection, xScale: d3.ScaleLinear<number, number>, height: number) {
   const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
   const centerValue = getCenterValue(xScale);
