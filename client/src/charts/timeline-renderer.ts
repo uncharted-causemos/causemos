@@ -18,6 +18,7 @@ const CONTEXT_RANGE_FILL = SELECTED_COLOR;
 const CONTEXT_RANGE_STROKE = SELECTED_COLOR_DARK;
 const CONTEXT_RANGE_OPACITY = 0.4;
 const CONTEXT_TIMESERIES_OPACITY = 0.2;
+const TOOLTIP_OFFSET = 10;
 const TOOLTIP_WIDTH = 150;
 const TOOLTIP_BG_COLOUR = 'white';
 const TOOLTIP_BORDER_COLOUR = 'grey';
@@ -156,6 +157,7 @@ export default function(
       [xScale.range()[0], 0],
       [xScale.range()[1], X_AXIS_HEIGHT]
     ])
+    .filter(event => !event.selection)
     .on('start brush end', brushed);
 
   groupElement
@@ -208,8 +210,8 @@ export default function(
       .join(enterFn as any)
       .attr('transform', (d, i) => translate(selection[i], 0));
   }
-
   function brushed({ selection }: { selection: number[] }) {
+    if (selection === null) return;
     const [x0, x1] = selection.map(xScale.invert);
     state.selectionDomain = [x0, x1];
     onTimestampRangeSelected(...state.selectionDomain);
@@ -238,11 +240,9 @@ export default function(
         'transform',
         ts => translate(xScaleNew(ts as number) - hitboxWidth / 2, PADDING_TOP)
       );
-    groupElement.selectAll('.timestamp-group .marker-tooltip')
-      .attr(
-        'transform',
-        ts => translate(xScaleNew(ts as number) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
-      );
+
+    // Update tooltip position
+    updateTooltipPosition(groupElement.select('.timestamp-group'), xScaleNew, height);
 
     // Update selection
     updateTimestampElements(
@@ -367,7 +367,6 @@ function getClosestTimestamps(uniqueTimestamps: number[]) {
     const tsA = uniqueTimestamps[index - 1];
     const tsB = uniqueTimestamps[index];
     const diff = tsB - tsA;
-    console.log(tsB > tsA);
     if (diff > 0 && diff < minResult.diff) {
       minResult.pair = [tsA, tsB];
       minResult.diff = diff;
@@ -388,6 +387,44 @@ function calculateHitboxWidth(timestamps: number[], xScale: d3.ScaleLinear<numbe
   return hitboxWidth;
 }
 
+function getCenterValue(scale: d3.ScaleLinear<number, number>) {
+  const [x0, x1] = scale.domain();
+  const center = x0 + (x1 - x0) / 2;
+  return center;
+}
+
+// function updateTooltipTransform(tooltip: d3.Selection<d3.BaseType, number, SVGAElement, any>, xScale: d3.ScaleLinear<number, number>, height: number) {
+function updateTooltipPosition(selection: D3GElementSelection, xScale: d3.ScaleLinear<number, number>, height: number) {
+  const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
+  const centerValue = getCenterValue(xScale);
+
+  // Display tooltip on the left of the hovered timestamp if that timestamp
+  //  is on the right side of the chart to avoid the tooltip overflowing
+  //  or being clipped.
+  const isRightOfCenter = (ts: number) => ts > centerValue;
+
+  selection.selectAll('.timestamp-group .marker-tooltip').attr(
+    'transform',
+    ts => translate(xScale(ts as number) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
+  );
+  selection.selectAll('.hover-tooltip').attr(
+    'transform',
+    ts => translate(isRightOfCenter(ts as number) ? (-TOOLTIP_OFFSET - TOOLTIP_WIDTH) : TOOLTIP_OFFSET, 0)
+  );
+  selection.selectAll('.notch-border').attr(
+    'transform',
+    ts => isRightOfCenter(ts as number)
+      ? translate(TOOLTIP_WIDTH - TOOLTIP_OFFSET - TOOLTIP_BORDER_WIDTH, markerHeight / 2) + 'rotate(-45)'
+      : translate(-TOOLTIP_BORDER_WIDTH - TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
+  );
+  selection.selectAll('.notch-background').attr(
+    'transform',
+    ts => isRightOfCenter(ts as number)
+      ? translate(TOOLTIP_WIDTH - 3 * TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
+      : translate(-TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
+  );
+}
+
 function generateSelectableTimestamps(
   selection: D3GElementSelection,
   xScale: d3.ScaleLinear<number, number>,
@@ -404,21 +441,11 @@ function generateSelectableTimestamps(
   const closestTimestamps = getClosestTimestamps(uniqueTimestamps);
   const hitboxWidth = calculateHitboxWidth(closestTimestamps, xScale);
   const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
-  const [minTimestamp, maxTimestamp] = xScale.domain();
-  const centerTimestamp = minTimestamp + (maxTimestamp - minTimestamp) / 2;
   uniqueTimestamps.forEach(timestamp => {
-    // Display tooltip on the left of the hovered timestamp if that timestamp
-    //  is on the right side of the chart to avoid the tooltip overflowing
-    //  or being clipped.
-    const isRightOfCenter = timestamp > centerTimestamp;
     const markerAndTooltip = timestampGroup
       .append('g')
       .datum(timestamp)
       .classed('marker-tooltip', true)
-      .attr(
-        'transform',
-        ts => translate(xScale(ts) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
-      )
       .attr('visibility', 'hidden');
     markerAndTooltip
       .append('rect')
@@ -426,17 +453,13 @@ function generateSelectableTimestamps(
       .attr('height', markerHeight)
       .attr('fill', SELECTED_COLOR)
       .attr('fill-opacity', SELECTABLE_TIMESTAMP_OPACITY);
+
     // How far the tooltip is shifted horizontally from the hovered timestamp
     //  also the "radius" of the notch diamond
-    const offset = 10;
-    const notchSideLength = Math.sqrt(offset * offset + offset * offset);
+    const notchSideLength = Math.sqrt(TOOLTIP_OFFSET * TOOLTIP_OFFSET + TOOLTIP_OFFSET * TOOLTIP_OFFSET);
     const tooltip = markerAndTooltip.append('g')
-      .attr('transform', translate(
-        isRightOfCenter
-          ? -offset - TOOLTIP_WIDTH
-          : offset
-        , 0)
-      );
+      .datum(timestamp)
+      .classed('hover-tooltip', true);
     tooltip
       .append('rect')
       .attr('width', TOOLTIP_WIDTH)
@@ -446,28 +469,20 @@ function generateSelectableTimestamps(
     // Notch border
     tooltip
       .append('rect')
+      .datum(timestamp)
+      .classed('notch-border', true)
       .attr('width', notchSideLength + TOOLTIP_BORDER_WIDTH)
       .attr('height', notchSideLength + TOOLTIP_BORDER_WIDTH)
-      .attr(
-        'transform',
-        isRightOfCenter
-          ? translate(TOOLTIP_WIDTH - offset - TOOLTIP_BORDER_WIDTH, markerHeight / 2) + 'rotate(-45)'
-          : translate(-TOOLTIP_BORDER_WIDTH - offset, markerHeight / 2) + 'rotate(-45)'
-      )
       .attr('fill', TOOLTIP_BORDER_COLOUR);
     // Notch background
     // Extend side length of notch background to make sure it covers the right
     //  half of the border rect
     tooltip
       .append('rect')
+      .datum(timestamp)
+      .classed('notch-background', true)
       .attr('width', notchSideLength * 2)
       .attr('height', notchSideLength * 2)
-      .attr(
-        'transform',
-        isRightOfCenter
-          ? translate(TOOLTIP_WIDTH - 3 * offset, markerHeight / 2) + 'rotate(-45)'
-          : translate(-offset, markerHeight / 2) + 'rotate(-45)'
-      )
       .attr('fill', TOOLTIP_BG_COLOUR);
 
     //
@@ -544,6 +559,7 @@ function generateSelectableTimestamps(
       .on('mouseleave', () => markerAndTooltip.attr('visibility', 'hidden'))
       .on('mousedown', () => onTimestampSelected(timestamp));
   });
+  updateTooltipPosition(selection.select('.timestamp-group'), xScale, height);
 }
 
 function calculateLabelDimensions(
