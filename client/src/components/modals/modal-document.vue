@@ -3,17 +3,7 @@
     class="modal-document-container"
     @close="close()">
     <template #body>
-      <div v-if="pdfViewer"
-        class="toolbar">
-        Show raw text
-        <i v-if="showTextViewer === false" class="fa fa-lg fa-fw fa-toggle-off" @click="toggle" />
-        <i v-if="showTextViewer === true" class="fa fa-lg fa-fw fa-toggle-on" @click="toggle" />
-      </div>
-      <div ref="content">
-        Loading...
-      </div>
-      <div>
-        <hr>
+      <div class="metadata">
         <table v-if="documentData && textOnly">
           <tr>
             <td class="doc-label">Publication Date</td>
@@ -49,6 +39,16 @@
             <td class="doc-value">{{ documentData.ner_analytics.org.join(', ') }}</td>
           </tr>
         </table>
+        <hr />
+      </div>
+      <div v-if="pdfViewer"
+        class="toolbar">
+        Show raw text
+        <i v-if="showTextViewer === false" class="fa fa-lg fa-fw fa-toggle-off" @click="toggle" />
+        <i v-if="showTextViewer === true" class="fa fa-lg fa-fw fa-toggle-on" @click="toggle" />
+      </div>
+      <div ref="content">
+        Loading...
       </div>
     </template>
     <template #footer>
@@ -268,7 +268,9 @@ export default {
 
 <style lang="scss" scoped>
 .modal-document-container {
-
+  .metadata {
+    margin-top: 2rem;
+  }
   .doc-label {
     vertical-align: baseline;
     width: 220px;
@@ -306,6 +308,7 @@ export default {
       margin: 0;
       height: 80vh;
       overflow-y: auto;
+      overflow-x: hidden;
     }
   }
   .toolbar {
