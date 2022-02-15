@@ -574,13 +574,13 @@ const renderProjectionRidgelines = (
     const elem = renderRidgelines(
       ridgeLineGroup as any,
       ridgeline,
+      null,
       approximateWidth,
       Math.abs(yScale.range()[1] - yScale.range()[0]),
       minValue,
       maxValue,
       false,
       false,
-      'black',
       '',
       contextRange
     );
