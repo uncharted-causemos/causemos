@@ -385,7 +385,7 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
   let indicators = [];
   // match using the component that gets the highest matching score
   for (let i = 0; i < 1; i++) { // i < 1 to work with first component for now
-    component = node.components[i];
+    const component = node.components[i];
     const memberStrings = reverseFlattenedConcept(component, set);
     const members = ontologyValues.filter(d => {
       return memberStrings.includes(_.last(d.label.split('/')));
@@ -394,7 +394,7 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
     const homeId = {}
     let foundConcept = false;
     // just use the first concept found for now
-    for (member of members) {
+    for (const member of members) {
       if (!foundConcept && member.includes('concept')) {
         homeId['concept'] = member;
         foundConcept = true;

@@ -114,12 +114,12 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
     nodesNotInHistory.push(node);
   }
 
-  nodesNotInConceptAligner = [];
+  const nodesNotInConceptAligner = [];
   // get top k matches
-  k = 3;
+  const k = 3;
   // Get matches from UAz
   for (const node of nodesNotInHistory) {
-    indicators = await searchService.indicatorSearchConceptAligner(model.project_id, node, k);
+    const indicators = await searchService.indicatorSearchConceptAligner(model.project_id, node, k);
     if (indicators.length === 0) {
       nodesNotInConceptAligner.push(node);
     } else {
