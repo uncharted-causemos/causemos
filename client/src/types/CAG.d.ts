@@ -148,6 +148,8 @@ export interface CAGModelSummary {
   modified_at: number;
 
   thumbnail_source?: string;
+
+  data_analysis_id?: string;
 }
 
 export interface CAGGraph {
