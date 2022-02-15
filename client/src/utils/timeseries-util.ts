@@ -389,7 +389,6 @@ export function renderPoint(
     .style('stroke', '#fff')
     .style('stroke-width', 1.5)
     .style('fill', color || DEFAULT_LINE_COLOR);
-  return circles;
 }
 
 export function normalizeTimeseriesList(timeseriesList: Timeseries[]) {

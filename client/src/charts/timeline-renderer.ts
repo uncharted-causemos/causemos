@@ -65,7 +65,7 @@ export default function(
   timeseriesList: Timeseries[],
   width: number,
   height: number,
-  selectedTimestamp: number,
+  selectedTimestamp: number | null,
   breakdownOption: string | null,
   timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} },
   onTimestampSelected: (timestamp: number) => void,
@@ -85,13 +85,16 @@ export default function(
     return () => {};
   }
 
+  const xExtentCorrected: [number, number] = (breakdownOption === TemporalAggregationLevel.Year ? [0, 11] : xExtent);
+
   const valueFormatter = chartValueFormatter(...yExtent);
   const [xScale, yScale] = calculateScales(
     width,
     height,
-    (breakdownOption === TemporalAggregationLevel.Year ? [0, 11] : xExtent),
+    xExtentCorrected,
     yExtent
   );
+
   const timestampFormatter =
     breakdownOption === TemporalAggregationLevel.Year
       ? BY_YEAR_DATE_FORMATTER
@@ -109,10 +112,12 @@ export default function(
     X_AXIS_HEIGHT
   );
 
+  const state = { selectedTimestamp, selectionDomain: xExtentCorrected };
+
   const timeseriesListValueCorrected = timeseriesList.map(timeseries => {
     const points = timeseries.points.map(p => ({ timestamp: p.timestamp, value: p.normalizedValue !== undefined ? p.normalizedValue : p.value }));
     return { ...timeseries, points };
-  });
+  }).filter(() => true);
   // Render lines
   const lineSelections = timeseriesListValueCorrected.filter(timeseries => timeseries.points.length > 1).map(timeseries => {
     const lineSelection = renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color, 1);
@@ -122,6 +127,16 @@ export default function(
   timeseriesListValueCorrected.forEach(timeseries => {
     renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
   });
+
+  const timestampElements = generateSelectedTimestampElements(
+    groupElement,
+    height,
+    width,
+    timeseriesList
+  );
+
+  const valuesAtEachTimestamp = getValuesAtEachTimestampMap(timeseriesList, timeseriesToDatacubeMap);
+  const uniqueTimeStamps = getUniqueTimeStamps(valuesAtEachTimestamp);
 
   //
   // render brush
@@ -195,10 +210,11 @@ export default function(
 
   function brushed({ selection }: { selection: number[] }) {
     const [x0, x1] = selection.map(xScale.invert);
-    onTimestampRangeSelected(x0, x1);
+    state.selectionDomain = [x0, x1];
+    onTimestampRangeSelected(...state.selectionDomain);
     groupElement.select('.brush').call(brushHandle as any, selection);
 
-    const xScaleNew = calculateXScale(width, [x0, x1]);
+    const xScaleNew = calculateXScale(width, state.selectionDomain);
     const line = d3
       .line<TimeseriesPoint>()
       .x(d => xScaleNew(d.timestamp))
@@ -212,21 +228,37 @@ export default function(
     lineSelections.forEach(({ points, lineSelection }) => {
       lineSelection.attr('d', () => line(points as TimeseriesPoint[]));
     });
-  }
 
-  const timestampElements = generateSelectedTimestampElements(
-    groupElement,
-    height,
-    width,
-    timeseriesList
-  );
+    // Update Selectable timestamp
+    const hitboxWidth = calculateHitboxWidth(uniqueTimeStamps, xScaleNew);
+    groupElement.selectAll('.timestamp-group .hitbox')
+      .attr('width', hitboxWidth)
+      .attr(
+        'transform',
+        ts => translate(xScaleNew(ts as number) - hitboxWidth / 2, PADDING_TOP)
+      );
+    groupElement.selectAll('.timestamp-group .marker-tooltip')
+      .attr(
+        'transform',
+        ts => translate(xScaleNew(ts as number) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
+      );
+
+    // Update selection
+    updateTimestampElements(
+      state.selectedTimestamp,
+      timestampElements,
+      xScaleNew,
+      timestampFormatter
+    );
+  }
 
   generateSelectableTimestamps(
     groupElement,
-    timeseriesList,
     xScale,
     height,
     timeseriesToDatacubeMap,
+    valuesAtEachTimestamp,
+    uniqueTimeStamps,
     timestampFormatter,
     onTimestampSelected,
     valueFormatter
@@ -243,10 +275,11 @@ export default function(
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
   return (timestamp: number | null) => {
+    state.selectedTimestamp = timestamp;
     updateTimestampElements(
-      timestamp,
+      state.selectedTimestamp,
       timestampElements,
-      xScale,
+      calculateXScale(width, state.selectionDomain),
       timestampFormatter
     );
   };
@@ -287,17 +320,11 @@ function calculateYScale(height: number, yExtent: [number, number]) {
   return yScale;
 }
 
-function generateSelectableTimestamps(
-  selection: D3GElementSelection,
+function getValuesAtEachTimestampMap(
   timeseriesList: Timeseries[],
-  xScale: d3.ScaleLinear<number, number>,
-  height: number,
-  timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} },
-  timestampFormatter: (timestamp: number) => string,
-  onTimestampSelected: (timestamp: number) => void,
-  valueFormatter: (value: number) => string
+  timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} }
+
 ) {
-  const timestampGroup = selection.append('g');
   const valuesAtEachTimestamp = new Map<number, { owner: string; color: string; name: string; value: number | string}[]>();
   const allTimestamps = _.uniq(
     timeseriesList
@@ -321,7 +348,15 @@ function generateSelectableTimestamps(
     });
   });
 
+  return valuesAtEachTimestamp;
+}
+
+function getUniqueTimeStamps(valuesAtEachTimestamp: Map<number, { owner: string; color: string; name: string; value: number | string}[]>) {
   const uniqueTimestamps = Array.from(valuesAtEachTimestamp.keys()).sort();
+  return uniqueTimestamps;
+}
+
+function calculateHitboxWidth(uniqueTimestamps: number[], xScale: d3.ScaleLinear<number, number>) {
   // FIXME: We assume that all timestamps are evenly spaced when determining
   //  how wide the hover/click hitbox should be. This may not always be the case.
 
@@ -331,6 +366,29 @@ function generateSelectableTimestamps(
     uniqueTimestamps.length > 1
       ? xScale(uniqueTimestamps[1]) - xScale(uniqueTimestamps[0])
       : SELECTED_TIMESTAMP_WIDTH * 5;
+  debugger;
+  return hitboxWidth;
+}
+
+function generateSelectableTimestamps(
+  selection: D3GElementSelection,
+  xScale: d3.ScaleLinear<number, number>,
+  height: number,
+  timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} },
+  valuesAtEachTimestamp: Map<number, { owner: string; color: string; name: string; value: number | string}[]>,
+  uniqueTimestamps: number[],
+  timestampFormatter: (timestamp: number) => string,
+  onTimestampSelected: (timestamp: number) => void,
+  valueFormatter: (value: number) => string
+) {
+  const timestampGroup = selection.append('g').classed('timestamp-group', true);
+
+  // FIXME: We assume that all timestamps are evenly spaced when determining
+  //  how wide the hover/click hitbox should be. This may not always be the case.
+
+  // Arbitrarily choose how wide the hitbox should be if there's only one unique
+  //  timestamp
+  const hitboxWidth = calculateHitboxWidth(uniqueTimestamps, xScale);
   const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
   const [minTimestamp, maxTimestamp] = xScale.domain();
   const centerTimestamp = minTimestamp + (maxTimestamp - minTimestamp) / 2;
@@ -341,9 +399,11 @@ function generateSelectableTimestamps(
     const isRightOfCenter = timestamp > centerTimestamp;
     const markerAndTooltip = timestampGroup
       .append('g')
+      .datum(timestamp)
+      .classed('marker-tooltip', true)
       .attr(
         'transform',
-        translate(xScale(timestamp) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
+        ts => translate(xScale(ts) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
       )
       .attr('visibility', 'hidden');
     markerAndTooltip
@@ -456,11 +516,13 @@ function generateSelectableTimestamps(
     // Hover hitbox
     timestampGroup
       .append('rect')
+      .datum(timestamp)
+      .classed('hitbox', true)
       .attr('width', hitboxWidth)
       .attr('height', height - PADDING_TOP - X_AXIS_HEIGHT)
       .attr(
         'transform',
-        translate(xScale(timestamp) - hitboxWidth / 2, PADDING_TOP)
+        ts => translate(xScale(ts) - hitboxWidth / 2, PADDING_TOP)
       )
       .attr('fill-opacity', 0)
       .style('cursor', 'pointer')
