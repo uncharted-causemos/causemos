@@ -316,7 +316,6 @@ export default defineComponent({
       ];
       const {
         time_scale,
-        indicator_time_series_range,
         projection_start
       } = modelSummary.value.parameter;
       const numSteps = getStepCountFromTimeScale(time_scale);
@@ -326,7 +325,6 @@ export default defineComponent({
         parameter: {
           constraints: constraintsParameter,
           num_steps: numSteps,
-          indicator_time_series_range,
           projection_start
         }
       };

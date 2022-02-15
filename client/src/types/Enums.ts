@@ -52,6 +52,14 @@ export enum DatacubeGenericAttributeVariableType {
   Geo = 'geo'
 }
 
+// numeric params can be converted to another numeric param type (i.e., int <--> float)
+//  and can have their min/max values updated
+// also, numeric param can be discrete (data type: nominal|ordinal) or continuous (data type: numerical)
+// can a numeric param be freeform?
+//
+// a string param can have its data type converted between nominal|ordinal to freeform
+//  nominal|ordinal assumes a pre-defined list of options vs freeform
+
 export type DatacubeAttributeVariableType = DatacubeGeoAttributeVariableType | DatacubeGenericAttributeVariableType;
 
 export enum GeoAttributeFormat {
@@ -61,10 +69,10 @@ export enum GeoAttributeFormat {
 }
 
 export enum ModelParameterDataType {
-  Nominal = 'nominal', // discrete
-  Ordinal = 'ordinal', // discrete
-  Numerical = 'numerical', // continuous
-  Freeform = 'freeform' // discrete, dynmaic choices
+  Nominal = 'nominal', // discrete; fixed set of choices edited only by the modeller
+  Ordinal = 'ordinal', // discrete; fixed set of choices edited only by the modeller
+  Numerical = 'numerical', // continuous; a numerical range is needed to render correctly
+  Freeform = 'freeform' // discrete, dynmaic choices; the user can add new choices
 }
 
 export enum TemporalResolution {
