@@ -118,7 +118,7 @@ export default function(
   const timeseriesListValueCorrected = timeseriesList.map(timeseries => {
     const points = timeseries.points.map(p => ({ timestamp: p.timestamp, value: p.normalizedValue !== undefined ? p.normalizedValue : p.value }));
     return { ...timeseries, points };
-  }).filter(() => true);
+  });
   // Render lines
   const lineSelections = timeseriesListValueCorrected.filter(timeseries => timeseries.points.length > 1).map(timeseries => {
     const lineSelection = renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color, 1);
