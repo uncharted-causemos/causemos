@@ -839,18 +839,16 @@ export default defineComponent({
     .image-preview-and-metadata {
       display: flex;
       overflow: auto;
-      height: 100%;
       padding-top: 5px;
+      flex: 1;
+      min-height: 0;
       .preview {
         overflow: auto;
         align-self: flex-start;
-        height: 100%;
-        width: 100%;
         padding-right: 1rem;
+        flex: 1;
+        min-width: 0;
         img {
-          max-height: 100%;
-          max-width: 100%;
-          height: 100%;
           width: 100%;
         }
       }
