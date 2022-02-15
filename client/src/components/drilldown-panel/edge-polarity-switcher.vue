@@ -270,16 +270,6 @@ export default defineComponent({
       { immediate: true }
     );
 
-    const engineWeights = (props.selectedRelationship as EdgeParameter).parameter?.engine_weights;
-
-    const inferredWeights = engineWeights
-      ? engineWeights[props.modelSummary.parameter.engine]
-      : [0, 0];
-
-    const inferredWeightType = inferredWeights[0] > inferredWeights[1] ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
-    const inferredWeightValue = inferredWeights[0] > inferredWeights[1] ? inferredWeights[0] : inferredWeights[1];
-
-
     return {
       currentView,
       ontologyFormatter,
