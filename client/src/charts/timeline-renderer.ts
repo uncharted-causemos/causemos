@@ -359,7 +359,7 @@ function getUniqueTimeStamps(valuesAtEachTimestamp: Map<number, { owner: string;
 
 function getClosestTimestamps(uniqueTimestamps: number[]) {
   // Assume uniqueTimestamps are sorted
-  if (uniqueTimestamps.length < 2) {
+  if (uniqueTimestamps.length < 3) {
     return [...uniqueTimestamps];
   }
   const minResult = { pair: [0, 0], diff: Infinity };
