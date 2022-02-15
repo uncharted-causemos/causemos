@@ -363,6 +363,12 @@ function getUniqueTimeStamps(valuesAtEachTimestamp: Map<number, { owner: string;
   return uniqueTimestamps;
 }
 
+// Find and get the closest pair of timestamps.
+// This can be used to calculate the width of the hitbox using calculateHitboxWidth
+// Since It's not guaranteed that the distance of each adjacent timstamps are equal for all timestamps,
+// especially if you draw multiple timeseries with different temporal resolution. If hitbox width are calculated based on lower resolution data (month)
+// you would have some issue with hover/tooltip with higher level resolution data (day).
+// In this case we just calculate the hitbox based on the closest timestamps pair and this works for all case.
 function getClosestTimestamps(uniqueTimestamps: number[]) {
   // Assume uniqueTimestamps are sorted
   if (uniqueTimestamps.length < 3) {
