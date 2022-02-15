@@ -19,8 +19,7 @@ import { getYearFromTimestamp } from '@/utils/date-util';
 import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain } from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
-import { getQualifierTimeseries } from '../new-datacube-service';
-import { getRawTimeseriesData, getRawTimeseriesDataBulk } from '../outputdata-service';
+import { getQualifierTimeseries, getRawQualifierTimeseries, getRawTimeseriesData, getRawTimeseriesDataBulk } from '../outputdata-service';
 import { correctIncompleteTimeseriesLists } from '@/utils/incomplete-data-detection';
 
 
@@ -313,8 +312,18 @@ export default function useTimeseriesData(
         //  exactly one model run is selected
         const regionId =
           regionIds.value.length > 0 ? regionIds.value[0] : undefined;
-        promises = [
-          getQualifierTimeseries(
+        const qualifierOptions = Array.from(selectedQualifierValues.value);
+        const promise = isRawDataResolution?.value
+          ? getRawQualifierTimeseries({
+            dataId,
+            runId: modelRunIds.value[0],
+            aggregation: spatialAgg,
+            outputVariable: activeFeature.value,
+            qualifierOptions,
+            qualifierVariableId: breakdownOption.value,
+            regionId
+          }).then(res => ({ data: res }))
+          : getQualifierTimeseries(
             dataId,
             modelRunIds.value[0],
             activeFeature.value,
@@ -322,11 +331,11 @@ export default function useTimeseriesData(
             temporalAgg.value,
             spatialAgg,
             breakdownOption.value,
-            Array.from(selectedQualifierValues.value),
+            qualifierOptions,
             transform,
             regionId
-          )
-        ];
+          );
+        promises = [promise];
       }
       const fetchResults = (await Promise.all(promises))
         .filter(response => response !== null)

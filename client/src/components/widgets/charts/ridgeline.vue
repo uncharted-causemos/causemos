@@ -10,6 +10,7 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 
 import {
+  COMPARISON_BASELINE_COLOR,
   CONTEXT_BRACKET_WIDTH,
   renderRidgelines
 } from '@/charts/ridgeline-renderer';
@@ -26,10 +27,6 @@ import {
 import { translate } from '@/utils/svg-util';
 
 const RESIZE_DELAY = 15;
-
-const COMPARISON_COLOR = '#4DAC26'; // green
-const COMPARISON_BASELINE_COLOR = '#E597B9'; // pink
-const COMPARISON_OVERLAP_COLOR = '#DDD'; // grey
 
 export default defineComponent({
   name: 'Ridgeline',
@@ -56,13 +53,8 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const {
-      ridgelineData,
-      comparisonBaseline,
-      min,
-      max,
-      contextRange
-    } = toRefs(props);
+    const { ridgelineData, comparisonBaseline, min, max, contextRange } =
+      toRefs(props);
 
     const renderTarget = ref<SVGElement | null>(null);
 
@@ -102,64 +94,24 @@ export default defineComponent({
       //  - pass a smaller width to `renderRidgelines`
       //  - shift the resulting `g` element to the right
       const widthWithoutContextRanges = width - CONTEXT_BRACKET_WIDTH;
-      // Render comparison baseline
-      const baseline = comparisonBaseline.value;
-      if (baseline !== null) {
-        renderRidgelines(
-          svg,
-          baseline,
-          widthWithoutContextRanges,
-          height,
-          min.value,
-          max.value,
-          false,
-          true,
-          COMPARISON_BASELINE_COLOR
-        ).attr('transform', translate(CONTEXT_BRACKET_WIDTH, 0));
-      }
-      // Render ridgeline
       renderRidgelines(
         svg,
         ridgelineData.value,
+        comparisonBaseline.value,
         widthWithoutContextRanges,
         height,
         min.value,
         max.value,
         true,
-        // Only render the yAxis line if this is the first ridgeline to be
-        //  drawn foor this chart
-        baseline === null,
-        baseline !== null ? COMPARISON_COLOR : COMPARISON_OVERLAP_COLOR,
+        true,
         '',
         contextRange.value,
-        10
+        10,
+        COMPARISON_BASELINE_COLOR
       ).attr('transform', translate(CONTEXT_BRACKET_WIDTH, 0));
-      // Render overlap
-      if (baseline !== null) {
-        const overlap = ridgelineData.value.map(
-          ({ value, coordinate }, index) => {
-            const baselineValue = baseline[index].value;
-            return {
-              value: _.min([value, baselineValue]) ?? 0,
-              coordinate
-            };
-          }
-        );
-        renderRidgelines(
-          svg,
-          overlap,
-          widthWithoutContextRanges,
-          height,
-          min.value,
-          max.value,
-          false,
-          false,
-          COMPARISON_OVERLAP_COLOR
-        ).attr('transform', translate(CONTEXT_BRACKET_WIDTH, 0));
-      }
     });
 
-    const resize = _.debounce(function({ width, height }) {
+    const resize = _.debounce(function ({ width, height }) {
       if (renderTarget.value === null) return;
       chartSize.value = { width, height };
     }, RESIZE_DELAY);

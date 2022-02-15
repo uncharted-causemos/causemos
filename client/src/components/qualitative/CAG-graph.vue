@@ -51,6 +51,13 @@ import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
 import { TimeScale } from '@/types/Enums';
+import {
+  calculateNewNodesAndEdges,
+  EdgeSuggestion,
+  extractEdgesFromStatements,
+  getEdgesFromConcepts,
+  sortSuggestionsByEvidenceCount
+} from '@/utils/relationship-suggestion-util';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -82,7 +89,8 @@ export default defineComponent({
 
     // Custom
     'refresh', 'new-edge', 'delete', 'rename-node', 'merge-nodes',
-    'suggestion-selected', 'suggestion-duplicated', 'datacube-selected'
+    'suggestion-selected', 'suggestion-duplicated', 'datacube-selected',
+    'add-to-CAG'
   ],
   setup(props) {
     const store = useStore();
@@ -102,6 +110,25 @@ export default defineComponent({
       return props.data.nodes.map(node => node.concept);
     });
 
+    // The node for which we're fetching/storing suggestions, as well as a
+    //  Cached copy of all of the statements related to the node, converted to
+    //  `EdgeSuggestion`s.
+    // Has a value of `null` when statements haven't been fetched yet.
+    const allEdgeSuggestions = ref<{
+      node: INode<NodeParameter> | null;
+      suggestions: EdgeSuggestion[] | null;
+    }>({ node: null, suggestions: null });
+    const searchQuery = ref('');
+    // The `EdgeSuggestion`s for the current search query.
+    // Has a value of `null` when search text is empty or results haven't been
+    //  fetched yet.
+    const searchSuggestions = ref<EdgeSuggestion[] | null>(null);
+    // The `EdgeSuggestion`s that have been selected to add to the CAG.
+    //  We have to store the whole suggestion instead of just an ID since
+    //  selected `searchSuggestions` won't appear in `allEdgeSuggestions` and
+    //  vice versa.
+    const selectedEdgeSuggestions = ref<EdgeSuggestion[]>([]);
+
     return {
       renderer,
       mouseTrap,
@@ -113,6 +140,12 @@ export default defineComponent({
       svgY,
       newNodeX,
       newNodeY,
+
+      // Tracking edge suggestions
+      allEdgeSuggestions,
+      searchQuery,
+      searchSuggestions,
+      selectedEdgeSuggestions,
 
       ontologyFormatter: useOntologyFormatter(),
 
@@ -149,6 +182,7 @@ export default defineComponent({
 
     // Native messages
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection, renderer: QualitativeRenderer) => {
+      this.exitSuggestionMode();
       renderer.selectNode(nodeSelection, '');
       nodeSelection.select('.node-container').classed('node-selected', true);
 
@@ -160,18 +194,20 @@ export default defineComponent({
       this.selectedNode = nodeSelection.datum().data.concept;
       this.$emit('node-click', nodeSelection.datum().data);
     });
-    this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection, renderer: QualitativeRenderer) => {
+    this.renderer.on('edge-click', (_evtName, _event: PointerEvent, edgeSelection, renderer: QualitativeRenderer) => {
+      this.exitSuggestionMode();
       const source = edgeSelection.datum().data.source;
       const target = edgeSelection.datum().data.target;
       const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
       renderer.neighborhoodAnnotation(neighborhood);
-      renderer.selectEdge(event, edgeSelection);
+      // renderer.selectEdge(event, edgeSelection);
 
       this.$emit('edge-click', edgeSelection.datum().data);
     });
 
     this.renderer.on('background-click', () => {
       rendererRef.resetAnnotations();
+      this.exitSuggestionMode();
       this.$emit('background-click');
     });
 
@@ -268,13 +304,134 @@ export default defineComponent({
             .classed('edge-possibility-indicator', true)
             .attr('transform', `translate(${pointerX}, ${pointerY}) scale(2.5)`)
             .attr('fill', calcEdgeColor(edge))
-            .attr('opactiy', 0)
+            .attr('opacity', 0)
             .style('pointer-events', 'none')
             .transition()
             .duration(300)
             .attr('opacity', 1);
         });
       });
+    });
+
+    this.renderer.on(
+      'fetch-suggested-impacts',
+      async (eventName: any, node: INode<NodeParameter>) => {
+        // Clear up any previous suggestion state. Skipping this step means
+        //  that if the suggestion search box already exists it won't be
+        //  rerendered next to the newly-selected node.
+        this.exitSuggestionMode();
+        this.allEdgeSuggestions = { node, suggestions: null };
+        this.selectedEdgeSuggestions = [];
+        // Load all statements that include any of the components in the
+        //  selected node-container.
+        this.renderer?.setSuggestionData([], [], node, true);
+        const statements = await projectService.getProjectStatementsForConcepts(
+          node.data.components,
+          this.project
+        );
+        const suggestions = sortSuggestionsByEvidenceCount(
+          extractEdgesFromStatements(statements, node.data, this.data, false)
+        );
+        // If suggestion mode is still active for `node`, store suggestions
+        if (this.allEdgeSuggestions.node === node) {
+          this.allEdgeSuggestions = { node, suggestions };
+          if (this.searchQuery.length === 0) {
+            // Pass them to the renderer to generate SVG elements for each one
+            this.renderer?.setSuggestionData(suggestions, [], node, false);
+          }
+        }
+      }
+    );
+
+    this.renderer.on(
+      'toggle-suggestion-selected',
+      (eventName: any, suggestion: EdgeSuggestion) => {
+        const withoutSuggestion = this.selectedEdgeSuggestions.filter(
+          selectedSuggestion => selectedSuggestion !== suggestion
+        );
+        if (withoutSuggestion.length === this.selectedEdgeSuggestions.length) {
+          // Not previously selected, so add it
+          this.selectedEdgeSuggestions = [...withoutSuggestion, suggestion];
+        } else {
+          // Was already selected, so remove it from selected suggestions
+          this.selectedEdgeSuggestions = withoutSuggestion;
+        }
+        // Edge case: if user searches results and selects one befor
+        //  `allEdgeSuggestions` is populated, UI won't update. I think this is
+        //  safe to ignore.
+        if (
+          this.allEdgeSuggestions.node === null ||
+          this.allEdgeSuggestions.suggestions === null
+        ) return;
+        // If searchSuggestions !== null, we're displaying search results
+        const suggestionsToDisplay = this.searchSuggestions !== null
+          ? this.searchSuggestions
+          : this.allEdgeSuggestions.suggestions;
+        this.renderer?.setSuggestionData(
+          suggestionsToDisplay,
+          this.selectedEdgeSuggestions,
+          this.allEdgeSuggestions.node,
+          false // Possible race condition if toggle occurs during load
+        );
+      }
+    );
+
+    this.renderer.on(
+      'search-for-concepts',
+      async (eventName: any, userInput: string) => {
+        if (this.allEdgeSuggestions.node === null) return;
+        // Store latest userInput for later use detecting out-of-order results
+        this.searchQuery = userInput;
+        const suggestionNode = this.allEdgeSuggestions.node;
+        if (_.isEmpty(userInput)) {
+          // Cleared search bar
+          this.searchSuggestions = null;
+          if (this.allEdgeSuggestions.suggestions === null) {
+            // Top suggestions are still loading
+            this.renderer?.setSuggestionData(
+              [],
+              this.selectedEdgeSuggestions,
+              this.allEdgeSuggestions.node,
+              true
+            );
+            return;
+          }
+          // Show top suggestions from `allEdgeSuggestions`
+          this.renderer?.setSuggestionData(
+            this.allEdgeSuggestions.suggestions,
+            this.selectedEdgeSuggestions,
+            this.allEdgeSuggestions.node,
+            false
+          );
+        } else {
+          // Show loading indicator
+          this.renderer?.setSuggestionData(
+            [],
+            this.selectedEdgeSuggestions,
+            this.allEdgeSuggestions.node,
+            true
+          );
+          // Fetch concepts based on user input
+          this.fetchSearchSuggestions(userInput, suggestionNode, this);
+        }
+      }
+    );
+
+    this.renderer.on('add-selected-suggestions', () => {
+      const simplifiedSuggestions = this.selectedEdgeSuggestions.map(
+        ({ source, target, statements }) => ({
+          source,
+          target,
+          reference_ids: statements.map(statement => statement.id)
+        })
+      );
+      const newSubgraph = calculateNewNodesAndEdges(
+        simplifiedSuggestions,
+        this.data,
+        this.ontologyFormatter
+      );
+      this.exitSuggestionMode();
+      this.$emit('add-to-CAG', newSubgraph);
     });
 
     this.refresh();
@@ -292,12 +449,59 @@ export default defineComponent({
         this.$emit('refresh', null);
       }
     },
+    fetchSearchSuggestions: _.debounce(async (
+      userInput: string,
+      suggestionNode: INode<NodeParameter>,
+      cagGraphThis: any
+    ) => {
+      const conceptSuggestions = await projectService.getConceptSuggestions(
+        cagGraphThis.project,
+        userInput
+      );
+      // Stop if we haven't fetched all edge suggestions yet
+      //  or we're no longer looking at suggestions for suggestionNode
+      //  or if the query has changed
+      // FIXME: Edge case here where search results return before all edge
+      //  suggestions, we currently keep showing loading indicator until user
+      //  changes their query.
+      if (
+        cagGraphThis.allEdgeSuggestions.suggestions === null ||
+        cagGraphThis.allEdgeSuggestions.node !== suggestionNode ||
+        cagGraphThis.searchQuery !== userInput
+      ) {
+        return;
+      }
+      const concepts = conceptSuggestions.map(
+        (suggestion: any) => suggestion.doc.key
+      );
+      // Convert to edge suggestions, assigning each concept to an edge
+      //  suggestion that was fetched earlier if possible
+      cagGraphThis.searchSuggestions = getEdgesFromConcepts(
+        concepts,
+        cagGraphThis.allEdgeSuggestions.suggestions,
+        cagGraphThis.allEdgeSuggestions.node.data.concept
+      );
+      // Update the suggestions that are being rendered
+      cagGraphThis.renderer?.setSuggestionData(
+        cagGraphThis.searchSuggestions,
+        cagGraphThis.selectedEdgeSuggestions,
+        cagGraphThis.allEdgeSuggestions.node,
+        false
+      );
+    }, 300),
     onSuggestionSelected(suggestion: any) {
       if (this.data.nodes.filter((node: any) => node.concept === suggestion.concept).length > 0) {
         this.$emit('suggestion-duplicated', suggestion);
         return;
       }
       this.$emit('suggestion-selected', suggestion);
+    },
+    exitSuggestionMode() {
+      this.allEdgeSuggestions = { node: null, suggestions: null };
+      this.searchSuggestions = null;
+      this.searchQuery = '';
+      this.selectedEdgeSuggestions = [];
+      this.renderer?.exitSuggestionMode();
     },
     onDatacubeSelected(datacubeParam: any) {
       this.$emit('datacube-selected', datacubeParam);

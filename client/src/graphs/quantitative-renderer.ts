@@ -1,12 +1,13 @@
 import * as d3 from 'd3';
 import { NodeParameter, EdgeParameter, NodeScenarioData } from '@/types/CAG';
-import { SELECTED_COLOR } from '@/utils/colors-util';
+// import { SELECTED_COLOR } from '@/utils/colors-util';
 import svgUtil from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
+import { decodeWeights } from '@/services/model-service';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
-import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
+import { DEFAULT_STYLE } from './cag-style';
 
 const GRAPH_HEIGHT = 55;
 const GRAPH_VERTICAL_MARGIN = 6;
@@ -24,6 +25,7 @@ const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
 export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, EdgeParameter> {
   scenarioData: ScenarioData = {};
+  engine = 'dyse';
 
   constructor(options: any) {
     super(options);
@@ -71,6 +73,10 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
 
   setScenarioData(scenarioData: ScenarioData) {
     this.scenarioData = scenarioData;
+  }
+
+  setEngine(engine: string) {
+    this.engine = engine;
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
@@ -241,57 +247,77 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     return svg;
   }
 
-
+  /**
+   * In this context, edge controls are used to denote
+   * warnings, where the user-specified values conflicts with
+   * automatically inferred valeus
+   */
   renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
     this.chart.selectAll('.edge-control').selectAll('*').remove();
-    const edgeControl = selection.select('.edge-control');
+
+    const edgeControl = selection
+      .filter(e => {
+        const param = e.data.parameter;
+        if (!param) {
+          return false;
+        }
+        const inferred = decodeWeights(param.engine_weights[this.engine]);
+        const current = decodeWeights(param.weights);
+
+        // If inferred and current have different types
+        if (inferred.weightType !== current.weightType) {
+          return true;
+        }
+
+        if (Math.abs(inferred.weightValue - current.weightValue) > 0.5) {
+          return true;
+        }
+
+        // If inferred and current have different polarity, Delphi only
+        const polarity = e.data.polarity || 0;
+        if (this.engine === 'delphi' || this.engine === 'delphi_dev') {
+          const w = param.engine_weights[this.engine];
+          if (w[2] && w[2] * polarity < 0) {
+            return true;
+          }
+        }
+        return false;
+      })
+      .select('.edge-control');
+
+    const EXCLAMATION_TRIANGLE = '\uf071';
+    const WARN = '#f80';
+
     edgeControl
       .append('circle')
       .attr('r', DEFAULT_STYLE.edge.controlRadius + 2)
       .style('fill', DEFAULT_STYLE.edgeBg.stroke)
-      .attr('stroke', SELECTED_COLOR)
+      .attr('stroke', WARN)
       .style('cursor', 'pointer');
 
     edgeControl
       .append('circle')
       .attr('r', DEFAULT_STYLE.edge.controlRadius)
-      .style('fill', d => calcEdgeColor(d.data))
+      .style('fill', 'none')
       .style('cursor', 'pointer');
 
     edgeControl
       .append('text')
-      .attr('x', d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.x;
-        }
-        return 0;
+      .attr('x', () => {
+        return -6;
       })
-      .attr('y', d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.y;
-        }
-        return 0;
+      .attr('y', () => {
+        return 3.5;
       })
-      .style('background-color', 'red')
       .style('font-family', 'FontAwesome')
-      .style('font-size', d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.fontSize;
-        }
-        return '';
+      .style('font-size', () => {
+        return '12px';
       })
       .style('stroke', 'none')
-      .style('fill', 'white')
+      .style('fill', WARN)
       .style('cursor', 'pointer')
-      .text(d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.text;
-        }
-        return '';
+      .text(() => {
+        return EXCLAMATION_TRIANGLE;
       });
   }
 

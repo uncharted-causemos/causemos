@@ -1,6 +1,6 @@
 import { ref } from '@vue/reactivity';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
-import { RegionalAggregations } from '@/types/Runoutput';
+import { RegionalAggregations } from '@/types/Outputdata';
 import { ComputedRef, Ref, watchEffect } from 'vue';
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 

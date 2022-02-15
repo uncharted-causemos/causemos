@@ -103,15 +103,22 @@ export const convertDistributionTimeseriesToRidgelines = (
 
   const ridgelines: RidgelineWithMetadata[] = [];
 
-  timeseries.forEach(({ timestamp, values }, timestepIndex) => {
+  timeseries.forEach(({ values }, timestepIndex) => {
     const timeSliceAtThisTimestep = getTimeSliceAtStepIndex(timestepIndex);
     if (onlyConvertTimeslices && timeSliceAtThisTimestep === undefined) return;
     // Convert the distribution to a ridgeline, and attach more information for
     //  rendering later.
     const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
     const monthsAfterNow = (timestepIndex + 1) * monthsPerTimestep;
+    // When `timestamp` is returned as a part of the projections, its value
+    //  seems to be slightly offset from the actual month (especially
+    //  noticeable after February), so override it with the correct timestamp.
+    const correctedTimestamp = getTimestampAfterMonths(
+      timeseries[0].timestamp,
+      monthsAfterNow
+    );
     ridgelines.push({
-      timestamp,
+      timestamp: correctedTimestamp,
       label: timeSliceAtThisTimestep?.shortLabel ?? '',
       monthsAfterNow,
       ridgeline: convertDistributionToRidgeline(values, min, max, binCount)

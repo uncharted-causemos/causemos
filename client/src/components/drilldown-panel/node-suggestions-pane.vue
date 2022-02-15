@@ -91,9 +91,8 @@
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
-import { STATEMENT_POLARITY } from '@/utils/polarity-util';
-import { calcEdgeColor } from '@/utils/scales-util';
 import filtersUtil from '@/utils/filters-util';
+import { calculateNewNodesAndEdges, extractEdgesFromStatements, sortSuggestionsByEvidenceCount } from '@/utils/relationship-suggestion-util';
 
 const RELATIONSHIP_GROUP_KEY = {
   CAUSE: 'cause',
@@ -102,23 +101,21 @@ const RELATIONSHIP_GROUP_KEY = {
 
 const MSG_EMPTY_SELECTION = 'There are no selected relationships';
 
-// Extract edge attributes
-const statementsToEdgeAttributes = (statements) => {
-  const edgeAttributes = statements.reduce((accumulator, s) => {
-    const wm = s.wm;
-    const p = wm.statement_polarity;
-
-    accumulator.belief_score += s.belief;
-    accumulator.same += p === STATEMENT_POLARITY.SAME ? 1 : 0;
-    accumulator.opposite += p === STATEMENT_POLARITY.OPPOSITE ? 1 : 0;
-    accumulator.unknown += p === STATEMENT_POLARITY.UNKNOWN ? 1 : 0;
-    return accumulator;
-  }, { same: 0, opposite: 0, unknown: 0, belief_score: 0 });
-
-  edgeAttributes.belief_score = edgeAttributes.belief_score / statements.length;
-  return edgeAttributes;
+const convertEdgeSuggestionToChecklistItem = (suggestion) => {
+  const { source, target, statements, color } = suggestion;
+  return {
+    meta: {
+      checked: false,
+      source,
+      target,
+      style: {
+        color
+      },
+      numEvidence: _.sumBy(statements, s => s.wm.num_evidence)
+    },
+    dataArray: statements
+  };
 };
-
 
 export default {
   name: 'NodeSuggestionsPane',
@@ -180,99 +177,26 @@ export default {
       setSearchClause: 'query/setSearchClause'
     }),
     refresh() {
-      const graphData = this.graphData;
-      const components = this.selectedNode.components;
-
-      const causeStatements = this.statements.filter(s => components.includes(s.obj.concept));
-      const effectStatements = this.statements.filter(s => components.includes(s.subj.concept));
-
-      // Helper
-      const addToMap = (map, key, val) => {
-        if (!map.has(key)) {
-          map.set(key, []);
-        }
-        map.get(key).push(val);
-      };
-      const edgeSorter = (a, b) => b.meta.numEvidence - a.meta.numEvidence;
-
-      // Map to node-container level if applicable
-      const causeMap = new Map();
-      for (let i = 0; i < causeStatements.length; i++) {
-        const statement = causeStatements[i];
-        const nodeContainters = graphData.nodes.filter(n => n.components.includes(statement.subj.concept));
-        if (nodeContainters.length === 0) {
-          addToMap(causeMap, statement.subj.concept, statement);
-        } else {
-          for (let j = 0; j < nodeContainters.length; j++) {
-            const causeConcept = nodeContainters[j].concept;
-
-            /* Skip if edge exists and statement exists on edge */
-            const exist = graphData.edges.find(edge => edge.source === causeConcept && edge.target === this.selectedNode.concept);
-            if (exist && exist.reference_ids.includes(statement.id)) {
-              continue;
-            }
-            addToMap(causeMap, causeConcept, statement);
-          }
-        }
-      }
-
-      // Map to node-container level if applicable
-      const effectMap = new Map();
-      for (let i = 0; i < effectStatements.length; i++) {
-        const statement = effectStatements[i];
-        const nodeContainters = graphData.nodes.filter(n => n.components.includes(statement.obj.concept));
-        if (nodeContainters.length === 0) {
-          addToMap(effectMap, statement.obj.concept, statement);
-        } else {
-          for (let j = 0; j < nodeContainters.length; j++) {
-            const effectConcept = nodeContainters[j].concept;
-
-            /* Skip if edge exists and statement exists on edge */
-            const exist = graphData.edges.find(edge => edge.source === this.selectedNode.concept && edge.target === effectConcept);
-            if (exist && exist.reference_ids.includes(statement.id)) {
-              continue;
-            }
-            addToMap(effectMap, effectConcept, statement);
-          }
-        }
-      }
-
-      const causeEntries = [...causeMap.entries()];
-      const causeEdges = [];
-      for (let i = 0; i < causeEntries.length; i++) {
-        const [key, statements] = causeEntries[i];
-        causeEdges.push({
-          meta: {
-            checked: false,
-            source: key,
-            target: this.selectedNode.concept,
-            style: { color: calcEdgeColor(statementsToEdgeAttributes(statements)) },
-            numEvidence: _.sumBy(statements, s => s.wm.num_evidence)
-          },
-          dataArray: statements
-        });
-      }
-
-      const effectEntries = [...effectMap.entries()];
-      const effectEdges = [];
-      for (let i = 0; i < effectEntries.length; i++) {
-        const [key, statements] = effectEntries[i];
-        effectEdges.push({
-          meta: {
-            checked: false,
-            source: this.selectedNode.concept,
-            target: key,
-            style: { color: calcEdgeColor(statementsToEdgeAttributes(statements)) },
-            numEvidence: _.sumBy(statements, s => s.wm.num_evidence)
-          },
-          dataArray: statements
-        });
-      }
-
-      // Get "top" edges by number of evidence
-      const topCauseEdges = _.take(causeEdges.sort(edgeSorter), 5);
-      const topEffectEdges = _.take(effectEdges.sort(edgeSorter), 5);
-
+      const causeEdges = extractEdgesFromStatements(
+        this.statements,
+        this.selectedNode,
+        this.graphData,
+        true
+      );
+      const effectEdges = extractEdgesFromStatements(
+        this.statements,
+        this.selectedNode,
+        this.graphData,
+        false
+      );
+      const topCauseEdges = _.take(
+        sortSuggestionsByEvidenceCount(causeEdges),
+        5
+      ).map(convertEdgeSuggestionToChecklistItem);
+      const topEffectEdges = _.take(
+        sortSuggestionsByEvidenceCount(effectEdges),
+        5
+      ).map(convertEdgeSuggestionToChecklistItem);
       this.summaryData = {
         children: [
           {
@@ -366,60 +290,8 @@ export default {
       }
 
       // Calculate if there are new nodes
-      const graphNodes = this.graphData.nodes;
-      const newNodes = [];
-
-      for (let i = 0; i < newEdges.length; i++) {
-        const edge = newEdges[i];
-        const source = edge.source;
-        const target = edge.target;
-
-        // Check source
-        if (!_.some(graphNodes, d => d.concept === source)) {
-          if (!_.some(newNodes, d => d.concept === source)) {
-            newNodes.push({
-              id: '',
-              concept: source,
-              label: this.ontologyFormatter(source),
-              components: [source]
-            });
-          }
-        }
-
-        // Check target
-        if (!_.some(graphNodes, d => d.concept === target)) {
-          if (!_.some(newNodes, d => d.concept === target)) {
-            newNodes.push({
-              id: '',
-              concept: target,
-              label: this.ontologyFormatter(target),
-              components: [target]
-            });
-          }
-        }
-      }
-
-      // Normalize edges to ensure no duplicates
-      const normalizedEdges = [];
-      const graphEdges = this.graphData.edges;
-      for (let i = 0; i < newEdges.length; i++) {
-        const newEdge = newEdges[i];
-        const existingEdge = graphEdges.find(e => {
-          return e.source === newEdge.source && e.target === newEdge.target;
-        });
-        if (existingEdge) {
-          normalizedEdges.push({
-            id: existingEdge.id,
-            source: existingEdge.source,
-            target: existingEdge.target,
-            reference_ids: existingEdge.reference_ids.concat(newEdge.reference_ids)
-          });
-        } else {
-          normalizedEdges.push(newEdge);
-        }
-      }
-
-      this.$emit('add-to-CAG', { nodes: newNodes, edges: normalizedEdges });
+      const newSubgraph = calculateNewNodesAndEdges(newEdges, this.graphData, this.ontologyFormatter);
+      this.$emit('add-to-CAG', newSubgraph);
     }
   }
 };

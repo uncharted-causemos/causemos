@@ -10081,10 +10081,10 @@ supports-preserve-symlinks-flag@^1.0.0:
   resolved "https://registry.yarnpkg.com/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz#6eda4bd344a3c94aea376d4cc31bc77311039e09"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
 
-svg-flowgraph@0.5.0:
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/svg-flowgraph/-/svg-flowgraph-0.5.0.tgz#55f542a885524941e9742e3a4a27de82e3ba1137"
-  integrity sha512-1zk0uBhs+2z7WsKYIpRnpCR4MwjYgPWnvrKQlku+M2HJ3+pbbVl/t6cKe0V+NsFDVqgjfrLeGsEuR0v273T8vg==
+svg-flowgraph@0.5.2:
+  version "0.5.2"
+  resolved "https://registry.yarnpkg.com/svg-flowgraph/-/svg-flowgraph-0.5.2.tgz#ee02bfbac2a8728e8051c80270a363f8a7ab79b8"
+  integrity sha512-NthpEdk1UrGkFrtmC8OWfrsqzKS4tCj5OrY2YfVZLZATxWb74HQScoG+5HSYUZHP5wMRCjwwaobzp9rIqT9RSw==
   dependencies:
     d3 "^7.1.1"
     lodash "^4.17.21"

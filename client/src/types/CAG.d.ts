@@ -6,23 +6,20 @@ export interface GraphPath {
   score?: number;
 }
 
-export interface ConceptProjectionConstraints {
-  concept: string;
-  values: ProjectionConstraint[];
-}
-
 export interface ProjectionConstraint {
   step: number;
   value: number;
 }
 
+export interface ConceptProjectionConstraints {
+  concept: string;
+  values: ProjectionConstraint[];
+}
+
 export interface ScenarioParameter {
   projection_start: number;
   num_steps: number;
-  indicator_time_series_range: {
-    start: number;
-    end: number;
-  };
+
   // A list of constraints across all concepts
   constraints: ConceptProjectionConstraints[];
 }
@@ -57,7 +54,7 @@ export interface Scenario {
   modified_at: number;
   created_at: number;
   model_id: string;
-  engine: string;
+  engine: string; // Deprecated
   is_valid: boolean;
   is_baseline: boolean;
   parameter: ScenarioParameter;
@@ -69,13 +66,10 @@ export interface NodeScenarioData {
   indicator_name: string;
   indicator_id: string | null;
   indicator_time_series: TimeseriesPoint[];
-  indicator_time_series_range: {
-    start: number;
-    end: number;
-  };
   min: number;
   max: number;
   projection_start: number;
+  history_range: number;
   time_scale: TimeScale;
   scenarios: {
     id: string;
@@ -111,6 +105,7 @@ export interface EdgeParameter {
   modified_at?: number;
   parameter?: {
     weights: number[];
+    engine_weights: { [key: string]: any };
   };
   // User polarity is taken into account when the user sets an edge's polarity manually
   user_polarity: number | null; // FIXME: need better ways to handle special case nulls
@@ -130,10 +125,7 @@ export interface SourceTargetPair {
 
 export interface CAGModelParameter {
   num_steps: number; // Deprecated, should now be derived from time_scale
-  indicator_time_series_range: {
-    start: number;
-    end: number;
-  };
+  history_range: number; // number in months
   projection_start: number;
   engine: string;
   time_scale: TimeScale;

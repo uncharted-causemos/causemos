@@ -6,15 +6,55 @@ const Logger = rootRequire('/config/logger');
 
 const basicAuthToken = auth.getBasicAuthToken(process.env.DART_SERVICE_USERNAME, process.env.DART_SERVICE_PASSWORD);
 
-
 const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
 const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
 
-// UAT DART - for testing only
-// const DART_SERVICE_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
-// const DART_READER_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
-
 const TIMEOUT = 3 * 1000;
+
+/** Ontology from DART
+ *
+ *   {
+ *     "id": {UUID},
+ *     "tenant_id": {String},
+ *     "version": {Int},
+ *     "staging_version": {Int},
+ *     "ontology": {String (this is the yml contents)},
+ *     "tags": {Array of String},
+ *     "timestamp": {Double}
+ *   }
+*/
+const getOntologyById = async (id) => {
+  Logger.info(`Calling ${DART_SERVICE_URL}/ontologies`);
+  const options = {
+    url: `${DART_SERVICE_URL}/ontologies?id=${id}`,
+    method: 'GET',
+    headers: {
+      Authorization: basicAuthToken
+    },
+    json: {},
+    timeout: TIMEOUT
+  };
+  const result = await requestAsPromise(options);
+  return result;
+};
+
+/**
+ * Returns the ontology yaml string
+ */
+const getOntologyByTenant = async (tenantId) => {
+  Logger.info(`Calling ${DART_SERVICE_URL}/ontologies`);
+  const options = {
+    url: `${DART_SERVICE_URL}/ontologies?tenant=${tenantId}`,
+    method: 'GET',
+    headers: {
+      Authorization: basicAuthToken
+    },
+    json: {},
+    timeout: TIMEOUT
+  };
+  const result = await requestAsPromise(options);
+  return result;
+};
 
 /**
  * Returns the stream of the raw document of document with corresponding id
@@ -33,7 +73,6 @@ const getRawDoc = async (docId) => {
   };
   return request(options);
 };
-
 
 /**
  * Sends a file to the DART server for parsing and returns document meta text.
@@ -69,7 +108,7 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
  */
 const queryReadersStatus = async (timestamp) => {
   // Format timestamp to yyyy-mm-dd hh:mm:ss
-  const t = moment.utc(+timestamp).format('YYYY-MM-DD HH:mm:ss');
+  const t = moment.utc(+timestamp).format('YYYY-MM-DDTHH:mm:ss');
 
   const formData = {
     metadata: JSON.stringify({
@@ -78,6 +117,8 @@ const queryReadersStatus = async (timestamp) => {
       }
     })
   };
+
+  Logger.info('Sending to DART ' + JSON.stringify(formData));
 
   const options = {
     url: `${DART_READER_URL}/query`,
@@ -94,6 +135,8 @@ const queryReadersStatus = async (timestamp) => {
 };
 
 module.exports = {
+  getOntologyById,
+  getOntologyByTenant,
   getRawDoc,
   uploadDocument,
   queryReadersStatus

@@ -12,7 +12,7 @@
 <script lang="ts">
 
 import _ from 'lodash';
-import { defineComponent, ref, Ref, computed } from 'vue';
+import { defineComponent, ref, Ref, PropType, computed } from 'vue';
 import { useStore } from 'vuex';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { D3SelectionINode, D3SelectionIEdge } from '@/graphs/abstract-cag-renderer';
@@ -20,7 +20,7 @@ import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import GraphSearch from '@/components/widgets/graph-search.vue';
 import { IGraph, moveToLabel } from 'svg-flowgraph';
-import { NodeParameter, EdgeParameter } from '@/types/CAG';
+import { NodeParameter, EdgeParameter, CAGModelSummary } from '@/types/CAG';
 
 export default defineComponent({
   name: 'ModelGraph',
@@ -28,6 +28,10 @@ export default defineComponent({
     GraphSearch
   },
   props: {
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      required: true
+    },
     data: {
       type: Object,
       default: () => ({})
@@ -84,6 +88,9 @@ export default defineComponent({
     const containerEl = this.$refs.container;
     this.renderer = new QuantitativeRenderer({
       el: containerEl,
+      useEdgeControl: true,
+      edgeControlOffsetType: 'percentage',
+      edgeControlOffset: 0.5,
       useAStarRouting: true,
       useStableLayout: true,
       useStableZoomPan: true,
@@ -101,14 +108,14 @@ export default defineComponent({
       this.$emit('node-drilldown', nodeSelection.datum().data);
     });
 
-    this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection: D3SelectionIEdge<EdgeParameter>, renderer: QuantitativeRenderer) => {
+    this.renderer.on('edge-click', (_evtName, _event: PointerEvent, edgeSelection: D3SelectionIEdge<EdgeParameter>, renderer: QuantitativeRenderer) => {
       const source = edgeSelection.datum().data.source;
       const target = edgeSelection.datum().data.target;
       const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
 
       renderer.resetAnnotations();
       renderer.neighborhoodAnnotation(neighborhood);
-      renderer.selectEdge(event, edgeSelection);
+      // renderer.selectEdge(event, edgeSelection);
       this.$emit('edge-click', edgeSelection.datum().data);
     });
 
@@ -125,6 +132,7 @@ export default defineComponent({
       if (this.renderer) {
         this.renderer.isGraphDirty = true;
         await this.renderer.setData(d);
+        this.renderer.setEngine(this.modelSummary.parameter.engine);
         this.renderer.setScenarioData(this.scenarioData);
         await this.renderer.render();
         this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
