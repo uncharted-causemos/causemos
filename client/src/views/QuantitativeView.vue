@@ -635,7 +635,7 @@ export default defineComponent({
         this.showOpenDataAnalysisConfirmation = true;
         // this.toaster('Data analysis created/updated successfully', 'success', false);
       } else {
-        this.toaster('Please have at least one qunatified node before opening data analysis!', 'error', false);
+        this.toaster('Please have at least one quantified node before opening data analysis!', 'error', false);
       }
     },
     onConfirmRedirectionToDataAnalysis() {
