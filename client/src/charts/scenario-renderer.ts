@@ -14,7 +14,6 @@ import {
   getTimeScaleOption
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
-// import { TimeScale } from '@/types/Enums';
 import {
   calculateTypicalChangeBracket,
   convertDistributionTimeseriesToRidgelines
@@ -60,12 +59,6 @@ function render(
       projection_start = scenario1.result.values[0].timestamp;
     }
   }
-
-
-  // Calculate timestamp of the earliest historical time to display
-  // const visibleHistoricalMonthCount = getVisibleHistoricalMonthCount(
-  //   time_scale
-  // );
 
   const visibleHistoricalMonthCount = nodeScenarioData.history_range;
   const historyStart = getTimestampAfterMonths(
