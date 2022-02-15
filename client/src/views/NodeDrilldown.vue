@@ -24,6 +24,11 @@
             {{ nodeConceptName }}
             <div class="button-group">
               <button
+                class="btn btn-primary"
+                @click="scheduleRun()">
+                Run
+              </button>
+              <button
                 v-if="areParameterValuesChanged"
                 class="btn btn-primary btn-call-for-action save-parameter-button"
                 @click="saveParameterValueChanges"
@@ -231,6 +236,10 @@ export default defineComponent({
     const toaster = useToaster();
     const project = computed(() => store.getters['app/project']);
     const nodeId = computed(() => store.getters['app/nodeId']);
+
+    const setRunImmediately = async (val: boolean) => {
+      await store.dispatch('model/setRunImmediately', val);
+    };
 
     const {
       modelSummary,
@@ -744,7 +753,8 @@ export default defineComponent({
       scenarioData,
       onCreateScenario,
       SEASONALITY_OPTIONS,
-      isDatacubeConfigDropdownOpen: ref(false)
+      isDatacubeConfigDropdownOpen: ref(false),
+      setRunImmediately
     };
   },
   methods: {
@@ -781,6 +791,17 @@ export default defineComponent({
         return;
       }
       this.setSelectedScenarioId(baseline.id);
+    },
+    scheduleRun() {
+      this.setRunImmediately(true);
+      router.push({
+        name: 'quantitative',
+        params: {
+          project: this.project,
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis
+        }
+      });
     }
   }
 });

@@ -92,6 +92,7 @@ export default defineComponent({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
       selectedScenarioId: 'model/selectedScenarioId',
+      runImmediately: 'model/runImmediately',
       tour: 'tour/tour'
     }),
     ready(): boolean {
@@ -147,7 +148,8 @@ export default defineComponent({
       setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
       setContextId: 'insightPanel/setContextId',
-      setDataState: 'insightPanel/setDataState'
+      setDataState: 'insightPanel/setDataState',
+      setRunImmediately: 'model/setRunImmediately'
     }),
     async onCreateScenario(scenarioInfo: { name: string; description: string }) {
       if (this.scenarios === null) {
@@ -392,9 +394,10 @@ export default defineComponent({
 
       // 5. Rebuild scenarios' result if necessary
       // If we had training in the previous cycle, it means most likely analysts want to rerfresh scenarios anyway.
-      if (hasEmptyScenarioResults || trainingInPreviousCycle === true) {
+      if (hasEmptyScenarioResults || trainingInPreviousCycle === true || this.runImmediately === true) {
         scenarios = await this.runScenarios(scenarios);
       }
+      this.setRunImmediately(false);
 
       // 6. Finally we are done and kick off the relevant events
       this.setSelectedScenarioId(scenarioId);
