@@ -53,8 +53,6 @@ export interface DatacubeAttribute {
   is_visible?: boolean;
 }
 
-export type DimensionInfo = ModelParameter | DatacubeFeature;
-
 export interface ModelParameter extends DatacubeAttribute {
   is_drilldown: boolean;
   data_type: ModelParameterDataType;
@@ -73,6 +71,8 @@ export interface DatacubeFeature extends DatacubeAttribute {
     spatial_resolution: number[];
   };
 }
+
+export type DimensionInfo = ModelParameter | DatacubeFeature;
 
 export interface DatasetEditable {
   name: string,

@@ -1973,7 +1973,12 @@ const createScales = (
         // a numerical continuous dimensions
         const min = dim?.min;
         const max = dim?.max;
-        dataExtent = [min ?? 0, max ?? 0];
+        if (_.isFinite(min) && _.isFinite(max)) {
+          dataExtent = [min ?? 0, max ?? 0];
+        } else {
+          // derive from data if min/max are invalid
+          dataExtent = d3.extent(data.map(point => +point[name]));
+        }
       }
     } else {
       dataExtent = d3.extent(data.map(point => +point[name]));
