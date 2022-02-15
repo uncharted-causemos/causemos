@@ -404,10 +404,7 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
       indicator_name: indicatorData.name || '',
       indicator_id: indicatorData.id ?? null,
       indicator_time_series: indicatorData.timeseries || [],
-      indicator_time_series_range: {
-        start: modelParameter.indicator_time_series_range.start,
-        end: modelParameter.indicator_time_series_range.end
-      },
+      history_range: modelParameter.history_range,
       projection_start: modelParameter.projection_start,
       time_scale: modelParameter.time_scale,
       min: indicatorData.min,
@@ -547,7 +544,6 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Pol
       parameter: {
         constraints: [],
         num_steps: numSteps,
-        indicator_time_series_range: modelSummary.parameter.indicator_time_series_range,
         projection_start: modelSummary.parameter.projection_start
       },
       is_baseline: true
@@ -604,7 +600,6 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
   });
 
   // Reset time ranges to match with the model's parameterization
-  scenario.parameter.indicator_time_series_range = modelParameter.indicator_time_series_range;
   scenario.parameter.projection_start = modelParameter.projection_start;
   scenario.parameter.num_steps = numSteps;
   return scenario;
@@ -822,6 +817,15 @@ export const historicalDataUncertaintyColor = (timeseries: TimeseriesPoint[], pr
   return background;
 };
 
+export const decodeWeights = (weights: number[]) => {
+  const w1 = weights[0];
+  const w2 = weights[1];
+  const weightType = w1 > w2 ? 'level' : 'trend';
+  const weightValue = w1 > w2 ? w1 : w2;
+  return { weightType, weightValue };
+};
+
+
 export default {
   getProjectModels,
   getSummary,
@@ -876,6 +880,8 @@ export default {
   cleanConstraints,
 
   historicalDataUncertaintyColor,
+
+  decodeWeights,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,
