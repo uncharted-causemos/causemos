@@ -1740,7 +1740,8 @@ export default defineComponent({
       availableQualifiers,
       initialSelectedQualifierValues,
       initialNonDefaultQualifiers,
-      activeFeature
+      activeFeature,
+      isRawDataLayerSelected
     );
 
     const {

@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
 import DomainProjectOverview from '@/views/DomainProjectOverview.vue';
+import DatasetOverview from '@/views/DatasetOverview.vue';
 import AnalysisProjectOverview from '@/views/AnalysisProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import NewDomainProject from '@/views/NewDomainProject.vue';
@@ -14,6 +15,7 @@ import NotFound from '@/views/NotFound.vue';
 import DatacubeDrilldown from '@/views/DatacubeDrilldown';
 import CompAnalysis from '@/views/CompAnalysis';
 import ModelPublishingExperiment from '@/views/ModelPublishingExperiment';
+import IndicatorPublishingExperiment from '@/views/IndicatorPublishingExperiment';
 import NodeCompExperiment from '@/views/NodeCompExperiment';
 import NodeDrilldown from '@/views/NodeDrilldown';
 import NodeDataExplorer from '@/views/NodeDataExplorer.vue';
@@ -73,6 +75,11 @@ const routes = [
     component: DomainProjectOverview
   },
   {
+    path: '/:projectType/:project/datasetOverview',
+    name: 'datasetOverview',
+    component: DatasetOverview
+  },
+  {
     path: '/:projectType/:project/data/:analysisId',
     name: 'data',
     component: DatacubeDrilldown,
@@ -100,6 +107,11 @@ const routes = [
     path: '/:projectType/:project/model-publishing-experiment',
     name: 'modelPublishingExperiment',
     component: ModelPublishingExperiment
+  },
+  {
+    path: '/:projectType/:project/indicator-publishing-experiment',
+    name: 'indicatorPublishingExperiment',
+    component: IndicatorPublishingExperiment
   },
   // {
   //   path: '/graph-experiment',

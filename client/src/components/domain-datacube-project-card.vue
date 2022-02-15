@@ -20,18 +20,18 @@
         {{project.name}}
       </span>
       <div class="table-column">
-        {{ project.ready_instances.length }}
+        {{ project.numReady }}
       </div>
-      <div class="table-column">
-        <span :style="{color: project.draft_instances.length > 0 ? 'red' : 'black'}">{{ project.draft_instances.length }}</span>
+      <div v-if="project.type !== 'dataset'" class="table-column">
+        <span :style="{color: project.numDraft > 0 ? 'red' : 'black'}">{{ project.numDraft }}</span>
       </div>
       <div class="table-column extra-wide overflow-ellipsis">
-        {{ projectSource }}
+        {{ project.source }}
       </div>
       <div class="table-column">
-        {{ dateFormatter(project.modified_at, 'MMM DD, YYYY') }}
+        {{ dateFormatter(project.modifiedAt, 'MMM DD, YYYY') }}
       </div>
-      <div class="table-column extra-small">
+      <div v-if="project.type !== 'dataset'" class="table-column extra-small">
         <small-icon-button :use-white-bg="true" @click.stop="showWarningModal">
           <i class="fa fa-fw fa-trash" />
         </small-icon-button>
@@ -49,7 +49,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { DomainProject } from '@/types/Common';
+import { DatacubeFamily } from '@/types/Common';
 import SmallIconButton from './widgets/small-icon-button.vue';
 
 /**
@@ -64,21 +64,8 @@ export default defineComponent({
   },
   props: {
     project: {
-      type: Object as PropType<DomainProject>,
+      type: Object as PropType<DatacubeFamily>,
       default: () => ({})
-    }
-  },
-  computed: {
-    projectSource(): string {
-      if (this.project) {
-        if (this.project.source) {
-          return this.project.source;
-        }
-        if (this.project.maintainer && this.project.maintainer.length > 0) {
-          return this.project.maintainer[0].organization;
-        }
-      }
-      return '';
     }
   },
   setup() {
@@ -112,7 +99,7 @@ export default defineComponent({
       // Reset filters every time we open a new project
       this.clearLastQuery();
       this.$router.push({
-        name: 'domainDatacubeOverview',
+        name: this.project.type === 'dataset' ? 'datasetOverview' : 'domainDatacubeOverview',
         params: {
           project: this.project.id as string,
           projectType: this.project.type

@@ -24,7 +24,7 @@ export enum DatacubeType {
 
 export enum ProjectType {
   Model = 'model',
-  Indicator = 'indicator',
+  Dataset = 'dataset',
   Analysis = 'analysis'
 }
 

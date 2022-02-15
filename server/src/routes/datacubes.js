@@ -35,6 +35,15 @@ router.put('/:datacubeId/deprecate', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * POST Bulk update multiple datacubes
+ */
+router.post('/bulk-update', asyncHandler(async (req, res) => {
+  const deltas = req.body.deltas;
+  const result = await datacubeService.updateDatacubes(deltas);
+  res.json(result);
+}));
+
+/**
  * Return all datacubes (models and indicators) that match the provided filter.
  */
 router.get('/', asyncHandler(async (req, res) => {
@@ -67,7 +76,6 @@ router.get('/facets', asyncHandler(async (req, res) => {
   res.json(facetsResult);
 }));
 
-
 /**
  * GET Search fields based on partial matches
  **/
@@ -78,13 +86,22 @@ router.get('/suggestions', asyncHandler(async (req, res) => {
   res.json(results);
 }));
 
-
 /**
  * GET Search for data cubes based on query string
  */
 router.get('/datacube-suggestions', asyncHandler(async (req, res) => {
   const q = req.query.q;
   const result = await searchService.rawDatacubeSearch(q);
+  res.json(result);
+}));
+
+/**
+ * GET Search for data cubes based on query string
+ */
+router.get('/datasets', asyncHandler(async (req, res) => {
+  const type = req.query.type || 'indicator';
+  const limit = req.query.limit || 0;
+  const result = await datacubeService.getDatasets(type, limit);
   res.json(result);
 }));
 
