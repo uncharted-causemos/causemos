@@ -66,14 +66,14 @@
             <div v-if="param.data_type === ModelParameterDataType.Numerical" class="numeric-param-range">
               <input
                 v-model="param.min"
-                type="text"
+                type="number"
                 class="model-param-range-text"
                 placeholder="min"
                 @keyup.enter="onParamRangeUpdated"
               >
               <input
                 v-model="param.max"
-                type="text"
+                type="number"
                 class="model-param-range-text"
                 style="margin-left: 4px"
                 placeholder="max"
@@ -248,7 +248,12 @@ import { computed, defineComponent, PropType, ComputedRef, toRefs, Ref, ref } fr
 import _ from 'lodash';
 import { DatacubeFeature, FeatureQualifier, Model, ModelParameter } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
-import { DatacubeGenericAttributeVariableType, FeatureQualifierRoles, ModelParameterDataType } from '@/types/Enums';
+import {
+  DatacubeAttributeVariableType,
+  DatacubeGenericAttributeVariableType,
+  FeatureQualifierRoles,
+  ModelParameterDataType
+} from '@/types/Enums';
 import ModalEditParamChoices from '@/components/modals/modal-edit-param-choices.vue';
 import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import { getOutputs } from '@/utils/datacube-util';
@@ -291,9 +296,24 @@ export default defineComponent({
         .map(val => ({ displayName: getDataTypeDisplayName(val), value: val })), 'displayName'
     );
 
+
+    // Current Conversion Rules:
+    //
+    // string param cannot be made continuous, can only be switched between discrete and freeform
+    // params of type string, geo, date. and date-range are convertible to each other without any validation
+    // numeric params cannot be made freeform, only discrete and continuous
+    // numeric params can have their range updated, or choices added
+
+    const isDiscrete = (dataType: ModelParameterDataType) => {
+      return dataType === ModelParameterDataType.Nominal || dataType === ModelParameterDataType.Ordinal || dataType === ModelParameterDataType.Freeform;
+    };
+    const isNumber = (type: DatacubeAttributeVariableType) => {
+      return type === DatacubeGenericAttributeVariableType.Int || type === DatacubeGenericAttributeVariableType.Float;
+    };
+
     const getValidDataTypesForParam = (paramType: DatacubeGenericAttributeVariableType) => {
       // remove freeform from numeric types
-      if (paramType === DatacubeGenericAttributeVariableType.Int || paramType === DatacubeGenericAttributeVariableType.Float) {
+      if (isNumber(paramType)) {
         return paramDataTypeGroupButtons.filter(item => item.value !== ModelParameterDataType.Freeform);
       }
       // remove continuous from string param
@@ -305,14 +325,14 @@ export default defineComponent({
 
     const setParamDataType = (newDataType: ModelParameterDataType, param: ModelParameter) => {
       // convert continuous to discrete
-      if (newDataType === ModelParameterDataType.Nominal || newDataType === ModelParameterDataType.Ordinal || newDataType === ModelParameterDataType.Freeform) {
+      if (isDiscrete(newDataType)) {
         param.choices = []; // this will trigger loading choices from existing runs
         param.choices_labels = _.clone(param.choices);
         param.data_type = newDataType;
       }
       // convert discrete to numeric/continuous
       //  requires an initial (valid) range: min and max values
-      if ((param.data_type === ModelParameterDataType.Nominal || param.data_type === ModelParameterDataType.Ordinal || param.data_type === ModelParameterDataType.Freeform) && (param.type === DatacubeGenericAttributeVariableType.Int || param.type === DatacubeGenericAttributeVariableType.Float) && newDataType === ModelParameterDataType.Numerical && param.min !== undefined && param.max !== undefined && param.min !== null && param.max !== null) {
+      if (isDiscrete(param.data_type) && isNumber(param.type) && newDataType === ModelParameterDataType.Numerical) {
         param.choices = undefined;
         param.choices_labels = undefined;
         param.data_type = newDataType;

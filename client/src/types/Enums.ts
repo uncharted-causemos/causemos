@@ -52,14 +52,11 @@ export enum DatacubeGenericAttributeVariableType {
   Geo = 'geo'
 }
 
-// ANY param can be converted to str
-//
 // numeric params can be converted to another numeric param type (i.e., int <--> float)
 //  and can have their min/max values updated
 // also, numeric param can be discrete (data type: nominal|ordinal) or continuous (data type: numerical)
 // can a numeric param be freeform?
 //
-// a string param cannot be converted to any other type
 // a string param can have its data type converted between nominal|ordinal to freeform
 //  nominal|ordinal assumes a pre-defined list of options vs freeform
 
