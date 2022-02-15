@@ -102,14 +102,14 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     chart.selectAll('.node-header').classed('node-selected', false);
     chart.selectAll('.edge-control').remove();
 
-    chart.selectAll('.node-container') // Clean up previous highlights
+    chart.selectAll('.node-container, .node-container-outer') // Clean up previous highlights
       .style('border-radius', DEFAULT_STYLE.node.borderRadius)
       .style('stroke', DEFAULT_STYLE.node.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
   }
 
   selectNode(node: D3SelectionINode<V>, color: string) {
-    node.select('.node-container')
+    node.selectAll('.node-container, .node-container-outer')
       .style('border-radius', DEFAULT_STYLE.node.highlighted.borderRadius)
       .style('stroke', _.isEmpty(color) ? DEFAULT_STYLE.node.highlighted.stroke : color)
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
