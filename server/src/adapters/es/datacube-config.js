@@ -26,7 +26,7 @@ const FIELDS = Object.freeze({
     level: FIELD_LEVELS.DATACUBE
   },
   keyword: { // For search only
-    fields: ['name', 'description', 'family_name', 'category',
+    fields: ['name', 'description', 'family_name', 'category', 'domains',
       'maintainer.name', 'maintainer.organization', 'tags',
       'geography.country', 'geography.admin1', 'geography.admin2', 'geography.admin3',
       'parameters.name', 'parameters.display_name', 'parameters.description',
@@ -42,6 +42,12 @@ const FIELDS = Object.freeze({
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
+  domain: {
+    fields: ['domains'],
+    aggFields: ['domains.raw'],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.DATACUBE
+  },
   createdAt: {
     fields: ['created_at'],
     type: FIELD_TYPES.DATE,
@@ -49,6 +55,16 @@ const FIELDS = Object.freeze({
   },
   description: {
     fields: ['description'],
+    type: FIELD_TYPES.REGEXP,
+    level: FIELD_LEVELS.DATACUBE
+  },
+  dataSensitivity: {
+    fields: ['data_sensitivity'],
+    type: FIELD_TYPES.REGEXP,
+    level: FIELD_LEVELS.DATACUBE
+  },
+  dataQuality: {
+    fields: ['data_quality'],
     type: FIELD_TYPES.REGEXP,
     level: FIELD_LEVELS.DATACUBE
   },
@@ -73,6 +89,11 @@ const FIELDS = Object.freeze({
   admin3: {
     fields: ['geography.admin3'],
     aggFields: ['geography.admin3.raw'],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.DATACUBE
+  },
+  geoGranularity: {
+    fields: ['data_info.region_levels'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },

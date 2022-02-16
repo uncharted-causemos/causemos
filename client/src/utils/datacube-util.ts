@@ -79,6 +79,12 @@ export const SUGGESTION_CODE_TABLE: SuggestionFieldMap = {
     searchMessage: 'Select an administrative area',
     filterFunc: filterArray
   },
+  GEO_GRANULARITY: {
+    ...field('geoGranularity', 'Geo Granularity'),
+    ...searchable('Geo Granularity', false),
+    searchMessage: 'Select a level',
+    filterFunc: filterArray
+  },
   OUTPUT_NAME: {
     ...field('variableName', 'Output Name'),
     ...searchable('Output Name', false),
@@ -97,11 +103,14 @@ export const SUGGESTION_CODE_TABLE: SuggestionFieldMap = {
 };
 
 export const CATEGORY = 'category';
+export const DOMAIN = 'domain';
 export const TAGS = 'tags';
 export const COUNTRY = 'country';
 export const ADMIN1 = 'admin1';
 export const ADMIN2 = 'admin2';
 export const ADMIN3 = 'admin3';
+export const GEO_GRANULARITY = 'geoGranularity';
+export const PERIOD = 'period';
 export const PARAMETERS = 'parameters';
 export const DATASET_NAME = 'name';
 export const VARIABLE_UNIT = 'variableUnit';
@@ -119,49 +128,41 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
   admin2: 'Administrative Area 2',
   admin3: 'Administrative Area 3',
   category: 'Category',
+  domain: 'Domain',
   country: 'Country',
+  geoGranularity: 'Geo Granularity',
+  period: 'Period',
   maintainerName: 'Maintainer',
-  maintainerOrg: 'Organization',
+  maintainerOrg: 'Source',
   tags: 'Tags',
   temporalResolution: 'Temporal Resolution',
-  type: 'Datacube Types',
+  type: 'Datacube Type',
   status: 'Datacube Status',
   name: 'Dataset Name',
-  variableUnit: 'Output Units',
+  variableUnit: 'Variable Unit',
   familyName: 'Family Name'
 };
 
 export const FACET_FIELDS: string [] = [
   TYPE,
-  CATEGORY,
-  TAGS,
+  DOMAIN,
   COUNTRY,
-  ADMIN1,
-  ADMIN2,
-  ADMIN3,
-  PARAMETERS,
-  DATASET_NAME,
-  VARIABLE_UNIT,
-  FAMILY_NAME,
+  GEO_GRANULARITY,
+  // PERIOD,
   TEMPORAL_RESOLUTION,
-  MAINTAINER_NAME,
   MAINTAINER_ORG,
+  VARIABLE_UNIT,
   STATUS
 ];
 
 export const NODE_FACET_FIELDS: string [] = [
-  TAGS,
+  DOMAIN,
   COUNTRY,
-  ADMIN1,
-  ADMIN2,
-  ADMIN3,
-  PARAMETERS,
-  DATASET_NAME,
-  VARIABLE_UNIT,
-  FAMILY_NAME,
+  GEO_GRANULARITY,
+  // PERIOD,
   TEMPORAL_RESOLUTION,
-  MAINTAINER_NAME,
   MAINTAINER_ORG,
+  VARIABLE_UNIT,
   STATUS
 ];
 
