@@ -157,6 +157,27 @@ export default defineComponent({
       }
     }
 
+    watch(
+      () => [
+        initialViewConfig.value,
+        metadata.value
+      ],
+      () => {
+        if (metadata.value) {
+          if (_.isEmpty(initialViewConfig.value) && !_.isEmpty(metadata.value.default_view)) {
+            const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+            let currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
+            if (datacubeVarId !== undefined) {
+              currentAnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId && item.datacubeId === datacubeVarId);
+            }
+            currentAnalysisItem.viewConfig = metadata.value.default_view;
+            store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+            initialViewConfig.value = metadata.value.default_view;
+          }
+        }
+      }
+    );
+
     watchEffect(() => {
       if (metadata.value) {
         store.dispatch('insightPanel/setContextId', [metadata.value.id]);
