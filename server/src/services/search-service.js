@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
+const requestAsPromise = rootRequire('/util/request-as-promise');
 const { client, searchAndHighlight, queryStringBuilder } = rootRequire('/adapters/es/client');
 const { RESOURCE } = rootRequire('/adapters/es/adapter');
 const { getCache } = rootRequire('/cache/node-lru-cache');
@@ -375,11 +376,99 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
   return results.body.hits.hits.map(d => d._source);
 };
 
+const indicatorSearchConceptAligner = async (projectId, node, k) => {
+  const ontologyMap = getCache(projectId).ontologyMap;
+  const ontologyValues = Object.values(ontologyMap);
+  const ontologyKeys = Object.keys(ontologyMap);
+  const set = new Set(ontologyKeys.map(d => _.last(d.split('/'))));
+
+  const indicators = [];
+  // match using the component that gets the highest matching score
+  for (let i = 0; i < 1; i++) { // i < 1 to work with first component for now
+    const component = node.components[i];
+    const memberStrings = reverseFlattenedConcept(component, set);
+    const members = ontologyValues.filter(d => {
+      return memberStrings.includes(_.last(d.label.split('/')));
+    }).map(d => d.label);
+
+    const homeId = {};
+    let foundConcept = false;
+    // just use the first concept found for now
+    for (const member of members) {
+      if (!foundConcept && member.includes('concept')) {
+        homeId.concept = member;
+        foundConcept = true;
+      }
+      // use process if it exists in the reversed ontology
+      if (member.includes('process')) {
+        homeId.process = member;
+      }
+    }
+
+    const options = {
+      method: 'PUT',
+      url: `http://linking.cs.arizona.edu/v1/compositionalSearch?maxHits=${k}&threshold=${0.3}`,
+      headers: {
+        'Content-type': 'application/json',
+        'Accept': 'application/json'
+      },
+      json: {
+        homeId,
+        awayId: [] // FIXME: next step involves constructing an adjacency list to make awayIds
+      }
+    };
+    try {
+      const response = await requestAsPromise(options);
+      if (response.length > 0) {
+        // need to make sure we have the indicator
+        for (const result of response) {
+          if (result.datamart.datamartId === 'DOJO_Indicator') {
+            const dataId = result.datamart.datasetId;
+            const name = result.datamart.variableId;
+            const candidates = await indicatorSeachByDatasetId(dataId, name);
+            if (candidates.length > 0) {
+              indicators.push({ score: result.score, candidate: candidates[0] });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  return indicators.sort((a, b) => b.score - a.score).slice(0, k).map(x => x.candidate);
+};
+
+const indicatorSeachByDatasetId = async (dataId, name) => {
+  const searchPayload = {
+    index: RESOURCE.DATA_DATACUBE,
+    size: 1,
+    body: {
+      query: {
+        bool: {
+          must: [
+            {
+              term: { data_id: dataId }
+            },
+            {
+              term: { 'outputs.name': name }
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  const results = await client.search(searchPayload);
+  return results.body.hits.hits.map(d => d._source);
+};
+
 
 
 module.exports = {
   statementConceptEntitySearch,
   rawConceptEntitySearch,
   rawDatacubeSearch,
-  indicatorSearchByConcepts
+  indicatorSearchByConcepts,
+  indicatorSearchConceptAligner
 };
