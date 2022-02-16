@@ -19,7 +19,7 @@
             >
               <div>
                 <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-                <span class="datacube-name">{{metadata.name}} </span>
+                <span class="datacube-name"> | {{metadata.name}} </span>
                 <!--
                 <span v-if="metadata.status === DatacubeStatus.Deprecated" v-tooltip.top-center="'Show current version of datacube'" style="margin-left: 1rem" :style="{ backgroundColor: statusColor, cursor: 'pointer' }" @click="showCurrentDatacube">{{ statusLabel }} <i class="fa fa-search"></i></span>
                 -->
