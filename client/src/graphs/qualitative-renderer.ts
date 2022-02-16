@@ -396,8 +396,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .style('fill', DEFAULT_STYLE.node.fill);
 
     selection
-      .selectAll<any, INode<NodeParameter>>('.node-container-outer')
       .filter(d => d.data.components.length > 1)
+      .selectAll<any, INode<NodeParameter>>('.node-container-outer')
       .style('display', null);
 
     selection.append('rect')
