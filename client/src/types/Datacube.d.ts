@@ -81,6 +81,7 @@ export interface DatasetEditable {
   category: string[],
   maintainer: DatacubeMaintainer,
   tags: string[],
+  domains: string[]
 }
 
 export interface Dataset extends DatasetEditable {
