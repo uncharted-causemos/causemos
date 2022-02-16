@@ -66,7 +66,6 @@
           rel="noopener noreferrer">
           ({{metadata.maintainer.website}})
         </a>
-        <span v-else></span>
       </div>
     </div>
   </div>
