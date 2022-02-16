@@ -180,6 +180,26 @@ export default defineComponent({
       initialDataConfig.value = datacubeAnalysisItem.dataConfig;
     }
 
+    watch(
+      () => [
+        initialViewConfig.value,
+        metadata.value
+      ],
+      () => {
+        if (metadata.value) {
+          if (_.isEmpty(initialViewConfig.value) && !_.isEmpty(metadata.value.default_view)) {
+            const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+            const datacubeAnalysisItem = updatedAnalysisItems.find(item => item.id === props.id && item.datacubeId === datacubeId.value);
+            if (datacubeAnalysisItem) {
+              datacubeAnalysisItem.viewConfig = metadata.value.default_view;
+              store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+            }
+            initialViewConfig.value = metadata.value.default_view;
+          }
+        }
+      }
+    );
+
     watchEffect(() => {
       if (metadata.value) {
         outputs.value = getOutputs(metadata.value);

@@ -14,6 +14,8 @@ import { calculateDiff } from '@/utils/value-util';
 
 const DEFAULT_LINE_COLOR = '#000';
 const DEFAULT_LINE_WIDTH = 2;
+const DEFAULT_XAXIS_TICK_COUNT = 4;
+const DEFAULT_XAXIS_TICK_SIZE = 2;
 
 
 export function applyReference (
@@ -183,6 +185,21 @@ const aggregateRefTemporalTimeseries = (temporalTimeseries: Timeseries[]): Times
   return aggregratedRefSeries;
 };
 
+export function xAxis(
+  xScale: d3.ScaleLinear<number, number>,
+  timestampFormatter: (timestamp: any) => string,
+  xAxisTickCount = DEFAULT_XAXIS_TICK_COUNT,
+  xAxisTickSizePx = DEFAULT_XAXIS_TICK_SIZE
+
+) {
+  const xAxis = d3
+    .axisBottom(xScale)
+    .tickSize(xAxisTickSizePx)
+    .tickFormat(timestampFormatter)
+    .ticks(xAxisTickCount);
+  return xAxis;
+}
+
 export function renderAxes(
   selection: D3GElementSelection,
   xScale: d3.ScaleLinear<number, number>,
@@ -198,15 +215,9 @@ export function renderAxes(
   yAxisWidth: number,
   paddingRight: number,
   xAxisHeight: number,
-  xAxisTickCount = 4,
-  xAxisTickSizePx = 2
+  xAxisTickCount = DEFAULT_XAXIS_TICK_COUNT,
+  xAxisTickSizePx = DEFAULT_XAXIS_TICK_SIZE
 ) {
-  const xAxis = d3
-    .axisBottom(xScale)
-    .tickSize(xAxisTickSizePx)
-    .tickFormat(timestampFormatter)
-    .ticks(xAxisTickCount);
-
   const yAxisTicks = calculateGenericTicks(
     yScale.domain()[0],
     yScale.domain()[1]
@@ -216,20 +227,21 @@ export function renderAxes(
     .tickSize(width - yAxisWidth - paddingRight)
     .tickFormat(valueFormatter)
     .tickValues(yAxisTicks);
-  selection
+  const xAxisSelection = selection
     .append('g')
     .classed('xAxis', true)
     .style('pointer-events', 'none')
-    .call(xAxis)
+    .call(xAxis(xScale, timestampFormatter, xAxisTickCount, xAxisTickSizePx))
     .style('font-size', '10px')
     .attr('transform', translate(0, height - xAxisHeight));
-  selection
+  const yAxisSelection = selection
     .append('g')
     .classed('yAxis', true)
     .style('pointer-events', 'none')
     .call(yAxis)
     .style('font-size', '10px')
     .attr('transform', translate(width - paddingRight, 0));
+  return [xAxisSelection, yAxisSelection];
 }
 
 export function calculateYearlyTicks (
@@ -346,13 +358,14 @@ export function renderLine(
     .line<TimeseriesPoint>()
     .x(d => xScale(d.timestamp))
     .y(d => yScale(d.value));
-  parentGroupElement
+  const lineSelection = parentGroupElement
     .append('path')
     .classed('segment-line', true)
     .attr('d', () => line(points))
     .style('fill', 'none')
     .style('stroke', color || DEFAULT_LINE_COLOR)
     .style('stroke-width', width || DEFAULT_LINE_WIDTH);
+  return lineSelection;
 }
 
 
