@@ -84,7 +84,7 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
         ]
       }, {});
       if (cube) {
-        result.set(node.concept, cube);
+        result.set(node.concept, [cube]);
       }
       continue;
     }
@@ -105,7 +105,7 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
         ]
       }, {});
       if (cube) {
-        result.set(node.concept, cube);
+        result.set(node.concept, [cube]);
       }
       continue;
     }
@@ -114,13 +114,26 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
     nodesNotInHistory.push(node);
   }
 
+  const nodesNotInConceptAligner = [];
+  // get top k matches
+  const k = 3;
+  // Get matches from UAz
+  for (const node of nodesNotInHistory) {
+    const indicators = await searchService.indicatorSearchConceptAligner(model.project_id, node, k);
+    Logger.info(`Found ${indicators.length} candidates for node ${node.concept}`);
+    if (indicators.length === 0) {
+      nodesNotInConceptAligner.push(node);
+    } else {
+      result.set(node.concept, indicators);
+    }
+  }
 
   // 2. Run search against datacubes
-  for (const node of nodesNotInHistory) {
+  for (const node of nodesNotInConceptAligner) {
     const concepts = node.components;
     const candidates = await searchService.indicatorSearchByConcepts(model.project_id, concepts);
     if (!_.isEmpty(candidates)) {
-      result.set(node.concept, candidates[0]);
+      result.set(node.concept, [candidates[0]]);
     }
   }
   return result;
@@ -166,11 +179,15 @@ const setDefaultIndicators = async (modelId, resolution) => {
   const updates = [];
 
   for (const node of nodeParameters) {
+    const matches = conceptIndicatorMap.get(node.concept);
     const updatePayload = {
       id: node.id
     };
     if (conceptIndicatorMap.has(node.concept)) {
-      const cube = conceptIndicatorMap.get(node.concept);
+      const cube = matches[0];
+      updatePayload.match_candidates = matches.map(match => {
+        return { id: match.id, dataId: match.data_id, displayName: match.outputs[0].display_name }
+      })
       updatePayload.parameter = {
         id: cube.id,
         name: cube.outputs[0].display_name,
