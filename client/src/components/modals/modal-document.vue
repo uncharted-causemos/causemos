@@ -3,17 +3,7 @@
     class="modal-document-container"
     @close="close()">
     <template #body>
-      <div v-if="pdfViewer"
-        class="toolbar">
-        Show raw text
-        <i v-if="showTextViewer === false" class="fa fa-lg fa-fw fa-toggle-off" @click="toggle" />
-        <i v-if="showTextViewer === true" class="fa fa-lg fa-fw fa-toggle-on" @click="toggle" />
-      </div>
-      <div ref="content">
-        Loading...
-      </div>
-      <div>
-        <hr>
+      <div class="metadata">
         <table v-if="documentData && textOnly">
           <tr>
             <td class="doc-label">Publication Date</td>
@@ -21,11 +11,24 @@
           </tr>
           <tr>
             <td class="doc-label">Publisher</td>
-            <td class="doc-value">{{ documentData.publisher_name }}</td>
+            <td v-if="!editable" class="doc-value">{{ publisher }}</td>
+            <td v-else class="doc-value">
+              <input v-model="publisher" />
+            </td>
           </tr>
           <tr>
             <td class="doc-label">Author</td>
-            <td class="doc-value">{{ documentData.author }}</td>
+            <td v-if="!editable" class="doc-value">{{ author }}</td>
+            <td v-else class="doc-value">
+              <input v-model="author" />
+            </td>
+          </tr>
+           <tr>
+            <td class="doc-label">Title</td>
+            <td v-if="!editable" class="doc-value">{{ title }}</td>
+            <td v-else class="doc-value">
+              <input v-model="title" />
+            </td>
           </tr>
           <tr>
             <td class="doc-label">Locations</td>
@@ -36,10 +39,35 @@
             <td class="doc-value">{{ documentData.ner_analytics.org.join(', ') }}</td>
           </tr>
         </table>
+        <hr />
+      </div>
+      <div v-if="pdfViewer"
+        class="toolbar">
+        Show raw text
+        <i v-if="showTextViewer === false" class="fa fa-lg fa-fw fa-toggle-off" @click="toggle" />
+        <i v-if="showTextViewer === true" class="fa fa-lg fa-fw fa-toggle-on" @click="toggle" />
+      </div>
+      <div ref="content">
+        Loading...
       </div>
     </template>
     <template #footer>
-      <div>
+        <button
+          v-if="!editable"
+          class="btn btn-md btn-secondary"
+          @click="edit()"
+        ><i class="fa fa-fw fa-edit" /> Edit</button>
+        <button
+          v-if="editable"
+          class="btn btn-md btn-secondary"
+          @click="save()"
+        ><i class="fa fa-fw fa-save" />Save</button>
+        <div class="spacer"></div>
+        <button
+          v-if="editable"
+          class="btn btn-md btn-secondary"
+          @click="cancel()"
+        >Cancel</button>
         <button
           class="btn btn-md btn-primary"
           @click="close()"
@@ -49,18 +77,17 @@
           class="btn btn-md btn-primary"
           @click="addToSearch()"
         >Add to search</button>
-      </div>
     </template>
   </modal>
 </template>
 
 <script>
-import API from '@/api/api';
 import Modal from '@/components/modals/modal';
 import { mapActions } from 'vuex';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
 import dateFormatter from '@/formatters/date-formatter';
+import { getDocument, updateDocument } from '@/services/document-service';
 
 const isPdf = (data) => {
   const fileType = data && data.file_type;
@@ -140,7 +167,11 @@ export default {
     textViewer: null,
     pdfViewer: null,
     textOnly: false,
-    showTextViewer: false
+    showTextViewer: false,
+    editable: false,
+    author: '',
+    publisher: '',
+    title: ''
   }),
   mounted() {
     this.refresh();
@@ -154,8 +185,7 @@ export default {
       this.fetchReaderContent();
     },
     async fetchReaderContent() {
-      const url = `documents/${this.documentId}`;
-      this.documentData = (await API.get(url)).data;
+      this.documentData = (await getDocument(this.documentId)).data;
       this.textViewer = createTextViewer(this.documentData.extracted_text);
 
 
@@ -186,6 +216,7 @@ export default {
           this.pdfViewer.search(this.textFragment);
         }
       }
+      this.setFieldsFromDocumentData();
     },
     toggle() {
       this.showTextViewer = !this.showTextViewer;
@@ -206,6 +237,30 @@ export default {
     },
     close() {
       this.$emit('close', null);
+    },
+    setFieldsFromDocumentData() {
+      this.author = this.documentData.author;
+      this.publisher = this.documentData.publisher_name;
+      this.title = this.documentData.doc_title;
+    },
+    edit() {
+      this.setFieldsFromDocumentData();
+      this.editable = true;
+    },
+    cancel() {
+      this.setFieldsFromDocumentData();
+      this.editable = false;
+    },
+    async save() {
+      this.editable = false;
+      const updatedData = {
+        id: this.documentData.id,
+        author: this.author,
+        docTitle: this.title,
+        publisherName: this.publisher
+      };
+      await updateDocument(updatedData);
+      this.refresh();
     }
   }
 };
@@ -213,7 +268,9 @@ export default {
 
 <style lang="scss" scoped>
 .modal-document-container {
-
+  .metadata {
+    margin-top: 2rem;
+  }
   .doc-label {
     vertical-align: baseline;
     width: 220px;
@@ -226,6 +283,9 @@ export default {
     text-align: left;
     padding: 1px 3px;
     max-width: 400px;
+    input {
+      width: 100%;
+    }
   }
 
   ::v-deep(.modal-container) {
@@ -238,13 +298,17 @@ export default {
 
     .modal-footer {
       display: flex;
-      justify-content: center;
+      align-content: flex-end;
+      .spacer {
+        flex: 1 1 auto;
+      }
     }
     .modal-body {
       padding: 0;
       margin: 0;
       height: 80vh;
       overflow-y: auto;
+      overflow-x: hidden;
     }
   }
   .toolbar {
