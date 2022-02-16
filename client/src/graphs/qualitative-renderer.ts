@@ -386,7 +386,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .classed('node-container-outer', true)
       .attr('x', -3)
       .attr('y', -3)
-      .attr('rx', DEFAULT_STYLE.node.borderRadius)
+      .attr('rx', DEFAULT_STYLE.node.borderRadius + 3)
       .attr('width', d => (d.width + 6) || 0)
       .attr('height', d => (d.height + 6) || 0)
       .style('stroke', DEFAULT_STYLE.node.stroke)

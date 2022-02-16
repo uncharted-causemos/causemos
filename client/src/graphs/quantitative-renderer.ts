@@ -85,7 +85,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       .classed('node-container-outer', true)
       .attr('x', -3)
       .attr('y', -3)
-      .attr('rx', DEFAULT_STYLE.node.borderRadius + 1)
+      .attr('rx', DEFAULT_STYLE.node.borderRadius + 3)
       .attr('width', d => d.width + 6)
       .attr('height', d => d.height + 6)
       .style('fill', DEFAULT_STYLE.node.fill)
