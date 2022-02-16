@@ -381,6 +381,25 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
+    selection
+      .append('rect')
+      .classed('node-container-outer', true)
+      .attr('x', -3)
+      .attr('y', -3)
+      .attr('rx', DEFAULT_STYLE.node.borderRadius + 3)
+      .attr('width', d => (d.width + 6) || 0)
+      .attr('height', d => (d.height + 6) || 0)
+      .style('stroke', DEFAULT_STYLE.node.stroke)
+      .style('stroke-width', DEFAULT_STYLE.node.strokeWidth)
+      .style('cursor', 'pointer')
+      .style('display', 'none')
+      .style('fill', DEFAULT_STYLE.node.fill);
+
+    selection
+      .filter(d => d.data.components.length > 1)
+      .selectAll<any, INode<NodeParameter>>('.node-container-outer')
+      .style('display', null);
+
     selection.append('rect')
       .classed('node-container', true)
       .attr('x', 0)
@@ -410,6 +429,11 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   }
 
   renderNodesUpdated(selection: D3SelectionINode<NodeParameter>) {
+    selection
+      .filter(d => d.data.components.length > 1)
+      .selectAll<any, INode<NodeParameter>>('.node-container-outer')
+      .style('display', null);
+
     selection
       .select('.node-label')
       .text(d => this.labelFormatter(d.label))
@@ -730,7 +754,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     const nodeHeight = node.datum().height || 0;
     const handleWidth = DEFAULT_STYLE.nodeHandles.width;
 
-    node.select('.node-container')
+    node.selectAll('.node-container, .node-container-outer')
       .style('border-radius', DEFAULT_STYLE.node.highlighted.borderRadius)
       .style('stroke', DEFAULT_STYLE.node.highlighted.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
@@ -898,7 +922,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('width', (d) => d.width)
       .attr('x', 0);
 
-    nodes.select('.node-container:not(.node-selected)')
+    nodes.selectAll('.node-container:not(.node-selected), .node-container-outer')
       .style('stroke', DEFAULT_STYLE.node.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
 

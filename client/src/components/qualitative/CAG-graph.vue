@@ -58,10 +58,11 @@ import {
   getEdgesFromConcepts,
   sortSuggestionsByEvidenceCount
 } from '@/utils/relationship-suggestion-util';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
-const mergeNodeColor = 'rgb(136, 255, 136)';
+const mergeNodeColor = SELECTED_COLOR;
 
 export default defineComponent({
   name: 'CAGGraph',
@@ -221,8 +222,9 @@ export default defineComponent({
 
     this.renderer.on('node-drag-move', (_evtName, _event, nodeSelection: D3SelectionINode<NodeParameter>, renderer: QualitativeRenderer) => {
       const nodeUI = nodeSelection.select('.node-ui');
-      const rect = nodeUI.select('rect');
+      const rect = nodeUI.select('.node-container');
       const nodeUIRect = rect.node();
+      mergeTargetNode = null;
 
       const others = renderer.chart.selectAll('.node-ui')
         .filter((d: any) => {
@@ -234,16 +236,24 @@ export default defineComponent({
         .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
         .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
 
+      nodeUI.selectAll('rect')
+        .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
+        .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
+
+
       others.each(function () {
         const otherNodeUI = d3.select(this);
-        const otherRect = otherNodeUI.select('rect');
+        const otherRect = otherNodeUI.select('.node-container');
         const otherNodeUIRect = otherRect.node();
 
         if (overlap(otherNodeUIRect as HTMLElement, nodeUIRect as HTMLElement, 0.5)) {
           mergeTargetNode = otherNodeUI as D3SelectionINode<NodeParameter>;
           otherRect
             .style('stroke', mergeNodeColor)
-            .style('stroke-width', 12);
+            .style('stroke-width', 6);
+          rect
+            .style('stroke', mergeNodeColor)
+            .style('stroke-width', 6);
         }
       });
     });
