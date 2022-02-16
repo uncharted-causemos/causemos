@@ -39,6 +39,10 @@ const filterArray = (result: string[], hint: string) => {
  * uses string-types while fields can have heterogeneous types.
 */
 export const CODE_TABLE: FieldMap = {
+  ID: {
+    ...field('id', 'Id'),
+    ...searchable('Id', false)
+  },
   ONTOLOGY_MATCH: {
     ...field('conceptName', 'Concept'),
     ...searchable('Concept', false)

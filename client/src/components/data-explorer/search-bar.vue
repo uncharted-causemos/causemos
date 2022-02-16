@@ -77,6 +77,7 @@ export default {
     // Defines a list of searchable fields for LEX
     this.pills = [
       new TextPill(CODE_TABLE.SEARCH),
+      new TextPill(CODE_TABLE.ID),
       new DynamicValuePill(CODE_TABLE.ONTOLOGY_MATCH,
         suggestionService.getDatacubeFieldSuggestionFunction(CODE_TABLE.ONTOLOGY_MATCH.field),
         'Select one or more ontological concepts',

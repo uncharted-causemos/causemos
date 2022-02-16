@@ -112,6 +112,10 @@
                     >Edit datacube settings</div>
                     <div
                       class="dropdown-option"
+                      @click="openDataExplorerWithSuggestions"
+                    ><i class="fa fa-fw fa-search" />View suggestions</div>
+                    <div
+                      class="dropdown-option"
                       @click="openDataExplorer"
                     ><i class="fa fa-fw fa-search" />Choose a different datacube</div>
                     <div
