@@ -406,15 +406,15 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
     }
 
     const options = {
-      method: 'PUT',
-      url: 'http://linking.cs.arizona.edu/v1/compositionalSearch?maxHits=' + k.toString() + '&threshold=0.3',
+      method: "PUT",
+      url: "http://linking.cs.arizona.edu/v1/compositionalSearch?maxHits=" + k.toString() + "&threshold=0.3",
       headers: {
-        'Content-type': 'application/json',
-        'Accept': 'application/json'
+        "Content-type": "application/json",
+        "Accept": "application/json"
       },
       json: {
         homeId,
-        'awayId': [] // next step involves constructing an adjacency list to make awayIds
+        "awayId": [] // next step involves constructing an adjacency list to make awayIds
       }
     };
     try {
@@ -428,7 +428,7 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
             const variableName = result.datamart.variableName
             const candidates = await indicatorSeachByDatasetId(dataId, variableName);
             if (candidates.length > 0) {
-              indicators.push([result.score, candidates[0]])
+              indicators.push({ score: result.score, candidate: candidates[0] });
             }
           }
         }
@@ -438,7 +438,7 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
       console.error(error);
     }
   }
-  return indicators.sort((a, b) => b[0] - a[0]).slice(0, k).map(x => x[1]);
+  return indicators.sort((a, b) => b.score - a.score).slice(0, k).map(x => x.candidate);
 }
 
 const indicatorSeachByDatasetId = async (dataId, variableName) => {
@@ -450,10 +450,10 @@ const indicatorSeachByDatasetId = async (dataId, variableName) => {
         bool: {
           must: [
             {
-              match: { data_id: dataId }
+              term: { data_id: dataId }
             },
             {
-              match: { "outputs.display_name": variableName }
+              term: { "outputs.display_name": variableName }
             }
           ]
         }
