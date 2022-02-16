@@ -45,13 +45,6 @@
               <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
               <span v-if="metadata.status === DatacubeStatus.Deprecated" v-tooltip.top-center="'Show current version of datacube'" style="margin-left: 1rem" :style="{ backgroundColor: statusColor, cursor: 'pointer' }" @click="showCurrentDatacube">{{ statusLabel }} <i class="fa fa-search"></i></span>
             </h5>
-            <disclaimer
-              v-if="scenarioCount > 0"
-              :message="
-                scenarioCount +
-                  ' scenarios. Click a vertical line to select or deselect it.'
-              "
-            />
           </div>
         </template>
         <template #datacube-description>
@@ -70,7 +63,6 @@ import { computed, defineComponent, Ref, ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 import DatacubeCard from '@/components/data/datacube-card.vue';
-import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import modelService from '@/services/model-service';
@@ -89,7 +81,6 @@ export default defineComponent({
   name: 'NodeCompExperiment',
   components: {
     DatacubeCard,
-    Disclaimer,
     DatacubeDescription,
     FullScreenModalHeader
   },
@@ -241,6 +232,7 @@ export default defineComponent({
           admin3,
           period: 12,
           timeseries,
+          original_timeseries: _.cloneDeep(timeseries),
           // Filled in by server
           max: null,
           min: null
