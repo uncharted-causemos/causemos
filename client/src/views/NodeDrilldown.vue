@@ -427,6 +427,11 @@ export default defineComponent({
       if (indicator && selectedNode.value) {
         // enableOverlay('Toggling data inversion');
 
+        if (!indicator.original_timeseries) {
+          // this is a fix for previously quantified nodes where at that time the 'original_timeseries' field was not popoluated
+          indicator.original_timeseries = _.cloneDeep(indicator.timeseries);
+        }
+
         // need to update the original indicator saved data and force a refresh
         const timeseries: {value: number; timestamp: number}[] = _.cloneDeep(indicator.original_timeseries);
 
