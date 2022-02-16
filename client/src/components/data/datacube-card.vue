@@ -1264,7 +1264,11 @@ export default defineComponent({
 
     const onTabClick = (value: string) => {
       if (value === 'description') {
-        setSelectedScenarioIds([]); // this will update the 'currentTabView'
+        if (isIndicatorDatacube.value) {
+          updateTabView('description');
+        } else {
+          setSelectedScenarioIds([]); // this will update the 'currentTabView'
+        }
       } else {
         clickData(value);
       }
