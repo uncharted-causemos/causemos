@@ -429,10 +429,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   }
 
   renderNodesUpdated(selection: D3SelectionINode<NodeParameter>) {
-    console.log(d3.selectAll('.node-ui').data());
     selection
-      .selectAll<any, INode<NodeParameter>>('.node-container-outer')
       .filter(d => d.data.components.length > 1)
+      .selectAll<any, INode<NodeParameter>>('.node-container-outer')
       .style('display', null);
 
     selection
