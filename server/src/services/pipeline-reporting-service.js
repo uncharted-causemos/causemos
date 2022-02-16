@@ -29,6 +29,13 @@ const setProcessingSucceeded = async(metadata) => {
     return { result: { message: 'Unable to fetch results.', error: err }, code: 404 };
   }
 
+  if (results && results.has_tiles) {
+    if (!results.region_levels) {
+      results.region_levels = [];
+    }
+    results.region_levels.push('grid data');
+  }
+
   const updateDelta = docIds.map(docId => {
     return {
       id: docId,
