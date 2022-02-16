@@ -5,7 +5,11 @@ import {
   RidgelineWithMetadata,
   summarizeRidgelineComparison
 } from '@/utils/ridgeline-util';
-import svgUtil, { translate } from '@/utils/svg-util';
+import svgUtil, {
+  ARROW_LENGTH,
+  ARROW_WIDTH,
+  translate
+} from '@/utils/svg-util';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
 import { chartValueFormatter } from '@/utils/string-util';
 
@@ -23,7 +27,11 @@ export const COMPARISON_BASELINE_COLOR = '#AAA'; // grey
 const COMPARISON_OVERLAP_COLOR = COMPARISON_BASELINE_COLOR;
 const curve = d3.curveMonotoneY;
 
+// How much of the width should be taken up by the text/arrow comparison summary
 const SUMMARY_WIDTH_PERCENTAGE = 0.75;
+// The gap between the summary and the ridgeline, as well as between the arrow
+//  and the text
+const SUMMARY_SPACING = 3;
 const SUMMARY_ARROW_COLOR = COMPARISON_BASELINE_COLOR;
 
 export const renderRidgelines = (
@@ -120,8 +128,8 @@ export const renderRidgelines = (
       min,
       max
     );
-    const summarySpacing = 3;
-    const summaryXPosition = widthAvailableForChart + summarySpacing;
+    const summaryXPosition = widthAvailableForChart + SUMMARY_SPACING;
+    // Vertically align summary text with the distribution's mean
     gElement
       .append('text')
       .style('font-size', labelSize)
@@ -140,15 +148,14 @@ export const renderRidgelines = (
       .append('tspan')
       .style('font-weight', 'normal')
       .text(summary.after);
-    // Arrow
+    // Draw arrow from comparison distribution's mean to this distribution's
+    //  mean
     const tail = yScale(comparisonBaseline.distributionMean);
     const head = yScale(ridgeline.distributionMean);
-    const arrowHeadHeight = 5;
-    const arrowHeadWidth = 6.5;
-    const arrowHeadOffset = labelSize / 2 + arrowHeadHeight + summarySpacing;
+    const arrowHeadOffset = labelSize / 2 + SUMMARY_SPACING + ARROW_LENGTH;
     const arrowHeight = Math.abs(head - tail) - arrowHeadOffset;
+    // If arrow isn't too small to draw
     if (arrowHeight > 0) {
-      // Arrow isn't too small to draw
       // Draw rect for arrow's stem
       const rectYPosition = tail < head ? tail : head + arrowHeadOffset;
       const rectWidth = 2;
@@ -159,7 +166,10 @@ export const renderRidgelines = (
         .attr('fill', SUMMARY_ARROW_COLOR)
         .attr(
           'transform',
-          translate(summaryXPosition + (arrowHeadWidth - rectWidth) / 2, rectYPosition)
+          translate(
+            summaryXPosition + (ARROW_WIDTH - rectWidth) / 2,
+            rectYPosition
+          )
         );
       // Draw arrow head
       const arrowHeadYPosition =
@@ -171,7 +181,7 @@ export const renderRidgelines = (
         .attr('d', svgUtil.ARROW)
         .attr(
           'transform',
-          translate(summaryXPosition + arrowHeadWidth / 2, arrowHeadYPosition) +
+          translate(summaryXPosition + ARROW_WIDTH / 2, arrowHeadYPosition) +
             ` rotate(${rotation})`
         );
     }
