@@ -84,15 +84,15 @@
       <div class="info-column">
         <div style="display: flex; align-items: center">
           <b>Domain(s): </b>
-          <select name="domains" id="domains" @change="selectedDomain=AVILABLE_DOMAINS[$event.target.selectedIndex]">
-            <option v-for="domain in AVILABLE_DOMAINS" :key="domain">
+          <select name="domains" id="domains" @change="selectedDomain=AVAILABLE_DOMAINS[$event.target.selectedIndex]">
+            <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
               {{domain}}
             </option>
           </select>
           <button type="button" class="btn btn-default" style="padding: 2px 4px" @click="addDomain">Add</button>
         </div>
-        <div v-if="dataset && dataset.domains" style="display: flex; flex-wrap: wrap">
-          <div v-for="domain in dataset.domains" :key="domain">
+        <div v-if="editedDataset.domains" style="display: flex; flex-wrap: wrap">
+          <div v-for="domain in editedDataset.domains" :key="domain">
             <span style="margin: 2px; background-color: white;">{{domain}} <i @click="removeDomain(domain)" class="fa fa-remove" /></span>
           </div>
         </div>
@@ -197,7 +197,7 @@ import { runtimeFormatter } from '@/utils/string-util';
 
 const MAX_COUNTRIES = 40;
 
-const AVILABLE_DOMAINS = [
+const AVAILABLE_DOMAINS = [
   'Logic',
   'Mathematics',
   'Astronomy and astrophysics',
@@ -236,14 +236,14 @@ export default defineComponent({
   data: () => ({
     indicators: [] as Indicator[],
     dataset: {} as Dataset,
-    editedDataset: { name: '', description: '', maintainer: {} } as DatasetEditable,
+    editedDataset: { name: '', description: '', maintainer: {}, domains: [] as string[] } as DatasetEditable,
     searchTerm: '',
     showSortingDropdown: false,
     sortingOptions: ['Most recent', 'Oldest'],
     selectedSortingOption: 'Most recent',
     showApplyToAllModal: false,
-    AVILABLE_DOMAINS,
-    selectedDomain: AVILABLE_DOMAINS[0]
+    AVAILABLE_DOMAINS,
+    selectedDomain: AVAILABLE_DOMAINS[0]
     // filterOptions: [
     //   { status: DatacubeStatus.Ready, selected: true },
     //   { status: DatacubeStatus.Deprecated, selected: false }
@@ -320,17 +320,15 @@ export default defineComponent({
       setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds'
     }),
     addDomain() {
-      if (this.dataset) {
-        if (!this.dataset.domains) {
-          this.dataset.domains = [];
-        }
-        if (!this.dataset.domains.includes(this.selectedDomain)) {
-          this.dataset.domains.push(this.selectedDomain);
-        }
+      if (!this.editedDataset.domains) {
+        this.editedDataset.domains = [];
+      }
+      if (!this.editedDataset.domains.includes(this.selectedDomain)) {
+        this.editedDataset.domains.push(this.selectedDomain);
       }
     },
     removeDomain(domain: string) {
-      this.dataset.domains = this.dataset.domains.filter(d => d !== domain);
+      this.editedDataset.domains = this.editedDataset.domains.filter(d => d !== domain);
     },
     async fetchIndicators() {
       this.enableOverlay('Loading indicators');
@@ -370,6 +368,7 @@ export default defineComponent({
       this.dataset.name = this.editedDataset.name;
       this.dataset.description = this.editedDataset.description;
       this.dataset.maintainer = this.editedDataset.maintainer;
+      this.dataset.domains = this.editedDataset.domains;
       const deltas = this.indicators.map(indicator => ({
         id: indicator.id,
         name: this.editedDataset.name,
