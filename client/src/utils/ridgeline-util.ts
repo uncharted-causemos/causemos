@@ -165,17 +165,18 @@ export const calculateTypicalChangeBracket = (
 };
 
 export const summarizeRidgelineComparison = (
-  scenario: RidgelineWithMetadata,
-  comparisonBaseline: RidgelineWithMetadata,
+  target: RidgelineWithMetadata,
+  source: RidgelineWithMetadata,
   min: number,
   max: number
 ) => {
   const fivePercentOfRange = (max - min) / 20;
   const meanDifference =
-    scenario.distributionMean - comparisonBaseline.distributionMean;
+    target.distributionMean - source.distributionMean;
   if (Math.abs(meanDifference) < fivePercentOfRange) {
-    // TODO: use standard deviation to test whether scenario is more/less
+    // TODO: use standard deviation to test whether target is more/less
     //  certain when means are approximately equal
+    // Only works if both distributions are approximately gaussian.
     return {
       before: 'No significant change.',
       emphasized: '',
@@ -193,7 +194,7 @@ export const summarizeRidgelineComparison = (
     magnitudeAdjective = 'extreme';
   }
   const direction =
-    scenario.distributionMean > comparisonBaseline.distributionMean
+    target.distributionMean > source.distributionMean
       ? 'higher'
       : 'lower';
   return {
