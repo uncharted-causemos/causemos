@@ -1,12 +1,13 @@
 <template>
   <h5 v-if="title !== ''" class="title">{{title}}</h5>
-  <textarea
+  <input
     v-model="n"
     v-focus
     type="text"
     placeholder="name"
     rows="1"
     class="text-field"
+    @keyup.enter="save"
   />
   <textarea
     v-model="d"

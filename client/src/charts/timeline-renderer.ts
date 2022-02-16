@@ -1,13 +1,13 @@
 import * as d3 from 'd3';
+import _ from 'lodash';
 import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import dateFormatter from '@/formatters/date-formatter';
-import { Timeseries } from '@/types/Timeseries';
+import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel, TIMESERIES_HEADER_SEPARATOR } from '@/types/Enums';
-import { MAX_TIMESERIES_LABEL_CHAR_LENGTH, renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
-import _ from 'lodash';
+import { MAX_TIMESERIES_LABEL_CHAR_LENGTH, renderAxes, renderLine, renderPoint, xAxis } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -18,6 +18,7 @@ const CONTEXT_RANGE_FILL = SELECTED_COLOR;
 const CONTEXT_RANGE_STROKE = SELECTED_COLOR_DARK;
 const CONTEXT_RANGE_OPACITY = 0.4;
 const CONTEXT_TIMESERIES_OPACITY = 0.2;
+const TOOLTIP_OFFSET = 10;
 const TOOLTIP_WIDTH = 150;
 const TOOLTIP_BG_COLOUR = 'white';
 const TOOLTIP_BORDER_COLOUR = 'grey';
@@ -59,13 +60,12 @@ interface TimestampElements {
   valueGroups: D3GElementSelection[];
 }
 
-// FIXME: add range selection/brushing support
 export default function(
   selection: D3Selection,
   timeseriesList: Timeseries[],
   width: number,
   height: number,
-  selectedTimestamp: number,
+  selectedTimestamp: number | null,
   breakdownOption: string | null,
   timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} },
   onTimestampSelected: (timestamp: number) => void,
@@ -85,19 +85,21 @@ export default function(
     return () => {};
   }
 
+  const xExtentCorrected: [number, number] = (breakdownOption === TemporalAggregationLevel.Year ? [0, 11] : xExtent);
+
   const valueFormatter = chartValueFormatter(...yExtent);
   const [xScale, yScale] = calculateScales(
     width,
     height,
-    xExtent,
-    yExtent,
-    breakdownOption
+    xExtentCorrected,
+    yExtent
   );
+
   const timestampFormatter =
     breakdownOption === TemporalAggregationLevel.Year
       ? BY_YEAR_DATE_FORMATTER
       : DATE_FORMATTER;
-  renderAxes(
+  const [xAxisSelection, _] = renderAxes(
     groupElement,
     xScale,
     yScale,
@@ -109,19 +111,59 @@ export default function(
     PADDING_RIGHT,
     X_AXIS_HEIGHT
   );
-  timeseriesList.forEach(timeseries => {
-    const normalizedPoints = _.cloneDeep(timeseries.points);
-    normalizedPoints
-      .forEach(p => {
-        p.value = p.normalizedValue !== undefined ? p.normalizedValue : p.value;
-      });
-    if (timeseries.points.length > 1) { // draw a line for time series longer than 1
-      renderLine(groupElement, normalizedPoints, xScale, yScale, timeseries.color, 1);
-      renderPoint(groupElement, normalizedPoints, xScale, yScale, timeseries.color);
-    } else { // draw a spot for timeseries that are only 1 long
-      renderPoint(groupElement, normalizedPoints, xScale, yScale, timeseries.color);
-    }
+
+  const state = { selectedTimestamp, selectionDomain: xExtentCorrected };
+
+  const timeseriesListValueCorrected = timeseriesList.map(timeseries => {
+    const points = timeseries.points.map(p => ({ timestamp: p.timestamp, value: p.normalizedValue !== undefined ? p.normalizedValue : p.value }));
+    return { ...timeseries, points };
   });
+  // Render lines
+  const lineSelections = timeseriesListValueCorrected.filter(timeseries => timeseries.points.length > 1).map(timeseries => {
+    const lineSelection = renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color, 1);
+    return { lineSelection, points: timeseries.points };
+  });
+  // Render points
+  timeseriesListValueCorrected.forEach(timeseries => {
+    renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+  });
+
+  const timestampElements = generateSelectedTimestampElements(
+    groupElement,
+    height,
+    width,
+    timeseriesList
+  );
+
+  const valuesAtEachTimestamp = getValuesAtEachTimestampMap(timeseriesList, timeseriesToDatacubeMap);
+  const uniqueTimestamps = getUniqueTimeStamps(valuesAtEachTimestamp);
+  const closestTimestamps = getClosestTimestamps(uniqueTimestamps);
+
+  generateSelectableTimestamps(
+    groupElement,
+    xScale,
+    height,
+    timeseriesToDatacubeMap,
+    valuesAtEachTimestamp,
+    uniqueTimestamps,
+    timestampFormatter,
+    onTimestampSelected,
+    valueFormatter
+  );
+
+  // Set timestamp elements to reflect the initially selected
+  //  timestamp
+  updateTimestampElements(
+    selectedTimestamp,
+    timestampElements,
+    xScale,
+    timestampFormatter
+  );
+
+  // Cache selections
+  const pointsSelection = groupElement.selectAll('circle.circle');
+  const hitBoxSelection = groupElement.selectAll('.timestamp-group .hitbox');
+  const markerAndTooltipSelection = groupElement.selectAll('.timestamp-group .marker-tooltip');
 
   //
   // render brush
@@ -140,6 +182,7 @@ export default function(
       [xScale.range()[0], 0],
       [xScale.range()[1], X_AXIS_HEIGHT]
     ])
+    .filter(event => !event.selection)
     .on('start brush end', brushed);
 
   groupElement
@@ -194,44 +237,56 @@ export default function(
   }
 
   function brushed({ selection }: { selection: number[] }) {
+    if (selection === null) return;
     const [x0, x1] = selection.map(xScale.invert);
-    onTimestampRangeSelected(x0, x1);
+    state.selectionDomain = [x0, x1];
+    onTimestampRangeSelected(...state.selectionDomain);
     groupElement.select('.brush').call(brushHandle as any, selection);
+
+    const xScaleBrushed = calculateXScale(width, state.selectionDomain);
+    const line = d3
+      .line<TimeseriesPoint>()
+      .x(d => xScaleBrushed(d.timestamp))
+      .y(d => yScale(d.value));
+
+    // Update x Axis
+    xAxisSelection.call(xAxis(xScaleBrushed, timestampFormatter));
+    // Update points
+    pointsSelection.attr('cx', (d: any) => xScaleBrushed(d.timestamp));
+    // Update lines
+    lineSelections.forEach(({ points, lineSelection }) => {
+      lineSelection.attr('d', () => line(points as TimeseriesPoint[]));
+    });
+
+    // Update Selectable timestamp
+    const hitboxWidth = calculateHitboxWidth(closestTimestamps, xScaleBrushed);
+    hitBoxSelection
+      .attr('width', hitboxWidth)
+      .attr(
+        'transform',
+        ts => translate(xScaleBrushed(ts as number) - hitboxWidth / 2, PADDING_TOP)
+      );
+
+    // Update tooltip position
+    updateTooltipPosition(markerAndTooltipSelection, xScaleBrushed, height);
+
+    // Update selection
+    updateTimestampElements(
+      state.selectedTimestamp,
+      timestampElements,
+      xScaleBrushed,
+      timestampFormatter
+    );
   }
 
-  const timestampElements = generateSelectedTimestampElements(
-    groupElement,
-    height,
-    width,
-    timeseriesList
-  );
-
-  generateSelectableTimestamps(
-    groupElement,
-    timeseriesList,
-    xScale,
-    height,
-    timeseriesToDatacubeMap,
-    timestampFormatter,
-    onTimestampSelected,
-    valueFormatter
-  );
-
-  // Set timestamp elements to reflect the initially selected
-  //  timestamp
-  updateTimestampElements(
-    selectedTimestamp,
-    timestampElements,
-    xScale,
-    timestampFormatter
-  );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
   return (timestamp: number | null) => {
+    state.selectedTimestamp = timestamp;
     updateTimestampElements(
-      timestamp,
+      state.selectedTimestamp,
       timestampElements,
-      xScale,
+      calculateXScale(width, state.selectionDomain),
       timestampFormatter
     );
   };
@@ -248,35 +303,35 @@ function calculateScales(
   width: number,
   height: number,
   xExtent: [number, number],
-  yExtent: [number, number],
-  breakdownOption: string | null
+  yExtent: [number, number]
 ) {
-  const xScaleDomain =
-    breakdownOption === TemporalAggregationLevel.Year
-      ? [0, 11] // January === 0, December === 11
-      : xExtent;
+  return [
+    calculateXScale(width, xExtent),
+    calculateYScale(height, yExtent)
+  ];
+}
+
+function calculateXScale(width: number, xExtent: [number, number]) {
   const xScale = d3
     .scaleLinear()
-    .domain(xScaleDomain)
+    .domain(xExtent)
     .range([Y_AXIS_WIDTH, width - PADDING_RIGHT]);
+  return xScale;
+}
+
+function calculateYScale(height: number, yExtent: [number, number]) {
   const yScale = d3
     .scaleLinear()
     .domain(yExtent)
     .range([height - X_AXIS_HEIGHT, PADDING_TOP]);
-  return [xScale, yScale];
+  return yScale;
 }
 
-function generateSelectableTimestamps(
-  selection: D3GElementSelection,
+function getValuesAtEachTimestampMap(
   timeseriesList: Timeseries[],
-  xScale: d3.ScaleLinear<number, number>,
-  height: number,
-  timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} },
-  timestampFormatter: (timestamp: number) => string,
-  onTimestampSelected: (timestamp: number) => void,
-  valueFormatter: (value: number) => string
+  timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} }
+
 ) {
-  const timestampGroup = selection.append('g');
   const valuesAtEachTimestamp = new Map<number, { owner: string; color: string; name: string; value: number | string}[]>();
   const allTimestamps = _.uniq(
     timeseriesList
@@ -296,34 +351,112 @@ function generateSelectableTimestamps(
       if (valuesAtThisTimestamp === undefined) {
         return;
       }
-      valuesAtThisTimestamp.push({ owner: ownerDatacube, color, name, value: pointAtTimestamp !== undefined ? (pointAtTimestamp.normalizedValue !== undefined ? pointAtTimestamp.normalizedValue : pointAtTimestamp.value) : 'no data' });
+      valuesAtThisTimestamp.push({ owner: ownerDatacube, color, name, value: pointAtTimestamp !== undefined ? pointAtTimestamp.value : 'no data' });
     });
   });
 
-  const uniqueTimestamps = Array.from(valuesAtEachTimestamp.keys()).sort();
-  // FIXME: We assume that all timestamps are evenly spaced when determining
-  //  how wide the hover/click hitbox should be. This may not always be the case.
+  return valuesAtEachTimestamp;
+}
+
+function getUniqueTimeStamps(valuesAtEachTimestamp: Map<number, { owner: string; color: string; name: string; value: number | string}[]>) {
+  const uniqueTimestamps = Array.from(valuesAtEachTimestamp.keys()).sort((b, a) => +b - +a);
+  return uniqueTimestamps;
+}
+
+// Find and get the closest pair of timestamps.
+// This can be used to calculate the width of the hitbox using calculateHitboxWidth
+// Since It's not guaranteed that the distance of each adjacent timstamps are equal for all timestamps,
+// especially if you draw multiple timeseries with different temporal resolution. If hitbox width are calculated based on lower resolution data (month)
+// you would have some issue with hover/tooltip with higher level resolution data (day).
+// In this case we just calculate the hitbox based on the closest timestamps pair and this works for all case.
+function getClosestTimestamps(uniqueTimestamps: number[]) {
+  // Assume uniqueTimestamps are sorted
+  if (uniqueTimestamps.length < 3) {
+    return [...uniqueTimestamps];
+  }
+  const minResult = { pair: [0, 0], diff: Infinity };
+  for (let index = 1; index < uniqueTimestamps.length; index++) {
+    const tsA = uniqueTimestamps[index - 1];
+    const tsB = uniqueTimestamps[index];
+    const diff = tsB - tsA;
+    if (diff > 0 && diff < minResult.diff) {
+      minResult.pair = [tsA, tsB];
+      minResult.diff = diff;
+    }
+  }
+  return minResult.pair;
+}
+
+function calculateHitboxWidth(timestamps: number[], xScale: d3.ScaleLinear<number, number>) {
+  // Calculate hit box width based on the distance of the provided pair of timestamps
 
   // Arbitrarily choose how wide the hitbox should be if there's only one unique
   //  timestamp
   const hitboxWidth =
-    uniqueTimestamps.length > 1
-      ? xScale(uniqueTimestamps[1]) - xScale(uniqueTimestamps[0])
+    timestamps.length > 1
+      ? xScale(timestamps[1]) - xScale(timestamps[0])
       : SELECTED_TIMESTAMP_WIDTH * 5;
+  return hitboxWidth;
+}
+
+function getCenterValue(scale: d3.ScaleLinear<number, number>) {
+  const [x0, x1] = scale.domain();
+  const center = x0 + (x1 - x0) / 2;
+  return center;
+}
+
+function updateTooltipPosition(markerTooltipSelection: d3.Selection<d3.BaseType, unknown, SVGGElement, any>, xScale: d3.ScaleLinear<number, number>, height: number) {
   const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
-  const [minTimestamp, maxTimestamp] = xScale.domain();
-  const centerTimestamp = minTimestamp + (maxTimestamp - minTimestamp) / 2;
+  const centerValue = getCenterValue(xScale);
+
+  // Display tooltip on the left of the hovered timestamp if that timestamp
+  //  is on the right side of the chart to avoid the tooltip overflowing
+  //  or being clipped.
+  const isRightOfCenter = (ts: number) => ts > centerValue;
+
+  markerTooltipSelection.attr(
+    'transform',
+    ts => translate(xScale(ts as number) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
+  );
+  markerTooltipSelection.select('.hover-tooltip').attr(
+    'transform',
+    ts => translate(isRightOfCenter(ts as number) ? (-TOOLTIP_OFFSET - TOOLTIP_WIDTH) : TOOLTIP_OFFSET, 0)
+  );
+  markerTooltipSelection.select('.notch-border').attr(
+    'transform',
+    ts => isRightOfCenter(ts as number)
+      ? translate(TOOLTIP_WIDTH - TOOLTIP_OFFSET - TOOLTIP_BORDER_WIDTH, markerHeight / 2) + 'rotate(-45)'
+      : translate(-TOOLTIP_BORDER_WIDTH - TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
+  );
+  markerTooltipSelection.select('.notch-background').attr(
+    'transform',
+    ts => isRightOfCenter(ts as number)
+      ? translate(TOOLTIP_WIDTH - 3 * TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
+      : translate(-TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
+  );
+}
+
+function generateSelectableTimestamps(
+  selection: D3GElementSelection,
+  xScale: d3.ScaleLinear<number, number>,
+  height: number,
+  timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} },
+  valuesAtEachTimestamp: Map<number, { owner: string; color: string; name: string; value: number | string}[]>,
+  uniqueTimestamps: number[],
+  timestampFormatter: (timestamp: number) => string,
+  onTimestampSelected: (timestamp: number) => void,
+  valueFormatter: (value: number) => string
+) {
+  const timestampGroup = selection.append('g').classed('timestamp-group', true);
+
+  const closestTimestamps = getClosestTimestamps(uniqueTimestamps);
+  const hitboxWidth = calculateHitboxWidth(closestTimestamps, xScale);
+  const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
   uniqueTimestamps.forEach(timestamp => {
-    // Display tooltip on the left of the hovered timestamp if that timestamp
-    //  is on the right side of the chart to avoid the tooltip overflowing
-    //  or being clipped.
-    const isRightOfCenter = timestamp > centerTimestamp;
     const markerAndTooltip = timestampGroup
       .append('g')
-      .attr(
-        'transform',
-        translate(xScale(timestamp) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
-      )
+      .datum(timestamp)
+      .classed('marker-tooltip', true)
       .attr('visibility', 'hidden');
     markerAndTooltip
       .append('rect')
@@ -331,17 +464,13 @@ function generateSelectableTimestamps(
       .attr('height', markerHeight)
       .attr('fill', SELECTED_COLOR)
       .attr('fill-opacity', SELECTABLE_TIMESTAMP_OPACITY);
+
     // How far the tooltip is shifted horizontally from the hovered timestamp
     //  also the "radius" of the notch diamond
-    const offset = 10;
-    const notchSideLength = Math.sqrt(offset * offset + offset * offset);
+    const notchSideLength = Math.sqrt(TOOLTIP_OFFSET * TOOLTIP_OFFSET + TOOLTIP_OFFSET * TOOLTIP_OFFSET);
     const tooltip = markerAndTooltip.append('g')
-      .attr('transform', translate(
-        isRightOfCenter
-          ? -offset - TOOLTIP_WIDTH
-          : offset
-        , 0)
-      );
+      .datum(timestamp)
+      .classed('hover-tooltip', true);
     tooltip
       .append('rect')
       .attr('width', TOOLTIP_WIDTH)
@@ -351,28 +480,20 @@ function generateSelectableTimestamps(
     // Notch border
     tooltip
       .append('rect')
+      .datum(timestamp)
+      .classed('notch-border', true)
       .attr('width', notchSideLength + TOOLTIP_BORDER_WIDTH)
       .attr('height', notchSideLength + TOOLTIP_BORDER_WIDTH)
-      .attr(
-        'transform',
-        isRightOfCenter
-          ? translate(TOOLTIP_WIDTH - offset - TOOLTIP_BORDER_WIDTH, markerHeight / 2) + 'rotate(-45)'
-          : translate(-TOOLTIP_BORDER_WIDTH - offset, markerHeight / 2) + 'rotate(-45)'
-      )
       .attr('fill', TOOLTIP_BORDER_COLOUR);
     // Notch background
     // Extend side length of notch background to make sure it covers the right
     //  half of the border rect
     tooltip
       .append('rect')
+      .datum(timestamp)
+      .classed('notch-background', true)
       .attr('width', notchSideLength * 2)
       .attr('height', notchSideLength * 2)
-      .attr(
-        'transform',
-        isRightOfCenter
-          ? translate(TOOLTIP_WIDTH - 3 * offset, markerHeight / 2) + 'rotate(-45)'
-          : translate(-offset, markerHeight / 2) + 'rotate(-45)'
-      )
       .attr('fill', TOOLTIP_BG_COLOUR);
 
     //
@@ -435,11 +556,13 @@ function generateSelectableTimestamps(
     // Hover hitbox
     timestampGroup
       .append('rect')
+      .datum(timestamp)
+      .classed('hitbox', true)
       .attr('width', hitboxWidth)
       .attr('height', height - PADDING_TOP - X_AXIS_HEIGHT)
       .attr(
         'transform',
-        translate(xScale(timestamp) - hitboxWidth / 2, PADDING_TOP)
+        ts => translate(xScale(ts) - hitboxWidth / 2, PADDING_TOP)
       )
       .attr('fill-opacity', 0)
       .style('cursor', 'pointer')
@@ -447,6 +570,7 @@ function generateSelectableTimestamps(
       .on('mouseleave', () => markerAndTooltip.attr('visibility', 'hidden'))
       .on('mousedown', () => onTimestampSelected(timestamp));
   });
+  updateTooltipPosition(selection.selectAll('.timestamp-group .marker-tooltip'), xScale, height);
 }
 
 function calculateLabelDimensions(

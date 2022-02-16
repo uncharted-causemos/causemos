@@ -45,13 +45,6 @@
               <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
               <span v-if="metadata.status === DatacubeStatus.Deprecated" v-tooltip.top-center="'Show current version of datacube'" style="margin-left: 1rem" :style="{ backgroundColor: statusColor, cursor: 'pointer' }" @click="showCurrentDatacube">{{ statusLabel }} <i class="fa fa-search"></i></span>
             </h5>
-            <disclaimer
-              v-if="scenarioCount > 0"
-              :message="
-                scenarioCount +
-                  ' scenarios. Click a vertical line to select or deselect it.'
-              "
-            />
           </div>
         </template>
         <template #datacube-description>
@@ -66,11 +59,10 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
+import { computed, defineComponent, Ref, ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 import DatacubeCard from '@/components/data/datacube-card.vue';
-import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import modelService from '@/services/model-service';
@@ -82,13 +74,13 @@ import { getOutputs, getSelectedOutput, getValidatedOutputs, STATUS } from '@/ut
 import filtersUtil from '@/utils/filters-util';
 
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
+import { ViewState } from '@/types/Insight';
 
 
 export default defineComponent({
   name: 'NodeCompExperiment',
   components: {
     DatacubeCard,
-    Disclaimer,
     DatacubeDescription,
     FullScreenModalHeader
   },
@@ -105,6 +97,7 @@ export default defineComponent({
     const project = computed(() => store.getters['app/project']);
     const dataState = computed(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
+    const initialViewConfig = ref<ViewState | null>(null);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelComponents = ref(null) as Ref<any>;
@@ -134,9 +127,23 @@ export default defineComponent({
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
 
-    const initialViewConfig = computed(() => {
-      return selectedNode?.value?.parameter;
-    });
+    watch(
+      () => [
+        metadata.value,
+        selectedNode.value
+      ],
+      () => {
+        if (metadata.value) {
+          const existingViewState = selectedNode?.value?.parameter;
+          if (existingViewState && !_.isEmpty(existingViewState)) {
+            return;
+          }
+          if (!_.isEmpty(metadata.value.default_view)) {
+            initialViewConfig.value = metadata.value.default_view;
+          }
+        }
+      }
+    );
 
     const stepsBeforeCanConfirm = computed(() => {
       const steps = [];
@@ -149,7 +156,7 @@ export default defineComponent({
       } else if (dataState.value?.selectedScenarioIds?.length > 1) {
         steps.push('Please select exactly one scenario.');
       }
-      if (viewState.value.breakdownOption !== null) {
+      if (viewState.value?.breakdownOption !== null) {
         steps.push('Please set "split by" to "none".');
       }
       return steps;
@@ -225,6 +232,7 @@ export default defineComponent({
           admin3,
           period: 12,
           timeseries,
+          original_timeseries: _.cloneDeep(timeseries),
           // Filled in by server
           max: null,
           min: null
@@ -232,7 +240,7 @@ export default defineComponent({
         components: selectedNode?.value?.components
       };
 
-      Object.keys(viewState).forEach(key => {
+      Object.keys(viewState.value).forEach((key: string) => {
         (nodeParameters.parameter as any)[key] = viewState.value[key];
       });
       await modelService.updateNodeParameter(selectedNode.value.model_id, nodeParameters);
@@ -306,7 +314,6 @@ export default defineComponent({
     // Load the CAG so we can find relevant components
     modelService.getComponents(this.currentCAG).then(_modelComponents => {
       this.modelComponents = _modelComponents;
-      console.log(this.modelComponents);
     });
   },
   methods: {

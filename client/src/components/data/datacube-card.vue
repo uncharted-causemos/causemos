@@ -1264,7 +1264,11 @@ export default defineComponent({
 
     const onTabClick = (value: string) => {
       if (value === 'description') {
-        setSelectedScenarioIds([]); // this will update the 'currentTabView'
+        if (isIndicatorDatacube.value) {
+          updateTabView('description');
+        } else {
+          setSelectedScenarioIds([]); // this will update the 'currentTabView'
+        }
       } else {
         clickData(value);
       }
@@ -1684,8 +1688,13 @@ export default defineComponent({
             // i.e., re-map all timestamp point values to a range of [0: 1]
             normalizeTimeseriesList([timeseries]);
 
+            //
             // re-create the map that relates between datacube and timeseries
-            const key = timeseries.id;
+            //
+            // NOTE: it is not enough to use key as the timeseries.id
+            //  e.g., split by variable would have the same timeseries.id for multiple variables
+            const key = timeseries.id + filteredActiveFeatures.value[indx].name; // use the combination of timeseries id and feature name as the ultimate unique id
+            timeseries.id = key; // override the timeseries id to match its owner datacube
             timeseriesToDatacubeMap.value[key] = {
               datacubeName: filteredActiveFeatures.value[indx].name,
               datacubeOutputVariable: filteredActiveFeatures.value[indx].display_name
