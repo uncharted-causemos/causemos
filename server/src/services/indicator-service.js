@@ -120,13 +120,13 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
   // Get matches from UAz
   for (const node of nodesNotInHistory) {
     const indicators = await searchService.indicatorSearchConceptAligner(model.project_id, node, k);
+    Logger.info(`Found ${indicators.length} candidates for node ${node.concept}`);
     if (indicators.length === 0) {
       nodesNotInConceptAligner.push(node);
     } else {
       result.set(node.concept, indicators);
     }
   }
-
 
   // 2. Run search against datacubes
   for (const node of nodesNotInConceptAligner) {
