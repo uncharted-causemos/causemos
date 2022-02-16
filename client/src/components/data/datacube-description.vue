@@ -55,16 +55,18 @@
         v-if="metadata.maintainer"
         class="metadata-row"
       >
-        <b>Maintainer: </b> {{ metadata.maintainer.name }} ({{metadata.maintainer.email}}),
-        {{metadata.maintainer.organization}}
+        <b>Registered By: </b> {{ metadata.maintainer.name }} ({{metadata.maintainer.email}})
       </div>
-      <div class="metadata-row" v-if="isSourceValidUrl"><strong>Source: </strong>
+      <div class="metadata-row" v-if="metadata.maintainer.organization"><strong>Source: </strong>
+        {{metadata.maintainer.organization}}
         <a
+          v-if="isSourceValidUrl"
           :href="metadata.maintainer.website"
           target="_blank"
           rel="noopener noreferrer">
-          {{ metadata.maintainer.website }}
+          ({{metadata.maintainer.website}})
         </a>
+        <span v-else></span>
       </div>
     </div>
   </div>
