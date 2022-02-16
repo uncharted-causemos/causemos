@@ -351,7 +351,7 @@ function getValuesAtEachTimestampMap(
       if (valuesAtThisTimestamp === undefined) {
         return;
       }
-      valuesAtThisTimestamp.push({ owner: ownerDatacube, color, name, value: pointAtTimestamp !== undefined ? (pointAtTimestamp.normalizedValue !== undefined ? pointAtTimestamp.normalizedValue : pointAtTimestamp.value) : 'no data' });
+      valuesAtThisTimestamp.push({ owner: ownerDatacube, color, name, value: pointAtTimestamp !== undefined ? pointAtTimestamp.value : 'no data' });
     });
   });
 
