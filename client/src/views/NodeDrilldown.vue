@@ -133,6 +133,16 @@
               <input class="form-control input-sm" v-model.number="indicatorMin"/>
               <span>Max. value:</span>
               <input class="form-control input-sm" v-model.number="indicatorMax"/>
+              <div class="checkbox">
+                <label
+                  @click="toggleIndicatorDataInversion">
+                  <i
+                    class="fa fa-lg fa-fw"
+                    :class="{ 'fa-check-square-o': indicatorDataInverted, 'fa-square-o': !indicatorDataInverted }"
+                  />
+                  <span>Invert data</span>
+                </label>
+              </div>
             </div>
             <projection-ridgelines
               v-if="
@@ -207,6 +217,7 @@ import { getStepCountFromTimeScale } from '@/utils/time-scale-util';
 import DropdownControl from '@/components/dropdown-control.vue';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
+import { normalize } from '@/utils/value-util';
 
 const SEASONALITY_OPTIONS: DropdownItem[] = [
   {
@@ -408,6 +419,67 @@ export default defineComponent({
       };
     });
 
+    const invertDataWasToggled = ref(false);
+    const toggleIndicatorDataInversion = async () => {
+      indicatorDataInverted.value = !indicatorDataInverted.value;
+      invertDataWasToggled.value = true;
+      const indicator = selectedNode.value?.parameter;
+      if (indicator && selectedNode.value) {
+        // enableOverlay('Toggling data inversion');
+
+        if (!indicator.original_timeseries) {
+          // this is a fix for previously quantified nodes where at that time the 'original_timeseries' field was not popoluated
+          indicator.original_timeseries = _.cloneDeep(indicator.timeseries);
+        }
+
+        // need to update the original indicator saved data and force a refresh
+        const timeseries: {value: number; timestamp: number}[] = _.cloneDeep(indicator.original_timeseries);
+
+        // invert timeseries data
+        // if data is not inverted: use the original timeseries data
+        if (indicatorDataInverted.value) {
+          const reverseNumber = (num: number, min: number, max: number) => {
+            return (max + min) - num;
+          };
+          const min = _.min(timeseries.map(item => item.value)) ?? 0;
+          const max = _.max(timeseries.map(item => item.value)) ?? 0;
+          timeseries.forEach(item => {
+            item.value = normalize(reverseNumber(item.value, min, max), min, max);
+          });
+        }
+
+        const nodeParameters = {
+          id: selectedNode?.value?.id,
+          concept: selectedNode?.value?.concept,
+          label: selectedNode?.value?.label,
+          model_id: selectedNode?.value?.model_id,
+          parameter: {
+            id: indicator.id,
+            name: indicator.name,
+            unit: indicator.unit,
+            country: indicator.country,
+            admin1: indicator.admin1,
+            admin2: indicator.admin2,
+            admin3: indicator.admin3,
+            period: indicator.period,
+            timeseries: indicatorDataInverted.value ? timeseries : _.cloneDeep(indicator.original_timeseries),
+            original_timeseries: indicator.original_timeseries,
+            // Filled in by server
+            max: null,
+            min: null
+          },
+          components: selectedNode?.value?.components
+        };
+
+        // FIXME: error when attempting to invert multiple times too quickly
+        //        without waiting a bit between each toggle
+        await modelService.updateNodeParameter(selectedNode.value?.model_id as string, nodeParameters);
+        refreshModelData();
+      }
+    };
+
+    const indicatorDataInverted = ref(false);
+
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
     // FIXME: we only want to overwrite historicalTimeseries with the selected
     //  node's timeseries when we first fetch it
@@ -422,6 +494,18 @@ export default defineComponent({
       (newScenarioData, oldScenarioData) => {
         if (oldScenarioData?.indicatorName !== newScenarioData?.indicatorName) {
           historicalTimeseries.value = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+        }
+      }
+    );
+    // @HACK: An exception to overwriting the historicalTimeseries is
+    //  when the user manually requests to invert the data
+    //  NOTE: this ignores any previously modified paramaterization
+    watch(
+      () => [modelComponents.value],
+      () => {
+        if (modelComponents.value && invertDataWasToggled.value) {
+          historicalTimeseries.value = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+          invertDataWasToggled.value = false;
         }
       }
     );
@@ -543,6 +627,11 @@ export default defineComponent({
     const clearParameterization = async () => {
       if (selectedNode.value === null) return;
       const { id, concept, label, model_id, components } = selectedNode.value;
+      const clearedTimeseries = [
+        { value: 0.5, timestamp: Date.UTC(2017, 0) },
+        { value: 0.5, timestamp: Date.UTC(2017, 1) },
+        { value: 0.5, timestamp: Date.UTC(2017, 2) }
+      ];
       const nodeParameters = {
         id,
         concept,
@@ -557,11 +646,8 @@ export default defineComponent({
           admin2: '',
           admin3: '',
           period: 1,
-          timeseries: [
-            { value: 0.5, timestamp: Date.UTC(2017, 0) },
-            { value: 0.5, timestamp: Date.UTC(2017, 1) },
-            { value: 0.5, timestamp: Date.UTC(2017, 2) }
-          ],
+          timeseries: clearedTimeseries,
+          original_timeseries: _.cloneDeep(clearedTimeseries),
           // Let server determine min/max
           max: null,
           min: null
@@ -736,6 +822,7 @@ export default defineComponent({
       indicatorMax,
       indicatorPeriod,
       indicatorRegions,
+      indicatorDataInverted,
       areParameterValuesChanged,
       saveParameterValueChanges,
       selectedTemporalResolution,
@@ -754,6 +841,7 @@ export default defineComponent({
       onCreateScenario,
       SEASONALITY_OPTIONS,
       isDatacubeConfigDropdownOpen: ref(false),
+      toggleIndicatorDataInversion,
       setRunImmediately
     };
   },
@@ -1015,6 +1103,24 @@ h5 {
 
 .btn-danger:hover {
   color: white;
+}
+
+
+.checkbox {
+  user-select: none;
+  display: inline-block;
+  align-self: center;
+  margin: 0;
+
+  label {
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    color: black;
+    display: flex;
+    align-items: center;
+  }
 }
 
 </style>
