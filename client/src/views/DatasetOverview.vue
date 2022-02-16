@@ -82,7 +82,20 @@
 <!--        </span>-->
 <!--      </div>-->
       <div class="info-column">
-        <div><b>Domain: </b> Coming Soon</div>
+        <div style="display: flex; align-items: center">
+          <b>Domain(s): </b>
+          <select name="domains" id="domains" @change="selectedDomain=AVAILABLE_DOMAINS[$event.target.selectedIndex]">
+            <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
+              {{domain}}
+            </option>
+          </select>
+          <button type="button" class="btn btn-default" style="padding: 2px 4px" @click="addDomain">Add</button>
+        </div>
+        <div v-if="editedDataset.domains" style="display: flex; flex-wrap: wrap">
+          <div v-for="domain in editedDataset.domains" :key="domain">
+            <span style="margin: 2px; background-color: white;">{{domain}} <i @click="removeDomain(domain)" class="fa fa-remove" /></span>
+          </div>
+        </div>
         <div><b>Region: </b>{{countries}}</div>
         <div><b>Period: </b> {{period}}</div>
         <div><b>Runtime: </b> Queue: {{runtimeFormatter(dataset.runtimes?.queued)}}, Ingestion: {{runtimeFormatter(dataset.runtimes?.post_processing)}}</div>
@@ -184,6 +197,33 @@ import { runtimeFormatter } from '@/utils/string-util';
 
 const MAX_COUNTRIES = 40;
 
+const AVAILABLE_DOMAINS = [
+  'Logic',
+  'Mathematics',
+  'Astronomy and astrophysics',
+  'Physics',
+  'Chemistry',
+  'Life Sciences',
+  'Earth and Space Sciences',
+  'Agricultural Sciences',
+  'Medical Sciences',
+  'Technological Sciences',
+  'Anthropology',
+  'Demographics',
+  'Economic Sciences',
+  'Geography',
+  'History',
+  'Juridical Sciences and Law',
+  'Linguistics',
+  'Pedagogy',
+  'Political Science',
+  'Psychology',
+  'Science of Arts and Letters',
+  'Sociology',
+  'Ethics',
+  'Philosophy'
+];
+
 export default defineComponent({
   name: 'DatasetOverview',
   components: {
@@ -196,12 +236,14 @@ export default defineComponent({
   data: () => ({
     indicators: [] as Indicator[],
     dataset: {} as Dataset,
-    editedDataset: { name: '', description: '', maintainer: {} } as DatasetEditable,
+    editedDataset: { name: '', description: '', maintainer: {}, domains: [] as string[] } as DatasetEditable,
     searchTerm: '',
     showSortingDropdown: false,
     sortingOptions: ['Most recent', 'Oldest'],
     selectedSortingOption: 'Most recent',
-    showApplyToAllModal: false
+    showApplyToAllModal: false,
+    AVAILABLE_DOMAINS,
+    selectedDomain: AVAILABLE_DOMAINS[0]
     // filterOptions: [
     //   { status: DatacubeStatus.Ready, selected: true },
     //   { status: DatacubeStatus.Deprecated, selected: false }
@@ -239,7 +281,8 @@ export default defineComponent({
     isDirty() {
       return this.editedDataset.name !== this.dataset.name ||
         this.editedDataset.description !== this.dataset.description ||
-        !_.isEqual(this.editedDataset.maintainer, this.dataset.maintainer);
+        !_.isEqual(this.editedDataset.maintainer, this.dataset.maintainer) ||
+        !_.isEqual(this.editedDataset.domains, this.dataset.domains);
     },
     countries() {
       const country = this.dataset?.geography?.country;
@@ -276,6 +319,17 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds'
     }),
+    addDomain() {
+      if (!this.editedDataset.domains) {
+        this.editedDataset.domains = [];
+      }
+      if (!this.editedDataset.domains.includes(this.selectedDomain)) {
+        this.editedDataset.domains.push(this.selectedDomain);
+      }
+    },
+    removeDomain(domain: string) {
+      this.editedDataset.domains = this.editedDataset.domains.filter(d => d !== domain);
+    },
     async fetchIndicators() {
       this.enableOverlay('Loading indicators');
 
@@ -314,11 +368,13 @@ export default defineComponent({
       this.dataset.name = this.editedDataset.name;
       this.dataset.description = this.editedDataset.description;
       this.dataset.maintainer = this.editedDataset.maintainer;
+      this.dataset.domains = this.editedDataset.domains;
       const deltas = this.indicators.map(indicator => ({
         id: indicator.id,
         name: this.editedDataset.name,
         description: this.editedDataset.description,
-        maintainer: this.editedDataset.maintainer
+        maintainer: this.editedDataset.maintainer,
+        domains: this.editedDataset.domains
       }));
       try {
         await updateIndicatorsBulk(deltas);
