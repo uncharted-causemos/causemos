@@ -836,7 +836,7 @@ export default defineComponent({
       onCreateScenario,
       SEASONALITY_OPTIONS,
       isDatacubeConfigDropdownOpen: ref(false),
-      toggleIndicatorDataInversion
+      toggleIndicatorDataInversion,
       setRunImmediately
     };
   },
