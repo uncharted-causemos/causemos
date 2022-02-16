@@ -46,21 +46,37 @@
             </div>
           </div>
           <div class="expanded-node-body">
-            <td-node-chart
+            <div
+              class="node-layout"
               v-if="selectedNodeScenarioData !== null"
-              class="scenario-chart"
-              :historical-timeseries="historicalTimeseries"
-              :projections="selectedNodeScenarioData.projections"
-              :unit="selectedNodeScenarioData.unit"
-              :min-value="indicatorMin"
-              :max-value="indicatorMax"
-              :constraints="constraints"
-              :model-summary="modelSummary"
-              :viewing-extent="viewingExtent"
-              :is-clamp-area-hidden="selectedScenarioId === null"
-              @set-constraints="modifyConstraints"
-              @set-historical-timeseries="setHistoricalTimeseries"
-            />
+            >
+              <div class="node-range">
+                <chart-range-input
+                  label="Maximum"
+                  :unit="selectedNodeScenarioData.unit"
+                  v-model.number="indicatorMax"
+                />
+                <chart-range-input
+                  label="Minimum"
+                  :unit="selectedNodeScenarioData.unit"
+                  v-model.number="indicatorMin"
+                />
+              </div>
+              <td-node-chart
+                class="scenario-chart"
+                :historical-timeseries="historicalTimeseries"
+                :projections="selectedNodeScenarioData.projections"
+                :unit="selectedNodeScenarioData.unit"
+                :min-value="indicatorMin"
+                :max-value="indicatorMax"
+                :constraints="constraints"
+                :model-summary="modelSummary"
+                :viewing-extent="viewingExtent"
+                :is-clamp-area-hidden="selectedScenarioId === null"
+                @set-constraints="modifyConstraints"
+                @set-historical-timeseries="setHistoricalTimeseries"
+              />
+            </div>
             <div class="indicator-config">
               <strong
                 class="indicator-name"
@@ -129,10 +145,6 @@
                   Clear constraints
                 </button> -->
               </div>
-              <span>Min. value:</span>
-              <input class="form-control input-sm" v-model.number="indicatorMin"/>
-              <span>Max. value:</span>
-              <input class="form-control input-sm" v-model.number="indicatorMax"/>
               <div class="checkbox">
                 <label
                   @click="toggleIndicatorDataInversion">
@@ -215,6 +227,7 @@ import ProjectionRidgelines from '@/components/node-drilldown/projection-ridgeli
 import moment from 'moment';
 import { getStepCountFromTimeScale } from '@/utils/time-scale-util';
 import DropdownControl from '@/components/dropdown-control.vue';
+import ChartRangeInput from '@/components/widgets/chart-range-input.vue';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
 import { normalize } from '@/utils/value-util';
@@ -238,7 +251,8 @@ export default defineComponent({
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
     ProjectionRidgelines,
-    DropdownControl
+    DropdownControl,
+    ChartRangeInput
   },
   props: {},
   setup() {
@@ -1009,15 +1023,25 @@ input[type="radio"] {
   flex-direction: column;
   padding: 10px;
   padding-top: 0;
+  .node-layout {
+    display: flex;
+    .node-range {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 12px;
+      width: 17ch;
+    }
+    .scenario-chart {
+      height: 140px;
+    }
+  }
 }
 
 .button-group > *:not(:first-child) {
   margin-left: 5px;
 }
 
-.scenario-chart {
-  height: 140px;
-}
 
 .projection-ridgelines {
   flex: 3;
@@ -1052,9 +1076,6 @@ h5 {
   align-items: center;
   gap: 5px;
 
-  .form-control {
-    width: 10ch;
-  }
 
   .indicator-name {
     max-width: 25ch;

@@ -42,7 +42,7 @@ const MAJOR_TICK_COLOR = '#A9A9A9';
 const MAJOR_TICK_LABEL_SIZE = 10;
 
 const X_AXIS_HEIGHT = 20;
-const Y_AXIS_WIDTH = 40;
+const Y_AXIS_WIDTH = 20;
 const PADDING_TOP = 10;
 const PADDING_RIGHT = 40;
 
@@ -272,17 +272,20 @@ export default function(
       yOffset,
       DATE_FORMATTER
     );
-    renderYaxis(
-      focusGroupElement,
-      yScaleFocus,
-      yAxisTicksFocus,
-      valueFormatter,
-      xOffset,
-      Y_AXIS_WIDTH
-    );
+    // only render the yAxis if 0 is in the range and longer than 2 elements
+    if (yAxisTicksFocus.includes(0) && yAxisTicksFocus.length > 2) {
+      renderYaxis(
+        focusGroupElement,
+        yScaleFocus,
+        [0],
+        valueFormatter,
+        xOffset,
+        Y_AXIS_WIDTH
+      );
+    }
 
     focusGroupElement.selectAll('.yAxis .domain').remove();
-    focusGroupElement.selectAll('.yAxis .tick line').remove();
+    focusGroupElement.selectAll('.yAxis .tick line').style('color', '#ddd');
     renderHistoricalTimeseries(
       historicalTimeseries,
       focusGroupElement,
