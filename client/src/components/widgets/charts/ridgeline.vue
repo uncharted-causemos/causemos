@@ -14,7 +14,7 @@ import {
   CONTEXT_BRACKET_WIDTH,
   renderRidgelines
 } from '@/charts/ridgeline-renderer';
-import { RidgelinePoint } from '@/utils/ridgeline-util';
+import { RidgelineWithMetadata } from '@/utils/ridgeline-util';
 import {
   defineComponent,
   onMounted,
@@ -32,11 +32,11 @@ export default defineComponent({
   name: 'Ridgeline',
   props: {
     ridgelineData: {
-      type: Object as PropType<RidgelinePoint[]>,
+      type: Object as PropType<RidgelineWithMetadata>,
       required: true
     },
     comparisonBaseline: {
-      type: Object as PropType<RidgelinePoint[] | null>,
+      type: Object as PropType<RidgelineWithMetadata | null>,
       default: null
     },
     min: {

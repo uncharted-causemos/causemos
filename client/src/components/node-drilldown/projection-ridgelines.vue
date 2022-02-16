@@ -139,7 +139,7 @@ import CagScenarioForm from '@/components/cag/cag-scenario-form.vue';
 import {
   calculateTypicalChangeBracket,
   convertDistributionTimeseriesToRidgelines,
-  RidgelinePoint
+  RidgelineWithMetadata
 } from '@/utils/ridgeline-util';
 import { scrollToElement, scrollToElementWithId } from '@/utils/dom-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
@@ -150,8 +150,8 @@ interface RidgelineRow {
   scenarioId: string;
   is_valid: boolean;
   parameter: ScenarioParameter;
-  ridgelines: RidgelinePoint[][];
-  comparisonBaseline: RidgelinePoint[][] | null;
+  ridgelines: RidgelineWithMetadata[];
+  comparisonBaseline: RidgelineWithMetadata[] | null;
   contextRanges: ({ min: number; max: number } | null)[];
 }
 
@@ -241,16 +241,14 @@ export default defineComponent({
 
         // Convert the distributions at each timeslice to ridgelines with
         //  metadata for each slice
-        const ridgelines: RidgelinePoint[][] = [];
         const contextRanges: ({ min: number; max: number } | null)[] = [];
-        convertDistributionTimeseriesToRidgelines(
+        const ridgelines = convertDistributionTimeseriesToRidgelines(
           projectionValues,
           this.modelSummary.parameter.time_scale,
           this.indicatorMin,
           this.indicatorMax
-        ).forEach(ridgelinesWithMetadata => {
-          // Remove metadata
-          ridgelines.push(ridgelinesWithMetadata.ridgeline);
+        );
+        ridgelines.forEach(ridgelinesWithMetadata => {
           // Calculate context range
           const contextRange = calculateTypicalChangeBracket(
             this.historicalTimeseries,
@@ -527,6 +525,6 @@ h3 {
 // Ridgeline plot looks too stretched out if it takes the full width
 .ridgeline {
   height: 100%;
-  width: 50%;
+  width: 100%;
 }
 </style>

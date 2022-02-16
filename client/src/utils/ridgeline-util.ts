@@ -26,6 +26,7 @@ export interface RidgelineWithMetadata {
   timestamp: number;
   monthsAfterNow: number;
   ridgeline: RidgelinePoint[];
+  distributionMean: number;
 }
 
 const convertDistributionToRidgeline = (
@@ -121,6 +122,7 @@ export const convertDistributionTimeseriesToRidgelines = (
       timestamp: correctedTimestamp,
       label: timeSliceAtThisTimestep?.shortLabel ?? '',
       monthsAfterNow,
+      distributionMean: _.mean(values),
       ridgeline: convertDistributionToRidgeline(values, min, max, binCount)
     });
   });
@@ -160,4 +162,43 @@ export const calculateTypicalChangeBracket = (
   );
   const latestHistoricalValue = _.last(dataBeforeProjectionStart)?.value ?? 0;
   return { min: latestHistoricalValue + min, max: latestHistoricalValue + max };
+};
+
+export const summarizeRidgelineComparison = (
+  scenario: RidgelineWithMetadata,
+  comparisonBaseline: RidgelineWithMetadata,
+  min: number,
+  max: number
+) => {
+  const fivePercentOfRange = (max - min) / 20;
+  const meanDifference =
+    scenario.distributionMean - comparisonBaseline.distributionMean;
+  if (Math.abs(meanDifference) < fivePercentOfRange) {
+    // TODO: use standard deviation to test whether scenario is more/less
+    //  certain when means are approximately equal
+    return {
+      before: 'No significant change.',
+      emphasized: '',
+      after: ''
+    };
+  }
+  let magnitudeAdjective = '';
+  const twentyFivePercentOfRange = fivePercentOfRange * 5;
+  const fiftyPercentOfRange = fivePercentOfRange * 10;
+  if (Math.abs(meanDifference) < twentyFivePercentOfRange) {
+    magnitudeAdjective = 'small';
+  } else if (Math.abs(meanDifference) < fiftyPercentOfRange) {
+    magnitudeAdjective = 'large';
+  } else {
+    magnitudeAdjective = 'extreme';
+  }
+  const direction =
+    scenario.distributionMean > comparisonBaseline.distributionMean
+      ? 'higher'
+      : 'lower';
+  return {
+    before: _.capitalize(`${magnitudeAdjective} shift toward `),
+    emphasized: direction,
+    after: ' values.'
+  };
 };

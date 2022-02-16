@@ -565,7 +565,7 @@ const renderProjectionRidgelines = (
 
   // Render each ridgeline
   ridgeLines.forEach(ridgelineWithMetadata => {
-    const { ridgeline, timestamp, monthsAfterNow } = ridgelineWithMetadata;
+    const { timestamp, monthsAfterNow } = ridgelineWithMetadata;
     const contextRange = calculateTypicalChangeBracket(
       historicalTimeseries,
       monthsAfterNow,
@@ -573,7 +573,7 @@ const renderProjectionRidgelines = (
     );
     const elem = renderRidgelines(
       ridgeLineGroup as any,
-      ridgeline,
+      ridgelineWithMetadata,
       null,
       approximateWidth,
       Math.abs(yScale.range()[1] - yScale.range()[0]),
