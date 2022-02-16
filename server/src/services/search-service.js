@@ -382,7 +382,7 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
   const ontologyKeys = Object.keys(ontologyMap);
   const set = new Set(ontologyKeys.map(d => _.last(d.split('/'))));
 
-  let indicators = [];
+  const indicators = [];
   // match using the component that gets the highest matching score
   for (let i = 0; i < 1; i++) { // i < 1 to work with first component for now
     const component = node.components[i];
@@ -391,30 +391,30 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
       return memberStrings.includes(_.last(d.label.split('/')));
     }).map(d => d.label);
 
-    const homeId = {}
+    const homeId = {};
     let foundConcept = false;
     // just use the first concept found for now
     for (const member of members) {
       if (!foundConcept && member.includes('concept')) {
-        homeId['concept'] = member;
+        homeId.concept = member;
         foundConcept = true;
       }
       // use process if it exists in the reversed ontology
       if (member.includes('process')) {
-        homeId['process'] = member;
+        homeId.process = member;
       }
     }
 
     const options = {
-      method: "PUT",
-      url: "http://linking.cs.arizona.edu/v1/compositionalSearch?maxHits=" + k.toString() + "&threshold=0.3",
+      method: 'PUT',
+      url: `http://linking.cs.arizona.edu/v1/compositionalSearch?maxHits=${k}&threshold=${0.3}`,
       headers: {
-        "Content-type": "application/json",
-        "Accept": "application/json"
+        'Content-type': 'application/json',
+        'Accept': 'application/json'
       },
       json: {
         homeId,
-        "awayId": [] // next step involves constructing an adjacency list to make awayIds
+        awayId: [] // FIXME: next step involves constructing an adjacency list to make awayIds
       }
     };
     try {
@@ -422,9 +422,9 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
       if (response.length > 0) {
         // need to make sure we have the indicator
         for (const result of response) {
-          if (result.datamart.datamartId === "DOJO_Indicator") {
+          if (result.datamart.datamartId === 'DOJO_Indicator') {
             const dataId = result.datamart.datasetId;
-            const name = result.datamart.variableId
+            const name = result.datamart.variableId;
             const candidates = await indicatorSeachByDatasetId(dataId, name);
             if (candidates.length > 0) {
               indicators.push({ score: result.score, candidate: candidates[0] });
@@ -432,13 +432,12 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
           }
         }
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error(error);
     }
   }
   return indicators.sort((a, b) => b.score - a.score).slice(0, k).map(x => x.candidate);
-}
+};
 
 const indicatorSeachByDatasetId = async (dataId, name) => {
   const searchPayload = {
@@ -452,7 +451,7 @@ const indicatorSeachByDatasetId = async (dataId, name) => {
               term: { data_id: dataId }
             },
             {
-              term: { "outputs.name": name }
+              term: { 'outputs.name': name }
             }
           ]
         }
@@ -471,5 +470,5 @@ module.exports = {
   rawConceptEntitySearch,
   rawDatacubeSearch,
   indicatorSearchByConcepts,
-  indicatorSearchConceptAligner,
+  indicatorSearchConceptAligner
 };
