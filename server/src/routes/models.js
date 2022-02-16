@@ -51,14 +51,16 @@ router.put('/:modelId/model-metadata', asyncHandler(async (req, res) => {
   const {
     name,
     description,
-    thumbnail_source: thumbnailSource
+    thumbnail_source: thumbnailSource,
+    data_analysis_id
   } = req.body;
 
   // Update the CAG metadata
   await cagService.updateCAGMetadata(modelId, {
     name: name,
     description: description,
-    thumbnail_source: thumbnailSource
+    thumbnail_source: thumbnailSource,
+    data_analysis_id
   });
   res.status(200).send({ updateToken: editTime });
 }));
@@ -173,7 +175,6 @@ router.post('/', asyncHandler(async (req, res) => {
   historyService.logHistory(result.id, 'create', nodes, edges);
   res.json(result);
 }));
-
 
 /**
  * DELETE a CAG

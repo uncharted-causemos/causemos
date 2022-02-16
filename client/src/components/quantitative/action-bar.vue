@@ -62,7 +62,16 @@
         <i class="fa fa-fw fa-undo" />Reset Layout
       </button>
     </div>
-    <div>
+    <div class="group">
+      <button
+        v-tooltip.top-center="'open data analysis with CAG indicators'"
+        type="button"
+        class="btn btn-default"
+        style="margin-right: 1rem;"
+        @click="openDataAnalysis"
+      >
+        Data Analysis
+      </button>
       <div class="augment-model">
         <arrow-button
           :text="'Modify CAG'"
@@ -116,7 +125,8 @@ export default defineComponent({
   emits: [
     'run-model',
     'reset-cag',
-    'tab-click'
+    'tab-click',
+    'open-data-analysis-for-cag'
   ],
   setup() {
     const store = useStore();
@@ -179,6 +189,9 @@ export default defineComponent({
     },
     resetCAG() {
       this.$emit('reset-cag');
+    },
+    openDataAnalysis() {
+      this.$emit('open-data-analysis-for-cag');
     },
     toggleScenarioDropdownOpen() {
       this.isScendarioDropdownOpen = !this.isScendarioDropdownOpen;

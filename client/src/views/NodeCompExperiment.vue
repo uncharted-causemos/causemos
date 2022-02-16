@@ -216,6 +216,7 @@ export default defineComponent({
         model_id: selectedNode?.value?.model_id,
         parameter: {
           id: metadata?.value?.id,
+          data_id: metadata?.value?.data_id,
           name: metadata?.value?.name,
           unit: mainModelOutput?.value?.unit,
           country,
