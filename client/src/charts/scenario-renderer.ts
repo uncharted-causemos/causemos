@@ -229,7 +229,7 @@ function renderScenarioProjections(
 
   // Convert distribution timeseries to line, where each point represents an
   //  inflection point on what will eventually be a ridgeline chart
-  const ridgelinePoints = convertDistributionTimeseriesToRidgelines(
+  const ridgelinesWithMetadata = convertDistributionTimeseriesToRidgelines(
     projectionValues,
     time_scale,
     yScale.domain()[0],
@@ -242,7 +242,8 @@ function renderScenarioProjections(
     xScale(getTimestampAfterMonths(projection_start, firstSliceMonths)) -
     xScale(projection_start);
 
-  ridgelinePoints.forEach(({ label, ridgeline, timestamp, monthsAfterNow }) => {
+  ridgelinesWithMetadata.forEach((ridgelineWithMetadata) => {
+    const { label, timestamp, monthsAfterNow } = ridgelineWithMetadata;
     // Calculate context range for each timeslice, unless this is an abstract
     //  node where the analyst hasn't filled in the historical data.
     const hideContextRanges = indicator_time_series.length < 4;
@@ -260,7 +261,7 @@ function renderScenarioProjections(
       //  this is "a known problem with [the] D3 type library", so for now just
       //  cast to `any`
       svgGroup as any,
-      ridgeline,
+      ridgelineWithMetadata,
       null,
       widthBetweenTimeslices,
       height,

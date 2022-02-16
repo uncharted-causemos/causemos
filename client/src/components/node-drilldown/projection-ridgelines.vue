@@ -33,8 +33,8 @@
               {{ ontologyFormatter(clamp.concept) }}
             </div>
           </div>
-          <div style="flex: 8; display: flex; flex-direction: column;">
-            <div style="display: flex; min-height: 3rem;">
+          <div style="flex: 8; display: flex; flex-direction: column">
+            <div style="display: flex; min-height: 3rem">
               <span
                 class="scenario-desc"
                 v-tooltip.top-start="row.scenarioDesc"
@@ -46,7 +46,7 @@
               <span
                 v-if="
                   rowsToDisplay.length > 1 &&
-                    row.scenarioId === comparisonBaselineId
+                  row.scenarioId === comparisonBaselineId
                 "
               >
                 Comparison baseline</span
@@ -61,26 +61,22 @@
                 Use as comparison baseline
               </button>
             </div>
-            <div style="display: flex;">
-              <div
-                class="ridgeline-wrapper"
+            <div style="display: flex">
+              <ridgeline
+                class="ridgeline"
                 v-for="(ridgelineData, timeSliceIndex) of row.ridgelines"
                 :key="timeSliceIndex"
-              >
-                <ridgeline
-                  class="ridgeline"
-                  :ridgeline-data="ridgelineData"
-                  :comparison-baseline="
-                    row.comparisonBaseline
-                      ? row.comparisonBaseline[timeSliceIndex]
-                      : null
-                  "
-                  :min="indicatorMin"
-                  :max="indicatorMax"
-                  :historical-timeseries="historicalTimeseries"
-                  :context-range="row.contextRanges[timeSliceIndex]"
-                />
-              </div>
+                :ridgeline-data="ridgelineData"
+                :comparison-baseline="
+                  row.comparisonBaseline
+                    ? row.comparisonBaseline[timeSliceIndex]
+                    : null
+                "
+                :min="indicatorMin"
+                :max="indicatorMax"
+                :historical-timeseries="historicalTimeseries"
+                :context-range="row.contextRanges[timeSliceIndex]"
+              />
             </div>
           </div>
         </div>
@@ -139,7 +135,7 @@ import CagScenarioForm from '@/components/cag/cag-scenario-form.vue';
 import {
   calculateTypicalChangeBracket,
   convertDistributionTimeseriesToRidgelines,
-  RidgelinePoint
+  RidgelineWithMetadata
 } from '@/utils/ridgeline-util';
 import { scrollToElement, scrollToElementWithId } from '@/utils/dom-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
@@ -150,8 +146,8 @@ interface RidgelineRow {
   scenarioId: string;
   is_valid: boolean;
   parameter: ScenarioParameter;
-  ridgelines: RidgelinePoint[][];
-  comparisonBaseline: RidgelinePoint[][] | null;
+  ridgelines: RidgelineWithMetadata[];
+  comparisonBaseline: RidgelineWithMetadata[] | null;
   contextRanges: ({ min: number; max: number } | null)[];
 }
 
@@ -241,16 +237,14 @@ export default defineComponent({
 
         // Convert the distributions at each timeslice to ridgelines with
         //  metadata for each slice
-        const ridgelines: RidgelinePoint[][] = [];
         const contextRanges: ({ min: number; max: number } | null)[] = [];
-        convertDistributionTimeseriesToRidgelines(
+        const ridgelines = convertDistributionTimeseriesToRidgelines(
           projectionValues,
           this.modelSummary.parameter.time_scale,
           this.indicatorMin,
           this.indicatorMax
-        ).forEach(ridgelinesWithMetadata => {
-          // Remove metadata
-          ridgelines.push(ridgelinesWithMetadata.ridgeline);
+        );
+        ridgelines.forEach(ridgelinesWithMetadata => {
           // Calculate context range
           const contextRange = calculateTypicalChangeBracket(
             this.historicalTimeseries,
@@ -516,17 +510,11 @@ h3 {
   margin-left: 2rem;
 }
 
-.ridgeline-wrapper {
+.ridgeline {
   height: 100px;
   position: relative;
   display: flex;
   flex: 1;
   min-width: 0;
-}
-
-// Ridgeline plot looks too stretched out if it takes the full width
-.ridgeline {
-  height: 100%;
-  width: 50%;
 }
 </style>
