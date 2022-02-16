@@ -423,10 +423,9 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
         // need to make sure we have the indicator
         for (const result of response) {
           if (result.datamart.datamartId === "DOJO_Indicator") {
-            // include variableName
             const dataId = result.datamart.datasetId;
-            const variableName = result.datamart.variableName
-            const candidates = await indicatorSeachByDatasetId(dataId, variableName);
+            const name = result.datamart.variableId
+            const candidates = await indicatorSeachByDatasetId(dataId, name);
             if (candidates.length > 0) {
               indicators.push({ score: result.score, candidate: candidates[0] });
             }
@@ -441,7 +440,7 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
   return indicators.sort((a, b) => b.score - a.score).slice(0, k).map(x => x.candidate);
 }
 
-const indicatorSeachByDatasetId = async (dataId, variableName) => {
+const indicatorSeachByDatasetId = async (dataId, name) => {
   const searchPayload = {
     index: RESOURCE.DATA_DATACUBE,
     size: 1,
@@ -453,7 +452,7 @@ const indicatorSeachByDatasetId = async (dataId, variableName) => {
               term: { data_id: dataId }
             },
             {
-              term: { "outputs.display_name": variableName }
+              term: { "outputs.name": name }
             }
           ]
         }
@@ -473,5 +472,4 @@ module.exports = {
   rawDatacubeSearch,
   indicatorSearchByConcepts,
   indicatorSearchConceptAligner,
-  indicatorSeachByDatasetId
 };

@@ -179,11 +179,15 @@ const setDefaultIndicators = async (modelId, resolution) => {
   const updates = [];
 
   for (const node of nodeParameters) {
+    const matches = conceptIndicatorMap.get(node.concept);
     const updatePayload = {
       id: node.id
     };
     if (conceptIndicatorMap.has(node.concept)) {
-      const cube = conceptIndicatorMap.get(node.concept)[0];
+      const cube = matches[0];
+      updatePayload.match_candidates = matches.map(match => {
+        return { id: match.id, dataId: match.data_id, displayName: match.outputs[0].display_name }
+      })
       updatePayload.parameter = {
         id: cube.id,
         name: cube.outputs[0].display_name,
