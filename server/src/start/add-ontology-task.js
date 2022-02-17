@@ -8,11 +8,7 @@ const addUAzOntology = async () => {
     const projects = await projectService.listProjects();
 
     for (const project of projects) {
-        try {
-            // want to skip ontologies that are URLs
-            // could just check if ending is .yml
-            new URL(project.ontology);
-        } catch (e) {
+        if (!project.ontology.startsWith("http")) {
             Logger.info('Calling addOntology for ontology ' + project.ontology);
             const options = {
                 method: 'PUT',
@@ -35,4 +31,4 @@ const startAddUAzOntology = (interval) => {
     setInterval(addUAzOntology, interval);
 };
 
-module.exports = { startAddUAzOntology };
+module.exports = { startAddUAzOntology, addUAzOntology };
