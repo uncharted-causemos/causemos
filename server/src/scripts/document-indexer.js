@@ -1,4 +1,4 @@
-const dotenvConfigResult = require('dotenv').config(); // This line of code reads the contents of the .env file in root into the process.env variable.
+const dotenvConfigResult = require('dotenv').config();
 const { client } = require('../adapters/es/client');
 
 const documentId = process.argv[2];
@@ -119,11 +119,14 @@ const reindex = async (index, doc) => {
 };
 
 const run = async () => {
+  const start = (new Date()).getTime();
+
   // 1. Get the document
   const doc = await getDocument(documentId);
   console.log(`Updating document ${doc.id}`);
 
   // 2. For each knowledge-base, update evidence that points to document
+  // knowledge-bases are set to readonly for cloning reasons, we need to flip the setting temporarily
   const kbs = await getElasticDocs('knowledge-base');
   for (const kb of kbs) {
     console.log(`Reindexing ${kb.name}`);
@@ -138,7 +141,7 @@ const run = async () => {
         }
       }
     });
-    await sleep(4000);
+    await sleep(4000); // Just to ensure settings take hold
 
     await reindex(kb.id, doc);
 
@@ -155,6 +158,15 @@ const run = async () => {
   }
 
   // 3. For each project, update evidence that points to document
+  const projects = await getElasticDocs('project');
+  console.log(projects.length);
+  for (const project of projects) {
+    console.log(`Reindexing ${project.name}`);
+    await reindex(project.id, doc);
+  }
+
+  const end = (new Date()).getTime();
+  console.log(`Elapsed ${end - start}`);
 };
 
 run();
