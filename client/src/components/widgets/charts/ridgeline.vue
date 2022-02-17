@@ -11,7 +11,6 @@ import _ from 'lodash';
 
 import {
   COMPARISON_BASELINE_COLOR,
-  CONTEXT_BRACKET_WIDTH,
   renderRidgelines
 } from '@/charts/ridgeline-renderer';
 import { RidgelineWithMetadata } from '@/utils/ridgeline-util';
@@ -24,7 +23,6 @@ import {
   watchEffect,
   nextTick
 } from 'vue';
-import { translate } from '@/utils/svg-util';
 
 const RESIZE_DELAY = 15;
 
@@ -88,17 +86,11 @@ export default defineComponent({
       // Set new size
       svg.attr('width', width).attr('height', height);
       svg.selectAll('*').remove();
-      // Context ranges start `CONTEXT_BRACKET_WIDTH` pixels(SVG units?) to the
-      //  left of the `g` element that's created in `renderRidgelines`.
-      // To keep it within this component's `svg` element, we
-      //  - pass a smaller width to `renderRidgelines`
-      //  - shift the resulting `g` element to the right
-      const widthWithoutContextRanges = width - CONTEXT_BRACKET_WIDTH;
       renderRidgelines(
         svg,
         ridgelineData.value,
         comparisonBaseline.value,
-        widthWithoutContextRanges,
+        width,
         height,
         min.value,
         max.value,
@@ -108,7 +100,7 @@ export default defineComponent({
         contextRange.value,
         10,
         COMPARISON_BASELINE_COLOR
-      ).attr('transform', translate(CONTEXT_BRACKET_WIDTH, 0));
+      );
     });
 
     const resize = _.debounce(function ({ width, height }) {

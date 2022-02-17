@@ -20,9 +20,8 @@ const LABEL_COLOR = '#999';
 const LABEL_SIZE = 5;
 const CONTEXT_BRACKET_LINE_WIDTH = 1;
 const CONTEXT_BRACKET_COLOR = LABEL_COLOR;
-export const CONTEXT_BRACKET_WIDTH = 4;
 
-const COMPARISON_COLOR = '#4DAC26'; // green
+const COMPARISON_COLOR = 'black';
 export const COMPARISON_BASELINE_COLOR = '#AAA'; // grey
 const COMPARISON_OVERLAP_COLOR = COMPARISON_BASELINE_COLOR;
 const curve = d3.curveMonotoneY;
@@ -33,6 +32,8 @@ const SUMMARY_WIDTH_PERCENTAGE = 0.75;
 //  and the text
 const SUMMARY_SPACING = 3;
 const SUMMARY_ARROW_COLOR = COMPARISON_BASELINE_COLOR;
+
+const UNPRECEDENTED_COLOR = 'orange';
 
 export const renderRidgelines = (
   selection: d3.Selection<SVGElement, any, any, any>,
@@ -57,9 +58,9 @@ export const renderRidgelines = (
     .domain([0, 1])
     .range([0, widthAvailableForChart]);
   // If yAxis labels are visible, leave padding of size `labelSize / 2` at the
-  //  top and bottom so the labels aren't clipped
+  //  top and `labelSize` at the bottom so the labels aren't clipped
   const yRange = showYAxisLabels
-    ? [height - labelSize / 2, labelSize / 2]
+    ? [height - labelSize, labelSize / 2]
     : [height, 0];
   const yScale = d3.scaleLinear().domain([min, max]).range(yRange).clamp(true);
   // Create a line generator that will be used to render the ridgeline
@@ -186,16 +187,6 @@ export const renderRidgelines = (
         );
     }
   }
-  // Draw vertical line to act as a baseline
-  if (showYAxisLine) {
-    gElement
-      .append('rect')
-      .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH)
-      .attr('height', height)
-      .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
-      .attr('x', -RIDGELINE_VERTICAL_AXIS_WIDTH / 2)
-      .attr('y', 0);
-  }
   // Draw time slice label
   if (label !== '') {
     gElement
@@ -203,7 +194,7 @@ export const renderRidgelines = (
       .attr(
         'transform',
         // Nudge labels down a little so they're not overlapped by context range bracket
-        translate(-labelSize / 2, height + labelSize / 2)
+        translate(-labelSize / 2, height + labelSize)
       )
       .attr('font-size', labelSize)
       .style('fill', LABEL_COLOR)
@@ -228,6 +219,63 @@ export const renderRidgelines = (
       .style('fill', LABEL_COLOR)
       .text(tickValue => formatter(tickValue));
   }
+
+  if (contextRange !== null) {
+    // TODO: this is a duplicate
+    // Clamp context range to the node's min/max so it doesn't overflow
+    const clampedContextRange = {
+      min: _.clamp(contextRange.min, min, max),
+      max: _.clamp(contextRange.max, min, max)
+    };
+    // Highlight values outside of context range
+    const uid = _.uniqueId();
+    const clipPath = gElement.append('clipPath').attr('id', uid);
+    if (yScale(clampedContextRange.max) - yScale(max) < 0) {
+      console.log(
+        contextRange.max,
+        clampedContextRange.max,
+        yScale(clampedContextRange.max),
+        max,
+        yScale(max)
+      );
+    }
+    clipPath
+      .append('rect')
+      .attr('width', width)
+      .attr('height', yScale(clampedContextRange.max) - yScale(max))
+      .attr('transform', translate(0, 0));
+    clipPath
+      .append('rect')
+      .attr('width', width)
+      .attr('height', yScale(min) - yScale(clampedContextRange.min))
+      .attr('transform', translate(0, yScale(clampedContextRange.min)));
+
+    const area = d3
+      .area<RidgelinePoint>()
+      .x0(() => xScale(0))
+      .x1(point => xScale(point.value))
+      .y(point => yScale(point.coordinate))
+      .curve(curve);
+    gElement
+      .append('path')
+      .attr('clip-path', `url(#${uid})`)
+      .attr('fill', UNPRECEDENTED_COLOR)
+      .attr('stroke', UNPRECEDENTED_COLOR)
+      .attr('stroke-width', RIDGELINE_STROKE_WIDTH)
+      .attr('d', area(ridgeline.ridgeline) ?? '');
+  }
+
+  // Draw vertical line to act as a baseline
+  if (showYAxisLine) {
+    gElement
+      .append('rect')
+      .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH)
+      .attr('height', height)
+      .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
+      .attr('x', -RIDGELINE_VERTICAL_AXIS_WIDTH / 2)
+      .attr('y', 0);
+  }
+
   // Draw context range
   if (contextRange !== null) {
     // Clamp context range to the node's min/max so it doesn't overflow
@@ -235,12 +283,14 @@ export const renderRidgelines = (
       min: _.clamp(contextRange.min, min, max),
       max: _.clamp(contextRange.max, min, max)
     };
-    // Vertical line
     gElement
       .append('rect')
       .attr(
         'transform',
-        translate(-CONTEXT_BRACKET_WIDTH, yScale(clampedContextRange.max))
+        translate(
+          -CONTEXT_BRACKET_LINE_WIDTH / 2,
+          yScale(clampedContextRange.max)
+        )
       )
       .attr('width', CONTEXT_BRACKET_LINE_WIDTH)
       .attr(
@@ -249,29 +299,6 @@ export const renderRidgelines = (
           yScale(clampedContextRange.max) - yScale(clampedContextRange.min)
         )
       )
-      .style('fill', CONTEXT_BRACKET_COLOR);
-    // Top tick
-    gElement
-      .append('rect')
-      .attr(
-        'transform',
-        translate(-CONTEXT_BRACKET_WIDTH, yScale(clampedContextRange.max))
-      )
-      .attr('width', CONTEXT_BRACKET_WIDTH)
-      .attr('height', CONTEXT_BRACKET_LINE_WIDTH)
-      .style('fill', CONTEXT_BRACKET_COLOR);
-    // Bottom tick
-    gElement
-      .append('rect')
-      .attr(
-        'transform',
-        translate(
-          -CONTEXT_BRACKET_WIDTH,
-          yScale(clampedContextRange.min) - CONTEXT_BRACKET_LINE_WIDTH
-        )
-      )
-      .attr('width', CONTEXT_BRACKET_WIDTH)
-      .attr('height', CONTEXT_BRACKET_LINE_WIDTH)
       .style('fill', CONTEXT_BRACKET_COLOR);
   }
   return gElement;
