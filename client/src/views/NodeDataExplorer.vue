@@ -48,7 +48,7 @@ import modelService from '@/services/model-service';
 import { ProjectType } from '@/types/Enums';
 
 import filtersUtil from '@/utils/filters-util';
-import { NODE_FACET_FIELDS } from '@/utils/datacube-util';
+import { FACET_FIELDS } from '@/utils/datacube-util';
 import { CAGGraph } from '@/types/CAG';
 
 export default defineComponent({
@@ -124,9 +124,7 @@ export default defineComponent({
     },
 
     getSearchFilters() {
-      const searchFilters = _.cloneDeep(this.filters);
-      filtersUtil.addSearchTerm(searchFilters, 'type', 'indicator', 'and', false);
-      return searchFilters;
+      return _.cloneDeep(this.filters);
     },
 
     // retrieves filtered datacube list
@@ -148,9 +146,9 @@ export default defineComponent({
       // retrieves filtered & unfiltered facet data
       this.enableOverlay();
       const searchFilters = this.getSearchFilters();
-      const defaultFilters = { clauses: [{ field: 'type', operand: 'and', isNot: false, values: ['indicator'] }] };
-      this.facets = await getDatacubeFacets(NODE_FACET_FIELDS, defaultFilters as any);
-      this.filteredFacets = await getDatacubeFacets(NODE_FACET_FIELDS, searchFilters);
+      const defaultFilters = { clauses: [] };
+      this.facets = await getDatacubeFacets(FACET_FIELDS, defaultFilters as any);
+      this.filteredFacets = await getDatacubeFacets(FACET_FIELDS, searchFilters);
 
       this.disableOverlay();
     },

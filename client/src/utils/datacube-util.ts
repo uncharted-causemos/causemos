@@ -155,17 +155,6 @@ export const FACET_FIELDS: string [] = [
   STATUS
 ];
 
-export const NODE_FACET_FIELDS: string [] = [
-  DOMAIN,
-  COUNTRY,
-  GEO_GRANULARITY,
-  // PERIOD,
-  TEMPORAL_RESOLUTION,
-  MAINTAINER_ORG,
-  VARIABLE_UNIT,
-  STATUS
-];
-
 export const getDatacubeStatusInfo = (status: DatacubeStatus) => {
   switch (status) {
     case DatacubeStatus.Ready:
@@ -311,7 +300,6 @@ export default {
   SUGGESTION_CODE_TABLE,
   DISPLAY_NAMES,
   FACET_FIELDS,
-  NODE_FACET_FIELDS,
   getValidatedOutputs,
   unpublishDatacube,
   unpublishDatacubeInstance
