@@ -33,10 +33,16 @@ export default function useOutputSpecs(
         ? featureInfo.transform
         : undefined;
       const outputVariable = breakdownOption?.value === SPLIT_BY_VARIABLE ? timeseriesId : activeFeature?.value ?? activeFeatures.value[indx].name;
+
+      // In split-by-variable the scenarioId is runId.concat(outputVariable)
+      // Need to undo that so we can fetch data properly
+      const runId = (breakdownOption?.value === SPLIT_BY_VARIABLE && scenarioId.endsWith(outputVariable))
+        ? scenarioId.slice(0, -outputVariable.length)
+        : scenarioId;
       const outputSpec: OutputSpecWithId = {
         id: timeseriesId,
         modelId: activeModelId,
-        runId: scenarioId,
+        runId: runId,
         outputVariable,
         timestamp,
         transform,
@@ -47,7 +53,7 @@ export default function useOutputSpecs(
         isDefaultRun: false
       };
 
-      const runModelData = modelRunData?.value.find(run => run.id === scenarioId);
+      const runModelData = modelRunData?.value.find(run => run.id === runId);
       const pregenDataForRun = runModelData?.pre_gen_output_paths;
       if (pregenDataForRun && pregenDataForRun.length > 0) {
         outputSpec.preGeneratedOutput = pregenDataForRun;
