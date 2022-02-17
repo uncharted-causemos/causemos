@@ -1052,7 +1052,7 @@ input[type="radio"] {
       flex-direction: column;
       justify-content: space-between;
       font-size: 12px;
-      width: 17ch;
+      width: 20ch;
       padding-bottom: 35px;
     }
     .scenario-chart {

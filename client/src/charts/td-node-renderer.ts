@@ -4,7 +4,7 @@ import { CAGModelSummary, ProjectionConstraint, ScenarioProjection } from '@/typ
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
-import { calculateGenericTicks, calculateYearlyTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
+import { calculateYearlyTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 import {
   hideSvgTooltip,
@@ -258,10 +258,7 @@ export default function(
       xScaleFocus.domain()[1],
       totalWidth
     );
-    const yAxisTicksFocus = calculateGenericTicks(
-      yScaleFocus.domain()[0],
-      yScaleFocus.domain()[1]
-    );
+
     const yOffset = focusHeight - X_AXIS_HEIGHT;
     const xOffset = totalWidth - PADDING_RIGHT;
 
@@ -273,7 +270,7 @@ export default function(
       DATE_FORMATTER
     );
     // only render the yAxis if 0 is in the range and longer than 2 elements
-    if (yAxisTicksFocus.includes(0) && yAxisTicksFocus.length > 2) {
+    if (yScaleFocus.domain()[0] < 0 && yScaleFocus.domain()[1] > 0) {
       renderYaxis(
         focusGroupElement,
         yScaleFocus,
