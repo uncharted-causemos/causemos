@@ -169,7 +169,7 @@ const run = async () => {
 
   // 1. Get the document
   const doc = await getDocument(documentId);
-  console.log(`Updating document ${doc.id}`);
+  console.log(`Updating indices for document ${doc.id}`);
 
   // 2. For each knowledge-base, update evidence that points to document
   // knowledge-bases are set to readonly for cloning reasons, we need to flip the setting temporarily
@@ -205,7 +205,6 @@ const run = async () => {
 
   // 3. For each project, update evidence that points to document
   const projects = await getElasticDocs('project');
-  console.log(projects.length);
   for (const project of projects) {
     console.log(`Reindexing ${project.name}`);
     await reindexByScript(project.id, doc);

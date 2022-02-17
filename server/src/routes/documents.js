@@ -9,19 +9,19 @@ const Logger = rootRequire('/config/logger');
 const spawnUpdateProcess = (documentId) => {
   const child = spawn('node', ['./src/scripts/document-indexer.js', documentId]);
   child.stdout.on('data', (data) => {
-    console.log(`stdout ${child.pid}:\n\t${data}`);
+    Logger.info(`stdout ${child.pid}:\n\t${data}`);
   });
 
   child.stderr.on('data', (data) => {
-    console.error(`stderr ${child.pid}:\n\t${data}`);
+    Logger.info(`stderr ${child.pid}:\n\t${data}`);
   });
 
   child.on('error', (error) => {
-    console.error(`error ${child.pid}:\n\t${error.message}`);
+    Logger.warn(`error ${child.pid}:\n\t${error.message}`);
   });
 
   child.on('close', (code) => {
-    console.log(`child process ${child.pid} exited with code ${code}`);
+    Logger.info(`child process ${child.pid} exited with code ${code}`);
   });
 };
 
