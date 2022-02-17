@@ -44,14 +44,14 @@ export const renderRidgelines = (
   min: number,
   max: number,
   showYAxisLabels = false,
-  showYAxisLine = true,
+  showSummary = false,
   label = '',
   contextRange: { min: number; max: number } | null = null,
   labelSize = LABEL_SIZE,
   fillColor = 'black'
 ) => {
   const gElement = selection.append('g');
-  const widthAvailableForChart = (1 - SUMMARY_WIDTH_PERCENTAGE) * width;
+  const widthAvailableForChart = showSummary ? (1 - SUMMARY_WIDTH_PERCENTAGE) * width : width;
   // Calculate scales
   const xScale = d3
     .scaleLinear()
@@ -123,68 +123,70 @@ export const renderRidgelines = (
       .attr('stroke-width', RIDGELINE_STROKE_WIDTH)
       .attr('d', area(comparisonBaseline.ridgeline) ?? '');
     // Render relative change summary
-    const summary = summarizeRidgelineComparison(
-      ridgeline,
-      comparisonBaseline,
-      min,
-      max
-    );
-    const summaryXPosition = widthAvailableForChart + SUMMARY_SPACING;
-    // Vertically align summary text with the distribution's mean
-    gElement
-      .append('text')
-      .style('font-size', labelSize)
-      .style('font-weight', 'normal')
-      .attr(
-        'transform',
-        translate(
-          summaryXPosition,
-          yScale(ridgeline.distributionMean) + labelSize / 2
-        )
-      )
-      .text(summary.before)
-      .append('tspan')
-      .style('font-weight', 600)
-      .text(summary.emphasized)
-      .append('tspan')
-      .style('font-weight', 'normal')
-      .text(summary.after);
-    // Draw arrow from comparison distribution's mean to this distribution's
-    //  mean
-    const tail = yScale(comparisonBaseline.distributionMean);
-    const head = yScale(ridgeline.distributionMean);
-    const arrowHeadOffset = labelSize / 2 + SUMMARY_SPACING + ARROW_LENGTH;
-    const arrowHeight = Math.abs(head - tail) - arrowHeadOffset;
-    // If arrow isn't too small to draw
-    if (arrowHeight > 0) {
-      // Draw rect for arrow's stem
-      const rectYPosition = tail < head ? tail : head + arrowHeadOffset;
-      const rectWidth = 2;
+    if (showSummary) {
+      const summary = summarizeRidgelineComparison(
+        ridgeline,
+        comparisonBaseline,
+        min,
+        max
+      );
+      const summaryXPosition = widthAvailableForChart + SUMMARY_SPACING;
+      // Vertically align summary text with the distribution's mean
       gElement
-        .append('rect')
-        .attr('width', rectWidth)
-        .attr('height', arrowHeight)
-        .attr('fill', SUMMARY_ARROW_COLOR)
+        .append('text')
+        .style('font-size', labelSize)
+        .style('font-weight', 'normal')
         .attr(
           'transform',
           translate(
-            summaryXPosition + (ARROW_WIDTH - rectWidth) / 2,
-            rectYPosition
+            summaryXPosition,
+            yScale(ridgeline.distributionMean) + labelSize / 2
           )
-        );
-      // Draw arrow head
-      const arrowHeadYPosition =
-        tail < head ? head - arrowHeadOffset : head + arrowHeadOffset;
-      const rotation = tail < head ? 90 : -90;
-      gElement
-        .append('path')
-        .attr('fill', SUMMARY_ARROW_COLOR)
-        .attr('d', svgUtil.ARROW)
-        .attr(
-          'transform',
-          translate(summaryXPosition + ARROW_WIDTH / 2, arrowHeadYPosition) +
-            ` rotate(${rotation})`
-        );
+        )
+        .text(summary.before)
+        .append('tspan')
+        .style('font-weight', 600)
+        .text(summary.emphasized)
+        .append('tspan')
+        .style('font-weight', 'normal')
+        .text(summary.after);
+      // Draw arrow from comparison distribution's mean to this distribution's
+      //  mean
+      const tail = yScale(comparisonBaseline.distributionMean);
+      const head = yScale(ridgeline.distributionMean);
+      const arrowHeadOffset = labelSize / 2 + SUMMARY_SPACING + ARROW_LENGTH;
+      const arrowHeight = Math.abs(head - tail) - arrowHeadOffset;
+      // If arrow isn't too small to draw
+      if (arrowHeight > 0) {
+        // Draw rect for arrow's stem
+        const rectYPosition = tail < head ? tail : head + arrowHeadOffset;
+        const rectWidth = 2;
+        gElement
+          .append('rect')
+          .attr('width', rectWidth)
+          .attr('height', arrowHeight)
+          .attr('fill', SUMMARY_ARROW_COLOR)
+          .attr(
+            'transform',
+            translate(
+              summaryXPosition + (ARROW_WIDTH - rectWidth) / 2,
+              rectYPosition
+            )
+          );
+        // Draw arrow head
+        const arrowHeadYPosition =
+          tail < head ? head - arrowHeadOffset : head + arrowHeadOffset;
+        const rotation = tail < head ? 90 : -90;
+        gElement
+          .append('path')
+          .attr('fill', SUMMARY_ARROW_COLOR)
+          .attr('d', svgUtil.ARROW)
+          .attr(
+            'transform',
+            translate(summaryXPosition + ARROW_WIDTH / 2, arrowHeadYPosition) +
+              ` rotate(${rotation})`
+          );
+      }
     }
   }
   // Draw time slice label
@@ -266,15 +268,13 @@ export const renderRidgelines = (
   }
 
   // Draw vertical line to act as a baseline
-  if (showYAxisLine) {
-    gElement
-      .append('rect')
-      .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH)
-      .attr('height', height)
-      .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
-      .attr('x', -RIDGELINE_VERTICAL_AXIS_WIDTH / 2)
-      .attr('y', 0);
-  }
+  gElement
+    .append('rect')
+    .attr('width', RIDGELINE_VERTICAL_AXIS_WIDTH)
+    .attr('height', height)
+    .attr('fill', RIDGELINE_VERTICAL_AXIS_COLOR)
+    .attr('x', -RIDGELINE_VERTICAL_AXIS_WIDTH / 2)
+    .attr('y', 0);
 
   // Draw context range
   if (contextRange !== null) {
