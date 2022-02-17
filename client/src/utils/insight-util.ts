@@ -353,11 +353,11 @@ function generateAPACiteDOCX(b: Bibliography): TextRun[] {
   // date
   cite.push(new TextRun({
     size: 24,
-    text: `(${b.publication_date.year}). `
+    text: `(${b.publication_date ? b.publication_date.year : 'n/a'}). `
   }));
 
   // title
-  const title = b.title.length > 0 ? b.title : `Document: ${b.doc_id}`;
+  const title = (b.title && b.title.length > 0) ? b.title : `Document: ${b.doc_id}`;
   cite.push(new TextRun({
     size: 24,
     text: `${title}. `
