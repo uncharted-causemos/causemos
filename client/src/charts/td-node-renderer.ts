@@ -332,6 +332,8 @@ export default function(
       setConstraints,
       setHistoricalTimeseries
     );
+    // Render major tick labels overtop of ridgelines
+    focusGroupElement.selectAll('.major-tick-label').raise();
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
       .selectChildren('*:not(.xAxis):not(.yAxis)')
@@ -475,10 +477,10 @@ const renderStaticElements = (
     .style('fill', 'none')
     .style('stroke', MAJOR_TICK_COLOR);
   groupElement
-    .selectAll('.grid-timeslice-label')
+    .selectAll('.major-tick-label')
     .data(majorTickTimestamps)
     .join('text')
-    .classed('grid-timeslice-label', true)
+    .classed('major-tick-label', true)
     .attr('x', (d) => xScale(d))
     .attr('y', offsetFromTop + MAJOR_TICK_LABEL_SIZE)
     .style('text-anchor', 'start')
