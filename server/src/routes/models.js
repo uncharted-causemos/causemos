@@ -481,7 +481,7 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
     const progress = await delphiService.modelTrainingProgress(modelId);
     modelStatus.progressPercentage = progress.progressPercentage;
   } else if (engine === DELPHI_DEV) {
-    const progress = await delphiService.modelTrainingProgress(modelId);
+    const progress = await delphiDevService.modelTrainingProgress(modelId);
     modelStatus.progressPercentage = progress.progressPercentage;
   }
 
