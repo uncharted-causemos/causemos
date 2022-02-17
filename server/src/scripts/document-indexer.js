@@ -47,7 +47,7 @@ const updateDocuments = async (index, statements, doc) => {
     for (const ev of stmt._source.evidence) {
       if (ev.document_context.doc_id === doc.id) {
         // copy over new attrs
-        ev.document_context.title = doc.title;
+        ev.document_context.title = doc.doc_title;
         ev.document_context.author = doc.author;
         ev.document_context.publisher_name = doc.publisher_name;
         ev.document_context.publication_date = doc.publiccation_date;
