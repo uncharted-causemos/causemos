@@ -116,7 +116,7 @@ export const convertDistributionTimeseriesToRidgelines = (
     //  noticeable after February), so override it with the correct timestamp.
     const correctedTimestamp = getTimestampAfterMonths(
       timeseries[0].timestamp,
-      monthsAfterNow
+      timestepIndex * monthsPerTimestep
     );
     ridgelines.push({
       timestamp: correctedTimestamp,
