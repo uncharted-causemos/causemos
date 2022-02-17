@@ -93,6 +93,7 @@ export interface NodeParameter {
   model_id?: string;
   modified_at?: number;
   components: string[];
+  match_candidates?: any[];
   parameter?: any;
 }
 

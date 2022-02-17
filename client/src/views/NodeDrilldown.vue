@@ -111,6 +111,11 @@
                       @click="openDataDrilldown"
                     >Edit datacube settings</div>
                     <div
+                      v-if="selectedNode && selectedNode.match_candidates"
+                      class="dropdown-option"
+                      @click="openDataExplorerWithSuggestions"
+                    ><i class="fa fa-fw fa-search" />View suggestions</div>
+                    <div
                       class="dropdown-option"
                       @click="openDataExplorer"
                     ><i class="fa fa-fw fa-search" />Choose a different datacube</div>
@@ -800,6 +805,7 @@ export default defineComponent({
     };
 
     return {
+      selectedNode,
       nodeConceptName,
       drilldownPanelTabs,
       drivers,
@@ -846,6 +852,22 @@ export default defineComponent({
     };
   },
   methods: {
+    openDataExplorerWithSuggestions() {
+      const filters: any = filtersUtil.newFilters();
+      const ids = (this.selectedNode?.match_candidates?.map(d => d.id) as string[]);
+      filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
+      filtersUtil.setClause(filters, 'id', ids, 'or', false);
+      this.$router.push({
+        name: 'nodeDataExplorer',
+        params: {
+          currentCAG: this.currentCAG,
+          nodeId: this.nodeId,
+          project: this.project,
+          projectType: ProjectType.Analysis
+        },
+        query: { filters }
+      });
+    },
     openDataExplorer() {
       const filters: any = filtersUtil.newFilters();
       filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
