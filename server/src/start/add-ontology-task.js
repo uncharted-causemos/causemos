@@ -1,7 +1,6 @@
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const projectService = rootRequire('/services/project-service');
-const URL = require("url").URL;
 
 const addUAzOntology = async () => {
   Logger.info('Calling UAz\'s addOntology');
@@ -14,7 +13,7 @@ const addUAzOntology = async () => {
         method: 'PUT',
         url: `http://linking.cs.arizona.edu/v2/addOntology?secret=${process.env.UAZ_SECRET}&ontologyId=${project.ontology}`,
         headers: {
-            'Content-type': 'application/json'
+          'Content-type': 'application/json'
         },
         json: {}
       };
