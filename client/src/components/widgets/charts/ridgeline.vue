@@ -82,7 +82,7 @@ export default defineComponent({
         ? d3.selectAll<SVGElement, any>([renderTarget.value])
         : null;
       const { width, height } = chartSize.value;
-      if (svg === null) {
+      if (svg === null || width === 0 || height === 0) {
         return;
       }
       // Set new size

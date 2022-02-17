@@ -232,15 +232,6 @@ export const renderRidgelines = (
     // Highlight values outside of context range
     const uid = _.uniqueId();
     const clipPath = gElement.append('clipPath').attr('id', uid);
-    if (yScale(clampedContextRange.max) - yScale(max) < 0) {
-      console.log(
-        contextRange.max,
-        clampedContextRange.max,
-        yScale(clampedContextRange.max),
-        max,
-        yScale(max)
-      );
-    }
     clipPath
       .append('rect')
       .attr('width', width)
