@@ -14,7 +14,7 @@ import { calculateGenericTicks } from '@/utils/timeseries-util';
 import { chartValueFormatter } from '@/utils/string-util';
 
 const RIDGELINE_STROKE_WIDTH = 0.5;
-const RIDGELINE_VERTICAL_AXIS_WIDTH = 1;
+export const RIDGELINE_VERTICAL_AXIS_WIDTH = 1;
 const RIDGELINE_VERTICAL_AXIS_COLOR = '#F3F3F3';
 const LABEL_COLOR = '#999';
 const LABEL_SIZE = 5;
