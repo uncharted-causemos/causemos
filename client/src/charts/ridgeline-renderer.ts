@@ -51,7 +51,9 @@ export const renderRidgelines = (
   fillColor = 'black'
 ) => {
   const gElement = selection.append('g');
-  const widthAvailableForChart = showSummary ? (1 - SUMMARY_WIDTH_PERCENTAGE) * width : width;
+  const widthAvailableForChart = showSummary
+    ? (1 - SUMMARY_WIDTH_PERCENTAGE) * width
+    : width;
   // Calculate scales
   const xScale = d3
     .scaleLinear()
@@ -222,13 +224,16 @@ export const renderRidgelines = (
       .text(tickValue => formatter(tickValue));
   }
 
+  // Clamp context range to the node's min/max so it doesn't overflow
+  const clampedContextRange =
+    contextRange === null
+      ? { min: 0, max: 0 }
+      : {
+          min: _.clamp(contextRange.min, min, max),
+          max: _.clamp(contextRange.max, min, max)
+        };
+
   if (contextRange !== null) {
-    // TODO: this is a duplicate
-    // Clamp context range to the node's min/max so it doesn't overflow
-    const clampedContextRange = {
-      min: _.clamp(contextRange.min, min, max),
-      max: _.clamp(contextRange.max, min, max)
-    };
     // Highlight values outside of context range
     const uid = _.uniqueId();
     const clipPath = gElement.append('clipPath').attr('id', uid);
@@ -269,11 +274,6 @@ export const renderRidgelines = (
 
   // Draw context range
   if (contextRange !== null) {
-    // Clamp context range to the node's min/max so it doesn't overflow
-    const clampedContextRange = {
-      min: _.clamp(contextRange.min, min, max),
-      max: _.clamp(contextRange.max, min, max)
-    };
     gElement
       .append('rect')
       .attr(
