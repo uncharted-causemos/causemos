@@ -44,44 +44,88 @@ const getElasticDocs = async (index) => {
   return docs;
 };
 
-
-const updateDocuments = async (index, statements, doc) => {
-  const bulk = [];
-  for (const stmt of statements) {
-    let changed = false;
-    for (const ev of stmt._source.evidence) {
-      if (ev.document_context.doc_id === doc.id) {
-        // copy over new attrs
-        ev.document_context.title = doc.doc_title;
-        ev.document_context.author = doc.author;
-        ev.document_context.publisher_name = doc.publisher_name;
-        ev.document_context.publication_date = doc.publiccation_date;
-        changed = true;
-      }
-    }
-    if (changed === true) {
-      bulk.push({ update: { _index: index, _id: stmt._id } });
-      bulk.push({ doc: stmt._source });
-    }
-  }
-  if (bulk.length > 0) {
-    const r = await client.bulk({
-      body: bulk
-    });
-    console.log(`has errors ${r.body.errors}`);
-  }
-};
+// const updateDocuments = async (index, statements, doc) => {
+//   const bulk = [];
+//   for (const stmt of statements) {
+//     let changed = false;
+//     for (const ev of stmt._source.evidence) {
+//       if (ev.document_context.doc_id === doc.id) {
+//         // copy over new attrs
+//         ev.document_context.title = doc.doc_title;
+//         ev.document_context.author = doc.author;
+//         ev.document_context.publisher_name = doc.publisher_name;
+//         ev.document_context.publication_date = doc.publication_date;
+//         changed = true;
+//       }
+//     }
+//     if (changed === true) {
+//       bulk.push({ update: { _index: index, _id: stmt._id } });
+//       bulk.push({ doc: stmt._source });
+//     }
+//   }
+//   if (bulk.length > 0) {
+//     const r = await client.bulk({
+//       body: bulk
+//     });
+//     console.log(`has errors ${r.body.errors}`);
+//   }
+// };
+//
+//
+// const reindex = async (index, doc) => {
+//   const batchsize = 1000;
+//
+//   // Scroll interface
+//   const response = await client.search({
+//     index: index,
+//     scroll: '5m',
+//     size: batchsize,
+//     body: {
+//       query: {
+//         nested: {
+//           path: 'evidence',
+//           query: {
+//             bool: {
+//               must: [
+//                 { term: { 'evidence.document_context.doc_id': doc.id } }
+//               ]
+//             }
+//           }
+//         }
+//       },
+//       _source: {
+//         includes: ['id', 'evidence', 'matches_hash']
+//       }
+//     }
+//   });
+//
+//   const responseQueue = [];
+//   responseQueue.push(response);
+//
+//   while (responseQueue.length) {
+//     const { body } = responseQueue.shift();
+//
+//     const docs = body.hits.hits;
+//     if (docs.length === 0) break;
+//
+//     console.log('processing ... ', docs.length);
+//     await updateDocuments(index, docs, doc);
+//
+//     // Get the next response if there are more quotes to fetch
+//     responseQueue.push(
+//       await client.scroll({
+//         scrollId: body._scroll_id,
+//         scroll: '5m'
+//       })
+//     );
+//   }
+// };
 
 
 // Reindex statement.evidence.document_contenxt with respect to doc
-const reindex = async (index, doc) => {
-  const batchsize = 1000;
-
-  // Scroll interface
-  const response = await client.search({
+const reindexByScript = async (index, doc) => {
+  await client.updateByQuery({
     index: index,
-    scroll: '5m',
-    size: batchsize,
     body: {
       query: {
         nested: {
@@ -95,33 +139,30 @@ const reindex = async (index, doc) => {
           }
         }
       },
-      _source: {
-        includes: ['id', 'evidence', 'matches_hash']
+      script: {
+        lang: 'painless',
+        params: {
+          doc_id: doc.id,
+          title: doc.doc_title,
+          author: doc.author,
+          publisher_name: doc.publisher_name,
+          publication_date: doc.publication_date
+        },
+        source: `
+          for (int i=ctx._source.evidence.length-1; i >= 0; i--) {
+            if (ctx._source.evidence[i].document_context.doc_id == params.doc_id) {
+              ctx._source.evidence[i].document_context.author = params.author;
+              ctx._source.evidence[i].document_context.title = params.title;
+              ctx._source.evidence[i].document_context.publisher_name = params.publisher_name;
+              ctx._source.evidence[i].document_context.publication_date = params.publication_date;
+            }
+          }
+        `
       }
     }
   });
-
-  const responseQueue = [];
-  responseQueue.push(response);
-
-  while (responseQueue.length) {
-    const { body } = responseQueue.shift();
-
-    const docs = body.hits.hits;
-    if (docs.length === 0) break;
-
-    console.log('processing ... ', docs.length);
-    await updateDocuments(index, docs, doc);
-
-    // Get the next response if there are more quotes to fetch
-    responseQueue.push(
-      await client.scroll({
-        scrollId: body._scroll_id,
-        scroll: '5m'
-      })
-    );
-  }
 };
+
 
 const run = async () => {
   const start = (new Date()).getTime();
@@ -146,9 +187,9 @@ const run = async () => {
         }
       }
     });
-    await sleep(4000); // Just to ensure settings take hold
+    await sleep(2500); // Just to ensure settings take hold
 
-    await reindex(kb.id, doc);
+    await reindexByScript(kb.id, doc);
 
     // Restore readonly
     await client.indices.putSettings({
@@ -167,7 +208,7 @@ const run = async () => {
   console.log(projects.length);
   for (const project of projects) {
     console.log(`Reindexing ${project.name}`);
-    await reindex(project.id, doc);
+    await reindexByScript(project.id, doc);
   }
 
   const end = (new Date()).getTime();
