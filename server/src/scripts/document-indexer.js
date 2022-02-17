@@ -1,6 +1,11 @@
 const dotenvConfigResult = require('dotenv').config();
 const { client } = require('../adapters/es/client');
 
+if (dotenvConfigResult.error) {
+  console.log('No .env file found or has initialization errors - will use default environment');
+}
+
+
 const documentId = process.argv[2];
 
 function sleep(ms) {
