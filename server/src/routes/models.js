@@ -264,18 +264,36 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
     let updateWeights = false;
     let overrideWeights = false;
 
+    console.log(`${key} => engineInferred=${engineInferredWeights}, current=${currentWeights}, currentEngine=${currentEngineWeights}`);
+
     // Update inferred engine weights
-    if (!_.isEqual(engineInferredWeights, currentEngineWeights)) {
-      updateEngineConfig = true;
-      currentEngineWeightsConfig[engine] = engineInferredWeights;
-      parameter.engine_weights = currentEngineWeightsConfig;
+    if (engine === 'delphi' || engine === 'delphi_dev') {
+      if (!currentEngineWeights || engineInferredWeights[0] !== currentEngineWeights[1]) {
+        updateEngineConfig = true;
+        currentEngineWeightsConfig[engine] = engineInferredWeights;
+        parameter.engine_weights = currentEngineWeightsConfig;
+      }
+    } else {
+      if (!_.isEqual(engineInferredWeights, currentEngineWeights)) {
+        updateEngineConfig = true;
+        currentEngineWeightsConfig[engine] = engineInferredWeights;
+        parameter.engine_weights = currentEngineWeightsConfig;
+      }
     }
 
     if (_.isEmpty(currentWeights)) {
       updateWeights = true;
       parameter.weights = engineInferredWeights;
     } else {
-      overrideWeights = true;
+      if (engine === 'delphi' || engine === 'delphi_dev') {
+        if (currentWeights[1] !== engineInferredWeights[0]) {
+          overrideWeights = true;
+        } else {
+          if (_.isEqual(currentWeights, engineInferredWeights)) {
+            overrideWeights = true;
+          }
+        }
+      }
     }
 
     // Resolve state - update on ourside
@@ -435,7 +453,6 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
       return acc;
     }, {});
 
-    console.log(inferredEdgeMap, modelStatus.relations);
 
     // Sort out weights
     const { edgesToUpdate, edgesToOverride } = await processInferredEdgeWeights(
@@ -522,10 +539,6 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
     res.status(400).send(`Failed to run projection ${engine} : ${modelId}`);
     return;
   }
-
-  console.log('!!');
-  console.log(result);
-  console.log('!!');
 
   res.json(result);
 }));
