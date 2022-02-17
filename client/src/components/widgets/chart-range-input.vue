@@ -2,7 +2,8 @@
   <div>
     <div>{{label}}</div>
     <input
-      class="form-control input-sm "
+      type="number"
+      class="form-control input-sm"
       :value="modelValue"
       @input="update"
     />

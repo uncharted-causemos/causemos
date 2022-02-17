@@ -1031,6 +1031,7 @@ input[type="radio"] {
       justify-content: space-between;
       font-size: 12px;
       width: 17ch;
+      padding-bottom: 35px;
     }
     .scenario-chart {
       height: 140px;
