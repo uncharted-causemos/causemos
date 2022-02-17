@@ -4,31 +4,31 @@ const projectService = rootRequire('/services/project-service');
 const URL = require("url").URL;
 
 const addUAzOntology = async () => {
-    Logger.info('Calling UAz\'s addOntology');
-    const projects = await projectService.listProjects();
+  Logger.info('Calling UAz\'s addOntology');
+  const projects = await projectService.listProjects();
 
-    for (const project of projects) {
-        if (!project.ontology.startsWith("http")) {
-            Logger.info('Calling addOntology for ontology ' + project.ontology);
-            const options = {
-                method: 'PUT',
-                url: `http://linking.cs.arizona.edu/v2/addOntology?secret=${process.env.UAZ_SECRET}&ontologyId=${project.ontology}`,
-                headers: {
-                    'Content-type': 'application/json'
-                },
-                json: {}
-            };
-            try {
-                await requestAsPromise(options);
-            } catch (e) {
-                Logger.error(e);
-            }
-        }
+  for (const project of projects) {
+    if (!project.ontology.startsWith("http")) {
+      Logger.info('Calling addOntology for ontology ' + project.ontology);
+      const options = {
+        method: 'PUT',
+        url: `http://linking.cs.arizona.edu/v2/addOntology?secret=${process.env.UAZ_SECRET}&ontologyId=${project.ontology}`,
+        headers: {
+            'Content-type': 'application/json'
+        },
+        json: {}
+      };
+      try {
+        await requestAsPromise(options);
+      } catch (e) {
+        Logger.error(e);
+      }
     }
+  }
 };
 
 const startAddUAzOntology = (interval) => {
-    setInterval(addUAzOntology, interval);
+  setInterval(addUAzOntology, interval);
 };
 
 module.exports = { startAddUAzOntology, addUAzOntology };
