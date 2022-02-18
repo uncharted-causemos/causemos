@@ -238,9 +238,6 @@ class QueryUtil {
       } else if (fieldMeta.type === FIELD_TYPES.RANGED || fieldMeta.type === FIELD_TYPES.DATE) {
         filter = this._rangeBuilder(clause);
         translatedFilters.push(filter);
-      } else if (fieldMeta.type === FIELD_TYPES.RANGED || fieldMeta.type === FIELD_TYPES.DATE) {
-        filter = this._rangeBuilder(clause);
-        translatedFilters.push(filter);
       } else if (fieldMeta.type === FIELD_TYPES.DATE_MILLIS) {
         filter = this._rangeBuilder(this._dateToEpochMillis(clause));
         translatedFilters.push(filter);
