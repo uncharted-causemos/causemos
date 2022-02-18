@@ -288,12 +288,13 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
       parameter.weights = engineInferredWeights;
     } else {
       if (engine === DELPHI || engine === DELPHI_DEV) {
+        console.log('debug', currentWeights, engineInferredWeights);
         if (currentWeights[1] !== engineInferredWeights[1]) {
           overrideWeights = true;
-        } else {
-          if (_.isEqual(currentWeights, engineInferredWeights)) {
-            overrideWeights = true;
-          }
+        }
+      } else {
+        if (!_.isEqual(currentWeights, engineInferredWeights)) {
+          overrideWeights = true;
         }
       }
     }
@@ -490,11 +491,9 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
       edgeTrainingDelphi = true;
 
       // HACK: Delphi takes in [trend] as oppose to [level, trend], change the payload
-      if (engine === DELPHI || engine === DELPHI_DEV) {
-        edgesToOverride.forEach(edge => {
-          edge.parameter.weights = [edge.parameter.weights[1]];
-        });
-      }
+      edgesToOverride.forEach(edge => {
+        edge.parameter.weights = [edge.parameter.weights[1]];
+      });
 
       if (engine === DELPHI) {
         await delphiService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
