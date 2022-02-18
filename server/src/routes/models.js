@@ -245,6 +245,8 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
 //
 // 1. if edge has no weights, it takes the engine's inferred weights
 // 2. if edge has weights, it retains the values and will send back "overrides"
+//
+// Note for Delphi engineWeights and engineInferredWeights are triples [level, trend, polarity]
 const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
   const components = await cagService.getComponents(modelId);
   const edgesToUpdate = [];
@@ -264,11 +266,11 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
     let updateWeights = false;
     let overrideWeights = false;
 
-    console.log(`${key} => engineInferred=${engineInferredWeights}, current=${currentWeights}, currentEngine=${currentEngineWeights}`);
+    Logger.debug(`${key} => engineInferred=${engineInferredWeights}, current=${currentWeights}, currentEngine=${currentEngineWeights}`);
 
     // Update inferred engine weights
-    if (engine === 'delphi' || engine === 'delphi_dev') {
-      if (!currentEngineWeights || engineInferredWeights[0] !== currentEngineWeights[1]) {
+    if (engine === DELPHI || engine === DELPHI_DEV) {
+      if (!currentEngineWeights || engineInferredWeights[1] !== currentEngineWeights[1]) {
         updateEngineConfig = true;
         currentEngineWeightsConfig[engine] = engineInferredWeights;
         parameter.engine_weights = currentEngineWeightsConfig;
@@ -285,8 +287,8 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
       updateWeights = true;
       parameter.weights = engineInferredWeights;
     } else {
-      if (engine === 'delphi' || engine === 'delphi_dev') {
-        if (currentWeights[1] !== engineInferredWeights[0]) {
+      if (engine === DELPHI || engine === DELPHI_DEV) {
+        if (currentWeights[1] !== engineInferredWeights[1]) {
           overrideWeights = true;
         } else {
           if (_.isEqual(currentWeights, engineInferredWeights)) {
@@ -433,9 +435,24 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
   // Update model
   let v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
 
+  // Patch Delphi's progress, sometimes state will be ready but still training
+  if (engine === DELPHI) {
+    const progress = await delphiService.modelTrainingProgress(modelId);
+    modelStatus.progressPercentage = progress.progressPercentage;
+    if (modelStatus.progressPercentage < 1) {
+      v = MODEL_STATUS.TRAINING;
+    }
+  } else if (engine === DELPHI_DEV) {
+    const progress = await delphiDevService.modelTrainingProgress(modelId);
+    modelStatus.progressPercentage = progress.progressPercentage;
+    if (modelStatus.progressPercentage < 1) {
+      v = MODEL_STATUS.TRAINING;
+    }
+  }
+
   // Patch Delphi's inferred weights
   let edgeTrainingDelphi = false;
-  if ((engine === DELPHI || engine === DELPHI_DEV) && modelStatus.status === 'ready') {
+  if ((engine === DELPHI || engine === DELPHI_DEV) && modelStatus.progressPercentage >= 1.0) {
     Logger.info('Processing Delphi edge weights');
     const inferredEdgeMap = modelStatus.relations.reduce((acc, edge) => {
       const key = `${edge.source}///${edge.target}`;
@@ -471,6 +488,14 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
     if (edgesToOverride.length > 0) {
       Logger.info(`Sending ${edgesToOverride.length} edge-weight overrides to Delphi`);
       edgeTrainingDelphi = true;
+
+      // HACK: Delphi takes in [trend] as oppose to [level, trend], change the payload
+      if (engine === DELPHI || engine === DELPHI_DEV) {
+        edgesToOverride.forEach(edge => {
+          edge.parameter.weights = [edge.parameter.weights[1]];
+        });
+      }
+
       if (engine === DELPHI) {
         await delphiService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
       } else if (engine === DELPHI_DEV) {
@@ -482,6 +507,7 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
   // We sent edge-weigts back to Delphi, so it will need to be retrained
   if (edgeTrainingDelphi === true) {
     v = MODEL_STATUS.TRAINING;
+    modelStatus.status = 'training';
   }
 
   // Update model status
@@ -491,16 +517,6 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
       [engine]: v
     }
   });
-
-
-  // Patch Delphi's progress
-  if (engine === DELPHI) {
-    const progress = await delphiService.modelTrainingProgress(modelId);
-    modelStatus.progressPercentage = progress.progressPercentage;
-  } else if (engine === DELPHI_DEV) {
-    const progress = await delphiDevService.modelTrainingProgress(modelId);
-    modelStatus.progressPercentage = progress.progressPercentage;
-  }
 
   res.json(modelStatus);
 }));
@@ -753,6 +769,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
 
   // For Delphi we will artificially set the model into unregistered state
   // so the detection loop will find it and actually send the edge weights
+  // FIXME: Set to TRAINING
   if (engine === DELPHI || engine === DELPHI_DEV) {
     Logger.info(`Defer edge upate for ${engine} until next refresh cycle`);
     const modelAdapter = Adapter.get(RESOURCE.MODEL);
