@@ -49,7 +49,7 @@ export const CODE_TABLE: FieldMap = {
   },
   PERIOD: {
     ...field('period', 'Period'),
-    ...searchable('Period Year', true)
+    ...searchable('Included Years', true)
   },
   SEARCH: {
     // _search is hidden special datacube field that combines text/keyword field values. It's used for text searching.
@@ -135,7 +135,7 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
   domain: 'Domain',
   country: 'Country',
   geoGranularity: 'Geo Granularity',
-  period: 'Period',
+  period: 'Included Years',
   maintainerName: 'Maintainer',
   maintainerOrg: 'Source',
   tags: 'Tags',
