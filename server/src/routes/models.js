@@ -270,6 +270,7 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
 
     // Update inferred engine weights
     if (engine === DELPHI || engine === DELPHI_DEV) {
+      Logger.debug(`\tcurrentEngine=${currentEngineWeights}, inferred=${engineInferredWeights}`);
       if (!currentEngineWeights || engineInferredWeights[1] !== currentEngineWeights[1]) {
         updateEngineConfig = true;
         currentEngineWeightsConfig[engine] = engineInferredWeights;
@@ -288,7 +289,7 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
       parameter.weights = engineInferredWeights;
     } else {
       if (engine === DELPHI || engine === DELPHI_DEV) {
-        console.log('debug', currentWeights, engineInferredWeights);
+        Logger.debug(`\tcurrent=${currentWeights}, inferred=${engineInferredWeights}`);
         if (currentWeights[1] !== engineInferredWeights[1]) {
           overrideWeights = true;
         }
