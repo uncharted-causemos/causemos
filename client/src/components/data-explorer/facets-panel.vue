@@ -7,8 +7,17 @@
   >
     <div v-if="currentTab === 'Data Cube Facets'" class="facet-panel-list">
       <div v-for="facet in formattedFacets" :key="facet.label">
+        <numerical-facet
+          v-if="facet.isNumerical"
+          :key="facet.label"
+          :facet="facet.id"
+          :label="facet.label"
+          :base-data="facet.baseData"
+          :selected-data="facet.filteredData"
+        />
         <categorical-facet
-          key="facet.label"
+          v-else
+          :key="facet.label"
           :facet="facet.id"
           :label="facet.label"
           :base-data="facet.baseData"
@@ -26,6 +35,7 @@ import { defineComponent, PropType } from 'vue';
 import { mapGetters } from 'vuex';
 
 import CategoricalFacet from '@/components/facets/categorical-facet.vue';
+import NumericalFacet from '@/components/facets/numerical-facet.vue';
 import SidePanel from '@/components/side-panel/side-panel.vue';
 import datacubeUtil from '@/utils/datacube-util';
 
@@ -35,6 +45,7 @@ export default defineComponent({
   name: 'FacetsPanel',
   components: {
     CategoricalFacet,
+    NumericalFacet,
     SidePanel
   },
   data: () => ({
@@ -86,6 +97,7 @@ export default defineComponent({
         return {
           id: key,
           label: datacubeUtil.DISPLAY_NAMES[key] || key,
+          isNumerical: datacubeUtil.NUMERICAL_FACETS.includes(key),
           baseData,
           filteredData
         };

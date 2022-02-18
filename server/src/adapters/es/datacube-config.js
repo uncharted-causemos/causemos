@@ -1,5 +1,10 @@
 const { FIELD_TYPES } = require('./config');
 
+const makeRanges = (startYear, endYear) => {
+  return [...Array(endYear - startYear)]
+    .map((_, i) => ({ from: startYear + i, to: startYear + 1 + i }));
+};
+
 const FIELD_LEVELS = Object.freeze({
   DATACUBE: 0,
   CONCEPTS: 1
@@ -50,7 +55,7 @@ const FIELDS = Object.freeze({
   },
   createdAt: {
     fields: ['created_at'],
-    type: FIELD_TYPES.DATE,
+    type: FIELD_TYPES.DATE_MILLIS,
     level: FIELD_LEVELS.DATACUBE
   },
   description: {
@@ -133,8 +138,9 @@ const FIELDS = Object.freeze({
   },
   period: {
     fields: ['period.gte', 'period.lte'],
-    type: FIELD_TYPES.RANGED,
-    level: FIELD_LEVELS.DATACUBE
+    type: FIELD_TYPES.DATE_MILLIS,
+    level: FIELD_LEVELS.DATACUBE,
+    range: makeRanges(1970, 2024)
   },
   tags: {
     fields: ['tags'],
