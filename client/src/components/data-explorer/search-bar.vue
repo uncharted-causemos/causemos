@@ -53,7 +53,6 @@ export default {
     const excludedFields = Object.values(SUGGESTION_CODE_TABLE).map(v => v.field)
       .concat(Object.values(CODE_TABLE).map(v => v.field));
     const keys = _.difference(Object.keys(this.facets), excludedFields);
-    console.log('keys', keys);
     const basicPills = keys.map(k => {
       const dcField = {
         field: k,
