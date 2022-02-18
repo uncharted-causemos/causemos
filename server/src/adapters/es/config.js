@@ -264,6 +264,11 @@ const FIELDS = Object.freeze({
     aggFields: [docPath('origin.byod_tag.raw')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
+  },
+  docGenre: {
+    fields: [docPath('genre')],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.EVIDENCE
   }
 });
 
