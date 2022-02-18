@@ -83,6 +83,12 @@ export default defineComponent({
     selectedTimeScale: {
       type: String as PropType<TimeScale>,
       required: true
+    },
+    visualState: {
+      // selected.nodes
+      // selected.edges
+      type: Object,
+      default: () => ({})
     }
   },
   emits: [
@@ -158,6 +164,9 @@ export default defineComponent({
   watch: {
     data() {
       this.refresh();
+    },
+    visualState() {
+      this.applyVisualState();
     }
   },
   mounted() {
@@ -457,6 +466,21 @@ export default defineComponent({
         await this.renderer.setData(d);
         await this.renderer.render();
         this.$emit('refresh', null);
+        this.applyVisualState();
+      }
+    },
+    applyVisualState() {
+      const renderer = this.renderer;
+      if (renderer) {
+        // apply changes
+        const visualState = this.visualState;
+        if (visualState.selected) {
+          if (visualState.selected.nodes) {
+            visualState.selected.nodes.forEach((node: any) => {
+              renderer.selectNodeByConcept(node.concept, '');
+            });
+          }
+        }
       }
     },
     fetchSearchSuggestions: _.debounce(async (
