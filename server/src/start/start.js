@@ -1,10 +1,12 @@
 const Logger = rootRequire('/config/logger');
 const serverConfiguration = rootRequire('/config/yargs-wrapper');
 const { startProjectCache, refreshProjectCache } = rootRequire('/start/project-cache-task');
+const { startAddUAzOntology } = rootRequire('/start/add-ontology-task');
 const { startBYOD } = rootRequire('/start/byod-task');
 
 const READER_OUTPUT_POLL_INTERVAL = 20 * 60 * 1000; // in milliseconds
 const PROJECT_CACHE_UPDATE_INTERVAL = 10 * 60 * 1000;
+const UAZ_ADD_ONTOLOGY_INTERVAL = 6 * 60 * 60 * 1000;
 
 // DART services are currently disabled - DC, Jan 2022
 const useDART = false;
@@ -31,6 +33,8 @@ async function runStartup() {
 
   // Periodic jobs
   startProjectCache(PROJECT_CACHE_UPDATE_INTERVAL);
+
+  startAddUAzOntology(UAZ_ADD_ONTOLOGY_INTERVAL)
 
   if (useDART === true) {
     startBYOD(READER_OUTPUT_POLL_INTERVAL);
