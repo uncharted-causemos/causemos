@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const { FIELD_TYPES } = require('./config');
+const moment = require('moment');
 
 class QueryUtil {
   constructor(fields) {
@@ -77,6 +78,27 @@ class QueryUtil {
         should: queries
       }
     };
+  }
+
+  /**
+   * converts the values in the clause object from YYYY-MM-DD to epoch_millis
+   * @param {Object} clause clause object
+   * @param {String} clause.field clause field name
+   * @param {Array}  clause.values clause values
+   * @param {String} clause.operand clause operand
+   * @param {Boolean} clause.isNot clause negative search
+   */
+  _dateToEpochMillis(clause) {
+    const { values } = clause;
+    values.forEach(range => {
+      if (range[0] !== '--') {
+        range[0] = moment.utc(range[0].toString()).valueOf();
+      }
+      if (range[1] !== '--') {
+        range[1] = moment.utc(range[1].toString()).valueOf();
+      }
+    });
+    return clause;
   }
 
   /**
@@ -215,6 +237,9 @@ class QueryUtil {
         translatedFilters.push(filter);
       } else if (fieldMeta.type === FIELD_TYPES.RANGED || fieldMeta.type === FIELD_TYPES.DATE) {
         filter = this._rangeBuilder(clause);
+        translatedFilters.push(filter);
+      } else if (fieldMeta.type === FIELD_TYPES.DATE_MILLIS) {
+        filter = this._rangeBuilder(this._dateToEpochMillis(clause));
         translatedFilters.push(filter);
       } else if (fieldMeta.type === FIELD_TYPES.NORMAL) {
         filter = this._termsBuilder(clause);

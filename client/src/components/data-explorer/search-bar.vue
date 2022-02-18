@@ -50,7 +50,8 @@ export default {
   },
   mounted() {
     // Generates lex pills from select datacube columns
-    const excludedFields = Object.values(SUGGESTION_CODE_TABLE).map(v => v.field);
+    const excludedFields = Object.values(SUGGESTION_CODE_TABLE).map(v => v.field)
+      .concat(Object.values(CODE_TABLE).map(v => v.field));
     const keys = _.difference(Object.keys(this.facets), excludedFields);
     const basicPills = keys.map(k => {
       const dcField = {
@@ -77,7 +78,6 @@ export default {
     // Defines a list of searchable fields for LEX
     this.pills = [
       new TextPill(CODE_TABLE.SEARCH),
-      new TextPill(CODE_TABLE.ID),
       new DynamicValuePill(CODE_TABLE.ONTOLOGY_MATCH,
         suggestionService.getDatacubeFieldSuggestionFunction(CODE_TABLE.ONTOLOGY_MATCH.field),
         'Select one or more ontological concepts',
@@ -85,7 +85,8 @@ export default {
         SingleRelationState),
       new RangePill(CODE_TABLE.PERIOD),
       ...suggestionPills,
-      ...basicPills
+      ...basicPills, // excludes suggestionPills and CODE_TABLE pills
+      new TextPill(CODE_TABLE.ID)
     ];
 
     const filteredPills = _.reject(this.pills, (pill) => _.find(this.filters.clauses, { field: pill.searchKey }));

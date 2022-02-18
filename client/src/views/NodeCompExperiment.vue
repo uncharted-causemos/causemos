@@ -313,9 +313,23 @@ export default defineComponent({
     };
 
     watchEffect(() => {
-      if (metadata.value && currentOutputIndex.value >= 0) {
+      if (metadata.value) {
         outputs.value = getOutputs(metadata.value);
         mainModelOutput.value = getSelectedOutput(metadata.value, currentOutputIndex.value);
+
+        let initialOutputIndex = 0;
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
+          // we have a store entry for the selected output of the current model
+          initialOutputIndex = currentOutputEntry;
+        } else {
+          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+
+          // update the store
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          setDatacubeCurrentOutputsMap(defaultOutputMap);
+        }
       }
     });
 
