@@ -49,7 +49,7 @@ export const CODE_TABLE: FieldMap = {
   },
   PERIOD: {
     ...field('period', 'Period'),
-    ...searchable('Period', true)
+    ...searchable('Period Year', true)
   },
   SEARCH: {
     // _search is hidden special datacube field that combines text/keyword field values. It's used for text searching.
@@ -152,11 +152,15 @@ export const FACET_FIELDS: string [] = [
   DOMAIN,
   COUNTRY,
   GEO_GRANULARITY,
-  // PERIOD,
+  PERIOD,
   TEMPORAL_RESOLUTION,
   MAINTAINER_ORG,
   VARIABLE_UNIT,
   STATUS
+];
+
+export const NUMERICAL_FACETS: string [] = [
+  PERIOD
 ];
 
 export const getDatacubeStatusInfo = (status: DatacubeStatus) => {
@@ -304,6 +308,7 @@ export default {
   SUGGESTION_CODE_TABLE,
   DISPLAY_NAMES,
   FACET_FIELDS,
+  NUMERICAL_FACETS,
   getValidatedOutputs,
   unpublishDatacube,
   unpublishDatacubeInstance
