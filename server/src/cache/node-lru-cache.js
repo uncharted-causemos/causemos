@@ -22,7 +22,7 @@ const delCache = (key) => {
   cache.del(key);
 };
 
-const timeout = 1000 * 60 * 3; // 3 min
+const timeout = 1000 * 60 * 2; // 2 min
 const setLock = (key) => {
   const t = ts();
   if (transLock.has(key) === false || (t - transLock.get(key)) >= timeout) {
