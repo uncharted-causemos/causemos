@@ -82,6 +82,9 @@ export default defineComponent({
         ? d3.selectAll<SVGElement, any>([renderTarget.value])
         : null;
       const { width, height } = chartSize.value;
+      // `width` and `height` are 0 on the first DOM update cycle (`onMounted`),
+      //  but this watcher is triggered that tick, resulting in errors from
+      //  trying to render rects with negative heights later on.
       if (svg === null || width === 0 || height === 0) {
         return;
       }
