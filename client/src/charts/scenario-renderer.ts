@@ -16,7 +16,8 @@ import {
 import { getTimestampAfterMonths } from '@/utils/date-util';
 import {
   calculateTypicalChangeBracket,
-  convertDistributionTimeseriesToRidgelines
+  convertDistributionTimeseriesToRidgelines,
+  RidgelineWithMetadata
 } from '@/utils/ridgeline-util';
 import { renderRidgelines } from './ridgeline-renderer';
 
@@ -25,8 +26,7 @@ import { SELECTED_COLOR } from '@/utils/colors-util';
 const HISTORY_LINE_COLOR = '#999';
 const LABEL_COLOR = HISTORY_LINE_COLOR;
 
-
-export default function(
+export default function (
   selection: D3Selection,
   nodeScenarioData: NodeScenarioData,
   renderOptions: any,
@@ -44,12 +44,7 @@ function render(
   nodeScenarioData: NodeScenarioData,
   runOptions: { selectedScenarioId: string | null }
 ) {
-  const {
-    indicator_time_series,
-    min,
-    max,
-    time_scale
-  } = nodeScenarioData;
+  const { indicator_time_series, min, max, time_scale } = nodeScenarioData;
 
   let projection_start = nodeScenarioData.projection_start;
   // Let projection override model's projection_start, as it can be in a temporary stale state that can mess up the renderer
@@ -101,18 +96,15 @@ function render(
     // Width won't be exactly the same between timeslices since some months/years
     //  are longer than others, but this will serve as a useful estimate of the
     //  maximum width a ridgeline can take up without overlapping the next one.
-    const firstSliceMonths = getTimeScaleOption(time_scale).timeSlices[0]
-      .months;
+    const firstSliceMonths =
+      getTimeScaleOption(time_scale).timeSlices[0].months;
     const timeBetweenSlices =
       getTimestampAfterMonths(historyEnd, firstSliceMonths) - historyEnd;
 
     xDomain[1] += timeBetweenSlices;
   }
 
-  const xScale = d3
-    .scaleLinear()
-    .domain(xDomain)
-    .range([0, width]);
+  const xScale = d3.scaleLinear().domain(xDomain).range([0, width]);
   const yExtent = [min, max];
   const formatter = chartValueFormatter(...yExtent);
   const yScale = d3
@@ -132,10 +124,13 @@ function render(
     .attr('y', 0)
     .attr('height', height)
     .attr('width', xScale(historyEnd))
-    .attr('fill', historicalDataUncertaintyColor(
-      nodeScenarioData.indicator_time_series,
-      nodeScenarioData.projection_start,
-      nodeScenarioData.time_scale)
+    .attr(
+      'fill',
+      historicalDataUncertaintyColor(
+        nodeScenarioData.indicator_time_series,
+        nodeScenarioData.projection_start,
+        nodeScenarioData.time_scale
+      )
     );
 
   const historicG = svgGroup.append('g');
@@ -149,7 +144,7 @@ function render(
       timeseriesLine(
         xScale,
         yScale
-      )((filteredTimeSeries as any) as [number, number][]) as string
+      )(filteredTimeSeries as any as [number, number][]) as string
     )
     .style('stroke', HISTORY_LINE_COLOR)
     .style('stroke-width', 1)
@@ -204,13 +199,9 @@ function renderScenarioProjections(
   // Collect/extract all the pieces of data needed to convert projections into
   //  ridgeline plot format.
   const { selectedScenarioId } = runOptions;
-  const {
-    scenarios,
-    time_scale,
-    projection_start,
-    indicator_time_series
-  } = nodeScenarioData;
-  const projection = nodeScenarioData.scenarios.find(
+  const { scenarios, time_scale, projection_start, indicator_time_series } =
+    nodeScenarioData;
+  const projection = scenarios.find(
     scenario => scenario.id === selectedScenarioId
   );
   if (projection === undefined) {
@@ -229,12 +220,30 @@ function renderScenarioProjections(
 
   // Convert distribution timeseries to line, where each point represents an
   //  inflection point on what will eventually be a ridgeline chart
+  const [min, max] = yScale.domain();
   const ridgelinesWithMetadata = convertDistributionTimeseriesToRidgelines(
     projectionValues,
     time_scale,
-    yScale.domain()[0],
-    yScale.domain()[1]
+    min,
+    max
   );
+
+  // Convert baseline scenario distribution to ridgeline
+  let comparisonRidgeline: RidgelineWithMetadata[] | null = null;
+  if (projection.is_baseline !== true) {
+    const baselineScenario = scenarios.find(
+      scenario => scenario.is_baseline === true
+    );
+    const baselineValues = baselineScenario?.result?.values;
+    if (baselineValues !== undefined) {
+      comparisonRidgeline = convertDistributionTimeseriesToRidgelines(
+        baselineValues,
+        time_scale,
+        min,
+        max
+      );
+    }
+  }
 
   // Calculate how wide a single ridgeline can be
   const firstSliceMonths = getTimeScaleOption(time_scale).timeSlices[0].months;
@@ -242,7 +251,7 @@ function renderScenarioProjections(
     xScale(getTimestampAfterMonths(projection_start, firstSliceMonths)) -
     xScale(projection_start);
 
-  ridgelinesWithMetadata.forEach((ridgelineWithMetadata) => {
+  ridgelinesWithMetadata.forEach((ridgelineWithMetadata, index) => {
     const { label, timestamp, monthsAfterNow } = ridgelineWithMetadata;
     // Calculate context range for each timeslice, unless this is an abstract
     //  node where the analyst hasn't filled in the historical data.
@@ -262,13 +271,13 @@ function renderScenarioProjections(
       //  cast to `any`
       svgGroup as any,
       ridgelineWithMetadata,
-      null,
+      comparisonRidgeline ? comparisonRidgeline[index] : null,
       widthBetweenTimeslices,
       height,
       yScale.domain()[0],
       yScale.domain()[1],
       false,
-      true,
+      false,
       label,
       contextRange
     );
@@ -282,7 +291,8 @@ function renderScenarioProjections(
   for (const constraint of constraints) {
     const ts = projectionValues[constraint.step].timestamp;
 
-    svgGroup.append('circle')
+    svgGroup
+      .append('circle')
       .attr('cx', xScale(ts))
       .attr('cy', yScale(constraint.value))
       .attr('r', 1.75)

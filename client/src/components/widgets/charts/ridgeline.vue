@@ -10,8 +10,8 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 
 import {
+  RIDGELINE_VERTICAL_AXIS_WIDTH,
   COMPARISON_BASELINE_COLOR,
-  CONTEXT_BRACKET_WIDTH,
   renderRidgelines
 } from '@/charts/ridgeline-renderer';
 import { RidgelineWithMetadata } from '@/utils/ridgeline-util';
@@ -82,18 +82,23 @@ export default defineComponent({
         ? d3.selectAll<SVGElement, any>([renderTarget.value])
         : null;
       const { width, height } = chartSize.value;
-      if (svg === null) {
+      // `width` and `height` are 0 on the first DOM update cycle (`onMounted`),
+      //  but this watcher is triggered that tick, resulting in errors from
+      //  trying to render rects with negative heights later on.
+      if (svg === null || width === 0 || height === 0) {
         return;
       }
       // Set new size
       svg.attr('width', width).attr('height', height);
       svg.selectAll('*').remove();
-      // Context ranges start `CONTEXT_BRACKET_WIDTH` pixels(SVG units?) to the
-      //  left of the `g` element that's created in `renderRidgelines`.
+      // Context ranges start `RIDGELINE_VERTICAL_AXIS_WIDTH` / 2 SVG units to
+      //  the left of the `g` element that's created in `renderRidgelines`.
       // To keep it within this component's `svg` element, we
       //  - pass a smaller width to `renderRidgelines`
       //  - shift the resulting `g` element to the right
-      const widthWithoutContextRanges = width - CONTEXT_BRACKET_WIDTH;
+      const widthWithoutContextRanges =
+        width - RIDGELINE_VERTICAL_AXIS_WIDTH / 2;
+
       renderRidgelines(
         svg,
         ridgelineData.value,
@@ -108,7 +113,7 @@ export default defineComponent({
         contextRange.value,
         10,
         COMPARISON_BASELINE_COLOR
-      ).attr('transform', translate(CONTEXT_BRACKET_WIDTH, 0));
+      ).attr('transform', translate(RIDGELINE_VERTICAL_AXIS_WIDTH / 2, 0));
     });
 
     const resize = _.debounce(function ({ width, height }) {
