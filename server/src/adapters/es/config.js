@@ -3,6 +3,7 @@ const FIELD_TYPES = Object.freeze({
   REGEXP: 1,
   RANGED: 2,
   DATE: 3,
+  DATE_MILLIS: 4,
   CUSTOM: 7,
   _QUALITY: 99 // HACK for query-util
 });
@@ -262,6 +263,11 @@ const FIELDS = Object.freeze({
   docByodTag: {
     fields: [docPath('origin.byod_tag')],
     aggFields: [docPath('origin.byod_tag.raw')],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.EVIDENCE
+  },
+  docGenre: {
+    fields: [docPath('genre')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
   }

@@ -1,6 +1,5 @@
 import * as d3 from 'd3';
 import { NodeParameter, EdgeParameter, NodeScenarioData } from '@/types/CAG';
-// import { SELECTED_COLOR } from '@/utils/colors-util';
 import svgUtil from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
