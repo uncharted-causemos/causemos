@@ -13,4 +13,9 @@ module.exports = require('yargs')
     choices: ['common', 'dev', 'combined', 'short', 'tiny'],
     default: undefined
   })
+  .options('schedules', {
+    describe: 'Defines a listing of scheduled tasks, ',
+    choices: ['dart', 'aligner'],
+    default: ''
+  })
   .argv;
