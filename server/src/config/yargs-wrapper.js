@@ -14,8 +14,7 @@ module.exports = require('yargs')
     default: undefined
   })
   .options('schedules', {
-    describe: 'Defines a listing of scheduled tasks, ',
-    choices: ['dart', 'aligner'],
+    describe: 'Defines a listing of comma delimited scheduled tasks from {dart, aligner} ',
     default: ''
   })
   .argv;
