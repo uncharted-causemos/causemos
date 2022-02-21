@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const config = require('../config/yargs-wrapper');
+const schedules = config.schedules.split(',');
 
 /* GET server settings */
 router.get('/settings', function(req, res, next) {
@@ -16,7 +17,8 @@ router.get('/settings', function(req, res, next) {
     senseiURL: env.SENSEI_URL,
     indraURL: env.INDRA_CURATION_URL,
     dartURL: env.DART_DOCUMENT_RETRIEVAL_URL,
-    pipelineURL: env.WM_PIPELINE_URL
+    pipelineURL: env.WM_PIPELINE_URL,
+    schedules
   });
 });
 

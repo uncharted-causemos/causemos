@@ -33,9 +33,11 @@ async function runStartup() {
 
   const schedules = serverConfiguration.schedules.split(',');
   if (schedules.includes('aligner')) {
+    Logger.info('Scheduling cocnept-aligner updates');
     startAddUAzOntology(UAZ_ADD_ONTOLOGY_INTERVAL);
   }
   if (schedules.includes('dart')) {
+    Logger.info('Scheduling DART BYOD updates');
     startBYOD(READER_OUTPUT_POLL_INTERVAL);
   }
 }
