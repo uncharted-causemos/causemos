@@ -378,6 +378,7 @@ export default defineComponent({
         // FIXME: Need to find out what exactly we need, id or data_id, name or display_name ...
         this.$emit('datacube-selected', {
           id: doc.id,
+          data_id: doc.data_id,
           name: doc.display_name,
           unit: '',
           country: '',
@@ -387,7 +388,7 @@ export default defineComponent({
           spatialAggregation: 'mean',
           temporalAggregation: 'mean',
           temporalResolution: this.temporalResolution,
-          period: 12,
+          period: this.temporalResolution === TemporalResolutionOption.Month ? 12 : 1,
           timeseries: this.timeseries,
           // Filled in by server
           min: null,
