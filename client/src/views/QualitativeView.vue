@@ -557,7 +557,7 @@ export default defineComponent({
         const edgeSrcAndTarget = selectedEdge.split(EDGE_LABEL_SOURCE_TARGET_SEPARATOR);
         const edgeSourceLabel = edgeSrcAndTarget[0];
         const edgeTargetLabel = edgeSrcAndTarget[1];
-        const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === edgeSourceLabel && edge.target === edgeTargetLabel);
+        const edgeToSelect = this.modelComponents.edges.find(edge => this.ontologyFormatter(edge.source) === edgeSourceLabel && this.ontologyFormatter(edge.target) === edgeTargetLabel);
         if (edgeToSelect) {
           this.selectEdge(edgeToSelect);
           this.visualState = {

@@ -480,6 +480,14 @@ export default defineComponent({
               renderer.selectNodeByConcept(node.concept, '');
             });
           }
+          if (visualState.selected.edges) {
+            visualState.selected.edges.forEach((edge: any) => {
+              const source = edge.source;
+              const target = edge.target;
+              const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
+              renderer.neighborhoodAnnotation(neighborhood);
+            });
+          }
         }
       }
     },
