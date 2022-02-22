@@ -7,7 +7,7 @@ import { computeRegionalStats, computeRawDataStats, adminLevelToString, computeG
 import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';
 import { getOutputStats } from '@/services/outputdata-service';
-import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
+import { SpatialAggregationLevel } from '@/types/Enums';
 
 export default function useAnalysisMapStats(
   outputSourceSpecs: Ref<OutputSpecWithId[]>,
@@ -36,7 +36,7 @@ export default function useAnalysisMapStats(
       We exclude temporal reference series as aren't using the aggregated endpoints for that scenario yet, so we can't
       retrieve any relative map data for say 2017 as a concept yet.
     */
-    if (relativeTo.value && breakdownOption.value !== TemporalAggregationLevel.Year) {
+    if (relativeTo.value) {
       const currentAdminLevel =
         breakdownOption.value === SpatialAggregationLevel.Region &&
         referenceOptions.value.includes(relativeTo.value)
