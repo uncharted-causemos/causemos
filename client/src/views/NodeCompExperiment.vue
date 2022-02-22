@@ -106,7 +106,7 @@ import modelService from '@/services/model-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { ProjectType, DatacubeStatus, TemporalResolutionOption, TimeScale, TemporalAggregationLevel } from '@/types/Enums';
+import { ProjectType, DatacubeStatus, TemporalResolutionOption, TimeScale, TemporalAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { getOutputs, getSelectedOutput, getValidatedOutputs, STATUS } from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
@@ -199,6 +199,8 @@ export default defineComponent({
       }
       if (viewState.value?.breakdownOption === TemporalAggregationLevel.Year) {
         steps.push('"Split by year" is not supported.');
+      } else if (viewState.value?.breakdownOption === SPLIT_BY_VARIABLE) {
+        steps.push('"Split by variable" is not supported.');
       }
       return steps;
     });
