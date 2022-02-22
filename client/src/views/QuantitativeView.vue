@@ -112,7 +112,7 @@ export default defineComponent({
     // will be valid if populated from a previous insight that include such info
     initialSelectedNode: null as string | null,
     initialSelectedEdge: null as string | null,
-    visualState: {} as any
+    visualState: null as any | null
   }),
   computed: {
     ...mapGetters({
@@ -325,7 +325,7 @@ export default defineComponent({
         const edgeSrcAndTarget = selectedEdge.split(EDGE_LABEL_SOURCE_TARGET_SEPARATOR);
         const edgeSourceLabel = edgeSrcAndTarget[0];
         const edgeTargetLabel = edgeSrcAndTarget[1];
-        const edgeToSelect = this.modelComponents?.edges.find(edge => edge.source === edgeSourceLabel && edge.target === edgeTargetLabel);
+        const edgeToSelect = this.modelComponents?.edges.find(edge => this.ontologyFormatter(edge.source) === edgeSourceLabel && this.ontologyFormatter(edge.target) === edgeTargetLabel);
         if (edgeToSelect) {
           this.visualState = {
             selected: {
@@ -475,19 +475,18 @@ export default defineComponent({
       // apply node/edge selection if we have initial selection and insight is being applied
       if (this.initialSelectedNode) {
         this.applyNodeSelection(this.initialSelectedNode);
+        this.initialSelectedNode = null;
       }
       if (this.initialSelectedEdge) {
         this.applyEdgeSelection(this.initialSelectedEdge);
+        this.initialSelectedEdge = null;
       }
       this.updateDataState();
     },
     onVisualStateUpdated(visualState: any) {
-      if (!_.isEqual(this.visualState, visualState)) {
-        this.visualState = _.cloneDeep(visualState);
-      }
-      this.updateDataState();
+      this.updateDataState(visualState);
     },
-    updateDataState() {
+    updateDataState(visualState?: any) {
       if (this.modelSummary === null) {
         console.error('Trying to update data state while modelSummary is null.');
         return;
@@ -503,17 +502,17 @@ export default defineComponent({
         modelName: this.modelSummary.name
       };
       // extract selected nodes/edges from the visual state
-      if (this.visualState) {
-        if (this.visualState.selected) {
-          if (this.visualState.selected.nodes) {
-            const selectedNodes = this.visualState.selected.nodes.map((node: any) => node.label);
+      if (visualState) {
+        if (visualState.selected) {
+          if (visualState.selected.nodes) {
+            const selectedNodes = visualState.selected.nodes.map((node: any) => node.label);
             dataState.selectedNode = selectedNodes.join(', ');
           } else {
             dataState.selectedNode = undefined;
           }
-          if (this.visualState.selected.edges) {
+          if (visualState.selected.edges) {
             // @Review: I think it is fair to assume that only one edge can be selected
-            const selectedEdge = this.visualState.selected.edges[0];
+            const selectedEdge = visualState.selected.edges[0];
             const source = this.ontologyFormatter(selectedEdge.source);
             const target = this.ontologyFormatter(selectedEdge.target);
             dataState.selectedEdge = source + EDGE_LABEL_SOURCE_TARGET_SEPARATOR + target;

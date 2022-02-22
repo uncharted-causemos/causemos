@@ -185,7 +185,7 @@ export default defineComponent({
       // highlighted.nodes
       // highlighted.edges
       type: Object,
-      default: () => ({})
+      default: null
     }
   },
   emits: [
@@ -263,15 +263,17 @@ export default defineComponent({
       handler(/* newValue, oldValue */) {
         // this will trigger renderer update to visually update
         //  e.g., a selected node will be highlighted with blue boundary
-        this.visualState = this.initialVisualState;
+        if (this.initialVisualState) {
+          this.visualState = this.initialVisualState;
 
-        // we also need to manually apply state, e.g., select nodes/edges
-        if (this.visualState && this.visualState.selected) {
-          if (this.visualState.selected.nodes) {
-            this.onNodeSensitivity(this.visualState.selected.nodes[0]);
-          }
-          if (this.visualState.selected.edges) {
-            this.showRelation(this.visualState.selected.edges[0]);
+          // we also need to manually apply state, e.g., select nodes/edges
+          if (this.visualState && this.visualState.selected) {
+            if (this.visualState.selected.nodes) {
+              this.onNodeSensitivity(this.visualState.selected.nodes[0]);
+            }
+            if (this.visualState.selected.edges) {
+              this.showRelation(this.visualState.selected.edges[0]);
+            }
           }
         }
       },
