@@ -733,6 +733,7 @@ const changeConcept = async (modelId, change) => {
   if (!node) {
     throw new Error(`Node ${nodeId} not found`);
   }
+  const oldConcept = node.concept;
 
   // Find edges
   const sourceEdges = await edgeAdapter.find([
@@ -789,6 +790,8 @@ const changeConcept = async (modelId, change) => {
   if (scenariosToUpdate.length > 0) {
     await scenarioAdapter.update(scenariosToUpdate, d => d.id);
   }
+
+  return { newConcept, oldConcept };
 };
 
 module.exports = {

@@ -230,13 +230,16 @@ router.post('/:mid/change-concept', asyncHandler(async (req, res) => {
   const change = req.body;
   const modelId = req.params.mid;
 
-  await cagService.changeConcept(modelId, change);
+  const { newConcept, oldConcept } = await cagService.changeConcept(modelId, change);
   await scenarioService.invalidateByModel(modelId);
 
   await cagService.updateCAGMetadata(modelId, {
     status: MODEL_STATUS.NOT_REGISTERED,
     engine_status: RESET_ALL_ENGINE_STATUS
   });
+
+
+  historyService.logDescription(modelId, 'rename node', `Original=${oldConcept}, New=${newConcept}`);
 
   const editTime = Date.now();
   res.status(200).send({ updateToken: editTime });

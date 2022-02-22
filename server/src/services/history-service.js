@@ -32,7 +32,18 @@ const logHistory = (modelId, type, nodes, edges) => {
   }, () => uuid());
 };
 
+const logDescription = (modelId, type, text) => {
+  const historyConnection = Adapter.get(RESOURCE.MODEL_HISTORY);
+  historyConnection.insert({
+    model_id: modelId,
+    type: type,
+    modified_at: Date.now(),
+    description: text
+  }, () => uuid());
+};
+
 
 module.exports = {
-  logHistory
+  logHistory,
+  logDescription
 };
