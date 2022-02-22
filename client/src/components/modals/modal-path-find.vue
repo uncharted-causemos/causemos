@@ -102,7 +102,9 @@ export default {
     refresh() {
       this.isLoadingSuggestions = true;
       suggestionService.getGroupPathSuggestions(this.project, this.source.components, this.target.components).then(paths => {
-        const sortedPaths = _.orderBy(paths, p => p.length);
+        // Remove direct edge if it exists
+        const indirectPaths = paths.filter(path => path.length !== 2);
+        const sortedPaths = _.orderBy(indirectPaths, p => p.length);
         this.suggestions = _.take(sortedPaths, 5).map(path => {
           return {
             // suggestions for grouped nodes may have source or target that are component concepts
