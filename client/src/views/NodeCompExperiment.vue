@@ -11,7 +11,7 @@
           :disabled="stepsBeforeCanConfirm.length > 0"
           type="button"
           class="btn btn-primary btn-call-for-action"
-          @click="onSelection"
+          @click="checkSelection"
         >
           <i class="fa fa-fw fa-plus-circle" />
           {{selectLabel}}
@@ -20,6 +20,41 @@
       </div>
     </full-screen-modal-header>
     <main class="insight-capture">
+      <modal class="timeseries-selection-modal" v-if="isTimeseriesSelectionModalOpen">
+        <template #header>
+          <h3>Please select one timeseires data</h3>
+        </template>
+        <template #body>
+          <div v-for="(d, index) in dataState.visibleTimeseriesData" :key="index">
+            <div class="select-row">
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{ 'fa-circle': selectedTimeseriesIndex === index, 'fa-circle-o': selectedTimeseriesIndex !== index }"
+                @click="selectedTimeseriesIndex = index"
+              />
+              <span :style="{ color: d.color }"><b>{{d.name}}</b></span>
+              <sparkline :data="[{ series: d.points.map(p => p.value), name: d.name, color: d.color }]" :size="[350, 20]" />
+            </div>
+          </div>
+
+        </template>
+        <template #footer>
+          <ul class="unstyled-list">
+            <button
+              type="button"
+              class="btn first-button"
+              @click.stop="closeTimeseriesSelectionModal">
+                Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary btn-call-for-action"
+              @click.stop="onSelection">
+                Select
+            </button>
+          </ul>
+        </template>
+      </modal>
       <datacube-card
         class="datacube-card"
         :initial-view-config="initialViewConfig"
@@ -62,6 +97,8 @@ import _ from 'lodash';
 import { computed, defineComponent, Ref, ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
+import Modal from '@/components/modals/modal.vue';
+import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
@@ -69,7 +106,7 @@ import modelService from '@/services/model-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { ProjectType, DatacubeStatus, TemporalResolutionOption, TimeScale } from '@/types/Enums';
+import { ProjectType, DatacubeStatus, TemporalResolutionOption, TimeScale, TemporalAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { getOutputs, getSelectedOutput, getValidatedOutputs, STATUS } from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
@@ -80,9 +117,11 @@ import { ViewState } from '@/types/Insight';
 export default defineComponent({
   name: 'NodeCompExperiment',
   components: {
+    Modal,
     DatacubeCard,
     DatacubeDescription,
-    FullScreenModalHeader
+    FullScreenModalHeader,
+    Sparkline
   },
   setup() {
     const selectLabel = 'Quantify Node';
@@ -99,6 +138,8 @@ export default defineComponent({
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const initialViewConfig = ref<ViewState | null>(null);
 
+    const isTimeseriesSelectionModalOpen = ref(false);
+    const selectedTimeseriesIndex = ref(0);
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelComponents = ref(null) as Ref<any>;
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
@@ -156,8 +197,10 @@ export default defineComponent({
       } else if (dataState.value?.selectedScenarioIds?.length > 1) {
         steps.push('Please select exactly one scenario.');
       }
-      if (viewState.value?.breakdownOption !== null) {
-        steps.push('Please set "split by" to "none".');
+      if (viewState.value?.breakdownOption === TemporalAggregationLevel.Year) {
+        steps.push('"Split by year" is not supported.');
+      } else if (viewState.value?.breakdownOption === SPLIT_BY_VARIABLE) {
+        steps.push('"Split by variable" is not supported.');
       }
       return steps;
     });
@@ -189,6 +232,18 @@ export default defineComponent({
       setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     };
 
+    const closeTimeseriesSelectionModal = () => {
+      selectedTimeseriesIndex.value = 0;
+      isTimeseriesSelectionModalOpen.value = false;
+    };
+
+    const checkSelection = async () => {
+      if (dataState.value.visibleTimeseriesData.length > 1) {
+        isTimeseriesSelectionModalOpen.value = true;
+      } else {
+        await onSelection();
+      }
+    };
 
     const onSelection = async () => {
       if (metadata === null) {
@@ -196,11 +251,14 @@ export default defineComponent({
         return;
       }
       const visibleTimeseriesData = dataState.value.visibleTimeseriesData;
-      if (visibleTimeseriesData.length !== 1) {
-        console.error('There should be exactly one timeseries visible.', visibleTimeseriesData);
+      if (visibleTimeseriesData.length < 1) {
+        console.error('There should be at least one timeseries visible.', visibleTimeseriesData);
         return;
       }
-      const timeseries = visibleTimeseriesData[0].points;
+      const selectedIndex = visibleTimeseriesData.length > 1
+        ? selectedTimeseriesIndex.value
+        : 0;
+      const timeseries = visibleTimeseriesData[selectedIndex].points;
       let country = '';
       let admin1 = '';
       let admin2 = '';
@@ -300,11 +358,15 @@ export default defineComponent({
 
     return {
       aggregationOptionFiltered,
+      checkSelection,
       currentCAG,
       currentOutputIndex,
+      closeTimeseriesSelectionModal,
+      dataState,
       DatacubeStatus,
       indicatorId,
       initialViewConfig,
+      isTimeseriesSelectionModalOpen,
       mainModelOutput,
       metadata,
       modelComponents,
@@ -317,6 +379,7 @@ export default defineComponent({
       project,
       selectedNode,
       selectLabel,
+      selectedTimeseriesIndex,
       statusColor,
       statusLabel,
       stepsBeforeCanConfirm,
@@ -361,6 +424,19 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.timeseries-selection-modal .select-row {
+  display: flex;
+  align-items: center;
+  i {
+    cursor: pointer;
+  }
+  span {
+    padding: 5px;
+    flex-grow: 1;
+    max-width: 94px;
+  }
 }
 
 .header-content > *:not(:first-child) {
