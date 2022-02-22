@@ -191,7 +191,7 @@ export default {
 
       // FIXME: temporarily return false always - DART is offline and there is a strange bug where the fallover
       // doesn't work after the code has been transpiled - issue 680.
-      const useDART = false;
+      const useDART = true;
 
       if (isPdf(this.documentData) && useDART) {
         const rawDocUrl = `/api/dart/${this.documentId}/raw`;
