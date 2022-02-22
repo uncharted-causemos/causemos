@@ -145,15 +145,14 @@ export interface InsightMetadata {
   analysisName?: string;
 
   // CAG specific
-  cagName?: string;
   ontology?: string;
   ontology_created_at?: number;
   ontology_modified_at?: number;
   corpus_id?: string;
   filters?: string;
+  cagName?: string;
   selectedNode?: string;
   selectedEdge?: string;
-  nodesCount?: string;
   currentEngine?: string;
   selectedCAGScenario?: string;
 }

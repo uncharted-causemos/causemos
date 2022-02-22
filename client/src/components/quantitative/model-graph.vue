@@ -146,10 +146,20 @@ export default defineComponent({
 
         // apply changes
         const visualState = this.visualState;
-        if (visualState.selected && visualState.selected.nodes) {
-          visualState.selected.nodes.forEach((node: any) => {
-            renderer.selectNodeByConcept(node.concept, '');
-          });
+        if (visualState.selected) {
+          if (visualState.selected.nodes) {
+            visualState.selected.nodes.forEach((node: any) => {
+              renderer.selectNodeByConcept(node.concept, '');
+            });
+          }
+          if (visualState.selected.edges) {
+            visualState.selected.edges.forEach((edge: any) => {
+              const source = edge.source;
+              const target = edge.target;
+              const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
+              renderer.neighborhoodAnnotation(neighborhood);
+            });
+          }
         }
         if (visualState.highlighted) {
           renderer.neighborhoodAnnotation(visualState.highlighted);

@@ -25,12 +25,14 @@
       :scenarios="scenarios"
       :current-engine="currentEngine"
       :reset-layout-token='resetLayoutToken'
+      :initial-visual-state="visualState"
       @refresh-model="refreshModelAndScenarios"
       @model-parameter-changed="refresh"
       @new-scenario='onCreateScenario'
       @update-scenario='onUpdateScenario'
       @delete-scenario='onDeleteScenario'
       @delete-scenario-clamp='onDeleteScenarioClamp'
+      @visual-state-updated="onVisualStateUpdated"
     >
       <template #action-bar>
         <action-bar
@@ -70,12 +72,15 @@ import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, S
 import { createAnalysis, getAnalysisState } from '@/services/analysis-service';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import { ProjectType } from '@/types/Enums';
+import { DataState } from '@/types/Insight';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
 const MODEL_STATUS = modelService.MODEL_STATUS;
 
 const PROJECTION_EXPERIMENT_THRESHOLD = 999;
 const PROJECTION_EXPERIMENT_INTERVAL = 3000; // millis
+
+const EDGE_LABEL_SOURCE_TARGET_SEPARATOR = ' : ';
 
 export default defineComponent({
   name: 'QuantitativeView',
@@ -102,7 +107,12 @@ export default defineComponent({
     trainingPercentage: 0,
     refreshTimer: 0,
     currentScenarioName: '',
-    showOpenDataAnalysisConfirmation: false
+    showOpenDataAnalysisConfirmation: false,
+
+    // will be valid if populated from a previous insight that include such info
+    initialSelectedNode: null as string | null,
+    initialSelectedEdge: null as string | null,
+    visualState: null as any | null
   }),
   computed: {
     ...mapGetters({
@@ -129,7 +139,7 @@ export default defineComponent({
     },
     $route: {
       handler(/* newValue, oldValue */) {
-        // NOTE:  this is only valid when the route is focused on the 'data' space
+        // NOTE:  this is only valid when the route is focused on the 'quantitative' space
         if (this.$route.name === 'quantitative' && this.$route.query) {
           const insight_id = this.$route.query.insight_id;
           if (typeof insight_id === 'string') {
@@ -280,9 +290,48 @@ export default defineComponent({
         //
         // data state
         // FIXME: the order of resetting the state is important
-        if (loadedInsight.data_state?.selectedScenarioId !== undefined) {
-          // this will reload datacube metadata as well as scenario runs
-          this.setSelectedScenarioId(loadedInsight.data_state?.selectedScenarioId);
+        if (loadedInsight.data_state?.selectedNode !== undefined) {
+          const selectedNode = loadedInsight.data_state?.selectedNode;
+          if (this.modelComponents && this.modelComponents.nodes) {
+            this.applyNodeSelection(selectedNode);
+          } else {
+            this.initialSelectedNode = selectedNode;
+          }
+        }
+        if (loadedInsight.data_state?.selectedEdge !== undefined) {
+          const selectedEdge = loadedInsight.data_state?.selectedEdge;
+          if (this.modelComponents && this.modelComponents.nodes) {
+            this.applyEdgeSelection(selectedEdge);
+          } else {
+            this.initialSelectedEdge = selectedEdge;
+          }
+        }
+      }
+    },
+    applyNodeSelection(selectedNode: string) {
+      if (selectedNode) {
+        const nodeToSelect = this.modelComponents?.nodes.find(node => node.label === selectedNode);
+        if (nodeToSelect) {
+          this.visualState = {
+            selected: {
+              nodes: [nodeToSelect]
+            }
+          };
+        }
+      }
+    },
+    applyEdgeSelection(selectedEdge: string) {
+      if (selectedEdge) {
+        const edgeSrcAndTarget = selectedEdge.split(EDGE_LABEL_SOURCE_TARGET_SEPARATOR);
+        const edgeSourceLabel = edgeSrcAndTarget[0];
+        const edgeTargetLabel = edgeSrcAndTarget[1];
+        const edgeToSelect = this.modelComponents?.edges.find(edge => this.ontologyFormatter(edge.source) === edgeSourceLabel && this.ontologyFormatter(edge.target) === edgeTargetLabel);
+        if (edgeToSelect) {
+          this.visualState = {
+            selected: {
+              edges: [edgeToSelect]
+            }
+          };
         }
       }
     },
@@ -423,9 +472,21 @@ export default defineComponent({
       this.setSelectedScenarioId(scenarioId);
       this.scenarios = scenarios;
 
+      // apply node/edge selection if we have initial selection and insight is being applied
+      if (this.initialSelectedNode) {
+        this.applyNodeSelection(this.initialSelectedNode);
+        this.initialSelectedNode = null;
+      }
+      if (this.initialSelectedEdge) {
+        this.applyEdgeSelection(this.initialSelectedEdge);
+        this.initialSelectedEdge = null;
+      }
       this.updateDataState();
     },
-    updateDataState() {
+    onVisualStateUpdated(visualState: any) {
+      this.updateDataState(visualState);
+    },
+    updateDataState(visualState?: any) {
       if (this.modelSummary === null) {
         console.error('Trying to update data state while modelSummary is null.');
         return;
@@ -434,13 +495,32 @@ export default defineComponent({
         console.error('Trying to update data state while modelComponents is null.');
         return;
       }
-      // save the scenario-id in the insight store so that it will be part of any insight captured from this view
-      const dataState = {
+      // save some state that will be part of any insight captured from this view
+      const dataState: DataState = {
         selectedScenarioId: this.selectedScenarioId,
         currentEngine: this.currentEngine,
-        modelName: this.modelSummary.name,
-        nodesCount: this.modelComponents.nodes.length
+        modelName: this.modelSummary.name
       };
+      // extract selected nodes/edges from the visual state
+      if (visualState) {
+        if (visualState.selected) {
+          if (visualState.selected.nodes) {
+            const selectedNodes = visualState.selected.nodes.map((node: any) => node.label);
+            dataState.selectedNode = selectedNodes.join(', ');
+          } else {
+            dataState.selectedNode = undefined;
+          }
+          if (visualState.selected.edges) {
+            // @Review: I think it is fair to assume that only one edge can be selected
+            const selectedEdge = visualState.selected.edges[0];
+            const source = this.ontologyFormatter(selectedEdge.source);
+            const target = this.ontologyFormatter(selectedEdge.target);
+            dataState.selectedEdge = source + EDGE_LABEL_SOURCE_TARGET_SEPARATOR + target;
+          } else {
+            dataState.selectedEdge = undefined;
+          }
+        }
+      }
       this.setDataState(dataState);
     },
     async runScenariosWrapper() {

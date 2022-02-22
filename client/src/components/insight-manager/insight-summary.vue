@@ -18,7 +18,6 @@
     <div v-if="ontologyModifiedAt !== null"><b>Ontology modified at</b>: {{ontologyModifiedAt}}</div>
     <div v-if="metadataDetails.corpus_id !== undefined"><b>Corpus</b>: {{metadataDetails.corpus_id}}</div>
     <div v-if="metadataDetails.currentEngine !== undefined"><b>Engine</b>: {{metadataDetails.currentEngine}}</div>
-    <div v-if="metadataDetails.nodesCount !== undefined"><b>Number of Nodes</b>: {{metadataDetails.nodesCount}}</div>
     <div v-if="metadataDetails.selectedNode !== undefined"><b>Selected Node</b>: {{metadataDetails.selectedNode}}</div>
     <div v-if="metadataDetails.selectedEdge !== undefined"><b>Selected Edge</b>: {{metadataDetails.selectedEdge}}</div>
     <div v-if="metadataDetails.selectedCAGScenario !== undefined"><b>CAG Scenario</b>: {{metadataDetails.selectedCAGScenario}}</div>
