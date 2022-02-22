@@ -11,7 +11,7 @@ const modelUtil = rootRequire('/util/model-util');
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
 const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;
 
-const PROJECTION_START_DATE = '2021-01-01';
+const PROJECTION_START_DATE = '2022-01-01';
 const DEFAULT_NUM_STEPS = 12;
 
 
