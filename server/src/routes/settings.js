@@ -1,7 +1,8 @@
+const _ = require('lodash');
 const express = require('express');
 const router = express.Router();
 const config = require('../config/yargs-wrapper');
-const schedules = config.schedules.split(',');
+const schedules = _.isEmpty(config.schedules) ? [] : config.schedules.split(',');
 
 /* GET server settings */
 router.get('/settings', function(req, res, next) {
