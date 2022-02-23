@@ -897,6 +897,7 @@ export default defineComponent({
     const initialSelectedQualifierValues = ref<string[]>([]);
     const initialSelectedYears = ref<string[]>([]);
     const initialActiveReferenceOptions = ref<string[]>([]);
+    const initialSelectedGlobalTimestamp = ref<number | null>(null);
 
     const selectedBreakdownOutputVariables = ref(new Set<string>());
     const toggleIsOutputVariableSelected = (outputVariable: string) => {
@@ -1183,6 +1184,14 @@ export default defineComponent({
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
             runFromInsight.value = true;
             setSelectedScenarioIds(_.clone(initialDataConfig.value.selectedScenarioIds));
+          }
+          if (initialDataConfig.value.selectedTimestamp !== undefined) {
+            if (initialViewConfig.value.breakdownOption && initialViewConfig.value.breakdownOption === SPLIT_BY_VARIABLE) {
+              initialSelectedGlobalTimestamp.value = initialDataConfig.value.selectedTimestamp;
+            } else {
+              // setSelectedTimestamp(initialDataConfig.value.selectedTimestamp); // fyi: this cannot be called since it is defined later in the document
+              selectedTimestamp.value = initialDataConfig.value.selectedTimestamp;
+            }
           }
           if (initialDataConfig.value.selectedRegionIds !== undefined) {
             initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
@@ -1518,7 +1527,11 @@ export default defineComponent({
           setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
         }
         if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
-          setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+          if (loadedInsight.view_state?.breakdownOption && loadedInsight.view_state?.breakdownOption === SPLIT_BY_VARIABLE) {
+            setSelectedGlobalTimestamp(loadedInsight.data_state?.selectedTimestamp);
+          } else {
+            setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+          }
         }
         if (loadedInsight.data_state?.relativeTo !== undefined) {
           setRelativeTo(loadedInsight.data_state?.relativeTo);
@@ -1544,7 +1557,7 @@ export default defineComponent({
           const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
           const datacubeId = metadata?.value ? metadata.value.id : loadedInsight.data_state?.selectedModelId;
           updatedCurrentOutputsMap.value[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
-          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap.value);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
           setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
@@ -1676,7 +1689,8 @@ export default defineComponent({
       metadata,
       selectedScenarioIds,
       breakdownOption,
-      filteredActiveFeatures
+      filteredActiveFeatures,
+      initialSelectedGlobalTimestamp
     );
 
     watch(
@@ -2002,7 +2016,7 @@ export default defineComponent({
         selectedBreakdownOutputVariables,
         activeFeatures,
         selectedScenarioIds,
-        selectedTimestamp,
+        timestampForSelection,
         selectedYears,
         selectedTransform,
         activeReferenceOptions,
