@@ -116,17 +116,31 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
 
   const nodesNotInConceptAligner = [];
   // get top k matches
+  // const k = 3;
+  // // Get matches from UAz
+  // for (const node of nodesNotInHistory) {
+  //   const indicators = await searchService.indicatorSearchConceptAligner(model.project_id, node, k);
+  //   Logger.info(`Found ${indicators.length} candidates for node ${node.concept}`);
+  //   if (indicators.length === 0) {
+  //     nodesNotInConceptAligner.push(node);
+  //   } else {
+  //     result.set(node.concept, indicators);
+  //   }
+  // }
+
   const k = 3;
   // Get matches from UAz
-  for (const node of nodesNotInHistory) {
-    const indicators = await searchService.indicatorSearchConceptAligner(model.project_id, node, k);
-    Logger.info(`Found ${indicators.length} candidates for node ${node.concept}`);
-    if (indicators.length === 0) {
-      nodesNotInConceptAligner.push(node);
+  const indicators = await searchService.indicatorSearchConceptAligner(model.project_id, nodesNotInHistory, k);
+  // note: this assumes that order of results returned by the searchService is the same as nodes provided
+  for (let i = 0; i < indicators.length; i++) {
+    if (indicators[i].length === 0) {
+      nodesNotInConceptAligner.push(nodesNotInHistory[i]);
     } else {
-      result.set(node.concept, indicators);
+      Logger.info(`Found ${indicators[i].length} candidates for node ${nodesNotInHistory[i].concept}`);
+      result.set(nodesNotInHistory[i].concept, indicators[i]);
     }
   }
+
 
   // 2. Run search against datacubes
   for (const node of nodesNotInConceptAligner) {
