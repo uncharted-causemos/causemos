@@ -32,23 +32,43 @@ export default function useOutputSpecs(
       const transform = featureInfo.transform !== DataTransform.None
         ? featureInfo.transform
         : undefined;
-      const outputVariable = breakdownOption?.value === SPLIT_BY_VARIABLE ? timeseriesId : activeFeature?.value ?? activeFeatures.value[indx].name;
+      const featureName = breakdownOption?.value === SPLIT_BY_VARIABLE ? timeseriesId : activeFeature?.value ?? activeFeatures.value[indx].name;
 
-      // In split-by-variable the scenarioId is runId.concat(outputVariable)
+      // ensure we have proper aggregations and resolutions when in split by variable
+      let temporalResolution = featureInfo.temporalResolution;
+      let temporalAggregation = featureInfo.temporalAggregation;
+      let spatialAggregation = featureInfo.spatialAggregation;
+      if (breakdownOption?.value === SPLIT_BY_VARIABLE) {
+        if (!temporalResolution || !temporalAggregation || !spatialAggregation) {
+          // a few fallback cases:
+          // - try the feature that matches the activeFeature.name (default behaviour when not in split-by-variable)
+          // - get the first feature that has aggregation and feature values
+          let feature = activeFeatures.value.find(f => f.name === activeFeature?.value);
+          if (!feature || !feature.temporalResolution || !feature.temporalAggregation || !feature.spatialAggregation) {
+            feature = activeFeatures.value.find(f => f.temporalResolution && f.temporalAggregation && f.spatialAggregation);
+          }
+
+          temporalResolution = feature?.temporalResolution ?? temporalResolution;
+          temporalAggregation = feature?.temporalAggregation ?? temporalAggregation;
+          spatialAggregation = feature?.spatialAggregation ?? spatialAggregation;
+        }
+      }
+
+      // In split-by-variable the scenarioId is runId.concat(featureName)
       // Need to undo that so we can fetch data properly
-      const runId = (breakdownOption?.value === SPLIT_BY_VARIABLE && scenarioId.endsWith(outputVariable))
-        ? scenarioId.slice(0, -outputVariable.length)
+      const runId = (breakdownOption?.value === SPLIT_BY_VARIABLE && scenarioId.endsWith(featureName))
+        ? scenarioId.slice(0, -featureName.length)
         : scenarioId;
       const outputSpec: OutputSpecWithId = {
         id: timeseriesId,
         modelId: activeModelId,
         runId: runId,
-        outputVariable,
+        outputVariable: featureName,
         timestamp,
         transform,
-        temporalResolution: featureInfo.temporalResolution,
-        temporalAggregation: featureInfo.temporalAggregation,
-        spatialAggregation: featureInfo.spatialAggregation,
+        temporalResolution,
+        temporalAggregation,
+        spatialAggregation,
         preGeneratedOutput: undefined,
         isDefaultRun: false
       };
