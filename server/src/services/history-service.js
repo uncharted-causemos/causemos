@@ -7,9 +7,17 @@ const _description = (nodes, edges) => {
   return `Nodes: [${nodeNames}] Edges: [${edgeNames}]`;
 };
 
-const logHistory = (modelId, type, nodes, edges) => {
+const logDescription = (modelId, type, text) => {
   const historyConnection = Adapter.get(RESOURCE.MODEL_HISTORY);
+  historyConnection.insert({
+    model_id: modelId,
+    type: type,
+    modified_at: Date.now(),
+    description: text
+  }, () => uuid());
+};
 
+const logHistory = (modelId, type, nodes, edges) => {
   let desc = _description(nodes, edges);
 
   if (type === 'set weights') {
@@ -23,25 +31,8 @@ const logHistory = (modelId, type, nodes, edges) => {
     desc = `${node.concept}, ${JSON.stringify(node.parameter)}`;
   }
 
-
-  historyConnection.insert({
-    model_id: modelId,
-    type: type,
-    modified_at: Date.now(),
-    description: desc
-  }, () => uuid());
+  logDescription(modelId, type, desc);
 };
-
-const logDescription = (modelId, type, text) => {
-  const historyConnection = Adapter.get(RESOURCE.MODEL_HISTORY);
-  historyConnection.insert({
-    model_id: modelId,
-    type: type,
-    modified_at: Date.now(),
-    description: text
-  }, () => uuid());
-};
-
 
 module.exports = {
   logHistory,
