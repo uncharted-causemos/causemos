@@ -30,14 +30,6 @@
               <input v-model="title" />
             </td>
           </tr>
-          <tr>
-            <td class="doc-label">Locations</td>
-            <td class="doc-value">{{ documentData.ner_analytics.loc.join(', ') }} </td>
-          </tr>
-          <tr>
-            <td class="doc-label">Organizations</td>
-            <td class="doc-value">{{ documentData.ner_analytics.org.join(', ') }}</td>
-          </tr>
         </table>
         <hr />
       </div>
@@ -278,6 +270,10 @@ export default {
 .modal-document-container {
   .metadata {
     margin-top: 2rem;
+    table {
+      margin-right: 3rem;
+      width: 100%;
+    }
   }
   .doc-label {
     vertical-align: baseline;
@@ -292,7 +288,7 @@ export default {
     padding: 1px 3px;
     max-width: 400px;
     input {
-      width: 100%;
+      width: calc(100% - 5rem);
     }
   }
 
