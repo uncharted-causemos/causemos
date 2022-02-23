@@ -19,7 +19,7 @@ export default function useScenarioData(
   const runData = ref([]) as Ref<ModelRun[]>;
 
   const allModelRunData = computed(() => runData.value
-    .filter(modelRun => modelRun.status !== ModelRunStatus.Deleted)
+    .filter(modelRun => modelRun.status !== ModelRunStatus.Deleted && modelRun.status !== ModelRunStatus.Test)
     .map(modelRun => { return { ...modelRun, _version: undefined }; }));
 
   const filteredRunData = computed(() => {
