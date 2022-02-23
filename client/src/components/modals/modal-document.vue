@@ -98,17 +98,22 @@ const reformat = (v) => {
   return `<span class='extract-text-anchor' style='background: #56b3e9'>${v}</span>`;
 };
 
-// Run through a list of sucessive transform to try to find the correct match
+// Run through a list of sucessive transforms to try to find the correct match
 const lossySearch = (text, textFragment) => {
   let fragment = textFragment;
-  fragment = fragment.replaceAll(' .', '.');
-  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
 
-  fragment = fragment.replaceAll(' ;', ';');
-  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+  const replacementElements = [
+    [' .', '.'],
+    [' ;', ';'],
+    [' ,', ','],
+    [' )', ')'],
+    ['( ', '(']
+  ];
 
-  fragment = fragment.replaceAll(' ,', ',');
-  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+  for (let i = 0; i < replacementElements.length; i++) {
+    fragment = fragment.replaceAll(...replacementElements[i]);
+    if (text.indexOf(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+  }
 
   return text;
 };
@@ -121,7 +126,7 @@ const createTextViewer = (text) => {
   function search(textFragment) {
     let t = originalText;
     if (textFragment) {
-      if (text.search(textFragment) >= 0) {
+      if (text.indexOf(textFragment) >= 0) {
         t = t.replace(textFragment, reformat(textFragment));
       } else {
         t = lossySearch(t, textFragment);
@@ -186,6 +191,7 @@ export default {
     },
     async fetchReaderContent() {
       this.documentData = (await getDocument(this.documentId)).data;
+      this.setFieldsFromDocumentData();
       this.textViewer = createTextViewer(this.documentData.extracted_text);
 
 
@@ -216,7 +222,6 @@ export default {
           this.pdfViewer.search(this.textFragment);
         }
       }
-      this.setFieldsFromDocumentData();
     },
     toggle() {
       this.showTextViewer = !this.showTextViewer;
@@ -244,6 +249,9 @@ export default {
       this.title = this.documentData.doc_title;
     },
     edit() {
+      // scroll up to edit zone;
+      const anchor = document.getElementsByClassName('modal-body')[0];
+      anchor.scrollTop = 0;
       this.setFieldsFromDocumentData();
       this.editable = true;
     },
