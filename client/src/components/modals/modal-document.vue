@@ -90,7 +90,7 @@ const reformat = (v) => {
   return `<span class='extract-text-anchor' style='background: #56b3e9'>${v}</span>`;
 };
 
-// Run through a list of sucessive transforms to try to find the correct match
+// Run through a list of inexpensive, sucessive transforms to try to find the correct match
 const lossySearch = (text, textFragment) => {
   let fragment = textFragment;
 
@@ -110,6 +110,29 @@ const lossySearch = (text, textFragment) => {
   return text;
 };
 
+// gradually loosen search requirements of a "regex and select punctuation"-sanitized
+// search string by progressively adding regex wildcards to account for skipped
+// characters, words and phrases in the text fragment being searched for.
+const iterativeRegexSearch = (text, fragment) => {
+  let sanitizedSearch = fragment
+    // remove some special characters, may need adjustment for edge cases but some are regex reserved
+    .replace(/[/\\[\].+*?^$(){}|,]/g, '')
+    .split(/\s+/)
+    .join(' ')
+    .trim();
+  const spaceTotal = sanitizedSearch.split(' ').length;
+  let count = 0;
+  while (count <= spaceTotal) {
+    const searchRegEx = new RegExp(sanitizedSearch);
+    const searchIndex = text.search(searchRegEx);
+    if (searchIndex > -1) {
+      return text.replace(searchRegEx, reformat(fragment));
+    }
+    sanitizedSearch = sanitizedSearch.replace(' ', '\\b.*?\\b');
+    count++;
+  }
+  return text;
+};
 
 const createTextViewer = (text) => {
   const el = document.createElement('div');
@@ -122,6 +145,10 @@ const createTextViewer = (text) => {
         t = t.replace(textFragment, reformat(textFragment));
       } else {
         t = lossySearch(t, textFragment);
+      }
+      // if all else fails, do this expensive regex search
+      if (t === text) {
+        t = iterativeRegexSearch(t, textFragment);
       }
       el.innerHTML = t;
       const anchor = document.getElementsByClassName('extract-text-anchor')[0];
