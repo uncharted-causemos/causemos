@@ -130,7 +130,7 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
 
   const k = 3;
   // Get matches from UAz
-  const indicators = await searchService.indicatorSearchConceptAligner(model.project_id, nodesNotInHistory, k);
+  const indicators = await searchService.indicatorSearchConceptAlignerBulk(model.project_id, nodesNotInHistory, k);
   // note: this assumes that order of results returned by the searchService is the same as nodes provided
   for (let i = 0; i < indicators.length; i++) {
     if (indicators[i].length === 0) {

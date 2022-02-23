@@ -5,7 +5,7 @@ const { client, searchAndHighlight, queryStringBuilder } = rootRequire('/adapter
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 const { getCache } = rootRequire('/cache/node-lru-cache');
 
-const conceptAlignerService = rootRequire('/services/external/cag-aligner-service');
+const conceptAlignerService = rootRequire('/services/external/concept-aligner-service');
 
 // Remove unneeded fields from compositional ontology
 const formatOntologyDoc = (d) => {
@@ -422,10 +422,10 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k) => {
 
   const ontologyId = project.ontology;
   try {
-    // const response = await requestAsPromise(options);
+    Logger.debug(`Concept aligner payload ${JSON.stringify(bulkSearchPayload)}`);
     const response = await conceptAlignerService.bulkSearch(ontologyId, bulkSearchPayload, k, 0.3);
 
-    for (const matches in response) {
+    for (const matches of response) {
       const indicatorsForMatches = [];
       if (matches.length > 0) {
         // need to make sure we have the indicator
@@ -448,6 +448,7 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k) => {
   return allIndicators.map(indicators => indicators.sort((a, b) => b.score - a.score).slice(0, k).map(x => x.candidate));
 };
 
+// Deprecated
 const indicatorSearchConceptAligner = async (projectId, node, k) => {
   const ontologyMap = getCache(projectId).ontologyMap;
   const ontologyValues = Object.values(ontologyMap);
