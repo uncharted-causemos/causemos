@@ -186,10 +186,11 @@ const setDefaultIndicators = async (modelId, resolution) => {
     if (conceptIndicatorMap.has(node.concept)) {
       const cube = matches[0];
       updatePayload.match_candidates = matches.map(match => {
-        return { id: match.id, dataId: match.data_id, displayName: match.outputs[0].display_name }
-      })
+        return { id: match.id, dataId: match.data_id, displayName: match.outputs[0].display_name };
+      });
       updatePayload.parameter = {
         id: cube.id,
+        data_id: cube.data_id,
         name: cube.outputs[0].display_name,
         unit: cube.outputs[0].unit,
         country: '',
@@ -199,7 +200,7 @@ const setDefaultIndicators = async (modelId, resolution) => {
         spatialAggregation: geospatialAgg,
         temporalAggregation: temporalAgg,
         temporalResolution: resolution,
-        period: 12
+        period: resolution === 'month' ? 12 : 1
       };
 
       // Set time series, min, max
