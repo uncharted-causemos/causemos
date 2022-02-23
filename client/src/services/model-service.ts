@@ -160,7 +160,7 @@ const addComponents = async (modelId: string, nodes: NodeParameter[], edges: Edg
 };
 
 const removeComponents = async (modelId: string, nodes: { id: string }[], edges: { id: string }[]) => {
-  const result = await API.put(`cags/${modelId}/components`, { operation: 'remove', nodes, edges });
+  const result = await API.put(`cags/${modelId}/components`, { operation: 'remove', nodes, edges, updateType: 'remove' });
   return result.data;
 };
 
@@ -259,6 +259,14 @@ const deleteScenario = async (scenario: Scenario) => {
   const result = await API.delete(`scenarios/${scenario.id}`);
   return result.data;
 };
+
+export const logHistoryEntry = async (modelId: string, type: string, text: string) => {
+  await API.post(`models/${modelId}/history`, {
+    type,
+    text
+  });
+};
+
 
 // Business logic
 
@@ -864,6 +872,8 @@ export default {
   updateScenarioSensitivityResult,
   deleteScenario,
   resetScenarioParameter,
+
+  logHistoryEntry,
 
   updateNodeParameter,
   updateModelParameter,

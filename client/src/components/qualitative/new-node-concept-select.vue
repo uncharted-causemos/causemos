@@ -140,6 +140,7 @@ import datacubeService from '@/services/new-datacube-service';
 
 import { AggregationOption, TemporalResolution, TemporalResolutionOption, TimeScale } from '@/types/Enums';
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
+import { logHistoryEntry } from '@/services/model-service';
 
 const CONCEPT_SUGGESTION_COUNT = 10;
 
@@ -224,6 +225,7 @@ export default defineComponent({
 
     const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
     const project = computed(() => store.getters['app/project']);
+    const currentCAG = computed(() => store.getters['app/currentCAG']);
 
     watch(userInput, _.debounce(async () => {
       if (_.isEmpty(userInput.value)) {
@@ -236,6 +238,8 @@ export default defineComponent({
 
         results = await datacubeService.getDatacubeSuggestions(userInput.value);
         datacubeSuggestions.value = results.splice(0, 5);
+
+        logHistoryEntry(currentCAG.value, 'search', userInput.value);
       }
     }, 300));
 

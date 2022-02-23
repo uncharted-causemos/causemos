@@ -29,6 +29,24 @@ const SENSEI = 'sensei';
 
 // const esLock = {};
 
+router.get('/:modelId/history', asyncHandler(async (req, res) => {
+  const { modelId } = req.params;
+  const historyConn = Adapter.get(RESOURCE.MODEL_HISTORY);
+  const historyLogs = await historyConn.find([
+    { field: 'model_id', value: modelId }
+  ], { size: 10000, sort: [{ modified_at: 'asc' }] });
+
+  res.json(historyLogs);
+}));
+
+
+router.post('/:modelId/history', asyncHandler(async (req, res) => {
+  const { modelId } = req.params;
+  const { type, text } = req.body;
+  historyService.logDescription(modelId, type, text);
+  res.json({});
+}));
+
 /**
  * Set node quantifications
  */
