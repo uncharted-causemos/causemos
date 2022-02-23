@@ -5,11 +5,9 @@ const URL = 'http://linking.cs.arizona.edu';
 const SECRET = process.env.CONCEPT_ALIGNER_SECRET;
 const TIMEOUT = 3 * 1000;
 
-// v2/addOntology?secret=${process.env.CONCEPT_ALIGNER_SECRET}&ontologyId=${project.ontology}`,
-
+// Check ontology status
 const queryOntology = async (ontologyId) => {
   Logger.info(`Calling ${URL}/v2/status`);
-
   const options = {
     url: `${URL}/v2/status?ontologyId=${ontologyId}`,
     method: 'GET',
@@ -20,6 +18,7 @@ const queryOntology = async (ontologyId) => {
   return result;
 };
 
+// Register ontology
 const addOntology = async (ontologyId) => {
   Logger.info(`Calling ${URL}/v2/addOntology`);
   const options = {
@@ -32,6 +31,7 @@ const addOntology = async (ontologyId) => {
   return result;
 };
 
+// Reindex: e.g. DOJO has changed
 const reindex = async () => {
   Logger.info(`Calling ${URL}/v1/reindex`);
   const options = {
@@ -44,8 +44,22 @@ const reindex = async () => {
   return result;
 };
 
+// Bulk search
+const bulkSearch = async (ontologyId, payload, maxHits, threshold) => {
+  Logger.info(`Calling ${URL}/v2/bulkCompositionalSearch?maxHits`);
+  const options = {
+    url: `${URL}/v2/bulkCompositionalSearch?ontologyId=${ontologyId}&secret=${SECRET}&maxHits=${maxHits}&threshold=${threshold}`,
+    method: 'PUT',
+    json: payload,
+    timeout: TIMEOUT
+  };
+  const result = await requestAsPromise(options);
+  return result;
+};
+
 module.exports = {
   queryOntology,
   addOntology,
-  reindex
+  reindex,
+  bulkSearch
 };
