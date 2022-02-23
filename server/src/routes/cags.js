@@ -138,7 +138,7 @@ router.put('/:mid/components/', asyncHandler(async (req, res) => {
     const nodeConn = Adapter.get(RESOURCE.NODE_PARAMETER);
     const edgeConn = Adapter.get(RESOURCE.EDGE_PARAMETER);
     nodePartials = await nodeConn.find([{ field: 'id', value: nodes.map(d => d.id) }], { size: 10000, includes: ['id', 'concept'] });
-    edgePartials = await edgeConn.find([{ field: 'id', value: nodes.map(d => d.id) }], { size: 10000, includes: ['id', 'source', 'target'] });
+    edgePartials = await edgeConn.find([{ field: 'id', value: edges.map(d => d.id) }], { size: 10000, includes: ['id', 'source', 'target'] });
   }
 
   // Perform the specified operation, or if it's not a supported operation
