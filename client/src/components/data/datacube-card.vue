@@ -1707,11 +1707,15 @@ export default defineComponent({
             //
             // NOTE: it is not enough to use key as the timeseries.id
             //  e.g., split by variable would have the same timeseries.id for multiple variables
-            const key = timeseries.id + filteredActiveFeatures.value[indx].name; // use the combination of timeseries id and feature name as the ultimate unique id
-            timeseries.id = key; // override the timeseries id to match its owner datacube
-            timeseriesToDatacubeMap.value[key] = {
-              datacubeName: filteredActiveFeatures.value[indx].name,
-              datacubeOutputVariable: filteredActiveFeatures.value[indx].display_name
+            const feature = filteredActiveFeatures.value[indx];
+            if (!timeseries.id.endsWith(feature.name)) { // prevent duplicate appends
+              // use a combination of timeseries id and feature name as the ultimate unique id
+              // override the timeseries id to match its owner datacube
+              timeseries.id = timeseries.id + feature.name;
+            }
+            timeseriesToDatacubeMap.value[timeseries.id] = {
+              datacubeName: feature.name,
+              datacubeOutputVariable: feature.display_name
             };
 
             // update the value of each timeseries in the breakdown data
