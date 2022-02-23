@@ -23,7 +23,6 @@ const CONTEXT_BRACKET_COLOR = LABEL_COLOR;
 
 const COMPARISON_COLOR = 'black';
 export const COMPARISON_BASELINE_COLOR = '#AAA'; // grey
-const COMPARISON_OVERLAP_COLOR = COMPARISON_BASELINE_COLOR;
 const curve = d3.curveMonotoneY;
 
 // How much of the width should be taken up by the text/arrow comparison summary
@@ -105,25 +104,6 @@ export const renderRidgelines = (
       .attr('stroke-width', RIDGELINE_STROKE_WIDTH)
       .attr('d', () => line(comparisonBaseline.ridgeline));
 
-    // Draw overlap
-    const area = d3
-      .area<RidgelinePoint>()
-      .x0(() => xScale(0))
-      .x1(point => xScale(point.value))
-      .y(point => yScale(point.coordinate))
-      .curve(curve);
-    gElement
-      .append('clipPath')
-      .attr('id', uid)
-      .append('path')
-      .attr('d', area(ridgeline.ridgeline) ?? '');
-    gElement
-      .append('path')
-      .attr('clip-path', `url(#${uid})`)
-      .attr('fill', COMPARISON_OVERLAP_COLOR)
-      .attr('stroke', COMPARISON_BASELINE_COLOR)
-      .attr('stroke-width', RIDGELINE_STROKE_WIDTH)
-      .attr('d', area(comparisonBaseline.ridgeline) ?? '');
     // Render relative change summary
     if (showSummary) {
       const summary = summarizeRidgelineComparison(
