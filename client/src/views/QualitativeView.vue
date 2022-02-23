@@ -672,7 +672,7 @@ export default defineComponent({
             target: target.concept,
             reference_ids: []
           };
-          const data = await this.addCAGComponents([], [newEdge], 'manual');
+          const data = await this.addCAGComponents([], [newEdge], 'add:manual');
           this.setUpdateToken(data.updateToken);
         } else {
           const newEdge = {
@@ -682,7 +682,7 @@ export default defineComponent({
             target: target.concept,
             reference_ids: backingStatements
           };
-          const data = await this.addCAGComponents([], [newEdge], 'manual');
+          const data = await this.addCAGComponents([], [newEdge], 'add:manual');
           this.setUpdateToken(data.updateToken);
         }
         this.edgeToSelectOnNextRefresh = {
@@ -752,7 +752,7 @@ export default defineComponent({
       //  with an empty value
       const { model_id, concept, label, modified_at, parameter, components } = node;
       const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter, components };
-      const data = await this.addCAGComponents([cleanedNode], [], 'manual');
+      const data = await this.addCAGComponents([cleanedNode], [], 'add:manual');
 
       // HACK: Force cagGraph to inject a node to keep layout stable
       if (data.newNode && this.cagGraph) {
@@ -988,7 +988,7 @@ export default defineComponent({
       this.isFetchingStatements = false;
     },
     async onAddToCAG(subgraph: CAGGraphInterface) {
-      const data = await this.addCAGComponents(subgraph.nodes, subgraph.edges, 'suggestion');
+      const data = await this.addCAGComponents(subgraph.nodes, subgraph.edges, 'add:suggestion');
       this.setUpdateToken(data.updateToken);
     },
     async onRemoveRelationship(edges: EdgeParameter[]) {
@@ -1094,7 +1094,7 @@ export default defineComponent({
         };
       });
 
-      await this.addCAGComponents(nodes, edges, 'merge');
+      await this.addCAGComponents(nodes, edges, 'add:merge-cag');
 
       // Make sure the reference_ids are not stale
       this.recalculateCAG();
@@ -1213,7 +1213,7 @@ export default defineComponent({
           components: [concept]
         };
       });
-      const result = await this.addCAGComponents(newNodesPayload, newEdges, 'path');
+      const result = await this.addCAGComponents(newNodesPayload, newEdges, 'add:path');
       this.setUpdateToken(result.updateToken);
     },
     async resetCAGLayout() {
@@ -1375,7 +1375,7 @@ export default defineComponent({
       await this.removeCAGComponents([removedNode], removedEdges);
 
       // 3. update the target node with new components and edges
-      const result = await this.addCAGComponents([updatedNode], updatedEdges, 'manual');
+      const result = await this.addCAGComponents([updatedNode], updatedEdges, 'add:merge-node');
 
       // FIXME: Layout hack: svg-flowgraph has a faulty stableness calculation that results in outdated edges not getting flusehd,
       // temporary fix to force layout to reset. - DC Dec2021
