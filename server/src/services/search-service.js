@@ -2,8 +2,10 @@ const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const { client, searchAndHighlight, queryStringBuilder } = rootRequire('/adapters/es/client');
-const { RESOURCE } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 const { getCache } = rootRequire('/cache/node-lru-cache');
+
+const conceptAlignerService = rootRequire('/services/external/concept-aligner-service');
 
 // Remove unneeded fields from compositional ontology
 const formatOntologyDoc = (d) => {
@@ -376,6 +378,77 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
   return results.body.hits.hits.map(d => d._source);
 };
 
+
+const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k) => {
+  const projectConn = Adapter.get(RESOURCE.PROJECT);
+  const project = await projectConn.findOne([{ field: 'id', value: projectId }], {});
+
+  const ontologyMap = getCache(projectId).ontologyMap;
+  const ontologyValues = Object.values(ontologyMap);
+  const ontologyKeys = Object.keys(ontologyMap);
+  const set = new Set(ontologyKeys.map(d => _.last(d.split('/'))));
+
+  const allIndicators = [];
+  const bulkSearchPayload = [];
+  for (const node of nodes) {
+    // match using the component that gets the highest matching score
+    for (let i = 0; i < 1; i++) { // i < 1 to work with first component for now
+      const component = node.components[i];
+      const memberStrings = reverseFlattenedConcept(component, set);
+      const members = ontologyValues.filter(d => {
+        return memberStrings.includes(_.last(d.label.split('/')));
+      }).map(d => d.label);
+
+      const homeId = {};
+      let foundConcept = false;
+      // just use the first concept found for now
+      for (const member of members) {
+        if (!foundConcept && member.includes('concept')) {
+          homeId.concept = member;
+          foundConcept = true;
+        }
+        // use process if it exists in the reversed ontology
+        if (member.includes('process')) {
+          homeId.process = member;
+        }
+      }
+      bulkSearchPayload.push({
+        homeId,
+        awayId: [], // TODO: next step involves constructing an adjacency list to make awayIds
+        context: '' // TODO: add text descriptions
+      });
+    }
+  }
+
+  const ontologyId = project.ontology;
+  try {
+    Logger.debug(`Concept aligner payload ${JSON.stringify(bulkSearchPayload)}`);
+    const response = await conceptAlignerService.bulkSearch(ontologyId, bulkSearchPayload, k, 0.3);
+
+    for (const matches of response) {
+      const indicatorsForMatches = [];
+      if (matches.length > 0) {
+        // need to make sure we have the indicator
+        for (const match of matches) {
+          if (match.datamart.datamartId === 'DOJO_Indicator') {
+            const dataId = match.datamart.datasetId;
+            const name = match.datamart.variableId;
+            const candidates = await indicatorSeachByDatasetId(dataId, name);
+            if (candidates.length > 0) {
+              indicatorsForMatches.push({ score: match.score, candidate: candidates[0] });
+            }
+          }
+        }
+      }
+      allIndicators.push(indicatorsForMatches);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  return allIndicators.map(indicators => indicators.sort((a, b) => b.score - a.score).slice(0, k).map(x => x.candidate));
+};
+
+// Deprecated
 const indicatorSearchConceptAligner = async (projectId, node, k) => {
   const ontologyMap = getCache(projectId).ontologyMap;
   const ontologyValues = Object.values(ontologyMap);
@@ -470,5 +543,6 @@ module.exports = {
   rawConceptEntitySearch,
   rawDatacubeSearch,
   indicatorSearchByConcepts,
-  indicatorSearchConceptAligner
+  indicatorSearchConceptAligner,
+  indicatorSearchConceptAlignerBulk
 };

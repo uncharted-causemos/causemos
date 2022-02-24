@@ -5,6 +5,7 @@ const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
 const indraService = rootRequire('/services/external/indra-service');
+const conceptAlignerService = rootRequire('/services/external/concept-aligner-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const { StatementQueryUtil } = rootRequire('adapters/es/statement-query-util');
@@ -124,6 +125,21 @@ const createProject = async (kbId, name, description) => {
   });
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
   await ontologyAdapter.insert(conceptsPayload, d => d.id);
+
+  // Register project's ontology with concept-aligner
+  if (!_.isEmpty(ontologyId)) {
+    try {
+      const status = await conceptAlignerService.queryOntology(ontologyId);
+      if (status.compStatus === 'absent') {
+        Logger.info(`Ontology ${ontologyId} does not exist, registering...`);
+        await conceptAlignerService.addOntology(ontologyId);
+      } else {
+        Logger.info(`Ontology ${ontologyId} exists`);
+      }
+    } catch (err) {
+      Logger.warn('Error with concept aligner');
+    }
+  }
 
   // Register new project with INDRA if available
   try {
