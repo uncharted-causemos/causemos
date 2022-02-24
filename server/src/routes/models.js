@@ -308,7 +308,8 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
     } else {
       if (engine === DELPHI || engine === DELPHI_DEV) {
         Logger.debug(`\tcurrent=${currentWeights}, inferred=${engineInferredWeights}`);
-        if (currentWeights[1] !== engineInferredWeights[1]) {
+        // Don't bother overriding unless change is somewhat significant. 0.05 is somewaht arbitrary range between [0, 1]
+        if (Math.abs(currentWeights[1] - engineInferredWeights[1]) > 0.05) {
           overrideWeights = true;
         }
       } else {
