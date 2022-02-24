@@ -533,12 +533,15 @@ export default {
     isRegionSelected(regionId) {
       const regionIdTokens = regionId.split(REGION_ID_DELIMETER);
       // Check if the regionId is included in the selection. Check with the parent selection if there's a parent region selection.
-      while (regionIdTokens.length > 0) {
+      let checkParentLevel = true;
+      while (regionIdTokens.length > 0 && checkParentLevel) {
         const rid = regionIdTokens.join(REGION_ID_DELIMETER);
         const curLevelRegionSelection = this.selectedRegions[adminLevelToString(regionIdTokens.length - 1)];
         if (curLevelRegionSelection.has(rid)) {
           return true;
         }
+        // If there's no selection in the current level, check the selection from parent level.
+        checkParentLevel = curLevelRegionSelection.size === 0;
         // Drop the current admin level region name from the id resulting the parent region id.
         regionIdTokens.pop();
       }
