@@ -52,7 +52,10 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     });
 
     this.on('edge-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      // selection.selectAll('.edge-mouseover-handle').remove();
+      if (selection.classed('selected')) {
+        return;
+      }
+
       selection.select('.edge-path-bg-outline')
         .style('stroke', null);
     });

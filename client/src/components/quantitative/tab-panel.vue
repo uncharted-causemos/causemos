@@ -390,11 +390,6 @@ export default defineComponent({
         this.selectedStatements = statements;
         this.selectedEdge = edgeData;
         this.isFetchingStatements = false;
-        this.visualState = {
-          selected: {
-            edges: [this.selectedEdge]
-          }
-        };
       });
     },
     onDrilldownTabClick(tab: string) {
