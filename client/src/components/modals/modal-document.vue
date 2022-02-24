@@ -30,14 +30,6 @@
               <input v-model="title" />
             </td>
           </tr>
-          <tr>
-            <td class="doc-label">Locations</td>
-            <td class="doc-value">{{ documentData.ner_analytics.loc.join(', ') }} </td>
-          </tr>
-          <tr>
-            <td class="doc-label">Organizations</td>
-            <td class="doc-value">{{ documentData.ner_analytics.org.join(', ') }}</td>
-          </tr>
         </table>
         <hr />
       </div>
@@ -98,21 +90,49 @@ const reformat = (v) => {
   return `<span class='extract-text-anchor' style='background: #56b3e9'>${v}</span>`;
 };
 
-// Run through a list of sucessive transform to try to find the correct match
+// Run through a list of inexpensive, sucessive transforms to try to find the correct match
 const lossySearch = (text, textFragment) => {
   let fragment = textFragment;
-  fragment = fragment.replaceAll(' .', '.');
-  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
 
-  fragment = fragment.replaceAll(' ;', ';');
-  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+  const replacementElements = [
+    [' .', '.'],
+    [' ;', ';'],
+    [' ,', ','],
+    [' )', ')'],
+    ['( ', '(']
+  ];
 
-  fragment = fragment.replaceAll(' ,', ',');
-  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+  for (let i = 0; i < replacementElements.length; i++) {
+    fragment = fragment.replaceAll(...replacementElements[i]);
+    if (text.indexOf(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+  }
 
   return text;
 };
 
+// gradually loosen search requirements of a "regex and select punctuation"-sanitized
+// search string by progressively adding regex wildcards to account for skipped
+// characters, words and phrases in the text fragment being searched for.
+const iterativeRegexSearch = (text, fragment) => {
+  let sanitizedSearch = fragment
+    // remove some special characters, may need adjustment for edge cases but some are regex reserved
+    .replace(/[/\\[\].+*?^$(){}|,]/g, '')
+    .split(/\s+/)
+    .join(' ')
+    .trim();
+  const spaceTotal = sanitizedSearch.split(' ').length;
+  let count = 0;
+  while (count <= spaceTotal) {
+    const searchRegEx = new RegExp(sanitizedSearch);
+    const searchIndex = text.search(searchRegEx);
+    if (searchIndex > -1) {
+      return text.replace(searchRegEx, reformat(fragment));
+    }
+    sanitizedSearch = sanitizedSearch.replace(' ', '\\b.*?\\b');
+    count++;
+  }
+  return text;
+};
 
 const createTextViewer = (text) => {
   const el = document.createElement('div');
@@ -121,10 +141,14 @@ const createTextViewer = (text) => {
   function search(textFragment) {
     let t = originalText;
     if (textFragment) {
-      if (text.search(textFragment) >= 0) {
+      if (text.indexOf(textFragment) >= 0) {
         t = t.replace(textFragment, reformat(textFragment));
       } else {
         t = lossySearch(t, textFragment);
+      }
+      // if all else fails, do this expensive regex search
+      if (t === text) {
+        t = iterativeRegexSearch(t, textFragment);
       }
       el.innerHTML = t;
       const anchor = document.getElementsByClassName('extract-text-anchor')[0];
@@ -186,6 +210,7 @@ export default {
     },
     async fetchReaderContent() {
       this.documentData = (await getDocument(this.documentId)).data;
+      this.setFieldsFromDocumentData();
       this.textViewer = createTextViewer(this.documentData.extracted_text);
 
 
@@ -216,7 +241,6 @@ export default {
           this.pdfViewer.search(this.textFragment);
         }
       }
-      this.setFieldsFromDocumentData();
     },
     toggle() {
       this.showTextViewer = !this.showTextViewer;
@@ -244,6 +268,9 @@ export default {
       this.title = this.documentData.doc_title;
     },
     edit() {
+      // scroll up to edit zone;
+      const anchor = document.getElementsByClassName('modal-body')[0];
+      anchor.scrollTop = 0;
       this.setFieldsFromDocumentData();
       this.editable = true;
     },
@@ -270,6 +297,10 @@ export default {
 .modal-document-container {
   .metadata {
     margin-top: 2rem;
+    table {
+      margin-right: 3rem;
+      width: 100%;
+    }
   }
   .doc-label {
     vertical-align: baseline;
@@ -284,7 +315,7 @@ export default {
     padding: 1px 3px;
     max-width: 400px;
     input {
-      width: 100%;
+      width: calc(100% - 5rem);
     }
   }
 
