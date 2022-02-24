@@ -229,8 +229,8 @@ const setDefaultIndicators = async (modelId, resolution) => {
           parameter.min = 0;
           parameter.max = 1;
         } else {
-          const rawResolution = cube.outputs[0].data_resolution.temporal_resolution;
-          const finalRawDate = new Date(cube.period.lte ?? 0);
+          const rawResolution = cube.outputs[0].data_resolution?.temporal_resolution ?? 'other';
+          const finalRawDate = new Date(cube.period?.lte ?? 0);
           const points = correctIncompleteTimeseries(timeseries, rawResolution, resolution, temporalAgg, finalRawDate);
           parameter.timeseries = points;
           const values = timeseries.map(d => d.value);
