@@ -343,7 +343,7 @@ export default {
       const data = convertRawDataToGeoJson(this.rawData);
       return data;
     },
-    isNoRegionSelection() {
+    isRegionSelectionEmpty() {
       // Check if there are selected regions in the current admin level or in the levels above.
       const level = SOURCE_LAYERS.findIndex(l => l.layerId === this.selectedLayerId);
       const { country, admin1, admin2, admin3 } = this.selectedRegions;
@@ -525,7 +525,7 @@ export default {
           }, {
             ...featureStateBase,
             ...row.values,
-            _isHidden: this.isNoRegionSelection ? false : !this.isRegionSelected(row.id)
+            _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(row.id)
           });
         });
       });
