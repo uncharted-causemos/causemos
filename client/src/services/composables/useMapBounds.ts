@@ -22,13 +22,13 @@ export default function useMapBounds(
 
   watchEffect(async () => {
     const { country, admin1, admin2, admin3 } = selectedRegionIdsAtAllLevels.value;
-    // All selected region ids from the current selected admin level and the above level
+    // Selection from the smallest available admin level
     const regionSelection =
       [country, admin1, admin2, admin3]
-        .slice(0, selectedAdminLevel.value + 1) // consider levels above the current level
-        .filter(set => set.size > 0) // filter out admin level with no selection
-        .map(set => Array.from(set)) // convert set to array
-        .pop(); // Get the last item (selection at the finest granuality)
+        .slice(0, selectedAdminLevel.value + 1) // only consider levels above the current level
+        .filter(set => set.size > 0) // filter out admin levels with no selection
+        .map(set => Array.from(set)) // convert the set to array
+        .pop(); // get the last item (selection from the smallest available admin level)
     if (!regionalData.value && !regionSelection?.length) return;
 
     // If there's no selected regions, use countries to get the bounds
