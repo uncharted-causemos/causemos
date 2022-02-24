@@ -46,7 +46,7 @@ const reindex = async () => {
 
 // Bulk search
 const bulkSearch = async (ontologyId, payload, maxHits, threshold) => {
-  Logger.info(`Calling ${URL}/v2/bulkCompositionalSearch?maxHits`);
+  Logger.info(`Calling ${URL}/v2/bulkCompositionalSearch?maxHits=${maxHits}&threshold=${threshold}`);
   const options = {
     url: `${URL}/v2/bulkCompositionalSearch?ontologyId=${ontologyId}&secret=${SECRET}&maxHits=${maxHits}&threshold=${threshold}`,
     method: 'PUT',
