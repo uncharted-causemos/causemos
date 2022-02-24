@@ -430,7 +430,7 @@
                       :map-bounds="mapBounds"
                       :region-data="regionalData"
                       :raw-data="rawDataPointsList[indx]"
-                      :selected-region-ids="allActiveRegionIds"
+                      :selected-regions="mapSelectedRegions"
                       :admin-layer-stats="adminLayerStats"
                       :grid-layer-stats="gridLayerStats"
                       :points-layer-stats="pointsLayerStats"
@@ -2056,6 +2056,13 @@ export default defineComponent({
       }
     };
 
+    const mapSelectedRegions = computed(() => {
+      // In 'Split by region' mode, regional data is already filtered by region so we don't need additional region selection
+      return breakdownOption.value === SpatialAggregationLevel.Region
+        ? undefined
+        : selectedRegionIdsAtAllLevels.value;
+    });
+
     // Check if we have active regional reference series by looking at the current breakdown option
     // and the lenght of active reference options
     const hasRegionalReferenceSeries = computed(() => {
@@ -2071,20 +2078,10 @@ export default defineComponent({
         : [mapSelectedLayerId.value];
     });
 
-    // If we have active regional reference series, then we need to provide region ids for all active
-    // regions/layers. As we currently only allow country level reference series, we add the selected
-    // to the country region ids from the active reference options to the list of selected region ids.
-    const allActiveRegionIds = computed(() => {
-      return hasRegionalReferenceSeries.value
-        ? [...selectedRegionIds.value, ...activeReferenceOptions.value]
-        : selectedRegionIds.value;
-    });
-
     return {
       activeReferenceOptions,
       addNewTag,
       allActiveLayerIds,
-      allActiveRegionIds,
       allModelRunData,
       activeDrilldownTab,
       activeVizOptionsTab,
@@ -2119,6 +2116,7 @@ export default defineComponent({
       mapLegendData,
       mapReady,
       mapSelectedLayerId,
+      mapSelectedRegions,
       modelRunsSearchData,
       newRunsMode,
       onMapLoad,
