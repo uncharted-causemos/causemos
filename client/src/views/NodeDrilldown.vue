@@ -474,6 +474,7 @@ export default defineComponent({
           model_id: selectedNode?.value?.model_id,
           parameter: {
             id: indicator.id,
+            data_id: indicator.data_id,
             name: indicator.name,
             unit: indicator.unit,
             country: indicator.country,

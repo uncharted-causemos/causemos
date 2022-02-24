@@ -80,7 +80,6 @@ function parseMetadataDetails (
     if (formattedFilterString.length > 0) {
       summary.filters = formattedFilterString;
     }
-    summary.nodesCount = dataState.nodesCount ?? undefined;
     summary.selectedNode = dataState.selectedNode ?? undefined;
     summary.selectedEdge = dataState.selectedEdge ?? undefined;
     summary.selectedCAGScenario = dataState.selectedScenarioId ?? undefined;

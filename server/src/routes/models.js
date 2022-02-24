@@ -29,6 +29,24 @@ const SENSEI = 'sensei';
 
 // const esLock = {};
 
+router.get('/:modelId/history', asyncHandler(async (req, res) => {
+  const { modelId } = req.params;
+  const historyConn = Adapter.get(RESOURCE.MODEL_HISTORY);
+  const historyLogs = await historyConn.find([
+    { field: 'model_id', value: modelId }
+  ], { size: 10000, sort: [{ modified_at: 'asc' }] });
+
+  res.json(historyLogs);
+}));
+
+
+router.post('/:modelId/history', asyncHandler(async (req, res) => {
+  const { modelId } = req.params;
+  const { type, text } = req.body;
+  historyService.logDescription(modelId, type, text);
+  res.json({});
+}));
+
 /**
  * Set node quantifications
  */
@@ -290,7 +308,8 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
     } else {
       if (engine === DELPHI || engine === DELPHI_DEV) {
         Logger.debug(`\tcurrent=${currentWeights}, inferred=${engineInferredWeights}`);
-        if (currentWeights[1] !== engineInferredWeights[1]) {
+        // Don't bother overriding unless change is somewhat significant. 0.05 is somewaht arbitrary range between [0, 1]
+        if (Math.abs(currentWeights[1] - engineInferredWeights[1]) > 0.05) {
           overrideWeights = true;
         }
       } else {

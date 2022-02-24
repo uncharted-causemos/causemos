@@ -20,7 +20,8 @@ export default function useMultiTimeseriesData(
   metadata: Ref<Datacube | null>,
   modelRunIds: Ref<string[]>,
   breakdownOption: Ref<string | null>,
-  activeFeatures: Ref<OutputVariableSpecs[]>
+  activeFeatures: Ref<OutputVariableSpecs[]>,
+  initialSelectedGlobalTimestamp?: Ref<number | null>
 ) {
   const timeseriesData = ref<Timeseries[]>([]);
   const selectedGlobalTimestamp: Ref<number | null> = ref(null);
@@ -120,11 +121,19 @@ export default function useMultiTimeseriesData(
       if (allTimestamps.length === 0) {
         return;
       }
-      selectedGlobalTimestamp.value = _.max(allTimestamps) ?? 0;
 
       // select the timestamp range as the full data extend
       const firstTimestamp = _.min(allTimestamps) ?? 0;
-      const lastTimestamp = selectedGlobalTimestamp.value;
+      const lastTimestamp = _.max(allTimestamps) ?? 0;
+
+      // if we have an initial value (e.g., that was previously saved) then use it
+      // otherwise, use the last valid timestamp value
+      if (initialSelectedGlobalTimestamp && initialSelectedGlobalTimestamp.value !== null) {
+        selectedGlobalTimestamp.value = initialSelectedGlobalTimestamp.value;
+      } else {
+        selectedGlobalTimestamp.value = lastTimestamp;
+      }
+
       // set initial timestamp selection range
       const newTimestampRange = { start: firstTimestamp, end: lastTimestamp };
       selectedGlobalTimestampRange.value = newTimestampRange;

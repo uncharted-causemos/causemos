@@ -32,6 +32,7 @@
             :data="modelComponents"
             :show-new-node="showNewNode"
             :selected-time-scale="modelSummary?.parameter?.time_scale"
+            :visual-state="visualState"
             @refresh="captureThumbnail"
             @new-edge="addEdge"
             @background-click="onBackgroundClick"
@@ -273,6 +274,9 @@ import { TimeScale } from '@/types/Enums';
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import CagLegend from '@/components/graph/cag-legend.vue';
 import { Statement } from '@/types/Statement';
+import { getInsightById } from '@/services/insight-service';
+
+const EDGE_LABEL_SOURCE_TARGET_SEPARATOR = ' : ';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -358,6 +362,10 @@ export default defineComponent({
     renameNodeId: '',
     renameNodeName: '',
 
+    // will be valid if populated from a previous insight that include such info
+    initialSelectedNode: null as string | null,
+    initialSelectedEdge: null as string | null,
+    visualState: {},
 
     drilldownTabs: [] as { name: string; id: string }[],
     activeDrilldownTab: null as string | null,
@@ -431,6 +439,23 @@ export default defineComponent({
     }
   },
   watch: {
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'qualitative' space
+        if (this.$route.name === 'qualitative' && this.$route.query) {
+          const insight_id = this.$route.query.insight_id;
+          if (typeof insight_id === 'string') {
+            this.updateStateFromInsight(insight_id);
+            this.$router.push({
+              query: {
+                insight_id: undefined
+              }
+            });
+          }
+        }
+      },
+      immediate: true
+    },
     updateToken(n, o) {
       if (_.isEqual(n, o)) return;
       this.refresh();
@@ -485,6 +510,64 @@ export default defineComponent({
       setContextId: 'insightPanel/setContextId',
       setDataState: 'insightPanel/setDataState'
     }),
+    async updateStateFromInsight(insight_id: string) {
+      const loadedInsight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedNode !== undefined) {
+          const selectedNode = loadedInsight.data_state?.selectedNode;
+          if (this.modelComponents && this.modelComponents.nodes) {
+            this.applyNodeSelection(selectedNode);
+          } else {
+            this.initialSelectedNode = selectedNode;
+          }
+        }
+        if (loadedInsight.data_state?.selectedEdge !== undefined) {
+          const selectedEdge = loadedInsight.data_state?.selectedEdge;
+          if (this.modelComponents && this.modelComponents.nodes) {
+            this.applyEdgeSelection(selectedEdge);
+          } else {
+            this.initialSelectedEdge = selectedEdge;
+          }
+        }
+      }
+    },
+    applyNodeSelection(selectedNode: string) {
+      if (selectedNode) {
+        const nodeToSelect = this.modelComponents.nodes.find(node => node.label === selectedNode);
+        if (nodeToSelect) {
+          this.selectNode(nodeToSelect);
+          this.visualState = {
+            selected: {
+              nodes: [nodeToSelect]
+            }
+          };
+        }
+      }
+    },
+    applyEdgeSelection(selectedEdge: string) {
+      if (selectedEdge) {
+        const edgeSrcAndTarget = selectedEdge.split(EDGE_LABEL_SOURCE_TARGET_SEPARATOR);
+        const edgeSourceLabel = edgeSrcAndTarget[0];
+        const edgeTargetLabel = edgeSrcAndTarget[1];
+        const edgeToSelect = this.modelComponents.edges.find(edge => this.ontologyFormatter(edge.source) === edgeSourceLabel && this.ontologyFormatter(edge.target) === edgeTargetLabel);
+        if (edgeToSelect) {
+          this.selectEdge(edgeToSelect);
+          this.visualState = {
+            selected: {
+              edges: [edgeToSelect]
+            }
+          };
+        }
+      }
+    },
     async refresh() {
       // Get CAG data
       this.setAnalysisName('');
@@ -504,12 +587,27 @@ export default defineComponent({
         }
         this.edgeToSelectOnNextRefresh = null;
       }
+
+      // apply node/edge selection if we have initial selection and insight is being applied
+      if (this.initialSelectedNode) {
+        this.applyNodeSelection(this.initialSelectedNode);
+      }
+      if (this.initialSelectedEdge) {
+        this.applyEdgeSelection(this.initialSelectedEdge);
+      }
     },
     updateDataState() {
-      // save the scenario-id in the insight store so that it will be part of any insight captured from this view
+      if (this.modelSummary === null) {
+        console.warn('Trying to update data state while modelSummary is null.');
+        return;
+      }
+      if (this.modelComponents === null) {
+        console.warn('Trying to update data state while modelComponents is null.');
+        return;
+      }
+      // save some state that will be part of any insight captured from this view
       const dataState: DataState = {
-        modelName: this.modelSummary?.name,
-        nodesCount: this.modelComponents.nodes.length
+        modelName: this.modelSummary?.name
       };
       if (this.selectedNode !== null) {
         dataState.selectedNode = this.selectedNode.label;
@@ -517,7 +615,7 @@ export default defineComponent({
       if (this.selectedEdge !== null) {
         const source = this.ontologyFormatter(this.selectedEdge.source);
         const target = this.ontologyFormatter(this.selectedEdge.target);
-        dataState.selectedEdge = source + ' : ' + target;
+        dataState.selectedEdge = source + EDGE_LABEL_SOURCE_TARGET_SEPARATOR + target;
       }
       this.setDataState(dataState);
     },
@@ -574,7 +672,7 @@ export default defineComponent({
             target: target.concept,
             reference_ids: []
           };
-          const data = await this.addCAGComponents([], [newEdge], 'manual');
+          const data = await this.addCAGComponents([], [newEdge], 'add:manual');
           this.setUpdateToken(data.updateToken);
         } else {
           const newEdge = {
@@ -584,7 +682,7 @@ export default defineComponent({
             target: target.concept,
             reference_ids: backingStatements
           };
-          const data = await this.addCAGComponents([], [newEdge], 'manual');
+          const data = await this.addCAGComponents([], [newEdge], 'add:manual');
           this.setUpdateToken(data.updateToken);
         }
         this.edgeToSelectOnNextRefresh = {
@@ -654,7 +752,7 @@ export default defineComponent({
       //  with an empty value
       const { model_id, concept, label, modified_at, parameter, components } = node;
       const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter, components };
-      const data = await this.addCAGComponents([cleanedNode], [], 'manual');
+      const data = await this.addCAGComponents([cleanedNode], [], 'add:manual');
 
       // HACK: Force cagGraph to inject a node to keep layout stable
       if (data.newNode && this.cagGraph) {
@@ -890,7 +988,7 @@ export default defineComponent({
       this.isFetchingStatements = false;
     },
     async onAddToCAG(subgraph: CAGGraphInterface) {
-      const data = await this.addCAGComponents(subgraph.nodes, subgraph.edges, 'suggestion');
+      const data = await this.addCAGComponents(subgraph.nodes, subgraph.edges, 'add:suggestion');
       this.setUpdateToken(data.updateToken);
     },
     async onRemoveRelationship(edges: EdgeParameter[]) {
@@ -996,7 +1094,7 @@ export default defineComponent({
         };
       });
 
-      await this.addCAGComponents(nodes, edges, 'merge');
+      await this.addCAGComponents(nodes, edges, 'add:merge-cag');
 
       // Make sure the reference_ids are not stale
       this.recalculateCAG();
@@ -1115,7 +1213,7 @@ export default defineComponent({
           components: [concept]
         };
       });
-      const result = await this.addCAGComponents(newNodesPayload, newEdges, 'path');
+      const result = await this.addCAGComponents(newNodesPayload, newEdges, 'add:path');
       this.setUpdateToken(result.updateToken);
     },
     async resetCAGLayout() {
@@ -1277,7 +1375,7 @@ export default defineComponent({
       await this.removeCAGComponents([removedNode], removedEdges);
 
       // 3. update the target node with new components and edges
-      const result = await this.addCAGComponents([updatedNode], updatedEdges, 'manual');
+      const result = await this.addCAGComponents([updatedNode], updatedEdges, 'add:merge-node');
 
       // FIXME: Layout hack: svg-flowgraph has a faulty stableness calculation that results in outdated edges not getting flusehd,
       // temporary fix to force layout to reset. - DC Dec2021

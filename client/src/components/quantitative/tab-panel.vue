@@ -178,6 +178,14 @@ export default defineComponent({
     resetLayoutToken: {
       type: Number,
       required: true
+    },
+    initialVisualState: {
+      // selected.nodes
+      // selected.edges
+      // highlighted.nodes
+      // highlighted.edges
+      type: Object,
+      default: null
     }
   },
   emits: [
@@ -188,7 +196,8 @@ export default defineComponent({
     'new-scenario',
     'update-scenario',
     'delete-scenario',
-    'delete-scenario-clamp'
+    'delete-scenario-clamp',
+    'visual-state-updated'
   ],
   setup() {
     const selectedNode = ref(null) as Ref<NodeParameter | null>;
@@ -211,7 +220,7 @@ export default defineComponent({
     activeDrilldownTab: PANE_ID.EVIDENCE,
     isDrilldownOpen: false,
     isFetchingStatements: false,
-    visualState: {}
+    visualState: {} as any
   }),
   computed: {
     ...mapGetters({
@@ -244,6 +253,31 @@ export default defineComponent({
     selectedScenarioId() {
       // FIXME: Probably need a ligher weight function than refresh
       this.refresh();
+    },
+    visualState() {
+      this.$emit('visual-state-updated', this.visualState);
+    },
+    initialVisualState: {
+      // this will be received every time the visualState is updated on the parent side
+      //  e.g., when the parent loads an insight
+      handler(/* newValue, oldValue */) {
+        // this will trigger renderer update to visually update
+        //  e.g., a selected node will be highlighted with blue boundary
+        if (this.initialVisualState) {
+          this.visualState = this.initialVisualState;
+
+          // we also need to manually apply state, e.g., select nodes/edges
+          if (this.visualState && this.visualState.selected) {
+            if (this.visualState.selected.nodes) {
+              this.onNodeSensitivity(this.visualState.selected.nodes[0]);
+            }
+            if (this.visualState.selected.edges) {
+              this.showRelation(this.visualState.selected.edges[0]);
+            }
+          }
+        }
+      },
+      immediate: true
     }
   },
   mounted() {
@@ -338,6 +372,7 @@ export default defineComponent({
       this.closeDrilldown();
       this.selectedEdge = null;
       this.selectedNode = null;
+      this.visualState = { };
     },
     openDrilldown() {
       this.isDrilldownOpen = true;
@@ -355,6 +390,11 @@ export default defineComponent({
         this.selectedStatements = statements;
         this.selectedEdge = edgeData;
         this.isFetchingStatements = false;
+        this.visualState = {
+          selected: {
+            edges: [this.selectedEdge]
+          }
+        };
       });
     },
     onDrilldownTabClick(tab: string) {
