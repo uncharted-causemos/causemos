@@ -97,9 +97,19 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     suggestions: EdgeSuggestion[],
     selectedSuggestions: EdgeSuggestion[],
     node: INode<NodeParameter>,
+    isShowingDriverEdges: boolean,
     isLoading: boolean
   ) {
-    const { cancelButtonX, cancelButtonWidth } = this.renderStaticSuggestionUI(node);
+    // Suggestion column starts to the left of the node if showing driver
+    //  (incoming) edges, and starts to the right otherwise.
+    const suggestionColumnX = isShowingDriverEdges
+      ? node.x - EDGE_SUGGESTION_SPACING - EDGE_SUGGESTION_WIDTH
+      : node.x + NODE_WIDTH + EDGE_SUGGESTION_SPACING;
+    const { cancelButtonX, cancelButtonWidth } = this.renderStaticSuggestionUI(
+      node,
+      isShowingDriverEdges,
+      suggestionColumnX
+    );
     // Show(or update if it exists) the button for adding selected edges to CAG
     const { buttonSelection: addButton } = this.createOrUpdateAddButton(selectedSuggestions.length);
     const addButtonStartX = cancelButtonX + cancelButtonWidth + EDGE_SUGGESTION_SPACING;
@@ -110,18 +120,19 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         node.y
       )
     );
-    this.renderSearchBox(node.x, node.y);
+    this.renderSearchBox(suggestionColumnX, node.y);
     this.renderSuggestionLoadingIndicator(
       isLoading,
-      node.x,
+      suggestionColumnX,
       node.y
     );
     this.renderEdgeSuggestions(
       suggestions,
       selectedSuggestions,
-      node.x,
+      suggestionColumnX,
       node.y,
-      addButtonStartX
+      addButtonStartX,
+      isShowingDriverEdges
     );
     this.setOtherNodesAndEdgesOpacity(node.id, 0.1);
   }
@@ -133,14 +144,18 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .style('opacity', opacity);
   }
 
-  renderStaticSuggestionUI(node: INode<NodeParameter>) {
+  renderStaticSuggestionUI(
+    node: INode<NodeParameter>,
+    isShowingDriverEdges: boolean,
+    suggestionColumnX: number
+  ) {
     // Show a button for exiting suggestion mode
+    const suggestionColumnWidth = EDGE_SUGGESTION_SPACING + EDGE_SUGGESTION_WIDTH;
     const cancelButtonX =
       node.x +
       NODE_WIDTH +
       EDGE_SUGGESTION_SPACING +
-      EDGE_SUGGESTION_WIDTH +
-      EDGE_SUGGESTION_SPACING;
+      (isShowingDriverEdges ? 0 : suggestionColumnWidth);
     const {
       buttonSelection: cancelButton,
       dynamicWidth: cancelButtonWidth
@@ -152,27 +167,30 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       () => {}
     );
     cancelButton.attr('transform', translate(cancelButtonX, node.y));
-    // Render label if it doesn't already exist
-    const existingLabel = (this.chart.node() as Element).querySelector(
+    // Remove label if it already exists
+    (this.chart.node() as Element).querySelector(
       '.suggestion-column-label'
-    );
-    if (existingLabel === null) {
-      this.chart.append('text')
-        .classed('suggestion-column-label', true)
-        .text('Add impacts')
-        .style('fill', 'grey')
-        .style('font-weight', '600')
-        .style('letter-spacing', '1.05')
-        .style('text-transform', 'uppercase')
-        .attr('transform', translate(
-          node.x + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
-          node.y - EDGE_SUGGESTION_SPACING
-        ));
-    }
+    )?.remove();
+    // Render label for suggestion column
+    this.chart.append('text')
+      .classed('suggestion-column-label', true)
+      .text(`Add ${isShowingDriverEdges ? 'drivers' : 'impacts'}`)
+      .style('fill', 'grey')
+      .style('font-weight', '600')
+      .style('letter-spacing', '1.05')
+      .style('text-transform', 'uppercase')
+      .attr('transform', translate(
+        suggestionColumnX,
+        node.y - EDGE_SUGGESTION_SPACING
+      ));
     return { cancelButtonX, cancelButtonWidth };
   }
 
-  renderSuggestionLoadingIndicator(isLoading: boolean, nodeX: number, nodeY: number) {
+  renderSuggestionLoadingIndicator(
+    isLoading: boolean,
+    suggestionColumnX: number,
+    nodeY: number
+  ) {
     this.chart.selectAll<any, boolean>('.suggestion-loading-indicator')
       .data(isLoading ? [true] : [])
       .join(
@@ -180,7 +198,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
           .classed('suggestion-loading-indicator', true)
           .attr('transform', () =>
             translate(
-              nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING,
+              suggestionColumnX,
               nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING + 20
             )
           )
@@ -194,11 +212,12 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       );
   }
 
-  renderSearchBox(nodeX: number, nodeY: number) {
+  renderSearchBox(suggestionColumnX: number, nodeY: number) {
     const existingSearchBox = (this.chart.node() as Element).querySelector(
       '.suggestion-search-box'
     );
     // Don't rerender search box if it already exists
+    // TODO: delete existing search box if it exists
     if (existingSearchBox !== null) return;
     const foreignElement = document.createElementNS(
       'http://www.w3.org/2000/svg',
@@ -209,7 +228,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     foreignElement.setAttribute('height', `${NODE_HEIGHT}px`);
     foreignElement.setAttribute(
       'transform',
-      translate(nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING, nodeY)
+      translate(suggestionColumnX, nodeY)
     );
 
     const textInput = document.createElement('input');
@@ -233,11 +252,11 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   renderEdgeSuggestions(
     suggestions: EdgeSuggestion[],
     selectedSuggestions: EdgeSuggestion[],
-    nodeX: number,
+    suggestionColumnX: number,
     nodeY: number,
-    selectedColumnX: number
+    selectedColumnX: number,
+    isShowingDriverEdges: boolean
   ) {
-    const suggestionStartX = nodeX + NODE_WIDTH + EDGE_SUGGESTION_SPACING;
     const suggestionStartY = nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING;
     // Render all selectedSuggestions and up to 5 other suggestions
     const selectedSuggestionsToDisplay = selectedSuggestions.map((s, i) => ({
@@ -247,16 +266,21 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     }));
     const otherSuggestionsToDisplay: EdgeSuggestionDisplayData[] = [];
     let i = 0;
+
     while (otherSuggestionsToDisplay.length < 5 && i < suggestions.length) {
       const suggestion = suggestions[i];
-      const selectedSuggestionWithSameTarget = selectedSuggestions.find(
-        selectedSuggestion => selectedSuggestion.target === suggestion.target
+      const selectedSuggestionWithSameConcept = selectedSuggestions.find(
+        selectedSuggestion => {
+          return isShowingDriverEdges
+            ? selectedSuggestion.source === suggestion.source
+            : selectedSuggestion.target === suggestion.target;
+        }
       );
-      if (selectedSuggestionWithSameTarget === undefined) {
+      if (selectedSuggestionWithSameConcept === undefined) {
         // Suggestion is not already displayed in the selected column
         otherSuggestionsToDisplay.push({
           suggestion: suggestion,
-          x: suggestionStartX,
+          x: suggestionColumnX,
           y:
             suggestionStartY +
             otherSuggestionsToDisplay.length *
@@ -269,10 +293,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       ...selectedSuggestionsToDisplay,
       ...otherSuggestionsToDisplay
     ];
+    const accessConcept = isShowingDriverEdges
+      ? (entry: EdgeSuggestionDisplayData) => entry.suggestion.source
+      : (entry: EdgeSuggestionDisplayData) => entry.suggestion.target;
     // Add a `g` to the dom for each suggestion, along with snazzy transitions
     const suggestionGroups = this.chart
       .selectAll<any, EdgeSuggestionDisplayData>('.node-suggestion')
-      .data(suggestionsToDisplay, entry => entry.suggestion.target)
+      .data(suggestionsToDisplay, accessConcept)
       .join(
         enter => enter.append('g')
           .classed('node-suggestion', true)
@@ -308,10 +335,10 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
     // Render node label
     suggestionGroups.selectAll('text')
-      .data(entry => [this.labelFormatter(entry.suggestion.target)])
+      .data(entry => [this.labelFormatter(accessConcept(entry))])
       .join('text')
       .attr('transform', translate(10, 20))
-      .text(target => target)
+      .text(concept => concept)
       .each(function() {
         // FIXME any
         svgUtil.truncateTextToWidth(this as any, EDGE_SUGGESTION_WIDTH - 20);
@@ -907,7 +934,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     rightHandle
       .call(drag as any)
       .on('click', (event) => {
-        this.emit('fetch-suggested-impacts', node.datum());
+        this.emit('fetch-suggested-edges', node.datum(), false);
+        // Don't open the side panel
+        event.stopPropagation();
+      });
+    leftHandle
+      .on('click', (event) => {
+        this.emit('fetch-suggested-edges', node.datum(), true);
         // Don't open the side panel
         event.stopPropagation();
       });

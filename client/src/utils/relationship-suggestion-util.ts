@@ -52,7 +52,7 @@ export const extractEdgesFromStatements = (
   statements: Statement[],
   node: NodeParameter,
   graphData: CAGGraph,
-  isLookingForDriverEdges = false
+  isLookingForDriverEdges: boolean
 ): EdgeSuggestion[] => {
   const concepts = node.components;
   // Filter out the outgoing/incoming edges depending on isLookingForDriverEdges
@@ -120,20 +120,33 @@ export const sortSuggestionsByEvidenceCount = (edges: EdgeSuggestion[]) => {
   return edges.sort((a, b) => b.numEvidence - a.numEvidence);
 };
 
+/**
+ * For each concept in `concepts`, look for an edge suggestion either coming out
+ * of or going into `knownConcept`. If no edge suggestion exists, make one.
+ * @param concepts will be mapped to edge suggestions
+ * @param edges existing edge suggestions
+ * @param knownConcept this concept exists as either the source or target of each edge suggestion
+ * @param isTargetConceptKnown determines whether we're looking for incoming/outgoing edges
+ * @returns the list of edge suggestions, one for each concept in `concepts`.
+ */
 export const getEdgesFromConcepts = (
   concepts: string[],
   edges: EdgeSuggestion[],
-  sourceConcept: string
+  knownConcept: string,
+  isTargetConceptKnown: boolean
 ): EdgeSuggestion[] => {
   return concepts.map(concept => {
-    // TODO: check sourcetarget depending on isLookingForDriverEdges
-    const edge = edges.find(edge => edge.target === concept);
+    const edge = edges.find(edge => {
+      return isTargetConceptKnown
+        ? edge.source === concept
+        : edge.target === concept;
+    });
     if (edge !== undefined) {
       return edge;
     }
     return {
-      source: sourceConcept,
-      target: concept,
+      source: isTargetConceptKnown ? concept : knownConcept,
+      target: isTargetConceptKnown ? knownConcept : concept,
       color: 'black',
       numEvidence: 0,
       statements: []
