@@ -3,6 +3,7 @@ import _ from 'lodash';
 import svgUtil from '@/utils/svg-util';
 import { DeltaRenderer, IEdge, INode, moveTo, highlight, unHighlight } from 'svg-flowgraph';
 import { DEFAULT_STYLE } from './cag-style';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 
 const FADED_OPACITY = 0.2;
 const AMBIGUOUS_MSG = 'To make CAG projections easier to interpret, <br /> select each grey edge and clarify its polarity in the side panel.';
@@ -100,7 +101,7 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     chart.selectAll('.node').style('opacity', 1);
     chart.selectAll('.edge').style('opacity', 1);
     chart.selectAll('.node-header').classed('node-selected', false);
-    // chart.selectAll('.edge-control-temp').remove();
+    chart.selectAll('.edge-path-bg-outline').classed('selected', false).style('stroke', null);
 
     chart.selectAll('.node-container, .node-container-outer') // Clean up previous highlights
       .style('border-radius', DEFAULT_STYLE.node.borderRadius)
@@ -115,18 +116,9 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
   }
 
-  selectEdge(/* evt: Event, edge: D3SelectionIEdge<E> */) {
-    /*
-    const mousePoint = d3.pointer(evt, edge.node());
-    const pathNode = edge.select('.edge-path').node();
-    const controlPoint = (svgUtil.closestPointOnPath(pathNode as any, mousePoint) as number[]);
-
-    edge.append('g')
-      .classed('edge-control-temp', true)
-      .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
-
-    this.renderEdgeControls(edge);
-   */
+  selectEdge(evt: Event, edge: D3SelectionIEdge<E>) {
+    edge.select('.edge-path-bg-outline').style('stroke', SELECTED_COLOR);
+    edge.classed('selected', true);
   }
 
   selectNodeByConcept(concept: string, color: string) {

@@ -61,28 +61,17 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     });
 
     this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      const mousePoint = d3.pointer(evt, selection.node());
-      const pathNode = selection.select('.edge-path').node();
-      const controlPoint = (svgUtil.closestPointOnPath(pathNode as any, mousePoint) as number[]);
-
-      selection.selectAll('.edge-mouseover-handle').remove();
-      selection.append('g')
-        .classed('edge-mouseover-handle', true)
-        .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]))
-        .append('circle')
-        .attr('r', DEFAULT_STYLE.edge.controlRadius)
-        .style('fill', d => calcEdgeColor(d.data))
-        .style('cursor', 'pointer');
-
-      // make sure mouseover doesn't obscure the more important edge-control
-      if (selection.selectAll('.edge-control').node() !== null) {
-        (selection.node() as HTMLElement).insertBefore(selection.selectAll('.edge-mouseover-handle').node() as any, selection.selectAll('.edge-control').node() as any);
-      }
+      selection.select('.edge-path-bg-outline')
+        .style('stroke', SELECTED_COLOR);
     });
 
+    this.on('edge-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<EdgeParameter>) => {
+      if (selection.classed('selected')) {
+        return;
+      }
 
-    this.on('edge-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      selection.selectAll('.edge-mouseover-handle').remove();
+      selection.select('.edge-path-bg-outline')
+        .style('stroke', null);
     });
   }
 
@@ -466,6 +455,14 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       }
       this.temporaryNewEdge = null;
     }
+
+    selection
+      .append('path')
+      .classed('edge-path-bg-outline', true)
+      .style('fill', DEFAULT_STYLE.edgeBg.fill)
+      .style('stroke', null)
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data) + 7)
+      .attr('d', d => pathFn(d.points as any));
 
     selection
       .append('path')

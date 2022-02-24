@@ -193,24 +193,24 @@ export default defineComponent({
     // Native messages
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection, renderer: QualitativeRenderer) => {
       this.exitSuggestionMode();
-      renderer.selectNode(nodeSelection, '');
       nodeSelection.select('.node-container').classed('node-selected', true);
 
       const neighborhood = calculateNeighborhood(this.data as any, nodeSelection.datum().data.concept);
       renderer.resetAnnotations();
       renderer.neighborhoodAnnotation(neighborhood);
+      renderer.selectNode(nodeSelection, '');
       // console.log(neighborhood);
 
       this.selectedNode = nodeSelection.datum().data.concept;
       this.$emit('node-click', nodeSelection.datum().data);
     });
-    this.renderer.on('edge-click', (_evtName, _event: PointerEvent, edgeSelection, renderer: QualitativeRenderer) => {
+    this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection, renderer: QualitativeRenderer) => {
       this.exitSuggestionMode();
       const source = edgeSelection.datum().data.source;
       const target = edgeSelection.datum().data.target;
       const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
       renderer.neighborhoodAnnotation(neighborhood);
-      // renderer.selectEdge(event, edgeSelection);
+      renderer.selectEdge(event, edgeSelection);
 
       this.$emit('edge-click', edgeSelection.datum().data);
     });
