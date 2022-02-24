@@ -72,7 +72,7 @@ export default {
       };
       this.map.addSource(this.sourceId, payload);
       // Re-add the layers
-      layerDefs.forEach(layer => this.map.addLayer(layer));
+      layerDefs.forEach(layer => this.map.addLayer(layer, this.beforeId));
       this.$_emitEvent('update-source', {
         id: this.sourceId,
         ...payload

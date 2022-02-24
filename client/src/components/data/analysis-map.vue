@@ -192,9 +192,9 @@ export default {
       type: Object,
       default: () => ([])
     },
-    selectedRegionIds: {
-      type: Array,
-      default: () => []
+    selectedRegions: {
+      type: Object,
+      default: () => ({ country: new Set(), admin1: new Set(), admin2: new Set(), admin3: new Set() })
     },
     adminLayerStats: {
       type: Object,
@@ -342,6 +342,13 @@ export default {
     rawGeoJson() {
       const data = convertRawDataToGeoJson(this.rawData);
       return data;
+    },
+    isRegionSelectionEmpty() {
+      // Check if there are selected regions in the current admin level or in the levels above.
+      const level = SOURCE_LAYERS.findIndex(l => l.layerId === this.selectedLayerId);
+      const { country, admin1, admin2, admin3 } = this.selectedRegions;
+      const checks = [country.size === 0, admin1.size === 0, admin2.size === 0, admin3.size === 0];
+      return checks.slice(0, level + 1).reduce((prev, cur) => prev && cur, true);
     }
   },
   watch: {
@@ -370,7 +377,7 @@ export default {
     pointsLayerStats() {
       this.debouncedRefresh();
     },
-    selectedRegionIds() {
+    selectedRegions() {
       this.debouncedRefresh();
     },
     showPercentChange() {
@@ -518,10 +525,27 @@ export default {
           }, {
             ...featureStateBase,
             ...row.values,
-            _isHidden: this.selectedRegionIds.length === 0 ? false : !this.selectedRegionIds.includes(row.id)
+            _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(row.id)
           });
         });
       });
+    },
+    isRegionSelected(regionId) {
+      const regionIdTokens = regionId.split(REGION_ID_DELIMETER);
+      // Check if the regionId is included in the selection. Check with the parent selection if there's a parent region selection.
+      let checkParentLevel = true;
+      while (regionIdTokens.length > 0 && checkParentLevel) {
+        const rid = regionIdTokens.join(REGION_ID_DELIMETER);
+        const curLevelRegionSelection = this.selectedRegions[adminLevelToString(regionIdTokens.length - 1)];
+        if (curLevelRegionSelection.has(rid)) {
+          return true;
+        }
+        // If there's no selection in the current level, check the selection from parent level.
+        checkParentLevel = curLevelRegionSelection.size === 0;
+        // Drop the current admin level region name from the id resulting the parent region id.
+        regionIdTokens.pop();
+      }
+      return false;
     },
     onAddLayer() {
       if (!this.regionData) return;
