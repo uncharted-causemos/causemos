@@ -1,13 +1,15 @@
+import _ from 'lodash';
 import { ref } from '@vue/reactivity';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { RegionalAggregations } from '@/types/Outputdata';
-import { ComputedRef, Ref, watchEffect } from 'vue';
+import { Ref, watchEffect } from 'vue';
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
+import { AdminRegionSets } from '@/types/Datacubes';
 
 export default function useMapBounds(
   regionalData: Ref<RegionalAggregations | null>,
   selectedAdminLevel: Ref<number>,
-  selectedRegionIds: ComputedRef<string[]>
+  selectedRegionIdsAtAllLevels: Ref<AdminRegionSets>
 ) {
   const mapBounds = ref<number[][] | { value: number[][], options: any }>([
     [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
@@ -19,12 +21,20 @@ export default function useMapBounds(
   };
 
   watchEffect(async () => {
-    if (!regionalData.value || !selectedRegionIds.value) {
-      return;
-    }
-    const regionIds = selectedRegionIds.value.length === 0
-      ? (regionalData.value.country || []).map(item => item.id)
-      : selectedRegionIds.value;
+    const { country, admin1, admin2, admin3 } = selectedRegionIdsAtAllLevels.value;
+    // All selected region ids from the current selected admin level and the above level
+    const regionSelection =
+      [country, admin1, admin2, admin3]
+        .slice(0, selectedAdminLevel.value + 1) // consider levels above the current level
+        .filter(set => set.size > 0) // filter out admin level with no selection
+        .map(set => Array.from(set)) // convert set to array
+        .pop(); // Get the last item (selection at the finest granuality)
+    if (!regionalData.value && !regionSelection?.length) return;
+
+    // If there's no selected regions, use countries to get the bounds
+    const regionIds = !regionSelection?.length
+      ? (regionalData.value?.country || []).map(item => item.id)
+      : regionSelection;
     //
     // calculate the initial map bounds covering the model geography
     //

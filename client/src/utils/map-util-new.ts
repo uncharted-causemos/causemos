@@ -3,11 +3,7 @@ import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/t
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
 import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
-import { getGADMSuggestions } from '@/services/suggestion-service';
-import { REGION_ID_DELIMETER } from './admin-level-util';
-
-// only allow fetching a maximum number of bbox for of a list of regions
-const MAX_NUMBER_BBOX_REGIONS = 10;
+import { getBboxFromRegionIds } from '@/services/geo-service';
 
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
@@ -203,70 +199,6 @@ export function computeRawDataStats(data: RawOutputDataPoint[][]): AnalysisMapSt
 }
 
 export async function computeMapBoundsForCountries(regionIds: string[]) {
-  //
-  // calculate the map bounds covering the geography covered by the input list of countries
-  //
-  if (regionIds && regionIds.length > 0) {
-    // Parse region ids
-    let items = regionIds.map(regionId => {
-      const names = regionId.split(REGION_ID_DELIMETER);
-      let level = DatacubeGeoAttributeVariableType.Country;
-      switch (names.length) {
-        // FIXME: Currently getGADMSuggestions is not reliable for searching admin1-n region bbox
-        // since it could return multiple results for a admin region name if there are same regions in different countries.
-        // For now just return corresponding country of the given admin region name. Later we could implement api endpoint that does exact match for any admin region name.
-        case 2:
-          level = DatacubeGeoAttributeVariableType.Country;
-          break;
-        case 3:
-          level = DatacubeGeoAttributeVariableType.Country;
-          break;
-        case 4:
-          level = DatacubeGeoAttributeVariableType.Country;
-          break;
-      }
-      // return { name: names[names.length - 1], level };
-      return { name: names[0], level };
-    });
-
-    if (items.length > MAX_NUMBER_BBOX_REGIONS) {
-      items = items.slice(0, MAX_NUMBER_BBOX_REGIONS);
-    }
-
-    const allBBox: any = [];
-    // fetch the bbox for country of the input geography
-    const promises = items.map(item => {
-      const debouncedFetchFunction = getGADMSuggestions(item.level, item.name);
-      return debouncedFetchFunction(); // NOTE: a debounced function may return undefined
-    });
-    const allResults = await Promise.all(promises);
-    allResults.forEach(result => {
-      if (result !== undefined) {
-        allBBox.push(...result.map(item => item.bbox ? item.bbox.coordinates : []));
-      }
-    });
-    // allBBox is an array of bbox values for each country of the input geography
-    //  calculate the union bbox by merging all bbox into a global one
-    if (allBBox.length > 0) {
-      const finalBBox: number[][] = allBBox[0];
-      allBBox.forEach((bbox: number[][]) => {
-        // [[minLon, maxLat], [maxLon, minLat]]:
-        if (bbox[0][0] < finalBBox[0][0]) {
-          finalBBox[0][0] = bbox[0][0];
-        }
-        if (bbox[0][1] > finalBBox[0][1]) {
-          finalBBox[0][1] = bbox[0][1];
-        }
-        if (bbox[1][0] > finalBBox[1][0]) {
-          finalBBox[1][0] = bbox[1][0];
-        }
-        if (bbox[1][1] < finalBBox[1][1]) {
-          finalBBox[1][1] = bbox[1][1];
-        }
-      });
-      // return the final, global, bbox
-      return finalBBox;
-    }
-  }
-  return null;
+  if (!regionIds?.length) return null;
+  return await getBboxFromRegionIds(regionIds);
 }

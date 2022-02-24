@@ -1969,7 +1969,7 @@ export default defineComponent({
     const {
       onSyncMapBounds,
       mapBounds
-    } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIds);
+    } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIdsAtAllLevels);
 
 
     watchEffect(() => {
