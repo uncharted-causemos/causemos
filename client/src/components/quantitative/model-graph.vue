@@ -101,6 +101,7 @@ export default defineComponent({
     this.renderer.setLabelFormatter(this.ontologyFormatter);
 
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>, renderer: QuantitativeRenderer) => {
+      renderer.resetAnnotations();
       renderer.selectNode(nodeSelection, '');
       this.$emit('node-sensitivity', nodeSelection.datum().data);
     });

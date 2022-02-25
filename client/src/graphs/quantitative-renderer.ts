@@ -40,10 +40,19 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
           [node.x + node.width / 2, node.y]
         );
       }
+      nodeSelection.selectAll('.node-container, .node-container-outer')
+        .style('stroke', SELECTED_COLOR)
+        .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
     });
 
-    this.on('node-mouse-leave', () => {
+    this.on('node-mouse-leave', (_evtName, __event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
       svgUtil.hideSvgTooltip(this.chart);
+      if (nodeSelection.classed('selected')) {
+        return;
+      }
+      nodeSelection.selectAll('.node-container, .node-container-outer')
+        .style('stroke', DEFAULT_STYLE.node.stroke)
+        .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
     });
 
     this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {

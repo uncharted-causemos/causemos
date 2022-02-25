@@ -101,7 +101,7 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     const chart = this.chart;
     chart.selectAll('.node').style('opacity', 1);
     chart.selectAll('.edge').style('opacity', 1);
-    chart.selectAll('.node-container, .node-header').classed('node-selected', false);
+    chart.selectAll('.node-ui').classed('selected', false);
 
     chart.selectAll('.edge').classed('selected', false);
     chart.selectAll('.edge-path-bg-outline').style('stroke', null);
@@ -117,6 +117,7 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
       .style('border-radius', DEFAULT_STYLE.node.highlighted.borderRadius)
       .style('stroke', _.isEmpty(color) ? DEFAULT_STYLE.node.highlighted.stroke : color)
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
+    node.classed('selected', true);
   }
 
   selectEdge(evt: Event, edge: D3SelectionIEdge<E>) {

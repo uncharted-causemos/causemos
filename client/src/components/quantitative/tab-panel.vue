@@ -304,11 +304,6 @@ export default defineComponent({
       this.activeDrilldownTab = PANE_ID.SENSITIVITY;
       this.openDrilldown();
       this.selectedNode = node;
-      this.visualState = {
-        selected: {
-          nodes: [this.selectedNode]
-        }
-      };
     },
     openNodeDrilldownView(node: NodeParameter) {
       this.onBackgroundClick();

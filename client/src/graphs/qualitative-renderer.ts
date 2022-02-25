@@ -61,6 +61,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         );
       }
 
+      selection.selectAll('.node-container, .node-container-outer').style('stroke', SELECTED_COLOR);
       this.showNodeMenu(selection);
     });
 
@@ -70,6 +71,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       }
       this.hideNodeMenu(selection);
       svgUtil.hideSvgTooltip(this.chart);
+
+      if (selection.classed('selected')) {
+        return;
+      }
+      selection.selectAll('.node-container, .node-container-outer')
+        .style('stroke', DEFAULT_STYLE.node.stroke)
+        .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
     });
 
     this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
@@ -930,10 +938,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     nodes.select('.node-container')
       .attr('width', (d) => d.width)
       .attr('x', 0);
-
-    nodes.selectAll('.node-container:not(.node-selected), .node-container-outer')
-      .style('stroke', DEFAULT_STYLE.node.stroke)
-      .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
 
     nodes.select('path')
       .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width, DEFAULT_STYLE.nodeHandles.width));
