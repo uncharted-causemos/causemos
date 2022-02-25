@@ -581,6 +581,10 @@ export default defineComponent({
         indicatorRegions.value = [
           indicator.admin3, indicator.admin2, indicator.admin1, indicator.country
         ].filter(d => d !== '').join(', ');
+        // Clear any constraints that fall outside the min/max. This can occur
+        //  when a new indicator is assigned to the node that has a smaller
+        //  range than the previous one.
+        clearConstraintsOutsideRange({ min, max }, true);
       }
     });
     const clearParameterization = async () => {
