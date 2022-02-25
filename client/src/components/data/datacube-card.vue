@@ -648,7 +648,7 @@ import {
   getOutputs
 } from '@/utils/datacube-util';
 import { normalize } from '@/utils/value-util';
-import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
+import { initDataStateFromRefs, initViewStateFromRefs, fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import {
   adminLevelToString,
   BASE_LAYER,
@@ -663,7 +663,7 @@ import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCachi
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
 import useQualifierCounts from '@/services/composables/useQualifierCounts';
-import { BreakdownData } from '@/types/Datacubes';
+import { AdminRegionSets, BreakdownData } from '@/types/Datacubes';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
@@ -891,6 +891,13 @@ export default defineComponent({
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
+    const initialSelectedRegions = ref<AdminRegionSets>({
+      country: new Set(),
+      admin1: new Set(),
+      admin2: new Set(),
+      admin3: new Set()
+    });
+
     const initialSelectedOutputVariables = ref<string[]>([]);
     const initialActiveFeatures = ref<OutputVariableSpecs[]>([]);
     const initialNonDefaultQualifiers = ref<string[]>([]);
@@ -1195,6 +1202,9 @@ export default defineComponent({
           }
           if (initialDataConfig.value.selectedRegionIds !== undefined) {
             initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
+          }
+          if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
+            initialSelectedRegions.value = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
           }
           if (initialDataConfig.value.selectedOutputVariables !== undefined) {
             initialSelectedOutputVariables.value = _.clone(initialDataConfig.value.selectedOutputVariables);
@@ -1593,6 +1603,9 @@ export default defineComponent({
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
           initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
         }
+        if (loadedInsight.data_state?.selectedRegionIdsAtAllLevels !== undefined) {
+          initialSelectedRegions.value = fromStateSelectedRegionsAtAllLevels(loadedInsight.data_state?.selectedRegionIdsAtAllLevels);
+        }
         if (loadedInsight.data_state?.selectedOutputVariables !== undefined) {
           initialSelectedOutputVariables.value = _.clone(loadedInsight.data_state?.selectedOutputVariables);
         }
@@ -1744,7 +1757,7 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       breakdownOption,
-      initialSelectedRegionIds,
+      initialSelectedRegions,
       activeFeature
     );
 

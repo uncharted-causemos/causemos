@@ -129,6 +129,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
 import { filterRegionalLevelData } from '@/utils/admin-level-util';
+import { fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import { AnalysisMapColorOptions } from '@/types/Common';
 import MapLegend from '@/components/widgets/map-legend.vue';
@@ -318,10 +319,7 @@ export default defineComponent({
             });
           }
           if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
-            selectedRegionIdsAtAllLevels.value = Object.assign(
-              {},
-              initialDataConfig.value.selectedRegionIdsAtAllLevels
-            );
+            selectedRegionIdsAtAllLevels.value = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
           }
         }
       },
@@ -339,7 +337,7 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      ref([]), // initialSelectedRegionIds
+      ref({ country: new Set<string>(), admin1: new Set<string>(), admin2: new Set<string>(), admin3: new Set<string>() }), // initialSelectedRegionIds
       activeFeature
     );
 

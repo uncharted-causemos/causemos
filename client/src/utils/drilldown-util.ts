@@ -8,6 +8,24 @@ import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { OutputVariableSpecs } from '@/types/Outputdata';
 
+export const toStateSelectedRegionsAtAllLevels = (data: { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }) => {
+  return {
+    country: Array.from(data.country),
+    admin1: Array.from(data.admin1),
+    admin2: Array.from(data.admin2),
+    admin3: Array.from(data.admin3)
+  };
+};
+
+export const fromStateSelectedRegionsAtAllLevels = (data: { country: string[], admin1: string[], admin2: string[], admin3: string[] }) => {
+  return {
+    country: new Set(data.country),
+    admin1: new Set(data.admin1),
+    admin2: new Set(data.admin2),
+    admin3: new Set(data.admin3)
+  };
+};
+
 export const aggregationOptionFiltered = Object.values(AggregationOption).filter(ao => AggregationOption.None as string !== ao);
 export const temporalResolutionOptionFiltered = Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.None as string !== tro);
 
@@ -41,7 +59,7 @@ export function initDataStateFromRefs (
     }],
     datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
     selectedRegionIds: selectedRegionIds.value,
-    selectedRegionIdsAtAllLevels: selectedRegionIdsAtAllLevels.value,
+    selectedRegionIdsAtAllLevels: toStateSelectedRegionsAtAllLevels(selectedRegionIdsAtAllLevels.value),
     selectedOutputVariables: Array.from(selectedOutputVariables.value),
     activeFeatures: activeFeatures.value,
     relativeTo: relativeTo.value,
