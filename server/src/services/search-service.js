@@ -411,6 +411,9 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k) => {
         if (member.includes('process')) {
           homeId.process = member;
         }
+        if (member.includes('property')) {
+          homeId.conceptProperty = member;
+        }
       }
       bulkSearchPayload.push({
         homeId,
@@ -436,6 +439,8 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k) => {
             const candidates = await indicatorSeachByDatasetId(dataId, name);
             if (candidates.length > 0) {
               indicatorsForMatches.push({ score: match.score, candidate: candidates[0] });
+            } else {
+              Logger.warn(`Cannot find ${dataId}, ${name} in data-datacube index`);
             }
           }
         }
