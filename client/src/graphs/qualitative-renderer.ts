@@ -337,12 +337,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         svgUtil.truncateTextToWidth(this as any, EDGE_SUGGESTION_WIDTH - 20);
       });
     // Render incoming edge arrowhead
+    const arrowHeadX = isShowingDriverEdges ? EDGE_SUGGESTION_WIDTH - 5 : -5;
     suggestionGroups.selectAll('edge-possibility-indicator')
       .data(entry => [entry.suggestion.color])
       .join('svg:path')
       .classed('edge-possibility-indicator', true)
       .attr('d', svgUtil.ARROW)
-      .attr('transform', translate(-5, NODE_HEIGHT / 2) + ' scale(2.5)')
+      .attr('transform', translate(arrowHeadX, NODE_HEIGHT / 2) + ' scale(2.5)')
       .attr('fill', color => color)
       .style('pointer-events', 'none');
     // On click, toggle whether the node is selected
