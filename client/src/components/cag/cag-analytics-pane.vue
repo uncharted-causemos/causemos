@@ -78,6 +78,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import CagPathItem from '@/components/cag/cag-path-item.vue';
 import { findCycles, classifyCycles, Vertex } from '@/utils/graphs-util';
 import modelService from '@/services/model-service';
+import useToaster from '@/services/composables/useToaster';
 
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelSummary, Scenario, GraphPath } from '@/types/CAG';
@@ -161,6 +162,8 @@ export default defineComponent({
       pathExperiemntId,
       pathExperimentResult,
 
+      toaster: useToaster(),
+
       analyses: ANALYSES
     };
   },
@@ -228,6 +231,13 @@ export default defineComponent({
       this.$emit('show-path', pathItem);
     },
     changeAnalysis(v: string) {
+      const modelStale = this.modelSummary.status !== modelService.MODEL_STATUS.READY;
+      const scenariosStale = _.some(this.scenarios, s => s.is_valid === false);
+      if (scenariosStale || modelStale) {
+        this.toaster('CAG or scenarios are stale, please click "Run" to synchronize first and then retry the path analysis.', 'error', true);
+        return;
+      }
+
       this.currentAnalysis = v;
       this.refresh();
     },
