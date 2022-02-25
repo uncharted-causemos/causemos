@@ -404,7 +404,6 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      ref({ country: new Set<string>(), admin1: new Set<string>(), admin2: new Set<string>(), admin3: new Set<string>() }), // initialSelectedRegionIds
       activeFeature
     );
 

@@ -663,7 +663,7 @@ import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCachi
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
 import useQualifierCounts from '@/services/composables/useQualifierCounts';
-import { AdminRegionSets, BreakdownData } from '@/types/Datacubes';
+import { BreakdownData } from '@/types/Datacubes';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
@@ -891,13 +891,6 @@ export default defineComponent({
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
-    const initialSelectedRegions = ref<AdminRegionSets>({
-      country: new Set(),
-      admin1: new Set(),
-      admin2: new Set(),
-      admin3: new Set()
-    });
-
     const initialSelectedOutputVariables = ref<string[]>([]);
     const initialActiveFeatures = ref<OutputVariableSpecs[]>([]);
     const initialNonDefaultQualifiers = ref<string[]>([]);
@@ -922,6 +915,21 @@ export default defineComponent({
       // Assign new object to selectedBreakdownOutputVariables.value to trigger reactivity updates.
       selectedBreakdownOutputVariables.value = updatedList;
     };
+
+    const {
+      datacubeHierarchy,
+      selectedRegionIds,
+      selectedRegionIdsAtAllLevels,
+      referenceRegions,
+      toggleIsRegionSelected
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      breakdownOption,
+      activeFeature
+    );
+
     watch(
       () => [
         initialSelectedOutputVariables.value
@@ -1204,7 +1212,7 @@ export default defineComponent({
             initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
           }
           if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
-            initialSelectedRegions.value = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
+            selectedRegionIdsAtAllLevels.value = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
           }
           if (initialDataConfig.value.selectedOutputVariables !== undefined) {
             initialSelectedOutputVariables.value = _.clone(initialDataConfig.value.selectedOutputVariables);
@@ -1604,7 +1612,7 @@ export default defineComponent({
           initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
         }
         if (loadedInsight.data_state?.selectedRegionIdsAtAllLevels !== undefined) {
-          initialSelectedRegions.value = fromStateSelectedRegionsAtAllLevels(loadedInsight.data_state?.selectedRegionIdsAtAllLevels);
+          selectedRegionIdsAtAllLevels.value = fromStateSelectedRegionsAtAllLevels(loadedInsight.data_state?.selectedRegionIdsAtAllLevels);
         }
         if (loadedInsight.data_state?.selectedOutputVariables !== undefined) {
           initialSelectedOutputVariables.value = _.clone(loadedInsight.data_state?.selectedOutputVariables);
@@ -1744,21 +1752,6 @@ export default defineComponent({
           });
         }
       }
-    );
-
-    const {
-      datacubeHierarchy,
-      selectedRegionIds,
-      selectedRegionIdsAtAllLevels,
-      referenceRegions,
-      toggleIsRegionSelected
-    } = useDatacubeHierarchy(
-      selectedScenarioIds,
-      metadata,
-      selectedAdminLevel,
-      breakdownOption,
-      initialSelectedRegions,
-      activeFeature
     );
 
     const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, activeFeature);

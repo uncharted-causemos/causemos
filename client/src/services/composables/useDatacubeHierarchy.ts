@@ -12,7 +12,6 @@ export default function useDatacubeHierarchy(
   metadata: Ref<Model | Indicator | null>,
   selectedAdminLevel: Ref<number>,
   breakdownOption: Ref<string | null>,
-  initialSelectedRegions: Ref<AdminRegionSets>,
   activeFeature: Ref<string>
 ) {
   /**
@@ -59,9 +58,12 @@ export default function useDatacubeHierarchy(
     } catch {}
   });
 
-  const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>(
-    _.clone(initialSelectedRegions.value)
-  );
+  const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>({
+    country: new Set(),
+    admin1: new Set(),
+    admin2: new Set(),
+    admin3: new Set()
+  });
 
   watchEffect(() => {
     // If multiselection is no longer allowed, truncate the list of selected
