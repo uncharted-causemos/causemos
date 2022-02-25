@@ -58,6 +58,23 @@ yarn start-client
 
 # start server - Defaults to localhost:3000
 yarn start-server
+
+# start server in debug mode
+yarn start-server-debug
+```
+
+### Additional options
+The application maintains several tasks that runs at regular intervals, these are turned off by default and must be opt-in at server start with the `--schedules` flag. The available options are
+- dart: Synchronization process with DART
+- aligner: Periodically request concept-aligner to refresh it's data
+
+```
+# example 1: both dart and aligner
+yarn start-server --schedules dart,aligner
+
+
+# example 2: only aligner and in debug mode
+ yarn start-server-debug --schedules aligner
 ```
 
 
