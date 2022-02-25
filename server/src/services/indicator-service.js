@@ -176,7 +176,7 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
     if (result.has(node.concept)) {
       continue;
     }
-    const candidates = await textSearch(node.concept);
+    const candidates = await textSearch(node.label);
     if (!_.isEmpty(candidates)) {
       result.set(node.concept, [candidates[0]]);
     }
