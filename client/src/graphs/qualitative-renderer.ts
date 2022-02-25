@@ -50,6 +50,17 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         this.showNodeHandles(selection);
       }
       if (this.handleBeingDragged === true) return;
+
+      const node = selection.datum();
+      const label = node.label;
+      if (label.length !== selection.select('.node-label').text().replace(/^\*/, '').length) {
+        svgUtil.showSvgTooltip(
+          this.chart,
+          label,
+          [node.x + node.width / 2, node.y]
+        );
+      }
+
       this.showNodeMenu(selection);
     });
 
@@ -58,6 +69,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         this.hideNodeHandles();
       }
       this.hideNodeMenu(selection);
+      svgUtil.hideSvgTooltip(this.chart);
     });
 
     this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
