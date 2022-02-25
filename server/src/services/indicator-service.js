@@ -156,6 +156,7 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
   // 2. Check against concept aligner matches
   // Note: this assumes that order of results returned by the searchService is the same as nodes provided
   const indicators = await searchService.indicatorSearchConceptAlignerBulk(model.project_id, nodeParameters, numMatches);
+
   for (let i = 0; i < indicators.length; i++) {
     if (indicators[i].length === 0) {
       continue;
@@ -175,8 +176,6 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
     if (result.has(node.concept)) {
       continue;
     }
-    // const concepts = node.components;
-    // const candidates = await searchService.indicatorSearchByConcepts(model.project_id, concepts);
     const candidates = await textSearch(node.concept);
     if (!_.isEmpty(candidates)) {
       result.set(node.concept, [candidates[0]]);
