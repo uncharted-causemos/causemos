@@ -4,7 +4,47 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
 const modelUtil = rootRequire('/util/model-util');
 const searchService = rootRequire('/services/search-service');
 const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
+const { client } = rootRequire('/adapters/es/client');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
+
+
+const _buildQueryStringFilter = (text) => {
+  const labels = text.split(' ');
+  let query = '';
+  if (labels.length === 1) {
+    query = text;
+  } else {
+    query = '(' + labels[0] + ') AND (' + labels[1] + ')';
+  }
+  return {
+    query_string: {
+      query: query,
+      fields: ['name', 'family_name', 'description', 'category', 'outputs.name', 'outputs.display_name', 'outputs.description', 'tags', 'geography.*', 'ontology_matches', 'data_info']
+    }
+  };
+};
+
+const textSearch = async (text) => {
+  const searchPayload = {
+    index: RESOURCE.DATA_DATACUBE,
+    size: 10,
+    body: {
+      query: {
+        bool: {
+          must: [
+            _buildQueryStringFilter(text),
+            { match: { type: 'indicator' } }
+          ]
+        }
+      },
+      sort: [
+        { _score: 'desc' }
+      ]
+    }
+  };
+  const results = await client.search(searchPayload);
+  return results.body.hits.hits.map(d => d._source);
+};
 
 const getIndicatorData = async (dataId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
   Logger.info(`Get indicator data from wm-go: ${dataId} ${feature}`);
@@ -135,8 +175,9 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
     if (result.has(node.concept)) {
       continue;
     }
-    const concepts = node.components;
-    const candidates = await searchService.indicatorSearchByConcepts(model.project_id, concepts);
+    // const concepts = node.components;
+    // const candidates = await searchService.indicatorSearchByConcepts(model.project_id, concepts);
+    const candidates = await textSearch(node.concept);
     if (!_.isEmpty(candidates)) {
       result.set(node.concept, [candidates[0]]);
     }
