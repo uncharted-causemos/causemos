@@ -670,6 +670,10 @@ export default defineComponent({
         components
       };
       try {
+        clearConstraintsOutsideRange(
+          { min: indicatorMin.value, max: indicatorMax.value },
+          true
+        );
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
         refreshModelData();
       } catch {
@@ -808,8 +812,10 @@ export default defineComponent({
       if (showToaster && removedConstraintCount > 0) {
         toaster(
           `Removed ${removedConstraintCount} constraint` +
-            `${removedConstraintCount === 1 ? '' : 's'} from` +
-            `${affectedScenarioCount} scenarios because they fell outside of` +
+            `${removedConstraintCount === 1 ? '' : 's'} from ` +
+            `${affectedScenarioCount} scenario` +
+            `${affectedScenarioCount === 1 ? '' : 's'} because ` +
+            `${removedConstraintCount === 1 ? 'it' : 'they'} fell outside of` +
             ` the range ${range.min} to ${range.max}.`,
           'error',
           false
