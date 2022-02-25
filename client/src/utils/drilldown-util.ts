@@ -47,7 +47,7 @@ export function initDataStateFromRefs (
   nonDefaultQualifiers: Ref<Set<string>>,
   selectedQualifierValues: Ref<Set<string>>,
   selectedRegionIds: Ref<string[]>,
-  selectedRegionIdsAtAllLevels: Ref<{ country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }>,
+  selectedRegionIdsAtAllLevels: Ref<AdminRegionSets>,
   selectedOutputVariables: Ref<Set<string>>,
   activeFeatures: Ref<OutputVariableSpecs[]>,
   selectedScenarioIds: Ref<string[]>,
