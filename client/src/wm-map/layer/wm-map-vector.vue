@@ -48,7 +48,7 @@ export default {
     }
   },
   mounted() {
-    // Add source if a source with given id doens't exist
+    // Add source if a source with given id doesn't exist
     // There can be multiple layers with a single data source so we only add the same source once
     if (!this.map.getSource(this.sourceId)) this._updateSource();
     this._addLayer();
