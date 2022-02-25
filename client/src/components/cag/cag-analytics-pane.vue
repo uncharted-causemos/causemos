@@ -234,7 +234,7 @@ export default defineComponent({
       const modelStale = this.modelSummary.status !== modelService.MODEL_STATUS.READY;
       const scenariosStale = _.some(this.scenarios, s => s.is_valid === false);
       if (scenariosStale || modelStale) {
-        this.toaster('CAG or scenarios are stale, please click "Run" to synchronize first before running the analysis.', 'error', true);
+        this.toaster('CAG or scenarios are stale, please click "Run" to synchronize first and then retry the path analysis.', 'error', true);
         return;
       }
 
