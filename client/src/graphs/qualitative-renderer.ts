@@ -120,7 +120,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         node.y
       )
     );
-    this.renderSearchBox(suggestionColumnX, node.y);
+    this.renderSearchBox(suggestionColumnX, node.y, isShowingDriverEdges);
     this.renderSuggestionLoadingIndicator(
       isLoading,
       suggestionColumnX,
@@ -212,41 +212,34 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       );
   }
 
-  renderSearchBox(suggestionColumnX: number, nodeY: number) {
-    const existingSearchBox = (this.chart.node() as Element).querySelector(
-      '.suggestion-search-box'
-    );
-    // Don't rerender search box if it already exists
-    // TODO: delete existing search box if it exists
-    if (existingSearchBox !== null) return;
-    const foreignElement = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'foreignObject'
-    );
-    foreignElement.classList.add('suggestion-search-box');
-    foreignElement.setAttribute('width', `${EDGE_SUGGESTION_WIDTH}px`);
-    foreignElement.setAttribute('height', `${NODE_HEIGHT}px`);
-    foreignElement.setAttribute(
-      'transform',
-      translate(suggestionColumnX, nodeY)
-    );
-
-    const textInput = document.createElement('input');
-    textInput.setAttribute('type', 'text');
-    textInput.style.width = `${EDGE_SUGGESTION_WIDTH}px`;
-    textInput.style.height = `${NODE_HEIGHT}px`;
-    textInput.style.border = '1px solid dodgerblue';
-    textInput.style.borderRadius = '3px';
-    textInput.addEventListener('keyup', (event) => {
-      this.emit('search-for-concepts', (event.target as any).value);
-    });
-    foreignElement.appendChild(textInput);
-    (this.chart.node() as Element).appendChild(foreignElement);
-    textInput.focus();
-    textInput.addEventListener('click', event => {
-      // Don't trigger background click handler
-      event.stopPropagation();
-    });
+  renderSearchBox(
+    suggestionColumnX: number,
+    nodeY: number,
+    isShowingDriverEdges: boolean
+  ) {
+    const textInput = this.chart.selectAll('.suggestion-search-box')
+      .data([isShowingDriverEdges])
+      .join('foreignObject')
+      .classed('suggestion-search-box', true)
+      .attr('width', `${EDGE_SUGGESTION_WIDTH}px`)
+      .attr('height', `${NODE_HEIGHT}px`)
+      .attr('transform', translate(suggestionColumnX, nodeY))
+      .selectAll('input')
+      .data(isShowingDriverEdges => [isShowingDriverEdges])
+      .join('xhtml:input')
+      .attr('type', 'text')
+      .style('width', `${EDGE_SUGGESTION_WIDTH}px`)
+      .style('height', `${NODE_HEIGHT}px`)
+      .style('border', '1px solid dodgerblue')
+      .style('border-radius', '3px')
+      .on('keyup', (event) => {
+        this.emit('search-for-concepts', (event.target as any).value);
+      })
+      .on('click', (event) => {
+        // Don't trigger background click handler
+        event.stopPropagation();
+      });
+    (textInput.node() as HTMLInputElement).focus();
   }
 
   renderEdgeSuggestions(
