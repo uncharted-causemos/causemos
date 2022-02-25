@@ -2,7 +2,7 @@
   <div class="path-container">
     <span v-for="(node, idx) of pathItem.path" :key="node">
       {{ ontologyFormatter(node) }}
-      <i v-if="idx < pathItem.path.length - 1" class="fa fa-arrow-right fa-fw" style="color: #888" />
+      <i v-if="idx < pathItem.path.length - 1" class="fa fa-long-arrow-right fa-fw" style="color: #888" />
     </span>
   </div>
 </template>
