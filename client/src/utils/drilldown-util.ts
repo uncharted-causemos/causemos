@@ -7,8 +7,9 @@ import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new'
 import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { OutputVariableSpecs } from '@/types/Outputdata';
+import { AdminRegionSets } from '@/types/Datacubes';
 
-export const toStateSelectedRegionsAtAllLevels = (data: { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }) => {
+export const toStateSelectedRegionsAtAllLevels = (data: AdminRegionSets) => {
   return {
     country: Array.from(data.country),
     admin1: Array.from(data.admin1),
