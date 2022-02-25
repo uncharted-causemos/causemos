@@ -18,6 +18,15 @@ export const toStateSelectedRegionsAtAllLevels = (data: { country: Set<string>; 
 };
 
 export const fromStateSelectedRegionsAtAllLevels = (data: { country: string[], admin1: string[], admin2: string[], admin3: string[] }) => {
+  // If country isn't valid array. This can happen if invalid state was saved to the server before.
+  if (data.country.length === undefined) {
+    return {
+      country: new Set<string>(),
+      admin1: new Set<string>(),
+      admin2: new Set<string>(),
+      admin3: new Set<string>()
+    };
+  }
   return {
     country: new Set(data.country),
     admin1: new Set(data.admin1),
