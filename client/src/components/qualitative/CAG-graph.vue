@@ -199,7 +199,6 @@ export default defineComponent({
       renderer.resetAnnotations();
       renderer.neighborhoodAnnotation(neighborhood);
       renderer.selectNode(nodeSelection, '');
-      // console.log(neighborhood);
 
       this.selectedNode = nodeSelection.datum().data.concept;
       this.$emit('node-click', nodeSelection.datum().data);

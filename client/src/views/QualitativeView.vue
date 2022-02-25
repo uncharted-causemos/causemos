@@ -40,7 +40,6 @@
             @node-click="onNodeClick"
             @edge-click="onEdgeClick"
             @delete="onDelete"
-            @edge-set-user-polarity="setEdgeUserPolarity"
             @suggestion-selected="onSuggestionSelected"
             @datacube-selected="onDatacubeSelected"
             @suggestion-duplicated="onSuggestionDuplicated"

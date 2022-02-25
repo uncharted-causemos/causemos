@@ -97,11 +97,14 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
   }
 
   resetAnnotations() {
+    console.log('reset annotation');
     const chart = this.chart;
     chart.selectAll('.node').style('opacity', 1);
     chart.selectAll('.edge').style('opacity', 1);
-    chart.selectAll('.node-header').classed('node-selected', false);
-    chart.selectAll('.edge-path-bg-outline').classed('selected', false).style('stroke', null);
+    chart.selectAll('.node-container, .node-header').classed('node-selected', false);
+
+    chart.selectAll('.edge').classed('selected', false);
+    chart.selectAll('.edge-path-bg-outline').style('stroke', null);
 
     chart.selectAll('.node-container, .node-container-outer') // Clean up previous highlights
       .style('border-radius', DEFAULT_STYLE.node.borderRadius)
