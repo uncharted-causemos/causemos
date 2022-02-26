@@ -481,7 +481,11 @@ export default defineComponent({
           const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
           const regionLevelData = regionalData.value[adminLevelAsString];
 
-          if (regionLevelData !== undefined && regionLevelData.length > 0) {
+          const hasValues = regionLevelData?.reduce((acc, region) => {
+            return acc || Object.keys(region.values).length > 0;
+          }, false);
+
+          if (regionLevelData !== undefined && regionLevelData.length > 0 && hasValues) {
             const data = regionLevelData.map(regionDataItem => ({
               name: regionDataItem.id,
               value: Object.values(regionDataItem.values).length > 0 && Object.values(regionDataItem.values).length > selectedScenarioIndex.value ? Object.values(regionDataItem.values)[selectedScenarioIndex.value] : 0
