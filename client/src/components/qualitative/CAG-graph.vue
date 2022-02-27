@@ -207,6 +207,8 @@ export default defineComponent({
       const source = edgeSelection.datum().data.source;
       const target = edgeSelection.datum().data.target;
       const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
+
+      renderer.resetAnnotations();
       renderer.neighborhoodAnnotation(neighborhood);
       renderer.selectEdge(event, edgeSelection);
 

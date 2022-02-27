@@ -20,6 +20,7 @@ import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import GraphSearch from '@/components/widgets/graph-search.vue';
 import { IGraph, moveToLabel } from 'svg-flowgraph';
+import { calculateNeighborhood } from '@/utils/graphs-util';
 import { NodeParameter, EdgeParameter, CAGModelSummary } from '@/types/CAG';
 
 export default defineComponent({
@@ -101,7 +102,9 @@ export default defineComponent({
     this.renderer.setLabelFormatter(this.ontologyFormatter);
 
     this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>, renderer: QuantitativeRenderer) => {
+      const neighborhood = calculateNeighborhood(this.data.graph as any, nodeSelection.datum().data.concept);
       renderer.resetAnnotations();
+      renderer.neighborhoodAnnotation(neighborhood);
       renderer.selectNode(nodeSelection, '');
       this.$emit('node-sensitivity', nodeSelection.datum().data);
     });
