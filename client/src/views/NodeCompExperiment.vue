@@ -274,7 +274,7 @@ export default defineComponent({
         }
       }
 
-      const nodeParameters = {
+      const nodeParameter = {
         id: selectedNode?.value?.id,
         concept: selectedNode?.value?.concept,
         label: selectedNode?.value?.label,
@@ -289,6 +289,7 @@ export default defineComponent({
           admin2,
           admin3,
           period: 12,
+          temporalResolution: null,
           timeseries,
           original_timeseries: _.cloneDeep(timeseries),
           // Filled in by server
@@ -299,9 +300,16 @@ export default defineComponent({
       };
 
       Object.keys(viewState.value).forEach((key: string) => {
-        (nodeParameters.parameter as any)[key] = viewState.value[key];
+        (nodeParameter.parameter as any)[key] = viewState.value[key];
       });
-      await modelService.updateNodeParameter(selectedNode.value.model_id, nodeParameters);
+
+      if (nodeParameter.parameter.temporalResolution === 'month') {
+        nodeParameter.parameter.period = 12;
+      } else {
+        nodeParameter.parameter.period = 1;
+      }
+
+      await modelService.updateNodeParameter(selectedNode.value.model_id, nodeParameter);
 
       router.push({
         name: 'nodeDrilldown',
