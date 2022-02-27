@@ -7,6 +7,34 @@ import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new'
 import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { OutputVariableSpecs } from '@/types/Outputdata';
+import { AdminRegionSets } from '@/types/Datacubes';
+
+export const toStateSelectedRegionsAtAllLevels = (data: AdminRegionSets) => {
+  return {
+    country: Array.from(data.country),
+    admin1: Array.from(data.admin1),
+    admin2: Array.from(data.admin2),
+    admin3: Array.from(data.admin3)
+  };
+};
+
+export const fromStateSelectedRegionsAtAllLevels = (data: { country: string[], admin1: string[], admin2: string[], admin3: string[] }) => {
+  // If country isn't valid array. This can happen if invalid state was saved to the server before.
+  if (data.country.length === undefined) {
+    return {
+      country: new Set<string>(),
+      admin1: new Set<string>(),
+      admin2: new Set<string>(),
+      admin3: new Set<string>()
+    };
+  }
+  return {
+    country: new Set(data.country),
+    admin1: new Set(data.admin1),
+    admin2: new Set(data.admin2),
+    admin3: new Set(data.admin3)
+  };
+};
 
 export const aggregationOptionFiltered = Object.values(AggregationOption).filter(ao => AggregationOption.None as string !== ao);
 export const temporalResolutionOptionFiltered = Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.None as string !== tro);
@@ -19,7 +47,7 @@ export function initDataStateFromRefs (
   nonDefaultQualifiers: Ref<Set<string>>,
   selectedQualifierValues: Ref<Set<string>>,
   selectedRegionIds: Ref<string[]>,
-  selectedRegionIdsAtAllLevels: Ref<{ country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }>,
+  selectedRegionIdsAtAllLevels: Ref<AdminRegionSets>,
   selectedOutputVariables: Ref<Set<string>>,
   activeFeatures: Ref<OutputVariableSpecs[]>,
   selectedScenarioIds: Ref<string[]>,
@@ -41,7 +69,7 @@ export function initDataStateFromRefs (
     }],
     datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
     selectedRegionIds: selectedRegionIds.value,
-    selectedRegionIdsAtAllLevels: selectedRegionIdsAtAllLevels.value,
+    selectedRegionIdsAtAllLevels: toStateSelectedRegionsAtAllLevels(selectedRegionIdsAtAllLevels.value),
     selectedOutputVariables: Array.from(selectedOutputVariables.value),
     activeFeatures: activeFeatures.value,
     relativeTo: relativeTo.value,

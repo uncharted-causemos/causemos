@@ -4,7 +4,47 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
 const modelUtil = rootRequire('/util/model-util');
 const searchService = rootRequire('/services/search-service');
 const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
+const { client } = rootRequire('/adapters/es/client');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
+
+
+const _buildQueryStringFilter = (text) => {
+  const labels = text.split(' ');
+  let query = '';
+  if (labels.length === 1) {
+    query = text;
+  } else {
+    query = '(' + labels[0] + ') AND (' + labels[1] + ')';
+  }
+  return {
+    query_string: {
+      query: query,
+      fields: ['name', 'family_name', 'description', 'category', 'outputs.name', 'outputs.display_name', 'outputs.description', 'tags', 'geography.*', 'ontology_matches', 'data_info']
+    }
+  };
+};
+
+const textSearch = async (text) => {
+  const searchPayload = {
+    index: RESOURCE.DATA_DATACUBE,
+    size: 10,
+    body: {
+      query: {
+        bool: {
+          must: [
+            _buildQueryStringFilter(text),
+            { match: { type: 'indicator' } }
+          ]
+        }
+      },
+      sort: [
+        { _score: 'desc' }
+      ]
+    }
+  };
+  const results = await client.search(searchPayload);
+  return results.body.hits.hits.map(d => d._source);
+};
 
 const getIndicatorData = async (dataId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
   Logger.info(`Get indicator data from wm-go: ${dataId} ${feature}`);
@@ -27,7 +67,7 @@ const getIndicatorData = async (dataId, feature, temporalResolution, temporalAgg
  * Find all node parameters (concepts) without indicators
  * @param {string} modelId - model id
  */
-const _findAllWithoutIndicators = async (modelId) => {
+const _findUnquantifiedNodes = async (modelId) => {
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
   const esClient = nodeParameterAdapter.client;
   const query = {
@@ -58,11 +98,11 @@ const _findAllWithoutIndicators = async (modelId) => {
   return response.body.hits.hits.map(d => d._source);
 };
 
+
 // Returns top concept->datacube mappings
 const getConceptIndicatorMap = async (model, nodeParameters) => {
   const historyAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
   const datacubeAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
-  const nodesNotInHistory = [];
   const result = new Map();
 
   // 1. Check against historical matches
@@ -109,43 +149,34 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
       }
       continue;
     }
-
-    // 1.3 Otherwise, flag the node
-    nodesNotInHistory.push(node);
   }
 
-  const nodesNotInConceptAligner = [];
-  // get top k matches
-  // const k = 3;
-  // // Get matches from UAz
-  // for (const node of nodesNotInHistory) {
-  //   const indicators = await searchService.indicatorSearchConceptAligner(model.project_id, node, k);
-  //   Logger.info(`Found ${indicators.length} candidates for node ${node.concept}`);
-  //   if (indicators.length === 0) {
-  //     nodesNotInConceptAligner.push(node);
-  //   } else {
-  //     result.set(node.concept, indicators);
-  //   }
-  // }
+  const numMatches = 3;
 
-  const k = 3;
-  // Get matches from UAz
-  const indicators = await searchService.indicatorSearchConceptAlignerBulk(model.project_id, nodesNotInHistory, k);
-  // note: this assumes that order of results returned by the searchService is the same as nodes provided
+  // 2. Check against concept aligner matches
+  // Note: this assumes that order of results returned by the searchService is the same as nodes provided
+  const indicators = await searchService.indicatorSearchConceptAlignerBulk(model.project_id, nodeParameters, numMatches);
+
   for (let i = 0; i < indicators.length; i++) {
     if (indicators[i].length === 0) {
-      nodesNotInConceptAligner.push(nodesNotInHistory[i]);
+      continue;
+    }
+    Logger.info(`Found ${indicators[i].length} candidates for node ${nodeParameters[i].concept}`);
+    const key = nodeParameters[i].concept;
+    if (result.has(key)) {
+      const temp = result.get(key);
+      result.set(key, [...temp, ...indicators[i]]);
     } else {
-      Logger.info(`Found ${indicators[i].length} candidates for node ${nodesNotInHistory[i].concept}`);
-      result.set(nodesNotInHistory[i].concept, indicators[i]);
+      result.set(key, indicators[i]);
     }
   }
 
-
-  // 2. Run search against datacubes
-  for (const node of nodesNotInConceptAligner) {
-    const concepts = node.components;
-    const candidates = await searchService.indicatorSearchByConcepts(model.project_id, concepts);
+  // 3. Run search against datacubes
+  for (const node of nodeParameters) {
+    if (result.has(node.concept)) {
+      continue;
+    }
+    const candidates = await textSearch(node.label);
     if (!_.isEmpty(candidates)) {
       result.set(node.concept, [candidates[0]]);
     }
@@ -183,7 +214,8 @@ const setDefaultIndicators = async (modelId, resolution) => {
   Logger.info(`Setting default indicators for: ${modelId}`);
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
   const model = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
-  const nodeParameters = await _findAllWithoutIndicators(modelId);
+  const nodeParameters = await _findUnquantifiedNodes(modelId);
+
   const conceptIndicatorMap = await getConceptIndicatorMap(model, nodeParameters);
 
   // Defaults

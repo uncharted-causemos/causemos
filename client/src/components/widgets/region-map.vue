@@ -12,6 +12,7 @@
         :source="vectorSource"
         :source-id="vectorSourceId"
         :source-layer="vectorSourceLayer"
+        :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="colorLayerId"
         :layer="colorLayer"
@@ -180,6 +181,8 @@ export default {
     this.colorLayerId = 'color-layer';
     this.borderLayerId = 'border-layer';
     this.firstSymbolLayerId = 'watername_ocean';
+    this.vectorSourceMaxzoom = 8;
+
     // Init layer objects
     this.colorLayer = colorLayer();
     this.borderLayer = borderLayer();

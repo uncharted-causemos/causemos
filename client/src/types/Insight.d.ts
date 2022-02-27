@@ -104,7 +104,7 @@ export interface DataState {
   selectedScenarioIds?: string[];
   selectedTimestamp?: number | null;
   selectedRegionIds?: string[];
-  selectedRegionIdsAtAllLevels?: { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; };
+  selectedRegionIdsAtAllLevels?: { country: string[]; admin1: string[]; admin2: string[]; admin3: string[]; };
   selectedOutputVariables?: string[];
   activeFeatures?: OutputVariableSpecs[];
   nonDefaultQualifiers?: string[];

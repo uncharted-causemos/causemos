@@ -404,7 +404,6 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      ref([]), // initialSelectedRegionIds
       activeFeature
     );
 

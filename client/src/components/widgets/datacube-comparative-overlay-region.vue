@@ -366,7 +366,6 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       ref(null), // breakdownOption,
-      selectedRegionIds, // initialSelectedRegionIds
       activeFeature // initialSelectedRegionIds
     );
 

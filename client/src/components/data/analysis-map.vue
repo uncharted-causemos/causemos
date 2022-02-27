@@ -15,6 +15,7 @@
         :source="vectorSource"
         :source-id="vectorSourceId"
         :source-layer="sourceLayer"
+        :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="baseLayerId"
         :layer="baseLayer"
@@ -23,10 +24,8 @@
       <wm-map-vector
         v-if="vectorSource && vectorColorLayer"
         :key="layerRerenderTrigger"
-        :source="vectorSource"
         :source-id="vectorSourceId"
         :source-layer="sourceLayer"
-        :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="colorLayerId"
         :layer="vectorColorLayer"

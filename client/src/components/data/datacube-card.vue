@@ -648,7 +648,7 @@ import {
   getOutputs
 } from '@/utils/datacube-util';
 import { normalize } from '@/utils/value-util';
-import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
+import { initDataStateFromRefs, initViewStateFromRefs, fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import {
   adminLevelToString,
   BASE_LAYER,
@@ -915,6 +915,21 @@ export default defineComponent({
       // Assign new object to selectedBreakdownOutputVariables.value to trigger reactivity updates.
       selectedBreakdownOutputVariables.value = updatedList;
     };
+
+    const {
+      datacubeHierarchy,
+      selectedRegionIds,
+      selectedRegionIdsAtAllLevels,
+      referenceRegions,
+      toggleIsRegionSelected
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      breakdownOption,
+      activeFeature
+    );
+
     watch(
       () => [
         initialSelectedOutputVariables.value
@@ -1195,6 +1210,9 @@ export default defineComponent({
           }
           if (initialDataConfig.value.selectedRegionIds !== undefined) {
             initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
+          }
+          if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
+            selectedRegionIdsAtAllLevels.value = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
           }
           if (initialDataConfig.value.selectedOutputVariables !== undefined) {
             initialSelectedOutputVariables.value = _.clone(initialDataConfig.value.selectedOutputVariables);
@@ -1593,6 +1611,9 @@ export default defineComponent({
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
           initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
         }
+        if (loadedInsight.data_state?.selectedRegionIdsAtAllLevels !== undefined) {
+          selectedRegionIdsAtAllLevels.value = fromStateSelectedRegionsAtAllLevels(loadedInsight.data_state?.selectedRegionIdsAtAllLevels);
+        }
         if (loadedInsight.data_state?.selectedOutputVariables !== undefined) {
           initialSelectedOutputVariables.value = _.clone(loadedInsight.data_state?.selectedOutputVariables);
         }
@@ -1731,21 +1752,6 @@ export default defineComponent({
           });
         }
       }
-    );
-
-    const {
-      datacubeHierarchy,
-      selectedRegionIds,
-      selectedRegionIdsAtAllLevels,
-      referenceRegions,
-      toggleIsRegionSelected
-    } = useDatacubeHierarchy(
-      selectedScenarioIds,
-      metadata,
-      selectedAdminLevel,
-      breakdownOption,
-      initialSelectedRegionIds,
-      activeFeature
     );
 
     const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, activeFeature);
@@ -1969,7 +1975,7 @@ export default defineComponent({
     const {
       onSyncMapBounds,
       mapBounds
-    } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIds);
+    } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIdsAtAllLevels);
 
 
     watchEffect(() => {
