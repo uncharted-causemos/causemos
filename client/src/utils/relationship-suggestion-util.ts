@@ -129,18 +129,18 @@ export const sortSuggestionsByEvidenceCount = (edges: EdgeSuggestion[]) => {
  * @param concepts will be mapped to edge suggestions
  * @param edges existing edge suggestions
  * @param knownConcept this concept exists as either the source or target of each edge suggestion
- * @param isTargetConceptKnown determines whether we're looking for incoming/outgoing edges
+ * @param edgeDirection determines whether we're looking for incoming/outgoing edges
  * @returns the list of edge suggestions, one for each concept in `concepts`.
  */
 export const getEdgesFromConcepts = (
   concepts: string[],
   edges: EdgeSuggestion[],
   knownConcept: string,
-  isTargetConceptKnown: boolean
+  edgeDirection: EdgeDirection
 ): EdgeSuggestion[] => {
   return concepts.map(concept => {
     const edge = edges.find(edge => {
-      return isTargetConceptKnown
+      return edgeDirection === EdgeDirection.Incoming
         ? edge.source === concept
         : edge.target === concept;
     });
@@ -148,8 +148,8 @@ export const getEdgesFromConcepts = (
       return edge;
     }
     return {
-      source: isTargetConceptKnown ? concept : knownConcept,
-      target: isTargetConceptKnown ? knownConcept : concept,
+      source: edgeDirection === EdgeDirection.Incoming ? concept : knownConcept,
+      target: edgeDirection === EdgeDirection.Incoming ? knownConcept : concept,
       color: 'black',
       numEvidence: 0,
       statements: []
