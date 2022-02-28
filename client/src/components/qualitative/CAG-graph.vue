@@ -123,8 +123,9 @@ export default defineComponent({
     // Has a value of `null` when statements haven't been fetched yet.
     const allEdgeSuggestions = ref<{
       node: INode<NodeParameter> | null;
+      isShowingDriverEdges: boolean;
       suggestions: EdgeSuggestion[] | null;
-    }>({ node: null, suggestions: null });
+    }>({ node: null, isShowingDriverEdges: false, suggestions: null });
     const searchQuery = ref('');
     // The `EdgeSuggestion`s for the current search query.
     // Has a value of `null` when search text is empty or results haven't been
@@ -333,30 +334,40 @@ export default defineComponent({
     });
 
     this.renderer.on(
-      'fetch-suggested-impacts',
-      async (eventName: any, node: INode<NodeParameter>) => {
+      'fetch-suggested-edges',
+      async (eventName: any, node: INode<NodeParameter>, isShowingDriverEdges: boolean) => {
         // Clear up any previous suggestion state. Skipping this step means
         //  that if the suggestion search box already exists it won't be
         //  rerendered next to the newly-selected node.
         this.exitSuggestionMode();
-        this.allEdgeSuggestions = { node, suggestions: null };
+        this.allEdgeSuggestions = { node, isShowingDriverEdges, suggestions: null };
         this.selectedEdgeSuggestions = [];
         // Load all statements that include any of the components in the
         //  selected node-container.
-        this.renderer?.setSuggestionData([], [], node, true);
+        this.renderer?.setSuggestionData([], [], node, isShowingDriverEdges, true);
         const statements = await projectService.getProjectStatementsForConcepts(
           node.data.components,
           this.project
         );
         const suggestions = sortSuggestionsByEvidenceCount(
-          extractEdgesFromStatements(statements, node.data, this.data, false)
+          extractEdgesFromStatements(statements, node.data, this.data, isShowingDriverEdges)
         );
-        // If suggestion mode is still active for `node`, store suggestions
-        if (this.allEdgeSuggestions.node === node) {
-          this.allEdgeSuggestions = { node, suggestions };
+        // If suggestion mode is still active for `node` and the analyst hasn't
+        //  clicked the other handle, store suggestions
+        if (
+          this.allEdgeSuggestions.node === node &&
+          this.allEdgeSuggestions.isShowingDriverEdges === isShowingDriverEdges
+        ) {
+          this.allEdgeSuggestions = { node, isShowingDriverEdges, suggestions };
           if (this.searchQuery.length === 0) {
             // Pass them to the renderer to generate SVG elements for each one
-            this.renderer?.setSuggestionData(suggestions, [], node, false);
+            this.renderer?.setSuggestionData(
+              suggestions,
+              [],
+              node,
+              isShowingDriverEdges,
+              false
+            );
           }
         }
       }
@@ -375,7 +386,7 @@ export default defineComponent({
           // Was already selected, so remove it from selected suggestions
           this.selectedEdgeSuggestions = withoutSuggestion;
         }
-        // Edge case: if user searches results and selects one befor
+        // Edge case: if user searches results and selects one before
         //  `allEdgeSuggestions` is populated, UI won't update. I think this is
         //  safe to ignore.
         if (
@@ -390,6 +401,7 @@ export default defineComponent({
           suggestionsToDisplay,
           this.selectedEdgeSuggestions,
           this.allEdgeSuggestions.node,
+          this.allEdgeSuggestions.isShowingDriverEdges,
           false // Possible race condition if toggle occurs during load
         );
       }
@@ -411,6 +423,7 @@ export default defineComponent({
               [],
               this.selectedEdgeSuggestions,
               this.allEdgeSuggestions.node,
+              this.allEdgeSuggestions.isShowingDriverEdges,
               true
             );
             return;
@@ -420,6 +433,7 @@ export default defineComponent({
             this.allEdgeSuggestions.suggestions,
             this.selectedEdgeSuggestions,
             this.allEdgeSuggestions.node,
+            this.allEdgeSuggestions.isShowingDriverEdges,
             false
           );
         } else {
@@ -428,6 +442,7 @@ export default defineComponent({
             [],
             this.selectedEdgeSuggestions,
             this.allEdgeSuggestions.node,
+            this.allEdgeSuggestions.isShowingDriverEdges,
             true
           );
           // Fetch concepts based on user input
@@ -521,13 +536,15 @@ export default defineComponent({
       cagGraphThis.searchSuggestions = getEdgesFromConcepts(
         concepts,
         cagGraphThis.allEdgeSuggestions.suggestions,
-        cagGraphThis.allEdgeSuggestions.node.data.concept
+        cagGraphThis.allEdgeSuggestions.node.data.concept,
+        cagGraphThis.allEdgeSuggestions.isShowingDriverEdges
       );
       // Update the suggestions that are being rendered
       cagGraphThis.renderer?.setSuggestionData(
         cagGraphThis.searchSuggestions,
         cagGraphThis.selectedEdgeSuggestions,
         cagGraphThis.allEdgeSuggestions.node,
+        cagGraphThis.allEdgeSuggestions.isShowingDriverEdges,
         false
       );
     }, 300),
@@ -539,7 +556,7 @@ export default defineComponent({
       this.$emit('suggestion-selected', suggestion);
     },
     exitSuggestionMode() {
-      this.allEdgeSuggestions = { node: null, suggestions: null };
+      this.allEdgeSuggestions = { node: null, isShowingDriverEdges: false, suggestions: null };
       this.searchSuggestions = null;
       this.searchQuery = '';
       this.selectedEdgeSuggestions = [];
