@@ -293,6 +293,7 @@ export default defineComponent({
           reCalculateGlobalTimeseries.value = true;
           // clear region ranking results
           globalBarsData.value.length = 0;
+          regionRankingWeights.value = {};
 
           selectedAnalysisItems.value = selectedItems;
         } else {
