@@ -304,11 +304,6 @@ export default defineComponent({
       this.activeDrilldownTab = PANE_ID.SENSITIVITY;
       this.openDrilldown();
       this.selectedNode = node;
-      this.visualState = {
-        selected: {
-          nodes: [this.selectedNode]
-        }
-      };
     },
     openNodeDrilldownView(node: NodeParameter) {
       this.onBackgroundClick();
@@ -390,11 +385,6 @@ export default defineComponent({
         this.selectedStatements = statements;
         this.selectedEdge = edgeData;
         this.isFetchingStatements = false;
-        this.visualState = {
-          selected: {
-            edges: [this.selectedEdge]
-          }
-        };
       });
     },
     onDrilldownTabClick(tab: string) {
