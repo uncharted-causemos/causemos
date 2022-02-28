@@ -4,7 +4,7 @@
     @close="close()">
     <template #body>
       <div class="metadata">
-        <table v-if="documentData && textOnly">
+        <table v-if="documentData">
           <tr>
             <td class="doc-label">Publication Date</td>
             <td>{{ dateFormatter(documentData.publication_date.date, 'YYYY-MM-DD') }}</td>

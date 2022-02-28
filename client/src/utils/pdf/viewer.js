@@ -4,9 +4,9 @@ export async function createPDFViewer({ url }) {
   // Set the pdf workerSrc explicitly for firefox
   // For more detail see: https://github.com/mozilla/pdf.js/issues/8204
   const [pdfjs, pdfjsWorker, PDFViewer] = await Promise.all([
-    import('pdfjs-dist/legacy/build/pdf.js'),
-    import('pdfjs-dist/legacy/build/pdf.worker.entry.js'),
-    import('pdfjs-dist/legacy/web/pdf_viewer.js')
+    import('pdfjs-dist/build/pdf.js'),
+    import('pdfjs-dist/build/pdf.worker.entry.js'),
+    import('pdfjs-dist/web/pdf_viewer.js')
   ]);
   pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
