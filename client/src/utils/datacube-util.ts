@@ -13,6 +13,7 @@ import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service
 import domainProjectService from '@/services/domain-project-service';
 import { DomainProject } from '@/types/Common';
 import { ModelRun } from '@/types/ModelRun';
+import { RegionAgg } from '@/types/Outputdata';
 
 export const DEFAULT_DATE_RANGE_DELIMETER = '__';
 
@@ -303,6 +304,12 @@ export const getFilteredScenariosFromIds = (scenarioIds: string[], allModelRunDa
   return filteredScenarios;
 };
 
+export const hasRegionLevelData = (regionLevelData: RegionAgg[]|undefined): boolean => {
+  return regionLevelData?.reduce((acc: boolean, region: RegionAgg) => {
+    return acc || Object.keys(region.values).length > 0;
+  }, false) ?? false;
+};
+
 export default {
   CODE_TABLE,
   SUGGESTION_CODE_TABLE,
@@ -310,6 +317,7 @@ export default {
   FACET_FIELDS,
   NUMERICAL_FACETS,
   getValidatedOutputs,
+  hasRegionLevelData,
   unpublishDatacube,
   unpublishDatacubeInstance
 };

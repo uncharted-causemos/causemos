@@ -282,15 +282,9 @@ export default defineComponent({
       selectedTimestamp.value = value;
     };
 
-    const handleTimestampRangeSelection = (newTimestampRange: {start: number; end: number}) => {
-      // we should pass the incoming (global) range to all datacube-comparative-card components
-      //  so that they may zoom accordingly
-      if (comparativeAnalysisViewSelection.value !== ComparativeAnalysisMode.Overlay) {
-        // if "Overvlay" is disabled do nothing
-        return;
-      }
-      if (selectedTimestampRange.value?.start === newTimestampRange.start &&
-        selectedTimestampRange.value?.end === newTimestampRange.end) {
+    const handleTimestampRangeSelection = (newTimestampRange: {start: number; end: number} | null) => {
+      if (selectedTimestampRange.value?.start === newTimestampRange?.start &&
+        selectedTimestampRange.value?.end === newTimestampRange?.end) {
         return;
       }
       selectedTimestampRange.value = newTimestampRange;
@@ -304,7 +298,11 @@ export default defineComponent({
       ],
       () => {
         setSelectedTimestamp(initialSelectedTimestamp.value);
-        handleTimestampRangeSelection(initialSelectedTimestampRange.value);
+        if (comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay) {
+          handleTimestampRangeSelection(initialSelectedTimestampRange.value);
+        } else { // reset the active selected range non-overlay views
+          handleTimestampRangeSelection(null);
+        }
       }
     );
 
