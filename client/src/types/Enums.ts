@@ -170,7 +170,6 @@ export enum EdgeDirection {
 }
 
 export enum LoadStatus {
-  Unloaded = 'Unloaded',
   Loading = 'Loading',
   Loaded = 'Loaded',
 }
