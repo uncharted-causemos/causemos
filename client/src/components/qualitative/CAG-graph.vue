@@ -50,7 +50,7 @@ import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
-import { TimeScale } from '@/types/Enums';
+import { EdgeDirection, TimeScale } from '@/types/Enums';
 import {
   calculateNewNodesAndEdges,
   EdgeSuggestion,
@@ -123,9 +123,9 @@ export default defineComponent({
     // Has a value of `null` when statements haven't been fetched yet.
     const allEdgeSuggestions = ref<{
       node: INode<NodeParameter> | null;
-      isShowingDriverEdges: boolean;
+      edgeDirection: EdgeDirection;
       suggestions: EdgeSuggestion[] | null;
-    }>({ node: null, isShowingDriverEdges: false, suggestions: null });
+    }>({ node: null, edgeDirection: EdgeDirection.Outgoing, suggestions: null });
     const searchQuery = ref('');
     // The `EdgeSuggestion`s for the current search query.
     // Has a value of `null` when search text is empty or results haven't been
@@ -335,37 +335,37 @@ export default defineComponent({
 
     this.renderer.on(
       'fetch-suggested-edges',
-      async (eventName: any, node: INode<NodeParameter>, isShowingDriverEdges: boolean) => {
+      async (eventName: any, node: INode<NodeParameter>, edgeDirection: EdgeDirection) => {
         // Clear up any previous suggestion state. Skipping this step means
         //  that if the suggestion search box already exists it won't be
         //  rerendered next to the newly-selected node.
         this.exitSuggestionMode();
-        this.allEdgeSuggestions = { node, isShowingDriverEdges, suggestions: null };
+        this.allEdgeSuggestions = { node, edgeDirection, suggestions: null };
         this.selectedEdgeSuggestions = [];
         // Load all statements that include any of the components in the
         //  selected node-container.
-        this.renderer?.setSuggestionData([], [], node, isShowingDriverEdges, true);
+        this.renderer?.setSuggestionData([], [], node, edgeDirection, true);
         const statements = await projectService.getProjectStatementsForConcepts(
           node.data.components,
           this.project
         );
         const suggestions = sortSuggestionsByEvidenceCount(
-          extractEdgesFromStatements(statements, node.data, this.data, isShowingDriverEdges)
+          extractEdgesFromStatements(statements, node.data, this.data, edgeDirection)
         );
         // If suggestion mode is still active for `node` and the analyst hasn't
         //  clicked the other handle, store suggestions
         if (
           this.allEdgeSuggestions.node === node &&
-          this.allEdgeSuggestions.isShowingDriverEdges === isShowingDriverEdges
+          this.allEdgeSuggestions.edgeDirection === edgeDirection
         ) {
-          this.allEdgeSuggestions = { node, isShowingDriverEdges, suggestions };
+          this.allEdgeSuggestions = { node, edgeDirection, suggestions };
           if (this.searchQuery.length === 0) {
             // Pass them to the renderer to generate SVG elements for each one
             this.renderer?.setSuggestionData(
               suggestions,
               [],
               node,
-              isShowingDriverEdges,
+              edgeDirection,
               false
             );
           }
@@ -401,7 +401,7 @@ export default defineComponent({
           suggestionsToDisplay,
           this.selectedEdgeSuggestions,
           this.allEdgeSuggestions.node,
-          this.allEdgeSuggestions.isShowingDriverEdges,
+          this.allEdgeSuggestions.edgeDirection,
           false // Possible race condition if toggle occurs during load
         );
       }
@@ -423,7 +423,7 @@ export default defineComponent({
               [],
               this.selectedEdgeSuggestions,
               this.allEdgeSuggestions.node,
-              this.allEdgeSuggestions.isShowingDriverEdges,
+              this.allEdgeSuggestions.edgeDirection,
               true
             );
             return;
@@ -433,7 +433,7 @@ export default defineComponent({
             this.allEdgeSuggestions.suggestions,
             this.selectedEdgeSuggestions,
             this.allEdgeSuggestions.node,
-            this.allEdgeSuggestions.isShowingDriverEdges,
+            this.allEdgeSuggestions.edgeDirection,
             false
           );
         } else {
@@ -442,7 +442,7 @@ export default defineComponent({
             [],
             this.selectedEdgeSuggestions,
             this.allEdgeSuggestions.node,
-            this.allEdgeSuggestions.isShowingDriverEdges,
+            this.allEdgeSuggestions.edgeDirection,
             true
           );
           // Fetch concepts based on user input
@@ -537,14 +537,14 @@ export default defineComponent({
         concepts,
         cagGraphThis.allEdgeSuggestions.suggestions,
         cagGraphThis.allEdgeSuggestions.node.data.concept,
-        cagGraphThis.allEdgeSuggestions.isShowingDriverEdges
+        cagGraphThis.allEdgeSuggestions.edgeDirection
       );
       // Update the suggestions that are being rendered
       cagGraphThis.renderer?.setSuggestionData(
         cagGraphThis.searchSuggestions,
         cagGraphThis.selectedEdgeSuggestions,
         cagGraphThis.allEdgeSuggestions.node,
-        cagGraphThis.allEdgeSuggestions.isShowingDriverEdges,
+        cagGraphThis.allEdgeSuggestions.edgeDirection,
         false
       );
     }, 300),
@@ -556,7 +556,7 @@ export default defineComponent({
       this.$emit('suggestion-selected', suggestion);
     },
     exitSuggestionMode() {
-      this.allEdgeSuggestions = { node: null, isShowingDriverEdges: false, suggestions: null };
+      this.allEdgeSuggestions = { node: null, edgeDirection: EdgeDirection.Outgoing, suggestions: null };
       this.searchSuggestions = null;
       this.searchQuery = '';
       this.selectedEdgeSuggestions = [];

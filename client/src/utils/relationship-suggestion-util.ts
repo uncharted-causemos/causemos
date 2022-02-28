@@ -1,4 +1,5 @@
 import { CAGGraph, NodeParameter } from '@/types/CAG';
+import { EdgeDirection } from '@/types/Enums';
 import { Statement } from '@/types/Statement';
 import _ from 'lodash';
 import { STATEMENT_POLARITY } from './polarity-util';
@@ -52,12 +53,12 @@ export const extractEdgesFromStatements = (
   statements: Statement[],
   node: NodeParameter,
   graphData: CAGGraph,
-  isLookingForDriverEdges: boolean
+  edgeDirection: EdgeDirection
 ): EdgeSuggestion[] => {
   const concepts = node.components;
-  // Filter out the outgoing/incoming edges depending on isLookingForDriverEdges
+  // Filter out the outgoing/incoming edges depending on edgeDirection
   const filteredStatements = statements.filter(statement => {
-    if (isLookingForDriverEdges) {
+    if (edgeDirection === EdgeDirection.Incoming) {
       // Only keep edges where the object concept is found in this node's components
       return concepts.includes(statement.obj.concept);
     }
@@ -73,9 +74,10 @@ export const extractEdgesFromStatements = (
   const conceptToStatementsMap = new Map<string, Statement[]>();
   filteredStatements.forEach(statement => {
     // Find any node containers in the graph that contain the other concept
-    const otherConcept = isLookingForDriverEdges
-      ? statement.subj.concept
-      : statement.obj.concept;
+    const otherConcept =
+      edgeDirection === EdgeDirection.Incoming
+        ? statement.subj.concept
+        : statement.obj.concept;
     const nodeContainers = graphData.nodes.filter(n =>
       n.components.includes(otherConcept)
     );
@@ -88,9 +90,10 @@ export const extractEdgesFromStatements = (
       nodeContainers.forEach(nodeContainer => {
         const otherConcept = nodeContainer.concept;
         // Skip if edge exists in graph and statement exists on edge
-        const edgeToLookFor = isLookingForDriverEdges
-          ? { source: otherConcept, target: node.concept }
-          : { source: node.concept, target: otherConcept };
+        const edgeToLookFor =
+          edgeDirection === EdgeDirection.Incoming
+            ? { source: otherConcept, target: node.concept }
+            : { source: node.concept, target: otherConcept };
         const existingEdge = graphData.edges.find(
           edge =>
             edge.source === edgeToLookFor.source &&
@@ -108,8 +111,8 @@ export const extractEdgesFromStatements = (
   });
   const mapEntries = [...conceptToStatementsMap.entries()];
   return mapEntries.map(([key, statements]) => ({
-    source: isLookingForDriverEdges ? key : node.concept,
-    target: isLookingForDriverEdges ? node.concept : key,
+    source: edgeDirection === EdgeDirection.Incoming ? key : node.concept,
+    target: edgeDirection === EdgeDirection.Incoming ? node.concept : key,
     color: calcEdgeColor(statementsToEdgeAttributes(statements)),
     numEvidence: _.sumBy(statements, s => s.wm.num_evidence),
     statements

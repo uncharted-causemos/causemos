@@ -164,5 +164,10 @@ export enum IncompleteDataCorrectiveAction {
   DataExtrapolated = 'Final data point contains extrapolated data'
 }
 
+export enum EdgeDirection {
+  Incoming,
+  Outgoing
+}
+
 export const SPLIT_BY_VARIABLE = 'variable';
 export const TIMESERIES_HEADER_SEPARATOR = ' | ';

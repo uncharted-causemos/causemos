@@ -14,6 +14,7 @@ import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
 import { EdgeSuggestion } from '@/utils/relationship-suggestion-util';
 import { createOrUpdateButton, SVG_BUTTON_STYLES } from '@/utils/svg-util-new';
 import { D3Selection } from '@/types/D3';
+import { EdgeDirection } from '@/types/Enums';
 
 const REMOVE_TIMER = 1000;
 
@@ -109,17 +110,17 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     suggestions: EdgeSuggestion[],
     selectedSuggestions: EdgeSuggestion[],
     node: INode<NodeParameter>,
-    isShowingDriverEdges: boolean,
+    edgeDirection: EdgeDirection,
     isLoading: boolean
   ) {
     // Suggestion column starts to the left of the node if showing driver
     //  (incoming) edges, and starts to the right otherwise.
-    const suggestionColumnX = isShowingDriverEdges
+    const suggestionColumnX = edgeDirection === EdgeDirection.Incoming
       ? node.x - EDGE_SUGGESTION_SPACING - EDGE_SUGGESTION_WIDTH
       : node.x + NODE_WIDTH + EDGE_SUGGESTION_SPACING;
     const { cancelButtonX, cancelButtonWidth } = this.renderStaticSuggestionUI(
       node,
-      isShowingDriverEdges,
+      edgeDirection,
       suggestionColumnX
     );
     // Show(or update if it exists) the button for adding selected edges to CAG
@@ -132,7 +133,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         node.y
       )
     );
-    this.renderSearchBox(suggestionColumnX, node.y, isShowingDriverEdges);
+    this.renderSearchBox(suggestionColumnX, node.y, edgeDirection);
     this.renderSuggestionLoadingIndicator(
       isLoading,
       suggestionColumnX,
@@ -144,7 +145,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       suggestionColumnX,
       node.y,
       addButtonStartX,
-      isShowingDriverEdges
+      edgeDirection
     );
     this.setOtherNodesAndEdgesOpacity(node.id, 0.1);
   }
@@ -158,7 +159,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
   renderStaticSuggestionUI(
     node: INode<NodeParameter>,
-    isShowingDriverEdges: boolean,
+    edgeDirection: EdgeDirection,
     suggestionColumnX: number
   ) {
     // Show a button for exiting suggestion mode
@@ -167,7 +168,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       node.x +
       NODE_WIDTH +
       EDGE_SUGGESTION_SPACING +
-      (isShowingDriverEdges ? 0 : suggestionColumnWidth);
+      (edgeDirection === EdgeDirection.Incoming ? 0 : suggestionColumnWidth);
     const {
       buttonSelection: cancelButton,
       dynamicWidth: cancelButtonWidth
@@ -186,7 +187,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     // Render label for suggestion column
     this.chart.append('text')
       .classed('suggestion-column-label', true)
-      .text(`Add ${isShowingDriverEdges ? 'drivers' : 'impacts'}`)
+      .text(`Add ${
+        edgeDirection === EdgeDirection.Incoming ? 'drivers' : 'impacts'
+      }`)
       .style('fill', 'grey')
       .style('font-weight', '600')
       .style('letter-spacing', '1.05')
@@ -227,17 +230,17 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   renderSearchBox(
     suggestionColumnX: number,
     nodeY: number,
-    isShowingDriverEdges: boolean
+    edgeDirection: EdgeDirection
   ) {
     const textInput = this.chart.selectAll('.suggestion-search-box')
-      .data([isShowingDriverEdges])
+      .data([edgeDirection])
       .join('foreignObject')
       .classed('suggestion-search-box', true)
       .attr('width', `${EDGE_SUGGESTION_WIDTH}px`)
       .attr('height', `${NODE_HEIGHT}px`)
       .attr('transform', translate(suggestionColumnX, nodeY))
       .selectAll('input')
-      .data(isShowingDriverEdges => [isShowingDriverEdges])
+      .data(edgeDirection => [edgeDirection])
       .join('xhtml:input')
       .attr('type', 'text')
       .style('width', `${EDGE_SUGGESTION_WIDTH}px`)
@@ -260,7 +263,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     suggestionColumnX: number,
     nodeY: number,
     selectedColumnX: number,
-    isShowingDriverEdges: boolean
+    edgeDirection: EdgeDirection
   ) {
     const suggestionStartY = nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING;
     // Render all selectedSuggestions and up to 5 other suggestions
@@ -276,7 +279,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       const suggestion = suggestions[i];
       const selectedSuggestionWithSameConcept = selectedSuggestions.find(
         selectedSuggestion => {
-          return isShowingDriverEdges
+          return edgeDirection === EdgeDirection.Incoming
             ? selectedSuggestion.source === suggestion.source
             : selectedSuggestion.target === suggestion.target;
         }
@@ -298,7 +301,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       ...selectedSuggestionsToDisplay,
       ...otherSuggestionsToDisplay
     ];
-    const accessConcept = isShowingDriverEdges
+    const accessConcept = edgeDirection === EdgeDirection.Incoming
       ? (entry: EdgeSuggestionDisplayData) => entry.suggestion.source
       : (entry: EdgeSuggestionDisplayData) => entry.suggestion.target;
     // Add a `g` to the dom for each suggestion, along with snazzy transitions
@@ -349,7 +352,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         svgUtil.truncateTextToWidth(this as any, EDGE_SUGGESTION_WIDTH - 20);
       });
     // Render incoming edge arrowhead
-    const arrowHeadX = isShowingDriverEdges ? EDGE_SUGGESTION_WIDTH - 5 : -5;
+    const arrowHeadX = edgeDirection === EdgeDirection.Incoming
+      ? EDGE_SUGGESTION_WIDTH - 5
+      : -5;
     suggestionGroups.selectAll('edge-possibility-indicator')
       .data(entry => [entry.suggestion.color])
       .join('svg:path')
@@ -940,13 +945,21 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     rightHandle
       .call(drag as any)
       .on('click', (event) => {
-        this.emit('fetch-suggested-edges', node.datum(), false);
+        this.emit(
+          'fetch-suggested-edges',
+          node.datum(),
+          EdgeDirection.Outgoing
+        );
         // Don't open the side panel
         event.stopPropagation();
       });
     leftHandle
       .on('click', (event) => {
-        this.emit('fetch-suggested-edges', node.datum(), true);
+        this.emit(
+          'fetch-suggested-edges',
+          node.datum(),
+          EdgeDirection.Incoming
+        );
         // Don't open the side panel
         event.stopPropagation();
       });
