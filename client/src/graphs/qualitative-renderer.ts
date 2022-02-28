@@ -14,7 +14,7 @@ import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
 import { EdgeSuggestion } from '@/utils/relationship-suggestion-util';
 import { createOrUpdateButton, SVG_BUTTON_STYLES } from '@/utils/svg-util-new';
 import { D3Selection } from '@/types/D3';
-import { EdgeDirection } from '@/types/Enums';
+import { EdgeDirection, LoadStatus } from '@/types/Enums';
 
 const REMOVE_TIMER = 1000;
 
@@ -102,16 +102,17 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   /**
    * Creates or updates all UI related to in-situ suggestions.
    * @param suggestions The list of potential suggestions to present.
-   * @param selectedSuggestions Displayed in a separate column
+   * @param selectedSuggestions Displayed in a separate column.
    * @param node Position UI relative to this. Other nodes will be faded out.
-   * @param isLoading If `true`, a loading indicator will be displayed instead of `suggestions`.
+   * @param edgeDirection Whether the suggestions are for incoming/outgoing edges.
+   * @param loadStatus Whether to display a loading indicator instead of `suggestions`.
    */
   setSuggestionData(
     suggestions: EdgeSuggestion[],
     selectedSuggestions: EdgeSuggestion[],
     node: INode<NodeParameter>,
     edgeDirection: EdgeDirection,
-    isLoading: boolean
+    loadStatus: LoadStatus
   ) {
     // Suggestion column starts to the left of the node if showing driver
     //  (incoming) edges, and starts to the right otherwise.
@@ -135,7 +136,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     );
     this.renderSearchBox(suggestionColumnX, node.y, edgeDirection);
     this.renderSuggestionLoadingIndicator(
-      isLoading,
+      loadStatus === LoadStatus.Loading,
       suggestionColumnX,
       node.y
     );

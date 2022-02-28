@@ -50,7 +50,7 @@ import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
-import { EdgeDirection, TimeScale } from '@/types/Enums';
+import { EdgeDirection, TimeScale, LoadStatus } from '@/types/Enums';
 import {
   calculateNewNodesAndEdges,
   EdgeSuggestion,
@@ -344,7 +344,7 @@ export default defineComponent({
         this.selectedEdgeSuggestions = [];
         // Load all statements that include any of the components in the
         //  selected node-container.
-        this.renderer?.setSuggestionData([], [], node, edgeDirection, true);
+        this.renderer?.setSuggestionData([], [], node, edgeDirection, LoadStatus.Unloaded);
         const statements = await projectService.getProjectStatementsForConcepts(
           node.data.components,
           this.project
@@ -366,7 +366,7 @@ export default defineComponent({
               [],
               node,
               edgeDirection,
-              false
+              LoadStatus.Loading
             );
           }
         }
@@ -402,7 +402,7 @@ export default defineComponent({
           this.selectedEdgeSuggestions,
           this.allEdgeSuggestions.node,
           this.allEdgeSuggestions.edgeDirection,
-          false // Possible race condition if toggle occurs during load
+          LoadStatus.Loaded // Possible race condition if toggle occurs during load
         );
       }
     );
@@ -424,7 +424,7 @@ export default defineComponent({
               this.selectedEdgeSuggestions,
               this.allEdgeSuggestions.node,
               this.allEdgeSuggestions.edgeDirection,
-              true
+              LoadStatus.Loading
             );
             return;
           }
@@ -434,7 +434,7 @@ export default defineComponent({
             this.selectedEdgeSuggestions,
             this.allEdgeSuggestions.node,
             this.allEdgeSuggestions.edgeDirection,
-            false
+            LoadStatus.Loaded
           );
         } else {
           // Show loading indicator
@@ -443,7 +443,7 @@ export default defineComponent({
             this.selectedEdgeSuggestions,
             this.allEdgeSuggestions.node,
             this.allEdgeSuggestions.edgeDirection,
-            true
+            LoadStatus.Loading
           );
           // Fetch concepts based on user input
           this.fetchSearchSuggestions(userInput, suggestionNode, this);

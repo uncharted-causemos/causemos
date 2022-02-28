@@ -166,7 +166,13 @@ export enum IncompleteDataCorrectiveAction {
 
 export enum EdgeDirection {
   Incoming,
-  Outgoing
+  Outgoing,
+}
+
+export enum LoadStatus {
+  Unloaded,
+  Loading,
+  Loaded,
 }
 
 export const SPLIT_BY_VARIABLE = 'variable';
