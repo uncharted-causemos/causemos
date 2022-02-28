@@ -357,7 +357,7 @@ export default defineComponent({
           [],
           node,
           edgeDirection,
-          LoadStatus.Unloaded,
+          LoadStatus.Loading,
           EdgeSuggestionType.TopInKB
         );
         const statements = await projectService.getProjectStatementsForConcepts(
@@ -381,7 +381,7 @@ export default defineComponent({
               [],
               node,
               edgeDirection,
-              LoadStatus.Loading,
+              LoadStatus.Loaded,
               EdgeSuggestionType.TopInKB
             );
           }
