@@ -165,14 +165,19 @@ export enum IncompleteDataCorrectiveAction {
 }
 
 export enum EdgeDirection {
-  Incoming,
-  Outgoing,
+  Incoming = 'Incoming',
+  Outgoing = 'Outgoing',
 }
 
 export enum LoadStatus {
-  Unloaded,
-  Loading,
-  Loaded,
+  Unloaded = 'Unloaded',
+  Loading = 'Loading',
+  Loaded = 'Loaded',
+}
+
+export enum EdgeSuggestionType {
+  SearchResult = 'SearchResult',
+  TopInKB = 'TopInKB',
 }
 
 export const SPLIT_BY_VARIABLE = 'variable';
