@@ -88,7 +88,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel, hasRegionLevelData } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, DataTransform } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
@@ -480,10 +480,7 @@ export default defineComponent({
         if (regionalData.value !== null) {
           const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
           const regionLevelData = regionalData.value[adminLevelAsString];
-
-          const hasValues = regionLevelData?.reduce((acc, region) => {
-            return acc || Object.keys(region.values).length > 0;
-          }, false);
+          const hasValues = hasRegionLevelData(regionLevelData);
 
           if (regionLevelData !== undefined && regionLevelData.length > 0 && hasValues) {
             const data = regionLevelData.map(regionDataItem => ({
