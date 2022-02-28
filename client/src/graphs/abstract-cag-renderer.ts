@@ -97,7 +97,6 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
   }
 
   resetAnnotations() {
-    console.log('reset annotation');
     const chart = this.chart;
     chart.selectAll('.node').style('opacity', 1);
     chart.selectAll('.edge').style('opacity', 1);
