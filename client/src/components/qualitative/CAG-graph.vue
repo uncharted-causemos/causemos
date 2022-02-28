@@ -50,7 +50,12 @@ import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
-import { EdgeDirection, TimeScale, LoadStatus } from '@/types/Enums';
+import {
+  EdgeDirection,
+  TimeScale,
+  LoadStatus,
+  EdgeSuggestionType
+} from '@/types/Enums';
 import {
   calculateNewNodesAndEdges,
   EdgeSuggestion,
@@ -59,6 +64,7 @@ import {
   sortSuggestionsByEvidenceCount
 } from '@/utils/relationship-suggestion-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
+import filtersUtil from '@/utils/filters-util';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -112,6 +118,7 @@ export default defineComponent({
     const showCustomConcept = ref(false);
     const mouseTrap = new Mousetrap(document as any);
     const project = computed(() => store.getters['app/project']);
+    const currentCAG = computed(() => store.getters['app/currentCAG']);
 
     const conceptsInCag = computed(() => {
       return props.data.nodes.map(node => node.concept);
@@ -158,6 +165,7 @@ export default defineComponent({
       ontologyFormatter: useOntologyFormatter(),
 
       project,
+      currentCAG,
       selectedNode,
       conceptsInCag
     };
@@ -344,7 +352,14 @@ export default defineComponent({
         this.selectedEdgeSuggestions = [];
         // Load all statements that include any of the components in the
         //  selected node-container.
-        this.renderer?.setSuggestionData([], [], node, edgeDirection, LoadStatus.Unloaded);
+        this.renderer?.setSuggestionData(
+          [],
+          [],
+          node,
+          edgeDirection,
+          LoadStatus.Unloaded,
+          EdgeSuggestionType.TopInKB
+        );
         const statements = await projectService.getProjectStatementsForConcepts(
           node.data.components,
           this.project
@@ -366,7 +381,8 @@ export default defineComponent({
               [],
               node,
               edgeDirection,
-              LoadStatus.Loading
+              LoadStatus.Loading,
+              EdgeSuggestionType.TopInKB
             );
           }
         }
@@ -394,6 +410,9 @@ export default defineComponent({
           this.allEdgeSuggestions.suggestions === null
         ) return;
         // If searchSuggestions !== null, we're displaying search results
+        const suggestionType = this.searchSuggestions !== null
+          ? EdgeSuggestionType.SearchResult
+          : EdgeSuggestionType.TopInKB;
         const suggestionsToDisplay = this.searchSuggestions !== null
           ? this.searchSuggestions
           : this.allEdgeSuggestions.suggestions;
@@ -402,7 +421,8 @@ export default defineComponent({
           this.selectedEdgeSuggestions,
           this.allEdgeSuggestions.node,
           this.allEdgeSuggestions.edgeDirection,
-          LoadStatus.Loaded // Possible race condition if toggle occurs during load
+          LoadStatus.Loaded, // Possible race condition if toggle occurs during load
+          suggestionType
         );
       }
     );
@@ -424,7 +444,8 @@ export default defineComponent({
               this.selectedEdgeSuggestions,
               this.allEdgeSuggestions.node,
               this.allEdgeSuggestions.edgeDirection,
-              LoadStatus.Loading
+              LoadStatus.Loading,
+              EdgeSuggestionType.TopInKB
             );
             return;
           }
@@ -434,7 +455,8 @@ export default defineComponent({
             this.selectedEdgeSuggestions,
             this.allEdgeSuggestions.node,
             this.allEdgeSuggestions.edgeDirection,
-            LoadStatus.Loaded
+            LoadStatus.Loaded,
+            EdgeSuggestionType.TopInKB
           );
         } else {
           // Show loading indicator
@@ -443,7 +465,8 @@ export default defineComponent({
             this.selectedEdgeSuggestions,
             this.allEdgeSuggestions.node,
             this.allEdgeSuggestions.edgeDirection,
-            LoadStatus.Loading
+            LoadStatus.Loading,
+            EdgeSuggestionType.SearchResult
           );
           // Fetch concepts based on user input
           this.fetchSearchSuggestions(userInput, suggestionNode, this);
@@ -466,6 +489,18 @@ export default defineComponent({
       );
       this.exitSuggestionMode();
       this.$emit('add-to-CAG', newSubgraph);
+    });
+
+    this.renderer.on('open-kb-explorer', () => {
+      if (this.allEdgeSuggestions.node === null) return;
+      const components = this.allEdgeSuggestions.node.data.components;
+      const filters = filtersUtil.newFilters();
+      const clauseName =
+        this.allEdgeSuggestions.edgeDirection === EdgeDirection.Incoming
+          ? 'objConcept'
+          : 'subjConcept';
+      filtersUtil.setClause(filters, clauseName, components, 'or', false);
+      this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs', filters: filters as any } });
     });
 
     this.refresh();
@@ -545,7 +580,8 @@ export default defineComponent({
         cagGraphThis.selectedEdgeSuggestions,
         cagGraphThis.allEdgeSuggestions.node,
         cagGraphThis.allEdgeSuggestions.edgeDirection,
-        false
+        LoadStatus.Loaded,
+        EdgeSuggestionType.SearchResult
       );
     }, 300),
     onSuggestionSelected(suggestion: any) {
