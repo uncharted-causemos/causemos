@@ -2,6 +2,7 @@ import { Timeseries } from '@/types/Timeseries';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { ComparativeAnalysisMode, BinningOptions, RegionRankingCompositionType, DataTransform } from '@/types/Enums';
+import { AnalysisItem } from './Analysis';
 
 // @base/abstract type
 export interface Snapshot {
@@ -112,6 +113,7 @@ export interface DataState {
   selectedYears?: string[];
   selectedTransform?: DataTransform;
   activeReferenceOptions?: string[];
+  selectedAnalysisItems?: AnalysisItem[];
 
   // region-ranking specific
   regionRankingWeights?: {[key: string]: {name: string; weight: number}};
