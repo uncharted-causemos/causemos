@@ -117,7 +117,7 @@ import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagLegend from '@/components/graph/cag-legend.vue';
 import { findPaths } from '@/utils/graphs-util';
-import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter } from '@/types/CAG';
+import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter, CAGVisualState } from '@/types/CAG';
 import { Statement } from '@/types/Statement';
 
 const PANE_ID = {
@@ -220,7 +220,7 @@ export default defineComponent({
     activeDrilldownTab: PANE_ID.EVIDENCE,
     isDrilldownOpen: false,
     isFetchingStatements: false,
-    visualState: {} as any
+    visualState: {} as CAGVisualState
   }),
   computed: {
     ...mapGetters({
@@ -256,29 +256,28 @@ export default defineComponent({
     },
     visualState() {
       this.$emit('visual-state-updated', this.visualState);
-    },
-    initialVisualState: {
-      // this will be received every time the visualState is updated on the parent side
-      //  e.g., when the parent loads an insight
-      handler(/* newValue, oldValue */) {
-        // this will trigger renderer update to visually update
-        //  e.g., a selected node will be highlighted with blue boundary
-        if (this.initialVisualState) {
-          this.visualState = this.initialVisualState;
-
-          // we also need to manually apply state, e.g., select nodes/edges
-          if (this.visualState && this.visualState.selected) {
-            if (this.visualState.selected.nodes) {
-              this.onNodeSensitivity(this.visualState.selected.nodes[0]);
-            }
-            if (this.visualState.selected.edges) {
-              this.showRelation(this.visualState.selected.edges[0]);
-            }
-          }
-        }
-      },
-      immediate: true
     }
+    // initialVisualState: {
+    //   // this will be received every time the visualState is updated on the parent side
+    //   //  e.g., when the parent loads an insight
+    //   handler(/* newValue, oldValue */) {
+    //     // this will trigger renderer update to visually update
+    //     //  e.g., a selected node will be highlighted with blue boundary
+    //     if (this.initialVisualState) {
+    //       this.visualState = this.initialVisualState;
+    //       // we also need to manually apply state, e.g., select nodes/edges
+    //       if (this.visualState && this.visualState.selected) {
+    //         if (this.visualState.selected.nodes) {
+    //           this.onNodeSensitivity(this.visualState.selected.nodes[0]);
+    //         }
+    //         if (this.visualState.selected.edges) {
+    //           this.showRelation(this.visualState.selected.edges[0]);
+    //         }
+    //       }
+    //     }
+    //   },
+    //   immediate: true
+    // }
   },
   mounted() {
     this.refresh();
@@ -329,7 +328,7 @@ export default defineComponent({
 
       const highlightEdges = [];
       const highlightNodes = [];
-      const nodesSet = new Set();
+      const nodesSet = new Set<string>();
 
       // FIXME: might have dupliate edges, should clean up
       for (const path of paths) {
@@ -350,15 +349,16 @@ export default defineComponent({
 
       if (node) {
         this.visualState = {
-          highlighted: {
+          focus: {
             nodes: highlightNodes,
             edges: highlightEdges
           },
-          selected: {
-            nodes: [this.selectedNode]
-          },
-          annotated: {
-            nodes: [node]
+          outline: {
+            nodes: [
+              { concept: node.concept, color: '#f80' },
+              { concept: this.selectedNode.concept }
+            ],
+            edges: []
           }
         };
       }
@@ -367,7 +367,10 @@ export default defineComponent({
       this.closeDrilldown();
       this.selectedEdge = null;
       this.selectedNode = null;
-      this.visualState = { };
+      this.visualState = {
+        focus: { nodes: [], edges: [] },
+        outline: { nodes: [], edges: [] }
+      };
     },
     openDrilldown() {
       this.isDrilldownOpen = true;
@@ -452,7 +455,7 @@ export default defineComponent({
       const highlightEdges = [];
       const highlightNode = _.uniq(path).map(d => {
         return {
-          concept: d
+          concept: (d as string)
         };
       });
 
@@ -463,9 +466,13 @@ export default defineComponent({
         });
       }
       this.visualState = {
-        highlighted: {
+        focus: {
           nodes: highlightNode,
           edges: highlightEdges
+        },
+        outline: {
+          nodes: [],
+          edges: []
         }
       };
     }

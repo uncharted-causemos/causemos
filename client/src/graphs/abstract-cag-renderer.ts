@@ -4,6 +4,7 @@ import svgUtil from '@/utils/svg-util';
 import { DeltaRenderer, IEdge, INode, moveTo, highlight, unHighlight } from 'svg-flowgraph';
 import { DEFAULT_STYLE } from './cag-style';
 import { SELECTED_COLOR } from '@/utils/colors-util';
+import { CAGVisualState } from '@/types/CAG';
 
 const FADED_OPACITY = 0.2;
 const AMBIGUOUS_MSG = 'To make CAG projections easier to interpret, <br /> select each grey edge and clarify its polarity in the side panel.';
@@ -129,6 +130,11 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     if (node) {
       this.selectNode(node as any, color);
     }
+  }
+
+  applyVisualState(visualState: CAGVisualState) {
+    console.log('visual state', visualState);
+
   }
 }
 

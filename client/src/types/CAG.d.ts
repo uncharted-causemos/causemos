@@ -1,6 +1,17 @@
 import { TimeseriesDistributionPoint, TimeseriesPoint } from './Timeseries';
 import { TimeScale } from './Enums';
 
+export interface CAGVisualState {
+  focus: {
+    nodes: { concept: string }[];
+    edges: { source: string; target: string } [];
+  },
+  outline: {
+    nodes: { concept: string; color?: string } [];
+    edges: { source: string; target: string; color?: string } [];
+  }
+}
+
 export interface GraphPath {
   path: string[];
   score?: number;

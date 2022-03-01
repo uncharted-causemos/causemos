@@ -21,7 +21,7 @@ import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import GraphSearch from '@/components/widgets/graph-search.vue';
 import { IGraph, moveToLabel } from 'svg-flowgraph';
 import { calculateNeighborhood } from '@/utils/graphs-util';
-import { NodeParameter, EdgeParameter, CAGModelSummary } from '@/types/CAG';
+import { NodeParameter, EdgeParameter, CAGModelSummary, CAGVisualState } from '@/types/CAG';
 
 export default defineComponent({
   name: 'ModelGraph',
@@ -42,11 +42,7 @@ export default defineComponent({
       required: true
     },
     visualState: {
-      // selected.nodes
-      // selected.edges
-      // highlighted.nodes
-      // highlighted.edges
-      type: Object,
+      type: Object as PropType<CAGVisualState>,
       default: () => ({})
     }
   },
@@ -146,6 +142,13 @@ export default defineComponent({
     applyVisualState() {
       const renderer = this.renderer;
       if (renderer) {
+        renderer.applyVisualState(this.visualState);
+      }
+    }
+    /*
+    applyVisualState() {
+      const renderer = this.renderer;
+      if (renderer) {
         renderer.resetAnnotations();
 
         // apply changes
@@ -178,6 +181,7 @@ export default defineComponent({
         }
       }
     },
+    */
     search(concept: string) {
       if (this.renderer) {
         moveToLabel(this.renderer, concept, 2000);
