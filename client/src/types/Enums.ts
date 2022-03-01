@@ -175,8 +175,8 @@ export enum LoadStatus {
 }
 
 export enum EdgeSuggestionType {
-  SearchResult = 'SearchResult',
-  TopInKB = 'TopInKB',
+  ConceptSuggestion = 'ConceptSuggestion',
+  KBSuggestion = 'KBSuggestion',
 }
 
 export const SPLIT_BY_VARIABLE = 'variable';

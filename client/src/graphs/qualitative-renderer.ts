@@ -410,7 +410,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     nodeY: number
   ) {
     this.chart.selectAll('.explore-all-button').remove();
-    if (suggestionType === EdgeSuggestionType.SearchResult || count === 0) return;
+    if (suggestionType === EdgeSuggestionType.ConceptSuggestion || count === 0) return;
     const { buttonSelection: exploreButton } = createOrUpdateButton(
       `Explore all (${count})`,
       'explore-all-button',

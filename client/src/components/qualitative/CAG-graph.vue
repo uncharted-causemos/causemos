@@ -358,7 +358,7 @@ export default defineComponent({
           node,
           edgeDirection,
           LoadStatus.Loading,
-          EdgeSuggestionType.TopInKB
+          EdgeSuggestionType.KBSuggestion
         );
         const statements = await projectService.getProjectStatementsForConcepts(
           node.data.components,
@@ -382,7 +382,7 @@ export default defineComponent({
               node,
               edgeDirection,
               LoadStatus.Loaded,
-              EdgeSuggestionType.TopInKB
+              EdgeSuggestionType.KBSuggestion
             );
           }
         }
@@ -411,8 +411,8 @@ export default defineComponent({
         ) return;
         // If searchSuggestions !== null, we're displaying search results
         const suggestionType = this.searchSuggestions !== null
-          ? EdgeSuggestionType.SearchResult
-          : EdgeSuggestionType.TopInKB;
+          ? EdgeSuggestionType.ConceptSuggestion
+          : EdgeSuggestionType.KBSuggestion;
         const suggestionsToDisplay = this.searchSuggestions !== null
           ? this.searchSuggestions
           : this.allEdgeSuggestions.suggestions;
@@ -445,7 +445,7 @@ export default defineComponent({
               this.allEdgeSuggestions.node,
               this.allEdgeSuggestions.edgeDirection,
               LoadStatus.Loading,
-              EdgeSuggestionType.TopInKB
+              EdgeSuggestionType.KBSuggestion
             );
             return;
           }
@@ -456,7 +456,7 @@ export default defineComponent({
             this.allEdgeSuggestions.node,
             this.allEdgeSuggestions.edgeDirection,
             LoadStatus.Loaded,
-            EdgeSuggestionType.TopInKB
+            EdgeSuggestionType.KBSuggestion
           );
         } else {
           // Show loading indicator
@@ -466,7 +466,7 @@ export default defineComponent({
             this.allEdgeSuggestions.node,
             this.allEdgeSuggestions.edgeDirection,
             LoadStatus.Loading,
-            EdgeSuggestionType.SearchResult
+            EdgeSuggestionType.ConceptSuggestion
           );
           // Fetch concepts based on user input
           this.fetchSearchSuggestions(userInput, suggestionNode, this);
@@ -581,7 +581,7 @@ export default defineComponent({
         cagGraphThis.allEdgeSuggestions.node,
         cagGraphThis.allEdgeSuggestions.edgeDirection,
         LoadStatus.Loaded,
-        EdgeSuggestionType.SearchResult
+        EdgeSuggestionType.ConceptSuggestion
       );
     }, 300),
     onSuggestionSelected(suggestion: any) {
