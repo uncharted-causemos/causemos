@@ -1505,7 +1505,7 @@ export default defineComponent({
         }
         potentialScenarios.value.forEach(run => {
           if (dateModelParam.value !== null) {
-            run[dateModelParam.value.type] = dateValue;
+            run[dateModelParam.value.name] = dateValue;
           }
         });
       }
