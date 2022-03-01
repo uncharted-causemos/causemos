@@ -1,7 +1,8 @@
 <template>
   <div class="analytical-questions-panel-container">
+    <h4 v-if="showChecklistTitle" class="title">Analysis Checklist</h4>
     <template v-if="showDeleteModal">
-      <h5 class="title">Delete Public Question</h5>
+      <h5>Delete Public Question</h5>
       <p>Are you sure you want to delete?</p>
       <message-display
         class="delete-confirm-alert"
@@ -24,12 +25,12 @@
       </ul>
     </template>
     <template v-if="showNewAnalyticalQuestion">
-      <h5 class="title">New Analytical Question</h5>
+      <h5>New Section</h5>
       <textarea
         v-model="newQuestionText"
         v-focus
         type="text"
-        placeholder="Enter question"
+        placeholder="e.g. Which intervention will have the greatest impact on crop production?"
         rows="10"
         class="question-text"
       />
@@ -56,7 +57,7 @@
         class="btn btn-default new-question-button"
         @click="addNewQuestion">
           <i class="fa fa-plus-circle" />
-          Add new question
+          Add new section
       </button>
       <div v-if="questionsList.length > 0" class="analytical-questions-container">
         <div
@@ -117,7 +118,7 @@
               v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
               class="no-insight-warning"
               :message-type="'alert-warning'"
-              :message="'No insights assigned to this question.'"
+              :message="'No insights assigned to this section.'"
             />
             <div
               v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
@@ -161,6 +162,12 @@ export default defineComponent({
   components: {
     MessageDisplay,
     OptionsButton
+  },
+  props: {
+    showChecklistTitle: {
+      type: Boolean,
+      default: false
+    }
   },
   setup() {
     const { questionsList, reFetchQuestions } = useQuestionsData();
@@ -683,6 +690,10 @@ export default defineComponent({
 
 <style lang="scss" scoped>
   @import "~styles/variables";
+
+  .title {
+    @include header-secondary;
+  }
 
   .question-text {
     margin-bottom: 1rem;
