@@ -93,6 +93,7 @@ import { mapGetters, mapActions } from 'vuex';
 
 import filtersUtil from '@/utils/filters-util';
 import { calculateNewNodesAndEdges, extractEdgesFromStatements, sortSuggestionsByEvidenceCount } from '@/utils/relationship-suggestion-util';
+import { EdgeDirection } from '@/types/Enums';
 
 const RELATIONSHIP_GROUP_KEY = {
   CAUSE: 'cause',
@@ -181,13 +182,13 @@ export default {
         this.statements,
         this.selectedNode,
         this.graphData,
-        true
+        EdgeDirection.Incoming
       );
       const effectEdges = extractEdgesFromStatements(
         this.statements,
         this.selectedNode,
         this.graphData,
-        false
+        EdgeDirection.Outgoing
       );
       const topCauseEdges = _.take(
         sortSuggestionsByEvidenceCount(causeEdges),

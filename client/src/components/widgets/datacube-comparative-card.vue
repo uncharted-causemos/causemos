@@ -394,6 +394,33 @@ export default defineComponent({
       return selectedRegionIds.join('/');
     });
 
+    // NOTE: only the List view within the CompAnalysis page will update the name of the analysis item
+    watch(
+      () => [
+        mainModelOutput.value,
+        selectedRegionIdsDisplay
+      ],
+      () => {
+        if (mainModelOutput.value && datacubeAnalysisItem) {
+          // update the corresponding analysis name; match the card title
+          const outputName = mainModelOutput.value.display_name !== '' ? mainModelOutput.value.display_name : mainModelOutput.value.name;
+          const selectedRegion = selectedRegionIdsDisplay.value;
+          const datacubeName = metadata.value?.name;
+          const datacubeHeader = '<b>' + outputName + ' - ' + selectedRegion + ' </b> ' + datacubeName;
+          if (datacubeHeader !== datacubeAnalysisItem.name) {
+            datacubeAnalysisItem.name = datacubeHeader;
+            // also, persist the change by updating the analysis item
+            const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+            const item = updatedAnalysisItems.find(item => item.id === props.id && item.datacubeId === datacubeId.value);
+            if (item) {
+              item.name = datacubeHeader;
+            }
+            store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+          }
+        }
+      }
+    );
+
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
     const {
