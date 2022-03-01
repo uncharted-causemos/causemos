@@ -268,21 +268,21 @@ const setDefaultIndicators = async (modelId, resolution) => {
       let runId = 'indicator';
       if (cube.type === 'model') {
         // If the datacube is a model, we need to find the runId of the default run
-        const runs = getDefaultModelRun(cube.data_id);
+        const runs = await getDefaultModelRun(cube.data_id);
         if (runs.length > 0) {
           runId = runs[0].id;
         }
       }
 
       updatePayload.match_candidates = matches.map(match => {
-        const displayName = match.outputs.find(output => output.name === match.default_feature).display_name;
-        return { id: match.id, dataId: match.data_id, displayName: displayName };
+        const output = match.outputs.find(output => output.name === match.default_feature);
+        return { id: match.id, dataId: match.data_id, displayName: output.display_name || output.name };
       });
       updatePayload.parameter = {
         id: cube.id,
         data_id: cube.data_id,
         runId,
-        name: defaultFeature.display_name,
+        name: defaultFeature.display_name || defaultFeature.name,
         unit: defaultFeature.unit,
         country: '',
         admin1: '',
