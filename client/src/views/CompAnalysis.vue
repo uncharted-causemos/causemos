@@ -113,9 +113,11 @@
             :region-ranking-binning-type="regionRankingBinningType"
             :bar-chart-hover-id="barChartHoverId"
             :show-normalized-data="showNormalizedData"
+            :is-data-inverted="regionRankingDataInversion[item.id+item.datacubeId]"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
             @map-click-region="onMapClickRegion"
+            @invert-data-updated="onToggleRegionRankingDataInversion"
           />
         </template>
       </div>
@@ -225,6 +227,7 @@ export default defineComponent({
 
     const showNormalizedData = ref(false);
     const regionRankingWeights = ref<{[key: string]: {name: string; weight: number}}>({});
+    const regionRankingDataInversion = ref<{[key: string]: boolean}>({});
 
     const globalBbox = ref<number[][] | undefined>(undefined);
 
@@ -318,6 +321,16 @@ export default defineComponent({
             };
           });
           regionRankingWeights.value = regionRankingWeightsMap;
+
+          // set the initial data inversion state
+          const regionRankingDataInversionMap = _.cloneDeep(regionRankingDataInversion.value);
+          Object.keys(regionRankingDataInversionMap).forEach(key => {
+            regionRankingDataInversionMap[key] = false;
+          });
+          regionRankingDataInversion.value = regionRankingDataInversionMap;
+        } else {
+          // no datacubes in this analysis, so do not fetch any insights/questions
+          store.dispatch('insightPanel/setContextId', undefined);
         }
       },
       { immediate: true }
@@ -439,11 +452,13 @@ export default defineComponent({
 
     watch(
       () => [
-        regionRankingWeights.value
+        regionRankingWeights.value,
+        regionRankingDataInversion.value
       ],
       () => {
         const dataStateUpdated = _.cloneDeep(dataState.value);
         dataStateUpdated.regionRankingWeights = regionRankingWeights.value;
+        dataStateUpdated.regionRankingDataInversion = regionRankingDataInversion.value;
         store.dispatch('insightPanel/setDataState', dataStateUpdated);
       }
     );
@@ -465,6 +480,9 @@ export default defineComponent({
             item.selected = selectedItems.findIndex(sItem => sItem.id === item.id && sItem.datacubeId === item.datacubeId) >= 0;
           });
           store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
+        }
+        if (loadedInsight.data_state?.regionRankingDataInversion !== undefined) {
+          regionRankingDataInversion.value = loadedInsight.data_state?.regionRankingDataInversion;
         }
         // view state
         if (loadedInsight.view_state?.regionRankingSelectedAdminLevel !== undefined) {
@@ -539,6 +557,7 @@ export default defineComponent({
       showNormalizedData,
       timeseriesToDatacubeMap,
       colorFromIndex,
+      regionRankingDataInversion,
       dataState
     };
   },
@@ -611,6 +630,15 @@ export default defineComponent({
         // re-build the transform computing the region ranking data
         this.updateGlobalRegionRankingData();
       }
+    },
+    onToggleRegionRankingDataInversion(regionRankingInfo: {id: string; datacubeId: string;}) {
+      const regionRankingDataInversionUpdated = _.cloneDeep(this.regionRankingDataInversion);
+      const datacubeKey = regionRankingInfo.id + regionRankingInfo.datacubeId;
+      if (regionRankingDataInversionUpdated[datacubeKey] === undefined) {
+        regionRankingDataInversionUpdated[datacubeKey] = false;
+      }
+      regionRankingDataInversionUpdated[datacubeKey] = !regionRankingDataInversionUpdated[datacubeKey];
+      this.regionRankingDataInversion = regionRankingDataInversionUpdated;
     },
     onUpdatedBarsData(regionRankingInfo: {id: string; datacubeId: string; name: string; barsData: BarData[]; selectedTimestamp: number}) {
       // clone and save the incoming regional-ranking data in the global map object

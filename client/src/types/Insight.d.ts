@@ -117,6 +117,7 @@ export interface DataState {
 
   // region-ranking specific
   regionRankingWeights?: {[key: string]: {name: string; weight: number}};
+  regionRankingDataInversion?: {[key: string]: boolean};
 
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string; source: string}[];

@@ -62,11 +62,11 @@
           </div>
           <div class="checkbox">
             <label
-              @click="invertData=!invertData"
+              @click="invertData"
               style="cursor: pointer; color: black;">
               <i
                 class="fa fa-lg fa-fw"
-                :class="{ 'fa-check-square-o': invertData, 'fa-square-o': !invertData }"
+                :class="{ 'fa-check-square-o': isDataInverted, 'fa-square-o': !isDataInverted }"
               />
               Invert data
             </label>
@@ -142,7 +142,7 @@ export default defineComponent({
     RegionMap,
     MapLegend
   },
-  emits: ['updated-bars-data', 'bar-chart-hover', 'map-click-region'],
+  emits: ['updated-bars-data', 'bar-chart-hover', 'map-click-region', 'invert-data-updated'],
   props: {
     id: {
       type: String,
@@ -175,6 +175,10 @@ export default defineComponent({
     showNormalizedData: {
       type: Boolean,
       default: true
+    },
+    isDataInverted: {
+      type: Boolean,
+      default: false
     }
   },
   setup(props, { emit }) {
@@ -186,7 +190,8 @@ export default defineComponent({
       selectedAdminLevel,
       regionRankingBinningType,
       showNormalizedData,
-      barChartHoverId
+      barChartHoverId,
+      isDataInverted
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -277,6 +282,13 @@ export default defineComponent({
 
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
+
+    const invertData = () => {
+      emit('invert-data-updated', {
+        id: id.value,
+        datacubeId: datacubeId.value
+      });
+    };
 
     // apply the view-config for this datacube
     watch(
@@ -470,8 +482,6 @@ export default defineComponent({
       bbox.value = await computeMapBoundsForCountries(countries) || undefined;
     });
 
-    const invertData = ref(false);
-
     watch(
       () => [
         regionalData.value,
@@ -481,7 +491,7 @@ export default defineComponent({
         numberOfColorBins.value,
         regionRankingBinningType.value,
         selectedRegionRankingScenario.value,
-        invertData.value,
+        isDataInverted.value,
         selectedRegionIdsAtAllLevels.value
       ],
       () => {
@@ -563,7 +573,7 @@ export default defineComponent({
             }
 
             // adjust the bar ranking so that the highest bar value will be ranked 1st
-            if (!invertData.value) {
+            if (!isDataInverted.value) {
               temp.forEach((barItem, indx) => {
                 barItem.name = (temp.length - indx).toString();
               });
@@ -612,8 +622,8 @@ export default defineComponent({
       regionRunsScenarios,
       bbox,
       isModelMetadata,
-      invertData,
-      mapLegendData
+      mapLegendData,
+      invertData
     };
   },
   methods: {
