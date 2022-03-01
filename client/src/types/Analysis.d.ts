@@ -10,6 +10,8 @@ export interface AnalysisItemState {
 export interface AnalysisItem extends AnalysisItemState {
   id: string;
   datacubeId: string;
+  name?: string;
+  selected?: boolean;
 }
 
 export interface AnalysisState {

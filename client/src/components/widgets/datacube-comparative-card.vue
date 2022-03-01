@@ -88,7 +88,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel, hasRegionLevelData } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, DataTransform } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
@@ -394,6 +394,33 @@ export default defineComponent({
       return selectedRegionIds.join('/');
     });
 
+    // NOTE: only the List view within the CompAnalysis page will update the name of the analysis item
+    watch(
+      () => [
+        mainModelOutput.value,
+        selectedRegionIdsDisplay
+      ],
+      () => {
+        if (mainModelOutput.value && datacubeAnalysisItem) {
+          // update the corresponding analysis name; match the card title
+          const outputName = mainModelOutput.value.display_name !== '' ? mainModelOutput.value.display_name : mainModelOutput.value.name;
+          const selectedRegion = selectedRegionIdsDisplay.value;
+          const datacubeName = metadata.value?.name;
+          const datacubeHeader = '<b>' + outputName + ' - ' + selectedRegion + ' </b> ' + datacubeName;
+          if (datacubeHeader !== datacubeAnalysisItem.name) {
+            datacubeAnalysisItem.name = datacubeHeader;
+            // also, persist the change by updating the analysis item
+            const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+            const item = updatedAnalysisItems.find(item => item.id === props.id && item.datacubeId === datacubeId.value);
+            if (item) {
+              item.name = datacubeHeader;
+            }
+            store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+          }
+        }
+      }
+    );
+
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
     const {
@@ -480,8 +507,9 @@ export default defineComponent({
         if (regionalData.value !== null) {
           const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
           const regionLevelData = regionalData.value[adminLevelAsString];
+          const hasValues = hasRegionLevelData(regionLevelData);
 
-          if (regionLevelData !== undefined && regionLevelData.length > 0) {
+          if (regionLevelData !== undefined && regionLevelData.length > 0 && hasValues) {
             const data = regionLevelData.map(regionDataItem => ({
               name: regionDataItem.id,
               value: Object.values(regionDataItem.values).length > 0 && Object.values(regionDataItem.values).length > selectedScenarioIndex.value ? Object.values(regionDataItem.values)[selectedScenarioIndex.value] : 0

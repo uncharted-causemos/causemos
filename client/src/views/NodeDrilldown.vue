@@ -314,67 +314,6 @@ export default defineComponent({
       return scenarios.value.find(scenario => scenario.is_baseline)?.id ?? null;
     });
 
-    const saveConstraints = async (updatedConstraints: ProjectionConstraint[]) => {
-      if (
-        selectedScenarioId.value === null ||
-        currentCAG.value === null ||
-        currentEngine.value === null ||
-        modelSummary.value === null ||
-        selectedNode.value === null
-      ) {
-        return;
-      }
-      const selectedScenario = scenarios.value.find(
-        scenario => scenario.id === selectedScenarioId.value
-      );
-      if (selectedScenario === undefined) {
-        console.error(
-          'Unable to find selected scenario with ID',
-          selectedScenarioId.value,
-          'in scenario list',
-          scenarios.value
-        );
-        return;
-      }
-      if (selectedScenario.is_baseline) {
-        toaster(
-          'Please select a non-baseline scenario to place constraints.',
-          'error',
-          true
-        );
-        // Remove constraints from the chart renderer
-        constraints.value = [];
-        return;
-      }
-      const selectedConcept = selectedNode.value.concept;
-      const constraintsParameter = [
-        ...selectedScenario.parameter.constraints.filter(
-          conceptConstraints => conceptConstraints.concept !== selectedConcept
-        ),
-        { concept: selectedConcept, values: updatedConstraints }
-      ];
-      const {
-        time_scale,
-        projection_start
-      } = modelSummary.value.parameter;
-      const numSteps = getStepCountFromTimeScale(time_scale);
-      const updatedScenario = {
-        id: selectedScenarioId.value,
-        model_id: currentCAG.value,
-        parameter: {
-          constraints: constraintsParameter,
-          num_steps: numSteps,
-          projection_start
-        }
-      };
-      // Save and reload scenarios
-      await modelService.updateScenario(updatedScenario);
-      // REFACTOR: We shouldn't set scenarios from so many places.
-      // trigger a scenario refresh
-      const _scenarios = await modelService.getScenarios(currentCAG.value, currentEngine.value);
-      scenarios.value = _scenarios;
-    };
-
     const selectedNode = computed(() => {
       if (nodeId.value === undefined || modelComponents.value === null) {
         return null;
@@ -642,6 +581,10 @@ export default defineComponent({
         indicatorRegions.value = [
           indicator.admin3, indicator.admin2, indicator.admin1, indicator.country
         ].filter(d => d !== '').join(', ');
+        // Clear any constraints that fall outside the min/max. This can occur
+        //  when a new indicator is assigned to the node that has a smaller
+        //  range than the previous one.
+        clearConstraintsOutsideRange({ min, max }, true);
       }
     });
     const clearParameterization = async () => {
@@ -700,6 +643,8 @@ export default defineComponent({
         console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
         toaster(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, 'error', true);
       }
+      // Pass range where max is lower than min to ensure no constraints are preserved
+      clearConstraintsOutsideRange({ min: 1, max: -1 }, false);
     };
     const areParameterValuesChanged = computed(() => {
       const indicator = selectedNode.value?.parameter;
@@ -729,6 +674,10 @@ export default defineComponent({
         components
       };
       try {
+        clearConstraintsOutsideRange(
+          { min: indicatorMin.value, max: indicatorMax.value },
+          true
+        );
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
         refreshModelData();
       } catch {
@@ -748,14 +697,134 @@ export default defineComponent({
     });
 
     const constraints = ref<ProjectionConstraint[]>([]);
+
+    const saveConstraintsToSelectedScenario = async (
+      updatedConstraints: ProjectionConstraint[]
+    ) => {
+      if (selectedScenarioId.value === null) {
+        return;
+      }
+      const selectedScenario = scenarios.value.find(
+        scenario => scenario.id === selectedScenarioId.value
+      );
+      if (selectedScenario === undefined) {
+        console.error(
+          'Unable to find selected scenario with ID',
+          selectedScenarioId.value,
+          'in scenario list',
+          scenarios.value
+        );
+        return;
+      }
+      if (selectedScenario.is_baseline) {
+        toaster(
+          'Please select a non-baseline scenario to place constraints.',
+          'error',
+          true
+        );
+        // Remove constraints from the chart renderer
+        constraints.value = [];
+        return;
+      }
+      saveConstraintsToScenario(updatedConstraints, selectedScenario);
+    };
+
+    const saveConstraintsToScenario = async (
+      updatedConstraints: ProjectionConstraint[],
+      scenario: Scenario
+    ) => {
+      if (
+        selectedNode.value === null ||
+        modelSummary.value === null ||
+        currentCAG.value === null ||
+        currentEngine.value === null
+      ) {
+        return;
+      }
+      const selectedConcept = selectedNode.value.concept;
+      const constraintsParameter = [
+        ...scenario.parameter.constraints.filter(
+          conceptConstraints => conceptConstraints.concept !== selectedConcept
+        )
+      ];
+      if (updatedConstraints.length > 0) {
+        constraintsParameter.push(
+          { concept: selectedConcept, values: updatedConstraints }
+        );
+      }
+      const {
+        time_scale,
+        projection_start
+      } = modelSummary.value.parameter;
+      const numSteps = getStepCountFromTimeScale(time_scale);
+      const updatedScenario = {
+        id: scenario.id,
+        model_id: currentCAG.value,
+        parameter: {
+          constraints: constraintsParameter,
+          num_steps: numSteps,
+          projection_start
+        }
+      };
+      // Save and reload scenarios
+      await modelService.updateScenario(updatedScenario);
+      // REFACTOR: We shouldn't set scenarios from so many places.
+      // trigger a scenario refresh
+      const _scenarios = await modelService.getScenarios(currentCAG.value, currentEngine.value);
+      scenarios.value = _scenarios;
+    };
+
     const modifyConstraints = (newConstraints: ProjectionConstraint[]) => {
       constraints.value = newConstraints;
-      saveConstraints(newConstraints);
+      saveConstraintsToSelectedScenario(newConstraints);
     };
 
     const clearConstraints = () => {
       constraints.value = [];
-      saveConstraints([]);
+      saveConstraintsToSelectedScenario([]);
+    };
+
+    /**
+     * Removes constraints that fall outside the provided `range` across all
+     * scenarios. Both bounds of the range are treated as inclusive.
+     */
+    const clearConstraintsOutsideRange = async (
+      range: {min: number; max: number},
+      showToaster = true
+    ) => {
+      if (selectedNode.value === null) {
+        return;
+      }
+      const selectedConcept = selectedNode.value.concept;
+      let removedConstraintCount = 0;
+      let affectedScenarioCount = 0;
+      scenarios.value.forEach(scenario => {
+        // Get current constraints for this concept
+        const constraintsForThisConcept = scenario.parameter.constraints.find(
+          conceptConstraints => conceptConstraints.concept === selectedConcept
+        )?.values ?? [];
+        // Filter constraints that are outside `range`
+        const updatedConstraints = constraintsForThisConcept.filter(
+          constraint => constraint.value >= range.min && constraint.value <= range.max
+        );
+        if (constraintsForThisConcept.length !== updatedConstraints.length) {
+          affectedScenarioCount++;
+          removedConstraintCount += constraintsForThisConcept.length - updatedConstraints.length;
+          saveConstraintsToScenario(updatedConstraints, scenario);
+        }
+      });
+      if (showToaster && removedConstraintCount > 0) {
+        toaster(
+          `Removed ${removedConstraintCount} constraint` +
+            `${removedConstraintCount === 1 ? '' : 's'} from ` +
+            `${affectedScenarioCount} scenario` +
+            `${affectedScenarioCount === 1 ? '' : 's'} because ` +
+            `${removedConstraintCount === 1 ? 'it' : 'they'} fell outside of` +
+            ` the range ${range.min} to ${range.max}.`,
+          'error',
+          false
+        );
+      }
     };
 
     watchEffect(() => {

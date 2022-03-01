@@ -7,6 +7,7 @@ import { decodeWeights } from '@/services/model-service';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { DEFAULT_STYLE } from './cag-style';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 
 const GRAPH_HEIGHT = 55;
 const GRAPH_VERTICAL_MARGIN = 6;
@@ -39,34 +40,37 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
           [node.x + node.width / 2, node.y]
         );
       }
+      nodeSelection.selectAll('.node-container, .node-container-outer')
+        .style('stroke', SELECTED_COLOR)
+        .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
     });
 
-    this.on('node-mouse-leave', () => {
+    this.on('node-mouse-leave', (_evtName, __event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
+      svgUtil.hideSvgTooltip(this.chart);
+      if (nodeSelection.classed('selected')) {
+        return;
+      }
+      nodeSelection.selectAll('.node-container, .node-container-outer')
+        .style('stroke', DEFAULT_STYLE.node.stroke)
+        .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
+    });
+
+    this.on('node-drag-move', () => {
       svgUtil.hideSvgTooltip(this.chart);
     });
 
     this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      const mousePoint = d3.pointer(evt, selection.node());
-      const pathNode = selection.select('.edge-path').node();
-      const controlPoint = (svgUtil.closestPointOnPath(pathNode as any, mousePoint) as number[]);
-
-      selection.selectAll('.edge-mouseover-handle').remove();
-      selection.append('g')
-        .classed('edge-mouseover-handle', true)
-        .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]))
-        .append('circle')
-        .attr('r', DEFAULT_STYLE.edge.controlRadius)
-        .style('fill', d => calcEdgeColor(d.data))
-        .style('cursor', 'pointer');
-
-      // make sure mouseover doesn't obscure the more important edge-control
-      if (selection.selectAll('.edge-control').node() !== null) {
-        (selection.node() as HTMLElement).insertBefore(selection.selectAll('.edge-mouseover-handle').node() as any, selection.selectAll('.edge-control').node() as any);
-      }
+      selection.select('.edge-path-bg-outline')
+        .style('stroke', SELECTED_COLOR);
     });
 
     this.on('edge-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      selection.selectAll('.edge-mouseover-handle').remove();
+      if (selection.classed('selected')) {
+        return;
+      }
+
+      selection.select('.edge-path-bg-outline')
+        .style('stroke', null);
     });
   }
 
@@ -145,6 +149,14 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
   }
 
   renderEdgesAdded(selection: D3SelectionIEdge<EdgeParameter>) {
+    selection
+      .append('path')
+      .classed('edge-path-bg-outline', true)
+      .style('fill', DEFAULT_STYLE.edgeBg.fill)
+      .style('stroke', null)
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data) + 7)
+      .attr('d', d => pathFn(d.points as any));
+
     selection
       .append('path')
       .classed('edge-path-bg', true)
