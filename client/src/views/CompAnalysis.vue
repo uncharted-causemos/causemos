@@ -31,7 +31,7 @@
           />
         </div>
         <datacube-region-ranking-composite-card
-          v-if="globalBarsData.length > 1"
+          v-if="selectedAnalysisItems.length > 0"
           :bars-data="globalBarsData"
           :selected-admin-level="selectedAdminLevel"
           :selected-timestamp="globalRegionRankingTimestamp"
@@ -41,7 +41,7 @@
           @bar-chart-hover="onBarChartHover"
           @map-click-region="onMapClickRegion"
         />
-        <div style="display: flex" v-if="globalBarsData.length > 1">
+        <div style="display: flex" v-if="selectedAnalysisItems.length > 0">
           <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
           <div class="checkbox">
             <label
