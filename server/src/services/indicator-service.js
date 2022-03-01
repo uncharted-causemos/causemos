@@ -46,13 +46,34 @@ const textSearch = async (text) => {
   return results.body.hits.hits.map(d => d._source);
 };
 
-const getIndicatorData = async (dataId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
+const getDefaultModelRun = async (dataId) => {
+  const searchPayload = {
+    index: RESOURCE.DATA_MODEL_RUN,
+    size: 1,
+    body: {
+      query: {
+        bool: {
+          must: [
+            { term: { model_id: dataId } },
+            { term: { status: 'READY' } },
+            { term: { is_default_run: true } }
+          ]
+        }
+      }
+    }
+  };
+  const results = await client.search(searchPayload);
+  return results.body.hits.hits.map(d => d._source);
+};
+
+const getTimeseries = async (dataId, runId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
   Logger.info(`Get indicator data from wm-go: ${dataId} ${feature}`);
 
   const options = {
     method: 'GET',
-    url: process.env.WM_GO_URL +
-      `/maas/output/timeseries?data_id=${encodeURI(dataId)}&run_id=indicator&feature=${encodeURI(feature)}&resolution=${temporalResolution}&temporal_agg=${temporalAggregation}&spatial_agg=${geospatialAggregation}`,
+    url: process.env.WM_GO_URL + '/maas/output/timeseries' +
+      `?data_id=${encodeURI(dataId)}&run_id=${encodeURI(runId)}&feature=${encodeURI(feature)}` +
+      `&resolution=${temporalResolution}&temporal_agg=${temporalAggregation}&spatial_agg=${geospatialAggregation}`,
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
@@ -219,8 +240,8 @@ const setDefaultIndicators = async (modelId, resolution) => {
   const conceptIndicatorMap = await getConceptIndicatorMap(model, nodeParameters);
 
   // Defaults
-  const geospatialAgg = 'mean';
-  const temporalAgg = 'mean';
+  let spatialAggregation = 'mean';
+  let temporalAggregation = 'mean';
 
   const updates = [];
 
@@ -231,20 +252,44 @@ const setDefaultIndicators = async (modelId, resolution) => {
     };
     if (conceptIndicatorMap.has(node.concept)) {
       const cube = matches[0];
+
+      // Use proper aggregation functions if they're set
+      if (cube.default_view) {
+        if (cube.default_view.spatialAggregation) {
+          spatialAggregation = cube.default_view.spatialAggregation;
+        }
+        if (cube.default_view.temporalAggregation) {
+          temporalAggregation = cube.default_view.temporalAggregation;
+        }
+      }
+
+      const defaultFeature = cube.outputs.find(output => output.name === cube.default_feature);
+
+      let runId = 'indicator';
+      if (cube.type === 'model') {
+        // If the datacube is a model, we need to find the runId of the default run
+        const runs = getDefaultModelRun(cube.data_id);
+        if (runs.length > 0) {
+          runId = runs[0].id;
+        }
+      }
+
       updatePayload.match_candidates = matches.map(match => {
-        return { id: match.id, dataId: match.data_id, displayName: match.outputs[0].display_name };
+        const displayName = match.outputs.find(output => output.name === match.default_feature).display_name;
+        return { id: match.id, dataId: match.data_id, displayName: displayName };
       });
       updatePayload.parameter = {
         id: cube.id,
         data_id: cube.data_id,
-        name: cube.outputs[0].display_name,
-        unit: cube.outputs[0].unit,
+        runId,
+        name: defaultFeature.display_name,
+        unit: defaultFeature.unit,
         country: '',
         admin1: '',
         admin2: '',
         admin3: '',
-        spatialAggregation: geospatialAgg,
-        temporalAggregation: temporalAgg,
+        spatialAggregation,
+        temporalAggregation,
         temporalResolution: resolution,
         period: resolution === 'month' ? 12 : 1
       };
@@ -255,15 +300,15 @@ const setDefaultIndicators = async (modelId, resolution) => {
         const dataId = cube.data_id;
         const parameter = updatePayload.parameter;
 
-        const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
+        const timeseries = await getTimeseries(dataId, runId, feature, resolution, temporalAggregation, spatialAggregation);
         if (_.isEmpty(timeseries)) {
           parameter.timeseries = [];
           parameter.min = 0;
           parameter.max = 1;
         } else {
-          const rawResolution = cube.outputs[0].data_resolution?.temporal_resolution ?? 'other';
+          const rawResolution = defaultFeature.data_resolution?.temporal_resolution ?? 'other';
           const finalRawDate = new Date(cube.period?.lte ?? 0);
-          const points = correctIncompleteTimeseries(timeseries, rawResolution, resolution, temporalAgg, finalRawDate);
+          const points = correctIncompleteTimeseries(timeseries, rawResolution, resolution, temporalAggregation, finalRawDate);
           parameter.timeseries = points;
           const values = timeseries.map(d => d.value);
           const { max, min } = modelUtil.projectionValueRange(values);
