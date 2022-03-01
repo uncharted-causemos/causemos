@@ -211,7 +211,7 @@ export default defineComponent({
 
       renderer.resetAnnotations();
       renderer.neighborhoodAnnotation(neighborhood);
-      renderer.selectEdge(event, edgeSelection);
+      renderer.selectEdge(edgeSelection);
 
       this.$emit('edge-click', edgeSelection.datum().data);
     });

@@ -180,10 +180,6 @@ export default defineComponent({
       required: true
     },
     initialVisualState: {
-      // selected.nodes
-      // selected.edges
-      // highlighted.nodes
-      // highlighted.edges
       type: Object,
       default: null
     }
@@ -220,7 +216,10 @@ export default defineComponent({
     activeDrilldownTab: PANE_ID.EVIDENCE,
     isDrilldownOpen: false,
     isFetchingStatements: false,
-    visualState: {} as CAGVisualState
+    visualState: {
+      focus: { nodes: [], edges: [] },
+      outline: { nodes: [], edges: [] }
+    } as CAGVisualState
   }),
   computed: {
     ...mapGetters({

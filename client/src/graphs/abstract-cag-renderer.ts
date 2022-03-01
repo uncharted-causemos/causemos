@@ -120,8 +120,8 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     node.classed('selected', true);
   }
 
-  selectEdge(evt: Event, edge: D3SelectionIEdge<E>) {
-    edge.select('.edge-path-bg-outline').style('stroke', SELECTED_COLOR);
+  selectEdge(edge: D3SelectionIEdge<E>, color: string = SELECTED_COLOR) {
+    edge.select('.edge-path-bg-outline').style('stroke', color);
     edge.classed('selected', true);
   }
 
@@ -132,9 +132,29 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     }
   }
 
+  selectEdgeBySourceTarget(source: string, target: string, color: string) {
+    const edge = this.chart.selectAll('.edge').filter((edge: any) => edge.source === source && edge.target === target);
+    if (edge) {
+      this.selectEdge(edge as any, color);
+    }
+  }
+
   applyVisualState(visualState: CAGVisualState) {
     console.log('visual state', visualState);
-
+    this.resetAnnotations();
+    if (visualState.focus) {
+      if (!_.isEmpty(visualState.focus.nodes) || !_.isEmpty(visualState.focus.edges)) {
+        this.neighborhoodAnnotation(visualState.focus);
+      }
+    }
+    if (visualState.outline.nodes) {
+      for (const node of visualState.outline.nodes) {
+        this.selectNodeByConcept(node.concept, node.color ? node.color : SELECTED_COLOR);
+      }
+      for (const edge of visualState.outline.edges) {
+        this.selectEdgeBySourceTarget(edge.source, edge.target, edge.color ? edge.color : SELECTED_COLOR);
+      }
+    }
   }
 }
 

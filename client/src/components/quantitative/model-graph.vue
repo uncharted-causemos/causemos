@@ -43,7 +43,10 @@ export default defineComponent({
     },
     visualState: {
       type: Object as PropType<CAGVisualState>,
-      default: () => ({})
+      default: () => ({
+        outline: { nodes: [], edges: [] },
+        focus: { nodes: [], edges: [] }
+      })
     }
   },
   emits: [
@@ -115,13 +118,13 @@ export default defineComponent({
 
       renderer.resetAnnotations();
       renderer.neighborhoodAnnotation(neighborhood);
-      renderer.selectEdge(event, edgeSelection);
+      renderer.selectEdge(edgeSelection);
       this.$emit('edge-click', edgeSelection.datum().data);
     });
 
     this.renderer.on('background-click', (_evtName, _event: PointerEvent, _svgSelection, renderer: QuantitativeRenderer) => {
-      this.$emit('background-click');
       renderer.resetAnnotations();
+      this.$emit('background-click');
     });
 
     this.refresh();
@@ -144,44 +147,7 @@ export default defineComponent({
       if (renderer) {
         renderer.applyVisualState(this.visualState);
       }
-    }
-    /*
-    applyVisualState() {
-      const renderer = this.renderer;
-      if (renderer) {
-        renderer.resetAnnotations();
-
-        // apply changes
-        const visualState = this.visualState;
-        if (visualState.selected) {
-          if (visualState.selected.nodes) {
-            visualState.selected.nodes.forEach((node: any) => {
-              renderer.selectNodeByConcept(node.concept, '');
-            });
-          }
-          if (visualState.selected.edges) {
-            visualState.selected.edges.forEach((edge: any) => {
-              const source = edge.source;
-              const target = edge.target;
-              const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
-              renderer.neighborhoodAnnotation(neighborhood);
-            });
-          }
-        }
-        if (visualState.highlighted) {
-          renderer.neighborhoodAnnotation(visualState.highlighted);
-        }
-        if (visualState.annotated) {
-          // FIXME: Need to be more flexible
-          if (visualState.annotated.nodes) {
-            visualState.annotated.nodes.forEach((node: any) => {
-              renderer.selectNodeByConcept(node.concept, '#8767c8');
-            });
-          }
-        }
-      }
     },
-    */
     search(concept: string) {
       if (this.renderer) {
         moveToLabel(this.renderer, concept, 2000);
