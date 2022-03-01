@@ -239,13 +239,13 @@ const setDefaultIndicators = async (modelId, resolution) => {
 
   const conceptIndicatorMap = await getConceptIndicatorMap(model, nodeParameters);
 
-  // Defaults
-  let spatialAggregation = 'mean';
-  let temporalAggregation = 'mean';
-
   const updates = [];
 
   for (const node of nodeParameters) {
+    // Defaults
+    let spatialAggregation = 'mean';
+    let temporalAggregation = 'mean';
+
     const matches = conceptIndicatorMap.get(node.concept);
     const updatePayload = {
       id: node.id
