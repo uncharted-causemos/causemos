@@ -77,7 +77,7 @@
         <region-map
           class="region-map-container"
           :data="barsData"
-          :selected-layer-id="selectedAdminLevel"
+          :selected-admin-level="selectedAdminLevel"
           :map-bounds="bbox"
           :selected-id="barChartHoverId"
           @click-region="$emit('map-click-region', $event)" />
@@ -114,6 +114,7 @@ import OptionsButton from '@/components/widgets/options-button.vue';
 import BarChart from '@/components/widgets/charts/bar-chart.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useMapBounds from '@/services/composables/useMapBounds';
 import { DataState, ViewState } from '@/types/Insight';
 import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
@@ -133,6 +134,7 @@ import { fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import { AnalysisMapColorOptions } from '@/types/Common';
 import MapLegend from '@/components/widgets/map-legend.vue';
+import { AdminRegionSets } from '@/types/Datacubes';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCard',
@@ -194,7 +196,7 @@ export default defineComponent({
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
-    const bbox = ref<number[][] | undefined>(undefined);
+    const bbox = ref<number[][] | { value: number[][], options: any } | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
@@ -273,7 +275,12 @@ export default defineComponent({
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
     const selectedRegionIds = ref<string[]>([]);
-    const selectedRegionIdsAtAllLevels = ref<null | { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }>(null);
+    const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>({
+      country: new Set(),
+      admin1: new Set(),
+      admin2: new Set(),
+      admin3: new Set()
+    });
 
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
@@ -462,14 +469,6 @@ export default defineComponent({
 
     const barsData = ref<BarData[]>([]);
 
-    // Calculate bbox
-    watchEffect(async () => {
-      const countries = barChartHoverId.value
-        ? [barChartHoverId.value.split('__')[0]]
-        : [...new Set((regionalData.value?.country || []).map(d => d.id))];
-      bbox.value = await computeMapBoundsForCountries(countries) || undefined;
-    });
-
     const invertData = ref(false);
 
     watch(
@@ -582,6 +581,26 @@ export default defineComponent({
           barsData.value = temp;
         }
       });
+
+    const { mapBounds } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIdsAtAllLevels);
+    // Calculate bbox
+    watchEffect(async () => {
+      const options = {
+        padding: 20, // pixels
+        duration: 1000, // milliseconds
+        essential: true // this animation is considered essential with respect to prefers-reduced-motion
+      };
+      const bounds = _.isArray(mapBounds.value)
+        ? { value: mapBounds.value, options }
+        : mapBounds.value;
+
+      if (barChartHoverId.value) {
+        const result = await computeMapBoundsForCountries([barChartHoverId.value]);
+        bbox.value = result ? { value: result, options } : bounds;
+      } else {
+        bbox.value = bounds;
+      }
+    });
 
     return {
       selectedTemporalResolution,
