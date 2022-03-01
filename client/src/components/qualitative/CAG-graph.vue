@@ -45,7 +45,7 @@ import { overlap } from '@/utils/dom-util';
 import svgUtil from '@/utils/svg-util';
 
 import { IGraph, INode, moveToLabel } from 'svg-flowgraph';
-import { NodeParameter, EdgeParameter, CAGGraph } from '@/types/CAG';
+import { NodeParameter, EdgeParameter, CAGGraph, CAGVisualState } from '@/types/CAG';
 import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
@@ -85,10 +85,11 @@ export default defineComponent({
       required: true
     },
     visualState: {
-      // selected.nodes
-      // selected.edges
-      type: Object,
-      default: () => ({})
+      type: Object as PropType<CAGVisualState>,
+      default: () => ({
+        focus: { nodes: [], edges: [] },
+        outline: { nodes: [], edges: [] }
+      })
     }
   },
   emits: [
@@ -487,23 +488,7 @@ export default defineComponent({
     applyVisualState() {
       const renderer = this.renderer;
       if (renderer) {
-        // apply changes
-        const visualState = this.visualState;
-        if (visualState.selected) {
-          if (visualState.selected.nodes) {
-            visualState.selected.nodes.forEach((node: any) => {
-              renderer.selectNodeByConcept(node.concept, '');
-            });
-          }
-          if (visualState.selected.edges) {
-            visualState.selected.edges.forEach((edge: any) => {
-              const source = edge.source;
-              const target = edge.target;
-              const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
-              renderer.neighborhoodAnnotation(neighborhood);
-            });
-          }
-        }
+        renderer.applyVisualState(this.visualState);
       }
     },
     fetchSearchSuggestions: _.debounce(async (
