@@ -545,7 +545,7 @@ export default defineComponent({
               bins.forEach((bin) => {
                 _.sortBy(bin, item => item.value).forEach(dataItem => {
                   const normalizedValue = normalize(dataItem.value, dataExtent[0], dataExtent[1]);
-                  const finalNormalizedValue = invertData.value ? (1 - normalizedValue) : normalizedValue;
+                  const finalNormalizedValue = isDataInverted.value ? (1 - normalizedValue) : normalizedValue;
                   const barValue = showNormalizedData.value ? (finalNormalizedValue * numberOfColorBins.value) : dataItem.value;
 
                   let barColor = 'skyblue';
