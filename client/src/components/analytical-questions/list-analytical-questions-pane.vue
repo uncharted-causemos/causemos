@@ -463,12 +463,12 @@ export default defineComponent({
       this.removeQuestionFromInsight(questionItem, insightId);
     },
     removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
-      const insight: any = this.getInsightsByIDs([insightId]);
-      if (insight) {
-        insight.analytical_question = insight?.analytical_question.filter(
+      const insights = this.getInsightsByIDs([insightId]);
+      if (insights.length > 0) {
+        insights[0].analytical_question = insights[0].analytical_question.filter(
           (qid: string) => qid !== questionItem.id
         );
-        updateInsight(insight?.id as string, insight);
+        updateInsight(insights[0].id as string, insights[0]);
       }
     },
     startTour(question: AnalyticalQuestion) {
