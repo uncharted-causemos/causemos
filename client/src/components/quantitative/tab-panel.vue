@@ -180,10 +180,6 @@ export default defineComponent({
     resetLayoutToken: {
       type: Number,
       required: true
-    },
-    initialVisualState: {
-      type: Object,
-      default: null
     }
   },
   emits: [
@@ -383,11 +379,11 @@ export default defineComponent({
       this.drilldownTabs = EDGE_DRILLDOWN_TABS;
       this.activeDrilldownTab = PANE_ID.EVIDENCE;
       this.openDrilldown();
-      this.updateDataState();
 
       modelService.getEdgeStatements(this.currentCAG, edgeData.source, edgeData.target).then(statements => {
         this.selectedStatements = statements;
         this.selectedEdge = edgeData;
+        this.updateDataState();
         this.isFetchingStatements = false;
       });
     },
@@ -482,7 +478,7 @@ export default defineComponent({
       const loadedInsight = await getInsightById(insight_id);
 
       const selectedNodeStr = loadedInsight.data_state?.selectedNode;
-      const selectedEdgeStr = loadedInsight.data_state?.selectedEdge;
+      const selectedEdge = loadedInsight.data_state?.selectedEdge;
       const visualState = loadedInsight.data_state?.cagVisualState as CAGVisualState;
 
       let newVisualState: CAGVisualState = {
@@ -490,7 +486,7 @@ export default defineComponent({
         outline: { nodes: [], edges: [] }
       };
 
-      if (!selectedEdgeStr) {
+      if (!selectedEdge) {
         this.closeDrilldown();
       }
 
@@ -510,14 +506,15 @@ export default defineComponent({
             }
           };
         }
-      } else if (selectedEdgeStr) {
-        const [source, target] = selectedEdgeStr.split(':');
+      } else if (selectedEdge) {
+        const [source, target] = selectedEdge;
         const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
+
         if (edgeToSelect) {
           this.showRelation(edgeToSelect);
           newVisualState = {
             focus: {
-              nodes: [],
+              nodes: [{ concept: source }, { concept: target }],
               edges: [{ source, target }]
             },
             outline: {
@@ -547,7 +544,7 @@ export default defineComponent({
         dataState.selectedNode = this.selectedNode.concept;
       }
       if (this.selectedEdge) {
-        dataState.selectedEdge = this.selectedEdge.source + ':' + this.selectedEdge.target;
+        dataState.selectedEdge = [this.selectedEdge.source, this.selectedEdge.target];
       }
       if (this.visualState) {
         dataState.cagVisualState = this.visualState;

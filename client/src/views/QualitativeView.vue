@@ -277,8 +277,6 @@ import CagLegend from '@/components/graph/cag-legend.vue';
 import { Statement } from '@/types/Statement';
 import { getInsightById } from '@/services/insight-service';
 
-const EDGE_LABEL_SOURCE_TARGET_SEPARATOR = ' : ';
-
 const PANE_ID = {
   FACTORS: 'factors',
   RELATIONSHIPS: 'relationships',
@@ -365,7 +363,7 @@ export default defineComponent({
 
     // will be valid if populated from a previous insight that include such info
     initialSelectedNode: null as string | null,
-    initialSelectedEdge: null as string | null,
+    initialSelectedEdge: null as string[] | null,
     visualState: {
       focus: { nodes: [], edges: [] },
       outline: { nodes: [], edges: [] }
@@ -562,15 +560,15 @@ export default defineComponent({
         }
       }
     },
-    applyEdgeSelection(selectedEdge: string) {
+    applyEdgeSelection(selectedEdge: string[]) {
       if (selectedEdge) {
-        const [source, target] = selectedEdge.split(EDGE_LABEL_SOURCE_TARGET_SEPARATOR);
+        const [source, target] = selectedEdge;
         const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
         if (edgeToSelect) {
           this.selectEdge(edgeToSelect);
           this.visualState = {
             focus: {
-              nodes: [],
+              nodes: [{ concept: source }, { concept: target }],
               edges: [{ source, target }]
             },
             outline: {
@@ -628,7 +626,7 @@ export default defineComponent({
       if (this.selectedEdge !== null) {
         const source = this.selectedEdge.source;
         const target = this.selectedEdge.target;
-        dataState.selectedEdge = source + EDGE_LABEL_SOURCE_TARGET_SEPARATOR + target;
+        dataState.selectedEdge = [source, target];
       }
       this.setDataState(dataState);
     },
