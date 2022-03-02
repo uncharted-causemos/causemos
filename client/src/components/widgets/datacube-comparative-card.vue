@@ -105,6 +105,7 @@ import { COLOR, colorFromIndex, ColorScaleType, COLOR_SCHEME, getColors, isDiscr
 import RegionMap from '@/components/widgets/region-map.vue';
 import { adminLevelToString, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
+import { getSelectedRegionIdsDisplay } from '@/utils/admin-level-util';
 import { BarData } from '@/types/BarChart';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useMapBounds from '@/services/composables/useMapBounds';
@@ -402,8 +403,7 @@ export default defineComponent({
     });
 
     const selectedRegionIdsDisplay = computed(() => {
-      if (_.isEmpty(selectedRegionIds)) return 'All';
-      return selectedRegionIds.join('/');
+      return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
     });
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);

@@ -100,6 +100,7 @@ import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFe
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
+import { getSelectedRegionIdsDisplay, filterRegionalLevelData } from '@/utils/admin-level-util';
 import { ModelRun } from '@/types/ModelRun';
 import {
   AggregationOption,
@@ -129,7 +130,6 @@ import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
-import { filterRegionalLevelData } from '@/utils/admin-level-util';
 import { fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import { AnalysisMapColorOptions } from '@/types/Common';
@@ -461,8 +461,7 @@ export default defineComponent({
     );
 
     const selectedRegionIdsDisplay = computed(() => {
-      if (_.isEmpty(selectedRegionIds.value)) return 'All';
-      return selectedRegionIds.value.join('/');
+      return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
     });
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
