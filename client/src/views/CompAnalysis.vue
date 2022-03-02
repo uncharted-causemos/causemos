@@ -321,13 +321,6 @@ export default defineComponent({
             };
           });
           regionRankingWeights.value = regionRankingWeightsMap;
-
-          // set the initial data inversion state
-          const regionRankingDataInversionMap = _.cloneDeep(regionRankingDataInversion.value);
-          Object.keys(regionRankingDataInversionMap).forEach(key => {
-            regionRankingDataInversionMap[key] = false;
-          });
-          regionRankingDataInversion.value = regionRankingDataInversionMap;
         } else {
           // no datacubes in this analysis, so do not fetch any insights/questions
           store.dispatch('insightPanel/setContextId', undefined);
