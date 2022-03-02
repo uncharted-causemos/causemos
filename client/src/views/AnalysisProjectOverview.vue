@@ -87,9 +87,12 @@
           class="btn btn-primary btn-call-for-action"
           @click.stop="openInsightsExplorer">
             <i class="fa fa-fw fa-star fa-lg" />
-            Review Analysis Checklist
+            Review All Insights
         </button>
-        <list-analytical-questions-pane  class="insights"/>
+        <list-analytical-questions-pane
+          show-checklist-title="true"
+          class="insights"
+        />
       </div>
       <div class="analysis-list-column">
         <div class="analysis-list-header">
