@@ -153,7 +153,6 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
   }
 
   applyVisualState(visualState: CAGVisualState) {
-    console.log('visual state', visualState);
     this.resetAnnotations();
     if (visualState.focus) {
       if (!_.isEmpty(visualState.focus.nodes) || !_.isEmpty(visualState.focus.edges)) {

@@ -63,22 +63,18 @@ import ActionBar from '@/components/quantitative/action-bar.vue';
 import TabPanel from '@/components/quantitative/tab-panel.vue';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 import modelService from '@/services/model-service';
-import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
 import { createAnalysis, getAnalysisState } from '@/services/analysis-service';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import { ProjectType } from '@/types/Enums';
-import { DataState } from '@/types/Insight';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
 const MODEL_STATUS = modelService.MODEL_STATUS;
 
 const PROJECTION_EXPERIMENT_THRESHOLD = 999;
 const PROJECTION_EXPERIMENT_INTERVAL = 3000; // millis
-
-const EDGE_LABEL_SOURCE_TARGET_SEPARATOR = ' : ';
 
 export default defineComponent({
   name: 'QuantitativeView',

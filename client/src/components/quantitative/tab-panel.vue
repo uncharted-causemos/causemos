@@ -121,6 +121,7 @@ import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, N
 import { Statement } from '@/types/Statement';
 import { getInsightById } from '@/services/insight-service';
 import { DataState } from '@/types/Insight';
+import { calculateNeighborhood } from '@/utils/graphs-util';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -273,30 +274,6 @@ export default defineComponent({
       // FIXME: Probably need a ligher weight function than refresh
       this.refresh();
     }
-    // visualState() {
-    //   this.$emit('visual-state-updated', this.visualState);
-    // }
-    // initialVisualState: {
-    //   // this will be received every time the visualState is updated on the parent side
-    //   //  e.g., when the parent loads an insight
-    //   handler(/* newValue, oldValue */) {
-    //     // this will trigger renderer update to visually update
-    //     //  e.g., a selected node will be highlighted with blue boundary
-    //     if (this.initialVisualState) {
-    //       this.visualState = this.initialVisualState;
-    //       // we also need to manually apply state, e.g., select nodes/edges
-    //       if (this.visualState && this.visualState.selected) {
-    //         if (this.visualState.selected.nodes) {
-    //           this.onNodeSensitivity(this.visualState.selected.nodes[0]);
-    //         }
-    //         if (this.visualState.selected.edges) {
-    //           this.showRelation(this.visualState.selected.edges[0]);
-    //         }
-    //       }
-    //     }
-    //   },
-    //   immediate: true
-    // }
   },
   mounted() {
     this.refresh();
@@ -506,24 +483,37 @@ export default defineComponent({
       const loadedInsight = await getInsightById(insight_id);
       console.log('>>>>', loadedInsight);
 
+      // Mutually exclusive for now - Mar 2022
       const selectedNodeStr = loadedInsight.data_state?.selectedNode;
       const selectedEdgeStr = loadedInsight.data_state?.selectedEdge;
-      const visualState = loadedInsight.data_state?.cagVisualState;
+      const visualState = loadedInsight.data_state?.cagVisualState as CAGVisualState;
+
+      if (!selectedEdgeStr) {
+        this.closeDrilldown();
+      }
 
       if (selectedNodeStr) {
-        const nodeToSelect = this.modelComponents.nodes.find(node => node.label === selectedNodeStr);
+        const nodeToSelect = this.modelComponents.nodes.find(node => node.concept === selectedNodeStr);
         if (nodeToSelect) {
           this.onNodeSensitivity(nodeToSelect);
+          const neighborhood = calculateNeighborhood(this.modelComponents, nodeToSelect.concept);
+          this.visualState = {
+            focus: neighborhood,
+            outline: {
+              nodes: [
+                { concept: nodeToSelect.concept }
+              ],
+              edges: []
+            }
+          };
         }
-      }
-      if (selectedEdgeStr) {
+      } else if (selectedEdgeStr) {
         const [source, target] = selectedEdgeStr.split(':');
         const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
         if (edgeToSelect) {
           this.showRelation(edgeToSelect);
         }
-      }
-      if (visualState) {
+      } else if (visualState) {
         this.visualState = visualState;
       }
     },
