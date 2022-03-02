@@ -539,6 +539,14 @@ export default defineComponent({
             this.initialSelectedEdge = selectedEdge;
           }
         }
+        // If blank force a reset
+        if (!loadedInsight.data_state?.selectedEdge && !loadedInsight.data_state?.selectedNode) {
+          this.visualState = {
+            focus: { nodes: [], edges: [] },
+            outline: { nodes: [], edges: [] }
+          };
+          this.closeDrilldown();
+        }
       }
     },
     applyNodeSelection(selectedNode: string) {
