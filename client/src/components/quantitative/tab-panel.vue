@@ -116,12 +116,11 @@ import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagLegend from '@/components/graph/cag-legend.vue';
-import { findPaths } from '@/utils/graphs-util';
+import { findPaths, calculateNeighborhood } from '@/utils/graphs-util';
 import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter, CAGVisualState } from '@/types/CAG';
 import { Statement } from '@/types/Statement';
 import { getInsightById } from '@/services/insight-service';
 import { DataState } from '@/types/Insight';
-import { calculateNeighborhood } from '@/utils/graphs-util';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -481,7 +480,6 @@ export default defineComponent({
     },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);
-      console.log('>>>>', loadedInsight);
 
       // Mutually exclusive for now - Mar 2022
       const selectedNodeStr = loadedInsight.data_state?.selectedNode;
@@ -512,6 +510,16 @@ export default defineComponent({
         const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
         if (edgeToSelect) {
           this.showRelation(edgeToSelect);
+          this.visualState = {
+            focus: {
+              nodes: [],
+              edges: [{ source, target }]
+            },
+            outline: {
+              nodes: [],
+              edges: [{ source, target }]
+            }
+          };
         }
       } else if (visualState) {
         this.visualState = visualState;
