@@ -4,6 +4,8 @@ import { ProjectType } from '@/types/Enums';
 import _ from 'lodash';
 import { computed } from 'vue';
 
+export const MAX_ANALYSIS_DATACUBES_COUNT = 9;
+
 const getNextAvailableDatacubeVariable = (metadata: Model | Indicator, id: string, analysisItems: AnalysisItem[]) => {
   if (metadata !== null && analysisItems.length > 0) {
     const outputs = metadata.outputs.map(output => output.name);

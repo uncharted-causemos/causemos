@@ -55,6 +55,10 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
         .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
     });
 
+    this.on('node-drag-move', () => {
+      svgUtil.hideSvgTooltip(this.chart);
+    });
+
     this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
       selection.select('.edge-path-bg-outline')
         .style('stroke', SELECTED_COLOR);

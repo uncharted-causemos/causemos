@@ -5,6 +5,7 @@ import { BarData } from '@/types/BarChart';
 import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { getHoverIdFromValue } from '@/utils/chart-util';
+import _ from 'lodash';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -45,7 +46,7 @@ function renderBarChart(
   const allBars = barsData.map(bar => bar.name);
   const allBarsValues = barsData.map(bar => bar.value);
   const xExtent = allBars;
-  const yExtent = [0, Math.ceil(d3.max(allBarsValues) ?? 0)];
+  const yExtent = [_.min(allBarsValues) ?? 0, _.max(allBarsValues) ?? 0];
   if (xExtent[0] === undefined || yExtent[0] === undefined) {
     console.error('Unable to derive extent from data', barsData);
     return;
@@ -57,7 +58,8 @@ function renderBarChart(
   const yScale = d3
     .scaleLinear()
     .domain(yExtent)
-    .range([height - X_AXIS_HEIGHT, PADDING_TOP]);
+    .range([height - X_AXIS_HEIGHT, PADDING_TOP])
+    .nice(); // 😃
 
   const valueFormatter = chartValueFormatter(...yExtent);
   renderAxes(

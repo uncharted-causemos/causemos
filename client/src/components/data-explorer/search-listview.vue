@@ -171,7 +171,8 @@ export default defineComponent({
         const item = { // AnalysisItem
           datacubeId: datacube.data_id,
           id: datacube.id,
-          viewConfig: {}
+          viewConfig: {},
+          name: datacube.name // set initial name
         };
         if (this.enableMultipleSelection) {
           // if the datacube is not in the list add it, otherwise remove it

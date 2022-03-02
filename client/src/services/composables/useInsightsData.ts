@@ -37,7 +37,9 @@ export default function useInsightsData() {
   };
 
   watchEffect(onInvalidate => {
-    console.log('refetching insights at: ' + new Date(insightsFetchedAt.value).toTimeString());
+    // This condition should always return true, it's just used to add
+    //  insightsFetchedAt to this watchEffect's dependency array
+    if (insightsFetchedAt.value < 0) { return; }
     let isCancelled = false;
     async function getInsights() {
       if (shouldRefetchInsights.value === false) {

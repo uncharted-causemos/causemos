@@ -164,5 +164,20 @@ export enum IncompleteDataCorrectiveAction {
   DataExtrapolated = 'Final data point contains extrapolated data'
 }
 
+export enum EdgeDirection {
+  Incoming = 'Incoming',
+  Outgoing = 'Outgoing',
+}
+
+export enum LoadStatus {
+  Loading = 'Loading',
+  Loaded = 'Loaded',
+}
+
+export enum EdgeSuggestionType {
+  ConceptSuggestion = 'ConceptSuggestion',
+  KBSuggestion = 'KBSuggestion',
+}
+
 export const SPLIT_BY_VARIABLE = 'variable';
 export const TIMESERIES_HEADER_SEPARATOR = ' | ';
