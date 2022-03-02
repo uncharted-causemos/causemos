@@ -132,6 +132,7 @@ export interface DataState {
   currentEngine?: string;
   modelName?: string;
   nodesCount?: number;
+  cagVisualState?: any;
 
   // others
   // ...

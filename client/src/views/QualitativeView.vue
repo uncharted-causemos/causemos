@@ -550,7 +550,6 @@ export default defineComponent({
         if (nodeToSelect) {
           const neighborhood = calculateNeighborhood(this.modelComponents, nodeToSelect.concept);
           this.selectNode(nodeToSelect);
-
           this.visualState = {
             focus: neighborhood,
             outline: {
@@ -627,8 +626,8 @@ export default defineComponent({
         dataState.selectedNode = this.selectedNode.concept;
       }
       if (this.selectedEdge !== null) {
-        const source = this.ontologyFormatter(this.selectedEdge.source);
-        const target = this.ontologyFormatter(this.selectedEdge.target);
+        const source = this.selectedEdge.source;
+        const target = this.selectedEdge.target;
         dataState.selectedEdge = source + EDGE_LABEL_SOURCE_TARGET_SEPARATOR + target;
       }
       this.setDataState(dataState);

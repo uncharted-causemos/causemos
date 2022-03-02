@@ -25,14 +25,12 @@
       :scenarios="scenarios"
       :current-engine="currentEngine"
       :reset-layout-token='resetLayoutToken'
-      :initial-visual-state="visualState"
       @refresh-model="refreshModelAndScenarios"
       @model-parameter-changed="refresh"
       @new-scenario='onCreateScenario'
       @update-scenario='onUpdateScenario'
       @delete-scenario='onDeleteScenario'
       @delete-scenario-clamp='onDeleteScenarioClamp'
-      @visual-state-updated="onVisualStateUpdated"
     >
       <template #action-bar>
         <action-bar
@@ -107,12 +105,7 @@ export default defineComponent({
     trainingPercentage: 0,
     refreshTimer: 0,
     currentScenarioName: '',
-    showOpenDataAnalysisConfirmation: false,
-
-    // will be valid if populated from a previous insight that include such info
-    initialSelectedNode: null as string | null,
-    initialSelectedEdge: null as string | null,
-    visualState: null as any | null
+    showOpenDataAnalysisConfirmation: false
   }),
   computed: {
     ...mapGetters({
@@ -136,24 +129,6 @@ export default defineComponent({
   watch: {
     currentCAG() {
       this.refresh();
-    },
-    $route: {
-      handler(/* newValue, oldValue */) {
-        // NOTE:  this is only valid when the route is focused on the 'quantitative' space
-        if (this.$route.name === 'quantitative' && this.$route.query) {
-          const insight_id = this.$route.query.insight_id;
-          if (typeof insight_id === 'string') {
-            this.updateStateFromInsight(insight_id);
-            this.$router.push({
-              query: {
-                insight_id: undefined,
-                activeTab: this.$route.query.activeTab || undefined
-              }
-            });
-          }
-        }
-      },
-      immediate: true
     }
   },
   created() {
@@ -175,7 +150,6 @@ export default defineComponent({
       setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
       setContextId: 'insightPanel/setContextId',
-      setDataState: 'insightPanel/setDataState',
       setRunImmediately: 'model/setRunImmediately',
       updateAnalysisItems: 'dataAnalysis/updateAnalysisItems'
     }),
@@ -278,62 +252,6 @@ export default defineComponent({
       await modelService.updateScenario(updatedScenario);
       await this.reloadScenarios();
       this.disableOverlay();
-    },
-    async updateStateFromInsight(insight_id: string) {
-      const loadedInsight = await getInsightById(insight_id);
-      // FIXME: before applying the insight, which will overwrite current state,
-      //  consider pushing current state to the url to support browser hsitory
-      //  in case the user wants to navigate to the original state using back button
-      if (loadedInsight) {
-        //
-        // insight was found and loaded
-        //
-        // data state
-        // FIXME: the order of resetting the state is important
-        if (loadedInsight.data_state?.selectedNode !== undefined) {
-          const selectedNode = loadedInsight.data_state?.selectedNode;
-          if (this.modelComponents && this.modelComponents.nodes) {
-            this.applyNodeSelection(selectedNode);
-          } else {
-            this.initialSelectedNode = selectedNode;
-          }
-        }
-        if (loadedInsight.data_state?.selectedEdge !== undefined) {
-          const selectedEdge = loadedInsight.data_state?.selectedEdge;
-          if (this.modelComponents && this.modelComponents.nodes) {
-            this.applyEdgeSelection(selectedEdge);
-          } else {
-            this.initialSelectedEdge = selectedEdge;
-          }
-        }
-      }
-    },
-    applyNodeSelection(selectedNode: string) {
-      if (selectedNode) {
-        const nodeToSelect = this.modelComponents?.nodes.find(node => node.label === selectedNode);
-        if (nodeToSelect) {
-          this.visualState = {
-            selected: {
-              nodes: [nodeToSelect]
-            }
-          };
-        }
-      }
-    },
-    applyEdgeSelection(selectedEdge: string) {
-      if (selectedEdge) {
-        const edgeSrcAndTarget = selectedEdge.split(EDGE_LABEL_SOURCE_TARGET_SEPARATOR);
-        const edgeSourceLabel = edgeSrcAndTarget[0];
-        const edgeTargetLabel = edgeSrcAndTarget[1];
-        const edgeToSelect = this.modelComponents?.edges.find(edge => this.ontologyFormatter(edge.source) === edgeSourceLabel && this.ontologyFormatter(edge.target) === edgeTargetLabel);
-        if (edgeToSelect) {
-          this.visualState = {
-            selected: {
-              edges: [edgeToSelect]
-            }
-          };
-        }
-      }
     },
     async refreshModel() {
       this.enableOverlay('Getting model data');
@@ -471,57 +389,6 @@ export default defineComponent({
       // 6. Finally we are done and kick off the relevant events
       this.setSelectedScenarioId(scenarioId);
       this.scenarios = scenarios;
-
-      // apply node/edge selection if we have initial selection and insight is being applied
-      if (this.initialSelectedNode) {
-        this.applyNodeSelection(this.initialSelectedNode);
-        this.initialSelectedNode = null;
-      }
-      if (this.initialSelectedEdge) {
-        this.applyEdgeSelection(this.initialSelectedEdge);
-        this.initialSelectedEdge = null;
-      }
-      this.updateDataState();
-    },
-    onVisualStateUpdated(visualState: any) {
-      this.updateDataState(visualState);
-    },
-    updateDataState(visualState?: any) {
-      if (this.modelSummary === null) {
-        console.error('Trying to update data state while modelSummary is null.');
-        return;
-      }
-      if (this.modelComponents === null) {
-        console.error('Trying to update data state while modelComponents is null.');
-        return;
-      }
-      // save some state that will be part of any insight captured from this view
-      const dataState: DataState = {
-        selectedScenarioId: this.selectedScenarioId,
-        currentEngine: this.currentEngine,
-        modelName: this.modelSummary.name
-      };
-      // extract selected nodes/edges from the visual state
-      if (visualState) {
-        if (visualState.selected) {
-          if (visualState.selected.nodes) {
-            const selectedNodes = visualState.selected.nodes.map((node: any) => node.label);
-            dataState.selectedNode = selectedNodes.join(', ');
-          } else {
-            dataState.selectedNode = undefined;
-          }
-          if (visualState.selected.edges) {
-            // @Review: I think it is fair to assume that only one edge can be selected
-            const selectedEdge = visualState.selected.edges[0];
-            const source = this.ontologyFormatter(selectedEdge.source);
-            const target = this.ontologyFormatter(selectedEdge.target);
-            dataState.selectedEdge = source + EDGE_LABEL_SOURCE_TARGET_SEPARATOR + target;
-          } else {
-            dataState.selectedEdge = undefined;
-          }
-        }
-      }
-      this.setDataState(dataState);
     },
     async runScenariosWrapper() {
       if (!this.scenarios) return;

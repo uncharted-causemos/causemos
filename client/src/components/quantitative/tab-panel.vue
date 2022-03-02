@@ -101,7 +101,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent, ref, PropType, Ref } from 'vue';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 import moment from 'moment';
 
 import ConfigBar from '@/components/quantitative/config-bar.vue';
@@ -119,6 +119,8 @@ import CagLegend from '@/components/graph/cag-legend.vue';
 import { findPaths } from '@/utils/graphs-util';
 import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter, CAGVisualState } from '@/types/CAG';
 import { Statement } from '@/types/Statement';
+import { getInsightById } from '@/services/insight-service';
+import { DataState } from '@/types/Insight';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -240,6 +242,24 @@ export default defineComponent({
     }
   },
   watch: {
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'quantitative' space
+        if (this.$route.name === 'quantitative' && this.$route.query) {
+          const insight_id = this.$route.query.insight_id;
+          if (typeof insight_id === 'string') {
+            this.updateStateFromInsight(insight_id);
+            this.$router.push({
+              query: {
+                insight_id: undefined,
+                activeTab: this.$route.query.activeTab || undefined
+              }
+            });
+          }
+        }
+      },
+      immediate: true
+    },
     scenarios() {
       this.refresh();
     },
@@ -252,10 +272,10 @@ export default defineComponent({
     selectedScenarioId() {
       // FIXME: Probably need a ligher weight function than refresh
       this.refresh();
-    },
-    visualState() {
-      this.$emit('visual-state-updated', this.visualState);
     }
+    // visualState() {
+    //   this.$emit('visual-state-updated', this.visualState);
+    // }
     // initialVisualState: {
     //   // this will be received every time the visualState is updated on the parent side
     //   //  e.g., when the parent loads an insight
@@ -282,6 +302,9 @@ export default defineComponent({
     this.refresh();
   },
   methods: {
+    ...mapActions({
+      setDataState: 'insightPanel/setDataState'
+    }),
     refresh() {
       // Get Model data
       const graph = { nodes: this.modelComponents.nodes, edges: this.modelComponents.edges };
@@ -302,6 +325,7 @@ export default defineComponent({
       this.activeDrilldownTab = PANE_ID.SENSITIVITY;
       this.openDrilldown();
       this.selectedNode = node;
+      this.updateDataState();
     },
     openNodeDrilldownView(node: NodeParameter) {
       this.onBackgroundClick();
@@ -360,6 +384,7 @@ export default defineComponent({
             edges: []
           }
         };
+        this.updateDataState();
       }
     },
     onBackgroundClick() {
@@ -382,6 +407,7 @@ export default defineComponent({
       this.drilldownTabs = EDGE_DRILLDOWN_TABS;
       this.activeDrilldownTab = PANE_ID.EVIDENCE;
       this.openDrilldown();
+      this.updateDataState();
 
       modelService.getEdgeStatements(this.currentCAG, edgeData.source, edgeData.target).then(statements => {
         this.selectedStatements = statements;
@@ -474,6 +500,51 @@ export default defineComponent({
           edges: []
         }
       };
+      this.updateDataState();
+    },
+    async updateStateFromInsight(insight_id: string) {
+      const loadedInsight = await getInsightById(insight_id);
+      console.log('>>>>', loadedInsight);
+
+      const selectedNodeStr = loadedInsight.data_state?.selectedNode;
+      const selectedEdgeStr = loadedInsight.data_state?.selectedEdge;
+      const visualState = loadedInsight.data_state?.cagVisualState;
+
+      if (selectedNodeStr) {
+        const nodeToSelect = this.modelComponents.nodes.find(node => node.label === selectedNodeStr);
+        if (nodeToSelect) {
+          this.onNodeSensitivity(nodeToSelect);
+        }
+      }
+      if (selectedEdgeStr) {
+        const [source, target] = selectedEdgeStr.split(':');
+        const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
+        if (edgeToSelect) {
+          this.showRelation(edgeToSelect);
+        }
+      }
+      if (visualState) {
+        this.visualState = visualState;
+      }
+    },
+    updateDataState() {
+      const dataState: DataState = {
+        selectedScenarioId: this.selectedScenarioId,
+        currentEngine: this.currentEngine,
+        modelName: this.modelSummary.name
+      };
+      if (this.selectedNode) {
+        dataState.selectedNode = this.selectedNode.concept;
+      }
+      if (this.selectedEdge) {
+        dataState.selectedEdge = this.selectedEdge.source + ':' + this.selectedEdge.target;
+      }
+      if (this.visualState) {
+        dataState.cagVisualState = this.visualState;
+      }
+
+      this.setDataState(dataState);
+      console.log(dataState);
     }
   }
 });
