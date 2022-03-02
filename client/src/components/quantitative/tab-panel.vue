@@ -194,18 +194,22 @@ export default defineComponent({
     'new-scenario',
     'update-scenario',
     'delete-scenario',
-    'delete-scenario-clamp',
-    'visual-state-updated'
+    'delete-scenario-clamp'
   ],
   setup() {
     const selectedNode = ref(null) as Ref<NodeParameter | null>;
     const selectedEdge = ref(null) as Ref<EdgeParameter | null>;
     const selectedStatements = ref([]) as Ref<Statement[]>;
+    const visualState = ref({
+      focus: { nodes: [], edges: [] },
+      outline: { nodes: [], edges: [] }
+    }) as Ref<CAGVisualState>;
 
     return {
       selectedNode,
       selectedEdge,
       selectedStatements,
+      visualState,
       PANE_ID
     };
   },
@@ -217,11 +221,7 @@ export default defineComponent({
     drilldownTabs: NODE_DRILLDOWN_TABS,
     activeDrilldownTab: PANE_ID.EVIDENCE,
     isDrilldownOpen: false,
-    isFetchingStatements: false,
-    visualState: {
-      focus: { nodes: [], edges: [] },
-      outline: { nodes: [], edges: [] }
-    } as CAGVisualState
+    isFetchingStatements: false
   }),
   computed: {
     ...mapGetters({
@@ -354,7 +354,7 @@ export default defineComponent({
           },
           outline: {
             nodes: [
-              { concept: node.concept, color: '#f80' },
+              { concept: node.concept, color: '#8767c8' },
               { concept: this.selectedNode.concept }
             ],
             edges: []
@@ -481,10 +481,14 @@ export default defineComponent({
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);
 
-      // Mutually exclusive for now - Mar 2022
       const selectedNodeStr = loadedInsight.data_state?.selectedNode;
       const selectedEdgeStr = loadedInsight.data_state?.selectedEdge;
       const visualState = loadedInsight.data_state?.cagVisualState as CAGVisualState;
+
+      let newVisualState: CAGVisualState = {
+        focus: { nodes: [], edges: [] },
+        outline: { nodes: [], edges: [] }
+      };
 
       if (!selectedEdgeStr) {
         this.closeDrilldown();
@@ -495,7 +499,8 @@ export default defineComponent({
         if (nodeToSelect) {
           this.onNodeSensitivity(nodeToSelect);
           const neighborhood = calculateNeighborhood(this.modelComponents, nodeToSelect.concept);
-          this.visualState = {
+
+          newVisualState = {
             focus: neighborhood,
             outline: {
               nodes: [
@@ -510,7 +515,7 @@ export default defineComponent({
         const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
         if (edgeToSelect) {
           this.showRelation(edgeToSelect);
-          this.visualState = {
+          newVisualState = {
             focus: {
               nodes: [],
               edges: [{ source, target }]
@@ -521,9 +526,16 @@ export default defineComponent({
             }
           };
         }
-      } else if (visualState) {
-        this.visualState = visualState;
       }
+
+      // merge
+      if (visualState) {
+        newVisualState.focus.nodes = [...newVisualState.focus.nodes, ...visualState.focus.nodes];
+        newVisualState.focus.edges = [...newVisualState.focus.edges, ...visualState.focus.edges];
+        newVisualState.outline.nodes = [...newVisualState.outline.nodes, ...visualState.outline.nodes];
+        newVisualState.outline.edges = [...newVisualState.outline.edges, ...visualState.outline.edges];
+      }
+      this.visualState = newVisualState;
     },
     updateDataState() {
       const dataState: DataState = {
@@ -540,9 +552,7 @@ export default defineComponent({
       if (this.visualState) {
         dataState.cagVisualState = this.visualState;
       }
-
       this.setDataState(dataState);
-      console.log(dataState);
     }
   }
 });

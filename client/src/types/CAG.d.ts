@@ -2,10 +2,12 @@ import { TimeseriesDistributionPoint, TimeseriesPoint } from './Timeseries';
 import { TimeScale } from './Enums';
 
 export interface CAGVisualState {
+  // Determines whether a subgraph should be faded-in (focused) or faded-out (not focused)
   focus: {
     nodes: { concept: string }[];
     edges: { source: string; target: string } [];
   },
+  // Determines if a subgraph should be outlined
   outline: {
     nodes: { concept: string; color?: string } [];
     edges: { source: string; target: string; color?: string } [];
