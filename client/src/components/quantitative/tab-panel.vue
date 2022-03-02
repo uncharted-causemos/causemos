@@ -146,6 +146,13 @@ const PROJECTION_ENGINES = {
   DYSE: 'dyse'
 };
 
+const blankVisualState = (): CAGVisualState => {
+  return {
+    focus: { nodes: [], edges: [] },
+    outline: { nodes: [], edges: [] }
+  };
+};
+
 export default defineComponent({
   name: 'TabPanel',
   components: {
@@ -196,10 +203,7 @@ export default defineComponent({
     const selectedNode = ref(null) as Ref<NodeParameter | null>;
     const selectedEdge = ref(null) as Ref<EdgeParameter | null>;
     const selectedStatements = ref([]) as Ref<Statement[]>;
-    const visualState = ref({
-      focus: { nodes: [], edges: [] },
-      outline: { nodes: [], edges: [] }
-    }) as Ref<CAGVisualState>;
+    const visualState = ref(blankVisualState()) as Ref<CAGVisualState>;
 
     return {
       selectedNode,
@@ -305,6 +309,16 @@ export default defineComponent({
       this.activeDrilldownTab = PANE_ID.SENSITIVITY;
       this.openDrilldown();
       this.selectedNode = node;
+      const neighborhood = calculateNeighborhood(this.modelComponents as any, node.concept);
+      this.visualState = {
+        focus: neighborhood,
+        outline: {
+          nodes: [
+            { concept: node.concept }
+          ],
+          edges: []
+        }
+      };
       this.updateDataState();
     },
     openNodeDrilldownView(node: NodeParameter) {
@@ -371,10 +385,8 @@ export default defineComponent({
       this.closeDrilldown();
       this.selectedEdge = null;
       this.selectedNode = null;
-      this.visualState = {
-        focus: { nodes: [], edges: [] },
-        outline: { nodes: [], edges: [] }
-      };
+      this.visualState = blankVisualState();
+      this.updateDataState();
     },
     openDrilldown() {
       this.isDrilldownOpen = true;
@@ -391,6 +403,19 @@ export default defineComponent({
       modelService.getEdgeStatements(this.currentCAG, edgeData.source, edgeData.target).then(statements => {
         this.selectedStatements = statements;
         this.selectedEdge = edgeData;
+        const source = edgeData.source;
+        const target = edgeData.target;
+        this.visualState = {
+          focus: {
+            nodes: [{ concept: source }, { concept: target }],
+            edges: [{ source, target }]
+          },
+          outline: {
+            nodes: [],
+            edges: [{ source, target }]
+          }
+        };
+
         this.updateDataState();
         this.isFetchingStatements = false;
       });
@@ -489,10 +514,7 @@ export default defineComponent({
       const selectedEdge = loadedInsight.data_state?.selectedEdge;
       const visualState = loadedInsight.data_state?.cagVisualState as CAGVisualState;
 
-      let newVisualState: CAGVisualState = {
-        focus: { nodes: [], edges: [] },
-        outline: { nodes: [], edges: [] }
-      };
+      let newVisualState: CAGVisualState = blankVisualState();
 
       if (!selectedEdge) {
         this.closeDrilldown();

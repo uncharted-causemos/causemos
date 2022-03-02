@@ -20,7 +20,6 @@ import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import GraphSearch from '@/components/widgets/graph-search.vue';
 import { IGraph, moveToLabel } from 'svg-flowgraph';
-import { calculateNeighborhood } from '@/utils/graphs-util';
 import { NodeParameter, EdgeParameter, CAGModelSummary, CAGVisualState } from '@/types/CAG';
 
 export default defineComponent({
@@ -100,25 +99,14 @@ export default defineComponent({
     });
     this.renderer.setLabelFormatter(this.ontologyFormatter);
 
-    this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>, renderer: QuantitativeRenderer) => {
-      const neighborhood = calculateNeighborhood(this.data.graph as any, nodeSelection.datum().data.concept);
-      renderer.resetAnnotations();
-      renderer.neighborhoodAnnotation(neighborhood);
-      renderer.selectNode(nodeSelection, '');
+    this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter> /*, renderer: QuantitativeRenderer */) => {
       this.$emit('node-sensitivity', nodeSelection.datum().data);
     });
     this.renderer.on('node-dbl-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
       this.$emit('node-drilldown', nodeSelection.datum().data);
     });
 
-    this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection: D3SelectionIEdge<EdgeParameter>, renderer: QuantitativeRenderer) => {
-      const source = edgeSelection.datum().data.source;
-      const target = edgeSelection.datum().data.target;
-      const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
-
-      renderer.resetAnnotations();
-      renderer.neighborhoodAnnotation(neighborhood);
-      renderer.selectEdge(edgeSelection);
+    this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection: D3SelectionIEdge<EdgeParameter> /*, renderer: QuantitativeRenderer */) => {
       this.$emit('edge-click', edgeSelection.datum().data);
     });
 

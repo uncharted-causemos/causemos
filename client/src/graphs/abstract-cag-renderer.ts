@@ -138,7 +138,7 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
   }
 
   selectNodeByConcept(concept: string, color: string) {
-    const node = this.chart.selectAll('.node').filter((node: any) => node.label === concept);
+    const node = this.chart.selectAll('.node-ui').filter((node: any) => node.label === concept);
     if (node) {
       this.selectNode(node as any, color);
     }
