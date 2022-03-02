@@ -90,7 +90,7 @@
             Review All Insights
         </button>
         <list-analytical-questions-pane
-          show-checklist-title="true"
+          :show-checklist-title="true"
           class="insights"
         />
       </div>
