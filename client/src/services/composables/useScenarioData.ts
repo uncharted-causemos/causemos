@@ -75,7 +75,9 @@ export default function useScenarioData(
   });
 
   watchEffect(onInvalidate => {
-    console.log('refetching scenario-data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
+    // This condition should always return true, it's just used to add
+    //  modelRunsFetchedAt to this watchEffect's dependency array
+    if (modelRunsFetchedAt.value < 0) { return; }
     let isCancelled = false;
     async function fetchRunData() {
       if (dataId.value === null) return;
