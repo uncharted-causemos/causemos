@@ -124,6 +124,13 @@ export default defineComponent({
   },
   watch: {
     currentCAG() {
+      if (this.$route.name !== 'quantitative') {
+        // We're in the process of navigating away from this page, so don't
+        //  trigger a refresh. This occurs when duplicating a yearly CAG, and
+        //  causes the baseline scenario to be created before the time scale
+        //  can be set. It defaults to monthly, which causes issues.
+        return;
+      }
       this.refresh();
     }
   },

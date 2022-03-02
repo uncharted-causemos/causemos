@@ -288,7 +288,15 @@ export default defineComponent({
       // Get sensitivity results, note these results may still be pending
       if (this.currentEngine === 'dyse') {
         modelService.getScenarioSensitivity(this.currentCAG, this.currentEngine).then(sensitivityResults => {
-          this.sensitivityResult = sensitivityResults.find((d: any) => d.scenario_id === this.selectedScenarioId);
+          // If historical data mode is active, use sensitivity results from
+          //  the baseline scenario
+          let scenarioId = this.selectedScenarioId;
+          if (this.selectedScenarioId === null) {
+            scenarioId = this.scenarios.find(scenario => scenario.is_baseline === true)?.id;
+          }
+          this.sensitivityResult = sensitivityResults.find(
+            (d: any) => d.scenario_id === scenarioId
+          );
         });
       }
     },
