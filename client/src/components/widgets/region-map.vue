@@ -6,6 +6,7 @@
       @load="onMapLoad"
       @mousemove="onMouseMove"
       @click="onMapClick"
+      @resize="onResize"
     >
       <wm-map-vector
         v-if="vectorSource"
@@ -40,7 +41,13 @@
 <script>
 
 import _ from 'lodash';
+import {
+  defineComponent,
+  toRefs,
+  computed
+} from 'vue';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
+import useMapRegionSelection from '@/services/composables/useMapRegionSelection';
 import {
   BASE_MAP_OPTIONS,
   ETHIOPIA_BOUNDING_BOX,
@@ -96,7 +103,7 @@ const borderLayer = () => {
   });
 };
 
-export default {
+export default defineComponent({
   name: 'RegionMap',
   emits: ['click-region'],
   components: {
@@ -113,7 +120,11 @@ export default {
       type: String,
       default: ''
     },
-    selectedLayerId: {
+    regionFilter: {
+      type: Object,
+      default: () => ({ country: new Set(), admin1: new Set(), admin2: new Set(), admin3: new Set() })
+    },
+    selectedAdminLevel: {
       type: Number,
       default: 0
     },
@@ -137,6 +148,20 @@ export default {
       default: () => []
     }
   },
+  setup(props) {
+    const {
+      selectedAdminLevel,
+      regionFilter
+    } = toRefs(props);
+
+    const selectedLayerId = computed(() => SOURCE_LAYERS[selectedAdminLevel.value].layerId);
+    const { isRegionSelectionEmpty, isRegionSelected } = useMapRegionSelection(selectedLayerId, regionFilter);
+
+    return {
+      isRegionSelectionEmpty,
+      isRegionSelected
+    };
+  },
   data: () => ({
     colorLayer: undefined,
     map: undefined,
@@ -153,7 +178,7 @@ export default {
       return options;
     },
     selectedLayer() {
-      return SOURCE_LAYERS[this.selectedLayerId];
+      return SOURCE_LAYERS[this.selectedAdminLevel];
     },
     vectorSourceLayer() {
       return this.selectedLayer.layerId;
@@ -174,6 +199,9 @@ export default {
     },
     selectedId() {
       this.updateSelection();
+    },
+    regionFilter() {
+      this.setFeatureStates();
     }
   },
   created() {
@@ -212,7 +240,7 @@ export default {
           sourceLayer: this.vectorSourceLayer
         }, {
           ...d,
-          _isHidden: this.selectedRegionIds.length === 0 ? false : !this.selectedRegionIds.includes(d.label)
+          _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(d.label)
         });
       }
     },
@@ -231,6 +259,9 @@ export default {
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
       this.disablePanAndZoom();
+    },
+    onResize() {
+      this.map.fitBounds(this.mapBounds.value || this.mapBounds, { duration: 0 });
     },
     onAddLayer() {
       // Triggered when the source layer has been updated or replaced with new one eg. when selected admin level changes
@@ -271,7 +302,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

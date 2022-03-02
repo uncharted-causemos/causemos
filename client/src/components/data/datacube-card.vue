@@ -379,8 +379,9 @@
                       :style="{ borderColor: colorFromIndex(indx) }"
                       :data="regionMapData[featureName]"
                       :map-bounds="mapBounds"
-                      :selected-layer-id="selectedAdminLevel"
                       :popup-Formatter="popupFormatter"
+                      :region-filter="selectedRegionIdsAtAllLevels"
+                      :selected-admin-level="selectedAdminLevel"
                     />
                   </div>
                 </div>
