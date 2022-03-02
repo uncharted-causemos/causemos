@@ -142,8 +142,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch } from 'vue';
-import { mapActions, mapGetters } from 'vuex';
+import { computed, defineComponent, watch, watchEffect } from 'vue';
+import { mapActions, mapGetters, useStore } from 'vuex';
 import _ from 'lodash';
 import Shepherd from 'shepherd.js';
 
@@ -175,8 +175,15 @@ export default defineComponent({
     const { getInsightsByIDs, reFetchInsights } = useInsightsData();
 
     const toaster = useToaster();
+    const store = useStore();
 
-    const sortedQuestions = ref<AnalyticalQuestion[]>([]);
+    const sortedQuestions = computed<AnalyticalQuestion[]>(() => {
+      return _.sortBy(questionsList.value, q => q.view_state?.analyticalQuestionOrder);
+    });
+    watchEffect(() => {
+      // update the store to facilitate questions consumption in other UI places
+      store.dispatch('analysisChecklist/setQuestions', sortedQuestions.value);
+    });
 
     watch(questionsList, () => {
       reFetchInsights();
@@ -188,9 +195,9 @@ export default defineComponent({
           q.view_state.analyticalQuestionOrder = indx;
         }
       });
-      sortedQuestions.value = _.sortBy(questionsList.value, q => q.view_state?.analyticalQuestionOrder);
     });
     return {
+      questionsList,
       sortedQuestions,
       reFetchQuestions,
       getInsightsByIDs,
@@ -240,7 +247,7 @@ export default defineComponent({
     canStartTour(): boolean {
       // if the tour's target-view is compatible with currentView and no modal is shown
       return !this.isPanelOpen &&
-             this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
+            this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
     }
   },
   mounted() {
@@ -327,16 +334,15 @@ export default defineComponent({
           this.removeQuestionFromInsight(this.selectedQuestion as AnalyticalQuestion, insightId);
         });
 
-        // refresh
-        this.sortedQuestions = this.sortedQuestions.filter(q => q.question !== this.selectedQuestion?.question);
-        this.setQuestions(this.sortedQuestions);
+        // Remove question from the local list of questions
+        this.questionsList = this.questionsList.filter(q => q.question !== this.selectedQuestion?.question);
 
         deleteQuestion(this.selectedQuestion.id as string).then(result => {
           const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_REMOVAL : QUESTIONS.ERRONEOUS_REMOVAL;
           if (message === QUESTIONS.SUCCESSFUL_REMOVAL) {
-            (this as any).toaster(message, 'success', false);
+            this.toaster(message, 'success', false);
           } else {
-            (this as any).toaster(message, 'error', true);
+            this.toaster(message, 'error', true);
           }
         });
       }
@@ -360,32 +366,27 @@ export default defineComponent({
       if (question_id !== '') {
         // swap questions: question_id and questionItem.id
         const questions = _.cloneDeep(this.sortedQuestions);
-        const i1 = questions.findIndex(q => q.id === question_id);
-        const i2 = questions.findIndex(q => q.id === questionItem.id);
-        // swap
-        const q1 = questions[i1];
-        questions[i1] = questions[i2];
-        questions[i2] = q1;
+        const question1 = questions.find(q => q.id === question_id);
+        const question2 = questions.find(q => q.id === questionItem.id);
+        if (question1 === undefined || question2 === undefined) {
+          return;
+        }
+        // Assume that each question has a view state with an
+        //  analyticalQuestionOrder, since there's a watcher in `setup()` that
+        //  ensures this.
+        const position1 = question1?.view_state
+          ?.analyticalQuestionOrder as number;
+        const position2 = question2?.view_state
+          ?.analyticalQuestionOrder as number;
 
-        // make re-ordering of questions persistent
-        const q1_order_indx = questions[i1].view_state?.analyticalQuestionOrder ?? i1;
-        const q2_order_indx = questions[i2].view_state?.analyticalQuestionOrder ?? i2;
-        const q1_updated_view_state = questions[i1].view_state as ViewState;
-        q1_updated_view_state.analyticalQuestionOrder = q2_order_indx; // swap
-        questions[i1].view_state = q1_updated_view_state;
-        const q2_updated_view_state = questions[i2].view_state as ViewState;
-        q2_updated_view_state.analyticalQuestionOrder = q1_order_indx; // swap
-        questions[i2].view_state = q2_updated_view_state;
-
-        // update
-        this.sortedQuestions = questions;
-
-        // update the store to facilitate questions consumption in other UI places
-        this.setQuestions(this.sortedQuestions);
+        // Swap and update local copy
+        (question1.view_state as ViewState).analyticalQuestionOrder = position2;
+        (question2.view_state as ViewState).analyticalQuestionOrder = position1;
+        this.questionsList = questions;
 
         // update question(s) on the backend for persistent ordering
-        await updateQuestion(questions[i1].id as string, questions[i1]);
-        await updateQuestion(questions[i2].id as string, questions[i2]);
+        await updateQuestion(question1.id as string, question1);
+        await updateQuestion(question2.id as string, question2);
       }
 
       const insight_id = evt.dataTransfer.getData('insight_id');
@@ -463,12 +464,12 @@ export default defineComponent({
       this.removeQuestionFromInsight(questionItem, insightId);
     },
     removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
-      const insight: any = this.getInsightsByIDs([insightId]);
-      if (insight) {
-        insight.analytical_question = insight?.analytical_question.filter(
+      const insights = this.getInsightsByIDs([insightId]);
+      if (insights.length > 0) {
+        insights[0].analytical_question = insights[0].analytical_question.filter(
           (qid: string) => qid !== questionItem.id
         );
-        updateInsight(insight?.id as string, insight);
+        updateInsight(insights[0].id as string, insights[0]);
       }
     },
     startTour(question: AnalyticalQuestion) {
