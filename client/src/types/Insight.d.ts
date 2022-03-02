@@ -87,6 +87,8 @@ export interface ViewState {
   regionRankingHoverId?: string;
   regionRankingShowNormalizedData?: boolean;
 
+  analyticalQuestionOrder?: number; // a numeric index to save and restore each question order
+
   // knowledge/model space specific
   sensitivityToggle?: any;
   graphLayout?: any;

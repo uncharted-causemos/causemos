@@ -59,9 +59,9 @@
           <i class="fa fa-plus-circle" />
           Add new section
       </button>
-      <div v-if="questionsList.length > 0" class="analytical-questions-container">
+      <div v-if="sortedQuestions.length > 0" class="analytical-questions-container">
         <div
-          v-for="questionItem in questionsList"
+          v-for="questionItem in sortedQuestions"
           :key="questionItem.id"
           class="checklist-item"
           @drop='onDrop($event, questionItem)'
@@ -142,7 +142,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, watch } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 import Shepherd from 'shepherd.js';
@@ -152,10 +152,11 @@ import useQuestionsData from '@/services/composables/useQuestionsData';
 import { getInsightById, updateInsight } from '@/services/insight-service';
 import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
 import { ProjectType } from '@/types/Enums';
-import { AnalyticalQuestion, Insight } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, ViewState } from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
+import useToaster from '@/services/composables/useToaster';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
@@ -173,13 +174,27 @@ export default defineComponent({
     const { questionsList, reFetchQuestions } = useQuestionsData();
     const { getInsightsByIDs, reFetchInsights } = useInsightsData();
 
+    const toaster = useToaster();
+
+    const sortedQuestions = ref<AnalyticalQuestion[]>([]);
+
     watch(questionsList, () => {
       reFetchInsights();
+      questionsList.value.forEach((q, indx) => {
+        if (!q.view_state) {
+          q.view_state = {};
+        }
+        if (q.view_state.analyticalQuestionOrder === undefined) {
+          q.view_state.analyticalQuestionOrder = indx;
+        }
+      });
+      sortedQuestions.value = _.sortBy(questionsList.value, q => q.view_state?.analyticalQuestionOrder);
     });
     return {
-      questionsList,
+      sortedQuestions,
       reFetchQuestions,
-      getInsightsByIDs
+      getInsightsByIDs,
+      toaster
     };
   },
   data: () => ({
@@ -253,11 +268,10 @@ export default defineComponent({
         question.url = '';
         updateQuestion(question.id as string, question).then(result => {
           const message = result.status === 200 ? QUESTIONS.SUCCESFUL_UPDATE : QUESTIONS.ERRONEOUS_UPDATE;
-          // FIXME: cast to 'any' since typescript cannot see mixins yet!
           if (message === QUESTIONS.SUCCESFUL_UPDATE) {
-            (this as any).toaster(message, 'success', false);
+            this.toaster(message, 'success', false);
           } else {
-            (this as any).toaster(message, 'error', true);
+            this.toaster(message, 'error', true);
           }
         });
       }
@@ -270,6 +284,9 @@ export default defineComponent({
       this.showNewAnalyticalQuestion = false;
 
       const url = this.$route.fullPath;
+      const viewState: ViewState = _.cloneDeep(this.viewState);
+      const newQuestionOrderIndx = _.maxBy(this.sortedQuestions, q => q.view_state?.analyticalQuestionOrder)?.view_state?.analyticalQuestionOrder;
+      viewState.analyticalQuestionOrder = newQuestionOrderIndx !== undefined ? (newQuestionOrderIndx + 1) : this.sortedQuestions.length;
       const newQuestion: AnalyticalQuestion = {
         question: this.newQuestionText,
         description: '',
@@ -281,17 +298,16 @@ export default defineComponent({
         pre_actions: null,
         post_actions: null,
         linked_insights: [],
-        view_state: this.viewState
+        view_state: viewState
       };
       addQuestion(newQuestion).then((result) => {
         const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_ADDITION : QUESTIONS.ERRONEOUS_ADDITION;
-        // FIXME: cast to 'any' since typescript cannot see mixins yet!
         if (message === QUESTIONS.SUCCESSFUL_ADDITION) {
-          (this as any).toaster(message, 'success', false);
+          this.toaster(message, 'success', false);
           // refresh the latest list from the server
           this.reFetchQuestions();
         } else {
-          (this as any).toaster(message, 'error', true);
+          this.toaster(message, 'error', true);
         }
       });
     },
@@ -312,8 +328,8 @@ export default defineComponent({
         });
 
         // refresh
-        this.questionsList = this.questionsList.filter(q => q.question !== this.selectedQuestion?.question);
-        this.setQuestions(this.questionsList);
+        this.sortedQuestions = this.sortedQuestions.filter(q => q.question !== this.selectedQuestion?.question);
+        this.setQuestions(this.sortedQuestions);
 
         deleteQuestion(this.selectedQuestion.id as string).then(result => {
           const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_REMOVAL : QUESTIONS.ERRONEOUS_REMOVAL;
@@ -343,20 +359,33 @@ export default defineComponent({
       const question_id = evt.dataTransfer.getData('question_id');
       if (question_id !== '') {
         // swap questions: question_id and questionItem.id
-        const questions = _.cloneDeep(this.questionsList);
+        const questions = _.cloneDeep(this.sortedQuestions);
         const i1 = questions.findIndex(q => q.id === question_id);
         const i2 = questions.findIndex(q => q.id === questionItem.id);
         // swap
         const q1 = questions[i1];
         questions[i1] = questions[i2];
         questions[i2] = q1;
+
+        // make re-ordering of questions persistent
+        const q1_order_indx = questions[i1].view_state?.analyticalQuestionOrder ?? i1;
+        const q2_order_indx = questions[i2].view_state?.analyticalQuestionOrder ?? i2;
+        const q1_updated_view_state = questions[i1].view_state as ViewState;
+        q1_updated_view_state.analyticalQuestionOrder = q2_order_indx; // swap
+        questions[i1].view_state = q1_updated_view_state;
+        const q2_updated_view_state = questions[i2].view_state as ViewState;
+        q2_updated_view_state.analyticalQuestionOrder = q1_order_indx; // swap
+        questions[i2].view_state = q2_updated_view_state;
+
         // update
-        this.questionsList = questions;
+        this.sortedQuestions = questions;
 
         // update the store to facilitate questions consumption in other UI places
-        this.setQuestions(this.questionsList);
+        this.setQuestions(this.sortedQuestions);
 
-        // NOTE: re-ordering of questions is not persistent (and shouldn't be)
+        // update question(s) on the backend for persistent ordering
+        await updateQuestion(questions[i1].id as string, questions[i1]);
+        await updateQuestion(questions[i2].id as string, questions[i2]);
       }
 
       const insight_id = evt.dataTransfer.getData('insight_id');
@@ -373,7 +402,7 @@ export default defineComponent({
             updateQuestion(questionItem.id as string, questionItem);
 
             // update the store to facilitate questions consumption in other UI places
-            this.setQuestions(this.questionsList);
+            this.setQuestions(this.sortedQuestions);
           }
           // add the following question (text) to the insight
           if (!(loadedInsight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
@@ -423,7 +452,7 @@ export default defineComponent({
       updateQuestion(questionItem.id as string, questionItem);
 
       // update the store to facilitate questions consumption in other UI places
-      this.setQuestions(this.questionsList);
+      this.setQuestions(this.sortedQuestions);
 
       //
       // insight
