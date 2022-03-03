@@ -34,10 +34,10 @@
       <div class="card-maps-box">
         <region-map
           :data="regionMapData"
-          :map-bounds="bbox"
-          :selected-layer-id="selectedAdminLevel"
+          :map-bounds="mapBounds"
           :popup-Formatter="popupFormatter"
-          :selected-region-ids="selectedRegionIds"
+          :region-filter="selectedRegionIdsAtAllLevels"
+          :selected-admin-level="selectedAdminLevel"
         />
         <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
           <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :isContinuos="isContinuousScale" />
@@ -83,22 +83,26 @@ import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
 import { DataState, ViewState } from '@/types/Insight';
+import useMapBounds from '@/services/composables/useMapBounds';
 import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import { fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import { COLOR, colorFromIndex, ColorScaleType, getColors, COLOR_SCHEME, isDiscreteScale, validateColorScaleType, SCALE_FUNCTION, isDivergingScheme } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
 import useRegionalData from '@/services/composables/useRegionalData';
-import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
+import { adminLevelToString, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { OutputVariableSpecs, RawOutputDataPoint, RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
+import { getSelectedRegionIdsDisplay } from '@/utils/admin-level-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { normalize } from '@/utils/value-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import { AnalysisMapColorOptions } from '@/types/Common';
+import { AdminRegionSets } from '@/types/Datacubes';
 import MapLegend from '@/components/widgets/map-legend.vue';
 
 export default defineComponent({
@@ -196,6 +200,12 @@ export default defineComponent({
     const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
 
     const selectedRegionIds = ref<string[]>([]);
+    const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>({
+      country: new Set(),
+      admin1: new Set(),
+      admin2: new Set(),
+      admin3: new Set()
+    });
     const initialSelectedScenarioIds = ref<string[]>([]);
 
     watchEffect(() => {
@@ -221,7 +231,7 @@ export default defineComponent({
 
     const selectedAdminLevel = ref(0); // country by default
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
-    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
 
     const colorSchemeReversed = ref(false);
     const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
@@ -281,6 +291,9 @@ export default defineComponent({
             initialDataConfig.value.selectedRegionIds.forEach(regionId => {
               selectedRegionIds.value.push(regionId);
             });
+          }
+          if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
+            selectedRegionIdsAtAllLevels.value = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
           }
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
             initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
@@ -350,13 +363,10 @@ export default defineComponent({
     });
 
     const selectedRegionIdsDisplay = computed(() => {
-      if (_.isEmpty(selectedRegionIds.value)) return 'All';
-      return selectedRegionIds.value.join('/');
+      return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
     });
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
-
-    const bbox = ref<number[][] | undefined>(undefined);
 
     const {
       datacubeHierarchy
@@ -440,15 +450,7 @@ export default defineComponent({
       rawDataPointsList
     );
 
-    // Calculate bbox
-    watchEffect(async () => {
-      if (selectedRegionIds.value.length > 0) {
-        bbox.value = await computeMapBoundsForCountries(selectedRegionIds.value) || undefined;
-      } else {
-        const countries = [...new Set((regionalData.value?.country || []).map(d => d.id))];
-        bbox.value = await computeMapBoundsForCountries(countries) || undefined;
-      }
-    });
+    const { mapBounds } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIdsAtAllLevels);
 
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
     const finalColorScheme = computed(() => {
@@ -540,7 +542,9 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedScenarioIds,
       selectedRegionIds,
+      selectedRegionIdsAtAllLevels,
       selectedRegionIdsDisplay,
+      mapBounds,
       metadata,
       mainModelOutput,
       outputs,
@@ -562,7 +566,6 @@ export default defineComponent({
       statusColor,
       statusLabel,
       regionMapData,
-      bbox,
       popupFormatter,
       selectedScenarioIndex,
       regionRunsScenarios,

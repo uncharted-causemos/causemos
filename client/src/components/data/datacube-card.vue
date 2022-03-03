@@ -379,8 +379,9 @@
                       :style="{ borderColor: colorFromIndex(indx) }"
                       :data="regionMapData[featureName]"
                       :map-bounds="mapBounds"
-                      :selected-layer-id="selectedAdminLevel"
                       :popup-Formatter="popupFormatter"
+                      :region-filter="selectedRegionIdsAtAllLevels"
+                      :selected-admin-level="selectedAdminLevel"
                     />
                   </div>
                 </div>
@@ -776,7 +777,7 @@ export default defineComponent({
     const breakdownOption = ref<string | null>(null);
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
-    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
@@ -1418,11 +1419,17 @@ export default defineComponent({
       }
     });
 
-    watchEffect(() => {
-      if (isPublishing.value && tabState.value) {
-        onTabClick(tabState.value);
+    watch(
+      () => [tabState.value],
+      () => {
+        if (tabState.value !== '') {
+          onTabClick(tabState.value);
+        }
+      },
+      {
+        immediate: true
       }
-    });
+    );
 
     const preGenDataMap = ref<{[key: string]: PreGeneratedModelRunData[]}>({}); // map all pre-gen data for each run
     const preGenDataItems = ref<PreGeneratedModelRunData[]>([]);
@@ -1505,7 +1512,7 @@ export default defineComponent({
         }
         potentialScenarios.value.forEach(run => {
           if (dateModelParam.value !== null) {
-            run[dateModelParam.value.type] = dateValue;
+            run[dateModelParam.value.name] = dateValue;
           }
         });
       }

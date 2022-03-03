@@ -57,10 +57,10 @@
 
       <!-- paht results -->
       <div>
-        <div v-if="pathExperiemntId && pathExperimentResult.length === 0">
+        <div v-if="pathExperimentId && pathExperimentResult.length === 0">
           <i class="fa fa-spinner fa-spin" /> Running experiment
         </div>
-        <div v-if="pathExperiemntId && pathExperimentResult.length > 0">
+        <div v-if="pathExperimentId && pathExperimentResult.length > 0">
           <div v-for="(path, idx) of pathExperimentResult" :key="idx">
             <cag-path-item :path-item="path" @click="showPath(path)" />
           </div>
@@ -81,7 +81,7 @@ import modelService from '@/services/model-service';
 import useToaster from '@/services/composables/useToaster';
 
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { CAGGraph, CAGModelSummary, Scenario, GraphPath } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, Scenario, GraphPath, ConceptProjectionConstraints } from '@/types/CAG';
 
 const ANALYSES = [
   { displayName: 'Feedback Loops', value: 'cycles' },
@@ -135,7 +135,7 @@ export default defineComponent({
       return store.getters['model/selectedScenarioId'];
     });
 
-    const pathExperiemntId = ref('');
+    const pathExperimentId = ref('');
     const pathExperimentResult = ref([]) as Ref<GraphPath[]>;
 
     // FIXME: SHould have adapatble lists depending on selection e.g. reachable nodes
@@ -159,7 +159,7 @@ export default defineComponent({
       totalCycles,
 
       availableNodes,
-      pathExperiemntId,
+      pathExperimentId,
       pathExperimentResult,
 
       toaster: useToaster(),
@@ -199,24 +199,27 @@ export default defineComponent({
     async runPathwayAnalysis() {
       if (_.isEmpty(this.currentPathSource) || _.isEmpty(this.currentPathTarget)) return;
 
-      // Extract constraints
-      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-      if (!scenario) return;
+      let constraints: ConceptProjectionConstraints[] = [];
+      // If we're in "historical data only" mode, run pathway analysis with no
+      //  constraints.
+      if (this.selectedScenarioId !== null) {
+        // Extract constraints
+        const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+        if (!scenario) return;
+        constraints = scenario.parameter.constraints;
+      }
 
       this.pathExperimentResult = [];
-
-      const constraints = scenario.parameter.constraints;
-      this.pathExperiemntId = await modelService.runPathwaySensitivityAnalysis(
+      this.pathExperimentId = await modelService.runPathwaySensitivityAnalysis(
         this.modelSummary,
         [this.currentPathSource],
         [this.currentPathTarget],
         modelService.cleanConstraints(constraints)
       );
-      console.log('path exp', this.pathExperiemntId);
       this.pollPathExperimentResult();
     },
     async pollPathExperimentResult() {
-      const r = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.pathExperiemntId);
+      const r = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.pathExperimentId);
 
       if (r.status === 'completed' && r.results) {
         const pathResult = r.results.pathways;

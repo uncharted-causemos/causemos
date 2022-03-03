@@ -42,7 +42,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, ComputedRef, defineComponent, ref, watchEffect } from 'vue';
+import { computed, ComputedRef, defineComponent, nextTick, ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
@@ -96,7 +96,7 @@ export default defineComponent({
     // reset on init:
     setCurrentPublishStep(ModelPublishingStepID.Enrich_Description);
 
-    const tabState = ref('');
+    const tabState = ref(''); // initial tab
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
 
@@ -156,29 +156,34 @@ export default defineComponent({
       }
     };
 
-    watchEffect(async () => {
-      if (metadata.value) {
-        const publicInsights = await InsightUtil.getPublicInsights(metadata.value.id, projectId.value);
-        if (countInsights.value > 0) {
-          const ps = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Capture_Insight);
+    watch(
+      () => [
+        countInsights.value
+      ],
+      async () => {
+        if (metadata.value) {
+          const insightStep = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Capture_Insight);
+          const publicInsights = await InsightUtil.getPublicInsights(metadata.value.id, projectId.value);
           // mark the relevant step as completed based on the availability of at least one public insight
-          if (ps) { ps.completed = publicInsights.length > 0; }
+          if (insightStep) { insightStep.completed = publicInsights.length > 0; }
+          if (publicInsights.length === 0 && metadata.value.status === DatacubeStatus.Ready && currentView.value === 'modelPublishingExperiment') {
+            toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', 'error', false);
+          }
         }
-        if (publicInsights.length === 0 && metadata.value.status === DatacubeStatus.Ready && currentView.value === 'modelPublishingExperiment') {
-          toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', 'error', false);
-        }
+      },
+      {
+        immediate: true
       }
-    });
+    );
 
-    const updatePublishingStep = (completed: boolean) => {
-      const currStep = publishingSteps.value.find(ps => ps.id === currentPublishStep.value);
-      if (currStep) {
-        currStep.completed = completed;
-      }
-    };
     const showPublishingStep = (publishStepInfo: {publishStep: ModelPublishingStep}) => {
       setCurrentPublishStep(publishStepInfo.publishStep.id);
-      tabState.value = publishStepInfo.publishStep.id === ModelPublishingStepID.Enrich_Description ? 'description' : 'data';
+      // @NOTE: some strange Vue issue does not force the update to "tabState.value" to be triggered in the datacube-card
+      //         so the following hack is used
+      tabState.value = '';
+      nextTick(() => {
+        tabState.value = publishStepInfo.publishStep.id === ModelPublishingStepID.Enrich_Description ? 'description' : 'data';
+      });
     };
 
     const publishModel = async () => {
@@ -238,28 +243,43 @@ export default defineComponent({
       }
     };
 
-    watchEffect(() => {
-      // mark the second step as complete
-      if (currentPublishStep.value === ModelPublishingStepID.Tweak_Visualization) {
-        updatePublishingStep(
-          selectedSpatialAggregation.value !== AggregationOption.None &&
-          selectedTemporalAggregation.value !== AggregationOption.None &&
-          selectedTemporalResolution.value !== TemporalResolutionOption.None);
+    watch(
+      () => [
+        selectedSpatialAggregation.value,
+        selectedTemporalAggregation.value,
+        selectedTemporalResolution.value
+      ],
+      () => {
+        const vizConfigStep = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Tweak_Visualization);
+        if (vizConfigStep) {
+          vizConfigStep.completed = selectedSpatialAggregation.value !== AggregationOption.None &&
+            selectedTemporalAggregation.value !== AggregationOption.None &&
+            selectedTemporalResolution.value !== TemporalResolutionOption.None;
+        }
       }
+    );
 
-      if (selectedScenarioIds?.value?.length > 0) {
-        if (currentPublishStep.value === ModelPublishingStepID.Enrich_Description) {
-          // user attempted to select one or more scenarios but the model publishing step is not correct
-          // this would be the case of the user selected a scenario on the PC plot while the model publishing step is still assuming description view
-          store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Tweak_Visualization);
-        }
-      } else {
-        // if no scenario selection is made, ensure we are back to the first step
-        if (currentPublishStep.value !== ModelPublishingStepID.Enrich_Description) {
-          store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Enrich_Description);
+    watch(
+      () => [
+        selectedScenarioIds.value,
+        selectedTemporalAggregation.value,
+        selectedTemporalResolution.value
+      ],
+      () => {
+        if (selectedScenarioIds?.value?.length > 0) {
+          if (currentPublishStep.value === ModelPublishingStepID.Enrich_Description) {
+            // user attempted to select one or more scenarios but the model publishing step is not correct
+            // this would be the case of the user selected a scenario on the PC plot while the model publishing step is still assuming description view
+            setCurrentPublishStep(ModelPublishingStepID.Tweak_Visualization);
+          }
+        } else {
+          // if no scenario selection is made, ensure we are back to the first step
+          if (currentPublishStep.value !== ModelPublishingStepID.Enrich_Description) {
+            setCurrentPublishStep(ModelPublishingStepID.Enrich_Description);
+          }
         }
       }
-    });
+    );
 
     const onModelParamUpdated = (updatedModelParam: ModelParameter) => {
       if (metadata.value !== null) {
@@ -269,9 +289,10 @@ export default defineComponent({
       }
     };
 
-    const updateModelMetadataValidity = (info: any) => {
-      if (currentPublishStep.value === ModelPublishingStepID.Enrich_Description) {
-        updatePublishingStep(info.valid);
+    const updateModelMetadataValidity = (valid: boolean) => {
+      const metadataStep = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Enrich_Description);
+      if (metadataStep) {
+        metadataStep.completed = valid;
       }
     };
 
@@ -292,7 +313,8 @@ export default defineComponent({
       onModelParamUpdated,
       updateModelMetadataValidity,
       projectId,
-      toast
+      toast,
+      currentView
     };
   },
   watch: {
@@ -317,12 +339,12 @@ export default defineComponent({
     //  previously opened it and clicked the browser back button
     this.hideInsightPanel();
 
-    let markStepsAsCompleted = false;
+    let markInsightStepAsCompleted = false;
 
     // we have some insights, some/all of which relates to the current model instance
     const insight_id = this.$route.query.insight_id as any;
     if (insight_id !== undefined) {
-      markStepsAsCompleted = true;
+      markInsightStepAsCompleted = true;
     } else {
       // check if a public insight exist for this model instance
       // first, fetch public insights to load the publication status, as needed
@@ -334,7 +356,7 @@ export default defineComponent({
         // we have at least one public insight, which we should use to fetch view configurations
         const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
         if (defaultInsight.context_id?.includes(this.metadata?.id as string)) {
-          markStepsAsCompleted = true;
+          markInsightStepAsCompleted = true;
           // restore initial config from the insight, if available
           if (defaultInsight.data_state !== undefined) {
             this.initialDataConfig = defaultInsight.data_state;
@@ -344,13 +366,18 @@ export default defineComponent({
           }
           this.toast('An existing published insight was found!\nLoading default configurations...', 'success', false);
         }
+      } else {
+        if (this.metadata?.status === DatacubeStatus.Ready && this.currentView === 'modelPublishingExperiment') {
+          this.toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', 'error', false);
+        }
       }
     }
-    if (markStepsAsCompleted) {
-      // just mark all steps as completed
-      this.publishingSteps.forEach(step => {
+    if (markInsightStepAsCompleted) {
+      // mark the last step (i.e., the insight step) as completed
+      const step = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Capture_Insight);
+      if (step) {
         step.completed = true;
-      });
+      }
     }
   }
 });

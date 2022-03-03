@@ -517,7 +517,7 @@ export default defineComponent({
       if (invalidInputs.length > 0 || invalidOutputs.length > 0 || outputQualifiers.length > 0) {
         isValid = false;
       }
-      this.$emit('check-model-metadata-validity', { valid: isValid });
+      this.$emit('check-model-metadata-validity', isValid);
     },
     updateInputKnobVisibility(param: ModelParameter) {
       param.is_visible = !param.is_visible;

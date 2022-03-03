@@ -72,10 +72,10 @@
       <div class="datacube-map-placeholder">
         <region-map
           :data="regionMapData"
-          :selected-layer-id="selectedAdminLevel"
-          :map-bounds="bbox"
+          :map-bounds="mapBounds"
           :popup-formatter="popupFormatter"
-          :selected-region-ids="selectedRegionIds"
+          :region-filter="selectedRegionIdsAtAllLevels"
+          :selected-admin-level="selectedAdminLevel"
         />
       </div>
     </main>
@@ -103,15 +103,19 @@ import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions'
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { COLOR, colorFromIndex, ColorScaleType, COLOR_SCHEME, getColors, isDiscreteScale, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
-import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
+import { adminLevelToString, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
+import { fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
+import { getSelectedRegionIdsDisplay } from '@/utils/admin-level-util';
 import { BarData } from '@/types/BarChart';
 import useRegionalData from '@/services/composables/useRegionalData';
+import useMapBounds from '@/services/composables/useMapBounds';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import { AdminRegionSets } from '@/types/Datacubes';
 import { normalize } from '@/utils/value-util';
 
 export default defineComponent({
@@ -163,7 +167,7 @@ export default defineComponent({
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
-    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
 
     const store = useStore();
 
@@ -233,6 +237,12 @@ export default defineComponent({
     const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
 
     const selectedRegionIds: string[] = [];
+    const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>({
+      country: new Set(),
+      admin1: new Set(),
+      admin2: new Set(),
+      admin3: new Set()
+    });
     const initialSelectedScenarioIds = ref<string[]>([]);
 
     watchEffect(() => {
@@ -314,6 +324,9 @@ export default defineComponent({
               selectedRegionIds.push(regionId);
             });
           }
+          if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
+            selectedRegionIdsAtAllLevels.value = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
+          }
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
             initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
           }
@@ -390,9 +403,35 @@ export default defineComponent({
     });
 
     const selectedRegionIdsDisplay = computed(() => {
-      if (_.isEmpty(selectedRegionIds)) return 'All';
-      return selectedRegionIds.join('/');
+      return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
     });
+
+    // NOTE: only the List view within the CompAnalysis page will update the name of the analysis item
+    watch(
+      () => [
+        mainModelOutput.value,
+        selectedRegionIdsDisplay
+      ],
+      () => {
+        if (mainModelOutput.value && datacubeAnalysisItem) {
+          // update the corresponding analysis name; match the card title
+          const outputName = mainModelOutput.value.display_name !== '' ? mainModelOutput.value.display_name : mainModelOutput.value.name;
+          const selectedRegion = selectedRegionIdsDisplay.value;
+          const datacubeName = metadata.value?.name;
+          const datacubeHeader = '<b>' + outputName + ' - ' + selectedRegion + ' </b> ' + datacubeName;
+          if (datacubeHeader !== datacubeAnalysisItem.name) {
+            datacubeAnalysisItem.name = datacubeHeader;
+            // also, persist the change by updating the analysis item
+            const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+            const item = updatedAnalysisItems.find(item => item.id === props.id && item.datacubeId === datacubeId.value);
+            if (item) {
+              item.name = datacubeHeader;
+            }
+            store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+          }
+        }
+      }
+    );
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
@@ -442,12 +481,7 @@ export default defineComponent({
       datacubeHierarchy
     );
 
-    // Calculate bbox
-    const bbox = ref<number[][] | undefined>(undefined);
-    watchEffect(async () => {
-      const countries = [...new Set((regionalData.value?.country || []).map(d => d.id))];
-      bbox.value = await computeMapBoundsForCountries(countries) || undefined;
-    });
+    const { mapBounds } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIdsAtAllLevels);
 
     // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
     const finalColorScheme = computed(() => {
@@ -539,6 +573,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedScenarioIds,
       selectedRegionIds,
+      selectedRegionIdsAtAllLevels,
       selectedRegionIdsDisplay,
       metadata,
       mainModelOutput,
@@ -562,7 +597,7 @@ export default defineComponent({
       statusColor,
       statusLabel,
       regionMapData,
-      bbox,
+      mapBounds,
       selectedAdminLevel,
       popupFormatter,
       selectedScenarioIndex,

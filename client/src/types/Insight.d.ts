@@ -2,6 +2,7 @@ import { Timeseries } from '@/types/Timeseries';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { ComparativeAnalysisMode, BinningOptions, RegionRankingCompositionType, DataTransform } from '@/types/Enums';
+import { AnalysisItem } from './Analysis';
 
 // @base/abstract type
 export interface Snapshot {
@@ -54,6 +55,7 @@ export interface AnalyticalQuestion extends Snapshot {
   linked_insights: string[]; // has some insight (using their names/IDs) been linked to satisfy/answer this question?
   tour_name?: string;
   modified_at?: number;
+  view_state: ViewState;
 }
 
 // view-specific values (no data dependency)
@@ -86,6 +88,8 @@ export interface ViewState {
   regionRankingHoverId?: string;
   regionRankingShowNormalizedData?: boolean;
 
+  analyticalQuestionOrder?: number; // a numeric index to save and restore each question order
+
   // knowledge/model space specific
   sensitivityToggle?: any;
   graphLayout?: any;
@@ -112,9 +116,11 @@ export interface DataState {
   selectedYears?: string[];
   selectedTransform?: DataTransform;
   activeReferenceOptions?: string[];
+  selectedAnalysisItems?: AnalysisItem[];
 
   // region-ranking specific
   regionRankingWeights?: {[key: string]: {name: string; weight: number}};
+  regionRankingDataInversion?: {[key: string]: boolean};
 
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string; source: string}[];
@@ -126,10 +132,11 @@ export interface DataState {
   // knowledge/model space specific
   selectedScenarioId?: string;
   selectedNode?: string;
-  selectedEdge?: string; // src + des node names
+  selectedEdge?: string[];
   currentEngine?: string;
   modelName?: string;
   nodesCount?: number;
+  cagVisualState?: any;
 
   // others
   // ...

@@ -62,11 +62,11 @@
           </div>
           <div class="checkbox">
             <label
-              @click="invertData=!invertData"
+              @click="invertData"
               style="cursor: pointer; color: black;">
               <i
                 class="fa fa-lg fa-fw"
-                :class="{ 'fa-check-square-o': invertData, 'fa-square-o': !invertData }"
+                :class="{ 'fa-check-square-o': isDataInverted, 'fa-square-o': !isDataInverted }"
               />
               Invert data
             </label>
@@ -77,7 +77,7 @@
         <region-map
           class="region-map-container"
           :data="barsData"
-          :selected-layer-id="selectedAdminLevel"
+          :selected-admin-level="selectedAdminLevel"
           :map-bounds="bbox"
           :selected-id="barChartHoverId"
           @click-region="$emit('map-click-region', $event)" />
@@ -100,6 +100,7 @@ import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFe
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
+import { getSelectedRegionIdsDisplay, filterRegionalLevelData } from '@/utils/admin-level-util';
 import { ModelRun } from '@/types/ModelRun';
 import {
   AggregationOption,
@@ -114,6 +115,7 @@ import OptionsButton from '@/components/widgets/options-button.vue';
 import BarChart from '@/components/widgets/charts/bar-chart.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useMapBounds from '@/services/composables/useMapBounds';
 import { DataState, ViewState } from '@/types/Insight';
 import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
@@ -128,11 +130,11 @@ import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
-import { filterRegionalLevelData } from '@/utils/admin-level-util';
 import { fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import { AnalysisMapColorOptions } from '@/types/Common';
 import MapLegend from '@/components/widgets/map-legend.vue';
+import { AdminRegionSets } from '@/types/Datacubes';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCard',
@@ -142,7 +144,7 @@ export default defineComponent({
     RegionMap,
     MapLegend
   },
-  emits: ['updated-bars-data', 'bar-chart-hover', 'map-click-region'],
+  emits: ['updated-bars-data', 'bar-chart-hover', 'map-click-region', 'invert-data-updated'],
   props: {
     id: {
       type: String,
@@ -175,6 +177,10 @@ export default defineComponent({
     showNormalizedData: {
       type: Boolean,
       default: true
+    },
+    isDataInverted: {
+      type: Boolean,
+      default: false
     }
   },
   setup(props, { emit }) {
@@ -186,7 +192,8 @@ export default defineComponent({
       selectedAdminLevel,
       regionRankingBinningType,
       showNormalizedData,
-      barChartHoverId
+      barChartHoverId,
+      isDataInverted
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -194,7 +201,7 @@ export default defineComponent({
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
-    const bbox = ref<number[][] | undefined>(undefined);
+    const bbox = ref<number[][] | { value: number[][], options: any } | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
@@ -273,10 +280,22 @@ export default defineComponent({
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
     const selectedRegionIds = ref<string[]>([]);
-    const selectedRegionIdsAtAllLevels = ref<null | { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }>(null);
+    const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>({
+      country: new Set(),
+      admin1: new Set(),
+      admin2: new Set(),
+      admin3: new Set()
+    });
 
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
-    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
+
+    const invertData = () => {
+      emit('invert-data-updated', {
+        id: id.value,
+        datacubeId: datacubeId.value
+      });
+    };
 
     // apply the view-config for this datacube
     watch(
@@ -454,8 +473,7 @@ export default defineComponent({
     );
 
     const selectedRegionIdsDisplay = computed(() => {
-      if (_.isEmpty(selectedRegionIds.value)) return 'All';
-      return selectedRegionIds.value.join('/');
+      return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
     });
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
@@ -470,8 +488,6 @@ export default defineComponent({
       bbox.value = await computeMapBoundsForCountries(countries) || undefined;
     });
 
-    const invertData = ref(false);
-
     watch(
       () => [
         regionalData.value,
@@ -481,7 +497,7 @@ export default defineComponent({
         numberOfColorBins.value,
         regionRankingBinningType.value,
         selectedRegionRankingScenario.value,
-        invertData.value,
+        isDataInverted.value,
         selectedRegionIdsAtAllLevels.value
       ],
       () => {
@@ -535,8 +551,9 @@ export default defineComponent({
               bins.forEach((bin) => {
                 _.sortBy(bin, item => item.value).forEach(dataItem => {
                   const normalizedValue = normalize(dataItem.value, dataExtent[0], dataExtent[1]);
-                  const finalNormalizedValue = invertData.value && showNormalizedData.value ? (1 - normalizedValue) : normalizedValue;
+                  const finalNormalizedValue = isDataInverted.value ? (1 - normalizedValue) : normalizedValue;
                   const barValue = showNormalizedData.value ? (finalNormalizedValue * numberOfColorBins.value) : dataItem.value;
+
                   let barColor = 'skyblue';
                   let binIndex = -1;
                   if (regionRankingBinningType.value === BinningOptions.Linear) {
@@ -562,7 +579,7 @@ export default defineComponent({
             }
 
             // adjust the bar ranking so that the highest bar value will be ranked 1st
-            if (!invertData.value) {
+            if (!isDataInverted.value) {
               temp.forEach((barItem, indx) => {
                 barItem.name = (temp.length - indx).toString();
               });
@@ -582,6 +599,26 @@ export default defineComponent({
           barsData.value = temp;
         }
       });
+
+    const { mapBounds } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIdsAtAllLevels);
+    // Calculate bbox
+    watchEffect(async () => {
+      const options = {
+        padding: 20, // pixels
+        duration: 1000, // milliseconds
+        essential: true // this animation is considered essential with respect to prefers-reduced-motion
+      };
+      const bounds = _.isArray(mapBounds.value)
+        ? { value: mapBounds.value, options }
+        : mapBounds.value;
+
+      if (barChartHoverId.value) {
+        const result = await computeMapBoundsForCountries([barChartHoverId.value]);
+        bbox.value = result ? { value: result, options } : bounds;
+      } else {
+        bbox.value = bounds;
+      }
+    });
 
     return {
       selectedTemporalResolution,
@@ -611,8 +648,8 @@ export default defineComponent({
       regionRunsScenarios,
       bbox,
       isModelMetadata,
-      invertData,
-      mapLegendData
+      mapLegendData,
+      invertData
     };
   },
   methods: {
