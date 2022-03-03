@@ -131,7 +131,6 @@ export default {
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countInsights: 'insightPanel/countInsights',
       projectId: 'app/project'
     }),
     exportOptions() {
@@ -182,12 +181,15 @@ export default {
   methods: {
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCountInsights: 'insightPanel/setCountInsights',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
       setInsightList: 'insightPanel/setInsightList',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
+      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
+      setReviewIndex: 'insightPanel/setReviewIndex'
     }),
+    getInsightIndex(targetInsight, insights) {
+      return insights.findIndex(ins => ins.id === targetInsight.id);
+    },
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsight = null;
@@ -223,7 +225,9 @@ export default {
       evt.currentTarget.style.border = 'none';
     },
     editInsight(insight) {
+      const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
+      this.setReviewIndex(insightIndex);
       this.setInsightList(this.searchedInsights);
       // open the preview in the edit mode
       this.setCurrentPane('review-edit-insight');
@@ -284,13 +288,16 @@ export default {
     },
     reviewInsight(insight) {
       // open review modal (i.e., insight gallery view)
+      const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
+      this.setReviewIndex(insightIndex);
       this.setInsightList(this.searchedInsights);
       this.setCurrentPane('review-insight');
     },
     reviewChecklist() {
       // to do: generate insights list in order of questions
       if (this.insightsGroupedByQuestion.length < 1) return;
+      this.setReviewIndex(0);
       this.setUpdatedInsight(this.insightsGroupedByQuestion[0]);
       this.setInsightList(this.insightsGroupedByQuestion);
       this.setCurrentPane('review-insight');
