@@ -24,7 +24,9 @@ export default function useQuestionsData() {
   const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
 
   watchEffect(onInvalidate => {
-    console.log('refetching questions at: ' + new Date(questionsFetchedAt.value).toTimeString());
+    // This condition should always return true, it's just used to add
+    //  questionsFetchedAt to this watchEffect's dependency array
+    if (questionsFetchedAt.value < 0) { return; }
     let isCancelled = false;
     async function getQuestions() {
       // do not fetch if the panel is not open

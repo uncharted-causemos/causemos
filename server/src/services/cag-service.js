@@ -199,6 +199,10 @@ const createCAG = async (modelFields, edges, nodes) => {
     return doc.id;
   };
   const now = Date.now();
+  // time_scale is defined if we're duplicating an existing CAG, or undefined
+  //  if this is a new CAG. If it's the latter, time_scale will be set when the
+  //  CAG is first loaded in the application.
+  const { time_scale } = modelFields.parameter ?? {};
   const results = await CAGConnection.insert({
     id: CAGId,
     ...modelFields,
@@ -209,7 +213,7 @@ const createCAG = async (modelFields, edges, nodes) => {
       num_steps: DEFAULT_NUM_STEPS,
       projection_start: defaultProjectionStartDate,
       engine: 'dyse',
-      time_scale: undefined // Will be set when CAG first load in the application
+      time_scale
     },
     created_at: now,
     modified_at: now

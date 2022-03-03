@@ -129,10 +129,11 @@ export interface DataState {
   // knowledge/model space specific
   selectedScenarioId?: string;
   selectedNode?: string;
-  selectedEdge?: string; // src + des node names
+  selectedEdge?: string[];
   currentEngine?: string;
   modelName?: string;
   nodesCount?: number;
+  cagVisualState?: any;
 
   // others
   // ...

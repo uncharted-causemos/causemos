@@ -26,7 +26,8 @@ const MAPBOX_EVENTS = [
   'mouseout',
   'render',
   'sourcedata',
-  'styledata'
+  'styledata',
+  'resize'
   // More events can be added in the future
 ];
 

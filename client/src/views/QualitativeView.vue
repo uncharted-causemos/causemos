@@ -250,6 +250,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalPathFind from '@/components/modals/modal-path-find.vue';
 import ModalImportCag from '@/components/qualitative/modal-import-cag.vue';
 import ModalImportConflict from '@/components/qualitative/modal-import-conflict.vue';
+import { calculateNeighborhood } from '@/utils/graphs-util';
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
@@ -260,7 +261,8 @@ import {
   CAGModelSummary,
   EdgeParameter,
   NodeParameter,
-  SourceTargetPair
+  SourceTargetPair,
+  CAGVisualState
 } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import useToaster from '@/services/composables/useToaster';
@@ -274,8 +276,6 @@ import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import CagLegend from '@/components/graph/cag-legend.vue';
 import { Statement } from '@/types/Statement';
 import { getInsightById } from '@/services/insight-service';
-
-const EDGE_LABEL_SOURCE_TARGET_SEPARATOR = ' : ';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -363,8 +363,11 @@ export default defineComponent({
 
     // will be valid if populated from a previous insight that include such info
     initialSelectedNode: null as string | null,
-    initialSelectedEdge: null as string | null,
-    visualState: {},
+    initialSelectedEdge: null as string[] | null,
+    visualState: {
+      focus: { nodes: [], edges: [] },
+      outline: { nodes: [], edges: [] }
+    } as CAGVisualState,
 
     drilldownTabs: [] as { name: string; id: string }[],
     activeDrilldownTab: null as string | null,
@@ -536,32 +539,49 @@ export default defineComponent({
             this.initialSelectedEdge = selectedEdge;
           }
         }
+        // If blank force a reset
+        if (!loadedInsight.data_state?.selectedEdge && !loadedInsight.data_state?.selectedNode) {
+          this.visualState = {
+            focus: { nodes: [], edges: [] },
+            outline: { nodes: [], edges: [] }
+          };
+          this.closeDrilldown();
+        }
       }
     },
     applyNodeSelection(selectedNode: string) {
       if (selectedNode) {
-        const nodeToSelect = this.modelComponents.nodes.find(node => node.label === selectedNode);
+        const nodeToSelect = this.modelComponents.nodes.find(node => node.concept === selectedNode);
+
         if (nodeToSelect) {
+          const neighborhood = calculateNeighborhood(this.modelComponents, nodeToSelect.concept);
           this.selectNode(nodeToSelect);
           this.visualState = {
-            selected: {
-              nodes: [nodeToSelect]
+            focus: neighborhood,
+            outline: {
+              nodes: [
+                { concept: nodeToSelect.concept }
+              ],
+              edges: []
             }
           };
         }
       }
     },
-    applyEdgeSelection(selectedEdge: string) {
+    applyEdgeSelection(selectedEdge: string[]) {
       if (selectedEdge) {
-        const edgeSrcAndTarget = selectedEdge.split(EDGE_LABEL_SOURCE_TARGET_SEPARATOR);
-        const edgeSourceLabel = edgeSrcAndTarget[0];
-        const edgeTargetLabel = edgeSrcAndTarget[1];
-        const edgeToSelect = this.modelComponents.edges.find(edge => this.ontologyFormatter(edge.source) === edgeSourceLabel && this.ontologyFormatter(edge.target) === edgeTargetLabel);
+        const [source, target] = selectedEdge;
+        const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
         if (edgeToSelect) {
           this.selectEdge(edgeToSelect);
           this.visualState = {
-            selected: {
-              edges: [edgeToSelect]
+            focus: {
+              nodes: [{ concept: source }, { concept: target }],
+              edges: [{ source, target }]
+            },
+            outline: {
+              nodes: [],
+              edges: [{ source, target }]
             }
           };
         }
@@ -609,12 +629,12 @@ export default defineComponent({
         modelName: this.modelSummary?.name
       };
       if (this.selectedNode !== null) {
-        dataState.selectedNode = this.selectedNode.label;
+        dataState.selectedNode = this.selectedNode.concept;
       }
       if (this.selectedEdge !== null) {
-        const source = this.ontologyFormatter(this.selectedEdge.source);
-        const target = this.ontologyFormatter(this.selectedEdge.target);
-        dataState.selectedEdge = source + EDGE_LABEL_SOURCE_TARGET_SEPARATOR + target;
+        const source = this.selectedEdge.source;
+        const target = this.selectedEdge.target;
+        dataState.selectedEdge = [source, target];
       }
       this.setDataState(dataState);
     },
