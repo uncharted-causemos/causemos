@@ -167,7 +167,7 @@ export default defineComponent({
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
-    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
 
     const store = useStore();
 

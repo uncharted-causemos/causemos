@@ -99,7 +99,7 @@
           :is-dropdown-left-aligned="true"
           :items="dataLayerTransparencyOptions"
           :selected-item="selectedDataLayerTransparency"
-          :inner-button-label="'Transparency'"
+          :inner-button-label="'Opacity'"
           @item-selected="setTransparencySelection"
         />
       </div>
@@ -220,7 +220,7 @@ export default defineComponent({
     },
     selectedDataLayerTransparency: {
       type: String,
-      default: DATA_LAYER_TRANSPARENCY['50%']
+      default: DATA_LAYER_TRANSPARENCY['100%']
     },
     colorSchemeReversed: {
       type: Boolean,
