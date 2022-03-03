@@ -101,7 +101,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent, ref, PropType, Ref } from 'vue';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 
 import ConfigBar from '@/components/quantitative/config-bar.vue';
 import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis.vue';
@@ -115,9 +115,11 @@ import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagLegend from '@/components/graph/cag-legend.vue';
-import { findPaths } from '@/utils/graphs-util';
-import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter } from '@/types/CAG';
+import { findPaths, calculateNeighborhood } from '@/utils/graphs-util';
+import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter, CAGVisualState } from '@/types/CAG';
 import { Statement } from '@/types/Statement';
+import { getInsightById } from '@/services/insight-service';
+import { DataState } from '@/types/Insight';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -141,6 +143,13 @@ const EDGE_DRILLDOWN_TABS = [
 const PROJECTION_ENGINES = {
   DELPHI: 'delphi',
   DYSE: 'dyse'
+};
+
+const blankVisualState = (): CAGVisualState => {
+  return {
+    focus: { nodes: [], edges: [] },
+    outline: { nodes: [], edges: [] }
+  };
 };
 
 export default defineComponent({
@@ -177,14 +186,6 @@ export default defineComponent({
     resetLayoutToken: {
       type: Number,
       required: true
-    },
-    initialVisualState: {
-      // selected.nodes
-      // selected.edges
-      // highlighted.nodes
-      // highlighted.edges
-      type: Object,
-      default: null
     }
   },
   emits: [
@@ -195,18 +196,19 @@ export default defineComponent({
     'new-scenario',
     'update-scenario',
     'delete-scenario',
-    'delete-scenario-clamp',
-    'visual-state-updated'
+    'delete-scenario-clamp'
   ],
   setup() {
     const selectedNode = ref(null) as Ref<NodeParameter | null>;
     const selectedEdge = ref(null) as Ref<EdgeParameter | null>;
     const selectedStatements = ref([]) as Ref<Statement[]>;
+    const visualState = ref(blankVisualState()) as Ref<CAGVisualState>;
 
     return {
       selectedNode,
       selectedEdge,
       selectedStatements,
+      visualState,
       PANE_ID
     };
   },
@@ -218,8 +220,7 @@ export default defineComponent({
     drilldownTabs: NODE_DRILLDOWN_TABS,
     activeDrilldownTab: PANE_ID.EVIDENCE,
     isDrilldownOpen: false,
-    isFetchingStatements: false,
-    visualState: {} as any
+    isFetchingStatements: false
   }),
   computed: {
     ...mapGetters({
@@ -240,6 +241,24 @@ export default defineComponent({
     }
   },
   watch: {
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'quantitative' space
+        if (this.$route.name === 'quantitative' && this.$route.query) {
+          const insight_id = this.$route.query.insight_id;
+          if (typeof insight_id === 'string') {
+            this.updateStateFromInsight(insight_id);
+            this.$router.push({
+              query: {
+                insight_id: undefined,
+                activeTab: this.$route.query.activeTab || undefined
+              }
+            });
+          }
+        }
+      },
+      immediate: true
+    },
     scenarios() {
       this.refresh();
     },
@@ -252,37 +271,15 @@ export default defineComponent({
     selectedScenarioId() {
       // FIXME: Probably need a ligher weight function than refresh
       this.refresh();
-    },
-    visualState() {
-      this.$emit('visual-state-updated', this.visualState);
-    },
-    initialVisualState: {
-      // this will be received every time the visualState is updated on the parent side
-      //  e.g., when the parent loads an insight
-      handler(/* newValue, oldValue */) {
-        // this will trigger renderer update to visually update
-        //  e.g., a selected node will be highlighted with blue boundary
-        if (this.initialVisualState) {
-          this.visualState = this.initialVisualState;
-
-          // we also need to manually apply state, e.g., select nodes/edges
-          if (this.visualState && this.visualState.selected) {
-            if (this.visualState.selected.nodes) {
-              this.onNodeSensitivity(this.visualState.selected.nodes[0]);
-            }
-            if (this.visualState.selected.edges) {
-              this.showRelation(this.visualState.selected.edges[0]);
-            }
-          }
-        }
-      },
-      immediate: true
     }
   },
   mounted() {
     this.refresh();
   },
   methods: {
+    ...mapActions({
+      setDataState: 'insightPanel/setDataState'
+    }),
     refresh() {
       // Get Model data
       const graph = { nodes: this.modelComponents.nodes, edges: this.modelComponents.edges };
@@ -311,6 +308,17 @@ export default defineComponent({
       this.activeDrilldownTab = PANE_ID.SENSITIVITY;
       this.openDrilldown();
       this.selectedNode = node;
+      const neighborhood = calculateNeighborhood(this.modelComponents as any, node.concept);
+      this.visualState = {
+        focus: neighborhood,
+        outline: {
+          nodes: [
+            { concept: node.concept }
+          ],
+          edges: []
+        }
+      };
+      this.updateDataState();
     },
     openNodeDrilldownView(node: NodeParameter) {
       this.onBackgroundClick();
@@ -336,7 +344,7 @@ export default defineComponent({
 
       const highlightEdges = [];
       const highlightNodes = [];
-      const nodesSet = new Set();
+      const nodesSet = new Set<string>();
 
       // FIXME: might have dupliate edges, should clean up
       for (const path of paths) {
@@ -357,24 +365,27 @@ export default defineComponent({
 
       if (node) {
         this.visualState = {
-          highlighted: {
+          focus: {
             nodes: highlightNodes,
             edges: highlightEdges
           },
-          selected: {
-            nodes: [this.selectedNode]
-          },
-          annotated: {
-            nodes: [node]
+          outline: {
+            nodes: [
+              { concept: node.concept, color: '#8767c8' },
+              { concept: this.selectedNode.concept }
+            ],
+            edges: []
           }
         };
+        this.updateDataState();
       }
     },
     onBackgroundClick() {
       this.closeDrilldown();
       this.selectedEdge = null;
       this.selectedNode = null;
-      this.visualState = { };
+      this.visualState = blankVisualState();
+      this.updateDataState();
     },
     openDrilldown() {
       this.isDrilldownOpen = true;
@@ -391,6 +402,20 @@ export default defineComponent({
       modelService.getEdgeStatements(this.currentCAG, edgeData.source, edgeData.target).then(statements => {
         this.selectedStatements = statements;
         this.selectedEdge = edgeData;
+        const source = edgeData.source;
+        const target = edgeData.target;
+        this.visualState = {
+          focus: {
+            nodes: [{ concept: source }, { concept: target }],
+            edges: [{ source, target }]
+          },
+          outline: {
+            nodes: [],
+            edges: [{ source, target }]
+          }
+        };
+
+        this.updateDataState();
         this.isFetchingStatements = false;
       });
     },
@@ -458,7 +483,7 @@ export default defineComponent({
       const highlightEdges = [];
       const highlightNode = _.uniq(path).map(d => {
         return {
-          concept: d
+          concept: (d as string)
         };
       });
 
@@ -469,11 +494,90 @@ export default defineComponent({
         });
       }
       this.visualState = {
-        highlighted: {
+        focus: {
           nodes: highlightNode,
           edges: highlightEdges
+        },
+        outline: {
+          nodes: [],
+          edges: []
         }
       };
+      this.updateDataState();
+    },
+    async updateStateFromInsight(insight_id: string) {
+      const loadedInsight = await getInsightById(insight_id);
+
+      const selectedNodeStr = loadedInsight.data_state?.selectedNode;
+      const selectedEdge = loadedInsight.data_state?.selectedEdge;
+      const visualState = loadedInsight.data_state?.cagVisualState as CAGVisualState;
+
+      let newVisualState: CAGVisualState = blankVisualState();
+
+      if (!selectedEdge) {
+        this.closeDrilldown();
+      }
+
+      if (selectedNodeStr) {
+        const nodeToSelect = this.modelComponents.nodes.find(node => node.concept === selectedNodeStr);
+        if (nodeToSelect) {
+          this.onNodeSensitivity(nodeToSelect);
+          const neighborhood = calculateNeighborhood(this.modelComponents, nodeToSelect.concept);
+
+          newVisualState = {
+            focus: neighborhood,
+            outline: {
+              nodes: [
+                { concept: nodeToSelect.concept }
+              ],
+              edges: []
+            }
+          };
+        }
+      } else if (selectedEdge) {
+        const [source, target] = selectedEdge;
+        const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
+
+        if (edgeToSelect) {
+          this.showRelation(edgeToSelect);
+          newVisualState = {
+            focus: {
+              nodes: [{ concept: source }, { concept: target }],
+              edges: [{ source, target }]
+            },
+            outline: {
+              nodes: [],
+              edges: [{ source, target }]
+            }
+          };
+        }
+      }
+
+      // merge
+      if (visualState) {
+        newVisualState.focus.nodes = [...newVisualState.focus.nodes, ...visualState.focus.nodes];
+        newVisualState.focus.edges = [...newVisualState.focus.edges, ...visualState.focus.edges];
+        newVisualState.outline.nodes = [...newVisualState.outline.nodes, ...visualState.outline.nodes];
+        newVisualState.outline.edges = [...newVisualState.outline.edges, ...visualState.outline.edges];
+      }
+      this.visualState = newVisualState;
+    },
+    updateDataState() {
+      const dataState: DataState = {
+        selectedScenarioId: this.selectedScenarioId,
+        currentEngine: this.currentEngine,
+        modelName: this.modelSummary.name
+      };
+      if (this.selectedNode) {
+        dataState.selectedNode = this.selectedNode.concept;
+      }
+      if (this.selectedEdge) {
+        dataState.selectedEdge = [this.selectedEdge.source, this.selectedEdge.target];
+      }
+      if (this.visualState) {
+        dataState.cagVisualState = this.visualState;
+      }
+      this.setDataState(dataState);
     }
   }
 });

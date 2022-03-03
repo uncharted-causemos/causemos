@@ -63,7 +63,12 @@
 
 import _ from 'lodash';
 import * as d3 from 'd3';
+import {
+  defineComponent,
+  toRefs
+} from 'vue';
 import { WmMap, WmMapVector, WmMapImage, WmMapPopup, WmMapGeojson } from '@/wm-map';
+import useMapRegionSelection from '@/services/composables/useMapRegionSelection';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
@@ -125,7 +130,7 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
   }
 };
 
-export default {
+export default defineComponent({
   name: 'AnalysisMap',
   components: {
     WmMap,
@@ -228,6 +233,19 @@ export default {
         opacity: 1
       })
     }
+  },
+  setup(props) {
+    const {
+      selectedLayerId,
+      selectedRegions
+    } = toRefs(props);
+
+    const { isRegionSelectionEmpty, isRegionSelected } = useMapRegionSelection(selectedLayerId, selectedRegions);
+
+    return {
+      isRegionSelectionEmpty,
+      isRegionSelected
+    };
   },
   data: () => ({
     baseLayer: undefined,
@@ -341,13 +359,6 @@ export default {
     rawGeoJson() {
       const data = convertRawDataToGeoJson(this.rawData);
       return data;
-    },
-    isRegionSelectionEmpty() {
-      // Check if there are selected regions in the current admin level or in the levels above.
-      const level = SOURCE_LAYERS.findIndex(l => l.layerId === this.selectedLayerId);
-      const { country, admin1, admin2, admin3 } = this.selectedRegions;
-      const checks = [country.size === 0, admin1.size === 0, admin2.size === 0, admin3.size === 0];
-      return checks.slice(0, level + 1).reduce((prev, cur) => prev && cur, true);
     }
   },
   watch: {
@@ -529,23 +540,6 @@ export default {
         });
       });
     },
-    isRegionSelected(regionId) {
-      const regionIdTokens = regionId.split(REGION_ID_DELIMETER);
-      // Check if the regionId is included in the selection. Check with the parent selection if there's a parent region selection.
-      let checkParentLevel = true;
-      while (regionIdTokens.length > 0 && checkParentLevel) {
-        const rid = regionIdTokens.join(REGION_ID_DELIMETER);
-        const curLevelRegionSelection = this.selectedRegions[adminLevelToString(regionIdTokens.length - 1)];
-        if (curLevelRegionSelection.has(rid)) {
-          return true;
-        }
-        // If there's no selection in the current level, check the selection from parent level.
-        checkParentLevel = curLevelRegionSelection.size === 0;
-        // Drop the current admin level region name from the id resulting the parent region id.
-        regionIdTokens.pop();
-      }
-      return false;
-    },
     onAddLayer() {
       if (!this.regionData) return;
       this.setFeatureStates();
@@ -699,7 +693,7 @@ export default {
       return rows.filter(field => !_.isNil(field)).join('<br />');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

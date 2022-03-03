@@ -379,8 +379,9 @@
                       :style="{ borderColor: colorFromIndex(indx) }"
                       :data="regionMapData[featureName]"
                       :map-bounds="mapBounds"
-                      :selected-layer-id="selectedAdminLevel"
                       :popup-Formatter="popupFormatter"
+                      :region-filter="selectedRegionIdsAtAllLevels"
+                      :selected-admin-level="selectedAdminLevel"
                     />
                   </div>
                 </div>
@@ -1418,11 +1419,17 @@ export default defineComponent({
       }
     });
 
-    watchEffect(() => {
-      if (isPublishing.value && tabState.value) {
-        onTabClick(tabState.value);
+    watch(
+      () => [tabState.value],
+      () => {
+        if (tabState.value !== '') {
+          onTabClick(tabState.value);
+        }
+      },
+      {
+        immediate: true
       }
-    });
+    );
 
     const preGenDataMap = ref<{[key: string]: PreGeneratedModelRunData[]}>({}); // map all pre-gen data for each run
     const preGenDataItems = ref<PreGeneratedModelRunData[]>([]);

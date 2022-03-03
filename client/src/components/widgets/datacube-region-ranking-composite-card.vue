@@ -11,7 +11,12 @@
         <div class="row datacube-footer">Showing data for {{timestampFormatter(selectedTimestamp)}} (or earlier)</div>
       </div>
       <div class="card-maps-box">
-        <region-map class="region-map-container" :data="barsData" :selected-layer-id="selectedAdminLevel" :map-bounds="mapBounds" :selected-id="barChartHoverId" @click-region="$emit('map-click-region', $event)"/>
+        <region-map class="region-map-container"
+          :data="barsData"
+          :selected-admin-level="selectedAdminLevel"
+          :map-bounds="mapBounds"
+          :selected-id="barChartHoverId"
+          @click-region="$emit('map-click-region', $event)"/>
         <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
           <map-legend :ramp="mapLegendData" :label-position="{ top: false, right: true }" :isContinuos="false" />
         </div>

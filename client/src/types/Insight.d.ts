@@ -117,6 +117,7 @@ export interface DataState {
 
   // region-ranking specific
   regionRankingWeights?: {[key: string]: {name: string; weight: number}};
+  regionRankingDataInversion?: {[key: string]: boolean};
 
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string; source: string}[];
@@ -128,10 +129,11 @@ export interface DataState {
   // knowledge/model space specific
   selectedScenarioId?: string;
   selectedNode?: string;
-  selectedEdge?: string; // src + des node names
+  selectedEdge?: string[];
   currentEngine?: string;
   modelName?: string;
   nodesCount?: number;
+  cagVisualState?: any;
 
   // others
   // ...
