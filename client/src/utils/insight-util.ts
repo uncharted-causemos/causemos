@@ -2,12 +2,17 @@ import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import { Clause, Filters } from '@/types/Filters';
 import _ from 'lodash';
-import { deleteInsight, fetchInsights, InsightFilterFields } from '@/services/insight-service';
+import {
+  countInsights,
+  deleteInsight,
+  getFirstInsight,
+  InsightFilterFields
+} from '@/services/insight-service';
 import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-service';
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
-import { AnalyticalQuestion, DataState, Insight, InsightMetadata } from '@/types/Insight';
+import { AnalyticalQuestion, DataState, Insight, FullInsight, InsightMetadata } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
 import { saveAs } from 'file-saver';
@@ -207,7 +212,7 @@ function parseReportFromQuestionsAndInsights(
   return report;
 }
 
-function instanceOfInsight(data: any): data is Insight {
+function instanceOfInsightWithImage(data: any): data is FullInsight {
   return 'thumbnail' in data;
 }
 
@@ -234,7 +239,7 @@ function generateFooterDOCX (metadataSummary: string) {
 }
 
 function generateInsightDOCX (
-  insight: Insight,
+  insight: FullInsight,
   metadataSummary: string,
   newPage: boolean
 ): ISectionOptions {
@@ -444,7 +449,7 @@ function getCagMapFromInsights (insights: Insight[]): Map<string, DataState> {
 }
 
 async function exportDOCX(
-  insights: Insight[],
+  insights: FullInsight[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[]
 ) {
@@ -454,7 +459,7 @@ async function exportDOCX(
 
   const metadataSummary = getMetadataSummary(projectMetadata);
   const sections = allData.reduce((acc, item, index) => {
-    if (instanceOfInsight(item)) {
+    if (instanceOfInsightWithImage(item)) {
       const newPage = index > 0 && !instanceOfQuestion(allData[index - 1]);
       acc.push(generateInsightDOCX(item, metadataSummary, newPage));
     } else if (instanceOfQuestion(item)) {
@@ -479,7 +484,7 @@ async function exportDOCX(
 }
 
 function generateInsightPPTX (
-  insight: Insight,
+  insight: FullInsight,
   pres: pptxgen,
   metadataSummary: string
 ) {
@@ -576,7 +581,7 @@ function generateQuestionPPTX (question: AnalyticalQuestion, pres: pptxgen) {
 }
 
 function exportPPTX(
-  insights: Insight[],
+  insights: FullInsight[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[]
 ) {
@@ -598,7 +603,7 @@ function exportPPTX(
   });
 
   allData.forEach((item) => {
-    if (instanceOfInsight(item)) {
+    if (instanceOfInsightWithImage(item)) {
       generateInsightPPTX(item, pres, metadataSummary);
     } else if (instanceOfQuestion(item)) {
       generateQuestionPPTX(item, pres);
@@ -610,13 +615,21 @@ function exportPPTX(
   });
 }
 
-async function getPublicInsights(datacubeId: string, projectId: string) {
+async function getFirstPublicInsight(datacubeId: string, projectId: string) {
   const publicInsightsSearchFields: InsightFilterFields = {};
   publicInsightsSearchFields.visibility = 'public';
   publicInsightsSearchFields.project_id = projectId;
   publicInsightsSearchFields.context_id = datacubeId;
-  const publicInsights = await fetchInsights([publicInsightsSearchFields]);
-  return publicInsights as Insight[];
+  return await getFirstInsight(publicInsightsSearchFields);
+}
+
+async function countPublicInsights(datacubeId: string, projectId: string) {
+  const publicInsightsSearchFields: InsightFilterFields = {};
+  publicInsightsSearchFields.visibility = 'public';
+  publicInsightsSearchFields.project_id = projectId;
+  publicInsightsSearchFields.context_id = datacubeId;
+  const count = await countInsights(publicInsightsSearchFields);
+  return count as number;
 }
 
 export default {
@@ -627,5 +640,6 @@ export default {
   jumpToInsightContext,
   exportDOCX,
   exportPPTX,
-  getPublicInsights
+  getFirstPublicInsight,
+  countPublicInsights
 };

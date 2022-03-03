@@ -1,12 +1,13 @@
 import { ProjectType } from '@/types/Enums';
-import { Insight } from '@/types/Insight';
-import { computed, ref, Ref, watchEffect } from 'vue';
+import { Insight, InsightImage, FullInsight } from '@/types/Insight';
+import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
-import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
+import { fetchInsights, fetchPartialInsights, InsightFilterFields } from '@/services/insight-service';
 import _ from 'lodash';
 
-export default function useInsightsData() {
+export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowList?: string[]) {
   const insights = ref([]) as Ref<Insight[]>;
+  const insightImages = ref([]) as Ref<InsightImage[]>;
 
   const insightsFetchedAt = ref(0);
 
@@ -21,6 +22,37 @@ export default function useInsightsData() {
     return result;
   };
 
+  const fetchWithImages = async (insightIDs: string[]): Promise<FullInsight[]> => {
+    const result: FullInsight[] = [];
+    const idsToFetch: string[] = [];
+    // use existing images if available
+    for (const id of insightIDs) {
+      const insight = insights.value.find(i => i.id === id);
+      const image = insightImages.value.find(i => i.id === id);
+      if (insight) {
+        if (image) {
+          result.push({ ...insight, ...image });
+        } else {
+          idsToFetch.push(id);
+        }
+      }
+    }
+
+    // fetch any images we don't have and store for later
+    if (idsToFetch.length > 0) {
+      const images: InsightImage[] = await fetchPartialInsights({ id: idsToFetch }, ['id', 'thumbnail']);
+      for (const id of idsToFetch) {
+        const insight = insights.value.find(i => i.id === id);
+        const image = images.find(i => i.id === id);
+        if (insight && image) {
+          result.push({ ...insight, ...image });
+          insightImages.value.push(image);
+        }
+      }
+    }
+    return result;
+  };
+
   const store = useStore();
   const contextIds = computed(() => store.getters['insightPanel/contextId']);
   const project = computed(() => store.getters['app/project']);
@@ -31,12 +63,37 @@ export default function useInsightsData() {
 
   const shouldRefetchInsights = computed(() => store.getters['contextInsightPanel/shouldRefetchInsights']);
 
+  watch(contextIds, (oldV, newV) => {
+    console.log('contextIds changed', oldV, newV);
+  });
+  watch(project, (oldV, newV) => {
+    console.log('project changed', oldV, newV);
+  });
+  watch(projectType, (oldV, newV) => {
+    console.log('projectType changed', oldV, newV);
+  });
+  watch(isInsightExplorerOpen, (oldV, newV) => {
+    console.log('isInsightExplorerOpen changed', oldV, newV);
+  });
+  watch(isContextInsightPanelOpen, (oldV, newV) => {
+    console.log('isContextInsightPanelOpen changed', oldV, newV);
+  });
+  watch(shouldRefetchInsights, (oldV, newV) => {
+    console.log('shouldRefetchInsights changed', oldV, newV);
+  });
+
+
+
   const reFetchInsights = () => {
+    console.log('fetching via reFetchInsights');
     insightsFetchedAt.value = Date.now();
     store.dispatch('contextInsightPanel/setRefetchInsights', true);
   };
 
   watchEffect(onInvalidate => {
+    if (preventFetch?.value) {
+      return;
+    }
     // This condition should always return true, it's just used to add
     //  insightsFetchedAt to this watchEffect's dependency array
     if (insightsFetchedAt.value < 0) { return; }
@@ -78,7 +135,14 @@ export default function useInsightsData() {
       }
       // Note that when 'ignoreContextId' is true, this means we are fetching insights for the insight explorer within an analysis project
       // For this case, public insights should not be listed
-      const publicInsights = ignoreContextId ? [] : await fetchInsights([publicInsightsSearchFields]);
+      let publicInsights = [];
+      if (!ignoreContextId) {
+        if (!fieldAllowList || fieldAllowList.length === 0) {
+          publicInsights = await fetchInsights(publicInsightsSearchFields);
+        } else {
+          publicInsights = await fetchPartialInsights(publicInsightsSearchFields, fieldAllowList);
+        }
+      }
 
       //
       // fetch project-specific insights
@@ -92,7 +156,12 @@ export default function useInsightsData() {
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
         contextInsightsSearchFields.context_id = contextIds.value; // note passing potentially an array of context to match against
       }
-      const contextInsights = await fetchInsights([contextInsightsSearchFields]);
+      let contextInsights;
+      if (!fieldAllowList || fieldAllowList.length === 0) {
+        contextInsights = await fetchInsights(contextInsightsSearchFields);
+      } else {
+        contextInsights = await fetchPartialInsights(contextInsightsSearchFields, fieldAllowList);
+      }
 
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
@@ -100,6 +169,7 @@ export default function useInsightsData() {
         return;
       }
       insights.value = _.uniqBy([...publicInsights, ...contextInsights], 'id');
+      insightImages.value = []; // remove all stores images to force re-fetch
       store.dispatch('contextInsightPanel/setCountContextInsights', insights.value.length);
       store.dispatch('insightPanel/setCountInsights', insights.value.length);
 
@@ -114,6 +184,7 @@ export default function useInsightsData() {
   return {
     insights,
     getInsightsByIDs,
-    reFetchInsights
+    reFetchInsights,
+    fetchWithImages
   };
 }

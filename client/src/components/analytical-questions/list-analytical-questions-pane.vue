@@ -115,13 +115,13 @@
             </div>
             <!-- second row display a list of linked insights -->
             <message-display
-              v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
+              v-if="getCachedInsights(questionItem.linked_insights).length === 0"
               class="no-insight-warning"
               :message-type="'alert-warning'"
               :message="'No insights assigned to this section.'"
             />
             <div
-              v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
+              v-for="insight in getCachedInsights(questionItem.linked_insights)"
               :key="insight.id"
               class="checklist-item-insight">
               <i @mousedown.stop.prevent class="fa fa-star" />
@@ -142,14 +142,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, watch } from 'vue';
+import { defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 import Shepherd from 'shepherd.js';
 
 import useInsightsData from '@/services/composables/useInsightsData';
 import useQuestionsData from '@/services/composables/useQuestionsData';
-import { getInsightById, updateInsight } from '@/services/insight-service';
+import { updateInsight } from '@/services/insight-service';
 import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
 import { ProjectType } from '@/types/Enums';
 import { AnalyticalQuestion, Insight } from '@/types/Insight';
@@ -157,6 +157,7 @@ import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 
+type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
   components: {
@@ -171,15 +172,19 @@ export default defineComponent({
   },
   setup() {
     const { questionsList, reFetchQuestions } = useQuestionsData();
-    const { getInsightsByIDs, reFetchInsights } = useInsightsData();
+    const { getInsightsByIDs, reFetchInsights } = useInsightsData(undefined,
+      ['id', 'name', 'visibility', 'analytical_question']);
 
-    watch(questionsList, () => {
-      reFetchInsights();
-    });
+    // wrapper to get a proper return type that matches the allowed fields above
+    const getCachedInsights = (insightIds: string[]) => {
+      return getInsightsByIDs(insightIds) as PartialInsight[];
+    };
+
     return {
       questionsList,
       reFetchQuestions,
-      getInsightsByIDs
+      reFetchInsights,
+      getCachedInsights
     };
   },
   data: () => ({
@@ -359,15 +364,16 @@ export default defineComponent({
         // NOTE: re-ordering of questions is not persistent (and shouldn't be)
       }
 
-      const insight_id = evt.dataTransfer.getData('insight_id');
+      const insight_id = evt.dataTransfer.getData('insight_id') as string;
       if (insight_id !== '') {
         // fetch the dropped insight and use its name in this question's insights
-        const loadedInsight: Insight = await getInsightById(insight_id);
-        if (loadedInsight) {
-          const existingIndex = questionItem.linked_insights.findIndex(id => id === loadedInsight.id);
+        const insights = this.getCachedInsights([insight_id]);
+        if (insights && insights.length > 0) {
+          const loadedInsight = insights[0];
+          const existingIndex = questionItem.linked_insights.findIndex(id => id === insight_id);
           if (existingIndex < 0) {
             // only add any dropped insight once to each question
-            questionItem.linked_insights.push(loadedInsight.id as string);
+            questionItem.linked_insights.push(insight_id);
 
             // update question on the backend
             updateQuestion(questionItem.id as string, questionItem);
@@ -378,7 +384,8 @@ export default defineComponent({
           // add the following question (text) to the insight
           if (!(loadedInsight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
             loadedInsight.analytical_question.push(questionItem.id as string);
-            updateInsight(loadedInsight.id as string, loadedInsight);
+            await updateInsight(insight_id, loadedInsight as Insight);
+            this.reFetchInsights();
           }
         }
       }
@@ -433,13 +440,15 @@ export default defineComponent({
       // also, remove this insight from the question list
       this.removeQuestionFromInsight(questionItem, insightId);
     },
-    removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
-      const insight: any = this.getInsightsByIDs([insightId]);
-      if (insight) {
+    async removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
+      const insights = this.getCachedInsights([insightId]);
+      if (insights && insights.length > 0) {
+        const insight = insights[0];
         insight.analytical_question = insight?.analytical_question.filter(
           (qid: string) => qid !== questionItem.id
         );
-        updateInsight(insight?.id as string, insight);
+        await updateInsight(insightId, insight as Insight);
+        this.reFetchInsights();
       }
     },
     startTour(question: AnalyticalQuestion) {

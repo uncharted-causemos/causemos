@@ -9,8 +9,10 @@
         @click="selectInsight()"
       >
         <img
+          v-if="insight.thumbnail"
           :src="insight.thumbnail"
           class="thumbnail">
+        <i v-else class="fa fa-spin fa-spinner" />
       </div>
       <div
         v-if="showDescription"

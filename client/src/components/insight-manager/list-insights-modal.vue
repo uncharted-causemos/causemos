@@ -94,11 +94,11 @@
               <h3 class="analysis-question">{{ questionItem.question }}</h3>
               <message-display
                 class="pane-content"
-                v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
+                v-if="questionItem.linked_insights.length === 0"
                 :message="'No insights assigned to this question.'"
               />
               <insight-card
-                v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
+                v-for="insight in getInsightsForQuestion(questionItem)"
                 :key="insight.id"
                 :insight="insight"
                 :active-insight="activeInsight"
@@ -130,14 +130,16 @@ import { INSIGHTS } from '@/utils/messages-util';
 import InsightCard from '@/components/insight-manager/insight-card';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
 
-import { computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
 import useInsightsData from '@/services/composables/useInsightsData';
+import useToaster from '@/services/composables/useToaster';
 import MessageDisplay from '@/components/widgets/message-display';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
+import { fetchPartialInsights } from '@/services/insight-service';
 
 const VIEW_OPTIONS = [
   {
@@ -153,6 +155,8 @@ const EXPORT_OPTIONS = {
   insights: 'insights',
   questions: 'questions'
 };
+
+const NOT_READY_ERROR = 'Insights are still loading. Try again later.';
 
 export default {
   name: 'ListInsightsModal',
@@ -174,22 +178,45 @@ export default {
   }),
   setup() {
     const store = useStore();
-    const questions = computed(() => store.getters['analysisChecklist/questions']);
+    const toaster = useToaster();
+    // prevent insight fetches if the gallery is closed
+    const preventFetches = computed(() => !store.getters['insightPanel/isPanelOpen']);
+    const { insights, reFetchInsights, fetchWithImages } = useInsightsData(preventFetches);
+    const fullInsights = ref([])/* as Ref<FullInsight[]> */;
 
-    const { insights: listInsights, getInsightsByIDs, reFetchInsights } = useInsightsData();
+    watch([insights], () => {
+      // first fill it without images, once the downloads finish, fill them in
+      fullInsights.value = insights.value.map(insight => ({ ...insight, thumbnail: '' }));
+      (async () => {
+        // First, get just the thumbnails, set annotation_state to null to indicate it's still coming
+        const images = await fetchWithImages(insights.value.map(insight => insight.id));
+        const ids = insights.value.map(insight => insight.id);
+        fullInsights.value = images.filter(i => ids.includes(i.id))
+          .map(i => ({ ...i, annotation_state: null }));
+
+        // Then, get the annotation_state, this is needed to open an insight
+        const annotations = await fetchPartialInsights({ id: ids }, ['id', 'annotation_state']);
+        fullInsights.value.forEach(insight => {
+          const annotation = annotations.find(i => i.id === insight.id);
+          insight.annotation_state = (annotations && annotation.annotation_state)
+            ? annotation.annotation_state
+            : undefined;
+        });
+      })();
+    });
 
     return {
-      listInsights,
-      questions,
-      getInsightsByIDs,
+      fullInsights,
       reFetchInsights,
-      store
+      store,
+      toaster
     };
   },
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
       countInsights: 'insightPanel/countInsights',
+      questions: 'analysisChecklist/questions',
       projectId: 'app/project'
     }),
     exportOptions() {
@@ -206,20 +233,20 @@ export default {
     },
     searchedInsights() {
       if (this.search.length > 0) {
-        const result = this.listInsights.filter((insight) => {
+        const result = this.fullInsights.filter((insight) => {
           return insight.name.toLowerCase().includes(this.search.toLowerCase());
         });
         return result;
       } else {
-        return this.listInsights;
+        return this.fullInsights;
       }
     },
     selectedInsights() {
       if (this.curatedInsights.length > 0) {
-        const curatedSet = this.listInsights.filter(i => this.curatedInsights.find(e => e === i.id));
+        const curatedSet = this.fullInsights.filter(i => this.curatedInsights.find(e => e === i.id));
         return curatedSet;
       } else {
-        return this.listInsights;
+        return this.fullInsights;
       }
     },
     insightsToExport() {
@@ -241,6 +268,9 @@ export default {
       setInsightList: 'insightPanel/setInsightList',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
     }),
+    getInsightsForQuestion(question) {
+      return this.fullInsights.filter(i => question.linked_insights.includes(i.id));
+    },
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsight = null;
@@ -276,6 +306,10 @@ export default {
       evt.currentTarget.style.border = 'none';
     },
     editInsight(insight) {
+      if (insight.thumbnail === '' || insight.annotation_state === null) {
+        this.toaster(NOT_READY_ERROR, 'error', false);
+        return;
+      }
       this.setUpdatedInsight(insight);
       this.setInsightList(this.searchedInsights);
       // open the preview in the edit mode
@@ -287,8 +321,8 @@ export default {
         // is this the last public insight for the relevant dataube?
         //  if so, unpublish the model datacube
         const datacubeId = insight.context_id[0];
-        const publicInsights = await InsightUtil.getPublicInsights(datacubeId, this.projectId);
-        if (publicInsights.length === 1) {
+        const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, this.project);
+        if (publicInsightCount === 1) {
           await unpublishDatacube(datacubeId, this.projectId);
           this.setRefreshDatacubes(true);
         }
@@ -304,7 +338,7 @@ export default {
     exportInsights(item) {
       const props = [];
       if (this.activeExportOption === EXPORT_OPTIONS.questions) {
-        props.push(this.listInsights, this.projectMetadata, this.questions);
+        props.push(this.fullInsights, this.projectMetadata, this.questions);
       } else {
         props.push(this.selectedInsights, this.projectMetadata);
       }
@@ -336,6 +370,10 @@ export default {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
     },
     reviewInsight(insight) {
+      if (insight.thumbnail === '' || insight.annotation_state === null) {
+        this.toaster(NOT_READY_ERROR, 'error', false);
+        return;
+      }
       // open review modal (i.e., insight gallery view)
       this.setUpdatedInsight(insight);
       this.setInsightList(this.searchedInsights);

@@ -54,7 +54,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import { updateDatacube } from '@/services/new-datacube-service';
 import { DatacubeFeature, Model, ModelParameter, ModelPublishingStep } from '@/types/Datacube';
 import { AggregationOption, TemporalResolutionOption, DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
-import { DataState, Insight, ViewState } from '@/types/Insight';
+import { DataState, ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import domainProjectService from '@/services/domain-project-service';
 import InsightUtil from '@/utils/insight-util';
@@ -163,10 +163,10 @@ export default defineComponent({
       async () => {
         if (metadata.value) {
           const insightStep = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Capture_Insight);
-          const publicInsights = await InsightUtil.getPublicInsights(metadata.value.id, projectId.value);
+          const publicInsightCount = await InsightUtil.countPublicInsights(metadata.value.id, projectId.value);
           // mark the relevant step as completed based on the availability of at least one public insight
-          if (insightStep) { insightStep.completed = publicInsights.length > 0; }
-          if (publicInsights.length === 0 && metadata.value.status === DatacubeStatus.Ready && currentView.value === 'modelPublishingExperiment') {
+          if (insightStep) { insightStep.completed = publicInsightsCount > 0; }
+          if (publicInsightCount === 0 && metadata.value.status === DatacubeStatus.Ready && currentView.value === 'modelPublishingExperiment') {
             toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', 'error', false);
           }
         }
@@ -348,13 +348,13 @@ export default defineComponent({
     } else {
       // check if a public insight exist for this model instance
       // first, fetch public insights to load the publication status, as needed
-      const publicInsights = await InsightUtil.getPublicInsights(this.metadata?.id as string, this.projectId);
-      if (publicInsights.length > 0) {
+      // FIXME: Fetch the first default insight, not the first public insight
+      const defaultInsight = await InsightUtil.getFirstPublicInsight(this.metadata?.id as string, this.projectId);
+      if (defaultInsight) {
         //
         // FIXME: only apply public insight if no, other, insight is being applied
         //
         // we have at least one public insight, which we should use to fetch view configurations
-        const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
         if (defaultInsight.context_id?.includes(this.metadata?.id as string)) {
           markInsightStepAsCompleted = true;
           // restore initial config from the insight, if available
