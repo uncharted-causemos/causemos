@@ -9,7 +9,6 @@
           :metadata="metadata"
           :aggregation-options="aggregationOptionFiltered"
           :temporal-resolution-options="temporalResolutionOptionFiltered"
-          :tab-state="tabState"
           @update-model-parameter="onModelParamUpdated"
         >
           <template #datacube-model-header>
@@ -82,7 +81,6 @@ export default defineComponent({
 
     const viewState = computed(() => store.getters['insightPanel/viewState']);
 
-    const tabState = ref('');
     const selectedIndicatorId = ref('');
     const metadata = useModelMetadata(selectedIndicatorId);
 
@@ -159,7 +157,6 @@ export default defineComponent({
       updateIndicator,
       refreshMetadata,
       selectedIndicatorId,
-      tabState,
       TemporalResolutionOption,
       initialViewConfig,
       onModelParamUpdated,
