@@ -285,6 +285,7 @@ export default defineComponent({
       // Get Model data
       const graph = { nodes: this.modelComponents.nodes, edges: this.modelComponents.edges };
       this.graphData = { model: this.currentCAG, graph, indicators: [] };
+
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
 
