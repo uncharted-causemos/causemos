@@ -231,7 +231,7 @@ export default defineComponent({
 
     const selectedAdminLevel = ref(0); // country by default
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
-    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
 
     const colorSchemeReversed = ref(false);
     const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
