@@ -82,10 +82,20 @@ export default function useQuestionsData() {
         return;
       }
       const allQuestions = _.uniqBy([...publicQuestions, ...contextQuestions], 'id');
-      // update the store to facilitate questions consumption in other UI places
-      store.dispatch('analysisChecklist/setQuestions', allQuestions);
+      const orderedQuestions = allQuestions.map((q, index) => {
+        if (!q.view_state) {
+          q.view_state = {};
+        }
+        if (q.view_state.analyticalQuestionOrder === undefined) {
+          q.view_state.analyticalQuestionOrder = index;
+        }
+        return q as AnalyticalQuestion;
+      });
 
-      questionsList.value = allQuestions;
+      // update the store to facilitate questions consumption in other UI places
+      store.dispatch('analysisChecklist/setQuestions', orderedQuestions);
+
+      questionsList.value = orderedQuestions;
     }
     onInvalidate(() => {
       isCancelled = true;

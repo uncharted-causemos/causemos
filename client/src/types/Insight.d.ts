@@ -55,6 +55,7 @@ export interface AnalyticalQuestion extends Snapshot {
   linked_insights: string[]; // has some insight (using their names/IDs) been linked to satisfy/answer this question?
   tour_name?: string;
   modified_at?: number;
+  view_state: ViewState;
 }
 
 // view-specific values (no data dependency)
