@@ -6,15 +6,17 @@ import { fetchInsights, fetchPartialInsights, InsightFilterFields } from '@/serv
 import _ from 'lodash';
 
 export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowList?: string[]) {
-  const insights = ref([]) as Ref<Insight[]>;
-  const insightImages = ref([]) as Ref<InsightImage[]>;
+  const insightMap = ref<Map<string, Insight>>(new Map<string, Insight>());
+  const insightImageMap = ref<Map<string, InsightImage>>(new Map<string, InsightImage>());
+
+  const insights = computed<Insight[]>(() => Array.from(insightMap.value.values()));
 
   const insightsFetchedAt = ref(0);
 
   const getInsightsByIDs = (insightIDs: string[]) => {
     const result: Insight[] = [];
     insightIDs.forEach(insightId => {
-      const ins = insights.value.find(i => i.id === insightId);
+      const ins = insightMap.value.get(insightId);
       if (ins) {
         result.push(ins);
       }
@@ -27,8 +29,8 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
     const idsToFetch: string[] = [];
     // use existing images if available
     for (const id of insightIDs) {
-      const insight = insights.value.find(i => i.id === id);
-      const image = insightImages.value.find(i => i.id === id);
+      const insight = insightMap.value.get(id);
+      const image = insightImageMap.value.get(id);
       if (insight) {
         if (image) {
           result.push({ ...insight, ...image });
@@ -41,12 +43,11 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
     // fetch any images we don't have and store for later
     if (idsToFetch.length > 0) {
       const images: InsightImage[] = await fetchPartialInsights({ id: idsToFetch }, ['id', 'thumbnail']);
-      for (const id of idsToFetch) {
-        const insight = insights.value.find(i => i.id === id);
-        const image = images.find(i => i.id === id);
-        if (insight && image) {
-          result.push({ ...insight, ...image });
-          insightImages.value.push(image);
+      for (const img of images) {
+        const insight = insightMap.value.get(img.id);
+        if (insight && img) {
+          result.push({ ...insight, ...img });
+          insightImageMap.value.set(img.id, img);
         }
       }
     }
@@ -146,10 +147,11 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
         //  fetch results to avoid a race condition.
         return;
       }
-      insights.value = _.uniqBy([...publicInsights, ...contextInsights], 'id');
-      insightImages.value = []; // remove all stores images to force re-fetch
-      store.dispatch('contextInsightPanel/setCountContextInsights', insights.value.length);
-      store.dispatch('insightPanel/setCountInsights', insights.value.length);
+      const deduped = _.uniqBy([...publicInsights, ...contextInsights], 'id');
+      insightMap.value = new Map<string, Insight>(deduped.map(i => [i.id as string, i]));
+      insightImageMap.value.clear(); // remove all stores images to force re-fetch
+      store.dispatch('contextInsightPanel/setCountContextInsights', deduped.length);
+      store.dispatch('insightPanel/setCountInsights', deduped.length);
 
       store.dispatch('contextInsightPanel/setRefetchInsights', false);
     }
