@@ -258,10 +258,8 @@ const setDefaultIndicators = async (modelId, resolution) => {
       let runId = 'indicator';
       if (cube.type === 'model') {
         // If the datacube is a model, we need to find the runId of the default run
-        const runs = await getDefaultModelRun(cube.data_id);
-        if (runs.length > 0) {
-          runId = runs[0].id;
-        }
+        const run = await getDefaultModelRun(cube.data_id);
+        runId = run?.id ?? 'no-default-run';
       }
 
       updatePayload.match_candidates = matches.map(match => {
