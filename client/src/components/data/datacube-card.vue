@@ -1419,11 +1419,17 @@ export default defineComponent({
       }
     });
 
-    watchEffect(() => {
-      if (isPublishing.value && tabState.value) {
-        onTabClick(tabState.value);
+    watch(
+      () => [tabState.value],
+      () => {
+        if (tabState.value !== '') {
+          onTabClick(tabState.value);
+        }
+      },
+      {
+        immediate: true
       }
-    });
+    );
 
     const preGenDataMap = ref<{[key: string]: PreGeneratedModelRunData[]}>({}); // map all pre-gen data for each run
     const preGenDataItems = ref<PreGeneratedModelRunData[]>([]);
