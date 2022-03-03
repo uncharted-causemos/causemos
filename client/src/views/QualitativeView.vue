@@ -50,7 +50,6 @@
           <div class="legend-config-row">
             <cag-legend
               v-if="!showEmptyStateInstructions"
-              :histogram-time-slice-labels="[]"
             />
             <div class="config-bar" v-if="selectedTimeScaleLabel !== null">
               Time scale of interest:
