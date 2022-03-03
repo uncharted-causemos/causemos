@@ -59,9 +59,9 @@
           <i class="fa fa-plus-circle" />
           Add new section
       </button>
-      <div v-if="questionsList.length > 0" class="analytical-questions-container">
+      <div v-if="sortedQuestions.length > 0" class="analytical-questions-container">
         <div
-          v-for="questionItem in questionsList"
+          v-for="questionItem in sortedQuestions"
           :key="questionItem.id"
           class="checklist-item"
           @drop='onDrop($event, questionItem)'
@@ -152,12 +152,15 @@ import useQuestionsData from '@/services/composables/useQuestionsData';
 import { updateInsight } from '@/services/insight-service';
 import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
 import { ProjectType } from '@/types/Enums';
-import { AnalyticalQuestion, Insight } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, ViewState } from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
+import useToaster from '@/services/composables/useToaster';
 
 type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
+const SORT_PATH = 'view_state.analyticalQuestionOrder';
+
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
   components: {
@@ -180,11 +183,14 @@ export default defineComponent({
       return getInsightsByIDs(insightIds) as PartialInsight[];
     };
 
+    const toaster = useToaster();
+
     return {
       questionsList,
       reFetchQuestions,
       reFetchInsights,
-      getCachedInsights
+      getCachedInsights,
+      toaster
     };
   },
   data: () => ({
@@ -218,6 +224,9 @@ export default defineComponent({
       isReadyForNextStep: 'tour/isReadyForNextStep',
       isPanelOpen: 'insightPanel/isPanelOpen'
     }),
+    sortedQuestions(): AnalyticalQuestion[] {
+      return _.sortBy(this.questionsList, SORT_PATH);
+    },
     // @REVIEW: this is similar to insightTargetView
     questionTargetView(): string[] {
       // an insight created during model publication should be listed either
@@ -230,7 +239,7 @@ export default defineComponent({
     canStartTour(): boolean {
       // if the tour's target-view is compatible with currentView and no modal is shown
       return !this.isPanelOpen &&
-             this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
+            this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
     }
   },
   mounted() {
@@ -258,14 +267,17 @@ export default defineComponent({
         question.url = '';
         updateQuestion(question.id as string, question).then(result => {
           const message = result.status === 200 ? QUESTIONS.SUCCESFUL_UPDATE : QUESTIONS.ERRONEOUS_UPDATE;
-          // FIXME: cast to 'any' since typescript cannot see mixins yet!
           if (message === QUESTIONS.SUCCESFUL_UPDATE) {
-            (this as any).toaster(message, 'success', false);
+            this.toaster(message, 'success', false);
           } else {
-            (this as any).toaster(message, 'error', true);
+            this.toaster(message, 'error', true);
           }
         });
       }
+    },
+    updateLocalQuestionsList(newQuestionsList: AnalyticalQuestion[]) {
+      this.questionsList = newQuestionsList;
+      this.setQuestions(this.sortedQuestions); // computed ref of this.questionsList
     },
     addNewQuestion() {
       this.newQuestionText = '';
@@ -275,6 +287,9 @@ export default defineComponent({
       this.showNewAnalyticalQuestion = false;
 
       const url = this.$route.fullPath;
+      const viewState: ViewState = _.cloneDeep(this.viewState);
+      const newQuestionOrderIndx = _.get(_.maxBy(this.sortedQuestions, SORT_PATH), SORT_PATH);
+      viewState.analyticalQuestionOrder = newQuestionOrderIndx !== undefined ? (newQuestionOrderIndx + 1) : this.sortedQuestions.length;
       const newQuestion: AnalyticalQuestion = {
         question: this.newQuestionText,
         description: '',
@@ -286,17 +301,16 @@ export default defineComponent({
         pre_actions: null,
         post_actions: null,
         linked_insights: [],
-        view_state: this.viewState
+        view_state: viewState
       };
       addQuestion(newQuestion).then((result) => {
         const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_ADDITION : QUESTIONS.ERRONEOUS_ADDITION;
-        // FIXME: cast to 'any' since typescript cannot see mixins yet!
         if (message === QUESTIONS.SUCCESSFUL_ADDITION) {
-          (this as any).toaster(message, 'success', false);
+          this.toaster(message, 'success', false);
           // refresh the latest list from the server
           this.reFetchQuestions();
         } else {
-          (this as any).toaster(message, 'error', true);
+          this.toaster(message, 'error', true);
         }
       });
     },
@@ -316,16 +330,16 @@ export default defineComponent({
           this.removeQuestionFromInsight(this.selectedQuestion as AnalyticalQuestion, insightId);
         });
 
-        // refresh
-        this.questionsList = this.questionsList.filter(q => q.question !== this.selectedQuestion?.question);
-        this.setQuestions(this.questionsList);
+        // Remove question from the local list of questions
+        const updatedList = this.questionsList.filter(q => q.question !== this.selectedQuestion?.question);
+        this.updateLocalQuestionsList(updatedList);
 
         deleteQuestion(this.selectedQuestion.id as string).then(result => {
           const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_REMOVAL : QUESTIONS.ERRONEOUS_REMOVAL;
           if (message === QUESTIONS.SUCCESSFUL_REMOVAL) {
-            (this as any).toaster(message, 'success', false);
+            this.toaster(message, 'success', false);
           } else {
-            (this as any).toaster(message, 'error', true);
+            this.toaster(message, 'error', true);
           }
         });
       }
@@ -345,26 +359,32 @@ export default defineComponent({
       evt.preventDefault();
       evt.currentTarget.style.background = 'white';
 
+      // At most ONE of these will exist
       const question_id = evt.dataTransfer.getData('question_id');
+      const insight_id = evt.dataTransfer.getData('insight_id');
+
       if (question_id !== '') {
         // swap questions: question_id and questionItem.id
-        const questions = _.cloneDeep(this.questionsList);
-        const i1 = questions.findIndex(q => q.id === question_id);
-        const i2 = questions.findIndex(q => q.id === questionItem.id);
-        // swap
-        const q1 = questions[i1];
-        questions[i1] = questions[i2];
-        questions[i2] = q1;
-        // update
-        this.questionsList = questions;
+        const questions = _.cloneDeep(this.sortedQuestions);
+        const question1 = questions.find(q => q.id === question_id);
+        const question2 = questions.find(q => q.id === questionItem.id);
+        if (question1 === undefined || question2 === undefined) {
+          return;
+        }
+        const position1 = question1.view_state.analyticalQuestionOrder as number;
+        const position2 = question2.view_state.analyticalQuestionOrder as number;
 
-        // update the store to facilitate questions consumption in other UI places
-        this.setQuestions(this.questionsList);
+        // Swap and update local copy
+        question1.view_state.analyticalQuestionOrder = position2;
+        question2.view_state.analyticalQuestionOrder = position1;
+        this.updateLocalQuestionsList(questions);
 
-        // NOTE: re-ordering of questions is not persistent (and shouldn't be)
+        // update question(s) on the backend for persistent ordering
+        await updateQuestion(question1.id as string, question1);
+        await updateQuestion(question2.id as string, question2);
       }
 
-      const insight_id = evt.dataTransfer.getData('insight_id') as string;
+      // implied else
       if (insight_id !== '') {
         // fetch the dropped insight and use its name in this question's insights
         const insights = this.getCachedInsights([insight_id]);
@@ -379,7 +399,7 @@ export default defineComponent({
             updateQuestion(questionItem.id as string, questionItem);
 
             // update the store to facilitate questions consumption in other UI places
-            this.setQuestions(this.questionsList);
+            this.updateLocalQuestionsList(this.sortedQuestions);
           }
           // add the following question (text) to the insight
           if (!(loadedInsight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
@@ -430,7 +450,7 @@ export default defineComponent({
       updateQuestion(questionItem.id as string, questionItem);
 
       // update the store to facilitate questions consumption in other UI places
-      this.setQuestions(this.questionsList);
+      this.setQuestions(this.sortedQuestions);
 
       //
       // insight
