@@ -57,7 +57,7 @@ export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<I
 
 /**
  * Fetch insights using the specified filter parameters, only the fields
- * specified in the allowList will be avialable
+ * specified in the allowList will be available
  * @param fetchParams an object of field-value pairs to filter by
  * @param allowList a list of fields to return
  */
