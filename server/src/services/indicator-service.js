@@ -47,23 +47,13 @@ const textSearch = async (text) => {
 };
 
 const getDefaultModelRun = async (dataId) => {
-  const searchPayload = {
-    index: RESOURCE.DATA_MODEL_RUN,
-    size: 1,
-    body: {
-      query: {
-        bool: {
-          must: [
-            { term: { model_id: dataId } },
-            { term: { status: 'READY' } },
-            { term: { is_default_run: true } }
-          ]
-        }
-      }
-    }
-  };
-  const results = await client.search(searchPayload);
-  return results.body.hits.hits.map(d => d._source);
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  const defaultRun = await connection.findOne([
+    { field: 'model_id', value: dataId },
+    { field: 'status', value: 'READY' },
+    { field: 'is_default_run', value: true }
+  ], {});
+  return defaultRun;
 };
 
 const getTimeseries = async (dataId, runId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
