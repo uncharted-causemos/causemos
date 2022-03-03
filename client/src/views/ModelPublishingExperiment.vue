@@ -165,7 +165,7 @@ export default defineComponent({
           const insightStep = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Capture_Insight);
           const publicInsightCount = await InsightUtil.countPublicInsights(metadata.value.id, projectId.value);
           // mark the relevant step as completed based on the availability of at least one public insight
-          if (insightStep) { insightStep.completed = publicInsightsCount > 0; }
+          if (insightStep) { insightStep.completed = publicInsightCount > 0; }
           if (publicInsightCount === 0 && metadata.value.status === DatacubeStatus.Ready && currentView.value === 'modelPublishingExperiment') {
             toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', 'error', false);
           }

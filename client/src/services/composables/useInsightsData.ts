@@ -1,6 +1,6 @@
 import { ProjectType } from '@/types/Enums';
 import { Insight, InsightImage, FullInsight } from '@/types/Insight';
-import { computed, ref, Ref, watch, watchEffect } from 'vue';
+import { computed, ref, Ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { fetchInsights, fetchPartialInsights, InsightFilterFields } from '@/services/insight-service';
 import _ from 'lodash';
