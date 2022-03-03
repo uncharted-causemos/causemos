@@ -8,40 +8,33 @@
     </full-screen-modal-header>
 
     <div class="body flex">
-      <analytical-questions-panel />
+      <analytical-questions-panel
+        @review-checklist="reviewChecklist"
+      />
 
       <!-- body -->
       <div class="body-main-content flex-col">
-
         <div class="tab-controls">
           <radio-button-group
-            :buttons="VIEW_OPTIONS"
-            :selected-button-value="activeTabId"
-            @button-clicked="switchTab"
+            :buttons="exportOptions"
+            :selected-button-value="activeExportOption"
+            @button-clicked="toggleExport"
           />
-          <div class="export">
-            <radio-button-group
-              :buttons="exportOptions"
-              :selected-button-value="activeExportOption"
-              @button-clicked="toggleExport"
-            />
-            <span> as </span>
-            <button
-              class="btn btn-sm btn-default"
-              @click="() => exportInsights('Powerpoint')"
-            >
-              PowerPoint
-            </button>
-            <button
-              class="btn btn-sm btn-default"
-              @click="() => exportInsights('Word')"
-            >
-              Word
-            </button>
-          </div>
+          as
+          <button
+            class="btn btn-sm btn-default"
+            @click="() => exportInsights('Powerpoint')"
+          >
+            PowerPoint
+          </button>
+          <button
+            class="btn btn-sm btn-default"
+            @click="() => exportInsights('Word')"
+          >
+            Word
+          </button>
         </div>
         <div
-          v-if="activeTabId === VIEW_OPTIONS[0].value"
           class="cards"
         >
           <input
@@ -78,45 +71,6 @@
             :message="messageNoData"
           />
         </div>
-
-        <div
-          v-else-if="activeTabId === VIEW_OPTIONS[1].value"
-          class="list"
-        >
-          <div
-            v-if="questions.length > 0"
-            class="pane-content"
-          >
-            <div
-              v-for="questionItem in questions"
-              :key="questionItem.id"
-              class="list-question-group">
-              <h3 class="analysis-question">{{ questionItem.question }}</h3>
-              <message-display
-                class="pane-content"
-                v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
-                :message="'No insights assigned to this question.'"
-              />
-              <insight-card
-                v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
-                :key="insight.id"
-                :insight="insight"
-                :active-insight="activeInsight"
-                :show-description="true"
-                :show-question="false"
-                @remove-insight="removeInsight(insight)"
-                @open-editor="openEditor(insight.id)"
-                @select-insight="reviewInsight(insight)"
-                @edit-insight="editInsight(insight)"
-              />
-            </div>
-          </div>
-          <message-display
-            class="pane-content"
-            v-else
-            :message="'Add a new question to see a list of insights, organized by question.'"
-          />
-        </div>
       </div>
     </div>
   </div>
@@ -139,16 +93,6 @@ import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
 
-const VIEW_OPTIONS = [
-  {
-    value: 'cards',
-    label: 'Cards'
-  }, {
-    value: 'list',
-    label: 'List'
-  }
-];
-
 const EXPORT_OPTIONS = {
   insights: 'insights',
   questions: 'questions'
@@ -166,11 +110,9 @@ export default {
   data: () => ({
     activeExportOption: EXPORT_OPTIONS.insights,
     activeInsight: null,
-    activeTabId: VIEW_OPTIONS[0].value,
     curatedInsights: [],
     messageNoData: INSIGHTS.NO_DATA,
-    search: '',
-    VIEW_OPTIONS
+    search: ''
   }),
   setup() {
     const store = useStore();
@@ -227,6 +169,11 @@ export default {
         return this.curatedInsights;
       }
       return this.searchedInsights;
+    },
+    insightsGroupedByQuestion() {
+      const insightsByQuestion = InsightUtil.parseReportFromQuestionsAndInsights(this.listInsights, this.questions)
+        .filter(item => InsightUtil.instanceOfInsight(item));
+      return insightsByQuestion;
     }
   },
   mounted() {
@@ -341,11 +288,12 @@ export default {
       this.setInsightList(this.searchedInsights);
       this.setCurrentPane('review-insight');
     },
-    switchTab(id) {
-      this.activeInsight = null;
-      this.activeTabId = id;
-
-      // FIXME: reload insights since questions most recent question stuff may not be up to date
+    reviewChecklist() {
+      // to do: generate insights list in order of questions
+      if (this.insightsGroupedByQuestion.length < 1) return;
+      this.setUpdatedInsight(this.insightsGroupedByQuestion[0]);
+      this.setInsightList(this.insightsGroupedByQuestion);
+      this.setCurrentPane('review-insight');
     },
     toggleExport(id) {
       this.activeExportOption = id;
@@ -375,13 +323,8 @@ export default {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: space-between;
-}
-
-.export {
-  display: flex;
-  gap: 5px;
-  align-items: center;
+  justify-content: right;
+  gap: 0.5em;
 }
 
 .cards {
