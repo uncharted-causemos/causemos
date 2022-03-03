@@ -63,29 +63,7 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
 
   const shouldRefetchInsights = computed(() => store.getters['contextInsightPanel/shouldRefetchInsights']);
 
-  watch(contextIds, (oldV, newV) => {
-    console.log('contextIds changed', oldV, newV);
-  });
-  watch(project, (oldV, newV) => {
-    console.log('project changed', oldV, newV);
-  });
-  watch(projectType, (oldV, newV) => {
-    console.log('projectType changed', oldV, newV);
-  });
-  watch(isInsightExplorerOpen, (oldV, newV) => {
-    console.log('isInsightExplorerOpen changed', oldV, newV);
-  });
-  watch(isContextInsightPanelOpen, (oldV, newV) => {
-    console.log('isContextInsightPanelOpen changed', oldV, newV);
-  });
-  watch(shouldRefetchInsights, (oldV, newV) => {
-    console.log('shouldRefetchInsights changed', oldV, newV);
-  });
-
-
-
   const reFetchInsights = () => {
-    console.log('fetching via reFetchInsights');
     insightsFetchedAt.value = Date.now();
     store.dispatch('contextInsightPanel/setRefetchInsights', true);
   };
