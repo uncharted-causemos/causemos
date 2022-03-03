@@ -1,9 +1,9 @@
 <template>
   <modal @close="save" :sticky="true">
     <template #header>
-      <h2 class="header-question">Which time scale are you interested in?</h2>
     </template>
     <template #body>
+      <h2 class="header-question">Which time scale are you interested in?</h2>
       <div
         v-for="timeScaleOption in TIME_SCALE_OPTIONS"
         :key="timeScaleOption.id"
@@ -29,6 +29,18 @@
           </div>
         </label>
       </div>
+
+      <div>
+        <h2 class="header-question">Which country are you interested in?</h2>
+        <auto-complete
+          :focus-input="true"
+          :style-results="true"
+          :placeholder-color="'gray'"
+          :placeholder-message="'Type region name...'"
+          :search-fn="searchRegions"
+          @item-selected="selectCountry"
+        />
+      </div>
     </template>
     <template #footer>
       <button
@@ -43,15 +55,22 @@
 </template>
 
 <script lang="ts">
-import { TimeScale } from '@/types/Enums';
+import { TimeScale, DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { TIME_SCALE_OPTIONS } from '@/utils/time-scale-util';
 import { defineComponent, PropType, ref, toRefs } from 'vue';
 import modal from '../modals/modal.vue';
+import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
+import { getGADMSuggestions } from '@/services/suggestion-service';
+import { RegionalGADMDetail } from '@/types/Common';
+import { REGION_ID_DISPLAY_DELIMETER } from '@/utils/admin-level-util';
 
 export default defineComponent({
-  components: { modal },
+  components: {
+    modal,
+    AutoComplete
+  },
   name: 'ModalTimeScale',
-  emits: ['save-time-scale'],
+  emits: ['save-cag-params'],
   props: {
     initiallySelectedTimeScale: {
       type: String as PropType<string | null>,
@@ -64,12 +83,45 @@ export default defineComponent({
       TIME_SCALE_OPTIONS,
       selectedTimeScaleOption: ref(
         initiallySelectedTimeScale.value ?? TimeScale.Months
-      )
+      ),
+      selectedCountry: ref<string | null>(null)
     };
   },
   methods: {
     save() {
-      this.$emit('save-time-scale', this.selectedTimeScaleOption);
+      this.$emit('save-cag-params', {
+        timeScale: this.selectedTimeScaleOption,
+        geography: this.selectedCountry
+      });
+    },
+    getGADMName(item: RegionalGADMDetail, delimter: string) {
+      return Object.values(DatacubeGeoAttributeVariableType).filter(l => item[l] !== undefined).map(l => item[l]).join(delimter);
+    },
+    searchRegions(query: string) {
+      return new Promise(resolve => {
+        let suggestionResults: string[] = [];
+
+        if (query.length < 1) resolve(suggestionResults); // early exit
+
+        const level = 'country';
+        const debouncedFetchFunction = getGADMSuggestions(level, query);
+        const fetchedResults = debouncedFetchFunction(); // NOTE: a debounced function may return undefined
+        if (fetchedResults !== undefined) {
+          fetchedResults.then((res) => {
+            suggestionResults = res.map(item => {
+              const regionLabel = this.getGADMName(item, REGION_ID_DISPLAY_DELIMETER);
+              return regionLabel; // this will be displayed in the autocomplete dropdown
+            });
+            resolve(suggestionResults);
+          });
+        } else {
+          resolve(suggestionResults);
+        }
+      });
+    },
+    selectCountry(v: string) {
+      console.log(v);
+      this.selectedCountry = v;
     }
   }
 });
