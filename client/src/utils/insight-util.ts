@@ -212,7 +212,7 @@ function parseReportFromQuestionsAndInsights(
   return report;
 }
 
-function instanceOfInsightWithImage(data: any): data is FullInsight {
+function instanceOfFullInsight(data: any): data is FullInsight {
   return 'thumbnail' in data;
 }
 
@@ -459,7 +459,7 @@ async function exportDOCX(
 
   const metadataSummary = getMetadataSummary(projectMetadata);
   const sections = allData.reduce((acc, item, index) => {
-    if (instanceOfInsightWithImage(item)) {
+    if (instanceOfFullInsight(item)) {
       const newPage = index > 0 && !instanceOfQuestion(allData[index - 1]);
       acc.push(generateInsightDOCX(item, metadataSummary, newPage));
     } else if (instanceOfQuestion(item)) {
@@ -603,7 +603,7 @@ function exportPPTX(
   });
 
   allData.forEach((item) => {
-    if (instanceOfInsightWithImage(item)) {
+    if (instanceOfFullInsight(item)) {
       generateInsightPPTX(item, pres, metadataSummary);
     } else if (instanceOfQuestion(item)) {
       generateQuestionPPTX(item, pres);
