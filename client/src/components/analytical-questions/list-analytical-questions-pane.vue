@@ -160,7 +160,6 @@ import OptionsButton from '../widgets/options-button.vue';
 import useToaster from '@/services/composables/useToaster';
 
 type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
-const SORT_PATH = 'view_state.analyticalQuestionOrder';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',

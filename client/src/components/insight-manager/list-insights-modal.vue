@@ -123,7 +123,6 @@ export default {
   }),
   setup() {
     const store = useStore();
-    const questions = computed(() => sortQuestionsByPath(store.getters['analysisChecklist/questions']));
     const toaster = useToaster();
     // prevent insight fetches if the gallery is closed
     const preventFetches = computed(() => !store.getters['insightPanel/isPanelOpen']);
@@ -156,9 +155,12 @@ export default {
       })();
     });
 
+    const questions = computed(() => sortQuestionsByPath(store.getters['analysisChecklist/questions']));
+
     return {
       fullInsights,
       reFetchInsights,
+      questions,
       store,
       toaster
     };
@@ -205,8 +207,8 @@ export default {
       return this.searchedInsights;
     },
     insightsGroupedByQuestion() {
-      const insightsByQuestion = InsightUtil.parseReportFromQuestionsAndInsights(this.listInsights, this.questions)
-        .filter(item => InsightUtil.instanceOfInsight(item));
+      const insightsByQuestion = InsightUtil.parseReportFromQuestionsAndInsights(this.fullInsights, this.questions)
+        .filter(item => InsightUtil.instanceOfFullInsight(item));
       return insightsByQuestion;
     }
   },

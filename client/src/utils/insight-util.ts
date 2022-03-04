@@ -620,7 +620,7 @@ async function countPublicInsights(datacubeId: string, projectId: string) {
 }
 
 export default {
-  instanceOfInsight,
+  instanceOfFullInsight,
   instanceOfQuestion,
   parseMetadataDetails,
   parseReportFromQuestionsAndInsights,
