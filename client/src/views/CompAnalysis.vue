@@ -652,7 +652,7 @@ export default defineComponent({
     },
     onToggleRegionRankingDataInversion(regionRankingInfo: {id: string; datacubeId: string;}) {
       const regionRankingDataInversionUpdated = _.cloneDeep(this.regionRankingDataInversion);
-      const datacubeKey = regionRankingInfo.id + regionRankingInfo.datacubeId;
+      const datacubeKey = this.getDatacubeKey(regionRankingInfo.id, regionRankingInfo.datacubeId);
       if (regionRankingDataInversionUpdated[datacubeKey] === undefined) {
         regionRankingDataInversionUpdated[datacubeKey] = false;
       }
@@ -765,7 +765,7 @@ export default defineComponent({
 
       // clone and save the incoming timeseries in the map object
       //  where all timeseries lists will be saved
-      const datacubeKey = timeseriesInfo.id + timeseriesInfo.datacubeId;
+      const datacubeKey = this.getDatacubeKey(timeseriesInfo.id, timeseriesInfo.datacubeId);
       this.allTimeseriesMap[datacubeKey] = _.cloneDeep(timeseriesInfo.timeseriesList);
 
       this.allDatacubesMetadataMap[datacubeKey] = {
