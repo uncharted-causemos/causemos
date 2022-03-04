@@ -3,11 +3,10 @@
     class="insight"
     :class="{ 'card-mode': cardMode }"
   >
-    <div class="insight-content">
-      <div
-        class="insight-thumbnail"
-        @click="selectInsight()"
-      >
+    <div
+      class="insight-content"
+      @click="selectInsight()">
+      <div class="insight-thumbnail">
         <img
           v-if="insight.thumbnail"
           :src="insight.thumbnail"
