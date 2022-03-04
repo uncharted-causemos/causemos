@@ -8,7 +8,9 @@
     @set-active="setActive"
   >
     <list-analytical-questions-pane
-      class="analytical-questions-container" />
+      class="analytical-questions-container"
+      :fetch-initial-insights="false"
+    />
   </side-panel>
 </template>
 

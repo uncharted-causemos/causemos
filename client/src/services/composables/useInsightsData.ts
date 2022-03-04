@@ -14,22 +14,6 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
   const insightsFetchedAt = ref(0);
 
   /**
-   * Returns the previously fetched insights matching the provided IDs.
-   * NOTE: This will not fetch new insights.
-   * @param insightIDs A list of insight IDs
-   */
-  const getInsightsByIDs = (insightIDs: string[]) => {
-    const result: Insight[] = [];
-    insightIDs.forEach(insightId => {
-      const ins = insightMap.value.get(insightId);
-      if (ins) {
-        result.push(ins);
-      }
-    });
-    return result;
-  };
-
-  /**
    * Fetches images for previously fetched insights that match the provided IDs.
    * If an insight with a given ID hasn't been fetched using this composable the image
    * will not be fetched.
@@ -100,7 +84,6 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
 
       // if context-id is undefined, then it means no datacubes/CAGs are listed, so ignore fetch
       if (contextIds.value === undefined) {
-        store.dispatch('contextInsightPanel/setRefetchInsights', false);
         return;
       }
 
@@ -176,7 +159,6 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
 
   return {
     insights,
-    getInsightsByIDs,
     reFetchInsights,
     fetchImagesForInsights
   };

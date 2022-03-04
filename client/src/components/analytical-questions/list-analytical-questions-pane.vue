@@ -115,13 +115,13 @@
             </div>
             <!-- second row display a list of linked insights -->
             <message-display
-              v-if="getCachedInsights(questionItem.linked_insights).length === 0"
+              v-if="(insightsByQuestion.get(questionItem.id)?.length ?? 0) === 0"
               class="no-insight-warning"
               :message-type="'alert-warning'"
               :message="'No insights assigned to this section.'"
             />
             <div
-              v-for="insight in getCachedInsights(questionItem.linked_insights)"
+              v-for="insight in insightsByQuestion.get(questionItem.id)"
               :key="insight.id"
               class="checklist-item-insight">
               <i @mousedown.stop.prevent class="fa fa-star" />
@@ -142,7 +142,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 import Shepherd from 'shepherd.js';
@@ -171,25 +171,39 @@ export default defineComponent({
     showChecklistTitle: {
       type: Boolean,
       default: false
+    },
+    fetchInitialInsights: {
+      type: Boolean,
+      default: true
     }
   },
-  setup() {
+  setup(props) {
+    const toaster = useToaster();
     const { questionsList, reFetchQuestions } = useQuestionsData();
-    const { getInsightsByIDs, reFetchInsights } = useInsightsData(undefined,
+    const { insights, reFetchInsights } = useInsightsData(undefined,
       ['id', 'name', 'visibility', 'analytical_question']);
 
-    // wrapper to get a proper return type that matches the allowed fields above
-    const getCachedInsights = (insightIds: string[]) => {
-      return getInsightsByIDs(insightIds) as PartialInsight[];
+    const getInsightById = (insightId: string) => {
+      return insights.value.find(insight => insight.id === insightId) as PartialInsight;
     };
 
-    const toaster = useToaster();
+    const insightsByQuestion = computed<Map<string, PartialInsight[]>>(() => {
+      return new Map<string, PartialInsight[]>(questionsList.value.map(question => [
+        question.id,
+        insights.value.filter(insight => question.linked_insights.includes(insight.id as string))
+      ] as [string, PartialInsight[]]));
+    });
+
+    if (props.fetchInitialInsights) {
+      reFetchInsights();
+    }
 
     return {
       questionsList,
+      insightsByQuestion,
       reFetchQuestions,
       reFetchInsights,
-      getCachedInsights,
+      getInsightById,
       toaster
     };
   },
@@ -387,9 +401,8 @@ export default defineComponent({
       // implied else
       if (insight_id !== '') {
         // fetch the dropped insight and use its name in this question's insights
-        const insights = this.getCachedInsights([insight_id]);
-        if (insights && insights.length > 0) {
-          const loadedInsight = insights[0];
+        const insight = this.getInsightById(insight_id);
+        if (insight) {
           const existingIndex = questionItem.linked_insights.findIndex(id => id === insight_id);
           if (existingIndex < 0) {
             // only add any dropped insight once to each question
@@ -402,9 +415,9 @@ export default defineComponent({
             this.updateLocalQuestionsList(this.sortedQuestions);
           }
           // add the following question (text) to the insight
-          if (!(loadedInsight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
-            loadedInsight.analytical_question.push(questionItem.id as string);
-            await updateInsight(insight_id, loadedInsight as Insight);
+          if (!(insight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
+            insight.analytical_question.push(questionItem.id as string);
+            await updateInsight(insight_id, insight as Insight);
             this.reFetchInsights();
           }
         }
@@ -461,9 +474,8 @@ export default defineComponent({
       this.removeQuestionFromInsight(questionItem, insightId);
     },
     async removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
-      const insights = this.getCachedInsights([insightId]);
-      if (insights && insights.length > 0) {
-        const insight = insights[0];
+      const insight = this.getInsightById(insightId);
+      if (insight) {
         insight.analytical_question = insight?.analytical_question.filter(
           (qid: string) => qid !== questionItem.id
         );
