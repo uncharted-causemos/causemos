@@ -116,7 +116,7 @@ const lossySearch = (text, textFragment) => {
 const iterativeRegexSearch = (text, fragment) => {
   let sanitizedSearch = fragment
     // remove some special characters, may need adjustment for edge cases but some are regex reserved
-    .replace(/[/\\[\].+*?^$(){}'"|,]/g, '')
+    .replace(/[/\\[\].+*?^$(){}|,]/g, '')
     .split(/\s+/)
     .join(' ')
     .trim();
@@ -216,7 +216,7 @@ export default {
 
       // FIXME: temporarily return false always - DART is offline and there is a strange bug where the fallover
       // doesn't work after the code has been transpiled - issue 680.
-      const useDART = false;
+      const useDART = true;
 
       if (isPdf(this.documentData) && useDART) {
         const rawDocUrl = `/api/dart/${this.documentId}/raw`;
