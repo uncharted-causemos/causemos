@@ -154,11 +154,10 @@ import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question
 import { ProjectType } from '@/types/Enums';
 import { AnalyticalQuestion, Insight, ViewState } from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
+import { SORT_PATH, sortQuestionsByPath } from '@/utils/questions-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 import useToaster from '@/services/composables/useToaster';
-
-const SORT_PATH = 'view_state.analyticalQuestionOrder';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
@@ -220,7 +219,7 @@ export default defineComponent({
       isPanelOpen: 'insightPanel/isPanelOpen'
     }),
     sortedQuestions(): AnalyticalQuestion[] {
-      return _.sortBy(this.questionsList, SORT_PATH);
+      return sortQuestionsByPath(this.questionsList);
     },
     // @REVIEW: this is similar to insightTargetView
     questionTargetView(): string[] {

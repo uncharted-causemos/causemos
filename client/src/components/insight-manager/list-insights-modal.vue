@@ -93,6 +93,7 @@ import MessageDisplay from '@/components/widgets/message-display';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
+import { sortQuestionsByPath } from '@/utils/questions-util';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
@@ -117,7 +118,7 @@ export default {
   }),
   setup() {
     const store = useStore();
-    const questions = computed(() => store.getters['analysisChecklist/questions']);
+    const questions = computed(() => sortQuestionsByPath(store.getters['analysisChecklist/questions']));
 
     const { insights: listInsights, getInsightsByIDs, reFetchInsights } = useInsightsData();
 
