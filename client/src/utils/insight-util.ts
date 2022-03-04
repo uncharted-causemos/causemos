@@ -2,12 +2,7 @@ import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import { Clause, Filters } from '@/types/Filters';
 import _ from 'lodash';
-import {
-  countInsights,
-  deleteInsight,
-  getFirstInsight,
-  InsightFilterFields
-} from '@/services/insight-service';
+import { countInsights, deleteInsight, InsightFilterFields } from '@/services/insight-service';
 import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-service';
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
@@ -615,14 +610,6 @@ function exportPPTX(
   });
 }
 
-async function getFirstPublicInsight(datacubeId: string, projectId: string) {
-  const publicInsightsSearchFields: InsightFilterFields = {};
-  publicInsightsSearchFields.visibility = 'public';
-  publicInsightsSearchFields.project_id = projectId;
-  publicInsightsSearchFields.context_id = datacubeId;
-  return await getFirstInsight(publicInsightsSearchFields);
-}
-
 async function countPublicInsights(datacubeId: string, projectId: string) {
   const publicInsightsSearchFields: InsightFilterFields = {};
   publicInsightsSearchFields.visibility = 'public';
@@ -640,6 +627,5 @@ export default {
   jumpToInsightContext,
   exportDOCX,
   exportPPTX,
-  getFirstPublicInsight,
   countPublicInsights
 };

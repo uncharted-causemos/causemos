@@ -13,6 +13,11 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
 
   const insightsFetchedAt = ref(0);
 
+  /**
+   * Returns the previously fetched insights matching the provided IDs.
+   * NOTE: This will not fetch new insights.
+   * @param insightIDs A list of insight IDs
+   */
   const getInsightsByIDs = (insightIDs: string[]) => {
     const result: Insight[] = [];
     insightIDs.forEach(insightId => {
@@ -24,7 +29,15 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
     return result;
   };
 
-  const fetchWithImages = async (insightIDs: string[]): Promise<FullInsight[]> => {
+  /**
+   * Fetches images for previously fetched insights that match the provided IDs.
+   * If an insight with a given ID hasn't been fetched using this composable the image
+   * will not be fetched.
+   * Caching is utilised so that existing images aren't downloaded again.
+   * The cache is cleared when a new set of insights is fetched using this composable.
+   * @param insightIDs
+   */
+  const fetchImagesForInsights = async (insightIDs: string[]): Promise<FullInsight[]> => {
     const result: FullInsight[] = [];
     const idsToFetch: string[] = [];
     // use existing images if available
@@ -165,6 +178,6 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
     insights,
     getInsightsByIDs,
     reFetchInsights,
-    fetchWithImages
+    fetchImagesForInsights
   };
 }

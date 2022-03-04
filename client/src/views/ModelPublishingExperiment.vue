@@ -59,6 +59,7 @@ import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacub
 import domainProjectService from '@/services/domain-project-service';
 import InsightUtil from '@/utils/insight-util';
 import useToaster from '@/services/composables/useToaster';
+import { getFirstInsight, InsightFilterFields } from '@/services/insight-service';
 
 export default defineComponent({
   name: 'ModelPublishingExperiment',
@@ -296,6 +297,14 @@ export default defineComponent({
       }
     };
 
+    const getFirstPublicInsight = async (datacubeId: string, projectId: string) => {
+      const publicInsightsSearchFields: InsightFilterFields = {};
+      publicInsightsSearchFields.visibility = 'public';
+      publicInsightsSearchFields.project_id = projectId;
+      publicInsightsSearchFields.context_id = datacubeId;
+      return await getFirstInsight(publicInsightsSearchFields);
+    };
+
     return {
       AggregationOption,
       currentPublishStep,
@@ -312,6 +321,7 @@ export default defineComponent({
       initialViewConfig,
       onModelParamUpdated,
       updateModelMetadataValidity,
+      getFirstPublicInsight,
       projectId,
       toast,
       currentView
@@ -349,7 +359,7 @@ export default defineComponent({
       // check if a public insight exist for this model instance
       // first, fetch public insights to load the publication status, as needed
       // FIXME: Fetch the first default insight, not the first public insight
-      const defaultInsight = await InsightUtil.getFirstPublicInsight(this.metadata?.id as string, this.projectId);
+      const defaultInsight = await this.getFirstPublicInsight(this.metadata?.id as string, this.projectId);
       if (defaultInsight) {
         //
         // FIXME: only apply public insight if no, other, insight is being applied

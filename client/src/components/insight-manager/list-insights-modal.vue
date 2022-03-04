@@ -181,15 +181,16 @@ export default {
     const toaster = useToaster();
     // prevent insight fetches if the gallery is closed
     const preventFetches = computed(() => !store.getters['insightPanel/isPanelOpen']);
-    const { insights, reFetchInsights, fetchWithImages } = useInsightsData(preventFetches);
+    const { insights, reFetchInsights, fetchImagesForInsights } = useInsightsData(preventFetches);
     const fullInsights = ref([])/* as Ref<FullInsight[]> */;
 
     watch([insights], () => {
       // first fill it without images, once the downloads finish, fill them in
+      // use '' to represent that the thumbnail is loading
       fullInsights.value = insights.value.map(insight => ({ ...insight, thumbnail: '' }));
       (async () => {
         // First, get just the thumbnails, set annotation_state to null to indicate it's still coming
-        const images = await fetchWithImages(insights.value.map(insight => insight.id));
+        const images = await fetchImagesForInsights(insights.value.map(insight => insight.id));
         const ids = insights.value.map(insight => insight.id);
         fullInsights.value = images.filter(i => ids.includes(i.id))
           .map(i => ({ ...i, annotation_state: null }));

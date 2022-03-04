@@ -123,14 +123,15 @@ export default {
     const store = useStore();
     // the gallery opens over top of this side panel, prevent fetches while the gallery is open
     const preventFetches = computed(() => store.getters['insightPanel/isPanelOpen']);
-    const { insights, reFetchInsights, fetchWithImages } = useInsightsData(preventFetches);
+    const { insights, reFetchInsights, fetchImagesForInsights } = useInsightsData(preventFetches);
     const listContextInsights = ref([])/* as Ref<FullInsight[]> */;
 
     watch([insights], () => {
-      // first fill it without images, once the downloads finish, fill them in
+      // first fill it without images, once the downloads finish, fill the image in
+      // use '' to represent that the thumbnail is loading
       listContextInsights.value = insights.value.map(insight => ({ ...insight, thumbnail: '' }));
       (async () => {
-        const images = await fetchWithImages(insights.value.map(insight => insight.id));
+        const images = await fetchImagesForInsights(insights.value.map(insight => insight.id));
         const ids = insights.value.map(insight => insight.id);
         listContextInsights.value = images.filter(i => ids.includes(i.id));
       })();
