@@ -16,7 +16,8 @@
       Review
     </button>
     <list-analytical-questions-pane
-      class="analytical-questions-container" />
+      class="analytical-questions-container"
+    />
   </side-panel>
 </template>
 

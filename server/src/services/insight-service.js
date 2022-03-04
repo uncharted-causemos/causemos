@@ -5,6 +5,8 @@ const es = rootRequire('adapters/es/adapter');
 const Adapter = es.Adapter;
 const RESOURCE = es.RESOURCE;
 
+const MAX_INSIGHTS = 50;
+
 /**
  * Wrapper to create a new insight.
  *
@@ -84,33 +86,36 @@ const updateInsight = async(id, insight) => {
 };
 
 /**
- * Returns a list of insights
+ * Returns a list of insights that match a filter
  */
-const getAllInsights = async (filterParams) => {
+const getAllInsights = async (filterParams, options) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const searchFilters = getFilterFields(filterParams);
-  const results = await insightsConnection.find(searchFilters, { size: 50 });
+  if (!options.size) {
+    options.size = MAX_INSIGHTS;
+  }
+  const results = await insightsConnection.find(filterParams, options);
   return results;
 };
 
 /**
- * Returns an insight
+ * Returns an insight matching the id
  */
-const getInsight = async (insightId) => {
+const getInsight = async (insightId, fieldAllowList) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const result = await insightsConnection.findOne([{ field: 'id', value: insightId }], {});
+  const options = {};
+  if (fieldAllowList && fieldAllowList.length > 0) {
+    options.includes = fieldAllowList;
+  }
+  const result = await insightsConnection.findOne([{ field: 'id', value: insightId }], options);
   return result;
 };
 
 /**
- * Count the number of insights within a project
- *
- * @param {string} projectId
+ * Count the number of insights that math a filter
  */
-const counts = async (filterParams) => {
+const count = async (filterParams) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const searchFilters = getFilterFields(filterParams);
-  const count = await insightsConnection.count(searchFilters);
+  const count = await insightsConnection.count(filterParams);
   return count;
 };
 
@@ -127,32 +132,11 @@ const remove = async (insightId) => {
   return stats;
 };
 
-const getFilterFields = (filterParams) => {
-  // NOTE: supported filter fields are listed also in the client service; InsightFilterFields
-  const supportedSearchFields = [
-    'project_id',
-    'context_id',
-    'target_view',
-    'visibility',
-    'analysis_id'
-  ];
-  const searchFilters = [];
-  supportedSearchFields.forEach(key => {
-    if (Object.prototype.hasOwnProperty.call(filterParams, key)) {
-      searchFilters.push({
-        field: key,
-        value: filterParams[key]
-      });
-    }
-  });
-  return searchFilters;
-};
-
 module.exports = {
   createInsight,
   getAllInsights,
   getInsight,
-  counts,
+  count,
   remove,
   insertInsight,
   updateInsight

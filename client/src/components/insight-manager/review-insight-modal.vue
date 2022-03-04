@@ -167,7 +167,7 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import InsightUtil from '@/utils/insight-util';
-import { Insight, InsightMetadata } from '@/types/Insight';
+import { Insight, InsightMetadata, FullInsight } from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { addInsight, updateInsight } from '@/services/insight-service';
@@ -504,7 +504,7 @@ export default defineComponent({
         // saving a new insight
         const url = this.$route.fullPath;
 
-        const newInsight: Insight = {
+        const newInsight: FullInsight = {
           name: this.insightTitle,
           description: this.insightDesc,
           visibility: this.insightVisibility,
