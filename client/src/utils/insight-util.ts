@@ -620,7 +620,10 @@ async function getPublicInsights(datacubeId: string, projectId: string) {
 }
 
 export default {
+  instanceOfInsight,
+  instanceOfQuestion,
   parseMetadataDetails,
+  parseReportFromQuestionsAndInsights,
   getFormattedFilterString,
   getSourceUrlForExport,
   removeInsight,

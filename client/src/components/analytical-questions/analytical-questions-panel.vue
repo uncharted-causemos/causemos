@@ -7,6 +7,14 @@
     :is-large="false"
     @set-active="setActive"
   >
+    <button
+      class="btn btn-call-for-action review-button"
+      :disabled="!loaded"
+      @click="reviewChecklist"
+    >
+      <i class="fa fa-fw fa-desktop" />
+      Review
+    </button>
     <list-analytical-questions-pane
       class="analytical-questions-container" />
   </side-panel>
@@ -23,6 +31,15 @@ export default defineComponent({
     SidePanel,
     ListAnalyticalQuestionsPane
   },
+  props: {
+    loaded: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: [
+    'review-checklist'
+  ],
   data: () => ({
     AnalyticalQuestionsTabs: [
       { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' }
@@ -30,6 +47,9 @@ export default defineComponent({
     currentTab: 'Analysis Checklist'
   }),
   methods: {
+    reviewChecklist() {
+      this.$emit('review-checklist');
+    },
     setActive(tab: string) {
       this.currentTab = tab;
     }
@@ -41,7 +61,10 @@ export default defineComponent({
   @import "~styles/variables";
   .analytical-questions-panel-container {
     margin-top: 5px;
-
+      .review-button {
+        color: $background-light-1;
+        width: 100%;
+      }
     .analytical-questions-container {
       overflow-y: auto;
     }
