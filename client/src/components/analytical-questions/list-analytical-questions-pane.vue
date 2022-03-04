@@ -171,13 +171,9 @@ export default defineComponent({
     showChecklistTitle: {
       type: Boolean,
       default: false
-    },
-    fetchInitialInsights: {
-      type: Boolean,
-      default: true
     }
   },
-  setup(props) {
+  setup() {
     const toaster = useToaster();
     const { questionsList, reFetchQuestions } = useQuestionsData();
     const { insights, reFetchInsights } = useInsightsData(undefined,
@@ -193,10 +189,6 @@ export default defineComponent({
         insights.value.filter(insight => question.linked_insights.includes(insight.id as string))
       ] as [string, PartialInsight[]]));
     });
-
-    if (props.fetchInitialInsights) {
-      reFetchInsights();
-    }
 
     return {
       questionsList,

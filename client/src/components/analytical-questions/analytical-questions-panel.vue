@@ -9,7 +9,6 @@
   >
     <list-analytical-questions-pane
       class="analytical-questions-container"
-      :fetch-initial-insights="false"
     />
   </side-panel>
 </template>

@@ -58,6 +58,7 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
 
   const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
   const isContextInsightPanelOpen = computed(() => store.getters['contextInsightPanel/isPanelOpen']);
+  const isSidePanelOpen = computed(() => store.getters['panel/isPanelOpen']);
 
   const shouldRefetchInsights = computed(() => store.getters['contextInsightPanel/shouldRefetchInsights']);
 
@@ -77,7 +78,7 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
     async function getInsights() {
       if (shouldRefetchInsights.value === false) {
         // do not fetch if the panel is not open
-        if (!(isInsightExplorerOpen.value === true || isContextInsightPanelOpen.value === true)) {
+        if (!(isInsightExplorerOpen.value === true || isContextInsightPanelOpen.value === true || isSidePanelOpen.value === true)) {
           return;
         }
       }
