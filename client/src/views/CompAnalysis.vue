@@ -9,7 +9,11 @@
       </template>
     </analytical-questions-and-insights-panel>
     <main class="insight-capture">
-      <action-bar />
+      <div class="action-bar-container">
+        <action-bar style="flex: 1" />
+        <div class="shown-datacubes-count">{{shownDatacubesCountLabel}}</div>
+      </div>
+
       <!-- overlay view content -->
       <datacube-comparative-timeline-sync
         v-if="globalTimeseries.length > 0 && comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay"
@@ -41,8 +45,9 @@
           @bar-chart-hover="onBarChartHover"
           @map-click-region="onMapClickRegion"
         />
-        <div style="display: flex" v-if="selectedAnalysisItems.length > 0">
-          <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
+        <div class="ranking-header-bottom" v-if="selectedAnalysisItems.length > 0">
+          <h5>Ranking Criteria:</h5>
+          <div>Composition Type: <b>{{regionRankingCompositionType}}</b></div>
           <div class="checkbox">
             <label
               @click="showNormalizedData=!showNormalizedData"
@@ -109,11 +114,12 @@
             :datacube-id="item.datacubeId"
             :selected-admin-level="selectedAdminLevel"
             :number-of-color-bins="numberOfColorBins"
+            :ranking-weight="getDatacubeRankingWeight(item)"
             :selected-color-scheme="finalColorScheme"
             :region-ranking-binning-type="regionRankingBinningType"
             :bar-chart-hover-id="barChartHoverId"
             :show-normalized-data="showNormalizedData"
-            :is-data-inverted="regionRankingDataInversion[item.id+item.datacubeId]"
+            :is-data-inverted="isDatacubeInverted(item)"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
             @map-click-region="onMapClickRegion"
@@ -328,6 +334,10 @@ export default defineComponent({
       },
       { immediate: true }
     );
+
+    const shownDatacubesCountLabel = computed(() => {
+      return 'Selected ' + selectedAnalysisItems.value.length + ' / ' + analysisItems.value.length + ' datacubes';
+    });
 
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) return;
@@ -551,7 +561,8 @@ export default defineComponent({
       timeseriesToDatacubeMap,
       colorFromIndex,
       regionRankingDataInversion,
-      dataState
+      dataState,
+      shownDatacubesCountLabel
     };
   },
   mounted() {
@@ -600,6 +611,21 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setDataState: 'insightPanel/setDataState'
     }),
+    getDatacubeRankingWeight(datacubeItem: AnalysisItem) {
+      const datacubeKey = this.getDatacubeKey(datacubeItem.id, datacubeItem.datacubeId);
+      if (this.regionRankingWeights[datacubeKey]) {
+        const weight = this.regionRankingWeights[datacubeKey].weight;
+        return weight.toFixed(2);
+      }
+      return '0';
+    },
+    getDatacubeKey(id: string, datacubeId: string) {
+      return id + datacubeId;
+    },
+    isDatacubeInverted(datacubeItem: AnalysisItem) {
+      const datacubeKey = this.getDatacubeKey(datacubeItem.id, datacubeItem.datacubeId);
+      return this.regionRankingDataInversion[datacubeKey];
+    },
     setRegionRankingEqualWeight() {
       // reset to equal weights
       const regionRankingEqualCompositionWeight = 1 / (this.selectedAnalysisItems.length) * 100;
@@ -635,7 +661,7 @@ export default defineComponent({
     },
     onUpdatedBarsData(regionRankingInfo: {id: string; datacubeId: string; name: string; barsData: BarData[]; selectedTimestamp: number}) {
       // clone and save the incoming regional-ranking data in the global map object
-      const datacubeKey = regionRankingInfo.id + regionRankingInfo.datacubeId;
+      const datacubeKey = this.getDatacubeKey(regionRankingInfo.id, regionRankingInfo.datacubeId);
       this.allRegionalRankingMap[datacubeKey] = _.cloneDeep(regionRankingInfo.barsData);
 
       // save the most recent timestamp from all datacubes as the global one
@@ -878,8 +904,12 @@ main {
 }
 
 .ranking-header-bottom {
-  margin-bottom: -1rem;
-  flex: 1;
+  h5 {
+    margin-bottom: -1rem;
+  }
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
 }
 .ranking-header-top {
   margin-bottom: -0.25rem;
@@ -962,6 +992,18 @@ $marginSize: 6px;
 .card-map {
   flex-grow: 1;
   min-height: 0;
+}
+
+.action-bar-container {
+  display: flex;
+  align-items: baseline;
+
+  .shown-datacubes-count {
+    margin-left: 20px;
+    color: darkgray;
+    cursor: default;
+    font-style: italic;
+  }
 }
 
 </style>

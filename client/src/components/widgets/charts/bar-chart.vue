@@ -1,6 +1,7 @@
 <template>
   <div class="bar-chart-container">
     <div class="chart">
+      <div v-if="barsData.length === 0" class="no-data">No data available using selected criteria!</div>
       <svg ref="barChart" />
       <resize-observer @notify="resize" />
     </div>
@@ -119,9 +120,16 @@ export default defineComponent({
 }
 
 .chart {
+  display: flex;
   flex: 1;
   min-width: 0;
+  align-items: center;
   position: relative;
+}
+
+.no-data {
+  font-style: italic;
+  width: 100%;
 }
 
 .selected-data {

@@ -11,6 +11,7 @@
         <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin-left: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
         <i class="fa fa-fw fa-expand drilldown-btn" />
       </h5>
+      <div class="ranking-weight-label">Ranking Weight: <b>{{rankingWeight}}</b></div>
 
       <options-button :dropdown-below="true">
         <template #content>
@@ -161,6 +162,10 @@ export default defineComponent({
     numberOfColorBins: {
       type: Number,
       default: 5
+    },
+    rankingWeight: {
+      type: String,
+      default: '0'
     },
     selectedColorScheme: {
       type: Array as PropType<string[]>,
@@ -791,6 +796,11 @@ main {
 
 .region-map-container {
   width: 75%;
+}
+
+.ranking-weight-label {
+  margin-left: 1rem;
+  margin-right: 1rem;
 }
 
 </style>
