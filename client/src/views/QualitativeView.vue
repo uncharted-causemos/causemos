@@ -165,7 +165,7 @@
     <modal-time-scale
       v-if="showModalTimeScale"
       :initially-selected-time-scale="modelSummary?.parameter?.time_scale"
-      @save-cag-params="saveTimeScale"
+      @save-cag-params="saveCAGParams"
       @close="showModalTimeScale = false"
     />
     <modal-import-cag
@@ -1423,7 +1423,7 @@ export default defineComponent({
         }
       }
     },
-    async saveTimeScale(params: { timeScale: TimeScale; geography: string | null }) {
+    async saveCAGParams(params: { timeScale: TimeScale; geography: string | null }) {
       let historyRange = 24;
       if (params.timeScale === TimeScale.Months) {
         historyRange = 24;
