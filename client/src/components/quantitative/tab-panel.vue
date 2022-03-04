@@ -102,7 +102,6 @@
 import _ from 'lodash';
 import { defineComponent, ref, PropType, Ref } from 'vue';
 import { mapGetters, mapActions } from 'vuex';
-import moment from 'moment';
 
 import ConfigBar from '@/components/quantitative/config-bar.vue';
 import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis.vue';
@@ -111,7 +110,7 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher.vue';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane.vue';
 import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane.vue';
-import modelService from '@/services/model-service';
+import modelService, { calculateProjectionEnd } from '@/services/model-service';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
@@ -463,15 +462,14 @@ export default defineComponent({
       const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
       if (!scenario) return;
 
-      const start = scenario.parameter.projection_start;
-      const numTimeSteps = scenario.parameter.num_steps;
-      // FIXME: endTime depends on time scale
+      const startTime = scenario.parameter.projection_start;
+      const endTime = calculateProjectionEnd(startTime, this.timeScale);
       const experimentPayload = {
         experimentType: 'PROJECTION',
         experimentParam: {
-          numTimesteps: numTimeSteps,
-          startTime: start,
-          endTime: moment(start).add(numTimeSteps - 1, 'M').valueOf(),
+          numTimesteps: scenario.parameter.num_steps,
+          startTime,
+          endTime,
           constraints: scenario.parameter.constraints
         }
       };
@@ -648,6 +646,13 @@ main {
   display: flex;
   gap: 10px;
   align-items: flex-end;
+
+  // Don't block the graph behind it
+  pointer-events: none;
+  // But do still receive mouse events on children
+  > * {
+    pointer-events: auto;
+  }
 }
 
 .config-bar {

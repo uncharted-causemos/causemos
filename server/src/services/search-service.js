@@ -448,6 +448,15 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k, geography)
             } else {
               Logger.warn(`Cannot find ${dataId}, ${name} in data-datacube index`);
             }
+          } else if (match.datamart.datamartId === 'DOJO_Model') {
+            const dataId = match.datamart.datasetId;
+            const name = match.datamart.variableId;
+            const candidates = await modelSearchWithName(dataId, name);
+            if (candidates.length > 0) {
+              indicatorsForMatches.push({ score: match.score, candidate: candidates[0] });
+            } else {
+              Logger.warn(`Cannot find ${dataId}, ${name} in data-datacube index`);
+            }
           }
         }
       }
@@ -513,6 +522,13 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
             if (candidates.length > 0) {
               indicators.push({ score: result.score, candidate: candidates[0] });
             }
+          } else if (result.datamart.datamartId === 'DOJO_Model') {
+            const dataId = result.datamart.datasetId;
+            const name = result.datamart.variableId;
+            const candidates = await modelSearchWithName(dataId, name);
+            if (candidates.length > 0) {
+              indicators.push({ score: result.score, candidate: candidates[0] });
+            }
           }
         }
       }
@@ -545,6 +561,32 @@ const indicatorSeachByDatasetId = async (dataId, name) => {
 
   const results = await client.search(searchPayload);
   return results.body.hits.hits.map(d => d._source);
+};
+
+const modelSearchWithName = async (id, name) => {
+  // id and dataId are interchangeable for models
+  const searchPayload = {
+    index: RESOURCE.DATA_DATACUBE,
+    size: 1,
+    body: {
+      query: {
+        bool: {
+          must: [
+            {
+              term: { id: id }
+            },
+            {
+              term: { 'outputs.name': name }
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  const results = await client.search(searchPayload);
+  // Set default_feature to name to force that output to be used
+  return results.body.hits.hits.map(d => ({ ...d._source, default_feature: name }));
 };
 
 

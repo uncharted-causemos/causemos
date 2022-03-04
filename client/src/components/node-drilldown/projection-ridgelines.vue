@@ -82,7 +82,7 @@
         </div>
         <div v-if="!row.is_valid" class="stale-scenario">
           <div class="transparent"></div>
-          <!-- overlay on top of the projection histograms -->
+          <!-- overlay on top of the projection ridgelines -->
           <div>
             <span>Pending changes</span>
           </div>
@@ -424,7 +424,7 @@ h3 {
 }
 
 .slice-labels {
-  // Add empty column at the left to align first label with first histogram.
+  // Add empty column at the left to align first label with first ridgeline.
   &::before {
     display: block;
     content: '';
