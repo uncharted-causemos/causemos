@@ -50,7 +50,6 @@
           <div class="legend-config-row">
             <cag-legend
               v-if="!showEmptyStateInstructions"
-              :histogram-time-slice-labels="[]"
             />
             <div class="config-bar" v-if="selectedTimeScaleLabel !== null">
               Time scale of interest:
@@ -1487,6 +1486,13 @@ export default defineComponent({
   display: flex;
   gap: 10px;
   align-items: flex-end;
+
+  // Don't block the graph behind it
+  pointer-events: none;
+  // But do still receive mouse events on children
+  > * {
+    pointer-events: auto;
+  }
 }
 
 .config-bar {
