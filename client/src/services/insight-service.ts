@@ -1,8 +1,9 @@
 import API from '@/api/api';
 import { Insight } from '@/types/Insight';
 
+// This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
-  id?: string[];
+  id?: string[]; // allows searching by multiple IDs
   project_id?: string;
   context_id?: string;
   visibility?: string;

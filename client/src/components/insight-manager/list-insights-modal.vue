@@ -194,7 +194,7 @@ export default {
         // First, get just the thumbnails, set annotation_state to null to indicate it's still coming
         const images = await fetchImagesForInsights(ids);
         // If insights changed, abort
-        if (_.isEmpty(_.xor(ids, insights.value.map(insight => insight.id)))) {
+        if (_.xor(ids, insights.value.map(insight => insight.id)).length > 0) {
           return;
         }
         fullInsights.value = images.filter(i => ids.includes(i.id))
