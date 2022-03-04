@@ -342,8 +342,13 @@ export default {
     reviewChecklist() {
       // to do: generate insights list in order of questions
       if (this.insightsGroupedByQuestion.length < 1) return;
+      const insight = this.insightsGroupedByQuestion[0];
+      if (insight.thumbnail === '' || insight.annotation_state === null) {
+        this.toaster(NOT_READY_ERROR, 'error', false);
+        return;
+      }
       this.setReviewIndex(0);
-      this.setUpdatedInsight(this.insightsGroupedByQuestion[0]);
+      this.setUpdatedInsight(insight);
       this.setInsightList(this.insightsGroupedByQuestion);
       this.setCurrentPane('review-insight');
     },

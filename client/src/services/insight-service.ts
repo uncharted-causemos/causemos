@@ -100,5 +100,5 @@ const _fetchInsights = async (fetchParams: InsightFilterFields, options: any) =>
 const _fetchParamsToFilters = (fetchParams: InsightFilterFields) => {
   return Object.keys(fetchParams)
     .map(field => ({ field: field, value: (fetchParams as any)[field] }))
-    .filter(f => f.value !== undefined);
+    .filter(f => f.value !== undefined && f.value !== null);
 };
