@@ -38,16 +38,20 @@
         v-if="isEdgeTypeOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option" @click="setType('level')">
-            <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-circle"></i>
-            <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightTypeString('level') }}
-          </div>
-          <div class="dropdown-option" @click="setType('trend')">
-            <i v-if="currentEdgeType === 'trend'" class="fa fa-fw fa-circle"></i>
-            <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightTypeString('trend') }}
-          </div>
+          <edge-weight-dropdown-option
+            :value="'level'"
+            :selected-value="currentEdgeType"
+            :label="weightTypeString('level')"
+            :is-inferred="isInferredValue('edgeType', 'level')"
+            @click="setType('level')"
+          />
+          <edge-weight-dropdown-option
+            :value="'trend'"
+            :selected-value="currentEdgeType"
+            :label="weightTypeString('trend')"
+            :is-inferred="isInferredValue('edgeType', 'trend')"
+            @click="setType('trend')"
+          />
         </template>
       </dropdown-control>
     </div>
@@ -76,29 +80,35 @@
         v-if="isEdgeWeightOpen"
         class="edge-type-dropdown">
         <template #content>
-          <div class="dropdown-option" @click="setWeight(0.1)">
-            <i v-if="currentEdgeWeight === 0.1" class="fa fa-fw fa-circle"></i>
-            <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightValueString(0.1) }} <span class="secondary">(0.1)</span>
-          </div>
-          <div class="dropdown-option" @click="setWeight(0.5)">
-            <i v-if="currentEdgeWeight === 0.5" class="fa fa-fw fa-circle"></i>
-            <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightValueString(0.5) }} <span class="secondary">(0.5)</span>
-          </div>
-          <div class="dropdown-option" @click="setWeight(0.9)">
-            <i v-if="currentEdgeWeight === 0.9" class="fa fa-fw fa-circle"></i>
-            <i v-else class="fa fa-fw fa-circle-o"></i>
-            {{ weightValueString(0.9) }} <span class="secondary">(0.9)</span>
-          </div>
-          <div class="dropdown-option" @click="setWeight(inferredWeightValue)">
-            <i v-if="currentEdgeWeight === inferredWeightValue" class="fa fa-fw fa-circle"></i>
-            <i v-else class="fa fa-fw fa-circle-o"></i>
-            <div> Inferred </div>
-            <div>
-              {{ weightValueString(inferredWeightValue) }} <span class="secondary">({{ inferredWeightValue.toFixed(3) }})</span>
-            </div>
-          </div>
+          <edge-weight-dropdown-option
+            :value="0.1"
+            :selected-value="currentEdgeWeight"
+            :label="weightValueString(0.1)"
+            :detailed-value="'0.1'"
+            @click="setWeight(0.1)"
+          />
+          <edge-weight-dropdown-option
+            :value="0.5"
+            :selected-value="currentEdgeWeight"
+            :label="weightValueString(0.5)"
+            :detailed-value="'0.5'"
+            @click="setWeight(0.5)"
+          />
+          <edge-weight-dropdown-option
+            :value="0.9"
+            :selected-value="currentEdgeWeight"
+            :label="weightValueString(0.9)"
+            :detailed-value="'0.9'"
+            @click="setWeight(0.9)"
+          />
+          <edge-weight-dropdown-option
+            :value="inferredWeightValue"
+            :selected-value="currentEdgeWeight"
+            :label="weightValueString(inferredWeightValue)"
+            :detailed-value="inferredWeightValue.toFixed(3)"
+            :is-inferred="true"
+            @click="setWeight(inferredWeightValue)"
+          />
         </template>
       </dropdown-control>
     </div>
@@ -157,6 +167,7 @@ import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-uti
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { decodeWeights } from '@/services/model-service';
 import { CAGModelSummary, EdgeParameter } from '@/types/CAG';
+import EdgeWeightDropdownOption from '@/components/drilldown-panel/edge-weight-dropdown-option.vue';
 
 const EDGE_TYPE_LEVEL = 'level';
 const EDGE_TYPE_TREND = 'trend';
@@ -194,7 +205,8 @@ enum DROPDOWN {
 export default defineComponent({
   name: 'EdgePolaritySwitcher',
   components: {
-    DropdownControl
+    DropdownControl,
+    EdgeWeightDropdownOption
   },
   emits: ['edge-set-user-polarity', 'edge-set-weights'],
   props: {
@@ -381,6 +393,13 @@ export default defineComponent({
 
       const assetFolder = require.context('@/assets/');
       return assetFolder('./' + fileName);
+    },
+    isInferredValue(dropdownVariable: string, value: string | number) {
+      switch (dropdownVariable) {
+        case 'edgeType': return value === this.inferredWeightType;
+        case 'edgeWeight': return value === this.inferredWeightValue;
+        default: return false;
+      }
     }
   }
 });
@@ -415,10 +434,6 @@ export default defineComponent({
 }
 .polarity-opposite {
   color: $negative;
-}
-
-.secondary {
-  color: #888;
 }
 
 .warning-message {
