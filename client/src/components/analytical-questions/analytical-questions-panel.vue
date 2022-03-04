@@ -9,6 +9,7 @@
   >
     <button
       class="btn btn-call-for-action review-button"
+      :disabled="!loaded"
       @click="reviewChecklist"
     >
       <i class="fa fa-fw fa-desktop" />
@@ -29,6 +30,12 @@ export default defineComponent({
   components: {
     SidePanel,
     ListAnalyticalQuestionsPane
+  },
+  props: {
+    loaded: {
+      type: Boolean,
+      default: false
+    }
   },
   emits: [
     'review-checklist'

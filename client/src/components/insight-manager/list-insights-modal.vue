@@ -9,6 +9,7 @@
 
     <div class="body flex">
       <analytical-questions-panel
+        :loaded="insightsGroupedByQuestion.length > 0"
         @review-checklist="reviewChecklist"
       />
 
