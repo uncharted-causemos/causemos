@@ -123,6 +123,7 @@
 </template>
 
 <script>
+import _ from 'lodash';
 import { mapGetters, mapActions, useStore } from 'vuex';
 
 import { INSIGHTS } from '@/utils/messages-util';
@@ -189,9 +190,13 @@ export default {
       // use '' to represent that the thumbnail is loading
       fullInsights.value = insights.value.map(insight => ({ ...insight, thumbnail: '' }));
       (async () => {
-        // First, get just the thumbnails, set annotation_state to null to indicate it's still coming
-        const images = await fetchImagesForInsights(insights.value.map(insight => insight.id));
         const ids = insights.value.map(insight => insight.id);
+        // First, get just the thumbnails, set annotation_state to null to indicate it's still coming
+        const images = await fetchImagesForInsights(ids);
+        // If insights changed, abort
+        if (_.isEmpty(_.xor(ids, insights.value.map(insight => insight.id)))) {
+          return;
+        }
         fullInsights.value = images.filter(i => ids.includes(i.id))
           .map(i => ({ ...i, annotation_state: null }));
 
