@@ -261,7 +261,9 @@ export default defineComponent({
       this.disablePanAndZoom();
     },
     onResize() {
-      this.map.fitBounds(this.mapBounds.value || this.mapBounds, { duration: 0 });
+      if (this.map) {
+        this.map.fitBounds(this.mapBounds.value || this.mapBounds, { duration: 0 });
+      }
     },
     onAddLayer() {
       // Triggered when the source layer has been updated or replaced with new one eg. when selected admin level changes

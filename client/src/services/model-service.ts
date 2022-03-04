@@ -13,7 +13,7 @@ import {
   ScenarioParameter,
   CAGModelParameter
 } from '@/types/CAG';
-import { getMonthsPerTimestepFromTimeScale, getStepCountFromTimeScale } from '@/utils/time-scale-util';
+import { getMonthsPerTimestepFromTimeScale, getProjectionLengthFromTimeScale, getStepCountFromTimeScale } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
 import { TimeScale } from '@/types/Enums';
 import { TimeseriesPoint } from '@/types/Timeseries';
@@ -305,6 +305,24 @@ const initializeModel = async (modelId: string) => {
   return [];
 };
 
+export const calculateProjectionEnd = (
+  projectionStart: number,
+  timeScale: TimeScale
+) => {
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+  // The number of months from "now" (1 step before projectionStart) until
+  //  projectionEnd
+  const projectionLengthInMonths = getProjectionLengthFromTimeScale(timeScale);
+  // Subtract 1 timestep so that, for example, if the start date is Jan 1 and
+  //  projection length is 12 months, the last timestamp will be on Dec 1
+  //  instead of Jan 1.
+  // endTime should be thought of as the last timestamp that will be returned.
+  return getTimestampAfterMonths(
+    projectionStart,
+    projectionLengthInMonths - monthsPerTimestep
+  );
+};
+
 
 /**
  * Runs projection experiment
@@ -324,14 +342,7 @@ const runProjectionExperiment = async (
     projection_start: projectionStart
   } = modelSummary.parameter;
   const numTimeSteps = getStepCountFromTimeScale(timeScale);
-  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
-  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
-  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
-  // endTime should be thought of as the last timestamp that will be returned.
-  const projectionEnd = getTimestampAfterMonths(
-    projectionStart,
-    (numTimeSteps - 1) * monthsPerTimestep
-  );
+  const projectionEnd = calculateProjectionEnd(projectionStart, timeScale);
   const result = await API.post(`models/${modelId}/projection`, {
     engine,
     parameters: constraints,
@@ -473,14 +484,7 @@ const runSensitivityAnalysis = async (
   const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
 
   const numTimeSteps = getStepCountFromTimeScale(timeScale);
-  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
-  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
-  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
-  // endTime should be thought of as the last timestamp that will be returned.
-  const experimentEnd = getTimestampAfterMonths(
-    experimentStart,
-    (numTimeSteps - 1) * monthsPerTimestep
-  );
+  const experimentEnd = calculateProjectionEnd(experimentStart, timeScale);
 
   const analysisParams = {
     numPath: 0,

@@ -79,6 +79,7 @@
     </full-screen-modal-header>
     <div class="pane-row">
       <button
+        v-if="!newMode"
         :disabled="prevInsight === null"
         type="button"
         class="btn btn-default"
@@ -145,6 +146,7 @@
       </div>
 
       <button
+        v-if="!newMode"
         :disabled="nextInsight === null"
         type="button"
         class="btn btn-default"
@@ -312,26 +314,19 @@ export default defineComponent({
       updatedInsight: 'insightPanel/updatedInsight',
       insightList: 'insightPanel/insightList',
       countInsights: 'insightPanel/countInsights',
+      reviewIndex: 'insightPanel/reviewIndex',
       filters: 'dataSearch/filters',
       analysisName: 'app/analysisName'
     }),
     nextInsight(): Insight | null {
-      if (this.updatedInsight) {
-        // start with the index of the current insight
-        const indx = this.insightList.findIndex((ins: Insight) => ins.id === this.updatedInsight.id);
-        if (indx + 1 < this.insightList.length) {
-          return this.insightList[indx + 1];
-        }
+      if (this.reviewIndex < this.insightList.length - 1) {
+        return this.insightList[this.reviewIndex + 1];
       }
       return null;
     },
     prevInsight(): Insight | null {
-      if (this.updatedInsight) {
-        // start with the index of the current insight
-        const indx = this.insightList.findIndex((ins: Insight) => ins.id === this.updatedInsight.id);
-        if (indx - 1 >= 0) {
-          return this.insightList[indx - 1];
-        }
+      if (this.reviewIndex > 0) {
+        return this.insightList[this.reviewIndex - 1];
       }
       return null;
     },
@@ -389,6 +384,7 @@ export default defineComponent({
       setInsightList: 'insightPanel/setInsightList',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
+      setReviewIndex: 'insightPanel/setReviewIndex',
       hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
       setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane',
       setRefetchInsights: 'contextInsightPanel/setRefetchInsights'
@@ -439,12 +435,14 @@ export default defineComponent({
         this.cancelInsightEdit();
       }
       this.setUpdatedInsight(this.prevInsight);
+      this.setReviewIndex(this.reviewIndex - 1);
     },
     goToNextInsight() {
       if (this.isEditingInsight) {
         this.cancelInsightEdit();
       }
       this.setUpdatedInsight(this.nextInsight);
+      this.setReviewIndex(this.reviewIndex + 1);
     },
     editInsight() {
       this.isEditingInsight = true;

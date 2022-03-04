@@ -777,7 +777,7 @@ export default defineComponent({
     const breakdownOption = ref<string | null>(null);
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
-    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['50%']);
+    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
