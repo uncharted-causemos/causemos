@@ -15,9 +15,9 @@
         v-if="globalTimeseries.length > 0 && comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay"
         :timeseriesData="globalTimeseries"
         :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
-        :selected-timestamp="selectedTimestamp"
+        :selected-timestamp="selectedGlobalTimestamp"
         :selected-timestamp-range="selectedTimestampRange"
-        @select-timestamp="setSelectedTimestamp"
+        @select-timestamp="setSelectedGlobalTimestamp"
         @select-timestamp-range="handleTimestampRangeSelection"
       />
       <!-- region ranking view content -->
@@ -92,10 +92,9 @@
                 :id="item.id"
                 :datacube-id="item.datacubeId"
                 :datacube-index="indx"
-                :selected-timestamp="selectedTimestamp"
+                :selected-timestamp="selectedGlobalTimestamp"
                 :selected-timestamp-range="selectedTimestampRange"
                 @loaded-timeseries="onLoadedTimeseries"
-                @select-timestamp="setSelectedTimestamp"
               />
             </div>
           </div>
@@ -244,7 +243,8 @@ export default defineComponent({
     const selectedTimestamp = ref(null) as Ref<number | null>;
     const selectedTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
 
-    const initialSelectedTimestamp = ref(0);
+    const selectedGlobalTimestamp = ref(null) as Ref<number | null>;
+    const initialSelectedTimestamp = ref(null) as Ref<number | null>;
     const initialSelectedTimestampRange = ref({}) as Ref<{start: number; end: number}>;
 
     onMounted(async () => {
@@ -334,6 +334,11 @@ export default defineComponent({
       selectedTimestamp.value = value;
     };
 
+    const setSelectedGlobalTimestamp = (value: number) => {
+      if (selectedGlobalTimestamp.value === value) return;
+      selectedGlobalTimestamp.value = value;
+    };
+
     const handleTimestampRangeSelection = (newTimestampRange: {start: number; end: number} | null) => {
       if (selectedTimestampRange.value?.start === newTimestampRange?.start &&
         selectedTimestampRange.value?.end === newTimestampRange?.end) {
@@ -345,11 +350,9 @@ export default defineComponent({
     watch(
       () => [
         comparativeAnalysisViewSelection.value,
-        initialSelectedTimestamp.value,
         initialSelectedTimestampRange.value
       ],
       () => {
-        setSelectedTimestamp(initialSelectedTimestamp.value);
         if (comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay) {
           handleTimestampRangeSelection(initialSelectedTimestampRange.value);
         } else { // reset the active selected range non-overlay views
@@ -446,12 +449,17 @@ export default defineComponent({
     watch(
       () => [
         regionRankingWeights.value,
-        regionRankingDataInversion.value
+        regionRankingDataInversion.value,
+        selectedGlobalTimestamp.value
       ],
       () => {
         const dataStateUpdated = _.cloneDeep(dataState.value);
         dataStateUpdated.regionRankingWeights = regionRankingWeights.value;
         dataStateUpdated.regionRankingDataInversion = regionRankingDataInversion.value;
+        if (comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay) {
+          // only save the selected timestamp in the overlap mode
+          dataStateUpdated.selectedTimestamp = selectedGlobalTimestamp.value;
+        }
         store.dispatch('insightPanel/setDataState', dataStateUpdated);
       }
     );
@@ -476,6 +484,11 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.regionRankingDataInversion !== undefined) {
           regionRankingDataInversion.value = loadedInsight.data_state?.regionRankingDataInversion;
+        }
+        if (loadedInsight.data_state?.selectedTimestamp !== undefined &&
+            loadedInsight.data_state?.selectedTimestamp !== null &&
+            loadedInsight.view_state?.regionRankingSelectedComparativeAnalysisMode === ComparativeAnalysisMode.Overlay) {
+          initialSelectedTimestamp.value = loadedInsight.data_state?.selectedTimestamp;
         }
         // view state
         if (loadedInsight.view_state?.regionRankingSelectedAdminLevel !== undefined) {
@@ -517,6 +530,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       handleTimestampRangeSelection,
+      selectedGlobalTimestamp,
+      setSelectedGlobalTimestamp,
       selectedTimestampRange,
       reCalculateGlobalTimeseries,
       initialSelectedTimestamp,
@@ -801,15 +816,18 @@ export default defineComponent({
           const lastTimestamp = _.max(allTimestamps);
           if (lastTimestamp !== undefined) {
             // set initial timestamp selection
-            // this.setSelectedTimestamp(lastTimestamp);
-            this.initialSelectedTimestamp = lastTimestamp;
+            if (this.initialSelectedTimestamp === null) {
+              this.selectedGlobalTimestamp = lastTimestamp;
+            } else {
+              this.selectedGlobalTimestamp = this.initialSelectedTimestamp;
+              this.initialSelectedTimestamp = null;
+            }
           }
           // select the timestamp range as the full data extend
           const firstTimestamp = _.min(allTimestamps);
           if (lastTimestamp !== undefined && firstTimestamp !== undefined) {
             // set initial timestamp selection range
             const newTimestampRange = { start: firstTimestamp, end: lastTimestamp };
-            // this.handleTimestampRangeSelection(newTimestampRange);
             this.initialSelectedTimestampRange = newTimestampRange;
           }
         }
