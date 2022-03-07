@@ -552,6 +552,9 @@ const indicatorSeachByDatasetId = async (dataId, name) => {
             },
             {
               term: { 'outputs.name': name }
+            },
+            {
+              term: { status: 'READY' }
             }
           ]
         }
@@ -577,6 +580,9 @@ const modelSearchWithName = async (id, name) => {
             },
             {
               term: { 'outputs.name': name }
+            },
+            {
+              term: { status: 'READY' }
             }
           ]
         }
