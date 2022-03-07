@@ -20,7 +20,7 @@
       v-if="selectedRelationship.parameter"
       style="display: inline-block">
       <span
-        v-if="currentView === 'quantitative'"
+        v-if="currentView === 'quantitative' && currentEngine !== 'delphi' && currentEngine !== 'delphi_dev'"
         class="clickable-dropdown"
         :class="{'warning-message': typeInconsistency}"
         @click.stop="openEdgeTypeDropdown()">
@@ -223,6 +223,7 @@ export default defineComponent({
     const ontologyFormatter = useOntologyFormatter();
     const store = useStore();
     const currentView = computed(() => store.getters['app/currentView']);
+    const currentEngine = computed(() => props.modelSummary.parameter.engine);
 
     const { selectedRelationship } = toRefs(props);
 
@@ -284,6 +285,7 @@ export default defineComponent({
 
     return {
       currentView,
+      currentEngine,
       ontologyFormatter,
 
       isEdgeTypeOpen,
