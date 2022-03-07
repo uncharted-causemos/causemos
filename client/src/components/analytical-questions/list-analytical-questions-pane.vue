@@ -115,13 +115,13 @@
             </div>
             <!-- second row display a list of linked insights -->
             <message-display
-              v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
+              v-if="(insightsByQuestion.get(questionItem.id)?.length ?? 0) === 0"
               class="no-insight-warning"
               :message-type="'alert-warning'"
               :message="'No insights assigned to this section.'"
             />
             <div
-              v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
+              v-for="insight in insightsByQuestion.get(questionItem.id)"
               :key="insight.id"
               class="checklist-item-insight">
               <i @mousedown.stop.prevent class="fa fa-star" />
@@ -142,23 +142,24 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, watch } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 import Shepherd from 'shepherd.js';
 
 import useInsightsData from '@/services/composables/useInsightsData';
 import useQuestionsData from '@/services/composables/useQuestionsData';
-import { getInsightById, updateInsight } from '@/services/insight-service';
+import { updateInsight } from '@/services/insight-service';
 import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
 import { ProjectType } from '@/types/Enums';
 import { AnalyticalQuestion, Insight, ViewState } from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
+import { SORT_PATH, sortQuestionsByPath } from '@/utils/questions-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 import useToaster from '@/services/composables/useToaster';
 
-const SORT_PATH = 'view_state.analyticalQuestionOrder';
+type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
@@ -173,18 +174,28 @@ export default defineComponent({
     }
   },
   setup() {
-    const { questionsList, reFetchQuestions } = useQuestionsData();
-    const { getInsightsByIDs, reFetchInsights } = useInsightsData();
-
     const toaster = useToaster();
+    const { questionsList, reFetchQuestions } = useQuestionsData();
+    const { insights, reFetchInsights } = useInsightsData(undefined,
+      ['id', 'name', 'visibility', 'analytical_question']);
 
-    watch(questionsList, () => {
-      reFetchInsights();
+    const getInsightById = (insightId: string) => {
+      return insights.value.find(insight => insight.id === insightId) as PartialInsight;
+    };
+
+    const insightsByQuestion = computed<Map<string, PartialInsight[]>>(() => {
+      return new Map<string, PartialInsight[]>(questionsList.value.map(question => [
+        question.id,
+        insights.value.filter(insight => question.linked_insights.includes(insight.id as string))
+      ] as [string, PartialInsight[]]));
     });
+
     return {
       questionsList,
+      insightsByQuestion,
       reFetchQuestions,
-      getInsightsByIDs,
+      reFetchInsights,
+      getInsightById,
       toaster
     };
   },
@@ -220,7 +231,7 @@ export default defineComponent({
       isPanelOpen: 'insightPanel/isPanelOpen'
     }),
     sortedQuestions(): AnalyticalQuestion[] {
-      return _.sortBy(this.questionsList, SORT_PATH);
+      return sortQuestionsByPath(this.questionsList);
     },
     // @REVIEW: this is similar to insightTargetView
     questionTargetView(): string[] {
@@ -382,12 +393,12 @@ export default defineComponent({
       // implied else
       if (insight_id !== '') {
         // fetch the dropped insight and use its name in this question's insights
-        const loadedInsight: Insight = await getInsightById(insight_id);
-        if (loadedInsight) {
-          const existingIndex = questionItem.linked_insights.findIndex(id => id === loadedInsight.id);
+        const insight = this.getInsightById(insight_id);
+        if (insight) {
+          const existingIndex = questionItem.linked_insights.findIndex(id => id === insight_id);
           if (existingIndex < 0) {
             // only add any dropped insight once to each question
-            questionItem.linked_insights.push(loadedInsight.id as string);
+            questionItem.linked_insights.push(insight_id);
 
             // update question on the backend
             updateQuestion(questionItem.id as string, questionItem);
@@ -396,9 +407,10 @@ export default defineComponent({
             this.updateLocalQuestionsList(this.sortedQuestions);
           }
           // add the following question (text) to the insight
-          if (!(loadedInsight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
-            loadedInsight.analytical_question.push(questionItem.id as string);
-            updateInsight(loadedInsight.id as string, loadedInsight);
+          if (!(insight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
+            insight.analytical_question.push(questionItem.id as string);
+            await updateInsight(insight_id, insight as Insight);
+            this.reFetchInsights();
           }
         }
       }
@@ -453,13 +465,14 @@ export default defineComponent({
       // also, remove this insight from the question list
       this.removeQuestionFromInsight(questionItem, insightId);
     },
-    removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
-      const insights = this.getInsightsByIDs([insightId]);
-      if (insights.length > 0) {
-        insights[0].analytical_question = insights[0].analytical_question.filter(
+    async removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
+      const insight = this.getInsightById(insightId);
+      if (insight) {
+        insight.analytical_question = insight?.analytical_question.filter(
           (qid: string) => qid !== questionItem.id
         );
-        updateInsight(insights[0].id as string, insights[0]);
+        await updateInsight(insightId, insight as Insight);
+        this.reFetchInsights();
       }
     },
     startTour(question: AnalyticalQuestion) {

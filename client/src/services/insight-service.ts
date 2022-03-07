@@ -1,9 +1,9 @@
 import API from '@/api/api';
 import { Insight } from '@/types/Insight';
-import _ from 'lodash';
 
-// FIXME: the following filter fields are also used when fetching questions, rename accordingly
+// This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
+  id?: string[]; // allows searching by multiple IDs
   project_id?: string;
   context_id?: string;
   visibility?: string;
@@ -11,8 +11,8 @@ export interface InsightFilterFields {
   analysis_id?: string;
 }
 
-export const getInsightById = async (insight_id: string) => {
-  const result = await API.get(`insights/${insight_id}`);
+export const getInsightById = async (insight_id: string, fieldAllowList?: string[]) => {
+  const result = await API.get(`insights/${insight_id}`, { params: { fieldAllowList } });
   return result.data;
 };
 
@@ -35,33 +35,70 @@ export const deleteInsight = async (id: string) => {
   return result;
 };
 
-//
-// Core fetch functions
-//
+
+export const countInsights = async (fetchParams: InsightFilterFields): Promise<number> => {
+  const filters = _fetchParamsToFilters(fetchParams);
+  const { data } = await API.get('insights/count', { params: { filters: JSON.stringify(filters) } });
+  return data;
+};
 
 /**
- * Fetch insights for a given array of fetch parameters
- * @param fetchParamsArray an array where each element is a combination of filter fields
- * @returns the result is a unique flat array with a union of all fetch operations
+ * Fetch insights using the specified filter parameters
+ * @param fetchParams an object of field-value pairs to filter by
  */
-export const fetchInsights = async (fetchParamsArray: InsightFilterFields[]) => {
-  // this sequential async loop works
-  /*
-  const allResults: Insight[] = [];
-  for (const fetchParams of fetchParamsArray) {
-    const insights = (await API.get('insights', { params: fetchParams })).data;
-    const orderedInsights: Insight[] = _.orderBy(insights, d => d.modified_at, ['desc']);
-    allResults.push(...orderedInsights);
-  }
-  */
+export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<Insight[]> => {
+  const options = {
+    excludes: [
+      'thumbnail',
+      'annotation_state'
+    ]
+  };
+  return await _fetchInsights(fetchParams, options);
+};
 
-  // but we may also run the loop in parallel; map the array to promises
-  const promises = fetchParamsArray.map((fetchParams) => {
-    return API.get('insights', { params: fetchParams });
+/**
+ * Fetch insights using the specified filter parameters, only the fields
+ * specified in the allowList will be available
+ * @param fetchParams an object of field-value pairs to filter by
+ * @param allowList a list of fields to return
+ */
+export const fetchPartialInsights = async (fetchParams: InsightFilterFields, allowList: string[]): Promise<any[]> => {
+  const options = {
+    includes: allowList
+  };
+  return await _fetchInsights(fetchParams, options);
+};
+
+/**
+ * Fetch the first insight using the specified filter parameters
+ * @param fetchParams an object of field-value pairs to filter by
+ */
+export const getFirstInsight = async (fetchParams: InsightFilterFields): Promise<Insight | undefined> => {
+  const options = {
+    excludes: [
+      'thumbnail',
+      'annotation_state'
+    ],
+    size: 1
+  };
+  const insights = await _fetchInsights(fetchParams, options);
+  return insights.length > 0 ? insights[0] : undefined;
+};
+
+
+const _fetchInsights = async (fetchParams: InsightFilterFields, options: any) => {
+  const filters = _fetchParamsToFilters(fetchParams);
+  const { data } = await API.get('insights', {
+    params: {
+      filters: JSON.stringify(filters),
+      options
+    }
   });
-  // wait until all promises are resolved
-  const allRawResponses = await Promise.all(promises);
-  const allFlatResults = allRawResponses.flatMap(res => res.data);
+  return data;
+};
 
-  return _.uniqBy(allFlatResults, 'id');
+const _fetchParamsToFilters = (fetchParams: InsightFilterFields) => {
+  return Object.keys(fetchParams)
+    .map(field => ({ field: field, value: (fetchParams as any)[field] }))
+    .filter(f => f.value !== undefined && f.value !== null);
 };

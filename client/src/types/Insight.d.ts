@@ -44,9 +44,18 @@ export interface Insight extends Snapshot {
   data_state?: DataState;
   is_default: boolean; // is this the default insight?
   analytical_question: string[]; // question(s) this insight may answer
-  thumbnail: string; // e.g., image url or base64 encoding
-  annotation_state?: AnnotationState;
   modified_at?: number;
+}
+
+// @concrete type
+export interface InsightImage {
+  id: string;
+  thumbnail: string; // e.g., image url or base64 encoding
+}
+
+// @concrete type
+export interface FullInsight extends Insight, InsightImage {
+  annotation_state?: AnnotationState;
 }
 
 // @concrete type

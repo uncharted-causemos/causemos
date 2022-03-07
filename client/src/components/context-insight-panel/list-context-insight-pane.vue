@@ -54,9 +54,11 @@
         </div>
         <div class="context-insight-content">
           <img
+            v-if="contextInsight.thumbnail"
             :src="contextInsight.thumbnail"
             class="context-insight-thumbnail"
           >
+          <div v-else class="context-insight-thumbnail"><i class="fa fa-spin fa-spinner" /></div>
           <div
             v-if="contextInsight.description.length > 0"
             class="context-insight-description"
@@ -86,8 +88,8 @@
 
 <script>
 import _ from 'lodash';
-
-import { mapGetters, mapActions } from 'vuex';
+import { ref, watch, computed } from 'vue';
+import { mapGetters, mapActions, useStore } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
 
 import { INSIGHTS } from '@/utils/messages-util';
@@ -118,7 +120,23 @@ export default {
     selectedContextInsight: null
   }),
   setup() {
-    const { insights: listContextInsights, reFetchInsights } = useInsightsData();
+    const store = useStore();
+    // the gallery opens over top of this side panel, prevent fetches while the gallery is open
+    const preventFetches = computed(() => store.getters['insightPanel/isPanelOpen']);
+    const { insights, reFetchInsights, fetchImagesForInsights } = useInsightsData(preventFetches);
+    const listContextInsights = ref([])/* as Ref<FullInsight[]> */;
+
+    watch([insights], () => {
+      // first fill it without images, once the downloads finish, fill the image in
+      // use '' to represent that the thumbnail is loading
+      listContextInsights.value = insights.value.map(insight => ({ ...insight, thumbnail: '' }));
+      (async () => {
+        const images = await fetchImagesForInsights(insights.value.map(insight => insight.id));
+        const ids = insights.value.map(insight => insight.id);
+        listContextInsights.value = images.filter(i => ids.includes(i.id));
+      })();
+    });
+
     return {
       listContextInsights,
       reFetchInsights
@@ -238,8 +256,8 @@ export default {
         // is this the last public insight for the relevant dataube?
         //  if so, unpublish the model datacube
         const datacubeId = insight.context_id[0];
-        const publicInsights = await InsightUtil.getPublicInsights(datacubeId, this.project);
-        if (publicInsights.length === 1) {
+        const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, this.project);
+        if (publicInsightCount === 1) {
           await unpublishDatacube(datacubeId, this.project);
           this.setRefreshDatacubes(true);
         }

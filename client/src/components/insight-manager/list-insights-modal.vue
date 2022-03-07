@@ -8,40 +8,34 @@
     </full-screen-modal-header>
 
     <div class="body flex">
-      <analytical-questions-panel />
+      <analytical-questions-panel
+        :loaded="insightsGroupedByQuestion.length > 0"
+        @review-checklist="reviewChecklist"
+      />
 
       <!-- body -->
       <div class="body-main-content flex-col">
-
         <div class="tab-controls">
           <radio-button-group
-            :buttons="VIEW_OPTIONS"
-            :selected-button-value="activeTabId"
-            @button-clicked="switchTab"
+            :buttons="exportOptions"
+            :selected-button-value="activeExportOption"
+            @button-clicked="toggleExport"
           />
-          <div class="export">
-            <radio-button-group
-              :buttons="exportOptions"
-              :selected-button-value="activeExportOption"
-              @button-clicked="toggleExport"
-            />
-            <span> as </span>
-            <button
-              class="btn btn-sm btn-default"
-              @click="() => exportInsights('Powerpoint')"
-            >
-              PowerPoint
-            </button>
-            <button
-              class="btn btn-sm btn-default"
-              @click="() => exportInsights('Word')"
-            >
-              Word
-            </button>
-          </div>
+          as
+          <button
+            class="btn btn-sm btn-default"
+            @click="() => exportInsights('Powerpoint')"
+          >
+            PowerPoint
+          </button>
+          <button
+            class="btn btn-sm btn-default"
+            @click="() => exportInsights('Word')"
+          >
+            Word
+          </button>
         </div>
         <div
-          v-if="activeTabId === VIEW_OPTIONS[0].value"
           class="cards"
         >
           <input
@@ -78,51 +72,13 @@
             :message="messageNoData"
           />
         </div>
-
-        <div
-          v-else-if="activeTabId === VIEW_OPTIONS[1].value"
-          class="list"
-        >
-          <div
-            v-if="questions.length > 0"
-            class="pane-content"
-          >
-            <div
-              v-for="questionItem in questions"
-              :key="questionItem.id"
-              class="list-question-group">
-              <h3 class="analysis-question">{{ questionItem.question }}</h3>
-              <message-display
-                class="pane-content"
-                v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
-                :message="'No insights assigned to this question.'"
-              />
-              <insight-card
-                v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
-                :key="insight.id"
-                :insight="insight"
-                :active-insight="activeInsight"
-                :show-description="true"
-                :show-question="false"
-                @remove-insight="removeInsight(insight)"
-                @open-editor="openEditor(insight.id)"
-                @select-insight="reviewInsight(insight)"
-                @edit-insight="editInsight(insight)"
-              />
-            </div>
-          </div>
-          <message-display
-            class="pane-content"
-            v-else
-            :message="'Add a new question to see a list of insights, organized by question.'"
-          />
-        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import _ from 'lodash';
 import { mapGetters, mapActions, useStore } from 'vuex';
 
 import { INSIGHTS } from '@/utils/messages-util';
@@ -130,29 +86,24 @@ import { INSIGHTS } from '@/utils/messages-util';
 import InsightCard from '@/components/insight-manager/insight-card';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
 
-import { computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
 import useInsightsData from '@/services/composables/useInsightsData';
+import useToaster from '@/services/composables/useToaster';
 import MessageDisplay from '@/components/widgets/message-display';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
-
-const VIEW_OPTIONS = [
-  {
-    value: 'cards',
-    label: 'Cards'
-  }, {
-    value: 'list',
-    label: 'List'
-  }
-];
+import { fetchPartialInsights } from '@/services/insight-service';
+import { sortQuestionsByPath } from '@/utils/questions-util';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
   questions: 'questions'
 };
+
+const NOT_READY_ERROR = 'Insights are still loading. Try again later.';
 
 export default {
   name: 'ListInsightsModal',
@@ -166,30 +117,57 @@ export default {
   data: () => ({
     activeExportOption: EXPORT_OPTIONS.insights,
     activeInsight: null,
-    activeTabId: VIEW_OPTIONS[0].value,
     curatedInsights: [],
     messageNoData: INSIGHTS.NO_DATA,
-    search: '',
-    VIEW_OPTIONS
+    search: ''
   }),
   setup() {
     const store = useStore();
-    const questions = computed(() => store.getters['analysisChecklist/questions']);
+    const toaster = useToaster();
+    // prevent insight fetches if the gallery is closed
+    const preventFetches = computed(() => !store.getters['insightPanel/isPanelOpen']);
+    const { insights, reFetchInsights, fetchImagesForInsights } = useInsightsData(preventFetches);
+    const fullInsights = ref([])/* as Ref<FullInsight[]> */;
 
-    const { insights: listInsights, getInsightsByIDs, reFetchInsights } = useInsightsData();
+    watch([insights], () => {
+      // first fill it without images, once the downloads finish, fill them in
+      // use '' to represent that the thumbnail is loading
+      fullInsights.value = insights.value.map(insight => ({ ...insight, thumbnail: '' }));
+      (async () => {
+        const ids = insights.value.map(insight => insight.id);
+        // First, get just the thumbnails, set annotation_state to null to indicate it's still coming
+        const images = await fetchImagesForInsights(ids);
+        // If insights changed, abort
+        if (_.xor(ids, insights.value.map(insight => insight.id)).length > 0) {
+          return;
+        }
+        fullInsights.value = images.filter(i => ids.includes(i.id))
+          .map(i => ({ ...i, annotation_state: null }));
+
+        // Then, get the annotation_state, this is needed to open an insight
+        const annotations = await fetchPartialInsights({ id: ids }, ['id', 'annotation_state']);
+        fullInsights.value.forEach(insight => {
+          const annotation = annotations.find(i => i.id === insight.id);
+          insight.annotation_state = (annotations && annotation.annotation_state)
+            ? annotation.annotation_state
+            : undefined;
+        });
+      })();
+    });
+
+    const questions = computed(() => sortQuestionsByPath(store.getters['analysisChecklist/questions']));
 
     return {
-      listInsights,
-      questions,
-      getInsightsByIDs,
+      fullInsights,
       reFetchInsights,
-      store
+      questions,
+      store,
+      toaster
     };
   },
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countInsights: 'insightPanel/countInsights',
       projectId: 'app/project'
     }),
     exportOptions() {
@@ -206,20 +184,20 @@ export default {
     },
     searchedInsights() {
       if (this.search.length > 0) {
-        const result = this.listInsights.filter((insight) => {
+        const result = this.fullInsights.filter((insight) => {
           return insight.name.toLowerCase().includes(this.search.toLowerCase());
         });
         return result;
       } else {
-        return this.listInsights;
+        return this.fullInsights;
       }
     },
     selectedInsights() {
       if (this.curatedInsights.length > 0) {
-        const curatedSet = this.listInsights.filter(i => this.curatedInsights.find(e => e === i.id));
+        const curatedSet = this.fullInsights.filter(i => this.curatedInsights.find(e => e === i.id));
         return curatedSet;
       } else {
-        return this.listInsights;
+        return this.fullInsights;
       }
     },
     insightsToExport() {
@@ -227,6 +205,11 @@ export default {
         return this.curatedInsights;
       }
       return this.searchedInsights;
+    },
+    insightsGroupedByQuestion() {
+      const insightsByQuestion = InsightUtil.parseReportFromQuestionsAndInsights(this.fullInsights, this.questions)
+        .filter(item => InsightUtil.instanceOfFullInsight(item));
+      return insightsByQuestion;
     }
   },
   mounted() {
@@ -235,12 +218,15 @@ export default {
   methods: {
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCountInsights: 'insightPanel/setCountInsights',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
       setInsightList: 'insightPanel/setInsightList',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
+      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
+      setReviewIndex: 'insightPanel/setReviewIndex'
     }),
+    getInsightIndex(targetInsight, insights) {
+      return insights.findIndex(ins => ins.id === targetInsight.id);
+    },
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsight = null;
@@ -276,7 +262,13 @@ export default {
       evt.currentTarget.style.border = 'none';
     },
     editInsight(insight) {
+      if (insight.thumbnail === '' || insight.annotation_state === null) {
+        this.toaster(NOT_READY_ERROR, 'error', false);
+        return;
+      }
+      const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
+      this.setReviewIndex(insightIndex);
       this.setInsightList(this.searchedInsights);
       // open the preview in the edit mode
       this.setCurrentPane('review-edit-insight');
@@ -287,8 +279,8 @@ export default {
         // is this the last public insight for the relevant dataube?
         //  if so, unpublish the model datacube
         const datacubeId = insight.context_id[0];
-        const publicInsights = await InsightUtil.getPublicInsights(datacubeId, this.projectId);
-        if (publicInsights.length === 1) {
+        const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, this.project);
+        if (publicInsightCount === 1) {
           await unpublishDatacube(datacubeId, this.projectId);
           this.setRefreshDatacubes(true);
         }
@@ -304,7 +296,7 @@ export default {
     exportInsights(item) {
       const props = [];
       if (this.activeExportOption === EXPORT_OPTIONS.questions) {
-        props.push(this.listInsights, this.projectMetadata, this.questions);
+        props.push(this.fullInsights, this.projectMetadata, this.questions);
       } else {
         props.push(this.selectedInsights, this.projectMetadata);
       }
@@ -336,16 +328,29 @@ export default {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
     },
     reviewInsight(insight) {
+      if (insight.thumbnail === '' || insight.annotation_state === null) {
+        this.toaster(NOT_READY_ERROR, 'error', false);
+        return;
+      }
       // open review modal (i.e., insight gallery view)
+      const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
+      this.setReviewIndex(insightIndex);
       this.setInsightList(this.searchedInsights);
       this.setCurrentPane('review-insight');
     },
-    switchTab(id) {
-      this.activeInsight = null;
-      this.activeTabId = id;
-
-      // FIXME: reload insights since questions most recent question stuff may not be up to date
+    reviewChecklist() {
+      // to do: generate insights list in order of questions
+      if (this.insightsGroupedByQuestion.length < 1) return;
+      const insight = this.insightsGroupedByQuestion[0];
+      if (insight.thumbnail === '' || insight.annotation_state === null) {
+        this.toaster(NOT_READY_ERROR, 'error', false);
+        return;
+      }
+      this.setReviewIndex(0);
+      this.setUpdatedInsight(insight);
+      this.setInsightList(this.insightsGroupedByQuestion);
+      this.setCurrentPane('review-insight');
     },
     toggleExport(id) {
       this.activeExportOption = id;
@@ -375,13 +380,8 @@ export default {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: space-between;
-}
-
-.export {
-  display: flex;
-  gap: 5px;
-  align-items: center;
+  justify-content: right;
+  gap: 0.5em;
 }
 
 .cards {

@@ -12,6 +12,7 @@ interface InsightState {
   updatedInsight: Insight | null;
   insightList: Insight[] | null;
   refreshDatacubes: boolean;
+  reviewIndex: number;
 }
 
 /**
@@ -27,7 +28,8 @@ const state: InsightState = {
   analysisId: '',
   updatedInsight: null,
   insightList: null,
-  refreshDatacubes: false
+  refreshDatacubes: false,
+  reviewIndex: 0
 };
 
 
@@ -41,7 +43,8 @@ const getters: GetterTree<InsightState, any> = {
   analysisId: state => state.analysisId,
   updatedInsight: state => state.updatedInsight,
   insightList: state => state.insightList,
-  refreshDatacubes: state => state.refreshDatacubes
+  refreshDatacubes: state => state.refreshDatacubes,
+  reviewIndex: state => state.reviewIndex
 };
 
 
@@ -78,6 +81,9 @@ const actions: ActionTree<InsightState, any> = {
   },
   setInsightList: ({ commit }, newValue) => {
     commit('setInsightList', newValue);
+  },
+  setReviewIndex: ({ commit }, newValue) => {
+    commit('setReviewIndex', newValue);
   }
 };
 
@@ -115,6 +121,9 @@ const mutations: MutationTree<InsightState> = {
   },
   setRefreshDatacubes(state, value) {
     state.refreshDatacubes = value;
+  },
+  setReviewIndex(state, value) {
+    state.reviewIndex = value;
   }
 };
 

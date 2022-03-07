@@ -6,7 +6,7 @@
     <review-insight-modal v-if="currentPane === 'review-insight'" />
     <review-insight-modal :edit-mode="true" v-if="currentPane === 'review-edit-insight'" />
     <review-insight-modal :new-mode="true" v-if="currentPane === 'review-new-insight'" />
-    <list-insights-modal v-if="currentPane === 'list-insights'" />
+    <list-insights-modal v-if="isOpen && currentPane === 'list-insights'" />
   </div>
 </template>
 
