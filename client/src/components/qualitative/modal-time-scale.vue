@@ -55,6 +55,7 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import { TimeScale, DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { TIME_SCALE_OPTIONS } from '@/utils/time-scale-util';
 import { defineComponent, PropType, ref, toRefs } from 'vue';
@@ -91,7 +92,7 @@ export default defineComponent({
     save() {
       this.$emit('save-cag-params', {
         timeScale: this.selectedTimeScaleOption,
-        geography: this.selectedCountry
+        geography: _.isEmpty(this.selectedCountry) ? undefined : this.selectedCountry
       });
     },
     getGADMName(item: RegionalGADMDetail, delimter: string) {
@@ -120,7 +121,6 @@ export default defineComponent({
       });
     },
     selectCountry(v: string) {
-      console.log(v);
       this.selectedCountry = v;
     }
   }

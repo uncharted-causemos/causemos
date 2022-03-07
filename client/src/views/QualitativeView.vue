@@ -1423,7 +1423,7 @@ export default defineComponent({
         }
       }
     },
-    async saveCAGParams(params: { timeScale: TimeScale; geography: string | null }) {
+    async saveCAGParams(params: { timeScale: TimeScale; geography: string | undefined}) {
       let historyRange = 24;
       if (params.timeScale === TimeScale.Months) {
         historyRange = 24;
