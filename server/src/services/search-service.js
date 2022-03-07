@@ -367,7 +367,8 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
         bool: {
           must: [
             indicatorConceptFilter(allMembers),
-            { match: { type: 'indicator' } }
+            { match: { type: 'indicator' } },
+            { match: { status: 'READY' } }
           ]
         }
       }
