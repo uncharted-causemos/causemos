@@ -214,10 +214,14 @@ export function renderAxes(
   timestampFormatter: (timestamp: any) => string,
   yAxisWidth: number,
   paddingRight: number,
-  xAxisHeight: number,
-  xAxisTickCount = DEFAULT_XAXIS_TICK_COUNT,
-  xAxisTickSizePx = DEFAULT_XAXIS_TICK_SIZE
+  xAxisHeight: number
 ) {
+  // generate uniformly-spaced and nicely-rounded tick values between start and end (inclusive)
+  const xTickValues = d3.ticks(xScale.domain()[0], xScale.domain()[1], DEFAULT_XAXIS_TICK_COUNT);
+  const xAxis = d3
+    .axisBottom(xScale)
+    .tickValues(xTickValues)
+    .tickFormat(timestampFormatter);
   const yAxisTicks = calculateGenericTicks(
     yScale.domain()[0],
     yScale.domain()[1]
@@ -231,7 +235,7 @@ export function renderAxes(
     .append('g')
     .classed('xAxis', true)
     .style('pointer-events', 'none')
-    .call(xAxis(xScale, timestampFormatter, xAxisTickCount, xAxisTickSizePx))
+    .call(xAxis)
     .style('font-size', '10px')
     .attr('transform', translate(0, height - xAxisHeight));
   const yAxisSelection = selection
