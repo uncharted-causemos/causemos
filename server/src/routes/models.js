@@ -96,7 +96,8 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
     projection_start: projectionStart,
     history_range: historyRange,
     num_steps: numSteps,
-    time_scale: timeScale
+    time_scale: timeScale,
+    geography
   } = req.body;
 
   let invalidateScenarios = false;
@@ -107,6 +108,9 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
 
   if (engine) {
     parameter.engine = engine;
+  }
+  if (geography) {
+    parameter.geography = geography;
   }
   if (projectionStart) {
     parameter.projection_start = projectionStart;

@@ -166,7 +166,8 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
 
   // 2. Check against concept aligner matches
   // Note: this assumes that order of results returned by the searchService is the same as nodes provided
-  const indicators = await searchService.indicatorSearchConceptAlignerBulk(model.project_id, nodeParameters, numMatches);
+  const geography = model.parameter.geography;
+  const indicators = await searchService.indicatorSearchConceptAlignerBulk(model.project_id, nodeParameters, numMatches, geography);
 
   for (let i = 0; i < indicators.length; i++) {
     if (indicators[i].length === 0) {
