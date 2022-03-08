@@ -120,7 +120,8 @@ export default defineComponent({
         breakdownOption.value,
         selectedTimestampRange.value,
         unit.value,
-        timestampFormatter
+        timestampFormatter,
+        selectedTemporalResolution.value ?? TemporalResolutionOption.Year
       );
     }, RESIZE_DELAY);
     watch(

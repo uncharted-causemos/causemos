@@ -6,17 +6,14 @@ import { D3GElementSelection } from '@/types/D3';
 import { translate } from './svg-util';
 import {
   TemporalAggregationLevel,
-  ReferenceSeriesOption
+  ReferenceSeriesOption,
+  TemporalResolutionOption
 } from '@/types/Enums';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import { calculateDiff } from '@/utils/value-util';
 
-
 const DEFAULT_LINE_COLOR = '#000';
 const DEFAULT_LINE_WIDTH = 2;
-const DEFAULT_XAXIS_TICK_COUNT = 4;
-const DEFAULT_XAXIS_TICK_SIZE = 2;
-
 
 export function applyReference (
   timeseriesData: Timeseries[],
@@ -188,16 +185,19 @@ const aggregateRefTemporalTimeseries = (temporalTimeseries: Timeseries[]): Times
 export function xAxis(
   xScale: d3.ScaleLinear<number, number>,
   timestampFormatter: (timestamp: any) => string,
-  xAxisTickCount = DEFAULT_XAXIS_TICK_COUNT,
-  xAxisTickSizePx = DEFAULT_XAXIS_TICK_SIZE
-
-) {
-  const xAxis = d3
+  temporalResolution: TemporalResolutionOption,
+  width: number) {
+  // generate uniformly-spaced and nicely-rounded tick values between start and end (inclusive)
+  const firstDate = moment.utc(xScale.domain()[0]);
+  const lastDate = moment.utc(xScale.domain()[1]);
+  const pixelsForEachTick = temporalResolution === TemporalResolutionOption.Year ? 50 : 100;
+  const tickCount = Math.round(width / pixelsForEachTick) ?? 1;
+  const xTickValues = d3.timeTicks(firstDate.toDate(), lastDate.toDate(), tickCount);
+  const axis = d3
     .axisBottom(xScale)
-    .tickSize(xAxisTickSizePx)
-    .tickFormat(timestampFormatter)
-    .ticks(xAxisTickCount);
-  return xAxis;
+    .tickValues(xTickValues)
+    .tickFormat(timestampFormatter);
+  return axis;
 }
 
 export function renderAxes(
@@ -214,14 +214,10 @@ export function renderAxes(
   timestampFormatter: (timestamp: any) => string,
   yAxisWidth: number,
   paddingRight: number,
-  xAxisHeight: number
+  xAxisHeight: number,
+  temporalResolution: TemporalResolutionOption
 ) {
-  // generate uniformly-spaced and nicely-rounded tick values between start and end (inclusive)
-  const xTickValues = d3.ticks(xScale.domain()[0], xScale.domain()[1], DEFAULT_XAXIS_TICK_COUNT);
-  const xAxis = d3
-    .axisBottom(xScale)
-    .tickValues(xTickValues)
-    .tickFormat(timestampFormatter);
+  const xAxisCreated = xAxis(xScale, timestampFormatter, temporalResolution, width);
   const yAxisTicks = calculateGenericTicks(
     yScale.domain()[0],
     yScale.domain()[1]
@@ -235,7 +231,7 @@ export function renderAxes(
     .append('g')
     .classed('xAxis', true)
     .style('pointer-events', 'none')
-    .call(xAxis)
+    .call(xAxisCreated)
     .style('font-size', '10px')
     .attr('transform', translate(0, height - xAxisHeight));
   const yAxisSelection = selection

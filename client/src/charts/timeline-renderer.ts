@@ -6,7 +6,7 @@ import { chartValueFormatter } from '@/utils/string-util';
 import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
-import { TemporalAggregationLevel, TIMESERIES_HEADER_SEPARATOR } from '@/types/Enums';
+import { TemporalAggregationLevel, TemporalResolutionOption, TIMESERIES_HEADER_SEPARATOR } from '@/types/Enums';
 import { MAX_TIMESERIES_LABEL_CHAR_LENGTH, renderAxes, renderLine, renderPoint, xAxis } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
@@ -109,7 +109,8 @@ export default function(
     timestampFormatter,
     Y_AXIS_WIDTH,
     PADDING_RIGHT,
-    X_AXIS_HEIGHT
+    X_AXIS_HEIGHT,
+    TemporalResolutionOption.Month // assume ticks to be rendered in monthly resolution
   );
 
   const state = { selectedTimestamp, selectionDomain: xExtentCorrected };
@@ -249,8 +250,8 @@ export default function(
       .x(d => xScaleBrushed(d.timestamp))
       .y(d => yScale(d.value));
 
-    // Update x Axis
-    xAxisSelection.call(xAxis(xScaleBrushed, timestampFormatter));
+    // Update x Axis (assume ticks rendered in monthly resolution)
+    xAxisSelection.call(xAxis(xScaleBrushed, timestampFormatter, TemporalResolutionOption.Month, width));
     // Update points
     pointsSelection.attr('cx', (d: any) => xScaleBrushed(d.timestamp));
     // Update lines
