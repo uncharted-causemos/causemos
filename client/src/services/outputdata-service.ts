@@ -277,8 +277,31 @@ export const getQualifierBreakdown = async (
   regionId?: string
 ) : Promise<QualifierBreakdownResponse[]> => {
   if (regionId) {
-    return await getQualifierBreakdownByRegionId(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp, regionId);
+    const [global, regional] = await Promise.all([
+      getGlobalQualifierBreakdown(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp),
+      getQualifierBreakdownByRegionId(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp, regionId)
+    ]);
+    // Remove all values from global qualifier, use only qualifier option name as placeholder
+    for (const qual of global) {
+      for (const opt of qual.options) {
+        opt.value = undefined;
+      }
+    }
+    return _.merge(global, regional);
   }
+  return await getGlobalQualifierBreakdown(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp);
+};
+
+export const getGlobalQualifierBreakdown = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  qualifierVariableIds: string[],
+  temporalResolution: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  timestamp: number
+): Promise<QualifierBreakdownResponse[]> => {
   const { data } = await API.get('maas/output/qualifier-data', {
     params: {
       data_id: dataId,

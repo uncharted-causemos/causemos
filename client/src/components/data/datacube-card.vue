@@ -1766,7 +1766,12 @@ export default defineComponent({
 
     const selectedRegionIdForQualifiers = computed(() => {
       const regionIds = getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
-      return regionIds.length === 1 ? regionIds[0] : '';
+      // Note: qualfiler breakdown data can only be broken down by singe regionId, so it isn't applicable in 'split by region' mode where multiple region can be selected
+      // and also in 'split by year' mode where data is aggregated by year.
+      if (regionIds.length !== 1 ||
+          breakdownOption.value === TemporalAggregationLevel.Year ||
+          breakdownOption.value === SpatialAggregationLevel.Region) return '';
+      return regionIds[0];
     });
 
     const {
