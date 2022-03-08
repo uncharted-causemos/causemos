@@ -367,7 +367,8 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
         bool: {
           must: [
             indicatorConceptFilter(allMembers),
-            { match: { type: 'indicator' } }
+            { match: { type: 'indicator' } },
+            { match: { status: 'READY' } }
           ]
         }
       }
@@ -552,6 +553,9 @@ const indicatorSeachByDatasetId = async (dataId, name) => {
             },
             {
               term: { 'outputs.name': name }
+            },
+            {
+              term: { status: 'READY' }
             }
           ]
         }
@@ -577,6 +581,9 @@ const modelSearchWithName = async (id, name) => {
             },
             {
               term: { 'outputs.name': name }
+            },
+            {
+              term: { status: 'READY' }
             }
           ]
         }

@@ -39,7 +39,8 @@ const textSearch = async (text) => {
         bool: {
           must: [
             _buildQueryStringFilter(text),
-            { match: { type: 'indicator' } }
+            { match: { type: 'indicator' } },
+            { match: { status: 'READY' } }
           ]
         }
       },
