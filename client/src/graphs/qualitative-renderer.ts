@@ -63,7 +63,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
           [node.x + node.width / 2, node.y]
         );
       }
-
+      if (selection.classed('selected')) {
+        return;
+      }
       selection.selectAll('.node-container, .node-container-outer').style('stroke', SELECTED_COLOR);
       this.showNodeMenu(selection);
     });
