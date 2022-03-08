@@ -87,7 +87,6 @@
                 v-tooltip.top="indicatorRegions"
               > - {{ indicatorRegions }}</strong>
               <span
-                v-if="datasetName.length > 0"
                 class="dataset-name"
                 v-tooltip.top="datasetName"
               > {{ datasetName }}</span>
@@ -559,7 +558,7 @@ export default defineComponent({
     });
     const indicatorData = useModelMetadata(indicatorId);
     const indicatorName = computed(() => {
-      if (indicatorData.value === null) return '';
+      if (indicatorData.value === null) return 'Abstract';
       return indicatorData.value.outputs[0].display_name || indicatorData.value.outputs[0].name;
     });
     const datasetName = computed(() => {
