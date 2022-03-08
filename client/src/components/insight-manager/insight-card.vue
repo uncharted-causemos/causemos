@@ -3,9 +3,7 @@
     class="insight"
     :class="{ 'card-mode': cardMode }"
   >
-    <div
-      class="insight-content"
-      @click="selectInsight()">
+    <div class="insight-content" @click="selectInsight()">
       <div class="insight-thumbnail">
         <img
           v-if="insight.thumbnail"
@@ -25,7 +23,8 @@
         <h5>{{ insight.name }}</h5>
       </div>
       <div class="insight-footer">
-        <div v-if="cardMode" class="insight-checkbox" @click="updateCuration()">
+        <!-- Stop propagation on click event to avoid opening insight -->
+        <div v-if="cardMode" class="insight-checkbox" @click.stop="updateCuration()">
           <label>
             <i
               class="fa fa-lg fa-fw"
