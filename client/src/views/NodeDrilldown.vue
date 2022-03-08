@@ -84,16 +84,16 @@
               >
                 {{ selectedNodeScenarioData?.indicatorName ?? '' }}
               </strong>
-              <span
-                v-if="indicatorDescription.length > 0"
-                class="description"
-                v-tooltip.top="indicatorDescription"
-              > - {{ indicatorDescription }}</span>
-              <span
+              <strong
                 v-if="indicatorRegions.length > 0"
-                class="description"
+                class="indicator-region"
                 v-tooltip.top="indicatorRegions"
-              > - {{ indicatorRegions }}.</span>
+              > - {{ indicatorRegions }}</strong>
+              <span
+                v-if="datasetName.length > 0"
+                class="dataset-name"
+                v-tooltip.top="datasetName"
+              > {{ datasetName }}</span>
               <span> Data shows</span>
               <dropdown-button
                 :items="SEASONALITY_OPTIONS"
@@ -561,9 +561,9 @@ export default defineComponent({
       return selectedNode.value?.parameter?.id ?? null;
     });
     const indicatorData = useModelMetadata(indicatorId);
-    const indicatorDescription = computed(() => {
+    const datasetName = computed(() => {
       if (indicatorData.value === null) return '';
-      return indicatorData.value.outputs[0].description;
+      return indicatorData.value.name;
     });
     const indicatorMin = ref(0);
     const indicatorMax = ref(1);
@@ -907,7 +907,7 @@ export default defineComponent({
       historicalTimeseries,
       setHistoricalTimeseries,
       indicatorId,
-      indicatorDescription,
+      datasetName,
       indicatorMin,
       indicatorMax,
       indicatorPeriod,
@@ -1171,15 +1171,19 @@ h5 {
 
 
   .indicator-name {
-    max-width: 25ch;
+    white-space: nowrap;
+  }
+
+  .indicator-region {
+    min-width: 8ch;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .description {
-    flex-basis: 4ch;
+  .dataset-name {
     flex-grow: 1;
+    min-width: 10ch;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
