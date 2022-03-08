@@ -91,13 +91,13 @@ import { COLOR, colorFromIndex, ColorScaleType, getColors, COLOR_SCHEME, isDiscr
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
 import useRegionalData from '@/services/composables/useRegionalData';
-import { adminLevelToString, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
+import { DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { OutputVariableSpecs, RawOutputDataPoint, RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
-import { getSelectedRegionIdsDisplay } from '@/utils/admin-level-util';
+import { getSelectedRegionIdsDisplay, adminLevelToString } from '@/utils/admin-level-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { normalize } from '@/utils/value-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';

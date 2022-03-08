@@ -81,10 +81,10 @@ import {
   convertRawDataToGeoJson,
   pickQualifiers
 } from '@/utils/outputdata-util';
-import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { chartValueFormatter, capitalize } from '@/utils/string-util';
-import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
 import { mapActions, mapGetters } from 'vuex';
 
 const createRangeFilter = ({ min, max }, prop) => {

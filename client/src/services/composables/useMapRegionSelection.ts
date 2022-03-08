@@ -1,8 +1,8 @@
 import _ from 'lodash';
 import { Ref, computed } from 'vue';
 import { AdminRegionSets } from '@/types/Datacubes';
-import { adminLevelToString, SOURCE_LAYERS } from '@/utils/map-util-new';
-import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { SOURCE_LAYERS } from '@/utils/map-util-new';
+import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
 
 export default function useMapRegionSelection(
   selectedLayerId: Ref<string>,

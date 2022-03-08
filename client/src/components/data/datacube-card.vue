@@ -606,7 +606,7 @@ import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFe
 
 import { getInsightById } from '@/services/insight-service';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
-import { getParentSelectedRegions } from '@/utils/admin-level-util';
+import { getParentSelectedRegions, adminLevelToString } from '@/utils/admin-level-util';
 
 import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
@@ -652,7 +652,6 @@ import {
 import { normalize } from '@/utils/value-util';
 import { initDataStateFromRefs, initViewStateFromRefs, fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import {
-  adminLevelToString,
   BASE_LAYER,
   DATA_LAYER,
   DATA_LAYER_TRANSPARENCY,
