@@ -38,7 +38,7 @@ const setProcessingSucceeded = async(metadata) => {
         id: runs[0].model_id,
         ...results
       };
-      await datacubeService.updateDatacubes(modelDelta);
+      await datacubeService.updateDatacube(modelDelta);
     }
   }
 
