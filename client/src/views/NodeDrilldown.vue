@@ -1182,8 +1182,8 @@ h5 {
   }
 
   .dataset-name {
+    flex-basis: 4ch;
     flex-grow: 1;
-    min-width: 10ch;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
