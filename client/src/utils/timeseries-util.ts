@@ -190,13 +190,19 @@ export function xAxis(
   // generate uniformly-spaced and nicely-rounded tick values between start and end (inclusive)
   const firstDate = moment.utc(xScale.domain()[0]);
   const lastDate = moment.utc(xScale.domain()[1]);
-  const pixelsForEachTick = temporalResolution === TemporalResolutionOption.Year ? 50 : 100;
+  const pixelsForEachTick = temporalResolution === TemporalResolutionOption.Year ? 60 : 120;
   const tickCount = Math.round(width / pixelsForEachTick) ?? 1;
   const xTickValues = d3.timeTicks(firstDate.toDate(), lastDate.toDate(), tickCount);
+  // Ensure that ticks count does not repeat
+  //  (which can happen if the number of ticks larger than the number of data points)
+  // NOTE that this is more of a hack to avoid examining the actual data points
+  //  and consider their count against the tick count
+  const xTickValuesFormatted = _.uniq(xTickValues.map(date => timestampFormatter(date)));
   const axis = d3
     .axisBottom(xScale)
-    .tickValues(xTickValues)
-    .tickFormat(timestampFormatter);
+    .tickValues(xTickValuesFormatted.map(dateStr => Date.parse(dateStr)))
+    .tickFormat(timestampFormatter)
+  ;
   return axis;
 }
 
