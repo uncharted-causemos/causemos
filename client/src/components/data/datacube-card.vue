@@ -606,6 +606,7 @@ import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFe
 
 import { getInsightById } from '@/services/insight-service';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
+import { getParentSelectedRegions } from '@/utils/admin-level-util';
 
 import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
@@ -1763,6 +1764,11 @@ export default defineComponent({
 
     const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, activeFeature);
 
+    const selectedRegionIdForQualifiers = computed(() => {
+      const regionIds = getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
+      return regionIds.length === 1 ? regionIds[0] : '';
+    });
+
     const {
       qualifierBreakdownData,
       toggleIsQualifierSelected,
@@ -1781,8 +1787,11 @@ export default defineComponent({
       initialSelectedQualifierValues,
       initialNonDefaultQualifiers,
       activeFeature,
-      isRawDataLayerSelected
+      isRawDataLayerSelected,
+      selectedRegionIdForQualifiers
     );
+
+    const selectedRegionIdsForTimeseries = computed(() => getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value));
 
     const {
       timeseriesData,
@@ -1803,7 +1812,7 @@ export default defineComponent({
       selectedTimestamp,
       selectedTransform,
       setSelectedTimestamp,
-      selectedRegionIds,
+      selectedRegionIdsForTimeseries,
       selectedQualifierValues,
       initialSelectedYears,
       showPercentChange,
