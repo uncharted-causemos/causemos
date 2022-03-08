@@ -1,5 +1,11 @@
 <template>
   <div class="new-insight-modal-container">
+    <rename-modal
+      v-if="showNewQuestion"
+      :modal-title="'Add a new question'"
+      @confirm="addNewQuestion"
+      @cancel="showNewQuestion = false"
+    />
     <full-screen-modal-header
       icon="angle-left"
       :nav-back-label="newMode ? 'Close' : 'All Insights'"
@@ -90,6 +96,23 @@
       </button>
       <div class="content">
         <div class="fields">
+          <div style="display: flex; align-items: baseline;">
+            <div v-if="!isEditingInsight" class="question-title">{{previewInsightQuestion}}</div>
+            <dropdown-button
+              v-else
+              class="dropdown-button"
+              :is-dropdown-left-aligned="true"
+              :items="questionsDropdown"
+              :inner-button-label="insightQuestionInnerLabel"
+              :selected-item="currentInsightQuestion"
+              @item-selected="setInsightQuestion"
+            />
+            <small-text-button
+              v-if="!loadingImage && isEditingInsight"
+              :label="'New question'"
+              @click="showNewQuestion = true"
+            />
+          </div>
           <div v-if="!isEditingInsight" class="title">{{previewInsightTitle}}</div>
           <input
             v-else
@@ -160,18 +183,16 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent, nextTick
-} from 'vue';
+import { computed, defineComponent, nextTick, ref, toRefs, watch } from 'vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import InsightUtil from '@/utils/insight-util';
-import { Insight, InsightMetadata, FullInsight } from '@/types/Insight';
+import { Insight, InsightMetadata, FullInsight, AnalyticalQuestion, ViewState } from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { addInsight, updateInsight } from '@/services/insight-service';
-import { INSIGHTS } from '@/utils/messages-util';
+import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
 import useToaster from '@/services/composables/useToaster';
 import html2canvas from 'html2canvas';
 import _ from 'lodash';
@@ -179,9 +200,16 @@ import { ProjectType } from '@/types/Enums';
 import { MarkerArea, MarkerAreaState } from 'markerjs2';
 import { CropArea, CropAreaState } from 'cropro';
 import InsightSummary from './insight-summary.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import SmallTextButton from '@/components/widgets/small-text-button.vue';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
+import { addQuestion, updateQuestion } from '@/services/question-service';
+import { sortQuestionsByPath, SORT_PATH } from '@/utils/questions-util';
+import useQuestionsData from '@/services/composables/useQuestionsData';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
+const LBL_EMPTY_INSIGHT_QUESTION = 'Add to Analysis Checklist section...';
 
 const METDATA_DRILLDOWN_TABS = [
   {
@@ -197,7 +225,10 @@ export default defineComponent({
     FullScreenModalHeader,
     Disclaimer,
     DrilldownPanel,
-    InsightSummary
+    InsightSummary,
+    DropdownButton,
+    SmallTextButton,
+    RenameModal
   },
   props: {
     editMode: {
@@ -209,12 +240,68 @@ export default defineComponent({
       default: false
     }
   },
-  setup() {
+  setup(props) {
+    const {
+      newMode
+    } = toRefs(props);
+
     const store = useStore();
     const toaster = useToaster();
+    const { questionsList, reFetchQuestions } = useQuestionsData();
+
+    const updatedInsight = computed(() => store.getters['insightPanel/updatedInsight']);
+
+    const currentInsightQuestion = ref('');
+    const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
+    const loadingImage = ref(false);
+    const sortedQuestions = computed<AnalyticalQuestion[]>(() => sortQuestionsByPath(questionsList.value));
+
+    const getQuestionById = (id: string) => {
+      return sortedQuestions.value.find(q => q.id === id);
+    };
+
+    const previewInsightQuestion = computed<string>(() => {
+      if (loadingImage.value) return '';
+      if (updatedInsight.value.analytical_question.length > 0) {
+        const questionObj = getQuestionById(updatedInsight.value.analytical_question[0]);
+        if (questionObj) {
+          return questionObj.question;
+        }
+      }
+      return '';
+    });
+
+    watch(
+      () => [
+        questionsList.value
+      ],
+      () => {
+        // if we are reviewing this insight in edit mode,
+        //  it may have a current linking with some analytical question
+        //  so we need to surface that
+        if (updatedInsight.value && !newMode.value && currentInsightQuestion.value === '') {
+          if (updatedInsight.value.analytical_question.length > 0) {
+            const questionObj = getQuestionById(updatedInsight.value.analytical_question[0]);
+            if (questionObj) {
+              currentInsightQuestion.value = questionObj.question;
+              insightQuestionInnerLabel.value = '';
+            }
+          }
+        }
+      }
+    );
+
     return {
       toaster,
-      store
+      store,
+      questionsList,
+      reFetchQuestions,
+      updatedInsight,
+      currentInsightQuestion,
+      sortedQuestions,
+      insightQuestionInnerLabel,
+      previewInsightQuestion,
+      loadingImage
     };
   },
   data: () => ({
@@ -235,7 +322,7 @@ export default defineComponent({
     lastCroppedImage: '',
     lastAnnotatedImage: '',
     showCropInfoMessage: false,
-    loadingImage: false
+    showNewQuestion: false
   }),
   watch: {
     insightTitle: {
@@ -311,13 +398,15 @@ export default defineComponent({
       projectMetadata: 'app/projectMetadata',
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
-      updatedInsight: 'insightPanel/updatedInsight',
       insightList: 'insightPanel/insightList',
       countInsights: 'insightPanel/countInsights',
       reviewIndex: 'insightPanel/reviewIndex',
       filters: 'dataSearch/filters',
       analysisName: 'app/analysisName'
     }),
+    questionsDropdown() {
+      return ['', ...this.sortedQuestions.map(q => q.question)];
+    },
     nextInsight(): Insight | null {
       if (this.reviewIndex < this.insightList.length - 1) {
         return this.insightList[this.reviewIndex + 1];
@@ -389,6 +478,41 @@ export default defineComponent({
       setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane',
       setRefetchInsights: 'contextInsightPanel/setRefetchInsights'
     }),
+    setInsightQuestion(question: string) {
+      this.currentInsightQuestion = question;
+      this.insightQuestionInnerLabel = question === '' ? LBL_EMPTY_INSIGHT_QUESTION : '';
+    },
+    addNewQuestion(newQuestionText: string) {
+      this.showNewQuestion = false;
+
+      const url = this.$route.fullPath;
+      const viewState: ViewState = _.cloneDeep(this.viewState);
+      const newQuestionOrderIndx = _.get(_.maxBy(this.sortedQuestions, SORT_PATH), SORT_PATH);
+      viewState.analyticalQuestionOrder = newQuestionOrderIndx !== undefined ? (newQuestionOrderIndx + 1) : this.sortedQuestions.length;
+      const newQuestion: AnalyticalQuestion = {
+        question: newQuestionText,
+        description: '',
+        visibility: 'private', // this.questionVisibility(),
+        project_id: this.project,
+        context_id: this.contextId,
+        url,
+        target_view: this.insightTargetView,
+        pre_actions: null,
+        post_actions: null,
+        linked_insights: [],
+        view_state: viewState
+      };
+      addQuestion(newQuestion).then((result) => {
+        const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_ADDITION : QUESTIONS.ERRONEOUS_ADDITION;
+        if (message === QUESTIONS.SUCCESSFUL_ADDITION) {
+          this.toaster(message, 'success', false);
+          // refresh the latest list from the server
+          this.reFetchQuestions();
+        } else {
+          this.toaster(message, 'error', true);
+        }
+      });
+    },
     async takeSnapshot() {
       const el = document.getElementsByClassName('insight-capture')[0] as HTMLElement;
       const image = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();
@@ -500,6 +624,8 @@ export default defineComponent({
       const insightThumbnail = annotateCropSaveObj.annotatedImagePreview;
       const annotationAndCropState = this.getAnnotatedState(annotateCropSaveObj);
 
+      const linkedQuestion = this.sortedQuestions.find(q => q.question === this.currentInsightQuestion);
+
       if (this.newMode) {
         // saving a new insight
         const url = this.$route.fullPath;
@@ -515,7 +641,7 @@ export default defineComponent({
           pre_actions: null,
           post_actions: null,
           is_default: true,
-          analytical_question: [],
+          analytical_question: linkedQuestion && linkedQuestion.id ? [linkedQuestion.id] : [],
           thumbnail: insightThumbnail,
           annotation_state: annotationAndCropState,
           view_state: this.viewState,
@@ -528,6 +654,13 @@ export default defineComponent({
               this.toaster(message, 'success', false);
               const count = this.countInsights + 1;
               this.setCountInsights(count);
+
+              // after the insight is created and have a valid id, we need to link that to the question
+              if (linkedQuestion) {
+                const insightId = result.data.id;
+                linkedQuestion?.linked_insights.push(insightId);
+                updateQuestion(linkedQuestion.id as string, linkedQuestion);
+              }
             } else {
               this.toaster(message, 'error', true);
             }
@@ -824,6 +957,11 @@ export default defineComponent({
     padding-right: 1rem;
     padding-bottom: 1rem;
     height: 100%;
+    .question-title {
+      font-size: 2rem;
+      flex: 1;
+      color: black;
+    }
     .title {
       font-size: $font-size-extra-large;
       color: black;
@@ -861,6 +999,23 @@ export default defineComponent({
 h6 {
   @include header-secondary;
   font-size: $font-size-medium;
+}
+
+
+.dropdown-button {
+  width: auto;
+  height: auto;
+  display: flex;
+  margin-bottom: 4px;
+  flex: 1;
+
+  ::v-deep(.dropdown-btn) {
+    width: 100%;
+    justify-content: space-between;
+  }
+  ::v-deep(.dropdown-container) {
+    width: 100%;
+  }
 }
 
 </style>
