@@ -320,14 +320,15 @@ export const getQualifierBreakdownByRegionId = async (
   const regionalData = await Promise.all(promises);
   const result = regionalData.map((data, index) => {
     // Filter by region Id
-    const regionAgg = data[adminLevel]?.filter(regionAgg => regionAgg.id === regionId)[0] || {};
+    const regionAgg = data[adminLevel]?.filter(regionAgg => regionAgg.id === regionId)[0];
+    if (!regionAgg) return undefined;
     // Get qualifier options which is an array of object that represent qualifier option name and value pair
-    const options = Object.entries(regionAgg).map(([name, value]) => {
+    const options = Object.entries((regionAgg as RegionAgg).values).map(([name, value]) => {
       return { name, value: value as number };
     });
     return { name: qualifierVariableIds[index], options };
-  });
-  return result;
+  }).filter(d => !!d);
+  return result as QualifierBreakdownResponse[];
 };
 
 /**
