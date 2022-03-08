@@ -78,11 +78,8 @@
               />
             </div>
             <div class="indicator-config">
-              <strong
-                class="indicator-name"
-                v-tooltip.top="selectedNodeScenarioData?.indicatorName ?? ''"
-              >
-                {{ selectedNodeScenarioData?.indicatorName ?? '' }}
+              <strong class="indicator-name">
+                {{ indicatorName }}
               </strong>
               <strong
                 v-if="indicatorRegions.length > 0"
@@ -561,6 +558,10 @@ export default defineComponent({
       return selectedNode.value?.parameter?.id ?? null;
     });
     const indicatorData = useModelMetadata(indicatorId);
+    const indicatorName = computed(() => {
+      if (indicatorData.value === null) return '';
+      return indicatorData.value.outputs[0].display_name || indicatorData.value.outputs[0].name;
+    });
     const datasetName = computed(() => {
       if (indicatorData.value === null) return '';
       return indicatorData.value.name;
@@ -907,6 +908,7 @@ export default defineComponent({
       historicalTimeseries,
       setHistoricalTimeseries,
       indicatorId,
+      indicatorName,
       datasetName,
       indicatorMin,
       indicatorMax,
