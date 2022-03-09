@@ -1,10 +1,12 @@
 import { Indicator, Model } from '../../types/Datacube';
-import { computed, Ref } from 'vue';
+import { computed, ref, Ref, watch } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import { useStore } from 'vuex';
 import { getAggregationKey, getOutputs } from '@/utils/datacube-util';
+import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -16,8 +18,20 @@ export default function useParallelCoordinatesData(
   modelRunData: Ref<ModelRun[]>
 ) {
   const store = useStore();
+  const route = useRoute();
   const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-  const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+  const currentOutputIndex = ref(0);
+
+  watch(
+    () => [
+      metadata.value,
+      datacubeCurrentOutputsMap.value
+    ],
+    () => {
+      const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+      currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
+    }
+  );
 
   const runParameterValues = computed(() => {
     if (modelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {

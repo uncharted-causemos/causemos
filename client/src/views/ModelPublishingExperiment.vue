@@ -60,6 +60,8 @@ import domainProjectService from '@/services/domain-project-service';
 import InsightUtil from '@/utils/insight-util';
 import useToaster from '@/services/composables/useToaster';
 import { getFirstInsight, InsightFilterFields } from '@/services/insight-service';
+import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
 
 export default defineComponent({
   name: 'ModelPublishingExperiment',
@@ -72,6 +74,7 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const route = useRoute();
     const toast = useToaster();
     const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
     const countInsights = computed(() => store.getters['insightPanel/countInsights']);
@@ -80,7 +83,17 @@ export default defineComponent({
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const currentView = computed(() => store.getters['app/currentView']);
 
-    const currentOutputIndex = computed((): number => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const currentOutputIndex = ref(0);
+    watch(
+      () => [
+        metadata.value,
+        datacubeCurrentOutputsMap.value
+      ],
+      () => {
+        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
+      }
+    );
     const currentPublishStep: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentPublishStep']);
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
@@ -130,7 +143,8 @@ export default defineComponent({
         store.dispatch('insightPanel/setContextId', [metadata.value.id]);
 
         let initialOutputIndex = 0;
-        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
         if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the selected output of the current model
           initialOutputIndex = currentOutputEntry;
@@ -139,7 +153,7 @@ export default defineComponent({
 
           // update the store
           const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          defaultOutputMap[datacubeKey] = initialOutputIndex;
           setDatacubeCurrentOutputsMap(defaultOutputMap);
         }
         mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);

@@ -668,6 +668,8 @@ import { BreakdownData } from '@/types/Datacubes';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
+import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -743,6 +745,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const timeInterval = 10000;
     const store = useStore();
+    const route = useRoute();
 
     const {
       isPublishing,
@@ -838,7 +841,19 @@ export default defineComponent({
     // we are receiving metadata from above (i.e. consumers) and we should not be setting a new model-id here at this level
     const selectedModelId = computed(() => metadata.value?.id ?? null);
 
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const currentOutputIndex = ref(0);
+
+    watch(
+      () => [
+        metadata.value,
+        datacubeCurrentOutputsMap.value
+      ],
+      () => {
+        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
+      }
+    );
+
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
     const isIndicatorDatacube = computed(() => metadata.value !== null && isIndicator(metadata.value));
 
@@ -1122,12 +1137,15 @@ export default defineComponent({
       }
 
       // fix to avoid double history later
-      router.push({
-        query: {
-          insight_id: undefined,
-          datacube_id: selectedModelId.value
-        }
-      }).catch(() => {});
+      // only set if the current route param includes insight_id
+      if (route && route.query && route.query.insight_id) {
+        router.push({
+          query: {
+            insight_id: undefined,
+            datacube_id: selectedModelId.value
+          }
+        }).catch(() => {});
+      }
     };
 
     const setSelectedScenarioIds = (newIds: string[]) => {
@@ -2033,7 +2051,9 @@ export default defineComponent({
         numberOfColorBins
       );
       store.dispatch('insightPanel/setViewState', viewState);
+    });
 
+    watchEffect(() => {
       const dataState: DataState = initDataStateFromRefs(
         mainModelOutput,
         metadata,

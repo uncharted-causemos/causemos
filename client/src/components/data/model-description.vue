@@ -244,7 +244,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, ComputedRef, toRefs, Ref, ref } from 'vue';
+import { computed, defineComponent, PropType, ComputedRef, toRefs, Ref, ref, watch } from 'vue';
 import _ from 'lodash';
 import { DatacubeFeature, FeatureQualifier, Model, ModelParameter } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
@@ -259,6 +259,8 @@ import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import { getOutputs } from '@/utils/datacube-util';
 import { scrollToElement } from '@/utils/dom-util';
 import DropdownButton from '@/components/dropdown-button.vue';
+import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
 
 export default defineComponent({
   name: 'ModelDescription',
@@ -279,6 +281,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const { metadata } = toRefs(props);
     const store = useStore();
+    const route = useRoute();
 
     const getDataTypeDisplayName = (name: string) => {
       if (name === ModelParameterDataType.Nominal || name === ModelParameterDataType.Ordinal) {
@@ -378,7 +381,18 @@ export default defineComponent({
     // NOTE: this index is mostly driven from the component 'datacube-model-header'
     //       which may list either all outputs or only the validated ones
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const currentOutputIndex = ref(0);
+
+    watch(
+      () => [
+        metadata.value,
+        datacubeCurrentOutputsMap.value
+      ],
+      () => {
+        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
+      }
+    );
 
     const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
       return metadata.value ? metadata.value.outputs : [];

@@ -161,7 +161,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import * as d3 from 'd3';
-import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { AggregationOption, TemporalResolutionOption, DataTransform } from '@/types/Enums';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
@@ -170,6 +170,8 @@ import { DatacubeFeature, Model } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
 import { COLOR_SCHEME, ColorScaleType, COLOR, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
 import { getOutputs } from '@/utils/datacube-util';
+import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.RDYLBU_7, COLOR.OTHER]);
 const TRANSFORMS: DropdownItem[] = [
@@ -269,6 +271,9 @@ export default defineComponent({
       selectedDataLayer
     } = toRefs(props);
 
+    const store = useStore();
+    const route = useRoute();
+
     const capitalize = (str: string) => {
       return str[0].toUpperCase() + str.slice(1);
     };
@@ -309,9 +314,19 @@ export default defineComponent({
     const colorSchemes = ref(Object.keys(COLOR_SCHEMES)
       .map(val => ({ displayName: capitalize(val.toLowerCase()), value: val })));
 
-    const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined && datacubeCurrentOutputsMap.value[metadata.value?.id] ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const currentOutputIndex = ref(0);
+
+    watch(
+      () => [
+        metadata.value,
+        datacubeCurrentOutputsMap.value
+      ],
+      () => {
+        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
+      }
+    );
 
     const modelOutputs = computed<DatacubeFeature[]>(() => {
       return metadata.value ? getOutputs(metadata.value) : [];

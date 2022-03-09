@@ -56,3 +56,36 @@ export const openDatacubeDrilldown = async (id: string, datacubeId: string, rout
     }
   }).catch(() => {});
 };
+
+export function getDatacubeKey(id: string, datacubeId: string) {
+  return id + datacubeId;
+}
+
+export const getDatacubeKeyFromAnalysis = (metadata: Model | Indicator | null, store: any, route: any) => {
+  // each datacube can have id and data_id
+  //  for indicators: id != data_id
+  //  for models: id != data_id (in the case of duplicate model datacubes)
+  //
+  //  in analysis project,
+  //   we should always fetch id and data_id from analysis items first, then from the metadata
+
+  //  in domain publication project,
+  //   we should use metadata to find the id and data_id
+
+  // datacube_id is id and often valid when a datacube is in drilldown mode
+  //                   (regardless of the project type)
+  // datacube_var_id is datacubeId set from any of the comparative analysis views
+  const datacubeId = route?.query?.datacube_id as any || metadata?.id;
+  const datacubeVarId = route?.query?.datacube_var_id as any;
+
+  const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
+  const projectType = computed(() => store.getters['app/projectType']);
+  let datacubeAnalysisItem: AnalysisItem | undefined | null = null;
+  datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === datacubeId);
+  if (datacubeVarId !== undefined) {
+    datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === datacubeId && item.datacubeId === datacubeVarId);
+  }
+  return datacubeAnalysisItem && projectType.value === ProjectType.Analysis
+    ? getDatacubeKey(datacubeAnalysisItem.id, datacubeAnalysisItem.datacubeId)
+    : metadata ? getDatacubeKey(metadata.id, metadata.data_id) : 'undefined';
+};

@@ -28,9 +28,11 @@
 
 <script lang="ts">
 import { Model } from '@/types/Datacube';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import { mapActions, useStore } from 'vuex';
 import { getOutputs } from '@/utils/datacube-util';
+import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
 
 export default defineComponent({
   name: 'DatacubeModelHeader',
@@ -60,14 +62,27 @@ export default defineComponent({
     }
 
     const store = useStore();
+    const route = useRoute();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const currentOutputIndex = ref(0);
+    watch(
+      () => [
+        metadata.value,
+        datacubeCurrentOutputsMap.value
+      ],
+      () => {
+        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
+      }
+    );
 
     return {
       updateDesc,
       maintainer,
       modelOutputs,
-      currentOutputIndex
+      currentOutputIndex,
+      store,
+      route
     };
   },
   methods: {
@@ -77,8 +92,9 @@ export default defineComponent({
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
+      const datacubeKey = getDatacubeKeyFromAnalysis(this.metadata, this.store, this.route);
       const defaultFeature = {
-        [this.metadata?.id ?? '']: selectedOutputIndex
+        [datacubeKey]: selectedOutputIndex
       };
       this.setDatacubeCurrentOutputsMap(defaultFeature);
     }
