@@ -94,7 +94,7 @@ interface CycleAnalysis {
   ambiguous: GraphPath[];
 }
 
-const shortesToLongest = (a: GraphPath, b: GraphPath) => {
+const shortestToLongest = (a: GraphPath, b: GraphPath) => {
   return a.path.length - b.path.length;
 };
 
@@ -199,9 +199,9 @@ export default defineComponent({
       const ambiguous = cycleResult.ambiguous.map<GraphPath>(reformat);
 
       this.cyclesPaths = {
-        balancing: balancing.sort(shortesToLongest),
-        reinforcing: reinforcing.sort(shortesToLongest),
-        ambiguous: ambiguous.sort(shortesToLongest)
+        balancing: balancing.sort(shortestToLongest),
+        reinforcing: reinforcing.sort(shortestToLongest),
+        ambiguous: ambiguous.sort(shortestToLongest)
       };
     },
     async runPathwayAnalysis() {
