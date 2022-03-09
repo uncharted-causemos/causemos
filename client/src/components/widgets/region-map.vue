@@ -173,9 +173,7 @@ export default defineComponent({
       syncBounds
     } = useMapSyncBounds(emit);
 
-    const onMapMove = (event) => {
-      syncBounds(event);
-    };
+    const onMapMove = (event) => syncBounds(event);
 
     return {
       isRegionSelectionEmpty,
