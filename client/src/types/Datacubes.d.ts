@@ -57,8 +57,8 @@ export interface AdminRegionSets {
   admin3: Set<string>;
 }
 
-export interface QualifierInfo {
+export interface QualifierFetchInfo {
   count: number;
-  fetchByDefault: boolean;
-  maxAdminLevelTimeseries: number;
+  shouldFetchByDefault: boolean,
+  maxAdminLevelWithRegionalTimeseries: number;
 }

@@ -409,7 +409,7 @@
                     :key="spec.id"
                     class="card-map-container"
                     :class="[
-                       {'is-default-run': spec.isDefaultRun },
+                      {'is-default-run': spec.isDefaultRun },
                       `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
                     ]"
                   >
@@ -475,6 +475,7 @@
                   v-if="activeDrilldownTab ==='breakdown'"
                   :selected-admin-level="selectedAdminLevel"
                   :qualifier-breakdown-data="qualifierBreakdownData"
+                  :qualifier-fetch-info="qualifierFetchInfo"
                   :regional-data="regionalData"
                   :temporal-breakdown-data="temporalBreakdownData"
                   :output-variable-breakdown-data="outputVariableBreakdownData"
@@ -663,7 +664,6 @@ import { addModelRunsTag, createModelRun, removeModelRunsTag, updateModelRun } f
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
-import useQualifierCounts from '@/services/composables/useQualifierCounts';
 import { BreakdownData } from '@/types/Datacubes';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
@@ -1761,8 +1761,6 @@ export default defineComponent({
       }
     );
 
-    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, activeFeature);
-
     const selectedRegionIdForQualifiers = computed(() => {
       const regionIds = getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
       // Note: qualfiler breakdown data can only be broken down by singe regionId, so it isn't applicable in 'split by region' mode where multiple region can be selected
@@ -1778,7 +1776,8 @@ export default defineComponent({
       toggleIsQualifierSelected,
       selectedQualifierValues,
       requestAdditionalQualifier,
-      nonDefaultQualifiers
+      nonDefaultQualifiers,
+      qualifierFetchInfo
     } = useQualifiers(
       metadata,
       breakdownOption,
@@ -1787,7 +1786,6 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedTimestamp,
-      availableQualifiers,
       initialSelectedQualifierValues,
       initialNonDefaultQualifiers,
       activeFeature,
@@ -2187,6 +2185,7 @@ export default defineComponent({
       requestNewModelRuns,
       runningDefaultRun,
       runParameterValues,
+      qualifierFetchInfo,
       scenarioCount,
       searchFilters,
       selectedAdminLevel,

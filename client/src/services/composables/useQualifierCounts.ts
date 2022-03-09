@@ -1,90 +1,122 @@
 import { Indicator, Model, QualifierThresholds } from '@/types/Datacube';
 import { QualifierCountsResponse } from '@/types/Outputdata';
-import { QualifierInfo } from '@/types/Datacubes';
+import { QualifierFetchInfo } from '@/types/Datacubes';
 import { Ref, ref, watchEffect } from 'vue';
 import { getQualifierCounts } from '@/services/outputdata-service';
 
+// Automatically fetch data for qualifiers with fewer than this many values.
 const FETCH_BY_DEFAULT_LIMIT = 100;
 
-const convertResponsesToAvailableQualifiers = (
-  responses: QualifierCountsResponse[],
-  listedQualifiers: string[]
-) => {
-  const availableQualifiers: Map<string, QualifierInfo> = new Map<string, QualifierInfo>();
-  const maxCounts: Map<string, number> = new Map<string, number>();
+const extractThresholds = (responses: QualifierCountsResponse[]) => {
   const thresholds: QualifierThresholds = {
     max_count: Infinity,
     regional_timeseries_count: Infinity,
     regional_timeseries_max_level: Infinity
   };
-
-  // Combine qualifiers from all runs into a single list
-  responses.forEach(qualifierCounts => {
-    Object.entries(qualifierCounts.counts).forEach(([key, value]) => {
-      // When combining multiple runs, take the max qualifier count
-      const existingVal = maxCounts.get(key);
-      if (!existingVal || value > existingVal) {
-        maxCounts.set(key, value);
-      }
-
-      // The thresholds should be the same across all runs, but take the min just in case.
-      thresholds.max_count = Math.min(thresholds.max_count,
-        qualifierCounts.thresholds.max_count);
-      thresholds.regional_timeseries_count = Math.min(thresholds.regional_timeseries_count,
-        qualifierCounts.thresholds.regional_timeseries_count);
-      thresholds.regional_timeseries_max_level = Math.min(thresholds.regional_timeseries_max_level,
-        qualifierCounts.thresholds.regional_timeseries_max_level);
-    });
+  // The thresholds should be the same across all runs, but take the min just in case.
+  responses.forEach(response => {
+    thresholds.max_count = Math.min(
+      thresholds.max_count,
+      response.thresholds.max_count
+    );
+    thresholds.regional_timeseries_count = Math.min(
+      thresholds.regional_timeseries_count,
+      response.thresholds.regional_timeseries_count
+    );
+    thresholds.regional_timeseries_max_level = Math.min(
+      thresholds.regional_timeseries_max_level,
+      response.thresholds.regional_timeseries_max_level
+    );
   });
-
-  // Filter out qualifiers not listed in the metadata and any with too many values
-  // Set flags indicating whether regional timeseries are available and whether to fetch
-  // the qualifier data by default.
-  maxCounts.forEach((value: number, key: string) => {
-    if (listedQualifiers.includes(key) && value <= thresholds.max_count) {
-      const qualifier: QualifierInfo = {
-        count: value,
-        fetchByDefault: value <= FETCH_BY_DEFAULT_LIMIT,
-        maxAdminLevelTimeseries: value <= thresholds.regional_timeseries_count
-          ? thresholds.regional_timeseries_max_level
-          : -1
-      };
-      availableQualifiers.set(key, qualifier);
-    }
-  });
-  return availableQualifiers;
+  return thresholds;
 };
 
-export default function useQualifierCounts(
+// Combine qualifiers from all runs into a single map, where the key is the
+//  qualifier name and the value is the number of values in the
+//  run that has the most.
+const makeMapFromQualifierToCount = (responses: QualifierCountsResponse[]) => {
+  const maxCounts = new Map<string, number>();
+  responses.forEach(response => {
+    Object.entries(response.counts).forEach(([qualifier, count]) => {
+      // When combining multiple runs, take the max qualifier count
+      const existingVal = maxCounts.get(qualifier);
+      if (!existingVal || count > existingVal) {
+        maxCounts.set(qualifier, count);
+      }
+    });
+  });
+  return maxCounts;
+};
+
+const calculateFetchInfoMap = (
+  qualifierNames: string[],
+  qualifierValueCounts: Map<string, number>,
+  thresholds: QualifierThresholds
+) => {
+  const fetchInfoMap = new Map<string, QualifierFetchInfo>();
+  [...qualifierValueCounts.entries()]
+    // Filter out qualifiers not listed in the metadata
+    .filter(([qualifierName]) => {
+      return qualifierNames.includes(qualifierName);
+    })
+    // Filter out any with too many values
+    .filter(([, count]) => count <= thresholds.max_count)
+    // Set flags indicating whether regional timeseries are available and
+    //  whether to fetch the qualifier data by default.
+    .forEach(([qualifierName, count]) => {
+      const fetchInfo: QualifierFetchInfo = {
+        count,
+        shouldFetchByDefault: count <= FETCH_BY_DEFAULT_LIMIT,
+        maxAdminLevelWithRegionalTimeseries:
+          count <= thresholds.regional_timeseries_count
+            ? thresholds.regional_timeseries_max_level
+            : -1
+      };
+      fetchInfoMap.set(qualifierName, fetchInfo);
+    });
+  return fetchInfoMap;
+};
+
+export default function useQualifierFetchInfo(
   metadata: Ref<Model | Indicator | null>,
   selectedScenarioIds: Ref<string[]>,
   activeFeature: Ref<string>
 ) {
-  const availableQualifiers = ref<Map<string, QualifierInfo>>(new Map<string, QualifierInfo>());
+  const qualifierFetchInfo = ref(new Map<string, QualifierFetchInfo>());
 
   watchEffect(async onInvalidate => {
+    // Fetch the counts for each value of each qualifier variable
     if (metadata.value === null) return;
     let isCancelled = false;
     onInvalidate(() => {
       isCancelled = true;
     });
-    const { data_id } = metadata.value;
+    const { data_id, qualifier_outputs } = metadata.value;
     const promises = selectedScenarioIds.value.map(runId =>
       getQualifierCounts(data_id, runId, activeFeature.value)
     );
-    const { qualifier_outputs } = metadata.value;
-    const listedQualifiers = (qualifier_outputs ?? []).map(variable => variable.name);
     // FIXME: OPTIMIZATION: Placing a separate request for each run eats into
     //  the maximum number of concurrent requests, resulting in closer to
     //  serial performance and slowing down other calls. We should update this
     //  endpoint to accept a list of run IDs so only one request is necessary.
     const responses = await Promise.all(promises);
     if (isCancelled) return;
-    availableQualifiers.value = convertResponsesToAvailableQualifiers(
-      responses,
-      listedQualifiers
+    const qualifierNames = (qualifier_outputs ?? []).map(
+      variable => variable.name
+    );
+
+    // For each qualifier, we need to determine:
+    //  - Should we fetch all of it's data right away?
+    //  - Should we allow the analyst to select regional data at all?
+    //  - If so, which is the lowest admin level for which we have regional data?
+    const thresholds = extractThresholds(responses);
+    const qualifierValueCounts = makeMapFromQualifierToCount(responses);
+    qualifierFetchInfo.value = calculateFetchInfoMap(
+      qualifierNames,
+      qualifierValueCounts,
+      thresholds
     );
   });
 
-  return availableQualifiers;
+  return qualifierFetchInfo;
 }
