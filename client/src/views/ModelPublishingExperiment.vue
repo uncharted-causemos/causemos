@@ -51,9 +51,15 @@ import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import { updateDatacube } from '@/services/new-datacube-service';
+import { updateDatacube, generateSparklines, getDefaultModelRunMetadata } from '@/services/new-datacube-service';
 import { DatacubeFeature, Model, ModelParameter, ModelPublishingStep } from '@/types/Datacube';
-import { AggregationOption, TemporalResolutionOption, DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
+import {
+  AggregationOption,
+  TemporalResolutionOption,
+  DatacubeStatus,
+  ModelPublishingStepID,
+  TemporalResolution
+} from '@/types/Enums';
 import { DataState, ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import domainProjectService from '@/services/domain-project-service';
@@ -190,6 +196,25 @@ export default defineComponent({
     const publishModel = async () => {
       // call the backend to update model metadata and finalize model publication
       if (metadata.value && isModel(metadata.value)) {
+        // Add a sparkline
+        const feature = metadata.value.default_feature;
+        const output = metadata.value?.outputs.find(output => output.name === feature);
+        const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+        const finalRawTimestamp = metadata.value?.period?.lte ?? 0;
+        const defaultRun = await getDefaultModelRunMetadata(metadata.value.id);
+        const sparklineResult = await generateSparklines([{
+          id: metadata.value.id,
+          dataId: metadata.value.data_id,
+          runId: defaultRun?.id ?? selectedScenarioIds.value[0],
+          feature: feature,
+          resolution: selectedTemporalResolution.value,
+          temporalAgg: selectedTemporalAggregation.value,
+          spatialAgg: selectedSpatialAggregation.value,
+          rawResolution: rawResolution,
+          finalRawTimestamp: finalRawTimestamp
+        }]);
+        console.log('Sparkline requested: ' + sparklineResult);
+
         // mark this datacube as published
         metadata.value.status = DatacubeStatus.Ready;
         // update the default output feature
@@ -199,6 +224,7 @@ export default defineComponent({
         }
         // remove newly-added fields such as 'validatedOutputs' so that ES can update
         const modelToUpdate = _.cloneDeep(metadata.value);
+        delete modelToUpdate.sparkline;
         delete modelToUpdate.validatedOutputs;
         const drilldownParams = modelToUpdate.parameters.filter(p => p.is_drilldown);
         drilldownParams.forEach((p: any) => {

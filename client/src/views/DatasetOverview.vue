@@ -180,20 +180,21 @@
 import { mapActions, mapGetters } from 'vuex';
 import IndicatorCard from '@/components/indicator-card.vue';
 import filtersUtil from '@/utils/filters-util';
-import { getDatacubes, updateIndicatorsBulk } from '@/services/new-datacube-service';
+import { generateSparklines, getDatacubes, SparklineParams, updateIndicatorsBulk } from '@/services/new-datacube-service';
 import _ from 'lodash';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { getDatacubeStatusInfo } from '@/utils/datacube-util';
-import { DatacubeStatus } from '@/types/Enums';
-import { DatacubeFeature, Dataset, DatasetEditable, Indicator } from '@/types/Datacube';
+import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
+import { Datacube, DatacubeFeature, Dataset, DatasetEditable, Indicator } from '@/types/Datacube';
 import { defineComponent } from 'vue';
 import router from '@/router';
 import moment from 'moment';
 import useToaster from '@/services/composables/useToaster';
 import { runtimeFormatter } from '@/utils/string-util';
+import { ViewState } from '@/types/Insight';
 
 const MAX_COUNTRIES = 40;
 
@@ -408,12 +409,14 @@ export default defineComponent({
       });
       const source = this.indicators.find(indicator => indicator.id === indicatorId);
       if (source) {
-        const deltas = this.indicators.filter(indicator => indicator.id !== indicatorId)
-          .map(indicator => ({
-            id: indicator.id,
-            default_view: source.default_view
-          }));
+        const targets = this.indicators.filter(indicator => indicator.id !== indicatorId);
+        const deltas = targets.map(indicator => ({
+          id: indicator.id,
+          default_view: source.default_view
+        }));
+        const sparklineList = targets.map(indicator => this.getSparklineParams(indicator, source.default_view));
         try {
+          await generateSparklines(sparklineList);
           await updateIndicatorsBulk(deltas);
           toaster(`Updated ${deltas.length} indicators`, 'success');
         } catch {
@@ -423,6 +426,23 @@ export default defineComponent({
       } else {
         toaster('Invalid template indicator', 'error');
       }
+    },
+    getSparklineParams(meta: Datacube, selections?: ViewState) {
+      const output = meta.outputs[0];
+      const feature = output.name;
+      const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+      const finalRawTimestamp = meta.period?.lte ?? 0;
+      return {
+        id: meta.id,
+        dataId: meta.data_id,
+        runId: 'indicator',
+        feature: feature,
+        resolution: selections?.temporalResolution ?? 'month',
+        temporalAgg: selections?.temporalAggregation ?? 'mean',
+        spatialAgg: selections?.spatialAggregation ?? 'mean',
+        rawResolution: rawResolution,
+        finalRawTimestamp: finalRawTimestamp
+      } as SparklineParams;
     },
     closeApplyVizModal() {
       this.showApplyToAllModal = false;
