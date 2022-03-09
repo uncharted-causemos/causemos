@@ -19,7 +19,8 @@ import {
   QualifierCountsResponse,
   QualifierListsResponse,
   OutputSpecWithRegionId,
-  BaseSpec
+  BaseSpec,
+  BulkRegionalAggregationData
 } from '@/types/Outputdata';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
@@ -456,7 +457,12 @@ export const getRegionAggregations = async (
     const ret = await getRegionAggregation(specs[0]);
     results = new Array(specs.length).fill(ret) as RegionalAggregation[];
   } else {
-    results = await Promise.all(specs.map(getRegionAggregation));
+    const selectedTimestamps = specs
+      .map(s => s.timestamp?.toString())
+      .filter(s => s !== undefined) as string[];
+
+    const bulkResults = await getBulkRegionalData(specs[0], selectedTimestamps, selectedTimestamps);
+    results = bulkResults?.regional_data.map(rd => rd.data);
   }
 
   // FIXME: we have to do a bunch of Typescript shenanigans because in some
@@ -531,9 +537,9 @@ export const getBulkRegionalData = async(
   spec: BaseSpec,
   selectedTimestamps: string[],
   allTimestamps: string[]
-): Promise<any> => {
+): Promise<BulkRegionalAggregationData> => {
   try {
-    const result = API.post(
+    const { data } = await API.post(
       'maas/output/bulk-regional-data',
       {
         all_timestamps: allTimestamps,
@@ -552,9 +558,9 @@ export const getBulkRegionalData = async(
         }
       }
     );
-    return result;
+    return data;
   } catch (e) {
-    return [];
+    return {} as BulkRegionalAggregationData;
   }
 };
 

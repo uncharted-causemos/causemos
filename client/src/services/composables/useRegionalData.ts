@@ -106,7 +106,11 @@ export default function useRegionalData(
 
     // all output specs are sent to the getRegionAggregations where it will optimize
     // the number of calls made based on the context like breakdownOption sent with it.
-    const result = await getRegionAggregations(outputSpecs.value, datacubeHierarchy.value, breakdownOption.value as string);
+    const result = await getRegionAggregations(
+      outputSpecs.value,
+      datacubeHierarchy.value,
+      breakdownOption.value as string
+    );
     if (isCancelled) return;
 
     regionalData.value = breakdownOption.value === SpatialAggregationLevel.Region

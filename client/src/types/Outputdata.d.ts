@@ -15,9 +15,9 @@ export interface BaseSpec {
 }
 
 export interface OutputSpec extends BaseSpec {
+  timestamp?: number;
   isDefaultRun?: boolean;
   preGeneratedOutput?: PreGeneratedModelRunData[];
-  timestamp?: number;
   transform?: string
 }
 export interface OutputSpecWithId extends OutputSpec {
@@ -91,3 +91,11 @@ export interface OutputVariableSpecs {
   transform: DataTransform;
 }
 
+export interface BulkRegionalAggregationData {
+  all_agg: RegionalAggregation,
+  select_agg: RegionalAggregation,
+  regional_data: {
+    data: RegionalAggregation,
+    timestamp: string
+  }[]
+}
