@@ -603,6 +603,11 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('d', d => {
         return pathFn(d.points as any);
       });
+    selection
+      .select('.edge-path-bg-outline')
+      .attr('d', d => {
+        return pathFn(d.points as any);
+      });
   }
 
   renderEdgesRemoved(selection: D3SelectionIEdge<EdgeParameter>) {
