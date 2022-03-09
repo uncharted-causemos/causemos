@@ -107,7 +107,7 @@ export default function useQualifierFetchInfo(
     );
 
     // For each qualifier, we need to determine:
-    //  - Should we fetch all of it's data right away?
+    //  - Should we fetch all of its data right away?
     //  - Should we allow the analyst to select regional data at all?
     //  - If so, which is the lowest admin level for which we have regional data?
     const thresholds = extractThresholds(responses);
