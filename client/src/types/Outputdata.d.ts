@@ -5,20 +5,28 @@ import { AdminLevel, TemporalResolutionOption, AggregationOption, DataTransform 
 import { AnalysisMapRange } from './Common';
 import { PreGeneratedModelRunData } from './ModelRun';
 
-export interface OutputSpec {
+export interface BaseSpec {
   modelId: string;
   runId: string;
   outputVariable: string;
   temporalResolution: string;
   temporalAggregation: string;
   spatialAggregation: string;
-  timestamp: number;
-  transform?: string
+}
+
+export interface OutputSpec extends BaseSpec {
+  isDefaultRun?: boolean;
   preGeneratedOutput?: PreGeneratedModelRunData[];
-  isDefaultRun: boolean;
+  timestamp?: number;
+  transform?: string
 }
 export interface OutputSpecWithId extends OutputSpec {
   id: string; // User defined id for identifying the output for this spec
+}
+
+
+export interface OutputSpecWithRegionId extends OutputSpec {
+  regionId?: string; // ids region for this spec if set
 }
 
 export interface OutputStatWithZoom extends AnalysisMapRange {

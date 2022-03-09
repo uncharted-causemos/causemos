@@ -124,7 +124,6 @@
 import _ from 'lodash';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
 import { useStore } from 'vuex';
-import API from '@/api/api';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import dateFormatter from '@/formatters/date-formatter';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -141,6 +140,7 @@ import datacubeService from '@/services/new-datacube-service';
 import { AggregationOption, TemporalResolution, TemporalResolutionOption, TimeScale } from '@/types/Enums';
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { logHistoryEntry } from '@/services/model-service';
+import { getTimeseries } from '@/services/outputdata-service';
 
 const CONCEPT_SUGGESTION_COUNT = 10;
 
@@ -149,18 +149,16 @@ const getRunId = async (id: string): Promise<ModelRun> => {
   return run;
 };
 
-const getTimeseries = async (dataId: string, runId: string, feature: string,
+const getTimeseriesData = async (dataId: string, runId: string, feature: string,
   temporalRes: TemporalResolutionOption, agg: AggregationOption): Promise<TimeseriesPoint[]> => {
-  const result = await API.get('maas/output/timeseries', {
-    params: {
-      data_id: dataId,
-      run_id: runId,
-      feature: feature,
-      resolution: temporalRes,
-      temporal_agg: agg,
-      spatial_agg: agg,
-      region_id: ''
-    }
+  const result = await getTimeseries({
+    modelId: dataId,
+    runId,
+    outputVariable: feature,
+    temporalResolution: temporalRes,
+    temporalAggregation: agg,
+    spatialAggregation: agg,
+    regionId: ''
   });
   return result.data as TimeseriesPoint[];
 };
@@ -270,7 +268,7 @@ export default defineComponent({
         const periodEndDate = new Date(doc.period?.lte ?? 0);
         const agg = AggregationOption.Mean;
 
-        const result = await getTimeseries(doc.data_id, runId, doc.feature, temporalResolution.value, agg);
+        const result = await getTimeseriesData(doc.data_id, runId, doc.feature, temporalResolution.value, agg);
         const { points } = correctIncompleteTimeseries(result, rawResolution, temporalResolution.value, agg, periodEndDate);
 
         timeseries.value = points;

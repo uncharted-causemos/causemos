@@ -17,7 +17,9 @@ import {
   RawOutputDataPoint,
   QualifierBreakdownResponse,
   QualifierCountsResponse,
-  QualifierListsResponse
+  QualifierListsResponse,
+  OutputSpecWithRegionId,
+  BaseSpec
 } from '@/types/Outputdata';
 import isSplitByQualifierActive from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
@@ -98,7 +100,7 @@ export const getRawOutputDataByTimestamp = async (
     dataId: string,
     runId: string,
     outputVariable: string,
-    timestamp: number
+    timestamp: number|undefined
   }
 ): Promise<RawOutputDataPoint[]> => {
   const rawData = await getRawOutputData(param);
@@ -141,6 +143,84 @@ export const getRawQualifierTimeseries = async (
   });
 
   return result;
+};
+
+export const getTimeseries = async (
+  spec: OutputSpecWithRegionId
+): Promise<any> => {
+  try {
+    const result = API.get('maas/output/timeseries',
+      {
+        params: {
+          data_id: spec.modelId,
+          run_id: spec.runId,
+          feature: spec.outputVariable,
+          resolution: spec.temporalResolution,
+          temporal_agg: spec.temporalAggregation,
+          spatial_agg: spec.spatialAggregation,
+          transform: spec.transform,
+          region_id: spec.regionId
+        }
+      }
+    );
+    return result;
+  } catch (e) {
+    return [];
+  }
+};
+
+export const getRawBulkTimeseries = async(
+  spec: OutputSpec,
+  regionIds: string[]
+): Promise<any> => {
+  try {
+    const result = API.post('maas/output/bulk-timeseries',
+      {
+        region_ids: regionIds
+      },
+      {
+        params: {
+          data_id: spec.modelId,
+          run_id: spec.runId,
+          feature: spec.outputVariable,
+          resolution: spec.temporalResolution,
+          temporal_agg: spec.temporalAggregation,
+          spatial_agg: spec.spatialAggregation,
+          transform: spec.transform
+        }
+      }
+    );
+    return result;
+  } catch (e) {
+    return [];
+  }
+};
+
+export const getAggregateTimeseries = async (
+  spec: BaseSpec,
+  regionIds: string[]
+): Promise<any> => {
+  try {
+    const result = API.post(
+      'maas/output/aggregate-timeseries',
+      {
+        region_ids: regionIds
+      },
+      {
+        params: {
+          data_id: spec.modelId,
+          run_id: spec.runId,
+          feature: spec.outputVariable,
+          resolution: spec.temporalResolution,
+          temporal_agg: spec.temporalAggregation,
+          spatial_agg: spec.spatialAggregation
+        }
+      }
+    );
+    return result;
+  } catch (e) {
+    return [];
+  }
 };
 
 export const getRawQualifierBreakdown = async (
@@ -447,6 +527,38 @@ export const getRegionAggregations = async (
   };
 };
 
+export const getBulkRegionalData = async(
+  spec: BaseSpec,
+  selectedTimestamps: string[],
+  allTimestamps: string[]
+): Promise<any> => {
+  try {
+    const result = API.post(
+      'maas/output/bulk-regional-data',
+      {
+        all_timestamps: allTimestamps,
+        timestamps: selectedTimestamps
+      },
+      {
+        params: {
+          aggForSelect: 'mean',
+          aggForAll: 'mean',
+          data_id: spec.modelId,
+          run_id: spec.runId,
+          feature: spec.outputVariable,
+          resolution: spec.temporalResolution,
+          temporal_agg: spec.temporalAggregation,
+          spatial_agg: spec.spatialAggregation
+        }
+      }
+    );
+    return result;
+  } catch (e) {
+    return [];
+  }
+};
+
+
 export const getOutputStat = async (spec: OutputSpec): Promise<OutputStatWithZoom[]> => {
   try {
     const { data } = await API.get('/maas/output/stats', {
@@ -478,6 +590,8 @@ export const getOutputStats = async (specs: OutputSpecWithId[]): Promise<OutputS
 };
 
 export default {
+  getTimeseries,
+  getRawBulkTimeseries,
   getRawOutputData,
   getRawTimeseriesData,
   getRawTimeseriesDataBulk,
@@ -492,6 +606,7 @@ export default {
   getRegionAggregation,
   getRegionAggregationWithQualifiers,
   getRegionAggregations,
+  getBulkRegionalData,
   getOutputStat,
   getOutputStats
 };
