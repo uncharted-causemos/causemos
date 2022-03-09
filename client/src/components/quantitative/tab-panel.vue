@@ -120,6 +120,7 @@ import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, N
 import { Statement } from '@/types/Statement';
 import { getInsightById } from '@/services/insight-service';
 import { DataState } from '@/types/Insight';
+import useToaster from '@/services/composables/useToaster';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -205,6 +206,7 @@ export default defineComponent({
     const visualState = ref(blankVisualState()) as Ref<CAGVisualState>;
 
     return {
+      toaster: useToaster(),
       selectedNode,
       selectedEdge,
       selectedStatements,
@@ -508,13 +510,10 @@ export default defineComponent({
     },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);
-
       const scenarioId = loadedInsight.data_state?.selectedScenarioId;
       const selectedNodeStr = loadedInsight.data_state?.selectedNode;
       const selectedEdge = loadedInsight.data_state?.selectedEdge;
       const visualState = loadedInsight.data_state?.cagVisualState as CAGVisualState;
-
-      console.log('selected scenario', scenarioId);
 
       let newVisualState: CAGVisualState = blankVisualState();
 
@@ -566,6 +565,30 @@ export default defineComponent({
       }
       this.visualState = newVisualState;
       this.setSelectedScenarioId(scenarioId);
+
+      // Restoring engine should probably be last, this may not work correctly pending each engine's own state
+      const insightEngine = loadedInsight.data_state?.currentEngine;
+      const currentEngine = this.modelSummary.parameter.engine;
+      const engineStatus = this.modelSummary.engine_status;
+
+      if (engineStatus[insightEngine] === modelService.MODEL_STATUS.TRAINING) {
+        this.toaster(`Cannot restore back to ${insightEngine} because there is training in progress`, 'error', true);
+        console.error(`Cannot restore back to ${insightEngine} because there is training in progress`);
+        return;
+      }
+      if (engineStatus[insightEngine] === modelService.MODEL_STATUS.NOT_REGISTERED) {
+        this.toaster(`Cannot restore back to ${insightEngine}, bad state`, 'error', true);
+        console.error(`Cannot restore back to ${insightEngine}, bad state`);
+        return;
+      }
+
+      if (insightEngine !== currentEngine) {
+        await modelService.updateModelParameter(this.currentCAG, {
+          engine: insightEngine
+        });
+        this.toaster(`Engine switched from ${currentEngine} to ${insightEngine}`, 'success', true);
+        this.$emit('model-parameter-changed');
+      }
     },
     updateDataState() {
       const dataState: DataState = {
