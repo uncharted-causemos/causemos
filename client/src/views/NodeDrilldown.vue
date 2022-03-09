@@ -90,13 +90,13 @@
                 class="dataset-name"
                 v-tooltip.top="datasetName"
               > {{ datasetName }}</span>
-              <span> Data shows</span>
+              <span class="configure-sentence"> Data shows</span>
               <dropdown-button
                 :items="SEASONALITY_OPTIONS"
                 :selected-item="indicatorPeriod"
                 @item-selected="(period) => { indicatorPeriod = period; }"
               />
-              <span>seasonal trends. </span>
+              <span class="configure-sentence">seasonal trends. </span>
               <button
                 v-if="indicatorId === null"
                 class="btn btn-sm btn-primary btn-call-for-action"
@@ -146,7 +146,7 @@
                   Clear constraints
                 </button> -->
               </div>
-              <div class="checkbox">
+              <div class="checkbox configure-sentence">
                 <label
                   @click="toggleIndicatorDataInversion">
                   <i
@@ -1173,6 +1173,9 @@ h5 {
 
   .indicator-name {
     white-space: nowrap;
+    min-width: 20px;
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 
   .indicator-region {
@@ -1183,7 +1186,7 @@ h5 {
   }
 
   .dataset-name {
-    flex-basis: 4ch;
+    min-width: 4ch;
     flex-grow: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -1191,6 +1194,11 @@ h5 {
     color: $text-color-medium;
   }
 
+}
+
+.configure-sentence {
+  // Don't wrap, continue taking as much space as necessary to fit
+  flex-shrink: 0;
 }
 
 .configure-dropdown-container {
