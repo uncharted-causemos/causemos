@@ -70,7 +70,8 @@ const calculateFetchInfoMap = (
         maxAdminLevelWithRegionalTimeseries:
           count <= thresholds.regional_timeseries_count
             ? thresholds.regional_timeseries_max_level
-            : -1
+            : -1,
+        thresholds
       };
       fetchInfoMap.set(qualifierName, fetchInfo);
     });

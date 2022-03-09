@@ -54,6 +54,12 @@
         </p>
       </template>
     </aggregation-checklist-pane>
+    <div
+      v-if="invalidRegionTimeseriesMessage !== null"
+      class="invalid-region-timeseries-message"
+    >
+      {{ invalidRegionTimeseriesMessage }}
+    </div>
     <aggregation-checklist-pane
       class="checklist-section"
       v-for="qualifierVariable in qualifierBreakdownData"
@@ -424,6 +430,43 @@ export default defineComponent({
       filteredRegionalData
     };
   },
+  computed: {
+    invalidRegionTimeseriesMessage() {
+      if (this.getRegionalBreakdownCheckboxType() !== null) {
+        return null;
+      }
+      // Assert that the breakdown option isn't null, since if it was the
+      //  previous conditional would have been triggered.
+      const breakdownOption = this.selectedBreakdownOption as string;
+      const fetchInfo = this.qualifierFetchInfo.get(breakdownOption);
+      if (fetchInfo === undefined) {
+        console.error(
+          'Unable to find qualifier fetch info for breakdown option: ' +
+          this.selectedBreakdownOption
+        );
+        return null;
+      }
+      const {
+        maxAdminLevelWithRegionalTimeseries: maxLevel,
+        thresholds
+      } = fetchInfo;
+      // We're hiding regional radio buttons because either:
+      // 1. The qualifier has too many values to calculate regional timeseries at any level
+      if (maxLevel === -1) {
+        const displayName = this.qualifierBreakdownData.find(
+          qualifier => qualifier.id === breakdownOption
+        )?.name ?? breakdownOption;
+        return `Unable to select individual regions because ${displayName} has
+          more than ${thresholds.regional_timeseries_count} possible values.`;
+      }
+      // 2. We're looking at an admin level beyond what we have regional timeseries for
+      if (this.selectedAdminLevel > maxLevel) {
+        return `Unable to select individual regions below admin level ${maxLevel}.`;
+      }
+      console.error('Regional breakdown checkbox type is unexpectedly null.');
+      return null;
+    }
+  },
   methods: {
     async scrollToBreakdown(newValue: string | null) {
       if (newValue) {
@@ -508,5 +551,11 @@ export default defineComponent({
 
 .disabled-dropdown-instructions {
   color: $text-color-medium;
+}
+
+.invalid-region-timeseries-message {
+  background: $background-light-2;
+  color: $text-color-dark;
+  padding: 5px;
 }
 </style>
