@@ -209,7 +209,7 @@ import useQuestionsData from '@/services/composables/useQuestionsData';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
-const LBL_EMPTY_INSIGHT_QUESTION = 'Add to Analysis Checklist section...';
+const LBL_EMPTY_INSIGHT_QUESTION = 'Add to Analysis Checklist section';
 
 const METDATA_DRILLDOWN_TABS = [
   {
