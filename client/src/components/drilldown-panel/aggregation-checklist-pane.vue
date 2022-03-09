@@ -287,8 +287,8 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
         // B should be sorted after A
         return -1;
       }
-      // Don't change their order
-      return 0;
+      // Sort by name
+      return nodeA.name > nodeB.name ? 1 : -1;
     });
   }
   newStatefulData.children.forEach(node => {
