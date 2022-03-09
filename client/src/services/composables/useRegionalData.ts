@@ -109,7 +109,8 @@ export default function useRegionalData(
     const result = await getRegionAggregations(
       outputSpecs.value,
       datacubeHierarchy.value,
-      breakdownOption.value as string
+      breakdownOption.value as string,
+      referenceOptions?.value
     );
     if (isCancelled) return;
 

@@ -4,7 +4,8 @@ import { DatacubeGeography } from '@/types/Common';
 import {
   AdminLevel,
   SpatialAggregationLevel,
-  AggregationOption
+  AggregationOption,
+  ReferenceSeriesOption
 } from '@/types/Enums';
 import {
   OutputSpec,
@@ -443,12 +444,14 @@ export const getRegionAggregationWithQualifiers = async (
 };
 
 export const getRegionAggregations = async (
-  specs: OutputSpecWithId[],
+  baseSpecs: OutputSpecWithId[],
   allRegions: DatacubeGeography,
-  breakdownOption: string
+  breakdownOption: string,
+  referenceSeries?: string[]
 ): Promise<RegionalAggregations> => {
   // Fetch and restructure the result
   let results;
+  const specs = baseSpecs; // we generate additional specs on the fly for yearly reference series;
 
   if (isSplitByQualifierActive(breakdownOption)) {
     results = await Promise.all(specs.map((spec) => getRegionAggregationWithQualifiers(spec, breakdownOption)));
@@ -461,8 +464,22 @@ export const getRegionAggregations = async (
       .map(s => s.timestamp?.toString())
       .filter(s => s !== undefined) as string[];
 
-    const bulkResults = await getBulkRegionalData(specs[0], selectedTimestamps, selectedTimestamps);
+    const bulkResults = await getBulkRegionalData(specs[0], selectedTimestamps, selectedTimestamps, referenceSeries);
     results = bulkResults?.regional_data.map(rd => rd.data);
+    if (bulkResults.all_agg) {
+      results.push(bulkResults.all_agg);
+      const newSpec = <OutputSpecWithId> {
+        id: ReferenceSeriesOption.AllYears as string
+      };
+      specs.push(newSpec);
+    }
+    if (bulkResults.select_agg) {
+      results.push(bulkResults.select_agg);
+      const newSpec = <OutputSpecWithId> {
+        id: ReferenceSeriesOption.SelectYears as string
+      };
+      specs.push(newSpec);
+    }
   }
 
   // FIXME: we have to do a bunch of Typescript shenanigans because in some
@@ -536,7 +553,8 @@ export const getRegionAggregations = async (
 export const getBulkRegionalData = async(
   spec: BaseSpec,
   selectedTimestamps: string[],
-  allTimestamps: string[]
+  allTimestamps: string[],
+  referenceSeries?: string[]
 ): Promise<BulkRegionalAggregationData> => {
   try {
     const { data } = await API.post(
@@ -547,8 +565,8 @@ export const getBulkRegionalData = async(
       },
       {
         params: {
-          aggForSelect: 'mean',
-          aggForAll: 'mean',
+          aggForSelect: referenceSeries?.includes(ReferenceSeriesOption.SelectYears) ? 'mean' : null,
+          aggForAll: referenceSeries?.includes(ReferenceSeriesOption.AllYears) ? 'mean' : null,
           data_id: spec.modelId,
           run_id: spec.runId,
           feature: spec.outputVariable,
