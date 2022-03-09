@@ -278,6 +278,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
+      setSelectedScenarioId: 'model/setSelectedScenarioId',
       setDataState: 'insightPanel/setDataState'
     }),
     refresh() {
@@ -508,9 +509,12 @@ export default defineComponent({
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);
 
+      const scenarioId = loadedInsight.data_state?.selectedScenarioId;
       const selectedNodeStr = loadedInsight.data_state?.selectedNode;
       const selectedEdge = loadedInsight.data_state?.selectedEdge;
       const visualState = loadedInsight.data_state?.cagVisualState as CAGVisualState;
+
+      console.log('selected scenario', scenarioId);
 
       let newVisualState: CAGVisualState = blankVisualState();
 
@@ -561,6 +565,7 @@ export default defineComponent({
         newVisualState.outline.edges = [...newVisualState.outline.edges, ...visualState.outline.edges];
       }
       this.visualState = newVisualState;
+      this.setSelectedScenarioId(scenarioId);
     },
     updateDataState() {
       const dataState: DataState = {
