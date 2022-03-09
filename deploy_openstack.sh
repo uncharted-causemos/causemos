@@ -107,10 +107,11 @@ ssh ${HOST} "rm -rf causemos${PORT}"
 
 
 ### Copy to remote
-echo "Copying to remote"
+echo ""
+echo "Copying server files to remote ${HOST}"
 scp -r _temp ${HOST}:causemos${PORT}
 if [ $? -eq 0 ]; then
-    echo "Copy to remte seems fine"
+    echo "Copy to remote seems fine"
 else
     echo "Copy to remote failed"
     exit 1
@@ -119,7 +120,8 @@ fi
 # echo "Copy credentials"
 # ssh ${HOST} "cp .env causemos${PORT}/"
 
-echo "Get dependencies"
+echo ""
+echo "Get server dependencies"
 ssh ${HOST} "cd causemos${PORT} && npm install"
 
 echo "Start"
