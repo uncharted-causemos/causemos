@@ -22,6 +22,7 @@ import {
 import isSplitByQualifierActive from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
 import { filterRawDataByRegionIds, computeTimeseriesFromRawData } from '@/utils/outputdata-util';
+import { getLevelFromRegionId, adminLevelToString } from '@/utils/admin-level-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
 
 const RAW_DATA_REQUEST_CACHE_SIZE = 20;
@@ -272,8 +273,35 @@ export const getQualifierBreakdown = async (
   temporalResolution: string,
   temporalAggregation: string,
   spatialAggregation: string,
-  timestamp: number
+  timestamp: number,
+  regionId?: string
 ) : Promise<QualifierBreakdownResponse[]> => {
+  if (regionId) {
+    const [global, regional] = await Promise.all([
+      getGlobalQualifierBreakdown(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp),
+      getQualifierBreakdownByRegionId(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp, regionId)
+    ]);
+    // Remove all values from global qualifier, use only qualifier option name as placeholder
+    for (const qual of global) {
+      for (const opt of qual.options) {
+        opt.value = undefined;
+      }
+    }
+    return _.merge(global, regional);
+  }
+  return await getGlobalQualifierBreakdown(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp);
+};
+
+export const getGlobalQualifierBreakdown = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  qualifierVariableIds: string[],
+  temporalResolution: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  timestamp: number
+): Promise<QualifierBreakdownResponse[]> => {
   const { data } = await API.get('maas/output/qualifier-data', {
     params: {
       data_id: dataId,
@@ -287,6 +315,43 @@ export const getQualifierBreakdown = async (
     }
   });
   return data as QualifierBreakdownResponse[];
+};
+
+export const getQualifierBreakdownByRegionId = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  qualifierVariableIds: string[],
+  temporalResolution: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  timestamp: number,
+  regionId: string
+) : Promise<QualifierBreakdownResponse[]> => {
+  const outputSpec: OutputSpec = {
+    modelId: dataId,
+    runId,
+    outputVariable: feature,
+    temporalResolution,
+    temporalAggregation,
+    spatialAggregation,
+    timestamp,
+    isDefaultRun: false
+  };
+  const adminLevel = adminLevelToString(getLevelFromRegionId(regionId));
+  const promises = qualifierVariableIds.map(varId => getRegionAggregationWithQualifiers(outputSpec, varId));
+  const regionalData = await Promise.all(promises);
+  const result = regionalData.map((data, index) => {
+    // Filter by region Id
+    const regionAgg = data[adminLevel]?.filter(regionAgg => regionAgg.id === regionId)[0];
+    if (!regionAgg) return undefined;
+    // Get qualifier options which is an array of object that represent qualifier option name and value pair
+    const options = Object.entries((regionAgg as RegionAgg).values).map(([name, value]) => {
+      return { name, value: value as number };
+    });
+    return { name: qualifierVariableIds[index], options };
+  }).filter(d => !!d);
+  return result as QualifierBreakdownResponse[];
 };
 
 /**

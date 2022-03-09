@@ -5,6 +5,7 @@ import { RegionalAggregations } from '@/types/Outputdata';
 import { Ref, watchEffect } from 'vue';
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { AdminRegionSets } from '@/types/Datacubes';
+import { getParentSelectedRegions } from '@/utils/admin-level-util';
 
 export default function useMapBounds(
   regionalData: Ref<RegionalAggregations | null>,
@@ -21,14 +22,7 @@ export default function useMapBounds(
   };
 
   watchEffect(async () => {
-    const { country, admin1, admin2, admin3 } = selectedRegionIdsAtAllLevels.value;
-    // Selection from the smallest available admin level
-    const regionSelection =
-      [country, admin1, admin2, admin3]
-        .slice(0, selectedAdminLevel.value + 1) // only consider levels above the current level
-        .filter(set => set.size > 0) // filter out admin levels with no selection
-        .map(set => Array.from(set)) // convert the set to array
-        .pop(); // get the last item (selection from the smallest available admin level)
+    const regionSelection = getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
     if (!regionalData.value && !regionSelection?.length) return;
 
     // If there's no selected regions, use countries to get the bounds

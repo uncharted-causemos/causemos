@@ -81,10 +81,10 @@ import {
   convertRawDataToGeoJson,
   pickQualifiers
 } from '@/utils/outputdata-util';
-import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
+import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
 import { capitalize, exponentFormatter } from '@/utils/string-util';
-import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { mapActions, mapGetters } from 'vuex';
 
 const createRangeFilter = ({ min, max }, prop) => {
@@ -513,11 +513,16 @@ export default defineComponent({
     setFeatureStates() {
       if (!this.map || !this.isAdminMap) return;
 
-      // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
-      this.map.removeFeatureState({
-        source: this.vectorSourceId,
-        sourceLayer: this.sourceLayer
-      });
+      try {
+        // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
+        this.map.removeFeatureState({
+          source: this.vectorSourceId,
+          sourceLayer: this.sourceLayer
+        });
+      } catch {
+        // remove featurestate throws error when source isn't loaded yet. Then exit.
+        return;
+      }
       // Note: RemoveFeatureState doesn't seem very reliable.
       // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and make it undefined
       // But once new state, lets's say {b: 4} is set by setFetureState afterwards, it just extends previous state instead of setting it to new state resulting something like

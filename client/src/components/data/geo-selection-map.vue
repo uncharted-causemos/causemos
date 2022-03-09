@@ -31,7 +31,8 @@ import {
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
-import { adminLevelToString, BASE_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER } from '@/utils/map-util-new';
+import { adminLevelToString } from '@/utils/admin-level-util';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({

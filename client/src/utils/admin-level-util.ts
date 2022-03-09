@@ -1,5 +1,5 @@
 import { AdminRegionSets, BreakdownData } from '@/types/Datacubes';
-import { AdminLevel } from '@/types/Enums';
+import { AdminLevel, DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { RegionalAggregations } from '@/types/Outputdata';
 import _ from 'lodash';
 
@@ -73,4 +73,32 @@ export function getSelectedRegionIdsDisplay(selection: AdminRegionSets, curAdmin
     result = 'All';
   }
   return result;
+}
+
+// Get either selected regions at given level or from the parent levels if no selection found in current level.
+export function getParentSelectedRegions(selection: AdminRegionSets, adminLevel: number) {
+  const { country, admin1, admin2, admin3 } = selection;
+  // Selection from the smallest available admin level
+  const regionSelection =
+    [country, admin1, admin2, admin3]
+      .slice(0, adminLevel + 1) // only consider levels above the current level
+      .filter(set => set.size > 0) // filter out admin levels with no selection
+      .map(set => Array.from(set)) // convert the set to array
+      .pop(); // get the last item (selection from the smallest available admin level)
+  return regionSelection || [];
+}
+
+export function stringToAdminLevel(geoString: string) {
+  const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
+  return adminLevel;
+}
+
+export function adminLevelToString(level: number) {
+  const adminLevel = level === 0 ? 'country' : 'admin' + level;
+  return adminLevel as AdminLevel;
+}
+
+export function getLevelFromRegionId(regionId: string) {
+  const level = regionId.split(REGION_ID_DELIMETER).length - 1;
+  return level;
 }
