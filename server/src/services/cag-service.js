@@ -575,12 +575,26 @@ const checkStaleCAGs = async (projectId, updatedStatementIds) => {
 const recalculateCAG = async (modelId) => {
   const cagAdapter = Adapter.get(RESOURCE.CAG);
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+  const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
   const cag = await _getModel(modelId);
 
   const statementAdapter = Adapter.get(RESOURCE.STATEMENT, cag.project_id);
   const edges = await edgeParameterAdapter.find([
     { field: 'model_id', value: modelId }
   ], { size: SEARCH_LIMIT });
+
+  const nodes = await nodeParameterAdapter.find([
+    { field: 'model_id', value: modelId }
+  ], {
+    size: SEARCH_LIMIT,
+    includes: ['id', 'concept', 'components']
+  });
+
+  const nodeMap = {};
+  for (let i = 0; i < nodes.length; i++) {
+    nodeMap[nodes[i].concept] = nodes[i];
+  }
+
 
   Logger.info(`Recalculate model ${modelId} with ${edges.length} edges and ${_.sumBy(edges, e => e.reference_ids.length)} statements`);
 
@@ -594,11 +608,17 @@ const recalculateCAG = async (modelId) => {
   // same composition with respect to the edge's source/target
   for (let i = 0; i < edges.length; i++) {
     const e = edges[i];
+    const subjComponents = nodeMap[e.source].components;
+    const objComponents = nodeMap[e.target].components;
     const referenceIds = e.reference_ids;
+
+    console.log(subjComponents, objComponents);
 
     // Filter out changed and discarded edges
     promises.push(statementAdapter.find({
       clauses: [
+        { field: 'subjConcept', values: subjComponents, isNot: false, operand: 'OR' },
+        { field: 'objConcept', values: objComponents, isNot: false, operand: 'OR' },
         { field: 'id', values: referenceIds }
       ]
     }, { size: SEARCH_LIMIT, includes: ['id', 'wm.statement_polarity'] }));
@@ -610,6 +630,7 @@ const recalculateCAG = async (modelId) => {
   // Resolve expected edge composition versus the actual edge composition
   for (let i = 0; i < edges.length; i++) {
     const e = edges[i];
+
     const validStatements = edgeResults[i];
     const referenceIds = e.reference_ids;
     // Get polarities from backing statements
