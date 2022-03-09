@@ -5,6 +5,7 @@
       :bounds="mapBounds"
       @load="onMapLoad"
       @mousemove="onMouseMove"
+      @move="onMapMove"
       @click="onMapClick"
       @resize="onResize"
     >
@@ -32,7 +33,7 @@
       <wm-map-popup
         :layer-id="colorLayerId"
         :formatter-fn="popupFormatter"
-        :cursor="'default'"
+      :cursor="'default'"
       />
     </wm-map>
   </div>
@@ -48,6 +49,7 @@ import {
 } from 'vue';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import useMapRegionSelection from '@/services/composables/useMapRegionSelection';
+import useMapSyncBounds from '@/services/composables/useMapSyncBounds';
 import {
   BASE_MAP_OPTIONS,
   ETHIOPIA_BOUNDING_BOX,
@@ -105,7 +107,10 @@ const borderLayer = () => {
 
 export default defineComponent({
   name: 'RegionMap',
-  emits: ['click-region'],
+  emits: [
+    'click-region',
+    'sync-bounds'
+  ],
   components: {
     WmMap,
     WmMapVector,
@@ -146,20 +151,36 @@ export default defineComponent({
     selectedRegionIds: {
       type: Array,
       default: () => []
+    },
+    disablePanZoom: {
+      type: Boolean,
+      default: false
     }
   },
-  setup(props) {
+  setup(props, { emit }) {
     const {
       selectedAdminLevel,
       regionFilter
     } = toRefs(props);
 
     const selectedLayerId = computed(() => SOURCE_LAYERS[selectedAdminLevel.value].layerId);
-    const { isRegionSelectionEmpty, isRegionSelected } = useMapRegionSelection(selectedLayerId, regionFilter);
+    const {
+      isRegionSelectionEmpty,
+      isRegionSelected
+    } = useMapRegionSelection(selectedLayerId, regionFilter);
+
+    const {
+      syncBounds
+    } = useMapSyncBounds(emit);
+
+    const onMapMove = (event) => {
+      syncBounds(event);
+    };
 
     return {
       isRegionSelectionEmpty,
-      isRegionSelected
+      isRegionSelected,
+      onMapMove
     };
   },
   data: () => ({
@@ -258,7 +279,7 @@ export default defineComponent({
       // disable interactions
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
-      this.disablePanAndZoom();
+      this.disablePanZoom && this.disablePanAndZoom();
     },
     onResize() {
       if (this.map) {

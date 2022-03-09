@@ -76,6 +76,7 @@
           :popup-formatter="popupFormatter"
           :region-filter="selectedRegionIdsAtAllLevels"
           :selected-admin-level="selectedAdminLevel"
+          :disable-pan-zoom="true"
         />
       </div>
     </main>

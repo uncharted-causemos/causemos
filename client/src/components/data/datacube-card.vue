@@ -382,6 +382,7 @@
                       :popup-Formatter="popupFormatter"
                       :region-filter="selectedRegionIdsAtAllLevels"
                       :selected-admin-level="selectedAdminLevel"
+                      @sync-bounds="onSyncMapBounds"
                     />
                   </div>
                 </div>
