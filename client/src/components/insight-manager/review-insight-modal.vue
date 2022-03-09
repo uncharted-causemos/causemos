@@ -97,14 +97,14 @@
       <div class="content">
         <div class="fields">
           <div style="display: flex; align-items: baseline;">
-            <div v-if="!isEditingInsight" class="question-title">{{previewInsightQuestion}}</div>
+            <div v-if="!isEditingInsight" class="question-title">{{insightQuestionLabel}}</div>
             <dropdown-button
               v-else
               class="dropdown-button"
               :is-dropdown-left-aligned="true"
               :items="questionsDropdown"
               :inner-button-label="insightQuestionInnerLabel"
-              :selected-item="currentInsightQuestion"
+              :selected-item="selectedInsightQuestion"
               @item-selected="setInsightQuestion"
             />
             <small-text-button
@@ -251,7 +251,7 @@ export default defineComponent({
 
     const updatedInsight = computed(() => store.getters['insightPanel/updatedInsight']);
 
-    const currentInsightQuestion = ref('');
+    const selectedInsightQuestion = ref('');
     const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
     const loadingImage = ref(false);
     const sortedQuestions = computed<AnalyticalQuestion[]>(() => sortQuestionsByPath(questionsList.value));
@@ -260,9 +260,8 @@ export default defineComponent({
       return sortedQuestions.value.find(q => q.id === id);
     };
 
-    const previewInsightQuestion = computed<string>(() => {
-      if (loadingImage.value) return '';
-      if (updatedInsight.value.analytical_question.length > 0) {
+    const insightQuestionLabel = computed<string>(() => {
+      if (updatedInsight.value && updatedInsight.value.analytical_question.length > 0) {
         const questionObj = getQuestionById(updatedInsight.value.analytical_question[0]);
         if (questionObj) {
           return questionObj.question;
@@ -279,11 +278,11 @@ export default defineComponent({
         // if we are reviewing this insight in edit mode,
         //  it may have a current linking with some analytical question
         //  so we need to surface that
-        if (updatedInsight.value && !newMode.value && currentInsightQuestion.value === '') {
+        if (updatedInsight.value && !newMode.value && selectedInsightQuestion.value === '') {
           if (updatedInsight.value.analytical_question.length > 0) {
             const questionObj = getQuestionById(updatedInsight.value.analytical_question[0]);
             if (questionObj) {
-              currentInsightQuestion.value = questionObj.question;
+              selectedInsightQuestion.value = questionObj.question;
               insightQuestionInnerLabel.value = '';
             }
           }
@@ -297,10 +296,10 @@ export default defineComponent({
       questionsList,
       reFetchQuestions,
       updatedInsight,
-      currentInsightQuestion,
+      selectedInsightQuestion,
       sortedQuestions,
       insightQuestionInnerLabel,
-      previewInsightQuestion,
+      insightQuestionLabel,
       loadingImage
     };
   },
@@ -479,7 +478,7 @@ export default defineComponent({
       setRefetchInsights: 'contextInsightPanel/setRefetchInsights'
     }),
     setInsightQuestion(question: string) {
-      this.currentInsightQuestion = question;
+      this.selectedInsightQuestion = question;
       this.insightQuestionInnerLabel = question === '' ? LBL_EMPTY_INSIGHT_QUESTION : '';
     },
     addNewQuestion(newQuestionText: string) {
@@ -624,7 +623,7 @@ export default defineComponent({
       const insightThumbnail = annotateCropSaveObj.annotatedImagePreview;
       const annotationAndCropState = this.getAnnotatedState(annotateCropSaveObj);
 
-      const linkedQuestion = this.sortedQuestions.find(q => q.question === this.currentInsightQuestion);
+      const linkedQuestion = this.sortedQuestions.find(q => q.question === this.selectedInsightQuestion);
 
       if (this.newMode) {
         // saving a new insight
