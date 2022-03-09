@@ -4,7 +4,7 @@
     :tabs="AnalyticalQuestionsTabs"
     :current-tab-name="currentTab"
     :add-padding="true"
-    :is-large="false"
+    :is-large="true"
     @set-active="setActive"
   >
     <button
