@@ -669,7 +669,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
 
   if (setLock(modelId) === false) {
     Logger.info(`Conflict while updateing model ${modelId} node-parameter. Another transaction in progress`);
-    res.status(409).send(`Conflict while updating node for model ${modelId}`, TRANSACTION_LOCK_MSG);
+    res.status(409).send(`Conflict while updating node for model ${modelId}. ` + TRANSACTION_LOCK_MSG);
     return;
   }
 
@@ -779,7 +779,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
 
   if (setLock(modelId) === false) {
     Logger.info(`Conflict while updateing model ${modelId} edge-parameter. Another transaction in progress`);
-    res.status(409).send(`Conflict while updating edge for model ${modelId}`, TRANSACTION_LOCK_MSG);
+    res.status(409).send(`Conflict while updating edge for model ${modelId}. ` + TRANSACTION_LOCK_MSG);
     return;
   }
 
