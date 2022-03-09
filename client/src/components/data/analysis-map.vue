@@ -83,8 +83,8 @@ import {
 } from '@/utils/outputdata-util';
 import { BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
-import { chartValueFormatter, capitalize } from '@/utils/string-util';
 import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
+import { capitalize, exponentFormatter } from '@/utils/string-util';
 import { mapActions, mapGetters } from 'vuex';
 
 const createRangeFilter = ({ min, max }, prop) => {
@@ -671,12 +671,15 @@ export default defineComponent({
         this.layerRerenderTrigger = this.selectedBaseLayerEndpoint + this.isGridMap;
       }, 200);
     },
+    numberFormatter(v) {
+      // Since there is more room in the tooltip, try to use less scientific notation
+      if (v === 0 || (Math.abs(v) >= 1 && Math.abs(v) < 9_999_999)) return d3.format(',.2~f')(v);
+      return exponentFormatter(v);
+    },
     popupValueFormatter(feature) {
       const prop = this.isAdminMap ? feature?.state : feature?.properties;
       if (_.isNil(prop && prop[this.valueProp])) return null;
-      const format = v => this.extent
-        ? chartValueFormatter(this.extent.min, this.extent.max)(v)
-        : chartValueFormatter()(v);
+      const format = v => this.numberFormatter(v);
       const value = prop[this.valueProp];
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {

@@ -9,15 +9,19 @@
       </template>
     </analytical-questions-and-insights-panel>
     <main class="insight-capture">
-      <action-bar />
+      <div class="action-bar-container">
+        <action-bar style="flex: 1" />
+        <div class="shown-datacubes-count">{{shownDatacubesCountLabel}}</div>
+      </div>
+
       <!-- overlay view content -->
       <datacube-comparative-timeline-sync
         v-if="globalTimeseries.length > 0 && comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay"
         :timeseriesData="globalTimeseries"
         :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
-        :selected-timestamp="selectedTimestamp"
+        :selected-timestamp="selectedGlobalTimestamp"
         :selected-timestamp-range="selectedTimestampRange"
-        @select-timestamp="setSelectedTimestamp"
+        @select-timestamp="setSelectedGlobalTimestamp"
         @select-timestamp-range="handleTimestampRangeSelection"
       />
       <!-- region ranking view content -->
@@ -41,8 +45,9 @@
           @bar-chart-hover="onBarChartHover"
           @map-click-region="onMapClickRegion"
         />
-        <div style="display: flex" v-if="selectedAnalysisItems.length > 0">
-          <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
+        <div class="ranking-header-bottom" v-if="selectedAnalysisItems.length > 0">
+          <h5>Ranking Criteria:</h5>
+          <div>Composition Type: <b>{{regionRankingCompositionType}}</b></div>
           <div class="checkbox">
             <label
               @click="showNormalizedData=!showNormalizedData"
@@ -92,10 +97,9 @@
                 :id="item.id"
                 :datacube-id="item.datacubeId"
                 :datacube-index="indx"
-                :selected-timestamp="selectedTimestamp"
+                :selected-timestamp="selectedGlobalTimestamp"
                 :selected-timestamp-range="selectedTimestampRange"
                 @loaded-timeseries="onLoadedTimeseries"
-                @select-timestamp="setSelectedTimestamp"
               />
             </div>
           </div>
@@ -109,11 +113,12 @@
             :datacube-id="item.datacubeId"
             :selected-admin-level="selectedAdminLevel"
             :number-of-color-bins="numberOfColorBins"
+            :ranking-weight="getDatacubeRankingWeight(item)"
             :selected-color-scheme="finalColorScheme"
             :region-ranking-binning-type="regionRankingBinningType"
             :bar-chart-hover-id="barChartHoverId"
             :show-normalized-data="showNormalizedData"
-            :is-data-inverted="regionRankingDataInversion[item.id+item.datacubeId]"
+            :is-data-inverted="isDatacubeInverted(item)"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
             @map-click-region="onMapClickRegion"
@@ -244,7 +249,8 @@ export default defineComponent({
     const selectedTimestamp = ref(null) as Ref<number | null>;
     const selectedTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
 
-    const initialSelectedTimestamp = ref(0);
+    const selectedGlobalTimestamp = ref(null) as Ref<number | null>;
+    const initialSelectedTimestamp = ref(null) as Ref<number | null>;
     const initialSelectedTimestampRange = ref({}) as Ref<{start: number; end: number}>;
 
     onMounted(async () => {
@@ -329,9 +335,18 @@ export default defineComponent({
       { immediate: true }
     );
 
+    const shownDatacubesCountLabel = computed(() => {
+      return 'Selected ' + selectedAnalysisItems.value.length + ' / ' + analysisItems.value.length + ' datacubes';
+    });
+
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) return;
       selectedTimestamp.value = value;
+    };
+
+    const setSelectedGlobalTimestamp = (value: number) => {
+      if (selectedGlobalTimestamp.value === value) return;
+      selectedGlobalTimestamp.value = value;
     };
 
     const handleTimestampRangeSelection = (newTimestampRange: {start: number; end: number} | null) => {
@@ -345,11 +360,9 @@ export default defineComponent({
     watch(
       () => [
         comparativeAnalysisViewSelection.value,
-        initialSelectedTimestamp.value,
         initialSelectedTimestampRange.value
       ],
       () => {
-        setSelectedTimestamp(initialSelectedTimestamp.value);
         if (comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay) {
           handleTimestampRangeSelection(initialSelectedTimestampRange.value);
         } else { // reset the active selected range non-overlay views
@@ -446,12 +459,17 @@ export default defineComponent({
     watch(
       () => [
         regionRankingWeights.value,
-        regionRankingDataInversion.value
+        regionRankingDataInversion.value,
+        selectedGlobalTimestamp.value
       ],
       () => {
         const dataStateUpdated = _.cloneDeep(dataState.value);
         dataStateUpdated.regionRankingWeights = regionRankingWeights.value;
         dataStateUpdated.regionRankingDataInversion = regionRankingDataInversion.value;
+        if (comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay) {
+          // only save the selected timestamp in the overlap mode
+          dataStateUpdated.selectedTimestamp = selectedGlobalTimestamp.value;
+        }
         store.dispatch('insightPanel/setDataState', dataStateUpdated);
       }
     );
@@ -476,6 +494,11 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.regionRankingDataInversion !== undefined) {
           regionRankingDataInversion.value = loadedInsight.data_state?.regionRankingDataInversion;
+        }
+        if (loadedInsight.data_state?.selectedTimestamp !== undefined &&
+            loadedInsight.data_state?.selectedTimestamp !== null &&
+            loadedInsight.view_state?.regionRankingSelectedComparativeAnalysisMode === ComparativeAnalysisMode.Overlay) {
+          initialSelectedTimestamp.value = loadedInsight.data_state?.selectedTimestamp;
         }
         // view state
         if (loadedInsight.view_state?.regionRankingSelectedAdminLevel !== undefined) {
@@ -517,6 +540,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       handleTimestampRangeSelection,
+      selectedGlobalTimestamp,
+      setSelectedGlobalTimestamp,
       selectedTimestampRange,
       reCalculateGlobalTimeseries,
       initialSelectedTimestamp,
@@ -551,7 +576,8 @@ export default defineComponent({
       timeseriesToDatacubeMap,
       colorFromIndex,
       regionRankingDataInversion,
-      dataState
+      dataState,
+      shownDatacubesCountLabel
     };
   },
   mounted() {
@@ -600,6 +626,21 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setDataState: 'insightPanel/setDataState'
     }),
+    getDatacubeRankingWeight(datacubeItem: AnalysisItem) {
+      const datacubeKey = this.getDatacubeKey(datacubeItem.id, datacubeItem.datacubeId);
+      if (this.regionRankingWeights[datacubeKey]) {
+        const weight = this.regionRankingWeights[datacubeKey].weight;
+        return weight.toFixed(2);
+      }
+      return '0';
+    },
+    getDatacubeKey(id: string, datacubeId: string) {
+      return id + datacubeId;
+    },
+    isDatacubeInverted(datacubeItem: AnalysisItem) {
+      const datacubeKey = this.getDatacubeKey(datacubeItem.id, datacubeItem.datacubeId);
+      return this.regionRankingDataInversion[datacubeKey];
+    },
     setRegionRankingEqualWeight() {
       // reset to equal weights
       const regionRankingEqualCompositionWeight = 1 / (this.selectedAnalysisItems.length) * 100;
@@ -626,7 +667,7 @@ export default defineComponent({
     },
     onToggleRegionRankingDataInversion(regionRankingInfo: {id: string; datacubeId: string;}) {
       const regionRankingDataInversionUpdated = _.cloneDeep(this.regionRankingDataInversion);
-      const datacubeKey = regionRankingInfo.id + regionRankingInfo.datacubeId;
+      const datacubeKey = this.getDatacubeKey(regionRankingInfo.id, regionRankingInfo.datacubeId);
       if (regionRankingDataInversionUpdated[datacubeKey] === undefined) {
         regionRankingDataInversionUpdated[datacubeKey] = false;
       }
@@ -635,7 +676,7 @@ export default defineComponent({
     },
     onUpdatedBarsData(regionRankingInfo: {id: string; datacubeId: string; name: string; barsData: BarData[]; selectedTimestamp: number}) {
       // clone and save the incoming regional-ranking data in the global map object
-      const datacubeKey = regionRankingInfo.id + regionRankingInfo.datacubeId;
+      const datacubeKey = this.getDatacubeKey(regionRankingInfo.id, regionRankingInfo.datacubeId);
       this.allRegionalRankingMap[datacubeKey] = _.cloneDeep(regionRankingInfo.barsData);
 
       // save the most recent timestamp from all datacubes as the global one
@@ -739,7 +780,7 @@ export default defineComponent({
 
       // clone and save the incoming timeseries in the map object
       //  where all timeseries lists will be saved
-      const datacubeKey = timeseriesInfo.id + timeseriesInfo.datacubeId;
+      const datacubeKey = this.getDatacubeKey(timeseriesInfo.id, timeseriesInfo.datacubeId);
       this.allTimeseriesMap[datacubeKey] = _.cloneDeep(timeseriesInfo.timeseriesList);
 
       this.allDatacubesMetadataMap[datacubeKey] = {
@@ -801,15 +842,18 @@ export default defineComponent({
           const lastTimestamp = _.max(allTimestamps);
           if (lastTimestamp !== undefined) {
             // set initial timestamp selection
-            // this.setSelectedTimestamp(lastTimestamp);
-            this.initialSelectedTimestamp = lastTimestamp;
+            if (this.initialSelectedTimestamp === null) {
+              this.selectedGlobalTimestamp = lastTimestamp;
+            } else {
+              this.selectedGlobalTimestamp = this.initialSelectedTimestamp;
+              this.initialSelectedTimestamp = null;
+            }
           }
           // select the timestamp range as the full data extend
           const firstTimestamp = _.min(allTimestamps);
           if (lastTimestamp !== undefined && firstTimestamp !== undefined) {
             // set initial timestamp selection range
             const newTimestampRange = { start: firstTimestamp, end: lastTimestamp };
-            // this.handleTimestampRangeSelection(newTimestampRange);
             this.initialSelectedTimestampRange = newTimestampRange;
           }
         }
@@ -878,8 +922,12 @@ main {
 }
 
 .ranking-header-bottom {
-  margin-bottom: -1rem;
-  flex: 1;
+  h5 {
+    margin-bottom: -1rem;
+  }
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
 }
 .ranking-header-top {
   margin-bottom: -0.25rem;
@@ -962,6 +1010,18 @@ $marginSize: 6px;
 .card-map {
   flex-grow: 1;
   min-height: 0;
+}
+
+.action-bar-container {
+  display: flex;
+  align-items: baseline;
+
+  .shown-datacubes-count {
+    margin-left: 20px;
+    color: darkgray;
+    cursor: default;
+    font-style: italic;
+  }
 }
 
 </style>

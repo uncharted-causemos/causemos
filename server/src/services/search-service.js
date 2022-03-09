@@ -367,7 +367,8 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
         bool: {
           must: [
             indicatorConceptFilter(allMembers),
-            { match: { type: 'indicator' } }
+            { match: { type: 'indicator' } },
+            { match: { status: 'READY' } }
           ]
         }
       }
@@ -379,7 +380,13 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
 };
 
 
-const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k) => {
+/**
+ * @param {string} projectId
+ * @param {array} nodes - node objects
+ * @param {number} k - top k-matches
+ * @param {string} geography - gadm country name
+ */
+const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k, geography) => {
   const projectConn = Adapter.get(RESOURCE.PROJECT);
   const project = await projectConn.findOne([{ field: 'id', value: projectId }], {});
 
@@ -426,7 +433,7 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k) => {
   const ontologyId = project.ontology;
   try {
     Logger.debug(`Concept aligner payload ${JSON.stringify(bulkSearchPayload)}`);
-    const response = await conceptAlignerService.bulkSearch(ontologyId, bulkSearchPayload, k, 0.3);
+    const response = await conceptAlignerService.bulkSearch(ontologyId, bulkSearchPayload, k, 0.3, geography);
 
     for (const matches of response) {
       const indicatorsForMatches = [];
@@ -546,6 +553,9 @@ const indicatorSeachByDatasetId = async (dataId, name) => {
             },
             {
               term: { 'outputs.name': name }
+            },
+            {
+              term: { status: 'READY' }
             }
           ]
         }
@@ -571,6 +581,9 @@ const modelSearchWithName = async (id, name) => {
             },
             {
               term: { 'outputs.name': name }
+            },
+            {
+              term: { status: 'READY' }
             }
           ]
         }

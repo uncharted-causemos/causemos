@@ -4,7 +4,7 @@ import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
-import { TemporalAggregationLevel } from '@/types/Enums';
+import { TemporalAggregationLevel, TemporalResolutionOption } from '@/types/Enums';
 import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
@@ -39,7 +39,8 @@ export default function(
   breakdownOption: string | null,
   selectedTimestampRange: {start: number; end: number} | null,
   unit: string,
-  timestampFormatter: (timestamp: number) => string
+  timestampFormatter: (timestamp: number) => string,
+  temporalResolution: TemporalResolutionOption
 ) {
   const groupElement = selection.append('g');
   const [xExtent, yExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
@@ -69,7 +70,8 @@ export default function(
     timestampFormatter,
     Y_AXIS_WIDTH,
     PADDING_RIGHT,
-    X_AXIS_HEIGHT
+    X_AXIS_HEIGHT,
+    temporalResolution
   );
   timeseriesList.forEach(timeseries => {
     if (timeseries.points.length > 1) { // draw a line for time series longer than 1

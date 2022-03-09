@@ -96,7 +96,8 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
     projection_start: projectionStart,
     history_range: historyRange,
     num_steps: numSteps,
-    time_scale: timeScale
+    time_scale: timeScale,
+    geography
   } = req.body;
 
   let invalidateScenarios = false;
@@ -107,6 +108,9 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
 
   if (engine) {
     parameter.engine = engine;
+  }
+  if (geography) {
+    parameter.geography = geography;
   }
   if (projectionStart) {
     parameter.projection_start = projectionStart;
@@ -266,6 +270,13 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
 //
 // Note for Delphi engineWeights and engineInferredWeights are triples [level, trend, polarity]
 const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
+  // FIXME: Sensei does not support edit-edges just yet. Mar 2022
+  if (engine === SENSEI) {
+    return {
+      edgesToUpdate: [],
+      edgesToOverride: []
+    };
+  }
   const components = await cagService.getComponents(modelId);
   const edgesToUpdate = [];
   const edgesToOverride = [];

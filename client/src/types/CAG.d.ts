@@ -143,6 +143,7 @@ export interface CAGModelParameter {
   projection_start: number;
   engine: string;
   time_scale: TimeScale;
+  geography?: string;
 }
 
 export interface CAGModelSummary {

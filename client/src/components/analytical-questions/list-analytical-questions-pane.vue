@@ -75,12 +75,14 @@
             <div class="checklist-item-question">
               <i class="fa fa-bars checklist-item-menu" />
               <span class="question-title"> {{ questionItem.question }}</span>
+              <!--
               <span
                 v-if="questionItem.visibility !== 'private'"
                 class="public-question-label"
               >
                 Public
               </span>
+              -->
               <i
                 v-if="hasTour(questionItem)"
                 v-tooltip.top="'Tutorial available for this question'"
@@ -96,6 +98,7 @@
                 class="options-button"
               >
                 <template #content>
+                  <!--
                   <div
                     class="dropdown-option"
                     @click="promote(questionItem)"
@@ -103,6 +106,7 @@
                     <i class="fa fa-edit" />
                     Make public
                   </div>
+                  -->
                   <div
                     class="dropdown-option"
                     @click="initiateQuestionDeletion(questionItem)"
@@ -299,7 +303,7 @@ export default defineComponent({
       const newQuestion: AnalyticalQuestion = {
         question: this.newQuestionText,
         description: '',
-        visibility: this.questionVisibility(),
+        visibility: 'private', // this.questionVisibility(),
         project_id: this.project,
         context_id: this.contextId,
         url,
@@ -322,11 +326,14 @@ export default defineComponent({
     },
     initiateQuestionDeletion(question: AnalyticalQuestion) {
       this.selectedQuestion = question;
+      this.deleteSelectedQuestion();
+      /*
       if (question.visibility === 'public') {
         this.showDeleteModal = true;
       } else {
         this.deleteSelectedQuestion();
       }
+      */
     },
     deleteSelectedQuestion() {
       if (this.selectedQuestion) {

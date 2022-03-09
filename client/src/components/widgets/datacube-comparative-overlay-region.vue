@@ -130,7 +130,7 @@ export default defineComponent({
       default: 0
     }
   },
-  emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp', 'loaded-timeseries'],
+  emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'loaded-timeseries'],
   setup(props, { emit }) {
     const {
       id,

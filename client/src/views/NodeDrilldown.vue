@@ -590,11 +590,23 @@ export default defineComponent({
     const clearParameterization = async () => {
       if (selectedNode.value === null) return;
       const { id, concept, label, model_id, components } = selectedNode.value;
-      const clearedTimeseries = [
-        { value: 0.5, timestamp: Date.UTC(2017, 0) },
-        { value: 0.5, timestamp: Date.UTC(2017, 1) },
-        { value: 0.5, timestamp: Date.UTC(2017, 2) }
-      ];
+
+      const dummyTimeseries = (resolution: string | null) => {
+        if (resolution === 'year') {
+          return [
+            { value: 0.5, timestamp: Date.UTC(2017, 0) },
+            { value: 0.5, timestamp: Date.UTC(2018, 0) },
+            { value: 0.5, timestamp: Date.UTC(2019, 0) }
+          ];
+        } else {
+          return [
+            { value: 0.5, timestamp: Date.UTC(2017, 0) },
+            { value: 0.5, timestamp: Date.UTC(2017, 1) },
+            { value: 0.5, timestamp: Date.UTC(2017, 2) }
+          ];
+        }
+      };
+
       const nodeParameters = {
         id,
         concept,
@@ -608,9 +620,13 @@ export default defineComponent({
           admin1: '',
           admin2: '',
           admin3: '',
+          spatialAggregation: 'mean',
+          temporalAggregation: 'mean',
+          temporalResolution: selectedTemporalResolution.value,
           period: 1,
-          timeseries: clearedTimeseries,
-          original_timeseries: _.cloneDeep(clearedTimeseries),
+          timeseries: dummyTimeseries(selectedTemporalResolution.value),
+          original_timeseries: dummyTimeseries(selectedTemporalResolution.value),
+
           // Let server determine min/max
           max: null,
           min: null
@@ -632,11 +648,7 @@ export default defineComponent({
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
 
         // FIXME: manually set historical for now because bad watcher
-        historicalTimeseries.value = [
-          { value: 0.5, timestamp: Date.UTC(2017, 0) },
-          { value: 0.5, timestamp: Date.UTC(2017, 1) },
-          { value: 0.5, timestamp: Date.UTC(2017, 2) }
-        ];
+        historicalTimeseries.value = dummyTimeseries(selectedTemporalResolution.value);
 
         refreshModelData();
       } catch {

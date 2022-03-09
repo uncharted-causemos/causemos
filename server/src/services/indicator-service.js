@@ -9,7 +9,13 @@ const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 
 
 const _buildQueryStringFilter = (text) => {
-  const labels = text.split(' ');
+  let cleanedStr = _.last(text.split('/'));
+  cleanedStr = cleanedStr.replaceAll('_', ' ');
+  cleanedStr = cleanedStr
+    .replace(/[^\w\s]/gi, '')
+    .replace(/\s\s+/gi, ' ');
+
+  const labels = cleanedStr.split(' ');
   let query = '';
   if (labels.length === 1) {
     query = text;
@@ -33,7 +39,8 @@ const textSearch = async (text) => {
         bool: {
           must: [
             _buildQueryStringFilter(text),
-            { match: { type: 'indicator' } }
+            { match: { type: 'indicator' } },
+            { match: { status: 'READY' } }
           ]
         }
       },
@@ -166,7 +173,8 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
 
   // 2. Check against concept aligner matches
   // Note: this assumes that order of results returned by the searchService is the same as nodes provided
-  const indicators = await searchService.indicatorSearchConceptAlignerBulk(model.project_id, nodeParameters, numMatches);
+  const geography = model.parameter.geography;
+  const indicators = await searchService.indicatorSearchConceptAlignerBulk(model.project_id, nodeParameters, numMatches, geography);
 
   for (let i = 0; i < indicators.length; i++) {
     if (indicators[i].length === 0) {
@@ -195,25 +203,40 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
   return result;
 };
 
-const ABSTRACT_INDICATOR = {
-  id: null,
-  name: 'Abstract',
-  unit: '',
-  country: '',
-  admin1: '',
-  admin2: '',
-  admin3: '',
-  spatialAggregation: 'mean',
-  temporalAggregation: 'mean',
-  temporalResolution: 'month',
-  period: 1,
-  timeseries: [
-    { value: 0.5, timestamp: Date.UTC(2017, 0) },
-    { value: 0.5, timestamp: Date.UTC(2017, 1) },
-    { value: 0.5, timestamp: Date.UTC(2017, 2) }
-  ],
-  min: 0,
-  max: 1
+/**
+ * @param {string} resolution - one of { month, year }
+ */
+const abstractIndicator = (resolution) => {
+  const base = {
+    id: null,
+    name: 'Abstract',
+    unit: '',
+    country: '',
+    admin1: '',
+    admin2: '',
+    admin3: '',
+    spatialAggregation: 'mean',
+    temporalAggregation: 'mean',
+    temporalResolution: 'month',
+    period: 1,
+    timeseries: [
+      { value: 0.5, timestamp: Date.UTC(2017, 0) },
+      { value: 0.5, timestamp: Date.UTC(2017, 1) },
+      { value: 0.5, timestamp: Date.UTC(2017, 2) }
+    ],
+    min: 0,
+    max: 1
+  };
+
+  if (resolution === 'year') {
+    base.temporalResolution = resolution;
+    base.timeseries = [
+      { value: 0.5, timestamp: Date.UTC(2017, 0) },
+      { value: 0.5, timestamp: Date.UTC(2018, 0) },
+      { value: 0.5, timestamp: Date.UTC(2019, 0) }
+    ];
+  }
+  return base;
 };
 
 /**
@@ -290,9 +313,8 @@ const setDefaultIndicators = async (modelId, resolution) => {
 
         const timeseries = await getTimeseries(dataId, runId, feature, resolution, temporalAggregation, spatialAggregation);
         if (_.isEmpty(timeseries)) {
-          parameter.timeseries = [];
-          parameter.min = 0;
-          parameter.max = 1;
+          Logger.warn(`Data ${feature} is empty, reset ${node.concept} to abstract`);
+          updatePayload.parameter = abstractIndicator(resolution);
         } else {
           const rawResolution = defaultFeature.data_resolution?.temporal_resolution ?? 'other';
           const finalRawDate = new Date(cube.period?.lte ?? 0);
@@ -306,10 +328,10 @@ const setDefaultIndicators = async (modelId, resolution) => {
       } catch (err) {
         Logger.warn(err);
         Logger.warn(`Failed getting data, reset ${node.concept} to abstract`);
-        updatePayload.parameter = _.cloneDeep(ABSTRACT_INDICATOR);
+        updatePayload.parameter = abstractIndicator(resolution);
       }
     } else {
-      updatePayload.parameter = _.cloneDeep(ABSTRACT_INDICATOR);
+      updatePayload.parameter = abstractIndicator(resolution);
     }
     updates.push(updatePayload);
   }

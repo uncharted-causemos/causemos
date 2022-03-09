@@ -10,8 +10,10 @@
       <list-datacubes-drawer-pane
         v-if="currentTab === 'Datacube Drawer'" />
 
+      <!--
       <list-analytical-questions-pane
         v-if="currentTab === 'Analysis Checklist'" />
+      -->
 
       <list-context-insight-pane
         v-if="currentTab === 'Context Insights'" />
@@ -26,7 +28,7 @@
 import SidePanel from '@/components/side-panel/side-panel.vue';
 import { computed, defineComponent } from 'vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
-import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
+// import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
 import ListDatacubesDrawerPane from '@/components/data/list-datacubes-drawer-pane.vue';
 import { useStore } from 'vuex';
 
@@ -35,7 +37,7 @@ export default defineComponent({
   components: {
     SidePanel,
     ListContextInsightPane,
-    ListAnalyticalQuestionsPane,
+    // ListAnalyticalQuestionsPane,
     ListDatacubesDrawerPane
   },
   setup() {
@@ -46,12 +48,12 @@ export default defineComponent({
       if (currentView.value === 'dataComparative') {
         return [
           { name: 'Datacube Drawer', icon: 'fa fa-fw fa-circle fa-lg' },
-          { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
+          // { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
           { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' }
         ];
       }
       return [
-        { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
+        // { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
         { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' }
       ];
     });

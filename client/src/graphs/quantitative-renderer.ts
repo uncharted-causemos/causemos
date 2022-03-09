@@ -40,6 +40,9 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
           [node.x + node.width / 2, node.y]
         );
       }
+      if (nodeSelection.classed('selected')) {
+        return;
+      }
       nodeSelection.selectAll('.node-container, .node-container-outer')
         .style('stroke', SELECTED_COLOR)
         .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
