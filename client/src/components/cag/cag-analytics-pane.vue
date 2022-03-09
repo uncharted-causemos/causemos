@@ -94,6 +94,10 @@ interface CycleAnalysis {
   ambiguous: GraphPath[];
 }
 
+const shortestToLongest = (a: GraphPath, b: GraphPath) => {
+  return a.path.length - b.path.length;
+};
+
 export default defineComponent({
   name: 'CAGAnalyticsPane',
   components: {
@@ -194,7 +198,11 @@ export default defineComponent({
       const reinforcing = cycleResult.reinforcing.map<GraphPath>(reformat);
       const ambiguous = cycleResult.ambiguous.map<GraphPath>(reformat);
 
-      this.cyclesPaths = { balancing, reinforcing, ambiguous };
+      this.cyclesPaths = {
+        balancing: balancing.sort(shortestToLongest),
+        reinforcing: reinforcing.sort(shortestToLongest),
+        ambiguous: ambiguous.sort(shortestToLongest)
+      };
     },
     async runPathwayAnalysis() {
       if (_.isEmpty(this.currentPathSource) || _.isEmpty(this.currentPathTarget)) return;
