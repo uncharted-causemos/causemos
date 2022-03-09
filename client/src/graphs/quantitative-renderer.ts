@@ -60,6 +60,12 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
 
     this.on('node-drag-move', () => {
       svgUtil.hideSvgTooltip(this.chart);
+      this.renderShockRelations();
+    });
+
+    this.on('node-drag-end', () => {
+      svgUtil.hideSvgTooltip(this.chart);
+      this.renderShockRelations();
     });
 
     this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
@@ -186,6 +192,8 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
         const target = d.data.target.replace(/\s/g, '');
         return `url(#start-${source}-${target})`;
       });
+
+    this.renderShockRelations();
   }
 
   renderEdgesUpdated(selection: D3SelectionIEdge<EdgeParameter>) {
@@ -273,6 +281,62 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     return svg;
   }
 
+  renderShockRelations() {
+    this.chart.selectAll('.shock-relation').remove();
+    const shockEdgesSelection = this.chart.selectAll('.edge') as D3SelectionIEdge<EdgeParameter>;
+
+    shockEdgesSelection.filter(e => {
+      const param = e.data.parameter;
+      if (!param) {
+        return false;
+      }
+      console.log(param.weights);
+      if (param.weights && param.weights[0] > param.weights[1]) {
+        return true;
+      }
+      return false;
+    });
+
+    shockEdgesSelection.each((_d, i, groups) => {
+      const SHOCK = '\uf0e7';
+      if (groups[i]) {
+        const s = d3.select(groups[i]);
+        const pathNode = s.select('path').node() as SVGPathElement;
+        const total = pathNode.getTotalLength();
+        const point = pathNode.getPointAtLength(total * 0.8);
+
+        const shockGroup = s.append('g')
+          .classed('shock-relation', true);
+
+        shockGroup.append('circle')
+          .attr('cx', point.x)
+          .attr('cy', point.y)
+          .attr('r', DEFAULT_STYLE.edge.controlRadius)
+          .style('stroke', (d: any) => calcEdgeColor(d.data))
+          .style('fill', DEFAULT_STYLE.edgeBg.stroke);
+
+        shockGroup
+          .append('text')
+          .attr('x', () => {
+            return point.x - 4;
+          })
+          .attr('y', () => {
+            return point.y + 5.0;
+          })
+          .style('font-family', 'FontAwesome')
+          .style('font-size', () => {
+            return '14px';
+          })
+          .style('stroke', 'none')
+          .style('fill', (d: any) => calcEdgeColor(d.data))
+          .style('cursor', 'pointer')
+          .text(() => {
+            return SHOCK;
+          });
+      }
+    });
+  }
+
   /**
    * In this context, edge controls are used to denote
    * warnings, where the user-specified values conflicts with
@@ -280,6 +344,8 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
    */
   renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
     this.chart.selectAll('.edge-control').selectAll('*').remove();
+
+
 
     const edgeControl = selection
       .filter(e => {
