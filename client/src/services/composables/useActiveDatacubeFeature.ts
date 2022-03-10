@@ -37,6 +37,7 @@ export default function useActiveDatacubeFeature(
   });
 
   return {
-    activeFeature
+    activeFeature,
+    currentOutputIndex
   };
 }

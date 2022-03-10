@@ -28,11 +28,13 @@
 
 <script lang="ts">
 import { Model } from '@/types/Datacube';
-import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import { mapActions, useStore } from 'vuex';
 import { getOutputs } from '@/utils/datacube-util';
 import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import _ from 'lodash';
 
 export default defineComponent({
   name: 'DatacubeModelHeader',
@@ -63,18 +65,8 @@ export default defineComponent({
 
     const store = useStore();
     const route = useRoute();
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = ref(0);
-    watch(
-      () => [
-        metadata.value,
-        datacubeCurrentOutputsMap.value
-      ],
-      () => {
-        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
-        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
-      }
-    );
 
     return {
       updateDesc,
@@ -82,7 +74,8 @@ export default defineComponent({
       modelOutputs,
       currentOutputIndex,
       store,
-      route
+      route,
+      datacubeCurrentOutputsMap
     };
   },
   methods: {
@@ -93,10 +86,9 @@ export default defineComponent({
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
       const datacubeKey = getDatacubeKeyFromAnalysis(this.metadata, this.store, this.route);
-      const defaultFeature = {
-        [datacubeKey]: selectedOutputIndex
-      };
-      this.setDatacubeCurrentOutputsMap(defaultFeature);
+      const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+      updatedCurrentOutputsMap.value[datacubeKey] = selectedOutputIndex;
+      this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap.value);
     }
   }
 });

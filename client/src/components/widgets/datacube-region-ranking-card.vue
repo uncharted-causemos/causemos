@@ -322,7 +322,8 @@ export default defineComponent({
           }
           if (initialViewConfig.value.selectedOutputIndex !== undefined) {
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-            defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
+            const datacubeKey = getDatacubeKey(props.id, props.datacubeId);
+            defaultOutputMap[datacubeKey] = initialViewConfig.value.selectedOutputIndex;
             store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
           }
           if (initialViewConfig.value.selectedMapDataLayer !== undefined) {

@@ -244,7 +244,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, ComputedRef, toRefs, Ref, ref, watch } from 'vue';
+import { computed, defineComponent, PropType, ComputedRef, toRefs, Ref, ref } from 'vue';
 import _ from 'lodash';
 import { DatacubeFeature, FeatureQualifier, Model, ModelParameter } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
@@ -261,6 +261,7 @@ import { scrollToElement } from '@/utils/dom-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
   name: 'ModelDescription',
@@ -381,18 +382,7 @@ export default defineComponent({
     // NOTE: this index is mostly driven from the component 'datacube-model-header'
     //       which may list either all outputs or only the validated ones
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = ref(0);
-
-    watch(
-      () => [
-        metadata.value,
-        datacubeCurrentOutputsMap.value
-      ],
-      () => {
-        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
-        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
-      }
-    );
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
 
     const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
       return metadata.value ? metadata.value.outputs : [];

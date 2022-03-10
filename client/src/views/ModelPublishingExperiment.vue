@@ -62,6 +62,7 @@ import useToaster from '@/services/composables/useToaster';
 import { getFirstInsight, InsightFilterFields } from '@/services/insight-service';
 import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
   name: 'ModelPublishingExperiment',
@@ -103,17 +104,7 @@ export default defineComponent({
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
 
-    const currentOutputIndex = ref(0);
-    watch(
-      () => [
-        metadata.value,
-        datacubeCurrentOutputsMap.value
-      ],
-      () => {
-        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
-        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
-      }
-    );
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
 
     const publishingSteps = ref<ModelPublishingStep[]>([
       {

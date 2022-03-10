@@ -114,6 +114,7 @@ import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/u
 import { ViewState } from '@/types/Insight';
 import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 
 export default defineComponent({
@@ -146,17 +147,7 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelComponents = ref(null) as Ref<any>;
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
-    const currentOutputIndex = ref(0);
-    watch(
-      () => [
-        metadata.value,
-        datacubeCurrentOutputsMap.value
-      ],
-      () => {
-        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
-        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
-      }
-    );
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const temporalResolutionOption = computed(() => {
       if (modelComponents.value === null) {

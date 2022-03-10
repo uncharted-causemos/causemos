@@ -144,6 +144,7 @@ export default defineComponent({
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
@@ -260,7 +261,8 @@ export default defineComponent({
           }
           if (initialViewConfig.value.selectedOutputIndex !== undefined) {
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-            defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
+            const datacubeKey = getDatacubeKey(props.id, props.datacubeId);
+            defaultOutputMap[datacubeKey] = initialViewConfig.value.selectedOutputIndex;
             store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
           }
           if (initialViewConfig.value.colorSchemeReversed !== undefined) {
@@ -312,8 +314,6 @@ export default defineComponent({
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
-
-    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       timeseriesData,

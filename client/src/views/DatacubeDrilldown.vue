@@ -79,6 +79,7 @@ import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/u
 import filtersUtil from '@/utils/filters-util';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
   name: 'DatacubeDrilldown',
@@ -144,17 +145,7 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
-    const currentOutputIndex = ref(0);
-    watch(
-      () => [
-        metadata.value,
-        datacubeCurrentOutputsMap.value
-      ],
-      () => {
-        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
-        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
-      }
-    );
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
