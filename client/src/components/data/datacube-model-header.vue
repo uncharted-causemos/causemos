@@ -28,7 +28,7 @@
 
 <script lang="ts">
 import { Model } from '@/types/Datacube';
-import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useStore } from 'vuex';
 import { getOutputs } from '@/utils/datacube-util';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
