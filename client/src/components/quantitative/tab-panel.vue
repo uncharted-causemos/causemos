@@ -305,6 +305,8 @@ export default defineComponent({
           );
         });
       }
+
+      this.updateDataState();
     },
     onNodeSensitivity(node: NodeParameter) {
       this.drilldownTabs = NODE_DRILLDOWN_TABS;
@@ -564,6 +566,12 @@ export default defineComponent({
         newVisualState.outline.edges = [...newVisualState.outline.edges, ...visualState.outline.edges];
       }
       this.visualState = newVisualState;
+
+      if (!this.scenarios.some(sc => sc.id === scenarioId)) {
+        this.toaster(`Cannot restore deleted scenario ${scenarioId}`, 'error', true);
+        return;
+      }
+
       this.setSelectedScenarioId(scenarioId);
 
       // Restoring engine should probably be last, this may not work correctly pending each engine's own state
@@ -576,7 +584,7 @@ export default defineComponent({
         console.error(`Cannot restore back to ${insightEngine} because there is training in progress`);
         return;
       }
-      if (engineStatus[insightEngine] === modelService.MODEL_STATUS.NOT_REGISTERED) {
+      if (!insightEngine || engineStatus[insightEngine] === modelService.MODEL_STATUS.NOT_REGISTERED) {
         this.toaster(`Cannot restore back to ${insightEngine}, bad state`, 'error', true);
         console.error(`Cannot restore back to ${insightEngine}, bad state`);
         return;
