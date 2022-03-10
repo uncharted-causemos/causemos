@@ -3,8 +3,8 @@ import { computed, Ref } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
-import { useStore } from 'vuex';
 import { getAggregationKey, getOutputs } from '@/utils/datacube-util';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -15,9 +15,7 @@ export default function useParallelCoordinatesData(
   metadata: Ref<Model | Indicator | null>,
   modelRunData: Ref<ModelRun[]>
 ) {
-  const store = useStore();
-  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-  const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+  const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
   const runParameterValues = computed(() => {
     if (modelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {

@@ -1,4 +1,3 @@
-import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { AggregationOption, DataTransform, TemporalResolutionOption, TemporalResolution, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
@@ -7,6 +6,7 @@ import _ from 'lodash';
 import { Ref, ref, watch, watchEffect } from 'vue';
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { OutputVariableSpecs } from '@/types/Outputdata';
+import { getTimeseries } from '../outputdata-service';
 
 /**
  * Takes a list of variable names, and fetches the timeseries data for each,
@@ -60,17 +60,14 @@ export default function useMultiTimeseriesData(
       // If no regions are selected, pass "undefined" as the region_id
       //  to get the aggregated timeseries for all regions.
       promises = allFeaturesAndRunIds.map(runAndFeature => {
-        return API.get('maas/output/timeseries', {
-          params: {
-            data_id: dataId,
-            run_id: runAndFeature.runId,
-            feature: runAndFeature.featureName,
-            resolution: runAndFeature.temporalResolution,
-            temporal_agg: runAndFeature.temporalAggregation,
-            spatial_agg: runAndFeature.spatialAggregation,
-            transform: runAndFeature.transform,
-            region_id: undefined
-          }
+        return getTimeseries({
+          modelId: dataId,
+          runId: runAndFeature.runId,
+          outputVariable: runAndFeature.featureName,
+          temporalResolution: runAndFeature.temporalResolution,
+          temporalAggregation: runAndFeature.temporalAggregation,
+          spatialAggregation: runAndFeature.spatialAggregation,
+          transform: runAndFeature.transform
         });
       });
       const fetchResults = (await Promise.all(promises))

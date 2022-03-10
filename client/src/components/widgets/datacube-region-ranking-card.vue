@@ -130,7 +130,7 @@ import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { computeMapBoundsForCountries, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
-import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
+import { duplicateAnalysisItem, getDatacubeKey, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
 import { fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
@@ -236,7 +236,8 @@ export default defineComponent({
         outputs.value = getOutputs(metadata.value);
 
         let initialOutputIndex = 0;
-        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        const datacubeKey = getDatacubeKey(props.id, props.datacubeId);
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
         if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the default output of the current model
           initialOutputIndex = currentOutputEntry;
@@ -245,7 +246,7 @@ export default defineComponent({
 
           // update the store
           const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          defaultOutputMap[datacubeKey] = initialOutputIndex;
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
         // override (to correctly fetch the output selection for each datacube duplication)
@@ -322,7 +323,8 @@ export default defineComponent({
           }
           if (initialViewConfig.value.selectedOutputIndex !== undefined) {
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-            defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
+            const datacubeKey = getDatacubeKey(props.id, props.datacubeId);
+            defaultOutputMap[datacubeKey] = initialViewConfig.value.selectedOutputIndex;
             store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
           }
           if (initialViewConfig.value.selectedMapDataLayer !== undefined) {
@@ -352,7 +354,7 @@ export default defineComponent({
         immediate: true
       });
 
-    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
+    const { activeFeature } = useActiveDatacubeFeature(metadata);
 
     const {
       datacubeHierarchy

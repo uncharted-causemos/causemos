@@ -22,6 +22,12 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
+    <div
+      v-if="message !== null"
+      class="message"
+    >
+      {{ message }}
+    </div>
     <reference-options-list
       v-if="showReferences"
       :reference-options="referenceOptions"
@@ -366,6 +372,10 @@ export default defineComponent({
     referenceOptions: {
       type: Array as PropType<ModelRunReference[]>,
       default: []
+    },
+    message: {
+      type: String as PropType<string | null>,
+      default: null
     }
   },
   emits: [
@@ -720,5 +730,11 @@ h5 {
   & *:only-child {
     margin-left: auto;
   }
+}
+
+.message {
+  background: $background-light-2;
+  color: $text-color-dark;
+  padding: 5px;
 }
 </style>

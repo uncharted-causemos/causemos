@@ -97,8 +97,8 @@ import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { OutputVariableSpecs, RawOutputDataPoint, RegionalAggregations } from '@/types/Outputdata';
-import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { getSelectedRegionIdsDisplay, adminLevelToString } from '@/utils/admin-level-util';
+import { duplicateAnalysisItem, getDatacubeKey, openDatacubeDrilldown } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { normalize } from '@/utils/value-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
@@ -145,6 +145,7 @@ export default defineComponent({
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+    const { activeFeature } = useActiveDatacubeFeature(metadata);
 
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
@@ -173,7 +174,8 @@ export default defineComponent({
         outputs.value = getOutputs(metadata.value);
 
         let initialOutputIndex = 0;
-        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        const datacubeKey = getDatacubeKey(props.id, props.datacubeId);
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
         if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the default output of the current model
           initialOutputIndex = currentOutputEntry;
@@ -182,7 +184,7 @@ export default defineComponent({
 
           // update the store
           const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          defaultOutputMap[datacubeKey] = initialOutputIndex;
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
         // override (to correctly fetch the output selection for each datacube duplication)
@@ -260,7 +262,8 @@ export default defineComponent({
           }
           if (initialViewConfig.value.selectedOutputIndex !== undefined) {
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-            defaultOutputMap[props.id] = initialViewConfig.value.selectedOutputIndex;
+            const datacubeKey = getDatacubeKey(props.id, props.datacubeId);
+            defaultOutputMap[datacubeKey] = initialViewConfig.value.selectedOutputIndex;
             store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
           }
           if (initialViewConfig.value.colorSchemeReversed !== undefined) {
@@ -312,8 +315,6 @@ export default defineComponent({
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
-
-    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       timeseriesData,

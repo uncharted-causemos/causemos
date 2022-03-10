@@ -410,7 +410,7 @@
                     :key="spec.id"
                     class="card-map-container"
                     :class="[
-                       {'is-default-run': spec.isDefaultRun },
+                      {'is-default-run': spec.isDefaultRun },
                       `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
                     ]"
                   >
@@ -476,6 +476,7 @@
                   v-if="activeDrilldownTab ==='breakdown'"
                   :selected-admin-level="selectedAdminLevel"
                   :qualifier-breakdown-data="qualifierBreakdownData"
+                  :qualifier-fetch-info="qualifierFetchInfo"
                   :regional-data="regionalData"
                   :temporal-breakdown-data="temporalBreakdownData"
                   :output-variable-breakdown-data="outputVariableBreakdownData"
@@ -664,11 +665,12 @@ import { addModelRunsTag, createModelRun, removeModelRunsTag, updateModelRun } f
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
-import useQualifierCounts from '@/services/composables/useQualifierCounts';
 import { BreakdownData } from '@/types/Datacubes';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
+import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -744,6 +746,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const timeInterval = 10000;
     const store = useStore();
+    const route = useRoute();
 
     const {
       isPublishing,
@@ -754,7 +757,6 @@ export default defineComponent({
       temporalResolutionOptions
     } = toRefs(props);
 
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
     const toaster = useToaster();
@@ -839,11 +841,10 @@ export default defineComponent({
     // we are receiving metadata from above (i.e. consumers) and we should not be setting a new model-id here at this level
     const selectedModelId = computed(() => metadata.value?.id ?? null);
 
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const { activeFeature, currentOutputIndex } = useActiveDatacubeFeature(metadata);
+
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
     const isIndicatorDatacube = computed(() => metadata.value !== null && isIndicator(metadata.value));
-
-    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       dimensions,
@@ -980,8 +981,6 @@ export default defineComponent({
         runTags.value = tags;
       }
     });
-
-    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
 
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
@@ -1123,12 +1122,15 @@ export default defineComponent({
       }
 
       // fix to avoid double history later
-      router.push({
-        query: {
-          insight_id: undefined,
-          datacube_id: selectedModelId.value
-        }
-      }).catch(() => {});
+      // only set if the current route param includes insight_id
+      if (route && route.query && route.query.insight_id) {
+        router.push({
+          query: {
+            insight_id: undefined,
+            datacube_id: selectedModelId.value
+          }
+        }).catch(() => {});
+      }
     };
 
     const setSelectedScenarioIds = (newIds: string[]) => {
@@ -1580,10 +1582,7 @@ export default defineComponent({
           updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
         }
         if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
-          const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
-          const datacubeId = metadata?.value ? metadata.value.id : loadedInsight.data_state?.selectedModelId;
-          updatedCurrentOutputsMap.value[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
-          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap.value);
+          updateDatacubesOutputsMap(metadata.value, store, route, loadedInsight.view_state?.selectedOutputIndex);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
           setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
@@ -1762,8 +1761,6 @@ export default defineComponent({
       }
     );
 
-    const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, activeFeature);
-
     const selectedRegionIdForQualifiers = computed(() => {
       const regionIds = getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
       // Note: qualfiler breakdown data can only be broken down by singe regionId, so it isn't applicable in 'split by region' mode where multiple region can be selected
@@ -1779,7 +1776,8 @@ export default defineComponent({
       toggleIsQualifierSelected,
       selectedQualifierValues,
       requestAdditionalQualifier,
-      nonDefaultQualifiers
+      nonDefaultQualifiers,
+      qualifierFetchInfo
     } = useQualifiers(
       metadata,
       breakdownOption,
@@ -1788,7 +1786,6 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedTimestamp,
-      availableQualifiers,
       initialSelectedQualifierValues,
       initialNonDefaultQualifiers,
       activeFeature,
@@ -1863,7 +1860,9 @@ export default defineComponent({
       breakdownOption,
       datacubeHierarchy,
       relativeTo,
-      activeReferenceOptions
+      activeReferenceOptions,
+      temporalBreakdownData,
+      timestampForSelection
     );
 
     const unit = computed(() => {
@@ -2034,7 +2033,9 @@ export default defineComponent({
         numberOfColorBins
       );
       store.dispatch('insightPanel/setViewState', viewState);
+    });
 
+    watchEffect(() => {
       const dataState: DataState = initDataStateFromRefs(
         mainModelOutput,
         metadata,
@@ -2188,6 +2189,7 @@ export default defineComponent({
       requestNewModelRuns,
       runningDefaultRun,
       runParameterValues,
+      qualifierFetchInfo,
       scenarioCount,
       searchFilters,
       selectedAdminLevel,

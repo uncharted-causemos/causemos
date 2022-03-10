@@ -1,7 +1,7 @@
 import { Indicator, Model, ModelParameter } from '../../types/Datacube';
 import { computed, ref, Ref } from 'vue';
-import { useStore } from 'vuex';
 import { getOutputs, isModel } from '@/utils/datacube-util';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 /**
  * Takes a model ID, transforms it into several structures that various components may utilize, for example the PC chart.
@@ -9,9 +9,7 @@ import { getOutputs, isModel } from '@/utils/datacube-util';
 export default function useDatacubeDimensions(
   metadata: Ref<Model | Indicator | null>
 ) {
-  const store = useStore();
-  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-  const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+  const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
   const inputDimensions = computed(() => {
     if (metadata.value !== null && isModel(metadata.value)) {
