@@ -94,7 +94,7 @@
         >
         <i class="fa fa-chevron-left" />
       </button>
-      <div class="content">
+      <div class="content" v-if="isInsight">
         <div class="fields">
           <div style="display: flex; align-items: baseline;">
             <div v-if="!isEditingInsight" class="question-title">{{insightQuestionLabel}}</div>
@@ -166,6 +166,10 @@
             </drilldown-panel>
           </div>
         </div>
+      </div>
+      <div class="content" v-else>
+        <h1>{{updatedInsight.question}}</h1>
+        <h3>{{updatedInsight.description}}</h3>
       </div>
 
       <button
@@ -250,6 +254,7 @@ export default defineComponent({
     const { questionsList, reFetchQuestions } = useQuestionsData();
 
     const updatedInsight = computed(() => store.getters['insightPanel/updatedInsight']);
+    const isInsight = computed(() => InsightUtil.instanceOfFullInsight(updatedInsight.value));
 
     const selectedInsightQuestion = ref('');
     const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
@@ -278,7 +283,12 @@ export default defineComponent({
         // if we are reviewing this insight in edit mode,
         //  it may have a current linking with some analytical question
         //  so we need to surface that
-        if (updatedInsight.value && !newMode.value && selectedInsightQuestion.value === '') {
+        if (
+          updatedInsight.value &&
+          !newMode.value &&
+          selectedInsightQuestion.value === '' &&
+          isInsight.value
+        ) {
           if (updatedInsight.value.analytical_question.length > 0) {
             const questionObj = getQuestionById(updatedInsight.value.analytical_question[0]);
             if (questionObj) {
@@ -300,7 +310,8 @@ export default defineComponent({
       sortedQuestions,
       insightQuestionInnerLabel,
       insightQuestionLabel,
-      loadingImage
+      loadingImage,
+      isInsight
     };
   },
   data: () => ({

@@ -207,9 +207,7 @@ export default {
       return this.searchedInsights;
     },
     insightsGroupedByQuestion() {
-      const insightsByQuestion = InsightUtil.parseReportFromQuestionsAndInsights(this.fullInsights, this.questions)
-        .filter(item => InsightUtil.instanceOfFullInsight(item));
-      return insightsByQuestion;
+      return InsightUtil.parseReportFromQuestionsAndInsights(this.fullInsights, this.questions);
     }
   },
   mounted() {
