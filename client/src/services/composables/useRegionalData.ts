@@ -1,11 +1,13 @@
 import _ from 'lodash';
 import { Ref, ref } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
-import { SpatialAggregationLevel } from '@/types/Enums';
+import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Outputdata';
 import { getRegionAggregations } from '../outputdata-service';
 import { DatacubeGeography } from '@/types/Common';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { BreakdownData } from '@/types/Datacubes';
+import { getTimestampMillis } from '@/utils/date-util';
 
 const applySplitByRegion = (
   regionalData: RegionalAggregations,
@@ -90,10 +92,13 @@ export default function useRegionalData(
   breakdownOption: Ref<string | null>,
   datacubeHierarchy: Ref<DatacubeGeography | null>,
   relativeTo?: Ref<string | null>,
-  referenceOptions?: Ref<string[]>
+  referenceOptions?: Ref<string[]>,
+  temporalBreakdownData?: Ref<BreakdownData | null>,
+  timestampForSelection?: Ref<number | null>
 ) {
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
+
   watchEffect(async onInvalidate => {
     // FIXME: OPTIMIZATION: with some careful refactoring, we can adjust things
     //  so that the getRegionAggregations call doesn't have to wait until the
@@ -104,13 +109,25 @@ export default function useRegionalData(
       isCancelled = true;
     });
 
+    let allYearlyTimestampsForSelection = <string[]>[];
+
+    if (
+      breakdownOption.value === TemporalAggregationLevel.Year &&
+      typeof timestampForSelection?.value === 'number' &&
+      temporalBreakdownData?.value
+    ) {
+      const years = temporalBreakdownData.value.Year.map(tbd => parseInt(tbd.id));
+      allYearlyTimestampsForSelection = years.map(year => getTimestampMillis(year, timestampForSelection.value as number).toString());
+    }
+
     // all output specs are sent to the getRegionAggregations where it will optimize
     // the number of calls made based on the context like breakdownOption sent with it.
     const result = await getRegionAggregations(
       outputSpecs.value,
       datacubeHierarchy.value,
       breakdownOption.value as string,
-      referenceOptions?.value
+      referenceOptions?.value,
+      allYearlyTimestampsForSelection
     );
     if (isCancelled) return;
 

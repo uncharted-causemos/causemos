@@ -447,7 +447,8 @@ export const getRegionAggregations = async (
   baseSpecs: OutputSpecWithId[],
   allRegions: DatacubeGeography,
   breakdownOption: string,
-  referenceSeries?: string[]
+  referenceSeries?: string[],
+  allTimestamps?: string[]
 ): Promise<RegionalAggregations> => {
   // Fetch and restructure the result
   let results;
@@ -464,9 +465,14 @@ export const getRegionAggregations = async (
       .map(s => s.timestamp?.toString())
       .filter(s => s !== undefined) as string[];
 
-    const bulkResults = await getBulkRegionalData(specs[0], selectedTimestamps, selectedTimestamps, referenceSeries);
-    results = bulkResults?.regional_data.map(rd => rd.data);
-    if (bulkResults.all_agg) {
+    // get bulk results then parse them into a format usable for the formatting section afterwards
+    const bulkResults = await getBulkRegionalData(specs[0], selectedTimestamps, allTimestamps ?? [], referenceSeries);
+    if (bulkResults.regional_data) {
+      results = bulkResults?.regional_data.map(rd => rd.data);
+    } else {
+      results = <RegionalAggregation[]> [];
+    }
+    if (bulkResults.all_agg && allTimestamps && allTimestamps.length > 0) {
       results.push(bulkResults.all_agg);
       const newSpec = <OutputSpecWithId> {
         id: ReferenceSeriesOption.AllYears as string

@@ -1849,7 +1849,9 @@ export default defineComponent({
       breakdownOption,
       datacubeHierarchy,
       relativeTo,
-      activeReferenceOptions
+      activeReferenceOptions,
+      temporalBreakdownData,
+      timestampForSelection
     );
 
     const unit = computed(() => {
