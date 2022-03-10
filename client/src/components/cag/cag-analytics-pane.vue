@@ -1,5 +1,5 @@
 <template>
-  <div class="analytics-pane">
+  <div class="analytics-pane" ref="containerElement">
     <dropdown-button
       :is-dropdown-left-aligned="true"
       :inner-button-label="'Analysis'"
@@ -12,19 +12,19 @@
       <div v-if="cyclesPaths && cyclesPaths.balancing.length > 0" class="cycles-result">
         <strong> Balancing Loops </strong>
         <div v-for="(path, idx) of cyclesPaths.balancing" :key="idx">
-          <cag-path-item :path-item="path" @click="showPath(path)" />
+          <cag-path-item :path-item="path" :selected="path === selectedPathItem" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="cyclesPaths && cyclesPaths.reinforcing.length > 0" class="cycles-result">
         <strong> Reinforcing Loops</strong>
         <div v-for="(path, idx) of cyclesPaths.reinforcing" :key="idx">
-          <cag-path-item :path-item="path" @click="showPath(path)" />
+          <cag-path-item :path-item="path" :selected="path === selectedPathItem" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="cyclesPaths && cyclesPaths.ambiguous.length > 0" class="cycles-result">
         <strong> Ambiguous Loops </strong>
         <div v-for="(path, idx) of cyclesPaths.ambiguous" :key="idx">
-          <cag-path-item :path-item="path" @click="showPath(path)" />
+          <cag-path-item :path-item="path" :selected="path === selectedPathItem" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="totalCycles === 0">
@@ -65,7 +65,7 @@
         </div>
         <div v-if="pathExperimentId && pathExperimentResult.length > 0">
           <div v-for="(path, idx) of pathExperimentResult" :key="idx">
-            <cag-path-item :path-item="path" @click="showPath(path)" />
+            <cag-path-item :path-item="path" :selected="path === selectedPath" @click="showPath(path)" />
           </div>
         </div>
       </div>
@@ -157,6 +157,9 @@ export default defineComponent({
       });
     });
 
+    const selectedPathItem = ref<GraphPath|null>(null);
+
+
     return {
       currentAnalysis,
       currentPathSource,
@@ -165,6 +168,8 @@ export default defineComponent({
       selectedScenarioId,
       cyclesPaths,
       totalCycles,
+
+      selectedPathItem,
 
       availableNodes,
       pathExperimentId,
@@ -178,6 +183,10 @@ export default defineComponent({
   },
   mounted() {
     this.refresh();
+    document.addEventListener('click', this.onClickOutside);
+  },
+  unmounted() {
+    document.removeEventListener('click', this.onClickOutside);
   },
   methods: {
     refresh() {
@@ -249,6 +258,7 @@ export default defineComponent({
       }
     },
     showPath(pathItem: GraphPath) {
+      this.selectedPathItem = pathItem;
       this.$emit('show-path', pathItem);
     },
     changeAnalysis(v: string) {
@@ -268,6 +278,15 @@ export default defineComponent({
     },
     changePathTarget(v: string) {
       this.currentPathTarget = v;
+    },
+    onClickOutside(event: MouseEvent) {
+      const containerElement = (this.$refs.containerElement as HTMLElement);
+      // input just lost focus, but was that because the user clicked on one of the suggestions?
+      if ((event.target instanceof Element) && containerElement.contains(event.target)) {
+        // Click was within this element, so do nothing
+        return;
+      }
+      this.selectedPathItem = null;
     }
   }
 });
