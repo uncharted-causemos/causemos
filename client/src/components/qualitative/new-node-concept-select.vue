@@ -149,20 +149,6 @@ const getRunId = async (id: string): Promise<ModelRun> => {
   return run;
 };
 
-const getTimeseriesData = async (dataId: string, runId: string, feature: string,
-  temporalRes: TemporalResolutionOption, agg: AggregationOption): Promise<TimeseriesPoint[]> => {
-  const result = await getTimeseries({
-    modelId: dataId,
-    runId,
-    outputVariable: feature,
-    temporalResolution: temporalRes,
-    temporalAggregation: agg,
-    spatialAggregation: agg,
-    regionId: ''
-  });
-  return result.data as TimeseriesPoint[];
-};
-
 export default defineComponent({
   name: 'NewNodeConceptSelect',
   components: {
@@ -268,7 +254,16 @@ export default defineComponent({
         const periodEndDate = new Date(doc.period?.lte ?? 0);
         const agg = AggregationOption.Mean;
 
-        const result = await getTimeseriesData(doc.data_id, runId, doc.feature, temporalResolution.value, agg);
+        const result = (await getTimeseries({
+          modelId: doc.data_id,
+          runId,
+          outputVariable: doc.feature,
+          temporalResolution: temporalResolution.value,
+          temporalAggregation: agg,
+          spatialAggregation: agg,
+          regionId: ''
+        })).data as TimeseriesPoint[];
+
         const { points } = correctIncompleteTimeseries(result, rawResolution, temporalResolution.value, agg, periodEndDate);
 
         timeseries.value = points;
