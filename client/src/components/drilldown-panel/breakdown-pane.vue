@@ -21,6 +21,7 @@
       :aggregation-level-count="availableAdminLevelTitles.length"
       :aggregation-level="selectedAdminLevel"
       :aggregation-level-title="availableAdminLevelTitles[selectedAdminLevel]"
+      :message="invalidRegionTimeseriesMessage"
       :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
       :raw-data="filteredRegionalData"
       :units="unit"
@@ -54,12 +55,6 @@
         </p>
       </template>
     </aggregation-checklist-pane>
-    <div
-      v-if="invalidRegionTimeseriesMessage !== null"
-      class="invalid-region-timeseries-message"
-    >
-      {{ invalidRegionTimeseriesMessage }}
-    </div>
     <aggregation-checklist-pane
       class="checklist-section"
       v-for="qualifierVariable in qualifierBreakdownData"
@@ -551,11 +546,5 @@ export default defineComponent({
 
 .disabled-dropdown-instructions {
   color: $text-color-medium;
-}
-
-.invalid-region-timeseries-message {
-  background: $background-light-2;
-  color: $text-color-dark;
-  padding: 5px;
 }
 </style>
