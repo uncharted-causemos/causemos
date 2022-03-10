@@ -83,17 +83,6 @@ export default defineComponent({
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const currentView = computed(() => store.getters['app/currentView']);
 
-    const currentOutputIndex = ref(0);
-    watch(
-      () => [
-        metadata.value,
-        datacubeCurrentOutputsMap.value
-      ],
-      () => {
-        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
-        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
-      }
-    );
     const currentPublishStep: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentPublishStep']);
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
@@ -113,6 +102,18 @@ export default defineComponent({
     const tabState = ref(''); // initial tab
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
+
+    const currentOutputIndex = ref(0);
+    watch(
+      () => [
+        metadata.value,
+        datacubeCurrentOutputsMap.value
+      ],
+      () => {
+        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
+      }
+    );
 
     const publishingSteps = ref<ModelPublishingStep[]>([
       {
