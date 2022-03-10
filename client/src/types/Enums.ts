@@ -139,11 +139,6 @@ export enum ReferenceSeriesOption {
   SelectRegions = 'selectRegions'
 }
 
-export const YearlyReferenceOptions = [
-  ReferenceSeriesOption.AllYears,
-  ReferenceSeriesOption.SelectYears
-];
-
 export enum ComparativeAnalysisMode {
   List = 'list',
   Overlay = 'overlay',
