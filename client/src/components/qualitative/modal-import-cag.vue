@@ -8,7 +8,7 @@
     <template #body>
       <div class="available-cags-container">
         <card
-          v-for="cag in availableCAGs"
+          v-for="cag in compatibleCAGs"
           :key="cag.id"
           :class="{ 'selected': cag.selected ? true : false }"
           @click="toggleCAGSelection(cag)">
@@ -66,19 +66,27 @@ export default defineComponent({
   ],
   setup() {
     const store = useStore();
-    const availableCAGs = ref([]) as Ref<SelectableCAGModelSummary[]>;
+    const allCAGs = ref([]) as Ref<SelectableCAGModelSummary[]>;
 
     const project = computed(() => store.getters['app/project']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
+    const compatibleCAGs = computed(() => {
+      const currentTimeScale = allCAGs.value.find(
+        cag => cag.id === currentCAG.value
+      )?.parameter.time_scale;
+      return allCAGs.value
+        .filter(d => d.id !== currentCAG.value)
+        .filter(d => d.parameter.time_scale === currentTimeScale);
+    });
     const selectedCAGIds = computed(() => {
-      return availableCAGs.value.filter(d => d.selected === true).map(d => d.id);
+      return compatibleCAGs.value.filter(d => d.selected === true).map(d => d.id);
     });
 
     return {
       project,
       currentCAG,
-
-      availableCAGs,
+      compatibleCAGs,
+      allCAGs,
       selectedCAGIds
     };
   },
@@ -88,7 +96,7 @@ export default defineComponent({
   methods: {
     refresh() {
       modelService.getProjectModels(this.project).then(result => {
-        this.availableCAGs = result.models.filter(d => d.id !== this.currentCAG);
+        this.allCAGs = result.models;
       });
     },
     toggleCAGSelection(cag: SelectableCAGModelSummary) {
@@ -97,7 +105,6 @@ export default defineComponent({
       } else {
         cag.selected = false;
       }
-      // Vue.set(this, 'availableCAGs', _.clone(this.availableCAGs));
     },
     importCAG() {
       this.$emit('import-cag', this.selectedCAGIds);
