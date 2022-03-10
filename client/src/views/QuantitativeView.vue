@@ -149,6 +149,7 @@ export default defineComponent({
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       enableOverlayWithCancel: 'app/enableOverlayWithCancel',
+      setOverlaySecondaryMessage: 'app/setOverlaySecondaryMessage',
       disableOverlay: 'app/disableOverlay',
       setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
@@ -332,21 +333,23 @@ export default defineComponent({
           this.trainingPercentage = Math.round(100 * r.progressPercentage);
           this.scheduleRefresh();
           return;
-        } else {
-          if (trainingInPreviousCycle === true || r.progressPercentage < 1.0) {
-            // Artificially inflate waiting time for Delphi to workaround race-conditions
-            const waitTime = 10000;
-            if (this.currentEngine === 'delphi' || this.currentEngine === 'delphi_dev') {
-              this.enableOverlay(`Waiting for ${this.currentEngine} DB`);
-              await new Promise((resolve) => {
-                window.setTimeout(() => {
-                  resolve(true);
-                }, waitTime);
-              });
-              this.disableOverlay();
-            }
-          }
         }
+        // Delphi workaround
+        // else {
+        //   if (trainingInPreviousCycle === true || r.progressPercentage < 1.0) {
+        //     // Artificially inflate waiting time for Delphi to workaround race-conditions
+        //     const waitTime = 10000;
+        //     if (this.currentEngine === 'delphi' || this.currentEngine === 'delphi_dev') {
+        //       this.enableOverlay(`Waiting for ${this.currentEngine} DB`);
+        //       await new Promise((resolve) => {
+        //         window.setTimeout(() => {
+        //           resolve(true);
+        //         }, waitTime);
+        //       });
+        //       this.disableOverlay();
+        //     }
+        //   }
+        // }
       }
 
       // 3. Check if we have scenarios, if not generate one
@@ -362,7 +365,8 @@ export default defineComponent({
         // Now we are up to date, create base scenario
         this.enableOverlayWithCancel({ message: 'Creating baseline scenario', cancelFn: cancelFn });
         try {
-          await modelService.createBaselineScenario(this.modelSummary, poller, this.updateProgress);
+          // FIXME: hack to get setOverlaySecondaryMessage, need to have experimentId extracted first
+          await modelService.createBaselineScenario(this.modelSummary, poller, this.updateProgress, this.setOverlaySecondaryMessage);
           scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
         } catch (error) {
           console.error(error);
@@ -478,6 +482,7 @@ export default defineComponent({
             this.currentCAG,
             modelService.cleanConstraints(scenario.parameter?.constraints ?? [])
           );
+          this.setOverlaySecondaryMessage(`CAG=${this.currentCAG} Experiment=${experimentId}`);
 
           const experiment: any = await modelService.getExperimentResult(this.currentCAG, experimentId, poller, this.updateProgress);
           // FIXME: Delphi uses .results, DySE uses .results.data
