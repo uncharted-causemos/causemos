@@ -1504,7 +1504,7 @@ export default defineComponent({
 
 .side-panel {
   isolation: isolate;
-  z-index: 1;
+  z-index: 2;
 }
 .tab-content {
   flex: 1;
