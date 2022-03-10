@@ -109,7 +109,7 @@ export default function useRegionalData(
       isCancelled = true;
     });
 
-    let allYearlyTimestampsForSelection = <string[]>[];
+    let allYearlyTimestampsForSelection: string[] = [];
 
     if (
       breakdownOption.value === TemporalAggregationLevel.Year &&
