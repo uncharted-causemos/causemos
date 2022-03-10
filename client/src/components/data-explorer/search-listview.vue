@@ -195,11 +195,11 @@ export default defineComponent({
       return originalResolution === TemporalResolution.Annual ? 'annual' : 'monthly';
     },
     formatTimeSeries(d: Datacube) {
-      return [{
+      return d.sparkline ? [{
         name: 'datacube',
         color: '',
-        series: d.sparkline || []
-      }];
+        series: d.sparkline
+      }] : [];
     },
     formatPeriod(d: Datacube) {
       if (!d.period) {
