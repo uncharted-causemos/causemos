@@ -31,6 +31,12 @@ import { TimeseriesPoint } from '@/types/Timeseries';
 const RAW_DATA_REQUEST_CACHE_SIZE = 20;
 const rawDataRequestCache = new FIFOCache<Promise<RawOutputDataPoint[]>>(RAW_DATA_REQUEST_CACHE_SIZE);
 
+/*
+  getRaw[something] functions:
+  - these all leverage data ultimately sourced from the raw-data api endpoint
+  - only use getRaw naming pattern for functions that use data from that endpoint
+*/
+
 export const getRawOutputData = async (
   param: {
     dataId: string,
@@ -171,7 +177,7 @@ export const getTimeseries = async (
   }
 };
 
-export const getRawBulkTimeseries = async(
+export const getBulkTimeseries = async(
   spec: OutputSpec,
   regionIds: string[]
 ): Promise<any> => {
@@ -197,37 +203,6 @@ export const getRawBulkTimeseries = async(
     return [];
   }
 };
-
-// not in use, but available from maas/output if aggregrate regional timeseries
-// are ever implemented
-/*
-export const getAggregateTimeseries = async (
-  spec: BaseSpec,
-  regionIds: string[]
-): Promise<any> => {
-  try {
-    const result = await API.post(
-      'maas/output/aggregate-timeseries',
-      {
-        region_ids: regionIds
-      },
-      {
-        params: {
-          data_id: spec.modelId,
-          run_id: spec.runId,
-          feature: spec.outputVariable,
-          resolution: spec.temporalResolution,
-          temporal_agg: spec.temporalAggregation,
-          spatial_agg: spec.spatialAggregation
-        }
-      }
-    );
-    return result;
-  } catch (e) {
-    return [];
-  }
-};
-*/
 
 export const getRawQualifierBreakdown = async (
   dataId: string,
@@ -623,9 +598,40 @@ export const getOutputStats = async (specs: OutputSpecWithId[]): Promise<OutputS
   return stats;
 };
 
+// not in use, but available from maas/output if aggregrate regional timeseries
+// are ever implemented
+/*
+export const getAggregateTimeseries = async (
+  spec: BaseSpec,
+  regionIds: string[]
+): Promise<any> => {
+  try {
+    const result = await API.post(
+      'maas/output/aggregate-timeseries',
+      {
+        region_ids: regionIds
+      },
+      {
+        params: {
+          data_id: spec.modelId,
+          run_id: spec.runId,
+          feature: spec.outputVariable,
+          resolution: spec.temporalResolution,
+          temporal_agg: spec.temporalAggregation,
+          spatial_agg: spec.spatialAggregation
+        }
+      }
+    );
+    return result;
+  } catch (e) {
+    return [];
+  }
+};
+*/
+
 export default {
   getTimeseries,
-  getRawBulkTimeseries,
+  getBulkTimeseries,
   getRawOutputData,
   getRawTimeseriesData,
   getRawTimeseriesDataBulk,

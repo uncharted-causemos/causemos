@@ -18,7 +18,7 @@ import { getYearFromTimestamp } from '@/utils/date-util';
 import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain } from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
-import { getQualifierTimeseries, getRawBulkTimeseries, getRawQualifierTimeseries, getRawTimeseriesData, getRawTimeseriesDataBulk, getTimeseries } from '../outputdata-service';
+import { getQualifierTimeseries, getBulkTimeseries, getRawQualifierTimeseries, getRawTimeseriesData, getRawTimeseriesDataBulk, getTimeseries } from '../outputdata-service';
 import { correctIncompleteTimeseriesLists } from '@/utils/incomplete-data-detection';
 
 
@@ -265,7 +265,7 @@ export default function useTimeseriesData(
               outputVariable: activeFeature.value,
               spatialAgg
             }, allRegionIds).then(result => ({ data: result }))]
-          : [getRawBulkTimeseries({
+          : [getBulkTimeseries({
               modelId: dataId,
               runId,
               outputVariable: activeFeature.value,
