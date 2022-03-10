@@ -568,7 +568,7 @@ export default defineComponent({
       }
       this.visualState = newVisualState;
 
-      if (!this.scenarios.some(sc => sc.id === scenarioId)) {
+      if (scenarioId && !this.scenarios.some(sc => sc.id === scenarioId)) {
         this.toaster(`Cannot restore deleted scenario ${scenarioId}`, 'error', true);
         return;
       }
