@@ -151,7 +151,7 @@ export const getTimeseries = async (
   spec: OutputSpecWithRegionId
 ): Promise<any> => {
   try {
-    const result = API.get('maas/output/timeseries',
+    const result = await API.get('maas/output/timeseries',
       {
         params: {
           data_id: spec.modelId,
@@ -176,7 +176,7 @@ export const getRawBulkTimeseries = async(
   regionIds: string[]
 ): Promise<any> => {
   try {
-    const result = API.post('maas/output/bulk-timeseries',
+    const result = await API.post('maas/output/bulk-timeseries',
       {
         region_ids: regionIds
       },
@@ -198,12 +198,15 @@ export const getRawBulkTimeseries = async(
   }
 };
 
+// not in use, but available from maas/output if aggregrate regional timeseries
+// are ever implemented
+/*
 export const getAggregateTimeseries = async (
   spec: BaseSpec,
   regionIds: string[]
 ): Promise<any> => {
   try {
-    const result = API.post(
+    const result = await API.post(
       'maas/output/aggregate-timeseries',
       {
         region_ids: regionIds
@@ -224,6 +227,7 @@ export const getAggregateTimeseries = async (
     return [];
   }
 };
+*/
 
 export const getRawQualifierBreakdown = async (
   dataId: string,
