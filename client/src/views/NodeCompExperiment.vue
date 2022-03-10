@@ -112,7 +112,7 @@ import filtersUtil from '@/utils/filters-util';
 
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import { ViewState } from '@/types/Insight';
-import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { getDatacubeKeyFromAnalysis, updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
@@ -165,8 +165,6 @@ export default defineComponent({
       }
       return modelComponents.value.nodes.find((node: { id: any }) => node.id === nodeId.value);
     });
-
-    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
 
     watch(
       () => [
@@ -227,10 +225,7 @@ export default defineComponent({
     const onOutputSelectionChange = (event: any) => {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-      const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
-      updatedCurrentOutputsMap[datacubeKey] = selectedOutputIndex;
-      setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+      updateDatacubesOutputsMap(metadata.value, store, route, selectedOutputIndex);
     };
 
     const closeTimeseriesSelectionModal = () => {
@@ -338,9 +333,7 @@ export default defineComponent({
           initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
           // update the store
-          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[datacubeKey] = initialOutputIndex;
-          setDatacubeCurrentOutputsMap(defaultOutputMap);
+          updateDatacubesOutputsMap(metadata.value, store, route, initialOutputIndex);
         }
       }
     });

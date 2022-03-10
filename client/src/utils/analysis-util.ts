@@ -89,3 +89,11 @@ export const getDatacubeKeyFromAnalysis = (metadata: Model | Indicator | null, s
     ? getDatacubeKey(datacubeAnalysisItem.id, datacubeAnalysisItem.datacubeId)
     : metadata ? getDatacubeKey(metadata.id, metadata.data_id) : 'undefined';
 };
+
+export function updateDatacubesOutputsMap(metadata: Model | Indicator | null, store: any, route: any, newOutputIndex: number) {
+  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+  const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+  const datacubeKey = getDatacubeKeyFromAnalysis(metadata, store, route);
+  updatedCurrentOutputsMap[datacubeKey] = newOutputIndex;
+  store.dispatch('app/setDatacubeCurrentOutputsMap', updatedCurrentOutputsMap);
+}

@@ -78,7 +78,7 @@ import { DATASET_NAME, isIndicator, getValidatedOutputs, getOutputs, getSelected
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import filtersUtil from '@/utils/filters-util';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
-import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { getDatacubeKeyFromAnalysis, updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
@@ -147,16 +147,12 @@ export default defineComponent({
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
     const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
 
-    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
 
     // apply initial view config for this datacube
     if (initialViewConfig.value !== null) {
       if (initialViewConfig.value.selectedOutputIndex !== undefined) {
-        const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
-        defaultOutputMap[datacubeKey] = initialViewConfig.value.selectedOutputIndex;
-        setDatacubeCurrentOutputsMap(defaultOutputMap);
+        updateDatacubesOutputsMap(metadata.value, store, route, initialViewConfig.value.selectedOutputIndex);
       }
     }
 
@@ -197,10 +193,7 @@ export default defineComponent({
           initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
           // update the store
-          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-
-          defaultOutputMap[datacubeKey] = initialOutputIndex;
-          setDatacubeCurrentOutputsMap(defaultOutputMap);
+          updateDatacubesOutputsMap(metadata.value, store, route, initialOutputIndex);
         }
         mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
       }
@@ -220,10 +213,7 @@ export default defineComponent({
     const onOutputSelectionChange = (event: any) => {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-      const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
-      updatedCurrentOutputsMap[datacubeKey] = selectedOutputIndex;
-      setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+      updateDatacubesOutputsMap(metadata.value, store, route, selectedOutputIndex);
     };
 
     const refreshMetadata = () => {

@@ -668,7 +668,7 @@ import { BreakdownData } from '@/types/Datacubes';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
-import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 
 const defaultRunButtonCaption = 'Run with default parameters';
@@ -756,7 +756,6 @@ export default defineComponent({
       temporalResolutionOptions
     } = toRefs(props);
 
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
     const toaster = useToaster();
@@ -981,8 +980,6 @@ export default defineComponent({
         runTags.value = tags;
       }
     });
-
-    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
 
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
@@ -1584,10 +1581,7 @@ export default defineComponent({
           updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
         }
         if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
-          const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
-          const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
-          updatedCurrentOutputsMap.value[datacubeKey] = loadedInsight.view_state?.selectedOutputIndex;
-          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap.value);
+          updateDatacubesOutputsMap(metadata.value, store, route, loadedInsight.view_state?.selectedOutputIndex);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
           setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);

@@ -167,10 +167,10 @@ import { AggregationOption, TemporalResolutionOption, DataTransform } from '@/ty
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
-import { mapActions, useStore } from 'vuex';
+import { useStore } from 'vuex';
 import { COLOR_SCHEME, ColorScaleType, COLOR, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
 import { getOutputs } from '@/utils/datacube-util';
-import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
@@ -275,8 +275,6 @@ export default defineComponent({
     const store = useStore();
     const route = useRoute();
 
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-
     const capitalize = (str: string) => {
       return str[0].toUpperCase() + str.slice(1);
     };
@@ -368,8 +366,7 @@ export default defineComponent({
       AggregationOption,
       setResolutionSelection,
       store,
-      route,
-      datacubeCurrentOutputsMap
+      route
     };
   },
   watch: {
@@ -405,9 +402,6 @@ export default defineComponent({
     this.renderColorScale();
   },
   methods: {
-    ...mapActions({
-      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
-    }),
     updateNumberOfColorBins() {
       const newVal = parseFloat(
         (this.$refs['number-of-color-bins-slider'] as HTMLInputElement).value
@@ -420,10 +414,7 @@ export default defineComponent({
     setOutputVariable(variable: string) {
       const selectedOutputIndex = this.modelOutputsDisplayNames.indexOf(variable);
       // update the store so that other components can sync
-      const datacubeKey = getDatacubeKeyFromAnalysis(this.metadata, this.store, this.route);
-      const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-      updatedCurrentOutputsMap.value[datacubeKey] = selectedOutputIndex;
-      this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap.value);
+      updateDatacubesOutputsMap(this.metadata, this.store, this.route, selectedOutputIndex);
     },
     setSpatialAggregationSelection(aggregation: string) {
       this.$emit('set-spatial-aggregation-selection', aggregation);

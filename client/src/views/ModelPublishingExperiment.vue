@@ -60,7 +60,7 @@ import domainProjectService from '@/services/domain-project-service';
 import InsightUtil from '@/utils/insight-util';
 import useToaster from '@/services/composables/useToaster';
 import { getFirstInsight, InsightFilterFields } from '@/services/insight-service';
-import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { getDatacubeKeyFromAnalysis, updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
@@ -86,7 +86,6 @@ export default defineComponent({
 
     const currentPublishStep: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentPublishStep']);
 
-    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
     const setCurrentPublishStep = (step: ModelPublishingStepID) => store.dispatch('modelPublishStore/setCurrentPublishStep', step);
 
@@ -144,9 +143,7 @@ export default defineComponent({
           initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
           // update the store
-          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[datacubeKey] = initialOutputIndex;
-          setDatacubeCurrentOutputsMap(defaultOutputMap);
+          updateDatacubesOutputsMap(metadata.value, store, route, initialOutputIndex);
         }
         mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
       }
