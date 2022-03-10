@@ -1,5 +1,5 @@
 import { Indicator, Model } from '../../types/Datacube';
-import { computed, ref, Ref } from 'vue';
+import { computed, Ref } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
@@ -15,7 +15,7 @@ export default function useParallelCoordinatesData(
   metadata: Ref<Model | Indicator | null>,
   modelRunData: Ref<ModelRun[]>
 ) {
-  const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
+  const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
   const runParameterValues = computed(() => {
     if (modelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {

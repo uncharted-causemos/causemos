@@ -355,7 +355,7 @@ export default defineComponent({
       breakdownOption.value = newValue;
     };
 
-    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
+    const { activeFeature } = useActiveDatacubeFeature(metadata);
 
     const {
       timeseriesData,

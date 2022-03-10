@@ -353,7 +353,7 @@ export default defineComponent({
         immediate: true
       });
 
-    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
+    const { activeFeature } = useActiveDatacubeFeature(metadata);
 
     const {
       datacubeHierarchy

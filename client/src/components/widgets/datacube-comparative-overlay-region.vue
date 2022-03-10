@@ -144,7 +144,7 @@ export default defineComponent({
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
-    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
+    const { activeFeature } = useActiveDatacubeFeature(metadata);
 
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);

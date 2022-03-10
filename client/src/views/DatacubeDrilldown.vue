@@ -145,7 +145,7 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
 

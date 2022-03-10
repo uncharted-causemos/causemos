@@ -103,7 +103,7 @@ export default defineComponent({
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
 
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
     const publishingSteps = ref<ModelPublishingStep[]>([
       {

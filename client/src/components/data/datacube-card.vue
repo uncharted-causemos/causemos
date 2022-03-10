@@ -840,7 +840,7 @@ export default defineComponent({
     // we are receiving metadata from above (i.e. consumers) and we should not be setting a new model-id here at this level
     const selectedModelId = computed(() => metadata.value?.id ?? null);
 
-    const { activeFeature, currentOutputIndex } = useActiveDatacubeFeature(metadata, mainModelOutput);
+    const { activeFeature, currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
     const isIndicatorDatacube = computed(() => metadata.value !== null && isIndicator(metadata.value));

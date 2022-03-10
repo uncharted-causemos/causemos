@@ -315,7 +315,7 @@ export default defineComponent({
     const colorSchemes = ref(Object.keys(COLOR_SCHEMES)
       .map(val => ({ displayName: capitalize(val.toLowerCase()), value: val })));
 
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
     const modelOutputs = computed<DatacubeFeature[]>(() => {
       return metadata.value ? getOutputs(metadata.value) : [];

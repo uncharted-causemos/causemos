@@ -65,7 +65,7 @@ export default defineComponent({
 
     const store = useStore();
     const route = useRoute();
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
     return {
       updateDesc,

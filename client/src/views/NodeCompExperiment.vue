@@ -147,7 +147,7 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelComponents = ref(null) as Ref<any>;
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, mainModelOutput);
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
     const temporalResolutionOption = computed(() => {
       if (modelComponents.value === null) {

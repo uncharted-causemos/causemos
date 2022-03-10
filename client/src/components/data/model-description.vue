@@ -382,7 +382,7 @@ export default defineComponent({
     // NOTE: this index is mostly driven from the component 'datacube-model-header'
     //       which may list either all outputs or only the validated ones
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
     const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
       return metadata.value ? metadata.value.outputs : [];

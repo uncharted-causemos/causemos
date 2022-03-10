@@ -9,7 +9,7 @@ import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 export default function useDatacubeDimensions(
   metadata: Ref<Model | Indicator | null>
 ) {
-  const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(undefined));
+  const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
   const inputDimensions = computed(() => {
     if (metadata.value !== null && isModel(metadata.value)) {
