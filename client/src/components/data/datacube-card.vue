@@ -669,6 +669,8 @@ import { BreakdownData } from '@/types/Datacubes';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
+import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -744,6 +746,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const timeInterval = 10000;
     const store = useStore();
+    const route = useRoute();
 
     const {
       isPublishing,
@@ -754,7 +757,6 @@ export default defineComponent({
       temporalResolutionOptions
     } = toRefs(props);
 
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
     const toaster = useToaster();
@@ -839,11 +841,10 @@ export default defineComponent({
     // we are receiving metadata from above (i.e. consumers) and we should not be setting a new model-id here at this level
     const selectedModelId = computed(() => metadata.value?.id ?? null);
 
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const { activeFeature, currentOutputIndex } = useActiveDatacubeFeature(metadata);
+
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
     const isIndicatorDatacube = computed(() => metadata.value !== null && isIndicator(metadata.value));
-
-    const { activeFeature } = useActiveDatacubeFeature(metadata, mainModelOutput);
 
     const {
       dimensions,
@@ -980,8 +981,6 @@ export default defineComponent({
         runTags.value = tags;
       }
     });
-
-    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
 
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
@@ -1123,12 +1122,15 @@ export default defineComponent({
       }
 
       // fix to avoid double history later
-      router.push({
-        query: {
-          insight_id: undefined,
-          datacube_id: selectedModelId.value
-        }
-      }).catch(() => {});
+      // only set if the current route param includes insight_id
+      if (route && route.query && route.query.insight_id) {
+        router.push({
+          query: {
+            insight_id: undefined,
+            datacube_id: selectedModelId.value
+          }
+        }).catch(() => {});
+      }
     };
 
     const setSelectedScenarioIds = (newIds: string[]) => {
@@ -1580,10 +1582,7 @@ export default defineComponent({
           updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
         }
         if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
-          const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
-          const datacubeId = metadata?.value ? metadata.value.id : loadedInsight.data_state?.selectedModelId;
-          updatedCurrentOutputsMap.value[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
-          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap.value);
+          updateDatacubesOutputsMap(metadata.value, store, route, loadedInsight.view_state?.selectedOutputIndex);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
           setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
@@ -2034,7 +2033,9 @@ export default defineComponent({
         numberOfColorBins
       );
       store.dispatch('insightPanel/setViewState', viewState);
+    });
 
+    watchEffect(() => {
       const dataState: DataState = initDataStateFromRefs(
         mainModelOutput,
         metadata,

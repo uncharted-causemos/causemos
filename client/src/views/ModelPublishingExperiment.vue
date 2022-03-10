@@ -66,6 +66,9 @@ import domainProjectService from '@/services/domain-project-service';
 import InsightUtil from '@/utils/insight-util';
 import useToaster from '@/services/composables/useToaster';
 import { getFirstInsight, InsightFilterFields } from '@/services/insight-service';
+import { getDatacubeKeyFromAnalysis, updateDatacubesOutputsMap } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
   name: 'ModelPublishingExperiment',
@@ -78,6 +81,7 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const route = useRoute();
     const toast = useToaster();
     const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
     const countInsights = computed(() => store.getters['insightPanel/countInsights']);
@@ -86,10 +90,8 @@ export default defineComponent({
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const currentView = computed(() => store.getters['app/currentView']);
 
-    const currentOutputIndex = computed((): number => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const currentPublishStep: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentPublishStep']);
 
-    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
     const setCurrentPublishStep = (step: ModelPublishingStepID) => store.dispatch('modelPublishStore/setCurrentPublishStep', step);
 
@@ -109,6 +111,8 @@ export default defineComponent({
     const tabState = ref(''); // initial tab
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
+
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
     const publishingSteps = ref<ModelPublishingStep[]>([
       {
@@ -139,7 +143,8 @@ export default defineComponent({
         store.dispatch('insightPanel/setContextId', [metadata.value.id]);
 
         let initialOutputIndex = 0;
-        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
         if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the selected output of the current model
           initialOutputIndex = currentOutputEntry;
@@ -147,9 +152,7 @@ export default defineComponent({
           initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
           // update the store
-          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[metadata.value.id] = initialOutputIndex;
-          setDatacubeCurrentOutputsMap(defaultOutputMap);
+          updateDatacubesOutputsMap(metadata.value, store, route, initialOutputIndex);
         }
         mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
       }
