@@ -38,6 +38,7 @@
           :popup-Formatter="popupFormatter"
           :region-filter="selectedRegionIdsAtAllLevels"
           :selected-admin-level="selectedAdminLevel"
+          :disable-pan-zoom="true"
         />
         <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
           <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :isContinuos="isContinuousScale" />
