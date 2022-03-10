@@ -143,7 +143,8 @@ const EDGE_DRILLDOWN_TABS = [
 
 const PROJECTION_ENGINES = {
   DELPHI: 'delphi',
-  DYSE: 'dyse'
+  DYSE: 'dyse',
+  SENSEI: 'sensei'
 };
 
 const blankVisualState = (): CAGVisualState => {
@@ -588,6 +589,11 @@ export default defineComponent({
         this.toaster(`Cannot restore back to ${insightEngine}, bad state`, 'error', true);
         console.error(`Cannot restore back to ${insightEngine}, bad state`);
         return;
+      }
+
+      // Only DySE curently handle sensitivity analysis
+      if (insightEngine !== PROJECTION_ENGINES.DYSE) {
+        this.sensitivityResult = null;
       }
 
       if (insightEngine !== currentEngine) {
