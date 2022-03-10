@@ -375,7 +375,9 @@ export default defineComponent({
       selectedUnitOption,
       TemporalResolutionOption,
       AggregationOption,
-      setResolutionSelection
+      setResolutionSelection,
+      store,
+      route
     };
   },
   watch: {
@@ -426,8 +428,9 @@ export default defineComponent({
     setOutputVariable(variable: string) {
       const selectedOutputIndex = this.modelOutputsDisplayNames.indexOf(variable);
       // update the store so that other components can sync
+      const datacubeKey = getDatacubeKeyFromAnalysis(this.metadata, this.store, this.route);
       const defaultFeature = {
-        [this.metadata?.id ?? '']: selectedOutputIndex
+        [datacubeKey]: selectedOutputIndex
       };
       this.setDatacubeCurrentOutputsMap(defaultFeature);
     },

@@ -1598,8 +1598,8 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
           const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
-          const datacubeId = metadata?.value ? metadata.value.id : loadedInsight.data_state?.selectedModelId;
-          updatedCurrentOutputsMap.value[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+          updatedCurrentOutputsMap.value[datacubeKey] = loadedInsight.view_state?.selectedOutputIndex;
           setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap.value);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {

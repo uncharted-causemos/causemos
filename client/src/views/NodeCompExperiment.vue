@@ -237,7 +237,8 @@ export default defineComponent({
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
       const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-      updatedCurrentOutputsMap[metadata?.value?.id ?? ''] = selectedOutputIndex;
+      const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+      updatedCurrentOutputsMap[datacubeKey] = selectedOutputIndex;
       setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     };
 

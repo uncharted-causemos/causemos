@@ -424,7 +424,9 @@ export default defineComponent({
       getDataTypeDisplayName,
       canChangeType,
       setParamType,
-      getValidDataTypesForParam
+      getValidDataTypesForParam,
+      store,
+      route
     };
   },
   computed: {
@@ -556,7 +558,8 @@ export default defineComponent({
       if (output.name !== this.currentOutputFeature.name) {
         const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
         if (this.currentOutputIndex > 0) {
-          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = this.currentOutputIndex - 1;
+          const datacubeKey = getDatacubeKeyFromAnalysis(this.metadata, this.store, this.route);
+          updatedCurrentOutputsMap[datacubeKey] = this.currentOutputIndex - 1;
         }
         this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
       }
