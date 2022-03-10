@@ -22,7 +22,12 @@
     </template>
     <template #footer>
       <ul class="unstyled-list">
-        <li class="first-button">
+        <span v-if="compatibleCAGs.length < allCAGs.length - 1">
+          Only
+          {{ currentTimeScale === TimeScale.Years ? "yearly" : "monthly" }}
+          CAGs are shown.
+        </span>
+        <li>
           <button
             type="button"
             class="btn"
@@ -50,6 +55,7 @@ import Modal from '@/components/modals/modal.vue';
 import Card from '@/components/widgets/card.vue';
 import modelService from '@/services/model-service';
 import { CAGModelSummary } from '@/types/CAG';
+import { TimeScale } from '@/types/Enums';
 
 interface SelectableCAGModelSummary extends CAGModelSummary {
   selected?: boolean;
@@ -70,13 +76,15 @@ export default defineComponent({
 
     const project = computed(() => store.getters['app/project']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
+    const currentTimeScale = computed(
+      () =>
+        allCAGs.value.find(cag => cag.id === currentCAG.value)?.parameter
+          .time_scale
+    );
     const compatibleCAGs = computed(() => {
-      const currentTimeScale = allCAGs.value.find(
-        cag => cag.id === currentCAG.value
-      )?.parameter.time_scale;
       return allCAGs.value
         .filter(d => d.id !== currentCAG.value)
-        .filter(d => d.parameter.time_scale === currentTimeScale);
+        .filter(d => d.parameter.time_scale === currentTimeScale.value);
     });
     const selectedCAGIds = computed(() => {
       return compatibleCAGs.value.filter(d => d.selected === true).map(d => d.id);
@@ -86,8 +94,10 @@ export default defineComponent({
       project,
       currentCAG,
       compatibleCAGs,
+      currentTimeScale,
       allCAGs,
-      selectedCAGIds
+      selectedCAGIds,
+      TimeScale
     };
   },
   mounted() {
@@ -119,8 +129,8 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-.first-button {
-  margin-right: 10px;
+.unstyled-list > *:not(:first-child) {
+  margin-left: 10px;
 }
 
 ::v-deep(.modal-container) {
