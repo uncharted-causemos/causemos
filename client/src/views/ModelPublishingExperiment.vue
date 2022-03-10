@@ -51,9 +51,15 @@ import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import { updateDatacube } from '@/services/new-datacube-service';
-import { DatacubeFeature, Model, ModelParameter, ModelPublishingStep } from '@/types/Datacube';
-import { AggregationOption, TemporalResolutionOption, DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
+import { updateDatacube, generateSparklines, getDefaultModelRunMetadata } from '@/services/new-datacube-service';
+import { Datacube, DatacubeFeature, Model, ModelParameter, ModelPublishingStep } from '@/types/Datacube';
+import {
+  AggregationOption,
+  TemporalResolutionOption,
+  DatacubeStatus,
+  ModelPublishingStepID,
+  TemporalResolution
+} from '@/types/Enums';
 import { DataState, ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import domainProjectService from '@/services/domain-project-service';
@@ -86,6 +92,9 @@ export default defineComponent({
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
     const setCurrentPublishStep = (step: ModelPublishingStepID) => store.dispatch('modelPublishStore/setCurrentPublishStep', step);
+
+    const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
+    const disableOverlay = () => store.dispatch('app/disableOverlay');
 
     const initialDataConfig = ref<DataState | null>(null);
     const initialViewConfig = ref<ViewState | null>({
@@ -187,60 +196,90 @@ export default defineComponent({
       });
     };
 
+    const addSparkline = async(meta: Datacube) => {
+      const feature = meta.default_feature;
+      const output = meta.outputs.find(output => output.name === feature);
+      const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+      const finalRawTimestamp = meta.period?.lte ?? 0;
+      const defaultRun = await getDefaultModelRunMetadata(meta.id);
+      const sparklineResult = await generateSparklines([{
+        id: meta.id,
+        dataId: meta.data_id,
+        runId: defaultRun?.id ?? selectedScenarioIds.value[0],
+        feature: feature,
+        resolution: selectedTemporalResolution.value,
+        temporalAgg: selectedTemporalAggregation.value,
+        spatialAgg: selectedSpatialAggregation.value,
+        rawResolution: rawResolution,
+        finalRawTimestamp: finalRawTimestamp
+      }]);
+      console.log('Sparkline requested: ' + sparklineResult);
+    };
+
     const publishModel = async () => {
       // call the backend to update model metadata and finalize model publication
       if (metadata.value && isModel(metadata.value)) {
-        // mark this datacube as published
-        metadata.value.status = DatacubeStatus.Ready;
-        // update the default output feature
-        const validatedOutputs = metadata.value.validatedOutputs ?? [];
-        if (validatedOutputs.length > 0) {
-          metadata.value.default_feature = validatedOutputs[currentOutputIndex.value].name;
-        }
-        // remove newly-added fields such as 'validatedOutputs' so that ES can update
-        const modelToUpdate = _.cloneDeep(metadata.value);
-        delete modelToUpdate.validatedOutputs;
-        const drilldownParams = modelToUpdate.parameters.filter(p => p.is_drilldown);
-        drilldownParams.forEach((p: any) => {
-          if (p.roles) {
-            delete p.roles;
+        try {
+          await enableOverlay('Generating preview');
+          await addSparkline(metadata.value);
+          await enableOverlay('Publishing model');
+          // mark this datacube as published
+          metadata.value.status = DatacubeStatus.Ready;
+          // update the default output feature
+          const validatedOutputs = metadata.value.validatedOutputs ?? [];
+          if (validatedOutputs.length > 0) {
+            metadata.value.default_feature = validatedOutputs[currentOutputIndex.value].name;
           }
-          if (p.related_features) {
-            delete p.related_features;
-          }
-        });
+          // remove newly-added fields such as 'validatedOutputs' so that ES can update
+          const modelToUpdate = _.cloneDeep(metadata.value);
+          delete modelToUpdate.sparkline;
+          delete modelToUpdate.validatedOutputs;
+          const drilldownParams = modelToUpdate.parameters.filter(p => p.is_drilldown);
+          drilldownParams.forEach((p: any) => {
+            if (p.roles) {
+              delete p.roles;
+            }
+            if (p.related_features) {
+              delete p.related_features;
+            }
+          });
 
-        //
-        // update server data
-        //
-        const updateResult = await updateDatacube(modelToUpdate.id, modelToUpdate);
-        console.log('model update status: ' + JSON.stringify(updateResult));
-        // also, update the project stats count
-        const domainProject = await domainProjectService.getProject(projectId.value);
-        // add the instance to list of published instances
-        const updatedReadyInstances = domainProject.ready_instances;
-        if (!updatedReadyInstances.includes(modelToUpdate.name)) {
-          updatedReadyInstances.push(modelToUpdate.name);
-        }
-        // remove the instance from the list of ready/published instances
-        const updatedDraftInstances = domainProject.ready_instances.filter((n: string) => n !== modelToUpdate.name);
-        // update the project doc at the server
-        domainProjectService.updateDomainProject(
-          projectId.value,
-          {
-            draft_instances: updatedDraftInstances,
-            ready_instances: updatedReadyInstances
+          //
+          // update server data
+          //
+          const updateResult = await updateDatacube(modelToUpdate.id, modelToUpdate);
+          console.log('model update status: ' + JSON.stringify(updateResult));
+          // also, update the project stats count
+          const domainProject = await domainProjectService.getProject(projectId.value);
+          // add the instance to list of published instances
+          const updatedReadyInstances = domainProject.ready_instances;
+          if (!updatedReadyInstances.includes(modelToUpdate.name)) {
+            updatedReadyInstances.push(modelToUpdate.name);
           }
-        );
+          // remove the instance from the list of ready/published instances
+          const updatedDraftInstances = domainProject.ready_instances.filter((n: string) => n !== modelToUpdate.name);
+          // update the project doc at the server
+          await domainProjectService.updateDomainProject(
+            projectId.value,
+            {
+              draft_instances: updatedDraftInstances,
+              ready_instances: updatedReadyInstances
+            }
+          );
 
-        // redirect to model family page
-        router.push({
-          name: 'domainDatacubeOverview',
-          params: {
-            project: projectId.value,
-            projectType: modelToUpdate.type
-          }
-        });
+          await disableOverlay();
+          // redirect to model family page
+          router.push({
+            name: 'domainDatacubeOverview',
+            params: {
+              project: projectId.value,
+              projectType: modelToUpdate.type
+            }
+          });
+        } catch {
+          toast('Failed to publish model', 'error', true);
+          await disableOverlay();
+        }
       }
     };
 

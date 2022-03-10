@@ -9,7 +9,7 @@
             <th>SOURCE and DESCRIPTION</th>
             <th>PERIOD</th>
             <th>REGION</th>
-            <th><!-- Timeseries chart--> <span class="right-cover" /></th>
+            <th>PREVIEW<span class="right-cover" /></th>
           </tr>
         </thead>
         <tbody>
@@ -80,17 +80,11 @@
               <td class="region-col">
                 <div> {{ formatCountry(d) }} </div>
               </td>
-              <!-- FIXME: do we still have timeseries here?? -->
-              <!--
-              <td
-                v-if="d.timeseries"
-                class="timeseries-col"
-              >
+              <td class="timeseries-col">
                 <div class="timeseries-container">
                   <sparkline :data="formatTimeSeries(d)" />
                 </div>
               </td>
-              -->
             </tr>
         </tbody>
       </table>
@@ -103,7 +97,7 @@
 import moment from 'moment';
 import { defineComponent, ref, computed } from 'vue';
 import { useStore } from 'vuex';
-// import Sparkline from '@/components/widgets/charts/sparkline.vue';
+import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
 import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { isIndicator, isModel } from '../../utils/datacube-util';
@@ -113,7 +107,7 @@ import { Datacube, ModelParameter } from '@/types/Datacube';
 export default defineComponent({
   name: 'SearchListview',
   components: {
-    // Sparkline,
+    Sparkline,
     MultilineDescription
   },
   props: {
@@ -200,16 +194,13 @@ export default defineComponent({
       // We want to display the aggregated resolution rather than the original one.
       return originalResolution === TemporalResolution.Annual ? 'annual' : 'monthly';
     },
-    // formatTimeSeries(cubeRow) {
-    //   const sparklineData = [{ series: [] }];
-    //   if (cubeRow.timeseries) {
-    //     sparklineData[0].series = cubeRow.timeseries;
-    //   } else {
-    //     // empty case
-    //     sparklineData[0].series = [0];
-    //   }
-    //   return sparklineData;
-    // },
+    formatTimeSeries(d: Datacube) {
+      return d.sparkline ? [{
+        name: 'datacube',
+        color: '',
+        series: d.sparkline
+      }] : [];
+    },
     formatPeriod(d: Datacube) {
       if (!d.period) {
         return '';
@@ -343,6 +334,7 @@ $selected-background: #EBF1FC;
       }
       .content {
         flex: 1 1 auto;
+        overflow-wrap: anywhere;
         .not-ready-label {
           font-weight: 600;
           border: none;
@@ -355,6 +347,10 @@ $selected-background: #EBF1FC;
       }
     }
   }
+  .desc-col {
+    width: 33%;
+    overflow-wrap: anywhere;
+  }
   .region-col {
     width: 200px;
   }
@@ -365,13 +361,11 @@ $selected-background: #EBF1FC;
   .timeseries-col {
     padding-left: 5px;
     padding-right: 10px;
-    display: none;
   }
   .timeseries-container {
     background-color: #f1f1f1;
     width: 110px;
     height: 50px;
-    display: none;
   }
 }
 </style>
