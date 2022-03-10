@@ -5,7 +5,7 @@ const moment = require('moment');
 const { v4: uuid } = require('uuid');
 const router = express.Router();
 const Logger = rootRequire('/config/logger');
-const { setLock, releaseLock } = rootRequire('/cache/node-lru-cache');
+const { setLock, releaseLock, LOCK_TIMEOUT } = rootRequire('/cache/node-lru-cache');
 
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 const cagService = rootRequire('/services/cag-service');
@@ -21,6 +21,7 @@ const senseiService = rootRequire('/services/external/sensei-service');
 const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 const modelUtil = rootRequire('util/model-util');
 
+const TRANSACTION_LOCK_MSG = `Another transaction is running on model, please try again in ${LOCK_TIMEOUT / 1000} seconds`;
 
 const DYSE = 'dyse';
 const DELPHI = 'delphi';
@@ -368,7 +369,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
   if (setLock(modelId) === false) {
     Logger.warn(`Conflict while registering model ${modelId} with ${engine}. Another transaction in progress`);
-    res.status(409).send('Another transaction is running for this model');
+    res.status(409).send(`Conflict while registering model ${modelId} with ${engine}. ` + TRANSACTION_LOCK_MSG);
     return;
   }
 
@@ -668,7 +669,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
 
   if (setLock(modelId) === false) {
     Logger.info(`Conflict while updateing model ${modelId} node-parameter. Another transaction in progress`);
-    res.status(409).send('Another transaction is running for this model');
+    res.status(409).send(`Conflict while updating node for model ${modelId}. ` + TRANSACTION_LOCK_MSG);
     return;
   }
 
@@ -778,7 +779,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
 
   if (setLock(modelId) === false) {
     Logger.info(`Conflict while updateing model ${modelId} edge-parameter. Another transaction in progress`);
-    res.status(409).send('Another transaction is running for this model');
+    res.status(409).send(`Conflict while updating edge for model ${modelId}. ` + TRANSACTION_LOCK_MSG);
     return;
   }
 

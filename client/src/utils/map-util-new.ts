@@ -2,7 +2,6 @@ import _ from 'lodash';
 import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
-import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { getBboxFromRegionIds } from '@/services/geo-service';
 
 export enum BASE_LAYER {
@@ -24,10 +23,6 @@ export enum DATA_LAYER {
   RAW = 'dot'
 }
 
-export function adminLevelToString(level: number) {
-  const adminLevel = level === 0 ? 'country' : 'admin' + level;
-  return adminLevel;
-}
 export enum SOURCE_LAYER {
   // Note: Vector tile source data for each layer (we currently have 4 different vector data source)
   // has to be referenced by following ids, 'boundaries-adm0' to 'boundaries-adm3' and `maas`.
@@ -83,11 +78,6 @@ export function getMapSourceLayer (dataLayer: DATA_LAYER, adminLevel = 0) {
     default:
       return getSourceLayerById(sLayers[adminLevel]);
   }
-}
-
-export function stringToAdminLevel(geoString: string) {
-  const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
-  return adminLevel;
 }
 
 // Resolve edge case where min and max are equal. Often happens when there's single data point when calculating min/max

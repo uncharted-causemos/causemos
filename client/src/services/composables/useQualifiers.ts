@@ -107,7 +107,8 @@ export default function useQualifiers(
   initialSelectedQualifierValues: Ref<string[]>,
   initialNonDefaultQualifiers: Ref<string[]>,
   activeFeature: Ref<string>,
-  isRawDataResolution?: Ref<Boolean>
+  isRawDataResolution?: Ref<Boolean>,
+  selectedRegionId?: Ref<string>
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
 
@@ -230,7 +231,8 @@ export default function useQualifiers(
           temporalResolution.value,
           temporalAggregation.value,
           spatialAggregation.value,
-          timestamp
+          timestamp,
+          selectedRegionId?.value
         )
     );
     // FIXME: OPTIMIZATION: Placing a separate request for each run eats into

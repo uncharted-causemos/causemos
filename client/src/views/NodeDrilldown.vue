@@ -78,29 +78,25 @@
               />
             </div>
             <div class="indicator-config">
-              <strong
-                class="indicator-name"
-                v-tooltip.top="selectedNodeScenarioData?.indicatorName ?? ''"
-              >
-                {{ selectedNodeScenarioData?.indicatorName ?? '' }}
+              <strong class="indicator-name">
+                {{ indicatorName }}
               </strong>
-              <span
-                v-if="indicatorDescription.length > 0"
-                class="description"
-                v-tooltip.top="indicatorDescription"
-              > - {{ indicatorDescription }}</span>
-              <span
+              <strong
                 v-if="indicatorRegions.length > 0"
-                class="description"
+                class="indicator-region"
                 v-tooltip.top="indicatorRegions"
-              > - {{ indicatorRegions }}.</span>
-              <span> Data shows</span>
+              > - {{ indicatorRegions }}</strong>
+              <span
+                class="dataset-name"
+                v-tooltip.top="datasetName"
+              > {{ datasetName }}</span>
+              <span class="configure-sentence"> Data shows</span>
               <dropdown-button
                 :items="SEASONALITY_OPTIONS"
                 :selected-item="indicatorPeriod"
                 @item-selected="(period) => { indicatorPeriod = period; }"
               />
-              <span>seasonal trends. </span>
+              <span class="configure-sentence">seasonal trends. </span>
               <button
                 v-if="indicatorId === null"
                 class="btn btn-sm btn-primary btn-call-for-action"
@@ -150,7 +146,7 @@
                   Clear constraints
                 </button> -->
               </div>
-              <div class="checkbox">
+              <div class="checkbox configure-sentence">
                 <label
                   @click="toggleIndicatorDataInversion">
                   <i
@@ -561,9 +557,13 @@ export default defineComponent({
       return selectedNode.value?.parameter?.id ?? null;
     });
     const indicatorData = useModelMetadata(indicatorId);
-    const indicatorDescription = computed(() => {
+    const indicatorName = computed(() => {
+      if (indicatorData.value === null) return 'Abstract';
+      return indicatorData.value.outputs[0].display_name || indicatorData.value.outputs[0].name;
+    });
+    const datasetName = computed(() => {
       if (indicatorData.value === null) return '';
-      return indicatorData.value.outputs[0].description;
+      return indicatorData.value.name;
     });
     const indicatorMin = ref(0);
     const indicatorMax = ref(1);
@@ -919,7 +919,8 @@ export default defineComponent({
       historicalTimeseries,
       setHistoricalTimeseries,
       indicatorId,
-      indicatorDescription,
+      indicatorName,
+      datasetName,
       indicatorMin,
       indicatorMax,
       indicatorPeriod,
@@ -1183,14 +1184,21 @@ h5 {
 
 
   .indicator-name {
-    max-width: 25ch;
+    white-space: nowrap;
+    min-width: 20px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .indicator-region {
+    min-width: 8ch;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .description {
-    flex-basis: 4ch;
+  .dataset-name {
+    min-width: 4ch;
     flex-grow: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -1198,6 +1206,11 @@ h5 {
     color: $text-color-medium;
   }
 
+}
+
+.configure-sentence {
+  // Don't wrap, continue taking as much space as necessary to fit
+  flex-shrink: 0;
 }
 
 .configure-dropdown-container {

@@ -591,7 +591,18 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .select('.edge-path')
       .style('stroke', d => calcEdgeColor(d.data))
       .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data))
-      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash);
+      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
+      .attr('marker-end', d => {
+        const source = d.data.source.replace(/\s/g, '');
+        const target = d.data.target.replace(/\s/g, '');
+        return `url(#arrowhead-${source}-${target})`;
+      })
+      .attr('marker-start', d => {
+        const source = d.data.source.replace(/\s/g, '');
+        const target = d.data.target.replace(/\s/g, '');
+        return `url(#start-${source}-${target})`;
+      });
+
 
     selection
       .select('.edge-path')
@@ -600,6 +611,11 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       });
     selection
       .select('.edge-path-bg')
+      .attr('d', d => {
+        return pathFn(d.points as any);
+      });
+    selection
+      .select('.edge-path-bg-outline')
       .attr('d', d => {
         return pathFn(d.points as any);
       });

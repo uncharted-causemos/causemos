@@ -430,7 +430,8 @@ export default defineComponent({
         const reference = newValue + '_ref';
         setTimeout(() => { // HACK: wait for element to be mounted, year_ref gets unmounted in certain cases so we need to wait before we try and scroll to it
           try { // in the future we should look into preventing the mount/unmount behavior
-            const element = (this.$refs[reference] as any).$el; // this will throw an error if element hasn't been rendered (it's ref wont exist)
+            const ref = (this.$refs[reference] as any);
+            const element = ref?.$el || ref[0]?.$el; // this will throw an error if element hasn't been rendered (it's ref wont exist)
             const container = document.getElementById('panel-content-container');
             if (container) {
               container.scrollTop = element.offsetTop - 45; // set scroll height to slightly above relevant qualifier

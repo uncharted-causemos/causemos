@@ -382,6 +382,7 @@
                       :popup-Formatter="popupFormatter"
                       :region-filter="selectedRegionIdsAtAllLevels"
                       :selected-admin-level="selectedAdminLevel"
+                      @sync-bounds="onSyncMapBounds"
                     />
                   </div>
                 </div>
@@ -606,6 +607,7 @@ import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFe
 
 import { getInsightById } from '@/services/insight-service';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
+import { getParentSelectedRegions, adminLevelToString } from '@/utils/admin-level-util';
 
 import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
@@ -651,7 +653,6 @@ import {
 import { normalize } from '@/utils/value-util';
 import { initDataStateFromRefs, initViewStateFromRefs, fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import {
-  adminLevelToString,
   BASE_LAYER,
   DATA_LAYER,
   DATA_LAYER_TRANSPARENCY,
@@ -1763,6 +1764,16 @@ export default defineComponent({
 
     const availableQualifiers = useQualifierCounts(metadata, selectedScenarioIds, activeFeature);
 
+    const selectedRegionIdForQualifiers = computed(() => {
+      const regionIds = getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
+      // Note: qualfiler breakdown data can only be broken down by singe regionId, so it isn't applicable in 'split by region' mode where multiple region can be selected
+      // and also in 'split by year' mode where data is aggregated by year.
+      if (regionIds.length !== 1 ||
+          breakdownOption.value === TemporalAggregationLevel.Year ||
+          breakdownOption.value === SpatialAggregationLevel.Region) return '';
+      return regionIds[0];
+    });
+
     const {
       qualifierBreakdownData,
       toggleIsQualifierSelected,
@@ -1781,8 +1792,11 @@ export default defineComponent({
       initialSelectedQualifierValues,
       initialNonDefaultQualifiers,
       activeFeature,
-      isRawDataLayerSelected
+      isRawDataLayerSelected,
+      selectedRegionIdForQualifiers
     );
+
+    const selectedRegionIdsForTimeseries = computed(() => getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value));
 
     const {
       timeseriesData,
@@ -1803,7 +1817,7 @@ export default defineComponent({
       selectedTimestamp,
       selectedTransform,
       setSelectedTimestamp,
-      selectedRegionIds,
+      selectedRegionIdsForTimeseries,
       selectedQualifierValues,
       initialSelectedYears,
       showPercentChange,

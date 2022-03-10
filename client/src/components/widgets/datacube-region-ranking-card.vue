@@ -81,6 +81,7 @@
           :selected-admin-level="selectedAdminLevel"
           :map-bounds="bbox"
           :selected-id="barChartHoverId"
+          :disable-pan-zoom="true"
           @click-region="$emit('map-click-region', $event)" />
         <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
           <map-legend :ramp="mapLegendData[0]" :label-position="{ top: false, right: true }" :isContinuos="false" />
@@ -101,7 +102,7 @@ import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFe
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
-import { getSelectedRegionIdsDisplay, filterRegionalLevelData } from '@/utils/admin-level-util';
+import { getSelectedRegionIdsDisplay, filterRegionalLevelData, adminLevelToString } from '@/utils/admin-level-util';
 import { ModelRun } from '@/types/ModelRun';
 import {
   AggregationOption,
@@ -126,7 +127,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import { adminLevelToString, computeMapBoundsForCountries, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
+import { computeMapBoundsForCountries, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';

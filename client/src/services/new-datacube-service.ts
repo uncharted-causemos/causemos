@@ -5,6 +5,21 @@ import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
 
 /**
+ * The parameters required to fetch a timeseries for a datacube and generate the sparkline data.
+ */
+export interface SparklineParams {
+  id: string;
+  dataId: string;
+  runId: string;
+  feature: string;
+  resolution: string;
+  temporalAgg: string;
+  spatialAgg: string;
+  rawResolution: string;
+  finalRawTimestamp: number;
+}
+
+/**
  * Get datacubes
  * @param {Filters} filters
  * @param {object} options - ES options
@@ -99,6 +114,16 @@ export const updateDatacube = async (datacubeId: string, metadata: Model) => {
  */
 export const updateIndicatorsBulk = async (metaDeltas: { id: string; [key: string]: any }[]) => {
   const result = await API.post('maas/datacubes/bulk-update', { deltas: metaDeltas });
+  return result.data;
+};
+
+/**
+ * Generate the data required to show a sparkline. Accepts multiple datacubes.
+ * @param sparklineParamsList an array of objects with the parameters required to fetch a timeseries
+ * @returns success or error on failure
+ */
+export const generateSparklines = async (sparklineParamsList: SparklineParams[]) => {
+  const result = await API.post('maas/datacubes/add-sparklines', { datacubes: sparklineParamsList });
   return result.data;
 };
 

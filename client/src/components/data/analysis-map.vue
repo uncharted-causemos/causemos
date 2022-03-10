@@ -69,6 +69,7 @@ import {
 } from 'vue';
 import { WmMap, WmMapVector, WmMapImage, WmMapPopup, WmMapGeojson } from '@/wm-map';
 import useMapRegionSelection from '@/services/composables/useMapRegionSelection';
+import useMapSyncBounds from '@/services/composables/useMapSyncBounds';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
@@ -81,10 +82,10 @@ import {
   convertRawDataToGeoJson,
   pickQualifiers
 } from '@/utils/outputdata-util';
-import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
+import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
 import { capitalize, exponentFormatter } from '@/utils/string-util';
-import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { mapActions, mapGetters } from 'vuex';
 
 const createRangeFilter = ({ min, max }, prop) => {
@@ -234,17 +235,24 @@ export default defineComponent({
       })
     }
   },
-  setup(props) {
+  setup(props, { emit }) {
     const {
       selectedLayerId,
       selectedRegions
     } = toRefs(props);
 
-    const { isRegionSelectionEmpty, isRegionSelected } = useMapRegionSelection(selectedLayerId, selectedRegions);
+    const {
+      isRegionSelectionEmpty,
+      isRegionSelected
+    } = useMapRegionSelection(selectedLayerId, selectedRegions);
+    const {
+      syncBounds
+    } = useMapSyncBounds(emit);
 
     return {
       isRegionSelectionEmpty,
-      isRegionSelected
+      isRegionSelected,
+      syncBounds
     };
   },
   data: () => ({
@@ -513,11 +521,16 @@ export default defineComponent({
     setFeatureStates() {
       if (!this.map || !this.isAdminMap) return;
 
-      // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
-      this.map.removeFeatureState({
-        source: this.vectorSourceId,
-        sourceLayer: this.sourceLayer
-      });
+      try {
+        // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
+        this.map.removeFeatureState({
+          source: this.vectorSourceId,
+          sourceLayer: this.sourceLayer
+        });
+      } catch {
+        // remove featurestate throws error when source isn't loaded yet. Then exit.
+        return;
+      }
       // Note: RemoveFeatureState doesn't seem very reliable.
       // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and make it undefined
       // But once new state, lets's say {b: 4} is set by setFetureState afterwards, it just extends previous state instead of setting it to new state resulting something like
@@ -587,26 +600,6 @@ export default defineComponent({
       this.isGridMap && this.debouncedRefresh();
       this.syncBounds(event);
       this.triggerMapUpdateEvent();
-    },
-    syncBounds(event) {
-      // Skip if move event is not originated from dom event (eg. not triggered by user interaction with dom)
-      // We ignore move events from other maps which are being synced with the master map to avoid situation
-      // where they also trigger prop updates and fire events again to create infinite loop
-      const originalEvent = event.mapboxEvent.originalEvent;
-      if (!originalEvent) return;
-
-      const map = event.map;
-      const component = event.component;
-
-      // Disable camera movement until next tick so that the master map doesn't get updated by the props change
-      // Master map is being interacted by user so camera movement is already applied
-      component.disableCamera();
-
-      this.$emit('sync-bounds', map.getBounds().toArray());
-
-      this.$nextTick(() => {
-        component.enableCamera();
-      });
     },
     updateLayerFilter() {
       if (!this.vectorColorLayer) return;
