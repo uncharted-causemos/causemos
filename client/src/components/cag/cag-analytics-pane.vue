@@ -57,8 +57,11 @@
 
       <!-- paht results -->
       <div>
-        <div v-if="pathExperimentId && pathExperimentResult.length === 0">
+        <div v-if="pathExperimentId && pathExperimentResult.length === 0 && noPathsFound === false">
           <i class="fa fa-spinner fa-spin" /> Running experiment
+        </div>
+        <div v-if="pathExperimentId && noPathsFound === true">
+          No results found
         </div>
         <div v-if="pathExperimentId && pathExperimentResult.length > 0">
           <div v-for="(path, idx) of pathExperimentResult" :key="idx">
@@ -141,6 +144,7 @@ export default defineComponent({
 
     const pathExperimentId = ref('');
     const pathExperimentResult = ref([]) as Ref<GraphPath[]>;
+    const noPathsFound = ref(false);
 
     // FIXME: SHould have adapatble lists depending on selection e.g. reachable nodes
     const availableNodes = computed(() => {
@@ -165,6 +169,7 @@ export default defineComponent({
       availableNodes,
       pathExperimentId,
       pathExperimentResult,
+      noPathsFound,
 
       toaster: useToaster(),
 
@@ -207,6 +212,7 @@ export default defineComponent({
     async runPathwayAnalysis() {
       if (_.isEmpty(this.currentPathSource) || _.isEmpty(this.currentPathTarget)) return;
 
+
       let constraints: ConceptProjectionConstraints[] = [];
       // If we're in "historical data only" mode, run pathway analysis with no
       //  constraints.
@@ -218,6 +224,7 @@ export default defineComponent({
       }
 
       this.pathExperimentResult = [];
+      this.noPathsFound = false;
       this.pathExperimentId = await modelService.runPathwaySensitivityAnalysis(
         this.modelSummary,
         [this.currentPathSource],
@@ -232,6 +239,9 @@ export default defineComponent({
       if (r.status === 'completed' && r.results) {
         const pathResult = r.results.pathways;
         this.pathExperimentResult = pathResult;
+        if (_.isEmpty(pathResult)) {
+          this.noPathsFound = true;
+        }
       } else {
         window.setTimeout(() => {
           this.pollPathExperimentResult();
@@ -242,7 +252,8 @@ export default defineComponent({
       this.$emit('show-path', pathItem);
     },
     changeAnalysis(v: string) {
-      const modelStale = this.modelSummary.status !== modelService.MODEL_STATUS.READY;
+      // const modelStale = this.modelSummary.status !== modelService.MODEL_STATUS.READY;
+      const modelStale = this.modelSummary.engine_status[this.modelSummary.parameter.engine] !== modelService.MODEL_STATUS.READY;
       const scenariosStale = _.some(this.scenarios, s => s.is_valid === false);
       if (scenariosStale || modelStale) {
         this.toaster('CAG or scenarios are stale, please click "Run" to synchronize first and then retry the path analysis.', 'error', true);
