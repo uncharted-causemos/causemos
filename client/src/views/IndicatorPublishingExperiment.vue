@@ -73,6 +73,9 @@ export default defineComponent({
     const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
     const projectType = computed(() => store.getters['app/projectType']);
 
+    const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
+    const disableOverlay = () => store.dispatch('app/disableOverlay');
+
     const initialViewConfig = ref<ViewState | null>({
       temporalAggregation: AggregationOption.Mean,
       spatialAggregation: AggregationOption.Mean,
@@ -143,8 +146,11 @@ export default defineComponent({
             default_view: indicator.default_view
           }));
         try {
+          await enableOverlay('Generating preview');
           await generateSparkline(metadata.value, mainModelOutput.value, viewState.value);
+          await enableOverlay('Saving changes');
           await updateIndicatorsBulk(deltas);
+          await disableOverlay();
           toast('Indicator updated', 'success');
           // redirect to dataset family page
           router.push({
@@ -156,6 +162,7 @@ export default defineComponent({
             }
           });
         } catch {
+          await disableOverlay();
           toast('The was an issue with applying the settings', 'error');
         }
       }

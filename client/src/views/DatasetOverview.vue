@@ -3,7 +3,7 @@
     <modal-confirmation
       v-if="showApplyToAllModal"
       :autofocus-confirm="false"
-      @confirm="applyVizToAll"
+      @confirm="applyVizToAll($route.query.template_id)"
       @close="closeApplyVizModal"
     >
       <template #title>Apply Settings To All</template>
@@ -399,7 +399,7 @@ export default defineComponent({
       //   indicator.status = DatacubeStatus.Ready;
       // }
     },
-    async applyVizToAll(indicatorId: string) {
+    async applyVizToAll(indicatorId: any) {
       const toaster = useToaster();
       this.showApplyToAllModal = false;
       await router.push({
@@ -409,6 +409,7 @@ export default defineComponent({
       });
       const source = this.indicators.find(indicator => indicator.id === indicatorId);
       if (source) {
+        this.enableOverlay('Applying settings');
         const targets = this.indicators.filter(indicator => indicator.id !== indicatorId);
         const deltas = targets.map(indicator => ({
           id: indicator.id,
@@ -416,12 +417,16 @@ export default defineComponent({
         }));
         const sparklineList = targets.map(indicator => this.getSparklineParams(indicator, source.default_view));
         try {
+          this.enableOverlay(`Generating ${sparklineList.length} previews`);
           await generateSparklines(sparklineList);
+
+          this.enableOverlay(`Updating ${deltas.length} indicators`);
           await updateIndicatorsBulk(deltas);
           toaster(`Updated ${deltas.length} indicators`, 'success');
         } catch {
           toaster('The was an issue with applying the settings', 'error');
         }
+        this.disableOverlay();
         await this.fetchIndicators();
       } else {
         toaster('Invalid template indicator', 'error');
