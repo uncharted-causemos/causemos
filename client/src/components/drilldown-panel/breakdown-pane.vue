@@ -21,6 +21,7 @@
       :aggregation-level-count="availableAdminLevelTitles.length"
       :aggregation-level="selectedAdminLevel"
       :aggregation-level-title="availableAdminLevelTitles[selectedAdminLevel]"
+      :message="invalidRegionTimeseriesMessage"
       :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
       :raw-data="filteredRegionalData"
       :units="unit"
@@ -30,12 +31,8 @@
       :show-references="selectedBreakdownOption === SpatialAggregationLevel.Region && selectedAdminLevel > 0"
       :allow-collapsing="false"
       :reference-options="referenceOptions"
+      :checkbox-type="getRegionalBreakdownCheckboxType()"
       @toggle-reference-options="toggleReferenceOptions"
-      :checkbox-type="
-        selectedBreakdownOption === SpatialAggregationLevel.Region
-          ? 'checkbox'
-          : 'radio'
-      "
       @toggle-is-item-selected="toggleIsRegionSelected"
       @aggregation-level-change="setSelectedAdminLevel"
     >
@@ -166,7 +163,7 @@ import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
-import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { AdminRegionSets, BreakdownData, NamedBreakdownData, QualifierFetchInfo } from '@/types/Datacubes';
 import { ModelRunReference } from '@/types/ModelRunReference';
 import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES, filterRegionalLevelData } from '@/utils/admin-level-util';
 import {
@@ -262,6 +259,10 @@ export default defineComponent({
     referenceOptions: {
       type: Array as PropType<ModelRunReference[]>,
       default: []
+    },
+    qualifierFetchInfo: {
+      type: Map as PropType<Map<String, QualifierFetchInfo>>,
+      default: () => new Map()
     }
   },
   emits: [
@@ -424,6 +425,43 @@ export default defineComponent({
       filteredRegionalData
     };
   },
+  computed: {
+    invalidRegionTimeseriesMessage() {
+      if (this.getRegionalBreakdownCheckboxType() !== null) {
+        return null;
+      }
+      // Assert that the breakdown option isn't null, since if it was the
+      //  previous conditional would have been triggered.
+      const breakdownOption = this.selectedBreakdownOption as string;
+      const fetchInfo = this.qualifierFetchInfo.get(breakdownOption);
+      if (fetchInfo === undefined) {
+        console.error(
+          'Unable to find qualifier fetch info for breakdown option: ' +
+          this.selectedBreakdownOption
+        );
+        return null;
+      }
+      const {
+        maxAdminLevelWithRegionalTimeseries: maxLevel,
+        thresholds
+      } = fetchInfo;
+      // We're hiding regional radio buttons because either:
+      // 1. The qualifier has too many values to calculate regional timeseries at any level
+      if (maxLevel === -1) {
+        const displayName = this.qualifierBreakdownData.find(
+          qualifier => qualifier.id === breakdownOption
+        )?.name ?? breakdownOption;
+        return `Unable to select individual regions because ${displayName} has
+          more than ${thresholds.regional_timeseries_count} possible values.`;
+      }
+      // 2. We're looking at an admin level beyond what we have regional timeseries for
+      if (this.selectedAdminLevel > maxLevel) {
+        return `Unable to select individual regions below admin level ${maxLevel}.`;
+      }
+      console.error('Regional breakdown checkbox type is unexpectedly null.');
+      return null;
+    }
+  },
   methods: {
     async scrollToBreakdown(newValue: string | null) {
       if (newValue) {
@@ -451,6 +489,30 @@ export default defineComponent({
       }
       this.emitBreakdownOptionSelection(breakdownOption);
       this.scrollToBreakdown(breakdownOption);
+    },
+    getRegionalBreakdownCheckboxType() {
+      switch (this.selectedBreakdownOption) {
+        case SpatialAggregationLevel.Region: {
+          return 'checkbox';
+        }
+        case TemporalAggregationLevel.Year: {
+          return 'radio';
+        }
+        case null: {
+          return 'radio';
+        }
+        default: {
+          // Qualifier is selected. If the selected admin level is greater than
+          //  the max regional timeseries level for this qualifier, hide radio
+          //  buttons.
+          const maxLevel = this.qualifierFetchInfo.get(this.selectedBreakdownOption)
+            ?.maxAdminLevelWithRegionalTimeseries;
+          if (maxLevel !== undefined && this.selectedAdminLevel > maxLevel) {
+            return null;
+          }
+          return 'radio';
+        }
+      }
     }
   }
 });

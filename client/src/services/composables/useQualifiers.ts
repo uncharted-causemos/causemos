@@ -1,36 +1,37 @@
 import { Indicator, Model } from '@/types/Datacube';
-import { NamedBreakdownData, QualifierInfo } from '@/types/Datacubes';
+import { NamedBreakdownData, QualifierFetchInfo } from '@/types/Datacubes';
 import { QualifierBreakdownResponse } from '@/types/Outputdata';
 import {
   AggregationOption,
   TemporalResolutionOption
 } from '@/types/Enums';
 import _ from 'lodash';
-import { computed, Ref, ref, watch, watchEffect } from 'vue';
+import { Ref, ref, watch, watchEffect } from 'vue';
 import { getQualifierBreakdown, getRawQualifierBreakdown } from '../outputdata-service';
-
-interface QualifierVariableInfo {
-  count: number;
-  displayName: string;
-  fetchByDefault: boolean;
-}
+import useQualifierFetchInfo from './useQualifierFetchInfo';
 
 const convertResponsesToBreakdownData = (
   existingData: NamedBreakdownData[],
   responses: QualifierBreakdownResponse[][],
   breakdownOption: string | null,
   modelRunIds: string[],
-  qualifierInfoMap: Map<string, QualifierVariableInfo>,
-  appendQualifier: boolean
+  qualifierInfoMap: Map<string, QualifierFetchInfo>,
+  appendQualifier: boolean,
+  metadata: null | Model | Indicator
 ) => {
   const breakdownDataList: NamedBreakdownData[] = appendQualifier ? existingData : [];
+  const qualifierOutputMetadata = metadata?.qualifier_outputs ?? [];
+
   responses.forEach((breakdownVariables, index) => {
     const runId = modelRunIds[index];
     breakdownVariables.forEach(breakdownVariable => {
       const { name: breakdownVariableId, options } = breakdownVariable;
       if (options !== undefined && breakdownVariableId !== undefined) {
+        const metadataForVariable = qualifierOutputMetadata.find(
+          metadata => metadata.name === breakdownVariableId
+        );
         const breakdownVariableDisplayName =
-          qualifierInfoMap.get(breakdownVariableId)?.displayName ?? breakdownVariableId;
+          metadataForVariable?.display_name ?? breakdownVariableId;
         let potentiallyExistingEntry = breakdownDataList.find(
           breakdownData => breakdownData.id === breakdownVariableId
         );
@@ -83,9 +84,11 @@ const convertResponsesToBreakdownData = (
       breakdownData => breakdownData.id === qualifierId
     );
     if (potentiallyExistingEntry === undefined) {
+      const displayName = qualifierOutputMetadata
+        .find(metadata => metadata.name === qualifierId)?.name ?? '';
       potentiallyExistingEntry = {
         id: qualifierId,
-        name: qualifierInfo.displayName,
+        name: displayName,
         totalDataLength: qualifierInfo.count,
         data: {}
       };
@@ -103,7 +106,6 @@ export default function useQualifiers(
   temporalAggregation: Ref<AggregationOption>,
   spatialAggregation: Ref<AggregationOption>,
   selectedTimestamp: Ref<number | null>,
-  availableQualifiers: Ref<Map<string, QualifierInfo>>,
   initialSelectedQualifierValues: Ref<string[]>,
   initialNonDefaultQualifiers: Ref<string[]>,
   activeFeature: Ref<string>,
@@ -113,32 +115,17 @@ export default function useQualifiers(
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
 
   const requestedQualifier = ref<string|null>(null);
+  const qualifierFetchInfo = useQualifierFetchInfo(metadata, selectedScenarioIds, activeFeature);
   const additionalQualifiersRequested = ref<Set<string>>(new Set());
-  watch([availableQualifiers], () => {
+  watch([qualifierFetchInfo], () => {
     additionalQualifiersRequested.value = new Set();
     requestedQualifier.value = null;
   });
 
-  const qualifierVariables = computed(() => {
-    const qualifiers = new Map<string, QualifierVariableInfo>();
-
-    const metadataQualifiers = metadata.value?.qualifier_outputs ?? [];
-    for (const [name, info] of availableQualifiers.value) {
-      const qualifierMeta = metadataQualifiers.find(meta => meta.name === name);
-      if (qualifierMeta) {
-        qualifiers.set(name, {
-          count: info.count,
-          displayName: qualifierMeta.display_name,
-          fetchByDefault: info.fetchByDefault
-        });
-      }
-    }
-    return qualifiers;
-  });
-
   const requestAdditionalQualifier = (qualifier: string) => {
-    if (!additionalQualifiersRequested.value.has(qualifier) &&
-      qualifierVariables.value.has(qualifier) && !qualifierVariables.value.get(qualifier)?.fetchByDefault
+    if (
+      !additionalQualifiersRequested.value.has(qualifier) &&
+      !qualifierFetchInfo.value.get(qualifier)?.shouldFetchByDefault
     ) {
       additionalQualifiersRequested.value.add(qualifier);
       requestedQualifier.value = qualifier;
@@ -193,8 +180,8 @@ export default function useQualifiers(
     });
     const { data_id } = metadata.value;
     const defaultQualifierIds: string[] = [];
-    for (const [name, info] of qualifierVariables.value) {
-      if (info.fetchByDefault) {
+    for (const [name, info] of qualifierFetchInfo.value) {
+      if (info.shouldFetchByDefault) {
         defaultQualifierIds.push(name);
       }
     }
@@ -246,8 +233,9 @@ export default function useQualifiers(
       responses,
       _breakdownOption,
       selectedScenarioIds.value,
-      qualifierVariables.value,
-      appendQualifier
+      qualifierFetchInfo.value,
+      appendQualifier,
+      metadata.value
     );
   });
 
@@ -256,6 +244,7 @@ export default function useQualifiers(
     selectedQualifierValues,
     toggleIsQualifierSelected,
     requestAdditionalQualifier,
-    nonDefaultQualifiers: additionalQualifiersRequested
+    nonDefaultQualifiers: additionalQualifiersRequested,
+    qualifierFetchInfo
   };
 }
