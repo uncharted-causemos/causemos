@@ -52,7 +52,7 @@ import ModelDescription from '@/components/data/model-description.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { updateDatacube, generateSparklines, getDefaultModelRunMetadata } from '@/services/new-datacube-service';
-import { DatacubeFeature, Model, ModelParameter, ModelPublishingStep } from '@/types/Datacube';
+import { Datacube, DatacubeFeature, Model, ModelParameter, ModelPublishingStep } from '@/types/Datacube';
 import {
   AggregationOption,
   TemporalResolutionOption,
@@ -196,30 +196,32 @@ export default defineComponent({
       });
     };
 
+    const addSparkline = async(meta: Datacube) => {
+      const feature = meta.default_feature;
+      const output = meta.outputs.find(output => output.name === feature);
+      const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+      const finalRawTimestamp = meta.period?.lte ?? 0;
+      const defaultRun = await getDefaultModelRunMetadata(meta.id);
+      const sparklineResult = await generateSparklines([{
+        id: meta.id,
+        dataId: meta.data_id,
+        runId: defaultRun?.id ?? selectedScenarioIds.value[0],
+        feature: feature,
+        resolution: selectedTemporalResolution.value,
+        temporalAgg: selectedTemporalAggregation.value,
+        spatialAgg: selectedSpatialAggregation.value,
+        rawResolution: rawResolution,
+        finalRawTimestamp: finalRawTimestamp
+      }]);
+      console.log('Sparkline requested: ' + sparklineResult);
+    };
+
     const publishModel = async () => {
       // call the backend to update model metadata and finalize model publication
       if (metadata.value && isModel(metadata.value)) {
         try {
           await enableOverlay('Generating preview');
-          // Add a sparkline
-          const feature = metadata.value.default_feature;
-          const output = metadata.value?.outputs.find(output => output.name === feature);
-          const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
-          const finalRawTimestamp = metadata.value?.period?.lte ?? 0;
-          const defaultRun = await getDefaultModelRunMetadata(metadata.value.id);
-          const sparklineResult = await generateSparklines([{
-            id: metadata.value.id,
-            dataId: metadata.value.data_id,
-            runId: defaultRun?.id ?? selectedScenarioIds.value[0],
-            feature: feature,
-            resolution: selectedTemporalResolution.value,
-            temporalAgg: selectedTemporalAggregation.value,
-            spatialAgg: selectedSpatialAggregation.value,
-            rawResolution: rawResolution,
-            finalRawTimestamp: finalRawTimestamp
-          }]);
-          console.log('Sparkline requested: ' + sparklineResult);
-
+          await addSparkline(metadata.value);
           await enableOverlay('Publishing model');
           // mark this datacube as published
           metadata.value.status = DatacubeStatus.Ready;
