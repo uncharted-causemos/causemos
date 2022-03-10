@@ -46,6 +46,7 @@
     </tab-panel>
     <div v-if="isTraining === true">
       <h4 style="margin-left: 15px">
+        <i class="fa fa-fw fa-spinner fa-spin"></i>
         Model is currently training on the {{currentEngine}} engine - {{ trainingPercentage }}%. You can switch to
         <button class="btn btn-primary btn-sm" @click="switchEngine('dyse')">DySE</button> to continue running experiments.
       </h4>
@@ -275,8 +276,9 @@ export default defineComponent({
       // Used to kick off scenario refreshes from a training state
       const trainingInPreviousCycle = this.isTraining === true;
 
-      this.isTraining = false;
-      this.enableOverlay('Loading');
+      if (this.isTraining === false) {
+        this.enableOverlay('Loading');
+      }
       this.modelSummary = await modelService.getSummary(this.currentCAG);
 
       let scenarios: Scenario[] = await modelService.getScenarios(this.currentCAG, this.currentEngine);
@@ -317,15 +319,10 @@ export default defineComponent({
 
       // 2. Check if model is still training status
       if (engineStatus === MODEL_STATUS.TRAINING) {
-        // Delphi status is a lot slower, throw up a guard
-        if (this.currentEngine === 'delphi' || this.currentEngine === 'delphi_dev') {
-          this.enableOverlay('Checking model training status');
-        }
         const r = await modelService.checkAndUpdateRegisteredStatus(
           this.modelSummary.id,
           this.currentEngine
         );
-        this.disableOverlay();
 
         // FIXME: use status code
         if (r.status === 'training') {
@@ -354,6 +351,7 @@ export default defineComponent({
 
       // 3. Check if we have scenarios, if not generate one
       await this.refreshModel();
+      this.isTraining = false;
 
       if (scenarios.length === 0) {
         const poller = new Poller(PROJECTION_EXPERIMENT_INTERVAL, PROJECTION_EXPERIMENT_THRESHOLD);
