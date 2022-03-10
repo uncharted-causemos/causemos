@@ -13,12 +13,14 @@ const _buildQueryStringFilter = (text) => {
   cleanedStr = cleanedStr.replaceAll('_', ' ');
   cleanedStr = cleanedStr
     .replace(/[^\w\s]/gi, '')
-    .replace(/\s\s+/gi, ' ');
+    .replace(/\s\s+/gi, ' ')
+    .trim();
 
   const labels = cleanedStr.split(' ');
+
   let query = '';
   if (labels.length === 1) {
-    query = text;
+    query = labels[0];
   } else {
     query = '(' + labels[0] + ') AND (' + labels[1] + ')';
   }
