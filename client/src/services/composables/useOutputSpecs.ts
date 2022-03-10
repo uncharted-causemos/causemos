@@ -26,7 +26,7 @@ export default function useOutputSpecs(
 
     const activeModelId = modelMetadata.data_id ?? '';
 
-    const specs = selectedTimeseriesPoints.value.map((timeseriesInfo, indx) => {
+    return selectedTimeseriesPoints.value.map((timeseriesInfo, indx) => {
       const { timeseriesId, scenarioId, timestamp } = timeseriesInfo;
       const featureInfo = (breakdownOption?.value === SPLIT_BY_VARIABLE ? activeFeatures.value[indx] : activeFeatures.value.find(f => f.name === activeFeature?.value)) ?? activeFeatures.value[indx];
       const transform = featureInfo.transform !== DataTransform.None
@@ -84,8 +84,6 @@ export default function useOutputSpecs(
 
       return outputSpec;
     }).filter(os => os.timestamp && !isNaN(os.timestamp));
-
-    return specs;
   });
   return { outputSpecs };
 }
