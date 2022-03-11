@@ -20,15 +20,26 @@ if [ -n "${BRANCH}" ]; then
   branch=${BRANCH}
 fi
 
+RED='\033[0;31m'
+B_YELLOW='\033[1;33m'
+B_GREEN='\033[1;32m'
+OFF='\033[0m' # No Color
+
+
 
 echo "##########################################################"
-echo "Sourcing from client branch: ${branch}"
+echo -e "Deploying to ${B_GREEN}${HOST}${OFF}"
+echo -e "Sourcing from client branch: ${B_GREEN}${branch}${OFF}"
 if [[ "${PORT}" == "3000" || -z $PORT ]]; then
-  echo "Deploying to port 3000 (This is the default demo instance)"
+  echo -e "Deploying to port (This is the default demo instance) ${B_GREEN}3000${OFF}"
 else
-  echo "Deploying to port ${PORT}"
+  echo -e "Deploying to port ${B_GREEN}${PORT}${OFF}"
 fi
+echo ""
+echo -e "${B_YELLOW}Note: The script does not refresh environment files.${OFF}"
+echo -e "${B_YELLOW}If needed you need to apply changes manually on the remote server ${HOST}${OFF}"
 echo "##########################################################"
+echo ""
 read -r -p "Are you sure you want to continue? [y/N] " response
 if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
 then
@@ -83,7 +94,7 @@ else
 fi
 
 
-#### Pack: FIXME: Clean up
+#### Package everything together
 echo "Packaging..."
 cd ${CURRENT_DIR}
 rm -rf _temp
@@ -105,7 +116,6 @@ echo "Removing remote causemos${PORT}"
 ssh ${HOST} "rm -rf causemos${PORT}"
 
 
-
 ### Copy to remote
 echo ""
 echo "Copying server files to remote ${HOST}"
@@ -116,9 +126,6 @@ else
     echo "Copy to remote failed"
     exit 1
 fi
-
-# echo "Copy credentials"
-# ssh ${HOST} "cp .env causemos${PORT}/"
 
 echo ""
 echo "Get server dependencies"
