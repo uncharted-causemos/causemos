@@ -15,6 +15,7 @@
         v-if="updatedInsight !== null && !isEditingInsight"
         type="button"
         class="btn btn-primary btn-call-for-action"
+        :disabled="isEmptyQuestion"
         @click="editInsight"
         >
         <i class="fa fa-pencil" />
@@ -43,6 +44,7 @@
       <button
         v-if="updatedInsight !== null"
         class="btn btn-default btn-delete"
+        :disabled="isEmptyQuestion"
         @click="removeInsight"
       >
         <i class="fa fa-trash" />
@@ -55,6 +57,7 @@
             type="button"
             class="btn btn-default"
             v-tooltip="'Toggle metadata'"
+            :disabled="isEmptyQuestion"
             @click="showMetadataPanel=!showMetadataPanel"
             >
             <i class="fa fa-info" />
@@ -64,6 +67,7 @@
             type="button"
             class="btn btn-default"
             v-tooltip="'Jump to live context'"
+            :disabled="isEmptyQuestion"
             @click="selectInsight"
             >
             <i class="fa fa-level-up" />
@@ -265,6 +269,11 @@ export default defineComponent({
 
     const isInsight = computed(() => InsightUtil.instanceOfFullInsight(updatedInsight.value));
 
+    const isEmptyQuestion = computed(() => !isInsight.value &&
+      updatedInsight.value.linked_insights &&
+      updatedInsight.value.linked_insights.length === 0
+    );
+
     const selectedInsightQuestion = ref('');
     const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
     const loadingImage = ref(false);
@@ -343,7 +352,8 @@ export default defineComponent({
       insightQuestionLabel,
       loadingImage,
       isInsight,
-      isReviewMode
+      isReviewMode,
+      isEmptyQuestion
     };
   },
   data: () => ({
