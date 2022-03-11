@@ -66,15 +66,7 @@
         </div>
       </div>
       <div class="card-column">
-        <div class="column-title">Domains
-          <button
-            type="button"
-            class="btn btn-sm btn-default btn-primary"
-            style="padding: 0px 4px"
-            :disabled="!canSaveDomains"
-            @click="saveDomains"
-          >SAVE</button>
-        </div>
+        <div class="column-title">Domains</div>
         <div style="display: flex; align-items: center">
           <select name="domains" id="domains" @change="selectedDomain=AVAILABLE_DOMAINS[$event.target.selectedIndex]">
             <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
@@ -143,7 +135,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, toRefs, watch } from 'vue';
+import { defineComponent, ref, PropType, toRefs } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
@@ -168,7 +160,7 @@ export default defineComponent({
     Sparkline,
     MessageDisplay
   },
-  emits: ['unpublish', 'refetch'],
+  emits: ['unpublish', 'update-domains'],
   props: {
     datacube: {
       type: Object as PropType<Model | Indicator>,
@@ -208,8 +200,8 @@ export default defineComponent({
         series: this.datacube.sparkline
       }] : [];
     },
-    canSaveDomains() {
-      return _.xor(this.datacube?.domains ?? [], this.datacubeDomains ?? []).length > 0;
+    datacubeDomains() {
+      return this.datacube?.domains ?? [];
     }
   },
   setup(props) {
@@ -218,12 +210,6 @@ export default defineComponent({
     const showUnpublishModal = ref(false);
     const showEditInDojoModal = ref(false);
     const selectedDomain = ref(AVAILABLE_DOMAINS[0]);
-    const datacubeDomains = ref([] as string[]);
-    watch([datacube.value], () => {
-      if (datacubeDomains.value.length === 0 && datacube.value?.domains?.length > 0) {
-        datacubeDomains.value = _.cloneDeep(datacube.value?.domains) ?? [];
-      }
-    });
 
     const { statusColor, statusLabel } = useDatacubeVersioning(datacube);
 
@@ -234,7 +220,6 @@ export default defineComponent({
       DatacubeStatus,
       statusColor,
       statusLabel,
-      datacubeDomains,
       selectedDomain,
       AVAILABLE_DOMAINS
     };
@@ -246,24 +231,24 @@ export default defineComponent({
     }),
     dateFormatter,
     addDomain() {
-      if (!this.datacubeDomains) {
-        this.datacubeDomains = [];
-      }
-      if (!this.datacubeDomains.includes(this.selectedDomain)) {
-        this.datacubeDomains.push(this.selectedDomain);
+      const newDomains = this.datacubeDomains ? _.cloneDeep(this.datacubeDomains) : [];
+      if (!newDomains.includes(this.selectedDomain)) {
+        newDomains.push(this.selectedDomain);
+        this.saveDomains(newDomains);
       }
     },
     removeDomain(domain: string) {
-      this.datacubeDomains = this.datacubeDomains.filter(d => d !== domain);
+      const newDomains = this.datacubeDomains.filter(d => d !== domain);
+      this.saveDomains(newDomains);
     },
-    async saveDomains() {
+    async saveDomains(newDomains: string[]) {
       const delta = {
         id: this.datacube?.id,
-        domains: this.datacubeDomains ?? []
+        domains: newDomains
       };
       try {
         await updateDatacube(delta.id, delta as Model);
-        this.$emit('refetch');
+        this.$emit('update-domains', delta.id, delta.domains);
       } catch {
         useToaster()('Saving Domains failed', 'error');
       }

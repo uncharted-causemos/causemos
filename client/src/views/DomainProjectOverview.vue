@@ -111,7 +111,7 @@
             :key="instance.id"
             :datacube="instance"
             @unpublish="unpublishInstance(instance)"
-            @refetch="fetchDatacubeInstances"
+            @update-domains="updateDatacubeDomains"
           />
           <message-display
             v-if="filteredDatacubeInstances.length === 0"
@@ -279,6 +279,12 @@ export default {
     },
     unpublishInstance(instance) {
       unpublishDatacubeInstance(instance, this.project);
+    },
+    updateDatacubeDomains(id, domains) {
+      const datacube = this.datacubeInstances.find(d => d.id === id);
+      if (datacube) {
+        datacube.domains = domains;
+      }
     },
     toggleSortingDropdownDatacubeInstances() {
       this.showSortingDropdownDatacubeInstances = !this.showSortingDropdownDatacubeInstances;
