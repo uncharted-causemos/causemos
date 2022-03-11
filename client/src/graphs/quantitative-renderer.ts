@@ -23,6 +23,13 @@ type ScenarioData = {
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
+
+const SHOCK_PATH = 'M9.9375 5.25H7.21875L8.22656 2.22656C8.32031 1.85156 8.03906 1.5 7.6875 1.5H4.3125C4.03125 1.5 3.77344 1.71094 3.75 1.99219L3 7.61719C2.95312 7.96875 3.21094 8.25 3.5625 8.25H6.32812L5.25 12.8203C5.17969 13.1719 5.4375 13.5 5.78906 13.5C6 13.5 6.1875 13.4062 6.28125 13.2188L10.4062 6.09375C10.6406 5.74219 10.3594 5.25 9.9375 5.25Z';
+const EXCLAMATION_PATH = 'M14.3359 11.8359L8.71094 2.0625C8.28906 1.33594 7.1875 1.3125 6.76562 2.0625L1.14062 11.8359C0.71875 12.5625 1.25781 13.5 2.125 13.5H13.3516C14.2188 13.5 14.7578 12.5859 14.3359 11.8359ZM7.75 9.79688C8.33594 9.79688 8.82812 10.2891 8.82812 10.875C8.82812 11.4844 8.33594 11.9531 7.75 11.9531C7.14062 11.9531 6.67188 11.4844 6.67188 10.875C6.67188 10.2891 7.14062 9.79688 7.75 9.79688ZM6.71875 5.92969C6.69531 5.76562 6.83594 5.625 7 5.625H8.47656C8.64062 5.625 8.78125 5.76562 8.75781 5.92969L8.59375 9.11719C8.57031 9.28125 8.45312 9.375 8.3125 9.375H7.16406C7.02344 9.375 6.90625 9.28125 6.88281 9.11719L6.71875 5.92969Z';
+const ICON_OFFSET_SHOCK = 7;
+const ICON_OFFSET_WARN = 8;
+const WARN = '#f80';
+
 export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, EdgeParameter> {
   scenarioData: ScenarioData = {};
   engine = 'dyse';
@@ -60,12 +67,12 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
 
     this.on('node-drag-move', () => {
       svgUtil.hideSvgTooltip(this.chart);
-      this.renderShockRelations();
+      this.renderEdgeeAnnotations();
     });
 
     this.on('node-drag-end', () => {
       svgUtil.hideSvgTooltip(this.chart);
-      this.renderShockRelations();
+      this.renderEdgeeAnnotations();
     });
 
     this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
@@ -193,7 +200,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
         return `url(#start-${source}-${target})`;
       });
 
-    this.renderShockRelations();
+    this.renderEdgeeAnnotations();
   }
 
   renderEdgesUpdated(selection: D3SelectionIEdge<EdgeParameter>) {
@@ -281,16 +288,17 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     return svg;
   }
 
-  renderShockRelations() {
+  renderEdgeeAnnotations() {
     this.chart.selectAll('.shock-relation').remove();
-    const shockEdgesSelection = this.chart.selectAll('.edge') as D3SelectionIEdge<EdgeParameter>;
+    this.chart.selectAll('.warn-relation').remove();
 
-    shockEdgesSelection.filter(e => {
+    const allEdgeSelection = this.chart.selectAll('.edge') as D3SelectionIEdge<EdgeParameter>;
+
+    const shockEdgesSelection = allEdgeSelection.filter(e => {
       const param = e.data.parameter;
       if (!param) {
         return false;
       }
-      console.log(param.weights);
       if (param.weights && param.weights[0] > param.weights[1]) {
         return true;
       }
@@ -298,12 +306,11 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     });
 
     shockEdgesSelection.each((_d, i, groups) => {
-      // const SHOCK = '\uf0e7';
       if (groups[i]) {
         const s = d3.select(groups[i]);
         const pathNode = s.select('path').node() as SVGPathElement;
         const total = pathNode.getTotalLength();
-        const point = pathNode.getPointAtLength(total * 0.8);
+        const point = pathNode.getPointAtLength(total - (ICON_OFFSET_SHOCK * 3));
 
         const shockGroup = s.append('g')
           .classed('shock-relation', true);
@@ -313,17 +320,65 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
           .attr('cy', point.y)
           .attr('r', DEFAULT_STYLE.edge.controlRadius)
           .style('stroke', (d: any) => calcEdgeColor(d.data))
+          .style('stroke-opacity', 0.5)
           .style('fill', DEFAULT_STYLE.edgeBg.stroke);
 
-        const SHOCK_PATH = 'M9.9375 5.25H7.21875L8.22656 2.22656C8.32031 1.85156 8.03906 1.5 7.6875 1.5H4.3125C4.03125 1.5 3.77344 1.71094 3.75 1.99219L3 7.61719C2.95312 7.96875 3.21094 8.25 3.5625 8.25H6.32812L5.25 12.8203C5.17969 13.1719 5.4375 13.5 5.78906 13.5C6 13.5 6.1875 13.4062 6.28125 13.2188L10.4062 6.09375C10.6406 5.74219 10.3594 5.25 9.9375 5.25Z';
-        const offset = 7; // the icons are 15x15
-        // const EXCLAMATION_PATH = 'M9.125 11.625C9.125 10.5938 8.28125 9.75 7.25 9.75C6.19531 9.75 5.375 10.5938 5.375 11.625C5.375 12.6797 6.19531 13.5 7.25 13.5C8.28125 13.5 9.125 12.6797 9.125 11.625ZM5.58594 2.10938L5.89062 8.48438C5.91406 8.76562 6.17188 9 6.45312 9H8.02344C8.30469 9 8.5625 8.76562 8.58594 8.48438L8.89062 2.10938C8.91406 1.78125 8.65625 1.5 8.32812 1.5H6.14844C5.82031 1.5 5.5625 1.78125 5.58594 2.10938Z';
-
-        shockGroup
-          .append('path')
+        shockGroup.append('path')
           .attr('d', SHOCK_PATH)
-          .attr('transform', `translate(${point.x - offset}, ${point.y - offset})`)
+          .attr('transform', `translate(${point.x - ICON_OFFSET_SHOCK}, ${point.y - ICON_OFFSET_SHOCK})`)
           .style('fill', (d: any) => calcEdgeColor(d.data));
+      }
+    });
+
+    const warnRelations = allEdgeSelection.filter(e => {
+      const param = e.data.parameter;
+      if (!param) {
+        return false;
+      }
+      const inferred = decodeWeights(param.engine_weights[this.engine]);
+      const current = decodeWeights(param.weights);
+
+      // If inferred and current have different types
+      if (inferred.weightType !== current.weightType) {
+        return true;
+      }
+
+      if (Math.abs(inferred.weightValue - current.weightValue) > 0.5) {
+        return true;
+      }
+
+      // If inferred and current have different polarity, Delphi only
+      const polarity = e.data.polarity || 0;
+      if (this.engine === 'delphi' || this.engine === 'delphi_dev') {
+        const w = param.engine_weights[this.engine];
+        if (w[2] && w[2] * polarity < 0) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    warnRelations.each((_d, i, groups) => {
+      if (groups[i]) {
+        const s = d3.select(groups[i]);
+        const pathNode = s.select('path').node() as SVGPathElement;
+        const total = pathNode.getTotalLength();
+        const point = pathNode.getPointAtLength(total * 0.5);
+
+        const warnGroup = s.append('g')
+          .classed('warn-relation', true);
+
+        warnGroup.append('circle')
+          .attr('cx', point.x)
+          .attr('cy', point.y)
+          .attr('r', DEFAULT_STYLE.edge.controlRadius + 1)
+          .style('stroke', WARN)
+          .style('fill', DEFAULT_STYLE.edgeBg.stroke);
+
+        warnGroup.append('path')
+          .attr('d', EXCLAMATION_PATH)
+          .attr('transform', `translate(${point.x - ICON_OFFSET_WARN + 0.5}, ${point.y - ICON_OFFSET_WARN})`)
+          .style('fill', WARN);
       }
     });
   }
@@ -333,76 +388,81 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
    * warnings, where the user-specified values conflicts with
    * automatically inferred valeus
    */
-  renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
-    this.chart.selectAll('.edge-control').selectAll('*').remove();
+  // renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
+  //   this.chart.selectAll('.edge-control').selectAll('*').remove();
 
+  //   const edgeControl = selection
+  //     .filter(e => {
+  //       const param = e.data.parameter;
+  //       if (!param) {
+  //         return false;
+  //       }
+  //       const inferred = decodeWeights(param.engine_weights[this.engine]);
+  //       const current = decodeWeights(param.weights);
 
+  //       // If inferred and current have different types
+  //       if (inferred.weightType !== current.weightType) {
+  //         return true;
+  //       }
 
-    const edgeControl = selection
-      .filter(e => {
-        const param = e.data.parameter;
-        if (!param) {
-          return false;
-        }
-        const inferred = decodeWeights(param.engine_weights[this.engine]);
-        const current = decodeWeights(param.weights);
+  //       if (Math.abs(inferred.weightValue - current.weightValue) > 0.5) {
+  //         return true;
+  //       }
 
-        // If inferred and current have different types
-        if (inferred.weightType !== current.weightType) {
-          return true;
-        }
+  //       // If inferred and current have different polarity, Delphi only
+  //       const polarity = e.data.polarity || 0;
+  //       if (this.engine === 'delphi' || this.engine === 'delphi_dev') {
+  //         const w = param.engine_weights[this.engine];
+  //         if (w[2] && w[2] * polarity < 0) {
+  //           return true;
+  //         }
+  //       }
+  //       return false;
+  //     })
+  //     .select('.edge-control');
 
-        if (Math.abs(inferred.weightValue - current.weightValue) > 0.5) {
-          return true;
-        }
+  //   // const EXCLAMATION_TRIANGLE = '\uf071';
 
-        // If inferred and current have different polarity, Delphi only
-        const polarity = e.data.polarity || 0;
-        if (this.engine === 'delphi' || this.engine === 'delphi_dev') {
-          const w = param.engine_weights[this.engine];
-          if (w[2] && w[2] * polarity < 0) {
-            return true;
-          }
-        }
-        return false;
-      })
-      .select('.edge-control');
+  //   edgeControl
+  //     .append('circle')
+  //     .attr('r', DEFAULT_STYLE.edge.controlRadius + 2)
+  //     .style('fill', DEFAULT_STYLE.edgeBg.stroke)
+  //     .attr('stroke', WARN)
+  //     .style('cursor', 'pointer');
 
-    const EXCLAMATION_TRIANGLE = '\uf071';
-    const WARN = '#f80';
+  //   edgeControl
+  //     .append('path')
+  //     .attr('d', EXCLAMATION_PATH)
+  //     .attr('transform', `translate(${-ICON_OFFSET}, ${-ICON_OFFSET})`)
+  //     .style('fill', WARN);
 
-    edgeControl
-      .append('circle')
-      .attr('r', DEFAULT_STYLE.edge.controlRadius + 2)
-      .style('fill', DEFAULT_STYLE.edgeBg.stroke)
-      .attr('stroke', WARN)
-      .style('cursor', 'pointer');
+  //   /*
+  //   dgeControl
+  //     .append('circle')
+  //     .attr('r', DEFAULT_STYLE.edge.controlRadius)
+  //     .style('fill', 'none')
+  //     .style('cursor', 'pointer');
 
-    edgeControl
-      .append('circle')
-      .attr('r', DEFAULT_STYLE.edge.controlRadius)
-      .style('fill', 'none')
-      .style('cursor', 'pointer');
-
-    edgeControl
-      .append('text')
-      .attr('x', () => {
-        return -6;
-      })
-      .attr('y', () => {
-        return 3.5;
-      })
-      .style('font-family', 'FontAwesome')
-      .style('font-size', () => {
-        return '12px';
-      })
-      .style('stroke', 'none')
-      .style('fill', WARN)
-      .style('cursor', 'pointer')
-      .text(() => {
-        return EXCLAMATION_TRIANGLE;
-      });
-  }
+  //   edgeControl
+  //     .append('text')
+  //     .attr('x', () => {
+  //       return -6;
+  //     })
+  //     .attr('y', () => {
+  //       return 3.5;
+  //     })
+  //     .style('font-family', 'FontAwesome')
+  //     .style('font-size', () => {
+  //       return '12px';
+  //     })
+  //     .style('stroke', 'none')
+  //     .style('fill', WARN)
+  //     .style('cursor', 'pointer')
+  //     .text(() => {
+  //       return EXCLAMATION_TRIANGLE;
+  //     });
+  //   */
+  // }
 
   // FIXME: Typescript
   renderHistoricalAndProjections(selectedScenarioId: string) {

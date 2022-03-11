@@ -22,11 +22,22 @@ const makeGeneralLayout = (numLeafNodes: number) => {
       'elk.layered.spacing.edgeEdgeBetweenLayers': 8,
       'elk.layered.spacing.edgeNodeBetweenLayers': 10
     };
-  } else {
+  } else if (numLeafNodes > 15) {
     spacingOptions = {
       'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
       'elk.layered.layering.coffmanGraham.layerBound': layerBound,
       'elk.layered.spacing.nodeNodeBetweenLayers': 35, // space between vertical lanes
+      'elk.spacing.nodeNode': 15,
+      'elk.spacing.edgeEdge': 10,
+      'elk.spacing.edgeNode': 10,
+      'elk.layered.spacing.edgeEdgeBetweenLayers': 15,
+      'elk.layered.spacing.edgeNodeBetweenLayers': 10
+    };
+  } else {
+    spacingOptions = {
+      'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
+      'elk.layered.layering.coffmanGraham.layerBound': layerBound,
+      'elk.layered.spacing.nodeNodeBetweenLayers': 65, // space between vertical lanes
       'elk.spacing.nodeNode': 15,
       'elk.spacing.edgeEdge': 10,
       'elk.spacing.edgeNode': 10,
