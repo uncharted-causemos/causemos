@@ -1,7 +1,7 @@
 <template>
   <div class="list-analytical-questions-pane-container">
     <h4 v-if="showChecklistTitle" class="title">Analysis Checklist</h4>
-    <template v-if="showDeleteModal">
+    <template v-if="isDeleteModalOpen">
       <h5>Delete Public Question</h5>
       <p>Are you sure you want to delete?</p>
       <message-display
@@ -13,7 +13,7 @@
         <button
           type="button"
           class="btn"
-          @click.stop="showDeleteModal = false">
+          @click.stop="isDeleteModalOpen = false">
             Cancel
         </button>
         <button
@@ -50,7 +50,7 @@
         </button>
       </ul>
     </template>
-    <template v-if="showDeleteModal === false && showNewAnalyticalQuestion === false">
+    <template v-if="isDeleteModalOpen === false && showNewAnalyticalQuestion === false">
       <button
         v-tooltip.top-center="'Add a new analytical question'"
         type="button"
@@ -98,15 +98,10 @@
                 class="options-button"
               >
                 <template #content>
-                  <!--
-                  <div
-                    class="dropdown-option"
-                    @click="promote(questionItem)"
-                  >
+                  <div class="dropdown-option" @click="editSection(questionItem)">
                     <i class="fa fa-edit" />
-                    Make public
+                    Edit
                   </div>
-                  -->
                   <div
                     class="dropdown-option"
                     @click="initiateQuestionDeletion(questionItem)"
@@ -142,6 +137,13 @@
           </div>
       </div>
     </template>
+    <rename-modal
+      v-if="isEditModalOpen"
+      :modal-title="'Edit section'"
+      :current-name="selectedQuestion?.question ?? ''"
+      @confirm="onEditModalConfirm"
+      @cancel="isEditModalOpen = false"
+    />
   </div>
 </template>
 
@@ -161,6 +163,7 @@ import { QUESTIONS } from '@/utils/messages-util';
 import { SORT_PATH, sortQuestionsByPath } from '@/utils/questions-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 import useToaster from '@/services/composables/useToaster';
 
 type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
@@ -169,7 +172,8 @@ export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
   components: {
     MessageDisplay,
-    OptionsButton
+    OptionsButton,
+    RenameModal
   },
   props: {
     showChecklistTitle: {
@@ -211,7 +215,8 @@ export default defineComponent({
     selectedQuestion: null as AnalyticalQuestion | null,
     showNewAnalyticalQuestion: false,
     newQuestionText: '',
-    showDeleteModal: false,
+    isDeleteModalOpen: false,
+    isEditModalOpen: false,
     toursMetadata: [
       {
         baseQuestion: 'What are the appropriate aggregation functions?',
@@ -268,22 +273,33 @@ export default defineComponent({
       return this.projectType === ProjectType.Analysis ? 'private' : 'public';
       // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
     },
-    promote(question: AnalyticalQuestion) {
-      // update question to be public, i.e., visible in all projects
-      if (question) {
-        question.visibility = 'public';
-        question.project_id = '';
-        question.context_id = [''];
-        question.url = '';
-        updateQuestion(question.id as string, question).then(result => {
-          const message = result.status === 200 ? QUESTIONS.SUCCESFUL_UPDATE : QUESTIONS.ERRONEOUS_UPDATE;
-          if (message === QUESTIONS.SUCCESFUL_UPDATE) {
-            this.toaster(message, 'success', false);
-          } else {
-            this.toaster(message, 'error', true);
-          }
-        });
+    editSection(section: AnalyticalQuestion) {
+      this.selectedQuestion = section;
+      this.isEditModalOpen = true;
+    },
+    onEditModalConfirm(newSectionTitle: string) {
+      if (this.selectedQuestion === null) {
+        console.error('No question is selected.');
+        return;
       }
+      const updatedSection = {
+        ...this.selectedQuestion,
+        question: newSectionTitle
+      };
+      this.selectedQuestion = null;
+      this.isEditModalOpen = false;
+      // Assert that ID is defined, since we should never be able to fetch a
+      //  question before it's stored with an ID
+      updateQuestion(updatedSection.id as string, updatedSection).then(
+        result => {
+          if (result.status === 200) {
+            // refresh the latest list from the server
+            this.reFetchQuestions();
+          } else {
+            this.toaster(QUESTIONS.ERRONEOUS_UPDATE, 'error', true);
+          }
+        }
+      );
     },
     updateLocalQuestionsList(newQuestionsList: AnalyticalQuestion[]) {
       this.questionsList = newQuestionsList;
@@ -329,7 +345,7 @@ export default defineComponent({
       this.deleteSelectedQuestion();
       /*
       if (question.visibility === 'public') {
-        this.showDeleteModal = true;
+        this.isDeleteModalOpen = true;
       } else {
         this.deleteSelectedQuestion();
       }
@@ -357,7 +373,7 @@ export default defineComponent({
         });
       }
       this.selectedQuestion = null;
-      this.showDeleteModal = false;
+      this.isDeleteModalOpen = false;
     },
     setActive(tab: string) {
       this.currentTab = tab;
