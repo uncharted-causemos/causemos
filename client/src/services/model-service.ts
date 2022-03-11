@@ -551,12 +551,16 @@ const runPathwaySensitivityAnalysis = async (
 };
 
 
-const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Poller, progressFn: Function) => {
+const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Poller, progressFn: Function, secondaryMessageFn: Function) => {
   const modelId = modelSummary.id;
   const numSteps = getStepCountFromTimeScale(modelSummary.parameter.time_scale);
   try {
     const experimentId = await runProjectionExperiment(modelId, cleanConstraints([]));
+    // FIXME: should return experiemntId
+    secondaryMessageFn(`CAG=${modelId} Experiment=${experimentId}`);
+
     const experiment: any = await getExperimentResult(modelId, experimentId, poller, progressFn);
+
 
     const scenario: NewScenario = {
       model_id: modelId,

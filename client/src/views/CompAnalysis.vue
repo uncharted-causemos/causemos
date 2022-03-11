@@ -191,7 +191,7 @@ import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
 import { AnalysisItem } from '@/types/Analysis';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
-import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import { MAX_ANALYSIS_DATACUBES_COUNT, getDatacubeKey } from '@/utils/analysis-util';
 
 const DRILLDOWN_TABS = [
   {
@@ -627,18 +627,15 @@ export default defineComponent({
       setDataState: 'insightPanel/setDataState'
     }),
     getDatacubeRankingWeight(datacubeItem: AnalysisItem) {
-      const datacubeKey = this.getDatacubeKey(datacubeItem.id, datacubeItem.datacubeId);
+      const datacubeKey = getDatacubeKey(datacubeItem.id, datacubeItem.datacubeId);
       if (this.regionRankingWeights[datacubeKey]) {
         const weight = this.regionRankingWeights[datacubeKey].weight;
         return weight.toFixed(2);
       }
       return '0';
     },
-    getDatacubeKey(id: string, datacubeId: string) {
-      return id + datacubeId;
-    },
     isDatacubeInverted(datacubeItem: AnalysisItem) {
-      const datacubeKey = this.getDatacubeKey(datacubeItem.id, datacubeItem.datacubeId);
+      const datacubeKey = getDatacubeKey(datacubeItem.id, datacubeItem.datacubeId);
       return this.regionRankingDataInversion[datacubeKey];
     },
     setRegionRankingEqualWeight() {
@@ -667,7 +664,7 @@ export default defineComponent({
     },
     onToggleRegionRankingDataInversion(regionRankingInfo: {id: string; datacubeId: string;}) {
       const regionRankingDataInversionUpdated = _.cloneDeep(this.regionRankingDataInversion);
-      const datacubeKey = this.getDatacubeKey(regionRankingInfo.id, regionRankingInfo.datacubeId);
+      const datacubeKey = getDatacubeKey(regionRankingInfo.id, regionRankingInfo.datacubeId);
       if (regionRankingDataInversionUpdated[datacubeKey] === undefined) {
         regionRankingDataInversionUpdated[datacubeKey] = false;
       }
@@ -676,7 +673,7 @@ export default defineComponent({
     },
     onUpdatedBarsData(regionRankingInfo: {id: string; datacubeId: string; name: string; barsData: BarData[]; selectedTimestamp: number}) {
       // clone and save the incoming regional-ranking data in the global map object
-      const datacubeKey = this.getDatacubeKey(regionRankingInfo.id, regionRankingInfo.datacubeId);
+      const datacubeKey = getDatacubeKey(regionRankingInfo.id, regionRankingInfo.datacubeId);
       this.allRegionalRankingMap[datacubeKey] = _.cloneDeep(regionRankingInfo.barsData);
 
       // save the most recent timestamp from all datacubes as the global one
@@ -780,7 +777,7 @@ export default defineComponent({
 
       // clone and save the incoming timeseries in the map object
       //  where all timeseries lists will be saved
-      const datacubeKey = this.getDatacubeKey(timeseriesInfo.id, timeseriesInfo.datacubeId);
+      const datacubeKey = getDatacubeKey(timeseriesInfo.id, timeseriesInfo.datacubeId);
       this.allTimeseriesMap[datacubeKey] = _.cloneDeep(timeseriesInfo.timeseriesList);
 
       this.allDatacubesMetadataMap[datacubeKey] = {

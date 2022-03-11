@@ -29,8 +29,12 @@
 <script lang="ts">
 import { Model } from '@/types/Datacube';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { mapActions, useStore } from 'vuex';
+import { useStore } from 'vuex';
 import { getOutputs } from '@/utils/datacube-util';
+import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import _ from 'lodash';
 
 export default defineComponent({
   name: 'DatacubeModelHeader',
@@ -60,27 +64,23 @@ export default defineComponent({
     }
 
     const store = useStore();
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const route = useRoute();
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
     return {
       updateDesc,
       maintainer,
       modelOutputs,
-      currentOutputIndex
+      currentOutputIndex,
+      store,
+      route
     };
   },
   methods: {
-    ...mapActions({
-      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
-    }),
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      const defaultFeature = {
-        [this.metadata?.id ?? '']: selectedOutputIndex
-      };
-      this.setDatacubeCurrentOutputsMap(defaultFeature);
+      updateDatacubesOutputsMap(this.metadata, this.store, this.route, selectedOutputIndex);
     }
   }
 });

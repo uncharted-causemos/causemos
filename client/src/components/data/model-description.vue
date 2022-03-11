@@ -259,6 +259,9 @@ import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import { getOutputs } from '@/utils/datacube-util';
 import { scrollToElement } from '@/utils/dom-util';
 import DropdownButton from '@/components/dropdown-button.vue';
+import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
   name: 'ModelDescription',
@@ -279,6 +282,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const { metadata } = toRefs(props);
     const store = useStore();
+    const route = useRoute();
 
     const getDataTypeDisplayName = (name: string) => {
       if (name === ModelParameterDataType.Nominal || name === ModelParameterDataType.Ordinal) {
@@ -378,7 +382,7 @@ export default defineComponent({
     // NOTE: this index is mostly driven from the component 'datacube-model-header'
     //       which may list either all outputs or only the validated ones
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
 
     const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
       return metadata.value ? metadata.value.outputs : [];
@@ -410,7 +414,9 @@ export default defineComponent({
       getDataTypeDisplayName,
       canChangeType,
       setParamType,
-      getValidDataTypesForParam
+      getValidDataTypesForParam,
+      store,
+      route
     };
   },
   computed: {
@@ -541,8 +547,9 @@ export default defineComponent({
       // so that the currentOutputFeature would still be the same
       if (output.name !== this.currentOutputFeature.name) {
         const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-        if (this.currentOutputIndex > 0) {
-          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = this.currentOutputIndex - 1;
+        if (this.currentOutputIndex > 0) { // REVIEW!?
+          const datacubeKey = getDatacubeKeyFromAnalysis(this.metadata, this.store, this.route);
+          updatedCurrentOutputsMap[datacubeKey] = this.currentOutputIndex - 1;
         }
         this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
       }

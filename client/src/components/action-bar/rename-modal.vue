@@ -44,7 +44,9 @@ export default defineComponent({
   }),
   methods: {
     onConfirm() {
-      this.$emit('confirm', this.newNameInput || this.currentName);
+      if (this.newNameInput) {
+        this.$emit('confirm', this.newNameInput.trim());
+      }
     },
     onCancel() {
       this.newNameInput = '';

@@ -11,6 +11,7 @@ import {
 } from '@/types/Enums';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import { calculateDiff } from '@/utils/value-util';
+import { colorFromIndex } from './colors-util';
 
 const DEFAULT_LINE_COLOR = '#000';
 const DEFAULT_LINE_WIDTH = 2;
@@ -22,6 +23,7 @@ export function applyReference (
   referenceOptions: string[]
 ) {
   let referenceTimeseries = [] as Timeseries[];
+  let colorOffset = timeseriesData.length;
 
   if (breakdownOption === TemporalAggregationLevel.Year) {
     if (referenceOptions.includes(ReferenceSeriesOption.AllYears)) {
@@ -45,8 +47,9 @@ export function applyReference (
         aggregratedRefSeries.id = ReferenceSeriesOption.AllYears;
         aggregratedRefSeries.isDefaultRun = false;
         aggregratedRefSeries.name = 'All Years';
-        aggregratedRefSeries.color = '#555';
+        aggregratedRefSeries.color = colorFromIndex(colorOffset);
         referenceTimeseries.push(aggregratedRefSeries);
+        colorOffset++;
       }
     }
 
@@ -63,7 +66,7 @@ export function applyReference (
         aggregratedRefSeries.id = ReferenceSeriesOption.SelectYears;
         aggregratedRefSeries.isDefaultRun = false;
         aggregratedRefSeries.name = 'Select Years';
-        aggregratedRefSeries.color = '#888';
+        aggregratedRefSeries.color = colorFromIndex(colorOffset);
         referenceTimeseries.push(aggregratedRefSeries);
       }
     }

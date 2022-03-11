@@ -3,6 +3,7 @@
     <overlay
       v-if="overlayActivated"
       :message="overlayMessage"
+      :messageSecondary="overlayMessageSecondary"
       :cancel-fn="overlayCancelFn"
     />
     <nav-bar />
@@ -37,6 +38,7 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       overlayMessage: 'app/overlayMessage',
+      overlayMessageSecondary: 'app/overlayMessageSecondary',
       overlayActivated: 'app/overlayActivated',
       overlayCancelFn: 'app/overlayCancelFn',
       project: 'app/project',
