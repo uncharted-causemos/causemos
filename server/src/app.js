@@ -198,29 +198,6 @@ app.use('/api/url-to-b64', asyncHandler(async (req, res) => {
   }
 }));
 
-const request = require('request');
-app.use('/api/url-proxy', asyncHandler(async (req, res) => {
-  const fileUrl = req.query.url;
-  const responseType = req.query.responseType;
-  Logger.info(`Proxying ${fileUrl} as ${responseType}`);
-
-  switch (responseType) {
-    case 'blob':
-      req.pipe(request(fileUrl)).pipe(res);
-      break;
-    case 'text':
-    default: {
-      const response = await requestAsPromise({
-        method: 'GET',
-        url: fileUrl,
-        encoding: 'binary'
-      });
-      const b64Str = Buffer.from(response, 'binary').toString('base64');
-      res.status(200).send(b64Str);
-    }
-  }
-}));
-
 app.use('/api/projects', projectsRouter);
 app.use('/api/kbs', kbsRouter);
 
