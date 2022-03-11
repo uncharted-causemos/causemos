@@ -75,14 +75,6 @@
             <div class="checklist-item-question">
               <i class="fa fa-bars checklist-item-menu" />
               <span class="question-title"> {{ questionItem.question }}</span>
-              <!--
-              <span
-                v-if="questionItem.visibility !== 'private'"
-                class="public-question-label"
-              >
-                Public
-              </span>
-              -->
               <i
                 v-if="hasTour(questionItem)"
                 v-tooltip.top="'Tutorial available for this question'"
@@ -345,13 +337,6 @@ export default defineComponent({
     initiateQuestionDeletion(question: AnalyticalQuestion) {
       this.selectedQuestion = question;
       this.deleteSelectedQuestion();
-      /*
-      if (question.visibility === 'public') {
-        this.isDeleteModalOpen = true;
-      } else {
-        this.deleteSelectedQuestion();
-      }
-      */
     },
     deleteSelectedQuestion() {
       if (this.selectedQuestion) {
