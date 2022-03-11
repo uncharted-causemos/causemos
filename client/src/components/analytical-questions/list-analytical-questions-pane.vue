@@ -1,5 +1,5 @@
 <template>
-  <div class="analytical-questions-panel-container">
+  <div class="list-analytical-questions-pane-container">
     <h4 v-if="showChecklistTitle" class="title">Analysis Checklist</h4>
     <template v-if="showDeleteModal">
       <h5>Delete Public Question</h5>
@@ -757,7 +757,7 @@ export default defineComponent({
     width: fit-content;
   }
 
-  .analytical-questions-panel-container {
+  .list-analytical-questions-pane-container {
     display: flex;
     flex-direction: column;
 

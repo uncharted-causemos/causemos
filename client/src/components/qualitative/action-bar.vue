@@ -81,9 +81,6 @@ export default defineComponent({
   ],
   setup() {
     return {
-      showDuplicateModal: ref(false),
-      showRenameModal: ref(false),
-      newCagName: ref(''),
       isRunningModel: ref(false),
       toaster: useToaster()
     };
