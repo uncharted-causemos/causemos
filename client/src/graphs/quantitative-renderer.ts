@@ -67,12 +67,12 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
 
     this.on('node-drag-move', () => {
       svgUtil.hideSvgTooltip(this.chart);
-      this.renderEdgeeAnnotations();
+      this.renderEdgeAnnotations();
     });
 
     this.on('node-drag-end', () => {
       svgUtil.hideSvgTooltip(this.chart);
-      this.renderEdgeeAnnotations();
+      this.renderEdgeAnnotations();
     });
 
     this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
@@ -200,7 +200,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
         return `url(#start-${source}-${target})`;
       });
 
-    this.renderEdgeeAnnotations();
+    this.renderEdgeAnnotations();
   }
 
   renderEdgesUpdated(selection: D3SelectionIEdge<EdgeParameter>) {
@@ -288,7 +288,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     return svg;
   }
 
-  renderEdgeeAnnotations() {
+  renderEdgeAnnotations() {
     this.chart.selectAll('.shock-relation').remove();
     this.chart.selectAll('.warn-relation').remove();
 
@@ -297,6 +297,9 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     const shockEdgesSelection = allEdgeSelection.filter(e => {
       const param = e.data.parameter;
       if (!param) {
+        return false;
+      }
+      if (this.engine === 'delphi' || this.engine === 'delphi_dev') {
         return false;
       }
       if (param.weights && param.weights[0] > param.weights[1]) {
