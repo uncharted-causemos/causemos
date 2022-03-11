@@ -245,6 +245,15 @@
                         {{pregenItem.id}}
                       </option>
                     </select>
+                  <button
+                    v-if="selectedPreGenDataItem.type === 'image'"
+                    type="button"
+                    class="btn btn-sm btn-primary btn-call-for-action"
+                    style="margin-left: 10px"
+                    @click="savePreGenAsInsight">
+                    <i class="fa fa-fw fa-star fa-lg" />
+                    Save As Insight
+                  </button>
                   </div>
                 <div v-if="selectedPreGenDataItem.caption" style="padding-left: 5px; padding-right: 10px">{{selectedPreGenDataItem.caption}}</div>
               </div>
@@ -1484,6 +1493,14 @@ export default defineComponent({
       }
     });
 
+    const savePreGenAsInsight = async() => {
+      const url = selectedPreGenDataItem.value.file;
+      await store.dispatch('insightPanel/setSnapshotUrl', url);
+      await store.dispatch('insightPanel/showInsightPanel');
+      await store.dispatch('insightPanel/setUpdatedInsight', null);
+      await store.dispatch('insightPanel/setCurrentPane', 'review-new-insight');
+    };
+
     const someVizOptionsInvalid = computed(() =>
       isPublishing.value && (selectedSpatialAggregation.value === AggregationOption.None ||
           selectedTemporalAggregation.value === AggregationOption.None ||
@@ -2147,6 +2164,7 @@ export default defineComponent({
       fetchData,
       filteredRunData,
       geoModelParam,
+      savePreGenAsInsight,
       getSelectedPreGenOutput,
       gridLayerStats,
       hasDefaultRun,

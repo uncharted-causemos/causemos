@@ -38,7 +38,6 @@ const datacubeRouter = rootRequire('/routes/datacubes');
 const gadmRouter = rootRequire('/routes/gadm');
 const pipelineReportingRouter = rootRequire('/routes/pipeline-reporting');
 const bibliographyRouter = rootRequire('/routes/bibliography');
-const fetchFileService = rootRequire('/services/external/fetch-file-service');
 const asyncHandler = require('express-async-handler');
 
 const kbsRouter = rootRequire('/routes/knowledge-bases');
@@ -51,6 +50,7 @@ const sessionLogService = rootRequire('/services/session-log-service');
 const mapProxyRouter = rootRequire('/routes/map-proxy');
 
 const compression = require('compression');
+const requestAsPromise = require('./util/request-as-promise');
 const app = express();
 
 // This code block is for handling issues with setting up the .env file for environment variables.
@@ -180,17 +180,44 @@ app.use('/api/curation_recommendations', [
   curationRecommendationsRouter
 ]);
 
-app.use('/api/fetch-demo-data', asyncHandler(async (req, res) => {
-  const modelId = req.query.modelId;
-  const runId = req.query.runId;
-  const type = req.query.type;
+app.use('/api/url-to-b64', asyncHandler(async (req, res) => {
+  const fileUrl = req.query.url;
+  Logger.info(`Fetching ${fileUrl} as base64`);
 
   try {
-    const result = await fetchFileService.fetchDemoData(modelId, runId, type);
-    res.status(200).json(result || {});
+    const response = await requestAsPromise({
+      method: 'GET',
+      url: fileUrl,
+      encoding: 'binary'
+    });
+    const b64Str = Buffer.from(response, 'binary').toString('base64');
+    res.status(200).send(b64Str);
   } catch (err) {
     console.log(err);
     res.status(500).send('Internal request returned: ' + err.message);
+  }
+}));
+
+const request = require('request');
+app.use('/api/url-proxy', asyncHandler(async (req, res) => {
+  const fileUrl = req.query.url;
+  const responseType = req.query.responseType;
+  Logger.info(`Proxying ${fileUrl} as ${responseType}`);
+
+  switch (responseType) {
+    case 'blob':
+      req.pipe(request(fileUrl)).pipe(res);
+      break;
+    case 'text':
+    default: {
+      const response = await requestAsPromise({
+        method: 'GET',
+        url: fileUrl,
+        encoding: 'binary'
+      });
+      const b64Str = Buffer.from(response, 'binary').toString('base64');
+      res.status(200).send(b64Str);
+    }
   }
 }));
 

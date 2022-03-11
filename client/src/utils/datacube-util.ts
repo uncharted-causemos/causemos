@@ -236,6 +236,36 @@ export function getUnitString(unit: string|null, transform: DataTransform) {
   }
 }
 
+// provide mime types for the image extensions listed below
+// taken from https://github.com/jshttp/mime-db/blob/master/db.json
+export function getImageMime(url: string) {
+  const extension = url.toLowerCase().split('.').pop();
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'jpg':
+    case 'jpeg':
+    case 'jfif':
+    case 'pjpeg':
+    case 'pjp':
+      return 'image/jpeg';
+    case 'gif':
+      return 'image/gif';
+    case 'apng':
+      return 'image/apng';
+    case 'avif':
+      return 'image/avif';
+    case 'svg':
+      return 'image/svg+xml';
+    case 'webp':
+      return 'image/webp';
+    case 'bmp':
+      return 'bmp';
+    default:
+      return undefined;
+  }
+}
+
 // supported pre-rendered datacube images
 export function isImage(url: string) {
   url = url.toLowerCase();

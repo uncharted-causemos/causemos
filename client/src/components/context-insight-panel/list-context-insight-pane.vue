@@ -176,9 +176,11 @@ export default {
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
       setInsightList: 'insightPanel/setInsightList',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
+      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
+      setSnapshotUrl: 'insightPanel/setSnapshotUrl'
     }),
     newInsight() {
+      this.setSnapshotUrl(undefined);
       this.showInsightPanel();
       this.setUpdatedInsight(null);
       this.setCurrentPane('review-new-insight');
