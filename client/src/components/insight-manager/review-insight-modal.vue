@@ -681,7 +681,7 @@ export default defineComponent({
           updateInsight(this.updatedInsight.id, updatedInsight)
             .then((result) => {
               if (result.updated === 'success') {
-                this.toaster(INSIGHTS.SUCCESFUL_UPDATE, 'success', false);
+                this.toaster(INSIGHTS.SUCCESSFUL_UPDATE, 'success', false);
               } else {
                 this.toaster(INSIGHTS.ERRONEOUS_UPDATE, 'error', true);
               }
