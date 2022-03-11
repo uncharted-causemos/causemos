@@ -298,7 +298,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     });
 
     shockEdgesSelection.each((_d, i, groups) => {
-      const SHOCK = '\uf0e7';
+      // const SHOCK = '\uf0e7';
       if (groups[i]) {
         const s = d3.select(groups[i]);
         const pathNode = s.select('path').node() as SVGPathElement;
@@ -315,24 +315,15 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
           .style('stroke', (d: any) => calcEdgeColor(d.data))
           .style('fill', DEFAULT_STYLE.edgeBg.stroke);
 
+        const SHOCK_PATH = 'M9.9375 5.25H7.21875L8.22656 2.22656C8.32031 1.85156 8.03906 1.5 7.6875 1.5H4.3125C4.03125 1.5 3.77344 1.71094 3.75 1.99219L3 7.61719C2.95312 7.96875 3.21094 8.25 3.5625 8.25H6.32812L5.25 12.8203C5.17969 13.1719 5.4375 13.5 5.78906 13.5C6 13.5 6.1875 13.4062 6.28125 13.2188L10.4062 6.09375C10.6406 5.74219 10.3594 5.25 9.9375 5.25Z';
+        const offset = 7; // the icons are 15x15
+        // const EXCLAMATION_PATH = 'M9.125 11.625C9.125 10.5938 8.28125 9.75 7.25 9.75C6.19531 9.75 5.375 10.5938 5.375 11.625C5.375 12.6797 6.19531 13.5 7.25 13.5C8.28125 13.5 9.125 12.6797 9.125 11.625ZM5.58594 2.10938L5.89062 8.48438C5.91406 8.76562 6.17188 9 6.45312 9H8.02344C8.30469 9 8.5625 8.76562 8.58594 8.48438L8.89062 2.10938C8.91406 1.78125 8.65625 1.5 8.32812 1.5H6.14844C5.82031 1.5 5.5625 1.78125 5.58594 2.10938Z';
+
         shockGroup
-          .append('text')
-          .attr('x', () => {
-            return point.x - 4;
-          })
-          .attr('y', () => {
-            return point.y + 5.0;
-          })
-          .style('font-family', 'FontAwesome')
-          .style('font-size', () => {
-            return '14px';
-          })
-          .style('stroke', 'none')
-          .style('fill', (d: any) => calcEdgeColor(d.data))
-          .style('cursor', 'pointer')
-          .text(() => {
-            return SHOCK;
-          });
+          .append('path')
+          .attr('d', SHOCK_PATH)
+          .attr('transform', `translate(${point.x - offset}, ${point.y - offset})`)
+          .style('fill', (d: any) => calcEdgeColor(d.data));
       }
     });
   }
