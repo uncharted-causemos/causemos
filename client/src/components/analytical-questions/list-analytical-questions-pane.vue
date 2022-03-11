@@ -1,29 +1,6 @@
 <template>
   <div class="list-analytical-questions-pane-container">
     <h4 v-if="showChecklistTitle" class="title">Analysis Checklist</h4>
-    <template v-if="isDeleteModalOpen">
-      <h5>Delete Public Question</h5>
-      <p>Are you sure you want to delete?</p>
-      <message-display
-        class="delete-confirm-alert"
-        :message-type="'alert-warning'"
-        :message="'This deletion will remove the question from all projects.'"
-      />
-      <ul class="unstyled-list">
-        <button
-          type="button"
-          class="btn"
-          @click.stop="isDeleteModalOpen = false">
-            Cancel
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary btn-call-for-action"
-          @click.stop="deleteSelectedQuestion">
-            Confirm
-        </button>
-      </ul>
-    </template>
     <template v-if="showNewAnalyticalQuestion">
       <h5>New Section</h5>
       <textarea
@@ -50,7 +27,7 @@
         </button>
       </ul>
     </template>
-    <template v-if="isDeleteModalOpen === false && showNewAnalyticalQuestion === false">
+    <template v-if="showNewAnalyticalQuestion === false">
       <button
         v-tooltip.top-center="'Add a new analytical question'"
         type="button"
@@ -209,7 +186,6 @@ export default defineComponent({
     selectedQuestion: null as AnalyticalQuestion | null,
     showNewAnalyticalQuestion: false,
     newQuestionText: '',
-    isDeleteModalOpen: false,
     isEditModalOpen: false,
     toursMetadata: [
       {
@@ -360,7 +336,6 @@ export default defineComponent({
         });
       }
       this.selectedQuestion = null;
-      this.isDeleteModalOpen = false;
     },
     setActive(tab: string) {
       this.currentTab = tab;
