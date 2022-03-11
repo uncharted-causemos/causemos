@@ -1,4 +1,4 @@
-import { Insight } from '@/types/Insight';
+import { AnalyticalQuestion, Insight } from '@/types/Insight';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface InsightState {
@@ -9,10 +9,12 @@ interface InsightState {
   dataState: any;
   contextId: string[] | undefined;
   analysisId: string;
-  updatedInsight: Insight | null;
-  insightList: Insight[] | null;
+  updatedInsight: (Insight|AnalyticalQuestion) | null;
+  insightList: (Insight|AnalyticalQuestion)[] | null;
   refreshDatacubes: boolean;
   reviewIndex: number;
+  isReviewMode: boolean;
+  currentReviewHeader: string
 }
 
 /**
@@ -29,7 +31,9 @@ const state: InsightState = {
   updatedInsight: null,
   insightList: null,
   refreshDatacubes: false,
-  reviewIndex: 0
+  reviewIndex: 0,
+  isReviewMode: false,
+  currentReviewHeader: ''
 };
 
 
@@ -44,7 +48,9 @@ const getters: GetterTree<InsightState, any> = {
   updatedInsight: state => state.updatedInsight,
   insightList: state => state.insightList,
   refreshDatacubes: state => state.refreshDatacubes,
-  reviewIndex: state => state.reviewIndex
+  reviewIndex: state => state.reviewIndex,
+  isReviewMode: state => state.isReviewMode,
+  currentReviewHeader: state => state.currentReviewHeader
 };
 
 
@@ -84,6 +90,12 @@ const actions: ActionTree<InsightState, any> = {
   },
   setReviewIndex: ({ commit }, newValue) => {
     commit('setReviewIndex', newValue);
+  },
+  setReviewMode: ({ commit }, newValue) => {
+    commit('setReviewMode', newValue);
+  },
+  setCurrentReviewHeader: ({ commit }, newValue) => {
+    commit('setCurrentReviewHeader', newValue);
   }
 };
 
@@ -124,6 +136,12 @@ const mutations: MutationTree<InsightState> = {
   },
   setReviewIndex(state, value) {
     state.reviewIndex = value;
+  },
+  setReviewMode(state, value) {
+    state.isReviewMode = value;
+  },
+  setCurrentReviewHeader(state, value) {
+    state.currentReviewHeader = value;
   }
 };
 

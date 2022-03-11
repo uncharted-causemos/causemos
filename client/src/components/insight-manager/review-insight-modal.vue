@@ -94,7 +94,7 @@
         >
         <i class="fa fa-chevron-left" />
       </button>
-      <div class="content" v-if="isInsight">
+      <div class="content">
         <div class="fields">
           <div style="display: flex; align-items: baseline;">
             <div v-if="!isEditingInsight" class="question-title">{{insightQuestionLabel}}</div>
@@ -113,63 +113,67 @@
               @click="showNewQuestion = true"
             />
           </div>
-          <div v-if="!isEditingInsight" class="title">{{previewInsightTitle}}</div>
-          <input
-            v-else
-            v-model="insightTitle"
-            v-focus
-            type="text"
-            class="form-control"
-            placeholder="Untitled insight name"
-          />
-          <div
-            v-if="isEditingInsight && hasError"
-            class="error-msg">
-            {{ errorMsg }}
-          </div>
-          <div v-if="!isEditingInsight" class="desc">{{previewInsightDesc}}</div>
-          <textarea
-            v-else
-            v-model="insightDesc"
-            :rows="2"
-            class="form-control"
-            placeholder="Untitled insight description" />
-          <div class="image-preview-and-metadata">
-            <div v-if="imagePreview !== null" class="preview">
-              <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview">
-              <div v-if="showCropInfoMessage" style="align-self: center">Annotations are still there, but not shown when the image is being cropped!</div>
+          <template v-if="isInsight">
+            <div v-if="!isEditingInsight" class="title">{{previewInsightTitle}}</div>
+            <input
+              v-else
+              v-model="insightTitle"
+              v-focus
+              type="text"
+              class="form-control"
+              placeholder="Untitled insight name"
+            />
+            <div
+              v-if="isEditingInsight && hasError"
+              class="error-msg">
+              {{ errorMsg }}
             </div>
-            <div v-else style="width: 100%;">
-              <div v-if="loadingImage" style="text-align: center; font-size: x-large">
-                <i class="fa fa-spin fa-spinner" /> Loading image ...
+            <div v-if="!isEditingInsight" class="desc">{{previewInsightDesc}}</div>
+            <textarea
+              v-else
+              v-model="insightDesc"
+              :rows="2"
+              class="form-control"
+              placeholder="Untitled insight description" />
+            <div class="image-preview-and-metadata">
+              <div v-if="imagePreview !== null" class="preview">
+                <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview">
+                <div v-if="showCropInfoMessage" style="align-self: center">Annotations are still there, but not shown when the image is being cropped!</div>
               </div>
-              <disclaimer
-                v-else
-                style="text-align: center; color: black"
-                :message="updatedInsight === null ? 'No more insights available to preview!' : 'No image preview!'"
-              />
-            </div>
-            <drilldown-panel
-              v-if="showMetadataPanel"
-              is-open
-              :tabs="drilldownTabs"
-              :activeTabId="drilldownTabs[0].id"
-              only-display-icons
-              @close="showMetadataPanel=false"
-            >
-              <template #content>
-                <insight-summary
-                  v-if="metadataDetails"
-                  :metadata-details="metadataDetails"
+              <div v-else style="width: 100%;">
+                <div v-if="loadingImage" style="text-align: center; font-size: x-large">
+                  <i class="fa fa-spin fa-spinner" /> Loading image ...
+                </div>
+                <disclaimer
+                  v-else
+                  style="text-align: center; color: black"
+                  :message="updatedInsight === null ? 'No more insights available to preview!' : 'No image preview!'"
                 />
-              </template>
-            </drilldown-panel>
-          </div>
+              </div>
+              <drilldown-panel
+                v-if="showMetadataPanel"
+                is-open
+                :tabs="drilldownTabs"
+                :activeTabId="drilldownTabs[0].id"
+                only-display-icons
+                @close="showMetadataPanel=false"
+              >
+                <template #content>
+                  <insight-summary
+                    v-if="metadataDetails"
+                    :metadata-details="metadataDetails"
+                  />
+                </template>
+              </drilldown-panel>
+            </div>
+          </template>
+          <template v-else>
+            <message-display
+              class="pane-content"
+              :message="messageNoData"
+            />
+          </template>
         </div>
-      </div>
-      <div class="content" v-else>
-        <h1>{{updatedInsight.question}}</h1>
-        <h3>{{updatedInsight.description}}</h3>
       </div>
 
       <button
@@ -210,6 +214,7 @@ import RenameModal from '@/components/action-bar/rename-modal.vue';
 import { addQuestion, updateQuestion } from '@/services/question-service';
 import { sortQuestionsByPath, SORT_PATH } from '@/utils/questions-util';
 import useQuestionsData from '@/services/composables/useQuestionsData';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
@@ -232,7 +237,8 @@ export default defineComponent({
     InsightSummary,
     DropdownButton,
     SmallTextButton,
-    RenameModal
+    RenameModal,
+    MessageDisplay
   },
   props: {
     editMode: {
@@ -254,6 +260,9 @@ export default defineComponent({
     const { questionsList, reFetchQuestions } = useQuestionsData();
 
     const updatedInsight = computed(() => store.getters['insightPanel/updatedInsight']);
+    const isReviewMode = computed(() => store.getters['insightPanel/isReviewMode']);
+    const currentReviewHeader = computed(() => store.getters['insightPanel/currentReviewHeader']);
+
     const isInsight = computed(() => InsightUtil.instanceOfFullInsight(updatedInsight.value));
 
     const selectedInsightQuestion = ref('');
@@ -266,10 +275,32 @@ export default defineComponent({
     };
 
     const insightQuestionLabel = computed<string>(() => {
-      if (updatedInsight.value && updatedInsight.value.analytical_question.length > 0) {
-        const questionObj = getQuestionById(updatedInsight.value.analytical_question[0]);
-        if (questionObj) {
-          return questionObj.question;
+      if (updatedInsight.value) {
+        if (isInsight.value && updatedInsight.value.analytical_question.length > 0) {
+          //
+          // we have an insight linked to one or more section/question
+          //
+          // if we are in the "Review" mode,
+          //  pick the question to be shown matching the currently shown section/question in the review mode
+          // otherwise, picks any question
+          let questionId = updatedInsight.value.analytical_question[0];
+          if (isReviewMode.value && currentReviewHeader.value) {
+            questionId = currentReviewHeader.value;
+          }
+          const questionObj = getQuestionById(questionId);
+          if (questionObj) {
+            return questionObj.question;
+          }
+        } else {
+          //
+          // we either have a question or an insight that is currently not linked to any question/section
+          //
+          // we (mostly) have a question
+          const questionId = updatedInsight.value.id;
+          const questionObj = getQuestionById(questionId);
+          if (questionObj) {
+            return questionObj.question;
+          }
         }
       }
       return '';
@@ -311,7 +342,8 @@ export default defineComponent({
       insightQuestionInnerLabel,
       insightQuestionLabel,
       loadingImage,
-      isInsight
+      isInsight,
+      isReviewMode
     };
   },
   data: () => ({
@@ -332,7 +364,8 @@ export default defineComponent({
     lastCroppedImage: '',
     lastAnnotatedImage: '',
     showCropInfoMessage: false,
-    showNewQuestion: false
+    showNewQuestion: false,
+    messageNoData: INSIGHTS.NO_DATA
   }),
   watch: {
     insightTitle: {
@@ -412,18 +445,19 @@ export default defineComponent({
       countInsights: 'insightPanel/countInsights',
       reviewIndex: 'insightPanel/reviewIndex',
       filters: 'dataSearch/filters',
-      analysisName: 'app/analysisName'
+      analysisName: 'app/analysisName',
+      currentReviewHeader: 'insightPanel/currentReviewHeader'
     }),
     questionsDropdown() {
       return ['', ...this.sortedQuestions.map(q => q.question)];
     },
-    nextInsight(): Insight | null {
+    nextInsight(): Insight | AnalyticalQuestion | null {
       if (this.reviewIndex < this.insightList.length - 1) {
         return this.insightList[this.reviewIndex + 1];
       }
       return null;
     },
-    prevInsight(): Insight | null {
+    prevInsight(): Insight | AnalyticalQuestion | null {
       if (this.reviewIndex > 0) {
         return this.insightList[this.reviewIndex - 1];
       }
@@ -462,6 +496,9 @@ export default defineComponent({
       return this.updatedInsight ? this.updatedInsight.annotation_state : undefined;
     }
   },
+  unmounted() {
+    this.setReviewMode(false);
+  },
   async mounted() {
     if (this.newMode) {
       this.loadingImage = true;
@@ -486,7 +523,9 @@ export default defineComponent({
       setReviewIndex: 'insightPanel/setReviewIndex',
       hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
       setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane',
-      setRefetchInsights: 'contextInsightPanel/setRefetchInsights'
+      setRefetchInsights: 'contextInsightPanel/setRefetchInsights',
+      setReviewMode: 'insightPanel/setReviewMode',
+      setCurrentReviewHeader: 'insightPanel/setCurrentReviewHeader'
     }),
     setInsightQuestion(question: string) {
       this.selectedInsightQuestion = question;
@@ -568,6 +607,34 @@ export default defineComponent({
       if (this.isEditingInsight) {
         this.cancelInsightEdit();
       }
+
+      // we are going to the previous insight/question, are we moving to a new section?
+      if (this.isReviewMode && this.prevInsight) {
+        if (InsightUtil.instanceOfQuestion(this.prevInsight)) {
+          // when we are moving to a question, which we know it has no any linked insights
+          // so it needs to be visible (as its own section)
+          this.setCurrentReviewHeader(this.prevInsight.id);
+        } else {
+          // we are moving to an insight:
+          //  is it part of the current section or is it part of the next section?
+          const currentHeader = this.currentReviewHeader;
+          const prevItemAsInsight = this.prevInsight as Insight;
+          if (!prevItemAsInsight.analytical_question.includes(currentHeader)) {
+            // moving to a new section/question
+            // note that the prev insight may have multiple linked question,
+            // so we need to find the prev question/section after currentHeader
+            const currentHeaderIndx = this.sortedQuestions.findIndex(q => q.id === currentHeader);
+            for (let i = currentHeaderIndx - 1; i >= 0; i--) {
+              const q = this.sortedQuestions[i];
+              if (i < currentHeaderIndx && prevItemAsInsight.analytical_question.includes(q.id ?? '')) {
+                this.setCurrentReviewHeader(q.id);
+                break;
+              }
+            }
+          }
+        }
+      }
+
       this.setUpdatedInsight(this.prevInsight);
       this.setReviewIndex(this.reviewIndex - 1);
     },
@@ -575,6 +642,34 @@ export default defineComponent({
       if (this.isEditingInsight) {
         this.cancelInsightEdit();
       }
+
+      // we are going to the next insight/question, are we moving to a new section?
+      if (this.isReviewMode && this.nextInsight) {
+        if (InsightUtil.instanceOfQuestion(this.nextInsight)) {
+          // when we are moving to a question, which we know it has no any linked insights
+          // so it needs to be visible (as its own section)
+          this.setCurrentReviewHeader(this.nextInsight.id);
+        } else {
+          // we are moving to an insight:
+          //  is it part of the current section or is it part of the next section?
+          const currentHeader = this.currentReviewHeader;
+          const nextItemAsInsight = this.nextInsight as Insight;
+          if (!nextItemAsInsight.analytical_question.includes(currentHeader)) {
+            // moving to a new section/question
+            // note that the next insight may have multiple linked question,
+            // so we need to find the next question/section after currentHeader
+            const currentHeaderIndx = this.sortedQuestions.findIndex(q => q.id === currentHeader);
+            for (let i = currentHeaderIndx + 1; i < this.sortedQuestions.length; i++) {
+              const q = this.sortedQuestions[i];
+              if (i > currentHeaderIndx && nextItemAsInsight.analytical_question.includes(q.id ?? '')) {
+                this.setCurrentReviewHeader(q.id);
+                break;
+              }
+            }
+          }
+        }
+      }
+
       this.setUpdatedInsight(this.nextInsight);
       this.setReviewIndex(this.reviewIndex + 1);
     },

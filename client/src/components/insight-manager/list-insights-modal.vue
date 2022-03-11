@@ -207,7 +207,11 @@ export default {
       return this.searchedInsights;
     },
     insightsGroupedByQuestion() {
-      return InsightUtil.parseReportFromQuestionsAndInsights(this.fullInsights, this.questions);
+      const allInsightsGroupedByQuestions = InsightUtil.parseReportFromQuestionsAndInsights(this.fullInsights, this.questions);
+      // filter the list by removing question/section items that have insights linked to them
+      return allInsightsGroupedByQuestions.filter(item => {
+        return InsightUtil.instanceOfFullInsight(item) || item.linked_insights.length === 0;
+      });
     }
   },
   mounted() {
@@ -220,7 +224,9 @@ export default {
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
       setInsightList: 'insightPanel/setInsightList',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
-      setReviewIndex: 'insightPanel/setReviewIndex'
+      setReviewIndex: 'insightPanel/setReviewIndex',
+      setReviewMode: 'insightPanel/setReviewMode',
+      setCurrentReviewHeader: 'insightPanel/setCurrentReviewHeader'
     }),
     getInsightIndex(targetInsight, insights) {
       return insights.findIndex(ins => ins.id === targetInsight.id);
@@ -338,12 +344,16 @@ export default {
       this.setCurrentPane('review-insight');
     },
     reviewChecklist() {
-      // to do: generate insights list in order of questions
+      // generate insights list in order of questions
       if (this.insightsGroupedByQuestion.length < 1) return;
       const insight = this.insightsGroupedByQuestion[0];
       if (insight.thumbnail === '' || insight.annotation_state === null) {
         this.toaster(NOT_READY_ERROR, 'error', false);
         return;
+      }
+      this.setReviewMode(true);
+      if (this.questions.length > 0) {
+        this.setCurrentReviewHeader(this.questions[0].id);
       }
       this.setReviewIndex(0);
       this.setUpdatedInsight(insight);
