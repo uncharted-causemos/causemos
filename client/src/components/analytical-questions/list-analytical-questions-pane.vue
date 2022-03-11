@@ -137,13 +137,15 @@
           </div>
       </div>
     </template>
-    <rename-modal
-      v-if="isEditModalOpen"
-      :modal-title="'Edit section'"
-      :current-name="selectedQuestion?.question ?? ''"
-      @confirm="onEditModalConfirm"
-      @cancel="isEditModalOpen = false"
-    />
+    <teleport to="body">
+      <rename-modal
+        v-if="isEditModalOpen"
+        :modal-title="'Edit section'"
+        :current-name="selectedQuestion?.question ?? ''"
+        @confirm="onEditModalConfirm"
+        @cancel="isEditModalOpen = false"
+      />
+    </teleport>
   </div>
 </template>
 
