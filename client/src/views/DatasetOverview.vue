@@ -186,7 +186,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
-import { getDatacubeStatusInfo } from '@/utils/datacube-util';
+import { AVAILABLE_DOMAINS, getDatacubeStatusInfo } from '@/utils/datacube-util';
 import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { Datacube, DatacubeFeature, Dataset, DatasetEditable, Indicator } from '@/types/Datacube';
 import { defineComponent } from 'vue';
@@ -197,33 +197,6 @@ import { runtimeFormatter } from '@/utils/string-util';
 import { ViewState } from '@/types/Insight';
 
 const MAX_COUNTRIES = 40;
-
-const AVAILABLE_DOMAINS = [
-  'Logic',
-  'Mathematics',
-  'Astronomy and astrophysics',
-  'Physics',
-  'Chemistry',
-  'Life Sciences',
-  'Earth and Space Sciences',
-  'Agricultural Sciences',
-  'Medical Sciences',
-  'Technological Sciences',
-  'Anthropology',
-  'Demographics',
-  'Economic Sciences',
-  'Geography',
-  'History',
-  'Juridical Sciences and Law',
-  'Linguistics',
-  'Pedagogy',
-  'Political Science',
-  'Psychology',
-  'Science of Arts and Letters',
-  'Sociology',
-  'Ethics',
-  'Philosophy'
-];
 
 export default defineComponent({
   name: 'DatasetOverview',

@@ -111,6 +111,7 @@
             :key="instance.id"
             :datacube="instance"
             @unpublish="unpublishInstance(instance)"
+            @refetch="fetchDatacubeInstances"
           />
           <message-display
             v-if="filteredDatacubeInstances.length === 0"
