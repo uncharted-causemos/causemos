@@ -270,7 +270,7 @@
                     <!-- display only a single pre-rendered-viz item for each selected run -->
                     <img
                       v-if="pregenDataForSpec.type === 'image'"
-                      :src="pregenDataForSpec.file"
+                      :src="pregenDataForSpec.embeddedSrc ?? pregenDataForSpec.file"
                       alt="Pre-rendered Visualization"
                       class="pre-rendered-content"
                     >
@@ -658,7 +658,8 @@ import {
   TAGS,
   DEFAULT_DATE_RANGE_DELIMETER,
   getSelectedOutput,
-  getOutputs
+  getOutputs,
+  getImageMime
 } from '@/utils/datacube-util';
 import { normalize } from '@/utils/value-util';
 import { initDataStateFromRefs, initViewStateFromRefs, fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
@@ -1468,6 +1469,24 @@ export default defineComponent({
         }
       }
     });
+
+    watch(
+      () => [selectedPreGenDataItem.value],
+      async () => {
+        if (selectedPreGenDataItem.value.file && selectedPreGenDataItem.value.type === 'image' && !selectedPreGenDataItem.value.embeddedSrc) {
+          try {
+            const url = selectedPreGenDataItem.value.file;
+            const { data } = await API.get('url-to-b64', { params: { url } });
+            const mime = getImageMime(url);
+            selectedPreGenDataItem.value.embeddedSrc = `data:${mime};base64,${data}`;
+          } catch (e) {
+          }
+        }
+      },
+      {
+        immediate: true
+      }
+    );
 
     function getPreGenItemDisplayName(pregen: PreGeneratedModelRunData) {
       // @REVIEW: use the resource file name
