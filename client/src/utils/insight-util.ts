@@ -208,11 +208,11 @@ function parseReportFromQuestionsAndInsights(
 }
 
 function instanceOfFullInsight(data: any): data is FullInsight {
-  return 'thumbnail' in data;
+  return data !== null && 'thumbnail' in data;
 }
 
 function instanceOfQuestion(data: any): data is AnalyticalQuestion {
-  return 'question' in data;
+  return data !== null && 'question' in data;
 }
 
 function generateFooterDOCX (metadataSummary: string) {

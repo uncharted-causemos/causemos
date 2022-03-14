@@ -741,6 +741,22 @@ export const hasMergeConflictEdges = (currentCAG: CAGGraph, importCAGs: CAGGraph
   return false;
 };
 
+export enum Engine {
+  DySE = 'dyse',
+  Delphi = 'delphi',
+  DelphiDev = 'delphi_dev',
+  Sensei = 'sensei'
+}
+
+export const supportsPolarityInference = (engine: Engine) => {
+  return engine === Engine.Delphi || engine === Engine.DelphiDev;
+};
+
+export const supportsLevelEdges = (engine: Engine) => {
+  return [Engine.DySE, Engine.Sensei].includes(engine);
+};
+
+// FIXME: we should replace these string keys with the stricter Engine type
 export const ENGINE_OPTIONS = [
   { key: 'dyse', value: 'DySE' },
   { key: 'delphi', value: 'Delphi' },

@@ -3,7 +3,12 @@ import { NodeParameter, EdgeParameter, NodeScenarioData } from '@/types/CAG';
 import svgUtil from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
-import { decodeWeights } from '@/services/model-service';
+import {
+  decodeWeights,
+  Engine,
+  supportsLevelEdges,
+  supportsPolarityInference
+} from '@/services/model-service';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { DEFAULT_STYLE } from './cag-style';
@@ -32,7 +37,7 @@ const WARN = '#f80';
 
 export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, EdgeParameter> {
   scenarioData: ScenarioData = {};
-  engine = 'dyse';
+  engine = Engine.DySE;
 
   constructor(options: any) {
     super(options);
@@ -95,7 +100,9 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
   }
 
   setEngine(engine: string) {
-    this.engine = engine;
+    // FIXME: we should use the stricter Engine type in more places and avoid
+    //  casting this far down the line.
+    this.engine = engine as Engine;
   }
 
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
@@ -299,7 +306,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       if (!param) {
         return false;
       }
-      if (this.engine === 'delphi' || this.engine === 'delphi_dev') {
+      if (!supportsLevelEdges(this.engine)) {
         return false;
       }
       if (param.weights && param.weights[0] > param.weights[1]) {
@@ -342,7 +349,10 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       const current = decodeWeights(param.weights);
 
       // If inferred and current have different types
-      if (inferred.weightType !== current.weightType) {
+      if (
+        supportsLevelEdges(this.engine) &&
+        inferred.weightType !== current.weightType
+      ) {
         return true;
       }
 
@@ -352,7 +362,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
 
       // If inferred and current have different polarity, Delphi only
       const polarity = e.data.polarity || 0;
-      if (this.engine === 'delphi' || this.engine === 'delphi_dev') {
+      if (supportsPolarityInference(this.engine)) {
         const w = param.engine_weights[this.engine];
         if (w[2] && w[2] * polarity < 0) {
           return true;
