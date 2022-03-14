@@ -1,6 +1,7 @@
 <template>
   <wm-map
     ref="mapComponents"
+    :bounds="mapBounds"
     v-bind="baseMapOptions"
     @load="disableDragRotate"
     @click="onClick"
