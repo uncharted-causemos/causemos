@@ -388,10 +388,15 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
         ];
       }
 
+      const temporalResolution = _.get(np.parameter, 'temporalResolution', 'month');
+
       // More hack: DySE needs at least 2 data points
       if (indicatorTimeSeries.length === 1) {
         const timestamp = indicatorTimeSeries[0].timestamp;
-        const prevTimestamp = moment.utc(timestamp).subtract(1, 'months').valueOf();
+        const prevTimestamp = moment
+          .utc(timestamp)
+          .subtract(1, `${temporalResolution}s`)
+          .valueOf();
         indicatorTimeSeries.unshift({
           value: indicatorTimeSeries[0].value,
           timestamp: prevTimestamp
@@ -405,7 +410,7 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
         maxValue: _.get(np.parameter, 'max', 1),
         values: indicatorTimeSeries,
         numLevels: NUM_LEVELS,
-        resolution: _.get(np.parameter, 'temporalResolution', 'month'),
+        resolution: temporalResolution,
         period: _.get(np.parameter, 'period', 12)
       });
     }
