@@ -115,6 +115,7 @@ export interface Datacube extends DatasetEditable {
   qualifier_outputs?: FeatureQualifier[] | null;
   default_view: any; // object that will contain various default view configurations such as default aggregations
   new_version_data_id?: string;
+  sparkline?: number[];
 }
 
 export interface Model extends Datacube {

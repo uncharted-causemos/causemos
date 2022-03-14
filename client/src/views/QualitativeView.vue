@@ -1301,7 +1301,7 @@ export default defineComponent({
       // into place. Needs better support from renderer itself!!
       const oldName = this.modelComponents.nodes.find(node => node.id === this.renameNodeId)?.concept;
       const node = this.cagGraph.renderer.graph.nodes.find((node: any) => node.label === oldName);
-      node.id = newName;
+      // node.id = newName;
       node.label = newName;
 
       const edges = this.cagGraph.renderer.graph.edges;
@@ -1504,7 +1504,7 @@ export default defineComponent({
 
 .side-panel {
   isolation: isolate;
-  z-index: 1;
+  z-index: 2;
 }
 .tab-content {
   flex: 1;

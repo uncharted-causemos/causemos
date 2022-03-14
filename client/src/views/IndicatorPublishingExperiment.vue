@@ -51,9 +51,9 @@ import { useStore } from 'vuex';
 import router from '@/router';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import { updateIndicatorsBulk } from '@/services/new-datacube-service';
-import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { AggregationOption, TemporalResolutionOption, DatacubeStatus } from '@/types/Enums';
+import { generateSparklines, updateIndicatorsBulk } from '@/services/new-datacube-service';
+import { Datacube, DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
+import { AggregationOption, TemporalResolutionOption, DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isIndicator, getOutputs } from '@/utils/datacube-util';
 import useToaster from '@/services/composables/useToaster';
@@ -72,6 +72,9 @@ export default defineComponent({
     const toast = useToaster();
     const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
     const projectType = computed(() => store.getters['app/projectType']);
+
+    const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
+    const disableOverlay = () => store.dispatch('app/disableOverlay');
 
     const initialViewConfig = ref<ViewState | null>({
       temporalAggregation: AggregationOption.Mean,
@@ -109,6 +112,24 @@ export default defineComponent({
       }
     };
 
+    const generateSparkline = async (meta: Datacube, output?: DatacubeFeature, selections?: ViewState) => {
+      const feature = output?.name ?? meta.default_feature;
+      const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+      const finalRawTimestamp = meta.period?.lte ?? 0;
+      const sparklineResult = await generateSparklines([{
+        id: meta.id,
+        dataId: meta.data_id,
+        runId: 'indicator',
+        feature: feature,
+        resolution: selections?.temporalResolution ?? 'month',
+        temporalAgg: selections?.temporalAggregation ?? 'mean',
+        spatialAgg: selections?.spatialAggregation ?? 'mean',
+        rawResolution: rawResolution,
+        finalRawTimestamp: finalRawTimestamp
+      }]);
+      console.log('Sparkline requested: ' + sparklineResult);
+    };
+
     const updateIndicator = async () => {
       //
       // call the backend to update metadata
@@ -125,7 +146,11 @@ export default defineComponent({
             default_view: indicator.default_view
           }));
         try {
+          await enableOverlay('Generating preview');
+          await generateSparkline(metadata.value, mainModelOutput.value, viewState.value);
+          await enableOverlay('Saving changes');
           await updateIndicatorsBulk(deltas);
+          await disableOverlay();
           toast('Indicator updated', 'success');
           // redirect to dataset family page
           router.push({
@@ -137,6 +162,7 @@ export default defineComponent({
             }
           });
         } catch {
+          await disableOverlay();
           toast('The was an issue with applying the settings', 'error');
         }
       }

@@ -1,29 +1,6 @@
 <template>
-  <div class="analytical-questions-panel-container">
+  <div class="list-analytical-questions-pane-container">
     <h4 v-if="showChecklistTitle" class="title">Analysis Checklist</h4>
-    <template v-if="showDeleteModal">
-      <h5>Delete Public Question</h5>
-      <p>Are you sure you want to delete?</p>
-      <message-display
-        class="delete-confirm-alert"
-        :message-type="'alert-warning'"
-        :message="'This deletion will remove the question from all projects.'"
-      />
-      <ul class="unstyled-list">
-        <button
-          type="button"
-          class="btn"
-          @click.stop="showDeleteModal = false">
-            Cancel
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary btn-call-for-action"
-          @click.stop="deleteSelectedQuestion">
-            Confirm
-        </button>
-      </ul>
-    </template>
     <template v-if="showNewAnalyticalQuestion">
       <h5>New Section</h5>
       <textarea
@@ -50,7 +27,7 @@
         </button>
       </ul>
     </template>
-    <template v-if="showDeleteModal === false && showNewAnalyticalQuestion === false">
+    <template v-if="showNewAnalyticalQuestion === false">
       <button
         v-tooltip.top-center="'Add a new analytical question'"
         type="button"
@@ -75,14 +52,6 @@
             <div class="checklist-item-question">
               <i class="fa fa-bars checklist-item-menu" />
               <span class="question-title"> {{ questionItem.question }}</span>
-              <!--
-              <span
-                v-if="questionItem.visibility !== 'private'"
-                class="public-question-label"
-              >
-                Public
-              </span>
-              -->
               <i
                 v-if="hasTour(questionItem)"
                 v-tooltip.top="'Tutorial available for this question'"
@@ -98,15 +67,10 @@
                 class="options-button"
               >
                 <template #content>
-                  <!--
-                  <div
-                    class="dropdown-option"
-                    @click="promote(questionItem)"
-                  >
+                  <div class="dropdown-option" @click="editSection(questionItem)">
                     <i class="fa fa-edit" />
-                    Make public
+                    Edit
                   </div>
-                  -->
                   <div
                     class="dropdown-option"
                     @click="initiateQuestionDeletion(questionItem)"
@@ -142,6 +106,15 @@
           </div>
       </div>
     </template>
+    <teleport to="body">
+      <rename-modal
+        v-if="isEditModalOpen"
+        :modal-title="'Edit section'"
+        :current-name="selectedQuestion?.question ?? ''"
+        @confirm="onEditModalConfirm"
+        @cancel="isEditModalOpen = false"
+      />
+    </teleport>
   </div>
 </template>
 
@@ -161,6 +134,7 @@ import { QUESTIONS } from '@/utils/messages-util';
 import { SORT_PATH, sortQuestionsByPath } from '@/utils/questions-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 import useToaster from '@/services/composables/useToaster';
 
 type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
@@ -169,7 +143,8 @@ export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
   components: {
     MessageDisplay,
-    OptionsButton
+    OptionsButton,
+    RenameModal
   },
   props: {
     showChecklistTitle: {
@@ -211,7 +186,7 @@ export default defineComponent({
     selectedQuestion: null as AnalyticalQuestion | null,
     showNewAnalyticalQuestion: false,
     newQuestionText: '',
-    showDeleteModal: false,
+    isEditModalOpen: false,
     toursMetadata: [
       {
         baseQuestion: 'What are the appropriate aggregation functions?',
@@ -268,22 +243,33 @@ export default defineComponent({
       return this.projectType === ProjectType.Analysis ? 'private' : 'public';
       // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
     },
-    promote(question: AnalyticalQuestion) {
-      // update question to be public, i.e., visible in all projects
-      if (question) {
-        question.visibility = 'public';
-        question.project_id = '';
-        question.context_id = [''];
-        question.url = '';
-        updateQuestion(question.id as string, question).then(result => {
-          const message = result.status === 200 ? QUESTIONS.SUCCESFUL_UPDATE : QUESTIONS.ERRONEOUS_UPDATE;
-          if (message === QUESTIONS.SUCCESFUL_UPDATE) {
-            this.toaster(message, 'success', false);
-          } else {
-            this.toaster(message, 'error', true);
-          }
-        });
+    editSection(section: AnalyticalQuestion) {
+      this.selectedQuestion = section;
+      this.isEditModalOpen = true;
+    },
+    onEditModalConfirm(newSectionTitle: string) {
+      if (this.selectedQuestion === null) {
+        console.error('No question is selected.');
+        return;
       }
+      const updatedSection = {
+        ...this.selectedQuestion,
+        question: newSectionTitle
+      };
+      this.selectedQuestion = null;
+      this.isEditModalOpen = false;
+      // Assert that ID is defined, since we should never be able to fetch a
+      //  question before it's stored with an ID
+      updateQuestion(updatedSection.id as string, updatedSection).then(
+        result => {
+          if (result.status === 200) {
+            // refresh the latest list from the server
+            this.reFetchQuestions();
+          } else {
+            this.toaster(QUESTIONS.ERRONEOUS_UPDATE, 'error', true);
+          }
+        }
+      );
     },
     updateLocalQuestionsList(newQuestionsList: AnalyticalQuestion[]) {
       this.questionsList = newQuestionsList;
@@ -327,13 +313,6 @@ export default defineComponent({
     initiateQuestionDeletion(question: AnalyticalQuestion) {
       this.selectedQuestion = question;
       this.deleteSelectedQuestion();
-      /*
-      if (question.visibility === 'public') {
-        this.showDeleteModal = true;
-      } else {
-        this.deleteSelectedQuestion();
-      }
-      */
     },
     deleteSelectedQuestion() {
       if (this.selectedQuestion) {
@@ -357,7 +336,6 @@ export default defineComponent({
         });
       }
       this.selectedQuestion = null;
-      this.showDeleteModal = false;
     },
     setActive(tab: string) {
       this.currentTab = tab;
@@ -757,7 +735,7 @@ export default defineComponent({
     width: fit-content;
   }
 
-  .analytical-questions-panel-container {
+  .list-analytical-questions-pane-container {
     display: flex;
     flex-direction: column;
 

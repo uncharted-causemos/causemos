@@ -44,6 +44,15 @@ router.post('/bulk-update', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * POST Bulk update multiple datacubes
+ */
+router.post('/add-sparklines', asyncHandler(async (req, res) => {
+  const datacubes = req.body.datacubes;
+  const result = await datacubeService.generateSparklines(datacubes);
+  res.json(result);
+}));
+
+/**
  * Return all datacubes (models and indicators) that match the provided filter.
  */
 router.get('/', asyncHandler(async (req, res) => {

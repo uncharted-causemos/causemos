@@ -1,5 +1,5 @@
 <template>
-  <div class="analytics-pane">
+  <div class="analytics-pane" ref="containerElement">
     <dropdown-button
       :is-dropdown-left-aligned="true"
       :inner-button-label="'Analysis'"
@@ -12,19 +12,19 @@
       <div v-if="cyclesPaths && cyclesPaths.balancing.length > 0" class="cycles-result">
         <strong> Balancing Loops </strong>
         <div v-for="(path, idx) of cyclesPaths.balancing" :key="idx">
-          <cag-path-item :path-item="path" @click="showPath(path)" />
+          <cag-path-item :path-item="path" :selected="path === selectedPathItem" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="cyclesPaths && cyclesPaths.reinforcing.length > 0" class="cycles-result">
         <strong> Reinforcing Loops</strong>
         <div v-for="(path, idx) of cyclesPaths.reinforcing" :key="idx">
-          <cag-path-item :path-item="path" @click="showPath(path)" />
+          <cag-path-item :path-item="path" :selected="path === selectedPathItem" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="cyclesPaths && cyclesPaths.ambiguous.length > 0" class="cycles-result">
         <strong> Ambiguous Loops </strong>
         <div v-for="(path, idx) of cyclesPaths.ambiguous" :key="idx">
-          <cag-path-item :path-item="path" @click="showPath(path)" />
+          <cag-path-item :path-item="path" :selected="path === selectedPathItem" @click="showPath(path)" />
         </div>
       </div>
       <div v-if="totalCycles === 0">
@@ -57,12 +57,15 @@
 
       <!-- paht results -->
       <div>
-        <div v-if="pathExperimentId && pathExperimentResult.length === 0">
+        <div v-if="pathExperimentId && pathExperimentResult.length === 0 && noPathsFound === false">
           <i class="fa fa-spinner fa-spin" /> Running experiment
+        </div>
+        <div v-if="pathExperimentId && noPathsFound === true">
+          No results found
         </div>
         <div v-if="pathExperimentId && pathExperimentResult.length > 0">
           <div v-for="(path, idx) of pathExperimentResult" :key="idx">
-            <cag-path-item :path-item="path" @click="showPath(path)" />
+            <cag-path-item :path-item="path" :selected="path === selectedPath" @click="showPath(path)" />
           </div>
         </div>
       </div>
@@ -141,6 +144,7 @@ export default defineComponent({
 
     const pathExperimentId = ref('');
     const pathExperimentResult = ref([]) as Ref<GraphPath[]>;
+    const noPathsFound = ref(false);
 
     // FIXME: SHould have adapatble lists depending on selection e.g. reachable nodes
     const availableNodes = computed(() => {
@@ -153,6 +157,9 @@ export default defineComponent({
       });
     });
 
+    const selectedPathItem = ref<GraphPath|null>(null);
+
+
     return {
       currentAnalysis,
       currentPathSource,
@@ -162,9 +169,12 @@ export default defineComponent({
       cyclesPaths,
       totalCycles,
 
+      selectedPathItem,
+
       availableNodes,
       pathExperimentId,
       pathExperimentResult,
+      noPathsFound,
 
       toaster: useToaster(),
 
@@ -173,6 +183,10 @@ export default defineComponent({
   },
   mounted() {
     this.refresh();
+    document.addEventListener('click', this.onClickOutside);
+  },
+  unmounted() {
+    document.removeEventListener('click', this.onClickOutside);
   },
   methods: {
     refresh() {
@@ -207,6 +221,7 @@ export default defineComponent({
     async runPathwayAnalysis() {
       if (_.isEmpty(this.currentPathSource) || _.isEmpty(this.currentPathTarget)) return;
 
+
       let constraints: ConceptProjectionConstraints[] = [];
       // If we're in "historical data only" mode, run pathway analysis with no
       //  constraints.
@@ -218,6 +233,7 @@ export default defineComponent({
       }
 
       this.pathExperimentResult = [];
+      this.noPathsFound = false;
       this.pathExperimentId = await modelService.runPathwaySensitivityAnalysis(
         this.modelSummary,
         [this.currentPathSource],
@@ -232,6 +248,9 @@ export default defineComponent({
       if (r.status === 'completed' && r.results) {
         const pathResult = r.results.pathways;
         this.pathExperimentResult = pathResult;
+        if (_.isEmpty(pathResult)) {
+          this.noPathsFound = true;
+        }
       } else {
         window.setTimeout(() => {
           this.pollPathExperimentResult();
@@ -239,10 +258,12 @@ export default defineComponent({
       }
     },
     showPath(pathItem: GraphPath) {
+      this.selectedPathItem = pathItem;
       this.$emit('show-path', pathItem);
     },
     changeAnalysis(v: string) {
-      const modelStale = this.modelSummary.status !== modelService.MODEL_STATUS.READY;
+      // const modelStale = this.modelSummary.status !== modelService.MODEL_STATUS.READY;
+      const modelStale = this.modelSummary.engine_status[this.modelSummary.parameter.engine] !== modelService.MODEL_STATUS.READY;
       const scenariosStale = _.some(this.scenarios, s => s.is_valid === false);
       if (scenariosStale || modelStale) {
         this.toaster('CAG or scenarios are stale, please click "Run" to synchronize first and then retry the path analysis.', 'error', true);
@@ -257,6 +278,15 @@ export default defineComponent({
     },
     changePathTarget(v: string) {
       this.currentPathTarget = v;
+    },
+    onClickOutside(event: MouseEvent) {
+      const containerElement = (this.$refs.containerElement as HTMLElement);
+      // input just lost focus, but was that because the user clicked on one of the suggestions?
+      if ((event.target instanceof Element) && containerElement.contains(event.target)) {
+        // Click was within this element, so do nothing
+        return;
+      }
+      this.selectedPathItem = null;
     }
   }
 });

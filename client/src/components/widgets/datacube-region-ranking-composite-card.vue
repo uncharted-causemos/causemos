@@ -16,6 +16,7 @@
           :selected-admin-level="selectedAdminLevel"
           :map-bounds="mapBounds"
           :selected-id="barChartHoverId"
+          :disable-pan-zoom="true"
           @click-region="$emit('map-click-region', $event)"/>
         <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
           <map-legend :ramp="mapLegendData" :label-position="{ top: false, right: true }" :isContinuos="false" />

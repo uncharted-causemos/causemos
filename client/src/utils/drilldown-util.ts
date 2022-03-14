@@ -1,5 +1,5 @@
 
-import { ComputedRef, Ref } from 'vue';
+import { Ref } from 'vue';
 import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { DataState, ViewState } from '@/types/Insight';
 import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/types/Enums';
@@ -85,7 +85,7 @@ export function initDataStateFromRefs (
 
 export function initViewStateFromRefs (
   breakdownOption: Ref<string|null>,
-  currentOutputIndex: ComputedRef<number>,
+  currentOutputIndex: Ref<number>,
   currentTabView: Ref<string>,
   selectedAdminLevel: Ref<number>,
   selectedBaseLayer: Ref<BASE_LAYER>,

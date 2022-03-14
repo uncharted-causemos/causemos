@@ -1,7 +1,9 @@
 const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
+const requestAsPromise = rootRequire('/util/request-as-promise');
 const domainProjectService = rootRequire('/services/domain-project-service');
 const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
+const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
 const Logger = rootRequire('/config/logger');
 
 /**
@@ -114,6 +116,36 @@ const updateDatacubes = async(metadataDeltas) => {
 };
 
 /**
+ * Generate sparkline data for the provided datacubes
+ */
+const generateSparklines = async(datacubes) => {
+  const datacubeDeltas = [];
+  for (const datacube of datacubes) {
+    const {
+      id,
+      dataId,
+      runId,
+      feature,
+      resolution,
+      temporalAgg,
+      spatialAgg,
+      rawResolution,
+      finalRawTimestamp
+    } = datacube;
+
+    const timeseries = await getTimeseries(dataId, runId, feature, resolution, temporalAgg, spatialAgg);
+    const points = correctIncompleteTimeseries(timeseries, rawResolution, resolution, temporalAgg, new Date(finalRawTimestamp));
+    const sparkline = points.map(point => point.value);
+
+    datacubeDeltas.push({
+      id,
+      sparkline
+    });
+  }
+  return await updateDatacubes(datacubeDeltas);
+};
+
+/**
  * Deprecate datacubes and update any references to it from previously deprecated datacubes
  */
 const deprecateDatacubes = async(newDatacubeId, oldDatacubeIds) => {
@@ -180,6 +212,24 @@ const searchFields = async (searchField, queryString) => {
   return matchedTerms;
 };
 
+const getTimeseries = async (dataId, runId, feature, resolution, temporalAgg, spatialAgg) => {
+  Logger.info(`Get timeseries data from wm-go: ${dataId} ${feature}`);
+
+  const options = {
+    method: 'GET',
+    url: process.env.WM_GO_URL + '/maas/output/timeseries' +
+      `?data_id=${encodeURI(dataId)}&run_id=${encodeURI(runId)}&feature=${encodeURI(feature)}` +
+      `&resolution=${resolution}&temporal_agg=${temporalAgg}&spatial_agg=${spatialAgg}`,
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {}
+  };
+  const response = await requestAsPromise(options);
+  return response;
+};
+
 
 module.exports = {
   getDatacubes,
@@ -189,9 +239,12 @@ module.exports = {
   insertDatacube,
   updateDatacube,
   updateDatacubes,
+  generateSparklines,
   deprecateDatacubes,
 
   facets,
-  searchFields
+  searchFields,
+
+  getTimeseries
 };
 

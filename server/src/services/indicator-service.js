@@ -1,8 +1,8 @@
 const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
-const requestAsPromise = rootRequire('/util/request-as-promise');
 const modelUtil = rootRequire('/util/model-util');
 const searchService = rootRequire('/services/search-service');
+const { getTimeseries } = rootRequire('/services/datacube-service');
 const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
 const { client } = rootRequire('/adapters/es/client');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
@@ -13,12 +13,14 @@ const _buildQueryStringFilter = (text) => {
   cleanedStr = cleanedStr.replaceAll('_', ' ');
   cleanedStr = cleanedStr
     .replace(/[^\w\s]/gi, '')
-    .replace(/\s\s+/gi, ' ');
+    .replace(/\s\s+/gi, ' ')
+    .trim();
 
   const labels = cleanedStr.split(' ');
+
   let query = '';
   if (labels.length === 1) {
-    query = text;
+    query = labels[0];
   } else {
     query = '(' + labels[0] + ') AND (' + labels[1] + ')';
   }
@@ -61,24 +63,6 @@ const getDefaultModelRun = async (dataId) => {
     { field: 'is_default_run', value: true }
   ], {});
   return defaultRun;
-};
-
-const getTimeseries = async (dataId, runId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
-  Logger.info(`Get indicator data from wm-go: ${dataId} ${feature}`);
-
-  const options = {
-    method: 'GET',
-    url: process.env.WM_GO_URL + '/maas/output/timeseries' +
-      `?data_id=${encodeURI(dataId)}&run_id=${encodeURI(runId)}&feature=${encodeURI(feature)}` +
-      `&resolution=${temporalResolution}&temporal_agg=${temporalAggregation}&spatial_agg=${geospatialAggregation}`,
-    headers: {
-      'Content-type': 'application/json',
-      'Accept': 'application/json'
-    },
-    json: {}
-  };
-  const response = await requestAsPromise(options);
-  return response;
 };
 
 /**
