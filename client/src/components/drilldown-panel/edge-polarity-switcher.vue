@@ -165,11 +165,9 @@ import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { decodeWeights } from '@/services/model-service';
-import { Engine } from '@/types/Enums';
+import { decodeWeights, Engine, supportsLevelEdges } from '@/services/model-service';
 import { CAGModelSummary, EdgeParameter } from '@/types/CAG';
 import EdgeWeightDropdownOption from '@/components/drilldown-panel/edge-weight-dropdown-option.vue';
-import { supportsLevelEdges } from '@/utils/engine-util';
 
 const EDGE_TYPE_LEVEL = 'level';
 const EDGE_TYPE_TREND = 'trend';

@@ -3,13 +3,16 @@ import { NodeParameter, EdgeParameter, NodeScenarioData } from '@/types/CAG';
 import svgUtil from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
-import { decodeWeights } from '@/services/model-service';
+import {
+  decodeWeights,
+  Engine,
+  supportsLevelEdges,
+  supportsPolarityInference
+} from '@/services/model-service';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { DEFAULT_STYLE } from './cag-style';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-import { Engine } from '@/types/Enums';
-import { supportsLevelEdges, supportsPolarityInference } from '@/utils/engine-util';
 
 const GRAPH_HEIGHT = 55;
 const GRAPH_VERTICAL_MARGIN = 6;

@@ -179,12 +179,5 @@ export enum EdgeSuggestionType {
   KBSuggestion = 'KBSuggestion',
 }
 
-export enum Engine {
-  DySE = 'dyse',
-  Delphi = 'delphi',
-  DelphiDev = 'delphi_dev',
-  Sensei = 'sensei'
-}
-
 export const SPLIT_BY_VARIABLE = 'variable';
 export const TIMESERIES_HEADER_SEPARATOR = ' | ';
