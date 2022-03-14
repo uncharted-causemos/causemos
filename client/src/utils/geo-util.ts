@@ -1,7 +1,7 @@
 
 /**
  * Calculated the bounding box of all input coordinates
- * @param coords an array of [lng, lat] coordinates
+ * @param coords an array of [x, y] coordinates
  * @returns bounding box in [[minX, maxY], [maxX, minY]]
  */
 export function bbox(coords: [number, number][]) {
