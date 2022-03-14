@@ -160,7 +160,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, toRefs, PropType, watchEffect } from 'vue';
+import { defineComponent, ref, computed, watch, toRefs, PropType } from 'vue';
 import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
