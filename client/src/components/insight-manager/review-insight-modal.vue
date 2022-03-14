@@ -219,8 +219,7 @@ import { addQuestion, updateQuestion } from '@/services/question-service';
 import { sortQuestionsByPath, SORT_PATH } from '@/utils/questions-util';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import MessageDisplay from '@/components/widgets/message-display.vue';
-import API from '@/api/api';
-import { getImageMime } from '@/utils/datacube-util';
+import { fetchImageAsBase64 } from '@/services/new-datacube-service';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
@@ -572,13 +571,11 @@ export default defineComponent({
     async takeSnapshot() {
       const url = this.snapshotUrl;
       if (url) {
-        try {
-          const { data } = await API.get('url-to-b64', { params: { url } });
-          const mime = getImageMime(url);
-          return `data:${mime};base64,${data}`;
-        } catch (e) {
-          console.log(`Unable to load snapshot from ${url}`);
+        const b64Str = await fetchImageAsBase64(url);
+        if (b64Str) {
+          return b64Str;
         }
+        // otherwise, capture snapshot the usual way
       }
       const el = document.getElementsByClassName('insight-capture')[0] as HTMLElement;
       const image = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();

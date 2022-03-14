@@ -658,8 +658,7 @@ import {
   TAGS,
   DEFAULT_DATE_RANGE_DELIMETER,
   getSelectedOutput,
-  getOutputs,
-  getImageMime
+  getOutputs
 } from '@/utils/datacube-util';
 import { normalize } from '@/utils/value-util';
 import { initDataStateFromRefs, initViewStateFromRefs, fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
@@ -671,7 +670,13 @@ import {
   getMapSourceLayer
 } from '@/utils/map-util-new';
 
-import { addModelRunsTag, createModelRun, removeModelRunsTag, updateModelRun } from '@/services/new-datacube-service';
+import {
+  addModelRunsTag,
+  createModelRun,
+  fetchImageAsBase64,
+  removeModelRunsTag,
+  updateModelRun
+} from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
@@ -1474,13 +1479,9 @@ export default defineComponent({
       () => [selectedPreGenDataItem.value],
       async () => {
         if (selectedPreGenDataItem.value.file && selectedPreGenDataItem.value.type === 'image' && !selectedPreGenDataItem.value.embeddedSrc) {
-          try {
-            const url = selectedPreGenDataItem.value.file;
-            const { data } = await API.get('url-to-b64', { params: { url } });
-            const mime = getImageMime(url);
-            selectedPreGenDataItem.value.embeddedSrc = `data:${mime};base64,${data}`;
-          } catch (e) {
-          }
+          const url = selectedPreGenDataItem.value.file;
+          const b64Str = await fetchImageAsBase64(url);
+          selectedPreGenDataItem.value.embeddedSrc = b64Str;
         }
       },
       {

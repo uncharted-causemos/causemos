@@ -3,6 +3,7 @@ import { Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
+import { getImageMime } from '@/utils/datacube-util';
 
 /**
  * The parameters required to fetch a timeseries for a datacube and generate the sparkline data.
@@ -240,6 +241,17 @@ export const renameModelRunsTag = async (runIds: string[], oldTag: string, newTa
   const filter = [{ field: 'id', value: runIds }];
   const result = await API.patch('maas/model-run-tags', { filter, oldTag, newTag });
   return result.data;
+};
+
+export const fetchImageAsBase64 = async (url: string): Promise<string|undefined> => {
+  try {
+    const { data } = await API.get('url-to-b64', { params: { url } });
+    const mime = getImageMime(url);
+    return `data:${mime};base64,${data}`;
+  } catch (e) {
+    console.log(`Unable to get base64 for ${url}`);
+    return undefined;
+  }
 };
 
 export default {
