@@ -1,27 +1,29 @@
 <template>
   <div class="timeseries-chart-container">
     <div class="chart">
-      <svg ref="lineChart" />
+      <svg ref="lineChart"></svg>
       <resize-observer @notify="resize" />
     </div>
     <div class="selected-data-container-and-footer">
       <div class="selected-data-container">
         <div
-            class="selected-data-sections"
-            v-for="datacubeSection in dataAtSelectedTimestamp"
-            :key="datacubeSection.header">
-          <div v-if="includeSectionHeaders" class="selected-data-section-header">{{datacubeSection.header}}</div>
+          class="selected-data-sections"
+          v-for="datacubeSection in dataAtSelectedTimestamp"
+          :key="datacubeSection.legendId"
+        >
           <div
             v-for="timeseries in datacubeSection.items"
             :key="timeseries.id"
             class="selected-data-row"
-            :style="{
-              color: timeseries.color,
-              cursor: includeSectionHeaders ? 'normal' : 'pointer'
-            }"
-            v-tooltip="datacubeSection.header"
+            :style="{ color: timeseries.color }"
+            v-tooltip="datacubeSection.tooltip"
           >
-            <strong>{{ timeseries.name.length > MAX_TIMESERIES_LABEL_CHAR_LENGTH ? timeseries.name.substring(0, MAX_TIMESERIES_LABEL_CHAR_LENGTH) + '...' : timeseries.name }}
+            <strong>
+              {{
+                timeseries.name.length > MAX_TIMESERIES_LABEL_CHAR_LENGTH
+                  ? timeseries.name.substring(0, MAX_TIMESERIES_LABEL_CHAR_LENGTH) + '...'
+                  : timeseries.name
+              }}
               <sup>{{timeseries.superscript}}</sup>
             </strong>
             <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
@@ -76,7 +78,6 @@ export default defineComponent({
     const { timeseriesData, breakdownOption, selectedTimestamp, selectedTemporalResolution, timeseriesToDatacubeMap } = toRefs(
       props
     );
-    const includeSectionHeaders = ref(false);
     const lineChart = ref<HTMLElement | null>(null);
     function selectTimestamp(newValue: number) {
       emit('select-timestamp', newValue);
@@ -101,18 +102,38 @@ export default defineComponent({
       return chartValueFormatter(...yExtent);
     });
     const dataAtSelectedTimestamp = computed(() => {
-      // array of sections, each for a datacube,
-      //  with header representing this unique datacube as well as all the timeseries info
-      const legendData: {header: string; items: {id: string; name: string; color: string; value: number|undefined; superscript: string|undefined}[]}[] = [];
+      const legendData: {
+        legendId: string;
+        tooltip: string;
+        items: {
+          id: string;
+          name: string;
+          color: string;
+          value: number | undefined;
+          superscript: string | undefined;
+        }[];
+      }[] = [];
       timeseriesData.value.forEach(timeseries => {
         const timeseriesId = timeseries.id;
-        const ownerDatacube = timeseriesToDatacubeMap.value[timeseriesId].datacubeName + TIMESERIES_HEADER_SEPARATOR + timeseriesToDatacubeMap.value[timeseriesId].datacubeOutputVariable;
-        const existingDatacubeSection = legendData.find(item => item.header === ownerDatacube);
+        const {
+          datacubeName,
+          datacubeOutputVariable
+        } = timeseriesToDatacubeMap.value[timeseriesId];
+        // Uniquely identify legend entries by constructing a legendId.
+        const legendId = datacubeName + TIMESERIES_HEADER_SEPARATOR + datacubeOutputVariable;
+        const existingDatacubeSection = legendData.find(item => item.legendId === legendId);
+        // `name` is what's actually displayed in the legend. On this screen we
+        //  compare across datacubes, so it's more helpful to display the
+        //  datacube name than something like "indicator" or "Run 9".
+        const name = datacubeName;
+        // Include "indicator"/"Run 9" in the tooltip, along with the output
+        //  feature.
+        const tooltip = timeseries.name + TIMESERIES_HEADER_SEPARATOR + datacubeOutputVariable;
         if (existingDatacubeSection !== undefined) {
           // datacube section already exists
           existingDatacubeSection.items.push({
             id: timeseries.id,
-            name: timeseries.name,
+            name,
             color: timeseries.color,
             superscript: getActionSuperscript(timeseries.correctiveAction),
             value: timeseries.points.find(
@@ -121,11 +142,12 @@ export default defineComponent({
           });
         } else {
           const datacubeSection = {
-            header: ownerDatacube,
+            tooltip,
+            legendId,
             items: [
               {
                 id: timeseries.id,
-                name: timeseries.name,
+                name,
                 color: timeseries.color,
                 superscript: getActionSuperscript(timeseries.correctiveAction),
                 value: timeseries.points.find(
@@ -194,7 +216,6 @@ export default defineComponent({
       timestampFormatter,
       dataAtSelectedTimestamp,
       valueFormatter,
-      includeSectionHeaders,
       MAX_TIMESERIES_LABEL_CHAR_LENGTH
     };
   }
