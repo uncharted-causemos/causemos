@@ -48,8 +48,6 @@ export default {
     };
   },
   data: () => ({
-    showDropdown: false,
-    showRenameModal: false,
     analysisName: ''
   }),
   computed: {

@@ -245,7 +245,6 @@ $selected-border: #255DCC;
 $selected-background: #EBF1FC;
 .search-listview-container {
   background: $background-light-2;
-  padding: 0 10px;
   width: 100%;
   table  {
     border-collapse: collapse;
