@@ -67,7 +67,7 @@
       </div>
       <div class="card-column">
         <div class="column-title">Domains</div>
-        <div style="display: flex; align-items: center">
+        <div style="display: flex; align-items: center; flex-wrap: wrap">
           <select name="domains" id="domains" @change="selectedDomain=AVAILABLE_DOMAINS[$event.target.selectedIndex]">
             <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
               {{domain}}
