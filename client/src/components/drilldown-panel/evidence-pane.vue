@@ -237,7 +237,7 @@ import numberFormatter from '@/formatters/number-formatter';
 import useToaster from '@/services/composables/useToaster';
 
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
-import { bbox } from '@/utils/geo-util';
+import geo from '@/utils/geo-util';
 import { Statement, Evidence, DocumentContext } from '@/types/Statement';
 import { AggChild } from '@/utils/aggregations-util';
 
@@ -437,11 +437,8 @@ export default defineComponent({
       return result;
     },
     mapBounds() {
-      const coords = this.mapData.features.map(feat => feat.geometry.coordinates);
-      const bounds = bbox(coords);
-      // To prevent that bound is focused on too small area, expand bound a bit by adding small degrees (e.g 1 lat is ~110km ) to each lng and lat values.
-      const ADD = 1;
-      return [[bounds[0][0] - ADD, bounds[0][1] + ADD], [bounds[1][0] + ADD, bounds[0][1] - ADD]];
+      const coords: [number, number][] = this.mapData.features.map(feat => feat.geometry.coordinates);
+      return geo.expand(geo.bbox(coords));
     },
     polarity() {
       return this.selectedRelationship.polarity;
