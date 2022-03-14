@@ -9,6 +9,7 @@ interface InsightState {
   dataState: any;
   contextId: string[] | undefined;
   analysisId: string;
+  snapshotUrl: string | undefined;
   updatedInsight: (Insight|AnalyticalQuestion) | null;
   insightList: (Insight|AnalyticalQuestion)[] | null;
   refreshDatacubes: boolean;
@@ -28,6 +29,7 @@ const state: InsightState = {
   dataState: {},
   contextId: undefined,
   analysisId: '',
+  snapshotUrl: undefined,
   updatedInsight: null,
   insightList: null,
   refreshDatacubes: false,
@@ -45,6 +47,7 @@ const getters: GetterTree<InsightState, any> = {
   dataState: state => state.dataState,
   contextId: state => state.contextId,
   analysisId: state => state.analysisId,
+  snapshotUrl: state => state.snapshotUrl,
   updatedInsight: state => state.updatedInsight,
   insightList: state => state.insightList,
   refreshDatacubes: state => state.refreshDatacubes,
@@ -78,6 +81,9 @@ const actions: ActionTree<InsightState, any> = {
   },
   setAnalysisId: ({ commit }, newValue) => {
     commit('setAnalysisId', newValue);
+  },
+  setSnapshotUrl: ({ commit }, newValue) => {
+    commit('setSnapshotUrl', newValue);
   },
   setUpdatedInsight: ({ commit }, newValue) => {
     commit('setUpdatedInsight', newValue);
@@ -124,6 +130,9 @@ const mutations: MutationTree<InsightState> = {
   },
   setAnalysisId(state, value) {
     state.analysisId = value;
+  },
+  setSnapshotUrl(state, value) {
+    state.snapshotUrl = value;
   },
   setUpdatedInsight(state, value) {
     state.updatedInsight = value;

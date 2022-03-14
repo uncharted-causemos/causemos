@@ -219,6 +219,7 @@ import { addQuestion, updateQuestion } from '@/services/question-service';
 import { sortQuestionsByPath, SORT_PATH } from '@/utils/questions-util';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import MessageDisplay from '@/components/widgets/message-display.vue';
+import { fetchImageAsBase64 } from '@/services/new-datacube-service';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
@@ -442,6 +443,7 @@ export default defineComponent({
       dataState: 'insightPanel/dataState',
       viewState: 'insightPanel/viewState',
       contextId: 'insightPanel/contextId',
+      snapshotUrl: 'insightPanel/snapshotUrl',
       projectMetadata: 'app/projectMetadata',
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
@@ -567,6 +569,14 @@ export default defineComponent({
       });
     },
     async takeSnapshot() {
+      const url = this.snapshotUrl;
+      if (url) {
+        const b64Str = await fetchImageAsBase64(url);
+        if (b64Str) {
+          return b64Str;
+        }
+        // otherwise, capture snapshot the usual way
+      }
       const el = document.getElementsByClassName('insight-capture')[0] as HTMLElement;
       const image = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();
       return image;

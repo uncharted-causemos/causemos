@@ -14,6 +14,7 @@ export interface ModelRunOutputAggregate {
 export interface PreGeneratedModelRunData {
   id?: string; // run-id
   file: string; // url/path for the pre-generated resource
+  embeddedSrc?: string; // base64 of the embedded media resource (ONLY supported for images)
   timestamp?: number; // timestamp value associated with the resource
   type?: string; // resource type, e.g., image, video
   target?: string; // target component, e.g., map, timeseries, none

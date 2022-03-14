@@ -245,6 +245,15 @@
                         {{pregenItem.id}}
                       </option>
                     </select>
+                  <button
+                    v-if="selectedPreGenDataItem.type === 'image'"
+                    type="button"
+                    class="btn btn-sm btn-primary btn-call-for-action"
+                    style="margin-left: 10px"
+                    @click="savePreGenAsInsight">
+                    <i class="fa fa-fw fa-star fa-lg" />
+                    Save As Insight
+                  </button>
                   </div>
                 <div v-if="selectedPreGenDataItem.caption" style="padding-left: 5px; padding-right: 10px">{{selectedPreGenDataItem.caption}}</div>
               </div>
@@ -261,7 +270,7 @@
                     <!-- display only a single pre-rendered-viz item for each selected run -->
                     <img
                       v-if="pregenDataForSpec.type === 'image'"
-                      :src="pregenDataForSpec.file"
+                      :src="pregenDataForSpec.embeddedSrc ?? pregenDataForSpec.file"
                       alt="Pre-rendered Visualization"
                       class="pre-rendered-content"
                     >
@@ -661,7 +670,13 @@ import {
   getMapSourceLayer
 } from '@/utils/map-util-new';
 
-import { addModelRunsTag, createModelRun, removeModelRunsTag, updateModelRun } from '@/services/new-datacube-service';
+import {
+  addModelRunsTag,
+  createModelRun,
+  fetchImageAsBase64,
+  removeModelRunsTag,
+  updateModelRun
+} from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
@@ -1460,6 +1475,20 @@ export default defineComponent({
       }
     });
 
+    watch(
+      () => [selectedPreGenDataItem.value],
+      async () => {
+        if (selectedPreGenDataItem.value.file && selectedPreGenDataItem.value.type === 'image' && !selectedPreGenDataItem.value.embeddedSrc) {
+          const url = selectedPreGenDataItem.value.file;
+          const b64Str = await fetchImageAsBase64(url);
+          selectedPreGenDataItem.value.embeddedSrc = b64Str;
+        }
+      },
+      {
+        immediate: true
+      }
+    );
+
     function getPreGenItemDisplayName(pregen: PreGeneratedModelRunData) {
       // @REVIEW: use the resource file name
       const lastSlashIndx = pregen.file.lastIndexOf('/');
@@ -1483,6 +1512,14 @@ export default defineComponent({
         return [];
       }
     });
+
+    const savePreGenAsInsight = async() => {
+      const url = selectedPreGenDataItem.value.file;
+      await store.dispatch('insightPanel/setSnapshotUrl', url);
+      await store.dispatch('insightPanel/showInsightPanel');
+      await store.dispatch('insightPanel/setUpdatedInsight', null);
+      await store.dispatch('insightPanel/setCurrentPane', 'review-new-insight');
+    };
 
     const someVizOptionsInvalid = computed(() =>
       isPublishing.value && (selectedSpatialAggregation.value === AggregationOption.None ||
@@ -2147,6 +2184,7 @@ export default defineComponent({
       fetchData,
       filteredRunData,
       geoModelParam,
+      savePreGenAsInsight,
       getSelectedPreGenOutput,
       gridLayerStats,
       hasDefaultRun,
