@@ -39,7 +39,7 @@ class DatacubeQueryUtil extends QueryUtil {
    * @params clause{}  enable clause object
    * */
   buildEnableFilters(clause) {
-    const values = _.get(clause, 'values') || [];
+    const values = _.get(clause, 'values', []);
     const queries = [];
     if (values.indexOf('hidden') < 0) {
       queries.push({
