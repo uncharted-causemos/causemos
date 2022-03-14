@@ -160,14 +160,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, toRefs, PropType } from 'vue';
+import { defineComponent, ref, computed, watch, toRefs, PropType, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { decodeWeights } from '@/services/model-service';
+import { Engine } from '@/types/Enums';
 import { CAGModelSummary, EdgeParameter } from '@/types/CAG';
 import EdgeWeightDropdownOption from '@/components/drilldown-panel/edge-weight-dropdown-option.vue';
+import { supportsLevelEdges } from '@/utils/engine-util';
 
 const EDGE_TYPE_LEVEL = 'level';
 const EDGE_TYPE_TREND = 'trend';
@@ -223,7 +225,10 @@ export default defineComponent({
     const ontologyFormatter = useOntologyFormatter();
     const store = useStore();
     const currentView = computed(() => store.getters['app/currentView']);
-    const currentEngine = computed(() => props.modelSummary.parameter.engine);
+    // FIXME: the type of CAGModelParameter.engine should be `Engine` instead of `string`
+    const currentEngine = computed(
+      () => props.modelSummary.parameter.engine as Engine
+    );
 
     const { selectedRelationship } = toRefs(props);
 
@@ -259,7 +264,10 @@ export default defineComponent({
     });
 
     const typeInconsistency = computed(() => {
-      return inferredWeightType.value !== currentEdgeType.value;
+      return (
+        supportsLevelEdges(currentEngine.value) &&
+        inferredWeightType.value !== currentEdgeType.value
+      );
     });
 
     const valueInconsistency = computed(() => {
