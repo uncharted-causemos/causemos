@@ -310,6 +310,33 @@ export const hasRegionLevelData = (regionLevelData: RegionAgg[]|undefined): bool
   }, false) ?? false;
 };
 
+export const AVAILABLE_DOMAINS = [
+  'Logic',
+  'Mathematics',
+  'Astronomy and astrophysics',
+  'Physics',
+  'Chemistry',
+  'Life Sciences',
+  'Earth and Space Sciences',
+  'Agricultural Sciences',
+  'Medical Sciences',
+  'Technological Sciences',
+  'Anthropology',
+  'Demographics',
+  'Economic Sciences',
+  'Geography',
+  'History',
+  'Juridical Sciences and Law',
+  'Linguistics',
+  'Pedagogy',
+  'Political Science',
+  'Psychology',
+  'Science of Arts and Letters',
+  'Sociology',
+  'Ethics',
+  'Philosophy'
+];
+
 export default {
   CODE_TABLE,
   SUGGESTION_CODE_TABLE,
