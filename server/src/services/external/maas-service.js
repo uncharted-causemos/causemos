@@ -273,6 +273,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   processFilteredData(metadata);
   removeUnwantedData(metadata);
   metadata.type = 'indicator';
+  metadata.is_hidden = false;
   // ensure for each newly registered indicator datacube a corresponding domain project
   // @TODO: when indicator publish workflow is added,
   //        the following function would be called at:
@@ -344,12 +345,18 @@ const startIndicatorPostProcessing = async (metadata) => {
           qualifier.ontologies.processes,
           qualifier.ontologies.properties
         ]).flat(2);
+
+        // Remove qualifier level ontologies
+        clonedMetadata.qualifier_outputs.forEach(qualifier => { qualifier.ontologies = undefined; });
       }
 
       // Append to the concepts from the output
       const allMatches = qualifierMatches.concat(output.ontologies.concepts,
         output.ontologies.processes,
         output.ontologies.properties);
+
+      // Remove output level ontologies
+      output.ontologies = undefined;
 
       clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
       return clonedMetadata;

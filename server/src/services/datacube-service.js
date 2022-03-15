@@ -51,6 +51,7 @@ const insertDatacube = async(metadata) => {
   // Allow deprecation of models while registering a new one. Field removed via `removeUnwantedData`
   const deprecatedIds = metadata.deprecatesIDs;
   metadata.type = metadata.type || 'model'; // Assume these are all models for now
+  metadata.is_hidden = false;
   metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
   processFilteredData(metadata);
   removeUnwantedData(metadata);
@@ -80,6 +81,13 @@ const insertDatacube = async(metadata) => {
   }).flat(2);
 
   metadata.ontology_matches = _.sortedUniqBy(_.orderBy(ontologyMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+
+  // Remove section specific ontologies
+  fields.forEach(field => {
+    field.forEach(variable => {
+      variable.ontologies = undefined;
+    });
+  });
 
   // a new datacube (model or indicator) is being added
   // ensure for each newly registered datacube a corresponding domain project
