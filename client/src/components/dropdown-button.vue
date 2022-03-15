@@ -25,11 +25,11 @@
           :key="item"
           class="dropdown-option"
           :class="{
-            'dropdown-option-selected': selectedItem === item.value
+            'dropdown-option-selected': isSelectedItem(item.value)
           }"
           @click="emitItemSelection(item.value)"
         >
-          {{ item.displayName }}
+          {{ item.displayName }} <i v-if="item.selected" style="margin-left: 1rem;" class="fa fa-check fa-lg" />
         </div>
       </template>
     </dropdown-control>
@@ -46,10 +46,12 @@ import {
   watchEffect
 } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
+import _ from 'lodash';
 
 export interface DropdownItem {
   displayName: string;
   value: any;
+  selected?: boolean;
 }
 
 export default defineComponent({
@@ -76,11 +78,20 @@ export default defineComponent({
     isDropdownAbove: {
       type: Boolean,
       default: false
+    },
+    // the following two props are added to enable multi-select mode
+    isMultiSelect: {
+      type: Boolean,
+      default: false
+    },
+    selectedItems: {
+      type: Array as PropType<string[]>,
+      default: []
     }
   },
-  emits: ['item-selected'],
+  emits: ['item-selected', 'items-selected'],
   setup(props, { emit }) {
-    const { items, selectedItem } = toRefs(props);
+    const { items, selectedItem, isMultiSelect, selectedItems } = toRefs(props);
 
     const isDropdownOpen = ref(false);
     const containerElement = ref<HTMLElement | null>(null);
@@ -106,22 +117,43 @@ export default defineComponent({
 
     // This component can accept a list of strings or a list of DropdownItems.
     //  This computed property standardizes by converting strings to DropdownItems.
-    const dropdownItems = computed<DropdownItem[]>(() =>
-      items.value.map(item =>
+    const dropdownItems = computed<DropdownItem[]>(() => {
+      const standardizedDropdownItems = items.value.map(item =>
         typeof item === 'string' ? { displayName: item, value: item } : item
-      )
-    );
+      );
+      if (isMultiSelect.value) {
+        standardizedDropdownItems.forEach(dropdownItem => {
+          dropdownItem.selected = selectedItems.value.includes(dropdownItem.value);
+        });
+      }
+      return standardizedDropdownItems;
+    });
 
     const selectedItemDisplayName = computed(() => {
       return (
-        dropdownItems.value.find(item => item.value === selectedItem.value)
-          ?.displayName ?? selectedItem.value
+        isMultiSelect.value && selectedItems.value.length > 0 ? '(multiple)'
+          : dropdownItems.value.find(item => item.value === selectedItem.value)
+            ?.displayName ?? selectedItem.value
       );
     });
 
     const emitItemSelection = (item: any) => {
-      isDropdownOpen.value = false;
-      emit('item-selected', item);
+      if (!isMultiSelect.value) {
+        isDropdownOpen.value = false;
+        emit('item-selected', item);
+      } else {
+        // keep the dropdown menu open in the mode if multi-select, and emit all selected
+        const updatedDropdownItems = _.cloneDeep(dropdownItems);
+        const itemToUpdate = updatedDropdownItems.value.find(i => i.value === item);
+        if (itemToUpdate) {
+          itemToUpdate.selected = !itemToUpdate.selected;
+        }
+        emit('items-selected', updatedDropdownItems.value.filter(item => item.selected).map(item => item.value));
+      }
+    };
+
+    const isSelectedItem = (item: any) => {
+      return isMultiSelect.value ? selectedItems.value.includes(item) : selectedItem === item;
     };
 
     return {
@@ -129,7 +161,8 @@ export default defineComponent({
       emitItemSelection,
       dropdownItems,
       selectedItemDisplayName,
-      containerElement
+      containerElement,
+      isSelectedItem
     };
   }
 });
