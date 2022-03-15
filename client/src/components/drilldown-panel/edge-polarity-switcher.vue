@@ -316,7 +316,8 @@ export default defineComponent({
   },
   computed: {
     polarity(): number {
-      // TODO: is this a safe assertion? When is polarity undefined?
+      // Polarity is only undefined on the backend before it's fetched and
+      //  computed locally.
       return this.selectedRelationship.polarity as number;
     },
     polarityColor(): { color: string } {
