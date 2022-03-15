@@ -354,20 +354,15 @@ function generateSelectableTimestamps(
     valuesAtEachTimestamp.keys()
   ).sort((a, b) => a - b);
 
-  // TODO: clean up these comments
-  // note that the timeseries list may have timeseries each of different number of timestamps
-  //  this means that there are missing values at some of the timestamps
-  // so, attempt to fill those as n/a for consistency
+  // The timeseries in the list may have timestamps that don't overlap. Fill in
+  //  `n/a` for each timeseries that doesn't have a value at a given timestep.
   sortedUniqueTimestamps.forEach(timestamp => {
     const valuesAtThisTimestamp = valuesAtEachTimestamp.get(timestamp) ?? [];
     if (valuesAtThisTimestamp.length !== timeseriesList.length) {
-      //
-      // we are missing some values at this timestamp
-      //
-      timeseriesList.forEach(timeseries => {
-        // skip if we do have a value for this timeseries
-        const { color, name } = timeseries;
+      // We're missing one or more values at this timestamp
+      timeseriesList.forEach(({ color, name }) => {
         if (valuesAtThisTimestamp.findIndex(e => e.name === name) < 0) {
+          // This timeseries is missing a value at this timestamp
           valuesAtThisTimestamp.push({ color, name, value: 'n/a' });
         }
       });
