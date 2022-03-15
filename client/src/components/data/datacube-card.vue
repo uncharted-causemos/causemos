@@ -162,7 +162,7 @@
               </div>
               <div style="display: flex">
                 <div
-                  v-if="currentTabView === 'data' && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
+                  v-if="currentTabView === DatacubeViewMode.Data && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
                   class="relative-box"
                 >
                   <div class="checkbox" v-if="relativeTo">
@@ -219,7 +219,7 @@
             </div>
 
             <!-- Description tab content -->
-            <slot name="datacube-description" v-if="currentTabView === 'description'" />
+            <slot name="datacube-description" v-if="currentTabView === DatacubeViewMode.Description" />
 
             <!-- Pre-rendered viz tab content -->
             <!--
@@ -227,7 +227,7 @@
               FIXME: this should be done directly against allModelRunData
             -->
             <div
-              v-if="currentTabView === 'pre-rendered-viz' && outputSpecs.length > 0"
+              v-if="currentTabView === DatacubeViewMode.Media && outputSpecs.length > 0"
               style="display: flex; height: 100%; flex-direction: column">
 
               <!-- a global list
@@ -290,7 +290,7 @@
             </div>
 
             <datacube-scenario-header
-              v-if="currentTabView === 'data' && mainModelOutput && isModelMetadata"
+              v-if="currentTabView === DatacubeViewMode.Data && mainModelOutput && isModelMetadata"
               :metadata="metadata"
               :model-run-data="filteredRunData"
               :selected-scenario-ids="selectedScenarioIds"
@@ -322,7 +322,7 @@
 
 
             <!-- Data tab content -->
-            <div v-if="currentTabView === 'data'" class="column">
+            <div v-if="currentTabView === DatacubeViewMode.Data" class="column">
               <timeseries-chart
                 v-if="visibleTimeseriesData.length > 0 && breakdownOption !== SPLIT_BY_VARIABLE"
                 class="timeseries-chart"
@@ -396,7 +396,7 @@
                   </div>
                 </div>
                 <div
-                  v-else-if="currentTabView === 'data'"
+                  v-else-if="currentTabView === DatacubeViewMode.Data"
                   class="card-maps-container"
                 >
                   <!-- Empty div to reduce jumpiness when the maps are loading -->
@@ -412,7 +412,7 @@
                   <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :isContinuos="isContinuousScale" />
                 </div>
                 <div
-                  v-if="mapReady && currentTabView === 'data' && regionalData !== null"
+                  v-if="mapReady && currentTabView === DatacubeViewMode.Data && regionalData !== null"
                   class="card-maps-container">
                   <div
                     v-for="(spec, indx) in outputSpecs"
@@ -457,7 +457,7 @@
                   </div>
                 </div>
                 <div
-                  v-else-if="currentTabView === 'data'"
+                  v-else-if="currentTabView === DatacubeViewMode.Data"
                   class="card-maps-container"
                 >
                   <!-- Empty div to reduce jumpiness when the maps are loading -->
@@ -631,7 +631,8 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption,
-  SPLIT_BY_VARIABLE
+  SPLIT_BY_VARIABLE,
+  DatacubeViewMode
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -686,6 +687,7 @@ import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
+import { capitalize } from '@/utils/string-util';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -719,7 +721,7 @@ export default defineComponent({
     },
     tabState: {
       type: String,
-      default: 'description'
+      default: DatacubeViewMode.Description
     },
     metadata: {
       type: Object as PropType<Model | Indicator | null>,
@@ -779,7 +781,7 @@ export default defineComponent({
     const activeDrilldownTab = ref<string|null>('breakdown');
     const activeReferenceOptions = ref([] as string[]);
     const activeVizOptionsTab = ref<string|null>(null);
-    const currentTabView = ref<string>('description');
+    const currentTabView = ref<DatacubeViewMode>(DatacubeViewMode.Description);
     const potentialScenarioCount = ref<number|null>(0);
     const potentialScenarios = ref<ScenarioData[]>([]);
     const showDatasets = ref<boolean>(false);
@@ -1064,7 +1066,7 @@ export default defineComponent({
       return isDivergingScheme(selectedColorSchemeName.value);
     });
 
-    const updateTabView = (val: string) => {
+    const updateTabView = (val: DatacubeViewMode) => {
       currentTabView.value = val;
     };
     const onMapLoad = () => {
@@ -1158,9 +1160,9 @@ export default defineComponent({
       if (newIds.length > 0) {
         // selecting a run or multiple runs when the desc tab is active should always open the data tab
         //  selecting a run or multiple runs otherwise should respect the current tab
-        if (currentTabView.value === 'description') {
+        if (currentTabView.value === DatacubeViewMode.Description) {
           if (canClickDataTab.value) {
-            updateTabView('data');
+            updateTabView(DatacubeViewMode.Data);
           }
         }
         // once the list of selected scenario changes,
@@ -1168,7 +1170,7 @@ export default defineComponent({
         selectedScenarios.value = getFilteredScenariosFromIds(newIds, filteredRunData.value);
       } else {
         selectedScenarios.value = [];
-        updateTabView('description');
+        updateTabView(DatacubeViewMode.Description);
       }
     };
 
@@ -1278,14 +1280,14 @@ export default defineComponent({
       }
     );
 
-    const clickData = (tab: string) => {
-      if (tab !== 'data' || canClickDataTab.value) {
+    const clickData = (tab: DatacubeViewMode) => {
+      if (tab !== DatacubeViewMode.Data || canClickDataTab.value) {
         // FIXME: This code to select a model run when switching to the data tab
         // should be in a watcher on the parent component to be more robust,
         // rather than in this button's click handler.
 
         if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
-          // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
+          // clicking on either the 'data' or 'media' tabs when no runs is selected should always pick the baseline run
           const readyRuns = filteredRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
           if (readyRuns.length === 0) {
             console.warn('cannot find a baseline model run indicated by the is_default_run');
@@ -1300,7 +1302,7 @@ export default defineComponent({
         //
         // advance the relevant tour if it is active
         //
-        if (tab === 'data' && tour.value && tour.value.id.startsWith('aggregations-tour')) {
+        if (tab === DatacubeViewMode.Data && tour.value && tour.value.id.startsWith('aggregations-tour')) {
           tour.value.next();
         }
       } else {
@@ -1308,10 +1310,10 @@ export default defineComponent({
       }
     };
 
-    const onTabClick = (value: string) => {
-      if (value === 'description') {
+    const onTabClick = (value: DatacubeViewMode) => {
+      if (value === DatacubeViewMode.Description) {
         if (isIndicatorDatacube.value) {
-          updateTabView('description');
+          updateTabView(DatacubeViewMode.Description);
         } else {
           setSelectedScenarioIds([]); // this will update the 'currentTabView'
         }
@@ -1414,15 +1416,13 @@ export default defineComponent({
       setSelectedScenarioIds(scenarioIDs);
     };
 
-    const headerGroupButtons = ref([
-      { label: 'Descriptions', value: 'description' },
-      { label: 'Data', value: 'data' },
-      { label: 'Media', value: 'pre-rendered-viz' }
-    ]) as Ref<{label: string; value: string}[]>;
+    const headerGroupButtons = ref(Object.values(DatacubeViewMode)
+      .map(val => ({ label: capitalize(val), value: val }))
+    ) as Ref<{label: string; value: string}[]>;
     watchEffect(() => {
       const headerGroupButtonsSimple = [
-        { label: 'Descriptions', value: 'description' },
-        { label: 'Data', value: 'data' }
+        { label: capitalize(DatacubeViewMode.Description), value: DatacubeViewMode.Description },
+        { label: capitalize(DatacubeViewMode.Data), value: DatacubeViewMode.Data }
       ];
       // indicators should not have the 'Media' tab
       if (isIndicatorDatacube.value) {
@@ -1440,8 +1440,8 @@ export default defineComponent({
     watch(
       () => [tabState.value],
       () => {
-        if (tabState.value !== '') {
-          onTabClick(tabState.value);
+        if (tabState.value as string !== '') {
+          onTabClick(tabState.value as DatacubeViewMode);
         }
       },
       {
@@ -1614,9 +1614,8 @@ export default defineComponent({
         if (loadedInsight.view_state?.temporalResolution) {
           selectedTemporalResolution.value = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
         }
-        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
-          // FIXME
-          updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
+        if (loadedInsight.view_state?.selectedViewTab !== undefined) {
+          updateTabView(loadedInsight.view_state?.selectedViewTab);
         }
         if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
           updateDatacubesOutputsMap(metadata.value, store, route, loadedInsight.view_state?.selectedOutputIndex);
@@ -2309,7 +2308,8 @@ export default defineComponent({
       SPLIT_BY_VARIABLE,
       regionMapData,
       popupFormatter,
-      activeFeaturesNames
+      activeFeaturesNames,
+      DatacubeViewMode
     };
   },
   watch: {

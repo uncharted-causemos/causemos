@@ -2,7 +2,7 @@
 import { Ref } from 'vue';
 import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { DataState, ViewState } from '@/types/Insight';
-import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/types/Enums';
+import { AggregationOption, DatacubeViewMode, DataTransform, TemporalResolutionOption } from '@/types/Enums';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new';
 import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
@@ -86,7 +86,7 @@ export function initDataStateFromRefs (
 export function initViewStateFromRefs (
   breakdownOption: Ref<string|null>,
   currentOutputIndex: Ref<number>,
-  currentTabView: Ref<string>,
+  currentTabView: Ref<DatacubeViewMode>,
   selectedAdminLevel: Ref<number>,
   selectedBaseLayer: Ref<BASE_LAYER>,
   selectedDataLayer: Ref<DATA_LAYER>,
@@ -103,7 +103,7 @@ export function initViewStateFromRefs (
     spatialAggregation: selectedSpatialAggregation.value,
     temporalAggregation: selectedTemporalAggregation.value,
     temporalResolution: selectedTemporalResolution.value,
-    isDescriptionView: currentTabView.value === 'description', // FIXME
+    selectedViewTab: currentTabView.value,
     selectedOutputIndex: currentOutputIndex.value,
     selectedMapBaseLayer: selectedBaseLayer.value,
     selectedMapDataLayer: selectedDataLayer.value,
