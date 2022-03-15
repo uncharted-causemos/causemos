@@ -124,8 +124,8 @@ export default defineComponent({
         const existingDatacubeSection = legendData.find(item => item.legendId === legendId);
         // `name` is what's actually displayed in the legend. On this screen we
         //  compare across datacubes, so it's more helpful to display the
-        //  datacube name than something like "indicator" or "Run 9".
-        const name = datacubeName;
+        //  output name than something like "indicator" or "Run 9".
+        const name = datacubeOutputVariable;
         // Include "indicator"/"Run 9" in the tooltip, along with the output
         //  feature.
         const tooltip = timeseries.name + TIMESERIES_HEADER_SEPARATOR + datacubeOutputVariable;
