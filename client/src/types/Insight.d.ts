@@ -63,6 +63,7 @@ export interface DataState {
   selectedTransform?: DataTransform;
   activeReferenceOptions?: string[];
   selectedAnalysisItems?: AnalysisItem[];
+  selectedPreGenDataId?: string;
 
   // region-ranking specific
   regionRankingWeights?: {[key: string]: {name: string; weight: number}};

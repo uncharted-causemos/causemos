@@ -1452,6 +1452,7 @@ export default defineComponent({
     const preGenDataMap = ref<{[key: string]: PreGeneratedModelRunData[]}>({}); // map all pre-gen data for each run
     const preGenDataItems = ref<PreGeneratedModelRunData[]>([]);
     const selectedPreGenDataItem = ref<PreGeneratedModelRunData>({ file: '' }); // not sure if this is the best way to declare an 'empty' object of this specific type
+    const selectedPreGenDataId = ref<string>('');
     watchEffect(() => {
       if (filteredRunData.value !== null && filteredRunData.value.length > 0) {
         // build a map of all pre-gen data indexed by run-id
@@ -1469,7 +1470,12 @@ export default defineComponent({
 
           // select first pre-gen data item once available
           if (preGenDataItems.value.length > 0) {
-            selectedPreGenDataItem.value = preGenDataItems.value[0];
+            const item = preGenDataItems.value.find(item => item.id === selectedPreGenDataId.value);
+            if (item) {
+              selectedPreGenDataItem.value = item;
+            } else {
+              selectedPreGenDataItem.value = preGenDataItems.value[0];
+            }
           }
         }
       }
@@ -1603,6 +1609,10 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.selectedTransform) {
           selectedTransform.value = loadedInsight.data_state?.selectedTransform as DataTransform;
+        }
+        if (loadedInsight.data_state?.selectedPreGenDataId) {
+          // this would only be valid and effective if/after datacube runs are reloaded
+          selectedPreGenDataId.value = loadedInsight.data_state?.selectedPreGenDataId;
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
@@ -2089,6 +2099,7 @@ export default defineComponent({
         selectedTransform,
         activeReferenceOptions,
         searchFilters,
+        selectedPreGenDataItem,
         visibleTimeseriesData
       );
 

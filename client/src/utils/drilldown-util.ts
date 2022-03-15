@@ -8,6 +8,7 @@ import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { OutputVariableSpecs } from '@/types/Outputdata';
 import { AdminRegionSets } from '@/types/Datacubes';
+import { PreGeneratedModelRunData } from '@/types/ModelRun';
 
 export const toStateSelectedRegionsAtAllLevels = (data: AdminRegionSets) => {
   return {
@@ -56,6 +57,7 @@ export function initDataStateFromRefs (
   selectedTransform: Ref<DataTransform>,
   activeReferenceOptions: Ref<string[]>,
   searchFilters: Ref<any>,
+  selectedPreGenDataItem: Ref<PreGeneratedModelRunData>,
   visibleTimeseriesData?: Ref<Timeseries[]> // useful for the node view's validation, but ignoreable by everything else, so optional
 ): DataState {
   return {
@@ -79,7 +81,8 @@ export function initDataStateFromRefs (
     selectedTransform: selectedTransform.value,
     activeReferenceOptions: activeReferenceOptions.value,
     visibleTimeseriesData: visibleTimeseriesData?.value,
-    searchFilters: searchFilters.value
+    searchFilters: searchFilters.value,
+    selectedPreGenDataId: selectedPreGenDataItem.value.id ?? ''
   };
 }
 
