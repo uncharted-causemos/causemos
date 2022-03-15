@@ -220,7 +220,7 @@ const searchFields = async (searchField, queryString) => {
   return matchedTerms;
 };
 
-const getTimeseries = async (dataId, runId, feature, resolution, temporalAgg, spatialAgg, region) => {
+const getTimeseries = async (dataId, runId, feature, resolution, temporalAgg, spatialAgg, region = null) => {
   Logger.info(`Get timeseries data from wm-go: ${dataId} ${feature}`);
 
   const options = {
@@ -229,7 +229,7 @@ const getTimeseries = async (dataId, runId, feature, resolution, temporalAgg, sp
       `?data_id=${encodeURI(dataId)}&run_id=${encodeURI(runId)}&feature=${encodeURI(feature)}` +
       `&resolution=${resolution}&temporal_agg=${temporalAgg}&spatial_agg=${spatialAgg}` +
       // optional
-      !_.isEmpty(region) ? `&region_id=${region}` : '',
+      (region && !_.isEmpty(region) ? `&region_id=${encodeURI(region)}` : ''),
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
