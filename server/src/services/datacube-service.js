@@ -220,14 +220,16 @@ const searchFields = async (searchField, queryString) => {
   return matchedTerms;
 };
 
-const getTimeseries = async (dataId, runId, feature, resolution, temporalAgg, spatialAgg) => {
+const getTimeseries = async (dataId, runId, feature, resolution, temporalAgg, spatialAgg, region) => {
   Logger.info(`Get timeseries data from wm-go: ${dataId} ${feature}`);
 
   const options = {
     method: 'GET',
     url: process.env.WM_GO_URL + '/maas/output/timeseries' +
       `?data_id=${encodeURI(dataId)}&run_id=${encodeURI(runId)}&feature=${encodeURI(feature)}` +
-      `&resolution=${resolution}&temporal_agg=${temporalAgg}&spatial_agg=${spatialAgg}`,
+      `&resolution=${resolution}&temporal_agg=${temporalAgg}&spatial_agg=${spatialAgg}` +
+      // optional
+      region ? `&region_id=${region}` : '',
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
