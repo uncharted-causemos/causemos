@@ -131,7 +131,7 @@ export default defineComponent({
 
     const selectedItemDisplayName = computed(() => {
       return (
-        isMultiSelect.value && selectedItems.value.length > 0 ? '(multiple)'
+        isMultiSelect.value && selectedItems.value.length > 0 ? (selectedItems.value.length > 1 ? '(multiple)' : selectedItems.value[0])
           : dropdownItems.value.find(item => item.value === selectedItem.value)
             ?.displayName ?? selectedItem.value
       );
