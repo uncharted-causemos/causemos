@@ -127,29 +127,40 @@ const updateDatacubes = async(metadataDeltas) => {
  * Generate sparkline data for the provided datacubes
  */
 const generateSparklines = async(datacubes) => {
-  const datacubeDeltas = [];
-  for (const datacube of datacubes) {
+  const datacubeMap = {};
+  datacubes.forEach(datacube => {
+    datacubeMap[datacube.id] = {
+      datacube,
+      params: {
+        key: datacube.id,
+        data_id: datacube.dataId,
+        run_id: datacube.runId,
+        feature: datacube.feature,
+        resolution: datacube.resolution,
+        temporal_agg: datacube.temporalAgg,
+        spatial_agg: datacube.spatialAgg
+      }
+    };
+  });
+  const bulkTimeseries = await getBulkTimeseries(Object.values(datacubeMap).map(d => d.params));
+
+  const datacubeDeltas = bulkTimeseries.map(timeseries => {
     const {
-      id,
-      dataId,
-      runId,
-      feature,
       resolution,
       temporalAgg,
-      spatialAgg,
       rawResolution,
       finalRawTimestamp
-    } = datacube;
+    } = datacubeMap[timeseries.key].datacube;
 
-    const timeseries = await getTimeseries(dataId, runId, feature, resolution, temporalAgg, spatialAgg);
     const points = correctIncompleteTimeseries(timeseries, rawResolution, resolution, temporalAgg, new Date(finalRawTimestamp));
     const sparkline = points.map(point => point.value);
 
-    datacubeDeltas.push({
-      id,
+    return {
+      id: timeseries.key,
       sparkline
-    });
-  }
+    };
+  });
+
   return await updateDatacubes(datacubeDeltas);
 };
 
@@ -233,6 +244,24 @@ const getTimeseries = async (dataId, runId, feature, resolution, temporalAgg, sp
       'Accept': 'application/json'
     },
     json: {}
+  };
+  const response = await requestAsPromise(options);
+  return response;
+};
+
+const getBulkTimeseries = async (timeseriesParams) => {
+  Logger.info(`Get ${timeseriesParams.length} timeseries in bulk from wm-go for`);
+
+  const options = {
+    method: 'POST',
+    url: process.env.WM_GO_URL + '/maas/output/bulk-timeseries/generic',
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {
+      timeseries_params: timeseriesParams
+    }
   };
   const response = await requestAsPromise(options);
   return response;
