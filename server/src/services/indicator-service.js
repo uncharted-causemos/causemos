@@ -110,10 +110,18 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
   // 1. Check against historical matches
   for (const node of nodeParameters) {
     // 1.1 Check project specific history first
-    let topUsedIndicator = await historyAdapter.findOne([
-      { field: 'project_id', value: model.project_id },
-      { field: 'concept', value: node.concept }
-    ], { sort: [{ frequency: { order: 'desc' } }] });
+    let topUsedIndicator = await historyAdapter.findOne(
+      [
+        { field: 'project_id', value: model.project_id },
+        { field: 'concept', value: node.concept }
+      ],
+      {
+        sort: [
+          { frequency: { order: 'desc' } },
+          { modified_at: { order: 'desc' } }
+        ]
+      }
+    );
 
     if (!_.isNil(topUsedIndicator)) {
       Logger.info(`Using previous selection (project specific) ${node.concept} => ${topUsedIndicator.indicator_id}`);

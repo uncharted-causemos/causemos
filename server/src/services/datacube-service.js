@@ -229,7 +229,7 @@ const getTimeseries = async (dataId, runId, feature, resolution, temporalAgg, sp
       `?data_id=${encodeURI(dataId)}&run_id=${encodeURI(runId)}&feature=${encodeURI(feature)}` +
       `&resolution=${resolution}&temporal_agg=${temporalAgg}&spatial_agg=${spatialAgg}` +
       // optional
-      region ? `&region_id=${region}` : '',
+      !_.isEmpty(region) ? `&region_id=${region}` : '',
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
