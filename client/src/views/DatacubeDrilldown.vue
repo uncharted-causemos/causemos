@@ -126,17 +126,19 @@ export default defineComponent({
           currentAnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId && item.datacubeId === datacubeVarId);
         }
 
-        if (currentAnalysisItem.viewConfig === undefined) {
-          currentAnalysisItem.viewConfig = {} as ViewState;
-        }
+        if (currentAnalysisItem) {
+          if (currentAnalysisItem.viewConfig === undefined) {
+            currentAnalysisItem.viewConfig = {} as ViewState;
+          }
 
-        if (currentAnalysisItem.dataConfig === undefined) {
-          currentAnalysisItem.dataConfig = {} as DataState;
-        }
+          if (currentAnalysisItem.dataConfig === undefined) {
+            currentAnalysisItem.dataConfig = {} as DataState;
+          }
 
-        currentAnalysisItem.viewConfig = viewState.value;
-        currentAnalysisItem.dataConfig = dataState.value;
-        store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+          currentAnalysisItem.viewConfig = viewState.value;
+          currentAnalysisItem.dataConfig = dataState.value;
+          store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+        }
       }
     );
 
@@ -169,9 +171,11 @@ export default defineComponent({
             if (datacubeVarId !== undefined) {
               currentAnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId && item.datacubeId === datacubeVarId);
             }
-            currentAnalysisItem.viewConfig = metadata.value.default_view;
-            store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
-            initialViewConfig.value = metadata.value.default_view;
+            if (currentAnalysisItem) {
+              currentAnalysisItem.viewConfig = metadata.value.default_view;
+              store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+              initialViewConfig.value = metadata.value.default_view;
+            }
           }
         }
       }

@@ -24,7 +24,7 @@ router.get('/:analysisId', asyncHandler(async (req, res) => {
     { field: 'id', value: analysisId }
   ], 1, 0);
   if (!results || results.length !== 1) {
-    throw new Error(`Unabled to find analysis ${analysisId}`);
+    res.json(null);
   }
   res.json(results[0]);
 }));

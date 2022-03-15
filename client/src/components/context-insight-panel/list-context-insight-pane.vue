@@ -235,7 +235,10 @@ export default {
         // add 'insight_id' as a URL param so that the target page can apply it
         const finalURL = InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id, datacubeId);
 
-        this.$router.push(finalURL);
+        try {
+          this.$router.push(finalURL);
+        } catch (e) {
+        }
       } else {
         router.push({
           query: {

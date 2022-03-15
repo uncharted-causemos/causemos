@@ -101,6 +101,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import * as d3 from 'd3';
 import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
 import TagSlider from '@/components/widgets/multi-thumb-slider/tag-slider.vue';
+import { capitalize } from '@/utils/string-util';
 
 export default defineComponent({
   components: {
@@ -164,10 +165,6 @@ export default defineComponent({
     'region-ranking-weights-updated'
   ],
   setup() {
-    const capitalize = (str: string) => {
-      return str[0].toUpperCase() + str.slice(1);
-    };
-
     const regionRankingCompositionTypeGroupButtons = ref(Object.values(RegionRankingCompositionType)
       .map(val => ({ displayName: capitalize(val), value: val })));
     const binningOptionsGroupButtons = ref(Object.values(BinningOptions)
