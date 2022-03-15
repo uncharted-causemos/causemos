@@ -20,6 +20,11 @@
           <arrow-icon class="arrow" :type="ArrowType.NoEvidence" />
           <span>No evidence</span>
         </div>
+
+        <div v-if="showEdgeTypeExplanation" class="edge-row">
+          <i class="fa fa-fw fa-bolt" />
+          <span>A's level (not trend) affects B</span>
+        </div>
       </div>
       <div v-if="showDataWarnings" class="column data-warnings">
         <div class="data-warning old-data">Old data</div>
@@ -47,6 +52,10 @@ export default defineComponent({
       default: TimeScale.Months
     },
     showDataWarnings: {
+      type: Boolean,
+      default: false
+    },
+    showEdgeTypeExplanation: {
       type: Boolean,
       default: false
     },
