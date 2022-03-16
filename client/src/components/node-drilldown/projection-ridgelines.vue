@@ -20,7 +20,7 @@
         class="scenario-row"
       >
         <div class="grid-row">
-          <div class="scenario-and-clamps">
+          <div class="first-column">
             <div class="scenario-name" @click="selectScenario(row.scenarioId)">
               <i
                 v-if="selectedScenarioId === row.scenarioId"
@@ -29,6 +29,9 @@
               <i v-else class="fa fa-circle-o" />
               <h3 style="margin-left: 5px">{{ row.scenarioName }}</h3>
             </div>
+            <span class="scenario-desc" v-tooltip.top-start="row.scenarioDesc">
+              {{ row.scenarioDesc }}
+            </span>
             <div
               v-for="clamp in getScenarioClamps(row)"
               :key="clamp.concept"
@@ -38,14 +41,8 @@
               {{ ontologyFormatter(clamp.concept) }}
             </div>
           </div>
-          <div style="flex: 8; display: flex; flex-direction: column">
+          <div style="flex: 4; display: flex; flex-direction: column">
             <div style="display: flex; min-height: 3rem">
-              <span
-                class="scenario-desc"
-                v-tooltip.top-start="row.scenarioDesc"
-              >
-                {{ row.scenarioDesc }}
-              </span>
               <!-- If there is more than one scenario and this is the comparison
             baseline, label it -->
               <span
@@ -67,21 +64,26 @@
               </button>
             </div>
             <div style="display: flex">
-              <ridgeline
-                class="ridgeline"
+              <div
                 v-for="(ridgelineData, timeSliceIndex) of row.ridgelines"
                 :key="timeSliceIndex"
-                :ridgeline-data="ridgelineData"
-                :comparison-baseline="
-                  row.comparisonBaseline
-                    ? row.comparisonBaseline[timeSliceIndex]
-                    : null
-                "
-                :min="indicatorMin"
-                :max="indicatorMax"
-                :historical-timeseries="historicalTimeseries"
-                :context-range="row.contextRanges[timeSliceIndex]"
-              />
+                class="ridgeline-with-summary"
+              >
+                <ridgeline
+                  class="ridgeline"
+                  :ridgeline-data="ridgelineData"
+                  :comparison-baseline="
+                    row.comparisonBaseline
+                      ? row.comparisonBaseline[timeSliceIndex]
+                      : null
+                  "
+                  :min="indicatorMin"
+                  :max="indicatorMax"
+                  :historical-timeseries="historicalTimeseries"
+                  :context-range="row.contextRanges[timeSliceIndex]"
+                />
+                <div>TODO: v-if not baseline Ridgeline description</div>
+              </div>
             </div>
           </div>
         </div>
@@ -389,7 +391,7 @@ h3 {
 .grid-row {
   display: flex;
   & > * {
-    flex: 2;
+    flex: 1;
     min-width: 0;
   }
 }
@@ -427,16 +429,6 @@ h3 {
   }
 }
 
-.scenario-desc {
-  color: $label-color;
-  flex: 8;
-  min-width: 0;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow-x: hidden;
-  cursor: pointer;
-}
-
 .slice-labels {
   // Add empty column at the left to align first label with first ridgeline.
   &::before {
@@ -470,7 +462,7 @@ h3 {
 
   h4 {
     @include header-secondary;
-    flex: 8;
+    flex: 4;
   }
 }
 
@@ -487,7 +479,7 @@ h3 {
   }
 }
 
-.scenario-and-clamps {
+.first-column {
   // Give this column half of the space
   flex: 1;
   z-index: 1; // allow clicking through the overlay for scenario selection
@@ -508,6 +500,21 @@ h3 {
 
     h3 {
       font-size: $font-size-large;
+    }
+  }
+  .scenario-desc {
+    margin-left: calc(#{$circle-width} + #{$gap-size});
+    color: $label-color;
+    cursor: pointer;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+
+    @supports (-webkit-line-clamp: 2) {
+      white-space: initial;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
     }
   }
   .clamp-name {
@@ -531,11 +538,15 @@ h3 {
   margin-left: 2rem;
 }
 
+.ridgeline-with-summary {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0
+}
+
 .ridgeline {
   height: 100px;
   position: relative;
-  display: flex;
-  flex: 1;
-  min-width: 0;
 }
 </style>
