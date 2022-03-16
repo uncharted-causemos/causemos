@@ -42,7 +42,7 @@ const MONTHS: DropdownItem[] = [
 ];
 
 const MIN_YEAR = 1990;
-const MAX_YEAR = 2021;
+const MAX_YEAR = 2022;
 
 export default defineComponent({
   components: { dropdownButton },
