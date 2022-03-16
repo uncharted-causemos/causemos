@@ -2,7 +2,10 @@
   <div class="projection-ridgelines-container">
     <div id="header-section" class="grid-row slice-labels x-axis-label">
       <h4>
-        Change in {{ nodeConceptName }} relative to {{ comparisonBaselineName }}
+        <span class="lighter">Change in</span>
+        {{ nodeConceptName }}
+        <span class="lighter">relative to</span>
+        {{ comparisonBaselineName }}
       </h4>
     </div>
     <div class="grid-row slice-labels">
@@ -465,17 +468,14 @@ h3 {
 .x-axis-label {
   margin-bottom: 0;
 
-  // Add three extra columns to the right
-  &::after {
-    display: block;
-    content: '';
-    flex: 6;
-    min-width: 0;
-  }
-
   h4 {
     @include header-secondary;
+    flex: 8;
   }
+}
+
+.lighter {
+  color: $text-color-light;
 }
 
 .scenario-row {
