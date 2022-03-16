@@ -749,7 +749,8 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
         project_id: model.project_id,
         concept: nodeParameter.concept,
         indicator_id: nodeParameter.parameter.id,
-        frequency: 1
+        frequency: 1,
+        modified_at: Date.now()
       };
       await indicatorMatchHistoryAdapter.insert([insertIndicatorMatchPayload], d => d.id);
     }
