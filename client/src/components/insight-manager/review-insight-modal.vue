@@ -101,15 +101,19 @@
       <div class="content">
         <div class="fields">
           <div style="display: flex; align-items: baseline;">
-            <div v-if="!isEditingInsight" class="question-title">{{insightQuestionLabel}}</div>
+            <template v-if="!isEditingInsight">
+              <div class="question-title">{{insightQuestionLabel}}</div>
+              <div v-if="insightLinkedQuestionsCount" class="other-question-title">{{insightLinkedQuestionsCount}}</div>
+            </template>
             <dropdown-button
               v-else
               class="dropdown-button"
               :is-dropdown-left-aligned="true"
               :items="questionsDropdown"
               :inner-button-label="insightQuestionInnerLabel"
-              :selected-item="selectedInsightQuestion"
-              @item-selected="setInsightQuestion"
+              :selected-items="selectedInsightQuestions"
+              :is-multi-select="true"
+              @items-selected="setInsightQuestions"
             />
             <small-text-button
               v-if="!loadingImage && isEditingInsight"
@@ -195,7 +199,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, nextTick, ref, toRefs, watch } from 'vue';
+import { computed, defineComponent, nextTick, ref, watch } from 'vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
@@ -255,10 +259,8 @@ export default defineComponent({
       default: false
     }
   },
-  setup(props) {
-    const {
-      newMode
-    } = toRefs(props);
+  setup() {
+    // const { } = toRefs(props);
 
     const store = useStore();
     const toaster = useToaster();
@@ -270,14 +272,26 @@ export default defineComponent({
 
     const isInsight = computed(() => InsightUtil.instanceOfFullInsight(updatedInsight.value));
 
-    const selectedInsightQuestion = ref('');
+    const selectedInsightQuestions = ref<string[]>([]);
     const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
     const loadingImage = ref(false);
+    const isEditingInsight = ref(false);
+
     const sortedQuestions = computed<AnalyticalQuestion[]>(() => sortQuestionsByPath(questionsList.value));
 
     const getQuestionById = (id: string) => {
       return sortedQuestions.value.find(q => q.id === id);
     };
+
+    const insightLinkedQuestionsCount = computed<string>(() => {
+      if (updatedInsight.value && isInsight.value && updatedInsight.value.analytical_question.length > 0) {
+        const linedQuestionsCount = (updatedInsight.value as Insight).analytical_question.length;
+        if (linedQuestionsCount > 1) {
+          return '+ ' + (linedQuestionsCount - 1).toString();
+        }
+      }
+      return '';
+    });
 
     const insightQuestionLabel = computed<string>(() => {
       if (updatedInsight.value) {
@@ -313,7 +327,8 @@ export default defineComponent({
 
     watch(
       () => [
-        questionsList.value
+        questionsList.value,
+        isEditingInsight.value
       ],
       () => {
         // if we are reviewing this insight in edit mode,
@@ -321,18 +336,23 @@ export default defineComponent({
         //  so we need to surface that
         if (
           updatedInsight.value &&
-          !newMode.value &&
-          selectedInsightQuestion.value === '' &&
           isInsight.value
         ) {
-          if (updatedInsight.value.analytical_question.length > 0) {
-            const questionObj = getQuestionById(updatedInsight.value.analytical_question[0]);
+          const initialSelection: string[] = [];
+          updatedInsight.value.analytical_question.forEach((q: string) => {
+            const questionObj = getQuestionById(q);
             if (questionObj) {
-              selectedInsightQuestion.value = questionObj.question;
-              insightQuestionInnerLabel.value = '';
+              initialSelection.push(questionObj.question);
             }
+          });
+          selectedInsightQuestions.value = initialSelection;
+          if (initialSelection.length > 0) {
+            insightQuestionInnerLabel.value = '';
           }
         }
+      },
+      {
+        immediate: true // need to force updating the selected list when toggling the edit mode
       }
     );
 
@@ -342,20 +362,21 @@ export default defineComponent({
       questionsList,
       reFetchQuestions,
       updatedInsight,
-      selectedInsightQuestion,
+      selectedInsightQuestions,
       sortedQuestions,
       insightQuestionInnerLabel,
       insightQuestionLabel,
       loadingImage,
       isInsight,
-      isReviewMode
+      isReviewMode,
+      insightLinkedQuestionsCount,
+      isEditingInsight
     };
   },
   data: () => ({
     errorMsg: MSG_EMPTY_INSIGHT_NAME,
     drilldownTabs: METDATA_DRILLDOWN_TABS,
     showMetadataPanel: false,
-    isEditingInsight: false,
     insightTitle: '',
     insightDesc: '',
     imagePreview: null as string | null,
@@ -455,7 +476,7 @@ export default defineComponent({
       currentReviewHeader: 'insightPanel/currentReviewHeader'
     }),
     questionsDropdown() {
-      return ['', ...this.sortedQuestions.map(q => q.question)];
+      return [...this.sortedQuestions.map(q => q.question)];
     },
     nextInsight(): Insight | AnalyticalQuestion | null {
       if (this.reviewIndex < this.insightList.length - 1) {
@@ -533,9 +554,9 @@ export default defineComponent({
       setReviewMode: 'insightPanel/setReviewMode',
       setCurrentReviewHeader: 'insightPanel/setCurrentReviewHeader'
     }),
-    setInsightQuestion(question: string) {
-      this.selectedInsightQuestion = question;
-      this.insightQuestionInnerLabel = question === '' ? LBL_EMPTY_INSIGHT_QUESTION : '';
+    setInsightQuestions(questions: string[]) {
+      this.selectedInsightQuestions = questions;
+      this.insightQuestionInnerLabel = questions.length === 0 ? LBL_EMPTY_INSIGHT_QUESTION : '';
     },
     addNewQuestion(newQuestionText: string) {
       this.showNewQuestion = false;
@@ -743,7 +764,7 @@ export default defineComponent({
       const insightThumbnail = annotateCropSaveObj.annotatedImagePreview;
       const annotationAndCropState = this.getAnnotatedState(annotateCropSaveObj);
 
-      const linkedQuestion = this.sortedQuestions.find(q => q.question === this.selectedInsightQuestion);
+      const linkedQuestions = this.sortedQuestions.filter(q => this.selectedInsightQuestions.includes(q.question));
 
       if (this.newMode) {
         // saving a new insight
@@ -760,7 +781,7 @@ export default defineComponent({
           pre_actions: null,
           post_actions: null,
           is_default: true,
-          analytical_question: linkedQuestion && linkedQuestion.id ? [linkedQuestion.id] : [],
+          analytical_question: linkedQuestions.map(q => q.id as string),
           thumbnail: insightThumbnail,
           annotation_state: annotationAndCropState,
           view_state: this.viewState,
@@ -775,10 +796,14 @@ export default defineComponent({
               this.setCountInsights(count);
 
               // after the insight is created and have a valid id, we need to link that to the question
-              if (linkedQuestion) {
+              if (linkedQuestions) {
                 const insightId = result.data.id;
-                linkedQuestion?.linked_insights.push(insightId);
-                updateQuestion(linkedQuestion.id as string, linkedQuestion);
+                linkedQuestions.forEach(q => {
+                  if (!q.linked_insights.includes(insightId)) {
+                    q.linked_insights.push(insightId);
+                    updateQuestion(q.id as string, q);
+                  }
+                });
               }
             } else {
               this.toaster(message, 'error', true);
@@ -798,10 +823,20 @@ export default defineComponent({
           updatedInsight.description = this.insightDesc;
           updatedInsight.thumbnail = insightThumbnail;
           updatedInsight.annotation_state = annotationAndCropState;
+          updatedInsight.analytical_question = linkedQuestions.map(q => q.id as string);
           updateInsight(this.updatedInsight.id, updatedInsight)
             .then((result) => {
               if (result.updated === 'success') {
                 this.toaster(INSIGHTS.SUCCESSFUL_UPDATE, 'success', false);
+
+                // ensure when updating an insight to also update its linked questions
+                const insightId = this.updatedInsight.id;
+                linkedQuestions.forEach(q => {
+                  if (!q.linked_insights.includes(insightId)) {
+                    q.linked_insights.push(insightId);
+                    updateQuestion(q.id as string, q);
+                  }
+                });
               } else {
                 this.toaster(INSIGHTS.ERRONEOUS_UPDATE, 'error', true);
               }
@@ -1080,6 +1115,14 @@ export default defineComponent({
       font-size: 2rem;
       flex: 1;
       color: black;
+    }
+    .other-question-title {
+      font-size: 2rem;
+      color: darkgray;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      border-style: solid;
+      border-radius: 50%;
     }
     .title {
       font-size: $font-size-extra-large;
