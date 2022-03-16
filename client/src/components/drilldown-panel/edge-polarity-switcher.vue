@@ -160,7 +160,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, toRefs, PropType, watchEffect } from 'vue';
+import { defineComponent, ref, computed, toRefs, PropType, watch } from 'vue';
 import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
@@ -190,7 +190,7 @@ const getEdgeWeight = (edge: EdgeParameter): number => {
   return 0;
 };
 
-const snapEdgeWeight = (weight: number): number => {
+const snapEdgeWeightToLowMedHigh = (weight: number): number => {
   if (weight > 0.7) return 0.9;
   if (weight > 0.3) return 0.5;
   return 0.1;
@@ -244,15 +244,17 @@ export default defineComponent({
     });
 
     const currentEdgeType = ref('');
-    watchEffect(() => {
-      currentEdgeType.value = getEdgeTypeString(selectedRelationship.value);
-    });
+    watch(selectedRelationship, (_selectedRelationship) => {
+      currentEdgeType.value = getEdgeTypeString(_selectedRelationship);
+    }, { immediate: true });
 
     const currentEdgeWeight = ref(0);
-    watchEffect(() => {
-      currentEdgeWeight.value = getEdgeWeight(selectedRelationship.value);
-    });
-    const snappedEdgeWeight = computed(() => snapEdgeWeight(currentEdgeWeight.value));
+    watch(selectedRelationship, (_selectedRelationship) => {
+      currentEdgeWeight.value = getEdgeWeight(_selectedRelationship);
+    }, { immediate: true });
+    const snappedEdgeWeight = computed(
+      () => snapEdgeWeightToLowMedHigh(currentEdgeWeight.value)
+    );
 
     const engineWeights = computed(() => selectedRelationship.value.parameter?.engine_weights);
 
