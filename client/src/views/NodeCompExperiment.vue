@@ -58,6 +58,7 @@
       <datacube-card
         class="datacube-card"
         :initial-view-config="initialViewConfig"
+        :initial-data-config="initialDataConfig"
         :metadata="metadata"
         :aggregation-options="aggregationOptionFiltered"
         :temporal-resolution-options="temporalResolutionOption"
@@ -141,6 +142,7 @@ export default defineComponent({
     const dataState = computed(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const initialViewConfig = ref<ViewState | null>(null);
+    // const initialDataConfig = ref<DataState | null>(null);
 
     const isTimeseriesSelectionModalOpen = ref(false);
     const selectedTimeseriesIndex = ref(0);
@@ -164,6 +166,19 @@ export default defineComponent({
         return null;
       }
       return modelComponents.value.nodes.find((node: { id: any }) => node.id === nodeId.value);
+    });
+
+    // FIXME: Just restoring the country for now since we are explictly tracking it.
+    // Should expand to encompass other properties
+    const initialDataConfig = computed(() => {
+      if (modelComponents.value === null) {
+        return null;
+      }
+      return {
+        selectedRegionIdsAtAllLevels: {
+          country: [modelComponents.value.parameter.geography as any]
+        }
+      };
     });
 
     watch(
@@ -369,6 +384,7 @@ export default defineComponent({
       DatacubeStatus,
       indicatorId,
       initialViewConfig,
+      initialDataConfig,
       isTimeseriesSelectionModalOpen,
       mainModelOutput,
       metadata,
