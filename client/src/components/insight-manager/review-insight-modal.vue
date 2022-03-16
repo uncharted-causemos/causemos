@@ -823,7 +823,7 @@ export default defineComponent({
           updatedInsight.description = this.insightDesc;
           updatedInsight.thumbnail = insightThumbnail;
           updatedInsight.annotation_state = annotationAndCropState;
-          updatedInsight.analytical_question = linkedQuestions ? linkedQuestions.map(q => q.id as string) : [];
+          updatedInsight.analytical_question = linkedQuestions.map(q => q.id as string);
           updateInsight(this.updatedInsight.id, updatedInsight)
             .then((result) => {
               if (result.updated === 'success') {
