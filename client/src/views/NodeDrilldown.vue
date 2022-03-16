@@ -155,6 +155,7 @@
               "
               class="projection-ridgelines"
               :model-summary="modelSummary"
+              :node-concept-name="nodeConceptName"
               :comparison-baseline-id="comparisonBaselineIdWithFallback"
               :baseline-scenario-id="baselineScenarioId"
               :projections="selectedNodeScenarioData.projections"

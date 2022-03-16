@@ -1,7 +1,9 @@
 <template>
   <div class="projection-ridgelines-container">
     <div id="header-section" class="grid-row slice-labels x-axis-label">
-      <h4>Change in value</h4>
+      <h4>
+        Change in {{ nodeConceptName }} relative to {{ comparisonBaselineName }}
+      </h4>
     </div>
     <div class="grid-row slice-labels">
       <h3 v-for="(timeSliceLabel, index) in timeSliceLabels" :key="index">
@@ -160,6 +162,10 @@ export default defineComponent({
       type: Object as PropType<CAGModelSummary>,
       required: true
     },
+    nodeConceptName: {
+      type: String,
+      default: ''
+    },
     comparisonBaselineId: {
       type: String,
       default: null
@@ -286,6 +292,11 @@ export default defineComponent({
           row.scenarioId === baselineId ? null : comparisonBaselineRidgelines;
       });
       return rows;
+    },
+    comparisonBaselineName() {
+      return this.ridgelinesAtTimeslices.find(
+        row => row.scenarioId === this.comparisonBaselineId
+      )?.scenarioName ?? '';
     }
   },
   methods: {
