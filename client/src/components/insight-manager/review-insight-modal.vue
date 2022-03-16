@@ -781,7 +781,7 @@ export default defineComponent({
           pre_actions: null,
           post_actions: null,
           is_default: true,
-          analytical_question: linkedQuestions ? linkedQuestions.map(q => q.id as string) : [],
+          analytical_question: linkedQuestions.map(q => q.id as string),
           thumbnail: insightThumbnail,
           annotation_state: annotationAndCropState,
           view_state: this.viewState,
