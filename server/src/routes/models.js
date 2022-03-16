@@ -271,13 +271,6 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
 //
 // Note for Delphi engineWeights and engineInferredWeights are triples [level, trend, polarity]
 const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
-  // FIXME: Sensei does not support edit-edges just yet. Mar 2022
-  if (engine === SENSEI) {
-    return {
-      edgesToUpdate: [],
-      edgesToOverride: []
-    };
-  }
   const components = await cagService.getComponents(modelId);
   const edgesToUpdate = [];
   const edgesToOverride = [];
