@@ -145,6 +145,12 @@ export enum ComparativeAnalysisMode {
   RegionRanking = 'region ranking'
 }
 
+export enum DatacubeViewMode {
+  Description = 'description',
+  Data = 'data',
+  Media = 'media'
+}
+
 export enum RegionRankingCompositionType {
   Union = 'union',
   Intersection = 'intersection'// ,
