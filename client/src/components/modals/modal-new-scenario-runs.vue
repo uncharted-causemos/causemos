@@ -60,7 +60,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue';
+import { defineComponent, PropType, toRefs } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
@@ -69,6 +69,7 @@ import { mapGetters } from 'vuex';
 import { getOutputs, isGeoParameter } from '@/utils/datacube-util';
 import datacubeService from '@/services/new-datacube-service';
 import useToaster from '@/services/composables/useToaster';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -99,16 +100,18 @@ export default defineComponent({
     },
     ...mapGetters({
       datacubeCurrentOutputsMap: 'app/datacubeCurrentOutputsMap'
-    }),
-    currentOutputIndex(): number {
-      return this.metadata.id !== undefined ? this.datacubeCurrentOutputsMap[this.metadata.id] : 0;
-    }
+    })
   },
   data: () => ({
     potentialRuns: [] as Array<ScenarioData>
   }),
-  setup() {
+  setup(props) {
+    const { metadata } = toRefs(props);
+
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
+
     return {
+      currentOutputIndex,
       toaster: useToaster()
     };
   },

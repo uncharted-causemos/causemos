@@ -753,7 +753,7 @@ export const supportsPolarityInference = (engine: Engine) => {
 };
 
 export const supportsLevelEdges = (engine: Engine) => {
-  return [Engine.DySE, Engine.Sensei].includes(engine);
+  return [Engine.DySE].includes(engine);
 };
 
 // FIXME: we should replace these string keys with the stricter Engine type

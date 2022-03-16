@@ -42,6 +42,7 @@
                 :are-ridgelines-visible="selectedScenarioId !== null"
                 :time-scale="timeScale"
                 :show-data-warnings="true"
+                :show-edge-type-explanation="doesCurrentEngineSupportLevelEdges"
               />
               <config-bar
                 class="config-bar"
@@ -110,7 +111,7 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher.vue';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane.vue';
 import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane.vue';
-import modelService, { calculateProjectionEnd } from '@/services/model-service';
+import modelService, { calculateProjectionEnd, Engine, supportsLevelEdges } from '@/services/model-service';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
@@ -241,6 +242,10 @@ export default defineComponent({
     },
     timeScale() {
       return this.modelSummary.parameter.time_scale;
+    },
+    doesCurrentEngineSupportLevelEdges() {
+      // FIXME: currentEngine's type should be Engine, not string
+      return supportsLevelEdges(this.currentEngine as Engine);
     }
   },
   watch: {
