@@ -830,15 +830,13 @@ export default defineComponent({
                 this.toaster(INSIGHTS.SUCCESSFUL_UPDATE, 'success', false);
 
                 // ensure when updating an insight to also update its linked questions
-                if (linkedQuestions) {
-                  const insightId = this.updatedInsight.id;
-                  linkedQuestions.forEach(q => {
-                    if (!q.linked_insights.includes(insightId)) {
-                      q.linked_insights.push(insightId);
-                      updateQuestion(q.id as string, q);
-                    }
-                  });
-                }
+                const insightId = this.updatedInsight.id;
+                linkedQuestions.forEach(q => {
+                  if (!q.linked_insights.includes(insightId)) {
+                    q.linked_insights.push(insightId);
+                    updateQuestion(q.id as string, q);
+                  }
+                });
               } else {
                 this.toaster(INSIGHTS.ERRONEOUS_UPDATE, 'error', true);
               }
