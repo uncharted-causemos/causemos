@@ -519,7 +519,6 @@ export const getRegionAggregations = async (
     } else {
       results = <RegionalAggregation[]> [];
     }
-    console.log('hello');
     if (bulkResults.all_agg && allTimestamps && allTimestamps.length > 0) {
       results.push(bulkResults.all_agg);
       const newSpec = <OutputSpecWithId> {
