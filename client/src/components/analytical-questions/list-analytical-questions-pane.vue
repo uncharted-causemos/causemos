@@ -395,6 +395,7 @@ export default defineComponent({
           if (!(insight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
             insight.analytical_question.push(questionItem.id as string);
             await updateInsight(insight_id, insight as Insight);
+            this.reFetchInsights();
           }
         }
       }
@@ -456,6 +457,7 @@ export default defineComponent({
           (qid: string) => qid !== questionItem.id
         );
         await updateInsight(insightId, insight as Insight);
+        this.reFetchInsights();
       }
     },
     startTour(question: AnalyticalQuestion) {
