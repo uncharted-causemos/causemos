@@ -256,7 +256,9 @@ export default defineComponent({
     onMounted(async () => {
       store.dispatch('app/setAnalysisName', '');
       const result = await getAnalysis(quantitativeAnalysisId.value);
-      store.dispatch('app/setAnalysisName', result.title);
+      if (result) {
+        store.dispatch('app/setAnalysisName', result.title);
+      }
     });
 
     watch(

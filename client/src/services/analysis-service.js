@@ -15,7 +15,8 @@ export const getAnalysis = async (analysisId) => {
  */
 export const getAnalysisState = async (analysisId) => {
   const analysis = await getAnalysis(analysisId);
-  return analysis.state || {};
+  if (analysis) return analysis.state;
+  return {};
 };
 
 /**
@@ -59,12 +60,16 @@ export const createAnalysis = async({ title = '', description = '', projectId, s
 export const updateAnalysis = async(analysisId, payload) => {
   if (!payload) return console.error(new Error('payload object must be provided'));
   const analysis = await getAnalysis(analysisId);
-  const result = await API.put(`analyses/${analysisId}`, { ...analysis, ...payload }, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
-  return result.data;
+  if (analysis) {
+    const result = await API.put(`analyses/${analysisId}`, { ...analysis, ...payload }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return result.data;
+  } else {
+    return console.error(new Error('payload object must be provided'));
+  }
 };
 
 /**

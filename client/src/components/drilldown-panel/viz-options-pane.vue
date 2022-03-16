@@ -173,6 +173,7 @@ import { getOutputs } from '@/utils/datacube-util';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import { capitalize } from '@/utils/string-util';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.RDYLBU_7, COLOR.OTHER]);
 const TRANSFORMS: DropdownItem[] = [
@@ -275,9 +276,6 @@ export default defineComponent({
     const store = useStore();
     const route = useRoute();
 
-    const capitalize = (str: string) => {
-      return str[0].toUpperCase() + str.slice(1);
-    };
     const resolutionGroupButtons = ref(Object.values(TemporalResolutionOption)
       .filter(val => val.length > 0)
       .map(val => ({ label: capitalize(val), value: val }))

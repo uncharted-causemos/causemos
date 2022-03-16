@@ -58,7 +58,8 @@ import {
   TemporalResolutionOption,
   DatacubeStatus,
   ModelPublishingStepID,
-  TemporalResolution
+  TemporalResolution,
+  DatacubeViewMode
 } from '@/types/Enums';
 import { DataState, ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
@@ -195,7 +196,7 @@ export default defineComponent({
       //         so the following hack is used
       tabState.value = '';
       nextTick(() => {
-        tabState.value = publishStepInfo.publishStep.id === ModelPublishingStepID.Enrich_Description ? 'description' : 'data';
+        tabState.value = publishStepInfo.publishStep.id === ModelPublishingStepID.Enrich_Description ? DatacubeViewMode.Description : DatacubeViewMode.Data;
       });
     };
 

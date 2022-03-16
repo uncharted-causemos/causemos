@@ -22,7 +22,9 @@ export default defineComponent({
     const toast = useToaster();
     onMounted(async () => {
       const result = await getAnalysis(analysisId.value);
-      description.value = result.description;
+      if (result) {
+        description.value = result.description;
+      }
     });
 
     const updateDescription = async (commentsText: string) => {
