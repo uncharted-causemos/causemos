@@ -144,19 +144,19 @@ const generateSparklines = async(datacubes) => {
   });
   const bulkTimeseries = await getBulkTimeseries(Object.values(datacubeMap).map(d => d.params));
 
-  const datacubeDeltas = bulkTimeseries.map(timeseries => {
+  const datacubeDeltas = bulkTimeseries.map(keyedTimeseries => {
     const {
       resolution,
       temporalAgg,
       rawResolution,
       finalRawTimestamp
-    } = datacubeMap[timeseries.key].datacube;
+    } = datacubeMap[keyedTimeseries.key].datacube;
 
-    const points = correctIncompleteTimeseries(timeseries, rawResolution, resolution, temporalAgg, new Date(finalRawTimestamp));
+    const points = correctIncompleteTimeseries(keyedTimeseries.timeseries, rawResolution, resolution, temporalAgg, new Date(finalRawTimestamp));
     const sparkline = points.map(point => point.value);
 
     return {
-      id: timeseries.key,
+      id: keyedTimeseries.key,
       sparkline
     };
   });
