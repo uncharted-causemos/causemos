@@ -67,13 +67,13 @@
         class="clickable-dropdown"
         :class="{'warning-message': valueInconsistency}"
         @click.stop="openEdgeWeightDropdown()">
-        {{ weightValueString(snappedEdgeWeight) }}
+        {{ weightValueString(currentQualitativeWeight) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
       <span
         v-if="currentView === 'qualitative'"
         class="clickable-dropdown">
-        {{ weightValueString(snappedEdgeWeight) }} &nbsp;
+        {{ weightValueString(currentQualitativeWeight) }} &nbsp;
       </span>
 
       <dropdown-control
@@ -138,7 +138,7 @@
     style="color: #888">
     A decrease of&nbsp;
     {{ ontologyFormatter(selectedRelationship.source) }} leads to
-    {{ weightValueString(snappedEdgeWeight) }}
+    {{ weightValueString(currentQualitativeWeight) }}
     {{ inversePolarityLabel }}
     in {{ ontologyFormatter(selectedRelationship.target) }}
   </div>
@@ -252,7 +252,7 @@ export default defineComponent({
     watch(selectedRelationship, (_selectedRelationship) => {
       currentEdgeWeight.value = getEdgeWeight(_selectedRelationship);
     }, { immediate: true });
-    const snappedEdgeWeight = computed(
+    const currentQualitativeWeight = computed(
       () => snapEdgeWeightToLowMedHigh(currentEdgeWeight.value)
     );
 
@@ -304,7 +304,7 @@ export default defineComponent({
 
       currentEdgeType,
       currentEdgeWeight,
-      snappedEdgeWeight,
+      currentQualitativeWeight,
 
       inferredWeightType,
       inferredWeightValue,
@@ -336,7 +336,7 @@ export default defineComponent({
       return 'unknown';
     },
     explainerGlyphFilepath(): string {
-      return this.buildExplainerGlyphFilepath(this.polarity, this.snappedEdgeWeight, this.currentEdgeType);
+      return this.buildExplainerGlyphFilepath(this.polarity, this.currentQualitativeWeight, this.currentEdgeType);
     }
   },
   methods: {
