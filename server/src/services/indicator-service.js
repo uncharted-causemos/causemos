@@ -110,10 +110,18 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
   // 1. Check against historical matches
   for (const node of nodeParameters) {
     // 1.1 Check project specific history first
-    let topUsedIndicator = await historyAdapter.findOne([
-      { field: 'project_id', value: model.project_id },
-      { field: 'concept', value: node.concept }
-    ], { sort: [{ frequency: { order: 'desc' } }] });
+    let topUsedIndicator = await historyAdapter.findOne(
+      [
+        { field: 'project_id', value: model.project_id },
+        { field: 'concept', value: node.concept }
+      ],
+      {
+        sort: [
+          { frequency: { order: 'desc' } },
+          { modified_at: { order: 'desc' } }
+        ]
+      }
+    );
 
     if (!_.isNil(topUsedIndicator)) {
       Logger.info(`Using previous selection (project specific) ${node.concept} => ${topUsedIndicator.indicator_id}`);
@@ -233,6 +241,7 @@ const setDefaultIndicators = async (modelId, resolution) => {
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
   const model = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
   const nodeParameters = await _findUnquantifiedNodes(modelId);
+  const country = model.parameter.geography;
 
   const conceptIndicatorMap = await getConceptIndicatorMap(model, nodeParameters);
 
@@ -279,7 +288,7 @@ const setDefaultIndicators = async (modelId, resolution) => {
         runId,
         name: defaultFeature.display_name || defaultFeature.name,
         unit: defaultFeature.unit,
-        country: '',
+        country: country,
         admin1: '',
         admin2: '',
         admin3: '',
@@ -295,7 +304,7 @@ const setDefaultIndicators = async (modelId, resolution) => {
         const dataId = cube.data_id;
         const parameter = updatePayload.parameter;
 
-        const timeseries = await getTimeseries(dataId, runId, feature, resolution, temporalAggregation, spatialAggregation);
+        const timeseries = await getTimeseries(dataId, runId, feature, resolution, temporalAggregation, spatialAggregation, country);
         if (_.isEmpty(timeseries)) {
           Logger.warn(`Data ${feature} is empty, reset ${node.concept} to abstract`);
           updatePayload.parameter = abstractIndicator(resolution);
