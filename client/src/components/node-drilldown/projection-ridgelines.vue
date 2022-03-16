@@ -480,6 +480,8 @@ h3 {
   // Give this column half of the space
   flex: 1;
   z-index: 1; // allow clicking through the overlay for scenario selection
+  $circle-width: 1rem;
+  $gap-size: 5px;
   .scenario-name {
     display: flex;
     align-items: baseline;
@@ -488,16 +490,24 @@ h3 {
     &:hover {
       color: rgb(92, 92, 92);
     }
+
+    i {
+      font-size: $circle-width;
+    }
+
+    h3 {
+      font-size: $font-size-large;
+    }
   }
   .clamp-name {
-    padding-left: 2rem;
+    padding-left: calc(#{$circle-width} + #{$gap-size});
     color: gray;
     font-size: small;
     user-select: none;
     .scenario-clamp-icon {
       user-select: none;
       color: $selected;
-      font-size: $font-size-small;
+      font-size: 0.75 * $circle-width;
     }
   }
 }
