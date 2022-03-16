@@ -40,29 +40,28 @@
               <i class="fa fa-circle scenario-clamp-icon" />
               {{ ontologyFormatter(clamp.concept) }}
             </div>
+            <!-- If there is more than one scenario and this is the comparison
+              baseline, label it -->
+            <h4
+              v-if="
+                rowsToDisplay.length > 1 &&
+                row.scenarioId === comparisonBaselineId
+              "
+              class="comparison-baseline-control"
+            >
+              Comparison baseline
+            </h4>
+            <!-- Else if there is more than one scenario, show a button to make
+              this the comparison baseline-->
+            <button
+              v-else-if="rowsToDisplay.length > 1"
+              class="btn btn-sm btn-default comparison-baseline-control"
+              @click="$emit('set-comparison-baseline-id', row.scenarioId)"
+            >
+              Use as comparison baseline
+            </button>
           </div>
           <div style="flex: 4; display: flex; flex-direction: column">
-            <div style="display: flex; min-height: 3rem">
-              <!-- If there is more than one scenario and this is the comparison
-            baseline, label it -->
-              <span
-                v-if="
-                  rowsToDisplay.length > 1 &&
-                  row.scenarioId === comparisonBaselineId
-                "
-              >
-                Comparison baseline</span
-              >
-              <!-- Else if there is more than one scenario, show a button to make
-            this the comparison baseline-->
-              <button
-                v-else-if="rowsToDisplay.length > 1"
-                class="btn btn-sm btn-default"
-                @click="$emit('set-comparison-baseline-id', row.scenarioId)"
-              >
-                Use as comparison baseline
-              </button>
-            </div>
             <div style="display: flex">
               <div
                 v-for="(ridgelineData, timeSliceIndex) of row.ridgelines"
@@ -461,9 +460,12 @@ h3 {
   margin-bottom: 0;
 
   h4 {
-    @include header-secondary;
     flex: 4;
   }
+}
+
+h4 {
+  @include header-secondary;
 }
 
 .lighter {
@@ -528,6 +530,14 @@ h3 {
       font-size: 0.75 * $circle-width;
     }
   }
+}
+
+.comparison-baseline-control {
+  margin-top: 5px;
+}
+
+h4.comparison-baseline-control {
+  font-size: $font-size-small;
 }
 
 .new-scenario-row {
