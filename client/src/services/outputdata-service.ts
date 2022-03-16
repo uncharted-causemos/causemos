@@ -5,7 +5,8 @@ import {
   AdminLevel,
   SpatialAggregationLevel,
   AggregationOption,
-  ReferenceSeriesOption
+  ReferenceSeriesOption,
+  SPLIT_BY_VARIABLE
 } from '@/types/Enums';
 import {
   OutputSpec,
@@ -504,6 +505,8 @@ export const getRegionAggregations = async (
   } else if (breakdownOption === SpatialAggregationLevel.Region) {
     const ret = await getRegionAggregation(specs[0]);
     results = new Array(specs.length).fill(ret) as RegionalAggregation[];
+  } else if (breakdownOption === SPLIT_BY_VARIABLE) {
+    results = await Promise.all(specs.map(getRegionAggregation));
   } else {
     const selectedTimestamps = specs
       .map(s => s.timestamp?.toString())
