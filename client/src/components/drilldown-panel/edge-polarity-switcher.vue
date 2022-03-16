@@ -67,13 +67,13 @@
         class="clickable-dropdown"
         :class="{'warning-message': valueInconsistency}"
         @click.stop="openEdgeWeightDropdown()">
-        {{ weightValueString(currentEdgeWeight) }}
+        {{ weightValueString(currentQualitativeWeight) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
       <span
         v-if="currentView === 'qualitative'"
         class="clickable-dropdown">
-        {{ weightValueString(currentEdgeWeight) }} &nbsp;
+        {{ weightValueString(currentQualitativeWeight) }} &nbsp;
       </span>
 
       <dropdown-control
@@ -138,7 +138,7 @@
     style="color: #888">
     A decrease of&nbsp;
     {{ ontologyFormatter(selectedRelationship.source) }} leads to
-    {{ weightValueString(currentEdgeWeight) }}
+    {{ weightValueString(currentQualitativeWeight) }}
     {{ inversePolarityLabel }}
     in {{ ontologyFormatter(selectedRelationship.target) }}
   </div>
@@ -160,7 +160,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, toRefs, PropType } from 'vue';
+import { defineComponent, ref, computed, toRefs, PropType, watch } from 'vue';
 import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
@@ -181,17 +181,19 @@ const getEdgeTypeString = (edge: EdgeParameter): string => {
 };
 
 
-// FIXME: Need better init heuristic because engine numbers are not discrete??
 const getEdgeWeight = (edge: EdgeParameter): number => {
   const type = getEdgeTypeString(edge);
   const param = edge.parameter;
   if (param && param.weights) {
-    const w = type === EDGE_TYPE_TREND ? param.weights[1] : param.weights[0];
-    if (w > 0.7) return 0.9;
-    if (w > 0.3) return 0.5;
-    return 0.1;
+    return type === EDGE_TYPE_TREND ? param.weights[1] : param.weights[0];
   }
   return 0;
+};
+
+const snapEdgeWeightToLowMedHigh = (weight: number): number => {
+  if (weight > 0.7) return 0.9;
+  if (weight > 0.3) return 0.5;
+  return 0.1;
 };
 
 enum DROPDOWN {
@@ -215,7 +217,7 @@ export default defineComponent({
       required: true
     },
     selectedRelationship: {
-      type: Object,
+      type: Object as PropType<EdgeParameter>,
       required: true
     }
   },
@@ -223,12 +225,12 @@ export default defineComponent({
     const ontologyFormatter = useOntologyFormatter();
     const store = useStore();
     const currentView = computed(() => store.getters['app/currentView']);
+
+    const { selectedRelationship, modelSummary } = toRefs(props);
     // FIXME: the type of CAGModelParameter.engine should be `Engine` instead of `string`
     const currentEngine = computed(
-      () => props.modelSummary.parameter.engine as Engine
+      () => modelSummary.value.parameter.engine as Engine
     );
-
-    const { selectedRelationship } = toRefs(props);
 
     const dropDown = ref(DROPDOWN.NONE);
     const isEdgeTypeOpen = computed(() => {
@@ -241,24 +243,35 @@ export default defineComponent({
       return dropDown.value === DROPDOWN.EDGE_POLARITY;
     });
 
-    const currentEdgeType = ref(getEdgeTypeString(props.selectedRelationship as EdgeParameter));
-    const currentEdgeWeight = ref(getEdgeWeight(props.selectedRelationship as EdgeParameter));
-    const engineWeights = ref((props.selectedRelationship as EdgeParameter).parameter?.engine_weights);
+    const currentEdgeType = ref('');
+    watch(selectedRelationship, (_selectedRelationship) => {
+      currentEdgeType.value = getEdgeTypeString(_selectedRelationship);
+    }, { immediate: true });
+
+    const currentEdgeWeight = ref(0);
+    watch(selectedRelationship, (_selectedRelationship) => {
+      currentEdgeWeight.value = getEdgeWeight(_selectedRelationship);
+    }, { immediate: true });
+    const currentQualitativeWeight = computed(
+      () => snapEdgeWeightToLowMedHigh(currentEdgeWeight.value)
+    );
+
+    const engineWeights = computed(() => selectedRelationship.value.parameter?.engine_weights);
 
     const inferredWeights = computed(() => {
       return engineWeights.value
-        ? engineWeights.value[props.modelSummary.parameter.engine]
+        ? engineWeights.value[modelSummary.value.parameter.engine]
         : [0, 0];
     });
 
-    const inferred = ref(decodeWeights(inferredWeights.value));
-
     const inferredWeightType = computed(() => {
-      return inferred.value.weightType === 'level' ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
+      return decodeWeights(inferredWeights.value).weightType === 'level'
+        ? EDGE_TYPE_LEVEL
+        : EDGE_TYPE_TREND;
     });
 
     const inferredWeightValue = computed(() => {
-      return inferred.value.weightValue;
+      return decodeWeights(inferredWeights.value).weightValue;
     });
 
     const typeInconsistency = computed(() => {
@@ -273,21 +286,11 @@ export default defineComponent({
     });
 
     const polarityInconsistency = computed(() => {
-      if (['delphi', 'delphi_dev'].includes(props.modelSummary.parameter.engine) && inferredWeights.value[2]) {
-        return inferredWeights.value[2] * props.selectedRelationship.polarity < 0;
+      if (['delphi', 'delphi_dev'].includes(modelSummary.value.parameter.engine) && inferredWeights.value[2]) {
+        return inferredWeights.value[2] * (selectedRelationship.value.polarity as number) < 0;
       }
       return false;
     });
-
-    watch(
-      [selectedRelationship.value],
-      () => {
-        engineWeights.value = (props.selectedRelationship as EdgeParameter).parameter?.engine_weights;
-        currentEdgeWeight.value = getEdgeWeight(props.selectedRelationship as EdgeParameter);
-        currentEdgeType.value = getEdgeTypeString(props.selectedRelationship as EdgeParameter);
-      },
-      { immediate: true }
-    );
 
     return {
       currentView,
@@ -301,8 +304,8 @@ export default defineComponent({
 
       currentEdgeType,
       currentEdgeWeight,
+      currentQualitativeWeight,
 
-      inferred,
       inferredWeightType,
       inferredWeightValue,
 
@@ -315,7 +318,9 @@ export default defineComponent({
   },
   computed: {
     polarity(): number {
-      return this.selectedRelationship.polarity;
+      // Polarity is only undefined on the backend before it's fetched and
+      //  computed locally.
+      return this.selectedRelationship.polarity as number;
     },
     polarityColor(): { color: string } {
       return statementPolarityColor(this.polarity);
@@ -331,7 +336,7 @@ export default defineComponent({
       return 'unknown';
     },
     explainerGlyphFilepath(): string {
-      return this.buildExplainerGlyphFilepath(this.polarity, this.currentEdgeWeight, this.currentEdgeType);
+      return this.buildExplainerGlyphFilepath(this.polarity, this.currentQualitativeWeight, this.currentEdgeType);
     }
   },
   methods: {
