@@ -1,12 +1,12 @@
 <template>
   <div class="projection-ridgelines-container">
     <div id="header-section" class="grid-row slice-labels x-axis-label">
-      <h4>
+      <h3>
         <span class="lighter">Change in</span>
         {{ nodeConceptName }}
         <span class="lighter">relative to</span>
         {{ comparisonBaselineName }}
-      </h4>
+      </h3>
     </div>
     <div class="grid-row slice-labels">
       <h3 v-for="(timeSliceLabel, index) in timeSliceLabels" :key="index">
@@ -439,7 +439,7 @@ $grid-row-gap-size: 5px;
     width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0.7);
-    flex: 8;
+    flex: 4;
     z-index: 1;
     align-items: flex-end;
     justify-content: end;
@@ -479,13 +479,9 @@ $grid-row-gap-size: 5px;
   //  align the second cell of this row with the second cell of the other rows.
   gap: $grid-row-gap-size / 4;
 
-  h4 {
+  h3 {
     flex: 4;
   }
-}
-
-h4 {
-  @include header-secondary;
 }
 
 .lighter {
@@ -552,6 +548,11 @@ h4 {
 
 .comparison-baseline-control {
   margin-top: 5px;
+}
+
+
+h4 {
+  @include header-secondary;
 }
 
 h4.comparison-baseline-control {
