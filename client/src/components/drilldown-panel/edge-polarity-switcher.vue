@@ -148,7 +148,7 @@
     style="color: #888">
     A decrease of&nbsp;
     {{ ontologyFormatter(selectedRelationship.source) }} leads to
-    {{ weightValueString(currentQualitativeWeight) }}
+    {{ currentWeightValueString(currentEdgeWeight, inferredWeightValue) }}
     {{ inversePolarityLabel }}
     in {{ ontologyFormatter(selectedRelationship.target) }}
   </div>
@@ -184,7 +184,7 @@ const EDGE_TYPE_TREND = 'trend';
 
 const getEdgeTypeString = (edge: EdgeParameter): string => {
   const param = edge.parameter;
-  if (param && param.weights) {
+  if (param && param.weights && param.weights.length >= 2) {
     return param.weights[0] > param.weights[1] ? EDGE_TYPE_LEVEL : EDGE_TYPE_TREND;
   }
   return '';
@@ -194,10 +194,10 @@ const getEdgeTypeString = (edge: EdgeParameter): string => {
 const getEdgeWeight = (edge: EdgeParameter): number => {
   const type = getEdgeTypeString(edge);
   const param = edge.parameter;
-  if (param && param.weights) {
+  if (param && param.weights && param.weights.length >= 2) {
     return type === EDGE_TYPE_TREND ? param.weights[1] : param.weights[0];
   }
-  return 0;
+  return -1;
 };
 
 const snapEdgeWeightToLowMedHigh = (weight: number): number => {
@@ -258,10 +258,11 @@ export default defineComponent({
       currentEdgeType.value = getEdgeTypeString(_selectedRelationship);
     }, { immediate: true });
 
-    const currentEdgeWeight = ref(0);
+    const currentEdgeWeight = ref(-1);
     watch(selectedRelationship, (_selectedRelationship) => {
       currentEdgeWeight.value = getEdgeWeight(_selectedRelationship);
     }, { immediate: true });
+    const isEdgeWeightStale = computed(() => currentEdgeWeight.value === -1);
     const currentQualitativeWeight = computed(
       () => snapEdgeWeightToLowMedHigh(currentEdgeWeight.value)
     );
@@ -315,6 +316,7 @@ export default defineComponent({
       currentEdgeType,
       currentEdgeWeight,
       currentQualitativeWeight,
+      isEdgeWeightStale,
 
       inferredWeightType,
       inferredWeightValue,
@@ -369,6 +371,9 @@ export default defineComponent({
       return 'a small';
     },
     currentWeightValueString(currentWeight: number, inferredWeight: number) {
+      if (this.isEdgeWeightStale) {
+        return 'an unknown';
+      }
       // FIXME: we currently have no way to determine if the a weight of, say,
       //  0.5 means the analyst selected the inferred weight or "medium",
       //  assuming the inferred value is also 0.5. Assume it's inferred for now.
