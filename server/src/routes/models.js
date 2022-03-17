@@ -661,7 +661,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   const nodeParameter = req.body;
 
   if (setLock(modelId) === false) {
-    Logger.info(`Conflict while updateing model ${modelId} node-parameter. Another transaction in progress`);
+    Logger.info(`Conflict while updating model ${modelId} node-parameter. Another transaction in progress`);
     res.status(409).send(`Conflict while updating node for model ${modelId}. ` + TRANSACTION_LOCK_MSG);
     return;
   }
@@ -749,6 +749,8 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     }
   }
 
+  await clearEdgeWeightsForNode(modelId, nodeParameter.concept);
+
   await scenarioService.invalidateByModel(modelId);
 
   await cagService.updateCAGMetadata(modelId, {
@@ -762,6 +764,30 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
 
   releaseLock(modelId);
 }));
+
+// Clear any edge weights that were manually set on edges coming into or
+//  leaving the node that was updated.
+const clearEdgeWeightsForNode = async (modelId, nodeConcept) => {
+  // Get all incoming and outgoing edges
+  const edgeComponents = await cagService.getAllComponents(modelId, RESOURCE.EDGE_PARAMETER);
+  const adjacentEdges = edgeComponents.filter(
+    edge => edge.source === nodeConcept || edge.target === nodeConcept
+  );
+  // Remove the weights for each
+  adjacentEdges.forEach(edge => {
+    edge.parameter.weights = [];
+  });
+  const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+  if (adjacentEdges.length > 0) {
+    const results = await edgeParameterAdapter.update(
+      adjacentEdges,
+      (doc) => doc.id
+    );
+    if (results.errors) {
+      throw new Error(JSON.stringify(results.errors[0]));
+    }
+  }
+};
 
 
 
