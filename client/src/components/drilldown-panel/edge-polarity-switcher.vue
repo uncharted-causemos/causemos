@@ -141,18 +141,14 @@
       in {{ ontologyFormatter(selectedRelationship.target) }}
     </div>
   </div>
-  <div
-    v-if="currentEdgeType === 'trend'"
-    style="color: #888">
+  <div v-if="currentEdgeType === 'trend'" style="color: #888">
     A decrease of&nbsp;
     {{ ontologyFormatter(selectedRelationship.source) }} leads to
     {{ currentWeightValueString(currentEdgeWeight, inferredWeightValue) }}
     {{ inversePolarityLabel }}
     in {{ ontologyFormatter(selectedRelationship.target) }}
   </div>
-  <div
-    v-if="currentEdgeType === 'level'"
-    style="color: #888">
+  <div v-if="currentEdgeType === 'level'" style="color: #888">
     A low amount of&nbsp;
     {{ ontologyFormatter(selectedRelationship.source) }} leads to
     a smaller
@@ -381,9 +377,6 @@ export default defineComponent({
       return 'a small';
     },
     currentWeightValueString(currentWeight: number, inferredWeight: number) {
-      if (this.isEdgeWeightStale) {
-        return 'an unknown';
-      }
       // FIXME: we currently have no way to determine if the a weight of, say,
       //  0.5 means the analyst selected the inferred weight or "medium",
       //  assuming the inferred value is also 0.5. Assume it's inferred for now.
