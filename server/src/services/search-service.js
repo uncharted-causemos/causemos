@@ -72,6 +72,51 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
   });
 };
 
+
+// Search against ontology concepts
+const rawConceptEntitySearch2 = async (projectId, queryString) => {
+  const filters = [{
+    terms: {
+      project_id: [projectId]
+    }
+  }];
+
+  const reserved = ['or', 'and'];
+
+  const builder = queryStringBuilder()
+    .setOperator('OR')
+    .setFields(['examples', 'label^20', 'definition']);
+
+  const tokens = queryString
+    .split(' ')
+    .filter(s => {
+      return !reserved.includes(s.toLowerCase());
+    });
+
+  let c = tokens.length * 2;
+  for (let i = 0; i < tokens.length; i++) {
+    builder.add(`(${tokens[i]}*)^${c}`);
+    c--;
+  }
+
+  console.log('>>', builder.build());
+
+  const results = await searchAndHighlight(RESOURCE.ONTOLOGY, builder.build(), filters, [
+    'label',
+    'examples'
+  ]);
+
+  return results.map(d => {
+    return {
+      doc_type: 'concept',
+      score: d._score,
+      doc: formatOntologyDoc(d._source),
+      highlight: d.highlight
+    };
+  });
+};
+
+
 const rawDatacubeSearch = async (queryString) => {
   const filters = [];
   const reserved = ['or', 'and'];
@@ -198,6 +243,84 @@ const buildSubjObjAggregation = (concepts) => {
       }
     }
   };
+};
+
+
+
+const statementConceptEntitySearch2 = async (projectId, queryString) => {
+  const reserved = ['or', 'and'];
+  const tokens = queryString
+    .split(' ')
+    .filter(s => {
+      return !reserved.includes(s.toLowerCase());
+    });
+
+  // 1. Search for obj and subj matches against the project directly
+  const q = tokens.map(s => `(${s}~)`).join(' AND ');
+  const results = await client.search({
+    index: projectId,
+    body: {
+      size: 0,
+      aggs: {
+        filteredSubj: {
+          filter: {
+            query_string: {
+              query: q,
+              fields: [
+                'subj.concept'
+              ]
+            }
+          },
+          aggs: {
+            concept: {
+              terms: {
+                field: 'subj.concept.raw',
+                size: 3
+              }
+            }
+          }
+        },
+        filteredObj: {
+          filter: {
+            query_string: {
+              query: q,
+              fields: [
+                'obj.concept'
+              ]
+            }
+          },
+          aggs: {
+            concept: {
+              terms: {
+                field: 'obj.concept.raw',
+                size: 3
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const subjConcepts = results.body.aggregations.filteredSubj.concept.buckets;
+  const objConcepts = results.body.aggregations.filteredObj.concept.buckets;
+
+  const map = new Map();
+  for (const bucket of subjConcepts) {
+    const count = map.get(bucket.key) || 0;
+    map.set(bucket.key, count + bucket.doc_count);
+  }
+  for (const bucket of objConcepts) {
+    const count = map.get(bucket.key) || 0;
+    map.set(bucket.key, count + bucket.doc_count);
+  }
+
+
+  // 2. Broader search for concepts using leveraging ontology and examples
+  const rawConcepts = await rawConceptEntitySearch2(projectId, queryString);
+
+
+  return { map, rawConcepts: _.take(rawConcepts, 5) };
 };
 
 
@@ -600,6 +723,7 @@ const modelSearchWithName = async (id, name) => {
 
 module.exports = {
   statementConceptEntitySearch,
+  statementConceptEntitySearch2,
   rawConceptEntitySearch,
   rawDatacubeSearch,
   indicatorSearchByConcepts,
