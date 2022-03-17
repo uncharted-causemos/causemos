@@ -115,6 +115,7 @@
             <button
               v-if="isPublishing && !hasDefaultRun && !runningDefaultRun"
               class="btn toggle-new-runs-button btn-primary btn-call-for-action"
+              :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
               @click="createRunWithDefaults()"
             >
               {{ defaultRunButtonCaption }}
@@ -126,6 +127,7 @@
                 'btn-primary btn-call-for-action': !newRunsMode,
                 'btn-default': newRunsMode
               }"
+              :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
               @click="toggleNewRunsMode()"
             >
               {{ newRunsMode ? 'Cancel' : 'Request new runs' }}
@@ -632,7 +634,7 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption,
   SPLIT_BY_VARIABLE,
-  DatacubeViewMode
+  DatacubeViewMode, DatacubeStatus
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -2320,7 +2322,8 @@ export default defineComponent({
       regionMapData,
       popupFormatter,
       activeFeaturesNames,
-      DatacubeViewMode
+      DatacubeViewMode,
+      DatacubeStatus
     };
   },
   watch: {

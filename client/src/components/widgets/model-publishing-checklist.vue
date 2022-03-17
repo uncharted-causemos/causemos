@@ -1,6 +1,9 @@
 <template>
     <div class="model-publishing-checklist-container">
-      <div class="checklist-items-container">
+      <div
+        v-if="metadata && metadata.status !== DatacubeStatus.Deprecated"
+        class="checklist-items-container"
+      >
         <div
           v-for="step in publishingSteps"
           :key="step.id"
@@ -20,10 +23,11 @@
         </div>
       </div>
       <div style="display: flex; align-items: center">
-        <span v-if="metadata && metadata.status === DatacubeStatus.Deprecated" style="margin: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+        <span v-if="metadata && metadata.status === DatacubeStatus.Deprecated" style="margin: 2px; padding: 2px 5px; font-size: large; font-weight: bolder" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
         <button
+          v-if="metadata && metadata.status !== DatacubeStatus.Deprecated"
           class="btn btn-primary btn-call-for-action"
-          :class="{ 'disabled': allStepsCompleted === false || (metadata && metadata.status === DatacubeStatus.Deprecated)}"
+          :class="{ 'disabled': allStepsCompleted === false}"
           style="padding: 6px 10px; border-radius: 4px;"
           @click="publishModel()">
             Publish model
