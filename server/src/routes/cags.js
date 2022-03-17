@@ -78,7 +78,8 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
       concept: n.concept,
       parameter: n.parameter,
       label: n.label,
-      components: n.components
+      components: n.components,
+      match_candidates: n.match_candidates
     };
   });
 
