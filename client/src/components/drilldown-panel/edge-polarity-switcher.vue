@@ -67,13 +67,23 @@
         class="clickable-dropdown"
         :class="{'warning-message': valueInconsistency}"
         @click.stop="openEdgeWeightDropdown()">
-        {{ weightValueString(currentQualitativeWeight) }}
+        {{
+          currentWeightValueString(
+            currentEdgeWeight,
+            inferredWeightValue
+          )
+        }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
       <span
         v-if="currentView === 'qualitative'"
         class="clickable-dropdown">
-        {{ weightValueString(currentQualitativeWeight) }} &nbsp;
+        {{
+          currentWeightValueString(
+            currentEdgeWeight,
+            inferredWeightValue
+          )
+        }} &nbsp;
       </span>
 
       <dropdown-control
@@ -357,6 +367,16 @@ export default defineComponent({
       if (normalizedV >= 0.9) return 'a large';
       if (normalizedV >= 0.5) return 'a medium';
       return 'a small';
+    },
+    currentWeightValueString(currentWeight: number, inferredWeight: number) {
+      // FIXME: we currently have no way to determine if the a weight of, say,
+      //  0.5 means the analyst selected the inferred weight or "medium",
+      //  assuming the inferred value is also 0.5. Assume it's inferred for now.
+      const prefix = currentWeight === inferredWeight ? 'an inferred ' : 'a ';
+      // Remove the leading "a "
+      const magnitudeString =
+        this.weightValueString(currentWeight).split(' ')[1];
+      return prefix + magnitudeString;
     },
     weightTypeString(v: string): string {
       if (v === EDGE_TYPE_LEVEL) return 'A high amount of';
