@@ -625,7 +625,8 @@ export const getBulkRegionalData = async(
           feature: spec.outputVariable,
           resolution: spec.temporalResolution,
           temporal_agg: spec.temporalAggregation,
-          spatial_agg: spec.spatialAggregation
+          spatial_agg: spec.spatialAggregation,
+          transform: spec.transform
         }
       }
     );
