@@ -61,34 +61,30 @@
               Use as comparison baseline
             </button>
           </div>
-          <div style="flex: 4; display: flex; flex-direction: column">
-            <div style="display: flex">
-              <div
-                v-for="(ridgelineData, timeSliceIndex) of row.ridgelines"
-                :key="timeSliceIndex"
-                class="ridgeline-with-summary"
-              >
-                <ridgeline
-                  class="ridgeline"
-                  :ridgeline-data="ridgelineData"
-                  :comparison-baseline="
-                    row.comparisonBaseline
-                      ? row.comparisonBaseline[timeSliceIndex]
-                      : null
-                  "
-                  :min="indicatorMin"
-                  :max="indicatorMax"
-                  :historical-timeseries="historicalTimeseries"
-                  :context-range="row.contextRanges[timeSliceIndex]"
-                />
-                <div v-if="row.summaries.length > timeSliceIndex">
-                  {{ row.summaries[timeSliceIndex].before }}
-                  <strong>
-                    {{ row.summaries[timeSliceIndex].emphasized }}
-                  </strong>
-                  {{ row.summaries[timeSliceIndex].after }}
-                </div>
-              </div>
+          <div
+            v-for="(ridgelineData, timeSliceIndex) of row.ridgelines"
+            :key="timeSliceIndex"
+            class="ridgeline-with-summary"
+          >
+            <ridgeline
+              class="ridgeline"
+              :ridgeline-data="ridgelineData"
+              :comparison-baseline="
+                row.comparisonBaseline
+                  ? row.comparisonBaseline[timeSliceIndex]
+                  : null
+              "
+              :min="indicatorMin"
+              :max="indicatorMax"
+              :historical-timeseries="historicalTimeseries"
+              :context-range="row.contextRanges[timeSliceIndex]"
+            />
+            <div v-if="row.summaries.length > timeSliceIndex">
+              {{ row.summaries[timeSliceIndex].before }}
+              <strong>
+                {{ row.summaries[timeSliceIndex].emphasized }}
+              </strong>
+              {{ row.summaries[timeSliceIndex].after }}
             </div>
           </div>
         </div>
@@ -501,8 +497,6 @@ h4 {
 }
 
 .first-column {
-  // Give this column half of the space
-  flex: 1;
   z-index: 1; // allow clicking through the overlay for scenario selection
   $circle-width: 1rem;
   $gap-size: 5px;
@@ -570,8 +564,6 @@ h4.comparison-baseline-control {
 .ridgeline-with-summary {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-width: 0
 }
 
 .ridgeline {
