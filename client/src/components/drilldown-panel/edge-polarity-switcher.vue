@@ -34,10 +34,6 @@
         {{ weightTypeString(currentEdgeType) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
-      <span v-if="!isEdgeWeightEditable" class="clickable-dropdown">
-        <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
-        {{ weightTypeString(currentEdgeType) }} &nbsp;
-      </span>
       <dropdown-control
         v-if="isEdgeTypeOpen"
         class="edge-type-dropdown">
