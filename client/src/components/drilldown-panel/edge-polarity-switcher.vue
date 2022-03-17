@@ -262,7 +262,7 @@ export default defineComponent({
       currentEdgeType.value = getEdgeTypeString(_selectedRelationship);
     }, { immediate: true });
 
-    const currentEdgeWeight = ref(-1);
+    const currentEdgeWeight = ref(0);
     watch(selectedRelationship, (_selectedRelationship) => {
       currentEdgeWeight.value = getEdgeWeight(_selectedRelationship);
     }, { immediate: true });
