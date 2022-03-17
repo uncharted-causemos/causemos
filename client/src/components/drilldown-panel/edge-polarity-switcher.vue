@@ -2,25 +2,31 @@
   <div @click="closeAll()">
     <div
       class="warning-message"
-      v-if="typeInconsistency === true && currentView === 'quantitative'">
+      v-if="typeInconsistency === true && isEdgeWeightEditable">
       <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship type is different than selected type.
     </div>
     <div
       class="warning-message"
-      v-if="valueInconsistency=== true && currentView === 'quantitative'">
+      v-if="valueInconsistency=== true && isEdgeWeightEditable">
       <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship strength is different than selected strength.
     </div>
     <div
       class="warning-message"
-      v-if="polarityInconsistency=== true && currentView === 'quantitative'">
+      v-if="polarityInconsistency=== true && isEdgeWeightEditable">
       <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred polarity conflicts with existing polarity.
     </div>
 
-    <div
-      v-if="selectedRelationship.parameter"
-      style="display: inline-block">
+    <message-display
+      v-if="isEdgeWeightStale"
+      :message="'Rerun to modify relationship type and strength.'"
+      :message-type="'alert-info'"
+    />
+
+    <!-- TODO: can we remove the second clause? I think parameter will always
+      be defined if we're in the quantitative space -->
+    <div v-if="isEdgeWeightEditable && selectedRelationship.parameter" style="display: inline-block">
       <span
-        v-if="currentView === 'quantitative' && currentEngine !== 'delphi' && currentEngine !== 'delphi_dev'"
+        v-if="supportsLevelEdges(currentEngine)"
         class="clickable-dropdown"
         :class="{'warning-message': typeInconsistency}"
         @click.stop="openEdgeTypeDropdown()">
@@ -28,9 +34,7 @@
         {{ weightTypeString(currentEdgeType) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
-      <span
-        v-if="currentView === 'qualitative'"
-        class="clickable-dropdown">
+      <span v-if="!isEdgeWeightEditable" class="clickable-dropdown">
         <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
         {{ weightTypeString(currentEdgeType) }} &nbsp;
       </span>
@@ -59,36 +63,34 @@
       {{ ontologyFormatter(selectedRelationship.source) }}
       leads to&nbsp;
     </div>
+
+    <!-- TODO: can we replace this whole thing with isEdgeWeightEditable?
+      I think parameter and parameter.weights will always be defined if we're
+      in the quantitative space -->
     <div
-      v-if="selectedRelationship.parameter && selectedRelationship.parameter.weights"
+      v-if="
+        selectedRelationship.parameter &&
+        selectedRelationship.parameter.weights &&
+        !isEdgeWeightStale
+      "
       style="display: inline-block">
       <span
-        v-if="currentView === 'quantitative'"
+        v-if="isEdgeWeightEditable"
         class="clickable-dropdown"
-        :class="{'warning-message': valueInconsistency}"
+        :class="{
+          'warning-message': isEdgeWeightEditable && valueInconsistency
+        }"
         @click.stop="openEdgeWeightDropdown()">
-        {{
-          currentWeightValueString(
-            currentEdgeWeight,
-            inferredWeightValue
-          )
-        }}
+        {{ currentWeightValueString(currentEdgeWeight, inferredWeightValue) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
-      <span
-        v-if="currentView === 'qualitative'"
-        class="clickable-dropdown">
+      <span v-else class="clickable-dropdown">
         {{
-          currentWeightValueString(
-            currentEdgeWeight,
-            inferredWeightValue
-          )
+          currentWeightValueString(currentEdgeWeight, inferredWeightValue)
         }} &nbsp;
       </span>
 
-      <dropdown-control
-        v-if="isEdgeWeightOpen"
-        class="edge-type-dropdown">
+      <dropdown-control v-if="isEdgeWeightOpen" class="edge-type-dropdown">
         <template #content>
           <edge-weight-dropdown-option
             :value="0.1"
@@ -125,7 +127,9 @@
     <div style="display: inline-block">
       <span
         class="clickable-dropdown"
-        :class="{'warning-message': polarityInconsistency}"
+        :class="{
+          'warning-message': isEdgeWeightEditable && polarityInconsistency
+        }"
         @click.stop="openEdgePolarityDropdown()">
         {{ polarityLabel }}
         <i class="fa fa-fw fa-caret-down" />
@@ -178,6 +182,7 @@ import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { decodeWeights, Engine, supportsLevelEdges } from '@/services/model-service';
 import { CAGModelSummary, EdgeParameter } from '@/types/CAG';
 import EdgeWeightDropdownOption from '@/components/drilldown-panel/edge-weight-dropdown-option.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 
 const EDGE_TYPE_LEVEL = 'level';
 const EDGE_TYPE_TREND = 'trend';
@@ -197,7 +202,11 @@ const getEdgeWeight = (edge: EdgeParameter): number => {
   if (param && param.weights && param.weights.length >= 2) {
     return type === EDGE_TYPE_TREND ? param.weights[1] : param.weights[0];
   }
-  return -1;
+  if (param && param.weights && param.weights.length === 0) {
+    // Edge is stale
+    return -1;
+  }
+  return 0;
 };
 
 const snapEdgeWeightToLowMedHigh = (weight: number): number => {
@@ -218,7 +227,8 @@ export default defineComponent({
   name: 'EdgePolaritySwitcher',
   components: {
     DropdownControl,
-    EdgeWeightDropdownOption
+    EdgeWeightDropdownOption,
+    MessageDisplay
   },
   emits: ['edge-set-user-polarity', 'edge-set-weights'],
   props: {
@@ -325,7 +335,8 @@ export default defineComponent({
       valueInconsistency,
       polarityInconsistency,
 
-      STATEMENT_POLARITY
+      STATEMENT_POLARITY,
+      supportsLevelEdges
     };
   },
   computed: {
@@ -349,6 +360,11 @@ export default defineComponent({
     },
     explainerGlyphFilepath(): string {
       return this.buildExplainerGlyphFilepath(this.polarity, this.currentQualitativeWeight, this.currentEdgeType);
+    },
+    isEdgeWeightEditable(): boolean {
+      return (
+        this.currentView === 'quantitative' && this.isEdgeWeightStale === false
+      );
     }
   },
   methods: {
