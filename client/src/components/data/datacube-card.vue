@@ -115,6 +115,7 @@
             <button
               v-if="isPublishing && !hasDefaultRun && !runningDefaultRun"
               class="btn toggle-new-runs-button btn-primary btn-call-for-action"
+              :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
               @click="createRunWithDefaults()"
             >
               {{ defaultRunButtonCaption }}
