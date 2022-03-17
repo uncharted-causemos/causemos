@@ -97,15 +97,7 @@
                 @item-selected="(period) => { indicatorPeriod = period; }"
               />
               <span class="configure-sentence">seasonal trends. </span>
-              <button
-                v-if="indicatorId === null"
-                class="btn btn-sm btn-primary btn-call-for-action"
-                @click="openDataExplorer"
-              >
-                <i class="fa fa-fw fa-search" />
-                Choose a datacube
-              </button>
-              <div class="configure-dropdown-container" v-else>
+              <div class="configure-dropdown-container">
                 <button
                   class="btn btn-sm btn-default"
                   @click="isDatacubeConfigDropdownOpen = !isDatacubeConfigDropdownOpen"
@@ -113,6 +105,26 @@
                   <i class="fa fa-fw fa-pencil" />
                   Configure
                 </button>
+                <dropdown-control
+                  v-if="isDatacubeConfigDropdownOpen && indicatorId === null"
+                  class="configure-dropdown"
+                >
+                  <template #content>
+                    <div
+                      class="dropdown-option"
+                      @click="openDataExplorer">
+                      <i class="fa fa-fw fa-search" />
+                      Choose a datacube
+                    </div>
+                    <div
+                      v-if="selectedNode && selectedNode.match_candidates"
+                      class="dropdown-option"
+                      @click="openDataExplorerWithSuggestions">
+                      <i class="fa fa-fw fa-search" />View suggestions
+                    </div>
+                  </template>
+                </dropdown-control>
+
                 <dropdown-control
                   v-if="isDatacubeConfigDropdownOpen && indicatorId !== null"
                   class="configure-dropdown"
