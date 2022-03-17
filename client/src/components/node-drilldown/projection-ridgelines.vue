@@ -81,7 +81,13 @@
                   :historical-timeseries="historicalTimeseries"
                   :context-range="row.contextRanges[timeSliceIndex]"
                 />
-                <div>TODO: v-if not baseline Ridgeline description</div>
+                <div v-if="row.summaries.length > timeSliceIndex">
+                  {{ row.summaries[timeSliceIndex].before }}
+                  <strong>
+                    {{ row.summaries[timeSliceIndex].emphasized }}
+                  </strong>
+                  {{ row.summaries[timeSliceIndex].after }}
+                </div>
               </div>
             </div>
           </div>
@@ -141,7 +147,8 @@ import CagScenarioForm from '@/components/cag/cag-scenario-form.vue';
 import {
   calculateTypicalChangeBracket,
   convertDistributionTimeseriesToRidgelines,
-  RidgelineWithMetadata
+  RidgelineWithMetadata,
+  summarizeRidgelineComparison
 } from '@/utils/ridgeline-util';
 import { scrollToElement, scrollToElementWithId } from '@/utils/dom-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
@@ -154,6 +161,8 @@ interface RidgelineRow {
   parameter: ScenarioParameter;
   ridgelines: RidgelineWithMetadata[];
   comparisonBaseline: RidgelineWithMetadata[] | null;
+  // TODO: extract type
+  summaries: { before: string; emphasized: string; after: string; }[];
   contextRanges: ({ min: number; max: number } | null)[];
 }
 
@@ -273,6 +282,8 @@ export default defineComponent({
           // Comparison baseline will be injected in `rowsToDisplay` after all
           //  projections have been converted to ridgelines
           comparisonBaseline: null,
+          // Summaries will also be injected once comparisonBaseline is.
+          summaries: [],
           contextRanges
         };
       });
@@ -294,6 +305,26 @@ export default defineComponent({
       rows.forEach(row => {
         row.comparisonBaseline =
           row.scenarioId === baselineId ? null : comparisonBaselineRidgelines;
+      });
+      // Calculate and store the summary for each ridgeline
+      rows.forEach(row => {
+        if (row.comparisonBaseline === null) {
+          return;
+        }
+        row.ridgelines.forEach((ridgeline, index) => {
+          // Assert that row.comparisonBaseline is not null because of the check
+          //  above.
+          const sourceRidgelines =
+            row.comparisonBaseline as RidgelineWithMetadata[];
+          const sourceRidgeline = sourceRidgelines[index];
+          const summary = summarizeRidgelineComparison(
+            ridgeline,
+            sourceRidgeline,
+            this.indicatorMin,
+            this.indicatorMax
+          );
+          row.summaries.push(summary);
+        });
       });
       return rows;
     },
@@ -439,6 +470,7 @@ h3 {
   h3 {
     color: $label-color;
     position: relative;
+    font-size: $font-size-large;
   }
   margin-bottom: 20px;
 }
