@@ -304,6 +304,9 @@ export default defineComponent({
       });
       // Calculate and store the summary for each ridgeline
       rows.forEach(row => {
+        // New row objects are only created when the projections or
+        //  parameterization changes, so reset the `summaries` property.
+        row.summaries = [];
         if (row.comparisonBaseline === null) {
           return;
         }
