@@ -93,6 +93,12 @@ export const getDatacubeKeyFromAnalysis = (metadata: Model | Indicator | null, s
 export function updateDatacubesOutputsMap(metadata: Model | Indicator | null, store: any, route: any, newOutputIndex: number) {
   const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
   const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+  // FIXME: we need to update the analysis item with the newly selected output
+  //  so that the calculation of datacubeKey is correct regardless of the datacube_var_id
+  //
+  // OR better refactor the whole logic related to assigning each datacube-card a true unique id
+  //  (this means datacubeKey will be this potential uuid and datacube_var_id will be removed)
+  //  see https://gitlab.uncharted.software/WM/causemos/-/issues/956
   const datacubeKey = getDatacubeKeyFromAnalysis(metadata, store, route);
   updatedCurrentOutputsMap[datacubeKey] = newOutputIndex;
   store.dispatch('app/setDatacubeCurrentOutputsMap', updatedCurrentOutputsMap);
