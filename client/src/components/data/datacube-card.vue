@@ -2018,6 +2018,7 @@ export default defineComponent({
       relativeTo,
       selectedDataLayer,
       selectedAdminLevel,
+      selectedRegionIdsAtAllLevels,
       showPercentChange,
       mapColorOptions,
       activeReferenceOptions,

@@ -473,6 +473,7 @@ export default defineComponent({
       ref(null), // relativeTo
       selectedDataLayer,
       selectedAdminLevel,
+      selectedRegionIdsAtAllLevels,
       ref(false), // showPercentChange
       mapColorOptions,
       ref([]), // activeReferenceOptions

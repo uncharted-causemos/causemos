@@ -106,6 +106,13 @@ export function isRegionSelected(selection: AdminRegionSets, regionId: string, p
   }
   return false;
 }
+// Check if selection is empty for for given adminLevel and the level above.
+// if parentOnly flag is true, check only for the parent admin level selection.
+export function isSelectionEmpty(selection: AdminRegionSets, adminLevel: number, parentOnly = false) {
+  const { country, admin1, admin2, admin3 } = selection;
+  const checks = [country.size === 0, admin1.size === 0, admin2.size === 0, admin3.size === 0];
+  return checks.slice(0, adminLevel + (parentOnly ? 0 : 1)).reduce((prev, cur) => prev && cur, true);
+}
 
 export function stringToAdminLevel(geoString: string) {
   const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
