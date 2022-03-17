@@ -1,10 +1,6 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
-import {
-  RidgelinePoint,
-  RidgelineWithMetadata,
-  summarizeRidgelineComparison
-} from '@/utils/ridgeline-util';
+import { RidgelinePoint, RidgelineWithMetadata } from '@/utils/ridgeline-util';
 import svgUtil, {
   ARROW_LENGTH,
   ARROW_WIDTH,
@@ -25,8 +21,8 @@ const COMPARISON_COLOR = 'black';
 export const COMPARISON_BASELINE_COLOR = '#AAA'; // grey
 const curve = d3.curveMonotoneY;
 
-// How much of the width should be taken up by the text/arrow comparison summary
-const SUMMARY_WIDTH_PERCENTAGE = 0.75;
+// How much of the width should be taken up by the arrow comparison summary
+const SUMMARY_WIDTH_PERCENTAGE = 0.4;
 // The gap between the summary and the ridgeline, as well as between the arrow
 //  and the text
 const SUMMARY_SPACING = 3;
@@ -106,32 +102,7 @@ export const renderRidgelines = (
 
     // Render relative change summary
     if (showSummary) {
-      const summary = summarizeRidgelineComparison(
-        ridgeline,
-        comparisonBaseline,
-        min,
-        max
-      );
       const summaryXPosition = widthAvailableForChart + SUMMARY_SPACING;
-      // Vertically align summary text with the distribution's mean
-      gElement
-        .append('text')
-        .style('font-size', labelSize)
-        .style('font-weight', 'normal')
-        .attr(
-          'transform',
-          translate(
-            summaryXPosition,
-            yScale(ridgeline.distributionMean) + labelSize / 2
-          )
-        )
-        .text(summary.before)
-        .append('tspan')
-        .style('font-weight', 600)
-        .text(summary.emphasized)
-        .append('tspan')
-        .style('font-weight', 'normal')
-        .text(summary.after);
       // Draw arrow from comparison distribution's mean to this distribution's
       //  mean
       const tail = yScale(comparisonBaseline.distributionMean);
