@@ -112,13 +112,13 @@
         v-tooltip.top-center="'Edit the metadata and visualization'"
         type="button"
         class="btn btn-primary btn-call-for-action"
-        :disabled="datacube.status === DatacubeStatus.Deprecated"
         @click="edit(datacube.data_id)"
       >
-        <i class="fa fa-edit" />
-        Edit
+        <i v-if="datacube.status !== DatacubeStatus.Deprecated" class="fa fa-edit" />
+        {{datacube.status === DatacubeStatus.Deprecated ? 'View' : 'Edit'}}
       </button>
       <button
+        v-if="datacube.status !== DatacubeStatus.Deprecated"
         v-tooltip.top-center="'Unpublish the datacube instance'"
         type="button"
         class="remove-button"

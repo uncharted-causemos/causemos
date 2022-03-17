@@ -126,6 +126,7 @@
                 'btn-primary btn-call-for-action': !newRunsMode,
                 'btn-default': newRunsMode
               }"
+              :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
               @click="toggleNewRunsMode()"
             >
               {{ newRunsMode ? 'Cancel' : 'Request new runs' }}
@@ -632,7 +633,7 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption,
   SPLIT_BY_VARIABLE,
-  DatacubeViewMode
+  DatacubeViewMode, DatacubeStatus
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -2320,7 +2321,8 @@ export default defineComponent({
       regionMapData,
       popupFormatter,
       activeFeaturesNames,
-      DatacubeViewMode
+      DatacubeViewMode,
+      DatacubeStatus
     };
   },
   watch: {
