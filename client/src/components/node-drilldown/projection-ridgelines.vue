@@ -414,8 +414,10 @@ h3 {
   font-weight: normal;
 }
 
+$grid-row-gap-size: 5px;
 .grid-row {
   display: flex;
+  gap: $grid-row-gap-size;
   & > * {
     flex: 1;
     min-width: 0;
@@ -473,6 +475,9 @@ h3 {
 
 .x-axis-label {
   margin-bottom: 0;
+  // Since this row only has two cells, we need to divide the gap size by 4 to
+  //  align the second cell of this row with the second cell of the other rows.
+  gap: $grid-row-gap-size / 4;
 
   h4 {
     flex: 4;
