@@ -48,6 +48,10 @@ export default defineComponent({
         this.originalSizes = this.sizes;
         // then set tags to trigger vue update
         this.tags = Object.keys(this.sections).map(key => ({ name: this.sections[key].name, color: 'gray' }));
+      } else {
+        this.tags = [];
+        this.originalSizes = [];
+        this.originalSizes = [];
       }
     }
   },
