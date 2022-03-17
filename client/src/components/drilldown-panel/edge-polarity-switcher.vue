@@ -73,9 +73,7 @@
       <span
         v-if="isEdgeWeightEditable"
         class="clickable-dropdown"
-        :class="{
-          'warning-message': isEdgeWeightEditable && valueInconsistency
-        }"
+        :class="{ 'warning-message': valueInconsistency }"
         @click.stop="openEdgeWeightDropdown()">
         {{ currentWeightValueString(currentEdgeWeight, inferredWeightValue) }}
         <i class="fa fa-fw fa-caret-down" />
