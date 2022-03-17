@@ -859,6 +859,12 @@ export const historicalDataUncertaintyColor = (timeseries: TimeseriesPoint[], pr
 };
 
 export const decodeWeights = (weights: number[]) => {
+  if (weights.length < 2) {
+    return {
+      weightType: 'stale',
+      weightValue: 0
+    };
+  }
   const w1 = weights[0];
   const w2 = weights[1];
   const weightType = w1 > w2 ? 'level' : 'trend';
