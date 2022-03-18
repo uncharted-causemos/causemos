@@ -95,6 +95,18 @@ function resolveSameMinMaxValue({ min, max }: { min: number; max: number}) {
   return result;
 }
 
+// Iterate over all stats for all level and resolve the same min/max for each range. Same min max often happens when there's single data point when calculating min/max.
+// Eg. When region data only has Ethiopia at country level.
+export function resolveSameMinMaxMapStats(analysisMapStats: AnalysisMapStats) {
+  const stats = _.cloneDeep(analysisMapStats);
+  Object.values(stats).forEach((layerStats: MapLayerStats) => {
+    for (const [level, stat] of Object.entries(layerStats)) {
+      layerStats[level] = resolveSameMinMaxValue(stat);
+    }
+  });
+  return stats;
+}
+
 function isNoneRegionId(regionId: string) {
   const tokens = regionId.split(REGION_ID_DELIMETER);
   return tokens.reduce((prev, cur) => prev && (cur === 'None'), true);
@@ -127,7 +139,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
       values.push(...Object.values(_.omit(v.values, '_baseline')));
     }
     if (values.length) {
-      globalStats[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
+      globalStats[key] = { min: Math.min(...values), max: Math.max(...values) };
     }
   }
   const baseline: MapLayerStats = {};
@@ -137,7 +149,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
     for (const [key, data] of Object.entries(regionData)) {
       const values = (data || []).filter(v => v.values[baselineProp] !== undefined).map(v => v.values[baselineProp]);
       if (values.length) {
-        baseline[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
+        baseline[key] = { min: Math.min(...values), max: Math.max(...values) };
       }
     }
 
@@ -150,7 +162,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
         values.push(...diffs.filter(v => _.isFinite(v)));
       });
       if (values.length) {
-        difference[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
+        difference[key] = { min: Math.min(...values), max: Math.max(...values) };
       }
     }
   }

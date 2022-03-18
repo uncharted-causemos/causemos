@@ -3,7 +3,7 @@ import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { MapLegendColor, AnalysisMapStats, MapLayerStats, AnalysisMapRange, AnalysisMapColorOptions } from '@/types/Common';
 import { OutputSpecWithId, OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
-import { applyRegionFilter, computeRegionalStats, computeRawDataStats, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
+import { applyRegionFilter, computeRegionalStats, resolveSameMinMaxMapStats, computeRawDataStats, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
 import { adminLevelToString } from '@/utils/admin-level-util';
 import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';
@@ -81,24 +81,25 @@ export default function useAnalysisMapStats(
         if (differenceStat) adminStats.difference[l] = differenceStat;
       });
     }
+    const adminStatsResolved = resolveSameMinMaxMapStats(adminStats);
 
     /*
       If relativeTo is defined, generated the relative legend info, otherwise generate the default legend info.
     */
     if (relativeTo.value) {
-      const baseline = getStats(adminStats.baseline, selectedAdminLevel.value);
-      const difference = getStats(adminStats.difference, selectedAdminLevel.value);
+      const baseline = getStats(adminStatsResolved.baseline, selectedAdminLevel.value);
+      const difference = getStats(adminStatsResolved.difference, selectedAdminLevel.value);
       adminMapLayerLegendData.value = (baseline && difference) ? [
         createMapLegendData([baseline.min, baseline.max], colorOptions.value.relativeToSchemes[0], colorOptions.value.scaleFn),
         createMapLegendData([difference.min, difference.max], colorOptions.value.relativeToSchemes[1], colorOptions.value.scaleFn, true)
       ] : [];
     } else {
-      const globalStats = getStats(adminStats.global, selectedAdminLevel.value);
+      const globalStats = getStats(adminStatsResolved.global, selectedAdminLevel.value);
       adminMapLayerLegendData.value = globalStats ? [
         createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn, colorOptions.value.isDiverging)
       ] : [];
     }
-    adminLayerStats.value = adminStats;
+    adminLayerStats.value = adminStatsResolved;
   });
 
   // ===== Calculate stats and legend for the grid layer dynamically ===== //
