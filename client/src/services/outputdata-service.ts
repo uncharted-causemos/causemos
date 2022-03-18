@@ -184,7 +184,7 @@ export const getBulkTimeseries = async(
   regionIds: string[]
 ): Promise<any> => {
   try {
-    const result = await API.post('maas/output/bulk-timeseries',
+    const result = await API.post('maas/output/bulk-timeseries/regions',
       {
         region_ids: regionIds
       },
