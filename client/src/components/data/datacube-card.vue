@@ -439,7 +439,6 @@
                       :relative-to="relativeTo"
                       :show-tooltip="true"
                       :selected-layer-id="getSelectedLayer(spec.id)"
-                      :all-active-layer-ids="allActiveLayerIds"
                       :map-bounds="isSplitByRegionMode ? mapBoundsForEachSpec[spec.id] : mapBounds"
                       :region-data="regionalData"
                       :raw-data="rawDataPointsList[indx]"
@@ -2030,6 +2029,7 @@ export default defineComponent({
       relativeTo,
       selectedDataLayer,
       selectedAdminLevel,
+      selectedRegionIdsAtAllLevels,
       showPercentChange,
       mapColorOptions,
       activeReferenceOptions,
@@ -2173,6 +2173,12 @@ export default defineComponent({
         activeReferenceOptions.value.push(value);
       }
     };
+    watchEffect(() => {
+      // Clear active reference options when selected admin level is country in split by region mode
+      if (breakdownOption.value === SpatialAggregationLevel.Region && selectedAdminLevel.value === 0) {
+        activeReferenceOptions.value = [];
+      }
+    });
 
     const mapSelectedRegions = computed(() => {
       // In 'Split by region' mode, regional data is already filtered by region so we don't need additional region selection
@@ -2181,25 +2187,9 @@ export default defineComponent({
         : selectedRegionIdsAtAllLevels.value;
     });
 
-    // Check if we have active regional reference series by looking at the current breakdown option
-    // and the lenght of active reference options
-    const hasRegionalReferenceSeries = computed(() => {
-      return activeReferenceOptions.value.length > 0 && breakdownOption.value === SpatialAggregationLevel.Region;
-    });
-
-    // If we have active regional reference series, then we need to provide layer ids for all active
-    // regions/layers. As we currently only allow country level reference series, we add the country
-    // to the list of selected layers.
-    const allActiveLayerIds = computed(() => {
-      return hasRegionalReferenceSeries.value
-        ? [SOURCE_LAYERS[0].layerId, mapSelectedLayerId.value]
-        : [mapSelectedLayerId.value];
-    });
-
     return {
       activeReferenceOptions,
       addNewTag,
-      allActiveLayerIds,
       allModelRunData,
       activeDrilldownTab,
       activeVizOptionsTab,
@@ -2224,7 +2214,6 @@ export default defineComponent({
       gridLayerStats,
       hasDefaultRun,
       headerGroupButtons,
-      hasRegionalReferenceSeries,
       isContinuousScale,
       isDivergingScale,
       isModelMetadata,
