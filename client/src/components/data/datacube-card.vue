@@ -439,7 +439,7 @@
                       :relative-to="relativeTo"
                       :show-tooltip="true"
                       :selected-layer-id="getSelectedLayer(spec.id)"
-                      :map-bounds="mapBounds"
+                      :map-bounds="isSplitByRegionMode ? mapBoundsForEachSpec[spec.id] : mapBounds"
                       :region-data="regionalData"
                       :raw-data="rawDataPointsList[indx]"
                       :selected-regions="mapSelectedRegions"
@@ -450,7 +450,7 @@
                       :unit="unit"
                       :color-options="mapColorOptions"
                       :show-percent-change="showPercentChange"
-                      @sync-bounds="onSyncMapBounds"
+                      @sync-bounds="(bounds) => isSplitByRegionMode ? () => {} : onSyncMapBounds(bounds)"
                       @on-map-load="onMapLoad"
                       @zoom-change="updateMapCurSyncedZoom"
                       @map-update="recalculateGridMapDiffStats"
@@ -689,6 +689,7 @@ import { BarData } from '@/types/BarChart';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import { capitalize } from '@/utils/string-util';
+import { getBboxForEachRegionId } from '@/services/geo-service';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -2045,6 +2046,27 @@ export default defineComponent({
       mapBounds
     } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIdsAtAllLevels);
 
+    const isSplitByRegionMode = computed(() => breakdownOption.value === SpatialAggregationLevel.Region);
+    const mapBoundsForEachSpec = ref<{ [key: string]: number[][]}>({});
+    watchEffect(async () => {
+      // init result
+      const result: { [key: string]: number[][] } = {};
+      const ids = outputSpecs.value.map(spec => spec.id);
+      ids.forEach(id => {
+        result[id] = _.isArray(mapBounds.value) ? mapBounds.value : mapBounds.value.value;
+      });
+
+      if (isSplitByRegionMode.value) {
+        // In this case, ids are region ids
+        const bboxes = await getBboxForEachRegionId(ids);
+        ids.forEach((regionId, index) => {
+          const bbox = bboxes[index];
+          if (bbox) result[regionId] = bbox;
+        });
+      }
+
+      mapBoundsForEachSpec.value = result;
+    });
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
@@ -2195,8 +2217,10 @@ export default defineComponent({
       isDivergingScale,
       isModelMetadata,
       isRelativeDropdownOpen,
+      isSplitByRegionMode,
       mainModelOutput,
       mapBounds,
+      mapBoundsForEachSpec,
       mapColorOptions,
       mapLegendData,
       mapReady,

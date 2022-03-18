@@ -3,9 +3,9 @@ import { ref } from '@vue/reactivity';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { RegionalAggregations } from '@/types/Outputdata';
 import { Ref, watchEffect } from 'vue';
-import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { getParentSelectedRegions } from '@/utils/admin-level-util';
+import { getBboxFromRegionIds } from '@/services/geo-service';
 
 export default function useMapBounds(
   regionalData: Ref<RegionalAggregations | null>,
@@ -32,7 +32,7 @@ export default function useMapBounds(
     //
     // calculate the initial map bounds covering the model geography
     //
-    const newBounds = await computeMapBoundsForCountries(regionIds);
+    const newBounds = await getBboxFromRegionIds(regionIds);
     if (newBounds !== null) {
       // ask the map to fit the new map bounds
       const options = {
