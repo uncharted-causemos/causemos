@@ -133,7 +133,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
   const baseline: MapLayerStats = {};
   const difference: MapLayerStats = {};
   if (baselineProp) {
-    // Stats for the baseline run
+    // Stats for the baseline run for each admin level
     for (const [key, data] of Object.entries(regionData)) {
       const values = (data || []).filter(v => v.values[baselineProp] !== undefined).map(v => v.values[baselineProp]);
       if (values.length) {
