@@ -2,7 +2,9 @@ import _ from 'lodash';
 import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
+import { isSelectionEmpty, isRegionSelected, stringToAdminLevel, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { getBboxFromRegionIds } from '@/services/geo-service';
+import { AdminRegionSets } from '@/types/Datacubes';
 
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
@@ -89,6 +91,28 @@ function resolveSameMinMaxValue({ min, max }: { min: number; max: number}) {
   const result = { min, max };
   if (min === max) {
     result[Math.sign(result.min) === -1 ? 'max' : 'min'] = 0;
+  }
+  return result;
+}
+
+function isNoneRegionId(regionId: string) {
+  const tokens = regionId.split(REGION_ID_DELIMETER);
+  return tokens.reduce((prev, cur) => prev && (cur === 'None'), true);
+}
+
+export function applyRegionFilter(regionalData: RegionalAggregations, selection: AdminRegionSets) {
+  const result: RegionalAggregations = {
+    country: [],
+    admin1: [],
+    admin2: [],
+    admin3: []
+  };
+  for (const [key, data] of Object.entries(regionalData)) {
+    const isAllSelected = isSelectionEmpty(selection, stringToAdminLevel(key), true);
+    result[key as keyof RegionalAggregations] = (data || []).filter(agg => {
+      const isSelected = isAllSelected || isRegionSelected(selection, agg.id, true);
+      return isSelected && !isNoneRegionId(agg.id);
+    });
   }
   return result;
 }

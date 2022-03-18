@@ -3,12 +3,13 @@ import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { MapLegendColor, AnalysisMapStats, AnalysisMapColorOptions } from '@/types/Common';
 import { OutputSpecWithId, OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
-import { computeRegionalStats, computeRawDataStats, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
+import { applyRegionFilter, computeRegionalStats, computeRawDataStats, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
 import { adminLevelToString } from '@/utils/admin-level-util';
 import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';
 import { getOutputStats } from '@/services/outputdata-service';
 import { SpatialAggregationLevel } from '@/types/Enums';
+import { AdminRegionSets } from '@/types/Datacubes';
 
 export default function useAnalysisMapStats(
   outputSourceSpecs: Ref<OutputSpecWithId[]>,
@@ -16,6 +17,7 @@ export default function useAnalysisMapStats(
   relativeTo: Ref<string | null>,
   selectedDataLayer: Ref<DATA_LAYER>,
   selectedAdminLevel: Ref<number>,
+  regionSelection: Ref<AdminRegionSets>,
   showPercentChange: Ref<boolean>,
   colorOptions: Ref<AnalysisMapColorOptions>,
   referenceOptions: Ref<string[]>,
@@ -31,7 +33,11 @@ export default function useAnalysisMapStats(
       adminMapLayerLegendData.value = [];
       return;
     }
-    adminLayerStats.value = computeRegionalStats(regionalData.value, relativeTo.value, showPercentChange.value);
+    adminLayerStats.value = computeRegionalStats(
+      applyRegionFilter(regionalData.value, regionSelection.value),
+      relativeTo.value,
+      showPercentChange.value
+    );
     /*
       If relativeTo is defined, generated the relative legend info, othewise generate the default legend info.
     */
