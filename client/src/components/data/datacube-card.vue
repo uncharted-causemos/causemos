@@ -2067,7 +2067,6 @@ export default defineComponent({
 
       mapBoundsForEachSpec.value = result;
     });
-    // const onSyncBounds = (bounds: number[][]) => isSplitByRegionMode.value ? () => {} : onSyncMapBounds(bounds);
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
