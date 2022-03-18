@@ -475,7 +475,7 @@ export default defineComponent({
       }
     },
     getAdminMapExtent() {
-      if (!this.adminLayerStats) return;
+      if (_.isEmpty(this.adminLayerStats)) return;
       const stats = this.adminLevels.reduce((acc, l) => {
         if (this.baselineSpec) {
           acc.push(this.adminLayerStats?.difference[l]);
@@ -485,15 +485,14 @@ export default defineComponent({
           acc.push(this.adminLayerStats?.global[l]);
         }
         return acc;
-      }, []);
+      }, []).filter(s => s);
       if (stats.length === 1) {
         return stats[0];
       } else {
-        const extendedStats = {
+        return stats.length ? {
           min: _.minBy(stats, (s) => s && s.min).min,
           max: _.maxBy(stats, (s) => s && s.max).max
-        };
-        return extendedStats;
+        } : undefined;
       }
     },
     getPointsMapExtent() {
