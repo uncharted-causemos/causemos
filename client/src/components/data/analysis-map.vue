@@ -174,10 +174,6 @@ export default defineComponent({
       type: String,
       default: SOURCE_LAYERS[0].layerId
     },
-    allActiveLayerIds: {
-      type: Array,
-      default: () => [SOURCE_LAYERS[0].layerId]
-    },
     filters: {
       type: Array,
       default: () => []
@@ -286,8 +282,11 @@ export default defineComponent({
         ? undefined
         : this.outputSourceSpecs.find(spec => spec.id === this.relativeTo);
     },
+    selectedLayerIndex() {
+      return SOURCE_LAYERS.findIndex(l => l.layerId === this.selectedLayerId);
+    },
     selectedLayer() {
-      return SOURCE_LAYERS.find(l => l.layerId === this.selectedLayerId);
+      return SOURCE_LAYERS[this.selectedLayerIndex];
     },
     sourceLayer() {
       return this.selectedLayer.layerId;
@@ -304,14 +303,8 @@ export default defineComponent({
     isPointsMap() {
       return this.sourceLayer === SOURCE_LAYER.POINTS;
     },
-    adminLevels() {
-      if (this.isGridMap) return undefined;
-      const adminLevels = this.allActiveLayerIds.map(
-        l => adminLevelToString(
-          SOURCE_LAYERS.findIndex(s => l === s.layerId)
-        )
-      );
-      return adminLevels;
+    selectedAdminLevel() {
+      return adminLevelToString(this.selectedLayerIndex);
     },
     selectedBaseLayerEndpoint() {
       return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
@@ -475,25 +468,14 @@ export default defineComponent({
       }
     },
     getAdminMapExtent() {
-      if (!this.adminLayerStats) return;
-      const stats = this.adminLevels.reduce((acc, l) => {
-        if (this.baselineSpec) {
-          acc.push(this.adminLayerStats?.difference[l]);
-        } else if (this.outputSelection === this.relativeTo) {
-          acc.push(this.adminLayerStats?.baseline[l]);
-        } else {
-          acc.push(this.adminLayerStats?.global[l]);
-        }
-        return acc;
-      }, []);
-      if (stats.length === 1) {
-        return stats[0];
+      if (_.isEmpty(this.adminLayerStats)) return;
+      const level = this.selectedAdminLevel;
+      if (this.baselineSpec) {
+        return this.adminLayerStats?.difference[level];
+      } else if (this.outputSelection === this.relativeTo) {
+        return this.adminLayerStats?.baseline[level];
       } else {
-        const extendedStats = {
-          min: _.minBy(stats, (s) => s && s.min).min,
-          max: _.maxBy(stats, (s) => s && s.max).max
-        };
-        return extendedStats;
+        return this.adminLayerStats?.global[level];
       }
     },
     getPointsMapExtent() {
@@ -528,7 +510,7 @@ export default defineComponent({
           sourceLayer: this.sourceLayer
         });
       } catch {
-        // remove featurestate throws error when source isn't loaded yet. Then exit.
+        // remove feature state throws error when source isn't loaded yet. Then exit.
         return;
       }
       // Note: RemoveFeatureState doesn't seem very reliable.
@@ -539,17 +521,15 @@ export default defineComponent({
       const featureStateBase = { _baseline: undefined };
       this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = undefined; });
 
-      this.adminLevels.forEach(level => {
-        this.regionData[level].forEach(row => {
-          this.map.setFeatureState({
-            id: row.id,
-            source: this.vectorSourceId,
-            sourceLayer: this.sourceLayer
-          }, {
-            ...featureStateBase,
-            ...row.values,
-            _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(row.id)
-          });
+      this.regionData[this.selectedAdminLevel].forEach(row => {
+        this.map.setFeatureState({
+          id: row.id,
+          source: this.vectorSourceId,
+          sourceLayer: this.sourceLayer
+        }, {
+          ...featureStateBase,
+          ...row.values,
+          _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(row.id)
         });
       });
     },
