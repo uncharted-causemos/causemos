@@ -1,7 +1,12 @@
 <template>
   <div class="projection-ridgelines-container">
     <div id="header-section" class="grid-row slice-labels x-axis-label">
-      <h4>Change in value</h4>
+      <h3>
+        <span class="lighter">Change in</span>
+        {{ nodeConceptName }}
+        <span class="lighter">relative to</span>
+        {{ comparisonBaselineName }}
+      </h3>
     </div>
     <div class="grid-row slice-labels">
       <h3 v-for="(timeSliceLabel, index) in timeSliceLabels" :key="index">
@@ -15,7 +20,7 @@
         class="scenario-row"
       >
         <div class="grid-row">
-          <div class="scenario-and-clamps">
+          <div class="first-column">
             <div class="scenario-name" @click="selectScenario(row.scenarioId)">
               <i
                 v-if="selectedScenarioId === row.scenarioId"
@@ -24,6 +29,9 @@
               <i v-else class="fa fa-circle-o" />
               <h3 style="margin-left: 5px">{{ row.scenarioName }}</h3>
             </div>
+            <span class="scenario-desc" v-tooltip.top-start="row.scenarioDesc">
+              {{ row.scenarioDesc }}
+            </span>
             <div
               v-for="clamp in getScenarioClamps(row)"
               :key="clamp.concept"
@@ -32,51 +40,51 @@
               <i class="fa fa-circle scenario-clamp-icon" />
               {{ ontologyFormatter(clamp.concept) }}
             </div>
+            <!-- If there is more than one scenario and this is the comparison
+              baseline, label it -->
+            <h4
+              v-if="
+                rowsToDisplay.length > 1 &&
+                row.scenarioId === comparisonBaselineId
+              "
+              class="comparison-baseline-control"
+            >
+              Comparison baseline
+            </h4>
+            <!-- Else if there is more than one scenario, show a button to make
+              this the comparison baseline-->
+            <button
+              v-else-if="rowsToDisplay.length > 1"
+              class="btn btn-sm btn-default comparison-baseline-control"
+              @click="$emit('set-comparison-baseline-id', row.scenarioId)"
+            >
+              Use as comparison baseline
+            </button>
           </div>
-          <div style="flex: 8; display: flex; flex-direction: column">
-            <div style="display: flex; min-height: 3rem">
-              <span
-                class="scenario-desc"
-                v-tooltip.top-start="row.scenarioDesc"
-              >
-                {{ row.scenarioDesc }}
-              </span>
-              <!-- If there is more than one scenario and this is the comparison
-            baseline, label it -->
-              <span
-                v-if="
-                  rowsToDisplay.length > 1 &&
-                  row.scenarioId === comparisonBaselineId
-                "
-              >
-                Comparison baseline</span
-              >
-              <!-- Else if there is more than one scenario, show a button to make
-            this the comparison baseline-->
-              <button
-                v-else-if="rowsToDisplay.length > 1"
-                class="btn btn-sm btn-default"
-                @click="$emit('set-comparison-baseline-id', row.scenarioId)"
-              >
-                Use as comparison baseline
-              </button>
-            </div>
-            <div style="display: flex">
-              <ridgeline
-                class="ridgeline"
-                v-for="(ridgelineData, timeSliceIndex) of row.ridgelines"
-                :key="timeSliceIndex"
-                :ridgeline-data="ridgelineData"
-                :comparison-baseline="
-                  row.comparisonBaseline
-                    ? row.comparisonBaseline[timeSliceIndex]
-                    : null
-                "
-                :min="indicatorMin"
-                :max="indicatorMax"
-                :historical-timeseries="historicalTimeseries"
-                :context-range="row.contextRanges[timeSliceIndex]"
-              />
+          <div
+            v-for="(ridgelineData, timeSliceIndex) of row.ridgelines"
+            :key="timeSliceIndex"
+            class="ridgeline-with-summary"
+          >
+            <ridgeline
+              class="ridgeline"
+              :ridgeline-data="ridgelineData"
+              :comparison-baseline="
+                row.comparisonBaseline
+                  ? row.comparisonBaseline[timeSliceIndex]
+                  : null
+              "
+              :min="indicatorMin"
+              :max="indicatorMax"
+              :historical-timeseries="historicalTimeseries"
+              :context-range="row.contextRanges[timeSliceIndex]"
+            />
+            <div v-if="row.summaries.length > timeSliceIndex">
+              {{ row.summaries[timeSliceIndex].before }}
+              <strong>
+                {{ row.summaries[timeSliceIndex].emphasized }}
+              </strong>
+              {{ row.summaries[timeSliceIndex].after }}
             </div>
           </div>
         </div>
@@ -135,7 +143,8 @@ import CagScenarioForm from '@/components/cag/cag-scenario-form.vue';
 import {
   calculateTypicalChangeBracket,
   convertDistributionTimeseriesToRidgelines,
-  RidgelineWithMetadata
+  RidgelineWithMetadata,
+  summarizeRidgelineComparison
 } from '@/utils/ridgeline-util';
 import { scrollToElement, scrollToElementWithId } from '@/utils/dom-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
@@ -148,6 +157,8 @@ interface RidgelineRow {
   parameter: ScenarioParameter;
   ridgelines: RidgelineWithMetadata[];
   comparisonBaseline: RidgelineWithMetadata[] | null;
+  // TODO: extract type
+  summaries: { before: string; emphasized: string; after: string; }[];
   contextRanges: ({ min: number; max: number } | null)[];
 }
 
@@ -159,6 +170,10 @@ export default defineComponent({
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
       required: true
+    },
+    nodeConceptName: {
+      type: String,
+      default: ''
     },
     comparisonBaselineId: {
       type: String,
@@ -263,6 +278,8 @@ export default defineComponent({
           // Comparison baseline will be injected in `rowsToDisplay` after all
           //  projections have been converted to ridgelines
           comparisonBaseline: null,
+          // Summaries will also be injected once comparisonBaseline is.
+          summaries: [],
           contextRanges
         };
       });
@@ -285,7 +302,35 @@ export default defineComponent({
         row.comparisonBaseline =
           row.scenarioId === baselineId ? null : comparisonBaselineRidgelines;
       });
+      // Calculate and store the summary for each ridgeline
+      rows.forEach(row => {
+        // New row objects are only created when the projections or
+        //  parameterization changes, so reset the `summaries` property.
+        row.summaries = [];
+        if (row.comparisonBaseline === null) {
+          return;
+        }
+        row.ridgelines.forEach((ridgeline, index) => {
+          // Assert that row.comparisonBaseline is not null because of the check
+          //  above.
+          const sourceRidgelines =
+            row.comparisonBaseline as RidgelineWithMetadata[];
+          const sourceRidgeline = sourceRidgelines[index];
+          const summary = summarizeRidgelineComparison(
+            ridgeline,
+            sourceRidgeline,
+            this.indicatorMin,
+            this.indicatorMax
+          );
+          row.summaries.push(summary);
+        });
+      });
       return rows;
+    },
+    comparisonBaselineName() {
+      return this.ridgelinesAtTimeslices.find(
+        row => row.scenarioId === this.comparisonBaselineId
+      )?.scenarioName ?? '';
     }
   },
   methods: {
@@ -372,10 +417,12 @@ h3 {
   font-weight: normal;
 }
 
+$grid-row-gap-size: 5px;
 .grid-row {
   display: flex;
+  gap: $grid-row-gap-size;
   & > * {
-    flex: 2;
+    flex: 1;
     min-width: 0;
   }
 }
@@ -395,7 +442,7 @@ h3 {
     width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0.7);
-    flex: 8;
+    flex: 4;
     z-index: 1;
     align-items: flex-end;
     justify-content: end;
@@ -413,16 +460,6 @@ h3 {
   }
 }
 
-.scenario-desc {
-  color: $label-color;
-  flex: 8;
-  min-width: 0;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow-x: hidden;
-  cursor: pointer;
-}
-
 .slice-labels {
   // Add empty column at the left to align first label with first ridgeline.
   &::before {
@@ -434,37 +471,24 @@ h3 {
   h3 {
     color: $label-color;
     position: relative;
-
-    .time-slice-arrow-button {
-      position: absolute;
-      right: calc(100% + 5ch);
-      top: 0;
-
-      &.right {
-        right: auto;
-        // The h3 element stretches to take up the hidden 3rd column, so we
-        //  need to hardcode how far to the right to move the right arrow.
-        left: 25ch;
-      }
-    }
+    font-size: $font-size-large;
   }
   margin-bottom: 20px;
 }
 
 .x-axis-label {
   margin-bottom: 0;
+  // Since this row only has two cells, we need to divide the gap size by 4 to
+  //  align the second cell of this row with the second cell of the other rows.
+  gap: $grid-row-gap-size / 4;
 
-  // Add three extra columns to the right
-  &::after {
-    display: block;
-    content: '';
-    flex: 6;
-    min-width: 0;
+  h3 {
+    flex: 4;
   }
+}
 
-  h4 {
-    @include header-secondary;
-  }
+.lighter {
+  color: $text-color-light;
 }
 
 .scenario-row {
@@ -476,10 +500,10 @@ h3 {
   }
 }
 
-.scenario-and-clamps {
-  // Give this column half of the space
-  flex: 1;
+.first-column {
   z-index: 1; // allow clicking through the overlay for scenario selection
+  $circle-width: 1rem;
+  $gap-size: 5px;
   .scenario-name {
     display: flex;
     align-items: baseline;
@@ -488,18 +512,54 @@ h3 {
     &:hover {
       color: rgb(92, 92, 92);
     }
+
+    i {
+      font-size: $circle-width;
+    }
+
+    h3 {
+      font-size: $font-size-large;
+    }
+  }
+  .scenario-desc {
+    margin-left: calc(#{$circle-width} + #{$gap-size});
+    color: $label-color;
+    cursor: pointer;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+
+    @supports (-webkit-line-clamp: 2) {
+      white-space: initial;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
   }
   .clamp-name {
-    padding-left: 2rem;
+    padding-left: calc(#{$circle-width} + #{$gap-size});
     color: gray;
     font-size: small;
     user-select: none;
     .scenario-clamp-icon {
       user-select: none;
       color: $selected;
-      font-size: $font-size-small;
+      font-size: 0.75 * $circle-width;
     }
   }
+}
+
+.comparison-baseline-control {
+  margin-top: 5px;
+}
+
+
+h4 {
+  @include header-secondary;
+}
+
+h4.comparison-baseline-control {
+  font-size: $font-size-small;
 }
 
 .new-scenario-row {
@@ -510,11 +570,13 @@ h3 {
   margin-left: 2rem;
 }
 
+.ridgeline-with-summary {
+  display: flex;
+  flex-direction: column;
+}
+
 .ridgeline {
   height: 100px;
   position: relative;
-  display: flex;
-  flex: 1;
-  min-width: 0;
 }
 </style>

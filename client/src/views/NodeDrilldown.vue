@@ -42,7 +42,6 @@
               >
                 <i class="fa fa-fw fa-compress" />
               </button>
-              <!-- TODO: Set goal button -->
             </div>
           </div>
           <div class="expanded-node-body">
@@ -149,14 +148,6 @@
                     ><i class="fa fa-fw fa-times" />Remove datacube</div>
                   </template>
                 </dropdown-control>
-                <!-- <button
-                  v-if="hasConstraints"
-                  v-tooltip.top-center="'Clear constraints'"
-                  type="button"
-                  class="btn btn-danger btn-sm"
-                  @click="clearConstraints">
-                  Clear constraints
-                </button> -->
               </div>
               <div class="checkbox configure-sentence">
                 <label
@@ -176,6 +167,7 @@
               "
               class="projection-ridgelines"
               :model-summary="modelSummary"
+              :node-concept-name="nodeConceptName"
               :comparison-baseline-id="comparisonBaselineIdWithFallback"
               :baseline-scenario-id="baselineScenarioId"
               :projections="selectedNodeScenarioData.projections"
@@ -803,11 +795,6 @@ export default defineComponent({
       saveConstraintsToSelectedScenario(newConstraints);
     };
 
-    const clearConstraints = () => {
-      constraints.value = [];
-      saveConstraintsToSelectedScenario([]);
-    };
-
     /**
      * Removes constraints that fall outside the provided `range` across all
      * scenarios. Both bounds of the range are treated as inclusive.
@@ -951,7 +938,6 @@ export default defineComponent({
       clearParameterization,
       viewingExtent,
       hasConstraints,
-      clearConstraints,
       scenarioData,
       onCreateScenario,
       SEASONALITY_OPTIONS,

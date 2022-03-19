@@ -164,7 +164,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, defineComponent, nextTick, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
 import DatacubeComparativeOverlayRegion from '@/components/widgets/datacube-comparative-overlay-region.vue';
@@ -297,20 +297,25 @@ export default defineComponent({
           dataStateUpdated.selectedAnalysisItems = selectedItems;
           store.dispatch('insightPanel/setDataState', dataStateUpdated);
 
-          // clear overlay global timeseries
-          globalTimeseries.value.length = 0;
-          allTimeseriesMap.value = {};
-          timeseriesToDatacubeMap.value = {};
-          reCalculateGlobalTimeseries.value = true;
-          // clear region ranking results
-          globalBarsData.value.length = 0;
-          regionRankingWeights.value = {};
-
-          selectedAnalysisItems.value = selectedItems;
+          selectedAnalysisItems.value = [];
+          nextTick(() => {
+            selectedAnalysisItems.value = selectedItems;
+          });
         } else {
           // no datacubes in this analysis, so do not fetch any insights/questions
           store.dispatch('insightPanel/setContextId', undefined);
+          // reset the selectedAnalysisItems array to trigger UI update
+          selectedAnalysisItems.value = [];
         }
+        // clear overlay global timeseries
+        globalTimeseries.value = [];
+        allTimeseriesMap.value = {};
+        timeseriesToDatacubeMap.value = {};
+        reCalculateGlobalTimeseries.value = true;
+        // clear region ranking results
+        globalBarsData.value = [];
+        regionRankingWeights.value = {};
+        allRegionalRankingMap.value = {};
       },
       { immediate: true }
     );
@@ -776,6 +781,12 @@ export default defineComponent({
       // we should only set the global timeseries one time
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
+
+      // if the incoming timeseries should no longer be considered for the computation of the global timeseries
+      //  because, for example, the corresponding datacube is no longer selected, then do not process it
+      if (this.selectedAnalysisItems.findIndex((item: any) => item.id === timeseriesInfo.id && item.datacubeId === timeseriesInfo.datacubeId) < 0) {
+        return;
+      }
 
       // clone and save the incoming timeseries in the map object
       //  where all timeseries lists will be saved

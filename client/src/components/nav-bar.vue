@@ -27,8 +27,11 @@
     </div>
 
     <!-- Help button -->
+    <!-- Old resources
+      Up until Mar 2022: https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing
+    -->
     <a
-      href="https://docs.google.com/presentation/d/1WnIXxAd639IFMOKEAu3E3C1SUgfzsCO6oLLbKOvAZkI/edit#slide=id.g8c51928f8f_0_200"
+      href="https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing"
       target="_blank"
       class="nav-item clickable"
     >
