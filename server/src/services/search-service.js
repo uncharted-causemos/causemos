@@ -99,8 +99,6 @@ const rawConceptEntitySearch2 = async (projectId, queryString) => {
     c--;
   }
 
-  console.log('>>', builder.build());
-
   const results = await searchAndHighlight(RESOURCE.ONTOLOGY, builder.build(), filters, [
     'label',
     'examples'
@@ -276,6 +274,21 @@ const statementConceptEntitySearch2 = async (projectId, queryString) => {
               terms: {
                 field: 'subj.concept.raw',
                 size: 3
+              },
+              aggs: {
+                sample: {
+                  top_hits: {
+                    size: 1,
+                    _source: {
+                      includes: [
+                        'subj.theme',
+                        'subj.theme_property',
+                        'subj.process',
+                        'subj.process_property'
+                      ]
+                    }
+                  }
+                }
               }
             }
           }
@@ -294,6 +307,21 @@ const statementConceptEntitySearch2 = async (projectId, queryString) => {
               terms: {
                 field: 'obj.concept.raw',
                 size: 3
+              },
+              aggs: {
+                sample: {
+                  top_hits: {
+                    size: 1,
+                    _source: {
+                      includes: [
+                        'obj.theme',
+                        'obj.theme_property',
+                        'obj.process',
+                        'obj.process_property'
+                      ]
+                    }
+                  }
+                }
               }
             }
           }
@@ -306,21 +334,79 @@ const statementConceptEntitySearch2 = async (projectId, queryString) => {
   const objConcepts = results.body.aggregations.filteredObj.concept.buckets;
 
   const map = new Map();
+  const refMap = new Map();
+
   for (const bucket of subjConcepts) {
     const count = map.get(bucket.key) || 0;
     map.set(bucket.key, count + bucket.doc_count);
+
+    const source = bucket.sample.hits.hits[0]._source;
+    refMap.set(bucket.key, {
+      theme: source.subj.theme,
+      theme_property: source.subj.theme_property,
+      process: source.subj.process,
+      process_property: source.subj.process_property
+    });
   }
   for (const bucket of objConcepts) {
     const count = map.get(bucket.key) || 0;
     map.set(bucket.key, count + bucket.doc_count);
+
+    const source = bucket.sample.hits.hits[0]._source;
+    refMap.set(bucket.key, {
+      theme: source.obj.theme,
+      theme_property: source.obj.theme_property,
+      process: source.obj.process,
+      process_property: source.obj.process_property
+    });
   }
 
+  const sortedMap = new Map([...map.entries()].sort((a, b) => {
+    return b.doc_count - a.doc_count;
+  }));
+
+  const result = [];
+  for (const entry of map.entries()) {
+    const key = entry[0];
+    const members = refMap.get(key);
+
+    const doc = {
+      key: key,
+      memebers: []
+    };
+
+    ['theme',
+      'theme_property',
+      'process',
+      'process_property'
+    ].forEach(str => {
+      if (members[str] && !_.isEmpty(members[str])) {
+        doc.memebers.push({
+          label: members.theme,
+          examples: [], // FIXME: fill
+          highlight: null
+        });
+      }
+    });
+
+    result.push({
+      doc_type: 'concept',
+      score: 1,
+      doc
+    });
+  }
 
   // 2. Broader search for concepts using leveraging ontology and examples
   const rawConcepts = await rawConceptEntitySearch2(projectId, queryString);
 
+  console.log('');
+  console.log('!!!!!!!!!!!!!!');
+  console.log(result);
+  console.log('!!!!!!!!!!!!!!');
+  console.log('');
 
-  return { map, rawConcepts: _.take(rawConcepts, 5) };
+
+  return { result, map: sortedMap, rawConcepts: _.take(rawConcepts, 5) };
 };
 
 
