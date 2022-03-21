@@ -7,11 +7,18 @@
       <svg ref="chartRef"></svg>
     </div>
     <div class="arrow" :class="{ 'is-outgoing-arrow': isDriver }">
-      <div
-        class="arrow-head"
-        :style="{ borderLeftColor: edgeStyle.stroke }"
-      ></div>
-      <div class="arrow-tail" :style="{ background: edgeStyle.stroke }"></div>
+      <div class="arrow-head" :style="{ borderLeftColor: edgeColor }"></div>
+      <div class="arrow-tail" :style="{ height: `${edgeStyle.strokeWidth}px` }">
+        <div
+          class="arrow-tail-segment"
+          :style="{ background: edgeColor }"
+        ></div>
+        <div
+          v-if="edgeStyle.isDashed"
+          class="arrow-tail-segment"
+          :style="{ background: edgeColor }"
+        ></div>
+      </div>
     </div>
   </div>
 </template>
@@ -24,8 +31,7 @@ import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 
-const BASE_EDGE_WIDTH = 0.5;
-const NO_EVIDENCE_DASH = '2, 1';
+const BASE_EDGE_WIDTH = 5;
 
 export default defineComponent({
   name: 'NeighborNode',
@@ -60,8 +66,7 @@ export default defineComponent({
     const edgeColor = computed(() => calcEdgeColor(props.edge));
     const edgeStyle = computed(() => {
       return {
-        stroke: edgeColor.value,
-        strokeDasharray: hasBackingEvidence(props.edge) ? null : NO_EVIDENCE_DASH,
+        isDashed: !hasBackingEvidence(props.edge),
         strokeWidth: scaleByWeight(BASE_EDGE_WIDTH, props.edge)
       };
     });
@@ -151,12 +156,13 @@ header {
 
 // Great article explaining how to render triangles using <div>s
 // https://css-tricks.com/snippets/css/css-triangle/
+$arrow-head-width: 10px;
 .arrow-head {
   width: 0;
   height: 0;
   border-top: 7px solid transparent;
   border-bottom: 7px solid transparent;
-  border-left: 10px solid transparent;
+  border-left: $arrow-head-width solid transparent;
   border-right: 0px solid transparent;
   position: absolute;
   right: 0;
@@ -164,12 +170,21 @@ header {
   transform: translateY(-50%);
 }
 
+$arrow-tail-overlap: 2.5px;
 .arrow-tail {
-  width: 100%;
+  width: calc(100% - #{$arrow-head-width} + #{$arrow-tail-overlap});
   height: 5px;
   position: absolute;
-  left: -5px;
+  left: -$arrow-tail-overlap;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
 }
+
+.arrow-tail-segment {
+  flex: 1;
+  min-width: 0;
+}
+
 </style>
