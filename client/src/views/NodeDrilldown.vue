@@ -1,7 +1,7 @@
 <template>
   <div class="node-drilldown-container">
     <analytical-questions-and-insights-panel />
-    <main>
+    <main class="insight-capture">
       <div class="drivers">
         <h5 v-if="drivers.length > 0">Top Drivers</h5>
         <template v-if="scenarioData">
@@ -19,7 +19,7 @@
         </template>
       </div>
       <div class="selected-node-column">
-        <div class="expanded-node insight-capture">
+        <div class="expanded-node">
           <div class="expanded-node-header">
             {{ nodeConceptName }}
             <div class="button-group">
