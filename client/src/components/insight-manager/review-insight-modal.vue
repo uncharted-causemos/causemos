@@ -266,6 +266,8 @@ export default defineComponent({
 
     const updatedInsight = computed(() => store.getters['insightPanel/updatedInsight']);
     const isReviewMode = computed(() => store.getters['insightPanel/isReviewMode']);
+    const insightList = computed(() => store.getters['insightPanel/insightList']);
+    const reviewIndex = computed(() => store.getters['insightPanel/reviewIndex']);
 
     const isInsight = computed(() => InsightUtil.instanceOfFullInsight(updatedInsight.value));
 
@@ -299,10 +301,18 @@ export default defineComponent({
         updatedInsight.value.analytical_question.length > 0
       ) {
         // Current item is an insight linked to one or more sections.
-        // Find the first section that is linked to this insight.
-        const linkedSections = updatedInsight.value.analytical_question;
-        const section = sortedQuestions.value.find(section => linkedSections.includes(section.id)) ?? getQuestionById(linkedSections[0]);
-        return section?.question ?? '';
+        // Find the sections that are linked to this insight.
+        const sortedLinkedSections = sortedQuestions.value.filter(section => section.linked_insights.includes(updatedInsight.value.id));
+        // Count how many instances of this insight appear earlier in the list.
+        let earlierInstanceCount = 0;
+        for (let index = 0; index < reviewIndex.value; index++) {
+          if (insightList.value[index] === updatedInsight.value) {
+            earlierInstanceCount += 1;
+          }
+        }
+        // If this is, say, the second instance of this insight, that means
+        //  we should show the second section that contains this insight.
+        return sortedLinkedSections[earlierInstanceCount]?.question ?? '';
       } else if (isInsight.value) {
         // Current item is an insight that's not linked to any section.
         return '';
@@ -359,7 +369,9 @@ export default defineComponent({
       isInsight,
       isReviewMode,
       insightLinkedQuestionsCount,
-      isEditingInsight
+      isEditingInsight,
+      insightList,
+      reviewIndex
     };
   },
   data: () => ({
@@ -457,9 +469,7 @@ export default defineComponent({
       projectMetadata: 'app/projectMetadata',
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
-      insightList: 'insightPanel/insightList',
       countInsights: 'insightPanel/countInsights',
-      reviewIndex: 'insightPanel/reviewIndex',
       filters: 'dataSearch/filters',
       analysisName: 'app/analysisName'
     }),
