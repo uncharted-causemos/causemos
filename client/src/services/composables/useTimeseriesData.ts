@@ -213,9 +213,11 @@ export default function useTimeseriesData(
     const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
     const finalRawDate = new Date(metadata.value?.period?.lte ?? 0);
 
-    const correctedTimeseriesData = correctIncompleteTimeseriesLists(breakdownTimeseriesData,
-      rawResolution, temporalRes.value as TemporalResolutionOption,
-      temporalAgg.value as AggregationOption, finalRawDate);
+    // Breakdown by year modifies timestamps and makes them unreliable to apply corrections
+    const correctedTimeseriesData = breakdownOption.value === TemporalAggregationLevel.Year
+      ? breakdownTimeseriesData
+      : correctIncompleteTimeseriesLists(breakdownTimeseriesData, rawResolution,
+        temporalRes.value as TemporalResolutionOption, temporalAgg.value as AggregationOption, finalRawDate);
 
     const referencedTimeseriesData = referenceOptions && referenceOptions.value && referenceOptions.value.length > 0
       ? applyReference(correctedTimeseriesData, rawTimeseriesData.value, breakdownOption.value, referenceOptions.value)

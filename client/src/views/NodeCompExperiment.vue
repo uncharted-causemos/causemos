@@ -142,7 +142,6 @@ export default defineComponent({
     const dataState = computed(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const initialViewConfig = ref<ViewState | null>(null);
-    // const initialDataConfig = ref<DataState | null>(null);
 
     const isTimeseriesSelectionModalOpen = ref(false);
     const selectedTimeseriesIndex = ref(0);
@@ -171,12 +170,12 @@ export default defineComponent({
     // FIXME: Just restoring the country for now since we are explictly tracking it.
     // Should expand to encompass other properties
     const initialDataConfig = computed(() => {
-      if (modelComponents.value === null) {
+      if (modelComponents.value === null || modelComponents.value.parameter.geography === undefined) {
         return null;
       }
       return {
         selectedRegionIdsAtAllLevels: {
-          country: [modelComponents.value.parameter.geography as any]
+          country: [modelComponents.value.parameter.geography]
         }
       };
     });

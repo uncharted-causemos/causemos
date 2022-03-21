@@ -16,6 +16,7 @@ import { PreGeneratedModelRunData } from './ModelRun';
  * @temporalResolution {string} resolution of the time data in question e.g. months, years
  * @temporalAggegation {string} setting for aggregating the data over time to a mean or sum
  * @spatialAggregation {string} setting for aggregating the data for a region to a mean or sum
+ * @transform {string} optional setting for transforming the data (per capita or normalization)
  */
 export interface BaseSpec {
   modelId: string;
@@ -24,6 +25,7 @@ export interface BaseSpec {
   temporalResolution: string;
   temporalAggregation: string;
   spatialAggregation: string;
+  transform?: string
 }
 
 /**
@@ -46,7 +48,6 @@ export interface OutputSpec extends BaseSpec {
   timestamp?: number;
   isDefaultRun?: boolean;
   preGeneratedOutput?: PreGeneratedModelRunData[];
-  transform?: string
 }
 
 export interface OutputSpecWithId extends OutputSpec {
