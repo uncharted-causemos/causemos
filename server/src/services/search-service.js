@@ -85,18 +85,19 @@ const rawConceptEntitySearch2 = async (projectId, queryString) => {
 
   const builder = queryStringBuilder()
     .setOperator('OR')
-    .setFields(['examples', 'label^20', 'definition']);
+    .setFields(['examples', 'label^2', 'definition']);
 
   const tokens = queryString
     .split(' ')
     .filter(s => {
-      return !reserved.includes(s.toLowerCase());
+      return !reserved.includes(s.toLowerCase()) && s.trim() !== '';
     });
 
-  let c = tokens.length * 2;
+  // Assumes 1st token > 2nd token > 3rd token ... in terms of importance
+  let weight = tokens.length * 2;
   for (let i = 0; i < tokens.length; i++) {
-    builder.add(`(${tokens[i]}*)^${c}`);
-    c--;
+    builder.add(`(${tokens[i]}*)^${weight}`);
+    weight--;
   }
 
   const results = await searchAndHighlight(RESOURCE.ONTOLOGY, builder.build(), filters, [
@@ -250,11 +251,12 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
   const tokens = queryString
     .split(' ')
     .filter(s => {
-      return !reserved.includes(s.toLowerCase());
+      return !reserved.includes(s.toLowerCase()) && s.trim() !== '';
     });
 
   // 1. Search for obj and subj matches against the project directly
   const q = tokens.map(s => `(${s}~)`).join(' AND ');
+
   const results = await client.search({
     index: projectId,
     body: {
@@ -383,9 +385,7 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
       'process',
       'process_property'
     ].forEach(str => {
-      console.log('checking', str, members);
       if (members[str] && !_.isEmpty(members[str])) {
-        console.log('hihihi');
         const ontologyMemberData = ontologyMap[members[str]];
         let examples = [];
         if (ontologyMemberData) {
@@ -409,7 +409,6 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
 
   // 2. Broader search for concepts using leveraging ontology and examples
   const rawConcepts = await rawConceptEntitySearch2(projectId, queryString);
-
 
 
   for (const rawConcept of rawConcepts) {
