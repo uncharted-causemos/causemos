@@ -247,8 +247,7 @@ export default {
       setInsightList: 'insightPanel/setInsightList',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
       setReviewIndex: 'insightPanel/setReviewIndex',
-      setReviewMode: 'insightPanel/setReviewMode',
-      setCurrentReviewHeader: 'insightPanel/setCurrentReviewHeader'
+      setReviewMode: 'insightPanel/setReviewMode'
     }),
     getInsightIndex(targetInsight, insights) {
       return insights.findIndex(ins => ins.id === targetInsight.id);
@@ -374,9 +373,6 @@ export default {
         return;
       }
       this.setReviewMode(true);
-      if (this.questions.length > 0) {
-        this.setCurrentReviewHeader(this.questions[0].id);
-      }
       this.setReviewIndex(0);
       this.setUpdatedInsight(insight);
       this.setInsightList(this.insightsGroupedByQuestion);
