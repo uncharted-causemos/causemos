@@ -36,7 +36,7 @@
       :cursor="'default'"
       />
     </wm-map>
-    <div v-if="data.length === 0" class="no-data">No data!</div>
+    <div v-if="data.length === 0" class="no-data">No data</div>
   </div>
 </template>
 
