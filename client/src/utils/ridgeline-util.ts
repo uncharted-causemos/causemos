@@ -16,6 +16,12 @@ import {
 // Raise the bin count to make the curve less smooth.
 const RIDGELINE_BIN_COUNT = 20;
 
+// If there are fewer than 3 historical intervals of a given length, don't make
+//  any claims about what a typical change is.
+// This cutoff is somewhat arbitrary, but it's high enough that abstract nodes
+//  don't show any change brackets or highlight any projections in orange.
+const MINIMUM_INTERVAL_COUNT = 3;
+
 export interface RidgelinePoint {
   coordinate: number;
   value: number;
@@ -151,6 +157,11 @@ export const calculateTypicalChangeBracket = (
       changes.push(pointAfterInterval - value);
     }
   });
+  // If there aren't enough historical intervals of this length, don't make
+  //  any claims about what a typical change is.
+  if (changes.length < MINIMUM_INTERVAL_COUNT) {
+    return null;
+  }
   const min = _.min(changes);
   const max = _.max(changes);
   if (min === undefined || max === undefined) {
