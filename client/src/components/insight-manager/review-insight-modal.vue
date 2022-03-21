@@ -260,15 +260,12 @@ export default defineComponent({
     }
   },
   setup() {
-    // const { } = toRefs(props);
-
     const store = useStore();
     const toaster = useToaster();
     const { questionsList, reFetchQuestions } = useQuestionsData();
 
     const updatedInsight = computed(() => store.getters['insightPanel/updatedInsight']);
     const isReviewMode = computed(() => store.getters['insightPanel/isReviewMode']);
-    const currentReviewHeader = computed(() => store.getters['insightPanel/currentReviewHeader']);
 
     const isInsight = computed(() => InsightUtil.instanceOfFullInsight(updatedInsight.value));
 
@@ -294,35 +291,27 @@ export default defineComponent({
     });
 
     const insightQuestionLabel = computed<string>(() => {
-      if (updatedInsight.value) {
-        if (isInsight.value && updatedInsight.value.analytical_question.length > 0) {
-          //
-          // we have an insight linked to one or more section/question
-          //
-          // if we are in the "Review" mode,
-          //  pick the question to be shown matching the currently shown section/question in the review mode
-          // otherwise, picks any question
-          let questionId = updatedInsight.value.analytical_question[0];
-          if (isReviewMode.value && currentReviewHeader.value) {
-            questionId = currentReviewHeader.value;
-          }
-          const questionObj = getQuestionById(questionId);
-          if (questionObj) {
-            return questionObj.question;
-          }
-        } else {
-          //
-          // we either have a question or an insight that is currently not linked to any question/section
-          //
-          // we (mostly) have a question
-          const questionId = updatedInsight.value.id;
-          const questionObj = getQuestionById(questionId);
-          if (questionObj) {
-            return questionObj.question;
-          }
-        }
+      if (!updatedInsight.value) {
+        return '';
       }
-      return '';
+      if (
+        isInsight.value &&
+        updatedInsight.value.analytical_question.length > 0
+      ) {
+        // Current item is an insight linked to one or more sections.
+        // Find the first section that is linked to this insight.
+        const linkedSections = updatedInsight.value.analytical_question;
+        const section = sortedQuestions.value.find(section => linkedSections.includes(section.id)) ?? getQuestionById(linkedSections[0]);
+        return section?.question ?? '';
+      } else if (isInsight.value) {
+        // Current item is an insight that's not linked to any section.
+        return '';
+      } else {
+        // Current item is a question.
+        const questionId = updatedInsight.value.id;
+        const questionObj = getQuestionById(questionId);
+        return questionObj?.question ?? '';
+      }
     });
 
     watch(
@@ -472,8 +461,7 @@ export default defineComponent({
       countInsights: 'insightPanel/countInsights',
       reviewIndex: 'insightPanel/reviewIndex',
       filters: 'dataSearch/filters',
-      analysisName: 'app/analysisName',
-      currentReviewHeader: 'insightPanel/currentReviewHeader'
+      analysisName: 'app/analysisName'
     }),
     questionsDropdown() {
       return [...this.sortedQuestions.map(q => q.question)];
@@ -551,8 +539,7 @@ export default defineComponent({
       hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
       setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane',
       setRefetchInsights: 'contextInsightPanel/setRefetchInsights',
-      setReviewMode: 'insightPanel/setReviewMode',
-      setCurrentReviewHeader: 'insightPanel/setCurrentReviewHeader'
+      setReviewMode: 'insightPanel/setReviewMode'
     }),
     setInsightQuestions(questions: string[]) {
       this.selectedInsightQuestions = questions;
@@ -642,34 +629,6 @@ export default defineComponent({
       if (this.isEditingInsight) {
         this.cancelInsightEdit();
       }
-
-      // we are going to the previous insight/question, are we moving to a new section?
-      if (this.isReviewMode && this.prevInsight) {
-        if (InsightUtil.instanceOfQuestion(this.prevInsight)) {
-          // when we are moving to a question, which we know it has no any linked insights
-          // so it needs to be visible (as its own section)
-          this.setCurrentReviewHeader(this.prevInsight.id);
-        } else {
-          // we are moving to an insight:
-          //  is it part of the current section or is it part of the next section?
-          const currentHeader = this.currentReviewHeader;
-          const prevItemAsInsight = this.prevInsight as Insight;
-          if (!prevItemAsInsight.analytical_question.includes(currentHeader)) {
-            // moving to a new section/question
-            // note that the prev insight may have multiple linked question,
-            // so we need to find the prev question/section after currentHeader
-            const currentHeaderIndx = this.sortedQuestions.findIndex(q => q.id === currentHeader);
-            for (let i = currentHeaderIndx - 1; i >= 0; i--) {
-              const q = this.sortedQuestions[i];
-              if (i < currentHeaderIndx && prevItemAsInsight.analytical_question.includes(q.id ?? '')) {
-                this.setCurrentReviewHeader(q.id);
-                break;
-              }
-            }
-          }
-        }
-      }
-
       this.setUpdatedInsight(this.prevInsight);
       this.setReviewIndex(this.reviewIndex - 1);
     },
@@ -677,34 +636,6 @@ export default defineComponent({
       if (this.isEditingInsight) {
         this.cancelInsightEdit();
       }
-
-      // we are going to the next insight/question, are we moving to a new section?
-      if (this.isReviewMode && this.nextInsight) {
-        if (InsightUtil.instanceOfQuestion(this.nextInsight)) {
-          // when we are moving to a question, which we know it has no any linked insights
-          // so it needs to be visible (as its own section)
-          this.setCurrentReviewHeader(this.nextInsight.id);
-        } else {
-          // we are moving to an insight:
-          //  is it part of the current section or is it part of the next section?
-          const currentHeader = this.currentReviewHeader;
-          const nextItemAsInsight = this.nextInsight as Insight;
-          if (!nextItemAsInsight.analytical_question.includes(currentHeader)) {
-            // moving to a new section/question
-            // note that the next insight may have multiple linked question,
-            // so we need to find the next question/section after currentHeader
-            const currentHeaderIndx = this.sortedQuestions.findIndex(q => q.id === currentHeader);
-            for (let i = currentHeaderIndx + 1; i < this.sortedQuestions.length; i++) {
-              const q = this.sortedQuestions[i];
-              if (i > currentHeaderIndx && nextItemAsInsight.analytical_question.includes(q.id ?? '')) {
-                this.setCurrentReviewHeader(q.id);
-                break;
-              }
-            }
-          }
-        }
-      }
-
       this.setUpdatedInsight(this.nextInsight);
       this.setReviewIndex(this.reviewIndex + 1);
     },
