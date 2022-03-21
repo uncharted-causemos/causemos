@@ -368,29 +368,32 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
   // Assemble KB's result
   const ontologyMap = getCache(projectId).ontologyMap;
   const result = [];
-  for (const entry of map.entries()) {
+  for (const entry of sortedMap.entries()) {
     const key = entry[0];
     const members = refMap.get(key);
 
     const doc = {
       key: key,
-      memebers: []
+      members: []
     };
 
-    ['theme',
+    [
+      'theme',
       'theme_property',
       'process',
       'process_property'
     ].forEach(str => {
+      console.log('checking', str, members);
       if (members[str] && !_.isEmpty(members[str])) {
+        console.log('hihihi');
         const ontologyMemberData = ontologyMap[members[str]];
         let examples = [];
         if (ontologyMemberData) {
           examples = ontologyMemberData.examples;
         }
 
-        doc.memebers.push({
-          label: members.theme,
+        doc.members.push({
+          label: members[str],
           examples,
           highlight: null
         });
@@ -411,11 +414,23 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
 
   for (const rawConcept of rawConcepts) {
     // Hack: label => key
-    rawConcept.doc.key = rawConcept.doc.label;
-    delete rawConcept.doc.label;
+    // rawConcept.doc.key = rawConcept.doc.label;
+    // delete rawConcept.doc.label;
 
-    if (!_.some(result, d => d.doc.key === rawConcept.doc.key)) {
-      result.push(rawConcept);
+    if (!_.some(result, d => d.doc.key === rawConcept.doc.label)) {
+      result.push({
+        doc_type: 'concept',
+        doc: {
+          key: rawConcept.doc.label,
+          members: [
+            {
+              label: rawConcept.doc.label,
+              examples: rawConcept.doc.examples,
+              highlight: rawConcept.highlight
+            }
+          ]
+        }
+      });
     }
   }
 
