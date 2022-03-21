@@ -36,6 +36,7 @@
       :cursor="'default'"
       />
     </wm-map>
+    <div v-if="data.length === 0" class="no-data">No data</div>
   </div>
 </template>
 
@@ -335,5 +336,16 @@ export default defineComponent({
 ::v-deep(.mapboxgl-ctrl-attrib) {
   display: none;
 
+}
+
+.no-data {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  background: white;
+  font-style: italic;
+  color: red;
+  font-size: large;
 }
 </style>
