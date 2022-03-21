@@ -365,6 +365,8 @@ const statementConceptEntitySearch2 = async (projectId, queryString) => {
     return b.doc_count - a.doc_count;
   }));
 
+  // Assemble KB's result
+  const ontologyMap = getCache(projectId).ontologyMap;
   const result = [];
   for (const entry of map.entries()) {
     const key = entry[0];
@@ -381,9 +383,15 @@ const statementConceptEntitySearch2 = async (projectId, queryString) => {
       'process_property'
     ].forEach(str => {
       if (members[str] && !_.isEmpty(members[str])) {
+        const ontologyMemberData = ontologyMap[members[str]];
+        let examples = [];
+        if (ontologyMemberData) {
+          examples = ontologyMemberData.examples;
+        }
+
         doc.memebers.push({
           label: members.theme,
-          examples: [], // FIXME: fill
+          examples,
           highlight: null
         });
       }
@@ -399,11 +407,17 @@ const statementConceptEntitySearch2 = async (projectId, queryString) => {
   // 2. Broader search for concepts using leveraging ontology and examples
   const rawConcepts = await rawConceptEntitySearch2(projectId, queryString);
 
-  console.log('');
-  console.log('!!!!!!!!!!!!!!');
-  console.log(result);
-  console.log('!!!!!!!!!!!!!!');
-  console.log('');
+
+
+  for (const rawConcept of rawConcepts) {
+    // Hack: label => key
+    rawConcept.doc.key = rawConcept.doc.label;
+    delete rawConcept.doc.label;
+
+    if (!_.some(result, d => d.doc.key === rawConcept.doc.key)) {
+      result.push(rawConcept);
+    }
+  }
 
 
   return { result, map: sortedMap, rawConcepts: _.take(rawConcepts, 5) };
