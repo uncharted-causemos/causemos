@@ -6,7 +6,7 @@ import {
   SpatialAggregationLevel,
   AggregationOption,
   ReferenceSeriesOption,
-  SPLIT_BY_VARIABLE
+  TemporalAggregationLevel
 } from '@/types/Enums';
 import {
   OutputSpec,
@@ -505,9 +505,7 @@ export const getRegionAggregations = async (
   } else if (breakdownOption === SpatialAggregationLevel.Region) {
     const ret = await getRegionAggregation(specs[0]);
     results = new Array(specs.length).fill(ret) as RegionalAggregation[];
-  } else if (breakdownOption === SPLIT_BY_VARIABLE) {
-    results = await Promise.all(specs.map(getRegionAggregation));
-  } else {
+  } else if (breakdownOption === TemporalAggregationLevel.Year) {
     const selectedTimestamps = specs
       .map(s => s.timestamp?.toString())
       .filter(s => s !== undefined) as string[];
@@ -533,6 +531,8 @@ export const getRegionAggregations = async (
       };
       specs.push(newSpec);
     }
+  } else {
+    results = await Promise.all(specs.map(getRegionAggregation));
   }
 
   // FIXME: we have to do a bunch of Typescript shenanigans because in some

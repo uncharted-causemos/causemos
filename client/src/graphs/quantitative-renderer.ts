@@ -309,7 +309,11 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       if (!supportsLevelEdges(this.engine)) {
         return false;
       }
-      if (param.weights && param.weights[0] > param.weights[1]) {
+      if (
+        param.weights &&
+        param.weights.length >= 2 &&
+        param.weights[0] > param.weights[1]
+      ) {
         return true;
       }
       return false;
@@ -345,8 +349,11 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       if (!param) {
         return false;
       }
-      const inferred = decodeWeights(param.engine_weights[this.engine]);
       const current = decodeWeights(param.weights);
+      if (current.weightType === 'stale') {
+        return false;
+      }
+      const inferred = decodeWeights(param.engine_weights[this.engine]);
 
       // If inferred and current have different types
       if (
