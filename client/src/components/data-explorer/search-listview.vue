@@ -12,7 +12,7 @@
             <th>PREVIEW<span class="right-cover" /></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="scrollable">
             <tr
               class="tr-item"
               v-for="d in datacubes"
@@ -95,13 +95,15 @@
 <script lang="ts">
 
 import moment from 'moment';
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, ref, computed, toRefs, watch } from 'vue';
 import { useStore } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
 import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { isIndicator, isModel } from '../../utils/datacube-util';
 import { Datacube, ModelParameter } from '@/types/Datacube';
+import { scrollToElement } from '@/utils/dom-util';
+
 
 
 export default defineComponent({
@@ -120,7 +122,7 @@ export default defineComponent({
       default: false
     }
   },
-  setup() {
+  setup(props) {
     const store = useStore();
     const expandedRowId = ref('');
     const selectedDatacubes = computed<Datacube[]>(() => {
@@ -129,6 +131,20 @@ export default defineComponent({
     const setSelectedDatacubes = (items: Datacube[]) => {
       store.dispatch('dataSearch/setSelectedDatacubes', items);
     };
+
+    const { datacubes } = toRefs(props);
+
+    watch(
+      datacubes,
+      () => {
+        const scrollables = document.getElementsByClassName('scrollable');
+        if (scrollables.length !== 1) return;
+        const rows = scrollables[0].children;
+        if (rows.length === 0) return;
+        scrollToElement(rows[0], 'auto');
+      },
+      { immediate: true }
+    );
 
     return {
       expandedRowId,

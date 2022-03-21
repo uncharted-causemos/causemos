@@ -39,9 +39,10 @@ export const scrollToElementWithId = (id: string) => {
   scrollToElement(element);
 };
 
-export const scrollToElement = (element: Element) => {
+type Behavior = 'auto' | 'smooth' | undefined;
+export const scrollToElement = (element: Element, behavior:Behavior = 'smooth') => {
   const scrollViewOptions: ScrollIntoViewOptions = {
-    behavior: 'smooth',
+    behavior,
     block: 'start',
     inline: 'nearest'
   };
