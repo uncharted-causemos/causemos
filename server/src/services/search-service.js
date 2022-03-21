@@ -245,7 +245,7 @@ const buildSubjObjAggregation = (concepts) => {
 
 
 
-const statementConceptEntitySearch2 = async (projectId, queryString) => {
+const statementConceptEntitySearch = async (projectId, queryString) => {
   const reserved = ['or', 'and'];
   const tokens = queryString
     .split(' ')
@@ -419,13 +419,13 @@ const statementConceptEntitySearch2 = async (projectId, queryString) => {
     }
   }
 
-
-  return { result, map: sortedMap, rawConcepts: _.take(rawConcepts, 5) };
+  return result;
 };
 
 
+// @deprecated
 // Search for concepts within a given project's INDRA statements
-const statementConceptEntitySearch = async (projectId, queryString) => {
+const statementConceptEntitySearchOld = async (projectId, queryString) => {
   Logger.info(`Query ${projectId} ${queryString}`);
 
   // Bootstrap from rawConcept
@@ -823,7 +823,7 @@ const modelSearchWithName = async (id, name) => {
 
 module.exports = {
   statementConceptEntitySearch,
-  statementConceptEntitySearch2,
+  statementConceptEntitySearchOld,
   rawConceptEntitySearch,
   rawDatacubeSearch,
   indicatorSearchByConcepts,
