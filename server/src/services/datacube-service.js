@@ -6,6 +6,37 @@ const { processFilteredData, removeUnwantedData } = rootRequire('util/post-proce
 const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
 const Logger = rootRequire('/config/logger');
 
+const auth = rootRequire('/util/auth-util');
+const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
+
+const DOJO_ROOT_FIELDS = [
+  'description',
+  'category',
+  'domains',
+  'data_sensitivity',
+  'data_quality',
+  'tags'
+];
+
+const DOJO_PARAMETER_FIELDS = [
+  'display_name',
+  'description',
+  'unit',
+  'unit_description',
+  'type',
+  'data_type',
+  'choices',
+  'min',
+  'max'
+];
+
+const DOJO_OUTPUT_FIELDS = [
+  'display_name',
+  'description',
+  'unit',
+  'unit_description'
+];
+
 /**
  * Return datacubes that match the provided filter
  */
@@ -112,6 +143,7 @@ const insertDatacube = async(metadata) => {
  */
 const updateDatacube = async(metadataDelta) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+  await updateDojoMetadata([metadataDelta]);
   return await connection.update([metadataDelta]);
 };
 
@@ -120,7 +152,121 @@ const updateDatacube = async(metadataDelta) => {
  */
 const updateDatacubes = async(metadataDeltas) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+  await updateDojoMetadata(metadataDeltas);
   return await connection.update(metadataDeltas, 'wait_for');
+};
+
+/**
+ * Send any relevant updates to the metadata to Dojo
+ *
+ * NOTE: If Dojo ever sends updates to Causemos something will need to be added to prevent infinite loops.
+ */
+const updateDojoMetadata = async(metadataDeltas) => {
+  const promises = metadataDeltas
+    // Filter out datacubes we know are indicators
+    .filter(delta => delta.type !== 'indicator' && (!delta.data_id || delta.data_id === delta.id))
+    .map(delta => {
+      const rootChanges = {};
+      let maintainer = {};
+      const parameters = {};
+      const outputs = {};
+      Object.keys(delta).forEach(field => {
+        if (field === 'maintainer') {
+          maintainer = delta.maintainer || {};
+        } else if (field === 'parameters') {
+          // create a param.name -> paramChanges map
+          delta.parameters.forEach(param => {
+            const paramChanges = {};
+            Object.keys(param).forEach(paramField => {
+              if (DOJO_PARAMETER_FIELDS.includes(paramField)) {
+                paramChanges[paramField] = param[paramField];
+              }
+            });
+            if (!_.isEmpty(paramChanges)) {
+              parameters[param.name] = paramChanges;
+            }
+          });
+        } else if (field === 'outputs') {
+          // create an output.name -> outputChanges map
+          delta.outputs.forEach(output => {
+            const outputChanges = {};
+            Object.keys(output).forEach(outputField => {
+              if (DOJO_OUTPUT_FIELDS.includes(outputField)) {
+                outputChanges[outputField] = output[outputField];
+              }
+            });
+            if (!_.isEmpty(outputChanges)) {
+              parameters[output.name] = outputChanges;
+            }
+          });
+        } else if (DOJO_ROOT_FIELDS.includes(field)) {
+          rootChanges[field] = delta[field];
+        }
+      });
+      return sendDojoUpdate(delta.id, rootChanges, maintainer, parameters, outputs);
+    });
+
+  await Promise.all(promises);
+};
+
+const sendDojoUpdate = async(id, changes, maintainer, parametersMap, outputsMap) => {
+  if (!id || (_.isEmpty(changes) && _.isEmpty(maintainer) && _.isEmpty(parametersMap) && _.isEmpty(outputsMap))) {
+    return;
+  }
+
+  // get latest from Dojo
+  let dojoModel;
+  try {
+    dojoModel = await requestAsPromise({
+      method: 'GET',
+      url: process.env.DOJO_URL + '/models/' + id,
+      headers: { Authorization: basicAuthToken }
+    });
+
+    if (_.isObject(dojoModel) && _.isEmpty(dojoModel)) {
+      return;
+    }
+  } catch (err) {
+    Logger.info(`No model in Dojo found for id ${id}`);
+    return;
+  }
+
+  // construct payload
+  const payload = changes;
+
+  // overwrite any changed maintainer fields
+  if (maintainer) {
+    payload.maintainer = {
+      ...dojoModel.maintainer,
+      ...maintainer
+    };
+  }
+  // apply all param and output changes matching by name
+  if (parametersMap && dojoModel.parameters) {
+    payload.parameters = dojoModel.parameters.map(param =>
+      Object.assign(param, parametersMap[param.name] || {}));
+  }
+  if (outputsMap && dojoModel.outputs) {
+    payload.outputs = dojoModel.outputs.map(output =>
+      Object.assign(output, outputsMap[output.name] || {}));
+  }
+
+  // send payload
+  try {
+    Logger.info(`Sending model patch request to Dojo for ${id}`);
+    await requestAsPromise({
+      method: 'PATCH',
+      url: process.env.DOJO_URL + '/models/' + id,
+      headers: {
+        'Authorization': basicAuthToken,
+        'Content-type': 'application/json',
+        'Accept': 'application/json'
+      },
+      json: payload
+    });
+  } catch (err) {
+    Logger.error('Error patching model in Dojo ', err);
+  }
 };
 
 /**
