@@ -32,11 +32,11 @@ const setProcessingSucceeded = async(metadata) => {
   // For model runs, add the data info from the default run into the model metadata
   if (!isIndicator) {
     // Fetch the run's metadata to check if it's the default run
-    const runs = maasService.getAllModelRuns([{ field: 'id', value: runId }], false);
+    const runs = await maasService.getAllModelRuns([{ field: 'id', value: runId }], false);
     if (runs && runs.length > 0 && runs[0].is_default_run) {
       const modelDelta = {
         id: runs[0].model_id,
-        ...results
+        data_info: results.data_info
       };
       await datacubeService.updateDatacube(modelDelta);
     }
