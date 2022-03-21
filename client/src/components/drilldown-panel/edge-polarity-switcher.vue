@@ -18,7 +18,7 @@
 
     <message-display
       v-if="isEdgeWeightStale"
-      :message="'Rerun to modify relationship type and strength.'"
+      :message="'Rerun to edit relationship type and strength.'"
       :message-type="'alert-info'"
     />
 
