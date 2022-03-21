@@ -1327,7 +1327,7 @@ export default defineComponent({
     openRenameModal(node: NodeParameter) {
       this.showModalRename = true;
       this.renameNodeId = node.id;
-      this.renameNodeName = node.concept;
+      this.renameNodeName = this.ontologyFormatter(node.concept);
     },
     async addEdgeEvidenceRecommendations(ids: string[]) {
       if (this.selectedEdge) {
