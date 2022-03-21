@@ -4,23 +4,21 @@
       {{ node.label }}
     </header>
     <div style="flex-grow: 1">
-      <svg ref="chartRef" />
+      <svg ref="chartRef"></svg>
     </div>
-    <svg
-      class="arrow"
-      :class="{ 'is-outgoing-arrow': isDriver }"
-      :viewBox="MARKER_VIEWBOX"
-    >
-      <line x1="-5" y1="0" x2="0" y2="0" :style="edgeStyle"/>
-      <path :d="ARROW" :fill="edgeColor" stroke="none" />
-    </svg>
+    <div class="arrow" :class="{ 'is-outgoing-arrow': isDriver }">
+      <div
+        class="arrow-head"
+        :style="{ borderLeftColor: edgeStyle.stroke }"
+      ></div>
+      <div class="arrow-tail" :style="{ background: edgeStyle.stroke }"></div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { ref, computed, defineComponent, PropType } from 'vue';
 import * as d3 from 'd3';
-import { ARROW, MARKER_VIEWBOX } from '@/utils/svg-util';
 import { EdgeParameter, NodeParameter } from '@/types/CAG';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
@@ -74,8 +72,6 @@ export default defineComponent({
     });
 
     return {
-      ARROW,
-      MARKER_VIEWBOX,
       edgeStyle,
       edgeColor,
       nodeChartData,
@@ -151,5 +147,29 @@ header {
     left: 100%;
     z-index: 2;
   }
+}
+
+// Great article explaining how to render triangles using <div>s
+// https://css-tricks.com/snippets/css/css-triangle/
+.arrow-head {
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 10px solid transparent;
+  border-right: 0px solid transparent;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.arrow-tail {
+  width: 100%;
+  height: 5px;
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 </style>
