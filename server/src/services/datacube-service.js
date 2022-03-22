@@ -198,7 +198,7 @@ const updateDojoMetadata = async(metadataDeltas) => {
               }
             });
             if (!_.isEmpty(outputChanges)) {
-              parameters[output.name] = outputChanges;
+              outputs[output.name] = outputChanges;
             }
           });
         } else if (DOJO_ROOT_FIELDS.includes(field)) {
@@ -222,10 +222,19 @@ const sendDojoUpdate = async(id, changes, maintainer, parametersMap, outputsMap)
     dojoModel = await requestAsPromise({
       method: 'GET',
       url: process.env.DOJO_URL + '/models/' + id,
-      headers: { Authorization: basicAuthToken }
+      headers: {
+        'Authorization': basicAuthToken,
+        'Content-type': 'application/json',
+        'Accept': 'application/json'
+      }
     });
 
-    if (_.isObject(dojoModel) && _.isEmpty(dojoModel)) {
+    // This is currently returning strings rather than JSON
+    if (_.isString(dojoModel)) {
+      dojoModel = JSON.parse(dojoModel);
+    }
+
+    if (!_.isObject(dojoModel) || _.isEmpty(dojoModel)) {
       return;
     }
   } catch (err) {
@@ -237,18 +246,18 @@ const sendDojoUpdate = async(id, changes, maintainer, parametersMap, outputsMap)
   const payload = changes;
 
   // overwrite any changed maintainer fields
-  if (maintainer) {
+  if (!_.isEmpty(maintainer)) {
     payload.maintainer = {
       ...dojoModel.maintainer,
       ...maintainer
     };
   }
   // apply all param and output changes matching by name
-  if (parametersMap && dojoModel.parameters) {
+  if (!_.isEmpty(parametersMap) && dojoModel.parameters) {
     payload.parameters = dojoModel.parameters.map(param =>
       Object.assign(param, parametersMap[param.name] || {}));
   }
-  if (outputsMap && dojoModel.outputs) {
+  if (!_.isEmpty(outputsMap) && dojoModel.outputs) {
     payload.outputs = dojoModel.outputs.map(output =>
       Object.assign(output, outputsMap[output.name] || {}));
   }
@@ -267,7 +276,8 @@ const sendDojoUpdate = async(id, changes, maintainer, parametersMap, outputsMap)
       json: payload
     });
   } catch (err) {
-    Logger.error('Error patching model in Dojo ', err);
+    Logger.error('Error patching model in Dojo ');
+    Logger.error(JSON.stringify(err));
   }
 };
 
