@@ -6,6 +6,8 @@ const { processFilteredData, removeUnwantedData } = rootRequire('util/post-proce
 const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
 const Logger = rootRequire('/config/logger');
 
+const config = rootRequire('/config/yargs-wrapper');
+const shouldSyncDojo = config.dojoSync;
 const auth = rootRequire('/util/auth-util');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
@@ -164,6 +166,11 @@ const updateDatacubes = async(metadataDeltas, notifyDojo = true) => {
  * NOTE: If Dojo ever sends updates to Causemos something will need to be added to prevent infinite loops.
  */
 const updateDojoMetadata = async(metadataDeltas) => {
+  // Don't update Dojo if the feature isn't enabled
+  if (!shouldSyncDojo) {
+    return;
+  }
+
   const promises = metadataDeltas
     // Filter out datacubes we know are indicators
     .filter(delta => delta.type !== 'indicator' && (!delta.data_id || delta.data_id === delta.id))

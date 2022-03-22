@@ -17,4 +17,9 @@ module.exports = require('yargs')
     describe: 'Defines a listing of comma delimited scheduled tasks from {dart, aligner} ',
     default: ''
   })
+  .options('dojo-sync', {
+    describe: 'Should metadata changes be sent to Dojo?',
+    type: 'boolean',
+    default: false
+  })
   .argv;
