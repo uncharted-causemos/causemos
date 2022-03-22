@@ -12,7 +12,7 @@
             <th>PREVIEW<span class="right-cover" /></th>
           </tr>
         </thead>
-        <tbody class="scrollable">
+        <tbody>
             <tr
               class="tr-item"
               v-for="d in datacubes"
@@ -102,9 +102,6 @@ import MultilineDescription from '@/components/widgets/multiline-description.vue
 import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { isIndicator, isModel } from '../../utils/datacube-util';
 import { Datacube, ModelParameter } from '@/types/Datacube';
-import { scrollToElement } from '@/utils/dom-util';
-
-
 
 export default defineComponent({
   name: 'SearchListview',
@@ -137,11 +134,9 @@ export default defineComponent({
     watch(
       datacubes,
       () => {
-        const scrollables = document.getElementsByClassName('scrollable');
-        if (scrollables.length !== 1) return;
-        const rows = scrollables[0].children;
-        if (rows.length === 0) return;
-        scrollToElement(rows[0], 'auto');
+        const elem:any = document.getElementsByClassName('table-fixed-head');
+        if (elem.length === 0) return;
+        elem[0].scrollTop = 0;
       },
       { immediate: true }
     );
