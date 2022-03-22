@@ -167,7 +167,8 @@ export default defineComponent({
         const paramArray: any[] = [];
         Object.keys(modelRun).forEach(key => {
           // exclude output variable values since they will be undefined for potential runs
-          if (key !== outputs[this.currentOutputIndex].name) {
+          // also, exclude the status field since it will be populated by the server
+          if (key !== outputs[this.currentOutputIndex].name && key !== 'status') {
             paramArray.push({
               name: key,
               value: modelRun[key]

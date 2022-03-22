@@ -13,8 +13,10 @@ import useActiveDatacubeFeature from './useActiveDatacubeFeature';
  */
 export default function useParallelCoordinatesData(
   metadata: Ref<Model | Indicator | null>,
-  itemId: Ref<string>,
-  modelRunData: Ref<ModelRun[]>
+  modelRunData: Ref<ModelRun[]>,
+  spatialAggregation: Ref<AggregationOption>,
+  temporalAggregation: Ref<AggregationOption>,
+  itemId: Ref<string>
 ) {
   const runParameterValues = computed(() => {
     const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
@@ -36,8 +38,11 @@ export default function useParallelCoordinatesData(
         status: runStatus ?? ModelRunStatus.Ready
       };
       if (run.status === ModelRunStatus.Ready) {
-        // TODO: This needs to depend on the selected aggregation functions
-        const aggKey = getAggregationKey(AggregationOption.Mean, AggregationOption.Mean);
+        const aggKey = getAggregationKey(
+          spatialAggregation.value === AggregationOption.None ? AggregationOption.Mean
+            : spatialAggregation.value,
+          temporalAggregation.value === AggregationOption.None ? AggregationOption.Mean
+            : temporalAggregation.value);
         const outputValue = modelRun.output_agg_values.find(val => val.name === outputParameterName);
         if (outputValue && outputValue[aggKey]) {
           run[outputParameterName] = outputValue[aggKey];
@@ -46,7 +51,10 @@ export default function useParallelCoordinatesData(
         }
       }
       modelRun.parameters.forEach(({ name, value }) => {
-        run[name ?? 'undefined'] = value;
+        // prevent a param named status from overriding run status
+        if (name !== 'status') {
+          run[name ?? 'undefined'] = value;
+        }
       });
       return run;
     });

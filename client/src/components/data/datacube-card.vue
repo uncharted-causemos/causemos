@@ -283,6 +283,11 @@
                       :src="pregenDataForSpec.file"
                     >
                     </video>
+                    <iframe
+                      v-if="pregenDataForSpec.type === 'web'"
+                      :src="pregenDataForSpec.file"
+                      class="pre-rendered-content" style="height: 100%;">
+                    </iframe>
                   </template>
                   <template v-else>
                     No pre-generated data available for some selected scenario(s)!
@@ -917,7 +922,7 @@ export default defineComponent({
     });
     const {
       runParameterValues
-    } = useParallelCoordinatesData(metadata, itemId, filteredRunData);
+    } = useParallelCoordinatesData(metadata, filteredRunData, selectedSpatialAggregation, selectedTemporalAggregation, itemId);
 
     const scenarioCount = computed(() => runParameterValues.value.length);
 
