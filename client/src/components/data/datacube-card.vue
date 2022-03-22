@@ -905,7 +905,7 @@ export default defineComponent({
     });
     const {
       runParameterValues
-    } = useParallelCoordinatesData(metadata, filteredRunData);
+    } = useParallelCoordinatesData(metadata, filteredRunData, selectedSpatialAggregation, selectedTemporalAggregation);
 
     const scenarioCount = computed(() => runParameterValues.value.length);
 
