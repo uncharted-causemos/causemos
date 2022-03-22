@@ -865,7 +865,7 @@ export default defineComponent({
       } else {
         // domain model or indicator project, so use the data_id as the unique item id
         // this is in line with how the model-description component works for example
-        return metadata.value?.data_id ?? metadata.value?.id;
+        return metadata.value?.id ?? metadata.value?.data_id;
       }
     });
 

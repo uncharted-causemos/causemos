@@ -104,7 +104,7 @@ export default defineComponent({
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataState | null>(null);
-    let datacubeAnalysisItem: AnalysisItem | null | undefined = analysisItems.value.find(item => item.itemId === datacubeItemId);
+    let datacubeAnalysisItem: AnalysisItem | undefined = analysisItems.value.find(item => item.itemId === datacubeItemId);
     if (!datacubeAnalysisItem) {
       datacubeAnalysisItem = analysisItems.value.find(item => item.id === selectedModelId.value);
     }
