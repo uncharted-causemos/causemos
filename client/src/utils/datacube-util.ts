@@ -280,6 +280,11 @@ export function isVideo(url: string) {
     url.endsWith('.mpg') || url.endsWith('.mpeg') || url.endsWith('.3gp');
 }
 
+export function isWebContent(url: string) {
+  url = url.toLowerCase();
+  return url.endsWith('.html') || url.endsWith('.htm');
+}
+
 export function getAggregationKey(spatial: AggregationOption, temporal: AggregationOption) {
   return `s_${spatial}_t_${temporal}`;
 }

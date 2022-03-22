@@ -1,7 +1,7 @@
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { getModelRunMetadata } from '@/services/new-datacube-service';
-import { getAggregationKey, isImage, isVideo, TAGS, isCategoricalAxis } from '@/utils/datacube-util';
+import { getAggregationKey, isImage, isVideo, isWebContent, TAGS, isCategoricalAxis } from '@/utils/datacube-util';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
@@ -154,6 +154,9 @@ export default function useScenarioData(
                 }
                 if (isVideo(pregen.file)) {
                   pregen.type = 'video';
+                }
+                if (isWebContent(pregen.file)) {
+                  pregen.type = 'web';
                 }
               }
             });
