@@ -77,6 +77,15 @@ yarn start-server --schedules dart,aligner
  yarn start-server-debug --schedules aligner
 ```
 
+Features that require communication with Dojo are disabled by default and must be turned on manually.
+Note that these will impact Dojo's production environment. These should only be enabled for careful testing to avoid creating discrepancies between Dojo and Causemos environments 
+- `dojo-sync`: Send datacube metadata changes to Dojo
+- `allow-model-runs`: Submit model runs for execution
+
+```
+# example 3: allow model execution, don't sync updates
+yarn start-server --allow-model-runs
+```
 
 ### Build
 Bulding and packaging the code.

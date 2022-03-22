@@ -22,4 +22,9 @@ module.exports = require('yargs')
     type: 'boolean',
     default: false
   })
+  .options('allow-model-runs', {
+    describe: 'Should model runs be sent to Dojo for execution?',
+    type: 'boolean',
+    default: false
+  })
   .argv;

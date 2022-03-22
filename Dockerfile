@@ -29,5 +29,5 @@ WORKDIR /server
 
 WORKDIR /
 RUN yarn install
-CMD yarn workspace server run start --log-level info --schedules dart,aligner --dojo-sync
+CMD yarn workspace server run start --log-level info --schedules dart,aligner --dojo-sync --allow-model-runs
 
