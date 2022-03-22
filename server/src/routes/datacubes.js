@@ -35,11 +35,13 @@ router.put('/:datacubeId/deprecate', asyncHandler(async (req, res) => {
 }));
 
 /**
- * POST Bulk update multiple datacubes
+ * POST Bulk update multiple indicators
+ *
+ * NOTE: THIS WILL NOT SEND CHANGES TO DOJO
  */
-router.post('/bulk-update', asyncHandler(async (req, res) => {
+router.post('/bulk-update-indicator', asyncHandler(async (req, res) => {
   const deltas = req.body.deltas;
-  const result = await datacubeService.updateDatacubes(deltas);
+  const result = await datacubeService.updateDatacubes(deltas, false);
   res.json(result);
 }));
 

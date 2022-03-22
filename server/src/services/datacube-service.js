@@ -150,9 +150,11 @@ const updateDatacube = async(metadataDelta) => {
 /**
  * Update datacubes with the specified changes
  */
-const updateDatacubes = async(metadataDeltas) => {
+const updateDatacubes = async(metadataDeltas, notifyDojo = true) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  await updateDojoMetadata(metadataDeltas);
+  if (notifyDojo) {
+    await updateDojoMetadata(metadataDeltas);
+  }
   return await connection.update(metadataDeltas, 'wait_for');
 };
 
