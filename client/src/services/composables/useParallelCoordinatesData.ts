@@ -45,7 +45,10 @@ export default function useParallelCoordinatesData(
         }
       }
       modelRun.parameters.forEach(({ name, value }) => {
-        run[name ?? 'undefined'] = value;
+        // prevent a param named status from overriding run status
+        if (name !== 'status') {
+          run[name ?? 'undefined'] = value;
+        }
       });
       return run;
     });
