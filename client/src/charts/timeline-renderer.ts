@@ -136,7 +136,7 @@ export default function(
     timeseriesList
   );
 
-  const valuesAtEachTimestamp = getValuesAtEachTimestampMap(timeseriesList, timeseriesToDatacubeMap);
+  const valuesAtEachTimestamp = getValuesAtEachTimestampMap(timeseriesList);
   const uniqueTimestamps = getUniqueTimeStamps(valuesAtEachTimestamp);
   const closestTimestamps = getClosestTimestamps(uniqueTimestamps);
 
@@ -329,9 +329,7 @@ function calculateYScale(height: number, yExtent: [number, number]) {
 }
 
 function getValuesAtEachTimestampMap(
-  timeseriesList: Timeseries[],
-  timeseriesToDatacubeMap: { [x: string]: {datacubeName: string;datacubeOutputVariable: string} }
-
+  timeseriesList: Timeseries[]
 ) {
   const valuesAtEachTimestamp = new Map<number, { owner: string; color: string; name: string; value: number | string}[]>();
   const allTimestamps = _.uniq(
@@ -342,7 +340,6 @@ function getValuesAtEachTimestampMap(
   allTimestamps.forEach(timestamp => {
     timeseriesList.forEach(timeseries => {
       const { color, name, points } = timeseries;
-      const ownerDatacube = timeseriesToDatacubeMap[timeseries.id].datacubeName + TIMESERIES_HEADER_SEPARATOR + timeseriesToDatacubeMap[timeseries.id].datacubeOutputVariable;
       const pointAtTimestamp = points.find(p => p.timestamp === timestamp);
       if (!valuesAtEachTimestamp.has(timestamp)) {
         valuesAtEachTimestamp.set(timestamp, []);
@@ -352,7 +349,7 @@ function getValuesAtEachTimestampMap(
       if (valuesAtThisTimestamp === undefined) {
         return;
       }
-      valuesAtThisTimestamp.push({ owner: ownerDatacube, color, name, value: pointAtTimestamp !== undefined ? pointAtTimestamp.value : 'no data' });
+      valuesAtThisTimestamp.push({ owner: timeseries.id, color, name, value: pointAtTimestamp !== undefined ? pointAtTimestamp.value : 'no data' });
     });
   });
 
@@ -521,7 +518,7 @@ function generateSelectableTimestamps(
         lineCounter += 1;
       }
       (valuesAtEachTimestamp.get(timestamp) ?? [])
-        .filter(timeseriesData => timeseriesData.owner === header)
+        .filter(timeseriesData => timeseriesData.owner === ownerDatacubeId)
         .sort(({ value: valueA }, { value: valueB }) => {
           // strings should always be sorted at the bottom
           return (typeof valueA === 'number' && typeof valueB === 'number') ? (valueB - valueA) : 1;

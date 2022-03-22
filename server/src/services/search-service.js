@@ -72,6 +72,50 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
   });
 };
 
+
+// Search against ontology concepts
+const rawConceptEntitySearch2 = async (projectId, queryString) => {
+  const filters = [{
+    terms: {
+      project_id: [projectId]
+    }
+  }];
+
+  const reserved = ['or', 'and'];
+
+  const builder = queryStringBuilder()
+    .setOperator('OR')
+    .setFields(['examples', 'label^2', 'definition']);
+
+  const tokens = queryString
+    .split(' ')
+    .filter(s => {
+      return !reserved.includes(s.toLowerCase()) && s.trim() !== '';
+    });
+
+  // Assumes 1st token > 2nd token > 3rd token ... in terms of importance
+  let weight = tokens.length * 2;
+  for (let i = 0; i < tokens.length; i++) {
+    builder.add(`(${tokens[i]}*)^${weight}`);
+    weight--;
+  }
+
+  const results = await searchAndHighlight(RESOURCE.ONTOLOGY, builder.build(), filters, [
+    'label',
+    'examples'
+  ]);
+
+  return results.map(d => {
+    return {
+      doc_type: 'concept',
+      score: d._score,
+      doc: formatOntologyDoc(d._source),
+      highlight: d.highlight
+    };
+  });
+};
+
+
 const rawDatacubeSearch = async (queryString) => {
   const filters = [];
   const reserved = ['or', 'and'];
@@ -201,8 +245,201 @@ const buildSubjObjAggregation = (concepts) => {
 };
 
 
-// Search for concepts within a given project's INDRA statements
+
 const statementConceptEntitySearch = async (projectId, queryString) => {
+  const reserved = ['or', 'and'];
+  const tokens = queryString
+    .split(' ')
+    .filter(s => {
+      return !reserved.includes(s.toLowerCase()) && s.trim() !== '';
+    });
+
+  // 1. Search for obj and subj matches against the project directly
+  const q = tokens.map(s => `(${s}~)`).join(' AND ');
+
+  const results = await client.search({
+    index: projectId,
+    body: {
+      size: 0,
+      aggs: {
+        filteredSubj: {
+          filter: {
+            query_string: {
+              query: q,
+              fields: [
+                'subj.concept'
+              ]
+            }
+          },
+          aggs: {
+            concept: {
+              terms: {
+                field: 'subj.concept.raw',
+                size: 3
+              },
+              aggs: {
+                sample: {
+                  top_hits: {
+                    size: 1,
+                    _source: {
+                      includes: [
+                        'subj.theme',
+                        'subj.theme_property',
+                        'subj.process',
+                        'subj.process_property'
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        filteredObj: {
+          filter: {
+            query_string: {
+              query: q,
+              fields: [
+                'obj.concept'
+              ]
+            }
+          },
+          aggs: {
+            concept: {
+              terms: {
+                field: 'obj.concept.raw',
+                size: 3
+              },
+              aggs: {
+                sample: {
+                  top_hits: {
+                    size: 1,
+                    _source: {
+                      includes: [
+                        'obj.theme',
+                        'obj.theme_property',
+                        'obj.process',
+                        'obj.process_property'
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const subjConcepts = results.body.aggregations.filteredSubj.concept.buckets;
+  const objConcepts = results.body.aggregations.filteredObj.concept.buckets;
+
+  const map = new Map();
+  const refMap = new Map();
+
+  for (const bucket of subjConcepts) {
+    const count = map.get(bucket.key) || 0;
+    map.set(bucket.key, count + bucket.doc_count);
+
+    const source = bucket.sample.hits.hits[0]._source;
+    refMap.set(bucket.key, {
+      theme: source.subj.theme,
+      theme_property: source.subj.theme_property,
+      process: source.subj.process,
+      process_property: source.subj.process_property
+    });
+  }
+  for (const bucket of objConcepts) {
+    const count = map.get(bucket.key) || 0;
+    map.set(bucket.key, count + bucket.doc_count);
+
+    const source = bucket.sample.hits.hits[0]._source;
+    refMap.set(bucket.key, {
+      theme: source.obj.theme,
+      theme_property: source.obj.theme_property,
+      process: source.obj.process,
+      process_property: source.obj.process_property
+    });
+  }
+
+  const sortedMap = new Map([...map.entries()].sort((a, b) => {
+    return b.doc_count - a.doc_count;
+  }));
+
+  // Assemble KB's result
+  const ontologyMap = getCache(projectId).ontologyMap;
+  const result = [];
+  for (const entry of sortedMap.entries()) {
+    const key = entry[0];
+    const members = refMap.get(key);
+
+    const doc = {
+      key: key,
+      members: []
+    };
+
+    [
+      'theme',
+      'theme_property',
+      'process',
+      'process_property'
+    ].forEach(str => {
+      if (members[str] && !_.isEmpty(members[str])) {
+        const ontologyMemberData = ontologyMap[members[str]];
+        let examples = [];
+        if (ontologyMemberData) {
+          examples = ontologyMemberData.examples;
+        }
+
+        doc.members.push({
+          label: members[str],
+          examples,
+          highlight: null
+        });
+      }
+    });
+
+    result.push({
+      doc_type: 'concept',
+      score: 1,
+      doc
+    });
+  }
+
+  // 2. Broader search for concepts using leveraging ontology and examples
+  const rawConcepts = await rawConceptEntitySearch2(projectId, queryString);
+
+
+  for (const rawConcept of rawConcepts) {
+    // Hack: label => key
+    // rawConcept.doc.key = rawConcept.doc.label;
+    // delete rawConcept.doc.label;
+
+    if (!_.some(result, d => d.doc.key === rawConcept.doc.label)) {
+      result.push({
+        doc_type: 'concept',
+        doc: {
+          key: rawConcept.doc.label,
+          members: [
+            {
+              label: rawConcept.doc.label,
+              examples: rawConcept.doc.examples,
+              highlight: rawConcept.highlight
+            }
+          ]
+        }
+      });
+    }
+  }
+
+  return result;
+};
+
+
+// @deprecated
+// Search for concepts within a given project's INDRA statements
+const statementConceptEntitySearchOld = async (projectId, queryString) => {
   Logger.info(`Query ${projectId} ${queryString}`);
 
   // Bootstrap from rawConcept
@@ -600,6 +837,7 @@ const modelSearchWithName = async (id, name) => {
 
 module.exports = {
   statementConceptEntitySearch,
+  statementConceptEntitySearchOld,
   rawConceptEntitySearch,
   rawDatacubeSearch,
   indicatorSearchByConcepts,
