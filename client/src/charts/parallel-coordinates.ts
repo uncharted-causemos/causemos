@@ -473,7 +473,10 @@ function renderParallelCoordinates(
         // hide tooltips
         doNotHighlight();
         // some marker-line is removed, so notify external listeners
-        onNewRuns(newScenarioData);
+        const potentialModelRuns = _.map(newScenarioData, function (run) {
+          return _.omit(run, ['status']);
+        });
+        onNewRuns(potentialModelRuns);
       })
       .append('title')
       .text('Remove')
