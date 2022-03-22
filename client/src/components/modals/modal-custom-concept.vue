@@ -149,10 +149,10 @@ export default defineComponent({
     },
     customGrounding(): { [key: string]: string } {
       return {
-        theme: this.theme,
-        theme_property: this.theme_property,
-        process: this.process,
-        process_property: this.process_property
+        theme: this.theme.trim(),
+        theme_property: this.theme_property.trim(),
+        process: this.process.trim(),
+        process_property: this.process_property.trim()
       };
     }
   },
