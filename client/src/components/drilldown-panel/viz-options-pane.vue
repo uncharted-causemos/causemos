@@ -249,6 +249,10 @@ export default defineComponent({
     metadata: {
       type: Object as PropType<Model | null>,
       default: null
+    },
+    itemId: {
+      type: String,
+      required: true
     }
   },
   emits: [
@@ -267,6 +271,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const {
       metadata,
+      itemId,
       resolutionOptions,
       selectedResolution,
       selectedTransform,
@@ -313,7 +318,7 @@ export default defineComponent({
     const colorSchemes = ref(Object.keys(COLOR_SCHEMES)
       .map(val => ({ displayName: capitalize(val.toLowerCase()), value: val })));
 
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
     const modelOutputs = computed<DatacubeFeature[]>(() => {
       return metadata.value ? getOutputs(metadata.value) : [];
@@ -412,7 +417,7 @@ export default defineComponent({
     setOutputVariable(variable: string) {
       const selectedOutputIndex = this.modelOutputsDisplayNames.indexOf(variable);
       // update the store so that other components can sync
-      updateDatacubesOutputsMap(this.metadata, this.store, this.route, selectedOutputIndex);
+      updateDatacubesOutputsMap(this.itemId, this.store, this.route, selectedOutputIndex);
     },
     setSpatialAggregationSelection(aggregation: string) {
       this.$emit('set-spatial-aggregation-selection', aggregation);

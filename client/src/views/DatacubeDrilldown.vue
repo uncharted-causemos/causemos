@@ -78,7 +78,7 @@ import { DATASET_NAME, isIndicator, getValidatedOutputs, getOutputs, getSelected
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import filtersUtil from '@/utils/filters-util';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
-import { getDatacubeKeyFromAnalysis, updateDatacubesOutputsMap } from '@/utils/analysis-util';
+import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
@@ -95,19 +95,18 @@ export default defineComponent({
     const projectType = computed(() => store.getters['app/projectType']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
-    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeId = route.query.datacube_id as any;
-    const datacubeVarId = route.query.datacube_var_id as any;
+    const datacubeItemId = route.query.item_id as any;
     const selectedModelId = ref(datacubeId);
     const dataState = computed(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataState | null>(null);
-    let datacubeAnalysisItem: AnalysisItem | null = null;
-    datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === selectedModelId.value);
-    if (datacubeVarId !== undefined) {
-      datacubeAnalysisItem = analysisItems.value.find((item: any) => item.id === selectedModelId.value && item.datacubeId === datacubeVarId);
+    let datacubeAnalysisItem: AnalysisItem | null | undefined = analysisItems.value.find(item => item.itemId === datacubeItemId);
+    if (!datacubeAnalysisItem) {
+      datacubeAnalysisItem = analysisItems.value.find(item => item.id === selectedModelId.value);
     }
     if (datacubeAnalysisItem) {
       initialViewConfig.value = datacubeAnalysisItem.viewConfig;
@@ -121,10 +120,7 @@ export default defineComponent({
       ],
       () => {
         const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-        let currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
-        if (datacubeVarId !== undefined) {
-          currentAnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId && item.datacubeId === datacubeVarId);
-        }
+        const currentAnalysisItem = updatedAnalysisItems.find(item => item.itemId === datacubeItemId);
 
         if (currentAnalysisItem) {
           if (currentAnalysisItem.viewConfig === undefined) {
@@ -147,14 +143,14 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(datacubeItemId));
 
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
 
     // apply initial view config for this datacube
-    if (initialViewConfig.value !== null) {
+    if (initialViewConfig.value) {
       if (initialViewConfig.value.selectedOutputIndex !== undefined) {
-        updateDatacubesOutputsMap(metadata.value, store, route, initialViewConfig.value.selectedOutputIndex);
+        updateDatacubesOutputsMap(datacubeItemId, store, route, initialViewConfig.value.selectedOutputIndex);
       }
     }
 
@@ -167,10 +163,7 @@ export default defineComponent({
         if (metadata.value) {
           if (_.isEmpty(initialViewConfig.value) && !_.isEmpty(metadata.value.default_view)) {
             const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-            let currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
-            if (datacubeVarId !== undefined) {
-              currentAnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId && item.datacubeId === datacubeVarId);
-            }
+            const currentAnalysisItem = updatedAnalysisItems.find(item => item.itemId === datacubeItemId);
             if (currentAnalysisItem) {
               currentAnalysisItem.viewConfig = metadata.value.default_view;
               store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
@@ -186,7 +179,7 @@ export default defineComponent({
         store.dispatch('insightPanel/setContextId', [metadata.value.id]);
 
         outputs.value = getOutputs(metadata.value);
-        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        const datacubeKey = datacubeItemId ?? metadata.value.id;
 
         let initialOutputIndex = 0;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
@@ -197,7 +190,7 @@ export default defineComponent({
           initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
           // update the store
-          updateDatacubesOutputsMap(metadata.value, store, route, initialOutputIndex);
+          updateDatacubesOutputsMap(datacubeItemId, store, route, initialOutputIndex);
         }
         mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
       }
@@ -217,7 +210,7 @@ export default defineComponent({
     const onOutputSelectionChange = (event: any) => {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      updateDatacubesOutputsMap(metadata.value, store, route, selectedOutputIndex);
+      updateDatacubesOutputsMap(datacubeItemId, store, route, selectedOutputIndex);
     };
 
     const refreshMetadata = () => {

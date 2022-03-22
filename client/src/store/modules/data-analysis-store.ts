@@ -52,7 +52,7 @@ const actions: ActionTree<AnalysisState, any> = {
     commit('setAnalysisItemsPreview', updatedAnalysisItems);
   },
   removeAnalysisItems({ state, commit }, analysisItemIds: string[] = []) {
-    const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.datacubeId));
+    const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.itemId));
     commit('setAnalysisItems', items);
   },
   setComparativeAnalysisViewSelection({ commit }, newValue: string) {

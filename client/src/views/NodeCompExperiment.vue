@@ -113,7 +113,7 @@ import filtersUtil from '@/utils/filters-util';
 
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import { ViewState } from '@/types/Insight';
-import { getDatacubeKeyFromAnalysis, updateDatacubesOutputsMap } from '@/utils/analysis-util';
+import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
@@ -135,7 +135,7 @@ export default defineComponent({
     // NOTE: only one indicator id (model or indicator) will be provided as a selection from the data explorer
     const currentCAG = computed(() => store.getters['app/currentCAG']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const indicatorId = computed(() => store.getters['app/indicatorId']);
+    const indicatorId = computed<string>(() => store.getters['app/indicatorId']);
     const metadata = useModelMetadata(indicatorId);
     const nodeId = computed(() => store.getters['app/nodeId']);
     const project = computed(() => store.getters['app/project']);
@@ -148,7 +148,7 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelComponents = ref(null) as Ref<any>;
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, indicatorId);
 
     const temporalResolutionOption = computed(() => {
       if (modelComponents.value === null) {
@@ -239,7 +239,7 @@ export default defineComponent({
     const onOutputSelectionChange = (event: any) => {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      updateDatacubesOutputsMap(metadata.value, store, route, selectedOutputIndex);
+      updateDatacubesOutputsMap(indicatorId.value, store, route, selectedOutputIndex);
     };
 
     const closeTimeseriesSelectionModal = () => {
@@ -338,7 +338,7 @@ export default defineComponent({
         mainModelOutput.value = getSelectedOutput(metadata.value, currentOutputIndex.value);
 
         let initialOutputIndex = 0;
-        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        const datacubeKey = indicatorId.value;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
         if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the selected output of the current model
@@ -347,7 +347,7 @@ export default defineComponent({
           initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
           // update the store
-          updateDatacubesOutputsMap(metadata.value, store, route, initialOutputIndex);
+          updateDatacubesOutputsMap(datacubeKey, store, route, initialOutputIndex);
         }
       }
     });

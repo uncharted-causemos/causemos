@@ -8,8 +8,9 @@ export interface AnalysisItemState {
 }
 
 export interface AnalysisItem extends AnalysisItemState {
-  id: string;
-  datacubeId: string;
+  itemId: string; // unique uuid that uniquely identify this item
+  id: string; // datacube-id, e.g., indicator id
+  datacubeId: string; // datacub-family-id, e.g., indicator family id
   name?: string;
   selected?: boolean;
 }

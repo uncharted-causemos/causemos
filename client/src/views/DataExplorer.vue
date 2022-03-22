@@ -51,6 +51,8 @@ import filtersUtil from '@/utils/filters-util';
 import { FACET_FIELDS } from '@/utils/datacube-util';
 import { ANALYSIS } from '@/utils/messages-util';
 import { ProjectType } from '@/types/Enums';
+import _ from 'lodash';
+import { v4 as uuidv4 } from 'uuid';
 
 export default defineComponent({
   name: 'DataExplorer',
@@ -149,7 +151,13 @@ export default defineComponent({
     async addToAnalysis() {
       try {
         // save the selected datacubes in the analysis object in the store/server
-        await this.updateAnalysisItems({ currentAnalysisId: this.analysisId, analysisItems: this.selectedDatacubes });
+        const selectedDatacubes = _.cloneDeep(this.selectedDatacubes);
+        selectedDatacubes.forEach((datacube: any) => {
+          if (!datacube.itemId) {
+            datacube.itemId = uuidv4();
+          }
+        });
+        await this.updateAnalysisItems({ currentAnalysisId: this.analysisId, analysisItems: selectedDatacubes });
         this.$router.push({
           name: 'dataComparative',
           params: {

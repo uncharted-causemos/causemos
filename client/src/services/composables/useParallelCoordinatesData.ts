@@ -13,11 +13,12 @@ import useActiveDatacubeFeature from './useActiveDatacubeFeature';
  */
 export default function useParallelCoordinatesData(
   metadata: Ref<Model | Indicator | null>,
+  itemId: Ref<string>,
   modelRunData: Ref<ModelRun[]>
 ) {
-  const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
-
   const runParameterValues = computed(() => {
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
+
     if (modelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {
       return [];
     }

@@ -74,6 +74,7 @@
             class="datacube-comparative-card"
             :id="item.id"
             :datacube-id="item.datacubeId"
+            :item-id="item.itemId"
             :datacube-index="indx"
             :selected-timestamp="selectedTimestamp"
             :selected-timestamp-range="selectedTimestampRange"
@@ -96,6 +97,7 @@
                 class="card-map"
                 :id="item.id"
                 :datacube-id="item.datacubeId"
+                :item-id="item.itemId"
                 :datacube-index="indx"
                 :selected-timestamp="selectedGlobalTimestamp"
                 :selected-timestamp-range="selectedTimestampRange"
@@ -111,6 +113,7 @@
             class="datacube-region-ranking-card"
             :id="item.id"
             :datacube-id="item.datacubeId"
+            :item-id="item.itemId"
             :selected-admin-level="selectedAdminLevel"
             :number-of-color-bins="numberOfColorBins"
             :ranking-weight="getDatacubeRankingWeight(item)"
@@ -191,7 +194,8 @@ import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
 import { AnalysisItem } from '@/types/Analysis';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
-import { MAX_ANALYSIS_DATACUBES_COUNT, getDatacubeKey } from '@/utils/analysis-util';
+import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import { v4 as uuidv4 } from 'uuid';
 
 const DRILLDOWN_TABS = [
   {
@@ -278,6 +282,11 @@ export default defineComponent({
               // ensure that some (valid initial) boolean value is added for each item
               const currSelectionCount = allAnalysisItems.filter(i => i.selected).length;
               item.selected = currSelectionCount < MAX_ANALYSIS_DATACUBES_COUNT;
+              shouldUpdateServerData = true;
+            }
+            // handle old analyses created without having uuid for each of their items
+            if (item.itemId === undefined) {
+              item.itemId = uuidv4();
               shouldUpdateServerData = true;
             }
           });
@@ -495,7 +504,7 @@ export default defineComponent({
           const allAnalysisItems = _.cloneDeep(analysisItems.value);
           const selectedItems = loadedInsight.data_state?.selectedAnalysisItems;
           allAnalysisItems.forEach(item => {
-            item.selected = selectedItems.findIndex(sItem => sItem.id === item.id && sItem.datacubeId === item.datacubeId) >= 0;
+            item.selected = selectedItems.findIndex(sItem => sItem.itemId === item.itemId) >= 0;
           });
           store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
         }
@@ -633,16 +642,16 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setDataState: 'insightPanel/setDataState'
     }),
-    getDatacubeRankingWeight(datacubeItem: AnalysisItem) {
-      const datacubeKey = getDatacubeKey(datacubeItem.id, datacubeItem.datacubeId);
+    getDatacubeRankingWeight(analysisItem: AnalysisItem) {
+      const datacubeKey = analysisItem.itemId;
       if (this.regionRankingWeights[datacubeKey]) {
         const weight = this.regionRankingWeights[datacubeKey].weight;
         return weight.toFixed(2);
       }
       return '0';
     },
-    isDatacubeInverted(datacubeItem: AnalysisItem) {
-      const datacubeKey = getDatacubeKey(datacubeItem.id, datacubeItem.datacubeId);
+    isDatacubeInverted(analysisItem: AnalysisItem) {
+      const datacubeKey = analysisItem.itemId;
       return this.regionRankingDataInversion[datacubeKey];
     },
     setRegionRankingEqualWeight() {
@@ -669,18 +678,18 @@ export default defineComponent({
         this.updateGlobalRegionRankingData();
       }
     },
-    onToggleRegionRankingDataInversion(regionRankingInfo: {id: string; datacubeId: string;}) {
+    onToggleRegionRankingDataInversion(regionRankingInfo: {id: string; datacubeId: string; itemId: string;}) {
       const regionRankingDataInversionUpdated = _.cloneDeep(this.regionRankingDataInversion);
-      const datacubeKey = getDatacubeKey(regionRankingInfo.id, regionRankingInfo.datacubeId);
+      const datacubeKey = regionRankingInfo.itemId;
       if (regionRankingDataInversionUpdated[datacubeKey] === undefined) {
         regionRankingDataInversionUpdated[datacubeKey] = false;
       }
       regionRankingDataInversionUpdated[datacubeKey] = !regionRankingDataInversionUpdated[datacubeKey];
       this.regionRankingDataInversion = regionRankingDataInversionUpdated;
     },
-    onUpdatedBarsData(regionRankingInfo: {id: string; datacubeId: string; name: string; barsData: BarData[]; selectedTimestamp: number}) {
+    onUpdatedBarsData(regionRankingInfo: {id: string; datacubeId: string; itemId: string; name: string; barsData: BarData[]; selectedTimestamp: number}) {
       // clone and save the incoming regional-ranking data in the global map object
-      const datacubeKey = getDatacubeKey(regionRankingInfo.id, regionRankingInfo.datacubeId);
+      const datacubeKey = regionRankingInfo.itemId;
       this.allRegionalRankingMap[datacubeKey] = _.cloneDeep(regionRankingInfo.barsData);
 
       // save the most recent timestamp from all datacubes as the global one
@@ -777,7 +786,7 @@ export default defineComponent({
       // limit the number of bars to the selected maximum
       this.globalBarsData = this.limitNumberOfChartBars ? compositeDataSorted.slice(-this.maxNumberOfChartBars) : compositeDataSorted;
     },
-    onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; source: string; region: string[]}) {
+    onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; itemId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; source: string; region: string[]}) {
       // we should only set the global timeseries one time
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
@@ -790,7 +799,7 @@ export default defineComponent({
 
       // clone and save the incoming timeseries in the map object
       //  where all timeseries lists will be saved
-      const datacubeKey = getDatacubeKey(timeseriesInfo.id, timeseriesInfo.datacubeId);
+      const datacubeKey = timeseriesInfo.itemId;
       this.allTimeseriesMap[datacubeKey] = _.cloneDeep(timeseriesInfo.timeseriesList);
 
       this.allDatacubesMetadataMap[datacubeKey] = {

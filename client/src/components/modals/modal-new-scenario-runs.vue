@@ -60,7 +60,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, toRefs } from 'vue';
+import { defineComponent, PropType, ref, toRefs } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
@@ -108,7 +108,9 @@ export default defineComponent({
   setup(props) {
     const { metadata } = toRefs(props);
 
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
+    // since model runs are shared between all model instances including their duplicate versions,
+    // then it is enough to use the data_id as the itemId that uniquely identify this model
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(metadata.value.data_id));
 
     return {
       currentOutputIndex,

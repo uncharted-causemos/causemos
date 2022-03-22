@@ -11,4 +11,6 @@ declare module 'v-tooltip';
 
 declare module 'vsup';
 
+declare module 'uuid';
+
 declare module 'file-saver';
