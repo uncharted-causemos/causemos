@@ -4,30 +4,34 @@
       {{ node.label }}
     </header>
     <div style="flex-grow: 1">
-      <svg ref="chartRef" />
+      <svg ref="chartRef"></svg>
     </div>
-    <svg
-      class="arrow"
-      :class="{ 'is-outgoing-arrow': isDriver }"
-      :viewBox="MARKER_VIEWBOX"
-    >
-      <line x1="-5" y1="0" x2="0" y2="0" :style="edgeStyle"/>
-      <path :d="ARROW" :fill="edgeColor" stroke="none" />
-    </svg>
+    <div class="arrow" :class="{ 'is-outgoing-arrow': isDriver }">
+      <div class="arrow-head" :style="{ borderLeftColor: edgeColor }"></div>
+      <div class="arrow-tail" :style="{ height: `${edgeStyle.strokeWidth}px` }">
+        <div
+          class="arrow-tail-segment"
+          :style="{ background: edgeColor }"
+        ></div>
+        <div
+          v-if="edgeStyle.isDashed"
+          class="arrow-tail-segment"
+          :style="{ background: edgeColor }"
+        ></div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { ref, computed, defineComponent, PropType } from 'vue';
 import * as d3 from 'd3';
-import { ARROW, MARKER_VIEWBOX } from '@/utils/svg-util';
 import { EdgeParameter, NodeParameter } from '@/types/CAG';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 
-const BASE_EDGE_WIDTH = 0.5;
-const NO_EVIDENCE_DASH = '2, 1';
+const BASE_EDGE_WIDTH = 5;
 
 export default defineComponent({
   name: 'NeighborNode',
@@ -62,8 +66,7 @@ export default defineComponent({
     const edgeColor = computed(() => calcEdgeColor(props.edge));
     const edgeStyle = computed(() => {
       return {
-        stroke: edgeColor.value,
-        strokeDasharray: hasBackingEvidence(props.edge) ? null : NO_EVIDENCE_DASH,
+        isDashed: !hasBackingEvidence(props.edge),
         strokeWidth: scaleByWeight(BASE_EDGE_WIDTH, props.edge)
       };
     });
@@ -74,8 +77,6 @@ export default defineComponent({
     });
 
     return {
-      ARROW,
-      MARKER_VIEWBOX,
       edgeStyle,
       edgeColor,
       nodeChartData,
@@ -152,4 +153,38 @@ header {
     z-index: 2;
   }
 }
+
+// Great article explaining how to render triangles using <div>s
+// https://css-tricks.com/snippets/css/css-triangle/
+$arrow-head-width: 10px;
+.arrow-head {
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: $arrow-head-width solid transparent;
+  border-right: 0px solid transparent;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+$arrow-tail-overlap: 2.5px;
+.arrow-tail {
+  width: calc(100% - #{$arrow-head-width} + #{$arrow-tail-overlap});
+  height: 5px;
+  position: absolute;
+  left: -$arrow-tail-overlap;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
+}
+
+.arrow-tail-segment {
+  flex: 1;
+  min-width: 0;
+}
+
 </style>
