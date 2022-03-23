@@ -171,7 +171,7 @@ export default defineComponent({
     watch([selectedNode, modelComponents], () => {
       const existingParams = selectedNode?.value?.parameter;
       const modelGeo = modelComponents.value?.parameter?.geography;
-      if (!existingParams && (modelComponents.value === null || modelGeo === undefined)) {
+      if (!existingParams && modelGeo === undefined) {
         return;
       }
       let country = modelGeo ? [modelGeo] : [];
