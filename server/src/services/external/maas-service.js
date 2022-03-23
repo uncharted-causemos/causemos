@@ -336,8 +336,8 @@ const startIndicatorPostProcessing = async (metadata) => {
       let qualifierMatches = [];
       if (metadata.qualifier_outputs) {
         // Filter out unrelated qualifiers
-        clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
-          qualifier => qualifier.related_features.includes(output.name));
+        clonedMetadata.qualifier_outputs = _.cloneDeep(metadata.qualifier_outputs.filter(
+          qualifier => qualifier.related_features.includes(output.name)));
 
         // Combine all concepts from the qualifiers into one list
         qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
