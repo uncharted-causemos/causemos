@@ -37,6 +37,13 @@
           @confirm="addNewTag"
           @cancel="showTagNameModal = false"
         />
+        <rename-modal
+          v-if="showRunNameModal"
+          :modal-title="'Rename run'"
+          :current-name="selectedScenarios[0].name"
+          @confirm="renameRun"
+          @cancel="showRunNameModal = false"
+        />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
@@ -47,6 +54,15 @@
               <span class="scenario-count" v-if="selectedScenarioIds.length > 0">
                 {{selectedScenarioIds.length}} model run{{selectedScenarioIds.length === 1 ? '' : 's'}} selected.
               </span>
+              <small-text-button
+                v-if="isPublishing && selectedScenarios.length === 1"
+                :label="'Rename ' + selectedScenarios[0].name"
+                @click="showRunNameModal = true"
+              >
+                <template #leading>
+                  <i class="fa fa-edit" />
+                </template>
+              </small-text-button>
               <span v-if="selectedScenarioIds.length > 0">Tags:</span>
               <small-text-button
                 v-for="(tag, index) in tagsSharedBySelectedRuns"
@@ -850,6 +866,7 @@ export default defineComponent({
     const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
 
     const showTagNameModal = ref<boolean>(false);
+    const showRunNameModal = ref<boolean>(false);
     const showScenarioTagsModal = ref<boolean>(false);
 
     const datePickerElement = ref<HTMLElement | null>(null);
@@ -1005,6 +1022,14 @@ export default defineComponent({
         runTags.value = tags;
       }
     });
+
+    const renameRun = async (newName: string) => {
+      // Rename can only be performed when one run is selected
+      const run = selectedScenarios.value[0];
+      run.name = newName;
+      showRunNameModal.value = false;
+      await updateModelRun({ id: run.id, name: newName });
+    };
 
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
@@ -2194,6 +2219,7 @@ export default defineComponent({
     return {
       activeReferenceOptions,
       addNewTag,
+      renameRun,
       allModelRunData,
       activeDrilldownTab,
       activeVizOptionsTab,
@@ -2308,6 +2334,7 @@ export default defineComponent({
       showScenarioTagsModal,
       showNewRunsModal,
       showTagNameModal,
+      showRunNameModal,
       SpatialAggregationLevel,
       TemporalAggregationLevel,
       temporalBreakdownData,
