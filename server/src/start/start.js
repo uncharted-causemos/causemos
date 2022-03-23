@@ -27,6 +27,7 @@ async function runStartup() {
   Logger.info(`\tDYSE_URL: ${process.env.DYSE_URL}`);
   Logger.info(`\tSENSEI_URL: ${process.env.SENSEI_URL}`);
   Logger.info(`\tWM_CURATION_SERVICE_URL: ${process.env.WM_CURATION_SERVICE_URL}`);
+  Logger.info(`\tSyncing changes to Dojo: ${serverConfiguration.dojoSync}`);
   Logger.info(`\tScheduled jobs: [${schedules}]`);
 
   // Force project cache to refresh the first time around
