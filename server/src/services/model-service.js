@@ -377,18 +377,28 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
       throw new Error(`${np.concept} is not parameterized`);
     } else {
       let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
+      const temporalResolution = _.get(np.parameter, 'temporalResolution', 'month');
+
+      // Historical data should be historical
       indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
 
+      // Temporary fallback so engines don't blow up - July 2021
       if (_.isEmpty(indicatorTimeSeries)) {
-        // FIXME: Temporary fallback so engines don't blow up - July 2021
-        indicatorTimeSeries = [
-          { value: 0.0, timestamp: Date.UTC(2017, 0) },
-          { value: 0.0, timestamp: Date.UTC(2017, 1) },
-          { value: 0.0, timestamp: Date.UTC(2017, 2) }
-        ];
+        console.log('\nEmpty indicator timeseries ... injecting dummy data');
+        if (temporalResolution === 'month') {
+          indicatorTimeSeries = [
+            { value: 0.0, timestamp: Date.UTC(2017, 0) },
+            { value: 0.0, timestamp: Date.UTC(2017, 1) },
+            { value: 0.0, timestamp: Date.UTC(2017, 2) }
+          ];
+        } else {
+          indicatorTimeSeries = [
+            { value: 0.5, timestamp: Date.UTC(2017, 0) },
+            { value: 0.5, timestamp: Date.UTC(2018, 0) },
+            { value: 0.5, timestamp: Date.UTC(2019, 0) }
+          ];
+        }
       }
-
-      const temporalResolution = _.get(np.parameter, 'temporalResolution', 'month');
 
       // More hack: DySE needs at least 2 data points
       if (indicatorTimeSeries.length === 1) {
@@ -480,6 +490,7 @@ const buildCreateModelPayload = async (model, nodeParameters, edgeParameters) =>
 };
 
 
+// @deprecated Only used by Delphi and Delphi_Dev
 const buildCreateModelPayloadDeprecated = async (model, nodeParameters, edgeParameters) => {
   const modelStatements = await buildModelStatements(model.id);
 
@@ -498,6 +509,7 @@ const buildCreateModelPayloadDeprecated = async (model, nodeParameters, edgePara
   };
 };
 
+// @deprecated - Only Delphi and Delphi_Dev
 const buildNodeParametersPayloadDeprecated = (nodeParameters, model) => {
   const r = {};
 
@@ -510,21 +522,33 @@ const buildNodeParametersPayloadDeprecated = (nodeParameters, model) => {
       throw new Error(`${np.concept} is not parameterized`);
     } else {
       let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
+      const temporalResolution = _.get(np.parameter, 'temporalResolution', 'month');
       indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
 
       if (_.isEmpty(indicatorTimeSeries)) {
-        // FIXME: Temporary fallback so engines don't blow up - July 2021
-        indicatorTimeSeries = [
-          { value: 0.0, timestamp: Date.UTC(2017, 0) },
-          { value: 0.0, timestamp: Date.UTC(2017, 1) },
-          { value: 0.0, timestamp: Date.UTC(2017, 2) }
-        ];
+        // Temporary fallback so engines don't blow up - July 2021
+        if (temporalResolution === 'month') {
+          indicatorTimeSeries = [
+            { value: 0.0, timestamp: Date.UTC(2017, 0) },
+            { value: 0.0, timestamp: Date.UTC(2017, 1) },
+            { value: 0.0, timestamp: Date.UTC(2017, 2) }
+          ];
+        } else {
+          indicatorTimeSeries = [
+            { value: 0.5, timestamp: Date.UTC(2017, 0) },
+            { value: 0.5, timestamp: Date.UTC(2018, 0) },
+            { value: 0.5, timestamp: Date.UTC(2019, 0) }
+          ];
+        }
       }
 
       // More hack: DySE needs at least 2 data points
       if (indicatorTimeSeries.length === 1) {
         const timestamp = indicatorTimeSeries[0].timestamp;
-        const prevTimestamp = moment.utc(timestamp).subtract(1, 'months').valueOf();
+        const prevTimestamp = moment
+          .utc(timestamp)
+          .subtract(1, `${temporalResolution}s`)
+          .valueOf();
         indicatorTimeSeries.unshift({
           value: indicatorTimeSeries[0].value,
           timestamp: prevTimestamp
@@ -563,7 +587,7 @@ module.exports = {
 
   buildCreateModelPayload,
 
-  // To deprecated once Graph-like api is in
+  // To deprecated once Graph-like api is in for Delphi
   buildCreateModelPayloadDeprecated,
   buildNodeParametersPayloadDeprecated
 };
