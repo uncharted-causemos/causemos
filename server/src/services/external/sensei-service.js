@@ -41,6 +41,14 @@ const createModel = async (payload) => {
     }
     const w = edge.weights.map(parseFloat);
     acc[key].weights = w.map(v => Math.abs(v));
+
+    // Sensei has polarity values encoded as positive/negative trend weight
+    if (+w[1] > 0) {
+      acc[key].weights.push(1);
+    } else {
+      acc[key].weights.push(-1);
+    }
+
     return acc;
   }, {});
   return { nodes, edges, status: result.status };
