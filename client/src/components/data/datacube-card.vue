@@ -668,7 +668,12 @@ import {
   getOutputs
 } from '@/utils/datacube-util';
 import { normalize } from '@/utils/value-util';
-import { initDataStateFromRefs, initViewStateFromRefs, fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
+import {
+  initDataStateFromRefs,
+  initViewStateFromRefs,
+  fromStateSelectedRegionsAtAllLevels,
+  validateSelectedRegions
+} from '@/utils/drilldown-util';
 import {
   BASE_LAYER,
   DATA_LAYER,
@@ -1240,7 +1245,9 @@ export default defineComponent({
             initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
           }
           if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
-            selectedRegionIdsAtAllLevels.value = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
+            const regions = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
+            const { isInvalid, validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
+            selectedRegionIdsAtAllLevels.value = isInvalid ? validRegions : regions;
           }
           if (initialDataConfig.value.selectedOutputVariables !== undefined) {
             initialSelectedOutputVariables.value = _.clone(initialDataConfig.value.selectedOutputVariables);
@@ -1672,7 +1679,9 @@ export default defineComponent({
           initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
         }
         if (loadedInsight.data_state?.selectedRegionIdsAtAllLevels !== undefined) {
-          selectedRegionIdsAtAllLevels.value = fromStateSelectedRegionsAtAllLevels(loadedInsight.data_state?.selectedRegionIdsAtAllLevels);
+          const regions = fromStateSelectedRegionsAtAllLevels(loadedInsight.data_state?.selectedRegionIdsAtAllLevels);
+          const { isInvalid, validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
+          selectedRegionIdsAtAllLevels.value = isInvalid ? validRegions : regions;
         }
         if (loadedInsight.data_state?.selectedOutputVariables !== undefined) {
           initialSelectedOutputVariables.value = _.clone(loadedInsight.data_state?.selectedOutputVariables);

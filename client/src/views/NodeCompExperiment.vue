@@ -112,7 +112,7 @@ import { getOutputs, getSelectedOutput, getValidatedOutputs, STATUS } from '@/ut
 import filtersUtil from '@/utils/filters-util';
 
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
-import { ViewState } from '@/types/Insight';
+import { DataState, ViewState } from '@/types/Insight';
 import { getDatacubeKeyFromAnalysis, updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
@@ -142,6 +142,7 @@ export default defineComponent({
     const dataState = computed(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const initialViewConfig = ref<ViewState | null>(null);
+    const initialDataConfig = ref<Partial<DataState> | null>(null);
 
     const isTimeseriesSelectionModalOpen = ref(false);
     const selectedTimeseriesIndex = ref(0);
@@ -167,15 +168,24 @@ export default defineComponent({
       return modelComponents.value.nodes.find((node: { id: any }) => node.id === nodeId.value);
     });
 
-    // FIXME: Just restoring the country for now since we are explictly tracking it.
-    // Should expand to encompass other properties
-    const initialDataConfig = computed(() => {
-      if (modelComponents.value === null || modelComponents.value.parameter.geography === undefined) {
-        return null;
+    watch([selectedNode, modelComponents], () => {
+      const existingParams = selectedNode?.value?.parameter;
+      const modelGeo = modelComponents.value?.parameter?.geography;
+      if (!existingParams && (modelComponents.value === null || modelGeo === undefined)) {
+        return;
       }
-      return {
+      let country = modelGeo ? [modelGeo] : [];
+      if (existingParams.id !== null) {
+        // Only use the CAG geography for Abstract nodes
+        // If there is already a quantification and country === '' it means the user explicitly chose 'All'
+        country = existingParams.country ? [existingParams.country] : [];
+      }
+      initialDataConfig.value = {
         selectedRegionIdsAtAllLevels: {
-          country: [modelComponents.value.parameter.geography]
+          country,
+          admin1: [],
+          admin2: [],
+          admin3: []
         }
       };
     });
