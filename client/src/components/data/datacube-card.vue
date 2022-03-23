@@ -1025,6 +1025,10 @@ export default defineComponent({
 
     const renameRun = async (newName: string) => {
       // Rename can only be performed when one run is selected
+      if (selectedScenarios.value.length !== 1) {
+        return;
+      }
+
       const run = selectedScenarios.value[0];
       run.name = newName;
       showRunNameModal.value = false;
