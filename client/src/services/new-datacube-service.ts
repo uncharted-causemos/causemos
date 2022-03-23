@@ -201,7 +201,7 @@ export const getDatacubeSuggestions = async (queryString: string) => {
   return data;
 };
 
-export const updateModelRun = async (modelRun: ModelRun) => {
+export const updateModelRun = async (modelRun: Partial<ModelRun>) => {
   const result = await API.put(`maas/model-runs/${modelRun.id}`, modelRun);
   return result.data;
 };
