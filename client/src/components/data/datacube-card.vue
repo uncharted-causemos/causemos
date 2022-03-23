@@ -1246,8 +1246,8 @@ export default defineComponent({
           }
           if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
             const regions = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
-            const { isInvalid, validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
-            selectedRegionIdsAtAllLevels.value = isInvalid ? validRegions : regions;
+            const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
+            selectedRegionIdsAtAllLevels.value = validRegions;
           }
           if (initialDataConfig.value.selectedOutputVariables !== undefined) {
             initialSelectedOutputVariables.value = _.clone(initialDataConfig.value.selectedOutputVariables);
@@ -1680,8 +1680,8 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.selectedRegionIdsAtAllLevels !== undefined) {
           const regions = fromStateSelectedRegionsAtAllLevels(loadedInsight.data_state?.selectedRegionIdsAtAllLevels);
-          const { isInvalid, validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
-          selectedRegionIdsAtAllLevels.value = isInvalid ? validRegions : regions;
+          const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
+          selectedRegionIdsAtAllLevels.value = validRegions;
         }
         if (loadedInsight.data_state?.selectedOutputVariables !== undefined) {
           initialSelectedOutputVariables.value = _.clone(loadedInsight.data_state?.selectedOutputVariables);
