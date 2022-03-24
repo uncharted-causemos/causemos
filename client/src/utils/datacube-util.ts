@@ -307,7 +307,8 @@ export const unpublishDatacube = async (datacubeId: string, projectId: string) =
 export const unpublishDatacubeInstance = async (instance: Model, projectId: string) => {
   // unpublish the datacube instance
   instance.status = DatacubeStatus.Registered;
-  await updateDatacube(instance.id, instance);
+  const delta = { id: instance.id, status: instance.status };
+  await updateDatacube(instance.id, delta);
 
   // also, update the project stats count
   const domainProject: DomainProject = await domainProjectService.getProject(projectId);

@@ -19,7 +19,8 @@ export default function useOutputSpecs(
     const modelMetadata = metadata.value;
     if (
       selectedModelId.value === null ||
-      modelMetadata === null
+      modelMetadata === null ||
+      activeFeatures.value.length === 0
     ) {
       return [];
     }
@@ -83,7 +84,7 @@ export default function useOutputSpecs(
       }
 
       return outputSpec;
-    }).filter(os => os.timestamp && !isNaN(os.timestamp));
+    }).filter(os => os.timestamp !== undefined && !isNaN(os.timestamp));
   });
   return { outputSpecs };
 }

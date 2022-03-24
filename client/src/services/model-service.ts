@@ -749,7 +749,7 @@ export enum Engine {
 }
 
 export const supportsPolarityInference = (engine: Engine) => {
-  return engine === Engine.Delphi || engine === Engine.DelphiDev;
+  return engine === Engine.Delphi || engine === Engine.DelphiDev || engine === Engine.Sensei;
 };
 
 export const supportsLevelEdges = (engine: Engine) => {

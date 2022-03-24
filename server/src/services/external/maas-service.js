@@ -10,6 +10,8 @@ const domainProjectService = rootRequire('/services/domain-project-service');
 const datacubeService = rootRequire('/services/datacube-service');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
+const config = rootRequire('/config/yargs-wrapper');
+const allowModelRuns = config.allowModelRuns;
 const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
 const QUALIFIER_MAX_COUNT = 10000;
 const QUALIFIER_TIMESERIES_MAX_COUNT = 100;
@@ -27,7 +29,7 @@ const submitModelRun = async(metadata) => {
     parameters,
     is_default_run = false
   } = metadata;
-  const isDevEnvironment = process.env.TD_DATA_URL.includes('10.65.18.69');
+
   const filteredMetadata = {
     model_id,
     model_name,
@@ -54,7 +56,7 @@ const submitModelRun = async(metadata) => {
   Logger.info(`Submitting execution request for id: ${filteredMetadata.id}`);
   let result;
   try {
-    if (!isDevEnvironment) {
+    if (allowModelRuns) {
       result = await requestAsPromise(pipelinePayload);
     }
   } catch (err) {
@@ -79,7 +81,8 @@ const submitModelRun = async(metadata) => {
       status: 'SUBMITTED',
       name: runName
     }, d => d.id);
-    if (isDevEnvironment) {
+    // If we didn't send the run to Dojo, "simulate" it and fail after some time
+    if (!allowModelRuns) {
       setTimeout(async () => {
         await connection.update({
           ...filteredMetadata,
@@ -336,8 +339,8 @@ const startIndicatorPostProcessing = async (metadata) => {
       let qualifierMatches = [];
       if (metadata.qualifier_outputs) {
         // Filter out unrelated qualifiers
-        clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
-          qualifier => qualifier.related_features.includes(output.name));
+        clonedMetadata.qualifier_outputs = _.cloneDeep(metadata.qualifier_outputs.filter(
+          qualifier => qualifier.related_features.includes(output.name)));
 
         // Combine all concepts from the qualifiers into one list
         qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [

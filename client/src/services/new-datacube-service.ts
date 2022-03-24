@@ -103,7 +103,7 @@ const _getDatacubesCount = async (datacubeType: string) => {
  * @param metadata an object of all metadata fields and their new values
  * @returns success or error on failure
  */
-export const updateDatacube = async (datacubeId: string, metadata: Model) => {
+export const updateDatacube = async (datacubeId: string, metadata: Partial<Model>) => {
   const result = await API.put(`maas/datacubes/${datacubeId}`, metadata);
   return result.data;
 };
@@ -114,7 +114,7 @@ export const updateDatacube = async (datacubeId: string, metadata: Model) => {
  * @returns success or error on failure
  */
 export const updateIndicatorsBulk = async (metaDeltas: { id: string; [key: string]: any }[]) => {
-  const result = await API.post('maas/datacubes/bulk-update', { deltas: metaDeltas });
+  const result = await API.post('maas/datacubes/bulk-update-indicator', { deltas: metaDeltas });
   return result.data;
 };
 
@@ -201,7 +201,7 @@ export const getDatacubeSuggestions = async (queryString: string) => {
   return data;
 };
 
-export const updateModelRun = async (modelRun: ModelRun) => {
+export const updateModelRun = async (modelRun: Partial<ModelRun>) => {
   const result = await API.put(`maas/model-runs/${modelRun.id}`, modelRun);
   return result.data;
 };

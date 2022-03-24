@@ -247,7 +247,7 @@ export default defineComponent({
         domains: newDomains
       };
       try {
-        await updateDatacube(delta.id, delta as Model);
+        await updateDatacube(delta.id, delta);
         this.$emit('update-domains', delta.id, delta.domains);
       } catch {
         useToaster()('Saving Domains failed', 'error');

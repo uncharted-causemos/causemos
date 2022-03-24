@@ -95,14 +95,13 @@
 <script lang="ts">
 
 import moment from 'moment';
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, ref, computed, toRefs, watch } from 'vue';
 import { useStore } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
 import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { isIndicator, isModel } from '../../utils/datacube-util';
 import { Datacube, ModelParameter } from '@/types/Datacube';
-
 
 export default defineComponent({
   name: 'SearchListview',
@@ -120,7 +119,7 @@ export default defineComponent({
       default: false
     }
   },
-  setup() {
+  setup(props) {
     const store = useStore();
     const expandedRowId = ref('');
     const selectedDatacubes = computed<Datacube[]>(() => {
@@ -129,6 +128,18 @@ export default defineComponent({
     const setSelectedDatacubes = (items: Datacube[]) => {
       store.dispatch('dataSearch/setSelectedDatacubes', items);
     };
+
+    const { datacubes } = toRefs(props);
+
+    watch(
+      datacubes,
+      () => {
+        const elem:any = document.getElementsByClassName('table-fixed-head');
+        if (elem.length === 0) return;
+        elem[0].scrollTop = 0;
+      },
+      { immediate: true }
+    );
 
     return {
       expandedRowId,

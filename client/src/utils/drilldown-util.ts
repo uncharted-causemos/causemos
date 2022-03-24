@@ -9,6 +9,9 @@ import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { OutputVariableSpecs } from '@/types/Outputdata';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { PreGeneratedModelRunData } from '@/types/ModelRun';
+import { DatacubeGeography } from '@/types/Common';
+import _ from 'lodash';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 
 export const toStateSelectedRegionsAtAllLevels = (data: AdminRegionSets) => {
   return {
@@ -35,6 +38,22 @@ export const fromStateSelectedRegionsAtAllLevels = (data: { country: string[], a
     admin2: new Set(data.admin2),
     admin3: new Set(data.admin3)
   };
+};
+
+export const validateSelectedRegions = (selectedRegions: AdminRegionSets, hierarchy: DatacubeGeography | null) => {
+  let isInvalid = false;
+  const validRegions = _.cloneDeep(selectedRegions);
+  ADMIN_LEVEL_KEYS.forEach(adminKey => {
+    if (hierarchy && adminKey !== 'admin4' && adminKey !== 'admin5') { // why are these even here?
+      const selected = [...selectedRegions[adminKey]];
+      const validList = _.intersection(hierarchy[adminKey], selected);
+      if (selected.length !== validList.length) {
+        isInvalid = true;
+        validRegions[adminKey] = new Set(validList);
+      }
+    }
+  });
+  return { isInvalid, validRegions };
 };
 
 export const aggregationOptionFiltered = Object.values(AggregationOption).filter(ao => AggregationOption.None as string !== ao);

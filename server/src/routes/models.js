@@ -292,7 +292,8 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
     Logger.debug(`${key} => engineInferred=${engineInferredWeights}, current=${currentWeights}, currentEngine=${currentEngineWeights}`);
 
     // Update inferred engine weights
-    if (engine === DELPHI || engine === DELPHI_DEV) {
+    // - Both Delphi and Sensei returns extra polarity information, so their arry is of length 3 instead of 2
+    if (engine === DELPHI || engine === DELPHI_DEV || engine === SENSEI) {
       Logger.debug(`\tcurrentEngine=${currentEngineWeights}, inferred=${engineInferredWeights}`);
       if (!currentEngineWeights || engineInferredWeights[1] !== currentEngineWeights[1]) {
         updateEngineConfig = true;

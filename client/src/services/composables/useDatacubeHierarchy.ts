@@ -2,10 +2,11 @@ import { DatacubeGeography } from '@/types/Common';
 import { Indicator, Model } from '@/types/Datacube';
 import { AdminRegionSets } from '@/types/Datacubes';
 import _ from 'lodash';
-import { computed, ref, Ref, watchEffect } from 'vue';
+import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import { getRegionLists } from '../outputdata-service';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
+import { validateSelectedRegions } from '@/utils/drilldown-util';
 
 export default function useDatacubeHierarchy(
   selectedScenarioIds: Ref<string[]>,
@@ -63,6 +64,14 @@ export default function useDatacubeHierarchy(
     admin1: new Set(),
     admin2: new Set(),
     admin3: new Set()
+  });
+
+  // When a new hierarchy arrives validate the selected regions to ensure they exist in this datacube
+  watch([datacubeHierarchy], () => {
+    const { isInvalid, validRegions } = validateSelectedRegions(selectedRegionIdsAtAllLevels.value, datacubeHierarchy.value);
+    if (isInvalid) {
+      selectedRegionIdsAtAllLevels.value = validRegions;
+    }
   });
 
   watchEffect(() => {
