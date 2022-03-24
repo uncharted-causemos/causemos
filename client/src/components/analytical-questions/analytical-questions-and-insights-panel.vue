@@ -8,7 +8,7 @@
     @set-active="setActive"
   >
       <list-datacubes-drawer-pane
-        v-if="currentTab === 'Datacube Drawer'" />
+        v-if="currentTab === 'Available datacubes'" />
 
       <list-context-insight-pane
         v-if="currentTab === 'Context Insights'" />
@@ -40,7 +40,7 @@ export default defineComponent({
     const tabs = computed(() => {
       if (currentView.value === 'dataComparative') {
         return [
-          { name: 'Datacube Drawer', icon: 'fa fa-fw fa-circle fa-lg' },
+          { name: 'Available datacubes', icon: 'fa fa-fw fa-circle fa-lg' },
           // { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
           { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' }
         ];
