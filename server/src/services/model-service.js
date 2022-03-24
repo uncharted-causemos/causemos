@@ -364,6 +364,35 @@ const clearNodeParameter = async (modelId, nodeId) => {
   }
 };
 
+// This is a hack that's been in place since before July 2021.
+// DySE needs at least 2 points, results will likely be nonsensical with fewer
+//  than 3. This function injects points immediately preceding the oldest
+//  historical data point (or the projection start if there are no points) until
+//  there are at least 3 points. Each injected point has the oldest historical
+//  data point's value (or 0.5 if there are no points).
+// Timestamps are selected to ensure the points are before projection start, and
+//  don't introduce a gap before any legitimate data.
+const injectDummyData = (timeseries, temporalResolution, projectionStart) => {
+  const pointsToInject = 3 - timeseries.length;
+  if (pointsToInject < 1) {
+    return;
+  }
+  // Assume timeseries is sorted
+  const oldestTimestamp =
+    timeseries.length > 0 ? timeseries[0].timestamp : projectionStart;
+  const value = timeseries.length > 0 ? timeseries[0].value : 0.5;
+  console.log(
+    `Insufficient timeseries length. Injecting ${pointsToInject} point(s) with a value of ${value}.`
+  );
+  for (let index = 1; index <= pointsToInject; index++) {
+    const timestamp = moment
+      .utc(oldestTimestamp)
+      .subtract(index, `${temporalResolution}s`)
+      .valueOf();
+    timeseries.unshift({ value, timestamp });
+  }
+};
+
 /**
  *
  */
@@ -382,36 +411,11 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
       // Historical data should be historical
       indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
 
-      // Temporary fallback so engines don't blow up - July 2021
-      if (_.isEmpty(indicatorTimeSeries)) {
-        console.log('\nEmpty indicator timeseries ... injecting dummy data');
-        if (temporalResolution === 'month') {
-          indicatorTimeSeries = [
-            { value: 0.0, timestamp: Date.UTC(2017, 0) },
-            { value: 0.0, timestamp: Date.UTC(2017, 1) },
-            { value: 0.0, timestamp: Date.UTC(2017, 2) }
-          ];
-        } else {
-          indicatorTimeSeries = [
-            { value: 0.5, timestamp: Date.UTC(2017, 0) },
-            { value: 0.5, timestamp: Date.UTC(2018, 0) },
-            { value: 0.5, timestamp: Date.UTC(2019, 0) }
-          ];
-        }
-      }
-
-      // More hack: DySE needs at least 2 data points
-      if (indicatorTimeSeries.length === 1) {
-        const timestamp = indicatorTimeSeries[0].timestamp;
-        const prevTimestamp = moment
-          .utc(timestamp)
-          .subtract(1, `${temporalResolution}s`)
-          .valueOf();
-        indicatorTimeSeries.unshift({
-          value: indicatorTimeSeries[0].value,
-          timestamp: prevTimestamp
-        });
-      }
+      injectDummyData(
+        indicatorTimeSeries,
+        temporalResolution,
+        projectionStart
+      );
 
       r.push({
         concept: np.concept,
@@ -525,35 +529,11 @@ const buildNodeParametersPayloadDeprecated = (nodeParameters, model) => {
       const temporalResolution = _.get(np.parameter, 'temporalResolution', 'month');
       indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
 
-      if (_.isEmpty(indicatorTimeSeries)) {
-        // Temporary fallback so engines don't blow up - July 2021
-        if (temporalResolution === 'month') {
-          indicatorTimeSeries = [
-            { value: 0.0, timestamp: Date.UTC(2017, 0) },
-            { value: 0.0, timestamp: Date.UTC(2017, 1) },
-            { value: 0.0, timestamp: Date.UTC(2017, 2) }
-          ];
-        } else {
-          indicatorTimeSeries = [
-            { value: 0.5, timestamp: Date.UTC(2017, 0) },
-            { value: 0.5, timestamp: Date.UTC(2018, 0) },
-            { value: 0.5, timestamp: Date.UTC(2019, 0) }
-          ];
-        }
-      }
-
-      // More hack: DySE needs at least 2 data points
-      if (indicatorTimeSeries.length === 1) {
-        const timestamp = indicatorTimeSeries[0].timestamp;
-        const prevTimestamp = moment
-          .utc(timestamp)
-          .subtract(1, `${temporalResolution}s`)
-          .valueOf();
-        indicatorTimeSeries.unshift({
-          value: indicatorTimeSeries[0].value,
-          timestamp: prevTimestamp
-        });
-      }
+      injectDummyData(
+        indicatorTimeSeries,
+        temporalResolution,
+        projectionStart
+      );
 
       r[np.concept] = {
         // Need to have unique indicator names because Delphi can't handle duplicates
