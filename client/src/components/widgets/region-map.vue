@@ -316,11 +316,13 @@ export default defineComponent({
       this.$emit('click-region', regionId);
     },
     updateSelection() {
-      this.data.forEach(d => {
-        this.map.removeFeatureState({ source: this.vectorSourceId, id: d.label, sourceLayer: this.vectorSourceLayer }, 'selected');
-      });
-      if (this.selectedId) {
-        this.map.setFeatureState({ source: this.vectorSourceId, id: this.selectedId, sourceLayer: this.vectorSourceLayer }, { selected: true });
+      if (this.map) {
+        this.data.forEach(d => {
+          this.map.removeFeatureState({ source: this.vectorSourceId, id: d.label, sourceLayer: this.vectorSourceLayer }, 'selected');
+        });
+        if (this.selectedId) {
+          this.map.setFeatureState({ source: this.vectorSourceId, id: this.selectedId, sourceLayer: this.vectorSourceLayer }, { selected: true });
+        }
       }
     }
   }

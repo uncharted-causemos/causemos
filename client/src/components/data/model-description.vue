@@ -259,7 +259,6 @@ import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import { getOutputs } from '@/utils/datacube-util';
 import { scrollToElement } from '@/utils/dom-util';
 import DropdownButton from '@/components/dropdown-button.vue';
-import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
@@ -273,6 +272,10 @@ export default defineComponent({
     metadata: {
       type: Object as PropType<Model | null>,
       default: null
+    },
+    itemId: {
+      type: String,
+      required: true
     }
   },
   emits: [
@@ -280,7 +283,7 @@ export default defineComponent({
     'refresh-metadata'
   ],
   setup(props, { emit }) {
-    const { metadata } = toRefs(props);
+    const { metadata, itemId } = toRefs(props);
     const store = useStore();
     const route = useRoute();
 
@@ -382,7 +385,7 @@ export default defineComponent({
     // NOTE: this index is mostly driven from the component 'datacube-model-header'
     //       which may list either all outputs or only the validated ones
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
     const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
       return metadata.value ? metadata.value.outputs : [];
@@ -548,7 +551,7 @@ export default defineComponent({
       if (output.name !== this.currentOutputFeature.name) {
         const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
         if (this.currentOutputIndex > 0) { // REVIEW!?
-          const datacubeKey = getDatacubeKeyFromAnalysis(this.metadata, this.store, this.route);
+          const datacubeKey = this.itemId;
           updatedCurrentOutputsMap[datacubeKey] = this.currentOutputIndex - 1;
         }
         this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);

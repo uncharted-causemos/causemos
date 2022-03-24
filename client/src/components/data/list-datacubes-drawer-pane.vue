@@ -82,7 +82,7 @@ export default defineComponent({
     toggleItemSelection(item: AnalysisItem) {
       if (item.selected || this.canSelectItem) {
         const items = _.cloneDeep(this.datacubeItems);
-        const target = items.find(i => i.datacubeId === item.datacubeId && i.id === item.id);
+        const target = items.find(i => i.itemId === item.itemId);
         if (target) {
           target.selected = !target.selected;
         }
@@ -91,7 +91,7 @@ export default defineComponent({
       }
     },
     removeItem(item: AnalysisItem) {
-      const items = _.cloneDeep(this.datacubeItems).filter(i => i.datacubeId !== item.datacubeId && i.id !== item.id);
+      const items = _.cloneDeep(this.datacubeItems).filter(i => i.itemId !== item.itemId);
       this.datacubeItems = items;
       this.store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: this.analysisId, analysisItems: items });
     }

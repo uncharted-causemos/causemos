@@ -22,7 +22,6 @@
             Remove
           </div>
           <div
-            v-if="isModelMetadata"
             class="dropdown-option"
             @click="clickDuplicate"
           >
@@ -101,7 +100,7 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel } from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput } from '@/utils/datacube-util';
 import { getSelectedRegionIdsDisplay, filterRegionalLevelData, adminLevelToString } from '@/utils/admin-level-util';
 import { ModelRun } from '@/types/ModelRun';
 import {
@@ -130,7 +129,7 @@ import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { computeMapBoundsForCountries, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
-import { duplicateAnalysisItem, getDatacubeKey, openDatacubeDrilldown } from '@/utils/analysis-util';
+import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
 import { fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
@@ -153,6 +152,10 @@ export default defineComponent({
       required: true
     },
     datacubeId: {
+      type: String,
+      required: true
+    },
+    itemId: {
       type: String,
       required: true
     },
@@ -191,6 +194,7 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const {
+      itemId,
       id,
       datacubeId,
       selectedColorScheme,
@@ -203,8 +207,6 @@ export default defineComponent({
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
-
-    const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const bbox = ref<number[][] | { value: number[][], options: any } | undefined>(undefined);
@@ -225,7 +227,7 @@ export default defineComponent({
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataState | null>(null);
-    const datacubeAnalysisItem = analysisItems.value.find(item => item.id === props.id && item.datacubeId === datacubeId.value);
+    const datacubeAnalysisItem = analysisItems.value.find(item => item.itemId === itemId.value);
     if (datacubeAnalysisItem) {
       initialViewConfig.value = datacubeAnalysisItem.viewConfig;
       initialDataConfig.value = datacubeAnalysisItem.dataConfig;
@@ -236,7 +238,7 @@ export default defineComponent({
         outputs.value = getOutputs(metadata.value);
 
         let initialOutputIndex = 0;
-        const datacubeKey = getDatacubeKey(props.id, props.datacubeId);
+        const datacubeKey = props.itemId;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
         if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the default output of the current model
@@ -259,7 +261,7 @@ export default defineComponent({
 
     const {
       dimensions
-    } = useDatacubeDimensions(metadata);
+    } = useDatacubeDimensions(metadata, itemId);
 
     const modelRunsFetchedAt = ref(0);
     const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
@@ -300,7 +302,8 @@ export default defineComponent({
     const invertData = () => {
       emit('invert-data-updated', {
         id: id.value,
-        datacubeId: datacubeId.value
+        datacubeId: datacubeId.value,
+        itemId: itemId.value
       });
     };
 
@@ -323,7 +326,7 @@ export default defineComponent({
           }
           if (initialViewConfig.value.selectedOutputIndex !== undefined) {
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-            const datacubeKey = getDatacubeKey(props.id, props.datacubeId);
+            const datacubeKey = itemId.value;
             defaultOutputMap[datacubeKey] = initialViewConfig.value.selectedOutputIndex;
             store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
           }
@@ -354,7 +357,7 @@ export default defineComponent({
         immediate: true
       });
 
-    const { activeFeature } = useActiveDatacubeFeature(metadata);
+    const { activeFeature } = useActiveDatacubeFeature(metadata, itemId);
 
     const {
       datacubeHierarchy
@@ -599,6 +602,7 @@ export default defineComponent({
             emit('updated-bars-data', {
               id: id.value,
               datacubeId: datacubeId.value,
+              itemId: itemId.value,
               name: mainModelOutput.value?.display_name + ' : ' + metadata.value?.name,
               barsData: temp,
               selectedTimestamp: selectedTimestamp.value
@@ -656,7 +660,6 @@ export default defineComponent({
       selectedRegionRankingScenario,
       regionRunsScenarios,
       bbox,
-      isModelMetadata,
       mapLegendData,
       invertData
     };
@@ -666,13 +669,13 @@ export default defineComponent({
       removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
     }),
     openDrilldown() {
-      openDatacubeDrilldown(this.props.id, this.datacubeId, router, this.store);
+      openDatacubeDrilldown(this.props.id, this.itemId, router, this.store);
     },
     clickRemove() {
       // when removing, it is not enough to only send the datacube id to be removed
       //  since the datacube may have been duplicated multiple times
       //  and we need to suport removing one at a time
-      this.removeAnalysisItems([this.datacubeId]);
+      this.removeAnalysisItems([this.itemId]);
     },
     clickDuplicate() {
       if (this.metadata !== null) {
