@@ -1,7 +1,6 @@
 <template>
   <div class="list-datacubes-drawer-pane-container">
     <template v-if="datacubeItems.length > 0">
-      <div>List of Available Datacubes</div>
       <div v-for="item in datacubeItems"
         :key="item.datacubeId">
         <div class="checkbox">
@@ -105,7 +104,7 @@ export default defineComponent({
 
 .list-datacubes-drawer-pane-container {
   color: #707070;
-  overflow-y: hidden;
+  overflow-y: auto;
   height: 100%;
   display: flex;
   flex-direction: column;
