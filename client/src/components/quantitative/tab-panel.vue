@@ -85,6 +85,7 @@
             <!-- make this a component later-->
             <sensitivity-pane
               v-else-if="activeDrilldownTab === PANE_ID.SENSITIVITY && selectedNode !== null"
+              :model-summary="modelSummary"
               :model-components="modelComponents"
               :selected-node="selectedNode"
               :sensitivity-result="sensitivityResult"
