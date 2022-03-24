@@ -11,6 +11,7 @@ router.get('/settings', function(req, res, next) {
     logLevel: config.logLevel,
     cacheSize: config.cacheSize,
     dojoSync: config.dojoSync,
+    allowModelRuns: config.allowModelRuns,
     curationURL: env.WM_CURATION_SERVICE_URL,
     goURL: env.WM_GO_URL,
     tdDataURL: env.TD_DATA_URL,
