@@ -252,19 +252,19 @@
                 of all pre-rendered-viz items from all runs,
                 and enable selection by item name/id instead of index
                 which won't work when different model runs have different list of pre-rendered items -->
-              <div v-if="preGenDataItems.length > 0">
+              <div v-if="preGenDataIds.length > 0">
                 <div style="display: flex; padding: 5px;">
                   <div style="padding-right: 10px">Selected Viz:</div>
-                    <select name="pre-gen-outputs" @change="selectedPreGenDataItem=preGenDataItems[$event.target.selectedIndex]">
+                    <select name="pre-gen-outputs" @change="selectedPreGenDataId = preGenDataIds[$event.target.selectedIndex]">
                       <option
-                        v-for="pregenItem in preGenDataItems" :key="pregenItem.id"
-                        :selected="pregenItem.id === selectedPreGenDataItem.id"
+                        v-for="pregenId in preGenDataIds" :key="pregenId"
+                        :selected="pregenId === selectedPreGenDataId"
                       >
-                        {{pregenItem.id}}
+                        {{pregenId}}
                       </option>
                     </select>
                   <button
-                    v-if="selectedPreGenDataItem.type === 'image'"
+                    v-if="firstSelectedPreGenOutput.type === 'image'"
                     type="button"
                     class="btn btn-sm btn-primary btn-call-for-action"
                     style="margin-left: 10px"
@@ -273,11 +273,11 @@
                     Save As Insight
                   </button>
                   </div>
-                <div v-if="selectedPreGenDataItem.caption" style="padding-left: 5px; padding-right: 10px">{{selectedPreGenDataItem.caption}}</div>
+                <div v-if="firstSelectedPreGenOutput.caption" style="padding-left: 5px; padding-right: 10px">{{firstSelectedPreGenOutput.caption}}</div>
               </div>
 
               <div class="column card-maps-container" style="flex-direction: revert;">
-                <div v-for="(spec, indx) in outputSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec)"
+                <div v-for="(spec, indx) in outputSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec.id)"
                   class="card-map-container"
                   :style="{ borderColor: colorFromIndex(indx) }"
                   style="border-width: 2px; border-style: solid;"
@@ -661,7 +661,7 @@ import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datac
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import { OutputSpecWithId, OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
+import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
 
 import {
   COLOR,
@@ -1505,8 +1505,7 @@ export default defineComponent({
     );
 
     const preGenDataMap = ref<{[key: string]: PreGeneratedModelRunData[]}>({}); // map all pre-gen data for each run
-    const preGenDataItems = ref<PreGeneratedModelRunData[]>([]);
-    const selectedPreGenDataItem = ref<PreGeneratedModelRunData>({ file: '' }); // not sure if this is the best way to declare an 'empty' object of this specific type
+    const preGenDataIds = ref<string[]>([]); // a unique list of pre gen ids across all runs
     const selectedPreGenDataId = ref<string>('');
     watchEffect(() => {
       if (filteredRunData.value !== null && filteredRunData.value.length > 0) {
@@ -1521,34 +1520,17 @@ export default defineComponent({
             pregen.id = getPreGenItemDisplayName(pregen);
           });
           // utilized to access the caption, as well as the id for the dropdown
-          preGenDataItems.value = _.uniqBy(allPreGenData, 'id');
+          preGenDataIds.value = _.uniq(allPreGenData.map(pregen => pregen.id || ''));
 
-          // select first pre-gen data item once available
-          if (preGenDataItems.value.length > 0) {
-            const item = preGenDataItems.value.find(item => item.id === selectedPreGenDataId.value);
-            if (item) {
-              selectedPreGenDataItem.value = item;
-            } else {
-              selectedPreGenDataItem.value = preGenDataItems.value[0];
+          // reset the selected item if it no longer exists in the list
+          if (preGenDataIds.value.length > 0) {
+            if (!preGenDataIds.value.includes(selectedPreGenDataId.value)) {
+              selectedPreGenDataId.value = preGenDataIds.value[0];
             }
           }
         }
       }
     });
-
-    watch(
-      () => [selectedPreGenDataItem.value],
-      async () => {
-        if (selectedPreGenDataItem.value.file && selectedPreGenDataItem.value.type === 'image' && !selectedPreGenDataItem.value.embeddedSrc) {
-          const url = selectedPreGenDataItem.value.file;
-          const b64Str = await fetchImageAsBase64(url);
-          selectedPreGenDataItem.value.embeddedSrc = b64Str;
-        }
-      },
-      {
-        immediate: true
-      }
-    );
 
     function getPreGenItemDisplayName(pregen: PreGeneratedModelRunData) {
       // @REVIEW: use the resource file name
@@ -1556,9 +1538,37 @@ export default defineComponent({
       return pregen.file.substring(lastSlashIndx + 1);
     }
 
-    function getSelectedPreGenOutput(spec: OutputSpecWithId): PreGeneratedModelRunData | undefined {
-      return preGenDataMap.value[spec.id] ? preGenDataMap.value[spec.id].find(pregen => getPreGenItemDisplayName(pregen) === selectedPreGenDataItem.value.id) : undefined;
+    function getSelectedPreGenOutput(runId: string): PreGeneratedModelRunData | undefined {
+      return preGenDataMap.value[runId] ? preGenDataMap.value[runId].find(pregen => getPreGenItemDisplayName(pregen) === selectedPreGenDataId.value) : undefined;
     }
+
+    const firstSelectedPreGenOutput = computed(() => {
+      if (selectedScenarioIds.value.length < 1) {
+        return undefined;
+      }
+      return getSelectedPreGenOutput(selectedScenarioIds.value[0]);
+    });
+
+    async function fetchImageData(preGenDataItem?: PreGeneratedModelRunData) {
+      if (preGenDataItem?.file && preGenDataItem?.type === 'image' && !preGenDataItem?.embeddedSrc) {
+        const url = preGenDataItem.file;
+        const b64Str = await fetchImageAsBase64(url);
+        preGenDataItem.embeddedSrc = b64Str;
+      }
+    }
+
+    watch([selectedPreGenDataId, selectedScenarioIds],
+      async () => {
+        const promises = selectedScenarioIds.value.map(runId => {
+          const preGenOutput = getSelectedPreGenOutput(runId);
+          return fetchImageData(preGenOutput);
+        });
+        await Promise.all(promises);
+      },
+      {
+        immediate: true
+      }
+    );
 
     const dataPaths = computed((): string[] => {
       if (!_.isNull(metadata.value)) {
@@ -1575,7 +1585,7 @@ export default defineComponent({
     });
 
     const savePreGenAsInsight = async() => {
-      const url = selectedPreGenDataItem.value.file;
+      const url = firstSelectedPreGenOutput.value?.file;
       await store.dispatch('insightPanel/setSnapshotUrl', url);
       await store.dispatch('insightPanel/showInsightPanel');
       await store.dispatch('insightPanel/setUpdatedInsight', null);
@@ -2178,7 +2188,7 @@ export default defineComponent({
         selectedTransform,
         activeReferenceOptions,
         searchFilters,
-        selectedPreGenDataItem,
+        selectedPreGenDataId,
         visibleTimeseriesData
       );
 
@@ -2296,7 +2306,7 @@ export default defineComponent({
       potentialScenarios,
       potentialScenarioCount,
       projectType,
-      preGenDataItems,
+      preGenDataIds,
       qualifierBreakdownData,
       rawDataPointsList,
       outputVariableBreakdownData,
@@ -2325,7 +2335,8 @@ export default defineComponent({
       numberOfColorBins,
       referenceOptions,
       selectedDataLayer,
-      selectedPreGenDataItem,
+      firstSelectedPreGenOutput,
+      selectedPreGenDataId,
       selectedQualifierValues,
       selectedRegionIds,
       selectedRegionIdsAtAllLevels,
