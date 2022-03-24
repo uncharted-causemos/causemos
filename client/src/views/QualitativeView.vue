@@ -222,6 +222,7 @@
       @confirm="renameNode"
       :modal-title="'Rename node'"
       :current-name="renameNodeName"
+      :restricted-names="restrictedNames"
       @close="showModalRename = false"
     />
   </div>
@@ -437,6 +438,10 @@ export default defineComponent({
       const timeScale = this.modelSummary?.parameter?.time_scale;
       const timeScaleOption = TIME_SCALE_OPTIONS_MAP.get(timeScale ?? '');
       return timeScaleOption?.label ?? null;
+    },
+    restrictedNames() {
+      if (!this.modelComponents) return [];
+      return this.modelComponents.nodes.map(node => node.concept);
     }
   },
   watch: {

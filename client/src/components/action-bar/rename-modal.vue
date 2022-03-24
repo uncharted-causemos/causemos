@@ -20,7 +20,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import _ from 'lodash';
+import { defineComponent, ref, PropType } from 'vue';
+import useToaster from '@/services/composables/useToaster';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
 export default defineComponent({
@@ -36,15 +38,35 @@ export default defineComponent({
     currentName: {
       type: String,
       default: ''
+    },
+    restrictedNames: {
+      type: Array as PropType<string[]>,
+      default: []
     }
   },
   emits: ['confirm', 'cancel'],
-  data: () => ({
-    newNameInput: ''
-  }),
+  setup() {
+    const toaster = useToaster();
+    const newNameInput = ref('');
+
+    return {
+      newNameInput,
+      toaster
+    };
+  },
   methods: {
     onConfirm() {
-      if (this.newNameInput) {
+      const currName = this.currentName;
+      const newName = this.newNameInput;
+      if (newName && newName !== currName) {
+        if (!_.isEmpty(this.restrictedNames) && this.restrictedNames.includes(newName)) {
+          this.toaster(
+            `Cannot rename "${currName}" to "${newName}". "${newName}" is restricted or creates a conflict!`,
+            'error',
+            true
+          );
+          return;
+        }
         this.$emit('confirm', this.newNameInput.trim());
       }
     },
