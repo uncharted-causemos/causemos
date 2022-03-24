@@ -1,5 +1,5 @@
 import { Datacube } from '@/types/Datacube';
-import { computed, ref, Ref, watch } from 'vue';
+import { computed, Ref } from 'vue';
 import { useStore } from 'vuex';
 import { getSelectedOutput } from '@/utils/datacube-util';
 
@@ -12,39 +12,17 @@ export default function useActiveDatacubeFeature(
     () => store.getters['app/datacubeCurrentOutputsMap']
   );
 
-  const currentOutputIndex = ref(0);
-  watch(
-    () => [
-      metadata.value,
-      datacubeCurrentOutputsMap.value
-    ],
-    () => {
-      const datacubeKey = itemId.value;
-      currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
-    },
-    {
-      immediate: true
-    }
-  );
+  const currentOutputIndex = computed(() => {
+    if (metadata.value === null) return 0;
+    const datacubeKey = itemId.value;
+    return datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
+  });
 
-  const activeFeature = ref('');
-  watch(
-    () => [
-      metadata.value,
-      currentOutputIndex.value
-    ],
-    () => {
-      if (metadata.value === null) {
-        activeFeature.value = '';
-        return;
-      }
-      const feature = getSelectedOutput(metadata.value, currentOutputIndex.value).name;
-      activeFeature.value = feature ?? metadata.value.default_feature;
-    },
-    {
-      immediate: true
-    }
-  );
+  const activeFeature = computed(() => {
+    if (metadata.value === null) return '';
+    const feature = getSelectedOutput(metadata.value, currentOutputIndex.value).name;
+    return feature ?? metadata.value.default_feature;
+  });
 
   return {
     activeFeature,

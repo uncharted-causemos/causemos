@@ -28,7 +28,7 @@
 
 <script lang="ts">
 import { Model } from '@/types/Datacube';
-import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useStore } from 'vuex';
 import { getOutputs } from '@/utils/datacube-util';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
@@ -49,7 +49,7 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const { metadata } = toRefs(props);
+    const { metadata, itemId } = toRefs(props);
 
     const maintainer = computed<any>(() => {
       return metadata.value?.maintainer ?? {};
@@ -69,7 +69,7 @@ export default defineComponent({
 
     const store = useStore();
     const route = useRoute();
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, ref(props.itemId));
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
     return {
       updateDesc,

@@ -18,9 +18,9 @@ export default function useParallelCoordinatesData(
   temporalAggregation: Ref<AggregationOption>,
   itemId: Ref<string>
 ) {
-  const runParameterValues = computed(() => {
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
+  const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
+  const runParameterValues = computed(() => {
     if (modelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {
       return [];
     }

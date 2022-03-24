@@ -227,7 +227,7 @@ export default defineComponent({
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataState | null>(null);
-    const datacubeAnalysisItem = analysisItems.value.find(item => item.itemId === props.itemId);
+    const datacubeAnalysisItem = analysisItems.value.find(item => item.itemId === itemId.value);
     if (datacubeAnalysisItem) {
       initialViewConfig.value = datacubeAnalysisItem.viewConfig;
       initialDataConfig.value = datacubeAnalysisItem.dataConfig;
@@ -303,7 +303,7 @@ export default defineComponent({
       emit('invert-data-updated', {
         id: id.value,
         datacubeId: datacubeId.value,
-        itemId: props.itemId
+        itemId: itemId.value
       });
     };
 
@@ -326,7 +326,7 @@ export default defineComponent({
           }
           if (initialViewConfig.value.selectedOutputIndex !== undefined) {
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-            const datacubeKey = props.itemId;
+            const datacubeKey = itemId.value;
             defaultOutputMap[datacubeKey] = initialViewConfig.value.selectedOutputIndex;
             store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
           }
@@ -602,7 +602,7 @@ export default defineComponent({
             emit('updated-bars-data', {
               id: id.value,
               datacubeId: datacubeId.value,
-              itemId: props.itemId,
+              itemId: itemId.value,
               name: mainModelOutput.value?.display_name + ' : ' + metadata.value?.name,
               barsData: temp,
               selectedTimestamp: selectedTimestamp.value
@@ -669,7 +669,7 @@ export default defineComponent({
       removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
     }),
     openDrilldown() {
-      openDatacubeDrilldown(this.props.id, this.props.itemId, router, this.store);
+      openDatacubeDrilldown(this.props.id, this.itemId, router, this.store);
     },
     clickRemove() {
       // when removing, it is not enough to only send the datacube id to be removed

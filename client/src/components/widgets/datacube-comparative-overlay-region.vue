@@ -165,7 +165,7 @@ export default defineComponent({
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataState | null>(null);
-    const datacubeAnalysisItem = analysisItems.value.find(item => item.itemId === props.itemId);
+    const datacubeAnalysisItem = analysisItems.value.find(item => item.itemId === itemId.value);
     if (datacubeAnalysisItem) {
       initialViewConfig.value = datacubeAnalysisItem.viewConfig;
       initialDataConfig.value = datacubeAnalysisItem.dataConfig;
@@ -176,7 +176,7 @@ export default defineComponent({
         outputs.value = getOutputs(metadata.value);
 
         let initialOutputIndex = 0;
-        const datacubeKey = props.itemId;
+        const datacubeKey = itemId.value;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
         if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the default output of the current model
@@ -264,7 +264,7 @@ export default defineComponent({
           }
           if (initialViewConfig.value.selectedOutputIndex !== undefined) {
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-            const datacubeKey = props.itemId;
+            const datacubeKey = itemId.value;
             defaultOutputMap[datacubeKey] = initialViewConfig.value.selectedOutputIndex;
             store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
           }
@@ -355,7 +355,7 @@ export default defineComponent({
         emit('loaded-timeseries', {
           id: id.value,
           datacubeId: datacubeId.value,
-          itemId: props.itemId,
+          itemId: itemId.value,
           timeseriesList: visibleTimeseriesData.value,
           //
           datacubeName: metadata.value.name,
