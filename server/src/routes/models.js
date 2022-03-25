@@ -677,21 +677,6 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
 
   // Parse and get meta data
   const model = await modelService.findOne(modelId);
-  const parameter = model.parameter;
-  if (_.isNil(parameter)) {
-    throw new Error('Model does not contain parameter');
-  }
-  const engine = parameter.engine;
-  const payload = modelService.buildNodeParametersPayload([nodeParameter], model);
-
-  // Register update with engine and retrieve new value
-  if (engine === DYSE) {
-    await dyseService.updateNodeParameter(modelId, payload);
-  } else if (engine === SENSEI) {
-    await senseiService.updateNodeParameter(modelId, payload);
-  } else {
-    Logger.warn(`Update node-parameter is undefined for ${engine}`);
-  }
 
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
   const getNodePayload = [
@@ -774,14 +759,21 @@ const clearEdgeWeightsForNode = async (modelId, nodeConcept) => {
   const adjacentEdges = edgeComponents.filter(
     edge => edge.source === nodeConcept || edge.target === nodeConcept
   );
+  const adjacentEdgesToUpdate = adjacentEdges.filter(edge => {
+    // Edge parameter is undefined if the edge was just added and hasn't been
+    //  registered with an engine yet.
+    // No need to update edges whose weights are already cleared.
+    const weights = edge.parameter?.weights;
+    return weights !== undefined && weights.length !== 0;
+  });
   // Remove the weights for each
-  adjacentEdges.forEach(edge => {
+  adjacentEdgesToUpdate.forEach(edge => {
     edge.parameter.weights = [];
   });
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-  if (adjacentEdges.length > 0) {
+  if (adjacentEdgesToUpdate.length > 0) {
     const results = await edgeParameterAdapter.update(
-      adjacentEdges,
+      adjacentEdgesToUpdate,
       (doc) => doc.id
     );
     if (results.errors) {
