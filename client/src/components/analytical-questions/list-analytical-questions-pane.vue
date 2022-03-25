@@ -48,62 +48,62 @@
           draggable='true'
           @dragstart='onDragStart($event, questionItem)'
         >
-            <!-- first row display the question -->
-            <div class="checklist-item-question">
-              <i class="fa fa-bars checklist-item-menu" />
-              <span class="question-title"> {{ questionItem.question }}</span>
-              <i
-                v-if="hasTour(questionItem)"
-                v-tooltip.top="'Tutorial available for this question'"
-                class="fa fa-lg fa-info-circle"
-                :style="{ color: canStartTour ? '#000000' : '#707070' }"
-                :disabled="!canStartTour"
-                @click.stop.prevent="startTour(questionItem)"
-                @mousedown.stop.prevent
-              />
-              <options-button
-                :dropdown-below="true"
-                :wider-dropdown-options="true"
-                class="options-button"
-              >
-                <template #content>
-                  <div class="dropdown-option" @click="editSection(questionItem)">
-                    <i class="fa fa-edit" />
-                    Edit
-                  </div>
-                  <div
-                    class="dropdown-option"
-                    @click="initiateQuestionDeletion(questionItem)"
-                  >
-                    <i class="fa fa-trash" />
-                    Delete
-                  </div>
-                </template>
-              </options-button>
-            </div>
-            <!-- second row display a list of linked insights -->
-            <message-display
-              v-if="(insightsByQuestion.get(questionItem.id)?.length ?? 0) === 0"
-              class="no-insight-warning"
-              :message-type="'alert-warning'"
-              :message="'No insights assigned to this section.'"
+          <!-- first row display the question -->
+          <div class="checklist-item-question">
+            <i class="fa fa-bars checklist-item-menu" />
+            <span class="question-title"> {{ questionItem.question }}</span>
+            <i
+              v-if="hasTour(questionItem)"
+              v-tooltip.top="'Tutorial available for this question'"
+              class="fa fa-lg fa-info-circle"
+              :style="{ color: canStartTour ? '#000000' : '#707070' }"
+              :disabled="!canStartTour"
+              @click.stop.prevent="startTour(questionItem)"
+              @mousedown.stop.prevent
             />
-            <div
-              v-for="insight in insightsByQuestion.get(questionItem.id)"
-              :key="insight.id"
-              class="checklist-item-insight">
-              <i @mousedown.stop.prevent class="fa fa-star" />
-              <span
-                @mousedown.stop.prevent
-                class="insight-name"
-                :class="{ 'private-insight-name': insight.visibility === 'private' }">
-                {{ insight.name }}
-              </span>
-              <i class="fa fa-fw fa-close"
-                style="pointer-events: all; cursor: pointer; margin-left: auto;"
-                @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
-            </div>
+            <options-button
+              :dropdown-below="true"
+              :wider-dropdown-options="true"
+              class="options-button"
+            >
+              <template #content>
+                <div class="dropdown-option" @click="editSection(questionItem)">
+                  <i class="fa fa-edit" />
+                  Edit
+                </div>
+                <div
+                  class="dropdown-option"
+                  @click="initiateQuestionDeletion(questionItem)"
+                >
+                  <i class="fa fa-trash" />
+                  Delete
+                </div>
+              </template>
+            </options-button>
           </div>
+          <!-- second row display a list of linked insights -->
+          <message-display
+            v-if="(insightsByQuestion.get(questionItem.id)?.length ?? 0) === 0"
+            class="no-insight-warning"
+            :message-type="'alert-warning'"
+            :message="'No insights assigned to this section.'"
+          />
+          <div
+            v-for="insight in insightsByQuestion.get(questionItem.id)"
+            :key="insight.id"
+            class="checklist-item-insight">
+            <i @mousedown.stop.prevent class="fa fa-star" />
+            <span
+              @mousedown.stop.prevent
+              class="insight-name"
+              :class="{ 'private-insight-name': insight.visibility === 'private' }">
+              {{ insight.name }}
+            </span>
+            <i class="fa fa-fw fa-close"
+              style="pointer-events: all; cursor: pointer; margin-left: auto;"
+              @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
+          </div>
+        </div>
       </div>
     </template>
     <teleport to="body">
@@ -345,56 +345,66 @@ export default defineComponent({
       evt.dataTransfer.effectAllowed = 'move';
       evt.dataTransfer.setData('question_id', questionItem.id);
     },
-    async onDrop(evt: any, questionItem: AnalyticalQuestion) {
+    async onDrop(evt: any, targetQuestion: AnalyticalQuestion) {
       // prevent default action (open as link for some elements)
       evt.preventDefault();
-      evt.currentTarget.style.background = 'white';
+      evt.currentTarget.classList.remove('dragging-over');
 
       // At most ONE of these will exist
-      const question_id = evt.dataTransfer.getData('question_id');
-      const insight_id = evt.dataTransfer.getData('insight_id');
+      const droppedQuestionId = evt.dataTransfer.getData('question_id');
+      const droppedInsightId = evt.dataTransfer.getData('insight_id');
 
-      if (question_id !== '') {
-        // swap questions: question_id and questionItem.id
+      if (droppedQuestionId !== '') {
+        // Move dropped question above questionItem
         const questions = _.cloneDeep(this.sortedQuestions);
-        const question1 = questions.find(q => q.id === question_id);
-        const question2 = questions.find(q => q.id === questionItem.id);
-        if (question1 === undefined || question2 === undefined) {
+        const droppedQuestion = questions.find(q => q.id === droppedQuestionId);
+        const targetQuestionIndex = questions.findIndex(q => q.id === targetQuestion.id);
+        if (droppedQuestion === undefined || targetQuestionIndex === -1) {
           return;
         }
-        const position1 = question1.view_state.analyticalQuestionOrder as number;
-        const position2 = question2.view_state.analyticalQuestionOrder as number;
+        let newPosition = 0;
+        const targetQuestionOrderNumber = targetQuestion.view_state
+          .analyticalQuestionOrder as number;
+        if (targetQuestionIndex === 0) {
+          // Dropped onto the question that's currently first in the list
+          newPosition = targetQuestionOrderNumber - 1;
+        } else {
+          // Dropping between two questions
+          const questionAbove = questions[targetQuestionIndex - 1];
+          const questionAboveOrderNumber = questionAbove.view_state
+            .analyticalQuestionOrder as number;
+          // New position is halfway between their order numbers
+          newPosition = questionAboveOrderNumber + (targetQuestionOrderNumber - questionAboveOrderNumber) / 2;
+        }
 
-        // Swap and update local copy
-        question1.view_state.analyticalQuestionOrder = position2;
-        question2.view_state.analyticalQuestionOrder = position1;
+        // Update local copy and store
+        droppedQuestion.view_state.analyticalQuestionOrder = newPosition;
         this.updateLocalQuestionsList(questions);
 
-        // update question(s) on the backend for persistent ordering
-        await updateQuestion(question1.id as string, question1);
-        await updateQuestion(question2.id as string, question2);
+        // Update question on the backend for persistent ordering
+        await updateQuestion(droppedQuestion.id as string, droppedQuestion);
       }
 
       // implied else
-      if (insight_id !== '') {
+      if (droppedInsightId !== '') {
         // fetch the dropped insight and use its name in this question's insights
-        const insight = this.getInsightById(insight_id);
+        const insight = this.getInsightById(droppedInsightId);
         if (insight) {
-          const existingIndex = questionItem.linked_insights.findIndex(id => id === insight_id);
+          const existingIndex = targetQuestion.linked_insights.findIndex(id => id === droppedInsightId);
           if (existingIndex < 0) {
             // only add any dropped insight once to each question
-            questionItem.linked_insights.push(insight_id);
+            targetQuestion.linked_insights.push(droppedInsightId);
 
             // update question on the backend
-            updateQuestion(questionItem.id as string, questionItem);
+            updateQuestion(targetQuestion.id as string, targetQuestion);
 
             // update the store to facilitate questions consumption in other UI places
             this.updateLocalQuestionsList(this.sortedQuestions);
           }
           // add the following question (text) to the insight
-          if (!(insight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
-            insight.analytical_question.push(questionItem.id as string);
-            await updateInsight(insight_id, insight as Insight);
+          if (!(insight.analytical_question.findIndex(qid => qid === targetQuestion.id) >= 0)) {
+            insight.analytical_question.push(targetQuestion.id as string);
+            await updateInsight(droppedInsightId, insight as Insight);
             this.reFetchInsights();
           }
         }
@@ -404,15 +414,14 @@ export default defineComponent({
       // prevent default action (open as link for some elements)
       evt.preventDefault();
       evt.stopPropagation();
-
-      // Change the source element's background color for enter events
-      evt.currentTarget.style.background = 'lightblue';
+      evt.currentTarget.classList.add('dragging-over');
     },
     onDragEnter(evt: any) {
       // prevent default action
       evt.preventDefault();
       evt.stopPropagation();
       this.lastDragEnter = evt.target; // keep track of element that was first entered while draging
+      evt.currentTarget.classList.add('dragging-over');
     },
     onDragLeave(evt: any) {
       // prevent default action (open as link for some elements)
@@ -420,7 +429,7 @@ export default defineComponent({
       evt.stopPropagation();
       // Change the source element's background color back to white
       if (this.lastDragEnter === evt.target) { // HACK: only flip color back if we leave the original element we entered
-        evt.currentTarget.style.background = 'white';
+        evt.currentTarget.classList.remove('dragging-over');
       }
     },
     removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string) {
@@ -747,7 +756,12 @@ export default defineComponent({
         display: flex;
         font-size: $font-size-medium;
         margin-bottom: 25px;
-        margin-top: 5px;
+        margin-top: 3px;
+        border-top: 2px solid transparent;
+
+        &.dragging-over {
+          border-top-color: $selected;
+        }
 
         .checklist-item-question {
           flex-direction: row;
@@ -765,11 +779,6 @@ export default defineComponent({
             min-width: 0;
             margin-right: 5px;
             font-size: $font-size-large;
-          }
-          .public-question-label {
-            @include header-secondary;
-            // Make label the same height as the question so it is centered
-            line-height: $font-size-large;
           }
         }
         .checklist-item-insight {
