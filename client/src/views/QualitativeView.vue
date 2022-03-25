@@ -220,9 +220,11 @@
     <rename-modal
       v-if="showModalRename"
       @confirm="renameNode"
+      @reject="rejectRenameNode"
       :modal-title="'Rename node'"
       :current-name="renameNodeName"
-      @close="showModalRename = false"
+      :restricted-names="restrictedNames"
+      @cancel="showModalRename = false"
     />
   </div>
 </template>
@@ -437,6 +439,10 @@ export default defineComponent({
       const timeScale = this.modelSummary?.parameter?.time_scale;
       const timeScaleOption = TIME_SCALE_OPTIONS_MAP.get(timeScale ?? '');
       return timeScaleOption?.label ?? null;
+    },
+    restrictedNames() {
+      if (!this.modelComponents) return [];
+      return this.modelComponents.nodes.map(node => node.concept);
     }
   },
   watch: {
@@ -1294,6 +1300,13 @@ export default defineComponent({
       // update and refresh
       const data = await this.addCAGComponents(nodePayload, edgePayload, 'curation');
       this.setUpdateToken(data.updateToken);
+    },
+    rejectRenameNode({ currentName, newName }: { currentName: string; newName: string }) {
+      this.toaster(
+        `Cannot rename "${currentName}" to "${newName}". Node "${newName}" already exists.`,
+        'error',
+        true
+      );
     },
     async renameNode(newName: string) {
       // FIXME: Stableness hack, because the node has changed, we end up caching the

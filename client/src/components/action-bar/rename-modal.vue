@@ -20,7 +20,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import _ from 'lodash';
+import { defineComponent, ref, PropType } from 'vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
 export default defineComponent({
@@ -35,16 +36,37 @@ export default defineComponent({
     },
     currentName: {
       type: String,
-      default: ''
+      required: true
+    },
+    restrictedNames: {
+      type: Array as PropType<string[]>,
+      default: []
     }
   },
-  emits: ['confirm', 'cancel'],
-  data: () => ({
-    newNameInput: ''
-  }),
+  emits: ['confirm', 'cancel', 'reject'],
+  setup(props) {
+    const newNameInput = ref(props.currentName);
+
+    return {
+      newNameInput
+    };
+  },
   methods: {
     onConfirm() {
-      if (this.newNameInput) {
+      const currName = this.currentName;
+      const newName = this.newNameInput;
+
+      // Nothing, same as cancel
+      if (newName === currName) {
+        this.$emit('cancel');
+        return;
+      }
+
+      if (newName) {
+        if (!_.isEmpty(this.restrictedNames) && this.restrictedNames.includes(newName)) {
+          this.$emit('reject', { currentName: currName, newName: newName });
+          return;
+        }
         this.$emit('confirm', this.newNameInput.trim());
       }
     },
