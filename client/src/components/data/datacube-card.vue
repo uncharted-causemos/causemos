@@ -547,6 +547,7 @@
                 <h4>Configuration</h4>
                 <viz-options-pane
                   :metadata="metadata"
+                  :item-id="itemId"
                   :aggregation-options="aggregationOptions"
                   :resolution-options="temporalResolutionOptions"
                   :selected-spatial-aggregation="selectedSpatialAggregation"
@@ -654,7 +655,7 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption,
   SPLIT_BY_VARIABLE,
-  DatacubeViewMode, DatacubeStatus
+  DatacubeViewMode, DatacubeStatus, ProjectType
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -833,6 +834,7 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
     const selectedTransform = ref<DataTransform>(DataTransform.None);
+    const datacubeItemId = route.query.item_id as any;
 
     const outputs = computed(() => {
       const modelMetadata = metadata.value;
@@ -884,10 +886,20 @@ export default defineComponent({
 
     const runFromInsight = ref<boolean>(false); // do we have a run from loaded insight?
 
+    const itemId = computed<string>(() => {
+      if (projectType.value === ProjectType.Analysis) {
+        return datacubeItemId;
+      } else {
+        // domain model or indicator project, so use the data_id as the unique item id
+        // this is in line with how the model-description component works for example
+        return metadata.value?.id ?? metadata.value?.data_id;
+      }
+    });
+
     // we are receiving metadata from above (i.e. consumers) and we should not be setting a new model-id here at this level
     const selectedModelId = computed(() => metadata.value?.id ?? null);
 
-    const { activeFeature, currentOutputIndex } = useActiveDatacubeFeature(metadata);
+    const { activeFeature, currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
     const isIndicatorDatacube = computed(() => metadata.value !== null && isIndicator(metadata.value));
@@ -895,7 +907,7 @@ export default defineComponent({
     const {
       dimensions,
       ordinalDimensionNames
-    } = useDatacubeDimensions(metadata);
+    } = useDatacubeDimensions(metadata, itemId);
 
     // FIXME: we only support one date param of each model datacube
     const dateModelParam = computed(() => {
@@ -932,7 +944,7 @@ export default defineComponent({
     });
     const {
       runParameterValues
-    } = useParallelCoordinatesData(metadata, filteredRunData, selectedSpatialAggregation, selectedTemporalAggregation);
+    } = useParallelCoordinatesData(metadata, filteredRunData, selectedSpatialAggregation, selectedTemporalAggregation, itemId);
 
     const scenarioCount = computed(() => runParameterValues.value.length);
 
@@ -1671,7 +1683,7 @@ export default defineComponent({
           updateTabView(loadedInsight.view_state?.selectedViewTab);
         }
         if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
-          updateDatacubesOutputsMap(metadata.value, store, route, loadedInsight.view_state?.selectedOutputIndex);
+          updateDatacubesOutputsMap(itemId.value, store, route, loadedInsight.view_state?.selectedOutputIndex);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
           setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
@@ -2381,7 +2393,8 @@ export default defineComponent({
       popupFormatter,
       activeFeaturesNames,
       DatacubeViewMode,
-      DatacubeStatus
+      DatacubeStatus,
+      itemId
     };
   },
   watch: {

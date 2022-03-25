@@ -70,6 +70,7 @@ import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, S
 import { createAnalysis, getAnalysisState } from '@/services/analysis-service';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import { ProjectType } from '@/types/Enums';
+import { v4 as uuidv4 } from 'uuid';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
 const MODEL_STATUS = modelService.MODEL_STATUS;
@@ -544,6 +545,7 @@ export default defineComponent({
         // do we have an existing analysis that was generated from this CAG?
         const existingAnalysisId = this.modelSummary?.data_analysis_id;
         const analysisItems = indicators.map(indicator => ({ // AnalysisItem
+          itemId: uuidv4(),
           datacubeId: indicator.data_id, // data_id
           id: indicator.id
         }));

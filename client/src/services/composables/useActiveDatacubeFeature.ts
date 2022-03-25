@@ -1,33 +1,22 @@
 import { Datacube } from '@/types/Datacube';
-import { computed, ref, Ref, watch } from 'vue';
+import { computed, Ref } from 'vue';
 import { useStore } from 'vuex';
 import { getSelectedOutput } from '@/utils/datacube-util';
-import { useRoute } from 'vue-router';
-import { getDatacubeKeyFromAnalysis } from '@/utils/analysis-util';
 
 export default function useActiveDatacubeFeature(
-  metadata: Ref<Datacube | null>
+  metadata: Ref<Datacube | null>,
+  itemId: Ref<string>
 ) {
   const store = useStore();
-  const route = useRoute();
   const datacubeCurrentOutputsMap = computed(
     () => store.getters['app/datacubeCurrentOutputsMap']
   );
 
-  const currentOutputIndex = ref(0);
-  watch(
-    () => [
-      metadata.value,
-      datacubeCurrentOutputsMap.value
-    ],
-    () => {
-      const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value as any, store, route);
-      currentOutputIndex.value = datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
-    },
-    {
-      immediate: true
-    }
-  );
+  const currentOutputIndex = computed(() => {
+    if (metadata.value === null) return 0;
+    const datacubeKey = itemId.value;
+    return datacubeCurrentOutputsMap.value[datacubeKey] ? datacubeCurrentOutputsMap.value[datacubeKey] : 0;
+  });
 
   const activeFeature = computed(() => {
     if (metadata.value === null) return '';

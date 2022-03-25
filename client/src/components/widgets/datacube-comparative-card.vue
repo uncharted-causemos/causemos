@@ -21,7 +21,6 @@
             Remove
           </div>
           <div
-            v-if="isModelMetadata"
             class="dropdown-option"
             @click="clickDuplicate"
           >
@@ -89,7 +88,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, isModel, hasRegionLevelData } from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, hasRegionLevelData } from '@/utils/datacube-util';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, DataTransform } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
@@ -114,7 +113,7 @@ import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
-import { duplicateAnalysisItem, getDatacubeKey, openDatacubeDrilldown } from '@/utils/analysis-util';
+import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { normalize } from '@/utils/value-util';
@@ -135,6 +134,10 @@ export default defineComponent({
       type: String,
       required: true
     },
+    itemId: {
+      type: String,
+      required: true
+    },
     selectedTimestamp: {
       type: Number,
       default: 0
@@ -148,9 +151,10 @@ export default defineComponent({
       default: null
     }
   },
-  emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp', 'loaded-timeseries'],
+  emits: ['select-timestamp', 'loaded-timeseries'],
   setup(props, { emit }) {
     const {
+      itemId,
       id,
       datacubeId,
       selectedTimestamp,
@@ -158,8 +162,6 @@ export default defineComponent({
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
-
-    const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -179,7 +181,7 @@ export default defineComponent({
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataState | null>(null);
-    const datacubeAnalysisItem = analysisItems.value.find(item => item.id === props.id && item.datacubeId === datacubeId.value);
+    const datacubeAnalysisItem = analysisItems.value.find(item => item.itemId === itemId.value);
     if (datacubeAnalysisItem) {
       initialViewConfig.value = datacubeAnalysisItem.viewConfig;
       initialDataConfig.value = datacubeAnalysisItem.dataConfig;
@@ -194,7 +196,7 @@ export default defineComponent({
         if (metadata.value) {
           if (_.isEmpty(initialViewConfig.value) && !_.isEmpty(metadata.value.default_view)) {
             const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-            const datacubeAnalysisItem = updatedAnalysisItems.find(item => item.id === props.id && item.datacubeId === datacubeId.value);
+            const datacubeAnalysisItem = updatedAnalysisItems.find(item => item.itemId === itemId.value);
             if (datacubeAnalysisItem) {
               datacubeAnalysisItem.viewConfig = metadata.value.default_view;
               store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
@@ -210,7 +212,7 @@ export default defineComponent({
         outputs.value = getOutputs(metadata.value);
 
         let initialOutputIndex = 0;
-        const datacubeKey = getDatacubeKey(props.id, props.datacubeId);
+        const datacubeKey = itemId.value;
 
         const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
         if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
@@ -234,7 +236,7 @@ export default defineComponent({
 
     const {
       dimensions
-    } = useDatacubeDimensions(metadata);
+    } = useDatacubeDimensions(metadata, itemId);
 
     const modelRunsFetchedAt = ref(0);
     const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
@@ -297,7 +299,7 @@ export default defineComponent({
           }
           if (initialViewConfig.value.selectedOutputIndex !== undefined) {
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-            const datacubeKey = getDatacubeKey(props.id, props.datacubeId);
+            const datacubeKey = itemId.value;
             defaultOutputMap[datacubeKey] = initialViewConfig.value.selectedOutputIndex;
             store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
           }
@@ -356,7 +358,7 @@ export default defineComponent({
       breakdownOption.value = newValue;
     };
 
-    const { activeFeature } = useActiveDatacubeFeature(metadata);
+    const { activeFeature } = useActiveDatacubeFeature(metadata, itemId);
 
     const {
       timeseriesData,
@@ -395,6 +397,7 @@ export default defineComponent({
         emit('loaded-timeseries', {
           id: id.value,
           datacubeId: datacubeId.value,
+          itemId: itemId.value,
           timeseriesList: visibleTimeseriesData.value,
           //
           datacubeName: metadata.value.name,
@@ -427,7 +430,7 @@ export default defineComponent({
             datacubeAnalysisItem.name = datacubeHeader;
             // also, persist the change by updating the analysis item
             const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-            const item = updatedAnalysisItems.find(item => item.id === props.id && item.datacubeId === datacubeId.value);
+            const item = updatedAnalysisItems.find(item => item.itemId === itemId.value);
             if (item) {
               item.name = datacubeHeader;
             }
@@ -605,8 +608,7 @@ export default defineComponent({
       selectedAdminLevel,
       popupFormatter,
       selectedScenarioIndex,
-      regionRunsScenarios,
-      isModelMetadata
+      regionRunsScenarios
     };
   },
   methods: {
@@ -614,13 +616,13 @@ export default defineComponent({
       removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
     }),
     openDrilldown() {
-      openDatacubeDrilldown(this.props.id, this.datacubeId, router, this.store);
+      openDatacubeDrilldown(this.props.id, this.itemId, router, this.store);
     },
     clickRemove() {
       // when removing, it is not enough to only send the datacube id to be removed
       //  since the datacube may have been duplicated multiple times
       //  and we need to suport removing one at a time
-      this.removeAnalysisItems([this.datacubeId]);
+      this.removeAnalysisItems([this.itemId]);
     },
     clickDuplicate() {
       if (this.metadata !== null) {

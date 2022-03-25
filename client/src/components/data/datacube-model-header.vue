@@ -42,10 +42,14 @@ export default defineComponent({
     metadata: {
       type: Object as PropType<Model | null>,
       default: null
+    },
+    itemId: {
+      type: String,
+      required: true
     }
   },
   setup(props) {
-    const { metadata } = toRefs(props);
+    const { metadata, itemId } = toRefs(props);
 
     const maintainer = computed<any>(() => {
       return metadata.value?.maintainer ?? {};
@@ -65,7 +69,7 @@ export default defineComponent({
 
     const store = useStore();
     const route = useRoute();
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
     return {
       updateDesc,
@@ -80,7 +84,7 @@ export default defineComponent({
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      updateDatacubesOutputsMap(this.metadata, this.store, this.route, selectedOutputIndex);
+      updateDatacubesOutputsMap(this.itemId, this.store, this.route, selectedOutputIndex);
     }
   }
 });

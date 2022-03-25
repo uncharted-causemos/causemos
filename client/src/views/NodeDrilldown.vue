@@ -452,7 +452,8 @@ export default defineComponent({
       () => selectedNodeScenarioData.value,
       (newScenarioData, oldScenarioData) => {
         if (oldScenarioData?.indicatorName !== newScenarioData?.indicatorName) {
-          historicalTimeseries.value = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+          const timeSeries = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+          historicalTimeseries.value = timeSeries.length > 0 ? timeSeries : dummyTimeseries(selectedTemporalResolution.value);
         }
       }
     );
@@ -591,25 +592,26 @@ export default defineComponent({
         clearConstraintsOutsideRange({ min, max }, true);
       }
     });
+
+    const dummyTimeseries = (resolution: string | null) => {
+      if (resolution === 'year') {
+        return [
+          { value: 0.5, timestamp: Date.UTC(2017, 0) },
+          { value: 0.5, timestamp: Date.UTC(2018, 0) },
+          { value: 0.5, timestamp: Date.UTC(2019, 0) }
+        ];
+      } else {
+        return [
+          { value: 0.5, timestamp: Date.UTC(2017, 0) },
+          { value: 0.5, timestamp: Date.UTC(2017, 1) },
+          { value: 0.5, timestamp: Date.UTC(2017, 2) }
+        ];
+      }
+    };
+
     const clearParameterization = async () => {
       if (selectedNode.value === null) return;
       const { id, concept, label, model_id, components } = selectedNode.value;
-
-      const dummyTimeseries = (resolution: string | null) => {
-        if (resolution === 'year') {
-          return [
-            { value: 0.5, timestamp: Date.UTC(2017, 0) },
-            { value: 0.5, timestamp: Date.UTC(2018, 0) },
-            { value: 0.5, timestamp: Date.UTC(2019, 0) }
-          ];
-        } else {
-          return [
-            { value: 0.5, timestamp: Date.UTC(2017, 0) },
-            { value: 0.5, timestamp: Date.UTC(2017, 1) },
-            { value: 0.5, timestamp: Date.UTC(2017, 2) }
-          ];
-        }
-      };
 
       const nodeParameters = {
         id,

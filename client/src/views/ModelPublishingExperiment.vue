@@ -25,11 +25,13 @@
             <datacube-model-header
               class="scenario-header"
               :metadata="metadata"
+              :item-id="selectedModelId"
             />
           </template>
           <template v-slot:datacube-description>
             <model-description
               :metadata="metadata"
+              :item-id="selectedModelId"
               @refresh-metadata="refreshMetadata"
               @check-model-metadata-validity="updateModelMetadataValidity"
             />
@@ -67,7 +69,7 @@ import domainProjectService from '@/services/domain-project-service';
 import InsightUtil from '@/utils/insight-util';
 import useToaster from '@/services/composables/useToaster';
 import { getFirstInsight, InsightFilterFields } from '@/services/insight-service';
-import { getDatacubeKeyFromAnalysis, updateDatacubesOutputsMap } from '@/utils/analysis-util';
+import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
@@ -113,7 +115,7 @@ export default defineComponent({
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
 
-    const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, selectedModelId);
 
     const publishingSteps = ref<ModelPublishingStep[]>([
       {
@@ -144,7 +146,7 @@ export default defineComponent({
         store.dispatch('insightPanel/setContextId', [metadata.value.id]);
 
         let initialOutputIndex = 0;
-        const datacubeKey = getDatacubeKeyFromAnalysis(metadata.value, store, route);
+        const datacubeKey = selectedModelId.value; // i.e., datacube_id
         const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
         if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
           // we have a store entry for the selected output of the current model
@@ -153,7 +155,7 @@ export default defineComponent({
           initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
           // update the store
-          updateDatacubesOutputsMap(metadata.value, store, route, initialOutputIndex);
+          updateDatacubesOutputsMap(datacubeKey, store, route, initialOutputIndex);
         }
         mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
       }

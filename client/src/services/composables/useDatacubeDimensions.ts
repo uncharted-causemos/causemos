@@ -7,9 +7,10 @@ import useActiveDatacubeFeature from './useActiveDatacubeFeature';
  * Takes a model ID, transforms it into several structures that various components may utilize, for example the PC chart.
  */
 export default function useDatacubeDimensions(
-  metadata: Ref<Model | Indicator | null>
+  metadata: Ref<Model | Indicator | null>,
+  itemId: Ref<string>
 ) {
-  const { currentOutputIndex } = useActiveDatacubeFeature(metadata);
+  const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
   const inputDimensions = computed(() => {
     if (metadata.value !== null && isModel(metadata.value)) {
