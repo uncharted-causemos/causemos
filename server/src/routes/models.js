@@ -102,12 +102,16 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   } = req.body;
 
   let invalidateScenarios = false;
+  let reregisterModel = false;
 
   // 1. Build update params
   const modelFields = {};
   const parameter = {};
 
   if (engine) {
+    // Note that setting the engine triggers the model to be reregistered if
+    //  the engine is different than its previous value.
+    // See cagService.updateCAGMetadata().
     parameter.engine = engine;
   }
   if (geography) {
@@ -116,6 +120,7 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   if (projectionStart) {
     parameter.projection_start = projectionStart;
     invalidateScenarios = true;
+    reregisterModel = true;
   }
   if (historyRange) {
     parameter.history_range = historyRange;
@@ -127,6 +132,11 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   if (timeScale) {
     parameter.time_scale = timeScale;
     invalidateScenarios = true;
+  }
+
+  if (reregisterModel === true) {
+    modelFields.status = MODEL_STATUS.NOT_REGISTERED;
+    modelFields.engine_status = RESET_ALL_ENGINE_STATUS;
   }
 
   if (!_.isEmpty(parameter)) {

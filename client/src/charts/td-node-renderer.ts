@@ -349,23 +349,30 @@ const calculateExtents = (
   maxValue: number,
   isClampAreaHidden: boolean
 ) => {
-  let xExtent: [number, number] = [0, 1];
   const getTimestampFromPoint = (point: { timestamp: number }) => point.timestamp;
 
+  // At least `history_range` steps should be visible before projection start.
+  const minVisibleHistoricalPoint = getTimestampAfterMonths(
+    modelSummary.parameter.projection_start,
+    -modelSummary.parameter.history_range *
+      getMonthsPerTimestepFromTimeScale(modelSummary.parameter.time_scale)
+  );
+
+  const pointsToInclude = [
+    minVisibleHistoricalPoint,
+    ...historicalTimeseries.map(getTimestampFromPoint)
+  ];
+
   if (!isClampAreaHidden) {
-    const projectedPoints = projections.flatMap(projection => projection.values);
-    const projectedTimestamps = projectedPoints.map(getTimestampFromPoint);
-    xExtent = d3.extent([
-      ...historicalTimeseries.map(getTimestampFromPoint),
-      ...projectedTimestamps
-    ]) as [number, number];
+    const projectedPoints = projections.flatMap(
+      projection => projection.values
+    );
+    pointsToInclude.push(...projectedPoints.map(getTimestampFromPoint));
   } else {
-    // if clamps are hidden, go up to the first projected points (basically projection_start)
-    xExtent = d3.extent([
-      ...historicalTimeseries.map(getTimestampFromPoint),
-      modelSummary.parameter.projection_start
-    ]) as [number, number];
+    // if clamps are hidden, go up to projection_staart
+    pointsToInclude.push(modelSummary.parameter.projection_start);
   }
+  const xExtent = d3.extent(pointsToInclude);
   const yExtent = d3.extent([minValue, maxValue]);
   return [xExtent, yExtent];
 };
@@ -434,7 +441,7 @@ const renderStaticElements = (
     .style('stroke', GRIDLINE_COLOR);
 
   // Render rectangle to delineate between historical data and projection data
-  const historicalStartTimestamp = historicalTimeseries[0].timestamp;
+  const historicalStartTimestamp = xScale.range()[0];
   const historicalEndTimestamp = getTimestampAfterMonths(projectionStartTimestamp, -monthsPerTimestep);
   groupElement
     .append('rect')
@@ -645,7 +652,7 @@ const generateClickableAreas = (
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) => {
-  const startTimestamp = historicalTimeseries[0].timestamp;
+  const startTimestamp = xScale.range()[0];
   const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
   const stepsInProjection = getStepCountFromTimeScale(timeScale);
   const monthsInProjection = (stepsInProjection - 1) * monthsPerTimestep;
