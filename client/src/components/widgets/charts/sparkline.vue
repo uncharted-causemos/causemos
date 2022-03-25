@@ -45,16 +45,17 @@ export default defineComponent({
   },
   methods: {
     refresh() {
+      const chart = d3.select(this.$refs.container as any).select('.chart');
+      chart.selectAll('*').remove();
+
       if (_.isEmpty(this.data)) return;
 
       const W = this.size[0];
       const H = this.size[1];
 
-      const chart = d3.select(this.$refs.container as any).select('.chart');
       chart.attr('width', W + 'px');
       chart.attr('height', H + 'px');
 
-      chart.selectAll('*').remove();
 
       const yExtent = d3.extent(_.flatten(this.data.map(s => s.series))) as [number, number];
       const xExtent = [0, this.data[0].series.length];
