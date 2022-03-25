@@ -8,7 +8,6 @@ import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { OutputVariableSpecs } from '@/types/Outputdata';
 import { AdminRegionSets } from '@/types/Datacubes';
-import { PreGeneratedModelRunData } from '@/types/ModelRun';
 import { DatacubeGeography } from '@/types/Common';
 import _ from 'lodash';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
@@ -76,7 +75,7 @@ export function initDataStateFromRefs (
   selectedTransform: Ref<DataTransform>,
   activeReferenceOptions: Ref<string[]>,
   searchFilters: Ref<any>,
-  selectedPreGenDataItem: Ref<PreGeneratedModelRunData>,
+  selectedPreGenDataId: Ref<string>,
   visibleTimeseriesData?: Ref<Timeseries[]> // useful for the node view's validation, but ignoreable by everything else, so optional
 ): DataState {
   return {
@@ -101,7 +100,7 @@ export function initDataStateFromRefs (
     activeReferenceOptions: activeReferenceOptions.value,
     visibleTimeseriesData: visibleTimeseriesData?.value,
     searchFilters: searchFilters.value,
-    selectedPreGenDataId: selectedPreGenDataItem.value.id ?? ''
+    selectedPreGenDataId: selectedPreGenDataId.value ?? ''
   };
 }
 
