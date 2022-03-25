@@ -839,6 +839,9 @@ const HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE = '#F7E6AA';
 // - Penalize short historical data (e.g default Abstract indicator)
 export const historicalDataUncertaintyColor = (timeseries: TimeseriesPoint[], projectionStart: number, timeScale: TimeScale) => {
   let background = HISTORY_BACKGROUND_COLOR;
+  if (timeseries.length < 4) {
+    return HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE;
+  }
   const gap = projectionStart - timeseries[timeseries.length - 1].timestamp;
   const approxMonth = 30 * 24 * 60 * 60 * 1000;
   if (gap > 0) {
@@ -851,9 +854,6 @@ export const historicalDataUncertaintyColor = (timeseries: TimeseriesPoint[], pr
         background = HISTORY_BACKGROUND_COLOR_HALF_CONFIDENCE;
       }
     }
-  }
-  if (timeseries.length < 4) {
-    background = HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE;
   }
   return background;
 };
