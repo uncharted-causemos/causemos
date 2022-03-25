@@ -53,6 +53,10 @@ const CONSTRAINT_HOVER_RADIUS = CONSTRAINT_RADIUS * 1.5;
   be snapped to. */
 const DISCRETE_Y_POSITION_COUNT = 31;
 
+// The scrollable area will always include at least this many steps before
+//  projection start.
+const MIN_HISTORICAL_STEPS_VISIBLE = 36;
+
 const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
 
 export default function(
@@ -351,13 +355,14 @@ const calculateExtents = (
 ) => {
   const getTimestampFromPoint = (point: { timestamp: number }) => point.timestamp;
 
-  // At least 36 steps (depending on timescale) should be visible before
+  // At least MIN_HISTORICAL_STEPS_VISIBLE steps should be visible before
   //  projection start.
   // TODO: we'll probably want to expose controls so analysts can put new points
   //  before the historical data if it's even older than this arbitrary cutoff.
   const minVisibleHistoricalPoint = getTimestampAfterMonths(
     modelSummary.parameter.projection_start,
-    -36 * getMonthsPerTimestepFromTimeScale(modelSummary.parameter.time_scale)
+    -MIN_HISTORICAL_STEPS_VISIBLE *
+      getMonthsPerTimestepFromTimeScale(modelSummary.parameter.time_scale)
   );
 
   const pointsToInclude = [
