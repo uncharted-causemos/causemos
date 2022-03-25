@@ -381,7 +381,7 @@ const injectDummyData = (timeseries, temporalResolution, projectionStart) => {
   const oldestTimestamp =
     timeseries.length > 0 ? timeseries[0].timestamp : projectionStart;
   const value = timeseries.length > 0 ? timeseries[0].value : 0.5;
-  console.log(
+  Logger.info(
     `Insufficient timeseries length. Injecting ${pointsToInject} point(s) with a value of ${value}.`
   );
   for (let index = 1; index <= pointsToInject; index++) {
