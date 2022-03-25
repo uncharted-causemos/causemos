@@ -1303,7 +1303,7 @@ export default defineComponent({
     },
     rejectRenameNode({ currentName, newName }: { currentName: string; newName: string }) {
       this.toaster(
-        `Cannot rename "${currentName}" to "${newName}". Node "${newName}" already exist`,
+        `Cannot rename "${currentName}" to "${newName}". Node "${newName}" already exists.`,
         'error',
         true
       );
