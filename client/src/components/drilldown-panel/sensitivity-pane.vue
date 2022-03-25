@@ -82,7 +82,8 @@
 import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import modelService from '@/services/model-service';
-import { CAGGraph, NodeParameter } from '@/types/CAG';
+import useToaster from '@/services/composables/useToaster';
+import { CAGGraph, CAGModelSummary, NodeParameter } from '@/types/CAG';
 import ImportanceBars from '../widgets/importance-bars.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
 
@@ -94,6 +95,10 @@ export default defineComponent({
   },
   emits: ['open-drilldown', 'highlight-node-paths'],
   props: {
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      required: true
+    },
     modelComponents: {
       type: Object as PropType<CAGGraph>,
       default: null
@@ -109,7 +114,9 @@ export default defineComponent({
   },
   setup(props) {
     const store = useStore();
+    const toaster = useToaster();
     const {
+      modelSummary,
       modelComponents,
       selectedNode,
       sensitivityResult
@@ -146,14 +153,12 @@ export default defineComponent({
       }
     };
     const updatePollingProgress = (result: Promise<void>) => {
-      console.log('update polling progress', result);
       paneSensitivityResult.value.result = result;
       window.setTimeout(() => {
         poll();
       }, 5000);
     };
     const processSensitivityResult = async (result: Promise<void>) => {
-      console.log('process sensitivity result', result);
       await modelService.updateScenarioSensitivityResult(
         sensitivityResult.value.id,
         sensitivityResult.value.experiment_id,
@@ -269,6 +274,15 @@ export default defineComponent({
         paneSensitivityResult.value = newResult;
       }
     });
+
+    watch(modelSummary, () => {
+      const engine = modelSummary.value.parameter.engine;
+      const status = modelSummary.value.engine_status[engine];
+      if (modelService.MODEL_STATUS.NOT_REGISTERED === status) {
+        toaster('CAG is stale. Node sensitivity may be invalid, please click "Run" to synchronize and get the updated results.', 'error', true);
+      }
+    }, { immediate: true });
+
 
     return {
       activeTab,
