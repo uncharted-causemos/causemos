@@ -44,9 +44,7 @@ const sendFeedback = async (curationLogs) => {
     headers: {
       'content-type': 'application/json'
     },
-    json: {
-      curations: curationLogs
-    },
+    json: curationLogs,
     timeout: 60000 * 3 // Ben G. said it may take a few minutes to bring up INDRA project. Oct 2020
   };
 
