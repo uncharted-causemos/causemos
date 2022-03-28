@@ -27,20 +27,17 @@
           />
         </div>
 
-        <!-- Empty -->
-        <div v-if="userInput === '' || !hasSuggestions" class="new-concept-section">
-          <div> No matches. Try searching something else or create a custom concept</div>
-          <button class="btn btn-primary"
-            @click="$emit('show-custom-concept')">
-            Create custom concept
-          </button>
-        </div>
 
         <!-- datacubes -->
         <div
           v-if="activeTab === 'datacubes' && hasSuggestions"
           style="display: flex; flex-direction: row">
           <div class="left-column">
+            <div
+              class="drodown-option"
+              v-if="datacubeSuggestions.length === 0">
+              No datacubes found.
+            </div>
             <div
               v-for="(suggestion, index) in datacubeSuggestions"
               :key="suggestion.doc.variableName"
@@ -75,6 +72,11 @@
           v-if="activeTab === 'concepts' && hasSuggestions"
           style="display: flex; flex-direction: row">
           <div class="left-column">
+            <div
+              class="drodown-option"
+              v-if="conceptSuggestions.length === 0">
+              No concepts found.
+            </div>
             <div
               v-for="(suggestion, index) in conceptSuggestions"
               :key="suggestion.doc.key"
@@ -113,6 +115,16 @@
             </div>
           </div>
         </div>
+
+        <!-- Empty -->
+        <div v-if="!hasSuggestions" class="new-concept-section">
+          <div> No matches. Try searching something else or create a custom concept</div>
+          <button class="btn btn-primary"
+            @click="$emit('show-custom-concept')">
+            Create custom concept
+          </button>
+        </div>
+
       </template>
     </dropdown-control>
   </div>
