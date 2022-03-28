@@ -1,4 +1,3 @@
-const {filter} = require('lodash');
 const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
