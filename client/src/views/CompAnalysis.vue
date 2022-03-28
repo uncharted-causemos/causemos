@@ -271,7 +271,7 @@ export default defineComponent({
         if (analysisItems && analysisItems.length > 0) {
           // set context-ids to fetch insights correctly for all datacubes
           //  (even the non-selected ones) in this analysis
-          const contextIDs = analysisItems.map(dc => dc.id); // FIXME/REVIEW is it id or datacubeId
+          const contextIDs = analysisItems.map(dc => dc.id); // FIXME is it id or datacubeId or itemId?
           store.dispatch('insightPanel/setContextId', contextIDs);
 
           // assign initial selection state if possible (to gracefully handle existing analyses)
@@ -343,9 +343,6 @@ export default defineComponent({
             };
           });
           regionRankingWeights.value = regionRankingWeightsMap;
-        } else {
-          // no datacubes in this analysis, so do not fetch any insights/questions
-          store.dispatch('insightPanel/setContextId', undefined);
         }
       },
       { immediate: true }
