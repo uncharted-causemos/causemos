@@ -580,7 +580,7 @@ export const getRegionAggregations = async (
         }
 
         // if we have item value, as in the normal regional aggregation use that.
-        if ((item as {id: string; value: number}).value) {
+        if (_.isFinite((item as {id: string; value: number}).value)) {
           // but only use that if we're not in regional aggregation, or we are and the specs id and item id match
           if (
             breakdownOption !== SpatialAggregationLevel.Region ||
