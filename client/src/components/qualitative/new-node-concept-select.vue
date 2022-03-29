@@ -30,14 +30,9 @@
 
         <!-- datacubes -->
         <div
-          v-if="activeTab === 'datacubes' && hasSuggestions"
+          v-if="activeTab === 'datacubes' && datacubeSuggestions.length > 0"
           style="display: flex; flex-direction: row">
           <div class="left-column">
-            <div
-              class="drodown-option"
-              v-if="datacubeSuggestions.length === 0">
-              No datacubes found.
-            </div>
             <div
               v-for="(suggestion, index) in datacubeSuggestions"
               :key="suggestion.doc.variableName"
@@ -69,14 +64,9 @@
 
         <!-- concepts -->
         <div
-          v-if="activeTab === 'concepts' && hasSuggestions"
+          v-if="activeTab === 'concepts' && conceptSuggestions.length > 0"
           style="display: flex; flex-direction: row">
           <div class="left-column">
-            <div
-              class="drodown-option"
-              v-if="conceptSuggestions.length === 0">
-              No concepts found.
-            </div>
             <div
               v-for="(suggestion, index) in conceptSuggestions"
               :key="suggestion.doc.key"
@@ -117,7 +107,7 @@
         </div>
 
         <!-- Empty -->
-        <div v-if="!hasSuggestions" class="new-concept-section">
+        <div v-if="showCustomConceptDisplay" class="new-concept-section">
           <div> No matches. Try searching something else or create a custom concept</div>
           <button class="btn btn-primary"
             @click="$emit('show-custom-concept')">
@@ -206,8 +196,14 @@ export default defineComponent({
     const newNodeTop = ref(null) as Ref<HTMLDivElement | null>;
     const newNodeContainer = ref(null) as Ref<HTMLDivElement | null>;
 
-    const hasSuggestions = computed(() => {
-      return conceptSuggestions.value.length + datacubeSuggestions.value.length > 0;
+    const showCustomConceptDisplay = computed(() => {
+      if (activeTab.value === 'concepts' && conceptSuggestions.value.length === 0) {
+        return true;
+      }
+      if (activeTab.value === 'datacubes' && datacubeSuggestions.value.length === 0) {
+        return true;
+      }
+      return false;
     });
 
     const currentSuggestion = computed(() => {
@@ -303,7 +299,7 @@ export default defineComponent({
       activeTab,
       conceptSuggestions,
       datacubeSuggestions,
-      hasSuggestions,
+      showCustomConceptDisplay,
       dropdownLeftOffset,
       dropdownTopOffset,
       timeseries,

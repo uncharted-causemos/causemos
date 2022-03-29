@@ -7,12 +7,8 @@
       <h5>Add custom concept</h5>
     </template>
     <template #body>
-      <div class="row form-group">
-        <div class="col-md-10">
-          <div> What is the concept you could not find in the ontology? </div>
-          <input class="form-control" v-model="theme" type="text" placeholder="e.g. heavy rainfall"/>
-        </div>
-      </div>
+      <div> What is the concept you could not find in the ontology? </div>
+      <input class="form-control" v-model="theme" type="text" placeholder="e.g. heavy rainfall"/>
       <!--
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Theme</label>
