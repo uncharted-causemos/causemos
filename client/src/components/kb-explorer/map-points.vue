@@ -68,7 +68,7 @@ export default {
     },
     mapBounds: {
       type: Array,
-      default: () => ([[0, 0], [0, 0]])
+      default: () => ([[-180, -90], [180, 90]])
     },
     /**
      * layer related props
