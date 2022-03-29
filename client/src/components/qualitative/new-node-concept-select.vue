@@ -25,6 +25,7 @@
             :selected-button-value="activeTab"
             @button-clicked="setActive"
           />
+          <div v-if="activeTab === 'concepts'">&nbsp;&nbsp;About {{ numberFormatter(conceptEstimatedHits) }} results</div>
         </div>
 
 
@@ -136,6 +137,7 @@ import { TimeseriesPoint } from '@/types/Timeseries';
 
 import projectService from '@/services/project-service';
 import datacubeService from '@/services/new-datacube-service';
+import numberFormatter from '@/formatters/number-formatter';
 
 import { AggregationOption, TemporalResolution, TemporalResolutionOption, TimeScale } from '@/types/Enums';
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
@@ -185,6 +187,7 @@ export default defineComponent({
     const mouseOverIndex = ref(-1);
     const activeTab = ref('concepts');
     const conceptSuggestions = ref([]) as Ref<any[]>;
+    const conceptEstimatedHits = ref(0);
     const datacubeSuggestions = ref([]) as Ref<any[]>;
     const dropdownLeftOffset = ref(0);
     const dropdownTopOffset = ref(4); // prevent overlap with input box
@@ -227,8 +230,9 @@ export default defineComponent({
         datacubeSuggestions.value = [];
       } else {
         let results: any = null;
-        results = await projectService.getConceptSuggestions(project.value, userInput.value);
-        conceptSuggestions.value = results.splice(0, CONCEPT_SUGGESTION_COUNT);
+        results = await projectService.getConceptSuggestions(project.value, userInput.value, true);
+        conceptSuggestions.value = results.result.splice(0, CONCEPT_SUGGESTION_COUNT);
+        conceptEstimatedHits.value = results.estimate;
 
         results = await datacubeService.getDatacubeSuggestions(userInput.value);
         datacubeSuggestions.value = results.splice(0, 5);
@@ -298,6 +302,7 @@ export default defineComponent({
       mouseOverIndex,
       activeTab,
       conceptSuggestions,
+      conceptEstimatedHits,
       datacubeSuggestions,
       showCustomConceptDisplay,
       dropdownLeftOffset,
@@ -313,7 +318,10 @@ export default defineComponent({
 
       dateFormatter,
       ontologyFormatter: useOntologyFormatter(),
-      TemporalResolutionOption
+      TemporalResolutionOption,
+
+      // Fn
+      numberFormatter
     };
   },
   mounted() {
@@ -428,6 +436,7 @@ export default defineComponent({
         }
       }
     },
+    /*
     getConceptSuggestions() {
       const fetch = async () => {
         if (_.isEmpty(this.userInput)) {
@@ -450,6 +459,7 @@ export default defineComponent({
       };
       return fetch();
     },
+    */
     setActive(tab: string) {
       this.activeTab = tab;
     }

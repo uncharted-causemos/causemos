@@ -286,7 +286,8 @@ router.post('/:projectId/statements-scores', asyncHandler(async (req, res) => {
 router.get('/:projectId/concept-suggestions', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
   const queryString = req.query.q;
-  const results = await searchService.statementConceptEntitySearch(projectId, queryString);
+  const useEstimate = !_.isEmpty(req.query.estimate);
+  const results = await searchService.statementConceptEntitySearch(projectId, queryString, useEstimate);
   res.json(results);
 }));
 

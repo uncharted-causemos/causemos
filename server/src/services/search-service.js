@@ -246,7 +246,7 @@ const buildSubjObjAggregation = (concepts) => {
 
 
 
-const statementConceptEntitySearch = async (projectId, queryString) => {
+const statementConceptEntitySearch = async (projectId, queryString, returnEstimateCount = false) => {
   const reserved = ['or', 'and'];
   const tokens = queryString
     .split(' ')
@@ -255,7 +255,10 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
     });
 
   // 1. Search for obj and subj matches against the project directly
-  const q = tokens.map(s => `(${s}~)`).join(' AND ');
+  // Rank edit-distance match to be twice as important
+  const q = tokens.map(s => `(${s}~^2 OR ${s}*)`).join(' AND ');
+
+  const SEARCH_LIMIT = 10;
 
   const results = await client.search({
     index: projectId,
@@ -275,7 +278,7 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
             concept: {
               terms: {
                 field: 'subj.concept.raw',
-                size: 3
+                size: SEARCH_LIMIT
               },
               aggs: {
                 sample: {
@@ -308,7 +311,7 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
             concept: {
               terms: {
                 field: 'obj.concept.raw',
-                size: 3
+                size: SEARCH_LIMIT
               },
               aggs: {
                 sample: {
@@ -332,8 +335,12 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
     }
   });
 
-  const subjConcepts = results.body.aggregations.filteredSubj.concept.buckets;
-  const objConcepts = results.body.aggregations.filteredObj.concept.buckets;
+  const filteredSubj = results.body.aggregations.filteredSubj;
+  const filteredObj = results.body.aggregations.filteredObj;
+
+  const subjConcepts = filteredSubj.concept.buckets;
+  const objConcepts = filteredObj.concept.buckets;
+
 
   const map = new Map();
   const refMap = new Map();
@@ -433,7 +440,22 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
     }
   }
 
-  return result;
+
+  if (returnEstimateCount === false) {
+    return result;
+  }
+
+  // Estimate the total match, assume roughly equal likelihood from subject and object
+  const subjOtherCount = filteredSubj.concept.sum_other_doc_count;
+  const objOtherCount = filteredObj.concept.sum_other_doc_count;
+  const returnedLen = result.length;
+  const estimateLen = Math.floor(0.5 * (subjOtherCount + objOtherCount) + returnedLen);
+
+  if (estimateLen <= returnedLen) {
+    return { result, estimate: returnedLen };
+  } else {
+    return { result, estimate: estimateLen };
+  }
 };
 
 

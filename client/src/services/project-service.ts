@@ -149,9 +149,9 @@ const addNewConceptToOntology = async(projectId: string, label: string, examples
   return result.data;
 };
 
-const getConceptSuggestions = async(projectId: string, q: string) => {
+const getConceptSuggestions = async(projectId: string, q: string, useEstimate: boolean | undefined = undefined) => {
   const result = await API.get(`projects/${projectId}/concept-suggestions`, {
-    params: { q }
+    params: { q, estimate: useEstimate }
   });
   return result.data;
 };
