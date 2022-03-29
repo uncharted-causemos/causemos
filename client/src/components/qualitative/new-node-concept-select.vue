@@ -9,19 +9,8 @@
         style="height: 2.5rem;"
         @keydown="onKeyDown"
       >
-      <button
-        v-if="userInput.length < 1"
-        class="mx-2"
-        style="border: none; background-color: white;"
-        @click="$emit('show-custom-concept')"
-      >
-        <span style="color: #255DCC; font-size: 1.5rem;">
-          <i class="fa fa-plus-circle"></i>
-        </span>
-      </button>
     </div>
     <dropdown-control
-      v-if="userInput !== ''"
       class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
         <div class="tab-row">
@@ -39,9 +28,10 @@
           <div v-if="activeTab === 'concepts'">&nbsp;&nbsp;About {{ numberFormatter(conceptEstimatedHits) }} results</div>
         </div>
 
+
         <!-- datacubes -->
         <div
-          v-if="activeTab === 'datacubes'"
+          v-if="activeTab === 'datacubes' && datacubeSuggestions.length > 0"
           style="display: flex; flex-direction: row">
           <div class="left-column">
             <div
@@ -75,7 +65,7 @@
 
         <!-- concepts -->
         <div
-          v-if="activeTab === 'concepts'"
+          v-if="activeTab === 'concepts' && conceptSuggestions.length > 0"
           style="display: flex; flex-direction: row">
           <div class="left-column">
             <div
@@ -116,6 +106,16 @@
             </div>
           </div>
         </div>
+
+        <!-- Empty -->
+        <div v-if="showCustomConceptDisplay" class="new-concept-section">
+          <div> No matches. Try searching something else or create a custom concept</div>
+          <button class="btn btn-primary"
+            @click="$emit('show-custom-concept')">
+            Create custom concept
+          </button>
+        </div>
+
       </template>
     </dropdown-control>
   </div>
@@ -198,6 +198,16 @@ export default defineComponent({
     const input = ref(null) as Ref<HTMLInputElement | null>;
     const newNodeTop = ref(null) as Ref<HTMLDivElement | null>;
     const newNodeContainer = ref(null) as Ref<HTMLDivElement | null>;
+
+    const showCustomConceptDisplay = computed(() => {
+      if (activeTab.value === 'concepts' && conceptSuggestions.value.length === 0) {
+        return true;
+      }
+      if (activeTab.value === 'datacubes' && datacubeSuggestions.value.length === 0) {
+        return true;
+      }
+      return false;
+    });
 
     const currentSuggestion = computed(() => {
       const idx = focusedSuggestionIndex.value;
@@ -294,6 +304,7 @@ export default defineComponent({
       conceptSuggestions,
       conceptEstimatedHits,
       datacubeSuggestions,
+      showCustomConceptDisplay,
       dropdownLeftOffset,
       dropdownTopOffset,
       timeseries,
@@ -536,6 +547,19 @@ export default defineComponent({
   border-left: 1px solid #DDD;
   height: 290px;
   overflow-y: scroll;
+}
+
+.new-concept-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 290px;
+  font-size: 1.5rem;
+
+  button {
+    margin-top: 10px;
+  }
 }
 
 </style>
