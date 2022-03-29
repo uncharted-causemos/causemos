@@ -18,12 +18,14 @@
       @datacube-selected="onDatacubeSelected"
       @show-custom-concept="showCustomConcept = true"
     />
-    <modal-custom-concept
-      v-if="showCustomConcept"
-      ref="customGrounding"
-      @close="showCustomConcept = false"
-      @save-custom-concept="saveCustomConcept"
-    />
+    <teleport to="body">
+      <modal-custom-concept
+        v-if="showCustomConcept"
+        ref="customGrounding"
+        @close="showCustomConcept = false"
+        @save-custom-concept="saveCustomConcept"
+      />
+    </teleport>
   </div>
 
 </template>

@@ -7,6 +7,9 @@
       <h5>Add custom concept</h5>
     </template>
     <template #body>
+      <div> What is the concept you could not find in the ontology? </div>
+      <input class="form-control" v-model="theme" type="text" placeholder="e.g. heavy rainfall"/>
+      <!--
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Theme</label>
         <div class="col-md-7">
@@ -35,6 +38,7 @@
           <div class="input-error-message" v-if="errorMessages.process_property">{{errorMessages.process_property}}</div>
         </div>
       </div>
+      -->
     </template>
     <template #footer>
       <ul class="unstyled-list">
@@ -167,5 +171,9 @@ export default defineComponent({
 .input-error-message {
   text-align: left;
   color: red;
+}
+
+input::placeholder {
+  color: #888;
 }
 </style>
