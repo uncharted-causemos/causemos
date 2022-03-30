@@ -746,9 +746,10 @@ export default defineComponent({
             }
             this.closeInsightReview();
             this.setShouldRefetchInsights(true);
+          }).catch(() => {
+            // just in case the call to the server fails
+            this.closeInsightReview();
           });
-        // just in case the call to the server fails
-        this.closeInsightReview();
       } else {
         // saving an existing insight
         if (this.updatedInsight) {
