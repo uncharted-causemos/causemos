@@ -255,7 +255,7 @@ export default {
       }
 
       const id = insight.id;
-      InsightUtil.removeInsight(id);
+      await InsightUtil.removeInsight(id);
       // refresh the latest list from the server
       this.reFetchInsights();
     },
