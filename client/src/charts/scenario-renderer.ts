@@ -249,7 +249,7 @@ function renderScenarioProjections(
   ridgelinesWithMetadata.forEach((ridgelineWithMetadata, index) => {
     // Don't render ridgelines if they are out of bound - this can happen if people start
     // to play around with projection_start parameter
-    if (ridgelineWithMetadata.timestamp > domain[1]) {
+    if (ridgelineWithMetadata.timestamp > domain[1] || ridgelineWithMetadata.timestamp < domain[0]) {
       return;
     }
 
