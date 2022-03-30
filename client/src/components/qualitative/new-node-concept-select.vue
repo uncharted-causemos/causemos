@@ -89,7 +89,10 @@
                 :key="idx">
                 <strong>{{ ontologyFormatter(member.label) }} </strong>
                 <br>
-                <div v-if="member.definition !== ''">
+                <div>
+                  <small>{{ member.label }}</small>
+                </div>
+                <div v-if="member.definition && member.definition !== ''">
                   <small>Definition: {{ member.definition }} </small>
                 </div>
                 <div v-if="member.examples">
@@ -144,7 +147,7 @@ import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { logHistoryEntry } from '@/services/model-service';
 import { getTimeseries } from '@/services/outputdata-service';
 
-const CONCEPT_SUGGESTION_COUNT = 10;
+const CONCEPT_SUGGESTION_COUNT = 30;
 
 const getRunId = async (id: string): Promise<ModelRun> => {
   const run = await datacubeService.getDefaultModelRunMetadata(id);
@@ -436,30 +439,6 @@ export default defineComponent({
         }
       }
     },
-    /*
-    getConceptSuggestions() {
-      const fetch = async () => {
-        if (_.isEmpty(this.userInput)) {
-          this.conceptSuggestions = [];
-        } else {
-          const conceptSuggestions = await projectService.getConceptSuggestions(this.project, this.userInput);
-          this.conceptSuggestions = conceptSuggestions.splice(0, CONCEPT_SUGGESTION_COUNT);
-        }
-      };
-      fetch();
-    },
-    getDatacubeSuggestions() {
-      const fetch = async () => {
-        if (_.isEmpty(this.userInput)) {
-          this.datacubeSuggestions = [];
-        } else {
-          const datacubeSuggestions = await datacubeService.getDatacubeSuggestions(this.userInput);
-          this.datacubeSuggestions = datacubeSuggestions.splice(0, 5);
-        }
-      };
-      return fetch();
-    },
-    */
     setActive(tab: string) {
       this.activeTab = tab;
     }
