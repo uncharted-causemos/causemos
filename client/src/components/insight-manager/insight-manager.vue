@@ -1,11 +1,6 @@
 <template>
-  <div
-    class="insight-container"
-    :class="{'panel-hidden': !isOpen}"
-  >
-    <review-insight-modal v-if="currentPane === 'review-insight'" />
-    <review-insight-modal :edit-mode="true" v-if="currentPane === 'review-edit-insight'" />
-    <review-insight-modal :new-mode="true" v-if="currentPane === 'review-new-insight'" />
+  <div class="insight-manager-container" :class="{'panel-hidden': !isOpen}">
+    <review-insight-modal v-if="isReviewInsightModalOpen" />
     <list-insights-modal v-if="isOpen && currentPane === 'list-insights'" />
   </div>
 </template>
@@ -28,6 +23,14 @@ export default defineComponent({
     const isPanelOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
     const currentPane = computed(() => store.getters['insightPanel/currentPane']);
 
+    const isReviewInsightModalOpen = computed(() => {
+      return [
+        'review-insight',
+        'review-edit-insight',
+        'review-new-insight'
+      ].includes(currentPane.value);
+    });
+
     const isOpen = computed(() => {
       return isPanelOpen.value === true;
     });
@@ -35,6 +38,7 @@ export default defineComponent({
     return {
       isPanelOpen,
       currentPane,
+      isReviewInsightModalOpen,
       isOpen
     };
   }
@@ -44,7 +48,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-.insight-container {
+.insight-manager-container {
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -63,15 +67,8 @@ export default defineComponent({
   color: #707070;
 }
 
-.insight-container.panel-hidden {
+.insight-manager-container.panel-hidden {
   display: none;
-}
-
-::v-deep(.pane-header) {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 56px;
 }
 </style>
 
