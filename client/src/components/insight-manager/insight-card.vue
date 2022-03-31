@@ -1,8 +1,5 @@
 <template>
-  <card
-    class="insight"
-    :class="{ 'card-mode': cardMode }"
-  >
+  <card class="insight" :class="{ 'card-mode': cardMode }">
     <div class="insight-content" @click="selectInsight()">
       <div class="insight-thumbnail">
         <img
@@ -37,11 +34,21 @@
         </div>
         <div class="insight-action" @click.stop="openEditor()">
           <i class="fa fa-ellipsis-h insight-header-btn" />
-          <insight-editor
+          <dropdown-control
             v-if="activeInsight === insight.id"
-            @edit="editInsight()"
-            @remove="removeInsight()"
-          />
+            class="insight-editor-dropdown"
+          >
+            <template #content>
+              <div class="dropdown-option" @click="editInsight">
+                <i class="fa fa-edit" />
+                Edit
+              </div>
+              <div class="dropdown-option" @click="removeInsight">
+                <i class="fa fa-trash" />
+                Delete
+              </div>
+            </template>
+          </dropdown-control>
         </div>
       </div>
     </div>
@@ -51,16 +58,16 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import InsightEditor from '@/components/insight-manager/insight-editor.vue';
 import Card from '@/components/widgets/card.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
+import DropdownControl from '../dropdown-control.vue';
 
 export default defineComponent({
   name: 'InsightCard',
   components: {
-    InsightEditor,
-    Card
+    Card,
+    DropdownControl
   },
   props: {
     activeInsight: {
@@ -165,5 +172,12 @@ export default defineComponent({
       }
     }
   }
+}
+
+.insight-editor-dropdown {
+  position: absolute;
+  right: 0px;
+  bottom: 32px;
+  width: fit-content;
 }
 </style>

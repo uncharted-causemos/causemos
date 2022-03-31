@@ -123,7 +123,7 @@ export default {
     const store = useStore();
     // the gallery opens over top of this side panel, prevent fetches while the gallery is open
     const preventFetches = computed(() => store.getters['insightPanel/isPanelOpen']);
-    const { insights, reFetchInsights, fetchImagesForInsights } = useInsightsData(preventFetches);
+    const { insights, reFetchInsights, fetchImagesForInsights } = useInsightsData(preventFetches, undefined, true);
     const listContextInsights = ref([])/* as Ref<FullInsight[]> */;
 
     watch([insights], () => {
@@ -145,11 +145,9 @@ export default {
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countContextInsights: 'contextInsightPanel/countContextInsights',
       projectType: 'app/projectType',
       project: 'app/project',
-      analysisId: 'dataAnalysis/analysisId',
-      shouldRefetchInsights: 'contextInsightPanel/shouldRefetchInsights'
+      analysisId: 'dataAnalysis/analysisId'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
@@ -158,20 +156,8 @@ export default {
         `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${this.projectMetadata.corpus_id}`;
     }
   },
-  watch: {
-    shouldRefetchInsights() {
-      if (this.shouldRefetchInsights) {
-        // refresh the latest list from the server
-        this.reFetchInsights();
-      }
-    }
-  },
-  mounted() {
-    this.showContextInsightPanel();
-  },
   methods: {
     ...mapActions({
-      showContextInsightPanel: 'contextInsightPanel/showContextInsightPanel',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
@@ -269,7 +255,7 @@ export default {
       }
 
       const id = insight.id;
-      InsightUtil.removeInsight(id);
+      await InsightUtil.removeInsight(id);
       // refresh the latest list from the server
       this.reFetchInsights();
     },

@@ -100,22 +100,21 @@ function parseMetadataDetails (
   return summary;
 }
 
-function removeInsight(id: string, store?: any) {
-  deleteInsight(id).then(result => {
-    const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
-    const toast = useToaster();
-    if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
-      toast(message, 'success', false);
+async function removeInsight(id: string, store?: any) {
+  const result = await deleteInsight(id);
+  const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
+  const toast = useToaster();
+  if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
+    toast(message, 'success', false);
 
-      if (store) {
-        const countInsights = computed(() => store.getters['insightPanel/countInsights']);
-        const count = countInsights.value - 1;
-        store.dispatch('insightPanel/setCountInsights', count);
-      }
-    } else {
-      toast(message, 'error', true);
+    if (store) {
+      const countInsights = computed(() => store.getters['insightPanel/countInsights']);
+      const count = countInsights.value - 1;
+      store.dispatch('insightPanel/setCountInsights', count);
     }
-  });
+  } else {
+    toast(message, 'error', true);
+  }
   // FIXME: delete any reference to this insight from its list of analytical_questions
 }
 

@@ -8,7 +8,7 @@
     />
     <full-screen-modal-header
       icon="angle-left"
-      :nav-back-label="newMode ? 'Close' : 'All Insights'"
+      :nav-back-label="isNewModeActive ? 'Close' : 'All Insights'"
       @close="closeInsightReview"
     >
       <button
@@ -89,7 +89,7 @@
     </full-screen-modal-header>
     <div class="pane-row">
       <button
-        v-if="!newMode"
+        v-if="!isNewModeActive"
         :disabled="prevInsight === null"
         type="button"
         class="btn btn-default"
@@ -185,7 +185,7 @@
       </div>
 
       <button
-        v-if="!newMode"
+        v-if="!isNewModeActive"
         :disabled="nextInsight === null"
         type="button"
         class="btn btn-default"
@@ -248,16 +248,6 @@ export default defineComponent({
     SmallTextButton,
     RenameModal,
     MessageDisplay
-  },
-  props: {
-    editMode: {
-      type: Boolean,
-      default: false
-    },
-    newMode: {
-      type: Boolean,
-      default: false
-    }
   },
   setup() {
     const store = useStore();
@@ -404,18 +394,11 @@ export default defineComponent({
         }
       }
     },
-    editMode: {
+    isEditModeActive: {
       handler(/* newValue, oldValue */) {
-        if (this.updatedInsight && this.editMode) {
+        if (this.updatedInsight && this.isEditModeActive) {
           this.editInsight();
         }
-      },
-      immediate: true
-    },
-    newMode: {
-      handler(/* newValue, oldValue */) {
-        // clear insight fields: name/desc
-        // capture the image
       },
       immediate: true
     },
@@ -473,6 +456,12 @@ export default defineComponent({
       filters: 'dataSearch/filters',
       analysisName: 'app/analysisName'
     }),
+    isEditModeActive() {
+      return this.currentPane === 'review-edit-insight';
+    },
+    isNewModeActive() {
+      return this.currentPane === 'review-new-insight';
+    },
     questionsDropdown() {
       return [...this.sortedQuestions.map(q => q.question)];
     },
@@ -492,9 +481,21 @@ export default defineComponent({
       return InsightUtil.getFormattedFilterString(this.filters);
     },
     metadataDetails(): InsightMetadata {
-      const dState = this.newMode || this.updatedInsight === null ? this.dataState : this.updatedInsight.data_state;
-      const insightLastUpdate = this.newMode || this.updatedInsight === null ? undefined : this.updatedInsight.modified_at;
-      const insightSummary = InsightUtil.parseMetadataDetails(dState, this.projectMetadata, this.analysisName, this.formattedFilterString, this.currentView, this.projectType, insightLastUpdate);
+      const dState = this.isNewModeActive || this.updatedInsight === null
+        ? this.dataState
+        : this.updatedInsight.data_state;
+      const insightLastUpdate = this.isNewModeActive || this.updatedInsight === null
+        ? undefined
+        : this.updatedInsight.modified_at;
+      const insightSummary = InsightUtil.parseMetadataDetails(
+        dState,
+        this.projectMetadata,
+        this.analysisName,
+        this.formattedFilterString,
+        this.currentView,
+        this.projectType,
+        insightLastUpdate
+      );
       return insightSummary;
     },
     previewInsightTitle(): string {
@@ -525,7 +526,7 @@ export default defineComponent({
     this.setReviewMode(false);
   },
   async mounted() {
-    if (this.newMode) {
+    if (this.isNewModeActive) {
       this.loadingImage = true;
       this.imagePreview = await this.takeSnapshot();
       this.loadingImage = false;
@@ -546,9 +547,7 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
       setReviewIndex: 'insightPanel/setReviewIndex',
-      hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
-      setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane',
-      setRefetchInsights: 'contextInsightPanel/setRefetchInsights',
+      setShouldRefetchInsights: 'insightPanel/setShouldRefetchInsights',
       setReviewMode: 'insightPanel/setReviewMode'
     }),
     setInsightQuestions(questions: string[]) {
@@ -600,7 +599,7 @@ export default defineComponent({
       return image;
     },
     closeInsightReview() {
-      if (this.newMode) {
+      if (this.isNewModeActive) {
         this.hideInsightPanel();
         this.setCurrentPane('');
       } else {
@@ -652,8 +651,8 @@ export default defineComponent({
     editInsight() {
       this.isEditingInsight = true;
       // save current insight name/desc in case the user cancels the edit action
-      this.insightTitle = this.newMode ? '' : this.updatedInsight.name;
-      this.insightDesc = this.newMode ? '' : this.updatedInsight.description;
+      this.insightTitle = this.isNewModeActive ? '' : this.updatedInsight.name;
+      this.insightDesc = this.isNewModeActive ? '' : this.updatedInsight.description;
     },
     cancelInsightEdit() {
       this.isEditingInsight = false;
@@ -668,7 +667,7 @@ export default defineComponent({
         this.cropArea.close();
       }
 
-      if (this.newMode || this.updatedInsight === null) {
+      if (this.isNewModeActive || this.updatedInsight === null) {
         this.closeInsightReview();
       }
     },
@@ -685,10 +684,6 @@ export default defineComponent({
         imagePreview: stateData.croppedNonAnnotatedImagePreview,
         originalImagePreview: stateData.originalImagePreview
       };
-    },
-    closeContextInsightPanel() {
-      this.hideContextInsightPanel();
-      this.setCurrentContextInsightPane('');
     },
     saveInsight() {
       if (this.hasError || this.insightTitle.trim().length === 0) return;
@@ -707,7 +702,7 @@ export default defineComponent({
 
       const linkedQuestions = this.sortedQuestions.filter(q => this.selectedInsightQuestions.includes(q.question));
 
-      if (this.newMode) {
+      if (this.isNewModeActive) {
         // saving a new insight
         const url = this.$route.fullPath;
 
@@ -750,12 +745,11 @@ export default defineComponent({
               this.toaster(message, 'error', true);
             }
             this.closeInsightReview();
-            this.closeContextInsightPanel();
-            this.setRefetchInsights(true);
+            this.setShouldRefetchInsights(true);
+          }).catch(() => {
+            // just in case the call to the server fails
+            this.closeInsightReview();
           });
-        // just in case the call to the server fails
-        this.closeInsightReview();
-        this.closeContextInsightPanel();
       } else {
         // saving an existing insight
         if (this.updatedInsight) {
