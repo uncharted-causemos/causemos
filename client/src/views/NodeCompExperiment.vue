@@ -11,32 +11,50 @@
           :disabled="stepsBeforeCanConfirm.length > 0"
           type="button"
           class="btn btn-primary btn-call-for-action"
-          @click="checkSelection"
+          @click="attemptToSaveUpdatedNodeParameter"
         >
           <i class="fa fa-fw fa-plus-circle" />
           {{selectLabel}}
         </button>
-        <span v-if="stepsBeforeCanConfirm.length > 0">{{ stepsBeforeCanConfirm[0] }}</span>
+        <span v-if="stepsBeforeCanConfirm.length > 0">{{
+          stepsBeforeCanConfirm[0]
+        }}</span>
       </div>
     </full-screen-modal-header>
     <main class="insight-capture">
-      <modal class="timeseries-selection-modal" v-if="isTimeseriesSelectionModalOpen">
+      <modal
+        class="timeseries-selection-modal"
+        v-if="isTimeseriesSelectionModalOpen"
+      >
         <template #header>
-          <h3>Please select one timeseires data</h3>
+          <!-- FIXME: awkward wording -->
+          <h3>Please select one timeseries data</h3>
         </template>
         <template #body>
-          <div v-for="(d, index) in dataState.visibleTimeseriesData" :key="index">
+          <div
+            v-for="(d, index) in dataState.visibleTimeseriesData"
+            :key="index"
+          >
             <div class="select-row">
               <i
                 class="fa fa-lg fa-fw"
-                :class="{ 'fa-circle': selectedTimeseriesIndex === index, 'fa-circle-o': selectedTimeseriesIndex !== index }"
+                :class="{
+                  'fa-circle': selectedTimeseriesIndex === index,
+                  'fa-circle-o': selectedTimeseriesIndex !== index
+                }"
                 @click="selectedTimeseriesIndex = index"
               />
-              <span :style="{ color: d.color }"><b>{{d.name}}</b></span>
-              <sparkline :data="[{ series: d.points.map(p => p.value), name: d.name, color: d.color }]" :size="[350, 20]" />
+              <strong :style="{ color: d.color }">{{d.name}}</strong>
+              <sparkline
+                :data="[{
+                  series: d.points.map(p => p.value),
+                  name: d.name,
+                  color: d.color
+                }]"
+                :size="[350, 20]"
+              />
             </div>
           </div>
-
         </template>
         <template #footer>
           <ul class="unstyled-list">
@@ -49,7 +67,7 @@
             <button
               type="button"
               class="btn btn-primary btn-call-for-action"
-              @click.stop="onSelection">
+              @click.stop="saveUpdatedNodeParameter">
                 Select
             </button>
           </ul>
@@ -63,6 +81,7 @@
         :aggregation-options="aggregationOptionFiltered"
         :temporal-resolution-options="temporalResolutionOption"
         @update-model-parameter="onModelParamUpdated"
+        @visible-timeseries-changed="(newValue) => { visibleTimeseries = newValue; }"
       >
         <template #datacube-model-header>
           <div class="datacube-header" v-if="metadata && mainModelOutput">
@@ -112,10 +131,11 @@ import { getOutputs, getSelectedOutput, getValidatedOutputs, STATUS } from '@/ut
 import filtersUtil from '@/utils/filters-util';
 
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
-import { DataState, ViewState } from '@/types/Insight';
+import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import { Timeseries } from '@/types/Timeseries';
 
 
 export default defineComponent({
@@ -142,7 +162,7 @@ export default defineComponent({
     const dataState = computed(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const initialViewConfig = ref<ViewState | null>(null);
-    const initialDataConfig = ref<Partial<DataState> | null>(null);
+    const initialDataConfig = ref<Partial<DataSpaceDataState> | null>(null);
 
     const isTimeseriesSelectionModalOpen = ref(false);
     const selectedTimeseriesIndex = ref(0);
@@ -150,6 +170,8 @@ export default defineComponent({
     const modelComponents = ref(null) as Ref<any>;
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
     const { currentOutputIndex } = useActiveDatacubeFeature(metadata, indicatorId);
+
+    const visibleTimeseries = ref<Timeseries[]>([]);
 
     const temporalResolutionOption = computed(() => {
       if (modelComponents.value === null) {
@@ -257,15 +279,15 @@ export default defineComponent({
       isTimeseriesSelectionModalOpen.value = false;
     };
 
-    const checkSelection = async () => {
+    const attemptToSaveUpdatedNodeParameter = async () => {
       if (dataState.value.visibleTimeseriesData.length > 1) {
         isTimeseriesSelectionModalOpen.value = true;
       } else {
-        await onSelection();
+        await saveUpdatedNodeParameter();
       }
     };
 
-    const onSelection = async () => {
+    const saveUpdatedNodeParameter = async () => {
       if (metadata === null) {
         console.error('Confirm should not be clickable until metadata is loaded.');
         return;
@@ -385,7 +407,7 @@ export default defineComponent({
 
     return {
       aggregationOptionFiltered,
-      checkSelection,
+      attemptToSaveUpdatedNodeParameter,
       currentCAG,
       currentOutputIndex,
       closeTimeseriesSelectionModal,
@@ -402,7 +424,7 @@ export default defineComponent({
       nodeId,
       onBack,
       onOutputSelectionChange,
-      onSelection,
+      saveUpdatedNodeParameter,
       outputs,
       project,
       selectedNode,
@@ -412,7 +434,8 @@ export default defineComponent({
       statusLabel,
       stepsBeforeCanConfirm,
       onModelParamUpdated,
-      temporalResolutionOption
+      temporalResolutionOption,
+      visibleTimeseries
     };
   },
   mounted() {

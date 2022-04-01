@@ -63,7 +63,7 @@ import {
   TemporalResolution,
   DatacubeViewMode
 } from '@/types/Enums';
-import { DataState, ViewState } from '@/types/Insight';
+import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import domainProjectService from '@/services/domain-project-service';
 import InsightUtil from '@/utils/insight-util';
@@ -101,7 +101,7 @@ export default defineComponent({
     const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
     const disableOverlay = () => store.dispatch('app/disableOverlay');
 
-    const initialDataConfig = ref<DataState | null>(null);
+    const initialDataConfig = ref<DataSpaceDataState | null>(null);
     const initialViewConfig = ref<ViewState | null>({
       temporalAggregation: AggregationOption.None,
       spatialAggregation: AggregationOption.None,
@@ -414,7 +414,10 @@ export default defineComponent({
           markInsightStepAsCompleted = true;
           // restore initial config from the insight, if available
           if (defaultInsight.data_state !== undefined) {
-            this.initialDataConfig = defaultInsight.data_state;
+            // FIXME: check that this insight has the correct type, rather than
+            //  just asserting
+            this.initialDataConfig =
+              defaultInsight.data_state as DataSpaceDataState;
           }
           if (defaultInsight.view_state !== undefined) {
             this.initialViewConfig = defaultInsight.view_state;

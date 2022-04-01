@@ -72,7 +72,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { DatacubeStatus, ProjectType, SPLIT_BY_VARIABLE } from '@/types/Enums';
-import { DataState, ViewState } from '@/types/Insight';
+import { DataSpaceDataState, ViewState } from '@/types/Insight';
 
 import { DATASET_NAME, isIndicator, getValidatedOutputs, getOutputs, getSelectedOutput } from '@/utils/datacube-util';
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
@@ -103,7 +103,7 @@ export default defineComponent({
     const viewState = computed(() => store.getters['insightPanel/viewState']);
 
     const initialViewConfig = ref<ViewState | null>(null);
-    const initialDataConfig = ref<DataState | null>(null);
+    const initialDataConfig = ref<DataSpaceDataState | null>(null);
     let datacubeAnalysisItem: AnalysisItem | undefined = analysisItems.value.find(item => item.itemId === datacubeItemId);
     if (!datacubeAnalysisItem) {
       datacubeAnalysisItem = analysisItems.value.find(item => item.id === selectedModelId.value);
@@ -123,14 +123,6 @@ export default defineComponent({
         const currentAnalysisItem = updatedAnalysisItems.find(item => item.itemId === datacubeItemId);
 
         if (currentAnalysisItem) {
-          if (currentAnalysisItem.viewConfig === undefined) {
-            currentAnalysisItem.viewConfig = {} as ViewState;
-          }
-
-          if (currentAnalysisItem.dataConfig === undefined) {
-            currentAnalysisItem.dataConfig = {} as DataState;
-          }
-
           currentAnalysisItem.viewConfig = viewState.value;
           currentAnalysisItem.dataConfig = dataState.value;
           store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });

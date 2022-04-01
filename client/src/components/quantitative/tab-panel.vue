@@ -121,7 +121,7 @@ import { findPaths, calculateNeighborhood } from '@/utils/graphs-util';
 import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter, CAGVisualState } from '@/types/CAG';
 import { Statement } from '@/types/Statement';
 import { getInsightById } from '@/services/insight-service';
-import { DataState } from '@/types/Insight';
+import { ModelsSpaceDataState } from '@/types/Insight';
 import useToaster from '@/services/composables/useToaster';
 
 const PANE_ID = {
@@ -611,20 +611,20 @@ export default defineComponent({
       }
     },
     updateDataState() {
-      const dataState: DataState = {
+      let _selectedEdge: [string, string] | null = null;
+      // dataState.selectedEdge requires an array of the form [source, target]
+      if (this.selectedEdge !== null) {
+        const { source, target } = this.selectedEdge;
+        _selectedEdge = [source, target];
+      }
+      const dataState: ModelsSpaceDataState = {
         selectedScenarioId: this.selectedScenarioId,
         currentEngine: this.currentEngine,
-        modelName: this.modelSummary.name
+        modelName: this.modelSummary.name,
+        selectedNode: this.selectedNode?.concept ?? null,
+        selectedEdge: _selectedEdge,
+        cagVisualState: this.visualState ?? null
       };
-      if (this.selectedNode) {
-        dataState.selectedNode = this.selectedNode.concept;
-      }
-      if (this.selectedEdge) {
-        dataState.selectedEdge = [this.selectedEdge.source, this.selectedEdge.target];
-      }
-      if (this.visualState) {
-        dataState.cagVisualState = this.visualState;
-      }
       this.setDataState(dataState);
     }
   }
