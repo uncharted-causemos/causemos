@@ -2159,13 +2159,6 @@ export default defineComponent({
 
 
     watchEffect(() => {
-      // FIXME: why do we need to copy this into the store?
-      // - nodecompexperiment uses it to
-      //  - select between multiple timeseries
-      //  - check whether we're ready to update the node parameter (stepsBeforeCanConfirm)
-      // - does anywhere else use it? presumably when we take new insights?
-      // FIXME: does this watcher even trigger as we expect? we're passing the
-      //  whole ref objects rather than ref.value
       const dataState: DataSpaceDataState = initDataStateFromRefs(
         relativeTo,
         selectedModelId,
