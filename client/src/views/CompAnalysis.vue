@@ -229,9 +229,6 @@ export default defineComponent({
     const quantitativeAnalysisId = computed(
       () => store.getters['dataAnalysis/analysisId']
     );
-    const dataState = computed<ComparativeAnalysisDataState>(
-      () => store.getters['insightPanel/dataState']
-    );
 
     const activeDrilldownTab = ref<string|null>('region-settings');
     const selectedAdminLevel = ref(0);
@@ -243,6 +240,14 @@ export default defineComponent({
     const globalBbox = ref<number[][] | undefined>(undefined);
 
     const allTimeseriesMap = ref<{[key: string]: Timeseries[]}>({});
+    const allDatacubesMetadataMap = ref<{
+      [key: string]: {
+        datacubeName: string;
+        datacubeOutputName: string;
+        source: string;
+        region: string[];
+      }
+    }>({});
     const globalTimeseries = ref([]) as Ref<Timeseries[]>;
     const reCalculateGlobalTimeseries = ref(true);
     const timeseriesToDatacubeMap = ref<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>({});
@@ -302,10 +307,6 @@ export default defineComponent({
             // update the selection status on the server
             store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
           }
-          // save selected analysis items in insight to apply later correctly as needed
-          const dataStateUpdated = _.cloneDeep(dataState.value);
-          dataStateUpdated.selectedAnalysisItems = selectedItems;
-          store.dispatch('insightPanel/setDataState', dataStateUpdated);
 
           selectedAnalysisItems.value = [];
           nextTick(() => {
@@ -470,24 +471,6 @@ export default defineComponent({
       }
     );
 
-    watch(
-      () => [
-        regionRankingWeights.value,
-        regionRankingDataInversion.value,
-        selectedGlobalTimestamp.value
-      ],
-      () => {
-        const dataStateUpdated = _.cloneDeep(dataState.value);
-        dataStateUpdated.regionRankingWeights = regionRankingWeights.value;
-        dataStateUpdated.regionRankingDataInversion = regionRankingDataInversion.value;
-        if (comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay) {
-          // only save the selected timestamp in the overlap mode
-          dataStateUpdated.selectedTimestamp = selectedGlobalTimestamp.value;
-        }
-        store.dispatch('insightPanel/setDataState', dataStateUpdated);
-      }
-    );
-
     const updateStateFromInsight = async (insight_id: string) => {
       const loadedInsight: Insight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
@@ -553,6 +536,7 @@ export default defineComponent({
     return {
       selectedAnalysisItems,
       allTimeseriesMap,
+      allDatacubesMetadataMap,
       globalTimeseries,
       globalBbox,
       selectedTimestamp,
@@ -594,8 +578,8 @@ export default defineComponent({
       timeseriesToDatacubeMap,
       colorFromIndex,
       regionRankingDataInversion,
-      dataState,
-      shownDatacubesCountLabel
+      shownDatacubesCountLabel,
+      datacubeTitles: ref<DatacubeTitle[]>([])
     };
   },
   mounted() {
@@ -606,9 +590,25 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       project: 'app/project'
-    })
+    }),
+    dataState(): ComparativeAnalysisDataState {
+      return {
+        regionRankingWeights: this.regionRankingWeights,
+        regionRankingDataInversion: this.regionRankingDataInversion,
+        // Only save the selected timestamp when overlap mode is active
+        selectedTimestamp:
+          this.comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay
+            ? this.selectedGlobalTimestamp
+            : null,
+        selectedAnalysisItems: this.selectedAnalysisItems,
+        datacubeTitles: this.datacubeTitles
+      };
+    }
   },
   watch: {
+    dataState(newDataState) {
+      this.setDataState(newDataState);
+    },
     regionRankingCompositionType() {
       this.updateGlobalRegionRankingData();
     },
@@ -804,15 +804,7 @@ export default defineComponent({
       const datacubeKey = timeseriesInfo.itemId;
       this.allTimeseriesMap[datacubeKey] = _.cloneDeep(timeseriesInfo.timeseriesList);
 
-      const allDatacubesMetadataMap: {
-        [key: string]: {
-          datacubeName: string;
-          datacubeOutputName: string;
-          source: string; region: string[]
-        }
-      } = {};
-
-      allDatacubesMetadataMap[datacubeKey] = {
+      this.allDatacubesMetadataMap[datacubeKey] = {
         datacubeName: timeseriesInfo.datacubeName,
         datacubeOutputName: timeseriesInfo.datacubeOutputName,
         source: timeseriesInfo.source,
@@ -843,7 +835,7 @@ export default defineComponent({
           // build a map that links each timeseries to its owner datacube
           timeseriesList.forEach(timeseries => {
             timeseries.id = key; // override the timeseries id to match its owner datacube
-            const info = allDatacubesMetadataMap[key];
+            const info = this.allDatacubesMetadataMap[key];
             this.timeseriesToDatacubeMap[key] = {
               datacubeName: info.datacubeName,
               datacubeOutputVariable: info.datacubeOutputName
@@ -887,27 +879,26 @@ export default defineComponent({
           }
         }
 
-        //
         // use the loaded metadata for all analysis-items
-        //  and update the data-state object in the store for future insight capture
-        //
         const datacubeTitles: DatacubeTitle[] = [];
         const regions: string[] = [];
-        Object.keys(allDatacubesMetadataMap).forEach(key => {
+        Object.keys(this.allDatacubesMetadataMap).forEach(key => {
           const title = {
-            datacubeName: allDatacubesMetadataMap[key].datacubeName,
-            datacubeOutputName: allDatacubesMetadataMap[key].datacubeOutputName,
-            source: allDatacubesMetadataMap[key].source
+            datacubeName: this.allDatacubesMetadataMap[key].datacubeName,
+            datacubeOutputName: this.allDatacubesMetadataMap[key].datacubeOutputName,
+            source: this.allDatacubesMetadataMap[key].source
           };
           // for each datacube, save its name and output-name
           datacubeTitles.push(title);
           // also, save a list of all regions (into a big list for all datacubes)
-          const datacubeRegions = allDatacubesMetadataMap[key].region && _.isArray(allDatacubesMetadataMap[key].region) ? allDatacubesMetadataMap[key].region : [];
+          const datacubeRegions =
+            this.allDatacubesMetadataMap[key].region &&
+            _.isArray(this.allDatacubesMetadataMap[key].region)
+              ? this.allDatacubesMetadataMap[key].region
+              : [];
           regions.push(...datacubeRegions);
         });
-        const dataStateUpdated = _.cloneDeep(this.dataState);
-        dataStateUpdated.datacubeTitles = datacubeTitles;
-        this.setDataState(dataStateUpdated);
+        this.datacubeTitles = datacubeTitles;
       }
     }
   }
