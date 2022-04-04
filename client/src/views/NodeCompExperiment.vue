@@ -32,7 +32,7 @@
         </template>
         <template #body>
           <div
-            v-for="(d, index) in dataState.visibleTimeseriesData"
+            v-for="(d, index) in visibleTimeseries"
             :key="index"
           >
             <div class="select-row">
@@ -280,7 +280,7 @@ export default defineComponent({
     };
 
     const attemptToSaveUpdatedNodeParameter = async () => {
-      if (dataState.value.visibleTimeseriesData.length > 1) {
+      if (visibleTimeseries.value.length > 1) {
         isTimeseriesSelectionModalOpen.value = true;
       } else {
         await saveUpdatedNodeParameter();
@@ -292,15 +292,14 @@ export default defineComponent({
         console.error('Confirm should not be clickable until metadata is loaded.');
         return;
       }
-      const visibleTimeseriesData = dataState.value.visibleTimeseriesData;
-      if (visibleTimeseriesData.length < 1) {
-        console.error('There should be at least one timeseries visible.', visibleTimeseriesData);
+      if (visibleTimeseries.value.length < 1) {
+        console.error('There should be at least one timeseries visible.', visibleTimeseries.value);
         return;
       }
-      const selectedIndex = visibleTimeseriesData.length > 1
+      const selectedIndex = visibleTimeseries.value.length > 1
         ? selectedTimeseriesIndex.value
         : 0;
-      const timeseries = visibleTimeseriesData[selectedIndex].points;
+      const timeseries = visibleTimeseries.value[selectedIndex].points;
       let country = '';
       let admin1 = '';
       let admin2 = '';
