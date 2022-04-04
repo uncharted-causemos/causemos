@@ -25,7 +25,6 @@
             :selected-button-value="activeTab"
             @button-clicked="setActive"
           />
-          <div v-if="activeTab === 'concepts'">&nbsp;&nbsp;About {{ numberFormatter(conceptEstimatedHits) }} results</div>
         </div>
 
 
@@ -110,6 +109,14 @@
           </div>
         </div>
 
+        <div
+          v-if="activeTab === 'concepts' && conceptSuggestions.length > 0"
+          class="tab-row" style="border-top: 1px solid #ddd; border-bottom: 0; margin: 2px; padding: 2px">
+          <button class="btn btn-primrary btn-sm" @click="openExplorer">
+            Explore (About {{ numberFormatter(conceptEstimatedHits) }} results)
+          </button>
+        </div>
+
         <!-- Empty -->
         <div v-if="showCustomConceptDisplay" class="new-concept-section">
           <div> No matches. Try searching something else or create a custom concept</div>
@@ -146,6 +153,7 @@ import { AggregationOption, TemporalResolution, TemporalResolutionOption, TimeSc
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { logHistoryEntry } from '@/services/model-service';
 import { getTimeseries } from '@/services/outputdata-service';
+import filtersUtil from '@/utils/filters-util';
 
 const CONCEPT_SUGGESTION_COUNT = 30;
 
@@ -315,6 +323,7 @@ export default defineComponent({
       temporalResolution,
 
       // Computed
+      currentCAG,
       currentSuggestion,
       ontologyConcepts,
       project,
@@ -441,6 +450,14 @@ export default defineComponent({
     },
     setActive(tab: string) {
       this.activeTab = tab;
+    },
+    openExplorer() {
+      const filters = filtersUtil.newFilters();
+      filtersUtil.setClause(filters, 'keyword', [this.userInput], 'or', false);
+      this.$router.push({
+        name: 'kbExplorer',
+        query: { cag: this.currentCAG, view: 'statements', filters: filters as any }
+      });
     }
   }
 });
