@@ -48,10 +48,6 @@ function parseMetadataDetails (
   projectMetadata: any,
   insightLastUpdate?: number
 ): InsightMetadata {
-  // FIXME: we should be able to assert that projectMetadata is set.
-  //  Or maybe split these into separate objects?
-  //  - project metadata
-  //  - analysis metadata
   const summary: InsightMetadata = {
     insightLastUpdate: insightLastUpdate ?? Date.now()
   };
