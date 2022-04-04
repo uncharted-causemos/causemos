@@ -53,17 +53,9 @@ function parseMetadataDetails (
   //  - project metadata
   //  - analysis metadata
   const summary: InsightMetadata = {
-    projectName: projectMetadata.name,
     insightLastUpdate: insightLastUpdate ?? Date.now()
   };
   if (!dataState || !projectMetadata) return summary;
-
-  // FIXME: remove
-  // Project metadata, do we want to only show things like ontology/corpus on CAGs?
-  // summary.ontology = projectMetadata.ontology;
-  // summary.ontology_created_at = projectMetadata.created_at;
-  // summary.ontology_modified_at = projectMetadata.modified_at;
-  // summary.corpus_id = projectMetadata.corpus_id;
 
   // FIXME: Previously, formattedFilterString came from 'dataSearch/filters',
   //  then was converted to a string by getFormattedFilterString(this.filters).
@@ -83,6 +75,14 @@ function parseMetadataDetails (
   // }
 
   if (isQualitativeViewDataState(dataState)) {
+    // Only show the project's ontology and corpus for CAG analysis insights
+    if (projectMetadata?.ontology) {
+      summary.ontology = projectMetadata.ontology;
+    }
+    if (projectMetadata?.corpus_id) {
+      summary.corpus_id = projectMetadata.corpus_id;
+    }
+
     summary.cagName = dataState.modelName;
     summary.selectedNode = dataState.selectedNode ?? undefined;
     summary.selectedEdge = dataState.selectedEdge?.toString() ?? undefined;

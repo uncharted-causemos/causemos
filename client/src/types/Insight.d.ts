@@ -183,19 +183,13 @@ export interface AnalyticalQuestion extends Snapshot {
 }
 
 export interface InsightMetadata {
-  projectName: string;
   insightLastUpdate: number;
-  datacubes?: { datasetName: string; outputName: string; source: string }[];
 
-  // data space specific
-  analysisName?: string;
+  // Data space specific
+  datacubes?: { datasetName: string; outputName: string; source: string }[];
 
   // CAG specific
   ontology?: string;
-  // FIXME: are these referring to the CAG created/modified timestamps or the
-  //  ontology's? or the project's? I think it's the last one.
-  ontology_created_at?: number;
-  ontology_modified_at?: number;
   corpus_id?: string;
   filters?: string;
   cagName?: string;

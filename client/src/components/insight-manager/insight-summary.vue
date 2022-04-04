@@ -1,10 +1,11 @@
 <template>
   <div>
-    <div><b>Project</b>: {{metadataDetails.projectName}}</div>
+    <div v-if="projectMetadata.name">
+      <strong>Project</strong>: {{projectMetadata.name}}
+    </div>
 
-    <div v-if="metadataDetails.analysisName !== undefined"><b>Analysis</b>: {{metadataDetails.analysisName}}</div>
     <template v-if="metadataDetails.datacubes !== undefined">
-      <div><b>Datacubes</b>:</div>
+      <div><strong>Datacubes</strong>:</div>
       <div v-for="(datacube, indx) in metadataDetails.datacubes" :key="indx" class="datacube-items">
           <div><i class="fa fa-circle output-name" />{{datacube.outputName}}</div>
           <div class="dataset-and-source">{{datacube.datasetName}}</div>
@@ -14,8 +15,6 @@
 
     <div v-if="metadataDetails.cagName !== undefined"><b>CAG</b>: {{metadataDetails.cagName}}</div>
     <div v-if="metadataDetails.ontology !== undefined"><b>Ontology</b>: {{metadataDetails.ontology}}</div>
-    <div v-if="ontologyCreatedAt !== null"><b>Ontology created at</b>: {{ontologyCreatedAt}}</div>
-    <div v-if="ontologyModifiedAt !== null"><b>Ontology modified at</b>: {{ontologyModifiedAt}}</div>
     <div v-if="metadataDetails.corpus_id !== undefined"><b>Corpus</b>: {{metadataDetails.corpus_id}}</div>
     <div v-if="metadataDetails.currentEngine !== undefined"><b>Engine</b>: {{metadataDetails.currentEngine}}</div>
     <div v-if="metadataDetails.selectedNode !== undefined"><b>Selected Node</b>: {{metadataDetails.selectedNode}}</div>
@@ -23,7 +22,7 @@
     <div v-if="metadataDetails.selectedCAGScenario !== undefined"><b>CAG Scenario</b>: {{metadataDetails.selectedCAGScenario}}</div>
     <div v-if="metadataDetails.filters !== undefined"><b>Filters</b>: {{metadataDetails.filters}}</div>
 
-    <div v-if="insightLastUpdate !== null"><b>Insight last update</b>: {{insightLastUpdate}}</div>
+    <div v-if="insightLastUpdate !== null"><b>Insight last updated at</b>: {{insightLastUpdate}}</div>
   </div>
 </template>
 
@@ -31,9 +30,10 @@
 import { InsightMetadata } from '@/types/Insight';
 import { defineComponent, PropType } from 'vue';
 import dateFormatter from '@/formatters/date-formatter';
+import { mapGetters } from 'vuex';
 
 const formatDate = (date: number) => {
-  return dateFormatter(date, 'YYYY-MM-DD hh:mm:ss a');
+  return dateFormatter(date, 'MMM DD, YYYY, h:mm a');
 };
 
 export default defineComponent({
@@ -45,21 +45,12 @@ export default defineComponent({
     }
   },
   computed: {
+    ...mapGetters({
+      projectMetadata: 'app/projectMetadata'
+    }),
     insightLastUpdate(): string | null {
       if (this.metadataDetails.insightLastUpdate !== undefined) {
         return formatDate(this.metadataDetails.insightLastUpdate);
-      }
-      return null;
-    },
-    ontologyCreatedAt(): string | null {
-      if (this.metadataDetails.ontology_created_at !== undefined) {
-        return formatDate(this.metadataDetails.ontology_created_at);
-      }
-      return null;
-    },
-    ontologyModifiedAt(): string | null {
-      if (this.metadataDetails.ontology_modified_at !== undefined) {
-        return formatDate(this.metadataDetails.ontology_modified_at);
       }
       return null;
     }
