@@ -31,10 +31,7 @@
           <h3>Please select one timeseries data</h3>
         </template>
         <template #body>
-          <div
-            v-for="(d, index) in visibleTimeseries"
-            :key="index"
-          >
+          <div v-for="(d, index) in visibleTimeseries" :key="index">
             <div class="select-row">
               <i
                 class="fa fa-lg fa-fw"
