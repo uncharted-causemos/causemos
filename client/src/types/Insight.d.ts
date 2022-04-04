@@ -55,7 +55,6 @@ export interface ViewState {
   [propName: string]: any; // allow other properties to be added
 }
 
-// data-specific context values
 // data context/selection (metadata, CAG node, one or more model runs, etc.)
 export interface DataSpaceDataState {
   selectedModelId: string;
@@ -98,6 +97,7 @@ export interface RegionRankingDataState {
   regionRankingWeights: { [key: string]: { name: string; weight: number } };
   regionRankingDataInversion: { [key: string]: boolean };
 }
+
 export interface QualitativeDataState {
   selectedNode: string | null;
   // selectedEdge uses the form [source, target]
