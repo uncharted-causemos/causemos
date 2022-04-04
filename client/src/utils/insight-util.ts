@@ -124,7 +124,7 @@ function isModelsSpaceDataState(
   return (dataState as ModelsSpaceDataState).selectedScenarioId !== undefined;
 }
 
-function isComparativeAnalysisDataState(
+export function isComparativeAnalysisDataState(
   dataState: DataState
 ): dataState is ComparativeAnalysisDataState {
   return (dataState as ComparativeAnalysisDataState).selectedAnalysisItems !== undefined;

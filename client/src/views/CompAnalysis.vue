@@ -195,6 +195,7 @@ import router from '@/router';
 import { AnalysisItem } from '@/types/Analysis';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import { isComparativeAnalysisDataState } from '@/utils/insight-util';
 import { v4 as uuidv4 } from 'uuid';
 
 const DRILLDOWN_TABS = [
@@ -477,30 +478,28 @@ export default defineComponent({
       //  consider pushing current state to the url to support browser hsitory
       //  in case the user wants to navigate to the original state using back button
       if (loadedInsight) {
-        // data state
+        const dataState = loadedInsight.data_state;
+        if (dataState && isComparativeAnalysisDataState(dataState)) {
+          regionRankingWeights.value = dataState.regionRankingWeights;
 
-        // FIXME: check that data_state is defined and actually an instance of
-        //  ComparativeAnalysisDataState instead of just asserting.
-        const dataState =
-          loadedInsight.data_state as ComparativeAnalysisDataState | undefined;
-        if (dataState?.regionRankingWeights !== undefined) {
-          regionRankingWeights.value = dataState?.regionRankingWeights;
-        }
-        if (dataState?.selectedAnalysisItems !== undefined) {
           const allAnalysisItems = _.cloneDeep(analysisItems.value);
-          const selectedItems = dataState?.selectedAnalysisItems;
+          const selectedItems = dataState.selectedAnalysisItems;
           allAnalysisItems.forEach(item => {
             item.selected = selectedItems.findIndex(sItem => sItem.itemId === item.itemId) >= 0;
           });
           store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
-        }
-        if (dataState?.regionRankingDataInversion !== undefined) {
-          regionRankingDataInversion.value = dataState?.regionRankingDataInversion;
-        }
-        if (dataState?.selectedTimestamp !== undefined &&
-            dataState?.selectedTimestamp !== null &&
-            loadedInsight.view_state?.regionRankingSelectedComparativeAnalysisMode === ComparativeAnalysisMode.Overlay) {
-          initialSelectedTimestamp.value = dataState?.selectedTimestamp;
+
+          regionRankingDataInversion.value =
+            dataState.regionRankingDataInversion;
+
+          if (
+            dataState.selectedTimestamp !== null &&
+            loadedInsight.view_state
+              ?.regionRankingSelectedComparativeAnalysisMode ===
+              ComparativeAnalysisMode.Overlay
+          ) {
+            initialSelectedTimestamp.value = dataState.selectedTimestamp;
+          }
         }
         // view state
         if (loadedInsight.view_state?.regionRankingSelectedAdminLevel !== undefined) {
