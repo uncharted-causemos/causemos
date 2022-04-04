@@ -46,20 +46,14 @@ function render(
 ) {
   const { indicator_time_series, min, max, time_scale } = nodeScenarioData;
 
-  let projection_start = nodeScenarioData.projection_start;
-  // Let projection override model's projection_start, as it can be in a temporary stale state that can mess up the renderer
-  if (nodeScenarioData.scenarios) {
-    const scenario1 = nodeScenarioData.scenarios[0];
-    if (scenario1.result) {
-      projection_start = scenario1.result.values[0].timestamp;
-    }
-  }
+  const projection_start = nodeScenarioData.projection_start;
 
   const visibleHistoricalMonthCount = nodeScenarioData.history_range;
   const historyStart = getTimestampAfterMonths(
     projection_start,
     -visibleHistoricalMonthCount
   );
+
   const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(time_scale);
   // Historical data should end 1 month (or year, depending on time
   //  scale) before projection start. "Projection start date" means the date at
@@ -251,7 +245,14 @@ function renderScenarioProjections(
     xScale(getTimestampAfterMonths(projection_start, firstSliceMonths)) -
     xScale(projection_start);
 
+  const domain = xScale.domain();
   ridgelinesWithMetadata.forEach((ridgelineWithMetadata, index) => {
+    // Don't render ridgelines if they are out of bound - this can happen if people start
+    // to play around with projection_start parameter
+    if (ridgelineWithMetadata.timestamp > domain[1] || ridgelineWithMetadata.timestamp < domain[0]) {
+      return;
+    }
+
     const { label, timestamp, monthsAfterNow } = ridgelineWithMetadata;
     // Calculate context range for each timeslice, unless this is an abstract
     //  node where the analyst hasn't filled in the historical data.

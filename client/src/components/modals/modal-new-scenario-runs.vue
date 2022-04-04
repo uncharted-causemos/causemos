@@ -65,7 +65,6 @@ import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
-import { mapGetters } from 'vuex';
 import { getOutputs, isGeoParameter } from '@/utils/datacube-util';
 import datacubeService from '@/services/new-datacube-service';
 import useToaster from '@/services/composables/useToaster';
@@ -97,10 +96,7 @@ export default defineComponent({
   computed: {
     inputParameters(): Array<ModelParameter> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
-    },
-    ...mapGetters({
-      datacubeCurrentOutputsMap: 'app/datacubeCurrentOutputsMap'
-    })
+    }
   },
   data: () => ({
     potentialRuns: [] as Array<ScenarioData>

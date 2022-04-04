@@ -728,22 +728,6 @@ export default defineComponent({
     border-width: thin;
   }
 
-  .insight-action {
-    flex: 1 1 auto;
-    text-align: right;
-    .insight-header-btn {
-      cursor: pointer;
-      padding: 5px;
-      color: gray;
-    }
-  }
-
-  .insight-editor-dropdown {
-    position: absolute;
-    right: 0px;
-    width: fit-content;
-  }
-
   .list-analytical-questions-pane-container {
     display: flex;
     flex-direction: column;
@@ -808,10 +792,6 @@ export default defineComponent({
   .no-insight-warning {
     margin-top: 5px;
     margin-left: 20px;
-  }
-
-  .delete-confirm-alert {
-    margin-bottom: 10px;
   }
 
   .new-question-button {

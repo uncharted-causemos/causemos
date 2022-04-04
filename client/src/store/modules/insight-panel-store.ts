@@ -15,6 +15,7 @@ interface InsightState {
   refreshDatacubes: boolean;
   reviewIndex: number;
   isReviewMode: boolean;
+  shouldRefetchInsights: boolean;
 }
 
 /**
@@ -33,7 +34,8 @@ const state: InsightState = {
   insightList: null,
   refreshDatacubes: false,
   reviewIndex: 0,
-  isReviewMode: false
+  isReviewMode: false,
+  shouldRefetchInsights: false
 };
 
 
@@ -50,7 +52,8 @@ const getters: GetterTree<InsightState, any> = {
   insightList: state => state.insightList,
   refreshDatacubes: state => state.refreshDatacubes,
   reviewIndex: state => state.reviewIndex,
-  isReviewMode: state => state.isReviewMode
+  isReviewMode: state => state.isReviewMode,
+  shouldRefetchInsights: state => state.shouldRefetchInsights
 };
 
 
@@ -96,6 +99,9 @@ const actions: ActionTree<InsightState, any> = {
   },
   setReviewMode: ({ commit }, newValue) => {
     commit('setReviewMode', newValue);
+  },
+  setShouldRefetchInsights: ({ commit }, newValue) => {
+    commit('setShouldRefetchInsights', newValue);
   }
 };
 
@@ -142,6 +148,9 @@ const mutations: MutationTree<InsightState> = {
   },
   setReviewMode(state, value) {
     state.isReviewMode = value;
+  },
+  setShouldRefetchInsights(state, value) {
+    state.shouldRefetchInsights = value;
   }
 };
 

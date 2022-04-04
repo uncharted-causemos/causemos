@@ -66,11 +66,12 @@
         </div>
       </div>
       <div class="card-column" style="display: flex; flex-direction: column">
-        <div class="column-title">Data Size</div>
-        <div><b>Data Resolution: </b>{{datacube.outputs[0].data_resolution?.temporal_resolution}}</div>
+        <div class="column-title">Data Info</div>
+        <div><b>Raw Resolution: </b>{{datacube.outputs[0].data_resolution?.temporal_resolution}}</div>
         <div v-if="datacube.data_info?.num_rows_per_feature"><b>Raw Points: </b>{{(datacube.data_info?.num_rows_per_feature ?? {})[datacube.default_feature] ?? 'unknown'}}</div>
-        <div><b>Months: </b>{{(datacube.data_info?.month_timeseries_size ?? {})[datacube.default_feature] ?? 'unknown'}}</div>
-        <div><b>Years: </b>{{(datacube.data_info?.year_timeseries_size ?? {})[datacube.default_feature] ?? 'unknown'}}</div>
+        <div><b>Aggregated by: </b>{{aggregationFunctions}}</div>
+        <div><b>Months: </b>{{(datacube.data_info?.month_timeseries_size ?? {})[datacube.default_feature] ?? 'unknown'}}  |
+        <b>  Years: </b>{{(datacube.data_info?.year_timeseries_size ?? {})[datacube.default_feature] ?? 'unknown'}}</div>
       </div>
     </div>
 
@@ -159,6 +160,10 @@ export default defineComponent({
     }),
     visibleQualifiers(): FeatureQualifier[] {
       return this.datacube?.qualifier_outputs?.filter(q => !QUALIFIERS_TO_EXCLUDE.includes(q.name)) ?? [];
+    },
+    aggregationFunctions(): string {
+      const selections = this.datacube?.default_view;
+      return `${selections?.temporalAggregation ?? 'mean'}/${selections?.spatialAggregation ?? 'mean (default)'}`;
     }
   },
   setup() {

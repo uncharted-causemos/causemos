@@ -313,7 +313,7 @@ export default {
 
       const id = insight.id;
       // remove the insight from the server
-      InsightUtil.removeInsight(id, this.store);
+      await InsightUtil.removeInsight(id, this.store);
       this.removeCuration(id);
       // refresh the latest list from the server
       this.reFetchInsights();
