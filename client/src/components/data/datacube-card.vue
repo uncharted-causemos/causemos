@@ -639,6 +639,7 @@ import useMultiTimeseriesData from '@/services/composables/useMultiTimeseriesDat
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 import { getInsightById } from '@/services/insight-service';
+import { isDataSpaceDataState } from '@/utils/insight-util';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { getParentSelectedRegions, adminLevelToString } from '@/utils/admin-level-util';
 
@@ -1635,51 +1636,43 @@ export default defineComponent({
       // FIXME: before applying the insight, which will overwrite current state,
       //  consider pushing current state to the url to support browser history
       //  in case the user wants to navigate to the original state using back button
+      // FIXME: the order of resetting the state is important
       if (loadedInsight) {
-        // FIXME: check that data_state is defined and actually an instance of
-        //  DataSpaceDataState instead of just asserting.
-        const dataState = loadedInsight.data_state as DataSpaceDataState | undefined;
-        // insight was found and loaded
-        // FIXME: the order of resetting the state is important
-        if (dataState?.selectedModelId) {
-          // this will reload datacube metadata as well as scenario runs
-          // NOTE: emit an event to the parent to reset the model metadata based on the new ID
-          //  Seems to be not needed anymore since applying an insight also involves passing the datacube_id as a query param
-          //  but will leave old code here for reference
-          // selectedModelId.value = loadedInsight.data_state?.selectedModelId;
-        }
-        // do we have a search filter that was saved before!?
-        if (dataState?.searchFilters !== undefined) {
-          // restoring a state where some searchFilters were defined
-          if (!_.isEmpty(dataState?.searchFilters) && dataState?.searchFilters.clauses.length > 0) {
-            searchFilters.value = _.clone(dataState?.searchFilters);
-          }
-        } else {
-          // we may be applying an insight that was captured before introducing the searchFilters capability
-          //  so we need to clear any existing filters that may affect the available model runs
-          searchFilters.value = {};
-        }
-        if (dataState?.selectedScenarioIds) {
-          // this would only be valid and effective if/after datacube runs are reloaded
-          setSelectedScenarioIds(dataState?.selectedScenarioIds);
-        }
-        if (dataState?.selectedTimestamp !== undefined) {
-          if (loadedInsight.view_state?.breakdownOption && loadedInsight.view_state?.breakdownOption === SPLIT_BY_VARIABLE) {
-            setSelectedGlobalTimestamp(dataState?.selectedTimestamp);
+        const dataState = loadedInsight.data_state;
+        if (dataState && isDataSpaceDataState(dataState)) {
+          // do we have a search filter that was saved before!?
+          if (dataState.searchFilters !== undefined) {
+            // restoring a state where some searchFilters were defined
+            if (!_.isEmpty(dataState.searchFilters) && dataState.searchFilters.clauses.length > 0) {
+              searchFilters.value = _.clone(dataState.searchFilters);
+            }
           } else {
-            setSelectedTimestamp(dataState?.selectedTimestamp);
+            // we may be applying an insight that was captured before introducing the searchFilters capability
+            //  so we need to clear any existing filters that may affect the available model runs
+            searchFilters.value = {};
           }
-        }
-        if (dataState?.relativeTo !== undefined) {
-          setRelativeTo(dataState?.relativeTo);
-        }
-        if (dataState?.selectedTransform) {
-          selectedTransform.value = dataState?.selectedTransform as DataTransform;
-        }
-        if (dataState?.selectedPreGenDataId) {
+
           // this would only be valid and effective if/after datacube runs are reloaded
-          selectedPreGenDataId.value = dataState?.selectedPreGenDataId;
+          setSelectedScenarioIds(dataState.selectedScenarioIds);
+
+          if (dataState.selectedTimestamp !== null) {
+            if (loadedInsight.view_state?.breakdownOption === SPLIT_BY_VARIABLE) {
+              setSelectedGlobalTimestamp(dataState.selectedTimestamp);
+            } else {
+              setSelectedTimestamp(dataState.selectedTimestamp);
+            }
+          }
+
+          if (dataState.relativeTo !== null) {
+            setRelativeTo(dataState.relativeTo);
+          }
+
+          selectedTransform.value = dataState.selectedTransform;
+
+          // this would only be valid and effective if/after datacube runs are reloaded
+          selectedPreGenDataId.value = dataState.selectedPreGenDataId;
         }
+
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
           selectedSpatialAggregation.value = loadedInsight.view_state?.spatialAggregation as AggregationOption;
@@ -1723,35 +1716,24 @@ export default defineComponent({
         if (loadedInsight.view_state?.numberOfColorBins !== undefined) {
           setNumberOfColorBins(loadedInsight.view_state?.numberOfColorBins);
         }
-        if (dataState?.nonDefaultQualifiers !== undefined) {
-          initialNonDefaultQualifiers.value = _.clone(dataState?.nonDefaultQualifiers);
-        }
-        // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
-        if (dataState?.selectedRegionIds !== undefined) {
-          initialSelectedRegionIds.value = _.clone(dataState?.selectedRegionIds);
-        }
-        if (dataState?.selectedRegionIdsAtAllLevels !== undefined) {
-          const regions = fromStateSelectedRegionsAtAllLevels(dataState?.selectedRegionIdsAtAllLevels);
+
+        if (dataState && isDataSpaceDataState(dataState)) {
+          initialNonDefaultQualifiers.value = _.clone(dataState.nonDefaultQualifiers);
+          // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
+          initialSelectedRegionIds.value = _.clone(dataState.selectedRegionIds);
+
+          const regions = fromStateSelectedRegionsAtAllLevels(dataState.selectedRegionIdsAtAllLevels);
           const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
           selectedRegionIdsAtAllLevels.value = validRegions;
-        }
-        if (dataState?.selectedOutputVariables !== undefined) {
-          initialSelectedOutputVariables.value = _.clone(dataState?.selectedOutputVariables);
-        }
-        if (dataState?.activeFeatures !== undefined) {
-          initialActiveFeatures.value = _.clone(dataState?.activeFeatures);
-        }
-        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
-        if (dataState?.selectedQualifierValues !== undefined) {
-          initialSelectedQualifierValues.value = _.clone(dataState?.selectedQualifierValues);
-        }
-        // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
-        if (dataState?.selectedYears !== undefined) {
-          initialSelectedYears.value = _.clone(dataState?.selectedYears);
-        }
-        // @NOTE: 'initialActiveReferenceOptions' must be set after 'breakdownOption'
-        if (dataState?.activeReferenceOptions !== undefined) {
-          initialActiveReferenceOptions.value = _.clone(dataState?.activeReferenceOptions);
+
+          initialSelectedOutputVariables.value = _.clone(dataState.selectedOutputVariables);
+          initialActiveFeatures.value = _.clone(dataState.activeFeatures);
+          // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+          initialSelectedQualifierValues.value = _.clone(dataState.selectedQualifierValues);
+          // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
+          initialSelectedYears.value = _.clone(dataState.selectedYears);
+          // @NOTE: 'initialActiveReferenceOptions' must be set after 'breakdownOption'
+          initialActiveReferenceOptions.value = _.clone(dataState.activeReferenceOptions);
         }
       }
     };
