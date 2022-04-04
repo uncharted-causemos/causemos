@@ -461,13 +461,14 @@ function getCagMapFromInsights (insights: Insight[]) {
       item.context_id.length > 0 &&
       targetViewsContainCAG(item.target_view)
     ) {
-      // FIXME: once we have typescript deciders to narrow DataState, put
-      //  a sanity check here that these are CAG insights rather than just
-      //  asserting.
-      if (!acc.has(item.context_id[0]) && item.data_state) {
+      if (
+        !acc.has(item.context_id[0]) &&
+        item.data_state &&
+        isQualitativeViewDataState(item.data_state)
+      ) {
         acc.set(
           item.context_id[0],
-          item.data_state as QualitativeDataState
+          item.data_state
         );
       }
     }
