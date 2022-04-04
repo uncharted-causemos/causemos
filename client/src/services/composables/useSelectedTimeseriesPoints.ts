@@ -5,7 +5,7 @@ import {
   TimeseriesPointSelection
 } from '@/types/Timeseries';
 import { getTimestampMillis } from '@/utils/date-util';
-import isSplitByQualifierActive from '@/utils/qualifier-util';
+import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { computed, Ref } from 'vue';
 
 const isTimestampInPoints = (timestamp: number, points: TimeseriesPoint[]) => {

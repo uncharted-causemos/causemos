@@ -24,7 +24,7 @@ import {
   BaseSpec,
   BulkRegionalAggregationData
 } from '@/types/Outputdata';
-import isSplitByQualifierActive from '@/utils/qualifier-util';
+import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
 import { filterRawDataByRegionIds, computeTimeseriesFromRawData } from '@/utils/outputdata-util';
 import { getLevelFromRegionId, adminLevelToString } from '@/utils/admin-level-util';

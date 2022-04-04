@@ -35,16 +35,6 @@ export default function useModelMetadata(
       // @Review: Later, we could just replace the 'outputs' attribute with the validated list
       rawMetadata.validatedOutputs = getValidatedOutputs(rawMetadata.outputs);
 
-      // for every loaded datacube, we may enable extended annotation of qualifiers
-      // so ensure that the "*.roles" exist as a valid attribute
-      if (rawMetadata.qualifier_outputs) {
-        rawMetadata.qualifier_outputs.forEach(qualifier => {
-          if (!qualifier.roles) {
-            qualifier.roles = [];
-          }
-        });
-      }
-
       // add initial visibility if not defined
       rawMetadata.outputs.forEach(output => {
         if (output.is_visible === undefined) {
