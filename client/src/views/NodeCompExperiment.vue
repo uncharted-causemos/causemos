@@ -128,11 +128,12 @@ import { getOutputs, getSelectedOutput, getValidatedOutputs, STATUS } from '@/ut
 import filtersUtil from '@/utils/filters-util';
 
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
-import { DataSpaceDataState, ViewState } from '@/types/Insight';
+import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { Timeseries } from '@/types/Timeseries';
+import { isDataSpaceDataState } from '@/utils/insight-util';
 
 
 export default defineComponent({
@@ -156,7 +157,9 @@ export default defineComponent({
     const metadata = useModelMetadata(indicatorId);
     const nodeId = computed(() => store.getters['app/nodeId']);
     const project = computed(() => store.getters['app/project']);
-    const dataState = computed(() => store.getters['insightPanel/dataState']);
+    const dataState = computed<DataState | null>(
+      () => store.getters['insightPanel/dataState']
+    );
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<Partial<DataSpaceDataState> | null>(null);
@@ -229,13 +232,17 @@ export default defineComponent({
 
     const stepsBeforeCanConfirm = computed(() => {
       const steps = [];
-      if (metadata.value === null || dataState.value?.selectedScenarioIds === undefined) {
+      if (
+        metadata.value === null ||
+        dataState.value === null ||
+        !isDataSpaceDataState(dataState.value)
+      ) {
         steps.push('Loading...');
         return steps;
       }
-      if (dataState.value?.selectedScenarioIds?.length < 1) {
+      if (dataState.value.selectedScenarioIds.length < 1) {
         steps.push('Please select a scenario.');
-      } else if (dataState.value?.selectedScenarioIds?.length > 1) {
+      } else if (dataState.value.selectedScenarioIds.length > 1) {
         steps.push('Please select exactly one scenario.');
       }
       if (viewState.value?.breakdownOption === TemporalAggregationLevel.Year) {
@@ -291,6 +298,13 @@ export default defineComponent({
       }
       if (visibleTimeseries.value.length < 1) {
         console.error('There should be at least one timeseries visible.', visibleTimeseries.value);
+        return;
+      }
+      if (dataState.value === null || !isDataSpaceDataState(dataState.value)) {
+        console.error(
+          'Data state should be a valid data space data state object.',
+          dataState.value
+        );
         return;
       }
       const selectedIndex = visibleTimeseries.value.length > 1

@@ -72,7 +72,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { DatacubeStatus, ProjectType, SPLIT_BY_VARIABLE } from '@/types/Enums';
-import { DataSpaceDataState, ViewState } from '@/types/Insight';
+import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
 
 import { DATASET_NAME, isIndicator, getValidatedOutputs, getOutputs, getSelectedOutput } from '@/utils/datacube-util';
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
@@ -80,6 +80,7 @@ import filtersUtil from '@/utils/filters-util';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import { isDataSpaceDataState } from '@/utils/insight-util';
 
 export default defineComponent({
   name: 'DatacubeDrilldown',
@@ -99,7 +100,7 @@ export default defineComponent({
     const datacubeId = route.query.datacube_id as any;
     const datacubeItemId = route.query.item_id as any;
     const selectedModelId = ref(datacubeId);
-    const dataState = computed(() => store.getters['insightPanel/dataState']);
+    const dataState = computed<DataState | null>(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
 
     const initialViewConfig = ref<ViewState | null>(null);
@@ -124,7 +125,12 @@ export default defineComponent({
 
         if (currentAnalysisItem) {
           currentAnalysisItem.viewConfig = viewState.value;
-          currentAnalysisItem.dataConfig = dataState.value;
+          if (
+            dataState.value !== null &&
+            isDataSpaceDataState(dataState.value)
+          ) {
+            currentAnalysisItem.dataConfig = dataState.value;
+          }
           store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
         }
       }
