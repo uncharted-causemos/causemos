@@ -80,12 +80,9 @@ function parseMetadataDetails (
     }
 
     summary.cagName = dataState.modelName;
-    summary.selectedNode = dataState.selectedNode ?? undefined;
-    summary.selectedEdge = dataState.selectedEdge?.toString() ?? undefined;
     if (isModelsSpaceDataState(dataState)) {
       summary.selectedCAGScenario = dataState.selectedScenarioId ?? undefined;
       summary.currentEngine = dataState.currentEngine ?? undefined;
-      summary.selectedNode = dataState.selectedNode ?? undefined;
     }
   } else if (isComparativeAnalysisDataState(dataState)) {
     const datacubes: {

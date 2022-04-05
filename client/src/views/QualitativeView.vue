@@ -631,16 +631,8 @@ export default defineComponent({
       }
       // Save dataState to the store. It will be used by review-insight-modal
       //  if we are creating a new insight.
-      let _selectedEdge: [string, string] | null = null;
-      // dataState.selectedEdge requires an array of the form [source, target]
-      if (this.selectedEdge !== null) {
-        const { source, target } = this.selectedEdge;
-        _selectedEdge = [source, target];
-      }
       const dataState: QualitativeDataState = {
-        modelName: this.modelSummary?.name,
-        selectedNode: this.selectedNode?.concept ?? null,
-        selectedEdge: _selectedEdge
+        modelName: this.modelSummary?.name
       };
       this.setDataState(dataState);
     },

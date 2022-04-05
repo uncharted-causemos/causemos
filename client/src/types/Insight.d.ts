@@ -94,9 +94,6 @@ export interface ComparativeAnalysisDataState {
 }
 
 export interface QualitativeDataState {
-  selectedNode: string | null;
-  // selectedEdge uses the form [source, target]
-  selectedEdge: string[] | null;
   modelName: string;
 }
 
