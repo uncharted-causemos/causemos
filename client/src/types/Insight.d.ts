@@ -93,11 +93,6 @@ export interface ComparativeAnalysisDataState {
   datacubeTitles: DatacubeTitle[];
 }
 
-export interface RegionRankingDataState {
-  regionRankingWeights: { [key: string]: { name: string; weight: number } };
-  regionRankingDataInversion: { [key: string]: boolean };
-}
-
 export interface QualitativeDataState {
   selectedNode: string | null;
   // selectedEdge uses the form [source, target]
@@ -114,7 +109,6 @@ export interface ModelsSpaceDataState extends QualitativeDataState {
 
 export type DataState =
   | DataSpaceDataState
-  | RegionRankingDataState
   | ComparativeAnalysisDataState
   | QualitativeDataState
   | ModelsSpaceDataState;
