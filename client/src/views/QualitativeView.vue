@@ -221,9 +221,11 @@
       v-if="showModalRename"
       @confirm="renameNode"
       @reject="rejectRenameNode"
+      @reject-alphanumeric="rejectAlphanumeric"
       :modal-title="'Rename node'"
       :current-name="renameNodeName"
       :restricted-names="restrictedNames"
+      :restrict-alphanumeric="true"
       @cancel="showModalRename = false"
     />
   </div>
@@ -1301,13 +1303,20 @@ export default defineComponent({
         true
       );
     },
+    rejectAlphanumeric({ currentName, newName }: { currentName: string; newName: string }) {
+      this.toaster(
+        `Cannot rename "${currentName}" to "${newName}". Only alphanumeric characters are allowed.`,
+        'error',
+        true
+      );
+    },
     async renameNode(newName: string) {
       // FIXME: Stableness hack, because the node has changed, we end up caching the
       // DOM which refers to the old values. To get it to cache new values we need to swap new/old
       // into place. Needs better support from renderer itself!!
       const oldName = this.modelComponents.nodes.find(node => node.id === this.renameNodeId)?.concept;
       const node = this.cagGraph.renderer.graph.nodes.find((node: any) => node.label === oldName);
-      // node.id = newName;
+
       node.label = newName;
 
       const edges = this.cagGraph.renderer.graph.edges;
