@@ -487,7 +487,7 @@ header {
 .metadata-column {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
 
   h3 {
     margin: 0;

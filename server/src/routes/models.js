@@ -399,7 +399,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     }
   } catch (error) {
     Logger.warn(error);
-    res.status(400).send(`Failed to sync with ${engine} : ${modelId}`);
+    res.status(400).send(`Failed to sync with ${engine} : ${modelId}. ${error}`);
     return;
   }
 
