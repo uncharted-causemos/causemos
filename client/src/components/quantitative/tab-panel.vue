@@ -611,18 +611,10 @@ export default defineComponent({
       }
     },
     updateDataState() {
-      let _selectedEdge: [string, string] | null = null;
-      // dataState.selectedEdge requires an array of the form [source, target]
-      if (this.selectedEdge !== null) {
-        const { source, target } = this.selectedEdge;
-        _selectedEdge = [source, target];
-      }
       const dataState: ModelsSpaceDataState = {
         selectedScenarioId: this.selectedScenarioId,
         currentEngine: this.currentEngine,
         modelName: this.modelSummary.name,
-        selectedNode: this.selectedNode?.concept ?? null,
-        selectedEdge: _selectedEdge,
         cagVisualState: this.visualState ?? null
       };
       this.setDataState(dataState);
