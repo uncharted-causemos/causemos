@@ -93,6 +93,7 @@ export interface Dataset extends DatasetEditable {
     queued: RuntimeStage;
     post_processing: RuntimeStage;
   };
+  flow_id: string;
   data_info?: DataPipelineInfo;
 }
 
@@ -130,6 +131,7 @@ export interface Indicator extends Datacube {
     queued: RuntimeStage;
     post_processing: RuntimeStage;
   };
+  flow_id: string;
   data_info?: DataPipelineInfo;
 }
 

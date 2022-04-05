@@ -17,6 +17,7 @@
           </td>
           <td class="params-header">time requested</td>
           <td class="params-header">execution logs</td>
+          <td class="params-header">processing logs</td>
           <td class="params-header">retry</td>
           <td class="params-header">delete</td>
         </tr>
@@ -51,7 +52,14 @@
             {{ timeSinceExecutionFormatted(run) }}
           </td>
           <td class="params-value">
-            <a :href=dojoExecutionLink(run.run_id)>See Logs</a>
+            <a :href=dojoExecutionLink(run.run_id)>Dojo Logs</a>
+          </td>
+          <td class="params-value">
+            <button
+              type="button"
+              class="btn btn-sm"
+              :disabled="!run.flow_id"
+              @click="viewCausemosLogs(run.flow_id)">Causemos Logs</button>
           </td>
           <td class="params-value">
             <i v-if="canRetryDelete(run)" class="fa fa-repeat" @click="retryRun(run.run_id)"/>
@@ -153,6 +161,14 @@ export default defineComponent({
     },
     retryRun(runId: string) {
       this.$emit('retry', runId);
+    },
+    viewCausemosLogs(flowId: string) {
+      this.$router.push({
+        name: 'prefectFlowInfo',
+        params: {
+          flowId: flowId as string
+        }
+      });
     }
   }
 });
