@@ -24,6 +24,8 @@ import _ from 'lodash';
 import { defineComponent, ref, PropType } from 'vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
+const regex = RegExp('^[A-Za-z0-9 ]+$');
+
 export default defineComponent({
   name: 'RenameModal',
   components: {
@@ -41,9 +43,13 @@ export default defineComponent({
     restrictedNames: {
       type: Array as PropType<string[]>,
       default: []
+    },
+    restrictAlphanumeric: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['confirm', 'cancel', 'reject'],
+  emits: ['confirm', 'cancel', 'reject', 'reject-alphanumeric'],
   setup(props) {
     const newNameInput = ref(props.currentName);
 
@@ -65,6 +71,10 @@ export default defineComponent({
       if (newName) {
         if (!_.isEmpty(this.restrictedNames) && this.restrictedNames.includes(newName)) {
           this.$emit('reject', { currentName: currName, newName: newName });
+          return;
+        }
+        if (this.restrictAlphanumeric === true && regex.test(this.newNameInput) === false) {
+          this.$emit('reject-alphanumeric', { currentName: currName, newName: newName });
           return;
         }
         this.$emit('confirm', this.newNameInput.trim());
