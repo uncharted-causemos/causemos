@@ -532,6 +532,23 @@ export default defineComponent({
       }
     };
 
+    const datacubeTitles = ref<DatacubeTitle[]>([]);
+
+    watchEffect(() => {
+      const newDataState: ComparativeAnalysisDataState = {
+        regionRankingWeights: regionRankingWeights.value,
+        regionRankingDataInversion: regionRankingDataInversion.value,
+        // Only save the selected timestamp when overlap mode is active
+        selectedTimestamp:
+          comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay
+            ? selectedGlobalTimestamp.value
+            : null,
+        selectedAnalysisItems: selectedAnalysisItems.value,
+        datacubeTitles: datacubeTitles.value
+      };
+      store.dispatch('insightPanel/setDataState', newDataState);
+    });
+
     return {
       selectedAnalysisItems,
       allTimeseriesMap,
@@ -578,7 +595,7 @@ export default defineComponent({
       colorFromIndex,
       regionRankingDataInversion,
       shownDatacubesCountLabel,
-      datacubeTitles: ref<DatacubeTitle[]>([])
+      datacubeTitles
     };
   },
   mounted() {
@@ -589,25 +606,9 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       project: 'app/project'
-    }),
-    dataState(): ComparativeAnalysisDataState {
-      return {
-        regionRankingWeights: this.regionRankingWeights,
-        regionRankingDataInversion: this.regionRankingDataInversion,
-        // Only save the selected timestamp when overlap mode is active
-        selectedTimestamp:
-          this.comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay
-            ? this.selectedGlobalTimestamp
-            : null,
-        selectedAnalysisItems: this.selectedAnalysisItems,
-        datacubeTitles: this.datacubeTitles
-      };
-    }
+    })
   },
   watch: {
-    dataState(newDataState) {
-      this.setDataState(newDataState);
-    },
     regionRankingCompositionType() {
       this.updateGlobalRegionRankingData();
     },
@@ -640,8 +641,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setDataState: 'insightPanel/setDataState'
+      hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     getDatacubeRankingWeight(analysisItem: AnalysisItem) {
       const datacubeKey = analysisItem.itemId;
