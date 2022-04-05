@@ -3,7 +3,7 @@ const { v4: uuid } = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
 const requestAsPromise = rootRequire('/util/request-as-promise');
-const { sendToPipeline } = rootRequire('services/external/prefect-queue-service');
+const { sendToPipeline, getFlowStatus, getFlowLogs } = rootRequire('services/external/prefect-queue-service');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
@@ -217,45 +217,51 @@ const getAllModelRuns = async(filter, includeVersion) => {
 };
 
 /**
- * Get the status of a prefect flow submitted with the endpoint above
+ * Get the logs of a model run. Use the flowId if provided, otherwise
+ * get the flowId from ES using the runId.
  *
  * @param {string} runId - model run id
+ * @param {string} flowId - optional flow id in lieu of run id
  */
-const getJobStatus = async (runId) => {
-  Logger.info(`Get job status for run ${runId}`);
+const getJobLogs = async (runId, flowId = undefined) => {
+  Logger.info(`Get logs for ${flowId ? 'flow id' : 'run id'} ${flowId || runId}`);
 
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  const result = await connection.findOne([{ field: 'id', value: runId }], {});
-  const flowId = _.get(result, 'flow_id');
   if (!flowId) {
-    Logger.error(`No model run found for ${runId}`);
-    return;
+    flowId = await _getFlowIdForRun(runId);
+    if (!flowId) {
+      Logger.error(`No model run found for ${runId}`);
+      return;
+    }
   }
 
-  // TODO: Ideally this information should come from an internal source (ie. Redis) rather than prefect directly
-  const graphQLQuery = `
-    query {
-      flow_run(where: { id: {_eq: "${flowId}"}}) {
-        state
-        start_time
-        end_time
-      }
-    }
-  `;
+  return await getFlowLogs(flowId);
+};
 
-  const pipelinePayload = {
-    method: 'POST',
-    url: process.env.WM_PIPELINE_URL,
-    headers: {
-      'Content-type': 'application/json',
-      'Accept': 'application/json'
-    },
-    json: {
-      query: graphQLQuery
-    }
-  };
+/**
+ * Get the status of a prefect flow submitted with the endpoint above.
+ * Use the flowId if provided, otherwise get the flowId from ES using the runId.
+ *
+ * @param {string} runId - model run id
+ * @param {string} flowId - optional flow id in lieu of run id
+ */
+const getJobStatus = async (runId, flowId = undefined) => {
+  Logger.info(`Get job status for ${flowId ? 'flow id' : 'run id'} ${flowId || runId}`);
 
-  return requestAsPromise(pipelinePayload);
+  if (!flowId) {
+    flowId = await _getFlowIdForRun(runId);
+    if (!flowId) {
+      Logger.error(`No model run found for ${runId}`);
+      return;
+    }
+  }
+
+  return await getFlowStatus(flowId);
+};
+
+const _getFlowIdForRun = async (runId) => {
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  const result = await connection.findOne([{ field: 'id', value: runId }], { includes: ['id', 'flow_id'] });
+  return _.get(result, 'flow_id');
 };
 
 /**
@@ -514,6 +520,7 @@ module.exports = {
   markModelRunFailed,
   getAllModelRuns,
   getJobStatus,
+  getJobLogs,
   startIndicatorPostProcessing,
   updateModelRun,
   addModelTag,

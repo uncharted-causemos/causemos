@@ -35,6 +35,38 @@ router.put('/:datacubeId/deprecate', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Get status of a submitted job
+ */
+router.get('/:indicatorId/status', asyncHandler(async (req, res) => {
+  const indicatorId = req.params.indicatorId;
+  const flowId = req.query.flow_id;
+
+  try {
+    const result = await datacubeService.getJobStatus(indicatorId, flowId);
+    res.status(200).json(result || {});
+  } catch (err) {
+    console.log(err);
+    res.status(500).send('Internal request returned: ' + err.message);
+  }
+}));
+
+/**
+ * Get processing logs of a submitted job
+ */
+router.get('/:indicatorId/logs', asyncHandler(async (req, res) => {
+  const indicatorId = req.params.indicatorId;
+  const flowId = req.query.flow_id;
+
+  try {
+    const result = await datacubeService.getJobLogs(indicatorId, flowId);
+    res.status(200).json(result || {});
+  } catch (err) {
+    console.log(err);
+    res.status(500).send('Internal request returned: ' + err.message);
+  }
+}));
+
+/**
  * POST Bulk update multiple indicators
  *
  * NOTE: THIS WILL NOT SEND CHANGES TO DOJO
