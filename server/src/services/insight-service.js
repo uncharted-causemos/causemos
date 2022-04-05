@@ -5,7 +5,7 @@ const es = rootRequire('adapters/es/adapter');
 const Adapter = es.Adapter;
 const RESOURCE = es.RESOURCE;
 
-const MAX_INSIGHTS = 50;
+const MAX_INSIGHTS = 150;
 
 /**
  * Wrapper to create a new insight.
