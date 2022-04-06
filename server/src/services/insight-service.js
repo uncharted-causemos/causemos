@@ -1,11 +1,31 @@
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 const es = rootRequire('adapters/es/adapter');
+const sharp = require('sharp');
 
 const Adapter = es.Adapter;
 const RESOURCE = es.RESOURCE;
 
 const MAX_INSIGHTS = 150;
+
+const resizeImage = async (base64Str, scaleFactor) => {
+  const parts = base64Str.split(';');
+  const mimType = parts[0].split(':')[1];
+  const imageData = parts[1].split(',')[1];
+  const img = Buffer.from(imageData, 'base64');
+
+  const metadata = await sharp(img).metadata();
+  const w = metadata.width;
+  const h = metadata.height;
+  const data = await sharp(img)
+    .resize(Math.floor(w * scaleFactor), Math.floor(h * scaleFactor))
+    .toBuffer();
+
+  const resizedStr = `data:${mimType};base64,${data.toString('base64')}`;
+  return resizedStr;
+};
+
+
 
 /**
  * Wrapper to create a new insight.
@@ -28,7 +48,7 @@ const createInsight = async (
   isDefault,
   // eslint-disable-next-line camelcase
   analytical_question,
-  thumbnail,
+  image,
   viewState,
   dataState,
   // eslint-disable-next-line camelcase
@@ -39,6 +59,10 @@ const createInsight = async (
   const keyFn = (doc) => {
     return doc.id;
   };
+
+  // Create a thumbnail
+  const thumbnail = await resizeImage(image, 0.25);
+
   await insightsConnection.insert({
     id: newId,
     name,
@@ -53,6 +77,7 @@ const createInsight = async (
     post_actions: postActions,
     is_default: isDefault,
     analytical_question: analytical_question,
+    image,
     thumbnail,
     view_state: viewState,
     data_state: dataState,

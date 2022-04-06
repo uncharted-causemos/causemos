@@ -23,7 +23,7 @@ router.post('/', asyncHandler(async (req, res) => {
     post_actions,
     is_default,
     analytical_question,
-    thumbnail,
+    image,
     view_state,
     data_state,
     annotation_state
@@ -40,7 +40,7 @@ router.post('/', asyncHandler(async (req, res) => {
     post_actions,
     is_default,
     analytical_question,
-    thumbnail,
+    image,
     view_state,
     data_state,
     annotation_state);
