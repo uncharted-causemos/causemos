@@ -112,8 +112,9 @@
         <div
           v-if="activeTab === 'concepts' && conceptSuggestions.length > 0"
           class="tab-row" style="border-top: 1px solid #ddd; border-bottom: 0; margin: 2px; padding: 2px">
-          <button class="btn btn-primrary btn-sm" @click="openExplorer">
-            Explore (About {{ numberFormatter(conceptEstimatedHits) }} results)
+          Showing top {{ conceptSuggestions.length }} matches&nbsp;&nbsp;
+          <button class="btn btn-primrary btn-xs" @click="openExplorer">
+            Explore Knowledge Base
           </button>
         </div>
 
