@@ -258,7 +258,7 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
   // Rank edit-distance match to be twice as important
   const q = tokens.map(s => `(${s}~^2 OR ${s}*)`).join(' AND ');
 
-  const SEARCH_LIMIT = 10;
+  const SEARCH_LIMIT = 15;
 
   const results = await client.search({
     index: projectId,

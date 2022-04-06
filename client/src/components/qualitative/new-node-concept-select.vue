@@ -25,7 +25,6 @@
             :selected-button-value="activeTab"
             @button-clicked="setActive"
           />
-          <div v-if="activeTab === 'concepts'">&nbsp;&nbsp;About {{ numberFormatter(conceptEstimatedHits) }} results</div>
         </div>
 
 
@@ -89,7 +88,10 @@
                 :key="idx">
                 <strong>{{ ontologyFormatter(member.label) }} </strong>
                 <br>
-                <div v-if="member.definition !== ''">
+                <div>
+                  <small>{{ member.label }}</small>
+                </div>
+                <div v-if="member.definition && member.definition !== ''">
                   <small>Definition: {{ member.definition }} </small>
                 </div>
                 <div v-if="member.examples">
@@ -105,6 +107,15 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div
+          v-if="activeTab === 'concepts' && conceptSuggestions.length > 0"
+          class="tab-row" style="border-top: 1px solid #ddd; border-bottom: 0; margin: 2px; padding: 2px">
+          Showing top {{ conceptSuggestions.length }} matches&nbsp;&nbsp;
+          <button class="btn btn-primrary btn-xs" @click="openExplorer">
+            Explore Knowledge Base
+          </button>
         </div>
 
         <!-- Empty -->
@@ -143,8 +154,9 @@ import { AggregationOption, TemporalResolution, TemporalResolutionOption, TimeSc
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { logHistoryEntry } from '@/services/model-service';
 import { getTimeseries } from '@/services/outputdata-service';
+import filtersUtil from '@/utils/filters-util';
 
-const CONCEPT_SUGGESTION_COUNT = 10;
+const CONCEPT_SUGGESTION_COUNT = 30;
 
 const getRunId = async (id: string): Promise<ModelRun> => {
   const run = await datacubeService.getDefaultModelRunMetadata(id);
@@ -312,6 +324,7 @@ export default defineComponent({
       temporalResolution,
 
       // Computed
+      currentCAG,
       currentSuggestion,
       ontologyConcepts,
       project,
@@ -436,32 +449,16 @@ export default defineComponent({
         }
       }
     },
-    /*
-    getConceptSuggestions() {
-      const fetch = async () => {
-        if (_.isEmpty(this.userInput)) {
-          this.conceptSuggestions = [];
-        } else {
-          const conceptSuggestions = await projectService.getConceptSuggestions(this.project, this.userInput);
-          this.conceptSuggestions = conceptSuggestions.splice(0, CONCEPT_SUGGESTION_COUNT);
-        }
-      };
-      fetch();
-    },
-    getDatacubeSuggestions() {
-      const fetch = async () => {
-        if (_.isEmpty(this.userInput)) {
-          this.datacubeSuggestions = [];
-        } else {
-          const datacubeSuggestions = await datacubeService.getDatacubeSuggestions(this.userInput);
-          this.datacubeSuggestions = datacubeSuggestions.splice(0, 5);
-        }
-      };
-      return fetch();
-    },
-    */
     setActive(tab: string) {
       this.activeTab = tab;
+    },
+    openExplorer() {
+      const filters = filtersUtil.newFilters();
+      filtersUtil.setClause(filters, 'keyword', [this.userInput], 'or', false);
+      this.$router.push({
+        name: 'kbExplorer',
+        query: { cag: this.currentCAG, view: 'statements', filters: filters as any }
+      });
     }
   }
 });
