@@ -14,7 +14,7 @@
           | End Time: {{flowInfo.end_time?.toLocaleString()}}
           | Agent ID: {{flowInfo.agent.id.toLocaleString()}}
         </h3>
-        <ul>
+        <ul style="list-style-type: none">
           <li
             v-for="{timestamp, message} in flowInfo.logs"
             :key="timestamp">

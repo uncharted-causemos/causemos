@@ -57,7 +57,7 @@
           <td class="params-value">
             <button
               type="button"
-              class="btn btn-sm"
+              class="btn btn-xs btn-primary"
               :disabled="!run.flow_id"
               @click="viewCausemosLogs(run.flow_id)">Causemos Logs</button>
           </td>
@@ -94,7 +94,7 @@ import { ModelRunStatus } from '@/types/Enums';
 import DurationFormatter from '@/formatters/duration-formatter';
 import { ModelRun } from '@/types/ModelRun';
 
-const OmittedColumns = ['run_id', 'created_at', 'status'];
+const OmittedColumns = ['run_id', 'created_at', 'status', 'is_default_run', 'flow_id'];
 
 // TODO: add table header with interactivity to rank/re-order
 
@@ -139,7 +139,9 @@ export default defineComponent({
   }),
   methods: {
     canRetryDelete(run: any) {
-      return run.status === ModelRunStatus.ExecutionFailed || (run.created_at && this.timeSinceExecution(run) > 1000 * 60 * 60 * 48);
+      return run.status === ModelRunStatus.ExecutionFailed ||
+        run.status === ModelRunStatus.ProcessingFailed ||
+        (run.created_at && this.timeSinceExecution(run) > 1000 * 60 * 60 * 48);
     },
     close() {
       this.$emit('close');

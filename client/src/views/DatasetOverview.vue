@@ -101,7 +101,7 @@
         <div><b>Runtime: </b> Queue: {{runtimeFormatter(dataset.runtimes?.queued)}}, Ingestion: {{runtimeFormatter(dataset.runtimes?.post_processing)}}
         <button
           type="button"
-          class="btn btn-sm btn-primary"
+          class="btn btn-xs btn-primary"
           :disabled="!dataset.flow_id"
           @click="viewCausemosLogs(dataset.flow_id)">View Logs</button>
         </div>
