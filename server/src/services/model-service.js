@@ -19,7 +19,7 @@ const EXPERIMENT_TYPE = Object.freeze({
 
 const NUM_LEVELS = 31; // For y-scaling (1 + 6*N)
 
-const regex = RegExp('^[A-Za-z0-9 ]+$');
+const regex = RegExp('^[A-Za-z0-9/_ ]+$');
 
 /**
  * Get all models
