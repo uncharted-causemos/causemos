@@ -24,7 +24,7 @@ import _ from 'lodash';
 import { defineComponent, ref, PropType } from 'vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
-const regex = RegExp('^[A-Za-z0-9 ]+$');
+const regex = RegExp('^[A-Za-z0-9/_ ]+$');
 
 export default defineComponent({
   name: 'RenameModal',
