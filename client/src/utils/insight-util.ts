@@ -207,7 +207,7 @@ function parseReportFromQuestionsAndInsights(
 }
 
 function instanceOfFullInsight(data: any): data is FullInsight {
-  return data !== null && 'thumbnail' in data;
+  return data !== null && 'image' in data;
 }
 
 function instanceOfQuestion(data: any): data is AnalyticalQuestion {
@@ -241,7 +241,7 @@ function generateInsightDOCX (
   // same height as width so that we can attempt to be consistent with the layout.
   const docxMaxImageSize = 612;
   const datacubeId = _.first(insight.context_id);
-  const imageSize = scaleImage(insight.thumbnail, docxMaxImageSize, docxMaxImageSize);
+  const imageSize = scaleImage(insight.image, docxMaxImageSize, docxMaxImageSize);
   const insightDate = dateFormatter(insight.modified_at);
   const footers = generateFooterDOCX(metadataSummary);
   const children = [
@@ -255,7 +255,7 @@ function generateInsightDOCX (
       alignment: AlignmentType.CENTER,
       children: [
         new ImageRun({
-          data: insight.thumbnail,
+          data: insight.image,
           transformation: {
             height: imageSize.height,
             width: imageSize.width
@@ -487,7 +487,7 @@ function generateInsightPPTX (
   const heightLimitImage = 4.75;
 
   const datacubeId = _.first(insight.context_id);
-  const imageSize = scaleImage(insight.thumbnail, widthLimitImage, heightLimitImage);
+  const imageSize = scaleImage(insight.image, widthLimitImage, heightLimitImage);
   const insightDate = dateFormatter(insight.modified_at);
   const slide = pres.addSlide();
   const notes = `Title: ${insight.name}\nDescription: ${insight.description}\nCaptured on: ${insightDate}\n${metadataSummary}`;
@@ -503,7 +503,7 @@ function generateInsightPPTX (
     text: notes
   });
   slide.addImage({
-    data: insight.thumbnail,
+    data: insight.image,
     // centering image code for x & y limited by consts for max content size
     // plus base offsets needed to stay clear of other elements
     x: (widthLimitImage - imageSize.width) / 2,

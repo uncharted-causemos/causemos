@@ -136,7 +136,8 @@ export interface Insight extends Snapshot {
 // @concrete type
 export interface InsightImage {
   id: string;
-  thumbnail: string; // e.g., image url or base64 encoding
+  thumbnail?: string; // e.g., image url or base64 encoding
+  image: string; // e.g., image url or base64 encoding
 }
 
 // @concrete type
