@@ -89,18 +89,16 @@ const createInsight = async (
 };
 
 /**
- * Insert an insight object as a whole
- */
-const insertInsight = async(insight) => {
-  const connection = Adapter.get(RESOURCE.INSIGHT);
-  return await connection.insert(insight);
-};
-
-/**
  * Update an insight with the specified changes
  */
 const updateInsight = async(id, insight) => {
   const connection = Adapter.get(RESOURCE.INSIGHT);
+
+  // Create a thumbnail
+  if (insight.image) {
+    insight.thumbnail = await resizeImage(insight.image, 0.25);
+  }
+
   const result = await connection.update({
     id: id,
     ...insight
@@ -163,6 +161,5 @@ module.exports = {
   getInsight,
   count,
   remove,
-  insertInsight,
   updateInsight
 };
