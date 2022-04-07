@@ -18,7 +18,7 @@
           <li
             v-for="{timestamp, message} in flowInfo.logs"
             :key="timestamp">
-            <b>{{timestamp.toLocaleString()}}: </b>
+            <span style="font-size: small">{{timestamp.toLocaleString()}}</span>
             <multiline-description :text="message" />
           </li>
         </ul>
