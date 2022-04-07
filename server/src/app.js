@@ -199,7 +199,7 @@ app.use('/api/url-to-b64', asyncHandler(async (req, res) => {
   }
 }));
 
-app.use('/api/prefect-flow-info', asyncHandler(async (req, res) => {
+app.use('/api/prefect-flow-logs', asyncHandler(async (req, res) => {
   try {
     const result = await getFlowLogs(req.query.flowId);
     res.status(200).json(result || {});

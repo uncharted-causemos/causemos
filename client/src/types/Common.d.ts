@@ -78,7 +78,7 @@ export interface DataPipelineInfo {
   num_rows_per_feature: { [feature: string]: number };
 }
 
-interface FlowInfo {
+interface FlowLogs {
   state: string;
   start_time: Date;
   end_time?: Date;

@@ -9,14 +9,14 @@
 
     <div>
       <div>
-        <h3 style="text-align: center">Status: {{flowInfo.state}}
-          | Start Time: {{flowInfo.start_time.toLocaleString()}}
-          | End Time: {{flowInfo.end_time?.toLocaleString()}}
-          | Agent ID: {{flowInfo.agent.id.toLocaleString()}}
+        <h3 style="text-align: center">Status: {{flowLogs.state}}
+          | Start Time: {{flowLogs.start_time.toLocaleString()}}
+          | End Time: {{flowLogs.end_time?.toLocaleString()}}
+          | Agent ID: {{flowLogs.agent.id.toLocaleString()}}
         </h3>
         <ul style="list-style-type: none">
           <li
-            v-for="{timestamp, message} in flowInfo.logs"
+            v-for="{timestamp, message} in flowLogs.logs"
             :key="timestamp">
             <span style="font-size: small">{{timestamp.toLocaleString()}}</span>
             <multiline-description :text="message" />
@@ -31,24 +31,24 @@
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
 import { /* ref, watch, toRefs, Ref, */ defineComponent } from 'vue';
-import { FlowInfo } from '@/types/Common';
-import { fetchFlowInfo } from '@/services/new-datacube-service';
+import { FlowLogs } from '@/types/Common';
+import { fetchFlowLogs } from '@/services/new-datacube-service';
 
-const DEFAULT_INFO: FlowInfo = { state: '', start_time: new Date(), logs: [], agent: { id: '', labels: [] } };
+const DEFAULT_LOGS: FlowLogs = { state: '', start_time: new Date(), logs: [], agent: { id: '', labels: [] } };
 export default defineComponent({
-  name: 'PrefectFlowInfo',
+  name: 'PrefectFlowLogs',
   components: {
     FullScreenModalHeader,
     MultilineDescription
   },
   data: () => ({
     flowId: '',
-    flowInfo: DEFAULT_INFO
+    flowLogs: DEFAULT_LOGS
   }),
   watch: {
     $route: {
       handler(/* newValue, oldValue */) {
-        if (this.$route.name === 'prefectFlowInfo' && this.flowId !== this.$route.params.flowId) {
+        if (this.$route.name === 'prefectFlowLogs' && this.flowId !== this.$route.params.flowId) {
           this.flowId = this.$route.params.flowId as string;
           this.fetchInfo(this.flowId);
         }
@@ -61,8 +61,8 @@ export default defineComponent({
       this.$router.back();
     },
     async fetchInfo(flowId: string) {
-      const info = await fetchFlowInfo(flowId);
-      this.flowInfo = info || DEFAULT_INFO;
+      const logs = await fetchFlowLogs(flowId);
+      this.flowLogs = logs || DEFAULT_LOGS;
     }
   }
 });

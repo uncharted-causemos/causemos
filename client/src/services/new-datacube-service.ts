@@ -4,7 +4,7 @@ import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
 import { getImageMime } from '@/utils/datacube-util';
-import { FlowInfo } from '@/types/Common';
+import { FlowLogs } from '@/types/Common';
 
 /**
  * The parameters required to fetch a timeseries for a datacube and generate the sparkline data.
@@ -255,17 +255,17 @@ export const fetchImageAsBase64 = async (url: string): Promise<string|undefined>
   }
 };
 
-export const fetchFlowInfo = async (flowId: string): Promise<FlowInfo|undefined> => {
+export const fetchFlowLogs = async (flowId: string): Promise<FlowLogs|undefined> => {
   try {
-    const { data } = await API.get('prefect-flow-info', { params: { flowId } });
-    return _parseFlowInfo(data);
+    const { data } = await API.get('prefect-flow-logs', { params: { flowId } });
+    return _parseFlowLogs(data);
   } catch (e) {
-    console.log(`Unable to get flow info for ${flowId}`);
+    console.log(`Unable to get flow logs for ${flowId}`);
     return undefined;
   }
 };
 
-const _parseFlowInfo = (data: any): FlowInfo | undefined => {
+const _parseFlowLogs = (data: any): FlowLogs | undefined => {
   if (!data.state || !data.start_time || !data.logs || !data.agent) {
     return undefined;
   }
@@ -275,7 +275,7 @@ const _parseFlowInfo = (data: any): FlowInfo | undefined => {
     end_time: data.end_time ? new Date(data.end_time) : undefined,
     logs: data.logs.map((log: any) => ({ timestamp: new Date(log.timestamp), message: log.message })),
     agent: data.agent
-  } as FlowInfo;
+  } as FlowLogs;
 };
 
 export default {
@@ -295,5 +295,5 @@ export default {
   removeModelRunsTag,
   renameModelRunsTag,
   getDatacubeSuggestions,
-  fetchFlowInfo
+  fetchFlowLogs
 };

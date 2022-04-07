@@ -451,7 +451,7 @@ export default defineComponent({
     },
     viewCausemosLogs(flowId: string) {
       this.$router.push({
-        name: 'prefectFlowInfo',
+        name: 'prefectFlowLogs',
         params: {
           flowId: flowId as string
         }
