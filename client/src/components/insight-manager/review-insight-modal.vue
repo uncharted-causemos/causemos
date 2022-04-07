@@ -436,7 +436,7 @@ export default defineComponent({
         // every time the user navigates to a new insight (or removes the current insight), re-fetch the image
         // NOTE: imagePreview ideally could be a computed prop, but when in newMode the image is fetched differently
         //       plus once imagePreview is assigned its watch will apply-annotation insight if any
-        this.imagePreview = this.updatedInsight.thumbnail;
+        this.imagePreview = this.updatedInsight.image;
       } else {
         this.imagePreview = null;
       }
@@ -527,7 +527,7 @@ export default defineComponent({
       this.editInsight();
     } else {
       if (this.updatedInsight) {
-        this.imagePreview = this.updatedInsight.thumbnail;
+        this.imagePreview = this.updatedInsight.image;
       }
     }
   },
@@ -711,7 +711,7 @@ export default defineComponent({
           post_actions: null,
           is_default: true,
           analytical_question: linkedQuestions.map(q => q.id as string),
-          thumbnail: insightThumbnail,
+          image: insightThumbnail,
           annotation_state: annotationAndCropState,
           view_state: this.viewState,
           data_state: this.dataState
@@ -749,7 +749,7 @@ export default defineComponent({
           const updatedInsight = this.updatedInsight;
           updatedInsight.name = this.insightTitle;
           updatedInsight.description = this.insightDesc;
-          updatedInsight.thumbnail = insightThumbnail;
+          updatedInsight.image = insightThumbnail;
           updatedInsight.annotation_state = annotationAndCropState;
           updatedInsight.analytical_question = linkedQuestions.map(q => q.id as string);
           updateInsight(this.updatedInsight.id, updatedInsight)

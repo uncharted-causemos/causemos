@@ -132,7 +132,7 @@ export default {
     watch([insights], () => {
       // first fill it without images, once the downloads finish, fill them in
       // use '' to represent that the thumbnail is loading
-      fullInsights.value = insights.value.map(insight => ({ ...insight, thumbnail: '' }));
+      fullInsights.value = insights.value.map(insight => ({ ...insight, image: '' }));
       (async () => {
         const ids = insights.value.map(insight => insight.id);
         // First, get just the thumbnails, set annotation_state to null to indicate it's still coming
@@ -267,7 +267,7 @@ export default {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       // Setting img src
-      img.src = insight.thumbnail;
+      img.src = insight.image;
 
       // Drawing to canvas with a smaller size
       canvas.width = img.width * 0.2;
@@ -287,7 +287,7 @@ export default {
       evt.currentTarget.style.border = 'none';
     },
     editInsight(insight) {
-      if (insight.thumbnail === '' || insight.annotation_state === null) {
+      if (insight.image === '' || insight.annotation_state === null) {
         this.toaster(NOT_READY_ERROR, 'error', false);
         return;
       }
@@ -353,7 +353,7 @@ export default {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
     },
     reviewInsight(insight) {
-      if (insight.thumbnail === '' || insight.annotation_state === null) {
+      if (insight.image === '' || insight.annotation_state === null) {
         this.toaster(NOT_READY_ERROR, 'error', false);
         return;
       }
@@ -368,7 +368,7 @@ export default {
       // generate insights list in order of questions
       if (this.insightsGroupedByQuestion.length < 1) return;
       const insight = this.insightsGroupedByQuestion[0];
-      if (insight.thumbnail === '' || insight.annotation_state === null) {
+      if (insight.image === '' || insight.annotation_state === null) {
         this.toaster(NOT_READY_ERROR, 'error', false);
         return;
       }

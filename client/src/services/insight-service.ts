@@ -49,7 +49,7 @@ export const countInsights = async (fetchParams: InsightFilterFields): Promise<n
 export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<Insight[]> => {
   const options = {
     excludes: [
-      'thumbnail',
+      'image',
       'annotation_state'
     ]
   };
@@ -76,7 +76,7 @@ export const fetchPartialInsights = async (fetchParams: InsightFilterFields, all
 export const getFirstInsight = async (fetchParams: InsightFilterFields): Promise<Insight | undefined> => {
   const options = {
     excludes: [
-      'thumbnail',
+      'image',
       'annotation_state'
     ],
     size: 1
