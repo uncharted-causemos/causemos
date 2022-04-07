@@ -7,8 +7,9 @@ const Adapter = es.Adapter;
 const RESOURCE = es.RESOURCE;
 
 const MAX_INSIGHTS = 150;
+const TARGET_THUMBNAIL_WIDTH = 200;
 
-const resizeImage = async (base64Str, scaleFactor) => {
+const resizeImage = async (base64Str, targetWidthInPixels) => {
   const parts = base64Str.split(';');
   const mimType = parts[0].split(':')[1];
   const imageData = parts[1].split(',')[1];
@@ -17,6 +18,14 @@ const resizeImage = async (base64Str, scaleFactor) => {
   const metadata = await sharp(img).metadata();
   const w = metadata.width;
   const h = metadata.height;
+
+  // Calculate how much we need to scale the image so that its new width is
+  //  approximately `targetWidthInPixels`.
+  // E.g. if width is 400 and targetWidth is 200, we need to make it 2x smaller.
+  const quotient = w / targetWidthInPixels;
+  // If the width is already smaller than the target width, don't scale it down.
+  const scaleFactor = quotient < 1 ? 1 : 1 / quotient;
+
   const data = await sharp(img)
     .resize(Math.floor(w * scaleFactor), Math.floor(h * scaleFactor))
     .toBuffer();
@@ -61,7 +70,10 @@ const createInsight = async (
   };
 
   // Create a thumbnail
-  const thumbnail = await resizeImage(image, 0.25);
+  const thumbnail = await resizeImage(
+    image,
+    TARGET_THUMBNAIL_WIDTH
+  );
 
   await insightsConnection.insert({
     id: newId,
@@ -96,7 +108,10 @@ const updateInsight = async(id, insight) => {
 
   // Create a thumbnail
   if (insight.image) {
-    insight.thumbnail = await resizeImage(insight.image, 0.25);
+    insight.thumbnail = await resizeImage(
+      insight.image,
+      TARGET_THUMBNAIL_WIDTH
+    );
   }
 
   const result = await connection.update({
