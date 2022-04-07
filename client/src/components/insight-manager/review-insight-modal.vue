@@ -204,7 +204,7 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import InsightUtil from '@/utils/insight-util';
-import { Insight, InsightMetadata, FullInsight, AnalyticalQuestion, ViewState } from '@/types/Insight';
+import { Insight, InsightMetadata, FullInsight, AnalyticalQuestion, ViewState, DataState } from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { addInsight, updateInsight } from '@/services/insight-service';
@@ -254,7 +254,9 @@ export default defineComponent({
     const toaster = useToaster();
     const { questionsList, reFetchQuestions } = useQuestionsData();
 
-    const updatedInsight = computed(() => store.getters['insightPanel/updatedInsight']);
+    const updatedInsight = computed(
+      () => store.getters['insightPanel/updatedInsight']
+    );
     const isReviewMode = computed(() => store.getters['insightPanel/isReviewMode']);
     const insightList = computed(() => store.getters['insightPanel/insightList']);
     const reviewIndex = computed(() => store.getters['insightPanel/reviewIndex']);
@@ -452,9 +454,7 @@ export default defineComponent({
       projectMetadata: 'app/projectMetadata',
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
-      countInsights: 'insightPanel/countInsights',
-      filters: 'dataSearch/filters',
-      analysisName: 'app/analysisName'
+      countInsights: 'insightPanel/countInsights'
     }),
     isEditModeActive() {
       return this.currentPane === 'review-edit-insight';
@@ -477,11 +477,8 @@ export default defineComponent({
       }
       return null;
     },
-    formattedFilterString(): string {
-      return InsightUtil.getFormattedFilterString(this.filters);
-    },
     metadataDetails(): InsightMetadata {
-      const dState = this.isNewModeActive || this.updatedInsight === null
+      const dState: DataState | null = this.isNewModeActive || this.updatedInsight === null
         ? this.dataState
         : this.updatedInsight.data_state;
       const insightLastUpdate = this.isNewModeActive || this.updatedInsight === null
@@ -490,10 +487,6 @@ export default defineComponent({
       const insightSummary = InsightUtil.parseMetadataDetails(
         dState,
         this.projectMetadata,
-        this.analysisName,
-        this.formattedFilterString,
-        this.currentView,
-        this.projectType,
         insightLastUpdate
       );
       return insightSummary;

@@ -269,7 +269,7 @@ import {
 } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import useToaster from '@/services/composables/useToaster';
-import { DataState } from '@/types/Insight';
+import { QualitativeDataState } from '@/types/Insight';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
@@ -631,18 +631,11 @@ export default defineComponent({
         console.warn('Trying to update data state while modelComponents is null.');
         return;
       }
-      // save some state that will be part of any insight captured from this view
-      const dataState: DataState = {
+      // Save dataState to the store. It will be used by review-insight-modal
+      //  if we are creating a new insight.
+      const dataState: QualitativeDataState = {
         modelName: this.modelSummary?.name
       };
-      if (this.selectedNode !== null) {
-        dataState.selectedNode = this.selectedNode.concept;
-      }
-      if (this.selectedEdge !== null) {
-        const source = this.selectedEdge.source;
-        const target = this.selectedEdge.target;
-        dataState.selectedEdge = [source, target];
-      }
       this.setDataState(dataState);
     },
     async addCAGComponents(nodes: NodeParameter[], edges: EdgeParameter[], updateType: string) {

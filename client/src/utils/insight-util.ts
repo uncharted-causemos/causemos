@@ -7,12 +7,11 @@ import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
-import { AnalyticalQuestion, DataState, Insight, FullInsight, InsightMetadata } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, FullInsight, InsightMetadata, QualitativeDataState, DataState, ModelsSpaceDataState, ComparativeAnalysisDataState, DataSpaceDataState } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
-import { ProjectType } from '@/types/Enums';
 
 function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId: string | undefined) {
   const separator = '?';
@@ -44,60 +43,88 @@ function getFormattedFilterString(filters: Filters) {
   return `${filterString.length > 0 ? filterString : ''}`;
 }
 
-function isQuantitativeView(currentView: string) {
-  return currentView === 'modelPublishingExperiment' ||
-  currentView === 'data' ||
-  currentView === 'dataPreview' ||
-  currentView === 'dataComparative';
-}
-
 function parseMetadataDetails (
-  dataState: any,
+  dataState: DataState | null,
   projectMetadata: any,
-  analysisName: string,
-  formattedFilterString: string,
-  currentView: string,
-  projectType: string,
   insightLastUpdate?: number
 ): InsightMetadata {
-  const quantitativeView = isQuantitativeView(currentView);
   const summary: InsightMetadata = {
-    projectName: projectMetadata.name,
     insightLastUpdate: insightLastUpdate ?? Date.now()
   };
   if (!dataState || !projectMetadata) return summary;
 
-  if (quantitativeView) {
-    if (projectType === ProjectType.Analysis) {
-      summary.analysisName = analysisName;
-    }
-  } else {
-    summary.cagName = dataState.modelName;
-    summary.ontology = projectMetadata.ontology;
-    summary.ontology_created_at = projectMetadata.created_at;
-    summary.ontology_modified_at = projectMetadata.modified_at;
-    summary.corpus_id = projectMetadata.corpus_id;
-    if (formattedFilterString.length > 0) {
-      summary.filters = formattedFilterString;
-    }
-    summary.selectedNode = dataState.selectedNode ?? undefined;
-    summary.selectedEdge = dataState.selectedEdge ?? undefined;
-    summary.selectedCAGScenario = dataState.selectedScenarioId ?? undefined;
-    summary.currentEngine = dataState.currentEngine ?? undefined;
-    summary.selectedNode = dataState.selectedNode ?? undefined;
-  }
+  // FIXME: Previously, formattedFilterString came from 'dataSearch/filters',
+  //  then was converted to a string by getFormattedFilterString(this.filters).
+  //  Maybe it should instead be loaded from DataSpaceDataState.searchFilters?
+  //  But either way it needs to be stored with the insight if we want to
+  //  display it here.
+  // if (formattedFilterString.length > 0) {
+  //   summary.filters = formattedFilterString;
+  // }
 
-  if (dataState.datacubeTitles) {
-    summary.datacubes = [];
+  // FIXME: Previously, analysisName came from 'app/analysisName'
+  //  It needs to be saved with the insight if we want to display it here
+  // if (quantitativeView) {
+  //   if (projectType === ProjectType.Analysis) {
+  //     summary.analysisName = analysisName;
+  //   }
+  // }
+
+  if (isQualitativeViewDataState(dataState)) {
+    // Only show the project's ontology and corpus for CAG analysis insights
+    if (projectMetadata?.ontology) {
+      summary.ontology = projectMetadata.ontology;
+    }
+    if (projectMetadata?.corpus_id) {
+      summary.corpus_id = projectMetadata.corpus_id;
+    }
+
+    summary.cagName = dataState.modelName;
+    if (isModelsSpaceDataState(dataState)) {
+      summary.selectedCAGScenario = dataState.selectedScenarioId ?? undefined;
+      summary.currentEngine = dataState.currentEngine ?? undefined;
+    }
+  } else if (isComparativeAnalysisDataState(dataState)) {
+    const datacubes: {
+      datasetName: string,
+      outputName: string,
+      source: string
+    }[] = [];
     dataState.datacubeTitles.forEach((title: any) => {
-      summary.datacubes?.push({
+      datacubes.push({
         datasetName: title.datacubeName,
         outputName: title.datacubeOutputName,
         source: title.source
       });
     });
+    summary.datacubes = datacubes;
   }
   return summary;
+}
+
+
+export function isDataSpaceDataState(
+  dataState: DataState
+): dataState is DataSpaceDataState {
+  return (dataState as DataSpaceDataState).selectedModelId !== undefined;
+}
+
+function isQualitativeViewDataState(
+  dataState: DataState
+): dataState is QualitativeDataState {
+  return (dataState as QualitativeDataState).modelName !== undefined;
+}
+
+function isModelsSpaceDataState(
+  dataState: QualitativeDataState
+): dataState is ModelsSpaceDataState {
+  return (dataState as ModelsSpaceDataState).selectedScenarioId !== undefined;
+}
+
+export function isComparativeAnalysisDataState(
+  dataState: DataState
+): dataState is ComparativeAnalysisDataState {
+  return (dataState as ComparativeAnalysisDataState).selectedAnalysisItems !== undefined;
 }
 
 async function removeInsight(id: string, store?: any) {
@@ -426,19 +453,26 @@ async function generateAppendixDOCX(
   };
 }
 
-function getCagMapFromInsights (insights: Insight[]): Map<string, DataState> {
+function getCagMapFromInsights (insights: Insight[]) {
   const cags = insights.reduce((acc, item) => {
     if (
       item.context_id &&
       item.context_id.length > 0 &&
       targetViewsContainCAG(item.target_view)
     ) {
-      if (!acc.has(item.context_id[0]) && item.data_state) {
-        acc.set(item.context_id[0], item.data_state);
+      if (
+        !acc.has(item.context_id[0]) &&
+        item.data_state &&
+        isQualitativeViewDataState(item.data_state)
+      ) {
+        acc.set(
+          item.context_id[0],
+          item.data_state
+        );
       }
     }
     return acc;
-  }, new Map<string, DataState>());
+  }, new Map<string, QualitativeDataState>());
   return cags;
 }
 

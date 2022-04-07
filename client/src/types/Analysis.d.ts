@@ -1,13 +1,6 @@
-import { DataState, ViewState } from '@/types/Insight';
+import { DataSpaceDataState, ViewState } from '@/types/Insight';
 
-// Defines the preservable analysis item states
-export interface AnalysisItemState {
-  // this is simply very similar to the Insight's view config
-  viewConfig: ViewState;
-  dataConfig: DataState;
-}
-
-export interface AnalysisItem extends AnalysisItemState {
+export interface AnalysisItem {
   // Generally a UUID that uniquely identifies one instance of a datacube in the
   //  analysis. However, under some circumstances this can be the the datacube's
   //  `id` or `data_id`. In those cases a UUID is not required to uniquely
@@ -24,6 +17,9 @@ export interface AnalysisItem extends AnalysisItemState {
   // In DOJO, these are all grouped into one "indicator".
   // FIXME: rename to dataId to match the rest of the app
   datacubeId: string;
+
+  viewConfig: ViewState;
+  dataConfig: DataSpaceDataState;
 
   name?: string;
   selected?: boolean;
