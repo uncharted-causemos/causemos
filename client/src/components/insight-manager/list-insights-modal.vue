@@ -419,6 +419,7 @@ export default {
 .checklist {
   margin: 10px;
   overflow: auto;
+  width: 380px;
 }
 
 .cards {
