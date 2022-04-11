@@ -95,7 +95,7 @@ import MessageDisplay from '@/components/widgets/message-display';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
-import { fetchPartialInsights } from '@/services/insight-service';
+// import { fetchPartialInsights } from '@/services/insight-service';
 import { sortQuestionsByPath } from '@/utils/questions-util';
 
 const EXPORT_OPTIONS = {
@@ -103,7 +103,7 @@ const EXPORT_OPTIONS = {
   questions: 'questions'
 };
 
-const NOT_READY_ERROR = 'Insights are still loading. Try again later.';
+// const NOT_READY_ERROR = 'Insights are still loading. Try again later.';
 
 export default {
   name: 'ListInsightsModal',
@@ -144,14 +144,15 @@ export default {
         fullInsights.value = images.filter(i => ids.includes(i.id))
           .map(i => ({ ...i, annotation_state: null }));
 
+        // FIXME: Remove, fetch as needed
         // Then, get the annotation_state, this is needed to open an insight
-        const annotations = await fetchPartialInsights({ id: ids }, ['id', 'annotation_state']);
-        fullInsights.value.forEach(insight => {
-          const annotation = annotations.find(i => i.id === insight.id);
-          insight.annotation_state = (annotations && annotation.annotation_state)
-            ? annotation.annotation_state
-            : undefined;
-        });
+        // const annotations = await fetchPartialInsights({ id: ids }, ['id', 'annotation_state']);
+        // fullInsights.value.forEach(insight => {
+        //   const annotation = annotations.find(i => i.id === insight.id);
+        //   insight.annotation_state = (annotations && annotation.annotation_state)
+        //     ? annotation.annotation_state
+        //     : undefined;
+        // });
       })();
     });
 
@@ -287,10 +288,10 @@ export default {
       evt.currentTarget.style.border = 'none';
     },
     editInsight(insight) {
-      if (insight.image === '' || insight.annotation_state === null) {
-        this.toaster(NOT_READY_ERROR, 'error', false);
-        return;
-      }
+      // if (insight.image === '' || insight.annotation_state === null) {
+      //   this.toaster(NOT_READY_ERROR, 'error', false);
+      //   return;
+      // }
       const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
       this.setReviewIndex(insightIndex);
@@ -353,10 +354,10 @@ export default {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
     },
     reviewInsight(insight) {
-      if (insight.image === '' || insight.annotation_state === null) {
-        this.toaster(NOT_READY_ERROR, 'error', false);
-        return;
-      }
+      // if (insight.image === '' || insight.annotation_state === null) {
+      //   this.toaster(NOT_READY_ERROR, 'error', false);
+      //   return;
+      // }
       // open review modal (i.e., insight gallery view)
       const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
@@ -368,10 +369,10 @@ export default {
       // generate insights list in order of questions
       if (this.insightsGroupedByQuestion.length < 1) return;
       const insight = this.insightsGroupedByQuestion[0];
-      if (insight.image === '' || insight.annotation_state === null) {
-        this.toaster(NOT_READY_ERROR, 'error', false);
-        return;
-      }
+      // if (insight.image === '' || insight.annotation_state === null) {
+      //   this.toaster(NOT_READY_ERROR, 'error', false);
+      //   return;
+      // }
       this.setReviewMode(true);
       this.setReviewIndex(0);
       this.setUpdatedInsight(insight);

@@ -207,7 +207,7 @@ import InsightUtil from '@/utils/insight-util';
 import { Insight, InsightMetadata, FullInsight, AnalyticalQuestion, ViewState, DataState } from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { addInsight, updateInsight } from '@/services/insight-service';
+import { addInsight, updateInsight, fetchPartialInsights } from '@/services/insight-service';
 import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
 import useToaster from '@/services/composables/useToaster';
 import html2canvas from 'html2canvas';
@@ -257,6 +257,25 @@ export default defineComponent({
     const updatedInsight = computed(
       () => store.getters['insightPanel/updatedInsight']
     );
+
+    const annotation = ref<any>(null);
+    const imagePreview = ref<string | null>(null);
+
+    watch(
+      () => [updatedInsight.value],
+      async () => {
+        console.log('hello');
+        const extras = await fetchPartialInsights({ id: updatedInsight.value.id }, ['id', 'annotation_state', 'image']);
+        updatedInsight.value.image = extras[0].image;
+        updatedInsight.value.annotation_state = extras[0].annotation_state;
+
+        annotation.value = extras[0].annotation_state;
+        imagePreview.value = extras[0].image;
+      },
+      { immediate: true }
+    );
+
+
     const isReviewMode = computed(() => store.getters['insightPanel/isReviewMode']);
     const insightList = computed(() => store.getters['insightPanel/insightList']);
     const reviewIndex = computed(() => store.getters['insightPanel/reviewIndex']);
@@ -353,6 +372,8 @@ export default defineComponent({
       questionsList,
       reFetchQuestions,
       updatedInsight,
+      annotation,
+      imagePreview,
       selectedInsightQuestions,
       sortedQuestions,
       insightQuestionInnerLabel,
@@ -372,7 +393,7 @@ export default defineComponent({
     showMetadataPanel: false,
     insightTitle: '',
     insightDesc: '',
-    imagePreview: null as string | null,
+    // imagePreview: null as string | null,
     hasError: false, // true when insight name is invalid
     //
     markerAreaState: undefined as MarkerAreaState | undefined,
@@ -510,10 +531,12 @@ export default defineComponent({
       //  (the latter is currently supported via a special route named dataPreview)
       // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
       return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
-    },
+    }
+    /*,
     annotation(): any {
       return this.updatedInsight ? this.updatedInsight.annotation_state : undefined;
     }
+    */
   },
   unmounted() {
     this.setReviewMode(false);
@@ -525,11 +548,12 @@ export default defineComponent({
       this.loadingImage = false;
       this.showMetadataPanel = true;
       this.editInsight();
-    } else {
-      if (this.updatedInsight) {
-        this.imagePreview = this.updatedInsight.image;
-      }
     }
+    // else {
+    //   if (this.updatedInsight) {
+    //     this.imagePreview = this.updatedInsight.image;
+    //   }
+    // }
   },
   methods: {
     ...mapActions({
