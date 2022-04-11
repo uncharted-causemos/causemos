@@ -173,4 +173,12 @@ export interface AnalysisMapStats {
   difference: MapLayerStats;
 }
 
-
+export interface BoxPlotStats {
+  min: number;
+  max: number;
+  sum: number;
+  mean: number;
+  q25: number;
+  q50: number;
+  q75: number;
+}
