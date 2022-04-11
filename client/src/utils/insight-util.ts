@@ -233,6 +233,75 @@ function parseReportFromQuestionsAndInsights(
   return report;
 }
 
+// Note that sectionsAndInsights should be valid for review.
+// - Only includes sections that have no linked insights
+// - Only includes insights associated with one or more sections
+// - Insights appear once for each section they're linked to
+//  - Insights are sorted by section
+function getIndexInSectionsAndInsights(
+  sectionsAndInsights: (Insight | AnalyticalQuestion)[],
+  section: AnalyticalQuestion | null,
+  insightId: string | null,
+  sortedSections: AnalyticalQuestion[]
+) {
+  if (section === null) {
+    return 0;
+  }
+  const indexOfSection = sectionsAndInsights.findIndex(
+    item => item.id === section.id
+  );
+  if (indexOfSection >= 0) {
+    return indexOfSection;
+  }
+  if (section.linked_insights.length === 0) {
+    // This section has no linked insights so it should have its own entry in
+    //  the list of items. If we reach this branch the list is malformed.
+    console.error(
+      'section with no linked insights was not found in list.',
+      section,
+      sectionsAndInsights
+    );
+    return 0;
+  }
+  // If we reach this point it means the section has no dedicated entry in the
+  //  list and we need to search for the occurrence of the insight with ID
+  //  `insightId` within this section. If insightId isn't specified, use the
+  //  first insight in the section.
+  const idOfTargetInsight = insightId ?? section.linked_insights[0];
+  // Loop through the sorted list of sections to find how many sections
+  //  before the selected section also contain the insight we're looking for.
+  let sectionsToSkip = 0;
+  let index = 0;
+  while (
+    index < sortedSections.length &&
+    // Stop when we reach the section of interest
+    sortedSections[index].id !== section.id
+  ) {
+    if (sortedSections[index].linked_insights.includes(idOfTargetInsight)) {
+      sectionsToSkip++;
+    }
+    index++;
+  }
+  // Now we can loop through the original list of sections and insights,
+  //  skipping `sectionsToSkip` occurrences of `firstInsightId` and then
+  //  returning the index of the next occurrence.
+  for (let index = 0; index < sectionsAndInsights.length; index++) {
+    if (sectionsAndInsights[index].id === idOfTargetInsight) {
+      if (sectionsToSkip === 0) {
+        return index;
+      } else {
+        sectionsToSkip--;
+      }
+    }
+  }
+  // We should never reach this point.
+  console.error(
+    'Unable to find enough occurrences of insight with ID',
+    idOfTargetInsight
+  );
+  return 0;
+}
+
 function instanceOfFullInsight(data: any): data is FullInsight {
   return data !== null && 'image' in data;
 }
@@ -657,6 +726,7 @@ export default {
   instanceOfQuestion,
   parseMetadataDetails,
   parseReportFromQuestionsAndInsights,
+  getIndexInSectionsAndInsights,
   getFormattedFilterString,
   getSourceUrlForExport,
   removeInsight,

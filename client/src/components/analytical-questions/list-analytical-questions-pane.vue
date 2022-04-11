@@ -52,7 +52,10 @@
           <!-- first row display the question -->
           <div class="checklist-item-question">
             <i class="fa fa-bars checklist-item-menu" />
-            <span class="question-title"> {{ questionItem.question }}</span>
+            <span
+              class="question-title"
+              @click="$emit('item-click', questionItem, 0)"
+            > {{ questionItem.question }}</span>
             <i
               v-if="hasTour(questionItem)"
               v-tooltip.top="'Tutorial available for this question'"
@@ -97,7 +100,8 @@
             <span
               @mousedown.stop.prevent
               class="insight-name"
-              :class="{ 'private-insight-name': insight.visibility === 'private' }">
+              :class="{ 'private-insight-name': insight.visibility === 'private' }"
+              @click="$emit('item-click', questionItem, insight.id)">
               {{ insight.name }}
             </span>
             <i class="fa fa-fw fa-close"
