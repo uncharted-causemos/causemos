@@ -87,20 +87,6 @@ export const runtimeFormatter = (runtime: RuntimeStage) => {
   return trimmed00.startsWith('0') ? trimmed00.substr(1) : trimmed00;
 };
 
-export const timeDurationFormatter = (seconds: number) => {
-  if (isNaN(seconds)) {
-    return '';
-  }
-
-  const sec = Math.round(seconds);
-  const minutes = Math.floor(sec / 60);
-  const hours = Math.floor(minutes / 60);
-
-  return (hours > 0 ? `${hours} hr, ` : '') +
-    (minutes > 0 ? `${minutes % 60} min, ` : '') +
-    `${sec % 60} sec`;
-};
-
 export const isValidUrl = (value: string) => {
   let url;
   try {

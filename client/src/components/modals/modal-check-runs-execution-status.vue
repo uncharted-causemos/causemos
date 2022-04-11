@@ -150,7 +150,7 @@ export default defineComponent({
       return `https://phantom.dojo-test.com/runlogs/${runId}`;
     },
     timeSinceExecutionFormatted(run: ModelRun) {
-      return `${DurationFormatter(this.timeSinceExecution(run))} ago`;
+      return `${DurationFormatter(this.timeSinceExecution(run), false)} ago`;
     },
     timeSinceExecution(run: ModelRun) {
       return this.currentTime - run.created_at;

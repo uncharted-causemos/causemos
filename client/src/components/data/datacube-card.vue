@@ -956,7 +956,7 @@ export default defineComponent({
     const runtimeStats = computed(() => {
       const runtimeMillis = allModelRunData.value
         .filter(run => run.runtimes?.post_processing?.start_time)
-        .map(run => (run.runtimes.post_processing.end_time - run.runtimes.post_processing.start_time) / 1000.0)
+        .map(run => run.runtimes.post_processing.end_time - run.runtimes.post_processing.start_time)
         .sort((a, b) => a - b);
 
       if (runtimeMillis.length === 0) {

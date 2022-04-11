@@ -69,7 +69,7 @@ import { getOutputs, isGeoParameter } from '@/utils/datacube-util';
 import datacubeService from '@/services/new-datacube-service';
 import useToaster from '@/services/composables/useToaster';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
-import { timeDurationFormatter } from '@/utils/string-util';
+import DurationFormatter from '@/formatters/duration-formatter';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -103,7 +103,7 @@ export default defineComponent({
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
     },
     estimatedRuntime(): string {
-      return timeDurationFormatter(
+      return DurationFormatter(
         (this.runtimeStats?.mean ?? NaN) * // average processing time
         this.potentialRuns.length * // multiply by the number of runs being requested
         2) || 'unknown'; // add on time for Dojo execution and queue time
