@@ -8,15 +8,30 @@
     </full-screen-modal-header>
 
     <div class="body flex">
-      <analytical-questions-panel
-        :loaded="insightsGroupedByQuestion.length > 0"
-        @review-checklist="reviewChecklist"
-      />
-
+      <div class="checklist">
+        <list-analytical-questions-pane :show-checklist-title="true">
+          <button
+            class="btn btn-primary btn-call-for-action review-button"
+            :disabled="insightsGroupedByQuestion.length === 0"
+            @click="reviewChecklist"
+          >
+            <i class="fa fa-fw fa-desktop" />
+            Review
+          </button>
+        </list-analytical-questions-pane>
+      </div>
       <!-- body -->
       <div class="body-main-content flex-col">
         <div class="tab-controls">
+          <input
+            v-model="search"
+            v-focus
+            type="text"
+            class="search form-control"
+            placeholder="Search insights"
+          >
           <radio-button-group
+            class="export-options"
             :buttons="exportOptions"
             :selected-button-value="activeExportOption"
             @button-clicked="toggleExport"
@@ -35,20 +50,8 @@
             Word
           </button>
         </div>
-        <div
-          class="cards"
-        >
-          <input
-            v-model="search"
-            v-focus
-            type="text"
-            class="search form-control"
-            placeholder="Search insights"
-          >
-          <div
-            v-if="searchedInsights.length > 0"
-            class="pane-content"
-          >
+        <div class="cards">
+          <div v-if="searchedInsights.length > 0" class="pane-content">
             <insight-card
               v-for="insight in searchedInsights"
               :active-insight="activeInsight"
@@ -88,7 +91,7 @@ import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header
 
 import { ref, watch, computed } from 'vue';
 
-import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
+import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane';
 import useInsightsData from '@/services/composables/useInsightsData';
 import useToaster from '@/services/composables/useToaster';
 import MessageDisplay from '@/components/widgets/message-display';
@@ -111,7 +114,7 @@ export default {
     FullScreenModalHeader,
     InsightCard,
     MessageDisplay,
-    AnalyticalQuestionsPanel,
+    ListAnalyticalQuestionsPane,
     RadioButtonGroup
   },
   data: () => ({
@@ -406,8 +409,16 @@ export default {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: right;
   gap: 0.5em;
+}
+
+.export-options {
+  flex-shrink: 0;
+}
+
+.checklist {
+  margin: 10px;
+  overflow: auto;
 }
 
 .cards {

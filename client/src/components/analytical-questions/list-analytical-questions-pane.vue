@@ -1,6 +1,7 @@
 <template>
   <div class="list-analytical-questions-pane-container">
     <h4 v-if="showChecklistTitle" class="title">Analysis Checklist</h4>
+    <slot />
     <template v-if="showNewAnalyticalQuestion">
       <h5>New Section</h5>
       <textarea
