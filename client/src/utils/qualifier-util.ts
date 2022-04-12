@@ -23,6 +23,14 @@ export function isBreakdownQualifier(qualifier: FeatureQualifier) {
     qualifier.qualifier_role === FeatureQualifierRoles.Breakdown);
 }
 
+export function getWeightQualifier(qualifiers: FeatureQualifier[] | undefined | null) {
+  return qualifiers?.find(q =>
+    !QUALIFIERS_TO_EXCLUDE.includes(q.name) &&
+    q.qualifier_role === 'weight' &&
+    q.related_features.length > 0
+  );
+}
+
 export function isSplitByQualifierActive(breakdownOption: string | null) {
   if (
     breakdownOption === null ||
