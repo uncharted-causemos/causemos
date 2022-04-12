@@ -143,16 +143,6 @@ export default {
         }
         fullInsights.value = images.filter(i => ids.includes(i.id))
           .map(i => ({ ...i, annotation_state: null }));
-
-        // FIXME: Remove, fetch as needed
-        // Then, get the annotation_state, this is needed to open an insight
-        // const annotations = await fetchPartialInsights({ id: ids }, ['id', 'annotation_state']);
-        // fullInsights.value.forEach(insight => {
-        //   const annotation = annotations.find(i => i.id === insight.id);
-        //   insight.annotation_state = (annotations && annotation.annotation_state)
-        //     ? annotation.annotation_state
-        //     : undefined;
-        // });
       })();
     });
 
@@ -243,6 +233,8 @@ export default {
   },
   methods: {
     ...mapActions({
+      enableOverlay: 'app/enableOverlay',
+      disableOverlay: 'app/disableOverlay',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
@@ -289,10 +281,6 @@ export default {
       evt.currentTarget.style.border = 'none';
     },
     editInsight(insight) {
-      // if (insight.image === '' || insight.annotation_state === null) {
-      //   this.toaster(NOT_READY_ERROR, 'error', false);
-      //   return;
-      // }
       const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
       this.setReviewIndex(insightIndex);
@@ -328,10 +316,12 @@ export default {
         ? this.fullInsights.map(d => d.id)
         : this.selectedInsights.map(d => d.id);
 
+      this.enableOverlay('Collecting insights data');
       const images = await fetchPartialInsights({ id: ids }, ['id', 'image']);
       images.forEach(d => {
         imageMap.set(d.id, d.image);
       });
+      this.disableOverlay();
 
       if (this.activeExportOption === EXPORT_OPTIONS.questions) {
         this.fullInsights.forEach(insight => {
@@ -372,10 +362,6 @@ export default {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
     },
     reviewInsight(insight) {
-      // if (insight.image === '' || insight.annotation_state === null) {
-      //   this.toaster(NOT_READY_ERROR, 'error', false);
-      //   return;
-      // }
       // open review modal (i.e., insight gallery view)
       const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
@@ -387,10 +373,6 @@ export default {
       // generate insights list in order of questions
       if (this.insightsGroupedByQuestion.length < 1) return;
       const insight = this.insightsGroupedByQuestion[0];
-      // if (insight.image === '' || insight.annotation_state === null) {
-      //   this.toaster(NOT_READY_ERROR, 'error', false);
-      //   return;
-      // }
       this.setReviewMode(true);
       this.setReviewIndex(0);
       this.setUpdatedInsight(insight);
