@@ -95,7 +95,7 @@ import MessageDisplay from '@/components/widgets/message-display';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
-// import { fetchPartialInsights } from '@/services/insight-service';
+import { fetchPartialInsights } from '@/services/insight-service';
 import { sortQuestionsByPath } from '@/utils/questions-util';
 
 const EXPORT_OPTIONS = {
@@ -209,6 +209,7 @@ export default {
     },
     insightsGroupedByQuestion() {
       const allInsightsGroupedByQuestions = InsightUtil.parseReportFromQuestionsAndInsights(this.fullInsights, this.questions);
+
       // filter the list by removing question/section items that have insights linked to them
       return allInsightsGroupedByQuestions.filter(item => {
         // if the item is an insight, always show it
@@ -319,11 +320,28 @@ export default {
       // refresh the latest list from the server
       this.reFetchInsights();
     },
-    exportInsights(item) {
+    async exportInsights(item) {
       const props = [];
+
+      const imageMap = new Map();
+      const ids = this.activeExportOption === EXPORT_OPTIONS.questions
+        ? this.fullInsights.map(d => d.id)
+        : this.selectedInsights.map(d => d.id);
+
+      const images = await fetchPartialInsights({ id: ids }, ['id', 'image']);
+      images.forEach(d => {
+        imageMap.set(d.id, d.image);
+      });
+
       if (this.activeExportOption === EXPORT_OPTIONS.questions) {
+        this.fullInsights.forEach(insight => {
+          insight.image = imageMap.get(insight.id);
+        });
         props.push(this.fullInsights, this.projectMetadata, this.questions);
       } else {
+        this.selectedInsights.forEach(insight => {
+          insight.image = imageMap.get(insight.id);
+        });
         props.push(this.selectedInsights, this.projectMetadata);
       }
       switch (item) {

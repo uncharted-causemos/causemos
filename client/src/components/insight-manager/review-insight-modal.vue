@@ -264,7 +264,7 @@ export default defineComponent({
     watch(
       () => [updatedInsight.value],
       async () => {
-        console.log('hello');
+        console.log('!!', updatedInsight.value.id);
         const extras = await fetchPartialInsights({ id: updatedInsight.value.id }, ['id', 'annotation_state', 'image']);
         updatedInsight.value.image = extras[0].image;
         updatedInsight.value.annotation_state = extras[0].annotation_state;
@@ -811,8 +811,8 @@ export default defineComponent({
       }
       this.hideInsightPanel();
     },
-    exportInsight(item: string) {
-      switch (item) {
+    exportInsight(exportType: string) {
+      switch (exportType) {
         case 'Word':
           InsightUtil.exportDOCX([this.updatedInsight], this.projectMetadata);
           break;
