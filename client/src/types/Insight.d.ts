@@ -1,7 +1,16 @@
-import { Timeseries } from '@/types/Timeseries';
-import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
+import {
+  BASE_LAYER,
+  DATA_LAYER,
+  DATA_LAYER_TRANSPARENCY
+} from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
-import { ComparativeAnalysisMode, DatacubeViewMode, BinningOptions, RegionRankingCompositionType, DataTransform } from '@/types/Enums';
+import {
+  ComparativeAnalysisMode,
+  DatacubeViewMode,
+  BinningOptions,
+  RegionRankingCompositionType,
+  DataTransform
+} from '@/types/Enums';
 import { AnalysisItem } from './Analysis';
 
 // view-specific values (no data dependency)
@@ -46,49 +55,60 @@ export interface ViewState {
   [propName: string]: any; // allow other properties to be added
 }
 
-// data-specific context values
 // data context/selection (metadata, CAG node, one or more model runs, etc.)
-export interface DataState {
-  // data space specific
-  selectedModelId?: string;
-  selectedScenarioIds?: string[];
-  selectedTimestamp?: number | null;
-  selectedRegionIds?: string[];
-  selectedRegionIdsAtAllLevels?: { country: string[]; admin1: string[]; admin2: string[]; admin3: string[]; };
-  selectedOutputVariables?: string[];
-  activeFeatures?: OutputVariableSpecs[];
-  nonDefaultQualifiers?: string[];
-  selectedQualifierValues?: string[];
-  selectedYears?: string[];
-  selectedTransform?: DataTransform;
-  activeReferenceOptions?: string[];
-  selectedAnalysisItems?: AnalysisItem[];
-  selectedPreGenDataId?: string;
-
-  // region-ranking specific
-  regionRankingWeights?: {[key: string]: {name: string; weight: number}};
-  regionRankingDataInversion?: {[key: string]: boolean};
-
-  //
-  datacubeTitles?: {datacubeName: string; datacubeOutputName: string; source: string}[];
-  datacubeRegions?: string[];
-  relativeTo?: string | null;
-  visibleTimeseriesData?: Timeseries[];
-  searchFilters?: any; // lex-bar search queries
-
-  // knowledge/model space specific
-  selectedScenarioId?: string;
-  selectedNode?: string;
-  selectedEdge?: string[];
-  currentEngine?: string;
-  modelName?: string;
-  nodesCount?: number;
-  cagVisualState?: any;
-
-  // others
-  // ...
-  [propName: string]: any; // allow other properties to be added
+export interface DataSpaceDataState {
+  selectedModelId: string;
+  selectedScenarioIds: string[];
+  selectedTimestamp: number | null;
+  selectedRegionIds: string[];
+  selectedRegionIdsAtAllLevels: {
+    country: string[];
+    admin1: string[];
+    admin2: string[];
+    admin3: string[];
+  };
+  selectedOutputVariables: string[];
+  activeFeatures: OutputVariableSpecs[];
+  nonDefaultQualifiers: string[];
+  selectedQualifierValues: string[];
+  selectedYears: string[];
+  selectedTransform: DataTransform;
+  activeReferenceOptions: string[];
+  selectedPreGenDataId: string;
+  relativeTo: string | null;
+  searchFilters: any; // lex-bar search queries
 }
+
+export interface DatacubeTitle {
+  datacubeName: string;
+  datacubeOutputName: string;
+  source: string;
+}
+
+export interface ComparativeAnalysisDataState {
+  selectedAnalysisItems: AnalysisItem[];
+  selectedTimestamp: number | null;
+  regionRankingWeights: { [key: string]: { name: string; weight: number } };
+  regionRankingDataInversion: { [x: string]: boolean };
+  datacubeTitles: DatacubeTitle[];
+}
+
+export interface QualitativeDataState {
+  modelName: string;
+}
+
+export interface ModelsSpaceDataState extends QualitativeDataState {
+  // FIXME: should this be in the Visual State rather than the Data State?
+  cagVisualState: any | null;
+  currentEngine: string;
+  selectedScenarioId: string;
+}
+
+export type DataState =
+  | DataSpaceDataState
+  | ComparativeAnalysisDataState
+  | QualitativeDataState
+  | ModelsSpaceDataState;
 
 // @base/abstract type
 export interface Snapshot {
@@ -136,7 +156,8 @@ export interface Insight extends Snapshot {
 // @concrete type
 export interface InsightImage {
   id: string;
-  thumbnail: string; // e.g., image url or base64 encoding
+  thumbnail?: string; // e.g., image url or base64 encoding
+  image: string; // e.g., image url or base64 encoding
 }
 
 // @concrete type
@@ -154,17 +175,13 @@ export interface AnalyticalQuestion extends Snapshot {
 }
 
 export interface InsightMetadata {
-  projectName: string;
   insightLastUpdate: number;
-  datacubes?: {datasetName: string; outputName: string; source: string}[];
 
-  // data space specific
-  analysisName?: string;
+  // Data space specific
+  datacubes?: { datasetName: string; outputName: string; source: string }[];
 
   // CAG specific
   ontology?: string;
-  ontology_created_at?: number;
-  ontology_modified_at?: number;
   corpus_id?: string;
   filters?: string;
   cagName?: string;
@@ -173,4 +190,3 @@ export interface InsightMetadata {
   currentEngine?: string;
   selectedCAGScenario?: string;
 }
-

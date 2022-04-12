@@ -98,7 +98,13 @@
         </div>
         <div><b>Region: </b>{{countries}}</div>
         <div><b>Period: </b> {{period}}</div>
-        <div><b>Runtime: </b> Queue: {{runtimeFormatter(dataset.runtimes?.queued)}}, Ingestion: {{runtimeFormatter(dataset.runtimes?.post_processing)}}</div>
+        <div><b>Runtime: </b> Queue: {{runtimeFormatter(dataset.runtimes?.queued)}}, Ingestion: {{runtimeFormatter(dataset.runtimes?.post_processing)}}
+        <button
+          type="button"
+          class="btn btn-xs btn-primary"
+          :disabled="!dataset.flow_id"
+          @click="viewCausemosLogs(dataset.flow_id)">View Logs</button>
+        </div>
       </div>
     </header>
     <main>
@@ -443,6 +449,14 @@ export default defineComponent({
       }
       await this.fetchIndicators();
     },
+    viewCausemosLogs(flowId: string) {
+      this.$router.push({
+        name: 'prefectFlowLogs',
+        params: {
+          flowId: flowId as string
+        }
+      });
+    },
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
@@ -473,7 +487,7 @@ header {
 .metadata-column {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
 
   h3 {
     margin: 0;

@@ -78,6 +78,13 @@ export interface DataPipelineInfo {
   num_rows_per_feature: { [feature: string]: number };
 }
 
+interface FlowLogs {
+  state: string;
+  start_time: Date;
+  end_time?: Date;
+  agent: { id: string; labels: string[]; }
+  logs: { timestamp: Date; message: string; }[]
+}
 
 // Side panel
 export interface SidePanelTab {

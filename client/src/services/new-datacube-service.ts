@@ -4,6 +4,7 @@ import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
 import { getImageMime } from '@/utils/datacube-util';
+import { FlowLogs } from '@/types/Common';
 
 /**
  * The parameters required to fetch a timeseries for a datacube and generate the sparkline data.
@@ -254,6 +255,29 @@ export const fetchImageAsBase64 = async (url: string): Promise<string|undefined>
   }
 };
 
+export const fetchFlowLogs = async (flowId: string): Promise<FlowLogs|undefined> => {
+  try {
+    const { data } = await API.get('prefect-flow-logs', { params: { flowId } });
+    return _parseFlowLogs(data);
+  } catch (e) {
+    console.log(`Unable to get flow logs for ${flowId}`);
+    return undefined;
+  }
+};
+
+const _parseFlowLogs = (data: any): FlowLogs | undefined => {
+  if (!data.state || !data.start_time || !data.logs || !data.agent) {
+    return undefined;
+  }
+  return {
+    state: data.state as string,
+    start_time: new Date(data.start_time),
+    end_time: data.end_time ? new Date(data.end_time) : undefined,
+    logs: data.logs.map((log: any) => ({ timestamp: new Date(log.timestamp), message: log.message })),
+    agent: data.agent
+  } as FlowLogs;
+};
+
 export default {
   updateDatacube,
   getDatacubes,
@@ -270,5 +294,6 @@ export default {
   updateModelRun,
   removeModelRunsTag,
   renameModelRunsTag,
-  getDatacubeSuggestions
+  getDatacubeSuggestions,
+  fetchFlowLogs
 };

@@ -1,10 +1,8 @@
 
 import { Ref } from 'vue';
-import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
-import { DataState, ViewState } from '@/types/Insight';
+import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import { AggregationOption, DatacubeViewMode, DataTransform, TemporalResolutionOption } from '@/types/Enums';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new';
-import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { OutputVariableSpecs } from '@/types/Outputdata';
 import { AdminRegionSets } from '@/types/Datacubes';
@@ -59,8 +57,6 @@ export const aggregationOptionFiltered = Object.values(AggregationOption).filter
 export const temporalResolutionOptionFiltered = Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.None as string !== tro);
 
 export function initDataStateFromRefs (
-  mainModelOutput: Ref<DatacubeFeature|undefined>,
-  metadata: Ref<Model|Indicator|null>,
   relativeTo: Ref<string|null>,
   selectedModelId: Ref<any>,
   nonDefaultQualifiers: Ref<Set<string>>,
@@ -75,19 +71,12 @@ export function initDataStateFromRefs (
   selectedTransform: Ref<DataTransform>,
   activeReferenceOptions: Ref<string[]>,
   searchFilters: Ref<any>,
-  selectedPreGenDataId: Ref<string>,
-  visibleTimeseriesData?: Ref<Timeseries[]> // useful for the node view's validation, but ignoreable by everything else, so optional
-): DataState {
+  selectedPreGenDataId: Ref<string>
+): DataSpaceDataState {
   return {
     selectedModelId: selectedModelId.value,
     selectedScenarioIds: selectedScenarioIds.value,
     selectedTimestamp: selectedTimestamp.value,
-    datacubeTitles: [{
-      datacubeName: metadata.value?.name ?? '',
-      datacubeOutputName: mainModelOutput?.value?.display_name ?? '',
-      source: metadata.value?.maintainer.organization ?? ''
-    }],
-    datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
     selectedRegionIds: selectedRegionIds.value,
     selectedRegionIdsAtAllLevels: toStateSelectedRegionsAtAllLevels(selectedRegionIdsAtAllLevels.value),
     selectedOutputVariables: Array.from(selectedOutputVariables.value),
@@ -98,7 +87,6 @@ export function initDataStateFromRefs (
     selectedYears: [...selectedYears.value],
     selectedTransform: selectedTransform.value,
     activeReferenceOptions: activeReferenceOptions.value,
-    visibleTimeseriesData: visibleTimeseriesData?.value,
     searchFilters: searchFilters.value,
     selectedPreGenDataId: selectedPreGenDataId.value ?? ''
   };

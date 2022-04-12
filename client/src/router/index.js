@@ -19,6 +19,7 @@ import IndicatorPublishingExperiment from '@/views/IndicatorPublishingExperiment
 import NodeCompExperiment from '@/views/NodeCompExperiment';
 import NodeDrilldown from '@/views/NodeDrilldown';
 import NodeDataExplorer from '@/views/NodeDataExplorer.vue';
+import PrefectFlowLogs from '@/views/PrefectFlowLogs.vue';
 import qs from 'qs';
 import _ from 'lodash';
 import store from '@/store';
@@ -146,6 +147,11 @@ const routes = [
     path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/explorer',
     name: 'nodeDataExplorer',
     component: NodeDataExplorer
+  },
+  {
+    path: '/prefectFlowLogs/:flowId',
+    name: 'prefectFlowLogs',
+    component: PrefectFlowLogs
   },
   {
     path: '/:projectType/:project/audit-trail',

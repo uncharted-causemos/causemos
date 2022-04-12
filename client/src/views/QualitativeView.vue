@@ -221,9 +221,11 @@
       v-if="showModalRename"
       @confirm="renameNode"
       @reject="rejectRenameNode"
+      @reject-alphanumeric="rejectAlphanumeric"
       :modal-title="'Rename node'"
       :current-name="renameNodeName"
       :restricted-names="restrictedNames"
+      :restrict-alphanumeric="true"
       @cancel="showModalRename = false"
     />
   </div>
@@ -267,7 +269,7 @@ import {
 } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import useToaster from '@/services/composables/useToaster';
-import { DataState } from '@/types/Insight';
+import { QualitativeDataState } from '@/types/Insight';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
@@ -629,18 +631,11 @@ export default defineComponent({
         console.warn('Trying to update data state while modelComponents is null.');
         return;
       }
-      // save some state that will be part of any insight captured from this view
-      const dataState: DataState = {
+      // Save dataState to the store. It will be used by review-insight-modal
+      //  if we are creating a new insight.
+      const dataState: QualitativeDataState = {
         modelName: this.modelSummary?.name
       };
-      if (this.selectedNode !== null) {
-        dataState.selectedNode = this.selectedNode.concept;
-      }
-      if (this.selectedEdge !== null) {
-        const source = this.selectedEdge.source;
-        const target = this.selectedEdge.target;
-        dataState.selectedEdge = [source, target];
-      }
       this.setDataState(dataState);
     },
     async addCAGComponents(nodes: NodeParameter[], edges: EdgeParameter[], updateType: string) {
@@ -1308,13 +1303,20 @@ export default defineComponent({
         true
       );
     },
+    rejectAlphanumeric({ currentName, newName }: { currentName: string; newName: string }) {
+      this.toaster(
+        `Cannot rename "${currentName}" to "${newName}". Only alphanumeric characters are allowed.`,
+        'error',
+        true
+      );
+    },
     async renameNode(newName: string) {
       // FIXME: Stableness hack, because the node has changed, we end up caching the
       // DOM which refers to the old values. To get it to cache new values we need to swap new/old
       // into place. Needs better support from renderer itself!!
       const oldName = this.modelComponents.nodes.find(node => node.id === this.renameNodeId)?.concept;
       const node = this.cagGraph.renderer.graph.nodes.find((node: any) => node.label === oldName);
-      // node.id = newName;
+
       node.label = newName;
 
       const edges = this.cagGraph.renderer.graph.edges;

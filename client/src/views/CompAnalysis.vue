@@ -179,7 +179,7 @@ import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import DatacubeRegionRankingCompositeCard from '@/components/widgets/datacube-region-ranking-composite-card.vue';
 import _ from 'lodash';
-import { DataState, Insight, ViewState } from '@/types/Insight';
+import { ComparativeAnalysisDataState, DatacubeTitle, Insight, ViewState } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
 import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
@@ -195,6 +195,7 @@ import router from '@/router';
 import { AnalysisItem } from '@/types/Analysis';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import { isComparativeAnalysisDataState } from '@/utils/insight-util';
 import { v4 as uuidv4 } from 'uuid';
 
 const DRILLDOWN_TABS = [
@@ -229,7 +230,6 @@ export default defineComponent({
     const quantitativeAnalysisId = computed(
       () => store.getters['dataAnalysis/analysisId']
     );
-    const dataState = computed<DataState>(() => store.getters['insightPanel/dataState']);
 
     const activeDrilldownTab = ref<string|null>('region-settings');
     const selectedAdminLevel = ref(0);
@@ -241,7 +241,14 @@ export default defineComponent({
     const globalBbox = ref<number[][] | undefined>(undefined);
 
     const allTimeseriesMap = ref<{[key: string]: Timeseries[]}>({});
-    const allDatacubesMetadataMap: {[key: string]: {datacubeName: string; datacubeOutputName: string; source: string; region: string[]}} = {};
+    const allDatacubesMetadataMap = ref<{
+      [key: string]: {
+        datacubeName: string;
+        datacubeOutputName: string;
+        source: string;
+        region: string[];
+      }
+    }>({});
     const globalTimeseries = ref([]) as Ref<Timeseries[]>;
     const reCalculateGlobalTimeseries = ref(true);
     const timeseriesToDatacubeMap = ref<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>({});
@@ -301,10 +308,6 @@ export default defineComponent({
             // update the selection status on the server
             store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
           }
-          // save selected analysis items in insight to apply later correctly as needed
-          const dataStateUpdated = _.cloneDeep(dataState.value);
-          dataStateUpdated.selectedAnalysisItems = selectedItems;
-          store.dispatch('insightPanel/setDataState', dataStateUpdated);
 
           selectedAnalysisItems.value = [];
           nextTick(() => {
@@ -469,49 +472,34 @@ export default defineComponent({
       }
     );
 
-    watch(
-      () => [
-        regionRankingWeights.value,
-        regionRankingDataInversion.value,
-        selectedGlobalTimestamp.value
-      ],
-      () => {
-        const dataStateUpdated = _.cloneDeep(dataState.value);
-        dataStateUpdated.regionRankingWeights = regionRankingWeights.value;
-        dataStateUpdated.regionRankingDataInversion = regionRankingDataInversion.value;
-        if (comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay) {
-          // only save the selected timestamp in the overlap mode
-          dataStateUpdated.selectedTimestamp = selectedGlobalTimestamp.value;
-        }
-        store.dispatch('insightPanel/setDataState', dataStateUpdated);
-      }
-    );
-
     const updateStateFromInsight = async (insight_id: string) => {
       const loadedInsight: Insight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
       //  consider pushing current state to the url to support browser hsitory
       //  in case the user wants to navigate to the original state using back button
       if (loadedInsight) {
-        // data state
-        if (loadedInsight.data_state?.regionRankingWeights !== undefined) {
-          regionRankingWeights.value = loadedInsight.data_state?.regionRankingWeights;
-        }
-        if (loadedInsight.data_state?.selectedAnalysisItems !== undefined) {
+        const dataState = loadedInsight.data_state;
+        if (dataState && isComparativeAnalysisDataState(dataState)) {
+          regionRankingWeights.value = dataState.regionRankingWeights;
+
           const allAnalysisItems = _.cloneDeep(analysisItems.value);
-          const selectedItems = loadedInsight.data_state?.selectedAnalysisItems;
+          const selectedItems = dataState.selectedAnalysisItems;
           allAnalysisItems.forEach(item => {
             item.selected = selectedItems.findIndex(sItem => sItem.itemId === item.itemId) >= 0;
           });
           store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
-        }
-        if (loadedInsight.data_state?.regionRankingDataInversion !== undefined) {
-          regionRankingDataInversion.value = loadedInsight.data_state?.regionRankingDataInversion;
-        }
-        if (loadedInsight.data_state?.selectedTimestamp !== undefined &&
-            loadedInsight.data_state?.selectedTimestamp !== null &&
-            loadedInsight.view_state?.regionRankingSelectedComparativeAnalysisMode === ComparativeAnalysisMode.Overlay) {
-          initialSelectedTimestamp.value = loadedInsight.data_state?.selectedTimestamp;
+
+          regionRankingDataInversion.value =
+            dataState.regionRankingDataInversion;
+
+          if (
+            dataState.selectedTimestamp !== null &&
+            loadedInsight.view_state
+              ?.regionRankingSelectedComparativeAnalysisMode ===
+              ComparativeAnalysisMode.Overlay
+          ) {
+            initialSelectedTimestamp.value = dataState.selectedTimestamp;
+          }
         }
         // view state
         if (loadedInsight.view_state?.regionRankingSelectedAdminLevel !== undefined) {
@@ -543,6 +531,23 @@ export default defineComponent({
         }
       }
     };
+
+    const datacubeTitles = ref<DatacubeTitle[]>([]);
+
+    watchEffect(() => {
+      const newDataState: ComparativeAnalysisDataState = {
+        regionRankingWeights: regionRankingWeights.value,
+        regionRankingDataInversion: regionRankingDataInversion.value,
+        // Only save the selected timestamp when overlap mode is active
+        selectedTimestamp:
+          comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay
+            ? selectedGlobalTimestamp.value
+            : null,
+        selectedAnalysisItems: selectedAnalysisItems.value,
+        datacubeTitles: datacubeTitles.value
+      };
+      store.dispatch('insightPanel/setDataState', newDataState);
+    });
 
     return {
       selectedAnalysisItems,
@@ -589,8 +594,8 @@ export default defineComponent({
       timeseriesToDatacubeMap,
       colorFromIndex,
       regionRankingDataInversion,
-      dataState,
-      shownDatacubesCountLabel
+      shownDatacubesCountLabel,
+      datacubeTitles
     };
   },
   mounted() {
@@ -636,8 +641,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setDataState: 'insightPanel/setDataState'
+      hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     getDatacubeRankingWeight(analysisItem: AnalysisItem) {
       const datacubeKey = analysisItem.itemId;
@@ -874,11 +878,8 @@ export default defineComponent({
           }
         }
 
-        //
         // use the loaded metadata for all analysis-items
-        //  and update the data-state object in the store for future insight capture
-        //
-        const datacubeTitles: any = [];
+        const datacubeTitles: DatacubeTitle[] = [];
         const regions: string[] = [];
         Object.keys(this.allDatacubesMetadataMap).forEach(key => {
           const title = {
@@ -889,13 +890,14 @@ export default defineComponent({
           // for each datacube, save its name and output-name
           datacubeTitles.push(title);
           // also, save a list of all regions (into a big list for all datacubes)
-          const datacubeRegions = this.allDatacubesMetadataMap[key].region && _.isArray(this.allDatacubesMetadataMap[key].region) ? this.allDatacubesMetadataMap[key].region : [];
+          const datacubeRegions =
+            this.allDatacubesMetadataMap[key].region &&
+            _.isArray(this.allDatacubesMetadataMap[key].region)
+              ? this.allDatacubesMetadataMap[key].region
+              : [];
           regions.push(...datacubeRegions);
         });
-        const dataStateUpdated = _.cloneDeep(this.dataState);
-        dataStateUpdated.datacubeTitles = datacubeTitles;
-        dataStateUpdated.datacubeRegions = _.unionBy(_.sortBy(regions)); // FIXME: rank repeated countries from all datacubes and show top 5
-        this.setDataState(dataStateUpdated);
+        this.datacubeTitles = datacubeTitles;
       }
     }
   }

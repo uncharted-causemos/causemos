@@ -3,8 +3,8 @@
     <div class="insight-content" @click="selectInsight()">
       <div class="insight-thumbnail">
         <img
-          v-if="insight.thumbnail"
-          :src="insight.thumbnail"
+          v-if="insight.image"
+          :src="insight.image"
           class="thumbnail">
         <i v-else class="fa fa-spin fa-spinner" />
       </div>

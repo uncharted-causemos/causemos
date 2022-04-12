@@ -133,7 +133,7 @@ export default defineComponent({
       this.$emit('close');
     },
     isAlphaNumeric(str: string) {
-      const regex = RegExp('^[A-Za-z0-9 ]+$');
+      const regex = RegExp('^[A-Za-z0-9/_ ]+$');
       return regex.test(str);
     },
     close() {

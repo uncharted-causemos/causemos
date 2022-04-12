@@ -45,6 +45,7 @@ const projectsRouter = rootRequire('/routes/projects');
 const DomainProjectsRouter = rootRequire('/routes/domain-projects');
 
 const sessionLogService = rootRequire('/services/session-log-service');
+const { getFlowLogs } = rootRequire('services/external/prefect-queue-service');
 
 // Proxy to serve carto tiles with Uncharted license key
 const mapProxyRouter = rootRequire('/routes/map-proxy');
@@ -192,6 +193,16 @@ app.use('/api/url-to-b64', asyncHandler(async (req, res) => {
     });
     const b64Str = Buffer.from(response, 'binary').toString('base64');
     res.status(200).send(b64Str);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send('Internal request returned: ' + err.message);
+  }
+}));
+
+app.use('/api/prefect-flow-logs', asyncHandler(async (req, res) => {
+  try {
+    const result = await getFlowLogs(req.query.flowId);
+    res.status(200).json(result || {});
   } catch (err) {
     console.log(err);
     res.status(500).send('Internal request returned: ' + err.message);

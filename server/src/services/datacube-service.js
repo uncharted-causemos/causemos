@@ -2,6 +2,7 @@ const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const domainProjectService = rootRequire('/services/domain-project-service');
+const { getFlowStatus, getFlowLogs } = rootRequire('services/external/prefect-queue-service');
 const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
 const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
 const Logger = rootRequire('/config/logger');
@@ -434,6 +435,60 @@ const getBulkTimeseries = async (timeseriesParams) => {
   return response;
 };
 
+/**
+ * Get the logs of a datacube post process job. Use the flowId if provided, otherwise
+ * get the flowId from ES using the indicatorId.
+ *
+ * @param {string} indicatorId - indicator id
+ * @param {string} flowId - optional flow id in lieu of indicator id
+ */
+const getJobLogs = async (indicatorId, flowId = undefined) => {
+  Logger.info(`Get logs for ${flowId ? 'flow id' : 'indicator id'} ${flowId || indicatorId}`);
+
+  if (!flowId) {
+    flowId = await _getFlowIdForIndicator(indicatorId);
+    if (!flowId) {
+      Logger.error(`No indicator with id ${indicatorId}`);
+      return;
+    }
+  }
+
+  return await getFlowLogs(flowId);
+};
+
+/**
+ * Get the status of a prefect flow. Use the flowId if provided, otherwise
+ * get the flowId from ES using the indicatorId.
+ *
+ * @param {string} indicatorId - indicator id
+ * @param {string} flowId - optional flow id in lieu of indicator id
+ */
+const getJobStatus = async (indicatorId, flowId = undefined) => {
+  Logger.info(`Get job status for ${flowId ? 'flow id' : 'run id'} ${flowId || indicatorId}`);
+
+  if (!flowId) {
+    flowId = await _getFlowIdForIndicator(indicatorId);
+    if (!flowId) {
+      Logger.error(`No indicator with id ${indicatorId}`);
+      return;
+    }
+  }
+
+  return await getFlowStatus(flowId);
+};
+
+const _getFlowIdForIndicator = async (indicatorId) => {
+  const indicators = await getDatacubes({
+    clauses: [
+      { field: 'id', operand: 'or', isNot: false, values: [indicatorId] }
+    ]
+  }, { size: 1, includes: ['id', 'flow_id'] });
+  if (indicators.length === 0) {
+    return undefined;
+  }
+  return _.get(indicators[0], 'flow_id');
+};
+
 
 module.exports = {
   getDatacubes,
@@ -448,6 +503,9 @@ module.exports = {
 
   facets,
   searchFields,
+
+  getJobLogs,
+  getJobStatus,
 
   getTimeseries
 };

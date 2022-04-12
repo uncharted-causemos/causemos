@@ -19,6 +19,8 @@ const EXPERIMENT_TYPE = Object.freeze({
 
 const NUM_LEVELS = 31; // For y-scaling (1 + 6*N)
 
+const regex = RegExp('^[A-Za-z0-9/_ ]+$');
+
 /**
  * Get all models
  *
@@ -402,6 +404,10 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
   const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
 
   nodeParameters.forEach((np, idx) => {
+    if (regex.test(np.concept) === false) {
+      throw new Error(`${np.concept} contains invalid characters.`);
+    }
+
     if (_.isEmpty(np.parameter)) {
       throw new Error(`${np.concept} is not parameterized`);
     } else {
@@ -520,6 +526,10 @@ const buildNodeParametersPayloadDeprecated = (nodeParameters, model) => {
   const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
 
   nodeParameters.forEach((np, idx) => {
+    if (regex.test(np.concept) === false) {
+      throw new Error(`${np.concept} contains invalid characters.`);
+    }
+
     const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
 
     if (_.isEmpty(np.parameter)) {

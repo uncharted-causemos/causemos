@@ -19,7 +19,7 @@
           :selected-dimensions="dimensions"
           @close="onNewScenarioRunsModalClose" />
         <modal-check-runs-execution-status
-          v-if="isModelMetadata & showModelRunsExecutionStatus === true"
+          v-if="isModelMetadata && showModelRunsExecutionStatus === true"
           :metadata="metadata"
           :potential-scenarios="runParameterValues"
           @close="showModelRunsExecutionStatus = false"
@@ -639,6 +639,7 @@ import useMultiTimeseriesData from '@/services/composables/useMultiTimeseriesDat
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 import { getInsightById } from '@/services/insight-service';
+import { isDataSpaceDataState } from '@/utils/insight-util';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { getParentSelectedRegions, adminLevelToString } from '@/utils/admin-level-util';
 
@@ -658,7 +659,7 @@ import {
   DatacubeViewMode, DatacubeStatus, ProjectType
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
-import { DataState, Insight, ViewState } from '@/types/Insight';
+import { DataSpaceDataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { ModelRunReference } from '@/types/ModelRunReference';
 import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
@@ -733,7 +734,8 @@ export default defineComponent({
   name: 'DatacubeCard',
   emits: [
     'on-map-load',
-    'update-model-parameter'
+    'update-model-parameter',
+    'visible-timeseries-changed'
   ],
   props: {
     isPublishing: {
@@ -741,7 +743,7 @@ export default defineComponent({
       default: false
     },
     initialDataConfig: {
-      type: Object as PropType<DataState>,
+      type: Object as PropType<DataSpaceDataState>,
       default: null
     },
     initialViewConfig: {
@@ -1632,53 +1634,45 @@ export default defineComponent({
     const updateStateFromInsight = async (insight_id: string) => {
       const loadedInsight: Insight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
-      //  consider pushing current state to the url to support browser hsitory
+      //  consider pushing current state to the url to support browser history
       //  in case the user wants to navigate to the original state using back button
+      // FIXME: the order of resetting the state is important
       if (loadedInsight) {
-        //
-        // insight was found and loaded
-        //
-        // data state
-        // FIXME: the order of resetting the state is important
-        if (loadedInsight.data_state?.selectedModelId) {
-          // this will reload datacube metadata as well as scenario runs
-          // NOTE: emit an event to the parent to reset the model metadata based on the new ID
-          //  Seems to be not needed anymore since applying an insight also involves passing the datacube_id as a query param
-          //  but will leave old code here for reference
-          // selectedModelId.value = loadedInsight.data_state?.selectedModelId;
-        }
-        // do we have a search filter that was saved before!?
-        if (loadedInsight.data_state?.searchFilters !== undefined) {
-          // restoring a state where some searchFilters were defined
-          if (!_.isEmpty(loadedInsight.data_state?.searchFilters) && loadedInsight.data_state?.searchFilters.clauses.length > 0) {
-            searchFilters.value = _.clone(loadedInsight.data_state?.searchFilters);
-          }
-        } else {
-          // we may be applying an insight that was captured before introducing the searchFilters capability
-          //  so we need to clear any existing filters that may affect the available model runs
-          searchFilters.value = {};
-        }
-        if (loadedInsight.data_state?.selectedScenarioIds) {
-          // this would only be valid and effective if/after datacube runs are reloaded
-          setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
-        }
-        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
-          if (loadedInsight.view_state?.breakdownOption && loadedInsight.view_state?.breakdownOption === SPLIT_BY_VARIABLE) {
-            setSelectedGlobalTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        const dataState = loadedInsight.data_state;
+        if (dataState && isDataSpaceDataState(dataState)) {
+          // do we have a search filter that was saved before!?
+          if (dataState.searchFilters !== undefined) {
+            // restoring a state where some searchFilters were defined
+            if (!_.isEmpty(dataState.searchFilters) && dataState.searchFilters.clauses.length > 0) {
+              searchFilters.value = _.clone(dataState.searchFilters);
+            }
           } else {
-            setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+            // we may be applying an insight that was captured before introducing the searchFilters capability
+            //  so we need to clear any existing filters that may affect the available model runs
+            searchFilters.value = {};
           }
-        }
-        if (loadedInsight.data_state?.relativeTo !== undefined) {
-          setRelativeTo(loadedInsight.data_state?.relativeTo);
-        }
-        if (loadedInsight.data_state?.selectedTransform) {
-          selectedTransform.value = loadedInsight.data_state?.selectedTransform as DataTransform;
-        }
-        if (loadedInsight.data_state?.selectedPreGenDataId) {
+
           // this would only be valid and effective if/after datacube runs are reloaded
-          selectedPreGenDataId.value = loadedInsight.data_state?.selectedPreGenDataId;
+          setSelectedScenarioIds(dataState.selectedScenarioIds);
+
+          if (dataState.selectedTimestamp !== null) {
+            if (loadedInsight.view_state?.breakdownOption === SPLIT_BY_VARIABLE) {
+              setSelectedGlobalTimestamp(dataState.selectedTimestamp);
+            } else {
+              setSelectedTimestamp(dataState.selectedTimestamp);
+            }
+          }
+
+          if (dataState.relativeTo !== null) {
+            setRelativeTo(dataState.relativeTo);
+          }
+
+          selectedTransform.value = dataState.selectedTransform;
+
+          // this would only be valid and effective if/after datacube runs are reloaded
+          selectedPreGenDataId.value = dataState.selectedPreGenDataId;
         }
+
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
           selectedSpatialAggregation.value = loadedInsight.view_state?.spatialAggregation as AggregationOption;
@@ -1722,35 +1716,24 @@ export default defineComponent({
         if (loadedInsight.view_state?.numberOfColorBins !== undefined) {
           setNumberOfColorBins(loadedInsight.view_state?.numberOfColorBins);
         }
-        if (loadedInsight.data_state?.nonDefaultQualifiers !== undefined) {
-          initialNonDefaultQualifiers.value = _.clone(loadedInsight.data_state?.nonDefaultQualifiers);
-        }
-        // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
-        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
-          initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
-        }
-        if (loadedInsight.data_state?.selectedRegionIdsAtAllLevels !== undefined) {
-          const regions = fromStateSelectedRegionsAtAllLevels(loadedInsight.data_state?.selectedRegionIdsAtAllLevels);
+
+        if (dataState && isDataSpaceDataState(dataState)) {
+          initialNonDefaultQualifiers.value = _.clone(dataState.nonDefaultQualifiers);
+          // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
+          initialSelectedRegionIds.value = _.clone(dataState.selectedRegionIds);
+
+          const regions = fromStateSelectedRegionsAtAllLevels(dataState.selectedRegionIdsAtAllLevels);
           const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
           selectedRegionIdsAtAllLevels.value = validRegions;
-        }
-        if (loadedInsight.data_state?.selectedOutputVariables !== undefined) {
-          initialSelectedOutputVariables.value = _.clone(loadedInsight.data_state?.selectedOutputVariables);
-        }
-        if (loadedInsight.data_state?.activeFeatures !== undefined) {
-          initialActiveFeatures.value = _.clone(loadedInsight.data_state?.activeFeatures);
-        }
-        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
-        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
-          initialSelectedQualifierValues.value = _.clone(loadedInsight.data_state?.selectedQualifierValues);
-        }
-        // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
-        if (loadedInsight.data_state?.selectedYears !== undefined) {
-          initialSelectedYears.value = _.clone(loadedInsight.data_state?.selectedYears);
-        }
-        // @NOTE: 'initialActiveReferenceOptions' must be set after 'breakdownOption'
-        if (loadedInsight.data_state?.activeReferenceOptions !== undefined) {
-          initialActiveReferenceOptions.value = _.clone(loadedInsight.data_state?.activeReferenceOptions);
+
+          initialSelectedOutputVariables.value = _.clone(dataState.selectedOutputVariables);
+          initialActiveFeatures.value = _.clone(dataState.activeFeatures);
+          // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+          initialSelectedQualifierValues.value = _.clone(dataState.selectedQualifierValues);
+          // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
+          initialSelectedYears.value = _.clone(dataState.selectedYears);
+          // @NOTE: 'initialActiveReferenceOptions' must be set after 'breakdownOption'
+          initialActiveReferenceOptions.value = _.clone(dataState.activeReferenceOptions);
         }
       }
     };
@@ -2171,9 +2154,12 @@ export default defineComponent({
     });
 
     watchEffect(() => {
-      const dataState: DataState = initDataStateFromRefs(
-        mainModelOutput,
-        metadata,
+      emit('visible-timeseries-changed', visibleTimeseriesData.value);
+    });
+
+
+    watchEffect(() => {
+      const dataState: DataSpaceDataState = initDataStateFromRefs(
         relativeTo,
         selectedModelId,
         nonDefaultQualifiers,
@@ -2188,8 +2174,7 @@ export default defineComponent({
         selectedTransform,
         activeReferenceOptions,
         searchFilters,
-        selectedPreGenDataId,
-        visibleTimeseriesData
+        selectedPreGenDataId
       );
 
       store.dispatch('insightPanel/setDataState', dataState);

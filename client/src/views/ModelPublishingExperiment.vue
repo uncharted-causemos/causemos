@@ -63,10 +63,10 @@ import {
   TemporalResolution,
   DatacubeViewMode
 } from '@/types/Enums';
-import { DataState, ViewState } from '@/types/Insight';
+import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import domainProjectService from '@/services/domain-project-service';
-import InsightUtil from '@/utils/insight-util';
+import InsightUtil, { isDataSpaceDataState } from '@/utils/insight-util';
 import useToaster from '@/services/composables/useToaster';
 import { getFirstInsight, InsightFilterFields } from '@/services/insight-service';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
@@ -89,7 +89,7 @@ export default defineComponent({
     const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
     const countInsights = computed(() => store.getters['insightPanel/countInsights']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const dataState = computed(() => store.getters['insightPanel/dataState']);
+    const dataState = computed<DataState | null>(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const currentView = computed(() => store.getters['app/currentView']);
 
@@ -101,7 +101,7 @@ export default defineComponent({
     const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
     const disableOverlay = () => store.dispatch('app/disableOverlay');
 
-    const initialDataConfig = ref<DataState | null>(null);
+    const initialDataConfig = ref<DataSpaceDataState | null>(null);
     const initialViewConfig = ref<ViewState | null>({
       temporalAggregation: AggregationOption.None,
       spatialAggregation: AggregationOption.None,
@@ -136,7 +136,12 @@ export default defineComponent({
     ]);
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
-    const selectedScenarioIds = computed(() => dataState.value.selectedScenarioIds);
+    const selectedScenarioIds = computed(() => {
+      if (dataState.value && isDataSpaceDataState(dataState.value)) {
+        return dataState.value.selectedScenarioIds;
+      }
+      return null;
+    });
     const selectedSpatialAggregation = computed(() => viewState.value.spatialAggregation);
     const selectedTemporalAggregation = computed(() => viewState.value.temporalAggregation);
     const selectedTemporalResolution = computed(() => viewState.value.temporalResolution);
@@ -211,7 +216,9 @@ export default defineComponent({
       const sparklineResult = await generateSparklines([{
         id: meta.id,
         dataId: meta.data_id,
-        runId: defaultRun?.id ?? selectedScenarioIds.value[0],
+        // This function is called when publishing model, which means it's safe
+        //  to assert that selectedScenarioIds is defined
+        runId: defaultRun?.id ?? (selectedScenarioIds.value as string[])[0],
         feature: feature,
         resolution: selectedTemporalResolution.value,
         temporalAgg: selectedTemporalAggregation.value,
@@ -313,7 +320,7 @@ export default defineComponent({
         selectedTemporalResolution.value
       ],
       () => {
-        if (selectedScenarioIds?.value?.length > 0) {
+        if (selectedScenarioIds.value && selectedScenarioIds.value.length > 0) {
           if (currentPublishStep.value === ModelPublishingStepID.Enrich_Description) {
             // user attempted to select one or more scenarios but the model publishing step is not correct
             // this would be the case of the user selected a scenario on the PC plot while the model publishing step is still assuming description view
@@ -414,7 +421,10 @@ export default defineComponent({
         if (defaultInsight.context_id?.includes(this.metadata?.id as string)) {
           markInsightStepAsCompleted = true;
           // restore initial config from the insight, if available
-          if (defaultInsight.data_state !== undefined) {
+          if (
+            defaultInsight.data_state !== undefined &&
+            isDataSpaceDataState(defaultInsight.data_state)
+          ) {
             this.initialDataConfig = defaultInsight.data_state;
           }
           if (defaultInsight.view_state !== undefined) {

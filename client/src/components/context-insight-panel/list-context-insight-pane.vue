@@ -54,8 +54,8 @@
         </div>
         <div class="context-insight-content">
           <img
-            v-if="contextInsight.thumbnail"
-            :src="contextInsight.thumbnail"
+            v-if="contextInsight.image"
+            :src="contextInsight.image"
             class="context-insight-thumbnail"
           >
           <div v-else class="context-insight-thumbnail"><i class="fa fa-spin fa-spinner" /></div>
@@ -129,7 +129,7 @@ export default {
     watch([insights], () => {
       // first fill it without images, once the downloads finish, fill the image in
       // use '' to represent that the thumbnail is loading
-      listContextInsights.value = insights.value.map(insight => ({ ...insight, thumbnail: '' }));
+      listContextInsights.value = insights.value.map(insight => ({ ...insight, image: '' }));
       (async () => {
         const images = await fetchImagesForInsights(insights.value.map(insight => insight.id));
         const ids = insights.value.map(insight => insight.id);
