@@ -768,6 +768,11 @@ export default defineComponent({
             min-width: 0;
             margin-right: 5px;
             font-size: $font-size-large;
+            cursor: pointer;
+
+            &:hover {
+              text-decoration: underline;
+            }
           }
         }
         .checklist-item-insight {
@@ -784,6 +789,11 @@ export default defineComponent({
             font-style: italic;
             flex: 1;
             min-width: 0;
+            cursor: pointer;
+
+            &:hover {
+              text-decoration: underline;
+            }
           }
           .private-insight-name {
             color: black;
