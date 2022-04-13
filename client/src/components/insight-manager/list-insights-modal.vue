@@ -11,6 +11,7 @@
       <div class="checklist">
         <list-analytical-questions-pane
           :show-checklist-title="true"
+          :can-click-checklist-items="true"
           @item-click="reviewChecklist"
         >
           <button
