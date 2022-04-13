@@ -249,6 +249,7 @@ export default defineComponent({
           delete modelToUpdate.validatedOutputs;
           const drilldownParams = modelToUpdate.parameters.filter(p => p.is_drilldown);
           drilldownParams.forEach((p: any) => {
+            // legacy field
             if (p.roles) {
               delete p.roles;
             }

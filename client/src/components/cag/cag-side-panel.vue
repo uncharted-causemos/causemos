@@ -7,11 +7,6 @@
     :is-large="false"
     @set-active="setActive"
   >
-    <!--
-    <list-analytical-questions-pane
-      v-if="currentTab === 'Analysis Checklist'"
-    />
-    -->
 
     <cag-scenarios-pane
       v-if="currentTab === 'Scenarios'"
@@ -59,7 +54,6 @@
 import SidePanel from '@/components/side-panel/side-panel.vue';
 import { computed, defineComponent, PropType, ref, watchEffect } from 'vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
-// import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
 import CagScenariosPane from '@/components/cag/cag-scenarios-pane.vue';
 import CagAnalyticsPane from '@/components/cag/cag-analytics-pane.vue';
 import { mapGetters, useStore } from 'vuex';

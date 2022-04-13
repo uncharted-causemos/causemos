@@ -17,6 +17,7 @@
           :metadata="metadata"
           :potential-scenarios="potentialScenarios"
           :selected-dimensions="dimensions"
+          :runtime-stats="runtimeStats"
           @close="onNewScenarioRunsModalClose" />
         <modal-check-runs-execution-status
           v-if="isModelMetadata && showModelRunsExecutionStatus === true"
@@ -548,7 +549,7 @@
                 <viz-options-pane
                   :metadata="metadata"
                   :item-id="itemId"
-                  :aggregation-options="aggregationOptions"
+                  :aggregation-options="filteredAggregationOptions"
                   :resolution-options="temporalResolutionOptions"
                   :selected-spatial-aggregation="selectedSpatialAggregation"
                   :selected-temporal-aggregation="selectedTemporalAggregation"
@@ -643,7 +644,7 @@ import { isDataSpaceDataState } from '@/utils/insight-util';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { getParentSelectedRegions, adminLevelToString } from '@/utils/admin-level-util';
 
-import { AnalysisMapColorOptions, GeoRegionDetail, ScenarioData } from '@/types/Common';
+import { AnalysisMapColorOptions, BoxPlotStats, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
   DatacubeGenericAttributeVariableType,
@@ -718,6 +719,7 @@ import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import { capitalize } from '@/utils/string-util';
 import { getBboxForEachRegionId } from '@/services/geo-service';
+import { getWeightQualifier } from '@/utils/qualifier-util';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -802,7 +804,8 @@ export default defineComponent({
       initialViewConfig,
       metadata,
       tabState,
-      temporalResolutionOptions
+      temporalResolutionOptions,
+      aggregationOptions
     } = toRefs(props);
 
     const projectType = computed(() => store.getters['app/projectType']);
@@ -951,6 +954,27 @@ export default defineComponent({
     const scenarioCount = computed(() => runParameterValues.value.length);
 
     const runningDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && (run.status === ModelRunStatus.Processing || run.status === ModelRunStatus.Submitted)));
+
+    const runtimeStats = computed(() => {
+      const runtimeMillis = allModelRunData.value
+        .filter(run => run.runtimes?.post_processing?.start_time)
+        .map(run => run.runtimes.post_processing.end_time - run.runtimes.post_processing.start_time)
+        .sort((a, b) => a - b);
+
+      if (runtimeMillis.length === 0) {
+        return undefined;
+      }
+
+      const min = runtimeMillis[0];
+      const max = runtimeMillis[runtimeMillis.length - 1];
+      const sum = runtimeMillis.reduce((a, b) => a + b, 0);
+      const mean = sum / runtimeMillis.length;
+      const q25 = d3.quantileSorted(runtimeMillis, 0.25);
+      const q50 = d3.quantileSorted(runtimeMillis, 0.5);
+      const q75 = d3.quantileSorted(runtimeMillis, 0.75);
+
+      return { min, max, sum, mean, q25, q50, q75 } as BoxPlotStats;
+    });
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
@@ -2236,6 +2260,11 @@ export default defineComponent({
         : selectedRegionIdsAtAllLevels.value;
     });
 
+    const filteredAggregationOptions = computed(() => {
+      const hasWeight = getWeightQualifier(metadata.value?.qualifier_outputs);
+      return aggregationOptions.value?.filter(agg => agg !== AggregationOption.WeightedAverage || hasWeight);
+    });
+
     return {
       activeReferenceOptions,
       addNewTag,
@@ -2302,6 +2331,7 @@ export default defineComponent({
       relativeTo,
       requestNewModelRuns,
       runningDefaultRun,
+      runtimeStats,
       runParameterValues,
       qualifierFetchInfo,
       scenarioCount,
@@ -2390,7 +2420,8 @@ export default defineComponent({
       activeFeaturesNames,
       DatacubeViewMode,
       DatacubeStatus,
-      itemId
+      itemId,
+      filteredAggregationOptions
     };
   },
   watch: {

@@ -38,7 +38,7 @@
     </template>
     <template #footer>
       <div class="row estimated-runtime">
-        Estimated execution time: {{ potentialScenarios.length * 2 }} {{ metadata.name.toLowerCase().includes('wash') ? 'hours' : 'minutes' }}
+        Estimated execution time: {{ estimatedRuntime }}.
       </div>
       <ul class="unstyled-list">
         <button
@@ -62,13 +62,14 @@
 <script lang="ts">
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import Modal from '@/components/modals/modal.vue';
-import { ScenarioData } from '@/types/Common';
+import { BoxPlotStats, ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
 import { getOutputs, isGeoParameter } from '@/utils/datacube-util';
 import datacubeService from '@/services/new-datacube-service';
 import useToaster from '@/services/composables/useToaster';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import DurationFormatter from '@/formatters/duration-formatter';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -91,11 +92,21 @@ export default defineComponent({
     selectedDimensions: {
       type: Array as PropType<DimensionInfo[]>,
       default: null
+    },
+    runtimeStats: {
+      type: Object as PropType<BoxPlotStats>,
+      default: undefined
     }
   },
   computed: {
     inputParameters(): Array<ModelParameter> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
+    },
+    estimatedRuntime(): string {
+      return DurationFormatter(
+        (this.runtimeStats?.mean ?? NaN) * // average processing time
+        this.potentialRuns.length * // multiply by the number of runs being requested
+        2) || 'unknown'; // add on time for Dojo execution and queue time
     }
   },
   data: () => ({
