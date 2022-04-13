@@ -83,7 +83,7 @@
       />
       <collapsible-item
         v-if="allowCollapsing && rowsWithoutData.length"
-        :override="true">
+        :override="{value: true}">
         <template #title>{{rowsWithoutData.length}} more without data</template>
         <template #content>
           <aggregation-checklist-item

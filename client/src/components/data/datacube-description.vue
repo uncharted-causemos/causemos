@@ -77,7 +77,7 @@ import stringUtil from '@/utils/string-util';
 import { FeatureQualifier, Indicator, Model } from '@/types/Datacube';
 import { isModel } from '@/utils/datacube-util';
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
-import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
+import { isBreakdownQualifier } from '@/utils/qualifier-util';
 
 export default defineComponent({
   name: 'DatacubeDescription',
@@ -101,7 +101,7 @@ export default defineComponent({
     },
     displayedQualifiers(): Array<any> {
       return this.metadata?.qualifier_outputs?.filter(
-        (q: FeatureQualifier) => !QUALIFIERS_TO_EXCLUDE.includes(q.name)) ?? [];
+        (q: FeatureQualifier) => isBreakdownQualifier(q)) ?? [];
     }
   }
 });

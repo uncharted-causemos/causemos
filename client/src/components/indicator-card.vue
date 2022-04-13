@@ -130,7 +130,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { DatacubeFeature, FeatureQualifier, Indicator } from '@/types/Datacube';
 import { DatacubeStatus } from '@/types/Enums';
 import _ from 'lodash';
-import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
+import { isBreakdownQualifier } from '@/utils/qualifier-util';
 
 /**
  * A card-styled widget to view project summary
@@ -159,7 +159,7 @@ export default defineComponent({
       projectType: 'app/projectType'
     }),
     visibleQualifiers(): FeatureQualifier[] {
-      return this.datacube?.qualifier_outputs?.filter(q => !QUALIFIERS_TO_EXCLUDE.includes(q.name)) ?? [];
+      return this.datacube?.qualifier_outputs?.filter(q => isBreakdownQualifier(q)) ?? [];
     },
     aggregationFunctions(): string {
       const selections = this.datacube?.default_view;

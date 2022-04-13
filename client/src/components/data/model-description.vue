@@ -199,44 +199,7 @@
               class="model-attribute-desc"
               :class="{ 'attribute-invalid': !isValid(qualifier.description) }"
             />
-            <!--
-            <div class="checkbox">
-              <label
-                @click="updateDrilldownVisibility(qualifier)"
-                style="cursor: pointer; color: black;">
-                <i
-                  class="fa fa-lg fa-fw"
-                  :class="{ 'fa-check-square-o': qualifier.is_visible, 'fa-square-o': !qualifier.is_visible }"
-                />
-                Visible
-              </label>
-            </div>
-            -->
           </td>
-          <!--
-          <td>
-            <div>Role</div>
-            <div
-              v-if="qualifier.roles"
-              class="role-list"
-              :class="{ 'attribute-invalid': !(qualifier.roles.length > 0) }"
-            >
-              <div
-                v-for="role in Object.values(FeatureQualifierRoles)"
-                :key="role"
-                @click="updateQualifierRole(qualifier, role)"
-              >
-                <div>
-                  <i
-                    class="fa fa-fw"
-                    :class="{ 'fa-check-square-o': isValidQualifierRole(qualifier, role), 'fa-square-o': !isValidQualifierRole(qualifier, role) }"
-                  />
-                  {{ role }}
-                </div>
-                </div>
-            </div>
-          </td>
-          -->
         </tr>
       </tbody>
     </table>
@@ -246,16 +209,15 @@
 <script lang="ts">
 import { computed, defineComponent, PropType, ComputedRef, toRefs, Ref, ref } from 'vue';
 import _ from 'lodash';
-import { DatacubeFeature, FeatureQualifier, Model, ModelParameter } from '@/types/Datacube';
+import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
 import {
   DatacubeAttributeVariableType,
   DatacubeGenericAttributeVariableType,
-  FeatureQualifierRoles,
   ModelParameterDataType
 } from '@/types/Enums';
 import ModalEditParamChoices from '@/components/modals/modal-edit-param-choices.vue';
-import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
+import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getOutputs } from '@/utils/datacube-util';
 import { scrollToElement } from '@/utils/dom-util';
 import DropdownButton from '@/components/dropdown-button.vue';
@@ -408,7 +370,6 @@ export default defineComponent({
       validatedOutputVariables,
       currentOutputFeature,
       outputVariables,
-      FeatureQualifierRoles,
       ModelParameterDataType,
       showEditParamOptionsModal,
       selectedParameter,
@@ -427,28 +388,8 @@ export default defineComponent({
       return this.metadata && this.metadata.parameters ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
     },
     qualifiers(): Array<any> {
-      // includes both drilldown-inputs and output-qualifiers
-      let qualifiers = [];
-      // first, add actual output qualifiers
-      qualifiers.push(...this.metadata?.qualifier_outputs ?? []);
-      // then, add all drilldown params as qualifiers
-      const drilldownParams = this.metadata?.parameters.filter((p: ModelParameter) => p.is_drilldown) ?? [];
-      drilldownParams.forEach((p: any) => {
-        // since ModelParameter does not share the same structure as FeatureQualifier,
-        //  we need to add the missing FeatureQualifier attributes
-        if (!p.roles) {
-          p.roles = [];
-        }
-        if (!p.roles.includes(FeatureQualifierRoles.Breakdown)) {
-          p.roles.push(FeatureQualifierRoles.Breakdown);
-        }
-        if (!p.related_features) {
-          p.related_features = [(this.currentOutputFeature as DatacubeFeature).name];
-        }
-      });
-      qualifiers.push(...drilldownParams);
-      // hide implicit qualifiers, e.g., admin1, admin2, lat, lng, etc.
-      qualifiers = qualifiers.filter(q => !QUALIFIERS_TO_EXCLUDE.includes(q.name));
+      // hide on-breakdown and implicit qualifiers, e.g., admin1, admin2, lat, lng, etc.
+      const qualifiers = this.metadata?.qualifier_outputs?.filter(q => isBreakdownQualifier(q)) ?? [];
       return qualifiers;
     }
   },
@@ -500,16 +441,6 @@ export default defineComponent({
     },
     isValidatedOutput(output: DatacubeFeature) {
       return this.validatedOutputVariables.findIndex(o => o.name === output.name) >= 0;
-    },
-    updateQualifierRole(qualifier: FeatureQualifier, role: FeatureQualifierRoles) {
-      if (qualifier.roles.includes(role)) {
-        qualifier.roles = qualifier.roles.filter(r => r !== role);
-      } else {
-        qualifier.roles.push(role);
-      }
-    },
-    isValidQualifierRole(qualifier: FeatureQualifier, role: FeatureQualifierRoles) {
-      return qualifier.roles.includes(role);
     },
     isValid(name: string) {
       return name && name !== '';

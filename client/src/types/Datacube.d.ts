@@ -61,7 +61,7 @@ export interface ModelParameter extends DatacubeAttribute {
 
 export interface FeatureQualifier extends DatacubeAttribute {
   related_features: string[];
-  roles: FeatureQualifierRoles[];
+  qualifier_role?: FeatureQualifierRoles; // set by modeler in Dojo
 }
 
 export interface DatacubeFeature extends DatacubeAttribute {

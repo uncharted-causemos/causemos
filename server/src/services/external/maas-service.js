@@ -125,13 +125,25 @@ const startModelOutputPostProcessing = async (metadata) => {
   }
 
   const qualifierMap = {};
+  let weightColumn = '';
   if (modelMetadata.qualifier_outputs) {
     modelMetadata.outputs.forEach(output => {
       qualifierMap[output.name] = modelMetadata.qualifier_outputs
-        .filter(q => !IMPLICIT_QUALIFIERS.includes(q.name))
+        .filter(q => !IMPLICIT_QUALIFIERS.includes(q.name) &&
+          (!q.qualifier_role || q.qualifier_role === 'breakdown'))
         .filter(qualifier => qualifier.related_features.includes(output.name))
         .map(q => q.name);
     });
+    // Data pipeline only supports a single weight column
+    // Use the first weight qualifiers
+    const weightQualifier = modelMetadata.qualifier_outputs.find(q =>
+      !IMPLICIT_QUALIFIERS.includes(q.name) &&
+      q.qualifier_role === 'weight' &&
+      q.related_features.length > 0
+    );
+    if (weightQualifier) {
+      weightColumn = weightQualifier.name;
+    }
   }
 
   // Remove extra fields from Jataware
@@ -167,6 +179,7 @@ const startModelOutputPostProcessing = async (metadata) => {
     doc_ids: docIds,
     data_paths: metadata.data_paths,
     qualifier_map: qualifierMap,
+    weight_column: weightColumn,
     compute_tiles: true,
     qualifier_thresholds: {
       max_count: QUALIFIER_MAX_COUNT,
@@ -313,8 +326,8 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
   let highestRes = 0;
 
   // Exclude all implicit qualifiers
-  const validQualifiers = metadata.qualifier_outputs.filter(
-    q => !IMPLICIT_QUALIFIERS.includes(q.name));
+  const validQualifiers = metadata.qualifier_outputs?.filter(
+    q => !IMPLICIT_QUALIFIERS.includes(q.name)) ?? [];
 
   // Exclude non-numeric outputs
   const numericOutputs = metadata.outputs.filter(output => acceptedTypes.includes(output.type));
@@ -323,10 +336,21 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
   }
 
   const qualifierMap = {};
+  let weightColumn = '';
   for (const output of numericOutputs) {
     qualifierMap[output.name] = validQualifiers
-      .filter(qualifier => qualifier.related_features.includes(output.name))
+      .filter(qualifier => qualifier.related_features.includes(output.name) &&
+        (!qualifier.qualifier_role || qualifier.qualifier_role === 'breakdown'))
       .map(q => q.name);
+  }
+  // Data pipeline only supports a single weight column
+  // Use the first weight qualifiers
+  const weightQualifier = validQualifiers.find(q =>
+    q.qualifier_role === 'weight' &&
+    q.related_features.length > 0
+  );
+  if (weightQualifier) {
+    weightColumn = weightQualifier.name;
   }
 
   // Create data to send to elasticsearch
@@ -395,6 +419,7 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
     data_paths: metadata.data_paths,
     temporal_resolution: resolutions[highestRes],
     qualifier_map: qualifierMap,
+    weight_column: weightColumn,
     is_indicator: true,
     compute_tiles: true,
     qualifier_thresholds: {
