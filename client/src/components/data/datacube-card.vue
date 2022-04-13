@@ -549,7 +549,7 @@
                 <viz-options-pane
                   :metadata="metadata"
                   :item-id="itemId"
-                  :aggregation-options="aggregationOptions"
+                  :aggregation-options="filteredAggregationOptions"
                   :resolution-options="temporalResolutionOptions"
                   :selected-spatial-aggregation="selectedSpatialAggregation"
                   :selected-temporal-aggregation="selectedTemporalAggregation"
@@ -719,6 +719,7 @@ import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import { capitalize } from '@/utils/string-util';
 import { getBboxForEachRegionId } from '@/services/geo-service';
+import { getWeightQualifier } from '@/utils/qualifier-util';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -803,7 +804,8 @@ export default defineComponent({
       initialViewConfig,
       metadata,
       tabState,
-      temporalResolutionOptions
+      temporalResolutionOptions,
+      aggregationOptions
     } = toRefs(props);
 
     const projectType = computed(() => store.getters['app/projectType']);
@@ -2258,6 +2260,11 @@ export default defineComponent({
         : selectedRegionIdsAtAllLevels.value;
     });
 
+    const filteredAggregationOptions = computed(() => {
+      const hasWeight = getWeightQualifier(metadata.value?.qualifier_outputs);
+      return aggregationOptions.value?.filter(agg => agg !== AggregationOption.WeightedAverage || hasWeight);
+    });
+
     return {
       activeReferenceOptions,
       addNewTag,
@@ -2413,7 +2420,8 @@ export default defineComponent({
       activeFeaturesNames,
       DatacubeViewMode,
       DatacubeStatus,
-      itemId
+      itemId,
+      filteredAggregationOptions
     };
   },
   watch: {
