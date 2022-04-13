@@ -10,7 +10,7 @@ const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
  * Insert a new model or indicator metadata doc
  */
 router.post('/', asyncHandler(async (req, res) => {
-  await respondUsingCode(req, res, datacubeService.insertDatacube);
+  await respondUsingCode(res, datacubeService.insertDatacube, [req.body]);
 }));
 
 /**

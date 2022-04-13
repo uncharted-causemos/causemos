@@ -268,8 +268,9 @@ const _getFlowIdForRun = async (runId) => {
  * Start a datacube ingest prefect flow using the provided ids
  *
  * @param {Indicator} metadata -indicator metadata
+ * @param {boolean} fullReplace -should old existing indicators be deleted
  */
-const startIndicatorPostProcessing = async (metadata) => {
+const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
   Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
   if (!metadata.id) {
     const err = 'Required ids for indicator post processing were not provided';
@@ -305,6 +306,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   if (existingIndicators.length > 0) {
     Logger.warn(`Indicators with data_id ${metadata.id} already exist. Duplicates will not be processed.`);
   }
+  const existingIndicatorIds = existingIndicators.reduce((map, i) => map.set(i.default_feature, i.id), new Map());
 
   const acceptedTypes = ['int', 'float', 'boolean', 'datetime'];
   const resolutions = ['annual', 'monthly', 'dekad', 'weekly', 'daily', 'other'];
@@ -314,81 +316,78 @@ const startIndicatorPostProcessing = async (metadata) => {
   const validQualifiers = metadata.qualifier_outputs.filter(
     q => !IMPLICIT_QUALIFIERS.includes(q.name));
 
+  // Exclude non-numeric outputs
+  const numericOutputs = metadata.outputs.filter(output => acceptedTypes.includes(output.type));
+  if (numericOutputs.length < metadata.outputs.length) {
+    Logger.warn(`Filtered out ${metadata.outputs.length - numericOutputs.length} indicators`);
+  }
+
   const qualifierMap = {};
-  for (const output of metadata.outputs) {
-    if (acceptedTypes.includes(output.type)) {
-      qualifierMap[output.name] = validQualifiers
-        .filter(qualifier => qualifier.related_features.includes(output.name))
-        .map(q => q.name);
+  for (const output of numericOutputs) {
+    qualifierMap[output.name] = validQualifiers
+      .filter(qualifier => qualifier.related_features.includes(output.name))
+      .map(q => q.name);
+  }
+
+  // Create data to send to elasticsearch
+  const indicatorMetadata = numericOutputs.map(output => {
+    // Determine the highest available temporal resolution
+    const outputRes = output.data_resolution && output.data_resolution.temporal_resolution;
+    const resIndex = resolutions.indexOf(outputRes || '');
+    highestRes = Math.max(highestRes, resIndex);
+
+    const clonedMetadata = _.cloneDeep(metadata);
+    clonedMetadata.data_id = metadata.id;
+    clonedMetadata.id = existingIndicatorIds.get(output.name) || uuid(); // use existing id if available
+    clonedMetadata.outputs = [output];
+    clonedMetadata.family_name = metadata.family_name;
+    clonedMetadata.default_feature = output.name;
+    clonedMetadata.type = metadata.type;
+    clonedMetadata.status = 'PROCESSING';
+
+    let qualifierMatches = [];
+    if (metadata.qualifier_outputs) {
+      // Filter out unrelated qualifiers
+      clonedMetadata.qualifier_outputs = _.cloneDeep(metadata.qualifier_outputs.filter(
+        qualifier => qualifier.related_features.includes(output.name)));
+
+      // Combine all concepts from the qualifiers into one list
+      qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
+        qualifier.ontologies.concepts,
+        qualifier.ontologies.processes,
+        qualifier.ontologies.properties
+      ]).flat(2);
+
+      // Remove qualifier level ontologies
+      clonedMetadata.qualifier_outputs.forEach(qualifier => { qualifier.ontologies = undefined; });
     }
-  }
 
-  // Create data now to send to elasticsearch
-  const newIndicatorMetadata = metadata.outputs
-    .filter(output => acceptedTypes.includes(output.type)) // Don't process non-numeric data
-    .filter(output => !existingIndicators.some(item => item.default_feature === output.name))
-    .map(output => {
-      // Determine the highest available temporal resolution
-      const outputRes = output.data_resolution && output.data_resolution.temporal_resolution;
-      const resIndex = resolutions.indexOf(outputRes || '');
-      highestRes = Math.max(highestRes, resIndex);
+    // Append to the concepts from the output
+    const allMatches = qualifierMatches.concat(output.ontologies.concepts,
+      output.ontologies.processes,
+      output.ontologies.properties);
 
-      const clonedMetadata = _.cloneDeep(metadata);
-      clonedMetadata.data_id = metadata.id;
-      clonedMetadata.id = uuid();
-      clonedMetadata.outputs = [output];
-      clonedMetadata.family_name = metadata.family_name;
-      clonedMetadata.default_feature = output.name;
-      clonedMetadata.type = metadata.type;
-      clonedMetadata.status = 'PROCESSING';
+    // Remove output level ontologies
+    output.ontologies = undefined;
 
-      let qualifierMatches = [];
-      if (metadata.qualifier_outputs) {
-        // Filter out unrelated qualifiers
-        clonedMetadata.qualifier_outputs = _.cloneDeep(metadata.qualifier_outputs.filter(
-          qualifier => qualifier.related_features.includes(output.name)));
+    clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+    return clonedMetadata;
+  });
 
-        // Combine all concepts from the qualifiers into one list
-        qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
-          qualifier.ontologies.concepts,
-          qualifier.ontologies.processes,
-          qualifier.ontologies.properties
-        ]).flat(2);
+  // replaceDocIds are the existing indicator ids in ES that will be replaced
+  // newDocIds are the new indicator ids
+  const [replaceDocIds, newDocIds] = _.partition(indicatorMetadata, meta => existingIndicatorIds.has(meta.name))
+    .map(metaList => metaList.map(meta => meta.id));
 
-        // Remove qualifier level ontologies
-        clonedMetadata.qualifier_outputs.forEach(qualifier => { qualifier.ontologies = undefined; });
-      }
+  // deleteDocIds are old indicators that weren't present in the new dataset
+  const deleteDocIds = fullReplace
+    ? existingIndicators.map(i => i.id).filter(id => !replaceDocIds.includes(id))
+    : [];
 
-      // Append to the concepts from the output
-      const allMatches = qualifierMatches.concat(output.ontologies.concepts,
-        output.ontologies.processes,
-        output.ontologies.properties);
+  // When processing a NEW datasets, replaceDocIds should be empty.
+  Logger.info(`${newDocIds.length} new indicators will be added. ${replaceDocIds.length} indicators will be replaced.`);
 
-      // Remove output level ontologies
-      output.ontologies = undefined;
-
-      clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
-      return clonedMetadata;
-    });
-
-  const newLength = newIndicatorMetadata.length;
-  if (newLength < metadata.outputs.length) {
-    Logger.warn(`Filtered out ${metadata.outputs.length - newLength} indicators`);
-  }
-
-  // When reprocessing a dataset, existingDocIds will be the existing indicator ids in ES,
-  // there should be no new indicators (newLength === 0).
-  // When processing a new datasets, existingDocIds will be empty.
-  const featureNames = metadata.outputs
-    .filter(output => acceptedTypes.includes(output.type))
-    .map(output => output.name);
-  const existingDocIds = existingIndicators
-    .filter(item => featureNames.includes(item.default_feature))
-    .map(item => item.id);
-
-  Logger.info(`${newLength} new indicators will be added. ${existingDocIds.length} indicators will be updated.`);
-
-  const docIds = existingDocIds.concat(newIndicatorMetadata.map(meta => meta.id));
+  const docIds = indicatorMetadata.map(meta => meta.id);
   const flowParameters = {
     model_id: metadata.id,
     doc_ids: docIds,
@@ -410,29 +409,31 @@ const startIndicatorPostProcessing = async (metadata) => {
     return { result: { error: err }, code: 500 };
   }
 
-  let response = { result: { message: 'No documents added' }, code: 202 }; // Fallback value
-  if (newLength > 0) {
-    try {
-      const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-      const result = await connection.insert(newIndicatorMetadata, d => d.id);
-      response = {
-        result:
-          {
-            es_response: result,
-            message: 'Documents inserted',
-            new_ids: flowParameters.doc_ids,
-            existing_ids: existingIndicators.map(indicator => indicator.id)
-          },
-        code: existingIndicators.length === 0 ? 201 : 200
-      };
-    } catch (err) {
-      return { result: { error: err }, code: 500 };
+  try {
+    const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+    if (deleteDocIds.length > 0) {
+      Logger.info(`${deleteDocIds.length} old indicators will be removed.`);
+      await connection.delete(deleteDocIds);
     }
+    const result = await connection.insert(indicatorMetadata, d => d.id);
+    const response = {
+      result:
+        {
+          es_response: result,
+          message: 'Documents inserted',
+          new_ids: newDocIds,
+          existing_ids: replaceDocIds,
+          deleted_ids: deleteDocIds
+        },
+      code: existingIndicators.length === 0 ? 201 : 200
+    };
+    if (deprecatedIds) {
+      await datacubeService.deprecateDatacubes(metadata.id, deprecatedIds);
+    }
+    return response;
+  } catch (err) {
+    return { result: { error: err }, code: 500 };
   }
-  if (deprecatedIds) {
-    await datacubeService.deprecateDatacubes(metadata.id, deprecatedIds);
-  }
-  return response;
 };
 
 /**
