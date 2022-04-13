@@ -54,6 +54,7 @@
             <i class="fa fa-bars checklist-item-menu" />
             <span
               class="question-title"
+              :class="{ clickable: canClickChecklistItems }"
               @click="$emit('item-click', questionItem, 0)"
             > {{ questionItem.question }}</span>
             <i
@@ -100,7 +101,10 @@
             <span
               @mousedown.stop.prevent
               class="insight-name"
-              :class="{ 'private-insight-name': insight.visibility === 'private' }"
+              :class="{
+                'private-insight-name': insight.visibility === 'private',
+                'clickable': canClickChecklistItems
+              }"
               @click="$emit('item-click', questionItem, insight.id)">
               {{ insight.name }}
             </span>
@@ -153,6 +157,12 @@ export default defineComponent({
   },
   props: {
     showChecklistTitle: {
+      type: Boolean,
+      default: false
+    },
+    // TODO: eventually we'll be able to click checklist items everywhere, at
+    //  which point we can remove this prop.
+    canClickChecklistItems: {
       type: Boolean,
       default: false
     }
@@ -768,10 +778,14 @@ export default defineComponent({
             min-width: 0;
             margin-right: 5px;
             font-size: $font-size-large;
-            cursor: pointer;
 
-            &:hover {
-              text-decoration: underline;
+            &.clickable {
+              cursor: pointer;
+
+              &:hover {
+                text-decoration: underline;
+              }
+
             }
           }
         }
@@ -789,10 +803,13 @@ export default defineComponent({
             font-style: italic;
             flex: 1;
             min-width: 0;
-            cursor: pointer;
 
-            &:hover {
-              text-decoration: underline;
+            &.clickable {
+              cursor: pointer;
+
+              &:hover {
+                text-decoration: underline;
+              }
             }
           }
           .private-insight-name {
