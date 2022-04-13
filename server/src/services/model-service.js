@@ -417,6 +417,9 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
       // Historical data should be historical
       indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
 
+      // Engines may have issues with dates before 1677 (Panda limitation), make it 1800 to be reasonable
+      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp > Date.UTC(1800));
+
       injectDummyData(
         indicatorTimeSeries,
         temporalResolution,
@@ -538,6 +541,9 @@ const buildNodeParametersPayloadDeprecated = (nodeParameters, model) => {
       let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
       const temporalResolution = _.get(np.parameter, 'temporalResolution', 'month');
       indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
+
+      // Engines may have issues with dates before 1677 (Panda limitation), make it 1800 to be reasonable
+      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp > Date.UTC(1800));
 
       injectDummyData(
         indicatorTimeSeries,
