@@ -233,7 +233,6 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setQuestions: 'analysisChecklist/setQuestions',
       showSidePanel: 'panel/showSidePanel',
       setTour: 'tour/setTour'
     }),
