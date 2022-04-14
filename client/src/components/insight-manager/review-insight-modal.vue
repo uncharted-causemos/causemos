@@ -204,7 +204,7 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import InsightUtil from '@/utils/insight-util';
-import { Insight, InsightMetadata, FullInsight, AnalyticalQuestion, ViewState, DataState } from '@/types/Insight';
+import { Insight, InsightMetadata, FullInsight, AnalyticalQuestion, DataState } from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { addInsight, updateInsight, fetchPartialInsights } from '@/services/insight-service';
@@ -219,8 +219,7 @@ import InsightSummary from './insight-summary.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
-import { addQuestion, updateQuestion } from '@/services/question-service';
-import { sortQuestionsByPath, SORT_PATH } from '@/utils/questions-util';
+import { updateQuestion } from '@/services/question-service';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { fetchImageAsBase64 } from '@/services/new-datacube-service';
@@ -252,7 +251,12 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const toaster = useToaster();
-    const { questionsList, reFetchQuestions } = useQuestionsData();
+    const {
+      questionsList,
+      reFetchQuestions,
+      addSection,
+      addInsightToSection
+    } = useQuestionsData();
 
     const updatedInsight = computed(
       () => store.getters['insightPanel/updatedInsight']
@@ -291,10 +295,8 @@ export default defineComponent({
     const loadingImage = ref(false);
     const isEditingInsight = ref(false);
 
-    const sortedQuestions = computed<AnalyticalQuestion[]>(() => sortQuestionsByPath(questionsList.value));
-
     const getQuestionById = (id: string) => {
-      return sortedQuestions.value.find(q => q.id === id);
+      return questionsList.value.find(q => q.id === id);
     };
 
     const insightLinkedQuestionsCount = computed<string>(() => {
@@ -317,7 +319,7 @@ export default defineComponent({
       ) {
         // Current item is an insight linked to one or more sections.
         // Find the sections that are linked to this insight.
-        const sortedLinkedSections = sortedQuestions.value.filter(section => section.linked_insights.includes(updatedInsight.value.id));
+        const sortedLinkedSections = questionsList.value.filter(section => section.linked_insights.includes(updatedInsight.value.id));
         // Count how many instances of this insight appear earlier in the list.
         let earlierInstanceCount = 0;
         for (let index = 0; index < reviewIndex.value; index++) {
@@ -375,11 +377,12 @@ export default defineComponent({
       store,
       questionsList,
       reFetchQuestions,
+      addSection,
+      addInsightToSection,
       updatedInsight,
       annotation,
       imagePreview,
       selectedInsightQuestions,
-      sortedQuestions,
       insightQuestionInnerLabel,
       insightQuestionLabel,
       loadingImage,
@@ -488,7 +491,7 @@ export default defineComponent({
       return this.currentPane === 'review-new-insight';
     },
     questionsDropdown() {
-      return [...this.sortedQuestions.map(q => q.question)];
+      return [...this.questionsList.map(q => q.question)];
     },
     nextInsight(): Insight | AnalyticalQuestion | null {
       if (this.reviewIndex < this.insightList.length - 1) {
@@ -577,34 +580,17 @@ export default defineComponent({
     },
     addNewQuestion(newQuestionText: string) {
       this.showNewQuestion = false;
-
-      const url = this.$route.fullPath;
-      const viewState: ViewState = _.cloneDeep(this.viewState);
-      const newQuestionOrderIndx = _.get(_.maxBy(this.sortedQuestions, SORT_PATH), SORT_PATH);
-      viewState.analyticalQuestionOrder = newQuestionOrderIndx !== undefined ? (newQuestionOrderIndx + 1) : this.sortedQuestions.length;
-      const newQuestion: AnalyticalQuestion = {
-        question: newQuestionText,
-        description: '',
-        visibility: 'private', // this.questionVisibility(),
-        project_id: this.project,
-        context_id: this.contextId,
-        url,
-        target_view: this.insightTargetView,
-        pre_actions: null,
-        post_actions: null,
-        linked_insights: [],
-        view_state: viewState
+      const handleSuccessfulAddition = () => {
+        this.toaster(QUESTIONS.SUCCESSFUL_ADDITION, 'success', false);
       };
-      addQuestion(newQuestion).then((result) => {
-        const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_ADDITION : QUESTIONS.ERRONEOUS_ADDITION;
-        if (message === QUESTIONS.SUCCESSFUL_ADDITION) {
-          this.toaster(message, 'success', false);
-          // refresh the latest list from the server
-          this.reFetchQuestions();
-        } else {
-          this.toaster(message, 'error', true);
-        }
-      });
+      const handleFailedAddition = () => {
+        this.toaster(QUESTIONS.ERRONEOUS_ADDITION, 'error', true);
+      };
+      this.addSection(
+        newQuestionText,
+        handleSuccessfulAddition,
+        handleFailedAddition
+      );
     },
     async takeSnapshot() {
       const url = this.snapshotUrl;
@@ -721,7 +707,7 @@ export default defineComponent({
       const insightThumbnail = annotateCropSaveObj.annotatedImagePreview;
       const annotationAndCropState = this.getAnnotatedState(annotateCropSaveObj);
 
-      const linkedQuestions = this.sortedQuestions.filter(q => this.selectedInsightQuestions.includes(q.question));
+      const linkedQuestions = this.questionsList.filter(q => this.selectedInsightQuestions.includes(q.question));
 
       if (this.isNewModeActive) {
         // saving a new insight
@@ -755,11 +741,8 @@ export default defineComponent({
               // after the insight is created and have a valid id, we need to link that to the question
               if (linkedQuestions) {
                 const insightId = result.data.id;
-                linkedQuestions.forEach(q => {
-                  if (!q.linked_insights.includes(insightId)) {
-                    q.linked_insights.push(insightId);
-                    updateQuestion(q.id as string, q);
-                  }
+                linkedQuestions.forEach(section => {
+                  this.addInsightToSection(insightId, section.id as string);
                 });
               }
             } else {

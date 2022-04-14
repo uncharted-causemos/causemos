@@ -174,6 +174,20 @@ export interface AnalyticalQuestion extends Snapshot {
   view_state: ViewState;
 }
 
+export interface SectionWithInsights {
+  section: AnalyticalQuestion,
+  // TODO: the various insight types
+  //  (Insight, PartialInsight, FullInsight, Snapshot, InsightImage)
+  //  are kind of out of whack right now. If possible it would be nice to use
+  //  one of them for this field.
+  insights: {
+    id: string,
+    name: string,
+    thumbnail: string,
+    visibility: string
+  }[]
+}
+
 export interface InsightMetadata {
   insightLastUpdate: number;
 

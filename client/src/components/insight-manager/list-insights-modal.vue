@@ -12,7 +12,14 @@
         <list-analytical-questions-pane
           :show-checklist-title="true"
           :can-click-checklist-items="true"
+          :insights-by-section="insightsBySection"
           @item-click="reviewChecklist"
+          @update-section-title="updateSectionTitle"
+          @add-section="addSection"
+          @delete-section="deleteSection"
+          @move-section-above-section="moveSectionAboveSection"
+          @add-insight-to-section="addInsightToSection"
+          @remove-insight-from-section="removeInsightFromSection"
         >
           <button
             class="btn btn-primary btn-call-for-action review-button"
@@ -103,8 +110,12 @@ import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
 import { fetchPartialInsights } from '@/services/insight-service';
-import { sortQuestionsByPath } from '@/utils/questions-util';
-import { AnalyticalQuestion, FullInsight } from '@/types/Insight';
+import {
+  AnalyticalQuestion,
+  FullInsight,
+  SectionWithInsights
+} from '@/types/Insight';
+import useQuestionsData from '@/services/composables/useQuestionsData';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
@@ -160,12 +171,41 @@ export default defineComponent({
       })();
     });
 
-    const questions = computed(() => sortQuestionsByPath(store.getters['analysisChecklist/questions']));
+    const {
+      questionsList,
+      updateSectionTitle,
+      addSection,
+      deleteSection,
+      moveSectionAboveSection,
+      addInsightToSection,
+      removeInsightFromSection
+    } = useQuestionsData();
+    const insightsBySection = computed<SectionWithInsights[]>(() => {
+      return questionsList.value.map(section => {
+        // FIXME: optimize by using maps
+        const _insights = section.linked_insights
+          .map(insightId =>
+            insights.value.find(insight => insight.id === insightId)
+          )
+          .filter(insight => insight !== undefined);
+        return {
+          section,
+          insights: _insights
+        };
+      });
+    });
 
     return {
       fullInsights,
       reFetchInsights,
-      questions,
+      updateSectionTitle,
+      addSection,
+      deleteSection,
+      moveSectionAboveSection,
+      addInsightToSection,
+      removeInsightFromSection,
+      insightsBySection,
+      questionsList,
       store,
       toaster
     };
@@ -212,7 +252,12 @@ export default defineComponent({
       return this.searchedInsights;
     },
     insightsGroupedByQuestion() {
-      const allInsightsGroupedByQuestions = InsightUtil.parseReportFromQuestionsAndInsights(this.fullInsights, this.questions);
+      const allInsightsGroupedByQuestions = InsightUtil.parseReportFromQuestionsAndInsights(
+        this.fullInsights,
+        this.questionsList
+      );
+
+
 
       // filter the list by removing question/section items that have insights linked to them
       return allInsightsGroupedByQuestions.filter(item => {
@@ -344,7 +389,7 @@ export default defineComponent({
           insight.image = imageMap.get(insight.id);
         });
         insights = this.fullInsights;
-        questions = this.questions;
+        questions = this.questionsList;
       } else {
         this.selectedInsights.forEach(insight => {
           insight.image = imageMap.get(insight.id);
@@ -399,7 +444,7 @@ export default defineComponent({
         this.insightsGroupedByQuestion,
         section,
         insightId,
-        this.questions
+        this.questionsList
       );
       const insightOrSection =
         this.insightsGroupedByQuestion[indexToStartReviewing];

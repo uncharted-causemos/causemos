@@ -1,10 +1,15 @@
 import { ProjectType } from '@/types/Enums';
-import { AnalyticalQuestion } from '@/types/Insight';
+import { AnalyticalQuestion, ViewState } from '@/types/Insight';
 import { computed, ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { InsightFilterFields } from '@/services/insight-service';
 import _ from 'lodash';
-import { fetchQuestions } from '../question-service';
+import { addQuestion, deleteQuestion, fetchQuestions, updateQuestion } from '../question-service';
+import { useRoute } from 'vue-router';
+
+const getOrderValueFromSection = (section: AnalyticalQuestion) => {
+  return section.view_state.analyticalQuestionOrder;
+};
 
 export default function useQuestionsData() {
   const questionsList = ref<AnalyticalQuestion[]>([]);
@@ -16,6 +21,7 @@ export default function useQuestionsData() {
   };
 
   const store = useStore();
+  const route = useRoute();
   const contextIds = computed(() => store.getters['insightPanel/contextId']);
   const project = computed(() => store.getters['app/project']);
   const projectType = computed(() => store.getters['app/projectType']);
@@ -84,7 +90,8 @@ export default function useQuestionsData() {
         return;
       }
       const allQuestions = _.uniqBy([...publicQuestions, ...contextQuestions], 'id');
-      const orderedQuestions = allQuestions.map((q, index) => {
+
+      questionsList.value = allQuestions.map((q, index) => {
         if (!q.view_state) {
           q.view_state = {};
         }
@@ -93,11 +100,6 @@ export default function useQuestionsData() {
         }
         return q as AnalyticalQuestion;
       });
-
-      // update the store to facilitate questions consumption in other UI places
-      store.dispatch('analysisChecklist/setQuestions', orderedQuestions);
-
-      questionsList.value = orderedQuestions;
     }
     onInvalidate(() => {
       isCancelled = true;
@@ -105,8 +107,198 @@ export default function useQuestionsData() {
     getQuestions();
   });
 
+  const addSection = (
+    title: string,
+    handleSuccessfulUpdate: () => void,
+    handleFailedUpdate: () => void
+  ) => {
+    const view_state: ViewState = _.cloneDeep(
+      store.getters['insightPanel/viewState']
+    );
+    const lastSection = _.last(questionsList.value);
+    let newSectionOrderIndex = questionsList.value.length;
+    if (lastSection) {
+      const lastSectionOrderIndex = getOrderValueFromSection(lastSection);
+      if (lastSectionOrderIndex) {
+        newSectionOrderIndex = lastSectionOrderIndex + 1;
+      }
+    }
+    view_state.analyticalQuestionOrder = newSectionOrderIndex;
+    const projectType = store.getters['app/projectType'];
+    const currentView = store.getters['app/currentView'];
+    // FIXME: Similar to insightTargetView. Can they be combined/removed?
+    // Insight created during model publication are visible in the full list of
+    //  insights, and as context specific insights on the corresponding model
+    //  family instance's page.
+    // The latter is currently supported via a special route named dataPreview.
+    const target_view: string[] = projectType === ProjectType.Analysis
+      ? [currentView, 'overview', 'dataComparative']
+      : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+    const newSection: AnalyticalQuestion = {
+      question: title,
+      description: '',
+      visibility: 'private',
+      project_id: store.getters['app/project'],
+      context_id: store.getters['insightPanel/contextId'],
+      url: route.fullPath,
+      target_view,
+      pre_actions: null,
+      post_actions: null,
+      linked_insights: [],
+      view_state
+    };
+    addQuestion(newSection).then((result) => {
+      if (result.status === 200) {
+        handleSuccessfulUpdate();
+        reFetchQuestions();
+      } else {
+        handleFailedUpdate();
+      }
+    });
+  };
+
+  const updateSectionTitle = (
+    sectionId: string,
+    newSectionTitle: string,
+    handleFailedUpdate: () => void
+  ) => {
+    const section = questionsList.value.find(
+      section => section.id === sectionId
+    );
+    if (section === undefined) {
+      console.error(
+        'Unable to find section with ID',
+        sectionId,
+        'while attempting to retitle it to:',
+        newSectionTitle,
+        '.'
+      );
+      handleFailedUpdate();
+      return;
+    }
+    const updatedSection = {
+      ...section,
+      question: newSectionTitle
+    };
+    updateQuestion(updatedSection.id as string, updatedSection).then(
+      result => {
+        if (result.status === 200) {
+          reFetchQuestions();
+        } else {
+          handleFailedUpdate();
+        }
+      }
+    );
+  };
+
+  const deleteSection = (
+    sectionId: string,
+    handleSuccessfulUpdate: () => void,
+    handleFailedUpdate: () => void
+  ) => {
+    const listBeforeDeletion = questionsList.value;
+    questionsList.value = questionsList.value.filter(
+      section => section.id !== sectionId
+    );
+
+    deleteQuestion(sectionId as string).then(result => {
+      if (result.status === 200) {
+        handleSuccessfulUpdate();
+      } else {
+        questionsList.value = listBeforeDeletion;
+        handleFailedUpdate();
+      }
+    });
+  };
+
+  const moveSectionAboveSection = async (
+    movedSectionId: string,
+    targetSectionId: string
+  ) => {
+    const sections = _.cloneDeep(questionsList.value);
+    const movedSection = sections.find(
+      section => section.id === movedSectionId
+    );
+    const targetSection = sections.find(
+      section => section.id === targetSectionId
+    );
+    if (movedSection === undefined || targetSection === undefined) {
+      return;
+    }
+    const targetSectionIndex = sections.findIndex(
+      section => section.id === targetSectionId
+    );
+    let newPosition = 0;
+    const targetSectionOrderNumber = targetSection.view_state
+      .analyticalQuestionOrder as number;
+    if (targetSectionIndex === 0) {
+      // Dropped onto the question that's currently first in the list
+      newPosition = targetSectionOrderNumber - 1;
+    } else {
+      // Dropping between two questions
+      const questionAbove = sections[targetSectionIndex - 1];
+      const questionAboveOrderNumber = questionAbove.view_state
+        .analyticalQuestionOrder as number;
+      // New position is halfway between their order numbers
+      newPosition = questionAboveOrderNumber + (targetSectionOrderNumber - questionAboveOrderNumber) / 2;
+    }
+    // The list of sections automatically resorts itself
+    movedSection.view_state.analyticalQuestionOrder = newPosition;
+    questionsList.value = [...questionsList.value];
+    // Update question on the backend for persistent ordering
+    await updateQuestion(movedSection.id as string, movedSection);
+  };
+
+  const addInsightToSection = (insightId: string, sectionId: string) => {
+    const section = questionsList.value.find(section => section.id === sectionId);
+    if (section === undefined) {
+      console.error(
+        'Unable to find section with ID',
+        sectionId,
+        'when attempting to assign insight with ID',
+        insightId,
+        'to it.'
+      );
+      return;
+    }
+    if (section.linked_insights.includes(insightId)) {
+      // Don't allow an insight to be added to a section more than once.
+      return;
+    }
+    section.linked_insights.push(insightId);
+    // update section on the backend
+    updateQuestion(sectionId, section);
+  };
+
+  const removeInsightFromSection = (insightId: string, sectionId: string) => {
+    const section = questionsList.value.find(section => section.id === sectionId);
+    if (section === undefined) {
+      console.error(
+        'Unable to find section with ID',
+        sectionId,
+        'when attempting to remove insight with ID',
+        insightId,
+        'from it.'
+      );
+      return;
+    }
+    section.linked_insights = section.linked_insights.filter(
+      linkedInsightId => linkedInsightId !== insightId
+    );
+    // update question on the backend
+    updateQuestion(sectionId, section);
+  };
+
   return {
-    questionsList,
-    reFetchQuestions
+    questionsList: computed(() =>
+      _.sortBy(questionsList.value, getOrderValueFromSection)
+    ),
+    reFetchQuestions,
+    updateSectionTitle,
+    addSection,
+    deleteSection,
+    moveSectionAboveSection,
+    addInsightToSection,
+    removeInsightFromSection
   };
 }
