@@ -221,7 +221,7 @@ export default defineComponent({
         // now we have a question:
         const question = item as AnalyticalQuestion;
         // if the question has no linked insights, always show it
-        if (question.linked_insights.length === 0) return true;
+        if (!question.linked_insights || question.linked_insights.length === 0) return true;
         // now we have a question that may have linked insights, but is this really the case?
         // sometimes, we have data quality issues where a question/section has linked insights IDs for insights that do not exist anymore
         let validQuestion = false;
