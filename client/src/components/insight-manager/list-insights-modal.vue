@@ -111,7 +111,7 @@ const EXPORT_OPTIONS = {
   questions: 'questions'
 };
 
-const NOT_READY_ERROR = 'Insights are still loading. Try again later.';
+// const NOT_READY_ERROR = 'Insights are still loading. Try again later.';
 
 export default defineComponent({
   name: 'ListInsightsModal',
@@ -157,15 +157,6 @@ export default defineComponent({
         // @ts-ignore
         fullInsights.value = images.filter(i => ids.includes(i.id))
           .map(i => ({ ...i, annotation_state: null }));
-
-        // Then, get the annotation_state, this is needed to open an insight
-        const annotations = await fetchPartialInsights({ id: ids }, ['id', 'annotation_state']);
-        fullInsights.value.forEach(insight => {
-          const annotation = annotations.find(i => i.id === insight.id);
-          insight.annotation_state = (annotations && annotation.annotation_state)
-            ? annotation.annotation_state
-            : undefined;
-        });
       })();
     });
 
@@ -222,6 +213,7 @@ export default defineComponent({
     },
     insightsGroupedByQuestion() {
       const allInsightsGroupedByQuestions = InsightUtil.parseReportFromQuestionsAndInsights(this.fullInsights, this.questions);
+
       // filter the list by removing question/section items that have insights linked to them
       return allInsightsGroupedByQuestions.filter(item => {
         // if the item is an insight, always show it
@@ -229,7 +221,7 @@ export default defineComponent({
         // now we have a question:
         const question = item as AnalyticalQuestion;
         // if the question has no linked insights, always show it
-        if (question.linked_insights.length === 0) return true;
+        if (!question.linked_insights || question.linked_insights.length === 0) return true;
         // now we have a question that may have linked insights, but is this really the case?
         // sometimes, we have data quality issues where a question/section has linked insights IDs for insights that do not exist anymore
         let validQuestion = false;
@@ -250,6 +242,8 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
+      enableOverlay: 'app/enableOverlay',
+      disableOverlay: 'app/disableOverlay',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
@@ -299,13 +293,6 @@ export default defineComponent({
       evt.currentTarget.style.border = 'none';
     },
     editInsight(insight: FullInsight) {
-      // FIXME: insight.annotation_state should never be null
-      // FullInsight may not be the correct type for insight, or the condition
-      //  below may need to be updated
-      if (insight.image === '' || insight.annotation_state === null) {
-        this.toaster(NOT_READY_ERROR, 'error', false);
-        return;
-      }
       const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
       this.setReviewIndex(insightIndex);
@@ -336,13 +323,32 @@ export default defineComponent({
       // refresh the latest list from the server
       this.reFetchInsights();
     },
-    exportInsights(outputFormat: string) {
+    async exportInsights(outputFormat: string) {
       let insights: FullInsight[] = [];
       let questions: AnalyticalQuestion[] | undefined;
+
+      const imageMap = new Map();
+      const ids = this.activeExportOption === EXPORT_OPTIONS.questions
+        ? this.fullInsights.map(d => d.id)
+        : this.selectedInsights.map(d => d.id);
+
+      this.enableOverlay('Collecting insights data');
+      const images = await fetchPartialInsights({ id: ids } as any, ['id', 'image']);
+      images.forEach(d => {
+        imageMap.set(d.id, d.image);
+      });
+      this.disableOverlay();
+
       if (this.activeExportOption === EXPORT_OPTIONS.questions) {
+        this.fullInsights.forEach(insight => {
+          insight.image = imageMap.get(insight.id);
+        });
         insights = this.fullInsights;
         questions = this.questions;
       } else {
+        this.selectedInsights.forEach(insight => {
+          insight.image = imageMap.get(insight.id);
+        });
         insights = this.selectedInsights;
       }
       switch (outputFormat) {
@@ -373,10 +379,6 @@ export default defineComponent({
       this.curatedInsightIds = this.curatedInsightIds.filter((ci) => ci !== id);
     },
     reviewInsight(insight: FullInsight) {
-      if (insight.image === '' || insight.annotation_state === null) {
-        this.toaster(NOT_READY_ERROR, 'error', false);
-        return;
-      }
       // open review modal (i.e., insight gallery view)
       const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
@@ -392,6 +394,7 @@ export default defineComponent({
       insightId: string | null
     ) {
       if (this.insightsGroupedByQuestion.length < 1) return;
+
       const indexToStartReviewing = InsightUtil.getIndexInSectionsAndInsights(
         this.insightsGroupedByQuestion,
         section,
@@ -409,14 +412,15 @@ export default defineComponent({
       // We should clean up / simplify this logic, unless we first complete the
       //  planned work to not require image/annotation_state to be loaded before
       //  switching to review mode.
-      const isSection = InsightUtil.instanceOfQuestion(insightOrSection);
-      const isFullInsight =
-        InsightUtil.instanceOfFullInsight(insightOrSection) &&
-        insightOrSection.image !== '';
-      if (!isSection && !isFullInsight) {
-        this.toaster(NOT_READY_ERROR, 'error', false);
-        return;
-      }
+      // const isSection = InsightUtil.instanceOfQuestion(insightOrSection);
+      // const isFullInsight =
+      //   InsightUtil.instanceOfFullInsight(insightOrSection) &&
+      //   insightOrSection.image !== '';
+      // if (!isSection && !isFullInsight) {
+      //   this.toaster(NOT_READY_ERROR, 'error', false);
+      //   return;
+      // }
+
       this.setReviewMode(true);
       this.setReviewIndex(indexToStartReviewing);
       this.setUpdatedInsight(insightOrSection);

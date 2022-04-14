@@ -54,8 +54,8 @@
         </div>
         <div class="context-insight-content">
           <img
-            v-if="contextInsight.image"
-            :src="contextInsight.image"
+            v-if="contextInsight.thumbnail"
+            :src="contextInsight.thumbnail"
             class="context-insight-thumbnail"
           >
           <div v-else class="context-insight-thumbnail"><i class="fa fa-spin fa-spinner" /></div>

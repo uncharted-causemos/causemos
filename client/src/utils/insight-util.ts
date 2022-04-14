@@ -303,7 +303,7 @@ function getIndexInSectionsAndInsights(
 }
 
 function instanceOfFullInsight(data: any): data is FullInsight {
-  return data !== null && 'image' in data;
+  return data !== null && 'thumbnail' in data;
 }
 
 function instanceOfQuestion(data: any): data is AnalyticalQuestion {

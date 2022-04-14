@@ -49,6 +49,7 @@ export const countInsights = async (fetchParams: InsightFilterFields): Promise<n
 export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<Insight[]> => {
   const options = {
     excludes: [
+      'thumbnail',
       'image',
       'annotation_state'
     ]

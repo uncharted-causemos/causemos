@@ -39,7 +39,7 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
 
     // fetch any images we don't have and store for later
     if (idsToFetch.length > 0) {
-      const images: InsightImage[] = await fetchPartialInsights({ id: idsToFetch }, ['id', 'image']);
+      const images: InsightImage[] = await fetchPartialInsights({ id: idsToFetch }, ['id', 'thumbnail']);
       for (const img of images) {
         const insight = insightMap.value.get(img.id);
         if (insight && img) {
