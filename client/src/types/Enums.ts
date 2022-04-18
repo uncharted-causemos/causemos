@@ -110,7 +110,8 @@ export enum SpatialAggregationLevel {
 export enum AggregationOption {
   None = '',
   Mean = 'mean',
-  Sum = 'sum'
+  Sum = 'sum',
+  WeightedAverage = 'wavg'
 }
 
 export enum TemporalResolutionOption {

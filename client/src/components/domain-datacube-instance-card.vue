@@ -146,7 +146,7 @@ import { FeatureQualifier, Indicator, Model } from '@/types/Datacube';
 import { DatacubeStatus } from '@/types/Enums';
 import { AVAILABLE_DOMAINS, getValidatedOutputs, isIndicator } from '@/utils/datacube-util';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
-import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
+import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { updateDatacube } from '@/services/new-datacube-service';
 import useToaster from '@/services/composables/useToaster';
 
@@ -184,8 +184,7 @@ export default defineComponent({
       return getValidatedOutputs(this.datacube.outputs);
     },
     displayedQualifiers(): FeatureQualifier[] {
-      return this.datacube?.qualifier_outputs?.filter(
-        (q: FeatureQualifier) => !QUALIFIERS_TO_EXCLUDE.includes(q.name)) ?? [];
+      return this.datacube?.qualifier_outputs?.filter((q: FeatureQualifier) => isBreakdownQualifier(q)) ?? [];
     },
     newVersionLink(): string | null {
       if (this.datacube.status === DatacubeStatus.Deprecated && this.datacube.new_version_data_id !== undefined) {

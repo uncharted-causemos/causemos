@@ -278,6 +278,8 @@ export default defineComponent({
       refreshModelData
     } = useQualitativeModel();
 
+    const indicatorDataInverted = ref(false);
+
     const currentEngine = computed(
       () => modelSummary.value?.parameter?.engine ?? null
     );
@@ -287,11 +289,14 @@ export default defineComponent({
     //  similarly to how they are being utilied in the data (quantitative analyses)
     // The same comment applies also to both the TD qualitative/quantitative views
 
-    watchEffect(() => {
-      // Fetch model summary and components
-      if (currentCAG.value === null) return;
-      store.dispatch('insightPanel/setContextId', [currentCAG.value]);
-    });
+    watch(
+      () => [currentCAG.value],
+      () => {
+        if (currentCAG.value === null) return;
+        store.dispatch('insightPanel/setContextId', [currentCAG.value]);
+      },
+      { immediate: true }
+    );
 
     const scenarios = ref<Scenario[]>([]);
 
@@ -423,6 +428,8 @@ export default defineComponent({
             period: indicator.period,
             timeseries: indicatorDataInverted.value ? timeseries : _.cloneDeep(indicator.original_timeseries),
             original_timeseries: indicator.original_timeseries,
+            inverted: indicatorDataInverted.value,
+
             // Filled in by server
             max: null,
             min: null
@@ -437,7 +444,6 @@ export default defineComponent({
       }
     };
 
-    const indicatorDataInverted = ref(false);
 
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
     // FIXME: we only want to overwrite historicalTimeseries with the selected
@@ -590,6 +596,8 @@ export default defineComponent({
         //  when a new indicator is assigned to the node that has a smaller
         //  range than the previous one.
         clearConstraintsOutsideRange({ min, max }, true);
+
+        indicatorDataInverted.value = indicator.inverted === true;
       }
     });
 
@@ -632,6 +640,7 @@ export default defineComponent({
           period: 1,
           timeseries: dummyTimeseries(selectedTemporalResolution.value),
           original_timeseries: dummyTimeseries(selectedTemporalResolution.value),
+          inverted: false,
 
           // Let server determine min/max
           max: null,
