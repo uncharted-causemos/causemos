@@ -601,6 +601,7 @@ export default defineComponent({
           this.toaster(message, 'success', false);
           // refresh the latest list from the server
           this.reFetchQuestions();
+          this.setInsightQuestions([newQuestionText]);
         } else {
           this.toaster(message, 'error', true);
         }
