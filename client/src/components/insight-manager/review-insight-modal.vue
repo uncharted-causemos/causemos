@@ -258,6 +258,8 @@ export default defineComponent({
       () => store.getters['insightPanel/updatedInsight']
     );
 
+    const insightCache = new Map<string, any>();
+
     const annotation = ref<any>(null);
     const imagePreview = ref<string | null>(null);
 
@@ -266,14 +268,20 @@ export default defineComponent({
       async () => {
         // FIXME: updatedInsight can be a question or an insight, there is nothing to fetch for a question
         if (!updatedInsight.value.thumbnail) return;
-        const extras = await fetchPartialInsights({ id: updatedInsight.value.id }, ['id', 'annotation_state', 'image']);
-        updatedInsight.value.image = extras[0].image;
-        updatedInsight.value.annotation_state = extras[0].annotation_state;
 
-        annotation.value = extras[0].annotation_state;
+        let cache = insightCache.get(updatedInsight.value.id);
+        if (!cache) {
+          const extras = await fetchPartialInsights({ id: updatedInsight.value.id }, ['id', 'annotation_state', 'image']);
+          cache = extras[0];
+          insightCache.set(updatedInsight.value.id, cache);
+        }
+
+        updatedInsight.value.image = cache.image;
+        updatedInsight.value.annotation_state = cache.annotation_state;
+        annotation.value = cache.annotation_state;
         imagePreview.value = null;
         nextTick(() => {
-          imagePreview.value = extras[0].image;
+          imagePreview.value = cache.image;
         });
       },
       { immediate: true }
@@ -388,7 +396,9 @@ export default defineComponent({
       insightLinkedQuestionsCount,
       isEditingInsight,
       insightList,
-      reviewIndex
+      reviewIndex,
+
+      insightCache
     };
   },
   data: () => ({
@@ -440,14 +450,14 @@ export default defineComponent({
             this.cropState = this.annotation.cropAreaState;
             // NOTE: REVIEW: FIXME:
             //  restoring both annotation and/or cropping is tricky since each one calls the other
-            if (this.markerAreaState) {
-              nextTick(() => {
-                const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
-                refAnnotatedImage.src = this.originalImagePreview;
-                this.annotateImage();
-                (this.markerArea as MarkerArea).startRenderAndClose();
-              });
-            }
+            // if (this.markerAreaState) {
+            //   nextTick(() => {
+            //     const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
+            //     refAnnotatedImage.src = this.originalImagePreview;
+            //     this.annotateImage();
+            //     (this.markerArea as MarkerArea).startRenderAndClose();
+            //   });
+            // }
           }
         } else {
           this.originalImagePreview = this.imagePreview;
@@ -774,6 +784,9 @@ export default defineComponent({
       } else {
         // saving an existing insight
         if (this.updatedInsight) {
+          // Invalidate cache
+          this.insightCache.delete(this.updatedInsight.id);
+
           const updatedInsight = this.updatedInsight;
           updatedInsight.name = this.insightTitle;
           updatedInsight.description = this.insightDesc;
