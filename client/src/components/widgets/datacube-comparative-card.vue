@@ -479,6 +479,7 @@ export default defineComponent({
     const selectedRegionIdsForTimeseries = computed(() => getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value));
 
     const {
+      relativeTo,
       timeseriesData,
       visibleTimeseriesData,
       temporalBreakdownData
@@ -629,7 +630,11 @@ export default defineComponent({
     } = useRegionalData(
       outputSpecs,
       breakdownOption,
-      datacubeHierarchy
+      datacubeHierarchy,
+      relativeTo,
+      activeReferenceOptions,
+      temporalBreakdownData,
+      timestampForSelection
     );
 
     const { mapBounds } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIdsAtAllLevels);

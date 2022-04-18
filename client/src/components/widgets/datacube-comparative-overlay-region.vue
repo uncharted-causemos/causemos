@@ -558,7 +558,11 @@ export default defineComponent({
     } = useRegionalData(
       outputSpecs,
       breakdownOption,
-      datacubeHierarchy
+      datacubeHierarchy,
+      relativeTo,
+      activeReferenceOptions,
+      temporalBreakdownData,
+      timestampForSelection
     );
 
     const rawDataPointsList = ref<RawOutputDataPoint[][]>([]);
