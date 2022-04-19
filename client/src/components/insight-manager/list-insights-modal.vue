@@ -297,9 +297,6 @@ export default defineComponent({
       setPositionInReview: 'insightPanel/setPositionInReview',
       setReviewMode: 'insightPanel/setReviewMode'
     }),
-    getInsightIndex(targetInsight: FullInsight, insights: FullInsight[]) {
-      return insights.findIndex(ins => ins.id === targetInsight.id);
-    },
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsightId = null;
