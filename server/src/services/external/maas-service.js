@@ -400,7 +400,7 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
 
   // replaceDocIds are the existing indicator ids in ES that will be replaced
   // newDocIds are the new indicator ids
-  const [replaceDocIds, newDocIds] = _.partition(indicatorMetadata, meta => existingIndicatorIds.has(meta.name))
+  const [replaceDocIds, newDocIds] = _.partition(indicatorMetadata, meta => existingIndicatorIds.has(meta.default_feature))
     .map(metaList => metaList.map(meta => meta.id));
 
   // deleteDocIds are old indicators that weren't present in the new dataset
@@ -438,7 +438,7 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
     if (deleteDocIds.length > 0) {
       Logger.info(`${deleteDocIds.length} old indicators will be removed.`);
-      await connection.delete(deleteDocIds);
+      await connection.delete(deleteDocIds.map(id => ({ id })));
     }
     const result = await connection.insert(indicatorMetadata, d => d.id);
     const response = {
