@@ -184,14 +184,24 @@ export default defineComponent({
       return questionsList.value.map(section => {
         // FIXME: optimize by using maps
         const _insights = section.linked_insights
-          .map(insightId =>
-            insights.value.find(insight => insight.id === insightId)
-          )
+          .map(insightId => {
+            const insight = insights.value.find(
+              insight => insight.id === insightId
+            );
+            if (insight === undefined) {
+              return undefined;
+            }
+            return {
+              id: insightId,
+              name: insight.name,
+              visibility: insight.visibility
+            };
+          })
           .filter(insight => insight !== undefined);
         return {
           section,
           insights: _insights
-        };
+        } as SectionWithInsights;
       });
     });
 
