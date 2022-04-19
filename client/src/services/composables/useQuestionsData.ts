@@ -293,7 +293,6 @@ export default function useQuestionsData() {
     questionsList: computed(() =>
       _.sortBy(questionsList.value, getOrderValueFromSection)
     ),
-    reFetchQuestions,
     updateSectionTitle,
     addSection,
     deleteSection,

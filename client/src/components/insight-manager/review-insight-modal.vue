@@ -253,7 +253,6 @@ export default defineComponent({
     const toaster = useToaster();
     const {
       questionsList,
-      reFetchQuestions,
       addSection,
       addInsightToSection
     } = useQuestionsData();
@@ -376,7 +375,6 @@ export default defineComponent({
       toaster,
       store,
       questionsList,
-      reFetchQuestions,
       addSection,
       addInsightToSection,
       updatedInsight,
