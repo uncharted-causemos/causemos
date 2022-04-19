@@ -183,7 +183,6 @@ export interface SectionWithInsights {
   insights: {
     id: string,
     name: string,
-    thumbnail: string,
     visibility: string
   }[]
 }
