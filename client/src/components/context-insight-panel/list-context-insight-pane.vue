@@ -161,7 +161,7 @@ export default {
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightList: 'insightPanel/setInsightList',
+      setInsightsBySection: 'insightPanel/setInsightsBySection',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
       setSnapshotUrl: 'insightPanel/setSnapshotUrl'
     }),

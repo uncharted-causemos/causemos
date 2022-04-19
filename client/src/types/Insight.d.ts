@@ -180,11 +180,12 @@ export interface SectionWithInsights {
   //  (Insight, PartialInsight, FullInsight, Snapshot, InsightImage)
   //  are kind of out of whack right now. If possible it would be nice to use
   //  one of them for this field.
-  insights: {
-    id: string,
-    name: string,
-    visibility: string
-  }[]
+  insights: FullInsight[]
+}
+
+export interface ReviewPosition {
+  sectionId: string,
+  insightId: string | null
 }
 
 export interface InsightMetadata {

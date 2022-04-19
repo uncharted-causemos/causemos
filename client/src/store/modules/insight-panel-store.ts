@@ -1,4 +1,4 @@
-import { AnalyticalQuestion, DataState, Insight } from '@/types/Insight';
+import { AnalyticalQuestion, DataState, Insight, ReviewPosition, SectionWithInsights } from '@/types/Insight';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface InsightState {
@@ -11,9 +11,17 @@ interface InsightState {
   analysisId: string;
   snapshotUrl: string | undefined;
   updatedInsight: (Insight|AnalyticalQuestion) | null;
-  insightList: (Insight|AnalyticalQuestion)[] | null;
+  insightsBySection: SectionWithInsights[] | null;
   refreshDatacubes: boolean;
-  reviewIndex: number;
+  // We can identify which section or insight we should be showing in the review
+  //  modal by storing the ID of the current insight and the section to which it
+  //  belongs.
+  // If the whole object is null, that means the analyst hasn't started
+  //  reviewing
+  // FIXME: combine with isReviewMode.
+  // If insightId is null, that means we're reviewing a section with no insights
+  //  attached.
+  positionInReview: ReviewPosition | null;
   isReviewMode: boolean;
   shouldRefetchInsights: boolean;
 }
@@ -31,9 +39,9 @@ const state: InsightState = {
   analysisId: '',
   snapshotUrl: undefined,
   updatedInsight: null,
-  insightList: null,
+  insightsBySection: null,
   refreshDatacubes: false,
-  reviewIndex: 0,
+  positionInReview: null,
   isReviewMode: false,
   shouldRefetchInsights: false
 };
@@ -49,9 +57,9 @@ const getters: GetterTree<InsightState, any> = {
   analysisId: state => state.analysisId,
   snapshotUrl: state => state.snapshotUrl,
   updatedInsight: state => state.updatedInsight,
-  insightList: state => state.insightList,
+  insightsBySection: state => state.insightsBySection,
   refreshDatacubes: state => state.refreshDatacubes,
-  reviewIndex: state => state.reviewIndex,
+  positionInReview: state => state.positionInReview,
   isReviewMode: state => state.isReviewMode,
   shouldRefetchInsights: state => state.shouldRefetchInsights
 };
@@ -91,11 +99,11 @@ const actions: ActionTree<InsightState, any> = {
   setRefreshDatacubes: ({ commit }, newValue) => {
     commit('setRefreshDatacubes', newValue);
   },
-  setInsightList: ({ commit }, newValue) => {
-    commit('setInsightList', newValue);
+  setInsightsBySection: ({ commit }, newValue) => {
+    commit('setInsightsBySection', newValue);
   },
-  setReviewIndex: ({ commit }, newValue) => {
-    commit('setReviewIndex', newValue);
+  setPositionInReview: ({ commit }, newValue) => {
+    commit('setPositionInReview', newValue);
   },
   setReviewMode: ({ commit }, newValue) => {
     commit('setReviewMode', newValue);
@@ -137,14 +145,14 @@ const mutations: MutationTree<InsightState> = {
   setUpdatedInsight(state, value) {
     state.updatedInsight = value;
   },
-  setInsightList(state, value) {
-    state.insightList = value;
+  setInsightsBySection(state, value) {
+    state.insightsBySection = value;
   },
   setRefreshDatacubes(state, value) {
     state.refreshDatacubes = value;
   },
-  setReviewIndex(state, value) {
-    state.reviewIndex = value;
+  setPositionInReview(state, value) {
+    state.positionInReview = value;
   },
   setReviewMode(state, value) {
     state.isReviewMode = value;

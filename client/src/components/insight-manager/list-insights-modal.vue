@@ -23,7 +23,7 @@
         >
           <button
             class="btn btn-primary btn-call-for-action review-button"
-            :disabled="insightsGroupedByQuestion.length === 0"
+            :disabled="insightsBySection.length === 0"
             @click="() => reviewChecklist(null, null)"
           >
             <i class="fa fa-fw fa-desktop" />
@@ -184,19 +184,9 @@ export default defineComponent({
       return questionsList.value.map(section => {
         // FIXME: optimize by using maps
         const _insights = section.linked_insights
-          .map(insightId => {
-            const insight = insights.value.find(
-              insight => insight.id === insightId
-            );
-            if (insight === undefined) {
-              return undefined;
-            }
-            return {
-              id: insightId,
-              name: insight.name,
-              visibility: insight.visibility
-            };
-          })
+          .map(insightId =>
+            fullInsights.value.find(insight => insight.id === insightId)
+          )
           .filter(insight => insight !== undefined);
         return {
           section,
@@ -302,9 +292,9 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightList: 'insightPanel/setInsightList',
+      setInsightsBySection: 'insightPanel/setInsightsBySection',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
-      setReviewIndex: 'insightPanel/setReviewIndex',
+      setPositionInReview: 'insightPanel/setPositionInReview',
       setReviewMode: 'insightPanel/setReviewMode'
     }),
     getInsightIndex(targetInsight: FullInsight, insights: FullInsight[]) {
@@ -348,10 +338,16 @@ export default defineComponent({
       evt.currentTarget.style.border = 'none';
     },
     editInsight(insight: FullInsight) {
-      const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
-      this.setReviewIndex(insightIndex);
-      this.setInsightList(this.searchedInsights);
+      const dummySection = InsightUtil.createEmptyChecklistSection();
+      this.setPositionInReview({
+        sectionId: dummySection.id,
+        insightId: insight.id
+      });
+      this.setInsightsBySection([{
+        section: dummySection,
+        insights: this.searchedInsights
+      }]);
       // open the preview in the edit mode
       this.setCurrentPane('review-edit-insight');
     },
@@ -435,51 +431,44 @@ export default defineComponent({
     },
     reviewInsight(insight: FullInsight) {
       // open review modal (i.e., insight gallery view)
-      const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
-      this.setReviewIndex(insightIndex);
-      this.setInsightList(this.searchedInsights);
+      const dummySection = InsightUtil.createEmptyChecklistSection();
+      this.setPositionInReview({
+        sectionId: dummySection.id,
+        insightId: insight.id
+      });
+      this.setInsightsBySection([{
+        section: dummySection,
+        insights: this.searchedInsights
+      }]);
       this.setCurrentPane('review-insight');
     },
-    // If `section` is `null`, goes to the first item in the checklist.
-    // If `insightId` is `null`, goes to the first item in `section`.
-    // Else, goes to the insight with ID `insightId` within `section`.
     reviewChecklist(
       section: AnalyticalQuestion | null,
       insightId: string | null
     ) {
-      if (this.insightsGroupedByQuestion.length < 1) return;
+      if (this.insightsBySection.length < 1) return;
+      // If `section` is `null`, go to the first item in the checklist.
+      const _section = section ?? this.insightsBySection[0].section;
+      const _sectionId = _section.id as string;
+      // If `insightId` is `null`, goes to the first insight in `section`.
+      // Else, goes to the insight with ID `insightId` within `section`.
+      const firstInsight = _section.linked_insights.length > 0
+        ? _section.linked_insights[0]
+        : null;
+      const _insightId = insightId ?? firstInsight;
 
-      const indexToStartReviewing = InsightUtil.getIndexInSectionsAndInsights(
-        this.insightsGroupedByQuestion,
-        section,
-        insightId,
-        this.questionsList
-      );
-      const insightOrSection =
-        this.insightsGroupedByQuestion[indexToStartReviewing];
-      // FIXME: previously this conditional looked like:
-      // if (insight.image === '' || insight.annotation_state === null) {
-      // Which was wonky because "insight" could be either
-      //  AnalyticalQuestion or Insight or FullInsight, and
-      // - AnalyticalQuestion and Insight don't have either property
-      // - FullInsight.annotation_state should never be `null`
-      // We should clean up / simplify this logic, unless we first complete the
-      //  planned work to not require image/annotation_state to be loaded before
-      //  switching to review mode.
-      // const isSection = InsightUtil.instanceOfQuestion(insightOrSection);
-      // const isFullInsight =
-      //   InsightUtil.instanceOfFullInsight(insightOrSection) &&
-      //   insightOrSection.image !== '';
-      // if (!isSection && !isFullInsight) {
-      //   this.toaster(NOT_READY_ERROR, 'error', false);
-      //   return;
-      // }
+      const insightOrSection = _insightId === null
+        ? _section
+        : this.fullInsights.find(insight => insight.id === _insightId);
 
       this.setReviewMode(true);
-      this.setReviewIndex(indexToStartReviewing);
       this.setUpdatedInsight(insightOrSection);
-      this.setInsightList(this.insightsGroupedByQuestion);
+      this.setPositionInReview({
+        sectionId: _sectionId,
+        insightId: _insightId
+      });
+      this.setInsightsBySection(this.insightsBySection);
       this.setCurrentPane('review-insight');
     },
     toggleExport(id: string) {

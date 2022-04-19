@@ -7,7 +7,7 @@ import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
-import { AnalyticalQuestion, Insight, FullInsight, InsightMetadata, QualitativeDataState, DataState, ModelsSpaceDataState, ComparativeAnalysisDataState, DataSpaceDataState } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, FullInsight, InsightMetadata, QualitativeDataState, DataState, ModelsSpaceDataState, ComparativeAnalysisDataState, DataSpaceDataState, ReviewPosition, SectionWithInsights } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
 import { saveAs } from 'file-saver';
@@ -300,6 +300,39 @@ function getIndexInSectionsAndInsights(
     idOfTargetInsight
   );
   return 0;
+}
+
+function createEmptyChecklistSection(): AnalyticalQuestion {
+  return {
+    id: '',
+    question: '',
+    linked_insights: [],
+    view_state: {},
+    target_view: [],
+    visibility: '',
+    url: ''
+  };
+}
+
+function getSlideFromPosition(
+  sections: SectionWithInsights[],
+  position: ReviewPosition | null
+): FullInsight | AnalyticalQuestion | null {
+  if (position === null) {
+    return null;
+  }
+  const section = sections.find(
+    section => section.section.id === position.sectionId
+  );
+  if (section === undefined) {
+    return null;
+  }
+  if (position.insightId === null) {
+    return section.section;
+  }
+  return section.insights.find(
+    insight => insight.id === position.insightId
+  ) ?? null;
 }
 
 function instanceOfFullInsight(data: any): data is FullInsight {
@@ -727,6 +760,8 @@ export default {
   parseMetadataDetails,
   parseReportFromQuestionsAndInsights,
   getIndexInSectionsAndInsights,
+  createEmptyChecklistSection,
+  getSlideFromPosition,
   getFormattedFilterString,
   getSourceUrlForExport,
   removeInsight,

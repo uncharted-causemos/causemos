@@ -90,11 +90,11 @@
     <div class="pane-row">
       <button
         v-if="!isNewModeActive"
-        :disabled="prevInsight === null"
+        :disabled="previousSlide === null"
         type="button"
         class="btn btn-default"
         v-tooltip="'Previous insight'"
-        @click="goToPreviousInsight"
+        @click="goToPreviousSlide"
         >
         <i class="fa fa-chevron-left" />
       </button>
@@ -186,11 +186,11 @@
 
       <button
         v-if="!isNewModeActive"
-        :disabled="nextInsight === null"
+        :disabled="nextSlide === null"
         type="button"
         class="btn btn-default"
         v-tooltip="'Next insight'"
-        @click="goToNextInsight"
+        @click="goToNextSlide"
         >
         <i class="fa fa-chevron-right" />
       </button>
@@ -204,7 +204,7 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import InsightUtil from '@/utils/insight-util';
-import { Insight, InsightMetadata, FullInsight, AnalyticalQuestion, DataState } from '@/types/Insight';
+import { Insight, InsightMetadata, FullInsight, DataState, SectionWithInsights, ReviewPosition } from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { addInsight, updateInsight, fetchPartialInsights } from '@/services/insight-service';
@@ -284,8 +284,17 @@ export default defineComponent({
 
 
     const isReviewMode = computed(() => store.getters['insightPanel/isReviewMode']);
-    const insightList = computed(() => store.getters['insightPanel/insightList']);
-    const reviewIndex = computed(() => store.getters['insightPanel/reviewIndex']);
+    const insightsBySection = computed<SectionWithInsights[]>(
+      () => store.getters['insightPanel/insightsBySection']
+    );
+    // Note that the actual type allows this store field to be null, but it
+    //  should never be null on this page, so we include that assertion in its
+    //  type declaration here.
+    // FIXME: IS THIS TRUE? Can we also get to this page by making a new insight?
+    const positionInReview = computed<{
+      sectionId:string;
+      insightId: string | null
+    }>(() => store.getters['insightPanel/positionInReview']);
 
     const isInsight = computed(() => InsightUtil.instanceOfFullInsight(updatedInsight.value));
 
@@ -309,35 +318,17 @@ export default defineComponent({
     });
 
     const insightQuestionLabel = computed<string>(() => {
-      if (!updatedInsight.value) {
-        return '';
-      }
       if (
         isInsight.value &&
-        updatedInsight.value.analytical_question.length > 0
+        updatedInsight.value.analytical_question.length === 0
       ) {
-        // Current item is an insight linked to one or more sections.
-        // Find the sections that are linked to this insight.
-        const sortedLinkedSections = questionsList.value.filter(section => section.linked_insights.includes(updatedInsight.value.id));
-        // Count how many instances of this insight appear earlier in the list.
-        let earlierInstanceCount = 0;
-        for (let index = 0; index < reviewIndex.value; index++) {
-          if (insightList.value[index] === updatedInsight.value) {
-            earlierInstanceCount += 1;
-          }
-        }
-        // If this is, say, the second instance of this insight, that means
-        //  we should show the second section that contains this insight.
-        return sortedLinkedSections[earlierInstanceCount]?.question ?? '';
-      } else if (isInsight.value) {
         // Current item is an insight that's not linked to any section.
         return '';
-      } else {
-        // Current item is a question.
-        const questionId = updatedInsight.value.id;
-        const questionObj = getQuestionById(questionId);
-        return questionObj?.question ?? '';
       }
+      // Current item is an insight linked to one or more sections, or current
+      //  item is a section itself.
+      const section = getQuestionById(positionInReview.value.sectionId);
+      return section?.question ?? '';
     });
 
     watch(
@@ -388,8 +379,8 @@ export default defineComponent({
       isReviewMode,
       insightLinkedQuestionsCount,
       isEditingInsight,
-      insightList,
-      reviewIndex
+      insightsBySection,
+      positionInReview
     };
   },
   data: () => ({
@@ -491,17 +482,91 @@ export default defineComponent({
     questionsDropdown() {
       return [...this.questionsList.map(q => q.question)];
     },
-    nextInsight(): Insight | AnalyticalQuestion | null {
-      if (this.reviewIndex < this.insightList.length - 1) {
-        return this.insightList[this.reviewIndex + 1];
+    nextSlide(): ReviewPosition | null {
+      const sectionWithInsights = this.insightsBySection.find(
+        _section => _section.section.id === this.positionInReview.sectionId
+      );
+      // If there's no section currently selected, return null;
+      if (sectionWithInsights === undefined) {
+        return null;
       }
-      return null;
+      const insightIndex = sectionWithInsights.insights.findIndex(
+        insight => insight.id === this.positionInReview.insightId
+      );
+      // If section has insights and current insight is not the last insight in
+      //  the current section, go to the next insight in the current section.
+      if (
+        insightIndex !== sectionWithInsights.insights.length - 1 &&
+        insightIndex !== -1
+      ) {
+        return {
+          sectionId: this.positionInReview.sectionId,
+          insightId: sectionWithInsights.insights[insightIndex + 1].id as string
+        };
+      }
+      // Otherwise, go to the next section
+      const sectionIndex = this.insightsBySection.findIndex(
+        _section => _section.section.id === this.positionInReview.sectionId
+      );
+      if (sectionIndex === this.insightsBySection.length - 1) {
+        // Current section is last section
+        return null;
+      }
+      const nextSectionWithInsights =
+        this.insightsBySection[sectionIndex + 1];
+      return nextSectionWithInsights.insights.length > 0
+        // Go to first insight in next section
+        ? {
+            sectionId: nextSectionWithInsights.section.id as string,
+            insightId: nextSectionWithInsights.insights[0].id as string
+          }
+        // Next section has no insights, so go to that section
+        : {
+            sectionId: nextSectionWithInsights.section.id as string,
+            insightId: null
+          };
     },
-    prevInsight(): Insight | AnalyticalQuestion | null {
-      if (this.reviewIndex > 0) {
-        return this.insightList[this.reviewIndex - 1];
+    previousSlide(): ReviewPosition | null {
+      const sectionWithInsights = this.insightsBySection.find(
+        _section => _section.section.id === this.positionInReview.sectionId
+      );
+      // If there's no section currently selected, return null;
+      if (sectionWithInsights === undefined) {
+        return null;
       }
-      return null;
+      const insightIndex = sectionWithInsights.insights.findIndex(
+        insight => insight.id === this.positionInReview.insightId
+      );
+      // If section has insights and current insight is not the first insight in
+      //  the current section, go to the previous insight in the current
+      //  section.
+      if (insightIndex !== 0 && insightIndex !== -1) {
+        return {
+          sectionId: this.positionInReview.sectionId,
+          insightId: sectionWithInsights.insights[insightIndex - 1].id as string
+        };
+      }
+      // Otherwise, go to the previous section
+      const sectionIndex = this.insightsBySection.findIndex(
+        _section => _section.section.id === this.positionInReview.sectionId
+      );
+      if (sectionIndex === 0) {
+        // Current section is the first section
+        return null;
+      }
+      const previousSectionWithInsights =
+        this.insightsBySection[sectionIndex - 1];
+      return previousSectionWithInsights.insights.length > 0
+        // Go to last insight in next section
+        ? {
+            sectionId: previousSectionWithInsights.section.id as string,
+            insightId: previousSectionWithInsights.insights[previousSectionWithInsights.insights.length - 1].id as string
+          }
+        // Previous section has no insights, so go to that section
+        : {
+            sectionId: previousSectionWithInsights.section.id as string,
+            insightId: null
+          };
     },
     metadataDetails(): InsightMetadata {
       const dState: DataState | null = this.isNewModeActive || this.updatedInsight === null
@@ -565,10 +630,10 @@ export default defineComponent({
       setCurrentPane: 'insightPanel/setCurrentPane',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightList: 'insightPanel/setInsightList',
+      setInsightsBySection: 'insightPanel/setInsightsBySection',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
-      setReviewIndex: 'insightPanel/setReviewIndex',
+      setPositionInReview: 'insightPanel/setPositionInReview',
       setShouldRefetchInsights: 'insightPanel/setShouldRefetchInsights',
       setReviewMode: 'insightPanel/setReviewMode'
     }),
@@ -617,41 +682,61 @@ export default defineComponent({
     },
     removeInsight() {
       // before deletion, find the index of the insight to be removed
-      const indx = this.insightList.findIndex((ins: Insight) => ins.id === this.updatedInsight.id);
-
+      const insightIdToDelete = this.updatedInsight.id;
       // remove the insight from the server
-      InsightUtil.removeInsight(this.updatedInsight.id, this.store);
-
+      InsightUtil.removeInsight(insightIdToDelete, this.store);
       // close editing before deleting insight (this will ensure annotation/crop mode is cleaned up)
       this.cancelInsightEdit();
-
-      // remove this insight from the local insight list
-      const filteredInsightList: Insight[] = this.insightList.filter((ins: Insight) => ins.id !== this.updatedInsight.id);
-      this.setInsightList(filteredInsightList);
-
-      // switch to the next/prev insight and update the 'updatedInsight'
-      //  if no more insights, exit this gallery view
-      if (filteredInsightList.length === 0) {
+      // remove this insight from each section that contains it in the store
+      const filteredInsightsBySection = this.insightsBySection.map(
+        ({ section, insights }) => ({
+          section,
+          insights: insights.filter(
+            insight => insight.id !== insightIdToDelete
+          )
+        })
+      );
+      this.setInsightsBySection(filteredInsightsBySection);
+      // Decide which slide to show next
+      if (this.nextSlide && this.nextSlide.insightId !== insightIdToDelete) {
+        this.goToNextSlide();
+      } else if (
+        this.previousSlide &&
+        this.previousSlide.insightId !== insightIdToDelete
+      ) {
+        this.goToPreviousSlide();
+      } else {
+        // Either there are no more insights, or we're in an edge case where we
+        //  just deleted an insight that is both the first insight of the next
+        //  section, and the last insight of the previous section.
+        // Either way, exit the review modal.
         this.setUpdatedInsight(null);
         this.showMetadataPanel = false;
-      } else {
-        const updatedIndx = Math.min(indx, filteredInsightList.length - 1);
-        this.setUpdatedInsight(filteredInsightList[updatedIndx]);
       }
     },
-    goToPreviousInsight() {
+    goToPreviousSlide() {
       if (this.isEditingInsight) {
         this.cancelInsightEdit();
       }
-      this.setUpdatedInsight(this.prevInsight);
-      this.setReviewIndex(this.reviewIndex - 1);
+      this.setUpdatedInsight(
+        InsightUtil.getSlideFromPosition(
+          this.insightsBySection,
+          this.previousSlide
+        )
+      );
+      this.setPositionInReview(this.previousSlide);
     },
-    goToNextInsight() {
+    goToNextSlide() {
       if (this.isEditingInsight) {
         this.cancelInsightEdit();
       }
-      this.setUpdatedInsight(this.nextInsight);
-      this.setReviewIndex(this.reviewIndex + 1);
+      this.setUpdatedInsight(
+        InsightUtil.getSlideFromPosition(
+          this.insightsBySection,
+          this.nextSlide
+        )
+      );
+      this.setPositionInReview(this.nextSlide);
     },
     editInsight() {
       this.isEditingInsight = true;
