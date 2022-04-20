@@ -121,7 +121,7 @@
               @click="showNewQuestion = true"
             />
           </div>
-          <template v-if="isInsight || !isReviewMode">
+          <template v-if="isInsight">
             <div v-if="!isEditingInsight" class="title">{{previewInsightTitle}}</div>
             <input
               v-else
@@ -284,7 +284,6 @@ export default defineComponent({
     );
 
 
-    const isReviewMode = computed(() => store.getters['insightPanel/isReviewMode']);
     const insightsBySection = computed<SectionWithInsights[]>(
       () => store.getters['insightPanel/insightsBySection']
     );
@@ -377,7 +376,6 @@ export default defineComponent({
       insightQuestionLabel,
       loadingImage,
       isInsight,
-      isReviewMode,
       insightLinkedQuestionsCount,
       isEditingInsight,
       insightsBySection,
@@ -609,9 +607,6 @@ export default defineComponent({
     }
     */
   },
-  unmounted() {
-    this.setReviewMode(false);
-  },
   async mounted() {
     if (this.isNewModeActive) {
       this.loadingImage = true;
@@ -636,7 +631,6 @@ export default defineComponent({
       setCountInsights: 'insightPanel/setCountInsights',
       setPositionInReview: 'insightPanel/setPositionInReview',
       setShouldRefetchInsights: 'insightPanel/setShouldRefetchInsights',
-      setReviewMode: 'insightPanel/setReviewMode'
     }),
     setInsightQuestions(questions: string[]) {
       this.selectedInsightQuestions = questions;

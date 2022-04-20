@@ -295,7 +295,6 @@ export default defineComponent({
       setInsightsBySection: 'insightPanel/setInsightsBySection',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
       setPositionInReview: 'insightPanel/setPositionInReview',
-      setReviewMode: 'insightPanel/setReviewMode'
     }),
     closeInsightPanel() {
       this.hideInsightPanel();
@@ -459,7 +458,6 @@ export default defineComponent({
         ? _section
         : this.fullInsights.find(insight => insight.id === _insightId);
 
-      this.setReviewMode(true);
       this.setUpdatedInsight(insightOrSection);
       this.setPositionInReview({
         sectionId: _sectionId,

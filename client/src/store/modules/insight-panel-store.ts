@@ -18,11 +18,9 @@ interface InsightState {
   //  belongs.
   // If the whole object is null, that means the analyst hasn't started
   //  reviewing
-  // FIXME: combine with isReviewMode.
   // If insightId is null, that means we're reviewing a section with no insights
   //  attached.
   positionInReview: ReviewPosition | null;
-  isReviewMode: boolean;
   shouldRefetchInsights: boolean;
 }
 
@@ -42,7 +40,6 @@ const state: InsightState = {
   insightsBySection: null,
   refreshDatacubes: false,
   positionInReview: null,
-  isReviewMode: false,
   shouldRefetchInsights: false
 };
 
@@ -60,7 +57,6 @@ const getters: GetterTree<InsightState, any> = {
   insightsBySection: state => state.insightsBySection,
   refreshDatacubes: state => state.refreshDatacubes,
   positionInReview: state => state.positionInReview,
-  isReviewMode: state => state.isReviewMode,
   shouldRefetchInsights: state => state.shouldRefetchInsights
 };
 
@@ -104,9 +100,6 @@ const actions: ActionTree<InsightState, any> = {
   },
   setPositionInReview: ({ commit }, newValue) => {
     commit('setPositionInReview', newValue);
-  },
-  setReviewMode: ({ commit }, newValue) => {
-    commit('setReviewMode', newValue);
   },
   setShouldRefetchInsights: ({ commit }, newValue) => {
     commit('setShouldRefetchInsights', newValue);
@@ -153,9 +146,6 @@ const mutations: MutationTree<InsightState> = {
   },
   setPositionInReview(state, value) {
     state.positionInReview = value;
-  },
-  setReviewMode(state, value) {
-    state.isReviewMode = value;
   },
   setShouldRefetchInsights(state, value) {
     state.shouldRefetchInsights = value;
