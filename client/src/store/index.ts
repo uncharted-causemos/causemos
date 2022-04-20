@@ -12,7 +12,6 @@ import DataSearchStore from './modules/data-search-store';
 import DataAnalysisStore from './modules/data-analysis-store';
 import InsightPanelStore from './modules/insight-panel-store';
 import ModelPublishStore from './modules/model-publish-store';
-import AnalysisChecklistStore from './modules/analysis-checklist-store';
 
 export default new Vuex.Store({
   modules: {
@@ -27,7 +26,6 @@ export default new Vuex.Store({
     dataSearch: DataSearchStore,
     dataAnalysis: DataAnalysisStore,
     insightPanel: InsightPanelStore,
-    modelPublishStore: ModelPublishStore,
-    analysisChecklist: AnalysisChecklistStore
+    modelPublishStore: ModelPublishStore
   }
 });

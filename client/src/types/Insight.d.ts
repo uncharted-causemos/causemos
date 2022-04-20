@@ -174,6 +174,16 @@ export interface AnalyticalQuestion extends Snapshot {
   view_state: ViewState;
 }
 
+export interface SectionWithInsights {
+  section: AnalyticalQuestion,
+  insights: FullInsight[]
+}
+
+export interface ReviewPosition {
+  sectionId: string,
+  insightId: string | null
+}
+
 export interface InsightMetadata {
   insightLastUpdate: number;
 

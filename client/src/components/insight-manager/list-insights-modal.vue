@@ -12,11 +12,18 @@
         <list-analytical-questions-pane
           :show-checklist-title="true"
           :can-click-checklist-items="true"
+          :insights-by-section="insightsBySection"
           @item-click="reviewChecklist"
+          @update-section-title="updateSectionTitle"
+          @add-section="addSection"
+          @delete-section="deleteSection"
+          @move-section-above-section="moveSectionAboveSection"
+          @add-insight-to-section="addInsightToSection"
+          @remove-insight-from-section="removeInsightFromSection"
         >
           <button
             class="btn btn-primary btn-call-for-action review-button"
-            :disabled="insightsGroupedByQuestion.length === 0"
+            :disabled="insightsBySection.length === 0"
             @click="() => reviewChecklist(null, null)"
           >
             <i class="fa fa-fw fa-desktop" />
@@ -103,8 +110,12 @@ import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
 import { fetchPartialInsights } from '@/services/insight-service';
-import { sortQuestionsByPath } from '@/utils/questions-util';
-import { AnalyticalQuestion, FullInsight } from '@/types/Insight';
+import {
+  AnalyticalQuestion,
+  FullInsight,
+  SectionWithInsights
+} from '@/types/Insight';
+import useQuestionsData from '@/services/composables/useQuestionsData';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
@@ -160,12 +171,46 @@ export default defineComponent({
       })();
     });
 
-    const questions = computed(() => sortQuestionsByPath(store.getters['analysisChecklist/questions']));
+    const {
+      questionsList,
+      updateSectionTitle,
+      addSection,
+      deleteSection,
+      moveSectionAboveSection,
+      addInsightToSection,
+      removeInsightFromSection
+    } = useQuestionsData();
+    const insightsBySection = computed<SectionWithInsights[]>(() => {
+      // FIXME: there's an edge case where insightsBySection is out of date when
+      //  assigning an insight to a section, since insightsBySection is
+      //  recalculated as soon as questionsList is updated, but fullInsights
+      //  haven't been refetched yet, or updated so the linked_insights.
+      //  list is correct.
+      return questionsList.value.map(section => {
+        // FIXME: optimize by using maps
+        const _insights = section.linked_insights
+          .map(insightId =>
+            fullInsights.value.find(insight => insight.id === insightId)
+          )
+          .filter(insight => insight !== undefined);
+        return {
+          section,
+          insights: _insights
+        } as SectionWithInsights;
+      });
+    });
 
     return {
       fullInsights,
       reFetchInsights,
-      questions,
+      updateSectionTitle,
+      addSection,
+      deleteSection,
+      moveSectionAboveSection,
+      addInsightToSection,
+      removeInsightFromSection,
+      insightsBySection,
+      questionsList,
       store,
       toaster
     };
@@ -210,34 +255,6 @@ export default defineComponent({
         return this.curatedInsightIds;
       }
       return this.searchedInsights;
-    },
-    insightsGroupedByQuestion() {
-      const allInsightsGroupedByQuestions = InsightUtil.parseReportFromQuestionsAndInsights(this.fullInsights, this.questions);
-
-      // filter the list by removing question/section items that have insights linked to them
-      return allInsightsGroupedByQuestions.filter(item => {
-        // if the item is an insight, always show it
-        if (InsightUtil.instanceOfFullInsight(item)) return true;
-        // now we have a question:
-        const question = item as AnalyticalQuestion;
-        // if the question has no linked insights, always show it
-        if (!question.linked_insights || question.linked_insights.length === 0) return true;
-        // now we have a question that may have linked insights, but is this really the case?
-        // sometimes, we have data quality issues where a question/section has linked insights IDs for insights that do not exist anymore
-        let validQuestion = false;
-        if (this.fullInsights && this.fullInsights.length > 0) {
-          // insights have been loaded, so we might as well use them to better validate questions
-          // if all linked insights do not exist anymore, then this question should be shown
-          validQuestion = true;
-          question.linked_insights.forEach(insightId => {
-            const indx = this.fullInsights.findIndex(ins => ins.id === insightId);
-            if (indx >= 0) {
-              validQuestion = false;
-            }
-          });
-        }
-        return validQuestion;
-      });
     }
   },
   methods: {
@@ -247,14 +264,10 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightList: 'insightPanel/setInsightList',
+      setInsightsBySection: 'insightPanel/setInsightsBySection',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
-      setReviewIndex: 'insightPanel/setReviewIndex',
-      setReviewMode: 'insightPanel/setReviewMode'
+      setPositionInReview: 'insightPanel/setPositionInReview'
     }),
-    getInsightIndex(targetInsight: FullInsight, insights: FullInsight[]) {
-      return insights.findIndex(ins => ins.id === targetInsight.id);
-    },
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsightId = null;
@@ -293,10 +306,16 @@ export default defineComponent({
       evt.currentTarget.style.border = 'none';
     },
     editInsight(insight: FullInsight) {
-      const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
-      this.setReviewIndex(insightIndex);
-      this.setInsightList(this.searchedInsights);
+      const dummySection = InsightUtil.createEmptyChecklistSection();
+      this.setPositionInReview({
+        sectionId: dummySection.id,
+        insightId: insight.id
+      });
+      this.setInsightsBySection([{
+        section: dummySection,
+        insights: this.searchedInsights
+      }]);
       // open the preview in the edit mode
       this.setCurrentPane('review-edit-insight');
     },
@@ -344,7 +363,7 @@ export default defineComponent({
           insight.image = imageMap.get(insight.id);
         });
         insights = this.fullInsights;
-        questions = this.questions;
+        questions = this.questionsList;
       } else {
         this.selectedInsights.forEach(insight => {
           insight.image = imageMap.get(insight.id);
@@ -380,51 +399,43 @@ export default defineComponent({
     },
     reviewInsight(insight: FullInsight) {
       // open review modal (i.e., insight gallery view)
-      const insightIndex = this.getInsightIndex(insight, this.searchedInsights);
       this.setUpdatedInsight(insight);
-      this.setReviewIndex(insightIndex);
-      this.setInsightList(this.searchedInsights);
+      const dummySection = InsightUtil.createEmptyChecklistSection();
+      this.setPositionInReview({
+        sectionId: dummySection.id,
+        insightId: insight.id
+      });
+      this.setInsightsBySection([{
+        section: dummySection,
+        insights: this.searchedInsights
+      }]);
       this.setCurrentPane('review-insight');
     },
-    // If `section` is `null`, goes to the first item in the checklist.
-    // If `insightId` is `null`, goes to the first item in `section`.
-    // Else, goes to the insight with ID `insightId` within `section`.
     reviewChecklist(
       section: AnalyticalQuestion | null,
       insightId: string | null
     ) {
-      if (this.insightsGroupedByQuestion.length < 1) return;
+      if (this.insightsBySection.length < 1) return;
+      // If `section` is `null`, go to the first item in the checklist.
+      const _section = section ?? this.insightsBySection[0].section;
+      const _sectionId = _section.id as string;
+      // If `insightId` is `null`, goes to the first insight in `section`.
+      // Else, goes to the insight with ID `insightId` within `section`.
+      const firstInsight = _section.linked_insights.length > 0
+        ? _section.linked_insights[0]
+        : null;
+      const _insightId = insightId ?? firstInsight;
 
-      const indexToStartReviewing = InsightUtil.getIndexInSectionsAndInsights(
-        this.insightsGroupedByQuestion,
-        section,
-        insightId,
-        this.questions
-      );
-      const insightOrSection =
-        this.insightsGroupedByQuestion[indexToStartReviewing];
-      // FIXME: previously this conditional looked like:
-      // if (insight.image === '' || insight.annotation_state === null) {
-      // Which was wonky because "insight" could be either
-      //  AnalyticalQuestion or Insight or FullInsight, and
-      // - AnalyticalQuestion and Insight don't have either property
-      // - FullInsight.annotation_state should never be `null`
-      // We should clean up / simplify this logic, unless we first complete the
-      //  planned work to not require image/annotation_state to be loaded before
-      //  switching to review mode.
-      // const isSection = InsightUtil.instanceOfQuestion(insightOrSection);
-      // const isFullInsight =
-      //   InsightUtil.instanceOfFullInsight(insightOrSection) &&
-      //   insightOrSection.image !== '';
-      // if (!isSection && !isFullInsight) {
-      //   this.toaster(NOT_READY_ERROR, 'error', false);
-      //   return;
-      // }
+      const insightOrSection = _insightId === null
+        ? _section
+        : this.fullInsights.find(insight => insight.id === _insightId);
 
-      this.setReviewMode(true);
-      this.setReviewIndex(indexToStartReviewing);
       this.setUpdatedInsight(insightOrSection);
-      this.setInsightList(this.insightsGroupedByQuestion);
+      this.setPositionInReview({
+        sectionId: _sectionId,
+        insightId: _insightId
+      });
+      this.setInsightsBySection(this.insightsBySection);
       this.setCurrentPane('review-insight');
     },
     toggleExport(id: string) {
