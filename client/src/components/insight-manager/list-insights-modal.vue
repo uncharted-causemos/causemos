@@ -181,6 +181,11 @@ export default defineComponent({
       removeInsightFromSection
     } = useQuestionsData();
     const insightsBySection = computed<SectionWithInsights[]>(() => {
+      // FIXME: there's an edge case where insightsBySection is out of date when
+      //  assigning an insight to a section, since insightsBySection is
+      //  recalculated as soon as questionsList is updated, but fullInsights
+      //  haven't been refetched yet, or updated so the linked_insights.
+      //  list is correct.
       return questionsList.value.map(section => {
         // FIXME: optimize by using maps
         const _insights = section.linked_insights

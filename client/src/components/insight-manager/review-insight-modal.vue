@@ -121,7 +121,7 @@
               @click="showNewQuestion = true"
             />
           </div>
-          <template v-if="isInsight">
+          <template v-if="isInsight || isNewModeActive">
             <div v-if="!isEditingInsight" class="title">{{previewInsightTitle}}</div>
             <input
               v-else
