@@ -295,14 +295,7 @@ export default defineComponent({
     const insightsBySection = computed<SectionWithInsights[]>(
       () => store.getters['insightPanel/insightsBySection']
     );
-    // Note that the actual type allows this store field to be null, but it
-    //  should never be null on this page, so we include that assertion in its
-    //  type declaration here.
-    // FIXME: IS THIS TRUE? Can we also get to this page by making a new insight?
-    const positionInReview = computed<{
-      sectionId:string;
-      insightId: string | null
-    }>(() => store.getters['insightPanel/positionInReview']);
+    const positionInReview = computed<ReviewPosition | null>(() => store.getters['insightPanel/positionInReview']);
 
     const isInsight = computed(() => InsightUtil.instanceOfFullInsight(updatedInsight.value));
 
@@ -334,8 +327,11 @@ export default defineComponent({
         return '';
       }
       // Current item is an insight linked to one or more sections, or current
-      //  item is a section itself.
-      const section = getQuestionById(positionInReview.value.sectionId);
+      //  item is a section itself, or we're in the process of making a new
+      //  insight.
+      const section = positionInReview.value
+        ? getQuestionById(positionInReview.value.sectionId)
+        : null;
       return section?.question ?? '';
     });
 
@@ -492,15 +488,20 @@ export default defineComponent({
       return [...this.questionsList.map(q => q.question)];
     },
     nextSlide(): ReviewPosition | null {
+      if (this.positionInReview === null) {
+        // In the process of making a new insight.
+        return null;
+      }
+      const { sectionId, insightId } = this.positionInReview;
       const sectionWithInsights = this.insightsBySection.find(
-        _section => _section.section.id === this.positionInReview.sectionId
+        _section => _section.section.id === sectionId
       );
       // If there's no section currently selected, return null;
       if (sectionWithInsights === undefined) {
         return null;
       }
       const insightIndex = sectionWithInsights.insights.findIndex(
-        insight => insight.id === this.positionInReview.insightId
+        insight => insight.id === insightId
       );
       // If section has insights and current insight is not the last insight in
       //  the current section, go to the next insight in the current section.
@@ -509,13 +510,13 @@ export default defineComponent({
         insightIndex !== -1
       ) {
         return {
-          sectionId: this.positionInReview.sectionId,
+          sectionId,
           insightId: sectionWithInsights.insights[insightIndex + 1].id as string
         };
       }
       // Otherwise, go to the next section
       const sectionIndex = this.insightsBySection.findIndex(
-        _section => _section.section.id === this.positionInReview.sectionId
+        _section => _section.section.id === sectionId
       );
       if (sectionIndex === this.insightsBySection.length - 1) {
         // Current section is last section
@@ -536,28 +537,33 @@ export default defineComponent({
           };
     },
     previousSlide(): ReviewPosition | null {
+      if (this.positionInReview === null) {
+        // In the process of making a new insight.
+        return null;
+      }
+      const { sectionId, insightId } = this.positionInReview;
       const sectionWithInsights = this.insightsBySection.find(
-        _section => _section.section.id === this.positionInReview.sectionId
+        _section => _section.section.id === sectionId
       );
       // If there's no section currently selected, return null;
       if (sectionWithInsights === undefined) {
         return null;
       }
       const insightIndex = sectionWithInsights.insights.findIndex(
-        insight => insight.id === this.positionInReview.insightId
+        insight => insight.id === insightId
       );
       // If section has insights and current insight is not the first insight in
       //  the current section, go to the previous insight in the current
       //  section.
       if (insightIndex !== 0 && insightIndex !== -1) {
         return {
-          sectionId: this.positionInReview.sectionId,
+          sectionId: sectionId,
           insightId: sectionWithInsights.insights[insightIndex - 1].id as string
         };
       }
       // Otherwise, go to the previous section
       const sectionIndex = this.insightsBySection.findIndex(
-        _section => _section.section.id === this.positionInReview.sectionId
+        _section => _section.section.id === sectionId
       );
       if (sectionIndex === 0) {
         // Current section is the first section
