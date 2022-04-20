@@ -176,10 +176,6 @@ export interface AnalyticalQuestion extends Snapshot {
 
 export interface SectionWithInsights {
   section: AnalyticalQuestion,
-  // TODO: the various insight types
-  //  (Insight, PartialInsight, FullInsight, Snapshot, InsightImage)
-  //  are kind of out of whack right now. If possible it would be nice to use
-  //  one of them for this field.
   insights: FullInsight[]
 }
 
