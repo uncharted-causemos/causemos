@@ -52,6 +52,9 @@ export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<I
       'thumbnail',
       'image',
       'annotation_state'
+    ],
+    sort: [
+      { modified_at: { order: 'desc' } }
     ]
   };
   return await _fetchInsights(fetchParams, options);
@@ -65,7 +68,10 @@ export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<I
  */
 export const fetchPartialInsights = async (fetchParams: InsightFilterFields, allowList: string[]): Promise<any[]> => {
   const options = {
-    includes: allowList
+    includes: allowList,
+    sort: [
+      { modified_at: { order: 'desc' } }
+    ]
   };
   return await _fetchInsights(fetchParams, options);
 };

@@ -1,7 +1,6 @@
-const respondUsingCode = async (req, res, serviceFcn) => {
-  const metadata = req.body;
+const respondUsingCode = async (res, serviceFcn, arguments) => {
   try {
-    const serviceResult = await serviceFcn(metadata);
+    const serviceResult = await serviceFcn.apply(null, arguments);
     res.status(serviceResult.code).json(serviceResult.result);
   } catch (err) {
     console.log(err);

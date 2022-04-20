@@ -308,6 +308,16 @@ class Datacube {
     return result;
   }
 
+  /**
+   * Data a list of datacubes by id
+   * @param {array} payloadArray
+   * @param {string} refreshOption - one of 'true', 'false', 'wait_for'
+   */
+  async delete(payloadArray, refreshOption = 'true') {
+    const result = await this._bulk('delete', payloadArray, refreshOption);
+    return result;
+  }
+
   async _search(filters, options) {
     const filterQuery = queryUtil.buildQuery(filters);
     const searchPayload = {
@@ -341,7 +351,7 @@ class Datacube {
 
   /**
    * Bulk ES operation
-   * @param {string} operationType - update|index
+   * @param {string} operationType - update|index|create|delete
    * @param {array} payloadArray - array of documents or partials
    * @param {string} refreshOption - one of 'true', 'false', 'wait_for'
    */
@@ -351,8 +361,10 @@ class Datacube {
       bulk.push({ [operationType]: { _index: this.index, _id: _keyFn(doc) } });
       if (operationType === 'update') {
         bulk.push({ doc: doc });
-      } else {
+      } else if (operationType === 'index' || operationType === 'create') {
         bulk.push(doc);
+      } else {
+        // delete doesn't need a second entry
       }
     });
 

@@ -9,7 +9,7 @@ const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
  * Start a indicator data post processing job
  */
 router.post('/post-process', asyncHandler(async (req, res) => {
-  await respondUsingCode(req, res, maasService.startIndicatorPostProcessing);
+  await respondUsingCode(res, maasService.startIndicatorPostProcessing, [req.body, req.query.fullReplace]);
 }));
 
 module.exports = router;
