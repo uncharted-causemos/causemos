@@ -55,7 +55,7 @@
             <span
               class="question-title"
               :class="{ clickable: canClickChecklistItems }"
-              @click="$emit('item-click', sectionWithInsights.section, 0)"
+              @click="$emit('item-click', sectionWithInsights.section, null)"
             > {{ sectionWithInsights.section.question }}</span>
             <i
               v-if="hasTour(sectionWithInsights.section)"
@@ -110,7 +110,7 @@
             </span>
             <i class="fa fa-fw fa-close"
               style="pointer-events: all; cursor: pointer; margin-left: auto;"
-              @click="removeRelationBetweenInsightAndQuestion($event, sectionWithInsights.section, insight.id)" />
+              @click="removeRelationBetweenInsightAndQuestion($event, sectionWithInsights.section, insight.id as string)" />
           </div>
         </div>
       </div>
