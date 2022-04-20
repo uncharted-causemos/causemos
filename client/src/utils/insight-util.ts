@@ -689,7 +689,6 @@ export default {
   instanceOfFullInsight,
   instanceOfQuestion,
   parseMetadataDetails,
-  parseReportFromQuestionsAndInsights,
   createEmptyChecklistSection,
   getSlideFromPosition,
   getFormattedFilterString,

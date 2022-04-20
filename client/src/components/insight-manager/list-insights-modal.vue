@@ -250,39 +250,6 @@ export default defineComponent({
         return this.curatedInsightIds;
       }
       return this.searchedInsights;
-    },
-    insightsGroupedByQuestion() {
-      const allInsightsGroupedByQuestions = InsightUtil.parseReportFromQuestionsAndInsights(
-        this.fullInsights,
-        this.questionsList
-      );
-
-
-
-      // filter the list by removing question/section items that have insights linked to them
-      return allInsightsGroupedByQuestions.filter(item => {
-        // if the item is an insight, always show it
-        if (InsightUtil.instanceOfFullInsight(item)) return true;
-        // now we have a question:
-        const question = item as AnalyticalQuestion;
-        // if the question has no linked insights, always show it
-        if (!question.linked_insights || question.linked_insights.length === 0) return true;
-        // now we have a question that may have linked insights, but is this really the case?
-        // sometimes, we have data quality issues where a question/section has linked insights IDs for insights that do not exist anymore
-        let validQuestion = false;
-        if (this.fullInsights && this.fullInsights.length > 0) {
-          // insights have been loaded, so we might as well use them to better validate questions
-          // if all linked insights do not exist anymore, then this question should be shown
-          validQuestion = true;
-          question.linked_insights.forEach(insightId => {
-            const indx = this.fullInsights.findIndex(ins => ins.id === insightId);
-            if (indx >= 0) {
-              validQuestion = false;
-            }
-          });
-        }
-        return validQuestion;
-      });
     }
   },
   methods: {
