@@ -267,8 +267,9 @@ export default defineComponent({
     watch(
       () => [updatedInsight.value],
       async () => {
-        // FIXME: updatedInsight can be a question or an insight, there is nothing to fetch for a question
-        if (!updatedInsight.value.thumbnail) return;
+        // FIXME: updatedInsight can be a question, an insight, or null.
+        // There is nothing to fetch for a question or null.
+        if (!updatedInsight.value?.thumbnail) return;
         const extras = await fetchPartialInsights({ id: updatedInsight.value.id }, ['id', 'annotation_state', 'image']);
         updatedInsight.value.image = extras[0].image;
         updatedInsight.value.annotation_state = extras[0].annotation_state;

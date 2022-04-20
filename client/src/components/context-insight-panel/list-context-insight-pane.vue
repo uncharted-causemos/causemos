@@ -162,6 +162,7 @@ export default {
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
       setInsightsBySection: 'insightPanel/setInsightsBySection',
+      setPositionInReview: 'insightPanel/setPositionInReview',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
       setSnapshotUrl: 'insightPanel/setSnapshotUrl'
     }),
@@ -265,7 +266,16 @@ export default {
       }
       this.showInsightPanel();
       this.setUpdatedInsight(insight);
-      this.setInsightList(this.listContextInsights);
+      const dummySection = InsightUtil.createEmptyChecklistSection();
+      const insightsBySection = [{
+        section: dummySection,
+        insights: this.listContextInsights
+      }];
+      this.setInsightsBySection(insightsBySection);
+      this.setPositionInReview({
+        sectionId: dummySection.id,
+        insightId: insight.id
+      });
       this.setCurrentPane('review-edit-insight');
     }
   }
