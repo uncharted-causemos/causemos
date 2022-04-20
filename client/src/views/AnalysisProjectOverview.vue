@@ -96,6 +96,7 @@
           @add-section="addSection"
           @delete-section="deleteSection"
           @move-section-above-section="moveSectionAboveSection"
+          @remove-insight-from-section="removeInsightFromSection"
           class="insights"
         />
       </div>
@@ -215,7 +216,8 @@ export default defineComponent({
       addSection,
       updateSectionTitle,
       deleteSection,
-      moveSectionAboveSection
+      moveSectionAboveSection,
+      removeInsightFromSection
     } = useQuestionsData();
 
     const insightsBySection = computed(() => {
@@ -239,7 +241,8 @@ export default defineComponent({
       addSection,
       updateSectionTitle,
       deleteSection,
-      moveSectionAboveSection
+      moveSectionAboveSection,
+      removeInsightFromSection
     };
   },
   data: () => ({
