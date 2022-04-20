@@ -110,7 +110,7 @@ export default function useQuestionsData() {
     getQuestions();
   });
 
-  const addSection = (
+  const addSection = async (
     title: string,
     handleSuccessfulUpdate: () => void,
     handleFailedUpdate: () => void
@@ -150,17 +150,16 @@ export default function useQuestionsData() {
       linked_insights: [],
       view_state
     };
-    addQuestion(newSection).then((result) => {
-      if (result.status === 200) {
-        handleSuccessfulUpdate();
-        reFetchQuestions();
-      } else {
-        handleFailedUpdate();
-      }
-    });
+    const result = await addQuestion(newSection);
+    if (result.status === 200) {
+      handleSuccessfulUpdate();
+      reFetchQuestions();
+    } else {
+      handleFailedUpdate();
+    }
   };
 
-  const updateSectionTitle = (
+  const updateSectionTitle = async (
     sectionId: string,
     newSectionTitle: string,
     handleFailedUpdate: () => void
@@ -183,18 +182,18 @@ export default function useQuestionsData() {
       ...section,
       question: newSectionTitle
     };
-    updateQuestion(updatedSection.id as string, updatedSection).then(
-      result => {
-        if (result.status === 200) {
-          reFetchQuestions();
-        } else {
-          handleFailedUpdate();
-        }
-      }
+    const result = await updateQuestion(
+      updatedSection.id as string,
+      updatedSection
     );
+    if (result.status === 200) {
+      reFetchQuestions();
+    } else {
+      handleFailedUpdate();
+    }
   };
 
-  const deleteSection = (
+  const deleteSection = async (
     sectionId: string,
     handleSuccessfulUpdate: () => void,
     handleFailedUpdate: () => void
@@ -204,14 +203,13 @@ export default function useQuestionsData() {
       section => section.id !== sectionId
     );
 
-    deleteQuestion(sectionId as string).then(result => {
-      if (result.status === 200) {
-        handleSuccessfulUpdate();
-      } else {
-        questionsList.value = listBeforeDeletion;
-        handleFailedUpdate();
-      }
-    });
+    const result = await deleteQuestion(sectionId as string);
+    if (result.status === 200) {
+      handleSuccessfulUpdate();
+    } else {
+      questionsList.value = listBeforeDeletion;
+      handleFailedUpdate();
+    }
   };
 
   const moveSectionAboveSection = async (
@@ -252,7 +250,7 @@ export default function useQuestionsData() {
     await updateQuestion(movedSection.id as string, movedSection);
   };
 
-  const addInsightToSection = (insightId: string, sectionId: string) => {
+  const addInsightToSection = async (insightId: string, sectionId: string) => {
     const section = questionsList.value.find(section => section.id === sectionId);
     if (section === undefined) {
       console.error(
@@ -270,10 +268,10 @@ export default function useQuestionsData() {
     }
     section.linked_insights.push(insightId);
     // update section on the backend
-    updateQuestion(sectionId, section);
+    await updateQuestion(sectionId, section);
   };
 
-  const removeInsightFromSection = (insightId: string, sectionId: string) => {
+  const removeInsightFromSection = async (insightId: string, sectionId: string) => {
     const section = questionsList.value.find(section => section.id === sectionId);
     if (section === undefined) {
       console.error(
@@ -289,7 +287,7 @@ export default function useQuestionsData() {
       linkedInsightId => linkedInsightId !== insightId
     );
     // update question on the backend
-    updateQuestion(sectionId, section);
+    await updateQuestion(sectionId, section);
   };
 
   return {
