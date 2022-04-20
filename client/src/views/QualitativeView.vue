@@ -830,7 +830,7 @@ export default defineComponent({
       this.timerId = window.setTimeout(async () => {
         const el = this.$el.querySelector('.CAG-graph-container');
         const thumbnailSource = (
-          await html2canvas(el, { scale: 0.5 })
+          await html2canvas(el, { scale: 0.25 })
         ).toDataURL();
         modelService.updateModelMetadata(this.currentCAG, {
           thumbnail_source: thumbnailSource
