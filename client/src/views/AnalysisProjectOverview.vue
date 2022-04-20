@@ -95,6 +95,7 @@
           @update-section-title="updateSectionTitle"
           @add-section="addSection"
           @delete-section="deleteSection"
+          @move-section-above-section="moveSectionAboveSection"
           class="insights"
         />
       </div>
@@ -213,7 +214,8 @@ export default defineComponent({
       questionsList,
       addSection,
       updateSectionTitle,
-      deleteSection
+      deleteSection,
+      moveSectionAboveSection
     } = useQuestionsData();
 
     const insightsBySection = computed(() => {
@@ -226,6 +228,8 @@ export default defineComponent({
           .filter(insight => insight !== undefined);
         return {
           section,
+          // FIXME: these might need to be FullInsights when we support jumping
+          //  straight to review from this page.
           insights: _insights
         };
       });
@@ -234,7 +238,8 @@ export default defineComponent({
       insightsBySection,
       addSection,
       updateSectionTitle,
-      deleteSection
+      deleteSection,
+      moveSectionAboveSection
     };
   },
   data: () => ({

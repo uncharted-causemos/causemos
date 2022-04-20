@@ -13,6 +13,9 @@ const getOrderValueFromSection = (section: AnalyticalQuestion) => {
 
 export default function useQuestionsData() {
   const questionsList = ref<AnalyticalQuestion[]>([]);
+  const sortedQuestionsList = computed(() =>
+    _.sortBy(questionsList.value, getOrderValueFromSection)
+  );
 
   const questionsFetchedAt = ref(0);
 
@@ -115,8 +118,8 @@ export default function useQuestionsData() {
     const view_state: ViewState = _.cloneDeep(
       store.getters['insightPanel/viewState']
     );
-    const lastSection = _.last(questionsList.value);
-    let newSectionOrderIndex = questionsList.value.length;
+    const lastSection = _.last(sortedQuestionsList.value);
+    let newSectionOrderIndex = sortedQuestionsList.value.length;
     if (lastSection) {
       const lastSectionOrderIndex = getOrderValueFromSection(lastSection);
       if (lastSectionOrderIndex) {
@@ -215,7 +218,7 @@ export default function useQuestionsData() {
     movedSectionId: string,
     targetSectionId: string
   ) => {
-    const sections = _.cloneDeep(questionsList.value);
+    const sections = _.cloneDeep(sortedQuestionsList.value);
     const movedSection = sections.find(
       section => section.id === movedSectionId
     );
@@ -244,7 +247,7 @@ export default function useQuestionsData() {
     }
     // The list of sections automatically resorts itself
     movedSection.view_state.analyticalQuestionOrder = newPosition;
-    questionsList.value = [...questionsList.value];
+    questionsList.value = sections;
     // Update question on the backend for persistent ordering
     await updateQuestion(movedSection.id as string, movedSection);
   };
@@ -290,9 +293,7 @@ export default function useQuestionsData() {
   };
 
   return {
-    questionsList: computed(() =>
-      _.sortBy(questionsList.value, getOrderValueFromSection)
-    ),
+    questionsList: sortedQuestionsList,
     updateSectionTitle,
     addSection,
     deleteSection,
