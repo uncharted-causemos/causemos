@@ -170,6 +170,8 @@ export default defineComponent({
   },
   setup() {
     const toaster = useToaster();
+    // FIXME: hoist insights to parent component so that we're not fetching and
+    //  managing two copies
     const { insights, reFetchInsights } = useInsightsData(undefined,
       ['id', 'name', 'visibility', 'analytical_question']);
 

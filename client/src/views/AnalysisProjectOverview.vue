@@ -91,6 +91,10 @@
         </button>
         <list-analytical-questions-pane
           :show-checklist-title="true"
+          :insights-by-section="insightsBySection"
+          @update-section-title="updateSectionTitle"
+          @add-section="addSection"
+          @delete-section="deleteSection"
           class="insights"
         />
       </div>
@@ -166,6 +170,10 @@ import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-
 import numberFormatter from '@/formatters/number-formatter';
 import DropdownButton from '@/components/dropdown-button.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
+import { defineComponent } from 'vue';
+import useQuestionsData from '@/services/composables/useQuestionsData';
+import useInsightsData from '@/services/composables/useInsightsData';
+import { computed } from '@vue/reactivity';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -187,7 +195,7 @@ const toQualitative = cag => ({
   modified_at: cag.modified_at
 });
 
-export default {
+export default defineComponent({
   name: 'AnalysisProjectOverview',
   components: {
     AnalysisOverviewCard,
@@ -196,6 +204,38 @@ export default {
     RenameModal,
     DropdownButton,
     EmptyStateInstructions
+  },
+  setup() {
+    const { insights } = useInsightsData(undefined,
+      ['id', 'name', 'visibility', 'analytical_question']);
+
+    const {
+      questionsList,
+      addSection,
+      updateSectionTitle,
+      deleteSection
+    } = useQuestionsData();
+
+    const insightsBySection = computed(() => {
+      return questionsList.value.map(section => {
+        // FIXME: optimize by using maps
+        const _insights = section.linked_insights
+          .map(insightId =>
+            insights.value.find(insight => insight.id === insightId)
+          )
+          .filter(insight => insight !== undefined);
+        return {
+          section,
+          insights: _insights
+        };
+      });
+    });
+    return {
+      insightsBySection,
+      addSection,
+      updateSectionTitle,
+      deleteSection
+    };
   },
   data: () => ({
     analyses: [],
@@ -510,7 +550,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
