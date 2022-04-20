@@ -294,7 +294,7 @@ export default defineComponent({
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
       setInsightsBySection: 'insightPanel/setInsightsBySection',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
-      setPositionInReview: 'insightPanel/setPositionInReview',
+      setPositionInReview: 'insightPanel/setPositionInReview'
     }),
     closeInsightPanel() {
       this.hideInsightPanel();

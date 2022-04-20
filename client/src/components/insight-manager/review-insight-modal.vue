@@ -630,7 +630,7 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
       setPositionInReview: 'insightPanel/setPositionInReview',
-      setShouldRefetchInsights: 'insightPanel/setShouldRefetchInsights',
+      setShouldRefetchInsights: 'insightPanel/setShouldRefetchInsights'
     }),
     setInsightQuestions(questions: string[]) {
       this.selectedInsightQuestions = questions;
