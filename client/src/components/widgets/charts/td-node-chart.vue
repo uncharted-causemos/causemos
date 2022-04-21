@@ -98,7 +98,9 @@ export default defineComponent({
       emit('set-historical-timeseries', newPoints);
     };
 
-    // Hack watch
+    // FIXME: Hack watch for viewingExtent changes and reset existing brush state
+    // In ensure it doesn't conflcit with watchEffect below and this happens first,
+    // the watchEffect render action is slated to the nextTick.
     watch(
       () => [viewingExtent.value],
       () => {
