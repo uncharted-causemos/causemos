@@ -58,10 +58,15 @@ export function conceptHumanName(name: string, set: Set<string>) {
   return token;
 }
 
+export const cleanConceptString = (v: string) => {
+  return v.trim().replace(/\s*\/\s*/g, '/');
+};
+
 export default {
   UNKNOWN,
   conceptShortName,
   conceptPrefix,
   conceptSuffix,
-  conceptHumanName
+  conceptHumanName,
+  cleanConceptString
 };
