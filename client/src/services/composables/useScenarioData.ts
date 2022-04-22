@@ -1,20 +1,23 @@
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
-import { computed, ref, Ref, watchEffect } from 'vue';
+import { computed, onMounted, onUnmounted, ref, Ref, watchEffect } from 'vue';
 import { getModelRunMetadata } from '@/services/new-datacube-service';
 import { getAggregationKey, isImage, isVideo, isWebContent, TAGS, isCategoricalAxis } from '@/utils/datacube-util';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
 
+const FETCH_INTERVAL_SECONDS = 10;
+
 /**
  * Takes a datacube data ID and a list of scenario IDs, then fetches and
- * returns the metadata for each scenario in one list.
+ * returns the metadata for each scenario in one list. Checks for updates every
+ * `FETCH_INTERVAL_SECONDS` if `isRefreshingPeriodically`.
  */
 export default function useScenarioData(
   dataId: Ref<string | null>,
-  modelRunsFetchedAt: Ref<number>,
   searchFilters: Ref<any>,
-  dimensions: Ref<ModelParameter[]>
+  dimensions: Ref<ModelParameter[]>,
+  isRefreshingPeriodically: Ref<boolean>
 ) {
   const runData = ref([]) as Ref<ModelRun[]>;
 
@@ -74,6 +77,11 @@ export default function useScenarioData(
     return filteredRuns;
   });
 
+
+  const modelRunsFetchedAt = ref(0);
+  const fetchModelRuns = () => {
+    modelRunsFetchedAt.value = Date.now();
+  };
   watchEffect(onInvalidate => {
     // This condition should always return true, it's just used to add
     //  modelRunsFetchedAt to this watchEffect's dependency array
@@ -172,7 +180,27 @@ export default function useScenarioData(
     fetchRunData();
   });
 
+  // Refetch model runs every FETCH_INTERVAL_SECONDS.
+  // isSuppressingFetches is still respected.
+  // FIXME: only datacube-card had this behaviour. isSuppressingFetches should
+  //  be true in other places.
+  let timerHandler: number | null = null;
+  onMounted(() => {
+    timerHandler = window.setInterval(
+      () => {
+        if (isRefreshingPeriodically.value) {
+          fetchModelRuns();
+        }
+      },
+      FETCH_INTERVAL_SECONDS * 1000
+    );
+  });
+  onUnmounted(() => {
+    window.clearInterval(timerHandler as number);
+  });
+
   return {
+    fetchModelRuns,
     filteredRunData,
     allModelRunData
   };

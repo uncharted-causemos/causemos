@@ -269,8 +269,12 @@ export default defineComponent({
       dimensions
     } = useDatacubeDimensions(metadata, itemId);
 
-    const modelRunsFetchedAt = ref(0);
-    const { allModelRunData, filteredRunData } = useScenarioData(id, modelRunsFetchedAt, searchFilters, dimensions);
+    const { allModelRunData, filteredRunData } = useScenarioData(
+      id,
+      searchFilters,
+      dimensions,
+      ref(false) // don't refresh periodically
+    );
 
     const selectedRegionIds: string[] = [];
     const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>({
@@ -729,7 +733,6 @@ export default defineComponent({
       });
 
     return {
-      activeDrilldownTab: 'breakdown',
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,

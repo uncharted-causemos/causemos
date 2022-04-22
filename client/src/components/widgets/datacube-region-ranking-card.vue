@@ -291,8 +291,13 @@ export default defineComponent({
       dimensions
     } = useDatacubeDimensions(metadata, itemId);
 
-    const modelRunsFetchedAt = ref(0);
-    const { allModelRunData, filteredRunData } = useScenarioData(id, modelRunsFetchedAt, searchFilters, dimensions);
+    const { allModelRunData, filteredRunData } = useScenarioData(
+      id,
+      searchFilters,
+      dimensions,
+      ref(false) // don't refresh periodically
+    );
+
     const initialSelectedScenarioIds = ref<string[]>([]);
 
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
