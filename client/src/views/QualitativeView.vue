@@ -248,6 +248,7 @@ import QualitativeFactorsPane from '@/components/drilldown-panel/qualitative-fac
 import NodeSuggestionsPane from '@/components/drilldown-panel/node-suggestions-pane.vue';
 import FactorsRecommendationsPane from '@/components/drilldown-panel/factors-recommendations-pane.vue';
 
+import { cleanConceptString } from '@/utils/concept-util';
 import filtersUtil from '@/utils/filters-util';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalPathFind from '@/components/modals/modal-path-find.vue';
@@ -732,7 +733,7 @@ export default defineComponent({
       // Strip off non-alphanumeric
       // - Engines cannot handle them
       // - Translation layer doesn't like consecutive spaces
-      const cleanedName = datacubeParam.name
+      const cleanedName = cleanConceptString(datacubeParam.name)
         .replace(/[^\w\s]/gi, '')
         .replace(/\s\s+/gi, ' ');
       const node = {
