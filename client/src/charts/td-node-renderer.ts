@@ -513,6 +513,7 @@ const renderStaticElements = (
     .style('text-anchor', 'start')
     .style('font-size', 'x-small')
     .style('fill', 'gray')
+    .style('pointer-events', 'none')
     .text(DATE_FORMATTER(historicalStartTimestamp));
   scrollbarGroupElement
     .append('text')
@@ -522,6 +523,7 @@ const renderStaticElements = (
     .style('text-anchor', 'end')
     .style('font-size', 'x-small')
     .style('fill', 'gray')
+    .style('pointer-events', 'none')
     .text(DATE_FORMATTER(projectionEnd));
 };
 

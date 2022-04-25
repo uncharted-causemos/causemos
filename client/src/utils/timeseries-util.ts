@@ -257,34 +257,40 @@ export function calculateYearlyTicks (
   firstTimestamp: number,
   lastTimestamp: number,
   width: number,
-  minTickSpacing = 25,
-  useMonthTicks = true
+  minTickSpacing = 40
 ) {
-  const firstYear = moment(firstTimestamp);
-  const lastYear = moment(lastTimestamp);
+  const firstYear = moment.utc(firstTimestamp);
+  const lastYear = moment.utc(lastTimestamp);
 
   const majorIncrecmentsElapsed = lastYear.year() - firstYear.year();
 
   const tickIncrements = [];
 
-  // create array of years from firstYear to lastYear
-  // epoch seconds for jan first of each year
-  if (majorIncrecmentsElapsed * 12 > width / minTickSpacing || !useMonthTicks) { // not enough space for minor ticks
-    const factor = Math.ceil(majorIncrecmentsElapsed / (width / minTickSpacing));
-    for (let i = 0; i < majorIncrecmentsElapsed; i += factor) {
-      tickIncrements.push(moment([i + 1 + firstYear.year()]).valueOf());
+  const yearGap = majorIncrecmentsElapsed / (width / minTickSpacing);
+  const threshold = 0.7; // Seems to be be nice from experimentation
+
+  // create array of tick values by year or by month, based on how space is available
+  if (yearGap > threshold) {
+    // Not enough space for minor ticks
+    for (let i = 0; i < majorIncrecmentsElapsed; i += Math.ceil(yearGap)) {
+      // Epoch seconds for jan first of each year
+      tickIncrements.push(
+        moment.utc([i + firstYear.year()]).valueOf()
+      );
     }
-  } else { // enough space for minor ticks
-    for (let i = 0; i < majorIncrecmentsElapsed * 12; i++) {
-      const momentPlusDuration = moment(firstYear.add(1, 'month')); // add increment of minor duration to next tick
-      const momentNormalized = moment([momentPlusDuration.year(), momentPlusDuration.month(), 1]); // force tick to first of month, FIXME - this is still hardcoded to only work with years and months, not quite sure how to fix
-      tickIncrements.push(momentNormalized.valueOf());
+  } else {
+    // Enough space for minor ticks
+    for (let year = 0; year <= majorIncrecmentsElapsed; year++) {
+      for (let month = 0; month < 12; month++) {
+        tickIncrements.push(
+          moment.utc([year + firstYear.year(), month]).valueOf()
+        );
+      }
     }
   }
-
-
   return tickIncrements;
 }
+
 export function calculateGenericTicks (
   min: number,
   max: number
