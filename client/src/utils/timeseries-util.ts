@@ -257,7 +257,7 @@ export function calculateYearlyTicks (
   firstTimestamp: number,
   lastTimestamp: number,
   width: number,
-  minTickSpacing = 10,
+  minTickSpacing = 25,
   useMonthTicks = true
 ) {
   const firstYear = moment(firstTimestamp);
@@ -265,12 +265,15 @@ export function calculateYearlyTicks (
 
   const majorIncrecmentsElapsed = lastYear.year() - firstYear.year();
 
-  let tickIncrements = [];
+  const tickIncrements = [];
 
   // create array of years from firstYear to lastYear
   // epoch seconds for jan first of each year
   if (majorIncrecmentsElapsed * 12 > width / minTickSpacing || !useMonthTicks) { // not enough space for minor ticks
-    tickIncrements = Array.from({ length: majorIncrecmentsElapsed }, (v, k) => moment([k + 1 + firstYear.year()]).valueOf());
+    const factor = Math.ceil(majorIncrecmentsElapsed / (width / minTickSpacing));
+    for (let i = 0; i < majorIncrecmentsElapsed; i += factor) {
+      tickIncrements.push(moment([i + 1 + firstYear.year()]).valueOf());
+    }
   } else { // enough space for minor ticks
     for (let i = 0; i < majorIncrecmentsElapsed * 12; i++) {
       const momentPlusDuration = moment(firstYear.add(1, 'month')); // add increment of minor duration to next tick
@@ -278,6 +281,7 @@ export function calculateYearlyTicks (
       tickIncrements.push(momentNormalized.valueOf());
     }
   }
+
 
   return tickIncrements;
 }

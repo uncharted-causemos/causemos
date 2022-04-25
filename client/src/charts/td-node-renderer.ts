@@ -154,6 +154,7 @@ export default function(
     .selectAll('.segment-line')
     .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
 
+
   // Create brush object and position over scroll bar
   const brush = d3
     .brushX()
@@ -180,6 +181,10 @@ export default function(
     .attr('fill', SCROLL_BAR_RANGE_FILL)
     .attr('stroke', SCROLL_BAR_RANGE_STROKE)
     .attr('opacity', SCROLL_BAR_RANGE_OPACITY);
+
+  scrollBarGroupElement
+    .selectAll('text')
+    .style('pointer-events', 'none');
 
   // Add clipping mask to hide elements that are outside the focus chart area when zoomed in
   // Note We need a little extra buffer to accommodate extra visuals in the last projected timestamp
