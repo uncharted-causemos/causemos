@@ -342,7 +342,7 @@ export default defineComponent({
       });
     };
 
-    const { activeFeature } = useActiveDatacubeFeature(metadata, itemId);
+    const { activeFeatureName } = useActiveDatacubeFeature(metadata, itemId);
 
     const {
       datacubeHierarchy
@@ -352,7 +352,7 @@ export default defineComponent({
       metadata,
       selectedAdminLevel,
       breakdownOption,
-      activeFeature
+      activeFeatureName
     );
 
     watchEffect(() => {
@@ -483,7 +483,7 @@ export default defineComponent({
       selectedTimestamp,
       initialSelectedQualifierValues,
       initialNonDefaultQualifiers,
-      activeFeature,
+      activeFeatureName,
       isRawDataLayerSelected,
       selectedRegionIdForQualifiers
     );
@@ -509,7 +509,7 @@ export default defineComponent({
       selectedQualifierValues,
       initialSelectedYears,
       showPercentChange,
-      activeFeature,
+      activeFeatureName,
       selectedScenarios,
       activeReferenceOptions,
       isRawDataLayerSelected
@@ -599,7 +599,7 @@ export default defineComponent({
       metadata,
       selectedTimeseriesPoints,
       activeFeatures,
-      activeFeature,
+      activeFeatureName,
       filteredRunData,
       breakdownOption
     );
@@ -814,7 +814,6 @@ export default defineComponent({
       mainModelOutput,
       outputs,
       timeseriesData,
-      temporalBreakdownData,
       AggregationOption,
       visibleTimeseriesData,
       timeseriesDataForSelection,

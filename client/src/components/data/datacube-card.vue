@@ -314,7 +314,7 @@
             </div>
 
             <datacube-scenario-header
-              v-if="currentTabView === DatacubeViewMode.Data && mainModelOutput && isModelMetadata"
+              v-if="currentTabView === DatacubeViewMode.Data && activeFeature && isModelMetadata"
               :metadata="metadata"
               :model-run-data="filteredRunData"
               :selected-scenario-ids="selectedScenarioIds"
@@ -358,7 +358,7 @@
                 @select-timestamp="setSelectedTimestamp"
               />
               <datacube-comparative-timeline-sync
-                v-if="breakdownOption === SPLIT_BY_VARIABLE && selectedBreakdownOutputVariables.size > 0 && globalTimeseries.length > 0"
+                v-if="breakdownOption === SPLIT_BY_VARIABLE && selectedFeatureNames.size > 0 && globalTimeseries.length > 0"
                 :timeseriesData="globalTimeseries"
                 :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
                 :selected-timestamp="selectedGlobalTimestamp"
@@ -371,7 +371,7 @@
                 v-if="
                   breakdownOption !== null &&
                   ((visibleTimeseriesData.length === 0 && breakdownOption !== SPLIT_BY_VARIABLE) ||
-                  (selectedBreakdownOutputVariables.size === 0 && breakdownOption === SPLIT_BY_VARIABLE))
+                  (selectedFeatureNames.size === 0 && breakdownOption === SPLIT_BY_VARIABLE))
                 "
               >
                 Please select one or more
@@ -387,22 +387,22 @@
                 , or choose 'Split by none'.
               </p>
               <div class="card-maps-box" v-if="breakdownOption === SPLIT_BY_VARIABLE">
-                <div v-if="activeFeaturesNames.length > 0" class="card-maps-legend-container">
-                  <span v-if="activeFeaturesNames.length > 1" class="top-padding"></span>
+                <div v-if="selectedFeatures.length > 0" class="card-maps-legend-container">
+                  <span v-if="selectedFeatures.length > 1" class="top-padding"></span>
                 </div>
                 <div
                   v-if="regionalData !== null"
                   class="card-maps-container">
                   <div
-                    v-for="(featureName, indx) in activeFeaturesNames"
+                    v-for="({ name: featureName }, indx) in selectedFeatures"
                     :key="featureName"
                     class="card-map-container"
                     :class="[
-                      `card-count-${activeFeaturesNames.length < 5 ? activeFeaturesNames.length : 'n'}`
+                      `card-count-${selectedFeatures.length < 5 ? selectedFeatures.length : 'n'}`
                     ]"
                   >
                     <span
-                      v-if="activeFeaturesNames.length > 1"
+                      v-if="selectedFeatures.length > 1"
                       :style="{ color: colorFromIndex(indx)}"
                     >
                       {{ featureName }}
@@ -426,8 +426,8 @@
                   <!-- Empty div to reduce jumpiness when the maps are loading -->
                   <div class="card-map" />
                 </div>
-                <div v-if="activeFeaturesNames.length > 0" class="card-maps-legend-container">
-                  <span v-if="activeFeaturesNames.length > 1" class="top-padding"></span>
+                <div v-if="selectedFeatures.length > 0" class="card-maps-legend-container">
+                  <span v-if="selectedFeatures.length > 1" class="top-padding"></span>
                 </div>
               </div>
               <div class="card-maps-box" v-if="breakdownOption !== SPLIT_BY_VARIABLE">
@@ -511,7 +511,7 @@
                   :qualifier-fetch-info="qualifierFetchInfo"
                   :regional-data="regionalData"
                   :temporal-breakdown-data="temporalBreakdownData"
-                  :output-variable-breakdown-data="outputVariableBreakdownData"
+                  :output-variable-breakdown-data="featureBreakdownData"
                   :selected-spatial-aggregation="selectedSpatialAggregation"
                   :selected-temporal-aggregation="selectedTemporalAggregation"
                   :selected-temporal-resolution="selectedTemporalResolution"
@@ -523,13 +523,13 @@
                   :selected-breakdown-option="breakdownOption"
                   :selected-timeseries-points="selectedTimeseriesPoints"
                   :selected-years="selectedYears"
-                  :selected-breakdown-output-variables="selectedBreakdownOutputVariables"
-                  :reference-options="referenceOptions"
+                  :selected-breakdown-output-variables="selectedFeatureNames"
+                  :reference-options="availableReferenceOptions"
                   :unit="unit"
                   @toggle-is-region-selected="toggleIsRegionSelected"
                   @toggle-is-qualifier-selected="toggleIsQualifierSelected"
                   @toggle-is-year-selected="toggleIsYearSelected"
-                  @toggle-is-output-variable-selected="toggleIsOutputVariableSelected"
+                  @toggle-is-output-variable-selected="toggleIsFeatureSelected"
                   @toggle-reference-options="toggleReferenceOptions"
                   @set-selected-admin-level="setSelectedAdminLevel"
                   @set-breakdown-option="setBreakdownOption"
@@ -641,18 +641,16 @@ import {
   DataTransform,
   GeoAttributeFormat,
   ModelRunStatus,
-  ReferenceSeriesOption,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption,
   SPLIT_BY_VARIABLE,
   DatacubeViewMode, DatacubeStatus, ProjectType
 } from '@/types/Enums';
-import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
+import { Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataSpaceDataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
-import { ModelRunReference } from '@/types/ModelRunReference';
-import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
+import { RegionalAggregations } from '@/types/Outputdata';
 
 import {
   COLOR,
@@ -671,9 +669,7 @@ import {
   isModel,
   getFilteredScenariosFromIds,
   TAGS,
-  DEFAULT_DATE_RANGE_DELIMETER,
-  getSelectedOutput,
-  getOutputs
+  DEFAULT_DATE_RANGE_DELIMETER
 } from '@/utils/datacube-util';
 import { normalize } from '@/utils/value-util';
 import {
@@ -700,7 +696,6 @@ import {
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
-import { BreakdownData } from '@/types/Datacubes';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
@@ -709,6 +704,7 @@ import { useRoute } from 'vue-router';
 import { capitalize } from '@/utils/string-util';
 import { getBboxForEachRegionId } from '@/services/geo-service';
 import { getWeightQualifier } from '@/utils/qualifier-util';
+import { BreakdownData } from '@/types/Datacubes';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -816,6 +812,7 @@ export default defineComponent({
 
     const {
       currentOutputIndex,
+      activeFeature,
       dimensions,
       ordinalDimensionNames,
       allModelRunData,
@@ -844,6 +841,7 @@ export default defineComponent({
       initialSelectedYears,
       initialSelectedGlobalTimestamp,
       initialSelectedOutputVariables,
+      initialActiveFeatures,
       selectedDataLayerTransparency,
       selectedDataLayer,
       isRawDataLayerSelected,
@@ -856,6 +854,8 @@ export default defineComponent({
       selectedTransform,
       showPercentChange,
       activeReferenceOptions,
+      toggleReferenceOptions,
+      availableReferenceOptions,
       timeseriesData,
       visibleTimeseriesData,
       relativeTo,
@@ -864,10 +864,11 @@ export default defineComponent({
       temporalBreakdownData,
       selectedYears,
       toggleIsYearSelected,
-      selectedBreakdownOutputVariables,
-      toggleIsOutputVariableSelected,
+      outputs,
+      selectedFeatures,
+      selectedFeatureNames,
+      toggleIsFeatureSelected,
       activeFeatures,
-      filteredActiveFeatures,
       globalTimeseries,
       selectedGlobalTimestamp,
       selectedGlobalTimestampRange,
@@ -901,34 +902,6 @@ export default defineComponent({
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const datacubeItemId = route.query.item_id as any;
 
-    const outputs = computed(() => {
-      const modelMetadata = metadata.value;
-      if (modelMetadata === null) return null;
-      const currOutputs = getOutputs(modelMetadata);
-      return currOutputs.length >= 1 ? currOutputs : null;
-    });
-
-    const outputVariableBreakdownData = ref<BreakdownData | null>(null);
-    watch(
-      () => [outputs.value],
-      () => {
-        if (outputs.value === null) return;
-        const result: {
-          id: string;
-          values: { [variableId: string]: number };
-        }[] = [];
-        outputs.value.forEach(datacubeFeature => {
-          result.push({
-            id: datacubeFeature.display_name,
-            values: { [datacubeFeature.name]: 0 }
-          });
-        });
-        outputVariableBreakdownData.value = {
-          Variable: result
-        };
-      }
-    );
-
     //
     // color scheme options
     //
@@ -943,8 +916,6 @@ export default defineComponent({
 
     const datePickerElement = ref<HTMLElement | null>(null);
     const dateParamPickerValue = ref<any | null>(null);
-
-    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const runFromInsight = ref<boolean>(false); // do we have a run from loaded insight?
 
@@ -1013,7 +984,6 @@ export default defineComponent({
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
-    const initialActiveFeatures = ref<OutputVariableSpecs[]>([]);
     const initialActiveReferenceOptions = ref<string[]>([]);
 
     const addNewTag = (tagName: string) => {
@@ -1729,113 +1699,90 @@ export default defineComponent({
       }
     };
 
-    watch(
-      () => [selectedTemporalAggregation.value, selectedTemporalResolution.value, selectedSpatialAggregation.value, selectedTransform.value],
-      () => {
-        // re-build activeFeatures since it hosts the config options for each variable
-        const updatedActiveFeatures = _.cloneDeep(activeFeatures.value);
-        const featureIndx = updatedActiveFeatures.findIndex(feature => feature.name === mainModelOutput.value?.name ?? '');
-        if (featureIndx >= 0) {
-          updatedActiveFeatures[featureIndx].temporalAggregation = selectedTemporalAggregation.value;
-          updatedActiveFeatures[featureIndx].temporalResolution = selectedTemporalResolution.value;
-          updatedActiveFeatures[featureIndx].spatialAggregation = selectedSpatialAggregation.value;
-          updatedActiveFeatures[featureIndx].transform = selectedTransform.value;
 
-          activeFeatures.value = updatedActiveFeatures;
-        }
+    // A map from timeseries to matching datacube (name and feature). Since
+    //  globalTimeseries is used when multiple features are selected, we need
+    //  to create a new ID for each timeseries that includes the feature name.
+    const timeseriesToDatacubeMap = computed<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>(() => {
+      if (selectedFeatures.value.length !== globalTimeseries.value.length) {
+        return {};
       }
-    );
-    watch(
-      () => [mainModelOutput.value],
-      () => {
-        if (mainModelOutput.value && activeFeatures.value.length > 0) {
-          const featureIndx = activeFeatures.value.findIndex(feature => feature.name === mainModelOutput.value?.name ?? '');
-          // restore all the config options for that variable
-          selectedTemporalAggregation.value = activeFeatures.value[featureIndx].temporalAggregation;
-          selectedTemporalResolution.value = activeFeatures.value[featureIndx].temporalResolution;
-          selectedSpatialAggregation.value = activeFeatures.value[featureIndx].spatialAggregation;
-          selectedTransform.value = activeFeatures.value[featureIndx].transform;
+      const result = {};
+      globalTimeseries.value.forEach((timeseries, index) => {
+        const feature = selectedFeatures.value[index];
+        // Prevent duplicate appends.
+        // FIXME: it's not clear why this is necessary. Duplicate appends
+        //  would implly we're rerunning this code multiple times for the
+        //  same globalTimeseries list, which is a bug.
+        // FIXME: the id should be constructed when globalTimeseries is
+        if (!timeseries.id.endsWith(feature.name)) {
+          // use a combination of timeseries id and feature name as the ultimate unique id
+          // override the timeseries id to match its owner datacube
+          timeseries.id = timeseries.id + feature.name;
         }
-      }
-    );
-    watch(
-      () => [initialActiveFeatures.value, outputs.value],
-      () => {
-        // are we restoring state post init or after an insight has been loaded?
-        if (initialActiveFeatures.value.length > 0) {
-          activeFeatures.value = _.cloneDeep(initialActiveFeatures.value);
-        } else {
-          // create the initial list of activeFeatures if datacube outputs have been loaded
-          if (outputs.value !== null) {
-            activeFeatures.value = outputs.value.map(output => ({
-              name: output.name,
-              display_name: output.display_name,
-              temporalResolution: selectedTemporalResolution.value,
-              temporalAggregation: selectedTemporalAggregation.value,
-              spatialAggregation: selectedSpatialAggregation.value,
-              transform: selectedTransform.value
-            }));
-          }
-        }
-      }
-    );
-    const activeFeaturesNames = computed(() => {
-      return filteredActiveFeatures.value
-        .filter(feature => selectedBreakdownOutputVariables.value.has(feature.display_name))
-        .map(feature => feature.name);
+        timeseriesToDatacubeMap.value[timeseries.id] = {
+          datacubeName: feature.name,
+          datacubeOutputVariable: feature.display_name
+        };
+      });
+      return result;
     });
 
-    const timeseriesToDatacubeMap = ref<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>({});
-
-    watch(
-      () => [globalTimeseries.value, filteredActiveFeatures.value, selectedGlobalTimestamp.value],
-      () => {
-        if (filteredActiveFeatures.value.length === globalTimeseries.value.length) {
-          globalTimeseries.value.forEach((timeseries, indx) => {
-            // normalize the values of each timeseries in the list independently
-            // i.e., re-map all timestamp point values to a range of [0: 1]
-            normalizeTimeseriesList([timeseries]);
-
-            //
-            // re-create the map that relates between datacube and timeseries
-            //
-            // NOTE: it is not enough to use key as the timeseries.id
-            //  e.g., split by variable would have the same timeseries.id for multiple variables
-            const feature = filteredActiveFeatures.value[indx];
-            if (!timeseries.id.endsWith(feature.name)) { // prevent duplicate appends
-              // use a combination of timeseries id and feature name as the ultimate unique id
-              // override the timeseries id to match its owner datacube
-              timeseries.id = timeseries.id + feature.name;
-            }
-            timeseriesToDatacubeMap.value[timeseries.id] = {
-              datacubeName: feature.name,
-              datacubeOutputVariable: feature.display_name
-            };
-
-            // update the value of each timeseries in the breakdown data
-            if (outputVariableBreakdownData.value !== null) {
-              const valueAtGlobalTimestamp = timeseries.points.find(p => p.timestamp === selectedGlobalTimestamp.value);
-              outputVariableBreakdownData.value.Variable.forEach(breakdownLine => {
-                // only update the breakdown line that correspond to the current timeseries
-                if (timeseries.name in breakdownLine.values) {
-                  breakdownLine.values[timeseries.name] = valueAtGlobalTimestamp !== undefined ? valueAtGlobalTimestamp.value : 0;
-                }
-              });
-            }
-          });
-        }
+    // FIXME: Only used by the breakdown pane. Can we just compute it there?
+    //  Maybe selectedTimeseriesPoints has
+    // FIXME: Renamed from outputVariableBreakdownData
+    const featureBreakdownData = computed<BreakdownData | null>(() => {
+      // If metadata hasn't loaded, return null.
+      if (outputs.value === null) return null;
+      const breakdownData = {
+        Variable: outputs.value.map(feature => ({
+          id: feature.display_name,
+          values: { [feature.name]: 0 }
+        }))
+      };
+      // If we haven't fetched the timeseries for the selected features yet,
+      //  return a BreakdownData object with values of 0 for each feature.
+      if (selectedFeatures.value.length !== globalTimeseries.value.length) {
+        return breakdownData;
       }
-    );
+      const normalizedGlobalTimeseries = _.cloneDeep(globalTimeseries.value);
+      // Append a normalizedValue property in the range 0 to 1 to each point.
+      // FIXME: rather than modifiying the timeseries list in place,
+      //  normalizeTimeseriesList should return a new list.
+      normalizedGlobalTimeseries.forEach(
+        timeseries => normalizeTimeseriesList([timeseries])
+      );
+      normalizedGlobalTimeseries.forEach(timeseries => {
+        // If timeseries has a point at the globally selected timestamp and
+        //  timeseries.name is one of the features' names, update that value in
+        //  the breakdownData.
+        const pointAtGlobalTimestamp = timeseries.points.find(
+          point => point.timestamp === selectedGlobalTimestamp.value
+        );
+        breakdownData.Variable.forEach(feature => {
+          if (
+            pointAtGlobalTimestamp !== undefined &&
+            timeseries.name in feature.values
+          ) {
+            // FIXME: We don't even use the normalized value to calculate
+            //  featureBreakdownData. Seems like we should either
+            //  a) use the normalized value here?
+            //  b) perform the normalization  right when calculating
+            //      globalTimeseries
+            //  c) replace value with normalizedValue if that's what should be
+            //      displayed everywhere in the current state
+            //  d) all of the above
+            feature.values[timeseries.name] = pointAtGlobalTimestamp.value;
+          }
+        });
+      });
+      return breakdownData;
+    });
 
     watchEffect(() => {
       if (initialActiveReferenceOptions.value && initialActiveReferenceOptions.value.length > 0) {
         activeReferenceOptions.value = initialActiveReferenceOptions.value;
       }
-    });
-
-    const unit = computed(() => {
-      const transform = isRawDataLayerSelected.value ? DataTransform.None : selectedTransform.value;
-      return getUnitString(mainModelOutput?.value?.unit || null, transform);
     });
 
     const popupFormatter = (feature: any) => {
@@ -1855,7 +1802,7 @@ export default defineComponent({
       ],
       () => {
         if (breakdownOption.value === SPLIT_BY_VARIABLE) {
-          activeFeaturesNames.value.forEach(selectedOutputVariable => {
+          selectedFeatures.value.forEach(({ name: selectedOutputVariable }) => {
             if (regionalData.value !== null) {
               const temp: BarData[] = [];
               const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
@@ -1903,21 +1850,29 @@ export default defineComponent({
         }
       });
 
+    // FIXME: Do we need both `unit` and `timeseriesUnit`? At the very least,
+    //  one should be renamed to make it more clear what the difference is.
+    const unit = computed(() => {
+      const transform = isRawDataLayerSelected.value ? DataTransform.None : selectedTransform.value;
+      return getUnitString(activeFeature.value?.unit || null, transform);
+    });
+
     const timeseriesUnit = computed(() => {
       if (relativeTo.value && showPercentChange.value) {
         return '%';
       }
+      const activeFeatureUnit = activeFeature.value?.unit;
       if (breakdownOption.value === null ||
         breakdownOption.value === TemporalAggregationLevel.Year ||
         selectedTransform.value === DataTransform.Normalization
       ) {
-        return mainModelOutput?.value?.unit ?? '';
+        return activeFeatureUnit ?? '';
       }
       // If split by region or split by qualifier with regions selected
       if (breakdownOption.value === SpatialAggregationLevel.Region || selectedRegionIds.value.length > 0) {
-        return getUnitString(mainModelOutput?.value?.unit || null, selectedTransform.value);
+        return getUnitString(activeFeatureUnit ?? null, selectedTransform.value);
       }
-      return mainModelOutput?.value?.unit ?? '';
+      return activeFeatureUnit ?? '';
     });
 
     const mapColorOptions = computed(() => {
@@ -1981,10 +1936,6 @@ export default defineComponent({
     });
 
     watchEffect(() => {
-      if (metadata.value && currentOutputIndex.value >= 0) {
-        mainModelOutput.value = getSelectedOutput(metadata.value, currentOutputIndex.value);
-      }
-
       if (isIndicatorDatacube.value) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
       }
@@ -2030,7 +1981,7 @@ export default defineComponent({
         selectedQualifierValues,
         selectedRegionIds,
         selectedRegionIdsAtAllLevels,
-        selectedBreakdownOutputVariables,
+        selectedFeatureNames,
         activeFeatures,
         selectedScenarioIds,
         timestampForSelection,
@@ -2042,55 +1993,6 @@ export default defineComponent({
       );
 
       store.dispatch('insightPanel/setDataState', dataState);
-    });
-
-    const referenceOptions = computed(() => {
-      let currentReferenceSeries: ModelRunReference[] = [];
-      if (breakdownOption.value === TemporalAggregationLevel.Year) {
-        currentReferenceSeries = [
-          { id: ReferenceSeriesOption.AllYears, displayName: 'Average All Years' },
-          { id: ReferenceSeriesOption.SelectYears, displayName: 'Average Selected Years' }
-        ];
-      } else if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        // add averaging options -- in a later iteration.
-        /*
-        if (selectedRegionIds.value.length > 1) {
-          currentReferenceSeries.push({
-            id: ReferenceSeriesOption.SelectRegions,
-            displayName: 'Average Selected Regions'
-          });
-        }
-        */
-        // if selected admin level is lower than country, add countries as references.
-        if (selectedAdminLevel.value > 0 && regionalData.value?.country) {
-          regionalData.value.country.forEach(refRegion => currentReferenceSeries.push({
-            id: refRegion.id,
-            displayName: refRegion.id
-          }));
-        }
-      }
-
-      return currentReferenceSeries.map((c: any) => {
-        return {
-          id: c.id,
-          displayName: c.displayName,
-          checked: activeReferenceOptions.value.includes(c.id)
-        } as ModelRunReference;
-      });
-    });
-
-    const toggleReferenceOptions = (value: string) => {
-      if (activeReferenceOptions.value.includes(value)) {
-        activeReferenceOptions.value = activeReferenceOptions.value.filter((r) => r !== value);
-      } else {
-        activeReferenceOptions.value.push(value);
-      }
-    };
-    watchEffect(() => {
-      // Clear active reference options when selected admin level is country in split by region mode
-      if (breakdownOption.value === SpatialAggregationLevel.Region && selectedAdminLevel.value === 0) {
-        activeReferenceOptions.value = [];
-      }
     });
 
     const mapSelectedRegions = computed(() => {
@@ -2138,7 +2040,6 @@ export default defineComponent({
       isModelMetadata,
       isRelativeDropdownOpen,
       isSplitByRegionMode,
-      mainModelOutput,
       mapBounds,
       mapBoundsForEachSpec,
       mapColorOptions,
@@ -2163,11 +2064,10 @@ export default defineComponent({
       preGenDataIds,
       qualifierBreakdownData,
       rawDataPointsList,
-      outputVariableBreakdownData,
+      activeFeature,
+      featureBreakdownData,
       recalculateGridMapDiffStats,
       regionalData,
-      // regionsToSubregions,
-      // regionsToTimeseries,
       relativeTo,
       requestNewModelRuns,
       runningDefaultRun,
@@ -2188,7 +2088,7 @@ export default defineComponent({
       selectedColorScaleType,
       setNumberOfColorBins,
       numberOfColorBins,
-      referenceOptions,
+      availableReferenceOptions,
       selectedDataLayer,
       firstSelectedPreGenOutput,
       selectedPreGenDataId,
@@ -2204,7 +2104,8 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedTimestamp,
       selectedYears,
-      selectedBreakdownOutputVariables,
+      selectedFeatures,
+      selectedFeatureNames,
       setSelectedAdminLevel,
       setBreakdownOption,
       setBaseLayer,
@@ -2234,7 +2135,7 @@ export default defineComponent({
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
-      toggleIsOutputVariableSelected,
+      toggleIsFeatureSelected,
       toggleNewRunsMode,
       toggleReferenceOptions,
       unit,
@@ -2256,7 +2157,6 @@ export default defineComponent({
       SPLIT_BY_VARIABLE,
       regionMapData,
       popupFormatter,
-      activeFeaturesNames,
       DatacubeViewMode,
       DatacubeStatus,
       itemId,
@@ -2307,7 +2207,7 @@ export default defineComponent({
       return layerId;
     },
     isReferenceSeries(id: string): boolean {
-      return this.referenceOptions.filter((item) => item.id === id).length > 0;
+      return this.availableReferenceOptions.filter((item) => item.id === id).length > 0;
     },
     openGeoSelectionModal(modelParam: ModelParameter) {
       this.showGeoSelectionModal = true;

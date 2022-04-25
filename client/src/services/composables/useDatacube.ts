@@ -12,8 +12,9 @@ import { OutputVariableSpecs } from '@/types/Outputdata';
 import { getParentSelectedRegions } from '@/utils/admin-level-util';
 import { DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import _ from 'lodash';
-import { computed, ref, Ref, watchEffect } from 'vue';
+import { computed, ref, Ref, watch } from 'vue';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
+import useDatacubeFeatures from './useDatacubeFeatures';
 import useDatacubeDimensions from './useDatacubeDimensions';
 import useDatacubeHierarchy from './useDatacubeHierarchy';
 import useMapBounds from './useMapBounds';
@@ -21,6 +22,7 @@ import useMultiTimeseriesData from './useMultiTimeseriesData';
 import useOutputSpecs from './useOutputSpecs';
 import useQualifiers from './useQualifiers';
 import useRawPointsData from './useRawPointsData';
+import useReferenceSeries from './useReferenceSeries';
 import useRegionalData from './useRegionalData';
 import useScenarioData from './useScenarioData';
 import useSelectedTimeseriesPoints from './useSelectedTimeseriesPoints';
@@ -36,9 +38,63 @@ export default function useDatacube(
   // In all other cards we never re-fetch
   isRefreshingModelRunsPeriodically: Ref<boolean>
 ) {
-  const { activeFeature, currentOutputIndex } = useActiveDatacubeFeature(
+  // Populated by initialDataConfig
+  // FIXME: rename initialDataConfig to initialDataState
+  // FIXME: don't break it down into refs, just pass the whole object around
+  const initialSelectedQualifierValues = ref<string[]>([]);
+  const initialNonDefaultQualifiers = ref<string[]>([]);
+  const initialSelectedYears = ref<string[]>([]);
+  const initialSelectedOutputVariables = ref<string[]>([]);
+  const initialSelectedGlobalTimestamp = ref<number | null>(null);
+  const initialActiveFeatures = ref<OutputVariableSpecs[]>([]);
+
+  const { activeFeature, activeFeatureName, currentOutputIndex } =
+    useActiveDatacubeFeature(metadata, itemId);
+
+  const selectedSpatialAggregation = ref<AggregationOption>(
+    AggregationOption.Mean
+  );
+  const selectedTemporalAggregation = ref<AggregationOption>(
+    AggregationOption.Mean
+  );
+  const selectedTemporalResolution = ref<TemporalResolutionOption>(
+    TemporalResolutionOption.Month
+  );
+  const selectedTransform = ref<DataTransform>(DataTransform.None);
+
+  // Whenever the selected variable changes, set the aggregations, resolution,
+  //  and transform that were previously stored in the activeFeatures list.
+  watch(
+    () => [activeFeatureName.value],
+    () => {
+      if (activeFeatureName.value && activeFeatures.value.length > 0) {
+        const feature =
+          activeFeatures.value.find(
+            feature => feature.name === activeFeatureName.value
+          ) ?? activeFeatures.value[0];
+        selectedTemporalAggregation.value = feature.temporalAggregation;
+        selectedTemporalResolution.value = feature.temporalResolution;
+        selectedSpatialAggregation.value = feature.spatialAggregation;
+        selectedTransform.value = feature.transform;
+      }
+    }
+  );
+
+  const {
+    outputs,
+    activeFeatures,
+    selectedFeatures,
+    selectedFeatureNames,
+    toggleIsFeatureSelected
+  } = useDatacubeFeatures(
     metadata,
-    itemId
+    initialSelectedOutputVariables,
+    initialActiveFeatures,
+    activeFeatureName,
+    selectedTemporalResolution,
+    selectedTemporalAggregation,
+    selectedSpatialAggregation,
+    selectedTransform
   );
 
   const { dimensions, ordinalDimensionNames } = useDatacubeDimensions(
@@ -88,7 +144,7 @@ export default function useDatacube(
     metadata,
     selectedAdminLevel,
     breakdownOption,
-    activeFeature
+    activeFeatureName
   );
 
   // FIXME: this is only used by useTimeseriesData, it's not clear exactly
@@ -101,15 +157,6 @@ export default function useDatacube(
   );
 
   const selectedScenarios = ref([] as ModelRun[]);
-  const selectedSpatialAggregation = ref<AggregationOption>(
-    AggregationOption.Mean
-  );
-  const selectedTemporalAggregation = ref<AggregationOption>(
-    AggregationOption.Mean
-  );
-  const selectedTemporalResolution = ref<TemporalResolutionOption>(
-    TemporalResolutionOption.Month
-  );
 
   const selectedTimestamp = ref(null) as Ref<number | null>;
   // FIXME: Safe to remove? Confirm that vue reactivity isn't triggered if the
@@ -118,15 +165,6 @@ export default function useDatacube(
   const setSelectedTimestamp = (newValue: number | null) => {
     selectedTimestamp.value = newValue;
   };
-
-  // Populated by initialDataConfig
-  // FIXME: rename initialDataConfig to initialDataState
-  // FIXME: don't break it down into refs, just pass the whole object around
-  const initialSelectedQualifierValues = ref<string[]>([]);
-  const initialNonDefaultQualifiers = ref<string[]>([]);
-  const initialSelectedYears = ref<string[]>([]);
-  const initialSelectedOutputVariables = ref<string[]>([]);
-  const initialSelectedGlobalTimestamp = ref<number | null>(null);
 
   const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
 
@@ -171,21 +209,20 @@ export default function useDatacube(
     selectedTimestamp,
     initialSelectedQualifierValues,
     initialNonDefaultQualifiers,
-    activeFeature,
+    activeFeatureName,
     isRawDataLayerSelected,
     selectedRegionIdForQualifiers
   );
-
-  const selectedTransform = ref<DataTransform>(DataTransform.None);
 
   // FIXME: not currently used in datacube-comparative-card or datacube-region-ranking-card
   // Used for useAnalysisMapStats in datacube-comparative-overlay-region and datacube-region-ranking-card.
   const showPercentChange = ref<boolean>(true);
 
-  // FIXME: we also have the currentReferenceOptions, not clear why we need both
-  //  set by initial data config, reset when some other things change
+  // FIXME: set by initial data config, reset when some other things change.
+  // This would be in the useReferenceSeries composable, but there is a circular
+  //  dependency chain where useRegionalData and useTimeseriesData require
+  //  activeReferenceOptions, and useReferenceSeries depends on them.
   const activeReferenceOptions = ref([] as string[]);
-
   const {
     timeseriesData,
     visibleTimeseriesData,
@@ -209,50 +246,16 @@ export default function useDatacube(
     selectedQualifierValues,
     initialSelectedYears,
     showPercentChange,
-    activeFeature,
+    activeFeatureName,
     selectedScenarios,
     activeReferenceOptions,
     isRawDataLayerSelected
   );
 
-  // FIXME: extract breakdownOutputVariables to its own composable?
-  const selectedBreakdownOutputVariables = ref(new Set<string>());
-  const toggleIsOutputVariableSelected = (outputVariable: string) => {
-    const isOutputVariableSelected =
-      selectedBreakdownOutputVariables.value.has(outputVariable);
-    const updatedList = _.clone(selectedBreakdownOutputVariables.value);
-
-    if (isOutputVariableSelected) {
-      // If an output variable is currently selected, remove it from the list
-      updatedList.delete(outputVariable);
-    } else {
-      // Else add it to the list of selected output variables.
-      updatedList.add(outputVariable);
-    }
-
-    // Assign new object to selectedBreakdownOutputVariables.value to trigger reactivity updates.
-    selectedBreakdownOutputVariables.value = updatedList;
-  };
-  watchEffect(() => {
-    selectedBreakdownOutputVariables.value = new Set(
-      initialSelectedOutputVariables.value
-    );
-  });
-
-  // FIXME: we also have `activeFeature`... should these be combined?
-  // FIXME: extract activeFeatures to its own composable? look at
-  //  breakdownOutputVariables and see if they should be combined or split up
-  const activeFeatures = ref<OutputVariableSpecs[]>([]);
-  const filteredActiveFeatures = computed(() => {
-    return activeFeatures.value.filter(feature =>
-      selectedBreakdownOutputVariables.value.has(feature.display_name)
-    );
-  });
-
   // FIXME: can we combine useTimeseriesData and useMultiTimeseriesData?
   // We might not want to, if it doesn't simplify the code. We might just need
   //  to rename useMultiTimeseriesData.
-  // Note that globalTimeseries is modified in datacube-card (outside the composable), but not in the others
+  // Note that globalTimeseries is modified in datacube-card (outside the composable), but not in the others. It's also constructed/modified in CompAnalysis.
   const {
     globalTimeseries,
     selectedGlobalTimestamp,
@@ -263,7 +266,7 @@ export default function useDatacube(
     metadata,
     selectedScenarioIds,
     breakdownOption,
-    filteredActiveFeatures,
+    selectedFeatures,
     initialSelectedGlobalTimestamp
   );
 
@@ -291,7 +294,7 @@ export default function useDatacube(
     metadata,
     selectedTimeseriesPoints,
     activeFeatures,
-    activeFeature,
+    activeFeatureName,
     filteredRunData,
     breakdownOption
   );
@@ -305,6 +308,14 @@ export default function useDatacube(
     temporalBreakdownData,
     timestampForSelection
   );
+
+  const { availableReferenceOptions, toggleReferenceOptions } =
+    useReferenceSeries(
+      activeReferenceOptions,
+      breakdownOption,
+      selectedAdminLevel,
+      regionalData
+    );
 
   const { rawDataPointsList } = useRawPointsData(
     outputSpecs,
@@ -349,6 +360,7 @@ export default function useDatacube(
     initialSelectedYears,
     initialSelectedGlobalTimestamp,
     initialSelectedOutputVariables,
+    initialActiveFeatures,
     selectedDataLayerTransparency,
     selectedDataLayer,
     isRawDataLayerSelected,
@@ -361,6 +373,8 @@ export default function useDatacube(
     selectedTransform,
     showPercentChange,
     activeReferenceOptions,
+    availableReferenceOptions,
+    toggleReferenceOptions,
     timeseriesData,
     visibleTimeseriesData,
     relativeTo,
@@ -369,10 +383,12 @@ export default function useDatacube(
     temporalBreakdownData,
     selectedYears,
     toggleIsYearSelected,
-    selectedBreakdownOutputVariables,
-    toggleIsOutputVariableSelected,
+    outputs,
+    activeFeature,
     activeFeatures,
-    filteredActiveFeatures,
+    selectedFeatures,
+    selectedFeatureNames,
+    toggleIsFeatureSelected,
     globalTimeseries,
     selectedGlobalTimestamp,
     selectedGlobalTimestampRange,
