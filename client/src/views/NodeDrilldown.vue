@@ -229,13 +229,14 @@ import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
 import ProjectionRidgelines from '@/components/node-drilldown/projection-ridgelines.vue';
-import moment from 'moment';
 import { getStepCountFromTimeScale } from '@/utils/time-scale-util';
 import DropdownControl from '@/components/dropdown-control.vue';
 import ChartRangeInput from '@/components/widgets/chart-range-input.vue';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
 import { normalize } from '@/utils/value-util';
+import { getTimestampAfterMonths } from '@/utils/date-util';
+
 
 const SEASONALITY_OPTIONS: DropdownItem[] = [
   {
@@ -877,14 +878,13 @@ export default defineComponent({
             }
           }
         }
-        // FIXME: default viewing extent should be equal to whatever is
-        //  displayed on the graph view
-        const historicalMonthsToDisplay = 5 * 12;
-        const historyStart = moment
-          .utc(parameter.projection_start)
-          .subtract(historicalMonthsToDisplay, 'months')
-          .valueOf();
-        return [historyStart, max];
+
+        const historyRange = parameter.history_range;
+        const viewStart = getTimestampAfterMonths(
+          parameter.projection_start,
+          -historyRange
+        );
+        return [viewStart, max];
       }
     });
 
