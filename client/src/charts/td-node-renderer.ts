@@ -354,8 +354,7 @@ const calculateExtents = (
   // At least `history_range` steps should be visible before projection start.
   const minVisibleHistoricalPoint = getTimestampAfterMonths(
     modelSummary.parameter.projection_start,
-    -modelSummary.parameter.history_range *
-      getMonthsPerTimestepFromTimeScale(modelSummary.parameter.time_scale)
+    -modelSummary.parameter.history_range
   );
 
   const pointsToInclude = [
