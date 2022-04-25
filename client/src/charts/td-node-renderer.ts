@@ -440,7 +440,7 @@ const renderStaticElements = (
     .style('stroke', GRIDLINE_COLOR);
 
   // Render rectangle to delineate between historical data and projection data
-  const historicalStartTimestamp = xScale.range()[0];
+  const historicalStartTimestamp = xScale.domain()[0];
   const historicalEndTimestamp = getTimestampAfterMonths(projectionStartTimestamp, -monthsPerTimestep);
   groupElement
     .append('rect')
