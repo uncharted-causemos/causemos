@@ -194,12 +194,12 @@ export const getValidatedOutputs = (outputs: DatacubeFeature[]) => {
   return validOutputs.filter(o => o.is_visible);
 };
 
-export function isModel(datacube: Datacube): datacube is Model {
-  return datacube.type === DatacubeType.Model;
+export function isModel(datacube: Datacube | null): datacube is Model {
+  return datacube !== null && datacube.type === DatacubeType.Model;
 }
 
-export function isIndicator(datacube: Datacube): datacube is Indicator {
-  return datacube.type === DatacubeType.Indicator;
+export function isIndicator(datacube: Datacube | null): datacube is Indicator {
+  return datacube !== null && datacube.type === DatacubeType.Indicator;
 }
 
 export function getOutputs(metadata: Datacube) {

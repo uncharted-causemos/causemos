@@ -13,14 +13,14 @@
           <slot name="datacube-model-header-collapse" />
         </header>
         <modal-new-scenario-runs
-          v-if="isModelMetadata && showNewRunsModal === true"
+          v-if="isModel(metadata) && showNewRunsModal === true"
           :metadata="metadata"
           :potential-scenarios="potentialScenarios"
           :selected-dimensions="dimensions"
           :runtime-stats="runtimeStats"
           @close="onNewScenarioRunsModalClose" />
         <modal-check-runs-execution-status
-          v-if="isModelMetadata && showModelRunsExecutionStatus === true"
+          v-if="isModel(metadata) && showModelRunsExecutionStatus === true"
           :metadata="metadata"
           :potential-scenarios="runParameterValues"
           @close="showModelRunsExecutionStatus = false"
@@ -47,7 +47,7 @@
         />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
-          <div v-if="isModelMetadata" class="scenario-selector">
+          <div v-if="isModel(metadata)" class="scenario-selector">
             <div class="tags-area-container">
               <span class="scenario-count" v-if="selectedScenarioIds.length === 0">
                 {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
@@ -89,7 +89,7 @@
             </div>
             <model-runs-search-bar
               class="model-runs-search-bar"
-              v-if="isModelMetadata"
+              v-if="isModel(metadata)"
               :data="modelRunsSearchData"
               :filters="searchFilters"
               @filters-updated="onModelRunsFiltersUpdated"
@@ -314,7 +314,7 @@
             </div>
 
             <datacube-scenario-header
-              v-if="currentTabView === DatacubeViewMode.Data && activeFeature && isModelMetadata"
+              v-if="currentTabView === DatacubeViewMode.Data && activeFeature && isModel(metadata)"
               :metadata="metadata"
               :model-run-data="filteredRunData"
               :selected-scenario-ids="selectedScenarioIds"
@@ -801,10 +801,8 @@ export default defineComponent({
 
     const newRunsMode = ref<boolean>(false);
 
-    const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
-
     const isPeriodicallyRefreshingModelRuns = computed(
-      () => (newRunsMode.value === false && isModelMetadata.value === true)
+      () => (newRunsMode.value === false && isModel(metadata.value) === true)
     );
 
     const {
@@ -921,8 +919,6 @@ export default defineComponent({
     const dateParamPickerValue = ref<any | null>(null);
 
     const runFromInsight = ref<boolean>(false); // do we have a run from loaded insight?
-
-    const isIndicatorDatacube = computed(() => metadata.value !== null && isIndicator(metadata.value));
 
     // FIXME: we only support one date param of each model datacube
     const dateModelParam = computed(() => {
@@ -1291,7 +1287,7 @@ export default defineComponent({
         // should be in a watcher on the parent component to be more robust,
         // rather than in this button's click handler.
 
-        if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
+        if (isModel(metadata.value) && selectedScenarioIds.value.length === 0) {
           // clicking on either the 'data' or 'media' tabs when no runs is selected should always pick the baseline run
           const readyRuns = filteredRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
           if (readyRuns.length === 0) {
@@ -1317,7 +1313,7 @@ export default defineComponent({
 
     const onTabClick = (value: DatacubeViewMode) => {
       if (value === DatacubeViewMode.Description) {
-        if (isIndicatorDatacube.value) {
+        if (isIndicator(metadata.value)) {
           updateTabView(DatacubeViewMode.Description);
         } else {
           setSelectedScenarioIds([]); // this will update the 'currentTabView'
@@ -1421,7 +1417,7 @@ export default defineComponent({
         { label: capitalize(DatacubeViewMode.Data), value: DatacubeViewMode.Data }
       ];
       // indicators should not have the 'Media' tab
-      if (isIndicatorDatacube.value) {
+      if (isIndicator(metadata.value)) {
         headerGroupButtons.value = headerGroupButtonsSimple;
       }
       // models with no pre-generated data should not have the 'Media' tab
@@ -1909,7 +1905,7 @@ export default defineComponent({
     });
 
     watchEffect(() => {
-      if (isIndicatorDatacube.value) {
+      if (isIndicator(metadata.value)) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
       }
     });
@@ -2010,7 +2006,7 @@ export default defineComponent({
       headerGroupButtons,
       isContinuousScale,
       isDivergingScale,
-      isModelMetadata,
+      isModel,
       isRelativeDropdownOpen,
       isSplitByRegionMode,
       mapBounds,
@@ -2293,7 +2289,7 @@ export default defineComponent({
       // send the request to the server
       const metadata = this.metadata;
       try {
-        if (metadata && isModel(metadata)) {
+        if (isModel(metadata)) {
           await API.post('maas/model-runs', {
             model_id: metadata.data_id,
             model_name: metadata?.name,
