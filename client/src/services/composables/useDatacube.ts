@@ -10,9 +10,9 @@ import {
 import { ModelRun } from '@/types/ModelRun';
 import { OutputVariableSpecs } from '@/types/Outputdata';
 import { getParentSelectedRegions } from '@/utils/admin-level-util';
-import { DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
+import { DATA_LAYER } from '@/utils/map-util-new';
 import _ from 'lodash';
-import { computed, ref, Ref, watch } from 'vue';
+import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 import useDatacubeFeatures from './useDatacubeFeatures';
 import useDatacubeDimensions from './useDatacubeDimensions';
@@ -27,6 +27,8 @@ import useRegionalData from './useRegionalData';
 import useScenarioData from './useScenarioData';
 import useSelectedTimeseriesPoints from './useSelectedTimeseriesPoints';
 import useTimeseriesData from './useTimeseriesData';
+import useAnalysisMapStats from './useAnalysisMapStats';
+import useDatacubeColorScheme from './useDatacubeColorScheme';
 
 // FIXME: in datacube-card, itemId is taken from the route, others all take it as a prop
 export default function useDatacube(
@@ -47,6 +49,7 @@ export default function useDatacube(
   const initialSelectedOutputVariables = ref<string[]>([]);
   const initialSelectedGlobalTimestamp = ref<number | null>(null);
   const initialActiveFeatures = ref<OutputVariableSpecs[]>([]);
+  const initialActiveReferenceOptions = ref<string[]>([]);
 
   const { activeFeature, activeFeatureName, currentOutputIndex } =
     useActiveDatacubeFeature(metadata, itemId);
@@ -166,8 +169,6 @@ export default function useDatacube(
     selectedTimestamp.value = newValue;
   };
 
-  const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
-
   const selectedDataLayer = ref(DATA_LAYER.ADMIN);
   const isRawDataLayerSelected = computed(
     () => selectedDataLayer.value === DATA_LAYER.RAW
@@ -223,6 +224,15 @@ export default function useDatacube(
   //  dependency chain where useRegionalData and useTimeseriesData require
   //  activeReferenceOptions, and useReferenceSeries depends on them.
   const activeReferenceOptions = ref([] as string[]);
+  watchEffect(() => {
+    if (
+      initialActiveReferenceOptions.value &&
+      initialActiveReferenceOptions.value.length > 0
+    ) {
+      activeReferenceOptions.value = initialActiveReferenceOptions.value;
+    }
+  });
+
   const {
     timeseriesData,
     visibleTimeseriesData,
@@ -330,6 +340,44 @@ export default function useDatacube(
     selectedRegionIdsAtAllLevels
   );
 
+  const {
+    selectedDataLayerTransparency,
+    setDataLayerTransparency,
+    colorSchemeReversed,
+    setColorSchemeReversed,
+    selectedColorSchemeName,
+    setColorSchemeName,
+    selectedColorScaleType,
+    setColorScaleType,
+    numberOfColorBins,
+    setNumberOfColorBins,
+    finalColorScheme,
+    isContinuousScale,
+    isDivergingScale,
+    mapColorOptions
+  } = useDatacubeColorScheme();
+
+  const {
+    updateMapCurSyncedZoom,
+    recalculateGridMapDiffStats,
+    adminLayerStats,
+    gridLayerStats,
+    pointsLayerStats,
+    mapLegendData
+  } = useAnalysisMapStats(
+    outputSpecs,
+    regionalData,
+    relativeTo,
+    selectedDataLayer,
+    selectedAdminLevel,
+    selectedRegionIdsAtAllLevels,
+    showPercentChange,
+    mapColorOptions,
+    activeReferenceOptions,
+    breakdownOption,
+    rawDataPointsList
+  );
+
   return {
     currentOutputIndex,
     dimensions,
@@ -361,7 +409,9 @@ export default function useDatacube(
     initialSelectedGlobalTimestamp,
     initialSelectedOutputVariables,
     initialActiveFeatures,
+    initialActiveReferenceOptions,
     selectedDataLayerTransparency,
+    setDataLayerTransparency,
     selectedDataLayer,
     isRawDataLayerSelected,
     qualifierBreakdownData,
@@ -400,6 +450,24 @@ export default function useDatacube(
     regionalData,
     rawDataPointsList,
     onSyncMapBounds,
-    mapBounds
+    mapBounds,
+    colorSchemeReversed,
+    setColorSchemeReversed,
+    selectedColorSchemeName,
+    setColorSchemeName,
+    selectedColorScaleType,
+    setColorScaleType,
+    numberOfColorBins,
+    setNumberOfColorBins,
+    finalColorScheme,
+    isContinuousScale,
+    isDivergingScale,
+    mapColorOptions,
+    updateMapCurSyncedZoom,
+    recalculateGridMapDiffStats,
+    adminLayerStats,
+    gridLayerStats,
+    pointsLayerStats,
+    mapLegendData
   };
 }

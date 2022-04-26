@@ -1,9 +1,16 @@
-import { COLOR, ColorScaleType, COLOR_SCHEME, getColors, isDiscreteScale, isDivergingScheme } from '@/utils/colors-util';
+import { AnalysisMapColorOptions } from '@/types/Common';
+import { COLOR, ColorScaleType, COLOR_SCHEME, getColors, isDiscreteScale, isDivergingScheme, SCALE_FUNCTION } from '@/utils/colors-util';
+import { DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import _ from 'lodash';
 import { computed, ref } from 'vue';
 
 // FIXME: use either "color scheme" or "color scale" throughout
 export default function useDatacubeColorScheme() {
+  const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
+  const setDataLayerTransparency = (val: DATA_LAYER_TRANSPARENCY) => {
+    selectedDataLayerTransparency.value = val;
+  };
+
   // FIXME: rename to isColorSchemeReversed
   const colorSchemeReversed = ref(false);
   // FIXME: rename to setIsColorSchemeReversed
@@ -42,7 +49,21 @@ export default function useDatacubeColorScheme() {
     return isDivergingScheme(selectedColorSchemeName.value);
   });
 
+  const mapColorOptions = computed(() => {
+    const options: AnalysisMapColorOptions = {
+      scheme: finalColorScheme.value,
+      relativeToSchemes: [COLOR_SCHEME.GREYS_7, COLOR_SCHEME.PIYG_7],
+      scaleFn: SCALE_FUNCTION[selectedColorScaleType.value],
+      isContinuous: isContinuousScale.value,
+      isDiverging: isDivergingScale.value,
+      opacity: Number(selectedDataLayerTransparency.value)
+    };
+    return options;
+  });
+
   return {
+    selectedDataLayerTransparency,
+    setDataLayerTransparency,
     colorSchemeReversed,
     setColorSchemeReversed,
     selectedColorSchemeName,
@@ -53,6 +74,7 @@ export default function useDatacubeColorScheme() {
     setNumberOfColorBins,
     finalColorScheme,
     isContinuousScale,
-    isDivergingScale
+    isDivergingScale,
+    mapColorOptions
   };
 }

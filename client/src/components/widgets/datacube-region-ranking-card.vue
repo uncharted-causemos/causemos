@@ -245,7 +245,6 @@ export default defineComponent({
     const showPercentChange = ref<boolean>(true);
     const isRawDataLayerSelected = ref<boolean>(false);
 
-    const initialSelectedRegionIds = ref<string[]>([]);
     const initialActiveFeatures = ref<OutputVariableSpecs[]>([]);
     const initialNonDefaultQualifiers = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
@@ -435,8 +434,6 @@ export default defineComponent({
           const dataState = initialDataConfig.value;
           if (dataState && isDataSpaceDataState(dataState)) {
             initialNonDefaultQualifiers.value = _.clone(dataState.nonDefaultQualifiers);
-            // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
-            initialSelectedRegionIds.value = _.clone(dataState.selectedRegionIds);
 
             selectedBreakdownOutputVariables.value = new Set(_.clone(dataState.selectedOutputVariables));
 

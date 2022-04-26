@@ -597,7 +597,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, nextTick, PropType, ref, Ref, toRefs, watch, watchEffect } from 'vue';
+import { computed, defineComponent, nextTick, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 import * as d3 from 'd3';
@@ -625,7 +625,6 @@ import TemporalFacet from '@/components/facets/temporal-facet.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
 import useDatacube from '@/services/composables/useDatacube';
-import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 
 import { getInsightById } from '@/services/insight-service';
@@ -633,7 +632,7 @@ import { isDataSpaceDataState } from '@/utils/insight-util';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { adminLevelToString } from '@/utils/admin-level-util';
 
-import { AnalysisMapColorOptions, BoxPlotStats, GeoRegionDetail, ScenarioData } from '@/types/Common';
+import { BoxPlotStats, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
   DatacubeGenericAttributeVariableType,
@@ -653,10 +652,8 @@ import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { RegionalAggregations } from '@/types/Outputdata';
 
 import {
-  COLOR_SCHEME,
   colorFromIndex,
   ColorScaleType,
-  SCALE_FUNCTION,
   validateColorScaleType
 } from '@/utils/colors-util';
 import {
@@ -677,7 +674,6 @@ import {
 import {
   BASE_LAYER,
   DATA_LAYER,
-  DATA_LAYER_TRANSPARENCY,
   SOURCE_LAYERS,
   getMapSourceLayer
 } from '@/utils/map-util-new';
@@ -701,7 +697,6 @@ import { capitalize } from '@/utils/string-util';
 import { getBboxForEachRegionId } from '@/services/geo-service';
 import { getWeightQualifier } from '@/utils/qualifier-util';
 import { BreakdownData } from '@/types/Datacubes';
-import useDatacubeColorScheme from '@/services/composables/useDatacubeColorScheme';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -837,7 +832,9 @@ export default defineComponent({
       initialSelectedGlobalTimestamp,
       initialSelectedOutputVariables,
       initialActiveFeatures,
+      initialActiveReferenceOptions,
       selectedDataLayerTransparency,
+      setDataLayerTransparency,
       selectedDataLayer,
       isRawDataLayerSelected,
       qualifierBreakdownData,
@@ -875,7 +872,25 @@ export default defineComponent({
       regionalData,
       rawDataPointsList,
       onSyncMapBounds,
-      mapBounds
+      mapBounds,
+      colorSchemeReversed,
+      setColorSchemeReversed,
+      selectedColorSchemeName,
+      setColorSchemeName,
+      selectedColorScaleType,
+      setColorScaleType,
+      numberOfColorBins,
+      setNumberOfColorBins,
+      finalColorScheme,
+      isContinuousScale,
+      isDivergingScale,
+      mapColorOptions,
+      updateMapCurSyncedZoom,
+      recalculateGridMapDiffStats,
+      adminLayerStats,
+      gridLayerStats,
+      pointsLayerStats,
+      mapLegendData
     } = useDatacube(metadata, itemId, isPeriodicallyRefreshingModelRuns);
 
     const projectType = computed(() => store.getters['app/projectType']);
@@ -896,20 +911,6 @@ export default defineComponent({
     const mapReady = ref<boolean>(false);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const datacubeItemId = route.query.item_id as any;
-
-    const {
-      colorSchemeReversed,
-      setColorSchemeReversed,
-      selectedColorSchemeName,
-      setColorSchemeName,
-      selectedColorScaleType,
-      setColorScaleType,
-      numberOfColorBins,
-      setNumberOfColorBins,
-      finalColorScheme,
-      isContinuousScale,
-      isDivergingScale
-    } = useDatacubeColorScheme();
 
     const showTagNameModal = ref<boolean>(false);
     const showRunNameModal = ref<boolean>(false);
@@ -981,10 +982,6 @@ export default defineComponent({
       return { min, max, sum, mean, q25, q50, q75 } as BoxPlotStats;
     });
 
-    // apply initial data config for this datacube
-    const initialSelectedRegionIds = ref<string[]>([]);
-    const initialActiveReferenceOptions = ref<string[]>([]);
-
     const addNewTag = (tagName: string) => {
       let numAdded = 0;
       selectedScenarios.value.forEach(s => {
@@ -1002,27 +999,26 @@ export default defineComponent({
       addModelRunsTag(selectedScenarios.value.map(run => run.id), tagName);
     };
 
-    const runTags = ref<RunsTag[]>([]);
-
-    watchEffect(() => {
-      if (filteredRunData.value && filteredRunData.value.length > 0) {
-        const tags: RunsTag[] = [];
-        filteredRunData.value.forEach(run => {
-          run.tags.forEach(tag => {
-            const existingTagIndx = tags.findIndex(t => t.label === tag);
-            if (existingTagIndx >= 0) {
-              tags[existingTagIndx].count++;
-            } else {
-              tags.push({
-                label: tag,
-                count: 1,
-                selected: false
-              });
-            }
-          });
-        });
-        runTags.value = tags;
+    const runTags = computed<RunsTag[]>(() => {
+      const tags: RunsTag[] = [];
+      if (filteredRunData.value.length === 0) {
+        return tags;
       }
+      filteredRunData.value.forEach(run => {
+        run.tags.forEach(tag => {
+          const existingTagIndx = tags.findIndex(t => t.label === tag);
+          if (existingTagIndx >= 0) {
+            tags[existingTagIndx].count++;
+          } else {
+            tags.push({
+              label: tag,
+              count: 1,
+              selected: false
+            });
+          }
+        });
+      });
+      return tags;
     });
 
     const renameRun = async (newName: string) => {
@@ -1039,10 +1035,6 @@ export default defineComponent({
 
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
-    };
-
-    const setDataLayerTransparency = (val: DATA_LAYER_TRANSPARENCY) => {
-      selectedDataLayerTransparency.value = val;
     };
 
     const setDataLayer = (val: DATA_LAYER) => {
@@ -1149,6 +1141,13 @@ export default defineComponent({
       }
     };
 
+    // FIXME: This should be split up
+    //  - setSelectedScenarioIds checks that the lists aren't equal and then
+    //    sets selectedScenarioIds
+    //  - watch([selectedScenarioIds], clearRouteParam)
+    //  - watchEffect(() => selectedScenarios.value = getFilteredScenariosFromIds(newIds, filteredRunData.value);)
+    //  ^ fun fact, this watcher already exists, it's duplicated here
+    //  - watchEffect() to switch tabs depending on selectedScenarioIds.length
     const setSelectedScenarioIds = (newIds: string[]) => {
       if (_.isEqual(selectedScenarioIds.value, newIds)) return;
 
@@ -1172,6 +1171,13 @@ export default defineComponent({
         updateTabView(DatacubeViewMode.Description);
       }
     };
+
+    watch(
+      () => filteredRunData.value,
+      () => {
+        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, filteredRunData.value);
+      }
+    );
 
     const modelRunsSearchData = ref<{[key: string]: any}>({});
     watchEffect(() => {
@@ -1228,9 +1234,6 @@ export default defineComponent({
               selectedTimestamp.value = initialDataConfig.value.selectedTimestamp;
             }
           }
-          if (initialDataConfig.value.selectedRegionIds !== undefined) {
-            initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
-          }
           if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
             const regions = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
             const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
@@ -1272,13 +1275,6 @@ export default defineComponent({
         }
       },
       { immediate: true }
-    );
-
-    watch(
-      () => filteredRunData.value,
-      () => {
-        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, filteredRunData.value);
-      }
     );
 
     const clickData = (tab: DatacubeViewMode) => {
@@ -1394,6 +1390,7 @@ export default defineComponent({
       }
     };
 
+    // FIXME: we have 3 functions to set selected scenario IDs
     const updateScenarioSelection = (e: { scenarios: Array<ScenarioData> }) => {
       const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
       if (selectedScenarios.length === 0) {
@@ -1408,25 +1405,23 @@ export default defineComponent({
       setSelectedScenarioIds(scenarioIDs);
     };
 
-    const headerGroupButtons = ref(Object.values(DatacubeViewMode)
-      .map(val => ({ label: capitalize(val), value: val }))
-    ) as Ref<{label: string; value: string}[]>;
-    watchEffect(() => {
-      const headerGroupButtonsSimple = [
-        { label: capitalize(DatacubeViewMode.Description), value: DatacubeViewMode.Description },
-        { label: capitalize(DatacubeViewMode.Data), value: DatacubeViewMode.Data }
-      ];
-      // indicators should not have the 'Media' tab
-      if (isIndicator(metadata.value)) {
-        headerGroupButtons.value = headerGroupButtonsSimple;
-      }
-      // models with no pre-generated data should not have the 'Media' tab
-      if (filteredRunData.value !== null && filteredRunData.value.length > 0) {
-        const runsWithPreGenDataAvailable = _.some(filteredRunData.value, r => r.pre_gen_output_paths && _.some(r.pre_gen_output_paths, p => p.coords === undefined));
-        if (!runsWithPreGenDataAvailable) {
-          headerGroupButtons.value = headerGroupButtonsSimple;
-        }
-      }
+    const headerGroupButtons = computed(() => {
+      const hasPreGenData = _.some(
+        filteredRunData.value,
+        run =>
+          run.pre_gen_output_paths &&
+          _.some(run.pre_gen_output_paths, p => p.coords === undefined)
+      );
+      const shouldShowMediaTab = !isIndicator(metadata.value) && hasPreGenData;
+      const tabs = shouldShowMediaTab
+        ? Object.values(DatacubeViewMode)
+        : Object.values(DatacubeViewMode).filter(
+          value => value !== DatacubeViewMode.Media
+        );
+      return tabs.map(tab => ({
+        label: capitalize(tab),
+        value: tab
+      }));
     });
 
     watch(
@@ -1436,36 +1431,41 @@ export default defineComponent({
           onTabClick(tabState.value as DatacubeViewMode);
         }
       },
-      {
-        immediate: true
-      }
+      { immediate: true }
     );
 
-    const preGenDataMap = ref<{[key: string]: PreGeneratedModelRunData[]}>({}); // map all pre-gen data for each run
-    const preGenDataIds = ref<string[]>([]); // a unique list of pre gen ids across all runs
-    const selectedPreGenDataId = ref<string>('');
+    // A map of all pre-generated data indexed by run-id
+    const preGenDataMap = computed<{[runId: string]: PreGeneratedModelRunData[]}>(() => {
+      if (filteredRunData.value.length === 0) {
+        return {};
+      }
+      return Object.assign({}, ...filteredRunData.value.map((r) => ({ [r.id]: r.pre_gen_output_paths })));
+    });
+    // A list of unique pre-generated ids across all runs
+    const preGenDataIds = computed<string[]>(() => {
+      if (Object.keys(preGenDataMap.value).length === 0) {
+        return [];
+      }
+      // note that some runs may not have valid pre-gen data (i.e., null)
+      const allPreGenData = Object.values(preGenDataMap.value)
+        .flat()
+        .filter(p => p !== null && p !== undefined);
+      // assign each pre-gen data item (within each run) an id
+      allPreGenData.forEach(pregen => {
+        pregen.id = getPreGenItemDisplayName(pregen);
+      });
+      // utilized to access the caption, as well as the id for the dropdown
+      return _.uniq(allPreGenData.map(pregen => pregen.id as string));
+    });
+
+    const selectedPreGenDataId = ref('');
+    // Reset the selected item if it no longer exists in the list
     watchEffect(() => {
-      if (filteredRunData.value !== null && filteredRunData.value.length > 0) {
-        // build a map of all pre-gen data indexed by run-id
-        preGenDataMap.value = Object.assign({}, ...filteredRunData.value.map((r) => ({ [r.id]: r.pre_gen_output_paths })));
-        if (Object.keys(preGenDataMap.value).length > 0) {
-          // note that some runs may not have valid pre-gen data (i.e., null)
-          const allPreGenData = Object.values(preGenDataMap.value).flat().filter(p => p !== null && p !== undefined);
-
-          // assign each pre-gen data item (within each run) an id
-          allPreGenData.forEach(pregen => {
-            pregen.id = getPreGenItemDisplayName(pregen);
-          });
-          // utilized to access the caption, as well as the id for the dropdown
-          preGenDataIds.value = _.uniq(allPreGenData.map(pregen => pregen.id || ''));
-
-          // reset the selected item if it no longer exists in the list
-          if (preGenDataIds.value.length > 0) {
-            if (!preGenDataIds.value.includes(selectedPreGenDataId.value)) {
-              selectedPreGenDataId.value = preGenDataIds.value[0];
-            }
-          }
-        }
+      if (
+        preGenDataIds.value.length > 0 &&
+        !preGenDataIds.value.includes(selectedPreGenDataId.value)
+      ) {
+        selectedPreGenDataId.value = preGenDataIds.value[0];
       }
     });
 
@@ -1649,8 +1649,6 @@ export default defineComponent({
 
         if (dataState && isDataSpaceDataState(dataState)) {
           initialNonDefaultQualifiers.value = _.clone(dataState.nonDefaultQualifiers);
-          // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
-          initialSelectedRegionIds.value = _.clone(dataState.selectedRegionIds);
 
           const regions = fromStateSelectedRegionsAtAllLevels(dataState.selectedRegionIdsAtAllLevels);
           const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
@@ -1748,12 +1746,6 @@ export default defineComponent({
       return breakdownData;
     });
 
-    watchEffect(() => {
-      if (initialActiveReferenceOptions.value && initialActiveReferenceOptions.value.length > 0) {
-        activeReferenceOptions.value = initialActiveReferenceOptions.value;
-      }
-    });
-
     const popupFormatter = (feature: any) => {
       const { label, value, normalizedValue } = feature.state || {};
       if (!label) return null;
@@ -1843,40 +1835,6 @@ export default defineComponent({
       }
       return activeFeatureUnit ?? '';
     });
-
-    const mapColorOptions = computed(() => {
-      const options: AnalysisMapColorOptions = {
-        scheme: finalColorScheme.value,
-        relativeToSchemes: [COLOR_SCHEME.GREYS_7, COLOR_SCHEME.PIYG_7],
-        scaleFn: SCALE_FUNCTION[selectedColorScaleType.value],
-        isContinuous: isContinuousScale.value,
-        isDiverging: isDivergingScale.value,
-        opacity: Number(selectedDataLayerTransparency.value)
-      };
-      return options;
-    });
-
-    // FIXME: mapColorOptions would need to be moved, which has a much longer chain of dependencies. Come back to this.
-    const {
-      updateMapCurSyncedZoom,
-      recalculateGridMapDiffStats,
-      adminLayerStats,
-      gridLayerStats,
-      pointsLayerStats,
-      mapLegendData
-    } = useAnalysisMapStats(
-      outputSpecs,
-      regionalData,
-      relativeTo,
-      selectedDataLayer,
-      selectedAdminLevel,
-      selectedRegionIdsAtAllLevels,
-      showPercentChange,
-      mapColorOptions,
-      activeReferenceOptions,
-      breakdownOption,
-      rawDataPointsList
-    );
 
     const mapSelectedLayerId = computed(() => {
       return getMapSourceLayer(selectedDataLayer.value, selectedAdminLevel.value).layerId;
