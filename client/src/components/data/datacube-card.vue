@@ -822,8 +822,11 @@ export default defineComponent({
       setBreakdownOption,
       selectedScenarios,
       selectedSpatialAggregation,
+      setSpatialAggregationSelection,
       selectedTemporalAggregation,
+      setTemporalAggregationSelection,
       selectedTemporalResolution,
+      setTemporalResolutionSelection,
       selectedTimestamp,
       setSelectedTimestamp,
       initialSelectedQualifierValues,
@@ -836,6 +839,7 @@ export default defineComponent({
       selectedDataLayerTransparency,
       setDataLayerTransparency,
       selectedDataLayer,
+      setDataLayer,
       isRawDataLayerSelected,
       qualifierBreakdownData,
       toggleIsQualifierSelected,
@@ -844,6 +848,7 @@ export default defineComponent({
       nonDefaultQualifiers,
       qualifierFetchInfo,
       selectedTransform,
+      setTransformSelection,
       showPercentChange,
       activeReferenceOptions,
       toggleReferenceOptions,
@@ -909,7 +914,12 @@ export default defineComponent({
     const showNewRunsModal = ref<boolean>(false);
     const showModelRunsExecutionStatus = ref<boolean>(false);
     const mapReady = ref<boolean>(false);
+
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+    const setBaseLayer = (val: BASE_LAYER) => {
+      selectedBaseLayer.value = val;
+    };
+
     const datacubeItemId = route.query.item_id as any;
 
     const showTagNameModal = ref<boolean>(false);
@@ -1031,30 +1041,6 @@ export default defineComponent({
       run.name = newName;
       showRunNameModal.value = false;
       await updateModelRun({ id: run.id, name: newName });
-    };
-
-    const setBaseLayer = (val: BASE_LAYER) => {
-      selectedBaseLayer.value = val;
-    };
-
-    const setDataLayer = (val: DATA_LAYER) => {
-      selectedDataLayer.value = val;
-    };
-
-    const setSpatialAggregationSelection = (aggOption: AggregationOption) => {
-      selectedSpatialAggregation.value = aggOption;
-    };
-
-    const setTemporalAggregationSelection = (aggOption: AggregationOption) => {
-      selectedTemporalAggregation.value = aggOption;
-    };
-
-    const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
-      selectedTemporalResolution.value = temporalRes;
-    };
-
-    const setTransformSelection = (transform: DataTransform) => {
-      selectedTransform.value = transform;
     };
 
     const updateTabView = (val: DatacubeViewMode) => {

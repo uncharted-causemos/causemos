@@ -57,13 +57,30 @@ export default function useDatacube(
   const selectedSpatialAggregation = ref<AggregationOption>(
     AggregationOption.Mean
   );
+  const setSpatialAggregationSelection = (aggOption: AggregationOption) => {
+    selectedSpatialAggregation.value = aggOption;
+  };
+
   const selectedTemporalAggregation = ref<AggregationOption>(
     AggregationOption.Mean
   );
+  const setTemporalAggregationSelection = (aggOption: AggregationOption) => {
+    selectedTemporalAggregation.value = aggOption;
+  };
+
   const selectedTemporalResolution = ref<TemporalResolutionOption>(
     TemporalResolutionOption.Month
   );
+  const setTemporalResolutionSelection = (
+    temporalRes: TemporalResolutionOption
+  ) => {
+    selectedTemporalResolution.value = temporalRes;
+  };
+
   const selectedTransform = ref<DataTransform>(DataTransform.None);
+  const setTransformSelection = (transform: DataTransform) => {
+    selectedTransform.value = transform;
+  };
 
   // Whenever the selected variable changes, set the aggregations, resolution,
   //  and transform that were previously stored in the activeFeatures list.
@@ -170,6 +187,9 @@ export default function useDatacube(
   };
 
   const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+  const setDataLayer = (val: DATA_LAYER) => {
+    selectedDataLayer.value = val;
+  };
   const isRawDataLayerSelected = computed(
     () => selectedDataLayer.value === DATA_LAYER.RAW
   );
@@ -399,8 +419,11 @@ export default function useDatacube(
     setBreakdownOption,
     selectedScenarios,
     selectedSpatialAggregation,
+    setSpatialAggregationSelection,
     selectedTemporalAggregation,
+    setTemporalAggregationSelection,
     selectedTemporalResolution,
+    setTemporalResolutionSelection,
     selectedTimestamp,
     setSelectedTimestamp,
     initialSelectedQualifierValues,
@@ -413,6 +436,7 @@ export default function useDatacube(
     selectedDataLayerTransparency,
     setDataLayerTransparency,
     selectedDataLayer,
+    setDataLayer,
     isRawDataLayerSelected,
     qualifierBreakdownData,
     toggleIsQualifierSelected,
@@ -421,6 +445,7 @@ export default function useDatacube(
     nonDefaultQualifiers,
     qualifierFetchInfo,
     selectedTransform,
+    setTransformSelection,
     showPercentChange,
     activeReferenceOptions,
     availableReferenceOptions,
