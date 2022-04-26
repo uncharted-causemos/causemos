@@ -653,13 +653,9 @@ import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { RegionalAggregations } from '@/types/Outputdata';
 
 import {
-  COLOR,
   COLOR_SCHEME,
   colorFromIndex,
   ColorScaleType,
-  getColors,
-  isDiscreteScale,
-  isDivergingScheme,
   SCALE_FUNCTION,
   validateColorScaleType
 } from '@/utils/colors-util';
@@ -705,6 +701,7 @@ import { capitalize } from '@/utils/string-util';
 import { getBboxForEachRegionId } from '@/services/geo-service';
 import { getWeightQualifier } from '@/utils/qualifier-util';
 import { BreakdownData } from '@/types/Datacubes';
+import useDatacubeColorScheme from '@/services/composables/useDatacubeColorScheme';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -902,13 +899,19 @@ export default defineComponent({
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const datacubeItemId = route.query.item_id as any;
 
-    //
-    // color scheme options
-    //
-    const colorSchemeReversed = ref(false);
-    const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
-    const selectedColorScaleType = ref(ColorScaleType.LinearDiscrete);
-    const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
+    const {
+      colorSchemeReversed,
+      setColorSchemeReversed,
+      selectedColorSchemeName,
+      setColorSchemeName,
+      selectedColorScaleType,
+      setColorScaleType,
+      numberOfColorBins,
+      setNumberOfColorBins,
+      finalColorScheme,
+      isContinuousScale,
+      isDivergingScale
+    } = useDatacubeColorScheme();
 
     const showTagNameModal = ref<boolean>(false);
     const showRunNameModal = ref<boolean>(false);
@@ -1062,39 +1065,9 @@ export default defineComponent({
       selectedTemporalResolution.value = temporalRes;
     };
 
-    const setColorSchemeReversed = (reversed: boolean) => {
-      colorSchemeReversed.value = reversed;
-    };
-
-    const setColorSchemeName = (schemeName: COLOR) => {
-      selectedColorSchemeName.value = schemeName;
-    };
-
-    const setColorScaleType = (scaleType: ColorScaleType) => {
-      selectedColorScaleType.value = scaleType;
-    };
-
-    const setNumberOfColorBins = (numBins: number) => {
-      numberOfColorBins.value = numBins;
-    };
-
     const setTransformSelection = (transform: DataTransform) => {
       selectedTransform.value = transform;
     };
-
-    // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
-    const finalColorScheme = computed(() => {
-      const scheme = isDiscreteScale(selectedColorScaleType.value)
-        ? getColors(selectedColorSchemeName.value, numberOfColorBins.value)
-        : _.clone(COLOR_SCHEME[selectedColorSchemeName.value]);
-      return colorSchemeReversed.value ? scheme.reverse() : scheme;
-    });
-    const isContinuousScale = computed(() => {
-      return !isDiscreteScale(selectedColorScaleType.value);
-    });
-    const isDivergingScale = computed(() => {
-      return isDivergingScheme(selectedColorSchemeName.value);
-    });
 
     const updateTabView = (val: DatacubeViewMode) => {
       currentTabView.value = val;
