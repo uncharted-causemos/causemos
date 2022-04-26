@@ -134,7 +134,7 @@ function renderHoverTooltips(
 
     const maxNameLen = 80; // max number of chars before truncating the text of each bar name
     const barName = bar.label.length > maxNameLen ? bar.label.substring(0, maxNameLen) + '...' : bar.label;
-    const adaptiveWidth = Math.max(MIN_TOOLTIP_WIDTH, 8 * barName.length);
+    const adaptiveWidth = Math.max(MIN_TOOLTIP_WIDTH, TOOLTIP_FONT_SIZE * barName.length);
 
 
     const markerAndTooltip = selection
