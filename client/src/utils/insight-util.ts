@@ -7,7 +7,7 @@ import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
-import { AnalyticalQuestion, Insight, FullInsight, InsightMetadata, QualitativeDataState, DataState, ModelsSpaceDataState, ComparativeAnalysisDataState, DataSpaceDataState } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, FullInsight, InsightMetadata, QualitativeDataState, DataState, ModelsSpaceDataState, ComparativeAnalysisDataState, DataSpaceDataState, ReviewPosition, SectionWithInsights } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
 import { saveAs } from 'file-saver';
@@ -233,73 +233,37 @@ function parseReportFromQuestionsAndInsights(
   return report;
 }
 
-// Note that sectionsAndInsights should be valid for review.
-// - Only includes sections that have no linked insights
-// - Only includes insights associated with one or more sections
-// - Insights appear once for each section they're linked to
-//  - Insights are sorted by section
-function getIndexInSectionsAndInsights(
-  sectionsAndInsights: (Insight | AnalyticalQuestion)[],
-  section: AnalyticalQuestion | null,
-  insightId: string | null,
-  sortedSections: AnalyticalQuestion[]
-) {
-  if (section === null) {
-    return 0;
+function createEmptyChecklistSection(): AnalyticalQuestion {
+  return {
+    id: '',
+    question: '',
+    linked_insights: [],
+    view_state: {},
+    target_view: [],
+    visibility: '',
+    url: ''
+  };
+}
+
+function getSlideFromPosition(
+  sections: SectionWithInsights[],
+  position: ReviewPosition | null
+): FullInsight | AnalyticalQuestion | null {
+  if (position === null) {
+    return null;
   }
-  const indexOfSection = sectionsAndInsights.findIndex(
-    item => item.id === section.id
+  const section = sections.find(
+    section => section.section.id === position.sectionId
   );
-  if (indexOfSection >= 0) {
-    return indexOfSection;
+  if (section === undefined) {
+    return null;
   }
-  if (section.linked_insights.length === 0) {
-    // This section has no linked insights so it should have its own entry in
-    //  the list of items. If we reach this branch the list is malformed.
-    console.error(
-      'section with no linked insights was not found in list.',
-      section,
-      sectionsAndInsights
-    );
-    return 0;
+  if (position.insightId === null) {
+    return section.section;
   }
-  // If we reach this point it means the section has no dedicated entry in the
-  //  list and we need to search for the occurrence of the insight with ID
-  //  `insightId` within this section. If insightId isn't specified, use the
-  //  first insight in the section.
-  const idOfTargetInsight = insightId ?? section.linked_insights[0];
-  // Loop through the sorted list of sections to find how many sections
-  //  before the selected section also contain the insight we're looking for.
-  let sectionsToSkip = 0;
-  let index = 0;
-  while (
-    index < sortedSections.length &&
-    // Stop when we reach the section of interest
-    sortedSections[index].id !== section.id
-  ) {
-    if (sortedSections[index].linked_insights.includes(idOfTargetInsight)) {
-      sectionsToSkip++;
-    }
-    index++;
-  }
-  // Now we can loop through the original list of sections and insights,
-  //  skipping `sectionsToSkip` occurrences of `firstInsightId` and then
-  //  returning the index of the next occurrence.
-  for (let index = 0; index < sectionsAndInsights.length; index++) {
-    if (sectionsAndInsights[index].id === idOfTargetInsight) {
-      if (sectionsToSkip === 0) {
-        return index;
-      } else {
-        sectionsToSkip--;
-      }
-    }
-  }
-  // We should never reach this point.
-  console.error(
-    'Unable to find enough occurrences of insight with ID',
-    idOfTargetInsight
-  );
-  return 0;
+  return section.insights.find(
+    insight => insight.id === position.insightId
+  ) ?? null;
 }
 
 function instanceOfFullInsight(data: any): data is FullInsight {
@@ -725,8 +689,8 @@ export default {
   instanceOfFullInsight,
   instanceOfQuestion,
   parseMetadataDetails,
-  parseReportFromQuestionsAndInsights,
-  getIndexInSectionsAndInsights,
+  createEmptyChecklistSection,
+  getSlideFromPosition,
   getFormattedFilterString,
   getSourceUrlForExport,
   removeInsight,

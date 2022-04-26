@@ -37,17 +37,17 @@
           <i class="fa fa-plus-circle" />
           Add new section
       </button>
-      <div v-if="sortedQuestions.length > 0" class="analytical-questions-container">
+      <div v-if="insightsBySection.length > 0" class="analytical-questions-container">
         <div
-          v-for="questionItem in sortedQuestions"
-          :key="questionItem.id"
+          v-for="sectionWithInsights in insightsBySection"
+          :key="sectionWithInsights.section.id"
           class="checklist-item"
-          @drop='onDrop($event, questionItem)'
+          @drop='onDrop($event, sectionWithInsights.section)'
           @dragover='onDragOver($event)'
           @dragenter='onDragEnter($event)'
           @dragleave='onDragLeave($event)'
           draggable='true'
-          @dragstart='onDragStart($event, questionItem)'
+          @dragstart='onDragStart($event, sectionWithInsights.section)'
         >
           <!-- first row display the question -->
           <div class="checklist-item-question">
@@ -55,15 +55,15 @@
             <span
               class="question-title"
               :class="{ clickable: canClickChecklistItems }"
-              @click="$emit('item-click', questionItem, 0)"
-            > {{ questionItem.question }}</span>
+              @click="$emit('item-click', sectionWithInsights.section, null)"
+            > {{ sectionWithInsights.section.question }}</span>
             <i
-              v-if="hasTour(questionItem)"
+              v-if="hasTour(sectionWithInsights.section)"
               v-tooltip.top="'Tutorial available for this question'"
               class="fa fa-lg fa-info-circle"
               :style="{ color: canStartTour ? '#000000' : '#707070' }"
               :disabled="!canStartTour"
-              @click.stop.prevent="startTour(questionItem)"
+              @click.stop.prevent="startTour(sectionWithInsights.section)"
               @mousedown.stop.prevent
             />
             <options-button
@@ -72,13 +72,13 @@
               class="options-button"
             >
               <template #content>
-                <div class="dropdown-option" @click="editSection(questionItem)">
+                <div class="dropdown-option" @click="editSection(sectionWithInsights.section)">
                   <i class="fa fa-edit" />
                   Edit
                 </div>
                 <div
                   class="dropdown-option"
-                  @click="initiateQuestionDeletion(questionItem)"
+                  @click="initiateQuestionDeletion(sectionWithInsights.section)"
                 >
                   <i class="fa fa-trash" />
                   Delete
@@ -88,13 +88,13 @@
           </div>
           <!-- second row display a list of linked insights -->
           <message-display
-            v-if="(insightsByQuestion.get(questionItem.id)?.length ?? 0) === 0"
+            v-if="(sectionWithInsights.insights.length ?? 0) === 0"
             class="no-insight-warning"
             :message-type="'alert-warning'"
             :message="'No insights assigned to this section.'"
           />
           <div
-            v-for="insight in insightsByQuestion.get(questionItem.id)"
+            v-for="insight in sectionWithInsights.insights"
             :key="insight.id"
             class="checklist-item-insight">
             <i @mousedown.stop.prevent class="fa fa-star" />
@@ -105,12 +105,12 @@
                 'private-insight-name': insight.visibility === 'private',
                 'clickable': canClickChecklistItems
               }"
-              @click="$emit('item-click', questionItem, insight.id)">
+              @click="$emit('item-click', sectionWithInsights.section, insight.id)">
               {{ insight.name }}
             </span>
             <i class="fa fa-fw fa-close"
               style="pointer-events: all; cursor: pointer; margin-left: auto;"
-              @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
+              @click="removeRelationBetweenInsightAndQuestion($event, sectionWithInsights.section, insight.id as string)" />
           </div>
         </div>
       </div>
@@ -128,19 +128,16 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from 'vue';
+import { defineComponent, PropType } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 import Shepherd from 'shepherd.js';
 
 import useInsightsData from '@/services/composables/useInsightsData';
-import useQuestionsData from '@/services/composables/useQuestionsData';
 import { updateInsight } from '@/services/insight-service';
-import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
 import { ProjectType } from '@/types/Enums';
-import { AnalyticalQuestion, Insight, ViewState } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, SectionWithInsights } from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
-import { SORT_PATH, sortQuestionsByPath } from '@/utils/questions-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
@@ -165,11 +162,16 @@ export default defineComponent({
     canClickChecklistItems: {
       type: Boolean,
       default: false
+    },
+    insightsBySection: {
+      type: Array as PropType<SectionWithInsights[]>,
+      default: []
     }
   },
   setup() {
     const toaster = useToaster();
-    const { questionsList, reFetchQuestions } = useQuestionsData();
+    // FIXME: hoist insights to parent component so that we're not fetching and
+    //  managing two copies
     const { insights, reFetchInsights } = useInsightsData(undefined,
       ['id', 'name', 'visibility', 'analytical_question']);
 
@@ -177,22 +179,21 @@ export default defineComponent({
       return insights.value.find(insight => insight.id === insightId) as PartialInsight;
     };
 
-    const insightsByQuestion = computed<Map<string, PartialInsight[]>>(() => {
-      return new Map<string, PartialInsight[]>(questionsList.value.map(question => [
-        question.id,
-        insights.value.filter(insight => question.linked_insights.includes(insight.id as string))
-      ] as [string, PartialInsight[]]));
-    });
-
     return {
-      questionsList,
-      insightsByQuestion,
-      reFetchQuestions,
       reFetchInsights,
       getInsightById,
       toaster
     };
   },
+  emits: [
+    'item-click',
+    'update-section-title',
+    'add-section',
+    'delete-section',
+    'move-section-above-section',
+    'add-insight-to-section',
+    'remove-insight-from-section'
+  ],
   data: () => ({
     AnalyticalQuestionsTabs: [
       { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' }
@@ -216,7 +217,6 @@ export default defineComponent({
   }),
   computed: {
     ...mapGetters({
-      viewState: 'insightPanel/viewState',
       currentView: 'app/currentView',
       projectType: 'app/projectType',
       project: 'app/project',
@@ -224,18 +224,6 @@ export default defineComponent({
       isReadyForNextStep: 'tour/isReadyForNextStep',
       isPanelOpen: 'insightPanel/isPanelOpen'
     }),
-    sortedQuestions(): AnalyticalQuestion[] {
-      return sortQuestionsByPath(this.questionsList);
-    },
-    // @REVIEW: this is similar to insightTargetView
-    questionTargetView(): string[] {
-      // an insight created during model publication should be listed either
-      //  in the full list of insights,
-      //  or as a context specific insight when opening the page of the corresponding model family instance
-      //  (the latter is currently supported via a special route named dataPreview)
-      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
-      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
-    },
     canStartTour(): boolean {
       // if the tour's target-view is compatible with currentView and no modal is shown
       return !this.isPanelOpen &&
@@ -247,7 +235,6 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setQuestions: 'analysisChecklist/setQuestions',
       showSidePanel: 'panel/showSidePanel',
       setTour: 'tour/setTour'
     }),
@@ -267,63 +254,39 @@ export default defineComponent({
         console.error('No question is selected.');
         return;
       }
-      const updatedSection = {
-        ...this.selectedQuestion,
-        question: newSectionTitle
+      const handleFailedUpdate = () => {
+        this.toaster(QUESTIONS.ERRONEOUS_UPDATE, 'error', true);
       };
+      this.$emit(
+        'update-section-title',
+        // Assert that ID is defined, since we should never be able to fetch a
+        //  question before it's stored with an ID
+        this.selectedQuestion.id as string,
+        newSectionTitle,
+        handleFailedUpdate
+      );
       this.selectedQuestion = null;
       this.isEditModalOpen = false;
-      // Assert that ID is defined, since we should never be able to fetch a
-      //  question before it's stored with an ID
-      updateQuestion(updatedSection.id as string, updatedSection).then(
-        result => {
-          if (result.status === 200) {
-            // refresh the latest list from the server
-            this.reFetchQuestions();
-          } else {
-            this.toaster(QUESTIONS.ERRONEOUS_UPDATE, 'error', true);
-          }
-        }
-      );
     },
-    updateLocalQuestionsList(newQuestionsList: AnalyticalQuestion[]) {
-      this.questionsList = newQuestionsList;
-      this.setQuestions(this.sortedQuestions); // computed ref of this.questionsList
-    },
+    // TODO: clarify these function names
     addNewQuestion() {
       this.newQuestionText = '';
       this.showNewAnalyticalQuestion = true;
     },
     onNewAnalyticalQuestion() {
       this.showNewAnalyticalQuestion = false;
-
-      const url = this.$route.fullPath;
-      const viewState: ViewState = _.cloneDeep(this.viewState);
-      const newQuestionOrderIndx = _.get(_.maxBy(this.sortedQuestions, SORT_PATH), SORT_PATH);
-      viewState.analyticalQuestionOrder = newQuestionOrderIndx !== undefined ? (newQuestionOrderIndx + 1) : this.sortedQuestions.length;
-      const newQuestion: AnalyticalQuestion = {
-        question: this.newQuestionText,
-        description: '',
-        visibility: 'private', // this.questionVisibility(),
-        project_id: this.project,
-        context_id: this.contextId,
-        url,
-        target_view: this.questionTargetView,
-        pre_actions: null,
-        post_actions: null,
-        linked_insights: [],
-        view_state: viewState
+      const handleSuccessfulAddition = () => {
+        this.toaster(QUESTIONS.SUCCESSFUL_ADDITION, 'success', false);
       };
-      addQuestion(newQuestion).then((result) => {
-        const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_ADDITION : QUESTIONS.ERRONEOUS_ADDITION;
-        if (message === QUESTIONS.SUCCESSFUL_ADDITION) {
-          this.toaster(message, 'success', false);
-          // refresh the latest list from the server
-          this.reFetchQuestions();
-        } else {
-          this.toaster(message, 'error', true);
-        }
-      });
+      const handleFailedAddition = () => {
+        this.toaster(QUESTIONS.ERRONEOUS_ADDITION, 'error', true);
+      };
+      this.$emit(
+        'add-section',
+        this.newQuestionText,
+        handleSuccessfulAddition,
+        handleFailedAddition
+      );
     },
     initiateQuestionDeletion(question: AnalyticalQuestion) {
       this.selectedQuestion = question;
@@ -337,18 +300,18 @@ export default defineComponent({
           this.removeQuestionFromInsight(this.selectedQuestion as AnalyticalQuestion, insightId);
         });
 
-        // Remove question from the local list of questions
-        const updatedList = this.questionsList.filter(q => q.question !== this.selectedQuestion?.question);
-        this.updateLocalQuestionsList(updatedList);
-
-        deleteQuestion(this.selectedQuestion.id as string).then(result => {
-          const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_REMOVAL : QUESTIONS.ERRONEOUS_REMOVAL;
-          if (message === QUESTIONS.SUCCESSFUL_REMOVAL) {
-            this.toaster(message, 'success', false);
-          } else {
-            this.toaster(message, 'error', true);
-          }
-        });
+        const handleSuccessfulDeletion = () => {
+          this.toaster(QUESTIONS.SUCCESSFUL_REMOVAL, 'success', false);
+        };
+        const handleFailedDeletion = () => {
+          this.toaster(QUESTIONS.ERRONEOUS_REMOVAL, 'error', true);
+        };
+        this.$emit(
+          'delete-section',
+          this.selectedQuestion.id as string,
+          handleSuccessfulDeletion,
+          handleFailedDeletion
+        );
       }
       this.selectedQuestion = null;
     },
@@ -371,33 +334,11 @@ export default defineComponent({
 
       if (droppedQuestionId !== '') {
         // Move dropped question above questionItem
-        const questions = _.cloneDeep(this.sortedQuestions);
-        const droppedQuestion = questions.find(q => q.id === droppedQuestionId);
-        const targetQuestionIndex = questions.findIndex(q => q.id === targetQuestion.id);
-        if (droppedQuestion === undefined || targetQuestionIndex === -1) {
-          return;
-        }
-        let newPosition = 0;
-        const targetQuestionOrderNumber = targetQuestion.view_state
-          .analyticalQuestionOrder as number;
-        if (targetQuestionIndex === 0) {
-          // Dropped onto the question that's currently first in the list
-          newPosition = targetQuestionOrderNumber - 1;
-        } else {
-          // Dropping between two questions
-          const questionAbove = questions[targetQuestionIndex - 1];
-          const questionAboveOrderNumber = questionAbove.view_state
-            .analyticalQuestionOrder as number;
-          // New position is halfway between their order numbers
-          newPosition = questionAboveOrderNumber + (targetQuestionOrderNumber - questionAboveOrderNumber) / 2;
-        }
-
-        // Update local copy and store
-        droppedQuestion.view_state.analyticalQuestionOrder = newPosition;
-        this.updateLocalQuestionsList(questions);
-
-        // Update question on the backend for persistent ordering
-        await updateQuestion(droppedQuestion.id as string, droppedQuestion);
+        this.$emit(
+          'move-section-above-section',
+          droppedQuestionId,
+          targetQuestion.id
+        );
       }
 
       // implied else
@@ -405,17 +346,11 @@ export default defineComponent({
         // fetch the dropped insight and use its name in this question's insights
         const insight = this.getInsightById(droppedInsightId);
         if (insight) {
-          const existingIndex = targetQuestion.linked_insights.findIndex(id => id === droppedInsightId);
-          if (existingIndex < 0) {
-            // only add any dropped insight once to each question
-            targetQuestion.linked_insights.push(droppedInsightId);
-
-            // update question on the backend
-            updateQuestion(targetQuestion.id as string, targetQuestion);
-
-            // update the store to facilitate questions consumption in other UI places
-            this.updateLocalQuestionsList(this.sortedQuestions);
-          }
+          this.$emit(
+            'add-insight-to-section',
+            droppedInsightId,
+            targetQuestion.id
+          );
           // add the following question (text) to the insight
           if (!(insight.analytical_question.findIndex(qid => qid === targetQuestion.id) >= 0)) {
             insight.analytical_question.push(targetQuestion.id as string);
@@ -451,25 +386,10 @@ export default defineComponent({
       evt.preventDefault();
       evt.stopPropagation();
 
-      //
       // question
-      //
+      this.$emit('remove-insight-from-section', insightId, questionItem.id);
 
-      // filter linked insights of this question
-      questionItem.linked_insights = questionItem.linked_insights.filter(
-        linId => linId !== insightId
-      );
-
-      // update question on the backend
-      updateQuestion(questionItem.id as string, questionItem);
-
-      // update the store to facilitate questions consumption in other UI places
-      this.setQuestions(this.sortedQuestions);
-
-      //
       // insight
-      //
-
       // update an insight, first fetch the insight to grab its list of linked_questions and update it
       // also, remove this insight from the question list
       this.removeQuestionFromInsight(questionItem, insightId);

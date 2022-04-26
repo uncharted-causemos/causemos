@@ -61,6 +61,7 @@
 <script lang="ts">
 import { defineComponent, ref, Ref } from 'vue';
 import { mapGetters, mapActions } from 'vuex';
+import { cleanConceptString } from '@/utils/concept-util';
 import Modal from '@/components/modals/modal.vue';
 import projectService from '@/services/project-service';
 
@@ -153,10 +154,10 @@ export default defineComponent({
     },
     customGrounding(): { [key: string]: string } {
       return {
-        theme: this.theme.trim(),
-        theme_property: this.theme_property.trim(),
-        process: this.process.trim(),
-        process_property: this.process_property.trim()
+        theme: cleanConceptString(this.theme),
+        theme_property: cleanConceptString(this.theme_property),
+        process: cleanConceptString(this.process),
+        process_property: cleanConceptString(this.process_property)
       };
     }
   },

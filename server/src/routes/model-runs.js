@@ -8,7 +8,7 @@ const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
  * Submit a new model run to Jataware and store information about it in ES.
  */
 router.post('/', asyncHandler(async (req, res) => {
-  await respondUsingCode(req, res, maasService.submitModelRun);
+  await respondUsingCode(res, maasService.submitModelRun, [req.body]);
 }));
 
 /**
@@ -24,14 +24,14 @@ router.get('/', asyncHandler(async (req, res) => {
  * Start a model data post processing job
  */
 router.post('/:runId/post-process', asyncHandler(async (req, res) => {
-  await respondUsingCode(req, res, maasService.startModelOutputPostProcessing);
+  await respondUsingCode(res, maasService.startModelOutputPostProcessing, [req.body]);
 }));
 
 /**
  * Inform of model execution failure
  */
 router.post('/:runId/run-failed', asyncHandler(async (req, res) => {
-  await respondUsingCode(req, res, maasService.markModelRunFailed);
+  await respondUsingCode(res, maasService.markModelRunFailed, [req.body]);
 }));
 
 /**
