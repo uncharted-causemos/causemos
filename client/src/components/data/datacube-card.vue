@@ -1141,43 +1141,34 @@ export default defineComponent({
       }
     };
 
-    // FIXME: This should be split up
-    //  - setSelectedScenarioIds checks that the lists aren't equal and then
-    //    sets selectedScenarioIds
-    //  - watch([selectedScenarioIds], clearRouteParam)
-    //  - watchEffect(() => selectedScenarios.value = getFilteredScenariosFromIds(newIds, filteredRunData.value);)
-    //  ^ fun fact, this watcher already exists, it's duplicated here
-    //  - watchEffect() to switch tabs depending on selectedScenarioIds.length
+    // selectedScenarioIds
+    // FIXME: do we need this layer of abstraction / equality check?
     const setSelectedScenarioIds = (newIds: string[]) => {
       if (_.isEqual(selectedScenarioIds.value, newIds)) return;
-
       selectedScenarioIds.value = newIds;
-
-      clearRouteParam();
-
-      if (newIds.length > 0) {
-        // selecting a run or multiple runs when the desc tab is active should always open the data tab
-        //  selecting a run or multiple runs otherwise should respect the current tab
-        if (currentTabView.value === DatacubeViewMode.Description) {
-          if (canClickDataTab.value) {
-            updateTabView(DatacubeViewMode.Data);
-          }
+    };
+    watch([selectedScenarioIds], clearRouteParam);
+    watchEffect(() => {
+      selectedScenarios.value = getFilteredScenariosFromIds(
+        selectedScenarioIds.value,
+        filteredRunData.value
+      );
+    });
+    // Switch to the data tab if the analyst selects one or more runs when the
+    //  description tab is open. Switch to the description tab when the analyst
+    //  deselects all runs.
+    watchEffect(() => {
+      if (selectedScenarioIds.value.length > 0) {
+        if (
+          currentTabView.value === DatacubeViewMode.Description &&
+          canClickDataTab.value
+        ) {
+          updateTabView(DatacubeViewMode.Data);
         }
-        // once the list of selected scenario changes,
-        // extract model runs that match the selected scenario IDs
-        selectedScenarios.value = getFilteredScenariosFromIds(newIds, filteredRunData.value);
       } else {
-        selectedScenarios.value = [];
         updateTabView(DatacubeViewMode.Description);
       }
-    };
-
-    watch(
-      () => filteredRunData.value,
-      () => {
-        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, filteredRunData.value);
-      }
-    );
+    });
 
     const modelRunsSearchData = ref<{[key: string]: any}>({});
     watchEffect(() => {
