@@ -128,7 +128,8 @@ export default defineComponent({
         svg === null ||
         _projections.length === 0 ||
         parentElement === undefined ||
-        parentElement === null
+        parentElement === null ||
+        !historicalTimeseries.value
       ) {
         return;
       }
