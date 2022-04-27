@@ -324,7 +324,8 @@ export default defineComponent({
       const contextIDs = [];
 
       // fetch data space analyses
-      this.quantitativeAnalyses = (await getAnalysesByProjectId(this.project)).map(toQuantitative);
+      const rawQuantitativeAnalyses = await getAnalysesByProjectId(this.project);
+      this.quantitativeAnalyses = rawQuantitativeAnalyses.map(toQuantitative);
 
       if (this.quantitativeAnalyses.length) {
         // save context-id(s) for all data-analyses
@@ -332,7 +333,7 @@ export default defineComponent({
         // @REVIEW
         // the assumption here is that each response in the allRawResponses refers to a specific quantitativeAnalyses
         // so we could utilize that to update the stats count
-        this.quantitativeAnalyses.forEach((analysis, indx) => {
+        rawQuantitativeAnalyses.forEach((analysis, indx) => {
           const analysesState = analysis.state || {};
           if (analysesState.analysisItems !== undefined) {
             const analysisContextIDs = analysesState.analysisItems.map(dc => dc.id);
