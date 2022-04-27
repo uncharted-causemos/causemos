@@ -30,6 +30,7 @@ export default function useDatacubeFeatures(
   // FIXME: it's confusing to have selectedFeatures and activeFeatures. This is
   //  because the latter has an inaccurate name. It stores the
   //  resolution/aggregation/transform selections for each feature in `outputs`
+  // FIXME: can this be a computed property?
   // FIXME: rename to `featureConfigs`.
   // FIXME: rename OutputVariableSpecs to FeatureConfig
   const activeFeatures = ref<OutputVariableSpecs[]>([]);

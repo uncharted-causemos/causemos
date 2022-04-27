@@ -5,15 +5,14 @@ import {
   TemporalResolutionOption,
   TemporalAggregationLevel,
   SpatialAggregationLevel,
-  DataTransform
+  DataTransform,
+  DatacubeType
 } from '@/types/Enums';
-import { ModelRun } from '@/types/ModelRun';
 import { OutputVariableSpecs } from '@/types/Outputdata';
 import { getParentSelectedRegions } from '@/utils/admin-level-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
 import _ from 'lodash';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
-import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 import useDatacubeFeatures from './useDatacubeFeatures';
 import useDatacubeDimensions from './useDatacubeDimensions';
 import useDatacubeHierarchy from './useDatacubeHierarchy';
@@ -29,15 +28,16 @@ import useSelectedTimeseriesPoints from './useSelectedTimeseriesPoints';
 import useTimeseriesData from './useTimeseriesData';
 import useAnalysisMapStats from './useAnalysisMapStats';
 import useDatacubeColorScheme from './useDatacubeColorScheme';
+import { getFilteredScenariosFromIds, isIndicator } from '@/utils/datacube-util';
 
 // FIXME: in datacube-card, itemId is taken from the route, others all take it as a prop
 export default function useDatacube(
   metadata: Ref<Model | Indicator | null>,
   itemId: Ref<string>,
-  // FIXME
-  // in datacube-card we want to suppress fetching data when
-  // newRunsMode.value || metadata.value?.type !== DatacubeType.Model
-  // In all other cards we never re-fetch
+  // FIXME: this doesn't need to be passed in as a prop if we can unify the
+  //  logic to calculate activeFeature. See the FIXME in
+  //  comparative-card for more details.
+  activeFeatureName: Ref<string>,
   isRefreshingModelRunsPeriodically: Ref<boolean>
 ) {
   // Populated by initialDataConfig
@@ -51,8 +51,6 @@ export default function useDatacube(
   const initialActiveFeatures = ref<OutputVariableSpecs[]>([]);
   const initialActiveReferenceOptions = ref<string[]>([]);
 
-  const { activeFeature, activeFeatureName, currentOutputIndex } =
-    useActiveDatacubeFeature(metadata, itemId);
 
   const selectedSpatialAggregation = ref<AggregationOption>(
     AggregationOption.Mean
@@ -129,8 +127,6 @@ export default function useDatacube(
   // TODO: rename and add a type
   const searchFilters = ref<any>({});
 
-  // FIXME: in datacube-card we do this. In all other cards we just pass id in
-  //  directly
   const selectedModelId = computed(() => metadata.value?.id ?? null);
   const { allModelRunData, filteredRunData, fetchModelRuns } = useScenarioData(
     selectedModelId,
@@ -140,6 +136,18 @@ export default function useDatacube(
   );
 
   const selectedScenarioIds = ref([] as string[]);
+  watchEffect(() => {
+    if (isIndicator(metadata.value)) {
+      selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
+    }
+  });
+
+  const selectedScenarios = computed(() => {
+    return getFilteredScenariosFromIds(
+      selectedScenarioIds.value,
+      filteredRunData.value
+    );
+  });
 
   const selectedAdminLevel = ref(0);
   const setSelectedAdminLevel = (level: number) => {
@@ -175,8 +183,6 @@ export default function useDatacube(
       selectedAdminLevel.value
     )
   );
-
-  const selectedScenarios = ref([] as ModelRun[]);
 
   const selectedTimestamp = ref(null) as Ref<number | null>;
   // FIXME: Safe to remove? Confirm that vue reactivity isn't triggered if the
@@ -300,7 +306,10 @@ export default function useDatacube(
     initialSelectedGlobalTimestamp
   );
 
-  // FIXME: only used by useSelectedTimeseriesPoints
+  // In datacube-card: only used by useSelectedTimeseriesPoints
+  // In all other cards:
+  //  - Color gets overridden
+  //  - used to create regionRunsScenarios
   const timeseriesDataForSelection = computed(() =>
     breakdownOption.value === SPLIT_BY_VARIABLE
       ? globalTimeseries.value
@@ -399,7 +408,6 @@ export default function useDatacube(
   );
 
   return {
-    currentOutputIndex,
     dimensions,
     ordinalDimensionNames,
     allModelRunData,
@@ -459,7 +467,6 @@ export default function useDatacube(
     selectedYears,
     toggleIsYearSelected,
     outputs,
-    activeFeature,
     activeFeatures,
     selectedFeatures,
     selectedFeatureNames,
@@ -471,6 +478,7 @@ export default function useDatacube(
     setSelectedGlobalTimestampRange,
     timestampForSelection,
     selectedTimeseriesPoints,
+    timeseriesDataForSelection,
     outputSpecs,
     regionalData,
     rawDataPointsList,

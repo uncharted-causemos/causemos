@@ -109,7 +109,7 @@
                 :model-run-data="filteredRunData"
                 :selected-scenarios="selectedScenarioIds"
                 :model-parameter="dateModelParam"
-                @update-scenario-selection="onUpdateScenarioSelection"
+                @update-scenario-selection="setSelectedScenarioIds"
               />
             </div>
             <parallel-coordinates-chart
@@ -119,7 +119,7 @@
               :ordinal-dimensions="ordinalDimensionNames"
               :initial-data-selection="selectedScenarioIds"
               :new-runs-mode="newRunsMode"
-              @select-scenario="updateScenarioSelection"
+              @select-scenario="setSelectedScenarios"
               @generated-scenarios="updateGeneratedScenarios"
               @geo-selection="openGeoSelectionModal"
             />
@@ -636,7 +636,6 @@ import { BoxPlotStats, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
   DatacubeGenericAttributeVariableType,
-  DatacubeType,
   DataTransform,
   GeoAttributeFormat,
   ModelRunStatus,
@@ -660,7 +659,6 @@ import {
   getUnitString,
   isIndicator,
   isModel,
-  getFilteredScenariosFromIds,
   TAGS,
   DEFAULT_DATE_RANGE_DELIMETER
 } from '@/utils/datacube-util';
@@ -697,6 +695,7 @@ import { capitalize } from '@/utils/string-util';
 import { getBboxForEachRegionId } from '@/services/geo-service';
 import { getWeightQualifier } from '@/utils/qualifier-util';
 import { BreakdownData } from '@/types/Datacubes';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -803,6 +802,10 @@ export default defineComponent({
     const {
       currentOutputIndex,
       activeFeature,
+      activeFeatureName
+    } = useActiveDatacubeFeature(metadata, itemId);
+
+    const {
       dimensions,
       ordinalDimensionNames,
       allModelRunData,
@@ -896,7 +899,12 @@ export default defineComponent({
       gridLayerStats,
       pointsLayerStats,
       mapLegendData
-    } = useDatacube(metadata, itemId, isPeriodicallyRefreshingModelRuns);
+    } = useDatacube(
+      metadata,
+      itemId,
+      activeFeatureName,
+      isPeriodicallyRefreshingModelRuns
+    );
 
     const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
@@ -1133,13 +1141,11 @@ export default defineComponent({
       if (_.isEqual(selectedScenarioIds.value, newIds)) return;
       selectedScenarioIds.value = newIds;
     };
+    const setSelectedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
+      const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
+      setSelectedScenarioIds(selectedScenarios.map(s => s.run_id.toString()));
+    };
     watch([selectedScenarioIds], clearRouteParam);
-    watchEffect(() => {
-      selectedScenarios.value = getFilteredScenariosFromIds(
-        selectedScenarioIds.value,
-        filteredRunData.value
-      );
-    });
     // Switch to the data tab if the analyst selects one or more runs when the
     //  description tab is open. Switch to the description tab when the analyst
     //  deselects all runs.
@@ -1311,7 +1317,7 @@ export default defineComponent({
 
       if (newRunsMode.value) {
         // clear any selected scenario and show the model desc page
-        updateScenarioSelection({ scenarios: [] });
+        setSelectedScenarioIds([]);
       }
     };
 
@@ -1365,21 +1371,6 @@ export default defineComponent({
         // then, re-fetch data from server (wait some time to give the server a chance to update)
         _.delay(() => fetchModelRuns(), 2000);
       }
-    };
-
-    // FIXME: we have 3 functions to set selected scenario IDs
-    const updateScenarioSelection = (e: { scenarios: Array<ScenarioData> }) => {
-      const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
-      if (selectedScenarios.length === 0) {
-        setSelectedScenarioIds([]);
-      } else {
-        const selectedRunIDs = selectedScenarios.map(s => s.run_id.toString());
-        setSelectedScenarioIds(selectedRunIDs);
-      }
-    };
-
-    const onUpdateScenarioSelection = (scenarioIDs: string[]) => {
-      setSelectedScenarioIds(scenarioIDs);
     };
 
     const headerGroupButtons = computed(() => {
@@ -1840,12 +1831,6 @@ export default defineComponent({
     });
 
     watchEffect(() => {
-      if (isIndicator(metadata.value)) {
-        selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
-      }
-    });
-
-    watchEffect(() => {
       // If more than one run is selected, make sure "split by" is set to none.
       if (selectedScenarioIds.value.length > 1) {
         breakdownOption.value = null;
@@ -1958,7 +1943,7 @@ export default defineComponent({
       onNewScenarioRunsModalClose,
       onSyncMapBounds,
       onTabClick,
-      onUpdateScenarioSelection,
+      setSelectedScenarioIds,
       ordinalDimensionNames,
       outputSpecs,
       pointsLayerStats,
@@ -2048,7 +2033,7 @@ export default defineComponent({
       updateStateFromInsight,
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
-      updateScenarioSelection,
+      setSelectedScenarios,
       visibleTimeseriesData,
       showPercentChange,
       someVizOptionsInvalid,
