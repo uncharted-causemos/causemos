@@ -160,7 +160,7 @@
 import { mapGetters, mapActions } from 'vuex';
 import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
-import { getAnalysisState, getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
+import { getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
 import ModalUploadDocument from '@/components/modals/modal-upload-document';
@@ -324,18 +324,17 @@ export default defineComponent({
       const contextIDs = [];
 
       // fetch data space analyses
-      this.quantitativeAnalyses = (await getAnalysesByProjectId(this.project)).map(toQuantitative);
+      const rawQuantitativeAnalyses = await getAnalysesByProjectId(this.project);
+      this.quantitativeAnalyses = rawQuantitativeAnalyses.map(toQuantitative);
 
       if (this.quantitativeAnalyses.length) {
         // save context-id(s) for all data-analyses
-        const promises = this.quantitativeAnalyses.map((analysis) => {
-          return getAnalysisState(analysis.analysisId);
-        });
-        const allRawResponses = await Promise.all(promises);
+
         // @REVIEW
         // the assumption here is that each response in the allRawResponses refers to a specific quantitativeAnalyses
         // so we could utilize that to update the stats count
-        allRawResponses.forEach((analysesState, indx) => {
+        rawQuantitativeAnalyses.forEach((analysis, indx) => {
+          const analysesState = analysis.state || {};
           if (analysesState.analysisItems !== undefined) {
             const analysisContextIDs = analysesState.analysisItems.map(dc => dc.id);
             contextIDs.push(...analysisContextIDs);
