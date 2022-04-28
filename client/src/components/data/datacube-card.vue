@@ -795,6 +795,9 @@ export default defineComponent({
     });
 
     const newRunsMode = ref<boolean>(false);
+    const toggleNewRunsMode = () => {
+      newRunsMode.value = !newRunsMode.value;
+    };
 
     const isPeriodicallyRefreshingModelRuns = computed(
       () => (newRunsMode.value === false && isModel(metadata.value) === true)
@@ -914,8 +917,15 @@ export default defineComponent({
     const isBreakdownPaneOpen = ref<boolean>(true);
     const activeVizOptionsTab = ref<string|null>(null);
     const currentTabView = ref<DatacubeViewMode>(DatacubeViewMode.Description);
-    const potentialScenarioCount = ref<number|null>(0);
+
     const potentialScenarios = ref<ScenarioData[]>([]);
+    watch([newRunsMode], () => {
+      potentialScenarios.value = [];
+    });
+    const potentialScenarioCount = computed(
+      () => potentialScenarios.value.length
+    );
+
     const showDatasets = ref<boolean>(false);
     const isRelativeDropdownOpen = ref<boolean>(false);
     const showGeoSelectionModal = ref<boolean>(false);
@@ -1137,6 +1147,13 @@ export default defineComponent({
     };
 
     // selectedScenarioIds
+    // When switching to new runs mode, clear any selected scenarios and show
+    //  the model desc page
+    watchEffect(() => {
+      if (newRunsMode.value) {
+        setSelectedScenarioIds([]);
+      }
+    });
     // FIXME: do we need this layer of abstraction / equality check?
     const setSelectedScenarioIds = (newIds: string[]) => {
       if (_.isEqual(selectedScenarioIds.value, newIds)) return;
@@ -1311,17 +1328,6 @@ export default defineComponent({
       showModelRunsExecutionStatus.value = true;
     };
 
-    const toggleNewRunsMode = () => {
-      newRunsMode.value = !newRunsMode.value;
-      potentialScenarioCount.value = 0;
-      potentialScenarios.value.length = 0;
-
-      if (newRunsMode.value) {
-        // clear any selected scenario and show the model desc page
-        setSelectedScenarioIds([]);
-      }
-    };
-
     watch(
       () => [dateParamPickerValue.value],
       () => {
@@ -1335,7 +1341,6 @@ export default defineComponent({
         nextTick(() => {
           if (dateModelParam.value !== null) {
             // clear existing scenarios, if any since the date/goe param formatting may have changed
-            potentialScenarioCount.value = 0;
             potentialScenarios.value.length = 0;
 
             const datePickerOptions: flatpickr.Options.Options = {
@@ -1505,7 +1510,6 @@ export default defineComponent({
     );
 
     const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
-      potentialScenarioCount.value = e.scenarios.length;
       potentialScenarios.value = e.scenarios;
       updatePotentialScenarioDates();
     };
