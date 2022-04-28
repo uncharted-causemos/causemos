@@ -2,11 +2,6 @@
   <div class="list-analytical-questions-pane-container">
     <h4 v-if="showChecklistTitle" class="title">Analysis Checklist</h4>
     <slot />
-    <div>
-      <button class="btn btn-sm" @click="questionsExpanded = true">Expand all</button>
-      &nbsp;
-      <button class="btn btn-sm" @click="questionsExpanded = false">Collapse all</button>
-    </div>
     <template v-if="showNewAnalyticalQuestion">
       <h5>New Section</h5>
       <textarea
@@ -34,14 +29,21 @@
       </ul>
     </template>
     <template v-if="showNewAnalyticalQuestion === false">
-      <button
-        v-tooltip.top-center="'Add a new analytical question'"
-        type="button"
-        class="btn btn-default new-question-button"
-        @click="addNewQuestion">
-          <i class="fa fa-plus-circle" />
-          Add new section
-      </button>
+      <div>
+        <button
+          v-tooltip.top-center="'Add a new analytical question'"
+          type="button"
+          class="btn btn-sm new-question-button"
+          @click="addNewQuestion">
+            <i class="fa fa-plus-circle" />
+            New section
+        </button>
+        &nbsp;
+        <button class="btn btn-sm" @click="questionsExpanded = true">Expand all</button>
+        &nbsp;
+        <button class="btn btn-sm" @click="questionsExpanded = false">Collapse all</button>
+      </div>
+
       <div v-if="insightsBySection.length > 0" class="analytical-questions-container">
         <div
           v-for="sectionWithInsights in insightsBySection"
