@@ -175,7 +175,7 @@ export default function useDatacube(
     activeFeatureName
   );
 
-  // FIXME: this is only used by useTimeseriesData, it's not clear exactly
+  // FIXME: this is only used by useTimeseriesData (and now selectedRegionIdForQualifiers), it's not clear exactly
   //  what it does, might need to be renamed
   const selectedRegionIdsForTimeseries = computed(() =>
     getParentSelectedRegions(
@@ -184,7 +184,7 @@ export default function useDatacube(
     )
   );
 
-  const selectedTimestamp = ref(null) as Ref<number | null>;
+  const selectedTimestamp = ref<number | null>(null);
   // FIXME: Safe to remove? Confirm that vue reactivity isn't triggered if the
   //  new value is the same as the old one
   // if (selectedTimestamp.value === timestamp) return;
@@ -200,13 +200,9 @@ export default function useDatacube(
     () => selectedDataLayer.value === DATA_LAYER.RAW
   );
 
-  // FIXME: move into useDatacubeHierarchy, it produces selectedRegionIdsAtAllLevels and takes breakdownOption as a prop. Only used by useQualifiers
-  // FIXME: the first line is literally `selectedRegionIdForQualifiers`
+  // FIXME: move into useDatacubeHierarchy, or useQualifiers. useQualifiers is the only place it's used. useDatacubeHierarchy produces selectedRegionIdsAtAllLevels and takes breakdownOption as a prop.
   const selectedRegionIdForQualifiers = computed(() => {
-    const regionIds = getParentSelectedRegions(
-      selectedRegionIdsAtAllLevels.value,
-      selectedAdminLevel.value
-    );
+    const regionIds = selectedRegionIdsForTimeseries.value;
     // Note: qualifier breakdown data can only be broken down by single regionId, so it isn't applicable in 'split by region' mode where multiple region can be selected
     // and also in 'split by year' mode where data is aggregated by year.
     if (

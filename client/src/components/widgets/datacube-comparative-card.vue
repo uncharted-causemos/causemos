@@ -163,31 +163,32 @@ export default defineComponent({
     const activeFeature = ref<DatacubeFeature | null>(null);
     const activeFeatureName = computed(() => activeFeature.value?.name ?? '');
     watchEffect(() => {
-      if (metadata.value) {
-        let initialOutputIndex = 0;
-        const datacubeKey = itemId.value;
-
-        const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
-        if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
-          // we have a store entry for the default output of the current model
-          initialOutputIndex = currentOutputEntry;
-        } else {
-          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
-
-          // update the store
-          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[datacubeKey] = initialOutputIndex;
-          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
-        }
-        // override (to correctly fetch the output selection for each datacube duplication)
-        if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value) && initialViewConfig.value.selectedOutputIndex !== undefined) {
-          initialOutputIndex = initialViewConfig.value.selectedOutputIndex;
-        }
-        activeFeature.value = getSelectedOutput(
-          metadata.value,
-          initialOutputIndex
-        );
+      if (!metadata.value) {
+        return;
       }
+      let initialOutputIndex = 0;
+      const datacubeKey = itemId.value;
+
+      const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
+      if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
+        // we have a store entry for the default output of the current model
+        initialOutputIndex = currentOutputEntry;
+      } else {
+        initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+
+        // update the store
+        const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+        defaultOutputMap[datacubeKey] = initialOutputIndex;
+        store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+      }
+      // override (to correctly fetch the output selection for each datacube duplication)
+      if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value) && initialViewConfig.value.selectedOutputIndex !== undefined) {
+        initialOutputIndex = initialViewConfig.value.selectedOutputIndex;
+      }
+      activeFeature.value = getSelectedOutput(
+        metadata.value,
+        initialOutputIndex
+      );
     });
 
     const {
@@ -274,6 +275,7 @@ export default defineComponent({
 
     const initialSelectedScenarioIds = ref<string[]>([]);
 
+    // FIXME: this logic is shared by other cards. Can we extract it?
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
         const baselineRuns = allModelRunData.value.filter(run => run.is_default_run).map(run => run.id);
@@ -285,6 +287,7 @@ export default defineComponent({
     });
 
     // FIXME: this is used in datacube-card, datacube-comparative-card, and datacube-comparative-overlay-region. Can we extract?
+    // Also unclear why BarData is being used to populate the map
     // FIXME: Previous dependency array was missing breakdownOption and
     //  numberOfColorBins. Confirm this hasn't introduced new bugs.
     // Note that numberOfColorBins is used in an anonymous function so is still
@@ -500,6 +503,8 @@ export default defineComponent({
     const regionRunsScenarios = ref([] as {name: string; color: string}[]);
     // FIXME: this watcher is shared between all cards except
     //  for datacube-card. We may be able to extract it to one place/simplify.
+    // Similar to useTimeseriesData.
+    // FIXME: potentially broken since it looks at both timeseriesDataForSelection and visibleTimeseriesData
     watchEffect(() => {
       if (metadata.value) {
         const timeseriesList = timeseriesDataForSelection.value;

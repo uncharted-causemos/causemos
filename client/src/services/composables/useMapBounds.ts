@@ -22,6 +22,7 @@ export default function useMapBounds(
   };
 
   watchEffect(async () => {
+    // FIXME: this is the same as selectedRegionIdsForTimeseries
     const regionSelection = getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
     if (!regionalData.value && !regionSelection?.length) return;
 
