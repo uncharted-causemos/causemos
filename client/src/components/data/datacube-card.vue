@@ -794,7 +794,7 @@ export default defineComponent({
     RegionMap
   },
   setup(props, { emit }) {
-    const timeInterval = 10000;
+    const timeInterval = 20000;
     const store = useStore();
     const route = useRoute();
 
