@@ -94,13 +94,11 @@ export default defineComponent({
     const tabsQuantitative = [
       { name: 'Scenarios', icon: 'fa fa-circle-o fa-lg' },
       { name: 'Analytics', icon: 'fa fa-fw fa-flask fa-lg' },
-      // { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
       { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' },
       { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' }
     ];
 
     const tabsQualitative = [
-      // { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
       { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' },
       { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' }
     ];
