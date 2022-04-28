@@ -1746,19 +1746,6 @@ export default defineComponent({
       });
       return result;
     });
-    watch(
-      () => [
-        regionalData.value,
-        breakdownOption.value,
-        finalColorScheme.value,
-        selectedAdminLevel.value,
-        selectedDataLayerTransparency.value
-      ],
-      () => {
-        if (breakdownOption.value === SPLIT_BY_VARIABLE) {
-          
-        }
-      });
 
     // FIXME: Do we need both `unit` and `timeseriesUnit`? At the very least,
     //  one should be renamed to make it more clear what the difference is.
