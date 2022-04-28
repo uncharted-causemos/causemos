@@ -165,6 +165,7 @@ export default function useDatacube(
   const {
     datacubeHierarchy,
     selectedRegionIds,
+    selectedRegionsString,
     selectedRegionIdsAtAllLevels,
     referenceRegions,
     toggleIsRegionSelected
@@ -414,6 +415,7 @@ export default function useDatacube(
     searchFilters,
     datacubeHierarchy,
     selectedRegionIds,
+    selectedRegionsString,
     selectedRegionIdsAtAllLevels,
     referenceRegions,
     toggleIsRegionSelected,

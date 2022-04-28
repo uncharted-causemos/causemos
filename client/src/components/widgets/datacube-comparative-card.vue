@@ -6,7 +6,7 @@
         class="datacube-title-area"
         @click="openDrilldown"
       >
-        <span>{{activeFeature.display_name !== '' ? activeFeature.display_name : activeFeature.name}} - {{ selectedRegionIdsDisplay }}</span>
+        <span>{{activeFeature.display_name !== '' ? activeFeature.display_name : activeFeature.name}} - {{ selectedRegionsString }}</span>
         <span class="datacube-name">{{metadata.name}}</span>
         <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin-left: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
         <i class="fa fa-fw fa-expand drilldown-btn" />
@@ -86,8 +86,8 @@
 import * as d3 from 'd3';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
-import { getSelectedOutput, hasRegionLevelData } from '@/utils/datacube-util';
-import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, SpatialAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
+import { getSelectedOutput, hasRegionLevelData, isModel } from '@/utils/datacube-util';
+import { AggregationOption, TemporalResolutionOption, DatacubeStatus, SpatialAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -99,7 +99,7 @@ import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning'
 import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
-import { getSelectedRegionIdsDisplay, adminLevelToString } from '@/utils/admin-level-util';
+import { adminLevelToString } from '@/utils/admin-level-util';
 import { popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
 import { RegionalAggregations } from '@/types/Outputdata';
@@ -208,6 +208,7 @@ export default defineComponent({
       initialSelectedOutputVariables,
       allModelRunData,
       selectedRegionIdsAtAllLevels,
+      selectedRegionsString,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
@@ -277,13 +278,21 @@ export default defineComponent({
     const initialSelectedScenarioIds = ref<string[]>([]);
 
     // FIXME: this logic is shared by other cards. Can we extract it?
+    // Select the initialSelectedScenarioIds if there are any, otherwise fall
+    //  back to the (first) default run.
     watchEffect(() => {
-      if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
-        const baselineRuns = allModelRunData.value.filter(run => run.is_default_run).map(run => run.id);
-        if (baselineRuns.length > 0 || initialSelectedScenarioIds.value.length) {
-          // do not pick the first run by default in case a run was previously selected
-          selectedScenarioIds.value = initialSelectedScenarioIds.value.length > 0 ? initialSelectedScenarioIds.value : [baselineRuns[0]];
-        }
+      if (!isModel(metadata.value) || allModelRunData.value.length === 0) {
+        return;
+      }
+      if (initialSelectedScenarioIds.value.length > 0) {
+        selectedScenarioIds.value = initialSelectedScenarioIds.value;
+        return;
+      }
+      const baselineRunIds = allModelRunData.value
+        .filter(run => run.is_default_run)
+        .map(run => run.id);
+      if (baselineRunIds.length > 0) {
+        selectedScenarioIds.value = [baselineRunIds[0]];
       }
     });
 
@@ -467,22 +476,14 @@ export default defineComponent({
       }
     );
 
-    // FIXME: used by all cards but datacube-card. Extract and consolidate with other selectedRegionIdsAtAllLevels references
-    const selectedRegionIdsDisplay = computed(() => {
-      return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
-    });
-
     // NOTE: only the List view within the CompAnalysis page will update the name of the analysis item
     watch(
-      () => [
-        activeFeature.value,
-        selectedRegionIdsDisplay
-      ],
+      () => [activeFeature, selectedRegionsString],
       () => {
         if (activeFeature.value && datacubeAnalysisItem) {
           // update the corresponding analysis name; match the card title
           const outputName = activeFeature.value.display_name !== '' ? activeFeature.value.display_name : activeFeature.value.name;
-          const selectedRegion = selectedRegionIdsDisplay.value;
+          const selectedRegion = selectedRegionsString.value;
           const datacubeName = metadata.value?.name;
           const datacubeHeader = '<b>' + outputName + ' - ' + selectedRegion + ' </b> ' + datacubeName;
           if (datacubeHeader !== datacubeAnalysisItem.name) {
@@ -541,7 +542,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedScenarioIds,
       selectedRegionIdsAtAllLevels,
-      selectedRegionIdsDisplay,
+      selectedRegionsString,
       metadata,
       activeFeature,
       outputs,

@@ -6,7 +6,7 @@
         class="datacube-title-area"
         @click="openDrilldown"
       >
-        <span>{{activeFeature.display_name !== '' ? activeFeature.display_name : activeFeature.name}} - {{ selectedRegionIdsDisplay }}</span>
+        <span>{{activeFeature.display_name !== '' ? activeFeature.display_name : activeFeature.name}} - {{ selectedRegionsString }}</span>
         <span class="datacube-name">{{metadata.name}}</span>
         <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin-left: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
         <i class="fa fa-fw fa-expand drilldown-btn" />
@@ -88,13 +88,12 @@ import router from '@/router';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getSelectedOutput } from '@/utils/datacube-util';
-import { getSelectedRegionIdsDisplay, filterRegionalLevelData, adminLevelToString } from '@/utils/admin-level-util';
+import { getSelectedOutput, isModel } from '@/utils/datacube-util';
+import { filterRegionalLevelData, adminLevelToString } from '@/utils/admin-level-util';
 import {
   AggregationOption,
   BinningOptions,
   DatacubeStatus,
-  DatacubeType,
   SpatialAggregationLevel,
   SPLIT_BY_VARIABLE,
   TemporalResolutionOption
@@ -242,6 +241,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       selectedRegionIdsAtAllLevels,
+      selectedRegionsString,
       selectedDataLayerTransparency,
       datacubeHierarchy,
       selectedTimestamp,
@@ -280,12 +280,18 @@ export default defineComponent({
 
     // FIXME: this logic is shared by other cards. Can we extract it?
     watchEffect(() => {
-      if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
-        const baselineRuns = allModelRunData.value.filter(run => run.is_default_run).map(run => run.id);
-        if (baselineRuns.length > 0 || initialSelectedScenarioIds.value.length) {
-          // do not pick the first run by default in case a run was previously selected
-          selectedScenarioIds.value = initialSelectedScenarioIds.value.length > 0 ? initialSelectedScenarioIds.value : [baselineRuns[0]];
-        }
+      if (!isModel(metadata.value) || allModelRunData.value.length === 0) {
+        return;
+      }
+      if (initialSelectedScenarioIds.value.length > 0) {
+        selectedScenarioIds.value = initialSelectedScenarioIds.value;
+        return;
+      }
+      const baselineRunIds = allModelRunData.value
+        .filter(run => run.is_default_run)
+        .map(run => run.id);
+      if (baselineRunIds.length > 0) {
+        selectedScenarioIds.value = [baselineRunIds[0]];
       }
     });
 
@@ -420,11 +426,6 @@ export default defineComponent({
           selectedTimestamp.value = lastTimestamp;
         }
       }
-    });
-
-    // FIXME: used by all cards but datacube-card. Extract and consolidate with other selectedRegionIdsAtAllLevels references
-    const selectedRegionIdsDisplay = computed(() => {
-      return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
     });
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
@@ -583,7 +584,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedScenarioIds,
-      selectedRegionIdsDisplay,
+      selectedRegionsString,
       metadata,
       activeFeature,
       outputs,

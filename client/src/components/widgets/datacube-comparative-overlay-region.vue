@@ -6,7 +6,7 @@
         class="datacube-title-area"
         @click="openDrilldown"
       >
-        <span>{{activeFeature.display_name !== '' ? activeFeature.display_name : activeFeature.name}} - {{ selectedRegionIdsDisplay }}</span>
+        <span>{{activeFeature.display_name !== '' ? activeFeature.display_name : activeFeature.name}} - {{ selectedRegionsString }}</span>
         <span class="datacube-name">{{metadata.name}}</span>
         <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin-left: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
         <i class="fa fa-fw fa-expand drilldown-btn" />
@@ -72,8 +72,8 @@ import * as d3 from 'd3';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getSelectedOutput, hasRegionLevelData } from '@/utils/datacube-util';
-import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, SpatialAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
+import { getSelectedOutput, hasRegionLevelData, isModel } from '@/utils/datacube-util';
+import { AggregationOption, TemporalResolutionOption, DatacubeStatus, SpatialAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { computed, defineComponent, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import { mapActions, useStore } from 'vuex';
@@ -86,7 +86,7 @@ import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
 import { RegionalAggregations } from '@/types/Outputdata';
-import { getSelectedRegionIdsDisplay, adminLevelToString } from '@/utils/admin-level-util';
+import { adminLevelToString } from '@/utils/admin-level-util';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
 import MapLegend from '@/components/widgets/map-legend.vue';
@@ -191,6 +191,7 @@ export default defineComponent({
       initialActiveReferenceOptions,
       allModelRunData,
       selectedRegionIdsAtAllLevels,
+      selectedRegionsString,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
@@ -241,12 +242,18 @@ export default defineComponent({
 
     // FIXME: this logic is shared by other cards. Can we extract it?
     watchEffect(() => {
-      if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
-        const baselineRuns = allModelRunData.value.filter(run => run.is_default_run).map(run => run.id);
-        if (baselineRuns.length > 0 || initialSelectedScenarioIds.value.length) {
-          // do not pick the first run by default in case a run was previously selected
-          selectedScenarioIds.value = initialSelectedScenarioIds.value.length > 0 ? initialSelectedScenarioIds.value : [baselineRuns[0]];
-        }
+      if (!isModel(metadata.value) || allModelRunData.value.length === 0) {
+        return;
+      }
+      if (initialSelectedScenarioIds.value.length > 0) {
+        selectedScenarioIds.value = initialSelectedScenarioIds.value;
+        return;
+      }
+      const baselineRunIds = allModelRunData.value
+        .filter(run => run.is_default_run)
+        .map(run => run.id);
+      if (baselineRunIds.length > 0) {
+        selectedScenarioIds.value = [baselineRunIds[0]];
       }
     });
 
@@ -398,11 +405,6 @@ export default defineComponent({
       }
     });
 
-    // FIXME: used by all cards but datacube-card. Extract and consolidate with other selectedRegionIdsAtAllLevels references
-    const selectedRegionIdsDisplay = computed(() => {
-      return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
-    });
-
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
     const selectedScenarioIndex = ref(0);
@@ -501,7 +503,7 @@ export default defineComponent({
       selectedScenarioIds,
       selectedRegionIds,
       selectedRegionIdsAtAllLevels,
-      selectedRegionIdsDisplay,
+      selectedRegionsString,
       mapBounds,
       metadata,
       activeFeature,
