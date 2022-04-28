@@ -6,7 +6,7 @@ import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
 
-const FETCH_INTERVAL_SECONDS = 10;
+const FETCH_INTERVAL_SECONDS = 20;
 
 /**
  * Takes a datacube data ID and a list of scenario IDs, then fetches and
