@@ -278,6 +278,7 @@ export default defineComponent({
 
     const initialSelectedScenarioIds = ref<string[]>([]);
 
+    // FIXME: this logic is shared by other cards. Can we extract it?
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
         const baselineRuns = allModelRunData.value.filter(run => run.is_default_run).map(run => run.id);
@@ -421,7 +422,7 @@ export default defineComponent({
       }
     });
 
-    // FIXME: is this duplicated in other cards? consolidate with other selectedRegionIdsAtAllLevels references
+    // FIXME: used by all cards but datacube-card. Extract and consolidate with other selectedRegionIdsAtAllLevels references
     const selectedRegionIdsDisplay = computed(() => {
       return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
     });

@@ -466,6 +466,7 @@ export default defineComponent({
       }
     );
 
+    // FIXME: used by all cards but datacube-card. Extract and consolidate with other selectedRegionIdsAtAllLevels references
     const selectedRegionIdsDisplay = computed(() => {
       return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
     });

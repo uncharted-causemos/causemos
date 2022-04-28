@@ -21,7 +21,7 @@ export default function useRawPointsData(
   breakdownOption: Ref<string | null>,
   selectedDataLayer: Ref<DATA_LAYER>
 ) {
-  // Fetch raw data points for for each output spec
+  // Fetch raw data points for each output spec
   const rawDataPointsListOrigin = ref<{ id: string, points: RawOutputDataPoint[] }[]>([]);
   watchEffect(async () => {
     if (selectedDataLayer.value !== DATA_LAYER.RAW) return;

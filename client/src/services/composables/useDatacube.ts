@@ -142,6 +142,7 @@ export default function useDatacube(
     }
   });
 
+  // FIXME: this might be trying to fetch scenarios when the list is ['indicator']. Verify and clean up.
   const selectedScenarios = computed(() => {
     return getFilteredScenariosFromIds(
       selectedScenarioIds.value,
