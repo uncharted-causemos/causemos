@@ -15,18 +15,8 @@
 
       <options-button :dropdown-below="true">
         <template #content>
-          <div
-            class="dropdown-option"
-            @click="clickRemove"
-          >
-            Remove
-          </div>
-          <div
-            class="dropdown-option"
-            @click="clickDuplicate"
-          >
-            Duplicate
-          </div>
+          <div class="dropdown-option" @click="clickRemove">Remove</div>
+          <div class="dropdown-option" @click="clickDuplicate">Duplicate</div>
         </template>
       </options-button>
     </header>
