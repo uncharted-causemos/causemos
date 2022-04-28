@@ -673,7 +673,8 @@ import {
   BASE_LAYER,
   DATA_LAYER,
   SOURCE_LAYERS,
-  getMapSourceLayer
+  getMapSourceLayer,
+  popupFormatter
 } from '@/utils/map-util-new';
 
 import {
@@ -1647,7 +1648,7 @@ export default defineComponent({
         const feature = selectedFeatures.value[index];
         // Prevent duplicate appends.
         // FIXME: it's not clear why this is necessary. Duplicate appends
-        //  would implly we're rerunning this code multiple times for the
+        //  would imply we're rerunning this code multiple times for the
         //  same globalTimeseries list, which is a bug.
         // FIXME: the id should be constructed when globalTimeseries is
         if (!timeseries.id.endsWith(feature.name)) {
@@ -1713,12 +1714,6 @@ export default defineComponent({
       });
       return breakdownData;
     });
-
-    const popupFormatter = (feature: any) => {
-      const { label, value, normalizedValue } = feature.state || {};
-      if (!label) return null;
-      return `${label.split('__').pop()}<br> Normalized: ${+normalizedValue.toFixed(2)}<br> Value: ${+value.toFixed(2)}`;
-    };
 
     const regionMapData = ref<{[variableName: string]: BarData[]}>({});
     watch(
@@ -2045,7 +2040,7 @@ export default defineComponent({
       setSelectedGlobalTimestamp,
       SPLIT_BY_VARIABLE,
       regionMapData,
-      popupFormatter,
+      popupFormatter: (feature: any) => popupFormatter(feature, true),
       DatacubeViewMode,
       DatacubeStatus,
       itemId,

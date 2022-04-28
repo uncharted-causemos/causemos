@@ -92,6 +92,7 @@ import { normalize } from '@/utils/value-util';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';
+import { popupFormatter } from '@/utils/map-util-new';
 
 export default defineComponent({
   name: 'DatacubeComparativeOverlayRegion',
@@ -113,7 +114,7 @@ export default defineComponent({
       type: String,
       required: true
     },
-    selectedTimestamp: {
+    globalTimestamp: {
       type: Number,
       default: 0
     },
@@ -128,10 +129,15 @@ export default defineComponent({
       itemId,
       id,
       datacubeId,
-      // FIXME: selectedTimestamp is hoisted
-      selectedTimestamp,
+      globalTimestamp,
       datacubeIndex
     } = toRefs(props);
+
+    // CompAnalysis passes globalTimestamp into this component.
+    // Keep the selectedTimestamp within useDatacube in sync with it.
+    watchEffect(() => {
+      setSelectedTimestamp(globalTimestamp.value);
+    });
 
     const metadata = useModelMetadata(id);
 
@@ -203,7 +209,8 @@ export default defineComponent({
       mapBounds,
       selectedDataLayer,
       mapLegendData,
-      isContinuousScale
+      isContinuousScale,
+      setSelectedTimestamp
     } = useDatacube(
       metadata,
       itemId,
@@ -398,14 +405,6 @@ export default defineComponent({
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
-    // FIXME: we're using slightly different popup formatters across cards.
-    //  can we simplify and unify?
-    const popupFormatter = (feature: any) => {
-      const { label, value, normalizedValue } = feature.state || {};
-      if (!label || value === null || value === undefined) return null;
-      return `${label.split('__').pop()}<br> Normalized: ${+normalizedValue.toFixed(2)}<br> Value: ${+value.toFixed(2)}`;
-    };
-
     const selectedScenarioIndex = ref(0);
     const regionRunsScenarios = ref([] as {name: string; color: string}[]);
 
@@ -520,7 +519,7 @@ export default defineComponent({
       statusColor,
       statusLabel,
       regionMapData,
-      popupFormatter,
+      popupFormatter: (feature: any) => popupFormatter(feature, true),
       selectedScenarioIndex,
       regionRunsScenarios,
       selectedAdminLevel,

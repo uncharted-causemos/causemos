@@ -100,6 +100,7 @@ import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/
 import RegionMap from '@/components/widgets/region-map.vue';
 import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
 import { getSelectedRegionIdsDisplay, adminLevelToString } from '@/utils/admin-level-util';
+import { popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
 import { RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
@@ -534,14 +535,6 @@ export default defineComponent({
       }
     });
 
-    // FIXME: we're using slightly different popup formatters across cards.
-    //  can we simplify and unify?
-    const popupFormatter = (feature: any) => {
-      const { label, value } = feature.state || {};
-      if (!label || value === null || value === undefined) return null;
-      return `${label.split('__').pop()}<br> Value: ${+value.toFixed(2)}`;
-    };
-
     return {
       selectedTemporalResolution,
       selectedTemporalAggregation,
@@ -569,7 +562,7 @@ export default defineComponent({
       regionMapData,
       mapBounds,
       selectedAdminLevel,
-      popupFormatter,
+      popupFormatter: (feature: any) => popupFormatter(feature, false),
       selectedScenarioIndex,
       regionRunsScenarios
     };
