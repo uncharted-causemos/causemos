@@ -268,9 +268,6 @@ export default defineComponent({
       ref(false)
     );
 
-    // FIXME: consolidate bbox logic
-    const bbox = ref<number[][] | { value: number[][], options: any } | undefined>(undefined);
-
     const selectedRegionRankingScenario = ref(0);
     const regionRunsScenarios = ref([] as {name: string; color: string}[]);
 
@@ -441,14 +438,6 @@ export default defineComponent({
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
-    // Calculate bbox
-    watchEffect(async () => {
-      const countries = barChartHoverId.value
-        ? [barChartHoverId.value.split('__')[0]]
-        : [...new Set((regionalData.value?.country || []).map(d => d.id))];
-      bbox.value = await computeMapBoundsForCountries(countries) || undefined;
-    });
-
     // FIXME: see regionMapData in comparative-carrd
     const barsData = ref<BarData[]>([]);
     watch(
@@ -575,6 +564,10 @@ export default defineComponent({
         }
       });
 
+    // FIXME: this is a wrapper for mapBounds. Since useMapBounds is only used
+    //  in two places, we can likely simplify this to remove some duplication.
+    // It's unclear why we only use the options in some cases.
+    const bbox = ref<number[][] | { value: number[][], options: any } | undefined>(undefined);
     // Calculate bbox
     watchEffect(async () => {
       const options = {

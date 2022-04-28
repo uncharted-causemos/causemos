@@ -12,6 +12,9 @@ export default function useMapBounds(
   selectedAdminLevel: Ref<number>,
   selectedRegionIdsAtAllLevels: Ref<AdminRegionSets>
 ) {
+  // FIXME: this can be greatly simplified. useMapBounds is only used in two
+  //  places and it's unclear why mapBounds can be set to two different possible
+  //  values.
   const mapBounds = ref<number[][] | { value: number[][], options: any }>([
     [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
     [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
