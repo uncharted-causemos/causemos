@@ -68,12 +68,11 @@
 </template>
 
 <script lang="ts">
-import * as d3 from 'd3';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { getSelectedOutput, hasRegionLevelData, isModel } from '@/utils/datacube-util';
-import { AggregationOption, TemporalResolutionOption, DatacubeStatus, SpatialAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
+import { convertRegionalDataToBarData, getSelectedOutput, isModel } from '@/utils/datacube-util';
+import { AggregationOption, TemporalResolutionOption, DatacubeStatus, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { computed, defineComponent, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import { mapActions, useStore } from 'vuex';
@@ -85,10 +84,7 @@ import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/
 import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
-import { RegionalAggregations } from '@/types/Outputdata';
-import { adminLevelToString } from '@/utils/admin-level-util';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
-import { normalize } from '@/utils/value-util';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';
@@ -410,91 +406,18 @@ export default defineComponent({
     const selectedScenarioIndex = ref(0);
     const regionRunsScenarios = ref([] as {name: string; color: string}[]);
 
-    // FIXME: this is used in datacube-card, datacube-comparative-card, and datacube-comparative-overlay-region. Can we extract?
-    // Also unclear why BarData is being used to populate the map
-    // FIXME: Previous dependency array was missing breakdownOption and
-    //  numberOfColorBins. Confirm this hasn't introduced new bugs.
-    // Note that numberOfColorBins is used in an anonymous function so is still
-    //  not part of the dependency array.
-    // () => [
-    //   regionalData.value,
-    //   selectedAdminLevel.value,
-    //   finalColorScheme.value,
-    //   selectedScenarioIndex.value,
-    //   selectedDataLayerTransparency.value
-    // ],
-    const regionMapData = ref<BarData[]>([]);
-    watch(
-      () => [
+    // FIXME: See note in datacube-card
+    const regionMapData = computed<BarData[]>(() => {
+      return convertRegionalDataToBarData(
         regionalData.value,
         selectedAdminLevel.value,
-        finalColorScheme.value,
+        breakdownOption.value,
         selectedScenarioIndex.value,
+        numberOfColorBins.value,
+        finalColorScheme.value,
         selectedDataLayerTransparency.value
-      ],
-      () => {
-        const temp: BarData[] = [];
-
-        if (regionalData.value !== null) {
-          const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
-          const regionLevelData = regionalData.value[adminLevelAsString];
-          const hasValues = hasRegionLevelData(regionLevelData);
-
-          if (regionLevelData !== undefined && regionLevelData.length > 0 && hasValues) {
-            // special case for split-by-region:
-            let indexIntoRegionData = selectedScenarioIndex.value;
-            if (breakdownOption.value === SpatialAggregationLevel.Region) {
-              indexIntoRegionData = 0;
-            }
-
-            const data = regionLevelData.map(regionDataItem => ({
-              name: regionDataItem.id,
-              value: Object.values(regionDataItem.values).length > 0 && Object.values(regionDataItem.values).length > indexIntoRegionData ? Object.values(regionDataItem.values)[indexIntoRegionData] : 0
-            }));
-
-            if (data.length > 0) {
-              let regionIndexCounter = 0;
-
-              const allValues = data.map(regionDataItem => regionDataItem.value);
-              const scale = d3
-                .scaleLinear()
-                .domain(d3.extent(allValues) as [number, number])
-                .nice(); // 😃
-              const dataExtent = scale.domain(); // after nice() is called
-
-              const colors = finalColorScheme.value;
-
-              // @REVIEW
-              // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
-              // To receive normalized data, send transform=normalization when fetching regional data
-              data.forEach(dataItem => {
-                const normalizedValue = normalize(dataItem.value, dataExtent[0], dataExtent[1]);
-                const itemValue = dataItem.value;
-                const colorIndex = Math.trunc(normalizedValue * numberOfColorBins.value); // i.e., linear binning
-                // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
-                const clampedColorIndex = _.clamp(colorIndex, 0, colors.length - 1);
-                const regionColor = colors[clampedColorIndex];
-                temp.push({
-                  name: (regionIndexCounter + 1).toString(),
-                  label: dataItem.name,
-                  value: itemValue,
-                  normalizedValue: normalizedValue,
-                  color: regionColor,
-                  opacity: Number(selectedDataLayerTransparency.value)
-                });
-                regionIndexCounter++;
-              });
-            }
-
-            // adjust the ranking so that the highest value will be ranked 1st
-            // REVIEW: do we need this in the Overlay mode?
-            temp.forEach((item, indx) => {
-              item.name = (temp.length - indx).toString();
-            });
-          }
-          regionMapData.value = temp;
-        }
-      });
+      );
+    });
 
     return {
       selectedTemporalResolution,

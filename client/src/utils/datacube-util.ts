@@ -6,14 +6,21 @@ import {
   DatacubeStatus,
   DatacubeType,
   DataTransform,
-  ModelParameterDataType
+  ModelParameterDataType,
+  SpatialAggregationLevel
 } from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
 import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service';
 import domainProjectService from '@/services/domain-project-service';
 import { DomainProject } from '@/types/Common';
 import { ModelRun } from '@/types/ModelRun';
-import { RegionAgg } from '@/types/Outputdata';
+import { RegionAgg, RegionalAggregations } from '@/types/Outputdata';
+import { DATA_LAYER_TRANSPARENCY } from './map-util-new';
+import { BarData } from '@/types/BarChart';
+import { adminLevelToString } from './admin-level-util';
+import { normalize } from './value-util';
+import _ from 'lodash';
+import * as d3 from 'd3';
 
 export const DEFAULT_DATE_RANGE_DELIMETER = '__';
 
@@ -372,6 +379,75 @@ export const AVAILABLE_DOMAINS = [
   'Ethics',
   'Philosophy'
 ];
+
+export const convertRegionalDataToBarData = (
+  regionalData: RegionalAggregations | null,
+  selectedAdminLevel: number,
+  breakdownOption: string | null,
+  selectedScenarioIndex: number,
+  numberOfColorBins: number,
+  colorScheme: string[],
+  selectedDataLayerTransparency: DATA_LAYER_TRANSPARENCY
+): BarData[] => {
+  if (regionalData === null) return [];
+  const adminLevelAsString = adminLevelToString(selectedAdminLevel) as keyof RegionalAggregations;
+  const regionLevelData = regionalData[adminLevelAsString];
+  const hasValues = hasRegionLevelData(regionLevelData);
+  if (regionLevelData === undefined || !hasValues) {
+    return [];
+  }
+  // special case for split-by-region:
+  const indexIntoRegionData =
+    breakdownOption === SpatialAggregationLevel.Region
+      ? 0
+      : selectedScenarioIndex;
+  const data = regionLevelData.map(({ id, values }) => {
+    const valuesForOneRegion = Object.values(values);
+    return {
+      name: id,
+      value: valuesForOneRegion.length > indexIntoRegionData
+        ? valuesForOneRegion[indexIntoRegionData]
+        : 0
+    };
+  });
+  const extent = d3.extent(data.map(({ value }) => value));
+  const scale = d3
+    .scaleLinear()
+    .domain(extent[0] === undefined ? [0, 0] : extent)
+    .nice(); // 😃
+  const dataExtent = scale.domain(); // after nice() is called
+  // @REVIEW
+  // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
+  // To receive normalized data, send transform=normalization when fetching regional data
+  return data.map((dataItem, index) => {
+    const normalizedValue = normalize(
+      dataItem.value,
+      dataExtent[0],
+      dataExtent[1]
+    );
+    // Linear binning
+    const colorIndex =
+      Math.trunc(normalizedValue * numberOfColorBins);
+    // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
+    const clampedColorIndex = _.clamp(
+      colorIndex,
+      0,
+      colorScheme.length - 1
+    );
+    const regionColor = colorScheme[clampedColorIndex];
+    return {
+      // adjust the ranking so that the highest value will be ranked 1st
+      // REVIEW: do we need this in the Overlay mode?
+      // FIXME: datacube-card uses index + 1, not clear if/when this is used
+      name: (data.length - index).toString(),
+      label: dataItem.name,
+      value: dataItem.value,
+      normalizedValue: normalizedValue,
+      color: regionColor,
+      opacity: Number(selectedDataLayerTransparency)
+    };
+  });
+};
 
 export default {
   CODE_TABLE,

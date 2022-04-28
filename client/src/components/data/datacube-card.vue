@@ -630,7 +630,6 @@ import useParallelCoordinatesData from '@/services/composables/useParallelCoordi
 import { getInsightById } from '@/services/insight-service';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
-import { adminLevelToString } from '@/utils/admin-level-util';
 
 import { BoxPlotStats, GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
@@ -648,7 +647,6 @@ import {
 import { Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataSpaceDataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
-import { RegionalAggregations } from '@/types/Outputdata';
 
 import {
   colorFromIndex,
@@ -660,9 +658,9 @@ import {
   isIndicator,
   isModel,
   TAGS,
-  DEFAULT_DATE_RANGE_DELIMETER
+  DEFAULT_DATE_RANGE_DELIMETER,
+  convertRegionalDataToBarData
 } from '@/utils/datacube-util';
-import { normalize } from '@/utils/value-util';
 import {
   initDataStateFromRefs,
   initViewStateFromRefs,
@@ -1719,7 +1717,35 @@ export default defineComponent({
       return breakdownData;
     });
 
-    const regionMapData = ref<{[variableName: string]: BarData[]}>({});
+    // FIXME: This is used in datacube-card, comparative-card, and
+    //  comparative-overlay-region. There is a longer modified version in
+    //  region-ranking card. datacube-card runs this once for each output
+    //  variable. If we can unify these behaviours this whole thing can be moved into useDatacube.
+    // FIXME: Investigate why BarData is being used to populate the map. If we
+    //  can use regionalData directly, we can remove this second piece of
+    //  state with a confusing and similar name.
+    // FIXME: Previous dependency array was missing breakdownOption and
+    //  numberOfColorBins. Confirm this hasn't introduced new bugs.
+    const regionMapData = computed(() => {
+      const result: {[variableName: string]: BarData[]} = {};
+      if (breakdownOption.value !== SPLIT_BY_VARIABLE || regionalData.value !== null) {
+        return result;
+      }
+      selectedFeatures.value.forEach(({ name: selectedOutputVariable }) => {
+        result[selectedOutputVariable] = convertRegionalDataToBarData(
+          regionalData.value,
+          selectedAdminLevel.value,
+          breakdownOption.value,
+          // This 0 is only used if this function is called when split by
+          //  region is active.
+          0,
+          numberOfColorBins.value,
+          finalColorScheme.value,
+          selectedDataLayerTransparency.value
+        );
+      });
+      return result;
+    });
     watch(
       () => [
         regionalData.value,
@@ -1730,51 +1756,7 @@ export default defineComponent({
       ],
       () => {
         if (breakdownOption.value === SPLIT_BY_VARIABLE) {
-          selectedFeatures.value.forEach(({ name: selectedOutputVariable }) => {
-            if (regionalData.value !== null) {
-              const temp: BarData[] = [];
-              const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
-              const regionLevelData = regionalData.value[adminLevelAsString];
-
-              if (regionLevelData !== undefined && regionLevelData.length > 0) {
-                const data = regionLevelData.map(regionDataItem => ({
-                  name: regionDataItem.id,
-                  value: Object.values(regionDataItem.values).length > 0 && regionDataItem.values[selectedOutputVariable] ? regionDataItem.values[selectedOutputVariable] : 0
-                }));
-
-                if (data.length > 0) {
-                  let regionIndexCounter = 0;
-
-                  const allValues = data.map(regionDataItem => regionDataItem.value);
-                  const scale = d3
-                    .scaleLinear()
-                    .domain(d3.extent(allValues) as [number, number])
-                    .nice(); // 😃
-                  const dataExtent = scale.domain(); // after nice() is called
-
-                  const colors = finalColorScheme.value;
-                  data.forEach(dataItem => {
-                    const normalizedValue = normalize(dataItem.value, dataExtent[0], dataExtent[1]);
-                    const itemValue = dataItem.value;
-                    const colorIndex = Math.trunc(normalizedValue * numberOfColorBins.value); // i.e., linear binning
-                    // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
-                    const clampedColorIndex = _.clamp(colorIndex, 0, colors.length - 1);
-                    const regionColor = colors[clampedColorIndex];
-                    temp.push({
-                      name: (regionIndexCounter + 1).toString(),
-                      label: dataItem.name,
-                      value: itemValue,
-                      normalizedValue: normalizedValue,
-                      color: regionColor,
-                      opacity: Number(selectedDataLayerTransparency.value)
-                    });
-                    regionIndexCounter++;
-                  });
-                }
-              }
-              regionMapData.value[selectedOutputVariable] = temp;
-            }
-          });
+          
         }
       });
 

@@ -430,7 +430,7 @@ export default defineComponent({
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
-    // FIXME: see regionMapData in comparative-carrd
+    // FIXME: See note in datacube-card
     const barsData = ref<BarData[]>([]);
     watch(
       () => [

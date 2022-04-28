@@ -83,11 +83,10 @@
 </template>
 
 <script lang="ts">
-import * as d3 from 'd3';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
-import { getSelectedOutput, hasRegionLevelData, isModel } from '@/utils/datacube-util';
-import { AggregationOption, TemporalResolutionOption, DatacubeStatus, SpatialAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
+import { convertRegionalDataToBarData, getSelectedOutput, isModel } from '@/utils/datacube-util';
+import { AggregationOption, TemporalResolutionOption, DatacubeStatus, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -99,12 +98,9 @@ import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning'
 import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
-import { adminLevelToString } from '@/utils/admin-level-util';
 import { popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
-import { RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
-import { normalize } from '@/utils/value-util';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';
 import { DatacubeFeature } from '@/types/Datacube';
@@ -296,75 +292,18 @@ export default defineComponent({
       }
     });
 
-    // FIXME: this is used in datacube-card, datacube-comparative-card, and datacube-comparative-overlay-region. Can we extract?
-    // Also unclear why BarData is being used to populate the map
-    // FIXME: Previous dependency array was missing breakdownOption and
-    //  numberOfColorBins. Confirm this hasn't introduced new bugs.
-    // Note that numberOfColorBins is used in an anonymous function so is still
-    //  not part of the dependency array.
-    // () => [
-    //   regionalData.value,
-    //   selectedAdminLevel.value,
-    //   finalColorScheme.value,
-    //   selectedScenarioIndex.value,
-    //   selectedDataLayerTransparency.value
-    // ],
+
+    // FIXME: See note in datacube-card
     const regionMapData = computed<BarData[]>(() => {
-      if (regionalData.value === null) return [];
-      const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
-      const regionLevelData = regionalData.value[adminLevelAsString];
-      const hasValues = hasRegionLevelData(regionLevelData);
-      if (regionLevelData === undefined || !hasValues) {
-        return [];
-      }
-      // special case for split-by-region:
-      const indexIntoRegionData =
-        breakdownOption.value === SpatialAggregationLevel.Region
-          ? 0
-          : selectedScenarioIndex.value;
-      const data = regionLevelData.map(({ id, values }) => {
-        const valuesForOneRegion = Object.values(values);
-        return {
-          name: id,
-          value: valuesForOneRegion.length > indexIntoRegionData
-            ? valuesForOneRegion[indexIntoRegionData]
-            : 0
-        };
-      });
-      const extent = d3.extent(data.map(({ value }) => value));
-      const scale = d3
-        .scaleLinear()
-        .domain(extent[0] === undefined ? [0, 0] : extent)
-        .nice(); // 😃
-      const dataExtent = scale.domain(); // after nice() is called
-      const colors = finalColorScheme.value;
-      // @REVIEW
-      // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
-      // To receive normalized data, send transform=normalization when fetching regional data
-      return data.map((dataItem, index) => {
-        const normalizedValue = normalize(
-          dataItem.value,
-          dataExtent[0],
-          dataExtent[1]
-        );
-        const itemValue = dataItem.value;
-        // Linear binning
-        const colorIndex =
-          Math.trunc(normalizedValue * numberOfColorBins.value);
-        // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
-        const clampedColorIndex = _.clamp(colorIndex, 0, colors.length - 1);
-        const regionColor = colors[clampedColorIndex];
-        return {
-          // adjust the ranking so that the highest value will be ranked 1st
-          // REVIEW: do we need this in the Overlay mode?
-          name: (data.length - index).toString(),
-          label: dataItem.name,
-          value: itemValue,
-          normalizedValue: normalizedValue,
-          color: regionColor,
-          opacity: Number(selectedDataLayerTransparency.value)
-        };
-      });
+      return convertRegionalDataToBarData(
+        regionalData.value,
+        selectedAdminLevel.value,
+        breakdownOption.value,
+        selectedScenarioIndex.value,
+        numberOfColorBins.value,
+        finalColorScheme.value,
+        selectedDataLayerTransparency.value
+      );
     });
 
     // apply the view-config for this datacube
