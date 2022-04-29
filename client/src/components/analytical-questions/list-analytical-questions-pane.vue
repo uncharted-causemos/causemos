@@ -29,14 +29,21 @@
       </ul>
     </template>
     <template v-if="showNewAnalyticalQuestion === false">
-      <button
-        v-tooltip.top-center="'Add a new analytical question'"
-        type="button"
-        class="btn btn-default new-question-button"
-        @click="addNewQuestion">
-          <i class="fa fa-plus-circle" />
-          Add new section
-      </button>
+      <div>
+        <button
+          v-tooltip.top-center="'Add a new analytical question'"
+          type="button"
+          class="btn btn-sm new-question-button"
+          @click="addNewQuestion">
+            <i class="fa fa-plus-circle" />
+            New section
+        </button>
+        &nbsp;
+        <button class="btn btn-sm" @click="questionsExpanded = true">Expand All</button>
+        &nbsp;
+        <button class="btn btn-sm" @click="questionsExpanded = false">Collapse All</button>
+      </div>
+
       <div v-if="insightsBySection.length > 0" class="analytical-questions-container">
         <div
           v-for="sectionWithInsights in insightsBySection"
@@ -86,32 +93,34 @@
               </template>
             </options-button>
           </div>
-          <!-- second row display a list of linked insights -->
-          <message-display
-            v-if="(sectionWithInsights.insights.length ?? 0) === 0"
-            class="no-insight-warning"
-            :message-type="'alert-warning'"
-            :message="'No insights assigned to this section.'"
-          />
-          <div
-            v-for="insight in sectionWithInsights.insights"
-            :key="insight.id"
-            class="checklist-item-insight">
-            <i @mousedown.stop.prevent class="fa fa-star" />
-            <span
-              @mousedown.stop.prevent
-              class="insight-name"
-              :class="{
-                'private-insight-name': insight.visibility === 'private',
-                'clickable': canClickChecklistItems
-              }"
-              @click="$emit('item-click', sectionWithInsights.section, insight.id)">
-              {{ insight.name }}
-            </span>
-            <i class="fa fa-fw fa-close"
-              style="pointer-events: all; cursor: pointer; margin-left: auto;"
-              @click="removeRelationBetweenInsightAndQuestion($event, sectionWithInsights.section, insight.id as string)" />
-          </div>
+          <template v-if="questionsExpanded === true">
+            <!-- second row display a list of linked insights -->
+            <message-display
+              v-if="(sectionWithInsights.insights.length ?? 0) === 0"
+              class="no-insight-warning"
+              :message-type="'alert-warning'"
+              :message="'No insights assigned to this section.'"
+            />
+            <div
+              v-for="insight in sectionWithInsights.insights"
+              :key="insight.id"
+              class="checklist-item-insight">
+              <i @mousedown.stop.prevent class="fa fa-star" />
+              <span
+                @mousedown.stop.prevent
+                class="insight-name"
+                :class="{
+                  'private-insight-name': insight.visibility === 'private',
+                  'clickable': canClickChecklistItems
+                }"
+                @click="$emit('item-click', sectionWithInsights.section, insight.id)">
+                {{ insight.name }}
+              </span>
+              <i class="fa fa-fw fa-close"
+                style="pointer-events: all; cursor: pointer; margin-left: auto;"
+                @click="removeRelationBetweenInsightAndQuestion($event, sectionWithInsights.section, insight.id as string)" />
+            </div>
+          </template>
         </div>
       </div>
     </template>
@@ -128,7 +137,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue';
+import { defineComponent, PropType, ref } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 import Shepherd from 'shepherd.js';
@@ -179,9 +188,12 @@ export default defineComponent({
       return insights.value.find(insight => insight.id === insightId) as PartialInsight;
     };
 
+    const questionsExpanded = ref(true);
+
     return {
       reFetchInsights,
       getInsightById,
+      questionsExpanded,
       toaster
     };
   },
