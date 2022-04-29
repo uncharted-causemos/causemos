@@ -2,13 +2,14 @@
   <analysis-options-button-widget
     :initial-name="analysisName"
     @rename="onRenameAnalysis"
+    @duplicate="onDuplicate"
     @delete="onDeleteAnalysis"
   />
 </template>
 
 <script lang="ts">
 import { computed, defineComponent } from 'vue';
-import { deleteAnalysis, updateAnalysis } from '@/services/analysis-service';
+import { deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
 import { useStore } from 'vuex';
 import useToaster from '@/services/composables/useToaster';
 import { ANALYSIS } from '@/utils/messages-util';
@@ -65,10 +66,29 @@ export default defineComponent({
       }
     };
 
+    const onDuplicate = (newName: string) => {
+      duplicateAnalysis(analysisId.value, newName).then((result) => {
+        toast(ANALYSIS.SUCCESSFUL_DUPLICATE, 'success', false);
+        store.dispatch('app/setAnalysisName', newName);
+        router.push({
+          name: 'dataComparative',
+          params: {
+            project: project.value,
+            analysisId: result.id,
+            projectType: ProjectType.Analysis
+          }
+        });
+      }).catch(() => {
+        toast(ANALYSIS.ERRONEOUS_DUPLICATE, 'error', true);
+      });
+    };
+
     return {
       analysisName,
+      analysisId,
       onRenameAnalysis,
-      onDeleteAnalysis
+      onDeleteAnalysis,
+      onDuplicate
     };
   }
 });
