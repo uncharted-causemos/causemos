@@ -2,6 +2,7 @@
   <graph-search
     :nodes="data.graph.nodes"
     @search="search"
+    @search-candidates="showSearchCandidates"
   />
   <div
     ref="container"
@@ -138,7 +139,18 @@ export default defineComponent({
     },
     search(concept: string) {
       if (this.renderer) {
+        this.renderer.hideSearchCandidates();
+        this.renderer.showSearchCandidates([concept]);
         moveToLabel(this.renderer, concept, 2000);
+        setTimeout(() => {
+          this.renderer?.hideSearchCandidates();
+        }, 2000);
+      }
+    },
+    showSearchCandidates(candidates: string[]) {
+      if (this.renderer) {
+        this.renderer.hideSearchCandidates();
+        this.renderer.showSearchCandidates(candidates);
       }
     }
   }

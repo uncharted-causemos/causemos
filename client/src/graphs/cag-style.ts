@@ -11,7 +11,8 @@ export const DEFAULT_STYLE = {
       stroke: SELECTED_COLOR,
       borderRadius: 2,
       strokeWidth: 2
-    }
+    },
+    matched: '#FFCC00'
   },
   edge: {
     fill: 'none',

@@ -630,7 +630,7 @@ export default defineComponent({
         this.renderer.showSearchCandidates([concept]);
         moveToLabel(this.renderer, concept, 2000);
         setTimeout(() => {
-          this.renderer.hideSearchCandidates();
+          this.renderer?.hideSearchCandidates();
         }, 2000);
       }
     },
