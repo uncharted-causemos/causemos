@@ -39,9 +39,9 @@
             New section
         </button>
         &nbsp;
-        <button class="btn btn-sm" @click="questionsExpanded = true">Expand all</button>
+        <button class="btn btn-sm" @click="questionsExpanded = true">Expand All</button>
         &nbsp;
-        <button class="btn btn-sm" @click="questionsExpanded = false">Collapse all</button>
+        <button class="btn btn-sm" @click="questionsExpanded = false">Collapse All</button>
       </div>
 
       <div v-if="insightsBySection.length > 0" class="analytical-questions-container">
