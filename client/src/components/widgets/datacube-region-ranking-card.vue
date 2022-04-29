@@ -813,6 +813,7 @@ main {
   background-color: white;
   color: blue;
   z-index: 1;
+  padding: 4px;
 }
 
 .country-list {
