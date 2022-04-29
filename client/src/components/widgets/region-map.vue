@@ -335,7 +335,7 @@ export default defineComponent({
   height: 100%;
   width: 100%;
 }
-::v-deep(.mapboxgl-ctrl-attrib) {
+:deep(.mapboxgl-ctrl-attrib) {
   display: none;
 
 }
