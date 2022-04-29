@@ -142,9 +142,6 @@ export default defineComponent({
         this.renderer.hideSearchCandidates();
         this.renderer.showSearchCandidates([concept]);
         moveToLabel(this.renderer, concept, 2000);
-        setTimeout(() => {
-          this.renderer?.hideSearchCandidates();
-        }, 2000);
       }
     },
     showSearchCandidates(candidates: string[]) {
