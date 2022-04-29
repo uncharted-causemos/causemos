@@ -70,8 +70,6 @@ export default defineComponent({
       duplicateAnalysis(analysisId.value, newName).then((result) => {
         toast(ANALYSIS.SUCCESSFUL_DUPLICATE, 'success', false);
         store.dispatch('app/setAnalysisName', newName);
-
-        console.log('result', result);
         router.push({
           name: 'dataComparative',
           params: {
