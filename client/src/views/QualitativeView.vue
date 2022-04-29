@@ -1537,7 +1537,7 @@ export default defineComponent({
   // Some panes have tabs in this space, some don't
   //  remove the padding that's baked into the tabs
   //  to always have a 10px gap exactly
-  ::v-deep(.tab-bar) {
+  :deep(.tab-bar) {
     padding-top: 0;
   }
 }

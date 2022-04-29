@@ -1004,12 +1004,12 @@ $marginSize: 6px;
   flex-direction: column;
   padding-top: 1rem;
 
-  ::v-deep(.region-map) {
+  :deep(.region-map) {
     border-style: solid;
     border-color: inherit;
   }
   &.card-count-1 {
-    ::v-deep(.region-map) {
+    :deep(.region-map) {
       border: none;
     }
   }
