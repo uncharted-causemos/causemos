@@ -28,11 +28,6 @@
       @cancel="isRenameModalOpen = false"
     />
 
-    <!-- duplicate-modal is hardwired to duplicate CAGs. At time of writing,
-    the data space doesn't support duplication. When it does, we should extract
-    the business logic out of duplicate-modal and let each wrapper instance
-    around this widget (e.g. cag-analysis-options-button) specify how the
-    duplication should be performed. -->
     <duplicate-modal
       v-if="isDuplicateModalOpen"
       :current-name="initialName"

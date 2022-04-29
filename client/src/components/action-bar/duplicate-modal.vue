@@ -22,8 +22,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
-// import modelService from '@/services/model-service';
-// import { CAG } from '@/utils/messages-util';
 import useToaster from '@/services/composables/useToaster';
 
 export default defineComponent({
