@@ -38,7 +38,7 @@
       v-if="isDuplicateModalOpen"
       :current-name="initialName"
       :id-to-duplicate="idToDuplicate"
-      @success="onDuplicateSuccess"
+      @confirm="onDuplicate"
       @fail="isDuplicateModalOpen = false"
       @cancel="isDuplicateModalOpen = false"
     />
@@ -63,7 +63,7 @@ export default defineComponent({
       default: null
     }
   },
-  emits: ['rename', 'duplicate-success', 'delete'],
+  emits: ['rename', 'duplicate', 'delete'],
   setup(props, { emit }) {
     const isDropdownOpen = ref(false);
     const isRenameModalOpen = ref(false);
@@ -81,9 +81,9 @@ export default defineComponent({
       isDuplicateModalOpen.value = true;
       isDropdownOpen.value = false;
     };
-    const onDuplicateSuccess = (name: string, newCagId: string) => {
+    const onDuplicate = (name: string) => {
       isDuplicateModalOpen.value = false;
-      emit('duplicate-success', newCagId);
+      emit('duplicate', name);
     };
     const onDelete = () => {
       emit('delete');
@@ -96,7 +96,7 @@ export default defineComponent({
       onRenameModalConfirm,
       isDuplicateModalOpen,
       showDuplicateModal,
-      onDuplicateSuccess,
+      onDuplicate,
       onDelete
     };
   }
