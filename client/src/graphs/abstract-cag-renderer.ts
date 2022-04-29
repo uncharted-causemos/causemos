@@ -169,6 +169,15 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     }
   }
 
+  hideSearchCandidates() {
+    this.chart.selectAll('.node-container').style('fill', DEFAULT_STYLE.node.fill);
+  }
+
+  showSearchCandidates(candidates: string[]) {
+    const nodes = this.chart.selectAll('.node').filter((d: any) => candidates.includes(d.label));
+    nodes.select('.node-container').style('fill', '#FC0');
+  }
+
   // @override
   // Override default behaviour
   stableLayoutCheck(): boolean {

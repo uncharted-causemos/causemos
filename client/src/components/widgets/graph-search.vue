@@ -16,7 +16,7 @@ import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
 export default defineComponent({
   name: 'GraphSearch',
   emits: [
-    'search'
+    'search', 'search-candidates'
   ],
   components: {
     AutoComplete
@@ -44,10 +44,17 @@ export default defineComponent({
     };
 
     const searchNodes = (query: string) => {
-      if (query.length < 1) return [];
-      return nodes.value
+      if (query.length < 1) {
+        emit('search-candidates', []);
+        return [];
+      }
+
+      const candidates = nodes.value
         .filter((n) => n.label.toLowerCase().includes(query.toLowerCase()))
         .map(n => n.concept);
+
+      emit('search-candidates', candidates);
+      return candidates;
     };
     return {
       emitSearchResult,
