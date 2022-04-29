@@ -39,10 +39,6 @@ export default defineComponent({
     currentName: {
       type: String,
       default: ''
-    },
-    idToDuplicate: {
-      type: String,
-      default: ''
     }
   },
   emits: ['confirm', 'cancel'],

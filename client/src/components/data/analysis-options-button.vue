@@ -1,7 +1,6 @@
 <template>
   <analysis-options-button-widget
     :initial-name="analysisName"
-    :id-to-duplicate="analysisId"
     @rename="onRenameAnalysis"
     @duplicate="onDuplicate"
     @delete="onDeleteAnalysis"

@@ -10,7 +10,6 @@
         </div>
         <div
           class="dropdown-option"
-          :class="{ disabled: idToDuplicate === null }"
           @click="showDuplicateModal"
         >
           <i class="fa fa-fw fa-copy" /> Duplicate
@@ -37,7 +36,6 @@
     <duplicate-modal
       v-if="isDuplicateModalOpen"
       :current-name="initialName"
-      :id-to-duplicate="idToDuplicate"
       @confirm="onDuplicate"
       @fail="isDuplicateModalOpen = false"
       @cancel="isDuplicateModalOpen = false"
@@ -55,10 +53,6 @@ export default defineComponent({
   name: 'AnalysisOptionsButtonWidget',
   props: {
     initialName: {
-      type: String as PropType<string | null>,
-      default: null
-    },
-    idToDuplicate: {
       type: String as PropType<string | null>,
       default: null
     }

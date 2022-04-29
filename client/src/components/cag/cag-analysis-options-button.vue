@@ -1,7 +1,6 @@
 <template>
   <analysis-options-button-widget
     :initial-name="cagNameToDisplay"
-    :id-to-duplicate="currentCAG"
     @rename="onRenameAnalysis"
     @duplicate="onDuplicate"
     @delete="onDeleteAnalysis"
