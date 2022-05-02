@@ -12,7 +12,7 @@ export const DEFAULT_STYLE = {
       borderRadius: 2,
       strokeWidth: 2
     },
-    matched: SELECTED_COLOR
+    matched: '#FD0'
   },
   edge: {
     fill: 'none',

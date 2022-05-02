@@ -1,17 +1,30 @@
 <template>
   <div class="search-box">
-    <auto-complete
-      :display-type="'ConceptDisplay'"
-      placeholder-message="Search..."
-      :search-fn="searchNodes"
-      @item-selected="emitSearchResult"
+    <input placeholder="Search" v-model="searchStr" class="graph-search" type="text" />
+    <i
+      v-if="searchStr.length > 1"
+      class="fa fa-window-close fa-fw"
+      style="margin-left: -20px; cursor: pointer"
+      @click="searchStr = ''"
     />
+
+    <dropdown-control
+      v-if="searchStr.length > 1"
+      class="search-dropdown">
+      <template #content>
+        <div
+          class="search-dropdown-item"
+          v-for="c of candidates" :key="c">
+          <div @click="moveTo(c)">{{ c }}</div>
+        </div>
+      </template>
+    </dropdown-control>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, toRefs } from 'vue';
-import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
+import { defineComponent, PropType, toRefs, ref, watch } from 'vue';
+import DropdownControl from '@/components/dropdown-control.vue';
 
 export default defineComponent({
   name: 'GraphSearch',
@@ -19,7 +32,7 @@ export default defineComponent({
     'search', 'search-candidates'
   ],
   components: {
-    AutoComplete
+    DropdownControl
   },
   props: {
     nodes: {
@@ -32,6 +45,9 @@ export default defineComponent({
       nodes
     } = toRefs(props);
 
+    const searchStr = ref('');
+    const candidates = ref<string[]>([]);
+
     const emitSearchResult = (concept: string) => {
       if (concept) {
         const matches = nodes.value.filter((n) => {
@@ -43,23 +59,35 @@ export default defineComponent({
       }
     };
 
-    const searchNodes = (query: string) => {
-      if (query.length < 1) {
-        emit('search-candidates', []);
-        return [];
-      }
+    watch(
+      () => [searchStr.value],
+      () => {
+        if (searchStr.value.length < 2) {
+          emit('search-candidates', []);
+          candidates.value = [];
+          return;
+        }
 
-      const candidates = nodes.value
-        .filter((n) => n.label.toLowerCase().includes(query.toLowerCase()))
-        .map(n => n.concept);
+        const matches = nodes.value
+          .filter((n) => n.label.toLowerCase().includes(searchStr.value.toLowerCase()))
+          .map(n => n.concept);
 
-      emit('search-candidates', candidates);
-      return candidates;
-    };
+        emit('search-candidates', matches);
+        candidates.value = matches;
+      },
+      { immediate: true }
+    );
+
     return {
+      searchStr,
       emitSearchResult,
-      searchNodes
+      candidates
     };
+  },
+  methods: {
+    moveTo(label: string) {
+      this.$emit('search', label);
+    }
   }
 });
 </script>
@@ -67,8 +95,39 @@ export default defineComponent({
 <style lang="scss" scoped>
 .search-box {
   position: absolute;
-  right: 5px;
+  right: 25px;
   top: 5px;
+
+  .graph-search {
+    padding-right: 20px;
+    border: 1px solid #BBB;
+    background: #DDD;
+    height: 30px;
+  }
+
+  .search-dropdown {
+    position: absolute;
+    top: 30px;
+    left: -100px;
+    opacity: 0.90;
+  }
+
+  .search-dropdown-item {
+    padding: 5px;
+    width: 270px;
+    height: 30px;
+    opacity: 0.75;
+  }
+
+  .search-dropdown-item:hover {
+    background: #fd0;
+    cursor: pointer;
+  }
+
+  .search-dropdown-item:not(:last-child) {
+    border-bottom: 1px solid #888;
+  }
 }
+
 </style>
 
