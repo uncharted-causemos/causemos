@@ -15,7 +15,7 @@
         <div
           class="search-dropdown-item"
           v-for="c of candidates" :key="c">
-          <div @click="moveTo(c)">{{ c }}</div>
+          <div @click="moveTo(c)">{{ ontologyFormatter(c) }}</div>
         </div>
       </template>
     </dropdown-control>
@@ -25,6 +25,7 @@
 <script lang="ts">
 import { defineComponent, PropType, toRefs, ref, watch } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 export default defineComponent({
   name: 'GraphSearch',
@@ -81,7 +82,8 @@ export default defineComponent({
     return {
       searchStr,
       emitSearchResult,
-      candidates
+      candidates,
+      ontologyFormatter: useOntologyFormatter()
     };
   },
   methods: {
@@ -107,16 +109,18 @@ export default defineComponent({
 
   .search-dropdown {
     position: absolute;
-    top: 30px;
+    top: 35px;
     left: -100px;
     opacity: 0.90;
   }
 
   .search-dropdown-item {
-    padding: 5px;
+    padding: 10px 5px;
     width: 270px;
     height: 30px;
     opacity: 0.75;
+    display: flex;
+    align-items: center;
   }
 
   .search-dropdown-item:hover {

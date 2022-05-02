@@ -169,13 +169,15 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     }
   }
 
+  // Hide graph search results
   hideSearchCandidates() {
-    this.chart.selectAll('.node-container, .node-header').style('fill', DEFAULT_STYLE.node.fill);
+    this.chart.selectAll('.node-header').style('fill', DEFAULT_STYLE.node.fill);
   }
 
+  // Show graph search results
   showSearchCandidates(candidates: string[]) {
     const nodes = this.chart.selectAll('.node').filter((d: any) => candidates.includes(d.label));
-    nodes.selectAll('.node-container, .node-header').style('fill', DEFAULT_STYLE.node.matched);
+    nodes.selectAll('.node-header').style('fill', DEFAULT_STYLE.node.matched);
   }
 
   // @override
