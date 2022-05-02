@@ -15,6 +15,7 @@
       @update-scenario='$emit("update-scenario", $event)'
       @delete-scenario='$emit("delete-scenario", $event)'
       @delete-scenario-clamp='$emit("delete-scenario-clamp", $event)'
+      @duplicate-scenario='$emit("duplicate-scenario", $event)'
     />
 
     <cag-analytics-pane
@@ -68,7 +69,7 @@ export default defineComponent({
     CagScenariosPane,
     CagAnalyticsPane
   },
-  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp', 'download-experiment', 'show-path'],
+  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp', 'download-experiment', 'show-path', 'duplicate-scenario'],
   props: {
     isExperimentDownloadVisible: {
       type: Boolean,
