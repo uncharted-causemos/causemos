@@ -122,6 +122,8 @@
             :bar-chart-hover-id="barChartHoverId"
             :show-normalized-data="showNormalizedData"
             :is-data-inverted="isDatacubeInverted(item)"
+            :max-number-of-chart-bars="maxNumberOfChartBars"
+            :limit-number-of-chart-bars="limitNumberOfChartBars"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
             @map-click-region="onMapClickRegion"

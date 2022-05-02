@@ -32,6 +32,7 @@
     </header>
     <main>
       <div class="chart-and-footer">
+        <div v-if="showTempHover !== ''" class="hover-not-visible" v-html="showTempHover"></div>
         <bar-chart
           class="bar-chart"
           :bars-data="barsData"
@@ -190,6 +191,14 @@ export default defineComponent({
     isDataInverted: {
       type: Boolean,
       default: false
+    },
+    maxNumberOfChartBars: {
+      type: Number,
+      default: 20
+    },
+    limitNumberOfChartBars: {
+      type: Boolean,
+      default: false
     }
   },
   setup(props, { emit }) {
@@ -203,7 +212,9 @@ export default defineComponent({
       regionRankingBinningType,
       showNormalizedData,
       barChartHoverId,
-      isDataInverted
+      isDataInverted,
+      limitNumberOfChartBars,
+      maxNumberOfChartBars
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -500,6 +511,8 @@ export default defineComponent({
       bbox.value = await computeMapBoundsForCountries(countries) || undefined;
     });
 
+    const barDataWithoutTheNumberOfBarsLimit = ref<BarData[]>([]);
+
     watch(
       () => [
         regionalData.value,
@@ -510,7 +523,9 @@ export default defineComponent({
         regionRankingBinningType.value,
         selectedRegionRankingScenario.value,
         isDataInverted.value,
-        selectedRegionIdsAtAllLevels.value
+        selectedRegionIdsAtAllLevels.value,
+        limitNumberOfChartBars.value,
+        maxNumberOfChartBars.value
       ],
       () => {
         const temp: BarData[] = [];
@@ -599,6 +614,9 @@ export default defineComponent({
               temp.reverse();
             }
 
+            // update our internal cache of the bar data before applying the limit, if enabled
+            barDataWithoutTheNumberOfBarsLimit.value = temp;
+
             emit('updated-bars-data', {
               id: id.value,
               datacubeId: datacubeId.value,
@@ -609,7 +627,7 @@ export default defineComponent({
             });
           }
           // limit the number of bars to the selected maximum
-          barsData.value = temp;
+          barsData.value = limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp;
         }
       });
 
@@ -632,6 +650,34 @@ export default defineComponent({
         bbox.value = bounds;
       }
     });
+
+    const showTempHover = ref('');
+    watch(
+      () => [
+        barChartHoverId.value,
+        barDataWithoutTheNumberOfBarsLimit.value,
+        limitNumberOfChartBars.value
+      ],
+      () => {
+        let hideTempHoverInfo = true;
+        let tempHoverInfo = '';
+        // do we have a selected bar and the max number of bars' limit is enabled?
+        if (barChartHoverId.value !== '' && limitNumberOfChartBars.value) {
+          // find the rank of the selected bar,
+          // and assess if it is outside the current limit enforced for the maximum number of bars
+          const targetBarInfo = barDataWithoutTheNumberOfBarsLimit.value.find(regionInfo => regionInfo.label === barChartHoverId.value);
+          if (targetBarInfo) {
+            const rank = +targetBarInfo.name;
+            // if the ranked region/bar is indeed outside the visible bars, then show a temp hover
+            if (rank > maxNumberOfChartBars.value) {
+              tempHoverInfo = targetBarInfo.label + '<br />' + 'Ranked: ' + rank;
+              hideTempHoverInfo = false;
+            }
+          }
+        }
+        showTempHover.value = hideTempHoverInfo ? '' : tempHoverInfo;
+      }
+    );
 
     return {
       selectedTemporalResolution,
@@ -661,7 +707,8 @@ export default defineComponent({
       regionRunsScenarios,
       bbox,
       mapLegendData,
-      invertData
+      invertData,
+      showTempHover
     };
   },
   methods: {
@@ -751,10 +798,22 @@ main {
 }
 
 .chart-and-footer {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
+}
+
+.hover-not-visible {
+  position: absolute;
+  left: 50%;
+  border: gray;
+  border-style: solid;
+  background-color: white;
+  color: blue;
+  z-index: 1;
+  padding: 4px;
 }
 
 .country-list {

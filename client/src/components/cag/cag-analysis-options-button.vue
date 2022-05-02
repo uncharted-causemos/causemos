@@ -1,9 +1,8 @@
 <template>
   <analysis-options-button-widget
     :initial-name="cagNameToDisplay"
-    :id-to-duplicate="currentCAG"
     @rename="onRenameAnalysis"
-    @duplicate-success="onDuplicateSuccess"
+    @duplicate="onDuplicate"
     @delete="onDeleteAnalysis"
   />
 </template>
@@ -80,21 +79,26 @@ export default defineComponent({
           toast(CAG.ERRONEOUS_DELETION, 'error', true);
         });
     };
-    const onDuplicateSuccess = (newCagId: string) => {
-      router.push({
-        name: 'qualitative',
-        params: {
-          project: project.value,
-          currentCAG: newCagId,
-          projectType: ProjectType.Analysis
-        }
+    const onDuplicate = (name: string) => {
+      modelService.duplicateModel(currentCAG.value, name).then((result) => {
+        toast(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
+        router.push({
+          name: 'qualitative',
+          params: {
+            project: project.value,
+            currentCAG: result.id,
+            projectType: ProjectType.Analysis
+          }
+        });
+      }).catch(() => {
+        toast(CAG.ERRONEOUS_DUPLICATE, 'error', false);
       });
     };
 
     return {
       cagNameToDisplay,
       onRenameAnalysis,
-      onDuplicateSuccess,
+      onDuplicate,
       onDeleteAnalysis,
       currentCAG
     };
