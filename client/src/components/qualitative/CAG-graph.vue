@@ -7,6 +7,7 @@
     <graph-search
       :nodes="data.nodes"
       @search="search"
+      @search-candidates="showSearchCandidates"
     />
     <new-node-concept-select
       v-if="showNewNode"
@@ -625,7 +626,15 @@ export default defineComponent({
     },
     search(concept: string) {
       if (this.renderer) {
+        this.renderer.hideSearchCandidates();
+        this.renderer.showSearchCandidates([concept]);
         moveToLabel(this.renderer, concept, 2000);
+      }
+    },
+    showSearchCandidates(candidates: string[]) {
+      if (this.renderer) {
+        this.renderer.hideSearchCandidates();
+        this.renderer.showSearchCandidates(candidates);
       }
     }
   }
