@@ -48,20 +48,20 @@
                   v-if="!scenario.is_baseline"
                   class="dropdown-option"
                   @click="editScenario(scenario)">
-                  <i class="fa fa-pencil" />
+                  <i class="fa fa-fw fa-pencil" />
                   Edit
                 </div>
                 <div
                   class="dropdown-option"
                   @click="duplicateScenario(scenario)">
-                  <i class="fa fa-copy" />
+                  <i class="fa fa-fw fa-copy" />
                   Duplicate
                 </div>
                 <div
                   v-if="!scenario.is_baseline"
                   class="dropdown-option destructive"
                   @click="deleteScenario(scenario)">
-                  <i class="fa fa-trash" />
+                  <i class="fa fa-fw fa-trash" />
                   Delete
                 </div>
               </template>
