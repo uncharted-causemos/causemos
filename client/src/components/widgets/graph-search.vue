@@ -1,10 +1,10 @@
 <template>
   <div class="search-box">
-    <input placeholder="Search" v-model="searchStr" class="graph-search" type="text" />
+    <input placeholder="Search..." v-model="searchStr" class="graph-search" type="text" />
     <i
       v-if="searchStr.length > 1"
-      class="fa fa-window-close fa-fw"
-      style="margin-left: -20px; cursor: pointer"
+      class="fa fa-window-close fa-fw fa-lg"
+      style="margin-left: -25px; cursor: pointer"
       @click="searchStr = ''"
     />
 
@@ -14,8 +14,10 @@
       <template #content>
         <div
           class="search-dropdown-item"
-          v-for="c of candidates" :key="c">
-          <div @click="moveTo(c)">{{ ontologyFormatter(c) }}</div>
+          v-for="c of candidates" :key="c"
+          @dblclick.stop=""
+          @click.stop="moveTo(c)">
+          <div>{{ ontologyFormatter(c) }}</div>
         </div>
       </template>
     </dropdown-control>
@@ -102,8 +104,8 @@ export default defineComponent({
 
   .graph-search {
     padding-right: 20px;
-    border: 1px solid #BBB;
-    background: #DDD;
+    border: 1px solid #CCC;
+    background: #EEE;
     height: 30px;
   }
 
