@@ -39,23 +39,28 @@
               </div>
             </div>
             <options-button
-              v-if="isFullScenario(scenario) && !scenario.is_baseline"
+              v-if="isFullScenario(scenario)"
               :dropdown-below="true"
               :wider-dropdown-options="true"
-              class="options-button"
-            >
+              class="options-button">
               <template #content>
                 <div
+                  v-if="!scenario.is_baseline"
                   class="dropdown-option"
-                  @click="editScenario(scenario)"
-                >
+                  @click="editScenario(scenario)">
                   <i class="fa fa-pencil" />
                   Edit
                 </div>
                 <div
                   class="dropdown-option"
-                  @click="deleteScenario(scenario)"
-                >
+                  @click="duplicateScenario(scenario)">
+                  <i class="fa fa-copy" />
+                  Duplicate
+                </div>
+                <div
+                  v-if="!scenario.is_baseline"
+                  class="dropdown-option destructive"
+                  @click="deleteScenario(scenario)">
                   <i class="fa fa-trash" />
                   Delete
                 </div>
@@ -121,7 +126,7 @@ export default defineComponent({
     OptionsButton,
     CagScenarioForm
   },
-  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp'],
+  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp', 'duplicate-scenario'],
   props: {
     scenarios: {
       type: Array as PropType<Scenario[]>,
@@ -204,6 +209,9 @@ export default defineComponent({
       this.scenarioDesc = scenario.description;
       this.showNewOrEditScenario = true;
       this.editingScenarioId = scenario.id;
+    },
+    duplicateScenario(scenario: Scenario) {
+      this.$emit('duplicate-scenario', scenario);
     },
     deleteScenarioClamp(scenario: Scenario, clamp: ConceptProjectionConstraints) {
       // emit an event to update the scenario and delete the relevant clamp
@@ -341,4 +349,8 @@ export default defineComponent({
   .unstyled-list {
     display: flex;
   }
+  .destructive {
+    color: $negative;
+  }
+
 </style>

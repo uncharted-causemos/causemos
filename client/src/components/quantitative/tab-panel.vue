@@ -16,6 +16,7 @@
         @update-scenario='$emit("update-scenario", $event)'
         @delete-scenario='$emit("delete-scenario", $event)'
         @delete-scenario-clamp='$emit("delete-scenario-clamp", $event)'
+        @duplicate-scenario='$emit("duplicate-scenario", $event)'
       >
         <template #below-tabs>
           <cag-comments-button :model-summary="modelSummary" />
@@ -200,7 +201,8 @@ export default defineComponent({
     'new-scenario',
     'update-scenario',
     'delete-scenario',
-    'delete-scenario-clamp'
+    'delete-scenario-clamp',
+    'duplicate-scenario'
   ],
   setup() {
     const selectedNode = ref(null) as Ref<NodeParameter | null>;
