@@ -81,8 +81,7 @@ export default defineComponent({
       currentCAG: 'app/currentCAG',
       nodeId: 'app/nodeId',
       project: 'app/project',
-      selectedDatacubes: 'dataSearch/selectedDatacubes',
-      searchResultsCount: 'dataSearch/searchResultsCount'
+      selectedDatacubes: 'dataSearch/selectedDatacubes'
     }),
     selectedNode() {
       if (this.nodeId === undefined || this.modelComponents === null) {
