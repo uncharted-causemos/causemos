@@ -144,6 +144,7 @@ import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import { AnalysisMapColorOptions } from '@/types/Common';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { AdminRegionSets } from '@/types/Datacubes';
+import { chartValueFormatter } from '@/utils/string-util';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCard',
@@ -661,7 +662,7 @@ export default defineComponent({
     // For displaying selected items that are off screen
     const hiddenRegionRank = ref(-1);
     const hiddenRegionName = ref('');
-    const hiddenRegionValue = ref(0);
+    const hiddenRegionValue = ref('');
     watch(
       () => [
         barChartHoverId.value,
@@ -669,7 +670,7 @@ export default defineComponent({
         limitNumberOfChartBars.value
       ],
       () => {
-        hiddenRegionValue.value = 0;
+        hiddenRegionValue.value = '';
         hiddenRegionRank.value = -1;
         hiddenRegionName.value = '';
 
@@ -682,9 +683,10 @@ export default defineComponent({
             const rank = +targetBarInfo.name;
             // if the ranked region/bar is indeed outside the visible bars, then show a temp hover
             if (rank > maxNumberOfChartBars.value) {
+              const valueFormatter = chartValueFormatter(...barDataWithoutTheNumberOfBarsLimit.value.map(d => d.value));
               hiddenRegionRank.value = rank;
               hiddenRegionName.value = targetBarInfo.label;
-              hiddenRegionValue.value = targetBarInfo.value;
+              hiddenRegionValue.value = valueFormatter(targetBarInfo.value);
             }
           }
         }
