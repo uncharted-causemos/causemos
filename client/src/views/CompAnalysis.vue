@@ -38,6 +38,7 @@
           v-if="selectedAnalysisItems.length > 0"
           :bars-data="globalBarsData"
           :max-number-of-chart-bars="maxNumberOfChartBars"
+          :limit-number-of-chart-bars="limitNumberOfChartBars"
           :selected-admin-level="selectedAdminLevel"
           :selected-timestamp="globalRegionRankingTimestamp"
           :selected-color-scheme="finalColorScheme"

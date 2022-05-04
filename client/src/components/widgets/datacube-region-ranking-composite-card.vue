@@ -62,6 +62,10 @@ export default defineComponent({
       type: Number,
       default: -1
     },
+    limitNumberOfChartBars: {
+      type: Boolean,
+      default: false
+    },
     selectedTimestamp: {
       type: Number,
       default: 0
@@ -91,7 +95,7 @@ export default defineComponent({
     const mapLegendData = ref<MapLegendColor[]>([]);
 
     const topBarsData = computed(() => {
-      return props.maxNumberOfChartBars > 0 ? props.barsData.slice(-props.maxNumberOfChartBars) : props.barsData;
+      return props.limitNumberOfChartBars ? props.barsData.slice(-props.maxNumberOfChartBars) : props.barsData;
     });
 
     watch(
@@ -123,7 +127,6 @@ export default defineComponent({
         hiddenRegionName.value = '';
 
         if (barChartHoverId.value && props.maxNumberOfChartBars > 0) {
-          console.log('hihi', barChartHoverId.value, props.maxNumberOfChartBars);
           const targetBarInfo = props.barsData.find(regionInfo => regionInfo.label === barChartHoverId.value);
 
           const valueFormatter = chartValueFormatter(...props.barsData.map(d => d.value));
