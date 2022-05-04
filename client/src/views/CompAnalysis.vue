@@ -37,6 +37,8 @@
         <datacube-region-ranking-composite-card
           v-if="selectedAnalysisItems.length > 0"
           :bars-data="globalBarsData"
+          :max-number-of-chart-bars="maxNumberOfChartBars"
+          :limit-number-of-chart-bars="limitNumberOfChartBars"
           :selected-admin-level="selectedAdminLevel"
           :selected-timestamp="globalRegionRankingTimestamp"
           :selected-color-scheme="finalColorScheme"
@@ -786,8 +788,7 @@ export default defineComponent({
       compositeDataSorted.forEach((barItem, indx) => {
         barItem.name = (compositeDataSorted.length - indx).toString();
       });
-      // limit the number of bars to the selected maximum
-      this.globalBarsData = this.limitNumberOfChartBars ? compositeDataSorted.slice(-this.maxNumberOfChartBars) : compositeDataSorted;
+      this.globalBarsData = compositeDataSorted;
     },
     onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; itemId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; source: string; region: string[]}) {
       // we should only set the global timeseries one time

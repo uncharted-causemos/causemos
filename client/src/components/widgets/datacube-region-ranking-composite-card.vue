@@ -2,9 +2,17 @@
   <div class="datacube-region-ranking-composite-container">
     <main>
       <div class="chart-and-footer">
+        <div v-if="hiddenRegionRank > 0" class="hover-not-visible">
+          <div style="display: flex; justify-content: space-between; min-width: 150px">
+            <div>{{hiddenRegionName}}</div><div>{{hiddenRegionValue}}</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; min-width: 150px">
+            <div>Rank</div><div>{{hiddenRegionRank}}</div>
+          </div>
+        </div>
         <bar-chart
           class="bar-chart"
-          :bars-data="barsData"
+          :bars-data="topBarsData"
           :hover-id="barChartHoverId"
           @bar-chart-hover="$emit('bar-chart-hover', $event)"
         />
@@ -12,7 +20,7 @@
       </div>
       <div class="card-maps-box">
         <region-map class="region-map-container"
-          :data="barsData"
+          :data="topBarsData"
           :selected-admin-level="selectedAdminLevel"
           :map-bounds="mapBounds"
           :selected-id="barChartHoverId"
@@ -27,7 +35,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, toRefs, watch } from 'vue';
+import { defineComponent, PropType, ref, toRefs, watch, computed } from 'vue';
 import { BarData } from '@/types/BarChart';
 import dateFormatter from '@/formatters/date-formatter';
 import BarChart from '@/components/widgets/charts/bar-chart.vue';
@@ -35,6 +43,7 @@ import RegionMap from '@/components/widgets/region-map.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import { MapLegendColor } from '@/types/Common';
+import { chartValueFormatter } from '@/utils/string-util';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCompositeCard',
@@ -48,6 +57,14 @@ export default defineComponent({
     barsData: {
       type: Array as PropType<BarData[]>,
       default: []
+    },
+    maxNumberOfChartBars: {
+      type: Number,
+      default: -1
+    },
+    limitNumberOfChartBars: {
+      type: Boolean,
+      default: false
     },
     selectedTimestamp: {
       type: Number,
@@ -72,9 +89,14 @@ export default defineComponent({
   },
   setup(props) {
     const {
-      selectedColorScheme
+      selectedColorScheme,
+      barChartHoverId
     } = toRefs(props);
     const mapLegendData = ref<MapLegendColor[]>([]);
+
+    const topBarsData = computed(() => {
+      return props.limitNumberOfChartBars ? props.barsData.slice(-props.maxNumberOfChartBars) : props.barsData;
+    });
 
     watch(
       () => [
@@ -93,9 +115,44 @@ export default defineComponent({
       { immediate: true }
     );
 
+    // When selected region changes, check if we can display the native tooltip, or if the region is hidden/clipped
+    const hiddenRegionRank = ref(-1);
+    const hiddenRegionName = ref('');
+    const hiddenRegionValue = ref('');
+    watch(
+      () => [barChartHoverId.value],
+      () => {
+        hiddenRegionValue.value = '';
+        hiddenRegionRank.value = -1;
+        hiddenRegionName.value = '';
+
+        if (barChartHoverId.value && props.maxNumberOfChartBars > 0) {
+          const targetBarInfo = props.barsData.find(regionInfo => regionInfo.label === barChartHoverId.value);
+
+          const valueFormatter = chartValueFormatter(...props.barsData.map(d => d.value));
+
+          if (targetBarInfo) {
+            const rank = +targetBarInfo.name;
+            if (rank > props.maxNumberOfChartBars) {
+              console.log('should show hidden information as a tooltip', targetBarInfo);
+              hiddenRegionRank.value = rank;
+              hiddenRegionName.value = targetBarInfo.label;
+              hiddenRegionValue.value = valueFormatter(targetBarInfo.value);
+            }
+          }
+        }
+      },
+      { immediate: true }
+    );
+
     return {
       mapLegendData,
-      timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY')
+      timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY'),
+      topBarsData,
+
+      hiddenRegionName,
+      hiddenRegionValue,
+      hiddenRegionRank
     };
   }
 });
@@ -154,6 +211,7 @@ main {
 }
 
 .chart-and-footer {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -184,5 +242,18 @@ main {
 .region-map-container {
   width: 75%;
 }
+
+.hover-not-visible {
+  position: absolute;
+  left: 50%;
+  border: #BBB;
+  border-style: solid;
+  border-radius: 2px;
+  background-color: #F4F4F4;
+  color: blue;
+  z-index: 1;
+  padding: 4px;
+}
+
 
 </style>

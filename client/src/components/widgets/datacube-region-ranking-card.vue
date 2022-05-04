@@ -32,7 +32,14 @@
     </header>
     <main>
       <div class="chart-and-footer">
-        <div v-if="showTempHover !== ''" class="hover-not-visible" v-html="showTempHover"></div>
+        <div v-if="hiddenRegionRank > 0" class="hover-not-visible">
+          <div style="display: flex; justify-content: space-between; min-width: 150px">
+            <div>{{hiddenRegionName}}</div><div>{{hiddenRegionValue}}</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; min-width: 150px">
+            <div>Rank</div><div>{{hiddenRegionRank}}</div>
+          </div>
+        </div>
         <bar-chart
           class="bar-chart"
           :bars-data="barsData"
@@ -137,6 +144,7 @@ import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import { AnalysisMapColorOptions } from '@/types/Common';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { AdminRegionSets } from '@/types/Datacubes';
+import { chartValueFormatter } from '@/utils/string-util';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCard',
@@ -651,7 +659,10 @@ export default defineComponent({
       }
     });
 
-    const showTempHover = ref('');
+    // For displaying selected items that are off screen
+    const hiddenRegionRank = ref(-1);
+    const hiddenRegionName = ref('');
+    const hiddenRegionValue = ref('');
     watch(
       () => [
         barChartHoverId.value,
@@ -659,8 +670,10 @@ export default defineComponent({
         limitNumberOfChartBars.value
       ],
       () => {
-        let hideTempHoverInfo = true;
-        let tempHoverInfo = '';
+        hiddenRegionValue.value = '';
+        hiddenRegionRank.value = -1;
+        hiddenRegionName.value = '';
+
         // do we have a selected bar and the max number of bars' limit is enabled?
         if (barChartHoverId.value !== '' && limitNumberOfChartBars.value) {
           // find the rank of the selected bar,
@@ -670,12 +683,13 @@ export default defineComponent({
             const rank = +targetBarInfo.name;
             // if the ranked region/bar is indeed outside the visible bars, then show a temp hover
             if (rank > maxNumberOfChartBars.value) {
-              tempHoverInfo = targetBarInfo.label + '<br />' + 'Ranked: ' + rank;
-              hideTempHoverInfo = false;
+              const valueFormatter = chartValueFormatter(...barDataWithoutTheNumberOfBarsLimit.value.map(d => d.value));
+              hiddenRegionRank.value = rank;
+              hiddenRegionName.value = targetBarInfo.label;
+              hiddenRegionValue.value = valueFormatter(targetBarInfo.value);
             }
           }
         }
-        showTempHover.value = hideTempHoverInfo ? '' : tempHoverInfo;
       }
     );
 
@@ -708,7 +722,9 @@ export default defineComponent({
       bbox,
       mapLegendData,
       invertData,
-      showTempHover
+      hiddenRegionName,
+      hiddenRegionValue,
+      hiddenRegionRank
     };
   },
   methods: {
@@ -808,9 +824,10 @@ main {
 .hover-not-visible {
   position: absolute;
   left: 50%;
-  border: gray;
+  border: #BBB;
   border-style: solid;
-  background-color: white;
+  border-radius: 2px;
+  background-color: #F4F4F4;
   color: blue;
   z-index: 1;
   padding: 4px;
