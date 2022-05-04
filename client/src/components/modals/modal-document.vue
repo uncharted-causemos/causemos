@@ -319,7 +319,7 @@ export default {
     }
   }
 
-  ::v-deep(.modal-container) {
+  :deep(.modal-container) {
     padding: 0;
     width: 800px;
 
@@ -347,7 +347,7 @@ export default {
   }
 
   /* Bootstrap sets all box-sizing to border-box, which messes up the pdf-js library */
-  ::v-deep(.page) {
+  :deep(.page) {
     box-sizing: content-box !important;
   }
 

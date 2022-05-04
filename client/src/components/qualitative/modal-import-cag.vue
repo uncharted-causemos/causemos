@@ -133,12 +133,12 @@ export default defineComponent({
   margin-left: 10px;
 }
 
-::v-deep(.modal-container) {
+:deep(.modal-container) {
   overflow: hidden;
   width: 960px;
 }
 
-::v-deep(.modal-body) {
+:deep(.modal-body) {
 
   .available-cags-container {
     display: flex;

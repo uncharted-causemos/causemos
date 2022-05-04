@@ -177,7 +177,7 @@ main {
   }
 }
 
-::v-deep(.color-ramp) {
+:deep(.color-ramp) {
   width: 10px; // FIXME: ideally this should be dynamic somehow to match the width of the legend colors in non-composite cards
 }
 

@@ -628,7 +628,7 @@ table.model-table thead tr th {
 .dropdown-button {
   width: 100%;
 }
-::v-deep(.dropdown-btn) {
+:deep(.dropdown-btn) {
   width: 100%;
 }
 

@@ -369,16 +369,16 @@ export default {
     }
   }
 
-  ::v-deep(.grid-lines path) {
+  :deep(.grid-lines path) {
     stroke-width: 0;
   }
 
-  ::v-deep(.grid-lines line) {
+  :deep(.grid-lines line) {
     stroke-width: 4px;
     stroke: $background-light-2;
   }
 
-  ::v-deep(.tick text) {
+  :deep(.tick text) {
     cursor: pointer;
 
     &:hover {

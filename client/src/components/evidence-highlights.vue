@@ -84,19 +84,19 @@ export default defineComponent({
 <style lang='scss' scoped>
 
 .evidence-highlights-container {
-  ::v-deep(.highlight) {
+  :deep(.highlight) {
     font-weight: 800;
   }
-  ::v-deep(.negation-highlight) {
+  :deep(.negation-highlight) {
     border-bottom:3px red dashed;
     display: inline-block;
     line-height: 0.85;
   }
-  ::v-deep(.hedging-highlight) {
+  :deep(.hedging-highlight) {
     background-color: #BEBEBE;
     font-style: italic;
   }
-  ::v-deep(.selected-highlight) {
+  :deep(.selected-highlight) {
     background-color: #B6D8FC;
   }
 }
