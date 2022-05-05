@@ -28,7 +28,10 @@ import useSelectedTimeseriesPoints from './useSelectedTimeseriesPoints';
 import useTimeseriesData from './useTimeseriesData';
 import useAnalysisMapStats from './useAnalysisMapStats';
 import useDatacubeColorScheme from './useDatacubeColorScheme';
-import { getFilteredScenariosFromIds, isIndicator } from '@/utils/datacube-util';
+import {
+  getFilteredScenariosFromIds,
+  isIndicator
+} from '@/utils/datacube-util';
 
 // FIXME: in datacube-card, itemId is taken from the route, others all take it as a prop
 export default function useDatacube(
@@ -50,7 +53,6 @@ export default function useDatacube(
   const initialSelectedGlobalTimestamp = ref<number | null>(null);
   const initialActiveFeatures = ref<OutputVariableSpecs[]>([]);
   const initialActiveReferenceOptions = ref<string[]>([]);
-
 
   const selectedSpatialAggregation = ref<AggregationOption>(
     AggregationOption.Mean
@@ -115,10 +117,7 @@ export default function useDatacube(
     selectedTransform
   );
 
-  const { dimensions, ordinalDimensionNames } = useDatacubeDimensions(
-    metadata,
-    itemId
-  );
+  const { dimensions } = useDatacubeDimensions(metadata, itemId);
 
   // FIXME: searchFilters refers to the model run search bar.
   // It's only really used in datacube-card (changes are scattered through the
@@ -407,7 +406,6 @@ export default function useDatacube(
 
   return {
     dimensions,
-    ordinalDimensionNames,
     allModelRunData,
     filteredRunData,
     fetchModelRuns,

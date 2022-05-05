@@ -136,8 +136,6 @@ function renderParallelCoordinates(
   data: Array<ScenarioData>,
   // (selected) dimensions list, which control shown dimensions as well as their order
   dimensionsList: Array<DimensionInfo>,
-  // list of dimensions (by name) that should be presented as ordinal axes regardless of their actual data type
-  ordinalDimensions: Array<string>,
   // callback function that is called with one or more lines are selected
   onLinesSelection: (selectedLines: Array<ScenarioData>) => void,
   // callback function that is called when one or more markers are added in the new-runs mode
@@ -180,7 +178,7 @@ function renderParallelCoordinates(
   /// map of x axes by dimension name
   //
   axisRange = [0, width];
-  const { x, y } = createScales(data, dimensions, ordinalDimensions, pcTypes, axisRange, height);
+  const { x, y } = createScales(data, dimensions, pcTypes, axisRange, height);
   xScaleMap = x;
   yScale = y;
 
@@ -1947,7 +1945,6 @@ function getSegmentsInfo(dimName: string) {
 const createScales = (
   data: Array<ScenarioData>,
   dimensions: Array<DimensionInfo>,
-  ordinalDimensions: Array<string>,
   pcTypes: { [key: string]: string },
   axisRange: Array<number>,
   height: number) => {
@@ -2110,13 +2107,6 @@ const createScales = (
   Object.values(DatacubeGeoAttributeVariableType).forEach(v => {
     defaultScales[v] = stringFunc;
   });
-
-  // force some dimensions to be ordinal, if requested
-  if (ordinalDimensions && Array.isArray(ordinalDimensions)) {
-    ordinalDimensions.forEach(dimName => {
-      pcTypes[dimName] = 'string';
-    });
-  }
 
   // For each dimension, build a scale and cache its function in the map
   for (const i in dimensions) {

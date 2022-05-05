@@ -38,10 +38,6 @@ export default defineComponent({
       type: Array as PropType<DimensionInfo[]>,
       default: null
     },
-    ordinalDimensions: {
-      type: Array as PropType<string[]>,
-      default: null
-    },
     initialDataSelection: {
       type: Array as PropType<string[]>,
       default: undefined
@@ -120,7 +116,6 @@ export default defineComponent({
           options,
           this.dimensionsData,
           this.selectedDimensions,
-          this.ordinalDimensions,
           this.onLinesSelection,
           this.onGeneratedRuns,
           this.onGeoSelection,

@@ -116,7 +116,6 @@
               class="pc-chart"
               :dimensions-data="runParameterValues"
               :selected-dimensions="dimensions"
-              :ordinal-dimensions="ordinalDimensionNames"
               :initial-data-selection="selectedScenarioIds"
               :new-runs-mode="newRunsMode"
               @select-scenario="setSelectedScenarios"
@@ -800,7 +799,6 @@ export default defineComponent({
 
     const {
       dimensions,
-      ordinalDimensionNames,
       allModelRunData,
       filteredRunData,
       fetchModelRuns,
@@ -1900,7 +1898,6 @@ export default defineComponent({
       onSyncMapBounds,
       onTabClick,
       setSelectedScenarioIds,
-      ordinalDimensionNames,
       outputSpecs,
       pointsLayerStats,
       potentialScenarios,
