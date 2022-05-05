@@ -562,8 +562,8 @@ export default defineComponent({
               const allValues = data.map(regionDataItem => regionDataItem.value);
               const scale = d3
                 .scaleLinear()
-                .domain(d3.extent(allValues) as [number, number])
-                .nice(); // 😃
+                .domain(d3.extent(allValues) as [number, number]);
+                // .nice(); // 😃
               const dataExtent = scale.domain(); // after nice() is called
               const binGenerator = d3.bin<{name: string;value: number}, number>()
                 .domain(scale.domain() as [number, number]) // omit to use the default domain/extent from data
