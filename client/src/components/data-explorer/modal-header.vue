@@ -16,7 +16,6 @@
     </button>
     <span>
       <span class="selected">{{ selectedDatacubes.length }} selected</span>
-      of {{ searchResultsCount }} data cubes
     </span>
   </full-screen-modal-header>
 </template>
@@ -48,8 +47,7 @@ export default defineComponent({
   emits: ['close', 'selection'],
   computed: {
     ...mapGetters({
-      selectedDatacubes: 'dataSearch/selectedDatacubes',
-      searchResultsCount: 'dataSearch/searchResultsCount'
+      selectedDatacubes: 'dataSearch/selectedDatacubes'
     })
   },
   methods: {

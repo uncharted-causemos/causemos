@@ -8,7 +8,6 @@ import { Filters } from '@/types/Filters';
 interface DataSearchState {
   selectedDatacubes: Datacube[];
   ontologyConcepts: string[];
-  searchResultsCount: number;
 }
 
 const updateQuery = (getters: GetterTree<DataSearchState, any>, { filters }: { filters: Filters }) => {
@@ -24,8 +23,7 @@ const updateQuery = (getters: GetterTree<DataSearchState, any>, { filters }: { f
 
 const state: DataSearchState = {
   selectedDatacubes: [],
-  ontologyConcepts: [],
-  searchResultsCount: 0
+  ontologyConcepts: []
 };
 const getters: GetterTree<DataSearchState, any> = {
   query: (state, getters, rootState /*, rootGetters */) => {
@@ -33,7 +31,6 @@ const getters: GetterTree<DataSearchState, any> = {
   },
   // selected datacube IDs
   selectedDatacubes: (state: DataSearchState) => state.selectedDatacubes,
-  searchResultsCount: (state: DataSearchState) => state.searchResultsCount,
   ontologyConcepts: (state: DataSearchState) => state.ontologyConcepts,
   // filters is an object, if watching it either need to be deeply watched, or manually check object equivalence.
   filters: (state: DataSearchState, getters, rootState /*, rootGetters */) => {
@@ -49,9 +46,6 @@ const actions: ActionTree<DataSearchState, any> = {
     const query = updateQuery(getters, { filters });
     router.push({ query }).catch(() => { });
   },
-  setSearchResultsCount({ commit }, searchResultsCount) {
-    commit('setSearchResultsCount', searchResultsCount);
-  },
   setOntologyConcepts({ commit }, concepts) {
     commit('setOntologyConcepts', concepts);
   }
@@ -59,9 +53,6 @@ const actions: ActionTree<DataSearchState, any> = {
 const mutations: MutationTree<DataSearchState> = {
   setSelectedDatacubes(state, datacubes: Datacube[]) {
     state.selectedDatacubes = datacubes;
-  },
-  setSearchResultsCount(state, searchResultsCount: number) {
-    state.searchResultsCount = searchResultsCount;
   },
   setOntologyConcepts(state, concepts: string[]) {
     state.ontologyConcepts = concepts;
