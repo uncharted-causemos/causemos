@@ -97,7 +97,7 @@ export default defineComponent({
  .fa {
    padding-right: 5px;
   }
-  ::v-deep(.highlight) {
+  :deep(.highlight) {
     font-weight: 800;
   }
 }

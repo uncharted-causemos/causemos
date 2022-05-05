@@ -32,6 +32,14 @@
     </header>
     <main>
       <div class="chart-and-footer">
+        <div v-if="hiddenRegionRank > 0" class="hover-not-visible">
+          <div style="display: flex; justify-content: space-between; min-width: 150px">
+            <div>{{hiddenRegionName}}</div><div>{{hiddenRegionValue}}</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; min-width: 150px">
+            <div>Rank</div><div>{{hiddenRegionRank}}</div>
+          </div>
+        </div>
         <bar-chart
           class="bar-chart"
           :bars-data="barsData"
@@ -142,6 +150,7 @@ import { AdminRegionSets } from '@/types/Datacubes';
 import useQualifiers from '@/services/composables/useQualifiers';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useMultiTimeseriesData from '@/services/composables/useMultiTimeseriesData';
+import { chartValueFormatter } from '@/utils/string-util';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCard',
@@ -196,6 +205,14 @@ export default defineComponent({
     isDataInverted: {
       type: Boolean,
       default: false
+    },
+    maxNumberOfChartBars: {
+      type: Number,
+      default: 20
+    },
+    limitNumberOfChartBars: {
+      type: Boolean,
+      default: false
     }
   },
   setup(props, { emit }) {
@@ -209,7 +226,9 @@ export default defineComponent({
       regionRankingBinningType,
       showNormalizedData,
       barChartHoverId,
-      isDataInverted
+      isDataInverted,
+      limitNumberOfChartBars,
+      maxNumberOfChartBars
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -655,6 +674,8 @@ export default defineComponent({
       bbox.value = await computeMapBoundsForCountries(countries) || undefined;
     });
 
+    const barDataWithoutTheNumberOfBarsLimit = ref<BarData[]>([]);
+
     watch(
       () => [
         regionalData.value,
@@ -665,7 +686,9 @@ export default defineComponent({
         regionRankingBinningType.value,
         selectedRegionRankingScenario.value,
         isDataInverted.value,
-        selectedRegionIdsAtAllLevels.value
+        selectedRegionIdsAtAllLevels.value,
+        limitNumberOfChartBars.value,
+        maxNumberOfChartBars.value
       ],
       () => {
         const temp: BarData[] = [];
@@ -765,6 +788,9 @@ export default defineComponent({
               temp.reverse();
             }
 
+            // update our internal cache of the bar data before applying the limit, if enabled
+            barDataWithoutTheNumberOfBarsLimit.value = temp;
+
             emit('updated-bars-data', {
               id: id.value,
               datacubeId: datacubeId.value,
@@ -775,7 +801,7 @@ export default defineComponent({
             });
           }
           // limit the number of bars to the selected maximum
-          barsData.value = temp;
+          barsData.value = limitNumberOfChartBars.value ? temp.slice(-maxNumberOfChartBars.value) : temp;
         }
       });
 
@@ -798,6 +824,40 @@ export default defineComponent({
         bbox.value = bounds;
       }
     });
+
+    // For displaying selected items that are off screen
+    const hiddenRegionRank = ref(-1);
+    const hiddenRegionName = ref('');
+    const hiddenRegionValue = ref('');
+    watch(
+      () => [
+        barChartHoverId.value,
+        barDataWithoutTheNumberOfBarsLimit.value,
+        limitNumberOfChartBars.value
+      ],
+      () => {
+        hiddenRegionValue.value = '';
+        hiddenRegionRank.value = -1;
+        hiddenRegionName.value = '';
+
+        // do we have a selected bar and the max number of bars' limit is enabled?
+        if (barChartHoverId.value !== '' && limitNumberOfChartBars.value) {
+          // find the rank of the selected bar,
+          // and assess if it is outside the current limit enforced for the maximum number of bars
+          const targetBarInfo = barDataWithoutTheNumberOfBarsLimit.value.find(regionInfo => regionInfo.label === barChartHoverId.value);
+          if (targetBarInfo) {
+            const rank = +targetBarInfo.name;
+            // if the ranked region/bar is indeed outside the visible bars, then show a temp hover
+            if (rank > maxNumberOfChartBars.value) {
+              const valueFormatter = chartValueFormatter(...barDataWithoutTheNumberOfBarsLimit.value.map(d => d.value));
+              hiddenRegionRank.value = rank;
+              hiddenRegionName.value = targetBarInfo.label;
+              hiddenRegionValue.value = valueFormatter(targetBarInfo.value);
+            }
+          }
+        }
+      }
+    );
 
     return {
       selectedTemporalResolution,
@@ -828,7 +888,10 @@ export default defineComponent({
       regionRunsScenarios,
       bbox,
       mapLegendData,
-      invertData
+      invertData,
+      hiddenRegionName,
+      hiddenRegionValue,
+      hiddenRegionRank
     };
   },
   methods: {
@@ -918,10 +981,23 @@ main {
 }
 
 .chart-and-footer {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
+}
+
+.hover-not-visible {
+  position: absolute;
+  left: 50%;
+  border: #BBB;
+  border-style: solid;
+  border-radius: 2px;
+  background-color: #F4F4F4;
+  color: blue;
+  z-index: 1;
+  padding: 4px;
 }
 
 .country-list {

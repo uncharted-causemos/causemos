@@ -173,7 +173,7 @@ $input-element-height: 37px;
       background-color: $background-light-3;
     }
   }
-  ::v-deep(.autocomplete-result) {
+  :deep(.autocomplete-result) {
     list-style: none;
     text-align: left;
     word-break: break-all;

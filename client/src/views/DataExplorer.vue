@@ -82,7 +82,6 @@ export default defineComponent({
       filters: 'dataSearch/filters',
       project: 'app/project',
       selectedDatacubes: 'dataSearch/selectedDatacubes',
-      searchResultsCount: 'dataSearch/searchResultsCount',
       analysisItems: 'dataAnalysis/analysisItems'
     }),
     navBackLabel() {

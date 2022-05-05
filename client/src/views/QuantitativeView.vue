@@ -31,6 +31,7 @@
       @update-scenario='onUpdateScenario'
       @delete-scenario='onDeleteScenario'
       @delete-scenario-clamp='onDeleteScenarioClamp'
+      @duplicate-scenario="onDuplicateScenario"
     >
       <template #action-bar>
         <action-bar
@@ -178,6 +179,22 @@ export default defineComponent({
         parameter: _.cloneDeep(baselineScenario?.parameter)
       };
       this.enableOverlay('Creating Scenario');
+      const createdScenario = await modelService.createScenario(newScenario);
+      // Save and reload scenarios
+      await this.reloadScenarios();
+      this.setSelectedScenarioId(createdScenario.id);
+      this.disableOverlay();
+    },
+    async onDuplicateScenario(scenario: Scenario) {
+      // add new scenario
+      const newScenario: NewScenario = {
+        model_id: this.currentCAG,
+        name: 'Copy of ' + scenario.name,
+        description: scenario.description,
+        is_baseline: false,
+        parameter: _.cloneDeep(scenario.parameter)
+      };
+      this.enableOverlay('Duplicating Scenario');
       const createdScenario = await modelService.createScenario(newScenario);
       // Save and reload scenarios
       await this.reloadScenarios();

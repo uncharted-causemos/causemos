@@ -463,7 +463,7 @@ export default defineComponent({
   margin-left: 5px;
 }
 
-::v-deep(.attribute-invalid button) {
+:deep(.attribute-invalid button) {
   border:1px solid red !important;
 }
 

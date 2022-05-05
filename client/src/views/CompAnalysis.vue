@@ -37,6 +37,8 @@
         <datacube-region-ranking-composite-card
           v-if="selectedAnalysisItems.length > 0"
           :bars-data="globalBarsData"
+          :max-number-of-chart-bars="maxNumberOfChartBars"
+          :limit-number-of-chart-bars="limitNumberOfChartBars"
           :selected-admin-level="selectedAdminLevel"
           :selected-timestamp="globalRegionRankingTimestamp"
           :selected-color-scheme="finalColorScheme"
@@ -122,6 +124,8 @@
             :bar-chart-hover-id="barChartHoverId"
             :show-normalized-data="showNormalizedData"
             :is-data-inverted="isDatacubeInverted(item)"
+            :max-number-of-chart-bars="maxNumberOfChartBars"
+            :limit-number-of-chart-bars="limitNumberOfChartBars"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
             @map-click-region="onMapClickRegion"
@@ -784,8 +788,7 @@ export default defineComponent({
       compositeDataSorted.forEach((barItem, indx) => {
         barItem.name = (compositeDataSorted.length - indx).toString();
       });
-      // limit the number of bars to the selected maximum
-      this.globalBarsData = this.limitNumberOfChartBars ? compositeDataSorted.slice(-this.maxNumberOfChartBars) : compositeDataSorted;
+      this.globalBarsData = compositeDataSorted;
     },
     onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; itemId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; source: string; region: string[]}) {
       // we should only set the global timeseries one time
@@ -1004,12 +1007,12 @@ $marginSize: 6px;
   flex-direction: column;
   padding-top: 1rem;
 
-  ::v-deep(.region-map) {
+  :deep(.region-map) {
     border-style: solid;
     border-color: inherit;
   }
   &.card-count-1 {
-    ::v-deep(.region-map) {
+    :deep(.region-map) {
       border: none;
     }
   }

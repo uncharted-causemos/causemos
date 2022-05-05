@@ -33,7 +33,7 @@ export default defineComponent({
   border-bottom: 1px solid $separator;
 }
 
-::v-deep(.bulk-actions) {
+:deep(.bulk-actions) {
   display: flex;
   align-items: center;
 

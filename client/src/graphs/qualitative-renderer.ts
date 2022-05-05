@@ -485,6 +485,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
     selection.append('rect')
       .classed('node-container', true)
+      .classed('node-header', true)
       .attr('x', 0)
       .attr('y', 0)
       .attr('rx', DEFAULT_STYLE.node.borderRadius)

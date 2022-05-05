@@ -1211,11 +1211,11 @@ h6 {
   margin-bottom: 4px;
   flex: 1;
 
-  ::v-deep(.dropdown-btn) {
+  :deep(.dropdown-btn) {
     width: 100%;
     justify-content: space-between;
   }
-  ::v-deep(.dropdown-container) {
+  :deep(.dropdown-container) {
     width: 100%;
   }
 }
