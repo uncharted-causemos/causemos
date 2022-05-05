@@ -1636,7 +1636,7 @@ export default defineComponent({
       if (selectedFeatures.value.length !== globalTimeseries.value.length) {
         return {};
       }
-      const result = {};
+      const result: {[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }} = {};
       globalTimeseries.value.forEach((timeseries, index) => {
         const feature = selectedFeatures.value[index];
         // Prevent duplicate appends.
@@ -1649,7 +1649,7 @@ export default defineComponent({
           // override the timeseries id to match its owner datacube
           timeseries.id = timeseries.id + feature.name;
         }
-        timeseriesToDatacubeMap.value[timeseries.id] = {
+        result[timeseries.id] = {
           datacubeName: feature.name,
           datacubeOutputVariable: feature.display_name
         };
@@ -1722,8 +1722,8 @@ export default defineComponent({
       if (breakdownOption.value !== SPLIT_BY_VARIABLE || regionalData.value !== null) {
         return result;
       }
-      selectedFeatures.value.forEach(({ name: selectedOutputVariable }) => {
-        result[selectedOutputVariable] = convertRegionalDataToBarData(
+      selectedFeatures.value.forEach(({ name: selectedFeature }) => {
+        result[selectedFeature] = convertRegionalDataToBarData(
           regionalData.value,
           selectedAdminLevel.value,
           breakdownOption.value,
@@ -1738,8 +1738,6 @@ export default defineComponent({
       return result;
     });
 
-    // FIXME: Do we need both `unit` and `timeseriesUnit`? At the very least,
-    //  one should be renamed to make it more clear what the difference is.
     const unit = computed(() => {
       const transform = isRawDataLayerSelected.value ? DataTransform.None : selectedTransform.value;
       return getUnitString(activeFeature.value?.unit || null, transform);

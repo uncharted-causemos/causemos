@@ -438,7 +438,6 @@ export const convertRegionalDataToBarData = (
     return {
       // adjust the ranking so that the highest value will be ranked 1st
       // REVIEW: do we need this in the Overlay mode?
-      // FIXME: datacube-card uses index + 1, not clear if/when this is used
       name: (data.length - index).toString(),
       label: dataItem.name,
       value: dataItem.value,

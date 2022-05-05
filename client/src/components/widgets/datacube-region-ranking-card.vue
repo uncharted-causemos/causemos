@@ -414,10 +414,8 @@ export default defineComponent({
         immediate: true
       });
 
-    // FIXME: this watcher is shared between all cards except
-    //  for datacube-card. We may be able to extract it to one place/simplify.
-    // Similar to useTimeseriesData.
-    // FIXME: potentially broken since it looks at both timeseriesDataForSelection and visibleTimeseriesData
+    // FIXME: This appears to be mostly copy-pasted from useTimeseriesData.
+    // Potentially broken since it looks at both timeseriesDataForSelection and visibleTimeseriesData.
     watchEffect(() => {
       const timeseriesList = timeseriesDataForSelection.value;
 
