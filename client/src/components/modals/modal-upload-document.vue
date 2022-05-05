@@ -134,7 +134,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 
-::v-deep(.modal-container) {
+:deep(.modal-container) {
 
   .modal-header {
     height: 50px;

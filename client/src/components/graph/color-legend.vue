@@ -137,7 +137,7 @@ export default defineComponent({
 
 <style lang='scss' scoped>
 
-::v-deep(.legend) {
+:deep(.legend) {
   text {
     font-size: 10px !important;
   }

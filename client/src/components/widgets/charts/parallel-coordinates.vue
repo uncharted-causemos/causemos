@@ -169,7 +169,7 @@ export default defineComponent({
         transition: opacity 1s ease;
       }
 
-      ::v-deep(.axis .overlay) {
+      :deep(.axis .overlay) {
         &:hover {
           fill-opacity: .3;
           fill: rgb(172, 233, 233);
@@ -177,21 +177,21 @@ export default defineComponent({
         }
       }
 
-      ::v-deep(.axis .pc-brush .selection) {
+      :deep(.axis .pc-brush .selection) {
         fill-opacity: .5;
         fill: $selected;
         stroke: none;
         shape-rendering: crispEdges;
       }
 
-      ::v-deep(.axis .pc-brush .handle) {
+      :deep(.axis .pc-brush .handle) {
         fill: #f8f8f8;
         stroke: #888;
         rx: 4;
         ry: 4;
       }
 
-      ::v-deep(.axis text) {
+      :deep(.axis text) {
 
         &.selected {
           color: $selected-dark;

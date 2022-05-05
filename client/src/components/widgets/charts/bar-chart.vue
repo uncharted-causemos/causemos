@@ -139,19 +139,19 @@ export default defineComponent({
   align-items: flex-end;
 }
 
-::v-deep(.xAxis .domain) {
+:deep(.xAxis .domain) {
   stroke: #e3e4e6;
 }
 
-::v-deep(.yAxis .tick line) {
+:deep(.yAxis .tick line) {
   stroke: #e3e4e6;
 }
 
-::v-deep(.yAxis .domain) {
+:deep(.yAxis .domain) {
   opacity: 0;
 }
 
-::v-deep(.segment-line) {
+:deep(.segment-line) {
   opacity: 0.5;
   stroke-width: 2;
 }

@@ -179,7 +179,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-::v-deep(.modal-container) {
+:deep(.modal-container) {
   max-width: 80vw;
   width: max-content;
   .modal-body {

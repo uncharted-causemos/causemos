@@ -2373,17 +2373,17 @@ $marginSize: 5px;
   display: flex;
   flex-direction: column;
 
-  ::v-deep(.wm-map) {
+  :deep(.wm-map) {
     border-style: solid;
     border-color: inherit;
   }
   &.is-default-run {
-    ::v-deep(.wm-map) {
+    :deep(.wm-map) {
       border-width: 8px;
     }
   }
   &.card-count-1 {
-    ::v-deep(.wm-map) {
+    :deep(.wm-map) {
       border: none;
     }
   }

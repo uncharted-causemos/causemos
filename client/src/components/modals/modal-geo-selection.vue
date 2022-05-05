@@ -269,7 +269,7 @@ $track-height: 2px;
 $thumb-size: 16px;
 $tick-size: 8px;
 
-::v-deep(.modal-container) {
+:deep(.modal-container) {
   max-width: 80vw;
   width: 60vw;
   .modal-body {

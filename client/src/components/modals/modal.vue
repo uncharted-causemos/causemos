@@ -121,7 +121,7 @@ export default defineComponent({
   transition: all .3s ease;
 }
 
-::v-deep(.modal-header) {
+:deep(.modal-header) {
   position: relative;
   h3, h4 {
     color: #5A5A5A;
@@ -129,13 +129,13 @@ export default defineComponent({
   }
 }
 
-::v-deep(.modal-body) {
+:deep(.modal-body) {
   label {
     font-weight: 300;
   }
 }
 
-::v-deep(.modal-header, .modal-body, .modal-footer) {
+:deep(.modal-header, .modal-body, .modal-footer) {
   padding: 0 10px 10px;
   border: 0;
 }
