@@ -295,11 +295,12 @@ export default defineComponent({
 
     // FIXME: See note in datacube-card
     const regionMapData = computed<BarData[]>(() => {
+      const timeseriesKey =
+        timeseriesDataForSelection.value[selectedScenarioIndex.value]?.id ?? 0;
       return convertRegionalDataToBarData(
         regionalData.value,
         selectedAdminLevel.value,
-        breakdownOption.value,
-        selectedScenarioIndex.value,
+        timeseriesKey,
         numberOfColorBins.value,
         finalColorScheme.value,
         selectedDataLayerTransparency.value

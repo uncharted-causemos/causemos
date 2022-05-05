@@ -6,8 +6,7 @@ import {
   DatacubeStatus,
   DatacubeType,
   DataTransform,
-  ModelParameterDataType,
-  SpatialAggregationLevel
+  ModelParameterDataType
 } from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
 import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service';
@@ -383,8 +382,9 @@ export const AVAILABLE_DOMAINS = [
 export const convertRegionalDataToBarData = (
   regionalData: RegionalAggregations | null,
   selectedAdminLevel: number,
-  breakdownOption: string | null,
-  selectedScenarioIndex: number,
+  // regionalData contains a nested list of regions. timeseriesKey is used to
+  //  identify the correct entry in a region's `values` object.
+  timeseriesKey: string,
   numberOfColorBins: number,
   colorScheme: string[],
   selectedDataLayerTransparency: DATA_LAYER_TRANSPARENCY
@@ -396,18 +396,10 @@ export const convertRegionalDataToBarData = (
   if (regionLevelData === undefined || !hasValues) {
     return [];
   }
-  // special case for split-by-region:
-  const indexIntoRegionData =
-    breakdownOption === SpatialAggregationLevel.Region
-      ? 0
-      : selectedScenarioIndex;
   const data = regionLevelData.map(({ id, values }) => {
-    const valuesForOneRegion = Object.values(values);
     return {
       name: id,
-      value: valuesForOneRegion.length > indexIntoRegionData
-        ? valuesForOneRegion[indexIntoRegionData]
-        : 0
+      value: values[timeseriesKey] ?? 0
     };
   });
   const extent = d3.extent(data.map(({ value }) => value));

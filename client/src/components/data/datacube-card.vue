@@ -1717,17 +1717,14 @@ export default defineComponent({
     //  numberOfColorBins. Confirm this hasn't introduced new bugs.
     const regionMapData = computed(() => {
       const result: {[variableName: string]: BarData[]} = {};
-      if (breakdownOption.value !== SPLIT_BY_VARIABLE || regionalData.value !== null) {
+      if (breakdownOption.value !== SPLIT_BY_VARIABLE || regionalData.value === null) {
         return result;
       }
       selectedFeatures.value.forEach(({ name: selectedFeature }) => {
         result[selectedFeature] = convertRegionalDataToBarData(
           regionalData.value,
           selectedAdminLevel.value,
-          breakdownOption.value,
-          // This 0 is only used if this function is called when split by
-          //  region is active.
-          0,
+          selectedFeature,
           numberOfColorBins.value,
           finalColorScheme.value,
           selectedDataLayerTransparency.value
