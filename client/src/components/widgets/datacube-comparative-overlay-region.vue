@@ -503,8 +503,8 @@ export default defineComponent({
               const allValues = data.map(regionDataItem => regionDataItem.value);
               const scale = d3
                 .scaleLinear()
-                .domain(d3.extent(allValues) as [number, number])
-                .nice(); // 😃
+                .domain(d3.extent(allValues) as [number, number]);
+                // .nice(); // 😃
               const dataExtent = scale.domain(); // after nice() is called
 
               const colors = finalColorScheme.value;
