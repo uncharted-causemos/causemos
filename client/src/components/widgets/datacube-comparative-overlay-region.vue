@@ -129,12 +129,6 @@ export default defineComponent({
       datacubeIndex
     } = toRefs(props);
 
-    // CompAnalysis passes globalTimestamp into this component.
-    // Keep the selectedTimestamp within useDatacube in sync with it.
-    watchEffect(() => {
-      setSelectedTimestamp(globalTimestamp.value);
-    });
-
     const metadata = useModelMetadata(id);
 
     // FIXME: this watcher is extremely error prone. Seems like its jobs are to:
@@ -214,6 +208,12 @@ export default defineComponent({
       activeFeatureName,
       ref(false)
     );
+
+    // CompAnalysis passes globalTimestamp into this component.
+    // Keep the selectedTimestamp within useDatacube in sync with it.
+    watchEffect(() => {
+      setSelectedTimestamp(globalTimestamp.value);
+    });
 
     const store = useStore();
 

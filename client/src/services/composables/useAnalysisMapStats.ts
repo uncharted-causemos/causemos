@@ -173,12 +173,12 @@ export default function useAnalysisMapStats(
 
   // ===== Set up stats and legend for raw points layer ===== //
 
-  const pointsMapLayerLegendData = ref<MapLegendColor[][]>([]);
-  const pointsLayerStats = ref<AnalysisMapStats>();
-  watchEffect(() => {
-    pointsLayerStats.value = computeRawDataStats(rawDataPointsList.value);
+  const pointsLayerStats = computed<AnalysisMapStats>(() => {
+    return computeRawDataStats(rawDataPointsList.value);
+  });
+  const pointsMapLayerLegendData = computed<MapLegendColor[][]>(() => {
     const globalStats = pointsLayerStats.value.global.all;
-    pointsMapLayerLegendData.value = globalStats ? [
+    return globalStats ? [
       createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn, colorOptions.value.isDiverging)
     ] : [];
   });

@@ -113,7 +113,7 @@ import RegionMap from '@/components/widgets/region-map.vue';
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { BarData } from '@/types/BarChart';
-import { COLOR_SCHEME } from '@/utils/colors-util';
+import { ColorScaleType, COLOR_SCHEME, SCALE_FUNCTION } from '@/utils/colors-util';
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
@@ -124,6 +124,8 @@ import MapLegend from '@/components/widgets/map-legend.vue';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';
 import { chartValueFormatter } from '@/utils/string-util';
+import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
+import { AnalysisMapColorOptions } from '@/types/Common';
 
 export default defineComponent({
   name: 'DatacubeRegionRankingCard',
@@ -268,13 +270,41 @@ export default defineComponent({
       visibleTimeseriesData,
       regionalData,
       timeseriesData,
-      mapLegendData,
-      mapBounds
+      mapBounds,
+      outputSpecs
     } = useDatacube(
       metadata,
       itemId,
       activeFeatureName,
       ref(false)
+    );
+
+    // Calculate mapColorOptions and mapLegendData outside useDatacube so that
+    //  we can use selectedColorScheme to stay consistent with the rest of the
+    //  region ranking page.
+    const mapColorOptions = computed<AnalysisMapColorOptions>(() => {
+      return {
+        scheme: selectedColorScheme.value,
+        relativeToSchemes: [],
+        scaleFn: SCALE_FUNCTION[ColorScaleType.LinearDiscrete],
+        isContinuous: false,
+        isDiverging: false,
+        opacity: Number(selectedDataLayerTransparency.value)
+      };
+    });
+
+    const { mapLegendData } = useAnalysisMapStats(
+      outputSpecs,
+      regionalData,
+      ref(null), // relativeTo
+      selectedDataLayer,
+      selectedAdminLevel,
+      selectedRegionIdsAtAllLevels,
+      ref(false), // showPercentChange
+      mapColorOptions,
+      ref([]), // activeReferenceOptions
+      breakdownOption,
+      ref([]) // rawDataPointsList
     );
 
     const selectedRegionRankingScenario = ref(0);
@@ -450,14 +480,6 @@ export default defineComponent({
     // FIXME: See note in datacube-card
     const barsData = ref<BarData[]>([]);
 
-    // Calculate bbox
-    watchEffect(async () => {
-      const countries = barChartHoverId.value
-        ? [barChartHoverId.value.split('__')[0]]
-        : [...new Set((regionalData.value?.country || []).map(d => d.id))];
-      bbox.value = await computeMapBoundsForCountries(countries) || undefined;
-    });
-
     const barDataWithoutTheNumberOfBarsLimit = ref<BarData[]>([]);
 
     watch(
@@ -593,6 +615,13 @@ export default defineComponent({
     //  in two places, we can likely simplify this to remove some duplication.
     // It's unclear why we only use the options in some cases.
     const bbox = ref<number[][] | { value: number[][], options: any } | undefined>(undefined);
+    // Calculate bbox
+    watchEffect(async () => {
+      const countries = barChartHoverId.value
+        ? [barChartHoverId.value.split('__')[0]]
+        : [...new Set((regionalData.value?.country || []).map(d => d.id))];
+      bbox.value = await computeMapBoundsForCountries(countries) || undefined;
+    });
     // Calculate bbox
     watchEffect(async () => {
       const options = {
