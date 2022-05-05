@@ -186,9 +186,6 @@ export default function useDatacube(
   );
 
   const selectedTimestamp = ref<number | null>(null);
-  // FIXME: Safe to remove? Confirm that vue reactivity isn't triggered if the
-  //  new value is the same as the old one
-  // if (selectedTimestamp.value === timestamp) return;
   const setSelectedTimestamp = (newValue: number | null) => {
     selectedTimestamp.value = newValue;
   };
