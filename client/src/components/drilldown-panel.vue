@@ -54,6 +54,7 @@ import TabBar from './widgets/tab-bar.vue';
 interface DrilldownPanelTab {
   id: string;
   name: string;
+  icon?: string;
 }
 
 export default defineComponent({

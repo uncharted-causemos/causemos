@@ -496,11 +496,11 @@
           <div style="position: relative">
             <drilldown-panel
               class="drilldown"
-              :active-tab-id="drilldownTabs[0].id"
+              :active-tab-id="'tabId'"
               :has-transition="false"
               :hide-close="true"
               :is-open="isBreakdownPaneOpen"
-              :tabs="drilldownTabs"
+              :tabs="[{ name: 'Breakdown', id: 'tabId', icon: '' }]"
               @close="() => { isBreakdownPaneOpen = false }"
             >
               <template #content>
@@ -697,15 +697,6 @@ import { BreakdownData } from '@/types/Datacubes';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 const defaultRunButtonCaption = 'Run with default parameters';
-
-const DRILLDOWN_TABS = [
-  {
-    name: 'Breakdown',
-    id: 'breakdown',
-    // TODO: our version of FA doesn't include fa-chart
-    icon: 'fa-question'
-  }
-];
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -1883,7 +1874,6 @@ export default defineComponent({
       dataPaths,
       defaultRunButtonCaption,
       dimensions,
-      drilldownTabs: DRILLDOWN_TABS,
       fetchModelRuns,
       filteredRunData,
       geoModelParam,
