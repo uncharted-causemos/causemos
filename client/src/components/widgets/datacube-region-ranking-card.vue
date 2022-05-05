@@ -249,7 +249,6 @@ export default defineComponent({
       searchFilters,
       breakdownOption,
       setBreakdownOption,
-      activeReferenceOptions,
       selectedDataLayer,
       initialSelectedQualifierValues,
       initialNonDefaultQualifiers,
@@ -351,12 +350,6 @@ export default defineComponent({
         itemId: itemId.value
       });
     };
-
-    watchEffect(() => {
-      if (initialActiveReferenceOptions.value && initialActiveReferenceOptions.value.length > 0) {
-        activeReferenceOptions.value = initialActiveReferenceOptions.value;
-      }
-    });
 
     // apply the view-config for this datacube
     watch(

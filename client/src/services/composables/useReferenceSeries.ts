@@ -5,7 +5,7 @@ import {
 } from '@/types/Enums';
 import { ModelRunReference } from '@/types/ModelRunReference';
 import { RegionalAggregations } from '@/types/Outputdata';
-import { computed, Ref, watchEffect } from 'vue';
+import { computed, Ref, watch, watchEffect } from 'vue';
 
 export default function useReferenceSeries(
   activeReferenceOptions: Ref<string[]>,
@@ -13,14 +13,19 @@ export default function useReferenceSeries(
   selectedAdminLevel: Ref<number>,
   regionalData: Ref<RegionalAggregations | null>
 ) {
+  // Clear active reference options when selected admin level is country in
+  //  split by region mode.
   watchEffect(() => {
-    // Clear active reference options when selected admin level is country in split by region mode
     if (
       breakdownOption.value === SpatialAggregationLevel.Region &&
       selectedAdminLevel.value === 0
     ) {
       activeReferenceOptions.value = [];
     }
+  });
+  // Clear active reference options whenever breakdownOption changes.
+  watch([breakdownOption], () => {
+    activeReferenceOptions.value = [];
   });
   const toggleReferenceOptions = (value: string) => {
     if (activeReferenceOptions.value.includes(value)) {

@@ -1849,7 +1849,6 @@ export default defineComponent({
     });
 
     return {
-      activeReferenceOptions,
       addNewTag,
       renameRun,
       allModelRunData,

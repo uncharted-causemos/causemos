@@ -230,8 +230,6 @@ export default defineComponent({
       initialDataConfig.value = datacubeAnalysisItem.dataConfig;
     }
 
-    const activeReferenceOptions = ref([] as string[]);
-
     const selectedRegionIds = ref<string[]>([]);
 
     const initialSelectedScenarioIds = ref<string[]>([]);
@@ -250,12 +248,6 @@ export default defineComponent({
         .map(run => run.id);
       if (baselineRunIds.length > 0) {
         selectedScenarioIds.value = [baselineRunIds[0]];
-      }
-    });
-
-    watchEffect(() => {
-      if (initialActiveReferenceOptions.value && initialActiveReferenceOptions.value.length > 0) {
-        activeReferenceOptions.value = initialActiveReferenceOptions.value;
       }
     });
 

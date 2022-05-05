@@ -157,8 +157,6 @@ export default function useDatacube(
   const breakdownOption = ref<string | null>(null);
   const setBreakdownOption = (newValue: string | null) => {
     breakdownOption.value = newValue;
-    // FIXME: this should be a watcher near activeReferenceOptions rather than a side effect of this function
-    activeReferenceOptions.value = [];
   };
 
   const {
@@ -177,7 +175,7 @@ export default function useDatacube(
   );
 
   // FIXME: Used by useTimeseriesData, selectedRegionIdForQualifiers and
-  //  useMapBounds). Rename to make it more clear what it does.
+  //  useMapBounds. Rename to make it more clear what it does.
   const selectedRegionIdsForTimeseries = computed(() =>
     getParentSelectedRegions(
       selectedRegionIdsAtAllLevels.value,
@@ -235,8 +233,6 @@ export default function useDatacube(
     selectedRegionIdForQualifiers
   );
 
-  // FIXME: not currently used in datacube-comparative-card or datacube-region-ranking-card
-  // Used for useAnalysisMapStats in datacube-comparative-overlay-region and datacube-region-ranking-card.
   const showPercentChange = ref<boolean>(true);
 
   // FIXME: set by initial data config, reset when some other things change.
