@@ -3,14 +3,11 @@ import { ref } from '@vue/reactivity';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { RegionalAggregations } from '@/types/Outputdata';
 import { Ref, watchEffect } from 'vue';
-import { AdminRegionSets } from '@/types/Datacubes';
-import { getParentSelectedRegions } from '@/utils/admin-level-util';
 import { getBboxFromRegionIds } from '@/services/geo-service';
 
 export default function useMapBounds(
   regionalData: Ref<RegionalAggregations | null>,
-  selectedAdminLevel: Ref<number>,
-  selectedRegionIdsAtAllLevels: Ref<AdminRegionSets>
+  selectedRegionIds: Ref<string[]>
 ) {
   // FIXME: this can be greatly simplified. useMapBounds is only used in two
   //  places and it's unclear why mapBounds can be set to two different possible
@@ -25,14 +22,12 @@ export default function useMapBounds(
   };
 
   watchEffect(async () => {
-    // FIXME: this is the same as selectedRegionIdsForTimeseries
-    const regionSelection = getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
-    if (!regionalData.value && !regionSelection?.length) return;
+    if (!regionalData.value) return;
 
     // If there's no selected regions, use countries to get the bounds
-    const regionIds = !regionSelection?.length
+    const regionIds = !selectedRegionIds.value.length
       ? (regionalData.value?.country || []).map(item => item.id)
-      : regionSelection;
+      : selectedRegionIds.value;
     //
     // calculate the initial map bounds covering the model geography
     //

@@ -176,8 +176,8 @@ export default function useDatacube(
     activeFeatureName
   );
 
-  // FIXME: this is only used by useTimeseriesData (and now selectedRegionIdForQualifiers), it's not clear exactly
-  //  what it does, might need to be renamed
+  // FIXME: Used by useTimeseriesData, selectedRegionIdForQualifiers and
+  //  useMapBounds). Rename to make it more clear what it does.
   const selectedRegionIdsForTimeseries = computed(() =>
     getParentSelectedRegions(
       selectedRegionIdsAtAllLevels.value,
@@ -362,8 +362,7 @@ export default function useDatacube(
 
   const { onSyncMapBounds, mapBounds } = useMapBounds(
     regionalData,
-    selectedAdminLevel,
-    selectedRegionIdsAtAllLevels
+    selectedRegionIdsForTimeseries
   );
 
   const {
