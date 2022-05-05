@@ -4,6 +4,7 @@
     :style="{height: (tags.length * 10) + 'vh' }"
     ref="tag_slider_ref"
     @mousemove="handleEventMove"
+    @mouseleave="handleEventUp"
     @mouseup="handleEventUp">
     <tag-section
       v-for="(tag, index) in tags"
