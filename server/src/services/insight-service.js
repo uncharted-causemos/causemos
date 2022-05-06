@@ -6,7 +6,7 @@ const sharp = require('sharp');
 const Adapter = es.Adapter;
 const RESOURCE = es.RESOURCE;
 
-const MAX_INSIGHTS = 200;
+const MAX_INSIGHTS = 300;
 const TARGET_THUMBNAIL_WIDTH = 200;
 
 const resizeImage = async (base64Str, targetWidthInPixels) => {
