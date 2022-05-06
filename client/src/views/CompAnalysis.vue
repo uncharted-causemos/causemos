@@ -906,15 +906,15 @@ export default defineComponent({
     downloadRankingResult() {
       const heading = 'rank,normalized value,region';
       const content = this.globalBarsData.map(d => {
-        return `${d.name},${d.normalizedValue},${d.label}`;
+        return `${d.name},${d.normalizedValue},${d.label.replace(/,/g, ' ')}`;
       }).reverse().join('\r\n');
 
       const weights = Object.values(this.regionRankingWeights);
       const weightContent = weights.map(d => {
-        return `${d.name},${d.weight}`;
+        return `${d.name.replace(/,/g, ' ')},${d.weight}`;
       }).join('\r\n');
 
-      const file = new Blob([weightContent + '\r\n\r\n\r\n' + heading + '\r\n' + content + '\r\n'], {
+      const file = new Blob(['Ranking Criteria and Relative Weight (%)' + '\r\n' + weightContent + '\r\n\r\n\r\n' + heading + '\r\n' + content + '\r\n'], {
         type: 'text/plain'
       });
       (window as any).saveAs(file, 'region-ranking-result.csv');
