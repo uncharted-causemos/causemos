@@ -27,7 +27,7 @@
       <!-- region ranking view content -->
       <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking">
         <div style="display: flex">
-          <h5 class="ranking-header-top">Ranking Results</h5>
+          <h5 class="ranking-header-top">Ranking Results <i style="cursor: pointer" @click="downloadRankingResult" class="fa fa-fw fa-download"></i></h5>
           <i
             :onClick="() => activeDrilldownTab = (activeDrilldownTab === null ? 'region-settings' : null)"
             class="fa fa-gear region-ranking-settings-button"
@@ -902,6 +902,22 @@ export default defineComponent({
         });
         this.datacubeTitles = datacubeTitles;
       }
+    },
+    downloadRankingResult() {
+      const heading = 'rank,normalized value,region';
+      const content = this.globalBarsData.map(d => {
+        return `${d.name},${d.normalizedValue},${d.label}`;
+      }).reverse().join('\r\n');
+
+      const weights = Object.values(this.regionRankingWeights);
+      const weightContent = weights.map(d => {
+        return `${d.name},${d.weight}`;
+      }).join('\r\n');
+
+      const file = new Blob([weightContent + '\r\n\r\n\r\n' + heading + '\r\n' + content + '\r\n'], {
+        type: 'text/plain'
+      });
+      (window as any).saveAs(file, 'region-ranking-result.csv');
     }
   }
 });
