@@ -95,13 +95,23 @@ export const getFirstInsight = async (fetchParams: InsightFilterFields): Promise
 
 const _fetchInsights = async (fetchParams: InsightFilterFields, options: any) => {
   const filters = _fetchParamsToFilters(fetchParams);
-  const { data } = await API.get('insights', {
-    params: {
-      filters: JSON.stringify(filters),
+
+  // Don't send long requests as a GET
+  if (filters && JSON.stringify(filters).length > 1000) {
+    const { data } = await API.post('insights/search', {
+      filters: filters,
       options
-    }
-  });
-  return data;
+    });
+    return data;
+  } else {
+    const { data } = await API.get('insights', {
+      params: {
+        filters: JSON.stringify(filters),
+        options
+      }
+    });
+    return data;
+  }
 };
 
 const _fetchParamsToFilters = (fetchParams: InsightFilterFields) => {
