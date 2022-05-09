@@ -405,9 +405,8 @@ export const convertRegionalDataToBarData = (
   const extent = d3.extent(data.map(({ value }) => value));
   const scale = d3
     .scaleLinear()
-    .domain(extent[0] === undefined ? [0, 0] : extent)
-    .nice(); // 😃
-  const dataExtent = scale.domain(); // after nice() is called
+    .domain(extent[0] === undefined ? [0, 0] : extent);
+  const dataExtent = scale.domain();
   // @REVIEW
   // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
   // To receive normalized data, send transform=normalization when fetching regional data

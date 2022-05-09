@@ -67,6 +67,13 @@ router.get('/', asyncHandler(async (req, res) => {
   const result = await insightService.getAllInsights(filterParams, options);
   res.json(result);
 }));
+// POST version
+router.post('/search', asyncHandler(async (req, res) => {
+  const filterParams = req.body.filters;
+  const options = req.body.options || {};
+  const result = await insightService.getAllInsights(filterParams, options);
+  res.json(result);
+}));
 
 /**
  * GET a count of insights
