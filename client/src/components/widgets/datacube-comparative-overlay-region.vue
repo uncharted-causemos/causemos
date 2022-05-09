@@ -396,8 +396,21 @@ export default defineComponent({
 
     // FIXME: See note in datacube-card
     const regionMapData = computed<BarData[]>(() => {
-      const timeseriesKey =
-        timeseriesDataForSelection.value[selectedScenarioIndex.value]?.id ?? 0;
+      const timeseriesToGetRegionDataFrom =
+        timeseriesDataForSelection.value[selectedScenarioIndex.value];
+      let timeseriesKey = '';
+      if (timeseriesToGetRegionDataFrom === undefined) {
+        timeseriesKey = '';
+      } else if (breakdownOption.value === SPLIT_BY_VARIABLE) {
+        // FIXME: useMultiTimeseriesData is only used when split by variable is
+        //  active, but it sets all timeseries IDs to the same scenarioId, so
+        //  they're not unique. In this case the feature name should be used as
+        //  both the timeseries name and ID and there are many conditionals like
+        //  this one which can then be cleaned up.
+        timeseriesKey = timeseriesToGetRegionDataFrom.name;
+      } else {
+        timeseriesKey = timeseriesToGetRegionDataFrom.id;
+      }
       return convertRegionalDataToBarData(
         regionalData.value,
         selectedAdminLevel.value,
