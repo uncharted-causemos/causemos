@@ -135,13 +135,13 @@
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
       ref="variable_ref"
-      v-if="isOutputVariableBreakdownDataValid"
+      v-if="isFeatureBreakdownDataValid"
       class="checklist-section"
-      :aggregation-level-count="Object.keys(outputVariableBreakdownData).length"
+      :aggregation-level-count="Object.keys(featureBreakdownData).length"
       :aggregation-level="0"
       :aggregation-level-title="'Variable'"
       :ordered-aggregation-level-keys="['Variable']"
-      :raw-data="outputVariableBreakdownData"
+      :raw-data="featureBreakdownData"
       :should-show-deselected-bars="selectedBreakdownOption !== SPLIT_BY_VARIABLE"
       :show-references="false"
       :allow-collapsing="false"
@@ -220,7 +220,7 @@ export default defineComponent({
       type: Object as PropType<BreakdownData | null>,
       default: null
     },
-    outputVariableBreakdownData: {
+    featureBreakdownData: {
       type: Object as PropType<BreakdownData | null>,
       default: null
     },
@@ -282,7 +282,7 @@ export default defineComponent({
       selectedBreakdownOption,
       selectedTemporalResolution,
       qualifierBreakdownData,
-      outputVariableBreakdownData,
+      featureBreakdownData,
       selectedRegionIdsAtAllLevels
     } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
@@ -361,11 +361,11 @@ export default defineComponent({
         Object.keys(temporalBreakdownData.value).length !== 0
     );
 
-    const isOutputVariableBreakdownDataValid = computed(
+    const isFeatureBreakdownDataValid = computed(
       () =>
 
-        outputVariableBreakdownData.value !== null &&
-        Object.keys(outputVariableBreakdownData.value).length !== 0
+        featureBreakdownData.value !== null &&
+        Object.keys(featureBreakdownData.value).length !== 0
     );
 
     const breakdownOptions = computed(() => {
@@ -417,7 +417,7 @@ export default defineComponent({
       breakdownOptions,
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
-      isOutputVariableBreakdownDataValid,
+      isFeatureBreakdownDataValid,
       AggregationOption,
       SpatialAggregationLevel,
       TemporalAggregationLevel,

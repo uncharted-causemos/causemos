@@ -1141,7 +1141,6 @@ export default defineComponent({
         setSelectedScenarioIds([]);
       }
     });
-    // FIXME: do we need this layer of abstraction / equality check?
     const setSelectedScenarioIds = (newIds: string[]) => {
       if (_.isEqual(selectedScenarioIds.value, newIds)) return;
       selectedScenarioIds.value = newIds;
@@ -1655,9 +1654,6 @@ export default defineComponent({
       return result;
     });
 
-    // FIXME: Only used by the breakdown pane. Can we just compute it there?
-    //  Maybe selectedTimeseriesPoints has
-    // FIXME: Renamed from outputVariableBreakdownData
     const featureBreakdownData = computed<BreakdownData | null>(() => {
       // If metadata hasn't loaded, return null.
       if (outputs.value === null) return null;
