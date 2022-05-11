@@ -91,8 +91,8 @@
               class="model-runs-search-bar"
               v-if="isModel(metadata)"
               :data="modelRunsSearchData"
-              :filters="searchFilters"
-              @filters-updated="onModelRunsFiltersUpdated"
+              :filters="modelRunSearchFilters"
+              @filters-updated="filters => modelRunSearchFilters = filters"
             />
             <div v-if="dateModelParam">
               <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
@@ -805,7 +805,7 @@ export default defineComponent({
       filteredRunData,
       fetchModelRuns,
       selectedModelId,
-      searchFilters,
+      modelRunSearchFilters,
       datacubeHierarchy,
       selectedRegionIds,
       selectedRegionIdsAtAllLevels,
@@ -1239,7 +1239,7 @@ export default defineComponent({
       if (!_.isEmpty(modelRunsSearchData.value) && Object.keys(modelRunsSearchData.value).length > 1 && dimensions.value.length > 0) {
         const outputDim = dimensions.value[dimensions.value.length - 1];
         if (modelRunsSearchData.value[outputDim.name] === undefined) {
-          searchFilters.value = {};
+          modelRunSearchFilters.value = { clauses: [] };
         }
       }
       modelRunsSearchData.value = result;
@@ -1250,10 +1250,6 @@ export default defineComponent({
         modelRunsSearchData.value[TAGS].values = runTags.value.map(tagInfo => tagInfo.label);
       }
     });
-
-    const onModelRunsFiltersUpdated = (filters: any) => {
-      searchFilters.value = filters; // this should kick the watcher to update the content of the data-state object
-    };
 
     watch(
       () => initialDataConfig.value,
@@ -1298,17 +1294,7 @@ export default defineComponent({
           if (initialDataConfig.value.selectedQualifierValues !== undefined) {
             initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
           }
-          // do we have a search filter that was saved before!?
-          if (initialDataConfig.value.searchFilters !== undefined) {
-            // restoring a state where some searchFilters were defined
-            if (!_.isEmpty(initialDataConfig.value.searchFilters) && initialDataConfig.value.searchFilters.clauses.length > 0) {
-              searchFilters.value = _.clone(initialDataConfig.value.searchFilters);
-            }
-          } else {
-            // we may be applying an insight that was captured before introducing the searchFilters capability
-            //  so we need to clear any existing filters that may affect the available model runs
-            searchFilters.value = {};
-          }
+          modelRunSearchFilters.value = _.clone(initialDataConfig.value.searchFilters);
         }
       },
       { immediate: true }
@@ -1528,17 +1514,7 @@ export default defineComponent({
       if (loadedInsight) {
         const dataState = loadedInsight.data_state;
         if (dataState && isDataSpaceDataState(dataState)) {
-          // do we have a search filter that was saved before!?
-          if (dataState.searchFilters !== undefined) {
-            // restoring a state where some searchFilters were defined
-            if (!_.isEmpty(dataState.searchFilters) && dataState.searchFilters.clauses.length > 0) {
-              searchFilters.value = _.clone(dataState.searchFilters);
-            }
-          } else {
-            // we may be applying an insight that was captured before introducing the searchFilters capability
-            //  so we need to clear any existing filters that may affect the available model runs
-            searchFilters.value = {};
-          }
+          modelRunSearchFilters.value = _.clone(dataState.searchFilters);
 
           // this would only be valid and effective if/after datacube runs are reloaded
           setSelectedScenarioIds(dataState.selectedScenarioIds);
@@ -1822,7 +1798,7 @@ export default defineComponent({
         selectedYears,
         selectedTransform,
         activeReferenceOptions,
-        searchFilters,
+        modelRunSearchFilters,
         selectedPreGenDataId
       );
 
@@ -1882,7 +1858,6 @@ export default defineComponent({
       modelRunsSearchData,
       newRunsMode,
       onMapLoad,
-      onModelRunsFiltersUpdated,
       onNewScenarioRunsModalClose,
       onSyncMapBounds,
       onTabClick,
@@ -1906,7 +1881,7 @@ export default defineComponent({
       runParameterValues,
       qualifierFetchInfo,
       scenarioCount,
-      searchFilters,
+      modelRunSearchFilters,
       selectedAdminLevel,
       selectedBaseLayer,
       selectedDataLayerTransparency,

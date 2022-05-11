@@ -32,6 +32,7 @@ import {
   getFilteredScenariosFromIds,
   isIndicator
 } from '@/utils/datacube-util';
+import { Filters } from '@/types/Filters';
 
 export default function useDatacube(
   metadata: Ref<Model | Indicator | null>,
@@ -118,17 +119,12 @@ export default function useDatacube(
 
   const { dimensions } = useDatacubeDimensions(metadata, itemId);
 
-  // FIXME: searchFilters refers to the model run search bar.
-  // It's only really used in datacube-card (changes are scattered through the
-  //  setup function), but the other components read and write it when saving/
-  //  restoring insights.
-  // TODO: rename and add a type
-  const searchFilters = ref<any>({});
+  const modelRunSearchFilters = ref<Filters>({ clauses: [] });
 
   const selectedModelId = computed(() => metadata.value?.id ?? null);
   const { allModelRunData, filteredRunData, fetchModelRuns } = useScenarioData(
     selectedModelId,
-    searchFilters,
+    modelRunSearchFilters,
     dimensions,
     isRefreshingModelRunsPeriodically
   );
@@ -400,7 +396,7 @@ export default function useDatacube(
     filteredRunData,
     fetchModelRuns,
     selectedModelId,
-    searchFilters,
+    modelRunSearchFilters,
     datacubeHierarchy,
     selectedRegionIds,
     selectedRegionsString,

@@ -246,7 +246,7 @@ export default defineComponent({
       outputs,
       selectedFeatureNames,
       selectedScenarioIds,
-      searchFilters,
+      modelRunSearchFilters,
       breakdownOption,
       setBreakdownOption,
       selectedDataLayer,
@@ -405,17 +405,7 @@ export default defineComponent({
           if (initialDataConfig.value.selectedQualifierValues !== undefined) {
             initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
           }
-          // do we have a search filter that was saved before!?
-          if (initialDataConfig.value.searchFilters !== undefined) {
-            // restoring a state where some searchFilters were defined
-            if (!_.isEmpty(initialDataConfig.value.searchFilters) && initialDataConfig.value.searchFilters.clauses.length > 0) {
-              searchFilters.value = _.clone(initialDataConfig.value.searchFilters);
-            }
-          } else {
-            // we may be applying an insight that was captured before introducing the searchFilters capability
-            //  so we need to clear any existing filters that may affect the available model runs
-            searchFilters.value = {};
-          }
+          modelRunSearchFilters.value = _.clone(initialDataConfig.value.searchFilters);
 
           const dataState = initialDataConfig.value;
           if (dataState && isDataSpaceDataState(dataState)) {

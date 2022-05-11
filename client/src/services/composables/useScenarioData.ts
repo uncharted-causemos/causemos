@@ -5,6 +5,7 @@ import { getAggregationKey, isImage, isVideo, isWebContent, TAGS, isCategoricalA
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
+import { Filters } from '@/types/Filters';
 
 const FETCH_INTERVAL_SECONDS = 20;
 
@@ -15,7 +16,7 @@ const FETCH_INTERVAL_SECONDS = 20;
  */
 export default function useScenarioData(
   dataId: Ref<string | null>,
-  searchFilters: Ref<any>,
+  searchFilters: Ref<Filters>,
   dimensions: Ref<ModelParameter[]>,
   isRefreshingPeriodically: Ref<boolean>
 ) {
@@ -28,52 +29,50 @@ export default function useScenarioData(
   const filteredRunData = computed(() => {
     let filteredRuns = allModelRunData.value;
 
-    // apply search filters, if any
-    // parse and apply filters to the model runs data
-    if (_.isEmpty(searchFilters.value) || searchFilters.value.clauses.length === 0) {
+    // parse and apply filters, if any, to the model runs data
+    if (searchFilters.value.clauses.length === 0) {
       // do nothing; since we need to cancel existing filters, if any
-    } else {
-      // a map that indicates whether each param is categorical or not
-      const dimTypeMap: { [key: string]: string } = dimensions.value.reduce(
-        (obj, item) => Object.assign(obj, { [item.name]: isCategoricalAxis(item.name, dimensions.value) }), {});
-      const clauses = searchFilters.value.clauses;
-      clauses.forEach((c: any) => {
-        const filterField: string = c.field; // the field to filter on
-        const filterValues = c.values; // array of values to filter upon
-        const isNot = !c.isNot; // is the filter reversed?
-        filteredRuns = filteredRuns.filter(v => {
-          if (filterField === TAGS) {
-            // special search, e.g. by keyword or tags
-            return v.tags && v.tags.length > 0 && filterValues.some((val: string) => v.tags.includes(val) === isNot);
-          } else {
-            // direct query against parameters or output features
-            const paramsMatchingFilterField = v.parameters.find(p => p.name === filterField);
-            if (paramsMatchingFilterField !== undefined) {
-              // this is a param filter
-              // so we can search this parameters array directly
-              //  depending on the param type, we could have range (e.g., rainful multiplier range) or a set of values (e.g., one or more selected countries)
-              if (!dimTypeMap[filterField]) {
-                const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
-                return paramsMatchingFilterField.value >= filterRange[0] && paramsMatchingFilterField.value <= filterRange[1];
-              } else {
-                return filterValues.includes(paramsMatchingFilterField.value.toString()) === isNot;
-              }
-            } else {
-              // this is an output filter
-              //  we need to search the array of v.output_agg_values
-              // note: this will always be a numeric range
-              // TODO: This needs to depend on the selected aggregation functions
-              const aggKey = getAggregationKey(AggregationOption.Mean, AggregationOption.Mean);
-              const outputValue = v.output_agg_values.find(val => val.name === filterField);
-              const runOutputValue = (outputValue && outputValue[aggKey]) ?? NaN;
-              const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
-              return runOutputValue >= filterRange[0] && runOutputValue <= filterRange[1];
-            }
-          }
-        });
-      });
+      return filteredRuns;
     }
-
+    // a map that indicates whether each param is categorical or not
+    const dimTypeMap: { [key: string]: string } = dimensions.value.reduce(
+      (obj, item) => Object.assign(obj, { [item.name]: isCategoricalAxis(item.name, dimensions.value) }), {});
+    const clauses = searchFilters.value.clauses;
+    clauses.forEach((c: any) => {
+      const filterField: string = c.field; // the field to filter on
+      const filterValues = c.values; // array of values to filter upon
+      const isNot = !c.isNot; // is the filter reversed?
+      filteredRuns = filteredRuns.filter(v => {
+        if (filterField === TAGS) {
+          // special search, e.g. by keyword or tags
+          return v.tags && v.tags.length > 0 && filterValues.some((val: string) => v.tags.includes(val) === isNot);
+        } else {
+          // direct query against parameters or output features
+          const paramsMatchingFilterField = v.parameters.find(p => p.name === filterField);
+          if (paramsMatchingFilterField !== undefined) {
+            // this is a param filter
+            // so we can search this parameters array directly
+            //  depending on the param type, we could have range (e.g., rainful multiplier range) or a set of values (e.g., one or more selected countries)
+            if (!dimTypeMap[filterField]) {
+              const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+              return paramsMatchingFilterField.value >= filterRange[0] && paramsMatchingFilterField.value <= filterRange[1];
+            } else {
+              return filterValues.includes(paramsMatchingFilterField.value.toString()) === isNot;
+            }
+          } else {
+            // this is an output filter
+            //  we need to search the array of v.output_agg_values
+            // note: this will always be a numeric range
+            // TODO: This needs to depend on the selected aggregation functions
+            const aggKey = getAggregationKey(AggregationOption.Mean, AggregationOption.Mean);
+            const outputValue = v.output_agg_values.find(val => val.name === filterField);
+            const runOutputValue = (outputValue && outputValue[aggKey]) ?? NaN;
+            const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+            return runOutputValue >= filterRange[0] && runOutputValue <= filterRange[1];
+          }
+        }
+      });
+    });
     return filteredRuns;
   });
 
