@@ -772,6 +772,8 @@ export default defineComponent({
       aggregationOptions
     } = toRefs(props);
 
+    const projectType = computed(() => store.getters['app/projectType']);
+    const datacubeItemId = route.query.item_id as any;
     const itemId = computed<string>(() => {
       if (projectType.value === ProjectType.Analysis) {
         return datacubeItemId;
@@ -897,13 +899,11 @@ export default defineComponent({
       isPeriodicallyRefreshingModelRuns
     );
 
-    const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
     const toaster = useToaster();
 
     const isBreakdownPaneOpen = ref<boolean>(true);
     const activeVizOptionsTab = ref<string|null>(null);
-    const currentTabView = ref<DatacubeViewMode>(DatacubeViewMode.Description);
 
     const potentialScenarios = ref<ScenarioData[]>([]);
     watch([newRunsMode], () => {
@@ -925,8 +925,6 @@ export default defineComponent({
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
     };
-
-    const datacubeItemId = route.query.item_id as any;
 
     const showTagNameModal = ref<boolean>(false);
     const showRunNameModal = ref<boolean>(false);
@@ -1049,9 +1047,6 @@ export default defineComponent({
       await updateModelRun({ id: run.id, name: newName });
     };
 
-    const updateTabView = (val: DatacubeViewMode) => {
-      currentTabView.value = val;
-    };
     const onMapLoad = () => {
       emit('on-map-load');
     };
@@ -1150,21 +1145,76 @@ export default defineComponent({
       setSelectedScenarioIds(selectedScenarios.map(s => s.run_id.toString()));
     };
     watch([selectedScenarioIds], clearRouteParam);
+
+    const currentTabView = ref<DatacubeViewMode>(DatacubeViewMode.Description);
     // Switch to the data tab if the analyst selects one or more runs when the
     //  description tab is open. Switch to the description tab when the analyst
     //  deselects all runs.
     watchEffect(() => {
+      if (!isModel(metadata.value)) {
+        return;
+      }
       if (selectedScenarioIds.value.length > 0) {
         if (
           currentTabView.value === DatacubeViewMode.Description &&
           canClickDataTab.value
         ) {
-          updateTabView(DatacubeViewMode.Data);
+          currentTabView.value = DatacubeViewMode.Data;
         }
       } else {
-        updateTabView(DatacubeViewMode.Description);
+        currentTabView.value = DatacubeViewMode.Description;
       }
     });
+
+    const onTabClick = (value: DatacubeViewMode) => {
+      if (value === DatacubeViewMode.Description) {
+        if (isIndicator(metadata.value)) {
+          currentTabView.value = DatacubeViewMode.Description;
+        } else {
+          setSelectedScenarioIds([]); // this will update the 'currentTabView'
+        }
+      } else {
+        clickData();
+      }
+    };
+
+    watch(
+      () => [tabState.value],
+      () => {
+        if (tabState.value as string !== '') {
+          onTabClick(tabState.value as DatacubeViewMode);
+        }
+      },
+      { immediate: true }
+    );
+
+    const clickData = () => {
+      if (!canClickDataTab.value) {
+        toaster(`At least one run must match the default parameters. Click "${defaultRunButtonCaption}"`, 'error', true);
+        return;
+      }
+      // FIXME: This code to select a model run when switching to the data tab
+      // should be in a watcher on the parent component to be more robust,
+      // rather than in this button's click handler.
+
+      if (isModel(metadata.value) && selectedScenarioIds.value.length === 0) {
+        // clicking on either the 'data' or 'media' tabs when no runs is selected should always pick the baseline run
+        const readyRuns = filteredRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
+        if (readyRuns.length === 0) {
+          console.warn('cannot find a baseline model run indicated by the is_default_run');
+          // failed to find baseline using the 'is_default_run' flag
+          // FIXME: so, try to find a model run that has values matching the default values of all inputs
+        }
+        const newIds = readyRuns.map(run => run.id).slice(0, 1);
+        setSelectedScenarioIds(newIds);
+      }
+
+      currentTabView.value = DatacubeViewMode.Data;
+      // advance the relevant tour if it is active
+      if (tour.value && tour.value.id.startsWith('aggregations-tour')) {
+        tour.value.next();
+      }
+    };
 
     const modelRunsSearchData = ref<{[key: string]: any}>({});
     watchEffect(() => {
@@ -1264,47 +1314,6 @@ export default defineComponent({
       { immediate: true }
     );
 
-    const clickData = (tab: DatacubeViewMode) => {
-      if (tab !== DatacubeViewMode.Data || canClickDataTab.value) {
-        // FIXME: This code to select a model run when switching to the data tab
-        // should be in a watcher on the parent component to be more robust,
-        // rather than in this button's click handler.
-
-        if (isModel(metadata.value) && selectedScenarioIds.value.length === 0) {
-          // clicking on either the 'data' or 'media' tabs when no runs is selected should always pick the baseline run
-          const readyRuns = filteredRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
-          if (readyRuns.length === 0) {
-            console.warn('cannot find a baseline model run indicated by the is_default_run');
-            // failed to find baseline using the 'is_default_run' flag
-            // FIXME: so, try to find a model run that has values matching the default values of all inputs
-          }
-          const newIds = readyRuns.map(run => run.id).slice(0, 1);
-          setSelectedScenarioIds(newIds);
-        }
-
-        updateTabView(tab);
-        //
-        // advance the relevant tour if it is active
-        //
-        if (tab === DatacubeViewMode.Data && tour.value && tour.value.id.startsWith('aggregations-tour')) {
-          tour.value.next();
-        }
-      } else {
-        toaster(`At least one run must match the default parameters. Click "${defaultRunButtonCaption}"`, 'error', true);
-      }
-    };
-
-    const onTabClick = (value: DatacubeViewMode) => {
-      if (value === DatacubeViewMode.Description) {
-        if (isIndicator(metadata.value)) {
-          updateTabView(DatacubeViewMode.Description);
-        } else {
-          setSelectedScenarioIds([]); // this will update the 'currentTabView'
-        }
-      } else {
-        clickData(value);
-      }
-    };
 
     const requestNewModelRuns = () => {
       showNewRunsModal.value = true;
@@ -1383,16 +1392,6 @@ export default defineComponent({
         value: tab
       }));
     });
-
-    watch(
-      () => [tabState.value],
-      () => {
-        if (tabState.value as string !== '') {
-          onTabClick(tabState.value as DatacubeViewMode);
-        }
-      },
-      { immediate: true }
-    );
 
     // A map of all pre-generated data indexed by run-id
     const preGenDataMap = computed<{[runId: string]: PreGeneratedModelRunData[]}>(() => {
@@ -1573,7 +1572,7 @@ export default defineComponent({
           selectedTemporalResolution.value = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
         }
         if (loadedInsight.view_state?.selectedViewTab !== undefined) {
-          updateTabView(loadedInsight.view_state?.selectedViewTab);
+          currentTabView.value = loadedInsight.view_state?.selectedViewTab;
         }
         if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
           updateDatacubesOutputsMap(itemId.value, store, route, loadedInsight.view_state?.selectedOutputIndex);
