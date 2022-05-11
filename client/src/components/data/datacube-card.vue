@@ -1712,9 +1712,7 @@ export default defineComponent({
     //  variable. If we can unify these behaviours this whole thing can be moved into useDatacube.
     // FIXME: Investigate why BarData is being used to populate the map. If we
     //  can use regionalData directly, we can remove this second piece of
-    //  state with a confusing and similar name.
-    // FIXME: Previous dependency array was missing breakdownOption and
-    //  numberOfColorBins. Confirm this hasn't introduced new bugs.
+    //  state with its confusing and similar name.
     const regionMapData = computed(() => {
       const result: {[variableName: string]: BarData[]} = {};
       if (breakdownOption.value !== SPLIT_BY_VARIABLE || regionalData.value === null) {

@@ -438,7 +438,9 @@ export default defineComponent({
       });
 
     // FIXME: This appears to be mostly copy-pasted from useTimeseriesData.
-    // Potentially broken since it looks at both timeseriesDataForSelection and visibleTimeseriesData.
+    // Differences:
+    //  - Looks at timeseriesDataForSelection instead of just timeseriesData. The difference there is that the former is equal to "globalTimeseries" when split by variable is active. This can be removed if useMultiTimeseriesData and useTimeseriesData are merged.
+    //  - selects the last point of the timeseries with index selectedRegionRankingScenario, instead of the last point of all timeseries in the datacube. We probably want to change the logic in useTimeseriesData so that visibleTimeseries only retains one timeseries in places where only one timeseries is everr shown, and change the onNewLastTimestamp watcher to use visibleTimeseries instead of all of them.
     watchEffect(() => {
       const timeseriesList = timeseriesDataForSelection.value;
 
