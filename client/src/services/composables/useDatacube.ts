@@ -3,8 +3,6 @@ import {
   SPLIT_BY_VARIABLE,
   AggregationOption,
   TemporalResolutionOption,
-  TemporalAggregationLevel,
-  SpatialAggregationLevel,
   DataTransform,
   DatacubeType
 } from '@/types/Enums';
@@ -168,9 +166,7 @@ export default function useDatacube(
     activeFeatureName
   );
 
-  // FIXME: Used by useTimeseriesData, selectedRegionIdForQualifiers and
-  //  useMapBounds. Rename to make it more clear what it does.
-  const selectedRegionIdsForTimeseries = computed(() =>
+  const selectedRegionIdsAtSelectedLevel = computed(() =>
     getParentSelectedRegions(
       selectedRegionIdsAtAllLevels.value,
       selectedAdminLevel.value
@@ -190,21 +186,6 @@ export default function useDatacube(
     () => selectedDataLayer.value === DATA_LAYER.RAW
   );
 
-  // FIXME: move into useDatacubeHierarchy, or useQualifiers. useQualifiers is the only place it's used. useDatacubeHierarchy produces selectedRegionIdsAtAllLevels and takes breakdownOption as a prop.
-  const selectedRegionIdForQualifiers = computed(() => {
-    const regionIds = selectedRegionIdsForTimeseries.value;
-    // Note: qualifier breakdown data can only be broken down by single regionId, so it isn't applicable in 'split by region' mode where multiple region can be selected
-    // and also in 'split by year' mode where data is aggregated by year.
-    if (
-      regionIds.length !== 1 ||
-      breakdownOption.value === TemporalAggregationLevel.Year ||
-      breakdownOption.value === SpatialAggregationLevel.Region
-    ) {
-      return '';
-    }
-    return regionIds[0];
-  });
-
   const {
     qualifierBreakdownData,
     toggleIsQualifierSelected,
@@ -214,6 +195,7 @@ export default function useDatacube(
     qualifierFetchInfo
   } = useQualifiers(
     metadata,
+    selectedRegionIdsAtSelectedLevel,
     breakdownOption,
     selectedScenarioIds,
     selectedTemporalResolution,
@@ -223,8 +205,7 @@ export default function useDatacube(
     initialSelectedQualifierValues,
     initialNonDefaultQualifiers,
     activeFeatureName,
-    isRawDataLayerSelected,
-    selectedRegionIdForQualifiers
+    isRawDataLayerSelected
   );
 
   const showPercentChange = ref<boolean>(true);
@@ -262,7 +243,7 @@ export default function useDatacube(
     selectedTimestamp,
     selectedTransform,
     setSelectedTimestamp,
-    selectedRegionIdsForTimeseries,
+    selectedRegionIdsAtSelectedLevel,
     selectedQualifierValues,
     initialSelectedYears,
     showPercentChange,
@@ -349,7 +330,7 @@ export default function useDatacube(
 
   const { onSyncMapBounds, mapBounds } = useMapBounds(
     regionalData,
-    selectedRegionIdsForTimeseries
+    selectedRegionIdsAtSelectedLevel
   );
 
   const {
