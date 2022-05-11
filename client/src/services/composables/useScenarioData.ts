@@ -181,8 +181,6 @@ export default function useScenarioData(
 
   // Refetch model runs every FETCH_INTERVAL_SECONDS.
   // isSuppressingFetches is still respected.
-  // FIXME: only datacube-card had this behaviour. isSuppressingFetches should
-  //  be true in other places.
   let timerHandler: number | null = null;
   onMounted(() => {
     timerHandler = window.setInterval(
