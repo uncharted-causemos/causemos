@@ -2,7 +2,7 @@ import { Datacube } from '@/types/Datacube';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import { getOutputs } from '@/utils/datacube-util';
 import _ from 'lodash';
-import { OutputVariableSpecs } from '@/types/Outputdata';
+import { FeatureConfig } from '@/types/Outputdata';
 import {
   AggregationOption,
   DataTransform,
@@ -13,7 +13,7 @@ export default function useDatacubeFeatures(
   metadata: Ref<Datacube | null>,
   // FIXME: rename to use consistent feature naming
   initialSelectedOutputVariables: Ref<string[]>,
-  initialActiveFeatures: Ref<OutputVariableSpecs[]>,
+  initialActiveFeatures: Ref<FeatureConfig[]>,
   activeFeatureName: Ref<string>,
   selectedTemporalResolution: Ref<TemporalResolutionOption>,
   selectedTemporalAggregation: Ref<AggregationOption>,
@@ -30,33 +30,24 @@ export default function useDatacubeFeatures(
   // FIXME: it's confusing to have selectedFeatures and activeFeatures. This is
   //  because the latter has an inaccurate name. It stores the
   //  resolution/aggregation/transform selections for each feature in `outputs`
-  // FIXME: can this be a computed property?
   // FIXME: rename to `featureConfigs`.
-  // FIXME: rename OutputVariableSpecs to FeatureConfig
-  const activeFeatures = ref<OutputVariableSpecs[]>([]);
-  // FIXME: should these be split into two different watchers?
-  // 1. We're restoring state after initial load, or after applying an insight
-  // 2. We're loading them from outputs (which comes from metadata)
-  // But it seems like we don't want to load from metadata if the first case has
-  //  already occurred? This logic can almost certainly be simplified
+  const activeFeatures = ref<FeatureConfig[]>([]);
   watch(
     () => [initialActiveFeatures.value, outputs.value],
     () => {
       // are we restoring state post init or after an insight has been loaded?
       if (initialActiveFeatures.value.length > 0) {
         activeFeatures.value = _.cloneDeep(initialActiveFeatures.value);
-      } else {
+      } else if (outputs.value !== null) {
         // create the initial list of activeFeatures if datacube outputs have been loaded
-        if (outputs.value !== null) {
-          activeFeatures.value = outputs.value.map(output => ({
-            name: output.name,
-            display_name: output.display_name,
-            temporalResolution: selectedTemporalResolution.value,
-            temporalAggregation: selectedTemporalAggregation.value,
-            spatialAggregation: selectedSpatialAggregation.value,
-            transform: selectedTransform.value
-          }));
-        }
+        activeFeatures.value = outputs.value.map(output => ({
+          name: output.name,
+          display_name: output.display_name,
+          temporalResolution: selectedTemporalResolution.value,
+          temporalAggregation: selectedTemporalAggregation.value,
+          spatialAggregation: selectedSpatialAggregation.value,
+          transform: selectedTransform.value
+        }));
       }
     }
   );
@@ -74,26 +65,21 @@ export default function useDatacubeFeatures(
     () => {
       // re-build activeFeatures since it hosts the config options for each variable
       const updatedActiveFeatures = _.cloneDeep(activeFeatures.value);
-      const featureIndx = updatedActiveFeatures.findIndex(
+      const feature = updatedActiveFeatures.find(
         feature => feature.name === activeFeatureName.value
       );
-      if (featureIndx >= 0) {
-        updatedActiveFeatures[featureIndx].temporalAggregation =
-          selectedTemporalAggregation.value;
-        updatedActiveFeatures[featureIndx].temporalResolution =
-          selectedTemporalResolution.value;
-        updatedActiveFeatures[featureIndx].spatialAggregation =
-          selectedSpatialAggregation.value;
-        updatedActiveFeatures[featureIndx].transform = selectedTransform.value;
+      if (feature !== undefined) {
+        feature.temporalAggregation = selectedTemporalAggregation.value;
+        feature.temporalResolution = selectedTemporalResolution.value;
+        feature.spatialAggregation = selectedSpatialAggregation.value;
+        feature.transform = selectedTransform.value;
 
         activeFeatures.value = updatedActiveFeatures;
       }
     }
   );
 
-  // FIXME: previously called selectedBreakdownOutputVariables
   const selectedFeatureNames = ref(new Set<string>());
-  // FIXME: previously called toggleIsOutputVariableSelected
   const toggleIsFeatureSelected = (outputVariable: string) => {
     const updatedList = _.clone(selectedFeatureNames.value);
     // If an output variable is currently selected, remove it from the list
@@ -110,7 +96,6 @@ export default function useDatacubeFeatures(
     selectedFeatureNames.value = new Set(initialSelectedOutputVariables.value);
   });
 
-  // FIXME: previously named filteredActiveFeatures
   // FIXME: rename to `selectedFeatureConfigs` when activeFeatures is renamed.
   const selectedFeatures = computed(() => {
     return activeFeatures.value.filter(feature =>

@@ -13,6 +13,7 @@ import {
 } from '@/types/Enums';
 import { AnalysisItem } from './Analysis';
 import { Filters } from './Filters';
+import { FeatureConfig } from './Outputdata';
 
 // view-specific values (no data dependency)
 export interface ViewState {
@@ -69,7 +70,7 @@ export interface DataSpaceDataState {
     admin3: string[];
   };
   selectedOutputVariables: string[];
-  activeFeatures: OutputVariableSpecs[];
+  activeFeatures: FeatureConfig[];
   nonDefaultQualifiers: string[];
   selectedQualifierValues: string[];
   selectedYears: string[];

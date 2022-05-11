@@ -111,7 +111,7 @@ export interface RawOutputGeoJson {
   features: RawOutputGeoJsonFeature[]
 }
 
-export interface OutputVariableSpecs {
+export interface FeatureConfig {
   name: string;
   display_name: string;
   temporalResolution: TemporalResolutionOption;

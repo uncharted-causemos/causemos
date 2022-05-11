@@ -151,8 +151,8 @@
           ? 'checkbox'
           : null
       "
-      :selected-item-ids="Array.from(selectedBreakdownOutputVariables)"
-      @toggle-is-item-selected="toggleIsOutputVariableSelected"
+      :selected-item-ids="Array.from(selectedFeatureNames)"
+      @toggle-is-item-selected="toggleIsFeatureSelected"
     >
     </aggregation-checklist-pane>
   </div>
@@ -244,7 +244,7 @@ export default defineComponent({
       type: Object as PropType<Set<string>>,
       default: () => new Set()
     },
-    selectedBreakdownOutputVariables: {
+    selectedFeatureNames: {
       type: Object as PropType<Set<string>>,
       default: () => new Set()
     },
@@ -304,7 +304,7 @@ export default defineComponent({
       emit('toggle-is-year-selected', year);
     };
 
-    const toggleIsOutputVariableSelected = (title: string, variable: string) => {
+    const toggleIsFeatureSelected = (title: string, variable: string) => {
       emit('toggle-is-output-variable-selected', variable);
     };
 
@@ -407,7 +407,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsQualifierSelected,
       toggleIsYearSelected,
-      toggleIsOutputVariableSelected,
+      toggleIsFeatureSelected,
       toggleReferenceOptions,
       availableAdminLevelTitles,
       timestampFormatter,

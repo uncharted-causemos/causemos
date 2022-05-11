@@ -6,7 +6,6 @@ import {
   DataTransform,
   DatacubeType
 } from '@/types/Enums';
-import { OutputVariableSpecs } from '@/types/Outputdata';
 import { getParentSelectedRegions } from '@/utils/admin-level-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
 import _ from 'lodash';
@@ -31,6 +30,7 @@ import {
   isIndicator
 } from '@/utils/datacube-util';
 import { Filters } from '@/types/Filters';
+import { FeatureConfig } from '@/types/Outputdata';
 
 export default function useDatacube(
   metadata: Ref<Model | Indicator | null>,
@@ -49,7 +49,7 @@ export default function useDatacube(
   const initialSelectedYears = ref<string[]>([]);
   const initialSelectedOutputVariables = ref<string[]>([]);
   const initialSelectedGlobalTimestamp = ref<number | null>(null);
-  const initialActiveFeatures = ref<OutputVariableSpecs[]>([]);
+  const initialActiveFeatures = ref<FeatureConfig[]>([]);
   const initialActiveReferenceOptions = ref<string[]>([]);
 
   const selectedSpatialAggregation = ref<AggregationOption>(

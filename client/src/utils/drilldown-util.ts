@@ -4,7 +4,7 @@ import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import { AggregationOption, DatacubeViewMode, DataTransform, TemporalResolutionOption } from '@/types/Enums';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
-import { OutputVariableSpecs } from '@/types/Outputdata';
+import { FeatureConfig } from '@/types/Outputdata';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { DatacubeGeography } from '@/types/Common';
 import _ from 'lodash';
@@ -64,7 +64,7 @@ export function initDataStateFromRefs (
   selectedRegionIds: Ref<string[]>,
   selectedRegionIdsAtAllLevels: Ref<AdminRegionSets>,
   selectedOutputVariables: Ref<Set<string>>,
-  activeFeatures: Ref<OutputVariableSpecs[]>,
+  activeFeatures: Ref<FeatureConfig[]>,
   selectedScenarioIds: Ref<string[]>,
   selectedTimestamp: Ref<number|null>,
   selectedYears: Ref<Set<string>>,
