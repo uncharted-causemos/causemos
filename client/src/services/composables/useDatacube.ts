@@ -33,7 +33,6 @@ import {
   isIndicator
 } from '@/utils/datacube-util';
 
-// FIXME: in datacube-card, itemId is taken from the route, others all take it as a prop
 export default function useDatacube(
   metadata: Ref<Model | Indicator | null>,
   itemId: Ref<string>,
@@ -141,7 +140,6 @@ export default function useDatacube(
     }
   });
 
-  // FIXME: this might be trying to fetch scenarios when the list is ['indicator']. Verify and clean up.
   const selectedScenarios = computed(() => {
     return getFilteredScenariosFromIds(
       selectedScenarioIds.value,

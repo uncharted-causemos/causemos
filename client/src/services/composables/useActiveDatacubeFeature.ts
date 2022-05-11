@@ -21,7 +21,6 @@ export default function useActiveDatacubeFeature(
       : 0;
   });
 
-  // FIXME: remove: previously called MainModelOutput
   const activeFeature = computed<DatacubeFeature | null>(() => {
     return metadata.value && currentOutputIndex.value >= 0
       ? getSelectedOutput(metadata.value, currentOutputIndex.value)
