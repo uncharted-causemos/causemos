@@ -899,7 +899,6 @@ export default defineComponent({
       isPeriodicallyRefreshingModelRuns
     );
 
-    const tour = computed(() => store.getters['tour/tour']);
     const toaster = useToaster();
 
     const isBreakdownPaneOpen = ref<boolean>(true);
@@ -1210,10 +1209,6 @@ export default defineComponent({
       }
 
       currentTabView.value = DatacubeViewMode.Data;
-      // advance the relevant tour if it is active
-      if (tour.value && tour.value.id.startsWith('aggregations-tour')) {
-        tour.value.next();
-      }
     };
 
     const modelRunsSearchData = ref<{[key: string]: any}>({});
