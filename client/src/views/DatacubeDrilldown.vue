@@ -125,6 +125,16 @@ export default defineComponent({
 
         if (currentAnalysisItem) {
           currentAnalysisItem.viewConfig = viewState.value;
+          // Note: this is where datacubes get their initial data state. When
+          //  they are added from the data explorer, they have a view state but
+          //  no data state. The datacube-card on this page calls
+          //  initDataStateFromRefs and then sets that new data state object in
+          //  the insightPanelStore. This component watches that value
+          //  (dataState.value), sees that it's not null, and then callss
+          //  dataAnalysis/updateAnalysisItems`.
+          // This could be simplified if the initial data state was created when
+          //  adding a new datacube to the analysis, and it was no longer
+          //  optional.
           if (
             dataState.value !== null &&
             isDataSpaceDataState(dataState.value)
