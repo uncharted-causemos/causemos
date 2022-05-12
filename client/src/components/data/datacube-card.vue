@@ -1351,7 +1351,11 @@ export default defineComponent({
         // first, exit new-runs-mode
         toggleNewRunsMode();
         // then, re-fetch data from server (wait some time to give the server a chance to update)
-        _.delay(() => fetchModelRuns(), 2000);
+        _.delay(() => {
+          if (isModel(metadata.value)) {
+            fetchModelRuns();
+          }
+        }, 2000);
       }
     };
 
