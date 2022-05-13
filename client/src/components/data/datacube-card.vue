@@ -1614,7 +1614,14 @@ export default defineComponent({
         // FIXME: it's not clear why this is necessary. Duplicate appends
         //  would imply we're rerunning this code multiple times for the
         //  same globalTimeseries list, which is a bug.
-        // FIXME: the id should be constructed when globalTimeseries is
+        // Though this code is being called multiple times, globalTimeseries
+        //  should be fresh each time, so no need to check for the potential
+        //  duplication. If useMultiTimeseriesData guarantees that, this code
+        //  can be removed.
+        // FIXME: the id should be constructed when globalTimeseries is. Because
+        //  we can have duplicates of the same datacube, the ID will need to be
+        //  made from item_id (unique for each analysis item) + whichever is
+        //  used to differentiate between timeseries for the current breakdown.
         if (!timeseries.id.endsWith(feature.name)) {
           // use a combination of timeseries id and feature name as the ultimate unique id
           // override the timeseries id to match its owner datacube
