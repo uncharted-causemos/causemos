@@ -1084,7 +1084,6 @@ export default defineComponent({
           selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
         }
         if (initialViewConfig.value.breakdownOption !== undefined) {
-          console.log('init', initialViewConfig.value.breakdownOption);
           breakdownOption.value = initialViewConfig.value.breakdownOption;
         }
         if (initialViewConfig.value.selectedAdminLevel !== undefined) {
