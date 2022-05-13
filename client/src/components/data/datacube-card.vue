@@ -510,7 +510,7 @@
                   :qualifier-fetch-info="qualifierFetchInfo"
                   :regional-data="regionalData"
                   :temporal-breakdown-data="temporalBreakdownData"
-                  :output-variable-breakdown-data="featureBreakdownData"
+                  :feature-breakdown-data="featureBreakdownData"
                   :selected-spatial-aggregation="selectedSpatialAggregation"
                   :selected-temporal-aggregation="selectedTemporalAggregation"
                   :selected-temporal-resolution="selectedTemporalResolution"
@@ -522,7 +522,7 @@
                   :selected-breakdown-option="breakdownOption"
                   :selected-timeseries-points="selectedTimeseriesPoints"
                   :selected-years="selectedYears"
-                  :selected-breakdown-output-variables="selectedFeatureNames"
+                  :selected-feature-names="selectedFeatureNames"
                   :reference-options="availableReferenceOptions"
                   :unit="unit"
                   @toggle-is-region-selected="toggleIsRegionSelected"
@@ -1066,7 +1066,7 @@ export default defineComponent({
     );
 
     // apply initial view config for this datacube
-    watchEffect(() => {
+    watch([initialViewConfig.value], () => {
       if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
         if (initialViewConfig.value.spatialAggregation !== undefined) {
           selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation as AggregationOption;
@@ -1084,6 +1084,7 @@ export default defineComponent({
           selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
         }
         if (initialViewConfig.value.breakdownOption !== undefined) {
+          console.log('init', initialViewConfig.value.breakdownOption);
           breakdownOption.value = initialViewConfig.value.breakdownOption;
         }
         if (initialViewConfig.value.selectedAdminLevel !== undefined) {
@@ -1107,7 +1108,7 @@ export default defineComponent({
         // FIXME: although we have restored the color palette/scale/options,
         //  none of those will look applied since the final color list is only generated when the viz-option is opened
       }
-    });
+    }, { immediate: true });
 
     // HACK: please delete this
     const clearRouteParam = () => {
@@ -1603,13 +1604,15 @@ export default defineComponent({
     // A map from timeseries to matching datacube (name and feature). Since
     //  globalTimeseries is used when multiple features are selected, we need
     //  to create a new ID for each timeseries that includes the feature name.
-    const timeseriesToDatacubeMap = computed<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>(() => {
+    const timeseriesToDatacubeMap = ref<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>({});
+    watch([selectedFeatures, globalTimeseries], () => {
       if (selectedFeatures.value.length !== globalTimeseries.value.length) {
-        return {};
+        return;
       }
       const result: {[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }} = {};
+      const features = selectedFeatures.value;
       globalTimeseries.value.forEach((timeseries, index) => {
-        const feature = selectedFeatures.value[index];
+        const feature = features[index];
         // Prevent duplicate appends.
         // FIXME: it's not clear why this is necessary. Duplicate appends
         //  would imply we're rerunning this code multiple times for the
@@ -1632,8 +1635,8 @@ export default defineComponent({
           datacubeOutputVariable: feature.display_name
         };
       });
-      return result;
-    });
+      timeseriesToDatacubeMap.value = result;
+    }, { immediate: true });
 
     const featureBreakdownData = computed<BreakdownData | null>(() => {
       // If metadata hasn't loaded, return null.
