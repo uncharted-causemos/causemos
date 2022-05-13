@@ -154,6 +154,8 @@ export default defineComponent({
           value: node.concept,
           displayName: ontologyFormatter(node.concept)
         };
+      }).sort((a, b) => {
+        return a.displayName.localeCompare(b.displayName);
       });
     });
 
