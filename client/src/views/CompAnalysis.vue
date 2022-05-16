@@ -19,7 +19,7 @@
         v-if="globalTimeseries.length > 0 && comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay"
         :timeseriesData="globalTimeseries"
         :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
-        :selected-timestamp="selectedGlobalTimestamp"
+        :selected-timestamp="globalTimestamp"
         :selected-timestamp-range="selectedTimestampRange"
         @select-timestamp="setSelectedGlobalTimestamp"
         @select-timestamp-range="handleTimestampRangeSelection"
@@ -101,7 +101,7 @@
                 :datacube-id="item.datacubeId"
                 :item-id="item.itemId"
                 :datacube-index="indx"
-                :selected-timestamp="selectedGlobalTimestamp"
+                :selected-timestamp="globalTimestamp"
                 :selected-timestamp-range="selectedTimestampRange"
                 @loaded-timeseries="onLoadedTimeseries"
               />
@@ -264,7 +264,7 @@ export default defineComponent({
     const selectedTimestamp = ref(null) as Ref<number | null>;
     const selectedTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
 
-    const selectedGlobalTimestamp = ref(null) as Ref<number | null>;
+    const globalTimestamp = ref(null) as Ref<number | null>;
     const initialSelectedTimestamp = ref(null) as Ref<number | null>;
     const initialSelectedTimestampRange = ref({}) as Ref<{start: number; end: number}>;
 
@@ -365,8 +365,8 @@ export default defineComponent({
     };
 
     const setSelectedGlobalTimestamp = (value: number) => {
-      if (selectedGlobalTimestamp.value === value) return;
-      selectedGlobalTimestamp.value = value;
+      if (globalTimestamp.value === value) return;
+      globalTimestamp.value = value;
     };
 
     const handleTimestampRangeSelection = (newTimestampRange: {start: number; end: number} | null) => {
@@ -545,7 +545,7 @@ export default defineComponent({
         // Only save the selected timestamp when overlap mode is active
         selectedTimestamp:
           comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay
-            ? selectedGlobalTimestamp.value
+            ? globalTimestamp.value
             : null,
         selectedAnalysisItems: selectedAnalysisItems.value,
         datacubeTitles: datacubeTitles.value
@@ -562,7 +562,7 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       handleTimestampRangeSelection,
-      selectedGlobalTimestamp,
+      globalTimestamp,
       setSelectedGlobalTimestamp,
       selectedTimestampRange,
       reCalculateGlobalTimeseries,
@@ -866,9 +866,9 @@ export default defineComponent({
           if (lastTimestamp !== undefined) {
             // set initial timestamp selection
             if (this.initialSelectedTimestamp === null) {
-              this.selectedGlobalTimestamp = lastTimestamp;
+              this.globalTimestamp = lastTimestamp;
             } else {
-              this.selectedGlobalTimestamp = this.initialSelectedTimestamp;
+              this.globalTimestamp = this.initialSelectedTimestamp;
               this.initialSelectedTimestamp = null;
             }
           }

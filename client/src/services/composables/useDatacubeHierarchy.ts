@@ -4,7 +4,7 @@ import { AdminRegionSets } from '@/types/Datacubes';
 import _ from 'lodash';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import { getRegionLists } from '../outputdata-service';
-import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER, stringifySelectedRegions } from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
 import { validateSelectedRegions } from '@/utils/drilldown-util';
 
@@ -65,6 +65,13 @@ export default function useDatacubeHierarchy(
     admin2: new Set(),
     admin3: new Set()
   });
+
+  const selectedRegionsString = computed(() =>
+    stringifySelectedRegions(
+      selectedRegionIdsAtAllLevels.value,
+      selectedAdminLevel.value
+    )
+  );
 
   // When a new hierarchy arrives validate the selected regions to ensure they exist in this datacube
   watch([datacubeHierarchy], () => {
@@ -172,6 +179,7 @@ export default function useDatacubeHierarchy(
   return {
     datacubeHierarchy,
     selectedRegionIds,
+    selectedRegionsString,
     selectedRegionIdsAtAllLevels,
     referenceRegions,
     toggleIsRegionSelected

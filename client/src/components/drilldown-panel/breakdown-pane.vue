@@ -135,13 +135,13 @@
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
       ref="variable_ref"
-      v-if="isOutputVariableBreakdownDataValid"
+      v-if="isFeatureBreakdownDataValid"
       class="checklist-section"
-      :aggregation-level-count="Object.keys(outputVariableBreakdownData).length"
+      :aggregation-level-count="Object.keys(featureBreakdownData).length"
       :aggregation-level="0"
       :aggregation-level-title="'Variable'"
       :ordered-aggregation-level-keys="['Variable']"
-      :raw-data="outputVariableBreakdownData"
+      :raw-data="featureBreakdownData"
       :should-show-deselected-bars="selectedBreakdownOption !== SPLIT_BY_VARIABLE"
       :show-references="false"
       :allow-collapsing="false"
@@ -151,8 +151,8 @@
           ? 'checkbox'
           : null
       "
-      :selected-item-ids="Array.from(selectedBreakdownOutputVariables)"
-      @toggle-is-item-selected="toggleIsOutputVariableSelected"
+      :selected-item-ids="Array.from(selectedFeatureNames)"
+      @toggle-is-item-selected="toggleIsFeatureSelected"
     >
     </aggregation-checklist-pane>
   </div>
@@ -220,7 +220,7 @@ export default defineComponent({
       type: Object as PropType<BreakdownData | null>,
       default: null
     },
-    outputVariableBreakdownData: {
+    featureBreakdownData: {
       type: Object as PropType<BreakdownData | null>,
       default: null
     },
@@ -244,7 +244,7 @@ export default defineComponent({
       type: Object as PropType<Set<string>>,
       default: () => new Set()
     },
-    selectedBreakdownOutputVariables: {
+    selectedFeatureNames: {
       type: Object as PropType<Set<string>>,
       default: () => new Set()
     },
@@ -282,7 +282,7 @@ export default defineComponent({
       selectedBreakdownOption,
       selectedTemporalResolution,
       qualifierBreakdownData,
-      outputVariableBreakdownData,
+      featureBreakdownData,
       selectedRegionIdsAtAllLevels
     } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
@@ -304,7 +304,7 @@ export default defineComponent({
       emit('toggle-is-year-selected', year);
     };
 
-    const toggleIsOutputVariableSelected = (title: string, variable: string) => {
+    const toggleIsFeatureSelected = (title: string, variable: string) => {
       emit('toggle-is-output-variable-selected', variable);
     };
 
@@ -361,11 +361,11 @@ export default defineComponent({
         Object.keys(temporalBreakdownData.value).length !== 0
     );
 
-    const isOutputVariableBreakdownDataValid = computed(
+    const isFeatureBreakdownDataValid = computed(
       () =>
 
-        outputVariableBreakdownData.value !== null &&
-        Object.keys(outputVariableBreakdownData.value).length !== 0
+        featureBreakdownData.value !== null &&
+        Object.keys(featureBreakdownData.value).length !== 0
     );
 
     const breakdownOptions = computed(() => {
@@ -407,7 +407,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsQualifierSelected,
       toggleIsYearSelected,
-      toggleIsOutputVariableSelected,
+      toggleIsFeatureSelected,
       toggleReferenceOptions,
       availableAdminLevelTitles,
       timestampFormatter,
@@ -417,7 +417,7 @@ export default defineComponent({
       breakdownOptions,
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
-      isOutputVariableBreakdownDataValid,
+      isFeatureBreakdownDataValid,
       AggregationOption,
       SpatialAggregationLevel,
       TemporalAggregationLevel,

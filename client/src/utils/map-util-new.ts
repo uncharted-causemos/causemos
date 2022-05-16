@@ -228,3 +228,20 @@ export async function computeMapBoundsForCountries(regionIds: string[]) {
   if (!regionIds?.length) return null;
   return await getBboxFromRegionIds(regionIds);
 }
+
+export function popupFormatter(
+  feature: { state: any },
+  includeNormalizedValue: boolean
+) {
+  const { label, value, normalizedValue } = feature.state || {};
+  if (!label || value === null || value === undefined) return null;
+  return [
+    label.split('__').pop(),
+    includeNormalizedValue
+      ? `Normalized: ${+normalizedValue.toFixed(2)}`
+      : null,
+    `Value: ${+value.toFixed(2)}`
+  ]
+    .filter(x => x !== null)
+    .join('<br>');
+}

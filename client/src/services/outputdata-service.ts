@@ -336,9 +336,9 @@ export const getQualifierBreakdown = async (
   temporalAggregation: string,
   spatialAggregation: string,
   timestamp: number,
-  regionId?: string
+  regionId: string
 ) : Promise<QualifierBreakdownResponse[]> => {
-  if (regionId) {
+  if (regionId.length > 0) {
     const [global, regional] = await Promise.all([
       getGlobalQualifierBreakdown(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp),
       getQualifierBreakdownByRegionId(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp, regionId)

@@ -3,10 +3,12 @@ import { NamedBreakdownData, QualifierFetchInfo } from '@/types/Datacubes';
 import { QualifierBreakdownResponse } from '@/types/Outputdata';
 import {
   AggregationOption,
+  SpatialAggregationLevel,
+  TemporalAggregationLevel,
   TemporalResolutionOption
 } from '@/types/Enums';
 import _ from 'lodash';
-import { Ref, ref, watch, watchEffect } from 'vue';
+import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { getQualifierBreakdown, getRawQualifierBreakdown } from '../outputdata-service';
 import useQualifierFetchInfo from './useQualifierFetchInfo';
 
@@ -100,6 +102,7 @@ const convertResponsesToBreakdownData = (
 
 export default function useQualifiers(
   metadata: Ref<Model | Indicator | null>,
+  selectedRegionIdsAtSelectedLevel: Ref<string[]>,
   breakdownOption: Ref<string | null>,
   selectedScenarioIds: Ref<string[]>,
   temporalResolution: Ref<TemporalResolutionOption>,
@@ -109,9 +112,22 @@ export default function useQualifiers(
   initialSelectedQualifierValues: Ref<string[]>,
   initialNonDefaultQualifiers: Ref<string[]>,
   activeFeature: Ref<string>,
-  isRawDataResolution?: Ref<Boolean>,
-  selectedRegionId?: Ref<string>
+  isRawDataResolution?: Ref<Boolean>
 ) {
+  const selectedRegionId = computed(() => {
+    const regionIds = selectedRegionIdsAtSelectedLevel.value;
+    // Note: qualifier breakdown data can only be broken down by single regionId, so it isn't applicable in 'split by region' mode where multiple region can be selected
+    // and also in 'split by year' mode where data is aggregated by year.
+    if (
+      regionIds.length !== 1 ||
+      breakdownOption.value === TemporalAggregationLevel.Year ||
+      breakdownOption.value === SpatialAggregationLevel.Region
+    ) {
+      return '';
+    }
+    return regionIds[0];
+  });
+
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
 
   const requestedQualifier = ref<string|null>(null);
@@ -219,7 +235,7 @@ export default function useQualifiers(
           temporalAggregation.value,
           spatialAggregation.value,
           timestamp,
-          selectedRegionId?.value
+          selectedRegionId.value
         )
     );
     // FIXME: OPTIMIZATION: Placing a separate request for each run eats into

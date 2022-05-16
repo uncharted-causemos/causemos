@@ -5,7 +5,7 @@ import { colorFromIndex } from '@/utils/colors-util';
 import _ from 'lodash';
 import { Ref, ref, watch, watchEffect } from 'vue';
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
-import { OutputVariableSpecs } from '@/types/Outputdata';
+import { FeatureConfig } from '@/types/Outputdata';
 import { getTimeseries } from '../outputdata-service';
 
 /**
@@ -20,7 +20,7 @@ export default function useMultiTimeseriesData(
   metadata: Ref<Datacube | null>,
   modelRunIds: Ref<string[]>,
   breakdownOption: Ref<string | null>,
-  activeFeatures: Ref<OutputVariableSpecs[]>,
+  activeFeatures: Ref<FeatureConfig[]>,
   initialSelectedGlobalTimestamp?: Ref<number | null>
 ) {
   const timeseriesData = ref<Timeseries[]>([]);
