@@ -2485,6 +2485,7 @@ export default defineComponent({
           // ensure that both choices and labels exist
           const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
           const updatedChoicesLabels = updatedModelParam.choices_labels === undefined || updatedModelParam.choices_labels.length === 0 ? _.clone(updatedModelParam.choices) as Array<string> : _.clone(updatedModelParam.choices_labels) as Array<string>;
+
           const getFormattedBBox = (bbox: any) => {
             // NOTE: bbox is coming as input string formatted as
             //       [ [{left}, {top}], [{right}, {bottom}] ]
@@ -2501,7 +2502,10 @@ export default defineComponent({
           };
           const getFormattedCode = (code: string) => {
             if (updatedModelParam.additional_options.geo_omit_gadm_code_version) {
-              return code.substring(0, code.lastIndexOf('_'));
+              if (code.indexOf('_') > -1) {
+                return code.substring(0, code.lastIndexOf('_'));
+              }
+              return code;
             } else {
               return code;
             }
@@ -2527,6 +2531,7 @@ export default defineComponent({
           });
           updatedModelParam.choices = updatedChoices;
           updatedModelParam.choices_labels = updatedChoicesLabels;
+
           this.$emit('update-model-parameter', updatedModelParam);
         }
       }
