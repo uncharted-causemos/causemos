@@ -2,11 +2,11 @@
   <div class="datacube-card-container">
     <header class="datacube-header" >
       <h5
-        v-if="metadata && mainModelOutput"
+        v-if="metadata && activeFeature"
         class="datacube-title-area"
         @click="openDrilldown"
       >
-        <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}} - {{ selectedRegionIdsDisplay }}</span>
+        <span>{{activeFeature.display_name !== '' ? activeFeature.display_name : activeFeature.name}} - {{ selectedRegionsString }}</span>
         <span class="datacube-name">{{metadata.name}}</span>
         <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin-left: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
         <i class="fa fa-fw fa-expand drilldown-btn" />
@@ -32,9 +32,9 @@
     <main>
       <div class="chart-and-footer">
         <timeseries-chart
-          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
+          v-if="timeseriesDataForSelection.length > 0 && timeseriesDataForSelection[0].points.length > 0"
           class="timeseries-chart"
-          :timeseries-data="visibleTimeseriesData"
+          :timeseries-data="timeseriesDataForSelection"
           :selected-temporal-resolution="selectedTemporalResolution"
           :selected-timestamp="selectedTimestamp"
           :selected-timestamp-range="selectedTimestampRange"
@@ -46,12 +46,12 @@
               <div>Aggregated by: {{ selectedSpatialAggregation }}</div>
               <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
               <div style="display: flex; align-items: center">
-                <div style="margin-right: 1rem">Total Runs: {{selectedScenarioIds.length}}</div>
+                <div style="margin-right: 1rem">Total Timeseries: {{regionRunsScenarios.length}}</div>
                 <div style="display: flex; align-items: center">
                   <div style="margin-right: 4px">Selected:</div>
                   <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
                           @change="selectedScenarioIndex = $event.target.selectedIndex"
-                          :disabled="selectedScenarioIds.length === 1"
+                          :disabled="regionRunsScenarios.length === 1"
                           :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex ? regionRunsScenarios[selectedScenarioIndex].color : 'black' }"
                   >
                     <option
@@ -83,40 +83,27 @@
 </template>
 
 <script lang="ts">
-import * as d3 from 'd3';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
-import { DatacubeFeature } from '@/types/Datacube';
-import { getFilteredScenariosFromIds, getOutputs, getSelectedOutput, hasRegionLevelData } from '@/utils/datacube-util';
-import { ModelRun } from '@/types/ModelRun';
-import { AggregationOption, TemporalResolutionOption, DatacubeType, DatacubeStatus, DataTransform } from '@/types/Enums';
-import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
+import { convertRegionalDataToBarData, getSelectedOutput, isModel } from '@/utils/datacube-util';
+import { AggregationOption, TemporalResolutionOption, DatacubeStatus, SPLIT_BY_VARIABLE } from '@/types/Enums';
+import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import useScenarioData from '@/services/composables/useScenarioData';
 import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
-import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
-import { COLOR, colorFromIndex, ColorScaleType, COLOR_SCHEME, getColors, isDiscreteScale, validateColorScaleType } from '@/utils/colors-util';
+import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
-import { DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
-import { fromStateSelectedRegionsAtAllLevels } from '@/utils/drilldown-util';
-import { getSelectedRegionIdsDisplay, adminLevelToString } from '@/utils/admin-level-util';
+import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
+import { popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
-import useRegionalData from '@/services/composables/useRegionalData';
-import useMapBounds from '@/services/composables/useMapBounds';
-import useOutputSpecs from '@/services/composables/useOutputSpecs';
-import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
-import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import { OutputVariableSpecs, RegionalAggregations } from '@/types/Outputdata';
 import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
-import { AdminRegionSets } from '@/types/Datacubes';
-import { normalize } from '@/utils/value-util';
+import { isDataSpaceDataState } from '@/utils/insight-util';
+import useDatacube from '@/services/composables/useDatacube';
+import { DatacubeFeature } from '@/types/Datacube';
 
 export default defineComponent({
   name: 'DatacubeComparativeCard',
@@ -163,14 +150,83 @@ export default defineComponent({
 
     const metadata = useModelMetadata(id);
 
-    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+    // FIXME: this watcher is extremely error prone. Seems like its jobs are to:
+    // - Search if there's an entry in the store for the current itemId
+    // - If there isn't, look up the default feature and update the store
+    // - Store that output index as the current output index
+    // - Unless we have an output index in initialViewConfig, in which case use that one
+    // Can that last case be avoided by using an ID in the datacubeCurrentOutputsMap that is unique between duplicate datacubes?
+    // FIXME: this logic is copied between all cards other than datacube-card
+    const activeFeature = ref<DatacubeFeature | null>(null);
+    const activeFeatureName = computed(() => activeFeature.value?.name ?? '');
+    watchEffect(() => {
+      if (!metadata.value) {
+        return;
+      }
+      let initialOutputIndex = 0;
+      const datacubeKey = itemId.value;
 
-    const selectedScenarioIds = ref([] as string[]);
-    const selectedScenarios = ref([] as ModelRun[]);
+      const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
+      if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
+        // we have a store entry for the default output of the current model
+        initialOutputIndex = currentOutputEntry;
+      } else {
+        initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
-    const outputs = ref([]) as Ref<DatacubeFeature[]>;
+        // update the store
+        const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+        defaultOutputMap[datacubeKey] = initialOutputIndex;
+        store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+      }
+      // override (to correctly fetch the output selection for each datacube duplication)
+      if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value) && initialViewConfig.value.selectedOutputIndex !== undefined) {
+        initialOutputIndex = initialViewConfig.value.selectedOutputIndex;
+      }
+      activeFeature.value = getSelectedOutput(
+        metadata.value,
+        initialOutputIndex
+      );
+    });
 
-    const selectedDataLayerTransparency = ref(DATA_LAYER_TRANSPARENCY['100%']);
+    const {
+      selectedScenarioIds,
+      outputs,
+      selectedDataLayerTransparency,
+      modelRunSearchFilters,
+      breakdownOption,
+      setBreakdownOption,
+      initialActiveFeatures,
+      initialSelectedQualifierValues,
+      initialNonDefaultQualifiers,
+      initialSelectedYears,
+      initialSelectedGlobalTimestamp,
+      initialActiveReferenceOptions,
+      initialSelectedOutputVariables,
+      allModelRunData,
+      selectedRegionIdsAtAllLevels,
+      selectedRegionsString,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
+      selectedTransform,
+      selectedAdminLevel,
+      colorSchemeReversed,
+      selectedColorSchemeName,
+      selectedColorScaleType,
+      numberOfColorBins,
+      finalColorScheme,
+      datacubeHierarchy,
+      timeseriesData,
+      timeseriesDataForSelection,
+      visibleTimeseriesData,
+      regionalData,
+      mapBounds
+    } = useDatacube(
+      metadata,
+      itemId,
+      activeFeatureName,
+      ref(false)
+    );
 
     const store = useStore();
 
@@ -186,6 +242,14 @@ export default defineComponent({
       initialViewConfig.value = datacubeAnalysisItem.viewConfig;
       initialDataConfig.value = datacubeAnalysisItem.dataConfig;
     }
+
+    const setSelectedTimestamp = (value: number) => {
+      if (selectedTimestamp.value === value) {
+        return;
+      }
+      // emit the timestamp so that the parent component can set and sync others
+      emit('select-timestamp', value);
+    };
 
     watch(
       () => [
@@ -207,78 +271,54 @@ export default defineComponent({
       }
     );
 
-    watchEffect(() => {
-      if (metadata.value) {
-        outputs.value = getOutputs(metadata.value);
-
-        let initialOutputIndex = 0;
-        const datacubeKey = itemId.value;
-
-        const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
-        if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
-          // we have a store entry for the default output of the current model
-          initialOutputIndex = currentOutputEntry;
-        } else {
-          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
-
-          // update the store
-          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[datacubeKey] = initialOutputIndex;
-          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
-        }
-        // override (to correctly fetch the output selection for each datacube duplication)
-        if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value) && initialViewConfig.value.selectedOutputIndex !== undefined) {
-          initialOutputIndex = initialViewConfig.value.selectedOutputIndex;
-        }
-        mainModelOutput.value = getSelectedOutput(metadata.value, initialOutputIndex);
-      }
-    });
-
-    const {
-      dimensions
-    } = useDatacubeDimensions(metadata, itemId);
-
-    const modelRunsFetchedAt = ref(0);
-    const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
-
-    const selectedRegionIds: string[] = [];
-    const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>({
-      country: new Set(),
-      admin1: new Set(),
-      admin2: new Set(),
-      admin3: new Set()
-    });
     const initialSelectedScenarioIds = ref<string[]>([]);
 
+    // FIXME: this logic is shared by other cards. Can we extract it?
+    // Select the initialSelectedScenarioIds if there are any, otherwise fall
+    //  back to the (first) default run.
     watchEffect(() => {
-      if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
-        const allScenarioIds = allModelRunData.value.map(run => run.id);
-        // do not pick the first run by default in case a run was previously selected
-        selectedScenarioIds.value = initialSelectedScenarioIds.value.length > 0 ? initialSelectedScenarioIds.value : [allScenarioIds[0]];
-
-        selectedScenarios.value = getFilteredScenariosFromIds(selectedScenarioIds.value, allModelRunData.value);
+      if (!isModel(metadata.value) || allModelRunData.value.length === 0) {
+        return;
+      }
+      if (initialSelectedScenarioIds.value.length > 0) {
+        selectedScenarioIds.value = initialSelectedScenarioIds.value;
+        return;
+      }
+      const baselineRunIds = allModelRunData.value
+        .filter(run => run.is_default_run)
+        .map(run => run.id);
+      if (baselineRunIds.length > 0) {
+        selectedScenarioIds.value = [baselineRunIds[0]];
       }
     });
 
-    watchEffect(() => {
-      if (metadata.value?.type === DatacubeType.Indicator) {
-        selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
+
+    // FIXME: See note in datacube-card
+    const regionMapData = computed<BarData[]>(() => {
+      const timeseriesToGetRegionDataFrom =
+        timeseriesDataForSelection.value[selectedScenarioIndex.value];
+      let timeseriesKey = '';
+      if (timeseriesToGetRegionDataFrom === undefined) {
+        timeseriesKey = '';
+      } else if (breakdownOption.value === SPLIT_BY_VARIABLE) {
+        // FIXME: useMultiTimeseriesData is only used when split by variable is
+        //  active, but it sets all timeseries IDs to the same scenarioId, so
+        //  they're not unique. In this case the feature name should be used as
+        //  both the timeseries name and ID and there are many conditionals like
+        //  this one which can then be cleaned up.
+        timeseriesKey = timeseriesToGetRegionDataFrom.name;
+      } else {
+        timeseriesKey = timeseriesToGetRegionDataFrom.id;
       }
+      return convertRegionalDataToBarData(
+        regionalData.value,
+        selectedAdminLevel.value,
+        timeseriesKey,
+        numberOfColorBins.value,
+        finalColorScheme.value,
+        selectedDataLayerTransparency.value
+      );
     });
-
-    const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
-    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
-    const selectedTransform = ref<DataTransform>(DataTransform.None);
-
-    const regionMapData = ref<BarData[]>([]);
-
-    const selectedAdminLevel = ref(0); // country by default
-
-    const colorSchemeReversed = ref(false);
-    const selectedColorSchemeName = ref<COLOR>(COLOR.DEFAULT); // DEFAULT
-    const selectedColorScaleType = ref(ColorScaleType.LinearDiscrete);
-    const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
 
     // apply the view-config for this datacube
     watch(
@@ -288,14 +328,17 @@ export default defineComponent({
       ],
       () => {
         if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
+          if (initialViewConfig.value?.breakdownOption !== undefined) {
+            setBreakdownOption(initialViewConfig.value?.breakdownOption);
+          }
           if (initialViewConfig.value.temporalResolution !== undefined) {
-            selectedTemporalResolution.value = initialViewConfig.value.temporalResolution;
+            selectedTemporalResolution.value = initialViewConfig.value.temporalResolution as TemporalResolutionOption;
           }
           if (initialViewConfig.value.temporalAggregation !== undefined) {
-            selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation;
+            selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation as AggregationOption;
           }
           if (initialViewConfig.value.spatialAggregation !== undefined) {
-            selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation;
+            selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation as AggregationOption;
           }
           if (initialViewConfig.value.selectedOutputIndex !== undefined) {
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
@@ -323,107 +366,67 @@ export default defineComponent({
           }
         }
 
+        //
         // apply initial data config for this datacube
+        //
         if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
-          if (initialDataConfig.value.selectedRegionIds !== undefined) {
-            initialDataConfig.value.selectedRegionIds.forEach(regionId => {
-              selectedRegionIds.push(regionId);
-            });
-          }
-          if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
-            selectedRegionIdsAtAllLevels.value = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
-          }
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
             initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
           }
+          if (initialDataConfig.value.selectedTimestamp !== undefined) {
+            if (initialViewConfig.value?.breakdownOption && initialViewConfig.value?.breakdownOption === SPLIT_BY_VARIABLE) {
+              initialSelectedGlobalTimestamp.value = initialDataConfig.value.selectedTimestamp;
+            } else {
+              setSelectedTimestamp(initialDataConfig.value?.selectedTimestamp as number);
+            }
+          }
+          // FIXME: can we remove this? can we remove selectedRegionIds from the datastate entirely?selectedRegionIdsAtAllLevels should be loaded, and selectedRegionIds should just be calculated from that.
+          // if (initialDataConfig.value.selectedRegionIds !== undefined) {
+          //   initialDataConfig.value.selectedRegionIds.forEach(regionId => {
+          //     selectedRegionIds.push(regionId);
+          //   });
+          // }
+          if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
+            const regions = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
+            const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
+            selectedRegionIdsAtAllLevels.value = validRegions;
+          }
           if (initialDataConfig.value.selectedTransform !== undefined) {
             selectedTransform.value = initialDataConfig.value.selectedTransform;
+          }
+          if (initialDataConfig.value.selectedQualifierValues !== undefined) {
+            initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
+          }
+          modelRunSearchFilters.value = _.clone(initialDataConfig.value.searchFilters);
+
+          const dataState = initialDataConfig.value;
+          if (dataState && isDataSpaceDataState(dataState)) {
+            initialNonDefaultQualifiers.value = _.clone(dataState.nonDefaultQualifiers);
+
+            initialSelectedOutputVariables.value = _.clone(dataState.selectedOutputVariables);
+            initialActiveFeatures.value = _.clone(dataState.activeFeatures);
+            // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+            initialSelectedQualifierValues.value = _.clone(dataState.selectedQualifierValues);
+            // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
+            initialSelectedYears.value = _.clone(dataState.selectedYears);
+            // @NOTE: 'initialActiveReferenceOptions' must be set after 'breakdownOption'
+            initialActiveReferenceOptions.value = _.clone(dataState.activeReferenceOptions);
           }
         }
       },
       {
         immediate: true
-      });
-
-    const setSelectedTimestamp = (value: number) => {
-      if (selectedTimestamp.value === value) {
-        return;
       }
-      // emit the timestamp so that the parent component can set and sync others
-      emit('select-timestamp', value);
-    };
-
-    const breakdownOption = ref<string | null>(null);
-    const setBreakdownOption = (newValue: string | null) => {
-      breakdownOption.value = newValue;
-    };
-
-    const { activeFeature } = useActiveDatacubeFeature(metadata, itemId);
-
-    const {
-      timeseriesData,
-      visibleTimeseriesData,
-      relativeTo,
-      baselineMetadata,
-      setRelativeTo,
-      temporalBreakdownData
-    } = useTimeseriesData(
-      metadata,
-      selectedScenarioIds,
-      selectedTemporalResolution,
-      selectedTemporalAggregation,
-      selectedSpatialAggregation,
-      breakdownOption,
-      selectedTimestamp,
-      selectedTransform,
-      setSelectedTimestamp,
-      ref(selectedRegionIds),
-      ref(new Set()),
-      ref([]),
-      ref(false),
-      activeFeature,
-      selectedScenarios
     );
-
-    watchEffect(() => {
-      if (metadata.value && visibleTimeseriesData.value && visibleTimeseriesData.value.length > 0) {
-        // override the color of all loaded timeseries
-        visibleTimeseriesData.value.forEach(timeseries => {
-          timeseries.color = colorFromIndex(datacubeIndex.value);
-        });
-
-        regionRunsScenarios.value = visibleTimeseriesData.value.map(timeseries => ({ name: timeseries.name, color: timeseries.color }));
-
-        emit('loaded-timeseries', {
-          id: id.value,
-          datacubeId: datacubeId.value,
-          itemId: itemId.value,
-          timeseriesList: visibleTimeseriesData.value,
-          //
-          datacubeName: metadata.value.name,
-          datacubeOutputName: mainModelOutput.value?.display_name,
-          source: metadata.value.maintainer.organization,
-          //
-          region: metadata.value.geography.country // FIXME: later this could be the selected region for each datacube
-        });
-      }
-    });
-
-    const selectedRegionIdsDisplay = computed(() => {
-      return getSelectedRegionIdsDisplay(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value);
-    });
 
     // NOTE: only the List view within the CompAnalysis page will update the name of the analysis item
     watch(
-      () => [
-        mainModelOutput.value,
-        selectedRegionIdsDisplay
-      ],
+      () => [activeFeature, selectedRegionsString],
       () => {
-        if (mainModelOutput.value && datacubeAnalysisItem) {
+        if (activeFeature.value && datacubeAnalysisItem) {
           // update the corresponding analysis name; match the card title
-          const outputName = mainModelOutput.value.display_name !== '' ? mainModelOutput.value.display_name : mainModelOutput.value.name;
-          const selectedRegion = selectedRegionIdsDisplay.value;
+          const outputName = activeFeature.value.display_name !== '' ? activeFeature.value.display_name : activeFeature.value.name;
+          const selectedRegion = selectedRegionsString.value;
           const datacubeName = metadata.value?.name;
           const datacubeHeader = '<b>' + outputName + ' - ' + selectedRegion + ' </b> ' + datacubeName;
           if (datacubeHeader !== datacubeAnalysisItem.name) {
@@ -442,159 +445,53 @@ export default defineComponent({
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
-    const {
-      datacubeHierarchy
-      // NOTE: selectedRegionIds is already calculated above so no need to receive as a return object
-    } = useDatacubeHierarchy(
-      selectedScenarioIds,
-      metadata,
-      selectedAdminLevel,
-      ref(null), // breakdownOption,
-      activeFeature
-    );
-
-    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
-      ref(null), // breakdownOption,
-      timeseriesData,
-      selectedTimestamp,
-      selectedScenarioIds
-    );
-
-    const activeFeatures = computed<OutputVariableSpecs[]>(() => {
-      return selectedTimeseriesPoints.value.map(() => ({
-        temporalAggregation: selectedTemporalAggregation.value as AggregationOption,
-        temporalResolution: selectedTemporalResolution.value as TemporalResolutionOption,
-        spatialAggregation: selectedSpatialAggregation.value as AggregationOption,
-        transform: selectedTransform.value,
-        name: activeFeature.value,
-        display_name: activeFeature.value
-      }));
-    });
-
-    const {
-      outputSpecs
-    } = useOutputSpecs(
-      id,
-      metadata,
-      selectedTimeseriesPoints,
-      activeFeatures
-    );
-
-    const {
-      regionalData
-    } = useRegionalData(
-      outputSpecs,
-      ref(null), // breakdownOption,
-      datacubeHierarchy
-    );
-
-    const { mapBounds } = useMapBounds(regionalData, selectedAdminLevel, selectedRegionIdsAtAllLevels);
-
-    // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
-    const finalColorScheme = computed(() => {
-      const scheme = isDiscreteScale(selectedColorScaleType.value)
-        ? getColors(selectedColorSchemeName.value, numberOfColorBins.value)
-        : _.clone(COLOR_SCHEME[selectedColorSchemeName.value]);
-      return colorSchemeReversed.value ? scheme.reverse() : scheme;
-    });
-
     const selectedScenarioIndex = ref(0);
     const regionRunsScenarios = ref([] as {name: string; color: string}[]);
 
-    const popupFormatter = (feature: any) => {
-      const { label, value } = feature.state || {};
-      if (!label) return null;
-      return `${label.split('__').pop()}<br> Value: ${+value.toFixed(2)}`;
-    };
+    watchEffect(() => {
+      if (metadata.value) {
+        const timeseriesList = timeseriesDataForSelection.value;
 
-    watch(
-      () => [
-        regionalData.value,
-        selectedAdminLevel.value,
-        finalColorScheme.value,
-        selectedScenarioIndex.value,
-        selectedDataLayerTransparency.value
-      ],
-      () => {
-        const temp: BarData[] = [];
+        if (timeseriesList.length > 0) {
+          // override the color of all loaded timeseries
+          timeseriesList.forEach(timeseries => {
+            timeseries.color = colorFromIndex(datacubeIndex.value);
+          });
 
-        if (regionalData.value !== null) {
-          const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
-          const regionLevelData = regionalData.value[adminLevelAsString];
-          const hasValues = hasRegionLevelData(regionLevelData);
+          regionRunsScenarios.value = timeseriesList.map(timeseries => ({ name: timeseries.name, color: timeseries.color }));
 
-          if (regionLevelData !== undefined && regionLevelData.length > 0 && hasValues) {
-            const data = regionLevelData.map(regionDataItem => ({
-              name: regionDataItem.id,
-              value: Object.values(regionDataItem.values).length > 0 && Object.values(regionDataItem.values).length > selectedScenarioIndex.value ? Object.values(regionDataItem.values)[selectedScenarioIndex.value] : 0
-            }));
-
-            if (data.length > 0) {
-              let regionIndexCounter = 0;
-
-              const allValues = data.map(regionDataItem => regionDataItem.value);
-              const scale = d3
-                .scaleLinear()
-                .domain(d3.extent(allValues) as [number, number]);
-                // .nice(); // 😃
-              const dataExtent = scale.domain(); // after nice() is called
-
-              const colors = finalColorScheme.value;
-
-              // @REVIEW
-              // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
-              // To receive normalized data, send transform=normalization when fetching regional data
-              data.forEach(dataItem => {
-                const normalizedValue = normalize(dataItem.value, dataExtent[0], dataExtent[1]);
-                const itemValue = dataItem.value;
-                const colorIndex = Math.trunc(normalizedValue * numberOfColorBins.value); // i.e., linear binning
-                // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
-                const clampedColorIndex = _.clamp(colorIndex, 0, colors.length - 1);
-                const regionColor = colors[clampedColorIndex];
-                temp.push({
-                  name: (regionIndexCounter + 1).toString(),
-                  label: dataItem.name,
-                  value: itemValue,
-                  normalizedValue: normalizedValue,
-                  color: regionColor,
-                  opacity: Number(selectedDataLayerTransparency.value)
-                });
-                regionIndexCounter++;
-              });
-            }
-
-            // adjust the ranking so that the highest value will be ranked 1st
-            // REVIEW: do we need this in the Overlay mode?
-            temp.forEach((item, indx) => {
-              item.name = (temp.length - indx).toString();
-            });
-          }
-          regionMapData.value = temp;
+          emit('loaded-timeseries', {
+            id: id.value,
+            datacubeId: datacubeId.value,
+            itemId: itemId.value,
+            timeseriesList,
+            //
+            datacubeName: metadata.value.name,
+            datacubeOutputName: activeFeature.value?.display_name,
+            source: metadata.value.maintainer.organization,
+            //
+            region: metadata.value.geography.country // FIXME: later this could be the selected region for each datacube
+          });
         }
-      });
+      }
+    });
 
     return {
-      activeDrilldownTab: 'breakdown',
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedScenarioIds,
-      selectedRegionIds,
       selectedRegionIdsAtAllLevels,
-      selectedRegionIdsDisplay,
+      selectedRegionsString,
       metadata,
-      mainModelOutput,
+      activeFeature,
       outputs,
       setSelectedTimestamp,
       timeseriesData,
-      baselineMetadata,
-      relativeTo,
-      setRelativeTo,
       breakdownOption,
-      setBreakdownOption,
-      temporalBreakdownData,
       AggregationOption,
       visibleTimeseriesData,
+      timeseriesDataForSelection,
       analysisItems,
       project,
       analysisId,
@@ -606,7 +503,7 @@ export default defineComponent({
       regionMapData,
       mapBounds,
       selectedAdminLevel,
-      popupFormatter,
+      popupFormatter: (feature: any) => popupFormatter(feature, false),
       selectedScenarioIndex,
       regionRunsScenarios
     };

@@ -1,5 +1,5 @@
 import { Indicator, Model, ModelParameter } from '../../types/Datacube';
-import { computed, ref, Ref } from 'vue';
+import { computed, Ref } from 'vue';
 import { getOutputs, isModel } from '@/utils/datacube-util';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
@@ -48,16 +48,12 @@ export default function useDatacubeDimensions(
   //    { dim1: value21, dim2: value22 }
   // ]
 
-  // @HACK: this is not needed, but left in case quick testing of the ordinal capability is needed
-  const ordinalDimensionNames = ref([]);
-
   const drilldownDimensions = computed(() =>
     dimensions.value.filter(p => p.is_drilldown)
   );
 
   return {
     dimensions,
-    ordinalDimensionNames,
     drilldownDimensions
   };
 }

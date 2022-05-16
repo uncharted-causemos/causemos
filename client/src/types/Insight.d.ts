@@ -12,6 +12,8 @@ import {
   DataTransform
 } from '@/types/Enums';
 import { AnalysisItem } from './Analysis';
+import { Filters } from './Filters';
+import { FeatureConfig } from './Outputdata';
 
 // view-specific values (no data dependency)
 export interface ViewState {
@@ -68,7 +70,7 @@ export interface DataSpaceDataState {
     admin3: string[];
   };
   selectedOutputVariables: string[];
-  activeFeatures: OutputVariableSpecs[];
+  activeFeatures: FeatureConfig[];
   nonDefaultQualifiers: string[];
   selectedQualifierValues: string[];
   selectedYears: string[];
@@ -76,7 +78,7 @@ export interface DataSpaceDataState {
   activeReferenceOptions: string[];
   selectedPreGenDataId: string;
   relativeTo: string | null;
-  searchFilters: any; // lex-bar search queries
+  searchFilters: Filters; // lex-bar search queries
 }
 
 export interface DatacubeTitle {

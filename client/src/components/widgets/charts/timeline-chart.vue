@@ -113,12 +113,13 @@ export default defineComponent({
           superscript: string | undefined;
         }[];
       }[] = [];
+      const _timeseriesToDatacubeMap = timeseriesToDatacubeMap.value;
       timeseriesData.value.forEach(timeseries => {
         const timeseriesId = timeseries.id;
         const {
           datacubeName,
           datacubeOutputVariable
-        } = timeseriesToDatacubeMap.value[timeseriesId];
+        } = _timeseriesToDatacubeMap[timeseriesId];
         // Uniquely identify legend entries by constructing a legendId.
         const legendId = datacubeName + TIMESERIES_HEADER_SEPARATOR + datacubeOutputVariable;
         const existingDatacubeSection = legendData.find(item => item.legendId === legendId);

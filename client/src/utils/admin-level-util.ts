@@ -61,7 +61,7 @@ export function filterRegionalLevelData(regionalData: BreakdownData | RegionalAg
 }
 
 // Get the string representation of the selected region Ids of the current or above level
-export function getSelectedRegionIdsDisplay(selection: AdminRegionSets, curAdminLevel: number) {
+export function stringifySelectedRegions(selection: AdminRegionSets, curAdminLevel: number) {
   const selections = [selection.country, selection.admin1, selection.admin2, selection.admin3].slice(0, curAdminLevel + 1);
   let result = '';
   for (const s of selections.reverse()) {

@@ -1,7 +1,7 @@
 import { Ref } from '@vue/reactivity';
 import { computed } from '@vue/runtime-core';
 import { Indicator, Model } from '@/types/Datacube';
-import { OutputSpecWithId, OutputVariableSpecs } from '@/types/Outputdata';
+import { OutputSpecWithId, FeatureConfig } from '@/types/Outputdata';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { ModelRun } from '@/types/ModelRun';
 import { DataTransform, SPLIT_BY_VARIABLE } from '@/types/Enums';
@@ -10,7 +10,7 @@ export default function useOutputSpecs(
   selectedModelId: Ref<string | null>,
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
-  activeFeatures: Ref<OutputVariableSpecs[]>,
+  activeFeatures: Ref<FeatureConfig[]>,
   activeFeature?: Ref<string>,
   modelRunData?: Ref<ModelRun[]>,
   breakdownOption?: Ref<string | null>

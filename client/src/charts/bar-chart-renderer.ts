@@ -45,8 +45,10 @@ function renderBarChart(
   //
   const allBars = barsData.map(bar => bar.name);
   const allBarsValues = barsData.map(bar => bar.value);
+  const minBarValue = _.min(allBarsValues) ?? 0;
   const xExtent = allBars;
-  const yExtent = [_.min(allBarsValues) ?? 0, _.max(allBarsValues) ?? 0];
+  // ensure that axis starts at 0 if necessary
+  const yExtent = [minBarValue > 0 ? 0 : minBarValue, _.max(allBarsValues) ?? 0];
   if (xExtent[0] === undefined || yExtent[0] === undefined) {
     console.error('Unable to derive extent from data', barsData);
     return;
