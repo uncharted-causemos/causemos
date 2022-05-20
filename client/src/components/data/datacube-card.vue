@@ -1457,7 +1457,7 @@ export default defineComponent({
         return _.compact(isAModel
           ? filteredRunData.value
             .filter(modelRun => selectedScenarioIds.value.indexOf(modelRun.id) >= 0)
-            .flatMap(modelRun => _.head(modelRun.data_paths))
+            .flatMap(modelRun => modelRun.data_paths)
           : isIndicator(metadata.value) ? metadata.value.data_paths : []
         );
       } else {
