@@ -8,6 +8,11 @@
       @item-selected="changeAnalysis"
     />
 
+    <message-display
+      v-if="modelStale || scenariosStale"
+      :message="'CAG or scenarios are stale, please click Run to synchronize first and then retry the path analysis.'"
+    />
+
     <div v-if="currentAnalysis === 'cycles'">
       <div v-if="cyclesPaths && cyclesPaths.balancing.length > 0" class="cycles-result">
         <strong> Balancing Loops </strong>
@@ -81,7 +86,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import CagPathItem from '@/components/cag/cag-path-item.vue';
 import { findCycles, classifyCycles, Vertex } from '@/utils/graphs-util';
 import modelService from '@/services/model-service';
-import useToaster from '@/services/composables/useToaster';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelSummary, Scenario, GraphPath, ConceptProjectionConstraints } from '@/types/CAG';
@@ -105,7 +110,8 @@ export default defineComponent({
   name: 'CAGAnalyticsPane',
   components: {
     DropdownButton,
-    CagPathItem
+    CagPathItem,
+    MessageDisplay
   },
   emits: ['show-path'],
   props: {
@@ -161,6 +167,9 @@ export default defineComponent({
 
     const selectedPathItem = ref<GraphPath|null>(null);
 
+    const modelStale = ref(false);
+    const scenariosStale = ref(false);
+
 
     return {
       currentAnalysis,
@@ -171,14 +180,15 @@ export default defineComponent({
       cyclesPaths,
       totalCycles,
 
+      modelStale,
+      scenariosStale,
+
       selectedPathItem,
 
       availableNodes,
       pathExperimentId,
       pathExperimentResult,
       noPathsFound,
-
-      toaster: useToaster(),
 
       analyses: ANALYSES
     };
@@ -264,13 +274,8 @@ export default defineComponent({
       this.$emit('show-path', pathItem);
     },
     changeAnalysis(v: string) {
-      // const modelStale = this.modelSummary.status !== modelService.MODEL_STATUS.READY;
-      const modelStale = this.modelSummary.engine_status[this.modelSummary.parameter.engine] !== modelService.MODEL_STATUS.READY;
-      const scenariosStale = _.some(this.scenarios, s => s.is_valid === false);
-      if (scenariosStale || modelStale) {
-        this.toaster('CAG or scenarios are stale, please click "Run" to synchronize first and then retry the path analysis.', 'error', true);
-        return;
-      }
+      this.modelStale = this.modelSummary.engine_status[this.modelSummary.parameter.engine] !== modelService.MODEL_STATUS.READY;
+      this.scenariosStale = _.some(this.scenarios, s => s.is_valid === false);
 
       this.currentAnalysis = v;
       this.refresh();

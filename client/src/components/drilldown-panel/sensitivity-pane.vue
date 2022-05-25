@@ -19,6 +19,10 @@
     </button>
   </div>
   <div>
+    <message-display
+      v-if="modelStale"
+      :message="'CAG is stale. Node sensitivity may be invalid, please click Run to synchronize and get the updated results.'"
+    />
     <div v-if="paneSensitivityResult?.result?.status && paneSensitivityResult?.result?.status !== 'completed'">
       Sensitivity Analysis In Progress
       <div v-if="paneSensitivityResult?.result?.progressPercentage">
@@ -82,16 +86,17 @@
 import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import modelService from '@/services/model-service';
-import useToaster from '@/services/composables/useToaster';
 import { CAGGraph, CAGModelSummary, NodeParameter } from '@/types/CAG';
 import ImportanceBars from '../widgets/importance-bars.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 
 export default defineComponent({
   name: 'SensitivityPane',
   components: {
     ImportanceBars,
-    RadioButtonGroup
+    RadioButtonGroup,
+    MessageDisplay
   },
   emits: ['open-drilldown', 'highlight-node-paths'],
   props: {
@@ -114,7 +119,6 @@ export default defineComponent({
   },
   setup(props) {
     const store = useStore();
-    const toaster = useToaster();
     const {
       modelSummary,
       modelComponents,
@@ -275,16 +279,21 @@ export default defineComponent({
       }
     });
 
+    const modelStale = ref(false);
+
     watch(modelSummary, () => {
       const engine = modelSummary.value.parameter.engine;
       const status = modelSummary.value.engine_status[engine];
       if (modelService.MODEL_STATUS.NOT_REGISTERED === status) {
-        toaster('CAG is stale. Node sensitivity may be invalid, please click "Run" to synchronize and get the updated results.', 'error', true);
+        modelStale.value = true;
+      } else {
+        modelStale.value = false;
       }
     }, { immediate: true });
 
 
     return {
+      modelStale,
       activeTab,
       activeNode,
       drivers,
