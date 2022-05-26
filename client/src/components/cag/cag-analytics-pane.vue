@@ -283,9 +283,6 @@ export default defineComponent({
       this.$emit('show-path', pathItem);
     },
     changeAnalysis(v: string) {
-      this.modelStale = this.modelSummary.engine_status[this.modelSummary.parameter.engine] !== modelService.MODEL_STATUS.READY;
-      this.scenariosStale = _.some(this.scenarios, s => s.is_valid === false);
-
       this.currentAnalysis = v;
       this.refresh();
     },
