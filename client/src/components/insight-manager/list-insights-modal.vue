@@ -272,13 +272,18 @@ export default defineComponent({
       this.hideInsightPanel();
       this.activeInsightId = null;
     },
-    // FIXME: add type
-    startDrag(evt: any, insight: FullInsight) {
+    startDrag(evt: DragEvent, insight: FullInsight) {
+      if (
+        evt.dataTransfer === null ||
+        !(evt.currentTarget instanceof HTMLElement)
+      ) {
+        return;
+      }
       evt.currentTarget.style.border = '3px dashed black';
 
-      evt.dataTransfer.dropEffect = 'move';
-      evt.dataTransfer.effectAllowed = 'move';
-      evt.dataTransfer.setData('insight_id', insight.id);
+      evt.dataTransfer.dropEffect = 'link';
+      evt.dataTransfer.effectAllowed = 'link';
+      evt.dataTransfer.setData('insight_id', insight.id as string);
 
       const img = document.createElement('img');
       const canvas = document.createElement('canvas');
