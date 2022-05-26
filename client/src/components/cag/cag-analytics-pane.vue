@@ -80,7 +80,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, ref, PropType, Ref } from 'vue';
+import { computed, defineComponent, ref, toRefs, watch, PropType, Ref } from 'vue';
 import { useStore } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
 import CagPathItem from '@/components/cag/cag-path-item.vue';
@@ -170,6 +170,15 @@ export default defineComponent({
     const modelStale = ref(false);
     const scenariosStale = ref(false);
 
+    const { modelSummary, scenarios } = toRefs(props);
+    watch(
+      () => [modelSummary.value, scenarios.value],
+      () => {
+        modelStale.value = props.modelSummary.engine_status[props.modelSummary.parameter.engine] !== modelService.MODEL_STATUS.READY;
+        scenariosStale.value = _.some(props.scenarios, s => s.is_valid === false);
+      },
+      { immediate: true }
+    );
 
     return {
       currentAnalysis,
