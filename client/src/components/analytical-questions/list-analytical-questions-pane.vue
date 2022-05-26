@@ -50,8 +50,8 @@
           :key="sectionWithInsights.section.id"
           class="checklist-item"
           @drop='onDrop($event, sectionWithInsights.section)'
-          @dragover='onDragOver($event)'
-          @dragenter='onDragEnter($event)'
+          @dragover='addDragOverClass'
+          @dragenter='addDragOverClass'
           @dragleave='onDragLeave($event)'
           draggable='true'
           @dragstart='onDragStart($event, sectionWithInsights.section)'
@@ -153,6 +153,12 @@ import RenameModal from '@/components/action-bar/rename-modal.vue';
 import useToaster from '@/services/composables/useToaster';
 
 type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
+
+const HOVER_CLASS = {
+  REORDERING_SECTION: 'reorder-section-hover',
+  REORDERING_INSIGHT: 'reorder-insight-hover',
+  ASSIGNING_INSIGHT: 'assign-insight-hover'
+};
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
@@ -338,7 +344,7 @@ export default defineComponent({
     async onDrop(evt: any, targetQuestion: AnalyticalQuestion) {
       // prevent default action (open as link for some elements)
       evt.preventDefault();
-      evt.currentTarget.classList.remove('dragging-over');
+      evt.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
 
       // At most ONE of these will exist
       const droppedQuestionId = evt.dataTransfer.getData('question_id');
@@ -372,27 +378,38 @@ export default defineComponent({
         }
       }
     },
-    onDragOver(evt: any) {
+    addDragOverClass(evt: DragEvent) {
       // prevent default action (open as link for some elements)
       evt.preventDefault();
       evt.stopPropagation();
-      evt.currentTarget.classList.add('dragging-over');
-    },
-    onDragEnter(evt: any) {
-      // prevent default action
-      evt.preventDefault();
-      evt.stopPropagation();
-      this.lastDragEnter = evt.target; // keep track of element that was first entered while draging
-      evt.currentTarget.classList.add('dragging-over');
-    },
-    onDragLeave(evt: any) {
-      // prevent default action (open as link for some elements)
-      evt.preventDefault();
-      evt.stopPropagation();
-      // Change the source element's background color back to white
-      if (this.lastDragEnter === evt.target) { // HACK: only flip color back if we leave the original element we entered
-        evt.currentTarget.classList.remove('dragging-over');
+      if (evt.dataTransfer === null) {
+        return;
       }
+      const types = evt.dataTransfer.types;
+      const action = evt.dataTransfer.effectAllowed;
+      if (!(evt.currentTarget instanceof HTMLElement)) {
+        return;
+      }
+      if (types.includes('question_id') && action === 'move') {
+        // Reordering section
+        evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_SECTION);
+      } else if (types.includes('insight_id') && action === 'move') {
+        // Reordering insight
+        console.log('reordering insight');
+        evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_INSIGHT);
+      } else if (types.includes('insight_id') && action === 'link') {
+        // Assigning insight to section
+        evt.currentTarget.classList.add(HOVER_CLASS.ASSIGNING_INSIGHT);
+      }
+    },
+    onDragLeave(evt: DragEvent) {
+      // prevent default action (open as link for some elements)
+      evt.preventDefault();
+      evt.stopPropagation();
+      if (!(evt.currentTarget instanceof HTMLElement)) {
+        return;
+      }
+      evt.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
     },
     removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string) {
       evt.preventDefault();
@@ -690,8 +707,12 @@ export default defineComponent({
         margin-top: 3px;
         border-top: 2px solid transparent;
 
-        &.dragging-over {
+        &.reorder-section-hover {
           border-top-color: $selected;
+        }
+
+        &.assign-insight-hover {
+          background: white;
         }
 
         .checklist-item-question {
