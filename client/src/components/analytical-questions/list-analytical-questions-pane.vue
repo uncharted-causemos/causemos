@@ -374,9 +374,10 @@ export default defineComponent({
           position
         );
         const insight = this.getInsightById(droppedInsightId);
-        if (insight === undefined) {
+        if (insight === undefined || droppedSectionId === targetSection.id) {
           return;
         }
+        // Update insight's list of the sections it's linked to
         const updatedList = insight.analytical_question.filter(
           sectionId =>
             sectionId !== droppedSectionId && sectionId !== targetSection.id
@@ -496,9 +497,10 @@ export default defineComponent({
       );
       // Update the list of sections that this insight is linked to.
       const insight = this.getInsightById(droppedInsightId);
-      if (insight === undefined) {
+      if (insight === undefined || droppedSectionId === targetSection.id) {
         return;
       }
+      // Update insight's list of the sections it's linked to
       const updatedList = insight.analytical_question.filter(
         sectionId =>
           sectionId !== droppedSectionId && sectionId !== targetSection.id
