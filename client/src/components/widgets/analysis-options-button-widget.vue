@@ -32,7 +32,6 @@
       v-if="isDuplicateModalOpen"
       :current-name="initialName"
       @confirm="onDuplicate"
-      @fail="isDuplicateModalOpen = false"
       @cancel="isDuplicateModalOpen = false"
     />
   </div>

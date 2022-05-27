@@ -22,10 +22,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
-import useToaster from '@/services/composables/useToaster';
 
 export default defineComponent({
-  name: 'DuplicateModel',
+  name: 'DuplicateModal',
   components: {
     ModalConfirmation
   },
@@ -43,11 +42,6 @@ export default defineComponent({
   data: () => ({
     newNameInput: ''
   }),
-  setup() {
-    return {
-      toaster: useToaster()
-    };
-  },
   methods: {
     onConfirm() {
       this.$emit('confirm', this.newNameInput || this.currentName);
