@@ -697,5 +697,5 @@ export default {
   jumpToInsightContext,
   exportDOCX,
   exportPPTX,
-  countPublicInsights,
+  countPublicInsights
 };
