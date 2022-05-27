@@ -444,9 +444,6 @@ export default defineComponent({
       }
     },
     onDragLeave(evt: DragEvent) {
-      // TODO: do we need to prevent here?
-      // prevent default action (open as link for some elements)
-      evt.preventDefault();
       if (evt.currentTarget instanceof HTMLElement) {
         evt.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
       }
@@ -892,7 +889,7 @@ export default defineComponent({
           align-items: center;
           user-select: none;
           // 6px visually lines up the insight's "x" with the section's menu
-          padding: 5px 6px 5px 20px;
+          padding: 5px 6px 5px 15px;
           border-top: 1px solid transparent;
           .insight-name {
             padding-left: 1rem;
@@ -923,8 +920,7 @@ export default defineComponent({
   }
 
   .no-insight-warning {
-    margin-top: 5px;
-    margin-left: 20px;
+    margin: 5px 20px 0 15px;
   }
 
   .new-question-button {
