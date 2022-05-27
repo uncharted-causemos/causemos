@@ -157,7 +157,6 @@ import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import useToaster from '@/services/composables/useToaster';
-import insightUtil from '@/utils/insight-util';
 
 type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
 
@@ -436,10 +435,6 @@ export default defineComponent({
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('insight_id', insight.id as string);
       event.dataTransfer.setData('section_id', sectionId);
-      insightUtil.setInsightThumbnailAsDragImage(
-        insight.thumbnail as string,
-        event.dataTransfer
-      );
     },
     addDragOverClassToInsight(evt: DragEvent) {
       if (

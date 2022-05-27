@@ -285,10 +285,12 @@ export default defineComponent({
       evt.dataTransfer.effectAllowed = 'link';
       evt.dataTransfer.setData('insight_id', insight.id as string);
 
-      InsightUtil.setInsightThumbnailAsDragImage(
-        insight.thumbnail as string,
-        evt.dataTransfer
-      );
+      if (insight.thumbnail !== undefined) {
+        InsightUtil.setInsightThumbnailAsDragImage(
+          insight.thumbnail,
+          evt.dataTransfer
+        );
+      }
     },
     dragEnd(evt: DragEvent) {
       (evt.currentTarget as HTMLElement).style.border = 'none';
