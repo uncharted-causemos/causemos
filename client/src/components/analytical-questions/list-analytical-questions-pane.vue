@@ -494,7 +494,6 @@ export default defineComponent({
     ) {
       // prevent default action (open as link for some elements)
       event.preventDefault();
-      event.stopPropagation();
       if (
         event.dataTransfer === null ||
         !(event.currentTarget instanceof HTMLElement)
@@ -511,6 +510,7 @@ export default defineComponent({
       ) {
         return;
       }
+      event.stopPropagation();
       const droppedInsightId = event.dataTransfer.getData('insight_id');
       const droppedSectionId = event.dataTransfer.getData('section_id');
       if (droppedInsightId === targetInsightId) {
