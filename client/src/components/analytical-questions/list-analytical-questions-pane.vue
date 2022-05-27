@@ -163,8 +163,7 @@ type PartialInsight = { id: string, name: string, visibility: string, analytical
 
 const HOVER_CLASS = {
   REORDERING_SECTION: 'reorder-section-hover',
-  REORDERING_INSIGHT: 'reorder-insight-hover',
-  ASSIGNING_INSIGHT: 'assign-insight-hover'
+  REORDERING_INSIGHT: 'reorder-insight-hover'
 };
 
 export default defineComponent({
@@ -216,7 +215,6 @@ export default defineComponent({
     'add-section',
     'delete-section',
     'move-section-above-section',
-    'add-insight-to-section',
     'remove-insight-from-section',
     'move-insight'
   ],
@@ -360,16 +358,11 @@ export default defineComponent({
         return;
       }
       const types = evt.dataTransfer.types;
-      const action = evt.dataTransfer.effectAllowed;
-      // Depending on the combination of insight/section ID and `action`,
-      //  this drop represents one of three different actions.
+      // Depending on the combination of insight/section ID, this drop
+      //  represents one of two different actions.
       const droppedInsightId = evt.dataTransfer.getData('insight_id');
       const droppedSectionId = evt.dataTransfer.getData('section_id');
-      if (
-        types.includes('insight_id') &&
-        types.includes('section_id') &&
-        action === 'move'
-      ) {
+      if (types.includes('insight_id')) {
         // Move insight to the end of this section
         const position = targetSection.linked_insights.filter(
           insightId => insightId !== droppedInsightId
@@ -393,29 +386,13 @@ export default defineComponent({
         insight.analytical_question = updatedList;
         await updateInsight(droppedInsightId, insight as Insight);
         this.reFetchInsights();
-      } else if (types.includes('section_id') && action === 'move') {
+      } else if (types.includes('section_id')) {
         // Move dropped section above targetSection
         this.$emit(
           'move-section-above-section',
           droppedSectionId,
           targetSection.id
         );
-      } else if (types.includes('insight_id') && action === 'link') {
-        // Assign insight to section
-        const insight = this.getInsightById(droppedInsightId);
-        if (insight) {
-          this.$emit(
-            'add-insight-to-section',
-            droppedInsightId,
-            targetSection.id
-          );
-          // add the following question (text) to the insight
-          if (!(insight.analytical_question.findIndex(qid => qid === targetSection.id) >= 0)) {
-            insight.analytical_question.push(targetSection.id as string);
-            await updateInsight(droppedInsightId, insight as Insight);
-            this.reFetchInsights();
-          }
-        }
       }
     },
     addDragOverClassToSection(evt: DragEvent) {
@@ -430,20 +407,12 @@ export default defineComponent({
         return;
       }
       const types = evt.dataTransfer.types;
-      const action = evt.dataTransfer.effectAllowed;
-      if (
-        types.includes('section_id') &&
-        types.includes('insight_id') &&
-        action === 'move'
-      ) {
-        // Reordering insight
+      if (types.includes('insight_id')) {
+        // Moving/assigning insight
         evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_INSIGHT);
-      } else if (types.includes('section_id') && action === 'move') {
+      } else if (types.includes('section_id')) {
         // Reordering section
         evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_SECTION);
-      } else if (types.includes('insight_id') && action === 'link') {
-        // Assigning insight to section
-        evt.currentTarget.classList.add(HOVER_CLASS.ASSIGNING_INSIGHT);
       }
     },
     onDragLeave(evt: DragEvent) {
@@ -480,11 +449,10 @@ export default defineComponent({
         return;
       }
       const types = evt.dataTransfer.types;
-      const action = evt.dataTransfer.effectAllowed;
-      if (types.includes('insight_id') && action === 'move') {
-        // Insights are only a valid drop target when we're dragging to reorder
-        //  an existing insight. Preventing default identifies this element as
-        //  a valid drop target to the browser.
+      if (types.includes('insight_id')) {
+        // Insights are only a valid drop target when we're dragging to move or
+        //  assign an insight. Preventing default identifies this element as a
+        //  valid drop target to the browser.
         evt.preventDefault();
         evt.stopPropagation();
         evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_INSIGHT);
@@ -504,19 +472,13 @@ export default defineComponent({
         return;
       }
       event.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
-      const types = event.dataTransfer.types;
-      const action = event.dataTransfer.effectAllowed;
-      if (
-        !types.includes('insight_id') ||
-        !types.includes('section_id') ||
-        action !== 'move'
-      ) {
+      const droppedInsightId = event.dataTransfer.getData('insight_id');
+      if (droppedInsightId === '') {
         return;
       }
       // Only stop propagation if this insight element is handling the drop
       //  action. Otherwise, let the event bubble up to the containing section.
       event.stopPropagation();
-      const droppedInsightId = event.dataTransfer.getData('insight_id');
       const droppedSectionId = event.dataTransfer.getData('section_id');
       if (droppedInsightId === targetInsightId) {
         return;
@@ -859,10 +821,6 @@ export default defineComponent({
 
         &.reorder-insight-hover::after {
           background: $selected;
-        }
-
-        &.assign-insight-hover {
-          background: white;
         }
 
         .checklist-item-question {

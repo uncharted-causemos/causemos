@@ -291,10 +291,12 @@ export default function useQuestionsData() {
   };
 
   // Reorder an insight within a section or drag an insight from one section to
-  //  another. Note that newPosition represents the index where the insight
-  //  should end up. Since a section cannot contain two copies of the same
-  //  insight, any value passed for that parameter should take into account that
-  //  if the insight exists earlier in the list it will be removed.
+  //  another.
+  // Note: newPosition represents the index where the insight should end up.
+  //  Since a section cannot contain two copies of the same insight, any value
+  //  passed for that parameter should take into account that if the insight
+  //  exists earlier in the list it will be removed.
+  // Note: fromSectionId === '' when assigning an insight from the tile view.
   const moveInsight = async (
     insightId: string,
     fromSectionId: string,
@@ -306,7 +308,7 @@ export default function useQuestionsData() {
     if (toSection === undefined) {
       return;
     }
-    if (fromSectionId !== toSectionId) {
+    if (fromSectionId !== '' && fromSectionId !== toSectionId) {
       removeInsightFromSection(insightId, fromSectionId);
     }
     const listWithoutInsight = toSection.linked_insights.filter(

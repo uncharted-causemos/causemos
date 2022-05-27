@@ -18,7 +18,6 @@
           @add-section="addSection"
           @delete-section="deleteSection"
           @move-section-above-section="moveSectionAboveSection"
-          @add-insight-to-section="addInsightToSection"
           @remove-insight-from-section="removeInsightFromSection"
           @move-insight="moveInsight"
         >
@@ -178,7 +177,6 @@ export default defineComponent({
       addSection,
       deleteSection,
       moveSectionAboveSection,
-      addInsightToSection,
       removeInsightFromSection,
       moveInsight
     } = useQuestionsData();
@@ -209,7 +207,6 @@ export default defineComponent({
       addSection,
       deleteSection,
       moveSectionAboveSection,
-      addInsightToSection,
       removeInsightFromSection,
       moveInsight,
       insightsBySection,
