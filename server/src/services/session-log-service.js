@@ -12,6 +12,9 @@ let timeId = null;
 const logRequest = async (req) => {
   let parameters = null;
 
+  // Don't self log
+  if (req.path.includes('session-log')) return;
+
   // Only know how to parse GET requests for sure
   if (req.method === 'GET') {
     if (req.query.filters) parameters = JSON.parse(req.query.filters);
