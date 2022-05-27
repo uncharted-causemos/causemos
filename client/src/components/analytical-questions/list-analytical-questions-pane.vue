@@ -891,7 +891,8 @@ export default defineComponent({
           justify-content: space-between;
           align-items: center;
           user-select: none;
-          padding: 5px 0 5px 20px;
+          // 6px visually lines up the insight's "x" with the section's menu
+          padding: 5px 6px 5px 20px;
           border-top: 1px solid transparent;
           .insight-name {
             padding-left: 1rem;
