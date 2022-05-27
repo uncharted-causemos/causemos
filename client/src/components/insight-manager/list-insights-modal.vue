@@ -116,6 +116,7 @@ import {
   SectionWithInsights
 } from '@/types/Insight';
 import useQuestionsData from '@/services/composables/useQuestionsData';
+import { setDragImage } from '@/utils/dom-util';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
@@ -286,10 +287,7 @@ export default defineComponent({
       evt.dataTransfer.setData('insight_id', insight.id as string);
 
       if (insight.thumbnail !== undefined) {
-        InsightUtil.setInsightThumbnailAsDragImage(
-          insight.thumbnail,
-          evt.dataTransfer
-        );
+        setDragImage(insight.thumbnail, evt.dataTransfer);
       }
     },
     dragEnd(evt: DragEvent) {

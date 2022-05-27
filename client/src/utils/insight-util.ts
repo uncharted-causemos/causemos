@@ -685,15 +685,6 @@ async function countPublicInsights(datacubeId: string, projectId: string) {
   return count as number;
 }
 
-function setInsightThumbnailAsDragImage(
-  thumbnail: string,
-  dataTransfer: DataTransfer
-) {
-  const img = document.createElement('img');
-  img.src = thumbnail;
-  dataTransfer.setDragImage(img, 0, 0);
-}
-
 export default {
   instanceOfFullInsight,
   instanceOfQuestion,
@@ -707,5 +698,4 @@ export default {
   exportDOCX,
   exportPPTX,
   countPublicInsights,
-  setInsightThumbnailAsDragImage
 };
