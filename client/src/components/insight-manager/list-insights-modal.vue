@@ -20,6 +20,7 @@
           @move-section-above-section="moveSectionAboveSection"
           @add-insight-to-section="addInsightToSection"
           @remove-insight-from-section="removeInsightFromSection"
+          @move-insight="moveInsight"
         >
           <button
             class="btn btn-primary btn-call-for-action review-button"
@@ -178,7 +179,8 @@ export default defineComponent({
       deleteSection,
       moveSectionAboveSection,
       addInsightToSection,
-      removeInsightFromSection
+      removeInsightFromSection,
+      moveInsight
     } = useQuestionsData();
     const insightsBySection = computed<SectionWithInsights[]>(() => {
       // FIXME: there's an edge case where insightsBySection is out of date when
@@ -209,6 +211,7 @@ export default defineComponent({
       moveSectionAboveSection,
       addInsightToSection,
       removeInsightFromSection,
+      moveInsight,
       insightsBySection,
       questionsList,
       store,
@@ -285,30 +288,13 @@ export default defineComponent({
       evt.dataTransfer.effectAllowed = 'link';
       evt.dataTransfer.setData('insight_id', insight.id as string);
 
-      const img = document.createElement('img');
-      const canvas = document.createElement('canvas');
-      // Assert not null
-      const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-      // Setting img src
-      img.src = insight.image;
-
-      // Drawing to canvas with a smaller size
-      canvas.width = img.width * 0.2;
-      canvas.height = img.height * 0.2;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      // add to ensure visibility
-      document.body.append(canvas);
-
-      // Setting drag image with drawn canvas image
-      evt.dataTransfer.setDragImage(canvas, 0, 0);
+      InsightUtil.setInsightThumbnailAsDragImage(
+        insight.thumbnail as string,
+        evt.dataTransfer
+      );
     },
-    // FIXME: add type
-    dragEnd(evt: any) {
-      const matches = document.querySelectorAll('canvas');
-      matches.forEach(c => c.remove());
-
-      evt.currentTarget.style.border = 'none';
+    dragEnd(evt: DragEvent) {
+      (evt.currentTarget as HTMLElement).style.border = 'none';
     },
     editInsight(insight: FullInsight) {
       this.setUpdatedInsight(insight);

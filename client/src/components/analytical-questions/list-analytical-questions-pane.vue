@@ -50,11 +50,11 @@
           :key="sectionWithInsights.section.id"
           class="checklist-item"
           @drop='onDrop($event, sectionWithInsights.section)'
-          @dragover='addDragOverClass'
-          @dragenter='addDragOverClass'
+          @dragover='addDragOverClassToSection'
+          @dragenter='addDragOverClassToSection'
           @dragleave='onDragLeave($event)'
           draggable='true'
-          @dragstart='onDragStart($event, sectionWithInsights.section)'
+          @dragstart='startDraggingSection($event, sectionWithInsights.section)'
         >
           <!-- first row display the question -->
           <div class="checklist-item-question">
@@ -104,10 +104,16 @@
             <div
               v-for="insight in sectionWithInsights.insights"
               :key="insight.id"
-              class="checklist-item-insight">
-              <i @mousedown.stop.prevent class="fa fa-star" />
+              class="checklist-item-insight"
+              draggable='true'
+              @drop="dropInsightOnInsight($event, sectionWithInsights.section, insight.id as string)"
+              @dragstart="startDraggingInsight($event, insight, sectionWithInsights.section.id as string)"
+              @dragover='addDragOverClassToInsight'
+              @dragenter='addDragOverClassToInsight'
+              @dragleave="onDragLeave"
+            >
+              <i class="fa fa-star" />
               <span
-                @mousedown.stop.prevent
                 class="insight-name"
                 :class="{
                   'private-insight-name': insight.visibility === 'private',
@@ -145,12 +151,13 @@ import Shepherd from 'shepherd.js';
 import useInsightsData from '@/services/composables/useInsightsData';
 import { updateInsight } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
-import { AnalyticalQuestion, Insight, SectionWithInsights } from '@/types/Insight';
+import { AnalyticalQuestion, FullInsight, Insight, SectionWithInsights } from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import useToaster from '@/services/composables/useToaster';
+import insightUtil from '@/utils/insight-util';
 
 type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
 
@@ -191,7 +198,7 @@ export default defineComponent({
       ['id', 'name', 'visibility', 'analytical_question']);
 
     const getInsightById = (insightId: string) => {
-      return insights.value.find(insight => insight.id === insightId) as PartialInsight;
+      return insights.value.find(insight => insight.id === insightId) as PartialInsight | undefined;
     };
 
     const questionsExpanded = ref(true);
@@ -210,7 +217,8 @@ export default defineComponent({
     'delete-section',
     'move-section-above-section',
     'add-insight-to-section',
-    'remove-insight-from-section'
+    'remove-insight-from-section',
+    'move-insight'
   ],
   data: () => ({
     AnalyticalQuestionsTabs: [
@@ -336,66 +344,96 @@ export default defineComponent({
     setActive(tab: string) {
       this.currentTab = tab;
     },
-    onDragStart(evt: any, questionItem: AnalyticalQuestion) {
+    startDraggingSection(evt: any, questionItem: AnalyticalQuestion) {
       evt.dataTransfer.dropEffect = 'move';
       evt.dataTransfer.effectAllowed = 'move';
       evt.dataTransfer.setData('question_id', questionItem.id);
     },
-    async onDrop(evt: any, targetQuestion: AnalyticalQuestion) {
+    async onDrop(evt: any, targetSection: AnalyticalQuestion) {
       // prevent default action (open as link for some elements)
       evt.preventDefault();
       evt.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
-
+      if (
+        evt.dataTransfer === null ||
+        !(evt.currentTarget instanceof HTMLElement)
+      ) {
+        return;
+      }
+      const types = evt.dataTransfer.types;
+      const action = evt.dataTransfer.effectAllowed;
+      // FIXME: rename question_id and update comment
       // At most ONE of these will exist
       const droppedQuestionId = evt.dataTransfer.getData('question_id');
       const droppedInsightId = evt.dataTransfer.getData('insight_id');
-
-      if (droppedQuestionId !== '') {
-        // Move dropped question above questionItem
+      const droppedSectionId = evt.dataTransfer.getData('section_id');
+      if (types.includes('question_id') && action === 'move') {
+        // Move dropped section above targetSection
         this.$emit(
           'move-section-above-section',
           droppedQuestionId,
-          targetQuestion.id
+          targetSection.id
         );
-      }
-
-      // implied else
-      if (droppedInsightId !== '') {
-        // fetch the dropped insight and use its name in this question's insights
+      } else if (
+        types.includes('insight_id') &&
+        types.includes('section_id') &&
+        action === 'move'
+      ) {
+        // Move insight within or between sections
+        this.$emit(
+          'move-insight',
+          droppedInsightId,
+          droppedSectionId,
+          targetSection.id as string,
+          0
+        );
+        const insight = this.getInsightById(droppedInsightId);
+        if (insight === undefined) {
+          return;
+        }
+        const updatedList = insight.analytical_question.filter(
+          sectionId =>
+            sectionId !== droppedSectionId && sectionId !== targetSection.id
+        );
+        updatedList.push(targetSection.id as string);
+        insight.analytical_question = updatedList;
+        await updateInsight(droppedInsightId, insight as Insight);
+        this.reFetchInsights();
+      } else if (types.includes('insight_id') && action === 'link') {
+        // Assign insight to section
         const insight = this.getInsightById(droppedInsightId);
         if (insight) {
           this.$emit(
             'add-insight-to-section',
             droppedInsightId,
-            targetQuestion.id
+            targetSection.id
           );
           // add the following question (text) to the insight
-          if (!(insight.analytical_question.findIndex(qid => qid === targetQuestion.id) >= 0)) {
-            insight.analytical_question.push(targetQuestion.id as string);
+          if (!(insight.analytical_question.findIndex(qid => qid === targetSection.id) >= 0)) {
+            insight.analytical_question.push(targetSection.id as string);
             await updateInsight(droppedInsightId, insight as Insight);
             this.reFetchInsights();
           }
         }
       }
     },
-    addDragOverClass(evt: DragEvent) {
-      // prevent default action (open as link for some elements)
+    addDragOverClassToSection(evt: DragEvent) {
+      // Prevent default action (open as link for some elements).
+      // Required to identify this element as a valid drop target.
       evt.preventDefault();
       evt.stopPropagation();
-      if (evt.dataTransfer === null) {
+      if (
+        evt.dataTransfer === null ||
+        !(evt.currentTarget instanceof HTMLElement)
+      ) {
         return;
       }
       const types = evt.dataTransfer.types;
       const action = evt.dataTransfer.effectAllowed;
-      if (!(evt.currentTarget instanceof HTMLElement)) {
-        return;
-      }
       if (types.includes('question_id') && action === 'move') {
         // Reordering section
         evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_SECTION);
       } else if (types.includes('insight_id') && action === 'move') {
         // Reordering insight
-        console.log('reordering insight');
         evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_INSIGHT);
       } else if (types.includes('insight_id') && action === 'link') {
         // Assigning insight to section
@@ -403,13 +441,106 @@ export default defineComponent({
       }
     },
     onDragLeave(evt: DragEvent) {
+      // TODO: do we need to prevent here?
       // prevent default action (open as link for some elements)
       evt.preventDefault();
-      evt.stopPropagation();
-      if (!(evt.currentTarget instanceof HTMLElement)) {
+      if (evt.currentTarget instanceof HTMLElement) {
+        evt.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
+      }
+    },
+    startDraggingInsight(
+      event: DragEvent,
+      insight: FullInsight,
+      sectionId: string
+    ) {
+      event.stopPropagation();
+      if (
+        event.dataTransfer === null ||
+        !(event.currentTarget instanceof HTMLElement)
+      ) {
         return;
       }
-      evt.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
+      event.dataTransfer.dropEffect = 'move';
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('insight_id', insight.id as string);
+      event.dataTransfer.setData('section_id', sectionId);
+      insightUtil.setInsightThumbnailAsDragImage(
+        insight.thumbnail as string,
+        event.dataTransfer
+      );
+    },
+    addDragOverClassToInsight(evt: DragEvent) {
+      if (
+        evt.dataTransfer === null ||
+        !(evt.currentTarget instanceof HTMLElement)
+      ) {
+        return;
+      }
+      const types = evt.dataTransfer.types;
+      const action = evt.dataTransfer.effectAllowed;
+      if (types.includes('insight_id') && action === 'move') {
+        // Insights are only a valid drop target when we're dragging to reorder
+        //  an existing insight.
+        // Preventing default identifies this element as a valid drop target.
+        evt.preventDefault();
+        evt.stopPropagation();
+        evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_INSIGHT);
+      }
+    },
+    async dropInsightOnInsight(
+      event: DragEvent,
+      targetSection: AnalyticalQuestion,
+      targetInsightId: string
+    ) {
+      // prevent default action (open as link for some elements)
+      event.preventDefault();
+      event.stopPropagation();
+      if (
+        event.dataTransfer === null ||
+        !(event.currentTarget instanceof HTMLElement)
+      ) {
+        return;
+      }
+      event.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
+      const types = event.dataTransfer.types;
+      const action = event.dataTransfer.effectAllowed;
+      if (
+        !types.includes('insight_id') ||
+        !types.includes('section_id') ||
+        action !== 'move'
+      ) {
+        return;
+      }
+      const droppedInsightId = event.dataTransfer.getData('insight_id');
+      const droppedSectionId = event.dataTransfer.getData('section_id');
+      if (droppedInsightId === targetInsightId) {
+        return;
+      }
+      const targetInsightList = targetSection.linked_insights.filter(
+        _insightId => _insightId !== droppedInsightId
+      );
+      const insertionPosition = targetInsightList.findIndex(
+        _insightId => _insightId === targetInsightId
+      );
+      this.$emit(
+        'move-insight',
+        droppedInsightId,
+        droppedSectionId,
+        targetSection.id as string,
+        insertionPosition
+      );
+      const insight = this.getInsightById(droppedInsightId);
+      if (insight === undefined) {
+        return;
+      }
+      const updatedList = insight.analytical_question.filter(
+        sectionId =>
+          sectionId !== droppedSectionId && sectionId !== targetSection.id
+      );
+      updatedList.push(targetSection.id as string);
+      insight.analytical_question = updatedList;
+      await updateInsight(droppedInsightId, insight as Insight);
+      this.reFetchInsights();
     },
     removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string) {
       evt.preventDefault();
@@ -749,6 +880,7 @@ export default defineComponent({
           user-select: none;
           margin-left: 20px;
           margin-top: 5px;
+          border-top: 1px solid transparent;
           .insight-name {
             padding-left: 1rem;
             padding-right: 1rem;
@@ -768,6 +900,9 @@ export default defineComponent({
           .private-insight-name {
             color: black;
             font-style: normal;
+          }
+          &.reorder-insight-hover {
+            border-top-color: $selected;
           }
         }
       }

@@ -290,6 +290,38 @@ export default function useQuestionsData() {
     await updateQuestion(sectionId, section);
   };
 
+  // Reorder an insight within a section or drag an insight from one section to
+  //  another. Note that newPosition represents the index where the insight
+  //  should end up. Since a section cannot contain two copies of the same
+  //  insight, any value passed for that parameter should take into account that
+  //  if the insight exists earlier in the list it will be removed.
+  const moveInsight = async (
+    insightId: string,
+    fromSectionId: string,
+    toSectionId: string,
+    newPosition: number
+  ) => {
+    const toSection =
+      questionsList.value.find(section => section.id === toSectionId);
+    if (toSection === undefined) {
+      return;
+    }
+    if (fromSectionId !== toSectionId) {
+      removeInsightFromSection(insightId, fromSectionId);
+    }
+    const listWithoutInsight = toSection.linked_insights.filter(
+      _insightId => _insightId !== insightId
+    );
+    listWithoutInsight.splice(
+      newPosition,
+      0,
+      insightId
+    );
+    toSection.linked_insights = listWithoutInsight;
+    // Update section on the backend
+    await updateQuestion(toSectionId, toSection);
+  };
+
   return {
     questionsList: sortedQuestionsList,
     updateSectionTitle,
@@ -297,6 +329,7 @@ export default function useQuestionsData() {
     deleteSection,
     moveSectionAboveSection,
     addInsightToSection,
-    removeInsightFromSection
+    removeInsightFromSection,
+    moveInsight
   };
 }
