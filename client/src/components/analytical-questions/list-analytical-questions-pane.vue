@@ -419,8 +419,8 @@ export default defineComponent({
       }
     },
     addDragOverClassToSection(evt: DragEvent) {
-      // Prevent default action (open as link for some elements).
-      // Required to identify this element as a valid drop target.
+      // Preventing default action (open as link for some elements) identifies
+      //  this element as a valid drop target to the browser.
       evt.preventDefault();
       evt.stopPropagation();
       if (
@@ -483,8 +483,8 @@ export default defineComponent({
       const action = evt.dataTransfer.effectAllowed;
       if (types.includes('insight_id') && action === 'move') {
         // Insights are only a valid drop target when we're dragging to reorder
-        //  an existing insight.
-        // Preventing default identifies this element as a valid drop target.
+        //  an existing insight. Preventing default identifies this element as
+        //  a valid drop target to the browser.
         evt.preventDefault();
         evt.stopPropagation();
         evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_INSIGHT);
@@ -513,12 +513,17 @@ export default defineComponent({
       ) {
         return;
       }
+      // Only stop propagation if this insight element is handling the drop
+      //  action. Otherwise, let the event bubble up to the containing section.
       event.stopPropagation();
       const droppedInsightId = event.dataTransfer.getData('insight_id');
       const droppedSectionId = event.dataTransfer.getData('section_id');
       if (droppedInsightId === targetInsightId) {
         return;
       }
+      // Insert insight immediately above the insight it was dropped onto, but
+      //  first filter out any existing instance of the dropped insight in the
+      //  section.
       const targetInsightList = targetSection.linked_insights.filter(
         _insightId => _insightId !== droppedInsightId
       );
@@ -532,6 +537,7 @@ export default defineComponent({
         targetSection.id as string,
         insertionPosition
       );
+      // Update the list of sections that this insight is linked to.
       const insight = this.getInsightById(droppedInsightId);
       if (insight === undefined) {
         return;

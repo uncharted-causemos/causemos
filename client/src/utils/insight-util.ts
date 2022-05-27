@@ -689,10 +689,8 @@ function setInsightThumbnailAsDragImage(
   thumbnail: string,
   dataTransfer: DataTransfer
 ) {
-  // Create image element
   const img = document.createElement('img');
   img.src = thumbnail;
-  // Set canvas as drag image
   dataTransfer.setDragImage(img, 0, 0);
 }
 
