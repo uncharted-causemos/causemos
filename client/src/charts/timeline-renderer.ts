@@ -294,7 +294,7 @@ export default function(
 }
 
 function calculateExtents(timeseriesList: Timeseries[]) {
-  const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
+  const allPoints = timeseriesList.map(timeseries => timeseries.points).flat();
   const xExtent = d3.extent(allPoints.map(point => point.timestamp));
   const yExtent = d3.extent(allPoints.map(point => (point.normalizedValue !== undefined ? point.normalizedValue : point.value)));
   return [xExtent, yExtent];
@@ -334,7 +334,7 @@ function getValuesAtEachTimestampMap(
   const valuesAtEachTimestamp = new Map<number, { owner: string; color: string; name: string; value: number | string}[]>();
   const allTimestamps = _.uniq(
     timeseriesList
-      .map(timeSeries => timeSeries.points)
+      .map(timeseries => timeseries.points)
       .flat()
       .map(point => point.timestamp));
   allTimestamps.forEach(timestamp => {

@@ -96,7 +96,7 @@ export default defineComponent({
       );
     };
     const valueFormatter = computed(() => {
-      const allPoints = timeseriesData.value.map(timeSeries => timeSeries.points).flat();
+      const allPoints = timeseriesData.value.map(timeseries => timeseries.points).flat();
       const yExtent = d3.extent(allPoints.map(point => point.value));
       if (yExtent[0] === undefined) { return chartValueFormatter(); }
       return chartValueFormatter(...yExtent);

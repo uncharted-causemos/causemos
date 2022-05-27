@@ -459,8 +459,8 @@ export default defineComponent({
       () => selectedNodeScenarioData.value,
       (newScenarioData, oldScenarioData) => {
         if (oldScenarioData?.indicatorName !== newScenarioData?.indicatorName) {
-          const timeSeries = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
-          historicalTimeseries.value = timeSeries.length > 0 ? timeSeries : dummyTimeseries(selectedTemporalResolution.value);
+          const timeseries = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+          historicalTimeseries.value = timeseries.length > 0 ? timeseries : dummyTimeseries(selectedTemporalResolution.value);
         }
       }
     );

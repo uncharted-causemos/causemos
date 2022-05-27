@@ -129,7 +129,7 @@ export default function(
 }
 
 function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: {start: number; end: number} | null) {
-  const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
+  const allPoints = timeseriesList.map(timeseries => timeseries.points).flat();
   const allTimestampDataPoints = allPoints.map(point => point.timestamp);
   let xExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
   if (selectedTimestampRange !== null) {
