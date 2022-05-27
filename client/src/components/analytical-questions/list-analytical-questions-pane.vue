@@ -344,10 +344,10 @@ export default defineComponent({
     setActive(tab: string) {
       this.currentTab = tab;
     },
-    startDraggingSection(evt: any, questionItem: AnalyticalQuestion) {
+    startDraggingSection(evt: any, section: AnalyticalQuestion) {
       evt.dataTransfer.dropEffect = 'move';
       evt.dataTransfer.effectAllowed = 'move';
-      evt.dataTransfer.setData('question_id', questionItem.id);
+      evt.dataTransfer.setData('section_id', section.id);
     },
     async onDrop(evt: any, targetSection: AnalyticalQuestion) {
       // prevent default action (open as link for some elements)
@@ -361,19 +361,11 @@ export default defineComponent({
       }
       const types = evt.dataTransfer.types;
       const action = evt.dataTransfer.effectAllowed;
-      // FIXME: rename question_id and update comment
-      // At most ONE of these will exist
-      const droppedQuestionId = evt.dataTransfer.getData('question_id');
+      // Depending on the combination of insight/section ID and `action`,
+      //  this drop represents one of three different actions.
       const droppedInsightId = evt.dataTransfer.getData('insight_id');
       const droppedSectionId = evt.dataTransfer.getData('section_id');
-      if (types.includes('question_id') && action === 'move') {
-        // Move dropped section above targetSection
-        this.$emit(
-          'move-section-above-section',
-          droppedQuestionId,
-          targetSection.id
-        );
-      } else if (
+      if (
         types.includes('insight_id') &&
         types.includes('section_id') &&
         action === 'move'
@@ -401,6 +393,13 @@ export default defineComponent({
         insight.analytical_question = updatedList;
         await updateInsight(droppedInsightId, insight as Insight);
         this.reFetchInsights();
+      } else if (types.includes('section_id') && action === 'move') {
+        // Move dropped section above targetSection
+        this.$emit(
+          'move-section-above-section',
+          droppedSectionId,
+          targetSection.id
+        );
       } else if (types.includes('insight_id') && action === 'link') {
         // Assign insight to section
         const insight = this.getInsightById(droppedInsightId);
@@ -432,12 +431,16 @@ export default defineComponent({
       }
       const types = evt.dataTransfer.types;
       const action = evt.dataTransfer.effectAllowed;
-      if (types.includes('question_id') && action === 'move') {
-        // Reordering section
-        evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_SECTION);
-      } else if (types.includes('insight_id') && action === 'move') {
+      if (
+        types.includes('section_id') &&
+        types.includes('insight_id') &&
+        action === 'move'
+      ) {
         // Reordering insight
         evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_INSIGHT);
+      } else if (types.includes('section_id') && action === 'move') {
+        // Reordering section
+        evt.currentTarget.classList.add(HOVER_CLASS.REORDERING_SECTION);
       } else if (types.includes('insight_id') && action === 'link') {
         // Assigning insight to section
         evt.currentTarget.classList.add(HOVER_CLASS.ASSIGNING_INSIGHT);
