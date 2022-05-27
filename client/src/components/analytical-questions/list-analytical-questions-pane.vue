@@ -378,13 +378,16 @@ export default defineComponent({
         types.includes('section_id') &&
         action === 'move'
       ) {
-        // Move insight within or between sections
+        // Move insight to the end of this section
+        const position = targetSection.linked_insights.filter(
+          insightId => insightId !== droppedInsightId
+        ).length;
         this.$emit(
           'move-insight',
           droppedInsightId,
           droppedSectionId,
           targetSection.id as string,
-          0
+          position
         );
         const insight = this.getInsightById(droppedInsightId);
         if (insight === undefined) {
@@ -834,12 +837,22 @@ export default defineComponent({
         flex-direction: column;
         display: flex;
         font-size: $font-size-medium;
-        margin-bottom: 25px;
-        margin-top: 3px;
+        padding-bottom: 25px;
         border-top: 2px solid transparent;
+        position: relative;
+
+        &::after {
+          content: '';
+          height: 1px;
+          background: transparent;
+        }
 
         &.reorder-section-hover {
           border-top-color: $selected;
+        }
+
+        &.reorder-insight-hover::after {
+          background: $selected;
         }
 
         &.assign-insight-hover {
@@ -878,8 +891,7 @@ export default defineComponent({
           justify-content: space-between;
           align-items: center;
           user-select: none;
-          margin-left: 20px;
-          margin-top: 5px;
+          padding: 5px 0 5px 20px;
           border-top: 1px solid transparent;
           .insight-name {
             padding-left: 1rem;
