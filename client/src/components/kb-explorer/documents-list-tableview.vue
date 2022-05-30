@@ -5,7 +5,6 @@
       :document-id="documentModalData.doc_id"
       @close="documentModalData = null"
     />
-    <hr>
     <div class="document-list">
       <div class="document-list-header">
         <div style="flex: 4;">
@@ -110,6 +109,9 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     margin-bottom: 20px;
+    border-top: 1px solid #e3e3e3;
+    padding-top: 5px;
+
     .document-list-header {
       box-sizing: border-box;
       border: 1px solid #bbb;
@@ -142,9 +144,5 @@ export default defineComponent({
     .form-control {
       background: #fff;
     }
-  }
-
-  hr {
-    margin: 5px;
   }
 </style>

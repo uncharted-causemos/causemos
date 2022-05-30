@@ -1,37 +1,6 @@
 // Styles extracted from the uncharted-bootstrap library so that we could
 //  remove that dependency.
 
-// Bootstrap: Clearfix
-//
-// For modern browsers
-// 1. The space content is one way to avoid an Opera bug when the
-//    contenteditable attribute is included anywhere else in the document.
-//    Otherwise it causes space to appear at the top and bottom of elements
-//    that are clearfixed.
-// 2. The use of `table` rather than `block` is only necessary if using
-//    `:before` to contain the top-margins of child elements.
-//
-// Source: http://nicolasgallagher.com/micro-clearfix-hack/
-
-@mixin clearfix() {
-  &:before,
-  &:after {
-    content: " "; // 1
-    display: table; // 2
-  }
-  &:after {
-    clear: both;
-  }
-}
-
-// Grid system
-// Padding between columns. Gets divided in half for the left and right.
-$grid-gutter-width: 30px !default;
-
-$screen-sm-min: 768px;
-$screen-md-min: 992px;
-$screen-lg-min: 1200px;
-
 .form-control {
   width: 100%;
   height: 37px;
@@ -39,7 +8,7 @@ $screen-lg-min: 1200px;
   background-color: #f2f2f2;
   background-image: none;
   border-radius: 1px;
-  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
 }
 
 textarea.form-control {
@@ -65,10 +34,6 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.42857;
   color: inherit;
 }
-
-
-// Typography
-// --------------------------------------------------
 
 button, input, select, textarea {
   font-family: inherit;
@@ -131,10 +96,6 @@ button, input, select, textarea {
   }
 }
 
-// Base colour hue
-$primary-hue: 358 !default;
-
-
 .btn {
   display: inline-block;
   margin-bottom: 0; // For input.btn
@@ -189,15 +150,15 @@ a.btn {
 .btn-default {
   @include button-variant(
     rgba(0, 0, 0, 0.89),
-    hsl($primary-hue, 0, 87),
-    hsl($primary-hue, 0, 87)
+    #dedede,
+    #dedede
   );
 }
 .btn-primary {
   @include button-variant(
     white,
-    hsl($primary-hue, 0.5, 32.84),
-    hsl($primary-hue, 0.5, 32.84)
+    #545353,
+    #545353
   );
 }
 // Danger and error appear as red

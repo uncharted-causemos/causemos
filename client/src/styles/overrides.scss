@@ -25,10 +25,10 @@ h5 {
 }
 
 /*
-  This file contains styles to override or reset the appearance
-  of native elements (like removing margins from <hr>) and elements
-  imported from custom stylesheets (like setting the colours used
-  in the toaster-message library we're using).
+  This file contains styles to override or reset the appearance of native
+  elements (like setting default font sizes) and elements imported from custom
+  stylesheets (like setting the colours used in the toaster-message library
+  we're using).
 
   These styles are applied globally.
 
@@ -88,12 +88,6 @@ table,
     vertical-align: bottom;
     border-bottom: 2px solid $separator;
   }
-}
-
-hr {
-  margin: 0;
-  border: 0;
-  border-top: 1px solid #e3e3e3;
 }
 
 input {
