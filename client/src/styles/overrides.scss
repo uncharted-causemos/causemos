@@ -49,48 +49,6 @@ body {
   }
 }
 
-//
-// Buttons
-// --------------------------------------------------
-
-.btn-default {
-  &,
-  &:active,
-  &.active {
-    &:focus,
-    &.focus {
-      outline: 2px solid;
-      outline-color: darken(grey, 10%);
-    }
-  }
-  &:hover,
-  &:focus,
-  &.focus {
-    background-color: grey;
-    border-color: grey;
-  }
-}
-
-.btn-primary {
-  letter-spacing: 0.02em;
-  &,
-  &:active,
-  &.active {
-    &:focus,
-    &.focus {
-      outline: 2px solid;
-      outline-color: darken(grey, 10%);
-    }
-  }
-  &:hover,
-  &:focus,
-  &.focus {
-    background-color: #353554;
-    border-color: #353554;
-    color: #fff;
-  }
-}
-
 // Base styles
 // --------------------------------------------------
 .table,

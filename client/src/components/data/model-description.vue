@@ -93,13 +93,11 @@
                 Visible
               </label>
             </div>
-            <button
+            <small-text-button
               v-if="param.choices_labels || isDateParam(param) || isGeoParam(param)"
-              type="button"
-              class="btn btn-link edit-choices"
-              @click="editParamOptions(param)">
-              Edit Options
-            </button>
+              @click="editParamOptions(param)"
+              :label="'Edit Options'"
+            />
           </td>
         </tr>
       </tbody>
@@ -223,12 +221,14 @@ import { scrollToElement } from '@/utils/dom-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import SmallTextButton from '@/components/widgets/small-text-button.vue';
 
 export default defineComponent({
   name: 'ModelDescription',
   components: {
     ModalEditParamChoices,
-    DropdownButton
+    DropdownButton,
+    SmallTextButton
   },
   props: {
     metadata: {
@@ -617,12 +617,6 @@ table.model-table thead tr th {
     cursor: auto;
     color: gray;
   }
-}
-
-.edit-choices {
-  padding: 0;
-  margin: 0;
-  color: black;
 }
 
 .dropdown-button {

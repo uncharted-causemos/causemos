@@ -40,12 +40,14 @@ button {
   border-radius: 2px;
   font-size: $font-size-small;
   height: 20px;
+  cursor: pointer;
 
   &:hover {
     color: #000;
   }
   &:disabled {
     color: #c6c6c6;
+    cursor: default;
   }
 }
 </style>

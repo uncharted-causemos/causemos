@@ -32,7 +32,7 @@
       </button>
       <button
         type="button"
-        class="btn btn-sm btn-link"
+        class="btn btn-sm"
         @click="closePane()"
       >
         No thanks

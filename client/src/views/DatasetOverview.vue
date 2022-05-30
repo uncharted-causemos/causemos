@@ -471,7 +471,6 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "@/styles/variables";
 
-$padding-size: 3vh;
 .dataset-overview-container {
   display: flex;
   flex-direction: column;
@@ -596,11 +595,6 @@ main {
   padding-left: 5px;
   padding-right: 5px;
   margin: 5px;
-}
-
-.row {
-  padding-left: $padding-size;
-  padding-right: $padding-size;
 }
 
 .header-prompt {
