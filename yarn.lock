@@ -1720,13 +1720,6 @@
     lodash "4.17.15"
     lodash-decorators "5.0.0"
 
-"@uncharted/uncharted-bootstrap@^0.4.0":
-  version "0.4.0"
-  resolved "https://npm.uncharted.software/repository/uncharted/@uncharted/uncharted-bootstrap/-/uncharted-bootstrap-0.4.0.tgz#7e92780b699aba40c7fa538c2f267ffc5e6bc9fa"
-  integrity sha512-iE2POFuK9Q6331Dxx8HnwLo8LfA92FbNOF9iPA+zQOxUij9mGE5i4iSLDO+zPsFqYkUF9sa5BC91++6TXxlhVw==
-  dependencies:
-    bootstrap-sass "3.3.7"
-
 "@ungap/promise-all-settled@1.1.2":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@ungap/promise-all-settled/-/promise-all-settled-1.1.2.tgz#aa58042711d6e3275dd37dc597e5d31e8c290a44"
@@ -2854,11 +2847,6 @@ boolbase@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
   integrity sha1-aN/1++YMUes3cl6p4+0xDcwed24=
-
-bootstrap-sass@3.3.7:
-  version "3.3.7"
-  resolved "https://registry.yarnpkg.com/bootstrap-sass/-/bootstrap-sass-3.3.7.tgz#6596c7ab40f6637393323ab0bc80d064fc630498"
-  integrity sha1-ZZbHq0D2Y3OTMjqwvIDQZPxjBJg=
 
 boxen@^5.0.0:
   version "5.1.2"
