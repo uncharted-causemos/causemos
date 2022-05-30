@@ -22,15 +22,13 @@ const getProjectsStats = async () => {
   return result.data;
 };
 
-const createProject = async (name: string, description: string, website: string, maintainer: DatacubeMaintainer[], type = ProjectType.Model, ready_instances = [], draft_instances = []) => {
+const createProject = async (name: string, description: string, website: string, maintainer: DatacubeMaintainer[], type = ProjectType.Model) => {
   const result = await API.post('domain-projects', {
     name,
     description,
     website,
     type,
-    maintainer,
-    ready_instances,
-    draft_instances
+    maintainer
   });
   const id = result.data.id;
   return id;

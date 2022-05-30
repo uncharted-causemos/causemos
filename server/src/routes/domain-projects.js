@@ -14,22 +14,15 @@ router.post('/', asyncHandler(async (req, res) => {
     description,
     website,
     maintainer,
-    type,
-    // eslint-disable-next-line camelcase
-    ready_instances,
-    // eslint-disable-next-line camelcase
-    draft_instances
+    type
   } = req.body;
   const result = await domainProjectService.createProject(
     name,
     description,
     website,
     maintainer,
-    type,
-    // eslint-disable-next-line camelcase
-    ready_instances,
-    // eslint-disable-next-line camelcase
-    draft_instances);
+    type);
+
   res.json(result);
 }));
 

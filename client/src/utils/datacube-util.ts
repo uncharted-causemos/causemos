@@ -315,24 +315,6 @@ export const unpublishDatacubeInstance = async (instance: Model, projectId: stri
   instance.status = DatacubeStatus.Registered;
   const delta = { id: instance.id, status: instance.status };
   await updateDatacube(instance.id, delta);
-
-  // also, update the project stats count
-  const domainProject: DomainProject = await domainProjectService.getProject(projectId);
-  // add the instance to list of draft instances
-  const updatedDraftInstances = domainProject.draft_instances;
-  if (!updatedDraftInstances.includes(instance.name)) {
-    updatedDraftInstances.push(instance.name);
-  }
-  // remove the instance from the list of ready/published instances
-  const updatedReadyInstances = domainProject.ready_instances.filter(n => n !== instance.name);
-  // update the project doc at the server
-  await domainProjectService.updateDomainProject(
-    projectId,
-    {
-      draft_instances: updatedDraftInstances,
-      ready_instances: updatedReadyInstances
-    }
-  );
 };
 
 export const getFilteredScenariosFromIds = (scenarioIds: string[], allModelRunData: ModelRun[]) => {

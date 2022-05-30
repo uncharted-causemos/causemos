@@ -16,11 +16,8 @@ const createProject = async (
   description,
   website,
   maintainer,
-  type,
-  // eslint-disable-next-line camelcase
-  ready_instances,
-  // eslint-disable-next-line camelcase
-  draft_instances) => {
+  type
+) => {
   const newId = uuid();
   Logger.info('Creating domain project entry: ' + newId);
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
@@ -34,9 +31,7 @@ const createProject = async (
     modified_at: Date.now(),
     website,
     maintainer,
-    type,
-    ready_instances,
-    draft_instances
+    type
   }, keyFn);
 
   // Acknowledge success
@@ -108,9 +103,7 @@ const updateDomainProjects = async (metadata) => {
   // ideally, there shouldn't be such a project since this function would only be called once on the registration of a new indicator family
   // if such a project already exist, we probably should overwrite it
 
-  const instanceName = metadata.name;
   const familyName = metadata.family_name || metadata.name || uuid();
-
   const existingProjects = await getAllProjects({ name: familyName });
   const modelFamilyNames = existingProjects.map(p => p.name);
 
@@ -120,25 +113,7 @@ const updateDomainProjects = async (metadata) => {
       metadata.description,
       '', // website
       [metadata.maintainer],
-      metadata.type,
-      [], // initial stats need to be set // ready_instances
-      [instanceName]); // initial stats need to be set // draft_instances
-  } else {
-    //
-    // update the count of draft_instances
-    //  (since another instance of the same family is being registered)
-    //
-    const matchingExistingProject = existingProjects.find(p => p.name === familyName);
-    if (matchingExistingProject) {
-      if (metadata.status === 'REGISTERED' && !matchingExistingProject.draft_instances.includes(instanceName)) {
-        // this is a new model instance datacube, so we need to increase the registered instances of this project
-        matchingExistingProject.draft_instances.push(instanceName);
-
-        await updateProject(
-          matchingExistingProject.id,
-          { draft_instances: matchingExistingProject.draft_instances });
-      }
-    }
+      metadata.type);
   }
 };
 
