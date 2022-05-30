@@ -62,15 +62,11 @@ h3, h4 {
 h3 {
   font-size: 25px;
 }
-// h1, h2, h3 {
-//   margin-top: 19px;
-//   margin-bottom: 9.5px;
-// }
 h1, h2, h3, h4, h5, h6 {
-  // font-family: inherit;
+  font-family: inherit;
   font-weight: 600;
   line-height: 1.42857;
-  // color: inherit;
+  color: inherit;
 }
 
 
@@ -84,20 +80,6 @@ button, input, select, textarea {
   color: inherit;
   font: inherit;
 }
-// button, html input[type=button], input[type=reset], input[type=submit] {
-//   -webkit-appearance: button;
-//   cursor: pointer;
-// }
-// button, select {
-//   text-transform: none;
-// }
-// button {
-//   overflow: visible;
-// }
-// button, input, optgroup, select, textarea {
-//   color: inherit;
-//   font: inherit;
-// }
 
 // Button variants
 //
@@ -152,17 +134,9 @@ button, input, select, textarea {
   }
 }
 
-// TODO: uncharted base
-
 // Base colour hue
 $primary-hue: 358 !default;
 
-
-//== Typography
-//
-//## Font, line-height, and color for body text, headings, and more.
-
-// $font-family-base: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
 
 .btn {
   display: inline-block;
@@ -247,7 +221,7 @@ a.btn {
 }
 
 .table {
-  background-color: #fff;
+  background-color: white;
 }
 
 .table > tbody > tr.active > td {
