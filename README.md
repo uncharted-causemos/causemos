@@ -11,27 +11,7 @@ The following need to be installed
 
 
 ### Install dependencies
-Note by default the application depends on an Uncharted theme library based on Bootstrap. You need to have access to the Uncharted npm registry to download the library.
-```
-# Set registry
-npm config set @uncharted:registry http://npm.uncharted.software
 
-# Log in with uncharted credentials
-npm login --registry=https://npm.uncharted.software --scope=@uncharted
-```
-
-If you want to use vanilla Bootstrap, make the following changes - note some colors and themes may need to be adjusted if you go with this route.
-```
-# Pull in dependencies
-yarn workspace client add bootstrap-sass@3.4.1
-yarn worksapce client remove @uncharted/uncharted-bootstrap
-
-# In client/src/app.vue, replace "Uncharted Bootstrap section with"
-$icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
-@import '~bootstrap-sass/assets/stylesheets/_bootstrap.scss';
-```
-
-When all set, install the rest of the dependencies
 ```
 yarn install
 ```
