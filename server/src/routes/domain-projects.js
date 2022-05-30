@@ -52,6 +52,14 @@ router.get('/', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET domain project stats
+ */
+router.get('/stats', asyncHandler(async (req, res) => {
+  const result = await domainProjectService.getDomainProjectStatistics();
+  res.json(result);
+}));
+
+/**
  * GET project by id
  */
 router.get('/:id', asyncHandler(async (req, res) => {

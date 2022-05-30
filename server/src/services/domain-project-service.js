@@ -1,6 +1,7 @@
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 const es = rootRequire('adapters/es/adapter');
+const { client } = rootRequire('/adapters/es/client');
 
 const Adapter = es.Adapter;
 const RESOURCE = es.RESOURCE;
@@ -163,11 +164,51 @@ const getFilterFields = (filterParams) => {
 };
 
 
+// Returns a map of how many datacubes/indicators are registered/published per domain project
+const getDomainProjectStatistics = async () => {
+  const response = await client.search({
+    index: RESOURCE.DATA_DATACUBE,
+    body: {
+      size: 0,
+      aggs: {
+        family: {
+          terms: {
+            field: 'family_name.raw',
+            size: 1000
+          },
+          aggs: {
+            status: {
+              terms: {
+                field: 'status'
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Make lookup map
+  const result = {};
+  const domainProjects = response.body.aggregations.family.buckets;
+  for (let i = 0; i < domainProjects.length; i++) {
+    const statusObj = {};
+    const statusList = domainProjects[i].status.buckets;
+    for (let j = 0; j < statusList.length; j++) {
+      statusObj[statusList[j].key] = statusList[j].doc_count;
+    }
+    result[domainProjects[i].key] = statusObj;
+  }
+  return result;
+};
+
+
 module.exports = {
   createProject,
   getAllProjects,
   getProject,
   remove,
   updateProject,
-  updateDomainProjects
+  updateDomainProjects,
+  getDomainProjectStatistics
 };
