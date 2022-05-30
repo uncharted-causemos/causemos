@@ -226,7 +226,7 @@ export default defineComponent({
       if (!country) return '';
       return this.isExpanded(d) || country.length < 4
         ? country.join(', ')
-        : `${country.slice(0, 3).join(', ')} and ${country.length - 4} more.`;
+        : `${country.slice(0, 3).join(', ')} and ${country.length - 3} more.`;
     },
     formatDescription(d: Datacube) {
       if (!d.description) return '';
