@@ -15,6 +15,7 @@
         :source="vectorSource"
         :source-id="vectorSourceId"
         :source-layer="sourceLayer"
+        :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="baseLayerId"
         :layer="baseLayer"
@@ -23,10 +24,8 @@
       <wm-map-vector
         v-if="vectorSource && vectorColorLayer"
         :key="layerRerenderTrigger"
-        :source="vectorSource"
         :source-id="vectorSourceId"
         :source-layer="sourceLayer"
-        :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="colorLayerId"
         :layer="vectorColorLayer"
@@ -64,7 +63,13 @@
 
 import _ from 'lodash';
 import * as d3 from 'd3';
+import {
+  defineComponent,
+  toRefs
+} from 'vue';
 import { WmMap, WmMapVector, WmMapImage, WmMapPopup, WmMapGeojson } from '@/wm-map';
+import useMapRegionSelection from '@/services/composables/useMapRegionSelection';
+import useMapSyncBounds from '@/services/composables/useMapSyncBounds';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
@@ -77,10 +82,10 @@ import {
   convertRawDataToGeoJson,
   pickQualifiers
 } from '@/utils/outputdata-util';
-import { adminLevelToString, BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
-import { chartValueFormatter, capitalize } from '@/utils/string-util';
-import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
+import { capitalize, exponentFormatter } from '@/utils/string-util';
 import { mapActions, mapGetters } from 'vuex';
 
 const createRangeFilter = ({ min, max }, prop) => {
@@ -126,7 +131,7 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
   }
 };
 
-export default {
+export default defineComponent({
   name: 'AnalysisMap',
   components: {
     WmMap,
@@ -169,10 +174,6 @@ export default {
       type: String,
       default: SOURCE_LAYERS[0].layerId
     },
-    allActiveLayerIds: {
-      type: Array,
-      default: () => [SOURCE_LAYERS[0].layerId]
-    },
     filters: {
       type: Array,
       default: () => []
@@ -192,9 +193,9 @@ export default {
       type: Object,
       default: () => ([])
     },
-    selectedRegionIds: {
-      type: Array,
-      default: () => []
+    selectedRegions: {
+      type: Object,
+      default: () => ({ country: new Set(), admin1: new Set(), admin2: new Set(), admin3: new Set() })
     },
     adminLayerStats: {
       type: Object,
@@ -230,6 +231,26 @@ export default {
       })
     }
   },
+  setup(props, { emit }) {
+    const {
+      selectedLayerId,
+      selectedRegions
+    } = toRefs(props);
+
+    const {
+      isRegionSelectionEmpty,
+      isRegionSelected
+    } = useMapRegionSelection(selectedLayerId, selectedRegions);
+    const {
+      syncBounds
+    } = useMapSyncBounds(emit);
+
+    return {
+      isRegionSelectionEmpty,
+      isRegionSelected,
+      syncBounds
+    };
+  },
   data: () => ({
     baseLayer: undefined,
     layerRerenderTrigger: undefined, // This is used specifically to trigger data layer re-rendering.
@@ -261,8 +282,11 @@ export default {
         ? undefined
         : this.outputSourceSpecs.find(spec => spec.id === this.relativeTo);
     },
+    selectedLayerIndex() {
+      return SOURCE_LAYERS.findIndex(l => l.layerId === this.selectedLayerId);
+    },
     selectedLayer() {
-      return SOURCE_LAYERS.find(l => l.layerId === this.selectedLayerId);
+      return SOURCE_LAYERS[this.selectedLayerIndex];
     },
     sourceLayer() {
       return this.selectedLayer.layerId;
@@ -279,14 +303,8 @@ export default {
     isPointsMap() {
       return this.sourceLayer === SOURCE_LAYER.POINTS;
     },
-    adminLevels() {
-      if (this.isGridMap) return undefined;
-      const adminLevels = this.allActiveLayerIds.map(
-        l => adminLevelToString(
-          SOURCE_LAYERS.findIndex(s => l === s.layerId)
-        )
-      );
-      return adminLevels;
+    selectedAdminLevel() {
+      return adminLevelToString(this.selectedLayerIndex);
     },
     selectedBaseLayerEndpoint() {
       return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
@@ -370,7 +388,7 @@ export default {
     pointsLayerStats() {
       this.debouncedRefresh();
     },
-    selectedRegionIds() {
+    selectedRegions() {
       this.debouncedRefresh();
     },
     showPercentChange() {
@@ -450,25 +468,14 @@ export default {
       }
     },
     getAdminMapExtent() {
-      if (!this.adminLayerStats) return;
-      const stats = this.adminLevels.reduce((acc, l) => {
-        if (this.baselineSpec) {
-          acc.push(this.adminLayerStats?.difference[l]);
-        } else if (this.outputSelection === this.relativeTo) {
-          acc.push(this.adminLayerStats?.baseline[l]);
-        } else {
-          acc.push(this.adminLayerStats?.global[l]);
-        }
-        return acc;
-      }, []);
-      if (stats.length === 1) {
-        return stats[0];
+      if (_.isEmpty(this.adminLayerStats)) return;
+      const level = this.selectedAdminLevel;
+      if (this.baselineSpec) {
+        return this.adminLayerStats?.difference[level];
+      } else if (this.outputSelection === this.relativeTo) {
+        return this.adminLayerStats?.baseline[level];
       } else {
-        const extendedStats = {
-          min: _.minBy(stats, (s) => s && s.min).min,
-          max: _.maxBy(stats, (s) => s && s.max).max
-        };
-        return extendedStats;
+        return this.adminLayerStats?.global[level];
       }
     },
     getPointsMapExtent() {
@@ -496,11 +503,16 @@ export default {
     setFeatureStates() {
       if (!this.map || !this.isAdminMap) return;
 
-      // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
-      this.map.removeFeatureState({
-        source: this.vectorSourceId,
-        sourceLayer: this.sourceLayer
-      });
+      try {
+        // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
+        this.map.removeFeatureState({
+          source: this.vectorSourceId,
+          sourceLayer: this.sourceLayer
+        });
+      } catch {
+        // remove feature state throws error when source isn't loaded yet. Then exit.
+        return;
+      }
       // Note: RemoveFeatureState doesn't seem very reliable.
       // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and make it undefined
       // But once new state, lets's say {b: 4} is set by setFetureState afterwards, it just extends previous state instead of setting it to new state resulting something like
@@ -509,17 +521,15 @@ export default {
       const featureStateBase = { _baseline: undefined };
       this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = undefined; });
 
-      this.adminLevels.forEach(level => {
-        this.regionData[level].forEach(row => {
-          this.map.setFeatureState({
-            id: row.id,
-            source: this.vectorSourceId,
-            sourceLayer: this.sourceLayer
-          }, {
-            ...featureStateBase,
-            ...row.values,
-            _isHidden: this.selectedRegionIds.length === 0 ? false : !this.selectedRegionIds.includes(row.id)
-          });
+      this.regionData[this.selectedAdminLevel].forEach(row => {
+        this.map.setFeatureState({
+          id: row.id,
+          source: this.vectorSourceId,
+          sourceLayer: this.sourceLayer
+        }, {
+          ...featureStateBase,
+          ...row.values,
+          _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(row.id)
         });
       });
     },
@@ -570,26 +580,6 @@ export default {
       this.isGridMap && this.debouncedRefresh();
       this.syncBounds(event);
       this.triggerMapUpdateEvent();
-    },
-    syncBounds(event) {
-      // Skip if move event is not originated from dom event (eg. not triggered by user interaction with dom)
-      // We ignore move events from other maps which are being synced with the master map to avoid situation
-      // where they also trigger prop updates and fire events again to create infinite loop
-      const originalEvent = event.mapboxEvent.originalEvent;
-      if (!originalEvent) return;
-
-      const map = event.map;
-      const component = event.component;
-
-      // Disable camera movement until next tick so that the master map doesn't get updated by the props change
-      // Master map is being interacted by user so camera movement is already applied
-      component.disableCamera();
-
-      this.$emit('sync-bounds', map.getBounds().toArray());
-
-      this.$nextTick(() => {
-        component.enableCamera();
-      });
     },
     updateLayerFilter() {
       if (!this.vectorColorLayer) return;
@@ -649,12 +639,15 @@ export default {
         this.layerRerenderTrigger = this.selectedBaseLayerEndpoint + this.isGridMap;
       }, 200);
     },
+    numberFormatter(v) {
+      // Since there is more room in the tooltip, try to use less scientific notation
+      if (v === 0 || (Math.abs(v) >= 1 && Math.abs(v) < 9_999_999)) return d3.format(',.2~f')(v);
+      return exponentFormatter(v);
+    },
     popupValueFormatter(feature) {
       const prop = this.isAdminMap ? feature?.state : feature?.properties;
       if (_.isNil(prop && prop[this.valueProp])) return null;
-      const format = v => this.extent
-        ? chartValueFormatter(this.extent.min, this.extent.max)(v)
-        : chartValueFormatter()(v);
+      const format = v => this.numberFormatter(v);
       const value = prop[this.valueProp];
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
@@ -676,7 +669,7 @@ export default {
       return rows.filter(field => !_.isNil(field)).join('<br />');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

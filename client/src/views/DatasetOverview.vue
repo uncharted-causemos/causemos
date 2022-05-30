@@ -3,7 +3,7 @@
     <modal-confirmation
       v-if="showApplyToAllModal"
       :autofocus-confirm="false"
-      @confirm="applyVizToAll"
+      @confirm="applyVizToAll($route.query.template_id)"
       @close="closeApplyVizModal"
     >
       <template #title>Apply Settings To All</template>
@@ -82,10 +82,29 @@
 <!--        </span>-->
 <!--      </div>-->
       <div class="info-column">
-        <div><b>Domain: </b> Coming Soon</div>
+        <div style="display: flex; align-items: center">
+          <b>Domain(s): </b>
+          <select name="domains" id="domains" @change="selectedDomain=AVAILABLE_DOMAINS[$event.target.selectedIndex]">
+            <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
+              {{domain}}
+            </option>
+          </select>
+          <button type="button" class="btn btn-default" style="padding: 2px 4px" @click="addDomain">Add</button>
+        </div>
+        <div v-if="editedDataset.domains" style="display: flex; flex-wrap: wrap">
+          <div v-for="domain in editedDataset.domains" :key="domain">
+            <span style="margin: 2px; background-color: white;">{{domain}} <i @click="removeDomain(domain)" class="fa fa-remove" /></span>
+          </div>
+        </div>
         <div><b>Region: </b>{{countries}}</div>
         <div><b>Period: </b> {{period}}</div>
-        <div><b>Runtime: </b> Queue: {{runtimeFormatter(dataset.runtimes?.queued)}}, Ingestion: {{runtimeFormatter(dataset.runtimes?.post_processing)}}</div>
+        <div><b>Runtime: </b> Queue: {{runtimeFormatter(dataset.runtimes?.queued)}}, Ingestion: {{runtimeFormatter(dataset.runtimes?.post_processing)}}
+        <button
+          type="button"
+          class="btn btn-xs btn-primary"
+          :disabled="!dataset.flow_id"
+          @click="viewCausemosLogs(dataset.flow_id)">View Logs</button>
+        </div>
       </div>
     </header>
     <main>
@@ -150,6 +169,7 @@
             :allow-editing="isReady"
             @apply-to-all="applyVizToAll(indicator.id)"
             @toggle-hidden="toggleHiddenState(indicator)"
+            @update-meta="updateIndicator"
           />
           <message-display
             v-if="filteredIndicators.length === 0"
@@ -166,20 +186,21 @@
 import { mapActions, mapGetters } from 'vuex';
 import IndicatorCard from '@/components/indicator-card.vue';
 import filtersUtil from '@/utils/filters-util';
-import { getDatacubes, updateIndicatorsBulk } from '@/services/new-datacube-service';
+import { generateSparklines, getDatacubes, SparklineParams, updateIndicatorsBulk } from '@/services/new-datacube-service';
 import _ from 'lodash';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
-import { getDatacubeStatusInfo } from '@/utils/datacube-util';
-import { DatacubeStatus } from '@/types/Enums';
-import { Dataset, DatasetEditable, Indicator } from '@/types/Datacube';
+import { AVAILABLE_DOMAINS, getDatacubeStatusInfo } from '@/utils/datacube-util';
+import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
+import { Datacube, DatacubeFeature, Dataset, DatasetEditable, Indicator } from '@/types/Datacube';
 import { defineComponent } from 'vue';
 import router from '@/router';
 import moment from 'moment';
 import useToaster from '@/services/composables/useToaster';
 import { runtimeFormatter } from '@/utils/string-util';
+import { ViewState } from '@/types/Insight';
 
 const MAX_COUNTRIES = 40;
 
@@ -195,12 +216,14 @@ export default defineComponent({
   data: () => ({
     indicators: [] as Indicator[],
     dataset: {} as Dataset,
-    editedDataset: { name: '', description: '', maintainer: {} } as DatasetEditable,
+    editedDataset: { name: '', description: '', maintainer: {}, domains: [] as string[] } as DatasetEditable,
     searchTerm: '',
     showSortingDropdown: false,
     sortingOptions: ['Most recent', 'Oldest'],
     selectedSortingOption: 'Most recent',
-    showApplyToAllModal: false
+    showApplyToAllModal: false,
+    AVAILABLE_DOMAINS,
+    selectedDomain: AVAILABLE_DOMAINS[0]
     // filterOptions: [
     //   { status: DatacubeStatus.Ready, selected: true },
     //   { status: DatacubeStatus.Deprecated, selected: false }
@@ -217,7 +240,7 @@ export default defineComponent({
 
       const sortFunc = this.sortingOptions.indexOf(this.selectedSortingOption) === 1
         ? 'asc' : 'desc';
-      return _.orderBy(filtered, '???', sortFunc);
+      return _.orderBy(filtered, ['created_at', 'name'], [sortFunc, 'asc']);
     },
     isReady() {
       return this.dataset.status === DatacubeStatus.Ready;
@@ -238,7 +261,8 @@ export default defineComponent({
     isDirty() {
       return this.editedDataset.name !== this.dataset.name ||
         this.editedDataset.description !== this.dataset.description ||
-        !_.isEqual(this.editedDataset.maintainer, this.dataset.maintainer);
+        !_.isEqual(this.editedDataset.maintainer, this.dataset.maintainer) ||
+        !_.isEqual(this.editedDataset.domains, this.dataset.domains);
     },
     countries() {
       const country = this.dataset?.geography?.country;
@@ -275,6 +299,17 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds'
     }),
+    addDomain() {
+      if (!this.editedDataset.domains) {
+        this.editedDataset.domains = [];
+      }
+      if (!this.editedDataset.domains.includes(this.selectedDomain)) {
+        this.editedDataset.domains.push(this.selectedDomain);
+      }
+    },
+    removeDomain(domain: string) {
+      this.editedDataset.domains = this.editedDataset.domains.filter(d => d !== domain);
+    },
     async fetchIndicators() {
       this.enableOverlay('Loading indicators');
 
@@ -313,17 +348,19 @@ export default defineComponent({
       this.dataset.name = this.editedDataset.name;
       this.dataset.description = this.editedDataset.description;
       this.dataset.maintainer = this.editedDataset.maintainer;
+      this.dataset.domains = this.editedDataset.domains;
       const deltas = this.indicators.map(indicator => ({
         id: indicator.id,
         name: this.editedDataset.name,
         description: this.editedDataset.description,
-        maintainer: this.editedDataset.maintainer
+        maintainer: this.editedDataset.maintainer,
+        domains: this.editedDataset.domains
       }));
       try {
         await updateIndicatorsBulk(deltas);
         toaster(`Updated ${deltas.length} indicators`, 'success');
       } catch {
-        toaster('The was an issue with updating the indicators', 'error');
+        toaster('There was an issue with updating the indicators', 'error');
       }
       await this.fetchIndicators();
     },
@@ -341,7 +378,7 @@ export default defineComponent({
       //   indicator.status = DatacubeStatus.Ready;
       // }
     },
-    async applyVizToAll(indicatorId: string) {
+    async applyVizToAll(indicatorId: any) {
       const toaster = useToaster();
       this.showApplyToAllModal = false;
       await router.push({
@@ -351,21 +388,45 @@ export default defineComponent({
       });
       const source = this.indicators.find(indicator => indicator.id === indicatorId);
       if (source) {
-        const deltas = this.indicators.filter(indicator => indicator.id !== indicatorId)
-          .map(indicator => ({
-            id: indicator.id,
-            default_view: source.default_view
-          }));
+        this.enableOverlay('Applying settings');
+        const targets = this.indicators.filter(indicator => indicator.id !== indicatorId);
+        const deltas = targets.map(indicator => ({
+          id: indicator.id,
+          default_view: source.default_view
+        }));
+        const sparklineList = targets.map(indicator => this.getSparklineParams(indicator, source.default_view));
         try {
+          this.enableOverlay(`Generating ${sparklineList.length} previews`);
+          await generateSparklines(sparklineList);
+
+          this.enableOverlay(`Updating ${deltas.length} indicators`);
           await updateIndicatorsBulk(deltas);
           toaster(`Updated ${deltas.length} indicators`, 'success');
         } catch {
           toaster('The was an issue with applying the settings', 'error');
         }
+        this.disableOverlay();
         await this.fetchIndicators();
       } else {
         toaster('Invalid template indicator', 'error');
       }
+    },
+    getSparklineParams(meta: Datacube, selections?: ViewState) {
+      const output = meta.outputs[0];
+      const feature = output.name;
+      const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+      const finalRawTimestamp = meta.period?.lte ?? 0;
+      return {
+        id: meta.id,
+        dataId: meta.data_id,
+        runId: 'indicator',
+        feature: feature,
+        resolution: selections?.temporalResolution ?? 'month',
+        temporalAgg: selections?.temporalAggregation ?? 'mean',
+        spatialAgg: selections?.spatialAggregation ?? 'mean',
+        rawResolution: rawResolution,
+        finalRawTimestamp: finalRawTimestamp
+      } as SparklineParams;
     },
     closeApplyVizModal() {
       this.showApplyToAllModal = false;
@@ -374,6 +435,27 @@ export default defineComponent({
           template_id: undefined
         }
       }).catch(() => {});
+    },
+    async updateIndicator({ id, meta }: { id: string, meta: DatacubeFeature}) {
+      const toaster = useToaster();
+      try {
+        await updateIndicatorsBulk([{
+          id: id,
+          outputs: [meta]
+        }]);
+        toaster('Indicator updated successfully', 'success');
+      } catch {
+        toaster('There was an issue with saving the changes', 'error');
+      }
+      await this.fetchIndicators();
+    },
+    viewCausemosLogs(flowId: string) {
+      this.$router.push({
+        name: 'prefectFlowLogs',
+        params: {
+          flowId: flowId as string
+        }
+      });
     },
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
@@ -405,7 +487,7 @@ header {
 .metadata-column {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
 
   h3 {
     margin: 0;

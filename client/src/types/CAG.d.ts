@@ -1,14 +1,22 @@
 import { TimeseriesDistributionPoint, TimeseriesPoint } from './Timeseries';
 import { TimeScale } from './Enums';
 
+export interface CAGVisualState {
+  // Determines whether a subgraph should be faded-in (focused) or faded-out (not focused)
+  focus: {
+    nodes: { concept: string }[];
+    edges: { source: string; target: string } [];
+  },
+  // Determines if a subgraph should be outlined
+  outline: {
+    nodes: { concept: string; color?: string } [];
+    edges: { source: string; target: string; color?: string } [];
+  }
+}
+
 export interface GraphPath {
   path: string[];
   score?: number;
-}
-
-export interface ConceptProjectionConstraints {
-  concept: string;
-  values: ProjectionConstraint[];
 }
 
 export interface ProjectionConstraint {
@@ -16,13 +24,15 @@ export interface ProjectionConstraint {
   value: number;
 }
 
+export interface ConceptProjectionConstraints {
+  concept: string;
+  values: ProjectionConstraint[];
+}
+
 export interface ScenarioParameter {
   projection_start: number;
   num_steps: number;
-  indicator_time_series_range: {
-    start: number;
-    end: number;
-  };
+
   // A list of constraints across all concepts
   constraints: ConceptProjectionConstraints[];
 }
@@ -57,7 +67,7 @@ export interface Scenario {
   modified_at: number;
   created_at: number;
   model_id: string;
-  engine: string;
+  engine: string; // Deprecated
   is_valid: boolean;
   is_baseline: boolean;
   parameter: ScenarioParameter;
@@ -69,13 +79,10 @@ export interface NodeScenarioData {
   indicator_name: string;
   indicator_id: string | null;
   indicator_time_series: TimeseriesPoint[];
-  indicator_time_series_range: {
-    start: number;
-    end: number;
-  };
   min: number;
   max: number;
   projection_start: number;
+  history_range: number;
   time_scale: TimeScale;
   scenarios: {
     id: string;
@@ -99,6 +106,7 @@ export interface NodeParameter {
   model_id?: string;
   modified_at?: number;
   components: string[];
+  match_candidates?: any[];
   parameter?: any;
 }
 
@@ -131,13 +139,11 @@ export interface SourceTargetPair {
 
 export interface CAGModelParameter {
   num_steps: number; // Deprecated, should now be derived from time_scale
-  indicator_time_series_range: {
-    start: number;
-    end: number;
-  };
+  history_range: number; // number in months
   projection_start: number;
   engine: string;
   time_scale: TimeScale;
+  geography?: string;
 }
 
 export interface CAGModelSummary {
@@ -148,15 +154,14 @@ export interface CAGModelSummary {
 
   is_stale: boolean;
   is_ambiguous: boolean;
-  is_quantified: boolean; // FIXME: Deprecated
-  status: number; // FIXME: Deprecated
-
   engine_status: { [key: string]: number };
 
   created_at: number;
   modified_at: number;
 
   thumbnail_source?: string;
+
+  data_analysis_id?: string;
 }
 
 export interface CAGGraph {

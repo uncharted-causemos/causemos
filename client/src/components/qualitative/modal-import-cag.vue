@@ -8,7 +8,7 @@
     <template #body>
       <div class="available-cags-container">
         <card
-          v-for="cag in availableCAGs"
+          v-for="cag in compatibleCAGs"
           :key="cag.id"
           :class="{ 'selected': cag.selected ? true : false }"
           @click="toggleCAGSelection(cag)">
@@ -22,7 +22,12 @@
     </template>
     <template #footer>
       <ul class="unstyled-list">
-        <li class="first-button">
+        <span v-if="compatibleCAGs.length < allCAGs.length - 1">
+          Only
+          {{ currentTimeScale === TimeScale.Years ? "yearly" : "monthly" }}
+          CAGs are shown.
+        </span>
+        <li>
           <button
             type="button"
             class="btn"
@@ -50,6 +55,7 @@ import Modal from '@/components/modals/modal.vue';
 import Card from '@/components/widgets/card.vue';
 import modelService from '@/services/model-service';
 import { CAGModelSummary } from '@/types/CAG';
+import { TimeScale } from '@/types/Enums';
 
 interface SelectableCAGModelSummary extends CAGModelSummary {
   selected?: boolean;
@@ -66,20 +72,32 @@ export default defineComponent({
   ],
   setup() {
     const store = useStore();
-    const availableCAGs = ref([]) as Ref<SelectableCAGModelSummary[]>;
+    const allCAGs = ref([]) as Ref<SelectableCAGModelSummary[]>;
 
     const project = computed(() => store.getters['app/project']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
+    const currentTimeScale = computed(
+      () =>
+        allCAGs.value.find(cag => cag.id === currentCAG.value)?.parameter
+          .time_scale
+    );
+    const compatibleCAGs = computed(() => {
+      return allCAGs.value
+        .filter(d => d.id !== currentCAG.value)
+        .filter(d => d.parameter.time_scale === currentTimeScale.value);
+    });
     const selectedCAGIds = computed(() => {
-      return availableCAGs.value.filter(d => d.selected === true).map(d => d.id);
+      return compatibleCAGs.value.filter(d => d.selected === true).map(d => d.id);
     });
 
     return {
       project,
       currentCAG,
-
-      availableCAGs,
-      selectedCAGIds
+      compatibleCAGs,
+      currentTimeScale,
+      allCAGs,
+      selectedCAGIds,
+      TimeScale
     };
   },
   mounted() {
@@ -88,7 +106,7 @@ export default defineComponent({
   methods: {
     refresh() {
       modelService.getProjectModels(this.project).then(result => {
-        this.availableCAGs = result.models.filter(d => d.id !== this.currentCAG);
+        this.allCAGs = result.models;
       });
     },
     toggleCAGSelection(cag: SelectableCAGModelSummary) {
@@ -97,7 +115,6 @@ export default defineComponent({
       } else {
         cag.selected = false;
       }
-      // Vue.set(this, 'availableCAGs', _.clone(this.availableCAGs));
     },
     importCAG() {
       this.$emit('import-cag', this.selectedCAGIds);
@@ -112,16 +129,16 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-.first-button {
-  margin-right: 10px;
+.unstyled-list > *:not(:first-child) {
+  margin-left: 10px;
 }
 
-::v-deep(.modal-container) {
+:deep(.modal-container) {
   overflow: hidden;
   width: 960px;
 }
 
-::v-deep(.modal-body) {
+:deep(.modal-body) {
 
   .available-cags-container {
     display: flex;

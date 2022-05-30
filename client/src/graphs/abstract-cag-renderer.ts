@@ -1,8 +1,10 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
 import svgUtil from '@/utils/svg-util';
-import { DeltaRenderer, IEdge, INode, moveTo, highlight, unHighlight } from 'svg-flowgraph';
+import { DeltaRenderer, IGraph, IEdge, INode, traverseGraph, moveTo, highlight, unHighlight } from 'svg-flowgraph';
 import { DEFAULT_STYLE } from './cag-style';
+import { SELECTED_COLOR } from '@/utils/colors-util';
+import { CAGVisualState } from '@/types/CAG';
 
 const FADED_OPACITY = 0.2;
 const AMBIGUOUS_MSG = 'To make CAG projections easier to interpret, <br /> select each grey edge and clarify its polarity in the side panel.';
@@ -33,6 +35,18 @@ const createStatsGroup = (foregroundLayer: any) => {
       .text('');
   }
   return statsGroup;
+};
+
+const flattenGraph = <V, E>(graph: IGraph<V, E>): { nodes: INode<V>[], edges: IEdge<E>[] } => {
+  let nodes: INode<V>[] = [];
+  traverseGraph(graph, (node) => {
+    nodes = nodes.concat(node);
+  });
+
+  return {
+    nodes,
+    edges: graph.edges
+  };
 };
 
 
@@ -99,39 +113,81 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     const chart = this.chart;
     chart.selectAll('.node').style('opacity', 1);
     chart.selectAll('.edge').style('opacity', 1);
-    chart.selectAll('.node-header').classed('node-selected', false);
-    chart.selectAll('.edge-control').remove();
+    chart.selectAll('.node-ui').classed('selected', false);
 
-    chart.selectAll('.node-container') // Clean up previous highlights
+    chart.selectAll('.edge').classed('selected', false);
+    chart.selectAll('.edge-path-bg-outline').style('stroke', null);
+
+    chart.selectAll('.node-container, .node-container-outer') // Clean up previous highlights
       .style('border-radius', DEFAULT_STYLE.node.borderRadius)
       .style('stroke', DEFAULT_STYLE.node.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
   }
 
   selectNode(node: D3SelectionINode<V>, color: string) {
-    node.select('.node-container')
+    node.selectAll('.node-container, .node-container-outer')
       .style('border-radius', DEFAULT_STYLE.node.highlighted.borderRadius)
       .style('stroke', _.isEmpty(color) ? DEFAULT_STYLE.node.highlighted.stroke : color)
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
+    node.classed('selected', true);
   }
 
-  selectEdge(evt: Event, edge: D3SelectionIEdge<E>) {
-    const mousePoint = d3.pointer(evt, edge.node());
-    const pathNode = edge.select('.edge-path').node();
-    const controlPoint = (svgUtil.closestPointOnPath(pathNode as any, mousePoint) as number[]);
-
-    edge.append('g')
-      .classed('edge-control', true)
-      .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
-
-    this.renderEdgeControls(edge);
+  selectEdge(edge: D3SelectionIEdge<E>, color: string = SELECTED_COLOR) {
+    edge.select('.edge-path-bg-outline').style('stroke', color);
+    edge.classed('selected', true);
   }
 
   selectNodeByConcept(concept: string, color: string) {
-    const node = this.chart.selectAll('.node').filter((node: any) => node.label === concept);
+    const node = this.chart.selectAll('.node-ui').filter((node: any) => node.label === concept);
     if (node) {
       this.selectNode(node as any, color);
     }
+  }
+
+
+  selectEdgeBySourceTarget(source: string, target: string, color: string) {
+    const edge = this.chart.selectAll('.edge').filter((edge: any) => edge.source === source && edge.target === target);
+    if (edge) {
+      this.selectEdge(edge as any, color);
+    }
+  }
+
+  applyVisualState(visualState: CAGVisualState) {
+    this.resetAnnotations();
+    if (visualState.focus) {
+      if (!_.isEmpty(visualState.focus.nodes) || !_.isEmpty(visualState.focus.edges)) {
+        this.neighborhoodAnnotation(visualState.focus);
+      }
+    }
+    if (visualState.outline.nodes) {
+      for (const node of visualState.outline.nodes) {
+        this.selectNodeByConcept(node.concept, node.color ? node.color : SELECTED_COLOR);
+      }
+      for (const edge of visualState.outline.edges) {
+        this.selectEdgeBySourceTarget(edge.source, edge.target, edge.color ? edge.color : SELECTED_COLOR);
+      }
+    }
+  }
+
+  // Hide graph search results
+  hideSearchCandidates() {
+    this.chart.selectAll('.node-header').style('fill', DEFAULT_STYLE.node.fill);
+  }
+
+  // Show graph search results
+  showSearchCandidates(candidates: string[]) {
+    const nodes = this.chart.selectAll('.node').filter((d: any) => candidates.includes(d.label));
+    nodes.selectAll('.node-header').style('fill', DEFAULT_STYLE.node.matched);
+  }
+
+  // @override
+  // Override default behaviour
+  stableLayoutCheck(): boolean {
+    const chart = this.chart;
+    const options = this.options;
+    const flattened = flattenGraph(this.graph);
+    const numNodes = flattened.nodes.length;
+    return (options.useStableLayout && numNodes <= chart.selectAll('.node').size()) as boolean;
   }
 }
 

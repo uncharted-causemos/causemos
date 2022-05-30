@@ -31,6 +31,7 @@ import { ComparativeAnalysisMode } from '@/types/Enums';
 import { ref } from 'vue';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
+import { capitalize } from '@/utils/string-util';
 
 export default {
   name: 'ActionBar',
@@ -38,9 +39,6 @@ export default {
     RadioButtonGroup
   },
   setup() {
-    const capitalize = (str) => {
-      return str[0].toUpperCase() + str.slice(1);
-    };
     const comparativeAnalysisGroupButtons = ref(Object.values(ComparativeAnalysisMode)
       .map(val => ({ label: capitalize(val), value: val })));
     return {
@@ -48,8 +46,6 @@ export default {
     };
   },
   data: () => ({
-    showDropdown: false,
-    showRenameModal: false,
     analysisName: ''
   }),
   computed: {
@@ -65,7 +61,9 @@ export default {
   },
   async mounted() {
     const result = await getAnalysis(this.analysisId);
-    this.analysisName = result.title;
+    if (result) {
+      this.analysisName = result.title;
+    }
   },
   methods: {
     ...mapActions({

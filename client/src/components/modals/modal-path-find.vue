@@ -2,30 +2,41 @@
   <modal
     @close="close()">
     <template #header>
-      <h4> Path suggestions </h4>
+      <h4>Path suggestions</h4>
     </template>
     <template #body>
-      <p>
-        There is no evidence to support the edge <strong>{{ ontologyFormatter(source.concept) }}</strong>
-        to <strong>{{ ontologyFormatter(target.concept) }}</strong>. You can still use it
-        <span v-if="suggestions.length === 1">.</span>
-        <span v-else>, or select from the indirect paths listed below.</span>
+      <p v-if="isLoadingSuggestions">
+        <i class="fa fa-fw fa-spin fa-spinner" />
+        Loading suggestions...
       </p>
-      <div>
-        <div v-if="suggestions.length === 0">
-          <div>Loading suggestions...</div>
-        </div>
-        <div
-          v-for="(suggestion, idx) in suggestions"
-          :key="idx"
-          @click="toggleSelection(suggestion)">
-          <i
-            class="fa fa-fw fa-check-square-o"
-            :class="{'fa-square-o': suggestion.selected === false, 'fa-check-square-o': suggestion.selected === true}"
-          />
-          {{ suggestion.path.map(d => ontologyFormatter(d)).join(" > ") }}
-          <hr v-if="idx === 0">
-        </div>
+      <p v-else-if="suggestions.length === 0">
+        No indirect paths from
+        <strong>{{ ontologyFormatter(source.concept) }}</strong>
+        to
+        <strong>{{ ontologyFormatter(target.concept) }}</strong>
+        were found.
+      </p>
+      <p v-else>
+        Select one or more indirect paths to add to your CAG:
+      </p>
+      <div
+        v-for="(suggestion, idx) in suggestions"
+        style="display: flex; align-items: center;"
+        :key="idx"
+        @click="toggleSelection(suggestion)"
+      >
+        <i
+          style="margin-right: 5px;"
+          class="fa fa-fw"
+          :class="{'fa-square-o': suggestion.selected === false, 'fa-check-square-o': suggestion.selected === true}"
+        />
+        <span v-for="(concept, index) of suggestion.path" :key="concept">
+          <span v-if="index !== 0">
+            &nbsp;
+            <i  class="fa fa-fw fa-long-arrow-right" />
+          </span>
+          {{ ontologyFormatter(concept) }}
+        </span>
       </div>
     </template>
     <template #footer>
@@ -39,7 +50,7 @@
           type="button"
           class="btn btn-primary btn-call-for-action"
           :disabled="!hasSelection"
-          @click.stop="addSuggestedPaths()">Add
+          @click.stop="addSuggestedPaths()">Add to CAG
         </button>
       </ul>
     </template>
@@ -71,6 +82,7 @@ export default {
     'add-paths', 'close'
   ],
   data: () => ({
+    isLoadingSuggestions: false,
     suggestions: []
   }),
   computed: {
@@ -88,9 +100,12 @@ export default {
   },
   methods: {
     refresh() {
+      this.isLoadingSuggestions = true;
       suggestionService.getGroupPathSuggestions(this.project, this.source.components, this.target.components).then(paths => {
-        const sortedPaths = _.orderBy(paths, p => p.length);
-        this.suggestions = [[this.source.concept, this.target.concept], ..._.take(sortedPaths, 5)].map(path => {
+        // Remove direct edge if it exists
+        const indirectPaths = paths.filter(path => path.length !== 2);
+        const sortedPaths = _.orderBy(indirectPaths, p => p.length);
+        this.suggestions = _.take(sortedPaths, 5).map(path => {
           return {
             // suggestions for grouped nodes may have source or target that are component concepts
             // this normalizes those source and target concepts to the main concepts such that
@@ -107,9 +122,8 @@ export default {
             selected: false
           };
         });
-        if (this.suggestions.length === 1) {
-          this.suggestions[0].selected = true;
-        }
+      }).finally(() => {
+        this.isLoadingSuggestions = false;
       });
     },
     close() {

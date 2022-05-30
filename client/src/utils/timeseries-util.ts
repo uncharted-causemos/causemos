@@ -6,15 +6,15 @@ import { D3GElementSelection } from '@/types/D3';
 import { translate } from './svg-util';
 import {
   TemporalAggregationLevel,
-  ReferenceSeriesOption
+  ReferenceSeriesOption,
+  TemporalResolutionOption
 } from '@/types/Enums';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import { calculateDiff } from '@/utils/value-util';
-
+import { colorFromIndex } from './colors-util';
 
 const DEFAULT_LINE_COLOR = '#000';
 const DEFAULT_LINE_WIDTH = 2;
-
 
 export function applyReference (
   timeseriesData: Timeseries[],
@@ -23,6 +23,7 @@ export function applyReference (
   referenceOptions: string[]
 ) {
   let referenceTimeseries = [] as Timeseries[];
+  let colorOffset = timeseriesData.length;
 
   if (breakdownOption === TemporalAggregationLevel.Year) {
     if (referenceOptions.includes(ReferenceSeriesOption.AllYears)) {
@@ -46,8 +47,9 @@ export function applyReference (
         aggregratedRefSeries.id = ReferenceSeriesOption.AllYears;
         aggregratedRefSeries.isDefaultRun = false;
         aggregratedRefSeries.name = 'All Years';
-        aggregratedRefSeries.color = '#555';
+        aggregratedRefSeries.color = colorFromIndex(colorOffset);
         referenceTimeseries.push(aggregratedRefSeries);
+        colorOffset++;
       }
     }
 
@@ -64,7 +66,7 @@ export function applyReference (
         aggregratedRefSeries.id = ReferenceSeriesOption.SelectYears;
         aggregratedRefSeries.isDefaultRun = false;
         aggregratedRefSeries.name = 'Select Years';
-        aggregratedRefSeries.color = '#888';
+        aggregratedRefSeries.color = colorFromIndex(colorOffset);
         referenceTimeseries.push(aggregratedRefSeries);
       }
     }
@@ -183,6 +185,30 @@ const aggregateRefTemporalTimeseries = (temporalTimeseries: Timeseries[]): Times
   return aggregratedRefSeries;
 };
 
+export function xAxis(
+  xScale: d3.ScaleLinear<number, number>,
+  timestampFormatter: (timestamp: any) => string,
+  temporalResolution: TemporalResolutionOption,
+  width: number) {
+  // generate uniformly-spaced and nicely-rounded tick values between start and end (inclusive)
+  const firstDate = moment.utc(xScale.domain()[0]);
+  const lastDate = moment.utc(xScale.domain()[1]);
+  const pixelsForEachTick = temporalResolution === TemporalResolutionOption.Year ? 60 : 120;
+  const tickCount = Math.round(width / pixelsForEachTick) ?? 1;
+  const xTickValues = d3.timeTicks(firstDate.toDate(), lastDate.toDate(), tickCount);
+  // Ensure that ticks count does not repeat
+  //  (which can happen if the number of ticks larger than the number of data points)
+  // NOTE that this is more of a hack to avoid examining the actual data points
+  //  and consider their count against the tick count
+  const xTickValuesFormatted = _.uniq(xTickValues.map(date => timestampFormatter(date)));
+  const axis = d3
+    .axisBottom(xScale)
+    .tickValues(xTickValuesFormatted.map(dateStr => Date.parse(dateStr)))
+    .tickFormat(timestampFormatter)
+  ;
+  return axis;
+}
+
 export function renderAxes(
   selection: D3GElementSelection,
   xScale: d3.ScaleLinear<number, number>,
@@ -198,15 +224,9 @@ export function renderAxes(
   yAxisWidth: number,
   paddingRight: number,
   xAxisHeight: number,
-  xAxisTickCount = 4,
-  xAxisTickSizePx = 2
+  temporalResolution: TemporalResolutionOption
 ) {
-  const xAxis = d3
-    .axisBottom(xScale)
-    .tickSize(xAxisTickSizePx)
-    .tickFormat(timestampFormatter)
-    .ticks(xAxisTickCount);
-
+  const xAxisCreated = xAxis(xScale, timestampFormatter, temporalResolution, width);
   const yAxisTicks = calculateGenericTicks(
     yScale.domain()[0],
     yScale.domain()[1]
@@ -216,50 +236,61 @@ export function renderAxes(
     .tickSize(width - yAxisWidth - paddingRight)
     .tickFormat(valueFormatter)
     .tickValues(yAxisTicks);
-  selection
+  const xAxisSelection = selection
     .append('g')
     .classed('xAxis', true)
     .style('pointer-events', 'none')
-    .call(xAxis)
+    .call(xAxisCreated)
     .style('font-size', '10px')
     .attr('transform', translate(0, height - xAxisHeight));
-  selection
+  const yAxisSelection = selection
     .append('g')
     .classed('yAxis', true)
     .style('pointer-events', 'none')
     .call(yAxis)
     .style('font-size', '10px')
     .attr('transform', translate(width - paddingRight, 0));
+  return [xAxisSelection, yAxisSelection];
 }
 
 export function calculateYearlyTicks (
   firstTimestamp: number,
   lastTimestamp: number,
   width: number,
-  minTickSpacing = 10,
-  useMonthTicks = true
+  minTickSpacing = 40
 ) {
-  const firstYear = moment(firstTimestamp);
-  const lastYear = moment(lastTimestamp);
+  const firstYear = moment.utc(firstTimestamp);
+  const lastYear = moment.utc(lastTimestamp);
 
   const majorIncrecmentsElapsed = lastYear.year() - firstYear.year();
 
-  let tickIncrements = [];
+  const tickIncrements = [];
 
-  // create array of years from firstYear to lastYear
-  // epoch seconds for jan first of each year
-  if (majorIncrecmentsElapsed * 12 > width / minTickSpacing || !useMonthTicks) { // not enough space for minor ticks
-    tickIncrements = Array.from({ length: majorIncrecmentsElapsed }, (v, k) => moment([k + 1 + firstYear.year()]).valueOf());
-  } else { // enough space for minor ticks
-    for (let i = 0; i < majorIncrecmentsElapsed * 12; i++) {
-      const momentPlusDuration = moment(firstYear.add(1, 'month')); // add increment of minor duration to next tick
-      const momentNormalized = moment([momentPlusDuration.year(), momentPlusDuration.month(), 1]); // force tick to first of month, FIXME - this is still hardcoded to only work with years and months, not quite sure how to fix
-      tickIncrements.push(momentNormalized.valueOf());
+  const yearGap = majorIncrecmentsElapsed / (width / minTickSpacing);
+  const threshold = 0.7; // Seems to be be nice from experimentation
+
+  // create array of tick values by year or by month, based on how space is available
+  if (yearGap > threshold) {
+    // Not enough space for minor ticks
+    for (let i = 0; i < majorIncrecmentsElapsed; i += Math.ceil(yearGap)) {
+      // Epoch seconds for jan first of each year
+      tickIncrements.push(
+        moment.utc([i + firstYear.year()]).valueOf()
+      );
+    }
+  } else {
+    // Enough space for minor ticks
+    for (let year = 0; year <= majorIncrecmentsElapsed; year++) {
+      for (let month = 0; month < 12; month++) {
+        tickIncrements.push(
+          moment.utc([year + firstYear.year(), month]).valueOf()
+        );
+      }
     }
   }
-
   return tickIncrements;
 }
+
 export function calculateGenericTicks (
   min: number,
   max: number
@@ -346,13 +377,14 @@ export function renderLine(
     .line<TimeseriesPoint>()
     .x(d => xScale(d.timestamp))
     .y(d => yScale(d.value));
-  parentGroupElement
+  const lineSelection = parentGroupElement
     .append('path')
     .classed('segment-line', true)
     .attr('d', () => line(points))
     .style('fill', 'none')
     .style('stroke', color || DEFAULT_LINE_COLOR)
     .style('stroke-width', width || DEFAULT_LINE_WIDTH);
+  return lineSelection;
 }
 
 

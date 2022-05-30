@@ -1,8 +1,44 @@
 const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
+const requestAsPromise = rootRequire('/util/request-as-promise');
 const domainProjectService = rootRequire('/services/domain-project-service');
+const { getFlowStatus, getFlowLogs } = rootRequire('services/external/prefect-queue-service');
 const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
+const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
 const Logger = rootRequire('/config/logger');
+
+const config = rootRequire('/config/yargs-wrapper');
+const shouldSyncDojo = config.dojoSync;
+const auth = rootRequire('/util/auth-util');
+const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
+
+const DOJO_ROOT_FIELDS = [
+  'description',
+  'category',
+  'domains',
+  'data_sensitivity',
+  'data_quality',
+  'tags'
+];
+
+const DOJO_PARAMETER_FIELDS = [
+  'display_name',
+  'description',
+  'unit',
+  'unit_description',
+  'type',
+  'data_type',
+  'choices',
+  'min',
+  'max'
+];
+
+const DOJO_OUTPUT_FIELDS = [
+  'display_name',
+  'description',
+  'unit',
+  'unit_description'
+];
 
 /**
  * Return datacubes that match the provided filter
@@ -49,6 +85,7 @@ const insertDatacube = async(metadata) => {
   // Allow deprecation of models while registering a new one. Field removed via `removeUnwantedData`
   const deprecatedIds = metadata.deprecatesIDs;
   metadata.type = metadata.type || 'model'; // Assume these are all models for now
+  metadata.is_hidden = false;
   metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
   processFilteredData(metadata);
   removeUnwantedData(metadata);
@@ -79,6 +116,13 @@ const insertDatacube = async(metadata) => {
 
   metadata.ontology_matches = _.sortedUniqBy(_.orderBy(ontologyMatches, ['name', 'score'], ['desc', 'desc']), 'name');
 
+  // Remove section specific ontologies
+  fields.forEach(field => {
+    field.forEach(variable => {
+      variable.ontologies = undefined;
+    });
+  });
+
   // a new datacube (model or indicator) is being added
   // ensure for each newly registered datacube a corresponding domain project
   await domainProjectService.updateDomainProjects(metadata);
@@ -102,15 +146,188 @@ const insertDatacube = async(metadata) => {
  */
 const updateDatacube = async(metadataDelta) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+  await updateDojoMetadata([metadataDelta]);
   return await connection.update([metadataDelta]);
 };
 
 /**
  * Update datacubes with the specified changes
  */
-const updateDatacubes = async(metadataDeltas) => {
+const updateDatacubes = async(metadataDeltas, notifyDojo = true) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+  if (notifyDojo) {
+    await updateDojoMetadata(metadataDeltas);
+  }
   return await connection.update(metadataDeltas, 'wait_for');
+};
+
+/**
+ * Send any relevant updates to the metadata to Dojo
+ *
+ * NOTE: If Dojo ever sends updates to Causemos something will need to be added to prevent infinite loops.
+ */
+const updateDojoMetadata = async(metadataDeltas) => {
+  // Don't update Dojo if the feature isn't enabled
+  if (!shouldSyncDojo) {
+    return;
+  }
+
+  const promises = metadataDeltas
+    // Filter out datacubes we know are indicators
+    .filter(delta => delta.type !== 'indicator' && (!delta.data_id || delta.data_id === delta.id))
+    .map(delta => {
+      const rootChanges = {};
+      let maintainer = {};
+      const parameters = {};
+      const outputs = {};
+      Object.keys(delta).forEach(field => {
+        if (field === 'maintainer') {
+          maintainer = delta.maintainer || {};
+        } else if (field === 'parameters') {
+          // create a param.name -> paramChanges map
+          delta.parameters.forEach(param => {
+            const paramChanges = {};
+            Object.keys(param).forEach(paramField => {
+              if (DOJO_PARAMETER_FIELDS.includes(paramField)) {
+                paramChanges[paramField] = param[paramField];
+              }
+            });
+            if (!_.isEmpty(paramChanges)) {
+              parameters[param.name] = paramChanges;
+            }
+          });
+        } else if (field === 'outputs') {
+          // create an output.name -> outputChanges map
+          delta.outputs.forEach(output => {
+            const outputChanges = {};
+            Object.keys(output).forEach(outputField => {
+              if (DOJO_OUTPUT_FIELDS.includes(outputField)) {
+                outputChanges[outputField] = output[outputField];
+              }
+            });
+            if (!_.isEmpty(outputChanges)) {
+              outputs[output.name] = outputChanges;
+            }
+          });
+        } else if (DOJO_ROOT_FIELDS.includes(field)) {
+          rootChanges[field] = delta[field];
+        }
+      });
+      return sendDojoUpdate(delta.id, rootChanges, maintainer, parameters, outputs);
+    });
+
+  await Promise.all(promises);
+};
+
+const sendDojoUpdate = async(id, changes, maintainer, parametersMap, outputsMap) => {
+  if (!id || (_.isEmpty(changes) && _.isEmpty(maintainer) && _.isEmpty(parametersMap) && _.isEmpty(outputsMap))) {
+    return;
+  }
+
+  // get latest from Dojo
+  let dojoModel;
+  try {
+    dojoModel = await requestAsPromise({
+      method: 'GET',
+      url: process.env.DOJO_URL + '/models/' + id,
+      headers: {
+        'Authorization': basicAuthToken,
+        'Content-type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+
+    // This is currently returning strings rather than JSON
+    if (_.isString(dojoModel)) {
+      dojoModel = JSON.parse(dojoModel);
+    }
+
+    if (!_.isObject(dojoModel) || _.isEmpty(dojoModel)) {
+      return;
+    }
+  } catch (err) {
+    Logger.info(`No model in Dojo found for id ${id}`);
+    return;
+  }
+
+  // construct payload
+  const payload = changes;
+
+  // overwrite any changed maintainer fields
+  if (!_.isEmpty(maintainer)) {
+    payload.maintainer = {
+      ...dojoModel.maintainer,
+      ...maintainer
+    };
+  }
+  // apply all param and output changes matching by name
+  if (!_.isEmpty(parametersMap) && dojoModel.parameters) {
+    payload.parameters = dojoModel.parameters.map(param =>
+      Object.assign(param, parametersMap[param.name] || {}));
+  }
+  if (!_.isEmpty(outputsMap) && dojoModel.outputs) {
+    payload.outputs = dojoModel.outputs.map(output =>
+      Object.assign(output, outputsMap[output.name] || {}));
+  }
+
+  // send payload
+  try {
+    Logger.info(`Sending model patch request to Dojo for ${id}`);
+    await requestAsPromise({
+      method: 'PATCH',
+      url: process.env.DOJO_URL + '/models/' + id,
+      headers: {
+        'Authorization': basicAuthToken,
+        'Content-type': 'application/json',
+        'Accept': 'application/json'
+      },
+      json: payload
+    });
+  } catch (err) {
+    Logger.error('Error patching model in Dojo ');
+    Logger.error(JSON.stringify(err));
+  }
+};
+
+/**
+ * Generate sparkline data for the provided datacubes
+ */
+const generateSparklines = async(datacubes) => {
+  const datacubeMap = {};
+  datacubes.forEach(datacube => {
+    datacubeMap[datacube.id] = {
+      datacube,
+      params: {
+        key: datacube.id,
+        data_id: datacube.dataId,
+        run_id: datacube.runId,
+        feature: datacube.feature,
+        resolution: datacube.resolution,
+        temporal_agg: datacube.temporalAgg,
+        spatial_agg: datacube.spatialAgg
+      }
+    };
+  });
+  const bulkTimeseries = await getBulkTimeseries(Object.values(datacubeMap).map(d => d.params));
+
+  const datacubeDeltas = bulkTimeseries.map(keyedTimeseries => {
+    const {
+      resolution,
+      temporalAgg,
+      rawResolution,
+      finalRawTimestamp
+    } = datacubeMap[keyedTimeseries.key].datacube;
+
+    const points = correctIncompleteTimeseries(keyedTimeseries.timeseries, rawResolution, resolution, temporalAgg, new Date(finalRawTimestamp));
+    const sparkline = points.map(point => point.value);
+
+    return {
+      id: keyedTimeseries.key,
+      sparkline
+    };
+  });
+
+  return await updateDatacubes(datacubeDeltas);
 };
 
 /**
@@ -180,6 +397,98 @@ const searchFields = async (searchField, queryString) => {
   return matchedTerms;
 };
 
+const getTimeseries = async (dataId, runId, feature, resolution, temporalAgg, spatialAgg, region = null) => {
+  Logger.info(`Get timeseries data from wm-go: ${dataId} ${feature}`);
+
+  const options = {
+    method: 'GET',
+    url: process.env.WM_GO_URL + '/maas/output/timeseries' +
+      `?data_id=${encodeURI(dataId)}&run_id=${encodeURI(runId)}&feature=${encodeURI(feature)}` +
+      `&resolution=${resolution}&temporal_agg=${temporalAgg}&spatial_agg=${spatialAgg}` +
+      // optional
+      (region && !_.isEmpty(region) ? `&region_id=${encodeURI(region)}` : ''),
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {}
+  };
+  const response = await requestAsPromise(options);
+  return response;
+};
+
+const getBulkTimeseries = async (timeseriesParams) => {
+  Logger.info(`Get ${timeseriesParams.length} timeseries in bulk from wm-go for`);
+
+  const options = {
+    method: 'POST',
+    url: process.env.WM_GO_URL + '/maas/output/bulk-timeseries/generic',
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {
+      timeseries_params: timeseriesParams
+    }
+  };
+  const response = await requestAsPromise(options);
+  return response;
+};
+
+/**
+ * Get the logs of a datacube post process job. Use the flowId if provided, otherwise
+ * get the flowId from ES using the indicatorId.
+ *
+ * @param {string} indicatorId - indicator id
+ * @param {string} flowId - optional flow id in lieu of indicator id
+ */
+const getJobLogs = async (indicatorId, flowId = undefined) => {
+  Logger.info(`Get logs for ${flowId ? 'flow id' : 'indicator id'} ${flowId || indicatorId}`);
+
+  if (!flowId) {
+    flowId = await _getFlowIdForIndicator(indicatorId);
+    if (!flowId) {
+      Logger.error(`No indicator with id ${indicatorId}`);
+      return;
+    }
+  }
+
+  return await getFlowLogs(flowId);
+};
+
+/**
+ * Get the status of a prefect flow. Use the flowId if provided, otherwise
+ * get the flowId from ES using the indicatorId.
+ *
+ * @param {string} indicatorId - indicator id
+ * @param {string} flowId - optional flow id in lieu of indicator id
+ */
+const getJobStatus = async (indicatorId, flowId = undefined) => {
+  Logger.info(`Get job status for ${flowId ? 'flow id' : 'run id'} ${flowId || indicatorId}`);
+
+  if (!flowId) {
+    flowId = await _getFlowIdForIndicator(indicatorId);
+    if (!flowId) {
+      Logger.error(`No indicator with id ${indicatorId}`);
+      return;
+    }
+  }
+
+  return await getFlowStatus(flowId);
+};
+
+const _getFlowIdForIndicator = async (indicatorId) => {
+  const indicators = await getDatacubes({
+    clauses: [
+      { field: 'id', operand: 'or', isNot: false, values: [indicatorId] }
+    ]
+  }, { size: 1, includes: ['id', 'flow_id'] });
+  if (indicators.length === 0) {
+    return undefined;
+  }
+  return _.get(indicators[0], 'flow_id');
+};
+
 
 module.exports = {
   getDatacubes,
@@ -189,9 +498,15 @@ module.exports = {
   insertDatacube,
   updateDatacube,
   updateDatacubes,
+  generateSparklines,
   deprecateDatacubes,
 
   facets,
-  searchFields
+  searchFields,
+
+  getJobLogs,
+  getJobStatus,
+
+  getTimeseries
 };
 

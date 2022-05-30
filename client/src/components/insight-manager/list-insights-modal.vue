@@ -8,42 +8,32 @@
     </full-screen-modal-header>
 
     <div class="body flex">
-      <analytical-questions-panel />
-
+      <div class="checklist">
+        <list-analytical-questions-pane
+          :show-checklist-title="true"
+          :can-click-checklist-items="true"
+          :insights-by-section="insightsBySection"
+          @item-click="reviewChecklist"
+          @update-section-title="updateSectionTitle"
+          @add-section="addSection"
+          @delete-section="deleteSection"
+          @move-section-above-section="moveSectionAboveSection"
+          @add-insight-to-section="addInsightToSection"
+          @remove-insight-from-section="removeInsightFromSection"
+        >
+          <button
+            class="btn btn-primary btn-call-for-action review-button"
+            :disabled="insightsBySection.length === 0"
+            @click="() => reviewChecklist(null, null)"
+          >
+            <i class="fa fa-fw fa-desktop" />
+            Review
+          </button>
+        </list-analytical-questions-pane>
+      </div>
       <!-- body -->
       <div class="body-main-content flex-col">
-
         <div class="tab-controls">
-          <radio-button-group
-            :buttons="VIEW_OPTIONS"
-            :selected-button-value="activeTabId"
-            @button-clicked="switchTab"
-          />
-          <div class="export">
-            <radio-button-group
-              :buttons="exportOptions"
-              :selected-button-value="activeExportOption"
-              @button-clicked="toggleExport"
-            />
-            <span> as </span>
-            <button
-              class="btn btn-sm btn-default"
-              @click="() => exportInsights('Powerpoint')"
-            >
-              PowerPoint
-            </button>
-            <button
-              class="btn btn-sm btn-default"
-              @click="() => exportInsights('Word')"
-            >
-              Word
-            </button>
-          </div>
-        </div>
-        <div
-          v-if="activeTabId === VIEW_OPTIONS[0].value"
-          class="cards"
-        >
           <input
             v-model="search"
             v-focus
@@ -51,22 +41,40 @@
             class="search form-control"
             placeholder="Search insights"
           >
-          <div
-            v-if="searchedInsights.length > 0"
-            class="pane-content"
+          <radio-button-group
+            class="export-options"
+            :buttons="exportOptions"
+            :selected-button-value="activeExportOption"
+            @button-clicked="toggleExport"
+          />
+          as
+          <button
+            class="btn btn-sm btn-default"
+            @click="() => exportInsights('Powerpoint')"
           >
+            PowerPoint
+          </button>
+          <button
+            class="btn btn-sm btn-default"
+            @click="() => exportInsights('Word')"
+          >
+            Word
+          </button>
+        </div>
+        <div class="cards">
+          <div v-if="searchedInsights.length > 0" class="pane-content">
             <insight-card
               v-for="insight in searchedInsights"
-              :active-insight="activeInsight"
+              :active-insight="activeInsightId"
               :card-mode="true"
-              :curated="isCuratedInsight(insight.id)"
+              :curated="isCuratedInsight(insight.id as string)"
               :key="insight.id"
               :insight="insight"
               @remove-insight="removeInsight(insight)"
               @edit-insight="editInsight(insight)"
-              @open-editor="openEditor(insight.id)"
+              @open-editor="openEditor(insight.id as string)"
               @select-insight="reviewInsight(insight)"
-              @update-curation="updateCuration(insight.id)"
+              @update-curation="updateCuration(insight.id as string)"
               draggable='true'
               @dragstart="startDrag($event, insight)"
               @dragend="dragEnd($event)"
@@ -78,123 +86,143 @@
             :message="messageNoData"
           />
         </div>
-
-        <div
-          v-else-if="activeTabId === VIEW_OPTIONS[1].value"
-          class="list"
-        >
-          <div
-            v-if="questions.length > 0"
-            class="pane-content"
-          >
-            <div
-              v-for="questionItem in questions"
-              :key="questionItem.id"
-              class="list-question-group">
-              <h3 class="analysis-question">{{ questionItem.question }}</h3>
-              <message-display
-                class="pane-content"
-                v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
-                :message="'No insights assigned to this question.'"
-              />
-              <insight-card
-                v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
-                :key="insight.id"
-                :insight="insight"
-                :active-insight="activeInsight"
-                :show-description="true"
-                :show-question="false"
-                @remove-insight="removeInsight(insight)"
-                @open-editor="openEditor(insight.id)"
-                @select-insight="reviewInsight(insight)"
-                @edit-insight="editInsight(insight)"
-              />
-            </div>
-          </div>
-          <message-display
-            class="pane-content"
-            v-else
-            :message="'Add a new question to see a list of insights, organized by question.'"
-          />
-        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import _ from 'lodash';
 import { mapGetters, mapActions, useStore } from 'vuex';
 
 import { INSIGHTS } from '@/utils/messages-util';
 
-import InsightCard from '@/components/insight-manager/insight-card';
-import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
+import InsightCard from '@/components/insight-manager/insight-card.vue';
+import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 
-import { computed } from 'vue';
+import { ref, watch, computed, defineComponent } from 'vue';
 
-import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
+import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
 import useInsightsData from '@/services/composables/useInsightsData';
-import MessageDisplay from '@/components/widgets/message-display';
+import useToaster from '@/services/composables/useToaster';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
-
-const VIEW_OPTIONS = [
-  {
-    value: 'cards',
-    label: 'Cards'
-  }, {
-    value: 'list',
-    label: 'List'
-  }
-];
+import { fetchPartialInsights } from '@/services/insight-service';
+import {
+  AnalyticalQuestion,
+  FullInsight,
+  SectionWithInsights
+} from '@/types/Insight';
+import useQuestionsData from '@/services/composables/useQuestionsData';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
   questions: 'questions'
 };
 
-export default {
+// const NOT_READY_ERROR = 'Insights are still loading. Try again later.';
+
+export default defineComponent({
   name: 'ListInsightsModal',
   components: {
     FullScreenModalHeader,
     InsightCard,
     MessageDisplay,
-    AnalyticalQuestionsPanel,
+    ListAnalyticalQuestionsPane,
     RadioButtonGroup
   },
   data: () => ({
     activeExportOption: EXPORT_OPTIONS.insights,
-    activeInsight: null,
-    activeTabId: VIEW_OPTIONS[0].value,
-    curatedInsights: [],
+    activeInsightId: null as string | null,
+    curatedInsightIds: [] as string[],
     messageNoData: INSIGHTS.NO_DATA,
-    search: '',
-    VIEW_OPTIONS
+    search: ''
   }),
   setup() {
     const store = useStore();
-    const questions = computed(() => store.getters['analysisChecklist/questions']);
+    const toaster = useToaster();
+    // prevent insight fetches if the gallery is closed
+    const preventFetches = computed(() => !store.getters['insightPanel/isPanelOpen']);
+    const { insights, reFetchInsights, fetchImagesForInsights } = useInsightsData(preventFetches);
+    const fullInsights = ref<FullInsight[]>([]);
 
-    const { insights: listInsights, getInsightsByIDs, reFetchInsights } = useInsightsData();
+    watch([insights], () => {
+      // first fill it without images, once the downloads finish, fill them in
+      // use '' to represent that the thumbnail is loading
+      fullInsights.value = insights.value.map(insight => ({ ...insight, image: '' }));
+      (async () => {
+        // Insight IDs should only be undefined before they've been saved on
+        //  the backend, so it is safe to assert the string[] type here.
+        const ids = insights.value.map(insight => insight.id) as string[];
+        // First, get just the thumbnails, set annotation_state to null to indicate it's still coming
+        const images = await fetchImagesForInsights(ids);
+        // If insights changed, abort
+        if (_.xor(ids, insights.value.map(insight => insight.id)).length > 0) {
+          return;
+        }
+        // FIXME: FullInsight.annotation_state should never be null.
+        // Either this should be `undefined` or more likely we should update
+        //  the type to be optionally `null` instead of `undefined`.
+        // @ts-ignore
+        fullInsights.value = images.filter(i => ids.includes(i.id))
+          .map(i => ({ ...i, annotation_state: null }));
+      })();
+    });
+
+    const {
+      questionsList,
+      updateSectionTitle,
+      addSection,
+      deleteSection,
+      moveSectionAboveSection,
+      addInsightToSection,
+      removeInsightFromSection
+    } = useQuestionsData();
+    const insightsBySection = computed<SectionWithInsights[]>(() => {
+      // FIXME: there's an edge case where insightsBySection is out of date when
+      //  assigning an insight to a section, since insightsBySection is
+      //  recalculated as soon as questionsList is updated, but fullInsights
+      //  haven't been refetched yet, or updated so the linked_insights.
+      //  list is correct.
+      return questionsList.value.map(section => {
+        // FIXME: optimize by using maps
+        const _insights = section.linked_insights
+          .map(insightId =>
+            fullInsights.value.find(insight => insight.id === insightId)
+          )
+          .filter(insight => insight !== undefined);
+        return {
+          section,
+          insights: _insights
+        } as SectionWithInsights;
+      });
+    });
 
     return {
-      listInsights,
-      questions,
-      getInsightsByIDs,
+      fullInsights,
       reFetchInsights,
-      store
+      updateSectionTitle,
+      addSection,
+      deleteSection,
+      moveSectionAboveSection,
+      addInsightToSection,
+      removeInsightFromSection,
+      insightsBySection,
+      questionsList,
+      store,
+      toaster
     };
   },
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countInsights: 'insightPanel/countInsights',
       projectId: 'app/project'
     }),
     exportOptions() {
       const insightLabel = `Export ${this.insightsToExport.length}` +
-      ` ${this.curatedInsights.length > 0 ? 'selected' : ''}` +
+      ` ${this.curatedInsightIds.length > 0 ? 'selected' : ''}` +
       ` insight${this.insightsToExport.length !== 1 ? 's' : ''}`;
       return [{
         value: EXPORT_OPTIONS.insights,
@@ -204,48 +232,48 @@ export default {
         label: 'Export All Questions & Insights'
       }];
     },
-    searchedInsights() {
+    searchedInsights(): FullInsight[] {
       if (this.search.length > 0) {
-        const result = this.listInsights.filter((insight) => {
+        const result = this.fullInsights.filter((insight) => {
           return insight.name.toLowerCase().includes(this.search.toLowerCase());
         });
         return result;
       } else {
-        return this.listInsights;
+        return this.fullInsights;
       }
     },
-    selectedInsights() {
-      if (this.curatedInsights.length > 0) {
-        const curatedSet = this.listInsights.filter(i => this.curatedInsights.find(e => e === i.id));
+    selectedInsights(): FullInsight[] {
+      if (this.curatedInsightIds.length > 0) {
+        const curatedSet = this.fullInsights.filter(i => this.curatedInsightIds.find(e => e === i.id));
         return curatedSet;
       } else {
-        return this.listInsights;
+        return this.fullInsights;
       }
     },
     insightsToExport() {
-      if (this.curatedInsights.length > 0) {
-        return this.curatedInsights;
+      if (this.curatedInsightIds.length > 0) {
+        return this.curatedInsightIds;
       }
       return this.searchedInsights;
     }
   },
-  mounted() {
-    this.curatedInsights = [];
-  },
   methods: {
     ...mapActions({
+      enableOverlay: 'app/enableOverlay',
+      disableOverlay: 'app/disableOverlay',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCountInsights: 'insightPanel/setCountInsights',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightList: 'insightPanel/setInsightList',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
+      setInsightsBySection: 'insightPanel/setInsightsBySection',
+      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
+      setPositionInReview: 'insightPanel/setPositionInReview'
     }),
     closeInsightPanel() {
       this.hideInsightPanel();
-      this.activeInsight = null;
+      this.activeInsightId = null;
     },
-    startDrag(evt, insight) {
+    // FIXME: add type
+    startDrag(evt: any, insight: FullInsight) {
       evt.currentTarget.style.border = '3px dashed black';
 
       evt.dataTransfer.dropEffect = 'move';
@@ -254,9 +282,10 @@ export default {
 
       const img = document.createElement('img');
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      // Assert not null
+      const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
       // Setting img src
-      img.src = insight.thumbnail;
+      img.src = insight.image;
 
       // Drawing to canvas with a smaller size
       canvas.width = img.width * 0.2;
@@ -269,96 +298,158 @@ export default {
       // Setting drag image with drawn canvas image
       evt.dataTransfer.setDragImage(canvas, 0, 0);
     },
-    dragEnd(evt) {
+    // FIXME: add type
+    dragEnd(evt: any) {
       const matches = document.querySelectorAll('canvas');
       matches.forEach(c => c.remove());
 
       evt.currentTarget.style.border = 'none';
     },
-    editInsight(insight) {
+    editInsight(insight: FullInsight) {
       this.setUpdatedInsight(insight);
-      this.setInsightList(this.searchedInsights);
+      const dummySection = InsightUtil.createEmptyChecklistSection();
+      this.setPositionInReview({
+        sectionId: dummySection.id,
+        insightId: insight.id
+      });
+      this.setInsightsBySection([{
+        section: dummySection,
+        insights: this.searchedInsights
+      }]);
       // open the preview in the edit mode
       this.setCurrentPane('review-edit-insight');
     },
-    async removeInsight(insight) {
+    async removeInsight(insight: FullInsight) {
       // are removing a public insight?
       if (insight.visibility === 'public' && Array.isArray(insight.context_id) && insight.context_id.length > 0) {
         // is this the last public insight for the relevant dataube?
         //  if so, unpublish the model datacube
         const datacubeId = insight.context_id[0];
-        const publicInsights = await InsightUtil.getPublicInsights(datacubeId, this.projectId);
-        if (publicInsights.length === 1) {
+        // This component doesn't have access to `this.project`, the following
+        //  line would have thrown an error if it was reached.
+        // Is this code still used? If so, we need to add a getter for `project`
+        const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, ''); // this.project);
+        if (publicInsightCount === 1) {
           await unpublishDatacube(datacubeId, this.projectId);
           this.setRefreshDatacubes(true);
         }
       }
 
-      const id = insight.id;
+      const id = insight.id as string;
       // remove the insight from the server
-      InsightUtil.removeInsight(id, this.store);
+      await InsightUtil.removeInsight(id, this.store);
       this.removeCuration(id);
       // refresh the latest list from the server
       this.reFetchInsights();
     },
-    exportInsights(item) {
-      const props = [];
+    async exportInsights(outputFormat: string) {
+      let insights: FullInsight[] = [];
+      let questions: AnalyticalQuestion[] | undefined;
+
+      const imageMap = new Map();
+      const ids = this.activeExportOption === EXPORT_OPTIONS.questions
+        ? this.fullInsights.map(d => d.id)
+        : this.selectedInsights.map(d => d.id);
+
+      this.enableOverlay('Collecting insights data');
+      const images = await fetchPartialInsights({ id: ids } as any, ['id', 'image']);
+      images.forEach(d => {
+        imageMap.set(d.id, d.image);
+      });
+      this.disableOverlay();
+
       if (this.activeExportOption === EXPORT_OPTIONS.questions) {
-        props.push(this.listInsights, this.projectMetadata, this.questions);
+        this.fullInsights.forEach(insight => {
+          insight.image = imageMap.get(insight.id);
+        });
+        insights = this.fullInsights;
+        questions = this.questionsList;
       } else {
-        props.push(this.selectedInsights, this.projectMetadata);
+        this.selectedInsights.forEach(insight => {
+          insight.image = imageMap.get(insight.id);
+        });
+        insights = this.selectedInsights;
       }
-      switch (item) {
+      switch (outputFormat) {
         case 'Word':
-          InsightUtil.exportDOCX(...props);
+          InsightUtil.exportDOCX(insights, this.projectMetadata, questions);
           break;
         case 'Powerpoint':
-          InsightUtil.exportPPTX(...props);
+          InsightUtil.exportPPTX(insights, this.projectMetadata, questions);
           break;
         default:
           break;
       }
     },
-    isCuratedInsight(id) {
-      return this.curatedInsights.reduce((res, ci) => {
+    isCuratedInsight(id: string) {
+      return this.curatedInsightIds.reduce((res, ci) => {
         res = res || ci === id;
         return res;
       }, false);
     },
-    openEditor(id) {
-      if (id === this.activeInsight) {
-        this.activeInsight = null;
+    openEditor(id: string) {
+      if (id === this.activeInsightId) {
+        this.activeInsightId = null;
         return;
       }
-      this.activeInsight = id;
+      this.activeInsightId = id;
     },
-    removeCuration(id) {
-      this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
+    removeCuration(id: string) {
+      this.curatedInsightIds = this.curatedInsightIds.filter((ci) => ci !== id);
     },
-    reviewInsight(insight) {
+    reviewInsight(insight: FullInsight) {
       // open review modal (i.e., insight gallery view)
       this.setUpdatedInsight(insight);
-      this.setInsightList(this.searchedInsights);
+      const dummySection = InsightUtil.createEmptyChecklistSection();
+      this.setPositionInReview({
+        sectionId: dummySection.id,
+        insightId: insight.id
+      });
+      this.setInsightsBySection([{
+        section: dummySection,
+        insights: this.searchedInsights
+      }]);
       this.setCurrentPane('review-insight');
     },
-    switchTab(id) {
-      this.activeInsight = null;
-      this.activeTabId = id;
+    reviewChecklist(
+      section: AnalyticalQuestion | null,
+      insightId: string | null
+    ) {
+      if (this.insightsBySection.length < 1) return;
+      // If `section` is `null`, go to the first item in the checklist.
+      const _section = section ?? this.insightsBySection[0].section;
+      const _sectionId = _section.id as string;
+      // If `insightId` is `null`, goes to the first insight in `section`.
+      // Else, goes to the insight with ID `insightId` within `section`.
+      const firstInsight = _section.linked_insights.length > 0
+        ? _section.linked_insights[0]
+        : null;
+      const _insightId = insightId ?? firstInsight;
 
-      // FIXME: reload insights since questions most recent question stuff may not be up to date
+      const insightOrSection = _insightId === null
+        ? _section
+        : this.fullInsights.find(insight => insight.id === _insightId);
+
+      this.setUpdatedInsight(insightOrSection);
+      this.setPositionInReview({
+        sectionId: _sectionId,
+        insightId: _insightId
+      });
+      this.setInsightsBySection(this.insightsBySection);
+      this.setCurrentPane('review-insight');
     },
-    toggleExport(id) {
+    toggleExport(id: string) {
       this.activeExportOption = id;
     },
-    updateCuration(id) {
+    updateCuration(id: string) {
       if (this.isCuratedInsight(id)) {
         this.removeCuration(id);
       } else {
-        this.curatedInsights.push(id);
+        this.curatedInsightIds.push(id);
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
@@ -375,13 +466,17 @@ export default {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5em;
 }
 
-.export {
-  display: flex;
-  gap: 5px;
-  align-items: center;
+.export-options {
+  flex-shrink: 0;
+}
+
+.checklist {
+  margin: 10px;
+  overflow: auto;
+  width: 380px;
 }
 
 .cards {

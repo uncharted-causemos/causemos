@@ -57,11 +57,6 @@
           @item-selected="setTemporalAggregationSelection"
         />
       </div>
-      <div class="config-sub-group">
-        <a class="add-second-variable">
-          <i class="fa fa-plus-circle"></i> Add a second variable
-        </a>
-      </div>
     </div>
 
     <div class="config-group">
@@ -104,7 +99,7 @@
           :is-dropdown-left-aligned="true"
           :items="dataLayerTransparencyOptions"
           :selected-item="selectedDataLayerTransparency"
-          :inner-button-label="'Transparency'"
+          :inner-button-label="'Opacity'"
           @item-selected="setTransparencySelection"
         />
       </div>
@@ -172,9 +167,13 @@ import { AggregationOption, TemporalResolutionOption, DataTransform } from '@/ty
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
-import { mapActions, useStore } from 'vuex';
+import { useStore } from 'vuex';
 import { COLOR_SCHEME, ColorScaleType, COLOR, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
 import { getOutputs } from '@/utils/datacube-util';
+import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import { capitalize } from '@/utils/string-util';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.RDYLBU_7, COLOR.OTHER]);
 const TRANSFORMS: DropdownItem[] = [
@@ -225,7 +224,7 @@ export default defineComponent({
     },
     selectedDataLayerTransparency: {
       type: String,
-      default: DATA_LAYER_TRANSPARENCY['50%']
+      default: DATA_LAYER_TRANSPARENCY['100%']
     },
     colorSchemeReversed: {
       type: Boolean,
@@ -250,6 +249,10 @@ export default defineComponent({
     metadata: {
       type: Object as PropType<Model | null>,
       default: null
+    },
+    itemId: {
+      type: String,
+      required: true
     }
   },
   emits: [
@@ -268,15 +271,16 @@ export default defineComponent({
   setup(props, { emit }) {
     const {
       metadata,
+      itemId,
       resolutionOptions,
       selectedResolution,
       selectedTransform,
       selectedDataLayer
     } = toRefs(props);
 
-    const capitalize = (str: string) => {
-      return str[0].toUpperCase() + str.slice(1);
-    };
+    const store = useStore();
+    const route = useRoute();
+
     const resolutionGroupButtons = ref(Object.values(TemporalResolutionOption)
       .filter(val => val.length > 0)
       .map(val => ({ label: capitalize(val), value: val }))
@@ -314,9 +318,7 @@ export default defineComponent({
     const colorSchemes = ref(Object.keys(COLOR_SCHEMES)
       .map(val => ({ displayName: capitalize(val.toLowerCase()), value: val })));
 
-    const store = useStore();
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined && datacubeCurrentOutputsMap.value[metadata.value?.id] ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
     const modelOutputs = computed<DatacubeFeature[]>(() => {
       return metadata.value ? getOutputs(metadata.value) : [];
@@ -365,7 +367,9 @@ export default defineComponent({
       selectedUnitOption,
       TemporalResolutionOption,
       AggregationOption,
-      setResolutionSelection
+      setResolutionSelection,
+      store,
+      route
     };
   },
   watch: {
@@ -401,9 +405,6 @@ export default defineComponent({
     this.renderColorScale();
   },
   methods: {
-    ...mapActions({
-      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
-    }),
     updateNumberOfColorBins() {
       const newVal = parseFloat(
         (this.$refs['number-of-color-bins-slider'] as HTMLInputElement).value
@@ -416,10 +417,7 @@ export default defineComponent({
     setOutputVariable(variable: string) {
       const selectedOutputIndex = this.modelOutputsDisplayNames.indexOf(variable);
       // update the store so that other components can sync
-      const defaultFeature = {
-        [this.metadata?.id ?? '']: selectedOutputIndex
-      };
-      this.setDatacubeCurrentOutputsMap(defaultFeature);
+      updateDatacubesOutputsMap(this.itemId, this.store, this.route, selectedOutputIndex);
     },
     setSpatialAggregationSelection(aggregation: string) {
       this.$emit('set-spatial-aggregation-selection', aggregation);

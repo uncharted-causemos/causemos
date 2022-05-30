@@ -22,12 +22,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
-import modelService from '@/services/model-service';
-import { CAG } from '@/utils/messages-util';
-import useToaster from '@/services/composables/useToaster';
 
 export default defineComponent({
-  name: 'DuplicateModel',
+  name: 'DuplicateModal',
   components: {
     ModalConfirmation
   },
@@ -39,30 +36,15 @@ export default defineComponent({
     currentName: {
       type: String,
       default: ''
-    },
-    idToDuplicate: {
-      type: String,
-      default: ''
     }
   },
-  emits: ['success', 'fail', 'cancel'],
+  emits: ['confirm', 'cancel'],
   data: () => ({
     newNameInput: ''
   }),
-  setup() {
-    return {
-      toaster: useToaster()
-    };
-  },
   methods: {
     onConfirm() {
-      modelService.duplicateModel(this.idToDuplicate, this.newNameInput || this.currentName).then((result) => {
-        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
-        this.$emit('success', this.newNameInput || this.currentName, result.id);
-      }).catch(() => {
-        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', false);
-        this.$emit('fail', this.newNameInput || this.currentName);
-      });
+      this.$emit('confirm', this.newNameInput || this.currentName);
     },
     onCancel() {
       this.newNameInput = '';

@@ -9,19 +9,8 @@
         style="height: 2.5rem;"
         @keydown="onKeyDown"
       >
-      <button
-        v-if="userInput.length < 1"
-        class="mx-2"
-        style="border: none; background-color: white;"
-        @click="$emit('show-custom-concept')"
-      >
-        <span style="color: #255DCC; font-size: 1.5rem;">
-          <i class="fa fa-plus-circle"></i>
-        </span>
-      </button>
     </div>
     <dropdown-control
-      v-if="userInput !== ''"
       class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
         <div class="tab-row">
@@ -38,9 +27,10 @@
           />
         </div>
 
+
         <!-- datacubes -->
         <div
-          v-if="activeTab === 'datacubes'"
+          v-if="activeTab === 'datacubes' && datacubeSuggestions.length > 0"
           style="display: flex; flex-direction: row">
           <div class="left-column">
             <div
@@ -74,7 +64,7 @@
 
         <!-- concepts -->
         <div
-          v-if="activeTab === 'concepts'"
+          v-if="activeTab === 'concepts' && conceptSuggestions.length > 0"
           style="display: flex; flex-direction: row">
           <div class="left-column">
             <div
@@ -98,7 +88,10 @@
                 :key="idx">
                 <strong>{{ ontologyFormatter(member.label) }} </strong>
                 <br>
-                <div v-if="member.definition !== ''">
+                <div>
+                  <small>{{ member.label }}</small>
+                </div>
+                <div v-if="member.definition && member.definition !== ''">
                   <small>Definition: {{ member.definition }} </small>
                 </div>
                 <div v-if="member.examples">
@@ -115,6 +108,25 @@
             </div>
           </div>
         </div>
+
+        <div
+          v-if="activeTab === 'concepts' && conceptSuggestions.length > 0"
+          class="tab-row" style="border-top: 1px solid #ddd; border-bottom: 0; margin: 2px; padding: 2px">
+          Showing top {{ conceptSuggestions.length }} matches&nbsp;&nbsp;
+          <button class="btn btn-primrary btn-xs" @click="openExplorer">
+            Explore Knowledge Base
+          </button>
+        </div>
+
+        <!-- Empty -->
+        <div v-if="showCustomConceptDisplay" class="new-concept-section">
+          <div> No matches. Try searching something else or create a custom concept</div>
+          <button class="btn btn-primary"
+            @click="$emit('show-custom-concept')">
+            Create custom concept
+          </button>
+        </div>
+
       </template>
     </dropdown-control>
   </div>
@@ -124,7 +136,6 @@
 import _ from 'lodash';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
 import { useStore } from 'vuex';
-import API from '@/api/api';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import dateFormatter from '@/formatters/date-formatter';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -137,31 +148,19 @@ import { TimeseriesPoint } from '@/types/Timeseries';
 
 import projectService from '@/services/project-service';
 import datacubeService from '@/services/new-datacube-service';
+import numberFormatter from '@/formatters/number-formatter';
 
 import { AggregationOption, TemporalResolution, TemporalResolutionOption, TimeScale } from '@/types/Enums';
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
+import { logHistoryEntry } from '@/services/model-service';
+import { getTimeseries } from '@/services/outputdata-service';
+import filtersUtil from '@/utils/filters-util';
 
-const CONCEPT_SUGGESTION_COUNT = 10;
+const CONCEPT_SUGGESTION_COUNT = 30;
 
 const getRunId = async (id: string): Promise<ModelRun> => {
   const run = await datacubeService.getDefaultModelRunMetadata(id);
   return run;
-};
-
-const getTimeseries = async (dataId: string, runId: string, feature: string,
-  temporalRes: TemporalResolutionOption, agg: AggregationOption): Promise<TimeseriesPoint[]> => {
-  const result = await API.get('maas/output/timeseries', {
-    params: {
-      data_id: dataId,
-      run_id: runId,
-      feature: feature,
-      resolution: temporalRes,
-      temporal_agg: agg,
-      spatial_agg: agg,
-      region_id: ''
-    }
-  });
-  return result.data as TimeseriesPoint[];
 };
 
 export default defineComponent({
@@ -200,6 +199,7 @@ export default defineComponent({
     const mouseOverIndex = ref(-1);
     const activeTab = ref('concepts');
     const conceptSuggestions = ref([]) as Ref<any[]>;
+    const conceptEstimatedHits = ref(0);
     const datacubeSuggestions = ref([]) as Ref<any[]>;
     const dropdownLeftOffset = ref(0);
     const dropdownTopOffset = ref(4); // prevent overlap with input box
@@ -210,6 +210,16 @@ export default defineComponent({
     const input = ref(null) as Ref<HTMLInputElement | null>;
     const newNodeTop = ref(null) as Ref<HTMLDivElement | null>;
     const newNodeContainer = ref(null) as Ref<HTMLDivElement | null>;
+
+    const showCustomConceptDisplay = computed(() => {
+      if (activeTab.value === 'concepts' && conceptSuggestions.value.length === 0) {
+        return true;
+      }
+      if (activeTab.value === 'datacubes' && datacubeSuggestions.value.length === 0) {
+        return true;
+      }
+      return false;
+    });
 
     const currentSuggestion = computed(() => {
       const idx = focusedSuggestionIndex.value;
@@ -224,6 +234,7 @@ export default defineComponent({
 
     const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
     const project = computed(() => store.getters['app/project']);
+    const currentCAG = computed(() => store.getters['app/currentCAG']);
 
     watch(userInput, _.debounce(async () => {
       if (_.isEmpty(userInput.value)) {
@@ -231,11 +242,14 @@ export default defineComponent({
         datacubeSuggestions.value = [];
       } else {
         let results: any = null;
-        results = await projectService.getConceptSuggestions(project.value, userInput.value);
-        conceptSuggestions.value = results.splice(0, CONCEPT_SUGGESTION_COUNT);
+        results = await projectService.getConceptSuggestions(project.value, userInput.value, true);
+        conceptSuggestions.value = results.result.splice(0, CONCEPT_SUGGESTION_COUNT);
+        conceptEstimatedHits.value = results.estimate;
 
         results = await datacubeService.getDatacubeSuggestions(userInput.value);
         datacubeSuggestions.value = results.splice(0, 5);
+
+        logHistoryEntry(currentCAG.value, 'search', userInput.value);
       }
     }, 300));
 
@@ -266,7 +280,16 @@ export default defineComponent({
         const periodEndDate = new Date(doc.period?.lte ?? 0);
         const agg = AggregationOption.Mean;
 
-        const result = await getTimeseries(doc.data_id, runId, doc.feature, temporalResolution.value, agg);
+        const result = (await getTimeseries({
+          modelId: doc.data_id,
+          runId,
+          outputVariable: doc.feature,
+          temporalResolution: temporalResolution.value,
+          temporalAggregation: agg,
+          spatialAggregation: agg,
+          regionId: ''
+        })).data as TimeseriesPoint[];
+
         const { points } = correctIncompleteTimeseries(result, rawResolution, temporalResolution.value, agg, periodEndDate);
 
         timeseries.value = points;
@@ -291,7 +314,9 @@ export default defineComponent({
       mouseOverIndex,
       activeTab,
       conceptSuggestions,
+      conceptEstimatedHits,
       datacubeSuggestions,
+      showCustomConceptDisplay,
       dropdownLeftOffset,
       dropdownTopOffset,
       timeseries,
@@ -299,13 +324,17 @@ export default defineComponent({
       temporalResolution,
 
       // Computed
+      currentCAG,
       currentSuggestion,
       ontologyConcepts,
       project,
 
       dateFormatter,
       ontologyFormatter: useOntologyFormatter(),
-      TemporalResolutionOption
+      TemporalResolutionOption,
+
+      // Fn
+      numberFormatter
     };
   },
   mounted() {
@@ -378,6 +407,7 @@ export default defineComponent({
         // FIXME: Need to find out what exactly we need, id or data_id, name or display_name ...
         this.$emit('datacube-selected', {
           id: doc.id,
+          data_id: doc.data_id,
           name: doc.display_name,
           unit: '',
           country: '',
@@ -387,7 +417,7 @@ export default defineComponent({
           spatialAggregation: 'mean',
           temporalAggregation: 'mean',
           temporalResolution: this.temporalResolution,
-          period: 12,
+          period: this.temporalResolution === TemporalResolutionOption.Month ? 12 : 1,
           timeseries: this.timeseries,
           // Filled in by server
           min: null,
@@ -419,30 +449,16 @@ export default defineComponent({
         }
       }
     },
-    getConceptSuggestions() {
-      const fetch = async () => {
-        if (_.isEmpty(this.userInput)) {
-          this.conceptSuggestions = [];
-        } else {
-          const conceptSuggestions = await projectService.getConceptSuggestions(this.project, this.userInput);
-          this.conceptSuggestions = conceptSuggestions.splice(0, CONCEPT_SUGGESTION_COUNT);
-        }
-      };
-      fetch();
-    },
-    getDatacubeSuggestions() {
-      const fetch = async () => {
-        if (_.isEmpty(this.userInput)) {
-          this.datacubeSuggestions = [];
-        } else {
-          const datacubeSuggestions = await datacubeService.getDatacubeSuggestions(this.userInput);
-          this.datacubeSuggestions = datacubeSuggestions.splice(0, 5);
-        }
-      };
-      return fetch();
-    },
     setActive(tab: string) {
       this.activeTab = tab;
+    },
+    openExplorer() {
+      const filters = filtersUtil.newFilters();
+      filtersUtil.setClause(filters, 'keyword', [this.userInput], 'or', false);
+      this.$router.push({
+        name: 'kbExplorer',
+        query: { cag: this.currentCAG, view: 'statements', filters: filters as any }
+      });
     }
   }
 });
@@ -528,6 +544,19 @@ export default defineComponent({
   border-left: 1px solid #DDD;
   height: 290px;
   overflow-y: scroll;
+}
+
+.new-concept-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 290px;
+  font-size: 1.5rem;
+
+  button {
+    margin-top: 10px;
+  }
 }
 
 </style>

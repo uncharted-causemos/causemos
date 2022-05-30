@@ -1,16 +1,12 @@
 <template>
-  <card
-    class="insight"
-    :class="{ 'card-mode': cardMode }"
-  >
-    <div class="insight-content">
-      <div
-        class="insight-thumbnail"
-        @click="selectInsight()"
-      >
+  <card class="insight" :class="{ 'card-mode': cardMode }">
+    <div class="insight-content" @click="selectInsight()">
+      <div class="insight-thumbnail">
         <img
+          v-if="insight.thumbnail"
           :src="insight.thumbnail"
           class="thumbnail">
+        <i v-else class="fa fa-spin fa-spinner" />
       </div>
       <div
         v-if="showDescription"
@@ -24,7 +20,8 @@
         <h5>{{ insight.name }}</h5>
       </div>
       <div class="insight-footer">
-        <div v-if="cardMode" class="insight-checkbox" @click="updateCuration()">
+        <!-- Stop propagation on click event to avoid opening insight -->
+        <div v-if="cardMode" class="insight-checkbox" @click.stop="updateCuration()">
           <label>
             <i
               class="fa fa-lg fa-fw"
@@ -37,11 +34,21 @@
         </div>
         <div class="insight-action" @click.stop="openEditor()">
           <i class="fa fa-ellipsis-h insight-header-btn" />
-          <insight-editor
+          <dropdown-control
             v-if="activeInsight === insight.id"
-            @edit="editInsight()"
-            @remove="removeInsight()"
-          />
+            class="insight-editor-dropdown"
+          >
+            <template #content>
+              <div class="dropdown-option" @click="editInsight">
+                <i class="fa fa-edit" />
+                Edit
+              </div>
+              <div class="dropdown-option" @click="removeInsight">
+                <i class="fa fa-trash" />
+                Delete
+              </div>
+            </template>
+          </dropdown-control>
         </div>
       </div>
     </div>
@@ -51,16 +58,16 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import InsightEditor from '@/components/insight-manager/insight-editor.vue';
 import Card from '@/components/widgets/card.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
+import DropdownControl from '../dropdown-control.vue';
 
 export default defineComponent({
   name: 'InsightCard',
   components: {
-    InsightEditor,
-    Card
+    Card,
+    DropdownControl
   },
   props: {
     activeInsight: {
@@ -165,5 +172,12 @@ export default defineComponent({
       }
     }
   }
+}
+
+.insight-editor-dropdown {
+  position: absolute;
+  right: 0px;
+  bottom: 32px;
+  width: fit-content;
 }
 </style>

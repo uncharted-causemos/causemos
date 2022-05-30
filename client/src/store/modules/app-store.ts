@@ -4,6 +4,7 @@ import { GetterTree, MutationTree, ActionTree } from 'vuex';
 interface AppState {
   overlayActivated: boolean;
   overlayMessage: string;
+  overlayMessageSecondary: string;
   overlayCancelFn: Function | null;
   updateToken: string;
   ontologyConcepts: Array<string>;
@@ -17,6 +18,7 @@ interface AppState {
 const state: AppState = {
   overlayActivated: false,
   overlayMessage: 'Loading...',
+  overlayMessageSecondary: 'Loading...',
   overlayCancelFn: null,
   updateToken: '',
   ontologyConcepts: [],
@@ -53,6 +55,7 @@ const getters: GetterTree<AppState, any> = {
   },
   overlayActivated: state => state.overlayActivated,
   overlayMessage: state => state.overlayMessage,
+  overlayMessageSecondary: state => state.overlayMessageSecondary,
   overlayCancelFn: state => state.overlayCancelFn,
   updateToken: state => state.updateToken,
   ontologyConcepts: state => state.ontologyConcepts,
@@ -77,6 +80,9 @@ const actions: ActionTree<AppState, any> = {
   },
   enableOverlay({ commit }, message) {
     commit('enableOverlay', message);
+  },
+  setOverlaySecondaryMessage({ commit }, message) {
+    commit('setOverlaySecondaryMessage', message);
   },
   disableOverlay({ commit }) {
     commit('disableOverlay');
@@ -113,9 +119,13 @@ const mutations: MutationTree<AppState> = {
   },
   disableOverlay(state) {
     state.overlayActivated = false;
+    state.overlayMessageSecondary = '';
   },
   setOverlayCancelFn(state, fn) {
     state.overlayCancelFn = fn;
+  },
+  setOverlaySecondaryMessage(state, message) {
+    state.overlayMessageSecondary = message;
   },
   setUpdateToken(state, updateToken) {
     state.updateToken = updateToken;

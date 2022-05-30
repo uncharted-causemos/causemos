@@ -1,5 +1,5 @@
 import { AdminRegionSets, BreakdownData } from '@/types/Datacubes';
-import { AdminLevel } from '@/types/Enums';
+import { AdminLevel, DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { RegionalAggregations } from '@/types/Outputdata';
 import _ from 'lodash';
 
@@ -58,4 +58,73 @@ export function filterRegionalLevelData(regionalData: BreakdownData | RegionalAg
   });
 
   return filteredRegionLevelData;
+}
+
+// Get the string representation of the selected region Ids of the current or above level
+export function stringifySelectedRegions(selection: AdminRegionSets, curAdminLevel: number) {
+  const selections = [selection.country, selection.admin1, selection.admin2, selection.admin3].slice(0, curAdminLevel + 1);
+  let result = '';
+  for (const s of selections.reverse()) {
+    const regions = Array.from(s);
+    result += regions.join('/');
+    if (result !== '') break;
+  }
+  if (result === '') {
+    result = 'All';
+  }
+  return result;
+}
+
+// Get either selected regions at given level or from the parent levels if no selection found in current level.
+export function getParentSelectedRegions(selection: AdminRegionSets, adminLevel: number) {
+  const { country, admin1, admin2, admin3 } = selection;
+  // Selection from the smallest available admin level
+  const regionSelection =
+    [country, admin1, admin2, admin3]
+      .slice(0, adminLevel + 1) // only consider levels >= current level
+      .filter(set => set.size > 0) // filter out admin levels with no selection
+      .map(set => Array.from(set)) // convert the set to array
+      .pop(); // get the last item (selection from the smallest available admin level)
+  return regionSelection || [];
+}
+// Check if the region or its parent for given regionId is included in the provided selection
+export function isRegionSelected(selection: AdminRegionSets, regionId: string, parentOnly = false) {
+  const regionIdTokens = regionId.split(REGION_ID_DELIMETER);
+  parentOnly && regionIdTokens.pop(); // Remove current admin level region name if parentOnly flag is true
+  // Check if the regionId is included in the selection. Check with the parent selection if there's a parent region selection.
+  let checkParentLevel = true;
+  while (regionIdTokens.length > 0 && checkParentLevel) {
+    const rid = regionIdTokens.join(REGION_ID_DELIMETER);
+    const curLevelRegionSelection = (selection)[adminLevelToString(regionIdTokens.length - 1) as keyof AdminRegionSets];
+    if (curLevelRegionSelection.has(rid)) {
+      return true;
+    }
+    // If there's no selection in the current level, check the selection from parent level.
+    checkParentLevel = curLevelRegionSelection.size === 0;
+    // Drop the current admin level region name from the id resulting the parent region id.
+    regionIdTokens.pop();
+  }
+  return false;
+}
+// Check if selection is empty for for given adminLevel and the level above.
+// if parentOnly flag is true, check only for the parent admin level selection.
+export function isSelectionEmpty(selection: AdminRegionSets, adminLevel: number, parentOnly = false) {
+  const { country, admin1, admin2, admin3 } = selection;
+  const checks = [country.size === 0, admin1.size === 0, admin2.size === 0, admin3.size === 0];
+  return checks.slice(0, adminLevel + (parentOnly ? 0 : 1)).reduce((prev, cur) => prev && cur, true);
+}
+
+export function stringToAdminLevel(geoString: string) {
+  const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
+  return adminLevel;
+}
+
+export function adminLevelToString(level: number) {
+  const adminLevel = level === 0 ? 'country' : 'admin' + level;
+  return adminLevel as AdminLevel;
+}
+
+export function getLevelFromRegionId(regionId: string) {
+  const level = regionId.split(REGION_ID_DELIMETER).length - 1;
+  return level;
 }

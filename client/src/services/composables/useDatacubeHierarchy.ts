@@ -4,22 +4,15 @@ import { AdminRegionSets } from '@/types/Datacubes';
 import _ from 'lodash';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import { getRegionLists } from '../outputdata-service';
-import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER, stringifySelectedRegions } from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
-
-const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
-  country: new Set(),
-  admin1: new Set(),
-  admin2: new Set(),
-  admin3: new Set()
-};
+import { validateSelectedRegions } from '@/utils/drilldown-util';
 
 export default function useDatacubeHierarchy(
   selectedScenarioIds: Ref<string[]>,
   metadata: Ref<Model | Indicator | null>,
   selectedAdminLevel: Ref<number>,
   breakdownOption: Ref<string | null>,
-  initialSelectedRegionIds: Ref<string[]>,
   activeFeature: Ref<string>
 ) {
   /**
@@ -66,28 +59,28 @@ export default function useDatacubeHierarchy(
     } catch {}
   });
 
-  const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>(
-    _.clone(EMPTY_ADMIN_REGION_SETS)
-  );
-  watch([datacubeHierarchy, initialSelectedRegionIds], () => {
-    // Reset the selected region list when the list of all regions changes
-
-    const emptyRegionSets = _.clone(EMPTY_ADMIN_REGION_SETS) as any;
-
-    if (initialSelectedRegionIds.value !== undefined) {
-      const adminLevel: string = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
-
-      if (initialSelectedRegionIds.value.length > 0) {
-        initialSelectedRegionIds.value.forEach(regionId => {
-          emptyRegionSets[adminLevel].add(regionId);
-        });
-      } else {
-        emptyRegionSets[adminLevel] = new Set();
-      }
-    }
-
-    selectedRegionIdsAtAllLevels.value = emptyRegionSets;
+  const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>({
+    country: new Set(),
+    admin1: new Set(),
+    admin2: new Set(),
+    admin3: new Set()
   });
+
+  const selectedRegionsString = computed(() =>
+    stringifySelectedRegions(
+      selectedRegionIdsAtAllLevels.value,
+      selectedAdminLevel.value
+    )
+  );
+
+  // When a new hierarchy arrives validate the selected regions to ensure they exist in this datacube
+  watch([datacubeHierarchy], () => {
+    const { isInvalid, validRegions } = validateSelectedRegions(selectedRegionIdsAtAllLevels.value, datacubeHierarchy.value);
+    if (isInvalid) {
+      selectedRegionIdsAtAllLevels.value = validRegions;
+    }
+  });
+
   watchEffect(() => {
     // If multiselection is no longer allowed, truncate the list of selected
     //  regions to a maximum length of one
@@ -186,6 +179,7 @@ export default function useDatacubeHierarchy(
   return {
     datacubeHierarchy,
     selectedRegionIds,
+    selectedRegionsString,
     selectedRegionIdsAtAllLevels,
     referenceRegions,
     toggleIsRegionSelected

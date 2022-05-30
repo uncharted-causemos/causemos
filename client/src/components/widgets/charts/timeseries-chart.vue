@@ -120,7 +120,8 @@ export default defineComponent({
         breakdownOption.value,
         selectedTimestampRange.value,
         unit.value,
-        timestampFormatter
+        timestampFormatter,
+        selectedTemporalResolution.value ?? TemporalResolutionOption.Year
       );
     }, RESIZE_DELAY);
     watch(
@@ -148,7 +149,7 @@ export default defineComponent({
       }
     );
     const valueFormatter = computed(() => {
-      const allPoints = timeseriesData.value.map(timeSeries => timeSeries.points).flat();
+      const allPoints = timeseriesData.value.map(timeseries => timeseries.points).flat();
       const yExtent = d3.extent(allPoints.map(point => point.value));
       if (yExtent[0] === undefined) { return chartValueFormatter(); }
       return chartValueFormatter(...yExtent);
@@ -243,19 +244,19 @@ export default defineComponent({
   display:flex
 }
 
-::v-deep(.xAxis .domain) {
+:deep(.xAxis .domain) {
   stroke: #e3e4e6;
 }
 
-::v-deep(.yAxis .tick line) {
+:deep(.yAxis .tick line) {
   stroke: #e3e4e6;
 }
 
-::v-deep(.yAxis .domain) {
+:deep(.yAxis .domain) {
   opacity: 0;
 }
 
-::v-deep(.segment-line) {
+:deep(.segment-line) {
   opacity: 0.5;
   stroke-width: 2;
 }

@@ -1,6 +1,7 @@
 <template>
   <wm-map
     ref="mapComponents"
+    :bounds="mapBounds"
     v-bind="baseMapOptions"
     @load="disableDragRotate"
     @click="onClick"
@@ -67,7 +68,7 @@ export default {
     },
     mapBounds: {
       type: Array,
-      default: () => ([[0, 0], [0, 0]])
+      default: () => ([[-180, -90], [180, 90]])
     },
     /**
      * layer related props

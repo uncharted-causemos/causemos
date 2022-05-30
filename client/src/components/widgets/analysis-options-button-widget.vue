@@ -10,7 +10,6 @@
         </div>
         <div
           class="dropdown-option"
-          :class="{ disabled: idToDuplicate === null }"
           @click="showDuplicateModal"
         >
           <i class="fa fa-fw fa-copy" /> Duplicate
@@ -29,17 +28,10 @@
       @cancel="isRenameModalOpen = false"
     />
 
-    <!-- duplicate-modal is hardwired to duplicate CAGs. At time of writing,
-    the data space doesn't support duplication. When it does, we should extract
-    the business logic out of duplicate-modal and let each wrapper instance
-    around this widget (e.g. cag-analysis-options-button) specify how the
-    duplication should be performed. -->
     <duplicate-modal
       v-if="isDuplicateModalOpen"
       :current-name="initialName"
-      :id-to-duplicate="idToDuplicate"
-      @success="onDuplicateSuccess"
-      @fail="isDuplicateModalOpen = false"
+      @confirm="onDuplicate"
       @cancel="isDuplicateModalOpen = false"
     />
   </div>
@@ -57,13 +49,9 @@ export default defineComponent({
     initialName: {
       type: String as PropType<string | null>,
       default: null
-    },
-    idToDuplicate: {
-      type: String as PropType<string | null>,
-      default: null
     }
   },
-  emits: ['rename', 'duplicate-success', 'delete'],
+  emits: ['rename', 'duplicate', 'delete'],
   setup(props, { emit }) {
     const isDropdownOpen = ref(false);
     const isRenameModalOpen = ref(false);
@@ -81,9 +69,9 @@ export default defineComponent({
       isDuplicateModalOpen.value = true;
       isDropdownOpen.value = false;
     };
-    const onDuplicateSuccess = (name: string, newCagId: string) => {
+    const onDuplicate = (name: string) => {
       isDuplicateModalOpen.value = false;
-      emit('duplicate-success', newCagId);
+      emit('duplicate', name);
     };
     const onDelete = () => {
       emit('delete');
@@ -96,7 +84,7 @@ export default defineComponent({
       onRenameModalConfirm,
       isDuplicateModalOpen,
       showDuplicateModal,
-      onDuplicateSuccess,
+      onDuplicate,
       onDelete
     };
   }

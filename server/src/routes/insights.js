@@ -23,7 +23,7 @@ router.post('/', asyncHandler(async (req, res) => {
     post_actions,
     is_default,
     analytical_question,
-    thumbnail,
+    image,
     view_state,
     data_state,
     annotation_state
@@ -40,7 +40,7 @@ router.post('/', asyncHandler(async (req, res) => {
     post_actions,
     is_default,
     analytical_question,
-    thumbnail,
+    image,
     view_state,
     data_state,
     annotation_state);
@@ -62,17 +62,25 @@ router.put('/:id', asyncHandler(async (req, res) => {
  * GET a list of insights
  */
 router.get('/', asyncHandler(async (req, res) => {
-  const filterParams = req.query;
-  const result = await insightService.getAllInsights(filterParams);
+  const filterParams = JSON.parse(req.query.filters);
+  const options = JSON.parse(req.query.options) || {};
+  const result = await insightService.getAllInsights(filterParams, options);
+  res.json(result);
+}));
+// POST version
+router.post('/search', asyncHandler(async (req, res) => {
+  const filterParams = req.body.filters;
+  const options = req.body.options || {};
+  const result = await insightService.getAllInsights(filterParams, options);
   res.json(result);
 }));
 
 /**
  * GET a count of insights
  **/
-router.get('/counts', asyncHandler(async (req, res) => {
-  const filterParams = req.query;
-  const result = await insightService.counts(filterParams);
+router.get('/count', asyncHandler(async (req, res) => {
+  const filterParams = JSON.parse(req.query.filters);
+  const result = await insightService.count(filterParams);
   res.json(result);
 }));
 
@@ -81,7 +89,8 @@ router.get('/counts', asyncHandler(async (req, res) => {
  */
 router.get('/:id', asyncHandler(async (req, res) => {
   const insightId = req.params.id;
-  const result = await insightService.getInsight(insightId);
+  const allowList = req.params.allowList;
+  const result = await insightService.getInsight(insightId, allowList);
   res.status(200);
   res.json(result);
 }));

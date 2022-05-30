@@ -1,13 +1,38 @@
 import _ from 'lodash';
 import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
-import { MapLegendColor, AnalysisMapStats, AnalysisMapColorOptions } from '@/types/Common';
+import { MapLegendColor, AnalysisMapStats, MapLayerStats, AnalysisMapRange, AnalysisMapColorOptions } from '@/types/Common';
 import { OutputSpecWithId, OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
-import { computeRegionalStats, computeRawDataStats, adminLevelToString, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
+import { applyRegionFilter, computeRegionalStats, resolveSameMinMaxMapStats, computeRawDataStats, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
+import { adminLevelToString } from '@/utils/admin-level-util';
 import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';
 import { getOutputStats } from '@/services/outputdata-service';
-import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
+import { SpatialAggregationLevel } from '@/types/Enums';
+import { AdminRegionSets } from '@/types/Datacubes';
+
+const computeMinMax = (stats: (AnalysisMapRange|undefined)[]) => {
+  const list = stats.filter(v => v); // filter out undefined
+  if (list.length === 0) return;
+  return (list as AnalysisMapRange[]).reduce((prev, cur) => {
+    return {
+      min: Math.min(prev.min, cur.min),
+      max: Math.max(prev.max, cur.max)
+    };
+  }, { min: Infinity, max: -Infinity });
+};
+
+// Get stats for the provided admin level
+const getStats = (layerStats: MapLayerStats | undefined, level: number) => {
+  if (!layerStats) return;
+  // In Split by region mode, if there's no stats for the current level, use stats from the parent level
+  const statsList = [layerStats.country, layerStats.admin1, layerStats.admin2, layerStats.admin3].slice(0, level + 1);
+  let stats;
+  while (statsList.length > 0 && stats === undefined) {
+    stats = statsList.pop();
+  }
+  return stats;
+};
 
 export default function useAnalysisMapStats(
   outputSourceSpecs: Ref<OutputSpecWithId[]>,
@@ -15,6 +40,7 @@ export default function useAnalysisMapStats(
   relativeTo: Ref<string | null>,
   selectedDataLayer: Ref<DATA_LAYER>,
   selectedAdminLevel: Ref<number>,
+  regionSelection: Ref<AdminRegionSets>,
   showPercentChange: Ref<boolean>,
   colorOptions: Ref<AnalysisMapColorOptions>,
   referenceOptions: Ref<string[]>,
@@ -24,37 +50,56 @@ export default function useAnalysisMapStats(
   // ===== Set up stats and legend for the admin layer ===== //
 
   const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
-  const adminLayerStats = ref<AnalysisMapStats>();
+  const adminLayerStats = ref<AnalysisMapStats>({
+    global: {},
+    baseline: {},
+    difference: {}
+  });
   watchEffect(() => {
     if (!regionalData.value) {
       adminMapLayerLegendData.value = [];
       return;
     }
-    adminLayerStats.value = computeRegionalStats(regionalData.value, relativeTo.value, showPercentChange.value);
-    /*
-      If we are using a relative time series and it's not a temporal reference series then retrieve the map stats.
-      We exclude temporal reference series as aren't using the aggregated endpoints for that scenario yet, so we can't
-      retrieve any relative map data for say 2017 as a concept yet.
-    */
-    if (relativeTo.value && breakdownOption.value !== TemporalAggregationLevel.Year) {
-      const currentAdminLevel =
-        breakdownOption.value === SpatialAggregationLevel.Region &&
-        referenceOptions.value.includes(relativeTo.value)
-          ? 0
-          : selectedAdminLevel.value;
+    const adminStats = computeRegionalStats(
+      applyRegionFilter(regionalData.value, regionSelection.value),
+      relativeTo.value,
+      showPercentChange.value
+    );
 
-      const baseline = adminLayerStats.value.baseline[adminLevelToString(currentAdminLevel)];
-      const difference = adminLayerStats.value.difference[adminLevelToString(currentAdminLevel)];
+    // If there is a reference region selected, min and max stat should come from across different regional levels (country and currently selected admin level)
+    if (referenceOptions.value.length > 0 && breakdownOption.value === SpatialAggregationLevel.Region) {
+      // Assume that reference region is always at country level.
+      const targetLevels = [0, selectedAdminLevel.value];
+      const globalStat = computeMinMax(targetLevels.map(l => getStats(adminStats.global, l)));
+      const baselineStat = computeMinMax(targetLevels.map(l => getStats(adminStats.baseline, l)));
+      const differenceStat = computeMinMax(targetLevels.map(l => getStats(adminStats.difference, l)));
+
+      // Assign same stats to all target admin levels
+      targetLevels.map(adminLevelToString).forEach(l => {
+        if (globalStat) adminStats.global[l] = globalStat;
+        if (baselineStat) adminStats.baseline[l] = baselineStat;
+        if (differenceStat) adminStats.difference[l] = differenceStat;
+      });
+    }
+    const adminStatsResolved = resolveSameMinMaxMapStats(adminStats);
+
+    /*
+      If relativeTo is defined, generated the relative legend info, otherwise generate the default legend info.
+    */
+    if (relativeTo.value) {
+      const baseline = getStats(adminStatsResolved.baseline, selectedAdminLevel.value);
+      const difference = getStats(adminStatsResolved.difference, selectedAdminLevel.value);
       adminMapLayerLegendData.value = (baseline && difference) ? [
         createMapLegendData([baseline.min, baseline.max], colorOptions.value.relativeToSchemes[0], colorOptions.value.scaleFn),
         createMapLegendData([difference.min, difference.max], colorOptions.value.relativeToSchemes[1], colorOptions.value.scaleFn, true)
       ] : [];
     } else {
-      const globalStats = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
+      const globalStats = getStats(adminStatsResolved.global, selectedAdminLevel.value);
       adminMapLayerLegendData.value = globalStats ? [
         createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn, colorOptions.value.isDiverging)
       ] : [];
     }
+    adminLayerStats.value = adminStatsResolved;
   });
 
   // ===== Calculate stats and legend for the grid layer dynamically ===== //
@@ -128,12 +173,12 @@ export default function useAnalysisMapStats(
 
   // ===== Set up stats and legend for raw points layer ===== //
 
-  const pointsMapLayerLegendData = ref<MapLegendColor[][]>([]);
-  const pointsLayerStats = ref<AnalysisMapStats>();
-  watchEffect(() => {
-    pointsLayerStats.value = computeRawDataStats(rawDataPointsList.value);
+  const pointsLayerStats = computed<AnalysisMapStats>(() => {
+    return computeRawDataStats(rawDataPointsList.value);
+  });
+  const pointsMapLayerLegendData = computed<MapLegendColor[][]>(() => {
     const globalStats = pointsLayerStats.value.global.all;
-    pointsMapLayerLegendData.value = globalStats ? [
+    return globalStats ? [
       createMapLegendData([globalStats.min, globalStats.max], colorOptions.value.scheme, colorOptions.value.scaleFn, colorOptions.value.isDiverging)
     ] : [];
   });

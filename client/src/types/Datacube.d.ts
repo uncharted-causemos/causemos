@@ -53,8 +53,6 @@ export interface DatacubeAttribute {
   is_visible?: boolean;
 }
 
-export type DimensionInfo = ModelParameter | DatacubeFeature;
-
 export interface ModelParameter extends DatacubeAttribute {
   is_drilldown: boolean;
   data_type: ModelParameterDataType;
@@ -63,7 +61,7 @@ export interface ModelParameter extends DatacubeAttribute {
 
 export interface FeatureQualifier extends DatacubeAttribute {
   related_features: string[];
-  roles: FeatureQualifierRoles[];
+  qualifier_role?: FeatureQualifierRoles; // set by modeler in Dojo
 }
 
 export interface DatacubeFeature extends DatacubeAttribute {
@@ -74,6 +72,8 @@ export interface DatacubeFeature extends DatacubeAttribute {
   };
 }
 
+export type DimensionInfo = ModelParameter | DatacubeFeature;
+
 export interface DatasetEditable {
   name: string,
   family_name: string;
@@ -81,6 +81,7 @@ export interface DatasetEditable {
   category: string[],
   maintainer: DatacubeMaintainer,
   tags: string[],
+  domains: string[]
 }
 
 export interface Dataset extends DatasetEditable {
@@ -92,20 +93,15 @@ export interface Dataset extends DatasetEditable {
     queued: RuntimeStage;
     post_processing: RuntimeStage;
   };
+  flow_id: string;
   data_info?: DataPipelineInfo;
 }
 
 export interface Datacube extends DatasetEditable {
   id: string;
   data_id: string; // this is the actual one to be used to fetch data
-  name: string;
-  family_name: string;
-  description: string;
   created_at: number;
   type: DatacubeType;
-  category: string[];
-  maintainer: DatacubeMaintainer;
-  tags: string[];
   ontology_matches: OntologyMatch[];
   geography: DatacubeGeography;
   period: DatacubePeriod;
@@ -120,6 +116,7 @@ export interface Datacube extends DatasetEditable {
   qualifier_outputs?: FeatureQualifier[] | null;
   default_view: any; // object that will contain various default view configurations such as default aggregations
   new_version_data_id?: string;
+  sparkline?: number[];
 }
 
 export interface Model extends Datacube {
@@ -134,6 +131,7 @@ export interface Indicator extends Datacube {
     queued: RuntimeStage;
     post_processing: RuntimeStage;
   };
+  flow_id: string;
   data_info?: DataPipelineInfo;
 }
 

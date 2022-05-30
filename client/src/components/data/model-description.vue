@@ -40,6 +40,13 @@
               class="model-attribute-text"
               placeholder="unit"
             >
+            <dropdown-button
+              class="dropdown-button"
+              :inner-button-label="'Type'"
+              :items="getValidDataTypesForParam(param.type)"
+              :selected-item="getDataTypeDisplayName(param.data_type)"
+              @item-selected="setParamDataType($event, param)"
+            />
           </td>
           <td>
             <textarea
@@ -48,6 +55,31 @@
               class="model-attribute-desc"
               :class="{ 'attribute-invalid': !isValid(param.description) }"
             />
+            <dropdown-button
+              v-if="canChangeType(param.type)"
+              class="dropdown-button"
+              :inner-button-label="'Field Type'"
+              :items="paramTypeGroupButtons"
+              :selected-item="param.type"
+              @item-selected="setParamType($event, param)"
+            />
+            <div v-if="param.data_type === ModelParameterDataType.Numerical" class="numeric-param-range">
+              <input
+                v-model="param.min"
+                type="number"
+                class="model-param-range-text"
+                placeholder="min"
+                @keyup.enter="onParamRangeUpdated"
+              >
+              <input
+                v-model="param.max"
+                type="number"
+                class="model-param-range-text"
+                style="margin-left: 4px"
+                placeholder="max"
+                @keyup.enter="onParamRangeUpdated"
+              >
+            </div>
           </td>
           <td style="padding-right: 0; padding-left: 0; display: flex; flex-direction: column">
             <div v-if="isDateParam(param) === false" class="checkbox">
@@ -167,44 +199,7 @@
               class="model-attribute-desc"
               :class="{ 'attribute-invalid': !isValid(qualifier.description) }"
             />
-            <!--
-            <div class="checkbox">
-              <label
-                @click="updateDrilldownVisibility(qualifier)"
-                style="cursor: pointer; color: black;">
-                <i
-                  class="fa fa-lg fa-fw"
-                  :class="{ 'fa-check-square-o': qualifier.is_visible, 'fa-square-o': !qualifier.is_visible }"
-                />
-                Visible
-              </label>
-            </div>
-            -->
           </td>
-          <!--
-          <td>
-            <div>Role</div>
-            <div
-              v-if="qualifier.roles"
-              class="role-list"
-              :class="{ 'attribute-invalid': !(qualifier.roles.length > 0) }"
-            >
-              <div
-                v-for="role in Object.values(FeatureQualifierRoles)"
-                :key="role"
-                @click="updateQualifierRole(qualifier, role)"
-              >
-                <div>
-                  <i
-                    class="fa fa-fw"
-                    :class="{ 'fa-check-square-o': isValidQualifierRole(qualifier, role), 'fa-square-o': !isValidQualifierRole(qualifier, role) }"
-                  />
-                  {{ role }}
-                </div>
-                </div>
-            </div>
-          </td>
-          -->
         </tr>
       </tbody>
     </table>
@@ -214,37 +209,145 @@
 <script lang="ts">
 import { computed, defineComponent, PropType, ComputedRef, toRefs, Ref, ref } from 'vue';
 import _ from 'lodash';
-import { DatacubeFeature, FeatureQualifier, Model, ModelParameter } from '@/types/Datacube';
+import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
-import { DatacubeGenericAttributeVariableType, FeatureQualifierRoles, ModelParameterDataType } from '@/types/Enums';
+import {
+  DatacubeAttributeVariableType,
+  DatacubeGenericAttributeVariableType,
+  ModelParameterDataType
+} from '@/types/Enums';
 import ModalEditParamChoices from '@/components/modals/modal-edit-param-choices.vue';
-import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
+import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getOutputs } from '@/utils/datacube-util';
 import { scrollToElement } from '@/utils/dom-util';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { useRoute } from 'vue-router';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
   name: 'ModelDescription',
   components: {
-    ModalEditParamChoices
+    ModalEditParamChoices,
+    DropdownButton
   },
   props: {
     metadata: {
       type: Object as PropType<Model | null>,
       default: null
+    },
+    itemId: {
+      type: String,
+      required: true
     }
   },
   emits: [
     'check-model-metadata-validity',
     'refresh-metadata'
   ],
-  setup(props) {
-    const { metadata } = toRefs(props);
+  setup(props, { emit }) {
+    const { metadata, itemId } = toRefs(props);
     const store = useStore();
+    const route = useRoute();
+
+    const getDataTypeDisplayName = (name: string) => {
+      if (name === ModelParameterDataType.Nominal || name === ModelParameterDataType.Ordinal) {
+        return 'Discrete';
+      } else if (name === ModelParameterDataType.Numerical) {
+        return 'Continuous';
+      } else {
+        return 'Freeform';
+      }
+    };
+
+    // because nominal and ordinal are both mapped to discrete, we need to filter one of them out
+    const paramDataTypeGroupButtons = _.uniqBy(
+      Object.values(ModelParameterDataType)
+        .map(val => ({ displayName: getDataTypeDisplayName(val), value: val })), 'displayName'
+    );
+
+
+    // Current Conversion Rules:
+    //
+    // string param cannot be made continuous, can only be switched between discrete and freeform
+    // params of type string, geo, date. and date-range are convertible to each other without any validation
+    // numeric params cannot be made freeform, only discrete and continuous
+    // numeric params can have their range updated, or choices added
+
+    const isDiscrete = (dataType: ModelParameterDataType) => {
+      return dataType === ModelParameterDataType.Nominal || dataType === ModelParameterDataType.Ordinal || dataType === ModelParameterDataType.Freeform;
+    };
+    const isNumber = (type: DatacubeAttributeVariableType) => {
+      return type === DatacubeGenericAttributeVariableType.Int || type === DatacubeGenericAttributeVariableType.Float;
+    };
+
+    const getValidDataTypesForParam = (paramType: DatacubeGenericAttributeVariableType) => {
+      // remove freeform from numeric types
+      if (isNumber(paramType)) {
+        return paramDataTypeGroupButtons.filter(item => item.value !== ModelParameterDataType.Freeform);
+      }
+      // remove continuous from string param
+      if (paramType === DatacubeGenericAttributeVariableType.String) {
+        return paramDataTypeGroupButtons.filter(item => item.value !== ModelParameterDataType.Numerical);
+      }
+      return paramDataTypeGroupButtons;
+    };
+
+    const setParamDataType = (newDataType: ModelParameterDataType, param: ModelParameter) => {
+      // convert continuous to discrete
+      if (isDiscrete(newDataType)) {
+        param.choices = []; // this will trigger loading choices from existing runs
+        param.choices_labels = _.clone(param.choices);
+        param.data_type = newDataType;
+      }
+      // convert discrete to numeric/continuous
+      //  requires an initial (valid) range: min and max values
+      if (isDiscrete(param.data_type) && isNumber(param.type) && newDataType === ModelParameterDataType.Numerical) {
+        param.choices = undefined;
+        param.choices_labels = undefined;
+        param.data_type = newDataType;
+      }
+
+      // need to emit an event for the metadata to refresh the sync with all components
+      emit('refresh-metadata');
+    };
+
+    // only the following type are convertable to each other
+    //  i.e., a geo can be converted to string
+    const validParamType = [
+      DatacubeGenericAttributeVariableType.String,
+      DatacubeGenericAttributeVariableType.Geo,
+      DatacubeGenericAttributeVariableType.Date,
+      DatacubeGenericAttributeVariableType.DateRange
+    ];
+    // REVIEW: this may be simplified as a direct map; i.e. Object.Keys(DatacubeGenericAttributeVariableType)
+    const getTypeDisplayName = (name: string) => {
+      if (name === DatacubeGenericAttributeVariableType.String) {
+        return 'String';
+      } else if (name === DatacubeGenericAttributeVariableType.Geo) {
+        return 'Geo';
+      } else if (name === DatacubeGenericAttributeVariableType.Date) {
+        return 'Date';
+      } else if (name === DatacubeGenericAttributeVariableType.DateRange) {
+        return 'Date range';
+      }
+    };
+    const paramTypeGroupButtons = ref(
+      validParamType.map(val => ({ displayName: getTypeDisplayName(val), value: val }))
+    );
+
+    const setParamType = (newType: DatacubeGenericAttributeVariableType, param: ModelParameter) => {
+      param.type = newType;
+      // need to emit an event for the metadata to refresh the sync with all components
+      emit('refresh-metadata');
+    };
+    const canChangeType = (type: DatacubeGenericAttributeVariableType) => {
+      return validParamType.includes(type);
+    };
 
     // NOTE: this index is mostly driven from the component 'datacube-model-header'
     //       which may list either all outputs or only the validated ones
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
     const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
       return metadata.value ? metadata.value.outputs : [];
@@ -267,10 +370,17 @@ export default defineComponent({
       validatedOutputVariables,
       currentOutputFeature,
       outputVariables,
-      FeatureQualifierRoles,
       ModelParameterDataType,
       showEditParamOptionsModal,
-      selectedParameter
+      selectedParameter,
+      paramTypeGroupButtons,
+      setParamDataType,
+      getDataTypeDisplayName,
+      canChangeType,
+      setParamType,
+      getValidDataTypesForParam,
+      store,
+      route
     };
   },
   computed: {
@@ -278,28 +388,8 @@ export default defineComponent({
       return this.metadata && this.metadata.parameters ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
     },
     qualifiers(): Array<any> {
-      // includes both drilldown-inputs and output-qualifiers
-      let qualifiers = [];
-      // first, add actual output qualifiers
-      qualifiers.push(...this.metadata?.qualifier_outputs ?? []);
-      // then, add all drilldown params as qualifiers
-      const drilldownParams = this.metadata?.parameters.filter((p: ModelParameter) => p.is_drilldown) ?? [];
-      drilldownParams.forEach((p: any) => {
-        // since ModelParameter does not share the same structure as FeatureQualifier,
-        //  we need to add the missing FeatureQualifier attributes
-        if (!p.roles) {
-          p.roles = [];
-        }
-        if (!p.roles.includes(FeatureQualifierRoles.Breakdown)) {
-          p.roles.push(FeatureQualifierRoles.Breakdown);
-        }
-        if (!p.related_features) {
-          p.related_features = [(this.currentOutputFeature as DatacubeFeature).name];
-        }
-      });
-      qualifiers.push(...drilldownParams);
-      // hide implicit qualifiers, e.g., admin1, admin2, lat, lng, etc.
-      qualifiers = qualifiers.filter(q => !QUALIFIERS_TO_EXCLUDE.includes(q.name));
+      // hide on-breakdown and implicit qualifiers, e.g., admin1, admin2, lat, lng, etc.
+      const qualifiers = this.metadata?.qualifier_outputs?.filter(q => isBreakdownQualifier(q)) ?? [];
       return qualifiers;
     }
   },
@@ -352,16 +442,6 @@ export default defineComponent({
     isValidatedOutput(output: DatacubeFeature) {
       return this.validatedOutputVariables.findIndex(o => o.name === output.name) >= 0;
     },
-    updateQualifierRole(qualifier: FeatureQualifier, role: FeatureQualifierRoles) {
-      if (qualifier.roles.includes(role)) {
-        qualifier.roles = qualifier.roles.filter(r => r !== role);
-      } else {
-        qualifier.roles.push(role);
-      }
-    },
-    isValidQualifierRole(qualifier: FeatureQualifier, role: FeatureQualifierRoles) {
-      return qualifier.roles.includes(role);
-    },
     isValid(name: string) {
       return name && name !== '';
     },
@@ -377,7 +457,7 @@ export default defineComponent({
       if (invalidInputs.length > 0 || invalidOutputs.length > 0 || outputQualifiers.length > 0) {
         isValid = false;
       }
-      this.$emit('check-model-metadata-validity', { valid: isValid });
+      this.$emit('check-model-metadata-validity', isValid);
     },
     updateInputKnobVisibility(param: ModelParameter) {
       param.is_visible = !param.is_visible;
@@ -401,8 +481,9 @@ export default defineComponent({
       // so that the currentOutputFeature would still be the same
       if (output.name !== this.currentOutputFeature.name) {
         const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-        if (this.currentOutputIndex > 0) {
-          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = this.currentOutputIndex - 1;
+        if (this.currentOutputIndex > 0) { // REVIEW!?
+          const datacubeKey = this.itemId;
+          updatedCurrentOutputsMap[datacubeKey] = this.currentOutputIndex - 1;
         }
         this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
       }
@@ -414,6 +495,9 @@ export default defineComponent({
       // need to emit an event for the metadata to refresh the sync with all components
       //  for example to allow the Breakdown panel to show/hide
       //  the relevant drilldown-dimension based on the updated visibility
+      this.$emit('refresh-metadata');
+    },
+    onParamRangeUpdated() {
       this.$emit('refresh-metadata');
     }
   }
@@ -496,6 +580,15 @@ table.model-table thead tr th {
   flex-basis: 100%;
 }
 
+.numeric-param-range {
+  display: flex;
+  margin-top: 1rem;
+}
+.model-param-range-text {
+  border-width: 1px;
+  border-color: rgb(216, 214, 214);
+}
+
 .model-attribute-desc {
   border-width: 1px;
   border-color: rgb(216, 214, 214);
@@ -530,6 +623,13 @@ table.model-table thead tr th {
   padding: 0;
   margin: 0;
   color: black;
+}
+
+.dropdown-button {
+  width: 100%;
+}
+:deep(.dropdown-btn) {
+  width: 100%;
 }
 
 </style>

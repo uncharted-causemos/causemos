@@ -8,7 +8,7 @@ const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
  * Submit a new model run to Jataware and store information about it in ES.
  */
 router.post('/', asyncHandler(async (req, res) => {
-  await respondUsingCode(req, res, maasService.submitModelRun);
+  await respondUsingCode(res, maasService.submitModelRun, [req.body]);
 }));
 
 /**
@@ -24,25 +24,42 @@ router.get('/', asyncHandler(async (req, res) => {
  * Start a model data post processing job
  */
 router.post('/:runId/post-process', asyncHandler(async (req, res) => {
-  await respondUsingCode(req, res, maasService.startModelOutputPostProcessing);
+  await respondUsingCode(res, maasService.startModelOutputPostProcessing, [req.body]);
 }));
 
 /**
  * Inform of model execution failure
  */
 router.post('/:runId/run-failed', asyncHandler(async (req, res) => {
-  await respondUsingCode(req, res, maasService.markModelRunFailed);
+  await respondUsingCode(res, maasService.markModelRunFailed, [req.body]);
 }));
 
 /**
  * Get status of a submitted job
  */
-router.get('/:runId/post-process', asyncHandler(async (req, res) => {
+router.get('/:runId/status', asyncHandler(async (req, res) => {
   const runId = req.params.runId;
+  const flowId = req.query.flow_id;
 
   try {
-    const result = await maasService.getJobStatus(runId);
-    res.status(200).json(result.data || {});
+    const result = await maasService.getJobStatus(runId, flowId);
+    res.status(200).json(result || {});
+  } catch (err) {
+    console.log(err);
+    res.status(500).send('Internal request returned: ' + err.message);
+  }
+}));
+
+/**
+ * Get processing logs of a submitted job
+ */
+router.get('/:runId/logs', asyncHandler(async (req, res) => {
+  const runId = req.params.runId;
+  const flowId = req.query.flow_id;
+
+  try {
+    const result = await maasService.getJobLogs(runId, flowId);
+    res.status(200).json(result || {});
   } catch (err) {
     console.log(err);
     res.status(500).send('Internal request returned: ' + err.message);

@@ -5,13 +5,16 @@
       :bounds="mapBounds"
       @load="onMapLoad"
       @mousemove="onMouseMove"
+      @move="onMapMove"
       @click="onMapClick"
+      @resize="onResize"
     >
       <wm-map-vector
         v-if="vectorSource"
         :source="vectorSource"
         :source-id="vectorSourceId"
         :source-layer="vectorSourceLayer"
+        :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
         :layer-id="colorLayerId"
         :layer="colorLayer"
@@ -30,16 +33,24 @@
       <wm-map-popup
         :layer-id="colorLayerId"
         :formatter-fn="popupFormatter"
-        :cursor="'default'"
+      :cursor="'default'"
       />
     </wm-map>
+    <div v-if="data.length === 0" class="no-data">No data</div>
   </div>
 </template>
 
 <script>
 
 import _ from 'lodash';
+import {
+  defineComponent,
+  toRefs,
+  computed
+} from 'vue';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
+import useMapRegionSelection from '@/services/composables/useMapRegionSelection';
+import useMapSyncBounds from '@/services/composables/useMapSyncBounds';
 import {
   BASE_MAP_OPTIONS,
   ETHIOPIA_BOUNDING_BOX,
@@ -95,9 +106,12 @@ const borderLayer = () => {
   });
 };
 
-export default {
+export default defineComponent({
   name: 'RegionMap',
-  emits: ['click-region'],
+  emits: [
+    'click-region',
+    'sync-bounds'
+  ],
   components: {
     WmMap,
     WmMapVector,
@@ -112,12 +126,16 @@ export default {
       type: String,
       default: ''
     },
-    selectedLayerId: {
+    regionFilter: {
+      type: Object,
+      default: () => ({ country: new Set(), admin1: new Set(), admin2: new Set(), admin3: new Set() })
+    },
+    selectedAdminLevel: {
       type: Number,
       default: 0
     },
     mapBounds: { // initial map bounds; default bounds to the bbox of the model country/countries
-      type: Array,
+      type: [Array, Object],
       default: () => [
         [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
         [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
@@ -134,7 +152,35 @@ export default {
     selectedRegionIds: {
       type: Array,
       default: () => []
+    },
+    disablePanZoom: {
+      type: Boolean,
+      default: false
     }
+  },
+  setup(props, { emit }) {
+    const {
+      selectedAdminLevel,
+      regionFilter
+    } = toRefs(props);
+
+    const selectedLayerId = computed(() => SOURCE_LAYERS[selectedAdminLevel.value].layerId);
+    const {
+      isRegionSelectionEmpty,
+      isRegionSelected
+    } = useMapRegionSelection(selectedLayerId, regionFilter);
+
+    const {
+      syncBounds
+    } = useMapSyncBounds(emit);
+
+    const onMapMove = (event) => syncBounds(event);
+
+    return {
+      isRegionSelectionEmpty,
+      isRegionSelected,
+      onMapMove
+    };
   },
   data: () => ({
     colorLayer: undefined,
@@ -152,7 +198,7 @@ export default {
       return options;
     },
     selectedLayer() {
-      return SOURCE_LAYERS[this.selectedLayerId];
+      return SOURCE_LAYERS[this.selectedAdminLevel];
     },
     vectorSourceLayer() {
       return this.selectedLayer.layerId;
@@ -173,6 +219,9 @@ export default {
     },
     selectedId() {
       this.updateSelection();
+    },
+    regionFilter() {
+      this.setFeatureStates();
     }
   },
   created() {
@@ -180,6 +229,8 @@ export default {
     this.colorLayerId = 'color-layer';
     this.borderLayerId = 'border-layer';
     this.firstSymbolLayerId = 'watername_ocean';
+    this.vectorSourceMaxzoom = 8;
+
     // Init layer objects
     this.colorLayer = colorLayer();
     this.borderLayer = borderLayer();
@@ -209,7 +260,7 @@ export default {
           sourceLayer: this.vectorSourceLayer
         }, {
           ...d,
-          _isHidden: this.selectedRegionIds.length === 0 ? false : !this.selectedRegionIds.includes(d.label)
+          _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(d.label)
         });
       }
     },
@@ -227,7 +278,12 @@ export default {
       // disable interactions
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
-      this.disablePanAndZoom();
+      this.disablePanZoom && this.disablePanAndZoom();
+    },
+    onResize() {
+      if (this.map) {
+        this.map.fitBounds(this.mapBounds.value || this.mapBounds, { duration: 0 });
+      }
     },
     onAddLayer() {
       // Triggered when the source layer has been updated or replaced with new one eg. when selected admin level changes
@@ -260,15 +316,17 @@ export default {
       this.$emit('click-region', regionId);
     },
     updateSelection() {
-      this.data.forEach(d => {
-        this.map.removeFeatureState({ source: this.vectorSourceId, id: d.label, sourceLayer: this.vectorSourceLayer }, 'selected');
-      });
-      if (this.selectedId) {
-        this.map.setFeatureState({ source: this.vectorSourceId, id: this.selectedId, sourceLayer: this.vectorSourceLayer }, { selected: true });
+      if (this.map) {
+        this.data.forEach(d => {
+          this.map.removeFeatureState({ source: this.vectorSourceId, id: d.label, sourceLayer: this.vectorSourceLayer }, 'selected');
+        });
+        if (this.selectedId) {
+          this.map.setFeatureState({ source: this.vectorSourceId, id: this.selectedId, sourceLayer: this.vectorSourceLayer }, { selected: true });
+        }
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
@@ -277,8 +335,19 @@ export default {
   height: 100%;
   width: 100%;
 }
-::v-deep(.mapboxgl-ctrl-attrib) {
+:deep(.mapboxgl-ctrl-attrib) {
   display: none;
 
+}
+
+.no-data {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  background: white;
+  font-style: italic;
+  color: red;
+  font-size: large;
 }
 </style>

@@ -13,7 +13,7 @@ import {
   ScenarioParameter,
   CAGModelParameter
 } from '@/types/CAG';
-import { getMonthsPerTimestepFromTimeScale, getStepCountFromTimeScale } from '@/utils/time-scale-util';
+import { getMonthsPerTimestepFromTimeScale, getProjectionLengthFromTimeScale, getStepCountFromTimeScale } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
 import { TimeScale } from '@/types/Enums';
 import { TimeseriesPoint } from '@/types/Timeseries';
@@ -160,7 +160,7 @@ const addComponents = async (modelId: string, nodes: NodeParameter[], edges: Edg
 };
 
 const removeComponents = async (modelId: string, nodes: { id: string }[], edges: { id: string }[]) => {
-  const result = await API.put(`cags/${modelId}/components`, { operation: 'remove', nodes, edges });
+  const result = await API.put(`cags/${modelId}/components`, { operation: 'remove', nodes, edges, updateType: 'remove' });
   return result.data;
 };
 
@@ -260,6 +260,14 @@ const deleteScenario = async (scenario: Scenario) => {
   return result.data;
 };
 
+export const logHistoryEntry = async (modelId: string, type: string, text: string) => {
+  await API.post(`models/${modelId}/history`, {
+    type,
+    text
+  });
+};
+
+
 // Business logic
 
 /**
@@ -297,6 +305,24 @@ const initializeModel = async (modelId: string) => {
   return [];
 };
 
+export const calculateProjectionEnd = (
+  projectionStart: number,
+  timeScale: TimeScale
+) => {
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+  // The number of months from "now" (1 step before projectionStart) until
+  //  projectionEnd
+  const projectionLengthInMonths = getProjectionLengthFromTimeScale(timeScale);
+  // Subtract 1 timestep so that, for example, if the start date is Jan 1 and
+  //  projection length is 12 months, the last timestamp will be on Dec 1
+  //  instead of Jan 1.
+  // endTime should be thought of as the last timestamp that will be returned.
+  return getTimestampAfterMonths(
+    projectionStart,
+    projectionLengthInMonths - monthsPerTimestep
+  );
+};
+
 
 /**
  * Runs projection experiment
@@ -316,14 +342,7 @@ const runProjectionExperiment = async (
     projection_start: projectionStart
   } = modelSummary.parameter;
   const numTimeSteps = getStepCountFromTimeScale(timeScale);
-  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
-  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
-  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
-  // endTime should be thought of as the last timestamp that will be returned.
-  const projectionEnd = getTimestampAfterMonths(
-    projectionStart,
-    (numTimeSteps - 1) * monthsPerTimestep
-  );
+  const projectionEnd = calculateProjectionEnd(projectionStart, timeScale);
   const result = await API.post(`models/${modelId}/projection`, {
     engine,
     parameters: constraints,
@@ -404,10 +423,7 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
       indicator_name: indicatorData.name || '',
       indicator_id: indicatorData.id ?? null,
       indicator_time_series: indicatorData.timeseries || [],
-      indicator_time_series_range: {
-        start: modelParameter.indicator_time_series_range.start,
-        end: modelParameter.indicator_time_series_range.end
-      },
+      history_range: modelParameter.history_range,
       projection_start: modelParameter.projection_start,
       time_scale: modelParameter.time_scale,
       min: indicatorData.min,
@@ -468,14 +484,7 @@ const runSensitivityAnalysis = async (
   const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
 
   const numTimeSteps = getStepCountFromTimeScale(timeScale);
-  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
-  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
-  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
-  // endTime should be thought of as the last timestamp that will be returned.
-  const experimentEnd = getTimestampAfterMonths(
-    experimentStart,
-    (numTimeSteps - 1) * monthsPerTimestep
-  );
+  const experimentEnd = calculateProjectionEnd(experimentStart, timeScale);
 
   const analysisParams = {
     numPath: 0,
@@ -512,6 +521,14 @@ const runPathwaySensitivityAnalysis = async (
   const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
 
   const numTimeSteps = getStepCountFromTimeScale(timeScale);
+  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
+  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
+  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
+  // endTime should be thought of as the last timestamp that will be returned.
+  const experimentEnd = getTimestampAfterMonths(
+    experimentStart,
+    (numTimeSteps - 1) * monthsPerTimestep
+  );
   const payload = {
     analysisMode: 'DYNAMIC',
     analysisType: 'PATHWAYS',
@@ -525,6 +542,7 @@ const runPathwaySensitivityAnalysis = async (
     constraints,
     engine,
     experimentStart,
+    experimentEnd,
     numTimeSteps
   };
 
@@ -533,12 +551,16 @@ const runPathwaySensitivityAnalysis = async (
 };
 
 
-const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Poller, progressFn: Function) => {
+const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Poller, progressFn: Function, secondaryMessageFn: Function) => {
   const modelId = modelSummary.id;
   const numSteps = getStepCountFromTimeScale(modelSummary.parameter.time_scale);
   try {
     const experimentId = await runProjectionExperiment(modelId, cleanConstraints([]));
+    // FIXME: should return experiemntId
+    secondaryMessageFn(`CAG=${modelId} Experiment=${experimentId}`);
+
     const experiment: any = await getExperimentResult(modelId, experimentId, poller, progressFn);
+
 
     const scenario: NewScenario = {
       model_id: modelId,
@@ -547,7 +569,6 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Pol
       parameter: {
         constraints: [],
         num_steps: numSteps,
-        indicator_time_series_range: modelSummary.parameter.indicator_time_series_range,
         projection_start: modelSummary.parameter.projection_start
       },
       is_baseline: true
@@ -604,7 +625,6 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
   });
 
   // Reset time ranges to match with the model's parameterization
-  scenario.parameter.indicator_time_series_range = modelParameter.indicator_time_series_range;
   scenario.parameter.projection_start = modelParameter.projection_start;
   scenario.parameter.num_steps = numSteps;
   return scenario;
@@ -721,6 +741,22 @@ export const hasMergeConflictEdges = (currentCAG: CAGGraph, importCAGs: CAGGraph
   return false;
 };
 
+export enum Engine {
+  DySE = 'dyse',
+  Delphi = 'delphi',
+  DelphiDev = 'delphi_dev',
+  Sensei = 'sensei'
+}
+
+export const supportsPolarityInference = (engine: Engine) => {
+  return engine === Engine.Delphi || engine === Engine.DelphiDev || engine === Engine.Sensei;
+};
+
+export const supportsLevelEdges = (engine: Engine) => {
+  return [Engine.DySE].includes(engine);
+};
+
+// FIXME: we should replace these string keys with the stricter Engine type
 export const ENGINE_OPTIONS = [
   { key: 'dyse', value: 'DySE' },
   { key: 'delphi', value: 'Delphi' },
@@ -803,6 +839,9 @@ const HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE = '#F7E6AA';
 // - Penalize short historical data (e.g default Abstract indicator)
 export const historicalDataUncertaintyColor = (timeseries: TimeseriesPoint[], projectionStart: number, timeScale: TimeScale) => {
   let background = HISTORY_BACKGROUND_COLOR;
+  if (timeseries.length < 4) {
+    return HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE;
+  }
   const gap = projectionStart - timeseries[timeseries.length - 1].timestamp;
   const approxMonth = 30 * 24 * 60 * 60 * 1000;
   if (gap > 0) {
@@ -816,11 +855,23 @@ export const historicalDataUncertaintyColor = (timeseries: TimeseriesPoint[], pr
       }
     }
   }
-  if (timeseries.length < 4) {
-    background = HISTORY_BACKGROUND_COLOR_NO_CONFIDENCE;
-  }
   return background;
 };
+
+export const decodeWeights = (weights: number[]) => {
+  if (weights.length < 2) {
+    return {
+      weightType: 'stale',
+      weightValue: 0
+    };
+  }
+  const w1 = weights[0];
+  const w2 = weights[1];
+  const weightType = w1 > w2 ? 'level' : 'trend';
+  const weightValue = w1 > w2 ? w1 : w2;
+  return { weightType, weightValue };
+};
+
 
 export default {
   getProjectModels,
@@ -852,6 +903,8 @@ export default {
   deleteScenario,
   resetScenarioParameter,
 
+  logHistoryEntry,
+
   updateNodeParameter,
   updateModelParameter,
   updateModelMetadata,
@@ -876,6 +929,8 @@ export default {
   cleanConstraints,
 
   historicalDataUncertaintyColor,
+
+  decodeWeights,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,

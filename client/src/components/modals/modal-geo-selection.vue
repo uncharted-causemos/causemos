@@ -82,11 +82,11 @@ import Modal from '@/components/modals/modal.vue';
 import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
 import { Model, ModelParameter } from '@/types/Datacube';
 import GeoSelectionMap from '@/components/data/geo-selection-map.vue';
-import { stringToAdminLevel, BASE_LAYER, computeMapBoundsForCountries } from '@/utils/map-util-new';
+import { BASE_LAYER, computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { getGADMSuggestions } from '@/services/suggestion-service';
 import { DatacubeGeoAttributeVariableType, DatacubeGenericAttributeVariableType } from '@/types/Enums';
 import { GeoRegionDetail, RegionalGADMDetail } from '@/types/Common';
-import { REGION_ID_DISPLAY_DELIMETER, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { REGION_ID_DISPLAY_DELIMETER, REGION_ID_DELIMETER, stringToAdminLevel } from '@/utils/admin-level-util';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 export default defineComponent({
@@ -269,7 +269,7 @@ $track-height: 2px;
 $thumb-size: 16px;
 $tick-size: 8px;
 
-::v-deep(.modal-container) {
+:deep(.modal-container) {
   max-width: 80vw;
   width: 60vw;
   .modal-body {

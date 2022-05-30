@@ -2,10 +2,17 @@
   <rename-modal
     v-if="showRenameModal"
     :modal-title="'Rename Analysis'"
-    :current-name="selectedAnalysisToRename.title"
+    :current-name="selectedAnalysis.title"
     @confirm="onRenameModalConfirm"
     @cancel="onRenameModalClose"
   />
+  <duplicate-modal
+    v-if="showDuplicateModal"
+    :current-name="selectedAnalysis.title"
+    @confirm="onDuplicateConfirm"
+    @cancel="showDuplicateModal = false"
+  />
+
   <div class="project-overview-container">
     <header>
       <div class="metadata-column">
@@ -87,9 +94,18 @@
           class="btn btn-primary btn-call-for-action"
           @click.stop="openInsightsExplorer">
             <i class="fa fa-fw fa-star fa-lg" />
-            Review Analysis Checklist
+            Review All Insights
         </button>
-        <list-analytical-questions-pane  class="insights"/>
+        <list-analytical-questions-pane
+          :show-checklist-title="true"
+          :insights-by-section="insightsBySection"
+          @update-section-title="updateSectionTitle"
+          @add-section="addSection"
+          @delete-section="deleteSection"
+          @move-section-above-section="moveSectionAboveSection"
+          @remove-insight-from-section="removeInsightFromSection"
+          class="insights"
+        />
       </div>
       <div class="analysis-list-column">
         <div class="analysis-list-header">
@@ -148,10 +164,11 @@
 </template>
 
 <script>
+import { defineComponent, ref } from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
-import { getAnalysisState, getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
+import { getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
 import ModalUploadDocument from '@/components/modals/modal-upload-document';
@@ -160,9 +177,13 @@ import { ANALYSIS, CAG } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal';
 import projectService from '@/services/project-service';
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
+import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';
 import numberFormatter from '@/formatters/number-formatter';
 import DropdownButton from '@/components/dropdown-button.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
+import useQuestionsData from '@/services/composables/useQuestionsData';
+import useInsightsData from '@/services/composables/useInsightsData';
+import { computed } from '@vue/reactivity';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -184,15 +205,58 @@ const toQualitative = cag => ({
   modified_at: cag.modified_at
 });
 
-export default {
+export default defineComponent({
   name: 'AnalysisProjectOverview',
   components: {
     AnalysisOverviewCard,
     ListAnalyticalQuestionsPane,
     ModalUploadDocument,
     RenameModal,
+    DuplicateModal,
     DropdownButton,
     EmptyStateInstructions
+  },
+  setup() {
+    const { insights } = useInsightsData(undefined,
+      ['id', 'name', 'visibility', 'analytical_question']);
+
+    const {
+      questionsList,
+      addSection,
+      updateSectionTitle,
+      deleteSection,
+      moveSectionAboveSection,
+      removeInsightFromSection
+    } = useQuestionsData();
+
+    const insightsBySection = computed(() => {
+      return questionsList.value.map(section => {
+        // FIXME: optimize by using maps
+        const _insights = section.linked_insights
+          .map(insightId =>
+            insights.value.find(insight => insight.id === insightId)
+          )
+          .filter(insight => insight !== undefined);
+        return {
+          section,
+          // FIXME: these might need to be FullInsights when we support jumping
+          //  straight to review from this page.
+          insights: _insights
+        };
+      });
+    });
+
+    const showDuplicateModal = ref(false);
+    return {
+      insightsBySection,
+      addSection,
+      updateSectionTitle,
+      deleteSection,
+      moveSectionAboveSection,
+      removeInsightFromSection,
+
+      showDuplicateModal
+    };
   },
   data: () => ({
     analyses: [],
@@ -208,7 +272,7 @@ export default {
     isEditingDesc: false,
     showDocumentModal: false,
     showRenameModal: false,
-    selectedAnalysisToRename: null,
+    selectedAnalysis: null,
     projectDesc: ''
   }),
   computed: {
@@ -273,18 +337,17 @@ export default {
       const contextIDs = [];
 
       // fetch data space analyses
-      this.quantitativeAnalyses = (await getAnalysesByProjectId(this.project)).map(toQuantitative);
+      const rawQuantitativeAnalyses = await getAnalysesByProjectId(this.project);
+      this.quantitativeAnalyses = rawQuantitativeAnalyses.map(toQuantitative);
 
       if (this.quantitativeAnalyses.length) {
         // save context-id(s) for all data-analyses
-        const promises = this.quantitativeAnalyses.map((analysis) => {
-          return getAnalysisState(analysis.analysisId);
-        });
-        const allRawResponses = await Promise.all(promises);
+
         // @REVIEW
         // the assumption here is that each response in the allRawResponses refers to a specific quantitativeAnalyses
         // so we could utilize that to update the stats count
-        allRawResponses.forEach((analysesState, indx) => {
+        rawQuantitativeAnalyses.forEach((analysis, indx) => {
+          const analysesState = analysis.state || {};
           if (analysesState.analysisItems !== undefined) {
             const analysisContextIDs = analysesState.analysisItems.map(dc => dc.id);
             contextIDs.push(...analysisContextIDs);
@@ -352,16 +415,16 @@ export default {
     },
     onRename(analysis) {
       this.showRenameModal = true;
-      this.selectedAnalysisToRename = analysis;
+      this.selectedAnalysis = analysis;
     },
     async onRenameModalConfirm(newName) {
-      const oldName = this.selectedAnalysisToRename && this.selectedAnalysisToRename.title;
+      const oldName = this.selectedAnalysis && this.selectedAnalysis.title;
 
       // updating qualitative analysis
-      const id = this.selectedAnalysisToRename && this.selectedAnalysisToRename.id;
+      const id = this.selectedAnalysis && this.selectedAnalysis.id;
       if (id && oldName !== newName) {
         modelService.updateModelMetadata(id, { name: newName }).then(() => {
-          this.selectedAnalysisToRename.title = newName;
+          this.selectedAnalysis.title = newName;
           this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
         }).catch(() => {
           this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);
@@ -369,11 +432,11 @@ export default {
       }
 
       // updating data analysis
-      const analysisId = this.selectedAnalysisToRename && this.selectedAnalysisToRename.analysisId;
+      const analysisId = this.selectedAnalysis && this.selectedAnalysis.analysisId;
       if (analysisId && oldName !== newName) {
         try {
           await updateAnalysis(analysisId, { title: newName });
-          this.selectedAnalysisToRename.title = newName;
+          this.selectedAnalysis.title = newName;
           this.toaster(ANALYSIS.SUCCESSFUL_RENAME, 'success', false);
         } catch (e) {
           this.toaster(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
@@ -385,12 +448,18 @@ export default {
     onRenameModalClose() {
       this.showRenameModal = false;
     },
-    async onDuplicate(analysis) {
+    onDuplicate(analysis) {
+      this.selectedAnalysis = analysis;
+      this.showDuplicateModal = true;
+    },
+    async onDuplicateConfirm(newName) {
+      const analysis = this.selectedAnalysis;
+
       if (analysis.analysisId) {
         try {
-          const copy = await duplicateAnalysis(analysis.analysisId);
+          const copy = await duplicateAnalysis(analysis.analysisId, newName);
           const duplicatedAnalysis = toQuantitative(copy);
-          duplicatedAnalysis.title = analysis.title; // FIXME @HACK since duplicateAnalysis() does not return a full object copy
+          duplicatedAnalysis.title = newName; // FIXME @HACK since duplicateAnalysis() does not return a full object copy
           this.analyses.unshift(duplicatedAnalysis);
           this.toaster(ANALYSIS.SUCCESSFUL_DUPLICATE, 'success', false);
         } catch (e) {
@@ -398,15 +467,16 @@ export default {
         }
       }
       if (analysis.id) { // cag-id
-        modelService.duplicateModel(analysis.id).then((copy) => {
+        modelService.duplicateModel(analysis.id, newName).then((copy) => {
           const duplicatedAnalysis = toQualitative(copy);
-          duplicatedAnalysis.title = analysis.title; // FIXME @HACK since duplicateModel() does not return a full object copy
+          duplicatedAnalysis.title = newName; // FIXME @HACK since duplicateModel() does not return a full object copy
           this.analyses.unshift(duplicatedAnalysis);
           this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
         }).catch(() => {
           this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
         });
       }
+      this.showDuplicateModal = false;
     },
     async onDelete(analysis) {
       if (analysis.analysisId) {
@@ -507,7 +577,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

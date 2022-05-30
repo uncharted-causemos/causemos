@@ -136,8 +136,6 @@ function renderParallelCoordinates(
   data: Array<ScenarioData>,
   // (selected) dimensions list, which control shown dimensions as well as their order
   dimensionsList: Array<DimensionInfo>,
-  // list of dimensions (by name) that should be presented as ordinal axes regardless of their actual data type
-  ordinalDimensions: Array<string>,
   // callback function that is called with one or more lines are selected
   onLinesSelection: (selectedLines: Array<ScenarioData>) => void,
   // callback function that is called when one or more markers are added in the new-runs mode
@@ -180,7 +178,7 @@ function renderParallelCoordinates(
   /// map of x axes by dimension name
   //
   axisRange = [0, width];
-  const { x, y } = createScales(data, dimensions, ordinalDimensions, pcTypes, axisRange, height);
+  const { x, y } = createScales(data, dimensions, pcTypes, axisRange, height);
   xScaleMap = x;
   yScale = y;
 
@@ -473,7 +471,10 @@ function renderParallelCoordinates(
         // hide tooltips
         doNotHighlight();
         // some marker-line is removed, so notify external listeners
-        onNewRuns(newScenarioData);
+        const potentialModelRuns = _.map(newScenarioData, function (run) {
+          return _.omit(run, ['status']);
+        });
+        onNewRuns(potentialModelRuns);
       })
       .append('title')
       .text('Remove')
@@ -1944,7 +1945,6 @@ function getSegmentsInfo(dimName: string) {
 const createScales = (
   data: Array<ScenarioData>,
   dimensions: Array<DimensionInfo>,
-  ordinalDimensions: Array<string>,
   pcTypes: { [key: string]: string },
   axisRange: Array<number>,
   height: number) => {
@@ -1973,7 +1973,12 @@ const createScales = (
         // a numerical continuous dimensions
         const min = dim?.min;
         const max = dim?.max;
-        dataExtent = [min ?? 0, max ?? 0];
+        if (_.isFinite(min) && _.isFinite(max)) {
+          dataExtent = [min ?? 0, max ?? 0];
+        } else {
+          // derive from data if min/max are invalid
+          dataExtent = d3.extent(data.map(point => +point[name]));
+        }
       }
     } else {
       dataExtent = d3.extent(data.map(point => +point[name]));
@@ -2102,13 +2107,6 @@ const createScales = (
   Object.values(DatacubeGeoAttributeVariableType).forEach(v => {
     defaultScales[v] = stringFunc;
   });
-
-  // force some dimensions to be ordinal, if requested
-  if (ordinalDimensions && Array.isArray(ordinalDimensions)) {
-    ordinalDimensions.forEach(dimName => {
-      pcTypes[dimName] = 'string';
-    });
-  }
 
   // For each dimension, build a scale and cache its function in the map
   for (const i in dimensions) {

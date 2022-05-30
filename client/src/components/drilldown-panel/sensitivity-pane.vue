@@ -19,6 +19,10 @@
     </button>
   </div>
   <div>
+    <message-display
+      v-if="modelStale"
+      :message="'CAG is stale. Node sensitivity may be invalid, please click Run to synchronize and get the updated results.'"
+    />
     <div v-if="paneSensitivityResult?.result?.status && paneSensitivityResult?.result?.status !== 'completed'">
       Sensitivity Analysis In Progress
       <div v-if="paneSensitivityResult?.result?.progressPercentage">
@@ -82,18 +86,24 @@
 import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import modelService from '@/services/model-service';
-import { CAGGraph, NodeParameter } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, NodeParameter } from '@/types/CAG';
 import ImportanceBars from '../widgets/importance-bars.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 
 export default defineComponent({
   name: 'SensitivityPane',
   components: {
     ImportanceBars,
-    RadioButtonGroup
+    RadioButtonGroup,
+    MessageDisplay
   },
   emits: ['open-drilldown', 'highlight-node-paths'],
   props: {
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      required: true
+    },
     modelComponents: {
       type: Object as PropType<CAGGraph>,
       default: null
@@ -110,6 +120,7 @@ export default defineComponent({
   setup(props) {
     const store = useStore();
     const {
+      modelSummary,
       modelComponents,
       selectedNode,
       sensitivityResult
@@ -146,14 +157,12 @@ export default defineComponent({
       }
     };
     const updatePollingProgress = (result: Promise<void>) => {
-      console.log('update polling progress', result);
       paneSensitivityResult.value.result = result;
       window.setTimeout(() => {
         poll();
       }, 5000);
     };
     const processSensitivityResult = async (result: Promise<void>) => {
-      console.log('process sensitivity result', result);
       await modelService.updateScenarioSensitivityResult(
         sensitivityResult.value.id,
         sensitivityResult.value.experiment_id,
@@ -270,7 +279,21 @@ export default defineComponent({
       }
     });
 
+    const modelStale = ref(false);
+
+    watch(modelSummary, () => {
+      const engine = modelSummary.value.parameter.engine;
+      const status = modelSummary.value.engine_status[engine];
+      if (modelService.MODEL_STATUS.NOT_REGISTERED === status) {
+        modelStale.value = true;
+      } else {
+        modelStale.value = false;
+      }
+    }, { immediate: true });
+
+
     return {
+      modelStale,
       activeTab,
       activeNode,
       drivers,

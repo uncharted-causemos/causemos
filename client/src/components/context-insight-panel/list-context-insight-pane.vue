@@ -54,9 +54,11 @@
         </div>
         <div class="context-insight-content">
           <img
+            v-if="contextInsight.thumbnail"
             :src="contextInsight.thumbnail"
             class="context-insight-thumbnail"
           >
+          <div v-else class="context-insight-thumbnail"><i class="fa fa-spin fa-spinner" /></div>
           <div
             v-if="contextInsight.description.length > 0"
             class="context-insight-description"
@@ -86,8 +88,8 @@
 
 <script>
 import _ from 'lodash';
-
-import { mapGetters, mapActions } from 'vuex';
+import { ref, watch, computed } from 'vue';
+import { mapGetters, mapActions, useStore } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
 
 import { INSIGHTS } from '@/utils/messages-util';
@@ -118,7 +120,23 @@ export default {
     selectedContextInsight: null
   }),
   setup() {
-    const { insights: listContextInsights, reFetchInsights } = useInsightsData();
+    const store = useStore();
+    // the gallery opens over top of this side panel, prevent fetches while the gallery is open
+    const preventFetches = computed(() => store.getters['insightPanel/isPanelOpen']);
+    const { insights, reFetchInsights, fetchImagesForInsights } = useInsightsData(preventFetches, undefined, true);
+    const listContextInsights = ref([])/* as Ref<FullInsight[]> */;
+
+    watch([insights], () => {
+      // first fill it without images, once the downloads finish, fill the image in
+      // use '' to represent that the thumbnail is loading
+      listContextInsights.value = insights.value.map(insight => ({ ...insight, image: '' }));
+      (async () => {
+        const images = await fetchImagesForInsights(insights.value.map(insight => insight.id));
+        const ids = insights.value.map(insight => insight.id);
+        listContextInsights.value = images.filter(i => ids.includes(i.id));
+      })();
+    });
+
     return {
       listContextInsights,
       reFetchInsights
@@ -127,11 +145,9 @@ export default {
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countContextInsights: 'contextInsightPanel/countContextInsights',
       projectType: 'app/projectType',
       project: 'app/project',
-      analysisId: 'dataAnalysis/analysisId',
-      shouldRefetchInsights: 'contextInsightPanel/shouldRefetchInsights'
+      analysisId: 'dataAnalysis/analysisId'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
@@ -140,27 +156,18 @@ export default {
         `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${this.projectMetadata.corpus_id}`;
     }
   },
-  watch: {
-    shouldRefetchInsights() {
-      if (this.shouldRefetchInsights) {
-        // refresh the latest list from the server
-        this.reFetchInsights();
-      }
-    }
-  },
-  mounted() {
-    this.showContextInsightPanel();
-  },
   methods: {
     ...mapActions({
-      showContextInsightPanel: 'contextInsightPanel/showContextInsightPanel',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightList: 'insightPanel/setInsightList',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
+      setInsightsBySection: 'insightPanel/setInsightsBySection',
+      setPositionInReview: 'insightPanel/setPositionInReview',
+      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
+      setSnapshotUrl: 'insightPanel/setSnapshotUrl'
     }),
     newInsight() {
+      this.setSnapshotUrl(undefined);
       this.showInsightPanel();
       this.setUpdatedInsight(null);
       this.setCurrentPane('review-new-insight');
@@ -215,7 +222,10 @@ export default {
         // add 'insight_id' as a URL param so that the target page can apply it
         const finalURL = InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id, datacubeId);
 
-        this.$router.push(finalURL);
+        try {
+          this.$router.push(finalURL);
+        } catch (e) {
+        }
       } else {
         router.push({
           query: {
@@ -238,15 +248,15 @@ export default {
         // is this the last public insight for the relevant dataube?
         //  if so, unpublish the model datacube
         const datacubeId = insight.context_id[0];
-        const publicInsights = await InsightUtil.getPublicInsights(datacubeId, this.project);
-        if (publicInsights.length === 1) {
+        const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, this.project);
+        if (publicInsightCount === 1) {
           await unpublishDatacube(datacubeId, this.project);
           this.setRefreshDatacubes(true);
         }
       }
 
       const id = insight.id;
-      InsightUtil.removeInsight(id);
+      await InsightUtil.removeInsight(id);
       // refresh the latest list from the server
       this.reFetchInsights();
     },
@@ -256,7 +266,16 @@ export default {
       }
       this.showInsightPanel();
       this.setUpdatedInsight(insight);
-      this.setInsightList(this.listContextInsights);
+      const dummySection = InsightUtil.createEmptyChecklistSection();
+      const insightsBySection = [{
+        section: dummySection,
+        insights: this.listContextInsights
+      }];
+      this.setInsightsBySection(insightsBySection);
+      this.setPositionInReview({
+        sectionId: dummySection.id,
+        insightId: insight.id
+      });
       this.setCurrentPane('review-edit-insight');
     }
   }

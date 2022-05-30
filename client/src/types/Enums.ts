@@ -52,6 +52,14 @@ export enum DatacubeGenericAttributeVariableType {
   Geo = 'geo'
 }
 
+// numeric params can be converted to another numeric param type (i.e., int <--> float)
+//  and can have their min/max values updated
+// also, numeric param can be discrete (data type: nominal|ordinal) or continuous (data type: numerical)
+// can a numeric param be freeform?
+//
+// a string param can have its data type converted between nominal|ordinal to freeform
+//  nominal|ordinal assumes a pre-defined list of options vs freeform
+
 export type DatacubeAttributeVariableType = DatacubeGeoAttributeVariableType | DatacubeGenericAttributeVariableType;
 
 export enum GeoAttributeFormat {
@@ -61,10 +69,10 @@ export enum GeoAttributeFormat {
 }
 
 export enum ModelParameterDataType {
-  Nominal = 'nominal', // discrete
-  Ordinal = 'ordinal', // discrete
-  Numerical = 'numerical', // continuous
-  Freeform = 'freeform' // discrete, dynmaic choices
+  Nominal = 'nominal', // discrete; fixed set of choices edited only by the modeller
+  Ordinal = 'ordinal', // discrete; fixed set of choices edited only by the modeller
+  Numerical = 'numerical', // continuous; a numerical range is needed to render correctly
+  Freeform = 'freeform' // discrete, dynmaic choices; the user can add new choices
 }
 
 export enum TemporalResolution {
@@ -102,7 +110,8 @@ export enum SpatialAggregationLevel {
 export enum AggregationOption {
   None = '',
   Mean = 'mean',
-  Sum = 'sum'
+  Sum = 'sum',
+  WeightedAverage = 'wavg'
 }
 
 export enum TemporalResolutionOption {
@@ -137,6 +146,12 @@ export enum ComparativeAnalysisMode {
   RegionRanking = 'region ranking'
 }
 
+export enum DatacubeViewMode {
+  Description = 'description',
+  Data = 'data',
+  Media = 'media'
+}
+
 export enum RegionRankingCompositionType {
   Union = 'union',
   Intersection = 'intersection'// ,
@@ -154,6 +169,21 @@ export enum IncompleteDataCorrectiveAction {
   CompleteData = 'Complete Data (No Change)',
   DataRemoved = ' Final data point was removed',
   DataExtrapolated = 'Final data point contains extrapolated data'
+}
+
+export enum EdgeDirection {
+  Incoming = 'Incoming',
+  Outgoing = 'Outgoing',
+}
+
+export enum LoadStatus {
+  Loading = 'Loading',
+  Loaded = 'Loaded',
+}
+
+export enum EdgeSuggestionType {
+  ConceptSuggestion = 'ConceptSuggestion',
+  KBSuggestion = 'KBSuggestion',
 }
 
 export const SPLIT_BY_VARIABLE = 'variable';

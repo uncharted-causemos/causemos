@@ -1,5 +1,10 @@
 const { FIELD_TYPES } = require('./config');
 
+const makeRanges = (startYear, endYear) => {
+  return [...Array(endYear - startYear)]
+    .map((_, i) => ({ from: startYear + i, to: startYear + 1 + i }));
+};
+
 const FIELD_LEVELS = Object.freeze({
   DATACUBE: 0,
   CONCEPTS: 1
@@ -26,7 +31,7 @@ const FIELDS = Object.freeze({
     level: FIELD_LEVELS.DATACUBE
   },
   keyword: { // For search only
-    fields: ['name', 'description', 'family_name', 'category',
+    fields: ['name', 'description', 'family_name', 'category', 'domains',
       'maintainer.name', 'maintainer.organization', 'tags',
       'geography.country', 'geography.admin1', 'geography.admin2', 'geography.admin3',
       'parameters.name', 'parameters.display_name', 'parameters.description',
@@ -42,13 +47,29 @@ const FIELDS = Object.freeze({
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
+  domain: {
+    fields: ['domains'],
+    aggFields: ['domains.raw'],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.DATACUBE
+  },
   createdAt: {
     fields: ['created_at'],
-    type: FIELD_TYPES.DATE,
+    type: FIELD_TYPES.DATE_MILLIS,
     level: FIELD_LEVELS.DATACUBE
   },
   description: {
     fields: ['description'],
+    type: FIELD_TYPES.REGEXP,
+    level: FIELD_LEVELS.DATACUBE
+  },
+  dataSensitivity: {
+    fields: ['data_sensitivity'],
+    type: FIELD_TYPES.REGEXP,
+    level: FIELD_LEVELS.DATACUBE
+  },
+  dataQuality: {
+    fields: ['data_quality'],
     type: FIELD_TYPES.REGEXP,
     level: FIELD_LEVELS.DATACUBE
   },
@@ -73,6 +94,11 @@ const FIELDS = Object.freeze({
   admin3: {
     fields: ['geography.admin3'],
     aggFields: ['geography.admin3.raw'],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.DATACUBE
+  },
+  geoGranularity: {
+    fields: ['data_info.region_levels'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
@@ -112,8 +138,9 @@ const FIELDS = Object.freeze({
   },
   period: {
     fields: ['period.gte', 'period.lte'],
-    type: FIELD_TYPES.RANGED,
-    level: FIELD_LEVELS.DATACUBE
+    type: FIELD_TYPES.DATE_MILLIS,
+    level: FIELD_LEVELS.DATACUBE,
+    range: makeRanges(1970, 2024)
   },
   tags: {
     fields: ['tags'],

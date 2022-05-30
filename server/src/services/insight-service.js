@@ -1,9 +1,40 @@
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 const es = rootRequire('adapters/es/adapter');
+const sharp = require('sharp');
 
 const Adapter = es.Adapter;
 const RESOURCE = es.RESOURCE;
+
+const MAX_INSIGHTS = 300;
+const TARGET_THUMBNAIL_WIDTH = 200;
+
+const resizeImage = async (base64Str, targetWidthInPixels) => {
+  const parts = base64Str.split(';');
+  const mimType = parts[0].split(':')[1];
+  const imageData = parts[1].split(',')[1];
+  const img = Buffer.from(imageData, 'base64');
+
+  const metadata = await sharp(img).metadata();
+  const w = metadata.width;
+  const h = metadata.height;
+
+  // Calculate how much we need to scale the image so that its new width is
+  //  approximately `targetWidthInPixels`.
+  // E.g. if width is 400 and targetWidth is 200, we need to make it 2x smaller.
+  const quotient = w / targetWidthInPixels;
+  // If the width is already smaller than the target width, don't scale it down.
+  const scaleFactor = quotient < 1 ? 1 : 1 / quotient;
+
+  const data = await sharp(img)
+    .resize(Math.floor(w * scaleFactor), Math.floor(h * scaleFactor))
+    .toBuffer();
+
+  const resizedStr = `data:${mimType};base64,${data.toString('base64')}`;
+  return resizedStr;
+};
+
+
 
 /**
  * Wrapper to create a new insight.
@@ -26,7 +57,7 @@ const createInsight = async (
   isDefault,
   // eslint-disable-next-line camelcase
   analytical_question,
-  thumbnail,
+  image,
   viewState,
   dataState,
   // eslint-disable-next-line camelcase
@@ -37,6 +68,13 @@ const createInsight = async (
   const keyFn = (doc) => {
     return doc.id;
   };
+
+  // Create a thumbnail
+  const thumbnail = await resizeImage(
+    image,
+    TARGET_THUMBNAIL_WIDTH
+  );
+
   await insightsConnection.insert({
     id: newId,
     name,
@@ -51,6 +89,7 @@ const createInsight = async (
     post_actions: postActions,
     is_default: isDefault,
     analytical_question: analytical_question,
+    image,
     thumbnail,
     view_state: viewState,
     data_state: dataState,
@@ -62,18 +101,19 @@ const createInsight = async (
 };
 
 /**
- * Insert an insight object as a whole
- */
-const insertInsight = async(insight) => {
-  const connection = Adapter.get(RESOURCE.INSIGHT);
-  return await connection.insert(insight);
-};
-
-/**
  * Update an insight with the specified changes
  */
 const updateInsight = async(id, insight) => {
   const connection = Adapter.get(RESOURCE.INSIGHT);
+
+  // Create a thumbnail
+  if (insight.image) {
+    insight.thumbnail = await resizeImage(
+      insight.image,
+      TARGET_THUMBNAIL_WIDTH
+    );
+  }
+
   const result = await connection.update({
     id: id,
     ...insight
@@ -84,33 +124,36 @@ const updateInsight = async(id, insight) => {
 };
 
 /**
- * Returns a list of insights
+ * Returns a list of insights that match a filter
  */
-const getAllInsights = async (filterParams) => {
+const getAllInsights = async (filterParams, options) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const searchFilters = getFilterFields(filterParams);
-  const results = await insightsConnection.find(searchFilters, { size: 50 });
+  if (!options.size) {
+    options.size = MAX_INSIGHTS;
+  }
+  const results = await insightsConnection.find(filterParams, options);
   return results;
 };
 
 /**
- * Returns an insight
+ * Returns an insight matching the id
  */
-const getInsight = async (insightId) => {
+const getInsight = async (insightId, fieldAllowList) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const result = await insightsConnection.findOne([{ field: 'id', value: insightId }], {});
+  const options = {};
+  if (fieldAllowList && fieldAllowList.length > 0) {
+    options.includes = fieldAllowList;
+  }
+  const result = await insightsConnection.findOne([{ field: 'id', value: insightId }], options);
   return result;
 };
 
 /**
- * Count the number of insights within a project
- *
- * @param {string} projectId
+ * Count the number of insights that math a filter
  */
-const counts = async (filterParams) => {
+const count = async (filterParams) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const searchFilters = getFilterFields(filterParams);
-  const count = await insightsConnection.count(searchFilters);
+  const count = await insightsConnection.count(filterParams);
   return count;
 };
 
@@ -127,33 +170,11 @@ const remove = async (insightId) => {
   return stats;
 };
 
-const getFilterFields = (filterParams) => {
-  // NOTE: supported filter fields are listed also in the client service; InsightFilterFields
-  const supportedSearchFields = [
-    'project_id',
-    'context_id',
-    'target_view',
-    'visibility',
-    'analysis_id'
-  ];
-  const searchFilters = [];
-  supportedSearchFields.forEach(key => {
-    if (Object.prototype.hasOwnProperty.call(filterParams, key)) {
-      searchFilters.push({
-        field: key,
-        value: filterParams[key]
-      });
-    }
-  });
-  return searchFilters;
-};
-
 module.exports = {
   createInsight,
   getAllInsights,
   getInsight,
-  counts,
+  count,
   remove,
-  insertInsight,
   updateInsight
 };

@@ -4,7 +4,9 @@ import { DatacubeGeography } from '@/types/Common';
 import {
   AdminLevel,
   SpatialAggregationLevel,
-  AggregationOption
+  AggregationOption,
+  ReferenceSeriesOption,
+  TemporalAggregationLevel
 } from '@/types/Enums';
 import {
   OutputSpec,
@@ -17,15 +19,25 @@ import {
   RawOutputDataPoint,
   QualifierBreakdownResponse,
   QualifierCountsResponse,
-  QualifierListsResponse
+  QualifierListsResponse,
+  OutputSpecWithRegionId,
+  BaseSpec,
+  BulkRegionalAggregationData
 } from '@/types/Outputdata';
-import isSplitByQualifierActive from '@/utils/qualifier-util';
+import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
 import { filterRawDataByRegionIds, computeTimeseriesFromRawData } from '@/utils/outputdata-util';
+import { getLevelFromRegionId, adminLevelToString } from '@/utils/admin-level-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
 
 const RAW_DATA_REQUEST_CACHE_SIZE = 20;
 const rawDataRequestCache = new FIFOCache<Promise<RawOutputDataPoint[]>>(RAW_DATA_REQUEST_CACHE_SIZE);
+
+/*
+  getRaw[something] functions:
+  - these all leverage data ultimately sourced from the raw-data api endpoint
+  - only use getRaw naming pattern for functions that use data from that endpoint
+*/
 
 export const getRawOutputData = async (
   param: {
@@ -98,7 +110,7 @@ export const getRawOutputDataByTimestamp = async (
     dataId: string,
     runId: string,
     outputVariable: string,
-    timestamp: number
+    timestamp: number|undefined
   }
 ): Promise<RawOutputDataPoint[]> => {
   const rawData = await getRawOutputData(param);
@@ -141,6 +153,57 @@ export const getRawQualifierTimeseries = async (
   });
 
   return result;
+};
+
+export const getTimeseries = async (
+  spec: OutputSpecWithRegionId
+): Promise<any> => {
+  try {
+    const result = await API.get('maas/output/timeseries',
+      {
+        params: {
+          data_id: spec.modelId,
+          run_id: spec.runId,
+          feature: spec.outputVariable,
+          resolution: spec.temporalResolution,
+          temporal_agg: spec.temporalAggregation,
+          spatial_agg: spec.spatialAggregation,
+          transform: spec.transform,
+          region_id: spec.regionId
+        }
+      }
+    );
+    return result;
+  } catch (e) {
+    return [];
+  }
+};
+
+export const getBulkTimeseries = async(
+  spec: OutputSpec,
+  regionIds: string[]
+): Promise<any> => {
+  try {
+    const result = await API.post('maas/output/bulk-timeseries/regions',
+      {
+        region_ids: regionIds
+      },
+      {
+        params: {
+          data_id: spec.modelId,
+          run_id: spec.runId,
+          feature: spec.outputVariable,
+          resolution: spec.temporalResolution,
+          temporal_agg: spec.temporalAggregation,
+          spatial_agg: spec.spatialAggregation,
+          transform: spec.transform
+        }
+      }
+    );
+    return result;
+  } catch (e) {
+    return [];
+  }
 };
 
 export const getRawQualifierBreakdown = async (
@@ -272,8 +335,35 @@ export const getQualifierBreakdown = async (
   temporalResolution: string,
   temporalAggregation: string,
   spatialAggregation: string,
-  timestamp: number
+  timestamp: number,
+  regionId: string
 ) : Promise<QualifierBreakdownResponse[]> => {
+  if (regionId.length > 0) {
+    const [global, regional] = await Promise.all([
+      getGlobalQualifierBreakdown(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp),
+      getQualifierBreakdownByRegionId(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp, regionId)
+    ]);
+    // Remove all values from global qualifier, use only qualifier option name as placeholder
+    for (const qual of global) {
+      for (const opt of qual.options) {
+        opt.value = undefined;
+      }
+    }
+    return _.merge(global, regional);
+  }
+  return await getGlobalQualifierBreakdown(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp);
+};
+
+export const getGlobalQualifierBreakdown = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  qualifierVariableIds: string[],
+  temporalResolution: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  timestamp: number
+): Promise<QualifierBreakdownResponse[]> => {
   const { data } = await API.get('maas/output/qualifier-data', {
     params: {
       data_id: dataId,
@@ -287,6 +377,43 @@ export const getQualifierBreakdown = async (
     }
   });
   return data as QualifierBreakdownResponse[];
+};
+
+export const getQualifierBreakdownByRegionId = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  qualifierVariableIds: string[],
+  temporalResolution: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  timestamp: number,
+  regionId: string
+) : Promise<QualifierBreakdownResponse[]> => {
+  const outputSpec: OutputSpec = {
+    modelId: dataId,
+    runId,
+    outputVariable: feature,
+    temporalResolution,
+    temporalAggregation,
+    spatialAggregation,
+    timestamp,
+    isDefaultRun: false
+  };
+  const adminLevel = adminLevelToString(getLevelFromRegionId(regionId));
+  const promises = qualifierVariableIds.map(varId => getRegionAggregationWithQualifiers(outputSpec, varId));
+  const regionalData = await Promise.all(promises);
+  const result = regionalData.map((data, index) => {
+    // Filter by region Id
+    const regionAgg = data[adminLevel]?.filter(regionAgg => regionAgg.id === regionId)[0];
+    if (!regionAgg) return undefined;
+    // Get qualifier options which is an array of object that represent qualifier option name and value pair
+    const options = Object.entries((regionAgg as RegionAgg).values).map(([name, value]) => {
+      return { name, value: value as number };
+    });
+    return { name: qualifierVariableIds[index], options };
+  }).filter(d => !!d);
+  return result as QualifierBreakdownResponse[];
 };
 
 /**
@@ -362,12 +489,15 @@ export const getRegionAggregationWithQualifiers = async (
 };
 
 export const getRegionAggregations = async (
-  specs: OutputSpecWithId[],
+  baseSpecs: OutputSpecWithId[],
   allRegions: DatacubeGeography,
-  breakdownOption: string
+  breakdownOption: string,
+  referenceSeries?: string[],
+  allTimestamps?: string[]
 ): Promise<RegionalAggregations> => {
   // Fetch and restructure the result
   let results;
+  const specs = baseSpecs; // we generate additional specs on the fly for yearly reference series;
 
   if (isSplitByQualifierActive(breakdownOption)) {
     results = await Promise.all(specs.map((spec) => getRegionAggregationWithQualifiers(spec, breakdownOption)));
@@ -375,6 +505,32 @@ export const getRegionAggregations = async (
   } else if (breakdownOption === SpatialAggregationLevel.Region) {
     const ret = await getRegionAggregation(specs[0]);
     results = new Array(specs.length).fill(ret) as RegionalAggregation[];
+  } else if (breakdownOption === TemporalAggregationLevel.Year) {
+    const selectedTimestamps = specs
+      .map(s => s.timestamp?.toString())
+      .filter(s => s !== undefined) as string[];
+
+    // get bulk results then parse them into a format usable for the formatting section afterwards
+    const bulkResults = await getBulkRegionalData(specs[0], selectedTimestamps, allTimestamps ?? [], referenceSeries);
+    if (bulkResults.regional_data) {
+      results = bulkResults?.regional_data.map(rd => rd.data);
+    } else {
+      results = <RegionalAggregation[]> [];
+    }
+    if (bulkResults.all_agg && allTimestamps && allTimestamps.length > 0) {
+      results.push(bulkResults.all_agg);
+      const newSpec = <OutputSpecWithId> {
+        id: ReferenceSeriesOption.AllYears as string
+      };
+      specs.push(newSpec);
+    }
+    if (bulkResults.select_agg) {
+      results.push(bulkResults.select_agg);
+      const newSpec = <OutputSpecWithId> {
+        id: ReferenceSeriesOption.SelectYears as string
+      };
+      specs.push(newSpec);
+    }
   } else {
     results = await Promise.all(specs.map(getRegionAggregation));
   }
@@ -424,7 +580,7 @@ export const getRegionAggregations = async (
         }
 
         // if we have item value, as in the normal regional aggregation use that.
-        if ((item as {id: string; value: number}).value) {
+        if (_.isFinite((item as {id: string; value: number}).value)) {
           // but only use that if we're not in regional aggregation, or we are and the specs id and item id match
           if (
             breakdownOption !== SpatialAggregationLevel.Region ||
@@ -446,6 +602,40 @@ export const getRegionAggregations = async (
     admin3: Object.values(dict.admin3)
   };
 };
+
+export const getBulkRegionalData = async(
+  spec: BaseSpec,
+  selectedTimestamps: string[],
+  allTimestamps: string[],
+  referenceSeries?: string[]
+): Promise<BulkRegionalAggregationData> => {
+  try {
+    const { data } = await API.post(
+      'maas/output/bulk-regional-data',
+      {
+        all_timestamps: allTimestamps,
+        timestamps: selectedTimestamps
+      },
+      {
+        params: {
+          aggForSelect: referenceSeries?.includes(ReferenceSeriesOption.SelectYears) ? 'mean' : null,
+          aggForAll: referenceSeries?.includes(ReferenceSeriesOption.AllYears) ? 'mean' : null,
+          data_id: spec.modelId,
+          run_id: spec.runId,
+          feature: spec.outputVariable,
+          resolution: spec.temporalResolution,
+          temporal_agg: spec.temporalAggregation,
+          spatial_agg: spec.spatialAggregation,
+          transform: spec.transform
+        }
+      }
+    );
+    return data;
+  } catch (e) {
+    return {} as BulkRegionalAggregationData;
+  }
+};
+
 
 export const getOutputStat = async (spec: OutputSpec): Promise<OutputStatWithZoom[]> => {
   try {
@@ -477,7 +667,40 @@ export const getOutputStats = async (specs: OutputSpecWithId[]): Promise<OutputS
   return stats;
 };
 
+// not in use, but available from maas/output if aggregrate regional timeseries
+// are ever implemented
+/*
+export const getAggregateTimeseries = async (
+  spec: BaseSpec,
+  regionIds: string[]
+): Promise<any> => {
+  try {
+    const result = await API.post(
+      'maas/output/aggregate-timeseries',
+      {
+        region_ids: regionIds
+      },
+      {
+        params: {
+          data_id: spec.modelId,
+          run_id: spec.runId,
+          feature: spec.outputVariable,
+          resolution: spec.temporalResolution,
+          temporal_agg: spec.temporalAggregation,
+          spatial_agg: spec.spatialAggregation
+        }
+      }
+    );
+    return result;
+  } catch (e) {
+    return [];
+  }
+};
+*/
+
 export default {
+  getTimeseries,
+  getBulkTimeseries,
   getRawOutputData,
   getRawTimeseriesData,
   getRawTimeseriesDataBulk,
@@ -492,6 +715,7 @@ export default {
   getRegionAggregation,
   getRegionAggregationWithQualifiers,
   getRegionAggregations,
+  getBulkRegionalData,
   getOutputStat,
   getOutputStats
 };

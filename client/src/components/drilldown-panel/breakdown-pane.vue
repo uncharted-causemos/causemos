@@ -21,6 +21,7 @@
       :aggregation-level-count="availableAdminLevelTitles.length"
       :aggregation-level="selectedAdminLevel"
       :aggregation-level-title="availableAdminLevelTitles[selectedAdminLevel]"
+      :message="invalidRegionTimeseriesMessage"
       :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
       :raw-data="filteredRegionalData"
       :units="unit"
@@ -30,12 +31,8 @@
       :show-references="selectedBreakdownOption === SpatialAggregationLevel.Region && selectedAdminLevel > 0"
       :allow-collapsing="false"
       :reference-options="referenceOptions"
+      :checkbox-type="getRegionalBreakdownCheckboxType()"
       @toggle-reference-options="toggleReferenceOptions"
-      :checkbox-type="
-        selectedBreakdownOption === SpatialAggregationLevel.Region
-          ? 'checkbox'
-          : 'radio'
-      "
       @toggle-is-item-selected="toggleIsRegionSelected"
       @aggregation-level-change="setSelectedAdminLevel"
     >
@@ -138,13 +135,13 @@
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
       ref="variable_ref"
-      v-if="isOutputVariableBreakdownDataValid"
+      v-if="isFeatureBreakdownDataValid"
       class="checklist-section"
-      :aggregation-level-count="Object.keys(outputVariableBreakdownData).length"
+      :aggregation-level-count="Object.keys(featureBreakdownData).length"
       :aggregation-level="0"
       :aggregation-level-title="'Variable'"
       :ordered-aggregation-level-keys="['Variable']"
-      :raw-data="outputVariableBreakdownData"
+      :raw-data="featureBreakdownData"
       :should-show-deselected-bars="selectedBreakdownOption !== SPLIT_BY_VARIABLE"
       :show-references="false"
       :allow-collapsing="false"
@@ -154,8 +151,8 @@
           ? 'checkbox'
           : null
       "
-      :selected-item-ids="Array.from(selectedBreakdownOutputVariables)"
-      @toggle-is-item-selected="toggleIsOutputVariableSelected"
+      :selected-item-ids="Array.from(selectedFeatureNames)"
+      @toggle-is-item-selected="toggleIsFeatureSelected"
     >
     </aggregation-checklist-pane>
   </div>
@@ -166,7 +163,7 @@ import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
-import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { AdminRegionSets, BreakdownData, NamedBreakdownData, QualifierFetchInfo } from '@/types/Datacubes';
 import { ModelRunReference } from '@/types/ModelRunReference';
 import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES, filterRegionalLevelData } from '@/utils/admin-level-util';
 import {
@@ -223,7 +220,7 @@ export default defineComponent({
       type: Object as PropType<BreakdownData | null>,
       default: null
     },
-    outputVariableBreakdownData: {
+    featureBreakdownData: {
       type: Object as PropType<BreakdownData | null>,
       default: null
     },
@@ -247,7 +244,7 @@ export default defineComponent({
       type: Object as PropType<Set<string>>,
       default: () => new Set()
     },
-    selectedBreakdownOutputVariables: {
+    selectedFeatureNames: {
       type: Object as PropType<Set<string>>,
       default: () => new Set()
     },
@@ -262,6 +259,10 @@ export default defineComponent({
     referenceOptions: {
       type: Array as PropType<ModelRunReference[]>,
       default: []
+    },
+    qualifierFetchInfo: {
+      type: Map as PropType<Map<String, QualifierFetchInfo>>,
+      default: () => new Map()
     }
   },
   emits: [
@@ -281,7 +282,7 @@ export default defineComponent({
       selectedBreakdownOption,
       selectedTemporalResolution,
       qualifierBreakdownData,
-      outputVariableBreakdownData,
+      featureBreakdownData,
       selectedRegionIdsAtAllLevels
     } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
@@ -303,7 +304,7 @@ export default defineComponent({
       emit('toggle-is-year-selected', year);
     };
 
-    const toggleIsOutputVariableSelected = (title: string, variable: string) => {
+    const toggleIsFeatureSelected = (title: string, variable: string) => {
       emit('toggle-is-output-variable-selected', variable);
     };
 
@@ -360,11 +361,11 @@ export default defineComponent({
         Object.keys(temporalBreakdownData.value).length !== 0
     );
 
-    const isOutputVariableBreakdownDataValid = computed(
+    const isFeatureBreakdownDataValid = computed(
       () =>
 
-        outputVariableBreakdownData.value !== null &&
-        Object.keys(outputVariableBreakdownData.value).length !== 0
+        featureBreakdownData.value !== null &&
+        Object.keys(featureBreakdownData.value).length !== 0
     );
 
     const breakdownOptions = computed(() => {
@@ -406,7 +407,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsQualifierSelected,
       toggleIsYearSelected,
-      toggleIsOutputVariableSelected,
+      toggleIsFeatureSelected,
       toggleReferenceOptions,
       availableAdminLevelTitles,
       timestampFormatter,
@@ -416,7 +417,7 @@ export default defineComponent({
       breakdownOptions,
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
-      isOutputVariableBreakdownDataValid,
+      isFeatureBreakdownDataValid,
       AggregationOption,
       SpatialAggregationLevel,
       TemporalAggregationLevel,
@@ -424,13 +425,51 @@ export default defineComponent({
       filteredRegionalData
     };
   },
+  computed: {
+    invalidRegionTimeseriesMessage() {
+      if (this.getRegionalBreakdownCheckboxType() !== null) {
+        return null;
+      }
+      // Assert that the breakdown option isn't null, since if it was the
+      //  previous conditional would have been triggered.
+      const breakdownOption = this.selectedBreakdownOption as string;
+      const fetchInfo = this.qualifierFetchInfo.get(breakdownOption);
+      if (fetchInfo === undefined) {
+        console.error(
+          'Unable to find qualifier fetch info for breakdown option: ' +
+          this.selectedBreakdownOption
+        );
+        return null;
+      }
+      const {
+        maxAdminLevelWithRegionalTimeseries: maxLevel,
+        thresholds
+      } = fetchInfo;
+      // We're hiding regional radio buttons because either:
+      // 1. The qualifier has too many values to calculate regional timeseries at any level
+      if (maxLevel === -1) {
+        const displayName = this.qualifierBreakdownData.find(
+          qualifier => qualifier.id === breakdownOption
+        )?.name ?? breakdownOption;
+        return `Unable to select individual regions because ${displayName} has
+          more than ${thresholds.regional_timeseries_count} possible values.`;
+      }
+      // 2. We're looking at an admin level beyond what we have regional timeseries for
+      if (this.selectedAdminLevel > maxLevel) {
+        return `Unable to select individual regions below admin level ${maxLevel}.`;
+      }
+      console.error('Regional breakdown checkbox type is unexpectedly null.');
+      return null;
+    }
+  },
   methods: {
     async scrollToBreakdown(newValue: string | null) {
       if (newValue) {
         const reference = newValue + '_ref';
         setTimeout(() => { // HACK: wait for element to be mounted, year_ref gets unmounted in certain cases so we need to wait before we try and scroll to it
           try { // in the future we should look into preventing the mount/unmount behavior
-            const element = (this.$refs[reference] as any).$el; // this will throw an error if element hasn't been rendered (it's ref wont exist)
+            const ref = (this.$refs[reference] as any);
+            const element = ref?.$el || ref[0]?.$el; // this will throw an error if element hasn't been rendered (it's ref wont exist)
             const container = document.getElementById('panel-content-container');
             if (container) {
               container.scrollTop = element.offsetTop - 45; // set scroll height to slightly above relevant qualifier
@@ -450,6 +489,30 @@ export default defineComponent({
       }
       this.emitBreakdownOptionSelection(breakdownOption);
       this.scrollToBreakdown(breakdownOption);
+    },
+    getRegionalBreakdownCheckboxType() {
+      switch (this.selectedBreakdownOption) {
+        case SpatialAggregationLevel.Region: {
+          return 'checkbox';
+        }
+        case TemporalAggregationLevel.Year: {
+          return 'radio';
+        }
+        case null: {
+          return 'radio';
+        }
+        default: {
+          // Qualifier is selected. If the selected admin level is greater than
+          //  the max regional timeseries level for this qualifier, hide radio
+          //  buttons.
+          const maxLevel = this.qualifierFetchInfo.get(this.selectedBreakdownOption)
+            ?.maxAdminLevelWithRegionalTimeseries;
+          if (maxLevel !== undefined && this.selectedAdminLevel > maxLevel) {
+            return null;
+          }
+          return 'radio';
+        }
+      }
     }
   }
 });

@@ -15,7 +15,7 @@
     </div>
     <!-- right side -->
     <div class="label-area">
-      <div class="line-content" v-if="size > 0">{{name}}</div>
+      <div class="line-content">{{name}}</div>
       <label class="line-content">{{size + '%'}}</label>
     </div>
   </div>

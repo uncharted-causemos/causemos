@@ -1,33 +1,75 @@
 const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
-const requestAsPromise = rootRequire('/util/request-as-promise');
 const modelUtil = rootRequire('/util/model-util');
 const searchService = rootRequire('/services/search-service');
+const { getTimeseries } = rootRequire('/services/datacube-service');
 const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
+const { client } = rootRequire('/adapters/es/client');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 
-const getIndicatorData = async (dataId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
-  Logger.info(`Get indicator data from wm-go: ${dataId} ${feature}`);
 
-  const options = {
-    method: 'GET',
-    url: process.env.WM_GO_URL +
-      `/maas/output/timeseries?data_id=${encodeURI(dataId)}&run_id=indicator&feature=${encodeURI(feature)}&resolution=${temporalResolution}&temporal_agg=${temporalAggregation}&spatial_agg=${geospatialAggregation}`,
-    headers: {
-      'Content-type': 'application/json',
-      'Accept': 'application/json'
-    },
-    json: {}
+const _buildQueryStringFilter = (text) => {
+  let cleanedStr = _.last(text.split('/'));
+  cleanedStr = cleanedStr.replaceAll('_', ' ');
+  cleanedStr = cleanedStr
+    .replace(/[^\w\s]/gi, '')
+    .replace(/\s\s+/gi, ' ')
+    .trim();
+
+  const labels = cleanedStr.split(' ');
+
+  let query = '';
+  if (labels.length === 1) {
+    query = labels[0];
+  } else {
+    query = '(' + labels[0] + ') AND (' + labels[1] + ')';
+  }
+  return {
+    query_string: {
+      query: query,
+      fields: ['name', 'family_name', 'description', 'category', 'outputs.name', 'outputs.display_name', 'outputs.description', 'tags', 'geography.*', 'ontology_matches', 'data_info']
+    }
   };
-  const response = await requestAsPromise(options);
-  return response;
+};
+
+const textSearch = async (text) => {
+  const searchPayload = {
+    index: RESOURCE.DATA_DATACUBE,
+    size: 10,
+    body: {
+      query: {
+        bool: {
+          must: [
+            _buildQueryStringFilter(text),
+            { match: { type: 'indicator' } },
+            { match: { status: 'READY' } }
+          ]
+        }
+      },
+      sort: [
+        { _score: 'desc' }
+      ]
+    }
+  };
+  const results = await client.search(searchPayload);
+  return results.body.hits.hits.map(d => d._source);
+};
+
+const getDefaultModelRun = async (dataId) => {
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  const defaultRun = await connection.findOne([
+    { field: 'model_id', value: dataId },
+    { field: 'status', value: 'READY' },
+    { field: 'is_default_run', value: true }
+  ], {});
+  return defaultRun;
 };
 
 /**
  * Find all node parameters (concepts) without indicators
  * @param {string} modelId - model id
  */
-const _findAllWithoutIndicators = async (modelId) => {
+const _findUnquantifiedNodes = async (modelId) => {
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
   const esClient = nodeParameterAdapter.client;
   const query = {
@@ -58,20 +100,28 @@ const _findAllWithoutIndicators = async (modelId) => {
   return response.body.hits.hits.map(d => d._source);
 };
 
+
 // Returns top concept->datacube mappings
 const getConceptIndicatorMap = async (model, nodeParameters) => {
   const historyAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
   const datacubeAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
-  const nodesNotInHistory = [];
   const result = new Map();
 
   // 1. Check against historical matches
   for (const node of nodeParameters) {
     // 1.1 Check project specific history first
-    let topUsedIndicator = await historyAdapter.findOne([
-      { field: 'project_id', value: model.project_id },
-      { field: 'concept', value: node.concept }
-    ], { sort: [{ frequency: { order: 'desc' } }] });
+    let topUsedIndicator = await historyAdapter.findOne(
+      [
+        { field: 'project_id', value: model.project_id },
+        { field: 'concept', value: node.concept }
+      ],
+      {
+        sort: [
+          { frequency: { order: 'desc' } },
+          { modified_at: { order: 'desc' } }
+        ]
+      }
+    );
 
     if (!_.isNil(topUsedIndicator)) {
       Logger.info(`Using previous selection (project specific) ${node.concept} => ${topUsedIndicator.indicator_id}`);
@@ -84,7 +134,7 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
         ]
       }, {});
       if (cube) {
-        result.set(node.concept, cube);
+        result.set(node.concept, [cube]);
       }
       continue;
     }
@@ -105,46 +155,80 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
         ]
       }, {});
       if (cube) {
-        result.set(node.concept, cube);
+        result.set(node.concept, [cube]);
       }
       continue;
     }
-
-    // 1.3 Otherwise, flag the node
-    nodesNotInHistory.push(node);
   }
 
+  const numMatches = 3;
 
-  // 2. Run search against datacubes
-  for (const node of nodesNotInHistory) {
-    const concepts = node.components;
-    const candidates = await searchService.indicatorSearchByConcepts(model.project_id, concepts);
+  // 2. Check against concept aligner matches
+  // Note: this assumes that order of results returned by the searchService is the same as nodes provided
+  const geography = model.parameter.geography;
+  const indicators = await searchService.indicatorSearchConceptAlignerBulk(model.project_id, nodeParameters, numMatches, geography);
+
+  for (let i = 0; i < indicators.length; i++) {
+    if (indicators[i].length === 0) {
+      continue;
+    }
+    Logger.info(`Found ${indicators[i].length} candidates for node ${nodeParameters[i].concept}`);
+    const key = nodeParameters[i].concept;
+    if (result.has(key)) {
+      const temp = result.get(key);
+      result.set(key, [...temp, ...indicators[i]]);
+    } else {
+      result.set(key, indicators[i]);
+    }
+  }
+
+  // 3. Run search against datacubes
+  for (const node of nodeParameters) {
+    if (result.has(node.concept)) {
+      continue;
+    }
+    const candidates = await textSearch(node.label);
     if (!_.isEmpty(candidates)) {
-      result.set(node.concept, candidates[0]);
+      result.set(node.concept, [candidates[0]]);
     }
   }
   return result;
 };
 
-const ABSTRACT_INDICATOR = {
-  id: null,
-  name: 'Abstract',
-  unit: '',
-  country: '',
-  admin1: '',
-  admin2: '',
-  admin3: '',
-  spatialAggregation: 'mean',
-  temporalAggregation: 'mean',
-  temporalResolution: 'month',
-  period: 1,
-  timeseries: [
-    { value: 0.5, timestamp: Date.UTC(2017, 0) },
-    { value: 0.5, timestamp: Date.UTC(2017, 1) },
-    { value: 0.5, timestamp: Date.UTC(2017, 2) }
-  ],
-  min: 0,
-  max: 1
+/**
+ * @param {string} resolution - one of { month, year }
+ */
+const abstractIndicator = (resolution) => {
+  const base = {
+    id: null,
+    name: 'Abstract',
+    unit: '',
+    country: '',
+    admin1: '',
+    admin2: '',
+    admin3: '',
+    spatialAggregation: 'mean',
+    temporalAggregation: 'mean',
+    temporalResolution: 'month',
+    period: 1,
+    timeseries: [
+      { value: 0.5, timestamp: Date.UTC(2017, 0) },
+      { value: 0.5, timestamp: Date.UTC(2017, 1) },
+      { value: 0.5, timestamp: Date.UTC(2017, 2) }
+    ],
+    min: 0,
+    max: 1
+  };
+
+  if (resolution === 'year') {
+    base.temporalResolution = resolution;
+    base.timeseries = [
+      { value: 0.5, timestamp: Date.UTC(2017, 0) },
+      { value: 0.5, timestamp: Date.UTC(2018, 0) },
+      { value: 0.5, timestamp: Date.UTC(2019, 0) }
+    ];
+  }
+  return base;
 };
 
 /**
@@ -156,33 +240,62 @@ const setDefaultIndicators = async (modelId, resolution) => {
   Logger.info(`Setting default indicators for: ${modelId}`);
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
   const model = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
-  const nodeParameters = await _findAllWithoutIndicators(modelId);
-  const conceptIndicatorMap = await getConceptIndicatorMap(model, nodeParameters);
+  const nodeParameters = await _findUnquantifiedNodes(modelId);
+  const country = model.parameter.geography;
 
-  // Defaults
-  const geospatialAgg = 'mean';
-  const temporalAgg = 'mean';
+  const conceptIndicatorMap = await getConceptIndicatorMap(model, nodeParameters);
 
   const updates = [];
 
   for (const node of nodeParameters) {
+    // Defaults
+    let spatialAggregation = 'mean';
+    let temporalAggregation = 'mean';
+
+    const matches = conceptIndicatorMap.get(node.concept);
     const updatePayload = {
       id: node.id
     };
     if (conceptIndicatorMap.has(node.concept)) {
-      const cube = conceptIndicatorMap.get(node.concept);
+      const cube = matches[0];
+
+      // Use proper aggregation functions if they're set
+      if (cube.default_view) {
+        if (cube.default_view.spatialAggregation) {
+          spatialAggregation = cube.default_view.spatialAggregation;
+        }
+        if (cube.default_view.temporalAggregation) {
+          temporalAggregation = cube.default_view.temporalAggregation;
+        }
+      }
+
+      const defaultFeature = cube.outputs.find(output => output.name === cube.default_feature);
+
+      let runId = 'indicator';
+      if (cube.type === 'model') {
+        // If the datacube is a model, we need to find the runId of the default run
+        const run = await getDefaultModelRun(cube.data_id);
+        runId = run?.id ?? 'no-default-run';
+      }
+
+      updatePayload.match_candidates = matches.map(match => {
+        const output = match.outputs.find(output => output.name === match.default_feature);
+        return { id: match.id, dataId: match.data_id, displayName: output.display_name || output.name };
+      });
       updatePayload.parameter = {
         id: cube.id,
-        name: cube.outputs[0].display_name,
-        unit: cube.outputs[0].unit,
-        country: '',
+        data_id: cube.data_id,
+        runId,
+        name: defaultFeature.display_name || defaultFeature.name,
+        unit: defaultFeature.unit,
+        country: country,
         admin1: '',
         admin2: '',
         admin3: '',
-        spatialAggregation: geospatialAgg,
-        temporalAggregation: temporalAgg,
+        spatialAggregation,
+        temporalAggregation,
         temporalResolution: resolution,
-        period: 12
+        period: resolution === 'month' ? 12 : 1
       };
 
       // Set time series, min, max
@@ -191,15 +304,14 @@ const setDefaultIndicators = async (modelId, resolution) => {
         const dataId = cube.data_id;
         const parameter = updatePayload.parameter;
 
-        const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
+        const timeseries = await getTimeseries(dataId, runId, feature, resolution, temporalAggregation, spatialAggregation, country);
         if (_.isEmpty(timeseries)) {
-          parameter.timeseries = [];
-          parameter.min = 0;
-          parameter.max = 1;
+          Logger.warn(`Data ${feature} is empty, reset ${node.concept} to abstract`);
+          updatePayload.parameter = abstractIndicator(resolution);
         } else {
-          const rawResolution = cube.outputs[0].data_resolution.temporal_resolution;
-          const finalRawDate = new Date(cube.period.lte ?? 0);
-          const points = correctIncompleteTimeseries(timeseries, rawResolution, resolution, temporalAgg, finalRawDate);
+          const rawResolution = defaultFeature.data_resolution?.temporal_resolution ?? 'other';
+          const finalRawDate = new Date(cube.period?.lte ?? 0);
+          const points = correctIncompleteTimeseries(timeseries, rawResolution, resolution, temporalAggregation, finalRawDate);
           parameter.timeseries = points;
           const values = timeseries.map(d => d.value);
           const { max, min } = modelUtil.projectionValueRange(values);
@@ -209,10 +321,10 @@ const setDefaultIndicators = async (modelId, resolution) => {
       } catch (err) {
         Logger.warn(err);
         Logger.warn(`Failed getting data, reset ${node.concept} to abstract`);
-        updatePayload.parameter = _.cloneDeep(ABSTRACT_INDICATOR);
+        updatePayload.parameter = abstractIndicator(resolution);
       }
     } else {
-      updatePayload.parameter = _.cloneDeep(ABSTRACT_INDICATOR);
+      updatePayload.parameter = abstractIndicator(resolution);
     }
     updates.push(updatePayload);
   }

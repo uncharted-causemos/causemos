@@ -11,22 +11,74 @@
           :disabled="stepsBeforeCanConfirm.length > 0"
           type="button"
           class="btn btn-primary btn-call-for-action"
-          @click="onSelection"
+          @click="attemptToSaveUpdatedNodeParameter"
         >
           <i class="fa fa-fw fa-plus-circle" />
           {{selectLabel}}
         </button>
-        <span v-if="stepsBeforeCanConfirm.length > 0">{{ stepsBeforeCanConfirm[0] }}</span>
+        <span v-if="stepsBeforeCanConfirm.length > 0">{{
+          stepsBeforeCanConfirm[0]
+        }}</span>
       </div>
     </full-screen-modal-header>
     <main class="insight-capture">
+      <modal
+        class="timeseries-selection-modal"
+        v-if="isTimeseriesSelectionModalOpen"
+      >
+        <template #header>
+          <!-- FIXME: awkward wording -->
+          <h3>Please select one timeseries data</h3>
+        </template>
+        <template #body>
+          <div v-for="(d, index) in visibleTimeseries" :key="index">
+            <div class="select-row">
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{
+                  'fa-circle': selectedTimeseriesIndex === index,
+                  'fa-circle-o': selectedTimeseriesIndex !== index
+                }"
+                @click="selectedTimeseriesIndex = index"
+              />
+              <strong :style="{ color: d.color }">{{d.name}}</strong>
+              <sparkline
+                :data="[{
+                  series: d.points.map(p => p.value),
+                  name: d.name,
+                  color: d.color
+                }]"
+                :size="[350, 20]"
+              />
+            </div>
+          </div>
+        </template>
+        <template #footer>
+          <ul class="unstyled-list">
+            <button
+              type="button"
+              class="btn first-button"
+              @click.stop="closeTimeseriesSelectionModal">
+                Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary btn-call-for-action"
+              @click.stop="saveUpdatedNodeParameter">
+                Select
+            </button>
+          </ul>
+        </template>
+      </modal>
       <datacube-card
         class="datacube-card"
         :initial-view-config="initialViewConfig"
+        :initial-data-config="initialDataConfig"
         :metadata="metadata"
         :aggregation-options="aggregationOptionFiltered"
         :temporal-resolution-options="temporalResolutionOption"
         @update-model-parameter="onModelParamUpdated"
+        @visible-timeseries-changed="(newValue) => { visibleTimeseries = newValue; }"
       >
         <template #datacube-model-header>
           <div class="datacube-header" v-if="metadata && mainModelOutput">
@@ -45,13 +97,6 @@
               <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
               <span v-if="metadata.status === DatacubeStatus.Deprecated" v-tooltip.top-center="'Show current version of datacube'" style="margin-left: 1rem" :style="{ backgroundColor: statusColor, cursor: 'pointer' }" @click="showCurrentDatacube">{{ statusLabel }} <i class="fa fa-search"></i></span>
             </h5>
-            <disclaimer
-              v-if="scenarioCount > 0"
-              :message="
-                scenarioCount +
-                  ' scenarios. Click a vertical line to select or deselect it.'
-              "
-            />
           </div>
         </template>
         <template #datacube-description>
@@ -66,54 +111,67 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
+import { computed, defineComponent, Ref, ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
+import Modal from '@/components/modals/modal.vue';
+import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
-import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import modelService from '@/services/model-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { ProjectType, DatacubeStatus, TemporalResolutionOption, TimeScale } from '@/types/Enums';
+import { ProjectType, DatacubeStatus, TemporalResolutionOption, TimeScale, TemporalAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { getOutputs, getSelectedOutput, getValidatedOutputs, STATUS } from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
+import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
+import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
+import { useRoute } from 'vue-router';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import { Timeseries } from '@/types/Timeseries';
+import { isDataSpaceDataState } from '@/utils/insight-util';
 
 
 export default defineComponent({
   name: 'NodeCompExperiment',
   components: {
+    Modal,
     DatacubeCard,
-    Disclaimer,
     DatacubeDescription,
-    FullScreenModalHeader
+    FullScreenModalHeader,
+    Sparkline
   },
   setup() {
     const selectLabel = 'Quantify Node';
     const navBackLabel = 'Select A Different Datacube';
     const store = useStore();
+    const route = useRoute();
     // NOTE: only one indicator id (model or indicator) will be provided as a selection from the data explorer
     const currentCAG = computed(() => store.getters['app/currentCAG']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const indicatorId = computed(() => store.getters['app/indicatorId']);
+    const indicatorId = computed<string>(() => store.getters['app/indicatorId']);
     const metadata = useModelMetadata(indicatorId);
     const nodeId = computed(() => store.getters['app/nodeId']);
     const project = computed(() => store.getters['app/project']);
-    const dataState = computed(() => store.getters['insightPanel/dataState']);
+    const dataState = computed<DataState | null>(
+      () => store.getters['insightPanel/dataState']
+    );
     const viewState = computed(() => store.getters['insightPanel/viewState']);
+    const initialViewConfig = ref<ViewState | null>(null);
+    const initialDataConfig = ref<Partial<DataSpaceDataState> | null>(null);
 
+    const isTimeseriesSelectionModalOpen = ref(false);
+    const selectedTimeseriesIndex = ref(0);
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelComponents = ref(null) as Ref<any>;
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined &&
-      datacubeCurrentOutputsMap.value[metadata.value?.id] !== undefined
-      ? datacubeCurrentOutputsMap.value[metadata.value?.id]
-      : 0
-    );
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, indicatorId);
+
+    const visibleTimeseries = ref<Timeseries[]>([]);
 
     const temporalResolutionOption = computed(() => {
       if (modelComponents.value === null) {
@@ -132,25 +190,65 @@ export default defineComponent({
       return modelComponents.value.nodes.find((node: { id: any }) => node.id === nodeId.value);
     });
 
-    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
-
-    const initialViewConfig = computed(() => {
-      return selectedNode?.value?.parameter;
+    watch([selectedNode, modelComponents], () => {
+      const existingParams = selectedNode?.value?.parameter;
+      const modelGeo = modelComponents.value?.parameter?.geography;
+      if (!existingParams && modelGeo === undefined) {
+        return;
+      }
+      let country = modelGeo ? [modelGeo] : [];
+      if (existingParams.id !== null) {
+        // Only use the CAG geography for Abstract nodes
+        // If there is already a quantification and country === '' it means the user explicitly chose 'All'
+        country = existingParams.country ? [existingParams.country] : [];
+      }
+      initialDataConfig.value = {
+        selectedRegionIdsAtAllLevels: {
+          country,
+          admin1: [],
+          admin2: [],
+          admin3: []
+        }
+      };
     });
+
+    watch(
+      () => [
+        metadata.value,
+        selectedNode.value
+      ],
+      () => {
+        if (metadata.value) {
+          const existingViewState = selectedNode?.value?.parameter;
+          if (existingViewState && !_.isEmpty(existingViewState)) {
+            return;
+          }
+          if (!_.isEmpty(metadata.value.default_view)) {
+            initialViewConfig.value = metadata.value.default_view;
+          }
+        }
+      }
+    );
 
     const stepsBeforeCanConfirm = computed(() => {
       const steps = [];
-      if (metadata.value === null || dataState.value?.selectedScenarioIds === undefined) {
+      if (
+        metadata.value === null ||
+        dataState.value === null ||
+        !isDataSpaceDataState(dataState.value)
+      ) {
         steps.push('Loading...');
         return steps;
       }
-      if (dataState.value?.selectedScenarioIds?.length < 1) {
+      if (dataState.value.selectedScenarioIds.length < 1) {
         steps.push('Please select a scenario.');
-      } else if (dataState.value?.selectedScenarioIds?.length > 1) {
+      } else if (dataState.value.selectedScenarioIds.length > 1) {
         steps.push('Please select exactly one scenario.');
       }
-      if (viewState.value.breakdownOption !== null) {
-        steps.push('Please set "split by" to "none".');
+      if (viewState.value?.breakdownOption === TemporalAggregationLevel.Year) {
+        steps.push('"Split by year" is not supported.');
+      } else if (viewState.value?.breakdownOption === SPLIT_BY_VARIABLE) {
+        steps.push('"Split by variable" is not supported.');
       }
       return steps;
     });
@@ -177,23 +275,42 @@ export default defineComponent({
     const onOutputSelectionChange = (event: any) => {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-      updatedCurrentOutputsMap[metadata?.value?.id ?? ''] = selectedOutputIndex;
-      setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+      updateDatacubesOutputsMap(indicatorId.value, store, route, selectedOutputIndex);
     };
 
+    const closeTimeseriesSelectionModal = () => {
+      selectedTimeseriesIndex.value = 0;
+      isTimeseriesSelectionModalOpen.value = false;
+    };
 
-    const onSelection = async () => {
+    const attemptToSaveUpdatedNodeParameter = async () => {
+      if (visibleTimeseries.value.length > 1) {
+        isTimeseriesSelectionModalOpen.value = true;
+      } else {
+        await saveUpdatedNodeParameter();
+      }
+    };
+
+    const saveUpdatedNodeParameter = async () => {
       if (metadata === null) {
         console.error('Confirm should not be clickable until metadata is loaded.');
         return;
       }
-      const visibleTimeseriesData = dataState.value.visibleTimeseriesData;
-      if (visibleTimeseriesData.length !== 1) {
-        console.error('There should be exactly one timeseries visible.', visibleTimeseriesData);
+      if (visibleTimeseries.value.length < 1) {
+        console.error('There should be at least one timeseries visible.', visibleTimeseries.value);
         return;
       }
-      const timeseries = visibleTimeseriesData[0].points;
+      if (dataState.value === null || !isDataSpaceDataState(dataState.value)) {
+        console.error(
+          'Data state should be a valid data space data state object.',
+          dataState.value
+        );
+        return;
+      }
+      const selectedIndex = visibleTimeseries.value.length > 1
+        ? selectedTimeseriesIndex.value
+        : 0;
+      const timeseries = visibleTimeseries.value[selectedIndex].points;
       let country = '';
       let admin1 = '';
       let admin2 = '';
@@ -209,13 +326,14 @@ export default defineComponent({
         }
       }
 
-      const nodeParameters = {
+      const nodeParameter = {
         id: selectedNode?.value?.id,
         concept: selectedNode?.value?.concept,
         label: selectedNode?.value?.label,
         model_id: selectedNode?.value?.model_id,
         parameter: {
           id: metadata?.value?.id,
+          data_id: metadata?.value?.data_id,
           name: metadata?.value?.name,
           unit: mainModelOutput?.value?.unit,
           country,
@@ -223,7 +341,9 @@ export default defineComponent({
           admin2,
           admin3,
           period: 12,
+          temporalResolution: null,
           timeseries,
+          original_timeseries: _.cloneDeep(timeseries),
           // Filled in by server
           max: null,
           min: null
@@ -231,10 +351,17 @@ export default defineComponent({
         components: selectedNode?.value?.components
       };
 
-      Object.keys(viewState).forEach(key => {
-        (nodeParameters.parameter as any)[key] = viewState.value[key];
+      Object.keys(viewState.value).forEach((key: string) => {
+        (nodeParameter.parameter as any)[key] = viewState.value[key];
       });
-      await modelService.updateNodeParameter(selectedNode.value.model_id, nodeParameters);
+
+      if (nodeParameter.parameter.temporalResolution === 'month') {
+        nodeParameter.parameter.period = 12;
+      } else {
+        nodeParameter.parameter.period = 1;
+      }
+
+      await modelService.updateNodeParameter(selectedNode.value.model_id, nodeParameter);
 
       router.push({
         name: 'nodeDrilldown',
@@ -248,9 +375,22 @@ export default defineComponent({
     };
 
     watchEffect(() => {
-      if (metadata.value && currentOutputIndex.value >= 0) {
+      if (metadata.value) {
         outputs.value = getOutputs(metadata.value);
         mainModelOutput.value = getSelectedOutput(metadata.value, currentOutputIndex.value);
+
+        let initialOutputIndex = 0;
+        const datacubeKey = indicatorId.value;
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[datacubeKey];
+        if (currentOutputEntry !== undefined && currentOutputEntry >= 0) {
+          // we have a store entry for the selected output of the current model
+          initialOutputIndex = currentOutputEntry;
+        } else {
+          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+
+          // update the store
+          updateDatacubesOutputsMap(datacubeKey, store, route, initialOutputIndex);
+        }
       }
     });
 
@@ -277,11 +417,16 @@ export default defineComponent({
 
     return {
       aggregationOptionFiltered,
+      attemptToSaveUpdatedNodeParameter,
       currentCAG,
       currentOutputIndex,
+      closeTimeseriesSelectionModal,
+      dataState,
       DatacubeStatus,
       indicatorId,
       initialViewConfig,
+      initialDataConfig,
+      isTimeseriesSelectionModalOpen,
       mainModelOutput,
       metadata,
       modelComponents,
@@ -289,23 +434,24 @@ export default defineComponent({
       nodeId,
       onBack,
       onOutputSelectionChange,
-      onSelection,
+      saveUpdatedNodeParameter,
       outputs,
       project,
       selectedNode,
       selectLabel,
+      selectedTimeseriesIndex,
       statusColor,
       statusLabel,
       stepsBeforeCanConfirm,
       onModelParamUpdated,
-      temporalResolutionOption
+      temporalResolutionOption,
+      visibleTimeseries
     };
   },
   mounted() {
     // Load the CAG so we can find relevant components
     modelService.getComponents(this.currentCAG).then(_modelComponents => {
       this.modelComponents = _modelComponents;
-      console.log(this.modelComponents);
     });
   },
   methods: {
@@ -339,6 +485,19 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.timeseries-selection-modal .select-row {
+  display: flex;
+  align-items: center;
+  i {
+    cursor: pointer;
+  }
+  span {
+    padding: 5px;
+    flex-grow: 1;
+    max-width: 94px;
+  }
 }
 
 .header-content > *:not(:first-child) {

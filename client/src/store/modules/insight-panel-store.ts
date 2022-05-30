@@ -1,4 +1,4 @@
-import { Insight } from '@/types/Insight';
+import { AnalyticalQuestion, DataState, Insight, ReviewPosition, SectionWithInsights } from '@/types/Insight';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface InsightState {
@@ -6,12 +6,22 @@ interface InsightState {
   currentPane: string;
   countInsights: number;
   viewState: any;
-  dataState: any;
+  dataState: DataState | null;
   contextId: string[] | undefined;
   analysisId: string;
-  updatedInsight: Insight | null;
-  insightList: Insight[] | null;
+  snapshotUrl: string | undefined;
+  updatedInsight: (Insight|AnalyticalQuestion) | null;
+  insightsBySection: SectionWithInsights[] | null;
   refreshDatacubes: boolean;
+  // We can identify which section or insight we should be showing in the review
+  //  modal by storing the ID of the current insight and the section to which it
+  //  belongs.
+  // If the whole object is null, that means the analyst hasn't started
+  //  reviewing
+  // If insightId is null, that means we're reviewing a section with no insights
+  //  attached.
+  positionInReview: ReviewPosition | null;
+  shouldRefetchInsights: boolean;
 }
 
 /**
@@ -22,12 +32,15 @@ const state: InsightState = {
   currentPane: '',
   countInsights: 0,
   viewState: {},
-  dataState: {},
+  dataState: null,
   contextId: undefined,
   analysisId: '',
+  snapshotUrl: undefined,
   updatedInsight: null,
-  insightList: null,
-  refreshDatacubes: false
+  insightsBySection: null,
+  refreshDatacubes: false,
+  positionInReview: null,
+  shouldRefetchInsights: false
 };
 
 
@@ -39,9 +52,12 @@ const getters: GetterTree<InsightState, any> = {
   dataState: state => state.dataState,
   contextId: state => state.contextId,
   analysisId: state => state.analysisId,
+  snapshotUrl: state => state.snapshotUrl,
   updatedInsight: state => state.updatedInsight,
-  insightList: state => state.insightList,
-  refreshDatacubes: state => state.refreshDatacubes
+  insightsBySection: state => state.insightsBySection,
+  refreshDatacubes: state => state.refreshDatacubes,
+  positionInReview: state => state.positionInReview,
+  shouldRefetchInsights: state => state.shouldRefetchInsights
 };
 
 
@@ -70,14 +86,23 @@ const actions: ActionTree<InsightState, any> = {
   setAnalysisId: ({ commit }, newValue) => {
     commit('setAnalysisId', newValue);
   },
+  setSnapshotUrl: ({ commit }, newValue) => {
+    commit('setSnapshotUrl', newValue);
+  },
   setUpdatedInsight: ({ commit }, newValue) => {
     commit('setUpdatedInsight', newValue);
   },
   setRefreshDatacubes: ({ commit }, newValue) => {
     commit('setRefreshDatacubes', newValue);
   },
-  setInsightList: ({ commit }, newValue) => {
-    commit('setInsightList', newValue);
+  setInsightsBySection: ({ commit }, newValue) => {
+    commit('setInsightsBySection', newValue);
+  },
+  setPositionInReview: ({ commit }, newValue) => {
+    commit('setPositionInReview', newValue);
+  },
+  setShouldRefetchInsights: ({ commit }, newValue) => {
+    commit('setShouldRefetchInsights', newValue);
   }
 };
 
@@ -107,14 +132,23 @@ const mutations: MutationTree<InsightState> = {
   setAnalysisId(state, value) {
     state.analysisId = value;
   },
+  setSnapshotUrl(state, value) {
+    state.snapshotUrl = value;
+  },
   setUpdatedInsight(state, value) {
     state.updatedInsight = value;
   },
-  setInsightList(state, value) {
-    state.insightList = value;
+  setInsightsBySection(state, value) {
+    state.insightsBySection = value;
   },
   setRefreshDatacubes(state, value) {
     state.refreshDatacubes = value;
+  },
+  setPositionInReview(state, value) {
+    state.positionInReview = value;
+  },
+  setShouldRefetchInsights(state, value) {
+    state.shouldRefetchInsights = value;
   }
 };
 

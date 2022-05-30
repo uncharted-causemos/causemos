@@ -1,17 +1,16 @@
 import { Indicator, Model, ModelParameter } from '../../types/Datacube';
-import { computed, ref, Ref } from 'vue';
-import { useStore } from 'vuex';
+import { computed, Ref } from 'vue';
 import { getOutputs, isModel } from '@/utils/datacube-util';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 /**
  * Takes a model ID, transforms it into several structures that various components may utilize, for example the PC chart.
  */
 export default function useDatacubeDimensions(
-  metadata: Ref<Model | Indicator | null>
+  metadata: Ref<Model | Indicator | null>,
+  itemId: Ref<string>
 ) {
-  const store = useStore();
-  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-  const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+  const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
   const inputDimensions = computed(() => {
     if (metadata.value !== null && isModel(metadata.value)) {
@@ -49,16 +48,12 @@ export default function useDatacubeDimensions(
   //    { dim1: value21, dim2: value22 }
   // ]
 
-  // @HACK: this is not needed, but left in case quick testing of the ordinal capability is needed
-  const ordinalDimensionNames = ref([]);
-
   const drilldownDimensions = computed(() =>
     dimensions.value.filter(p => p.is_drilldown)
   );
 
   return {
     dimensions,
-    ordinalDimensionNames,
     drilldownDimensions
   };
 }

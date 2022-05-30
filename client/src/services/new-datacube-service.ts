@@ -3,6 +3,23 @@ import { Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
+import { getImageMime } from '@/utils/datacube-util';
+import { FlowLogs } from '@/types/Common';
+
+/**
+ * The parameters required to fetch a timeseries for a datacube and generate the sparkline data.
+ */
+export interface SparklineParams {
+  id: string;
+  dataId: string;
+  runId: string;
+  feature: string;
+  resolution: string;
+  temporalAgg: string;
+  spatialAgg: string;
+  rawResolution: string;
+  finalRawTimestamp: number;
+}
 
 /**
  * Get datacubes
@@ -87,7 +104,7 @@ const _getDatacubesCount = async (datacubeType: string) => {
  * @param metadata an object of all metadata fields and their new values
  * @returns success or error on failure
  */
-export const updateDatacube = async (datacubeId: string, metadata: Model) => {
+export const updateDatacube = async (datacubeId: string, metadata: Partial<Model>) => {
   const result = await API.put(`maas/datacubes/${datacubeId}`, metadata);
   return result.data;
 };
@@ -98,7 +115,17 @@ export const updateDatacube = async (datacubeId: string, metadata: Model) => {
  * @returns success or error on failure
  */
 export const updateIndicatorsBulk = async (metaDeltas: { id: string; [key: string]: any }[]) => {
-  const result = await API.post('maas/datacubes/bulk-update', { deltas: metaDeltas });
+  const result = await API.post('maas/datacubes/bulk-update-indicator', { deltas: metaDeltas });
+  return result.data;
+};
+
+/**
+ * Generate the data required to show a sparkline. Accepts multiple datacubes.
+ * @param sparklineParamsList an array of objects with the parameters required to fetch a timeseries
+ * @returns success or error on failure
+ */
+export const generateSparklines = async (sparklineParamsList: SparklineParams[]) => {
+  const result = await API.post('maas/datacubes/add-sparklines', { datacubes: sparklineParamsList });
   return result.data;
 };
 
@@ -175,7 +202,7 @@ export const getDatacubeSuggestions = async (queryString: string) => {
   return data;
 };
 
-export const updateModelRun = async (modelRun: ModelRun) => {
+export const updateModelRun = async (modelRun: Partial<ModelRun>) => {
   const result = await API.put(`maas/model-runs/${modelRun.id}`, modelRun);
   return result.data;
 };
@@ -217,6 +244,40 @@ export const renameModelRunsTag = async (runIds: string[], oldTag: string, newTa
   return result.data;
 };
 
+export const fetchImageAsBase64 = async (url: string): Promise<string|undefined> => {
+  try {
+    const { data } = await API.get('url-to-b64', { params: { url } });
+    const mime = getImageMime(url);
+    return `data:${mime};base64,${data}`;
+  } catch (e) {
+    console.log(`Unable to get base64 for ${url}`);
+    return undefined;
+  }
+};
+
+export const fetchFlowLogs = async (flowId: string): Promise<FlowLogs|undefined> => {
+  try {
+    const { data } = await API.get('prefect-flow-logs', { params: { flowId } });
+    return _parseFlowLogs(data);
+  } catch (e) {
+    console.log(`Unable to get flow logs for ${flowId}`);
+    return undefined;
+  }
+};
+
+const _parseFlowLogs = (data: any): FlowLogs | undefined => {
+  if (!data.state || !data.start_time || !data.logs || !data.agent) {
+    return undefined;
+  }
+  return {
+    state: data.state as string,
+    start_time: new Date(data.start_time),
+    end_time: data.end_time ? new Date(data.end_time) : undefined,
+    logs: data.logs.map((log: any) => ({ timestamp: new Date(log.timestamp), message: log.message })),
+    agent: data.agent
+  } as FlowLogs;
+};
+
 export default {
   updateDatacube,
   getDatacubes,
@@ -233,5 +294,6 @@ export default {
   updateModelRun,
   removeModelRunsTag,
   renameModelRunsTag,
-  getDatacubeSuggestions
+  getDatacubeSuggestions,
+  fetchFlowLogs
 };

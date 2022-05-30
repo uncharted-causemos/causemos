@@ -54,6 +54,7 @@ import TabBar from './widgets/tab-bar.vue';
 interface DrilldownPanelTab {
   id: string;
   name: string;
+  icon?: string;
 }
 
 export default defineComponent({
@@ -148,7 +149,7 @@ $drilldown-width: 25vw;
     }
   }
 
-  ::v-deep(.tab-bar li.active) {
+  :deep(.tab-bar li.active) {
     background: $background-light-1;
     z-index: -1;
   }
@@ -166,7 +167,7 @@ $drilldown-width: 25vw;
     }
   }
 
-  ::v-deep(.pane-summary) {
+  :deep(.pane-summary) {
     padding-bottom: 5px;
     font-size: $font-size-large;
     font-weight: 600;
@@ -177,7 +178,7 @@ $drilldown-width: 25vw;
     }
   }
 
-  ::v-deep(.pane-loading-message) {
+  :deep(.pane-loading-message) {
     padding: 10px;
 
     .pane-loading-icon ~ span {

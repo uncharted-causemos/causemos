@@ -1,61 +1,101 @@
 
-import { ComputedRef, Ref } from 'vue';
-import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
-import { DataState, ViewState } from '@/types/Insight';
-import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/types/Enums';
+import { Ref } from 'vue';
+import { DataSpaceDataState, ViewState } from '@/types/Insight';
+import { AggregationOption, DatacubeViewMode, DataTransform, TemporalResolutionOption } from '@/types/Enums';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new';
-import { Timeseries } from '@/types/Timeseries';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
+import { FeatureConfig } from '@/types/Outputdata';
+import { AdminRegionSets } from '@/types/Datacubes';
+import { DatacubeGeography } from '@/types/Common';
+import _ from 'lodash';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+
+export const toStateSelectedRegionsAtAllLevels = (data: AdminRegionSets) => {
+  return {
+    country: Array.from(data.country),
+    admin1: Array.from(data.admin1),
+    admin2: Array.from(data.admin2),
+    admin3: Array.from(data.admin3)
+  };
+};
+
+export const fromStateSelectedRegionsAtAllLevels = (data: { country: string[], admin1: string[], admin2: string[], admin3: string[] }) => {
+  // If country isn't valid array. This can happen if invalid state was saved to the server before.
+  if (data.country.length === undefined) {
+    return {
+      country: new Set<string>(),
+      admin1: new Set<string>(),
+      admin2: new Set<string>(),
+      admin3: new Set<string>()
+    };
+  }
+  return {
+    country: new Set(data.country),
+    admin1: new Set(data.admin1),
+    admin2: new Set(data.admin2),
+    admin3: new Set(data.admin3)
+  };
+};
+
+export const validateSelectedRegions = (selectedRegions: AdminRegionSets, hierarchy: DatacubeGeography | null) => {
+  let isInvalid = false;
+  const validRegions = _.cloneDeep(selectedRegions);
+  ADMIN_LEVEL_KEYS.forEach(adminKey => {
+    if (hierarchy && adminKey !== 'admin4' && adminKey !== 'admin5') { // why are these even here?
+      const selected = [...selectedRegions[adminKey]];
+      const validList = _.intersection(hierarchy[adminKey], selected);
+      if (selected.length !== validList.length) {
+        isInvalid = true;
+        validRegions[adminKey] = new Set(validList);
+      }
+    }
+  });
+  return { isInvalid, validRegions };
+};
 
 export const aggregationOptionFiltered = Object.values(AggregationOption).filter(ao => AggregationOption.None as string !== ao);
 export const temporalResolutionOptionFiltered = Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.None as string !== tro);
 
 export function initDataStateFromRefs (
-  mainModelOutput: Ref<DatacubeFeature|undefined>,
-  metadata: Ref<Model|Indicator|null>,
   relativeTo: Ref<string|null>,
   selectedModelId: Ref<any>,
   nonDefaultQualifiers: Ref<Set<string>>,
   selectedQualifierValues: Ref<Set<string>>,
   selectedRegionIds: Ref<string[]>,
-  selectedRegionIdsAtAllLevels: Ref<{ country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; }>,
+  selectedRegionIdsAtAllLevels: Ref<AdminRegionSets>,
   selectedOutputVariables: Ref<Set<string>>,
+  activeFeatures: Ref<FeatureConfig[]>,
   selectedScenarioIds: Ref<string[]>,
   selectedTimestamp: Ref<number|null>,
   selectedYears: Ref<Set<string>>,
   selectedTransform: Ref<DataTransform>,
   activeReferenceOptions: Ref<string[]>,
   searchFilters: Ref<any>,
-  visibleTimeseriesData?: Ref<Timeseries[]> // useful for the node view's validation, but ignoreable by everything else, so optional
-): DataState {
+  selectedPreGenDataId: Ref<string>
+): DataSpaceDataState {
   return {
     selectedModelId: selectedModelId.value,
     selectedScenarioIds: selectedScenarioIds.value,
     selectedTimestamp: selectedTimestamp.value,
-    datacubeTitles: [{
-      datacubeName: metadata.value?.name ?? '',
-      datacubeOutputName: mainModelOutput?.value?.display_name ?? '',
-      source: metadata.value?.maintainer.organization ?? ''
-    }],
-    datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
     selectedRegionIds: selectedRegionIds.value,
-    selectedRegionIdsAtAllLevels: selectedRegionIdsAtAllLevels.value,
+    selectedRegionIdsAtAllLevels: toStateSelectedRegionsAtAllLevels(selectedRegionIdsAtAllLevels.value),
     selectedOutputVariables: Array.from(selectedOutputVariables.value),
+    activeFeatures: activeFeatures.value,
     relativeTo: relativeTo.value,
     nonDefaultQualifiers: [...nonDefaultQualifiers.value],
     selectedQualifierValues: [...selectedQualifierValues.value],
     selectedYears: [...selectedYears.value],
     selectedTransform: selectedTransform.value,
     activeReferenceOptions: activeReferenceOptions.value,
-    visibleTimeseriesData: visibleTimeseriesData?.value,
-    searchFilters: searchFilters.value
+    searchFilters: searchFilters.value,
+    selectedPreGenDataId: selectedPreGenDataId.value ?? ''
   };
 }
 
 export function initViewStateFromRefs (
   breakdownOption: Ref<string|null>,
-  currentOutputIndex: ComputedRef<number>,
-  currentTabView: Ref<string>,
+  currentOutputIndex: Ref<number>,
+  currentTabView: Ref<DatacubeViewMode>,
   selectedAdminLevel: Ref<number>,
   selectedBaseLayer: Ref<BASE_LAYER>,
   selectedDataLayer: Ref<DATA_LAYER>,
@@ -72,7 +112,7 @@ export function initViewStateFromRefs (
     spatialAggregation: selectedSpatialAggregation.value,
     temporalAggregation: selectedTemporalAggregation.value,
     temporalResolution: selectedTemporalResolution.value,
-    isDescriptionView: currentTabView.value === 'description', // FIXME
+    selectedViewTab: currentTabView.value,
     selectedOutputIndex: currentOutputIndex.value,
     selectedMapBaseLayer: selectedBaseLayer.value,
     selectedMapDataLayer: selectedDataLayer.value,

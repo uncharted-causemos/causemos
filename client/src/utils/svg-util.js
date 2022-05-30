@@ -527,6 +527,8 @@ export function closestPointOnPath(pathNode, point) {
 // - Arrows point left-to-right
 export const MARKER_VIEWBOX = '-5 -5 10 10';
 export const ARROW = 'M 0,-3.25 L 5 ,0 L 0,3.25';
+export const ARROW_WIDTH = 6.5;
+export const ARROW_LENGTH = 5;
 export const ARROW_SHARP = 'M 0,-3 L 5 ,0 L 0,3 L 1 0';
 
 export default {

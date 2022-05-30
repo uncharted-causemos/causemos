@@ -16,6 +16,7 @@
         @update-scenario='$emit("update-scenario", $event)'
         @delete-scenario='$emit("delete-scenario", $event)'
         @delete-scenario-clamp='$emit("delete-scenario-clamp", $event)'
+        @duplicate-scenario='$emit("duplicate-scenario", $event)'
       >
         <template #below-tabs>
           <cag-comments-button :model-summary="modelSummary" />
@@ -27,6 +28,7 @@
             v-if="activeTab === 'flow' && scenarioData && graphData"
             class="model-graph-layout-container">
             <model-graph
+              :model-summary="modelSummary"
               :data="graphData"
               :scenario-data="scenarioData"
               :visual-state="visualState"
@@ -41,6 +43,7 @@
                 :are-ridgelines-visible="selectedScenarioId !== null"
                 :time-scale="timeScale"
                 :show-data-warnings="true"
+                :show-edge-type-explanation="doesCurrentEngineSupportLevelEdges"
               />
               <config-bar
                 class="config-bar"
@@ -83,6 +86,7 @@
             <!-- make this a component later-->
             <sensitivity-pane
               v-else-if="activeDrilldownTab === PANE_ID.SENSITIVITY && selectedNode !== null"
+              :model-summary="modelSummary"
               :model-components="modelComponents"
               :selected-node="selectedNode"
               :sensitivity-result="sensitivityResult"
@@ -100,8 +104,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent, ref, PropType, Ref } from 'vue';
-import { mapGetters } from 'vuex';
-import moment from 'moment';
+import { mapGetters, mapActions } from 'vuex';
 
 import ConfigBar from '@/components/quantitative/config-bar.vue';
 import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis.vue';
@@ -110,14 +113,17 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher.vue';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane.vue';
 import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane.vue';
-import modelService from '@/services/model-service';
+import modelService, { calculateProjectionEnd, Engine, supportsLevelEdges } from '@/services/model-service';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagLegend from '@/components/graph/cag-legend.vue';
-import { findPaths } from '@/utils/graphs-util';
-import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter } from '@/types/CAG';
+import { findPaths, calculateNeighborhood } from '@/utils/graphs-util';
+import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter, CAGVisualState } from '@/types/CAG';
 import { Statement } from '@/types/Statement';
+import { getInsightById } from '@/services/insight-service';
+import { ModelsSpaceDataState } from '@/types/Insight';
+import useToaster from '@/services/composables/useToaster';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -140,7 +146,15 @@ const EDGE_DRILLDOWN_TABS = [
 
 const PROJECTION_ENGINES = {
   DELPHI: 'delphi',
-  DYSE: 'dyse'
+  DYSE: 'dyse',
+  SENSEI: 'sensei'
+};
+
+const blankVisualState = (): CAGVisualState => {
+  return {
+    focus: { nodes: [], edges: [] },
+    outline: { nodes: [], edges: [] }
+  };
 };
 
 export default defineComponent({
@@ -187,17 +201,21 @@ export default defineComponent({
     'new-scenario',
     'update-scenario',
     'delete-scenario',
-    'delete-scenario-clamp'
+    'delete-scenario-clamp',
+    'duplicate-scenario'
   ],
   setup() {
     const selectedNode = ref(null) as Ref<NodeParameter | null>;
     const selectedEdge = ref(null) as Ref<EdgeParameter | null>;
     const selectedStatements = ref([]) as Ref<Statement[]>;
+    const visualState = ref(blankVisualState()) as Ref<CAGVisualState>;
 
     return {
+      toaster: useToaster(),
       selectedNode,
       selectedEdge,
       selectedStatements,
+      visualState,
       PANE_ID
     };
   },
@@ -209,8 +227,7 @@ export default defineComponent({
     drilldownTabs: NODE_DRILLDOWN_TABS,
     activeDrilldownTab: PANE_ID.EVIDENCE,
     isDrilldownOpen: false,
-    isFetchingStatements: false,
-    visualState: {}
+    isFetchingStatements: false
   }),
   computed: {
     ...mapGetters({
@@ -228,9 +245,31 @@ export default defineComponent({
     },
     timeScale() {
       return this.modelSummary.parameter.time_scale;
+    },
+    doesCurrentEngineSupportLevelEdges() {
+      // FIXME: currentEngine's type should be Engine, not string
+      return supportsLevelEdges(this.currentEngine as Engine);
     }
   },
   watch: {
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'quantitative' space
+        if (this.$route.name === 'quantitative' && this.$route.query) {
+          const insight_id = this.$route.query.insight_id;
+          if (typeof insight_id === 'string') {
+            this.updateStateFromInsight(insight_id);
+            this.$router.push({
+              query: {
+                insight_id: undefined,
+                activeTab: this.$route.query.activeTab || undefined
+              }
+            });
+          }
+        }
+      },
+      immediate: true
+    },
     scenarios() {
       this.refresh();
     },
@@ -249,6 +288,10 @@ export default defineComponent({
     this.refresh();
   },
   methods: {
+    ...mapActions({
+      setSelectedScenarioId: 'model/setSelectedScenarioId',
+      setDataState: 'insightPanel/setDataState'
+    }),
     refresh() {
       // Get Model data
       const graph = { nodes: this.modelComponents.nodes, edges: this.modelComponents.edges };
@@ -260,20 +303,36 @@ export default defineComponent({
       // Get sensitivity results, note these results may still be pending
       if (this.currentEngine === 'dyse') {
         modelService.getScenarioSensitivity(this.currentCAG, this.currentEngine).then(sensitivityResults => {
-          this.sensitivityResult = sensitivityResults.find((d: any) => d.scenario_id === this.selectedScenarioId);
+          // If historical data mode is active, use sensitivity results from
+          //  the baseline scenario
+          let scenarioId = this.selectedScenarioId;
+          if (this.selectedScenarioId === null) {
+            scenarioId = this.scenarios.find(scenario => scenario.is_baseline === true)?.id;
+          }
+          this.sensitivityResult = sensitivityResults.find(
+            (d: any) => d.scenario_id === scenarioId
+          );
         });
       }
+
+      this.updateDataState();
     },
     onNodeSensitivity(node: NodeParameter) {
       this.drilldownTabs = NODE_DRILLDOWN_TABS;
       this.activeDrilldownTab = PANE_ID.SENSITIVITY;
       this.openDrilldown();
       this.selectedNode = node;
+      const neighborhood = calculateNeighborhood(this.modelComponents as any, node.concept);
       this.visualState = {
-        selected: {
-          nodes: [this.selectedNode]
+        focus: neighborhood,
+        outline: {
+          nodes: [
+            { concept: node.concept }
+          ],
+          edges: []
         }
       };
+      this.updateDataState();
     },
     openNodeDrilldownView(node: NodeParameter) {
       this.onBackgroundClick();
@@ -299,7 +358,7 @@ export default defineComponent({
 
       const highlightEdges = [];
       const highlightNodes = [];
-      const nodesSet = new Set();
+      const nodesSet = new Set<string>();
 
       // FIXME: might have dupliate edges, should clean up
       for (const path of paths) {
@@ -320,23 +379,27 @@ export default defineComponent({
 
       if (node) {
         this.visualState = {
-          highlighted: {
+          focus: {
             nodes: highlightNodes,
             edges: highlightEdges
           },
-          selected: {
-            nodes: [this.selectedNode]
-          },
-          annotated: {
-            nodes: [node]
+          outline: {
+            nodes: [
+              { concept: node.concept, color: '#8767c8' },
+              { concept: this.selectedNode.concept }
+            ],
+            edges: []
           }
         };
+        this.updateDataState();
       }
     },
     onBackgroundClick() {
       this.closeDrilldown();
       this.selectedEdge = null;
       this.selectedNode = null;
+      this.visualState = blankVisualState();
+      this.updateDataState();
     },
     openDrilldown() {
       this.isDrilldownOpen = true;
@@ -353,6 +416,20 @@ export default defineComponent({
       modelService.getEdgeStatements(this.currentCAG, edgeData.source, edgeData.target).then(statements => {
         this.selectedStatements = statements;
         this.selectedEdge = edgeData;
+        const source = edgeData.source;
+        const target = edgeData.target;
+        this.visualState = {
+          focus: {
+            nodes: [{ concept: source }, { concept: target }],
+            edges: [{ source, target }]
+          },
+          outline: {
+            nodes: [],
+            edges: [{ source, target }]
+          }
+        };
+
+        this.updateDataState();
         this.isFetchingStatements = false;
       });
     },
@@ -399,15 +476,14 @@ export default defineComponent({
       const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
       if (!scenario) return;
 
-      const start = scenario.parameter.projection_start;
-      const numTimeSteps = scenario.parameter.num_steps;
-      // FIXME: endTime depends on time scale
+      const startTime = scenario.parameter.projection_start;
+      const endTime = calculateProjectionEnd(startTime, this.timeScale);
       const experimentPayload = {
         experimentType: 'PROJECTION',
         experimentParam: {
-          numTimesteps: numTimeSteps,
-          startTime: start,
-          endTime: moment(start).add(numTimeSteps - 1, 'M').valueOf(),
+          numTimesteps: scenario.parameter.num_steps,
+          startTime,
+          endTime,
           constraints: scenario.parameter.constraints
         }
       };
@@ -421,7 +497,7 @@ export default defineComponent({
       const highlightEdges = [];
       const highlightNode = _.uniq(path).map(d => {
         return {
-          concept: d
+          concept: (d as string)
         };
       });
 
@@ -432,11 +508,118 @@ export default defineComponent({
         });
       }
       this.visualState = {
-        highlighted: {
+        focus: {
           nodes: highlightNode,
           edges: highlightEdges
+        },
+        outline: {
+          nodes: [],
+          edges: []
         }
       };
+      this.updateDataState();
+    },
+    async updateStateFromInsight(insight_id: string) {
+      const loadedInsight = await getInsightById(insight_id);
+      const scenarioId = loadedInsight.data_state?.selectedScenarioId;
+      const selectedNodeStr = loadedInsight.data_state?.selectedNode;
+      const selectedEdge = loadedInsight.data_state?.selectedEdge;
+      const visualState = loadedInsight.data_state?.cagVisualState as CAGVisualState;
+
+      let newVisualState: CAGVisualState = blankVisualState();
+
+      if (!selectedEdge) {
+        this.closeDrilldown();
+      }
+
+      if (selectedNodeStr) {
+        const nodeToSelect = this.modelComponents.nodes.find(node => node.concept === selectedNodeStr);
+        if (nodeToSelect) {
+          this.onNodeSensitivity(nodeToSelect);
+          const neighborhood = calculateNeighborhood(this.modelComponents, nodeToSelect.concept);
+
+          newVisualState = {
+            focus: neighborhood,
+            outline: {
+              nodes: [
+                { concept: nodeToSelect.concept }
+              ],
+              edges: []
+            }
+          };
+        }
+      } else if (selectedEdge) {
+        const [source, target] = selectedEdge;
+        const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
+
+        if (edgeToSelect) {
+          this.showRelation(edgeToSelect);
+          newVisualState = {
+            focus: {
+              nodes: [{ concept: source }, { concept: target }],
+              edges: [{ source, target }]
+            },
+            outline: {
+              nodes: [],
+              edges: [{ source, target }]
+            }
+          };
+        }
+      }
+
+      // merge
+      if (visualState) {
+        newVisualState.focus.nodes = [...newVisualState.focus.nodes, ...visualState.focus.nodes];
+        newVisualState.focus.edges = [...newVisualState.focus.edges, ...visualState.focus.edges];
+        newVisualState.outline.nodes = [...newVisualState.outline.nodes, ...visualState.outline.nodes];
+        newVisualState.outline.edges = [...newVisualState.outline.edges, ...visualState.outline.edges];
+      }
+      this.visualState = newVisualState;
+
+      if (scenarioId && !this.scenarios.some(sc => sc.id === scenarioId)) {
+        this.toaster(`Cannot restore deleted scenario ${scenarioId}`, 'error', true);
+        return;
+      }
+
+      this.setSelectedScenarioId(scenarioId);
+
+      // Restoring engine should probably be last, this may not work correctly pending each engine's own state
+      const insightEngine = loadedInsight.data_state?.currentEngine;
+      const currentEngine = this.modelSummary.parameter.engine;
+      const engineStatus = this.modelSummary.engine_status;
+
+      if (engineStatus[insightEngine] === modelService.MODEL_STATUS.TRAINING) {
+        this.toaster(`Cannot restore back to ${insightEngine} because there is training in progress`, 'error', true);
+        console.error(`Cannot restore back to ${insightEngine} because there is training in progress`);
+        return;
+      }
+      if (!insightEngine || engineStatus[insightEngine] === modelService.MODEL_STATUS.NOT_REGISTERED) {
+        this.toaster(`Cannot restore back to ${insightEngine}, bad state`, 'error', true);
+        console.error(`Cannot restore back to ${insightEngine}, bad state`);
+        return;
+      }
+
+      // Only DySE curently handle sensitivity analysis
+      if (insightEngine !== PROJECTION_ENGINES.DYSE) {
+        this.sensitivityResult = null;
+      }
+
+      if (insightEngine !== currentEngine) {
+        await modelService.updateModelParameter(this.currentCAG, {
+          engine: insightEngine
+        });
+        this.toaster(`Engine switched from ${currentEngine} to ${insightEngine}`, 'success', true);
+        this.$emit('model-parameter-changed');
+      }
+    },
+    updateDataState() {
+      const dataState: ModelsSpaceDataState = {
+        selectedScenarioId: this.selectedScenarioId,
+        currentEngine: this.currentEngine,
+        modelName: this.modelSummary.name,
+        cagVisualState: this.visualState ?? null
+      };
+      this.setDataState(dataState);
     }
   }
 });
@@ -505,6 +688,13 @@ main {
   display: flex;
   gap: 10px;
   align-items: flex-end;
+
+  // Don't block the graph behind it
+  pointer-events: none;
+  // But do still receive mouse events on children
+  > * {
+    pointer-events: auto;
+  }
 }
 
 .config-bar {

@@ -3,6 +3,9 @@
     <div class="message-container">
       <i class="fa fa-spin fa-spinner" /> {{ message }}
     </div>
+    <div v-if="messageSecondary !== ''" class="message-secondary-container">
+      {{ messageSecondary }}
+    </div>
     <div
       v-if="cancelFn"
       style="font-size: 2rem">
@@ -22,6 +25,10 @@ export default defineComponent({
     message: {
       type: String,
       default: 'Loading...'
+    },
+    messageSecondary: {
+      type: String,
+      default: ''
     },
     cancelFn: {
       type: Function
@@ -49,6 +56,11 @@ export default defineComponent({
 
   .message-container {
     font-size: 4rem;
+    color: $text-color-light;
+  }
+
+  .message-secondary-container {
+    font-size: 2.25rem;
     color: $text-color-light;
   }
 }

@@ -5,6 +5,7 @@ const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
 const indraService = rootRequire('/services/external/indra-service');
+const conceptAlignerService = rootRequire('/services/external/concept-aligner-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const { StatementQueryUtil } = rootRequire('adapters/es/statement-query-util');
@@ -24,6 +25,8 @@ const INCREMENTAL_ASSEMBLY_FLOW_ID = '90a09440-e504-4db9-ad89-9db370933c8b';
 
 const queryUtil = new StatementQueryUtil();
 
+const dartService = rootRequire('/services/external/dart-service');
+
 /**
  * Returns projects summary
  */
@@ -42,6 +45,7 @@ const findProject = async (projectId) => {
 };
 
 
+const BACKUP_ONTOLOGY_URL = 'https://raw.githubusercontent.com/WorldModelers/Ontologies/master/CompositionalOntology_metadata.yml';
 /**
  * Creates the metadata and invokes cloning.
  * Note this will return immedately with the new index identifier, but
@@ -67,12 +71,45 @@ const createProject = async (kbId, name, description) => {
   ], () => projectId);
 
   const projectData = await projectAdapter.findOne([{ field: 'id', value: projectId }], {});
+  let ontologyId = '';
 
   Logger.info(`Cached ${projectId}`);
 
-  // Ontology
-  Logger.info(`Processing ontology ${projectData.ontology}`);
-  const ontologyMetadata = await parseOntology(projectData.ontology);
+  // Get the latest ontology
+  // 1 - Try to get ontology information from DART, if this fails
+  // 2 - Try to get backup ontology
+  Logger.info('Processing ontology');
+  const tenantId = projectData.tenant_id || 'dsmt-e';
+  let ontologyMetadata = {};
+  try {
+    Logger.info('Getting ontology data from DART');
+    const r = await dartService.getOntologyByTenant(tenantId);
+    ontologyId = r.id;
+
+    await projectAdapter.update(
+      [{ id: projectId, ontology: ontologyId, tenant_id: tenantId }],
+      d => d.id
+    );
+
+    const ontology = yaml.safeLoad(r.ontology);
+    if (_.isArray(ontology)) {
+      for (let i = 0; i < ontology.length; i++) {
+        conceptUtil.extractOntologyMetadata(ontologyMetadata, ontology[i].node, '');
+      }
+    }
+  } catch (err) {
+    ontologyMetadata = {};
+  }
+
+  if (_.isEmpty(ontologyMetadata)) {
+    Logger.info('Getting backup ontology');
+    ontologyMetadata = await parseOntology(BACKUP_ONTOLOGY_URL);
+
+    await projectAdapter.update(
+      [{ id: projectId, ontology: 'default', tenant_id: tenantId }],
+      d => d.id
+    );
+  }
 
   // FIXME: May need idempotent id to support ontology updates from upstream
   const conceptsPayload = Object.keys(ontologyMetadata).map(key => {
@@ -89,9 +126,26 @@ const createProject = async (kbId, name, description) => {
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
   await ontologyAdapter.insert(conceptsPayload, d => d.id);
 
+  // Register project's ontology with concept-aligner
+  if (!_.isEmpty(ontologyId)) {
+    try {
+      const status = await conceptAlignerService.queryOntology(ontologyId);
+      if (status.compStatus === 'absent') {
+        Logger.info(`Ontology ${ontologyId} does not exist, registering...`);
+        await conceptAlignerService.addOntology(ontologyId);
+      } else {
+        Logger.info(`Ontology ${ontologyId} exists`);
+      }
+    } catch (err) {
+      Logger.warn('Error with concept aligner');
+    }
+  }
+
+  // Register new project with INDRA if available
   try {
     await indraService.sendNewProject(result.index, name, projectData.corpus_id);
   } catch (err) {
+    Logger.warn(`Failed to register project ${projectId} with Indra`);
     console.log(err);
   }
 
@@ -149,7 +203,7 @@ const checkIndexStatus = async (projectId) => {
  * - model metadata
  * - edge
  * - node
- * - project metadat
+ * - project metadata
  * - project
  *
  * @param {string} projectId - project identifier

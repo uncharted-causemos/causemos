@@ -7,6 +7,9 @@
       <h5>Add custom concept</h5>
     </template>
     <template #body>
+      <div> What is the concept you could not find in the ontology? </div>
+      <input class="form-control" v-model="theme" type="text" placeholder="e.g. heavy rainfall"/>
+      <!--
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Theme</label>
         <div class="col-md-7">
@@ -35,6 +38,7 @@
           <div class="input-error-message" v-if="errorMessages.process_property">{{errorMessages.process_property}}</div>
         </div>
       </div>
+      -->
     </template>
     <template #footer>
       <ul class="unstyled-list">
@@ -57,6 +61,7 @@
 <script lang="ts">
 import { defineComponent, ref, Ref } from 'vue';
 import { mapGetters, mapActions } from 'vuex';
+import { cleanConceptString } from '@/utils/concept-util';
 import Modal from '@/components/modals/modal.vue';
 import projectService from '@/services/project-service';
 
@@ -129,7 +134,7 @@ export default defineComponent({
       this.$emit('close');
     },
     isAlphaNumeric(str: string) {
-      const regex = RegExp('^[A-Za-z0-9 ]+$');
+      const regex = RegExp('^[A-Za-z0-9/_ ]+$');
       return regex.test(str);
     },
     close() {
@@ -149,10 +154,10 @@ export default defineComponent({
     },
     customGrounding(): { [key: string]: string } {
       return {
-        theme: this.theme,
-        theme_property: this.theme_property,
-        process: this.process,
-        process_property: this.process_property
+        theme: cleanConceptString(this.theme),
+        theme_property: cleanConceptString(this.theme_property),
+        process: cleanConceptString(this.process),
+        process_property: cleanConceptString(this.process_property)
       };
     }
   },
@@ -167,5 +172,9 @@ export default defineComponent({
 .input-error-message {
   text-align: left;
   color: red;
+}
+
+input::placeholder {
+  color: #888;
 }
 </style>

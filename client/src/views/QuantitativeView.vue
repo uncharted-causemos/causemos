@@ -6,6 +6,17 @@
         :view-after-deletion="'overview'"
       />
     </teleport>
+    <modal-confirmation
+      v-if="showOpenDataAnalysisConfirmation"
+      :autofocus-confirm="false"
+      @confirm="onConfirmRedirectionToDataAnalysis"
+      @close="showOpenDataAnalysisConfirmation = false"
+    >
+      <template #title>Data analysis created/updated successfully!</template>
+      <template #message>
+        <p>Are you sure you want to navigate away from the current CAG? This will redirect you to the page of the created data analysis.</p>
+      </template>
+    </modal-confirmation>
     <tab-panel
       v-if="ready && isTraining === false"
       class="graph-container"
@@ -20,6 +31,7 @@
       @update-scenario='onUpdateScenario'
       @delete-scenario='onDeleteScenario'
       @delete-scenario-clamp='onDeleteScenarioClamp'
+      @duplicate-scenario="onDuplicateScenario"
     >
       <template #action-bar>
         <action-bar
@@ -29,11 +41,13 @@
           @reset-cag="resetCAGLayout()"
           @run-model="runScenariosWrapper"
           @tab-click="tabClick"
+          @open-data-analysis-for-cag="openDataAnalysis()"
         />
       </template>
     </tab-panel>
     <div v-if="isTraining === true">
       <h4 style="margin-left: 15px">
+        <i class="fa fa-fw fa-spinner fa-spin"></i>
         Model is currently training on the {{currentEngine}} engine - {{ trainingPercentage }}%. You can switch to
         <button class="btn btn-primary btn-sm" @click="switchEngine('dyse')">DySE</button> to continue running experiments.
       </h4>
@@ -51,10 +65,13 @@ import ActionBar from '@/components/quantitative/action-bar.vue';
 import TabPanel from '@/components/quantitative/tab-panel.vue';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 import modelService from '@/services/model-service';
-import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
+import { createAnalysis, getAnalysisState } from '@/services/analysis-service';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
+import { ProjectType } from '@/types/Enums';
+import { v4 as uuidv4 } from 'uuid';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
 const MODEL_STATUS = modelService.MODEL_STATUS;
@@ -67,7 +84,8 @@ export default defineComponent({
   components: {
     TabPanel,
     ActionBar,
-    CagAnalysisOptionsButton
+    CagAnalysisOptionsButton,
+    ModalConfirmation
   },
   setup() {
     return {
@@ -85,13 +103,15 @@ export default defineComponent({
     isTraining: false,
     trainingPercentage: 0,
     refreshTimer: 0,
-    currentScenarioName: ''
+    currentScenarioName: '',
+    showOpenDataAnalysisConfirmation: false
   }),
   computed: {
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
       selectedScenarioId: 'model/selectedScenarioId',
+      runImmediately: 'model/runImmediately',
       tour: 'tour/tour'
     }),
     ready(): boolean {
@@ -107,25 +127,14 @@ export default defineComponent({
   },
   watch: {
     currentCAG() {
+      if (this.$route.name !== 'quantitative') {
+        // We're in the process of navigating away from this page, so don't
+        //  trigger a refresh. This occurs when duplicating a yearly CAG, and
+        //  causes the baseline scenario to be created before the time scale
+        //  can be set. It defaults to monthly, which causes issues.
+        return;
+      }
       this.refresh();
-    },
-    $route: {
-      handler(/* newValue, oldValue */) {
-        // NOTE:  this is only valid when the route is focused on the 'data' space
-        if (this.$route.name === 'quantitative' && this.$route.query) {
-          const insight_id = this.$route.query.insight_id;
-          if (typeof insight_id === 'string') {
-            this.updateStateFromInsight(insight_id);
-            this.$router.push({
-              query: {
-                insight_id: undefined,
-                activeTab: this.$route.query.activeTab || undefined
-              }
-            });
-          }
-        }
-      },
-      immediate: true
     }
   },
   created() {
@@ -143,11 +152,13 @@ export default defineComponent({
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       enableOverlayWithCancel: 'app/enableOverlayWithCancel',
+      setOverlaySecondaryMessage: 'app/setOverlaySecondaryMessage',
       disableOverlay: 'app/disableOverlay',
       setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
       setContextId: 'insightPanel/setContextId',
-      setDataState: 'insightPanel/setDataState'
+      setRunImmediately: 'model/setRunImmediately',
+      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems'
     }),
     async onCreateScenario(scenarioInfo: { name: string; description: string }) {
       if (this.scenarios === null) {
@@ -168,6 +179,22 @@ export default defineComponent({
         parameter: _.cloneDeep(baselineScenario?.parameter)
       };
       this.enableOverlay('Creating Scenario');
+      const createdScenario = await modelService.createScenario(newScenario);
+      // Save and reload scenarios
+      await this.reloadScenarios();
+      this.setSelectedScenarioId(createdScenario.id);
+      this.disableOverlay();
+    },
+    async onDuplicateScenario(scenario: Scenario) {
+      // add new scenario
+      const newScenario: NewScenario = {
+        model_id: this.currentCAG,
+        name: 'Copy of ' + scenario.name,
+        description: scenario.description,
+        is_baseline: false,
+        parameter: _.cloneDeep(scenario.parameter)
+      };
+      this.enableOverlay('Duplicating Scenario');
       const createdScenario = await modelService.createScenario(newScenario);
       // Save and reload scenarios
       await this.reloadScenarios();
@@ -241,7 +268,6 @@ export default defineComponent({
             conceptConstraints => conceptConstraints.concept !== selectedConcept
           ),
           num_steps: selectedScenario.parameter.num_steps,
-          indicator_time_series_range: selectedScenario.parameter.indicator_time_series_range,
           projection_start: selectedScenario.parameter.projection_start
         }
       };
@@ -249,23 +275,6 @@ export default defineComponent({
       await modelService.updateScenario(updatedScenario);
       await this.reloadScenarios();
       this.disableOverlay();
-    },
-    async updateStateFromInsight(insight_id: string) {
-      const loadedInsight = await getInsightById(insight_id);
-      // FIXME: before applying the insight, which will overwrite current state,
-      //  consider pushing current state to the url to support browser hsitory
-      //  in case the user wants to navigate to the original state using back button
-      if (loadedInsight) {
-        //
-        // insight was found and loaded
-        //
-        // data state
-        // FIXME: the order of resetting the state is important
-        if (loadedInsight.data_state?.selectedScenarioId !== undefined) {
-          // this will reload datacube metadata as well as scenario runs
-          this.setSelectedScenarioId(loadedInsight.data_state?.selectedScenarioId);
-        }
-      }
     },
     async refreshModel() {
       this.enableOverlay('Getting model data');
@@ -280,11 +289,14 @@ export default defineComponent({
       this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
     },
     async refresh() {
+      if (!this.currentCAG) return;
+
       // Used to kick off scenario refreshes from a training state
       const trainingInPreviousCycle = this.isTraining === true;
 
-      this.isTraining = false;
-      this.enableOverlay('Loading');
+      if (this.isTraining === false) {
+        this.enableOverlay('Loading');
+      }
       this.modelSummary = await modelService.getSummary(this.currentCAG);
 
       let scenarios: Scenario[] = await modelService.getScenarios(this.currentCAG, this.currentEngine);
@@ -325,15 +337,10 @@ export default defineComponent({
 
       // 2. Check if model is still training status
       if (engineStatus === MODEL_STATUS.TRAINING) {
-        // Delphi status is a lot slower, throw up a guard
-        if (this.currentEngine === 'delphi' || this.currentEngine === 'delphi_dev') {
-          this.enableOverlay('Checking model training status');
-        }
         const r = await modelService.checkAndUpdateRegisteredStatus(
           this.modelSummary.id,
           this.currentEngine
         );
-        this.disableOverlay();
 
         // FIXME: use status code
         if (r.status === 'training') {
@@ -342,10 +349,27 @@ export default defineComponent({
           this.scheduleRefresh();
           return;
         }
+        // Delphi workaround
+        // else {
+        //   if (trainingInPreviousCycle === true || r.progressPercentage < 1.0) {
+        //     // Artificially inflate waiting time for Delphi to workaround race-conditions
+        //     const waitTime = 10000;
+        //     if (this.currentEngine === 'delphi' || this.currentEngine === 'delphi_dev') {
+        //       this.enableOverlay(`Waiting for ${this.currentEngine} DB`);
+        //       await new Promise((resolve) => {
+        //         window.setTimeout(() => {
+        //           resolve(true);
+        //         }, waitTime);
+        //       });
+        //       this.disableOverlay();
+        //     }
+        //   }
+        // }
       }
 
       // 3. Check if we have scenarios, if not generate one
       await this.refreshModel();
+      this.isTraining = false;
 
       if (scenarios.length === 0) {
         const poller = new Poller(PROJECTION_EXPERIMENT_INTERVAL, PROJECTION_EXPERIMENT_THRESHOLD);
@@ -357,7 +381,8 @@ export default defineComponent({
         // Now we are up to date, create base scenario
         this.enableOverlayWithCancel({ message: 'Creating baseline scenario', cancelFn: cancelFn });
         try {
-          await modelService.createBaselineScenario(this.modelSummary, poller, this.updateProgress);
+          // FIXME: hack to get setOverlaySecondaryMessage, need to have experimentId extracted first
+          await modelService.createBaselineScenario(this.modelSummary, poller, this.updateProgress, this.setOverlaySecondaryMessage);
           scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
         } catch (error) {
           console.error(error);
@@ -379,33 +404,14 @@ export default defineComponent({
 
       // 5. Rebuild scenarios' result if necessary
       // If we had training in the previous cycle, it means most likely analysts want to rerfresh scenarios anyway.
-      if (hasEmptyScenarioResults || trainingInPreviousCycle === true) {
+      if (hasEmptyScenarioResults || trainingInPreviousCycle === true || this.runImmediately === true) {
         scenarios = await this.runScenarios(scenarios);
       }
+      this.setRunImmediately(false);
 
       // 6. Finally we are done and kick off the relevant events
       this.setSelectedScenarioId(scenarioId);
       this.scenarios = scenarios;
-
-      this.updateDataState();
-    },
-    updateDataState() {
-      if (this.modelSummary === null) {
-        console.error('Trying to update data state while modelSummary is null.');
-        return;
-      }
-      if (this.modelComponents === null) {
-        console.error('Trying to update data state while modelComponents is null.');
-        return;
-      }
-      // save the scenario-id in the insight store so that it will be part of any insight captured from this view
-      const dataState = {
-        selectedScenarioId: this.selectedScenarioId,
-        currentEngine: this.currentEngine,
-        modelName: this.modelSummary.name,
-        nodesCount: this.modelComponents.nodes.length
-      };
-      this.setDataState(dataState);
     },
     async runScenariosWrapper() {
       if (!this.scenarios) return;
@@ -492,6 +498,7 @@ export default defineComponent({
             this.currentCAG,
             modelService.cleanConstraints(scenario.parameter?.constraints ?? [])
           );
+          this.setOverlaySecondaryMessage(`CAG=${this.currentCAG} Experiment=${experimentId}`);
 
           const experiment: any = await modelService.getExperimentResult(this.currentCAG, experimentId, poller, this.updateProgress);
           // FIXME: Delphi uses .results, DySE uses .results.data
@@ -549,6 +556,75 @@ export default defineComponent({
     resetCAGLayout() {
       this.resetLayoutToken = Date.now();
     },
+    async openDataAnalysis() {
+      const indicators = this.modelComponents?.nodes.map(node => node.parameter).filter(indicator => indicator.id !== null && indicator.data_id);
+      if (indicators !== undefined && indicators.length > 0) {
+        // do we have an existing analysis that was generated from this CAG?
+        const existingAnalysisId = this.modelSummary?.data_analysis_id;
+        const analysisItems = indicators.map(indicator => ({ // AnalysisItem
+          itemId: uuidv4(),
+          datacubeId: indicator.data_id, // data_id
+          id: indicator.id
+        }));
+        let createNewAnalysis = false;
+        if (existingAnalysisId) {
+          // update existing data analysis
+          try {
+            const existingAnalysisState = await getAnalysisState(existingAnalysisId);
+            existingAnalysisState.currentAnalysisId = existingAnalysisId;
+            existingAnalysisState.analysisItems = analysisItems;
+            await this.updateAnalysisItems(existingAnalysisState);
+          } catch (e) {
+            // we have an existing analysis id, but the analysis itself is not there
+            //  perhaps it was manually removed, so we need to create a new one
+            createNewAnalysis = true;
+          }
+        } else {
+          // no existing analysis, so create a new one
+          createNewAnalysis = true;
+        }
+        if (createNewAnalysis) {
+          // create a new data analysis
+          const initialAnalysisState = { // AnalysisState
+            currentAnalysisId: '',
+            analysisItems
+          };
+          const analysis = await createAnalysis({
+            title: 'analysis from CAG: ' + this.modelSummary?.name,
+            projectId: this.project,
+            state: initialAnalysisState
+          } as any);
+          // update the analysis items in case the user wants to redirect to the data analysis momentarily
+          initialAnalysisState.currentAnalysisId = analysis.id;
+          await this.updateAnalysisItems(initialAnalysisState);
+          // save the created analysis id with the CAG
+          await modelService.updateModelMetadata(this.currentCAG, {
+            data_analysis_id: analysis.id
+          });
+          // instead of re-fetching the model summary, just update the data analysis id locally
+          if (this.modelSummary) {
+            this.modelSummary.data_analysis_id = analysis.id;
+          }
+        }
+
+        this.showOpenDataAnalysisConfirmation = true;
+        // this.toaster('Data analysis created/updated successfully', 'success', false);
+      } else {
+        this.toaster('Please have at least one quantified node before opening data analysis!', 'error', false);
+      }
+    },
+    onConfirmRedirectionToDataAnalysis() {
+      this.showOpenDataAnalysisConfirmation = false;
+      window.clearTimeout(this.refreshTimer);
+      this.$router.push({
+        name: 'dataComparative',
+        params: {
+          project: this.project,
+          analysisId: this.modelSummary?.data_analysis_id,
+          projectType: ProjectType.Analysis
+        }
+      });
+    },
     updateProgress(polls: number, threshold: number, result: any) {
       if (result?.progressPercentage !== undefined) {
         const overlayContent = `Running ${this.currentScenarioName} on ${this.currentEngine} - ${result.progressPercentage * 100}% complete.`;
@@ -570,7 +646,7 @@ export default defineComponent({
 });
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 @import "~styles/variables";
 
 .quantitative-view-container {

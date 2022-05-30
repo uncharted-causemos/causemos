@@ -1,3 +1,5 @@
+import { QualifierThresholds } from './Datacube';
+
 export interface Period {
   gte: string;
   lte: string;
@@ -57,8 +59,9 @@ export interface AdminRegionSets {
   admin3: Set<string>;
 }
 
-export interface QualifierInfo {
+export interface QualifierFetchInfo {
   count: number;
-  fetchByDefault: boolean;
-  maxAdminLevelTimeseries: number;
+  shouldFetchByDefault: boolean;
+  maxAdminLevelWithRegionalTimeseries: number;
+  thresholds: QualifierThresholds;
 }

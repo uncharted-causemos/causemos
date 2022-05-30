@@ -3,8 +3,8 @@ import { computed, Ref } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
-import { useStore } from 'vuex';
 import { getAggregationKey, getOutputs } from '@/utils/datacube-util';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -13,11 +13,12 @@ import { getAggregationKey, getOutputs } from '@/utils/datacube-util';
  */
 export default function useParallelCoordinatesData(
   metadata: Ref<Model | Indicator | null>,
-  modelRunData: Ref<ModelRun[]>
+  modelRunData: Ref<ModelRun[]>,
+  spatialAggregation: Ref<AggregationOption>,
+  temporalAggregation: Ref<AggregationOption>,
+  itemId: Ref<string>
 ) {
-  const store = useStore();
-  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-  const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+  const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
   const runParameterValues = computed(() => {
     if (modelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {
@@ -30,15 +31,20 @@ export default function useParallelCoordinatesData(
       const runStatus = modelRun.status;
       const created_at = modelRun.created_at;
       const is_default_run = modelRun.is_default_run ? 1 : 0;
+      const flow_id = modelRun.flow_id;
       const run: ScenarioData = {
         created_at,
         is_default_run,
         run_id,
+        flow_id,
         status: runStatus ?? ModelRunStatus.Ready
       };
       if (run.status === ModelRunStatus.Ready) {
-        // TODO: This needs to depend on the selected aggregation functions
-        const aggKey = getAggregationKey(AggregationOption.Mean, AggregationOption.Mean);
+        const aggKey = getAggregationKey(
+          spatialAggregation.value === AggregationOption.None ? AggregationOption.Mean
+            : spatialAggregation.value,
+          temporalAggregation.value === AggregationOption.None ? AggregationOption.Mean
+            : temporalAggregation.value);
         const outputValue = modelRun.output_agg_values.find(val => val.name === outputParameterName);
         if (outputValue && outputValue[aggKey]) {
           run[outputParameterName] = outputValue[aggKey];
@@ -47,7 +53,10 @@ export default function useParallelCoordinatesData(
         }
       }
       modelRun.parameters.forEach(({ name, value }) => {
-        run[name ?? 'undefined'] = value;
+        // prevent a param named status from overriding run status
+        if (name !== 'status') {
+          run[name ?? 'undefined'] = value;
+        }
       });
       return run;
     });

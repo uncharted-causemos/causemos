@@ -22,8 +22,9 @@ const _facetQuery = (filters, fields = []) => {
     } else if (fieldMeta.type === FIELD_TYPES.RANGED) {
       aggregations[field] = aggUtil.rangeAggregation(field);
     } else if (fieldMeta.type === FIELD_TYPES.DATE) {
-      // FIXME: reimplement date range aggregation after figuring out how dates should be faceted in the Front end - June 16th 2020
       aggregations[field] = aggUtil.dateRangeAggregation(field);
+    } else if (fieldMeta.type === FIELD_TYPES.DATE_MILLIS) {
+      aggregations[field] = aggUtil.dateRangeAggregation(field, true);
     } else {
       throw new Error(`Unsupported aggregation for field ${field}`);
     }
@@ -40,7 +41,7 @@ const _facetPostProcess = (fields, facets) => {
   const result = {};
   fields.forEach(field => {
     const fieldMeta = FIELDS[field];
-    if (fieldMeta.type === FIELD_TYPES.DATE) {
+    if (fieldMeta.type === FIELD_TYPES.DATE || fieldMeta.type === FIELD_TYPES.DATE_MILLIS) {
       // handle custom result from date histogram aggregation
       const dateHistogramData = facets[field].buckets;
       const dateKeys = Object.keys(dateHistogramData);

@@ -1,35 +1,14 @@
 <template>
-  <div class="analytical-questions-panel-container">
-    <template v-if="showDeleteModal">
-      <h5 class="title">Delete Public Question</h5>
-      <p>Are you sure you want to delete?</p>
-      <message-display
-        class="delete-confirm-alert"
-        :message-type="'alert-warning'"
-        :message="'This deletion will remove the question from all projects.'"
-      />
-      <ul class="unstyled-list">
-        <button
-          type="button"
-          class="btn"
-          @click.stop="showDeleteModal = false">
-            Cancel
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary btn-call-for-action"
-          @click.stop="deleteSelectedQuestion">
-            Confirm
-        </button>
-      </ul>
-    </template>
+  <div class="list-analytical-questions-pane-container">
+    <h4 v-if="showChecklistTitle" class="title">Analysis Checklist</h4>
+    <slot />
     <template v-if="showNewAnalyticalQuestion">
-      <h5 class="title">New Analytical Question</h5>
+      <h5>New Section</h5>
       <textarea
         v-model="newQuestionText"
         v-focus
         type="text"
-        placeholder="Enter question"
+        placeholder="e.g. Which intervention will have the greatest impact on crop production?"
         rows="10"
         class="question-text"
       />
@@ -49,132 +28,184 @@
         </button>
       </ul>
     </template>
-    <template v-if="showDeleteModal === false && showNewAnalyticalQuestion === false">
-      <button
-        v-tooltip.top-center="'Add a new analytical question'"
-        type="button"
-        class="btn btn-default new-question-button"
-        @click="addNewQuestion">
-          <i class="fa fa-plus-circle" />
-          Add new question
-      </button>
-      <div v-if="questionsList.length > 0" class="analytical-questions-container">
+    <template v-if="showNewAnalyticalQuestion === false">
+      <div>
+        <button
+          v-tooltip.top-center="'Add a new analytical question'"
+          type="button"
+          class="btn btn-sm new-question-button"
+          @click="addNewQuestion">
+            <i class="fa fa-plus-circle" />
+            New section
+        </button>
+        &nbsp;
+        <button class="btn btn-sm" @click="questionsExpanded = true">Expand All</button>
+        &nbsp;
+        <button class="btn btn-sm" @click="questionsExpanded = false">Collapse All</button>
+      </div>
+
+      <div v-if="insightsBySection.length > 0" class="analytical-questions-container">
         <div
-          v-for="questionItem in questionsList"
-          :key="questionItem.id"
+          v-for="sectionWithInsights in insightsBySection"
+          :key="sectionWithInsights.section.id"
           class="checklist-item"
-          @drop='onDrop($event, questionItem)'
+          @drop='onDrop($event, sectionWithInsights.section)'
           @dragover='onDragOver($event)'
           @dragenter='onDragEnter($event)'
           @dragleave='onDragLeave($event)'
           draggable='true'
-          @dragstart='onDragStart($event, questionItem)'
+          @dragstart='onDragStart($event, sectionWithInsights.section)'
         >
-            <!-- first row display the question -->
-            <div class="checklist-item-question">
-              <i class="fa fa-bars checklist-item-menu" />
-              <span class="question-title"> {{ questionItem.question }}</span>
-              <span
-                v-if="questionItem.visibility !== 'private'"
-                class="public-question-label"
-              >
-                Public
-              </span>
-              <i
-                v-if="hasTour(questionItem)"
-                v-tooltip.top="'Tutorial available for this question'"
-                class="fa fa-lg fa-info-circle"
-                :style="{ color: canStartTour ? '#000000' : '#707070' }"
-                :disabled="!canStartTour"
-                @click.stop.prevent="startTour(questionItem)"
-                @mousedown.stop.prevent
-              />
-              <options-button
-                :dropdown-below="true"
-                :wider-dropdown-options="true"
-                class="options-button"
-              >
-                <template #content>
-                  <div
-                    class="dropdown-option"
-                    @click="promote(questionItem)"
-                  >
-                    <i class="fa fa-edit" />
-                    Make public
-                  </div>
-                  <div
-                    class="dropdown-option"
-                    @click="initiateQuestionDeletion(questionItem)"
-                  >
-                    <i class="fa fa-trash" />
-                    Delete
-                  </div>
-                </template>
-              </options-button>
-            </div>
+          <!-- first row display the question -->
+          <div class="checklist-item-question">
+            <i class="fa fa-bars checklist-item-menu" />
+            <span
+              class="question-title"
+              :class="{ clickable: canClickChecklistItems }"
+              @click="$emit('item-click', sectionWithInsights.section, null)"
+            > {{ sectionWithInsights.section.question }}</span>
+            <i
+              v-if="hasTour(sectionWithInsights.section)"
+              v-tooltip.top="'Tutorial available for this question'"
+              class="fa fa-lg fa-info-circle"
+              :style="{ color: canStartTour ? '#000000' : '#707070' }"
+              :disabled="!canStartTour"
+              @click.stop.prevent="startTour(sectionWithInsights.section)"
+              @mousedown.stop.prevent
+            />
+            <options-button
+              :dropdown-below="true"
+              :wider-dropdown-options="true"
+              class="options-button"
+            >
+              <template #content>
+                <div class="dropdown-option" @click="editSection(sectionWithInsights.section)">
+                  <i class="fa fa-edit" />
+                  Edit
+                </div>
+                <div
+                  class="dropdown-option"
+                  @click="initiateQuestionDeletion(sectionWithInsights.section)"
+                >
+                  <i class="fa fa-trash" />
+                  Delete
+                </div>
+              </template>
+            </options-button>
+          </div>
+          <template v-if="questionsExpanded === true">
             <!-- second row display a list of linked insights -->
             <message-display
-              v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
+              v-if="(sectionWithInsights.insights.length ?? 0) === 0"
               class="no-insight-warning"
               :message-type="'alert-warning'"
-              :message="'No insights assigned to this question.'"
+              :message="'No insights assigned to this section.'"
             />
             <div
-              v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
+              v-for="insight in sectionWithInsights.insights"
               :key="insight.id"
               class="checklist-item-insight">
               <i @mousedown.stop.prevent class="fa fa-star" />
               <span
                 @mousedown.stop.prevent
                 class="insight-name"
-                :class="{ 'private-insight-name': insight.visibility === 'private' }">
+                :class="{
+                  'private-insight-name': insight.visibility === 'private',
+                  'clickable': canClickChecklistItems
+                }"
+                @click="$emit('item-click', sectionWithInsights.section, insight.id)">
                 {{ insight.name }}
               </span>
               <i class="fa fa-fw fa-close"
                 style="pointer-events: all; cursor: pointer; margin-left: auto;"
-                @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
+                @click="removeRelationBetweenInsightAndQuestion($event, sectionWithInsights.section, insight.id as string)" />
             </div>
-          </div>
+          </template>
+        </div>
       </div>
     </template>
+    <teleport to="body">
+      <rename-modal
+        v-if="isEditModalOpen"
+        :modal-title="'Edit section'"
+        :current-name="selectedQuestion?.question ?? ''"
+        @confirm="onEditModalConfirm"
+        @cancel="isEditModalOpen = false"
+      />
+    </teleport>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, watch } from 'vue';
+import { defineComponent, PropType, ref } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 import Shepherd from 'shepherd.js';
 
 import useInsightsData from '@/services/composables/useInsightsData';
-import useQuestionsData from '@/services/composables/useQuestionsData';
-import { getInsightById, updateInsight } from '@/services/insight-service';
-import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
+import { updateInsight } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
-import { AnalyticalQuestion, Insight } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, SectionWithInsights } from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
+import useToaster from '@/services/composables/useToaster';
+
+type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
   components: {
     MessageDisplay,
-    OptionsButton
+    OptionsButton,
+    RenameModal
+  },
+  props: {
+    showChecklistTitle: {
+      type: Boolean,
+      default: false
+    },
+    // TODO: eventually we'll be able to click checklist items everywhere, at
+    //  which point we can remove this prop.
+    canClickChecklistItems: {
+      type: Boolean,
+      default: false
+    },
+    insightsBySection: {
+      type: Array as PropType<SectionWithInsights[]>,
+      default: []
+    }
   },
   setup() {
-    const { questionsList, reFetchQuestions } = useQuestionsData();
-    const { getInsightsByIDs, reFetchInsights } = useInsightsData();
+    const toaster = useToaster();
+    // FIXME: hoist insights to parent component so that we're not fetching and
+    //  managing two copies
+    const { insights, reFetchInsights } = useInsightsData(undefined,
+      ['id', 'name', 'visibility', 'analytical_question']);
 
-    watch(questionsList, () => {
-      reFetchInsights();
-    });
+    const getInsightById = (insightId: string) => {
+      return insights.value.find(insight => insight.id === insightId) as PartialInsight;
+    };
+
+    const questionsExpanded = ref(true);
+
     return {
-      questionsList,
-      reFetchQuestions,
-      getInsightsByIDs
+      reFetchInsights,
+      getInsightById,
+      questionsExpanded,
+      toaster
     };
   },
+  emits: [
+    'item-click',
+    'update-section-title',
+    'add-section',
+    'delete-section',
+    'move-section-above-section',
+    'add-insight-to-section',
+    'remove-insight-from-section'
+  ],
   data: () => ({
     AnalyticalQuestionsTabs: [
       { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' }
@@ -183,7 +214,7 @@ export default defineComponent({
     selectedQuestion: null as AnalyticalQuestion | null,
     showNewAnalyticalQuestion: false,
     newQuestionText: '',
-    showDeleteModal: false,
+    isEditModalOpen: false,
     toursMetadata: [
       {
         baseQuestion: 'What are the appropriate aggregation functions?',
@@ -198,7 +229,6 @@ export default defineComponent({
   }),
   computed: {
     ...mapGetters({
-      viewState: 'insightPanel/viewState',
       currentView: 'app/currentView',
       projectType: 'app/projectType',
       project: 'app/project',
@@ -206,19 +236,10 @@ export default defineComponent({
       isReadyForNextStep: 'tour/isReadyForNextStep',
       isPanelOpen: 'insightPanel/isPanelOpen'
     }),
-    // @REVIEW: this is similar to insightTargetView
-    questionTargetView(): string[] {
-      // an insight created during model publication should be listed either
-      //  in the full list of insights,
-      //  or as a context specific insight when opening the page of the corresponding model family instance
-      //  (the latter is currently supported via a special route named dataPreview)
-      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
-      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
-    },
     canStartTour(): boolean {
       // if the tour's target-view is compatible with currentView and no modal is shown
       return !this.isPanelOpen &&
-             this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
+            this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
     }
   },
   mounted() {
@@ -226,7 +247,6 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setQuestions: 'analysisChecklist/setQuestions',
       showSidePanel: 'panel/showSidePanel',
       setTour: 'tour/setTour'
     }),
@@ -237,64 +257,52 @@ export default defineComponent({
       return this.projectType === ProjectType.Analysis ? 'private' : 'public';
       // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
     },
-    promote(question: AnalyticalQuestion) {
-      // update question to be public, i.e., visible in all projects
-      if (question) {
-        question.visibility = 'public';
-        question.project_id = '';
-        question.context_id = [''];
-        question.url = '';
-        updateQuestion(question.id as string, question).then(result => {
-          const message = result.status === 200 ? QUESTIONS.SUCCESFUL_UPDATE : QUESTIONS.ERRONEOUS_UPDATE;
-          // FIXME: cast to 'any' since typescript cannot see mixins yet!
-          if (message === QUESTIONS.SUCCESFUL_UPDATE) {
-            (this as any).toaster(message, 'success', false);
-          } else {
-            (this as any).toaster(message, 'error', true);
-          }
-        });
-      }
+    editSection(section: AnalyticalQuestion) {
+      this.selectedQuestion = section;
+      this.isEditModalOpen = true;
     },
+    onEditModalConfirm(newSectionTitle: string) {
+      if (this.selectedQuestion === null) {
+        console.error('No question is selected.');
+        return;
+      }
+      const handleFailedUpdate = () => {
+        this.toaster(QUESTIONS.ERRONEOUS_UPDATE, 'error', true);
+      };
+      this.$emit(
+        'update-section-title',
+        // Assert that ID is defined, since we should never be able to fetch a
+        //  question before it's stored with an ID
+        this.selectedQuestion.id as string,
+        newSectionTitle,
+        handleFailedUpdate
+      );
+      this.selectedQuestion = null;
+      this.isEditModalOpen = false;
+    },
+    // TODO: clarify these function names
     addNewQuestion() {
       this.newQuestionText = '';
       this.showNewAnalyticalQuestion = true;
     },
     onNewAnalyticalQuestion() {
       this.showNewAnalyticalQuestion = false;
-
-      const url = this.$route.fullPath;
-      const newQuestion: AnalyticalQuestion = {
-        question: this.newQuestionText,
-        description: '',
-        visibility: this.questionVisibility(),
-        project_id: this.project,
-        context_id: this.contextId,
-        url,
-        target_view: this.questionTargetView,
-        pre_actions: null,
-        post_actions: null,
-        linked_insights: [],
-        view_state: this.viewState
+      const handleSuccessfulAddition = () => {
+        this.toaster(QUESTIONS.SUCCESSFUL_ADDITION, 'success', false);
       };
-      addQuestion(newQuestion).then((result) => {
-        const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_ADDITION : QUESTIONS.ERRONEOUS_ADDITION;
-        // FIXME: cast to 'any' since typescript cannot see mixins yet!
-        if (message === QUESTIONS.SUCCESSFUL_ADDITION) {
-          (this as any).toaster(message, 'success', false);
-          // refresh the latest list from the server
-          this.reFetchQuestions();
-        } else {
-          (this as any).toaster(message, 'error', true);
-        }
-      });
+      const handleFailedAddition = () => {
+        this.toaster(QUESTIONS.ERRONEOUS_ADDITION, 'error', true);
+      };
+      this.$emit(
+        'add-section',
+        this.newQuestionText,
+        handleSuccessfulAddition,
+        handleFailedAddition
+      );
     },
     initiateQuestionDeletion(question: AnalyticalQuestion) {
       this.selectedQuestion = question;
-      if (question.visibility === 'public') {
-        this.showDeleteModal = true;
-      } else {
-        this.deleteSelectedQuestion();
-      }
+      this.deleteSelectedQuestion();
     },
     deleteSelectedQuestion() {
       if (this.selectedQuestion) {
@@ -304,21 +312,20 @@ export default defineComponent({
           this.removeQuestionFromInsight(this.selectedQuestion as AnalyticalQuestion, insightId);
         });
 
-        // refresh
-        this.questionsList = this.questionsList.filter(q => q.question !== this.selectedQuestion?.question);
-        this.setQuestions(this.questionsList);
-
-        deleteQuestion(this.selectedQuestion.id as string).then(result => {
-          const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_REMOVAL : QUESTIONS.ERRONEOUS_REMOVAL;
-          if (message === QUESTIONS.SUCCESSFUL_REMOVAL) {
-            (this as any).toaster(message, 'success', false);
-          } else {
-            (this as any).toaster(message, 'error', true);
-          }
-        });
+        const handleSuccessfulDeletion = () => {
+          this.toaster(QUESTIONS.SUCCESSFUL_REMOVAL, 'success', false);
+        };
+        const handleFailedDeletion = () => {
+          this.toaster(QUESTIONS.ERRONEOUS_REMOVAL, 'error', true);
+        };
+        this.$emit(
+          'delete-section',
+          this.selectedQuestion.id as string,
+          handleSuccessfulDeletion,
+          handleFailedDeletion
+        );
       }
       this.selectedQuestion = null;
-      this.showDeleteModal = false;
     },
     setActive(tab: string) {
       this.currentTab = tab;
@@ -328,50 +335,39 @@ export default defineComponent({
       evt.dataTransfer.effectAllowed = 'move';
       evt.dataTransfer.setData('question_id', questionItem.id);
     },
-    async onDrop(evt: any, questionItem: AnalyticalQuestion) {
+    async onDrop(evt: any, targetQuestion: AnalyticalQuestion) {
       // prevent default action (open as link for some elements)
       evt.preventDefault();
-      evt.currentTarget.style.background = 'white';
+      evt.currentTarget.classList.remove('dragging-over');
 
-      const question_id = evt.dataTransfer.getData('question_id');
-      if (question_id !== '') {
-        // swap questions: question_id and questionItem.id
-        const questions = _.cloneDeep(this.questionsList);
-        const i1 = questions.findIndex(q => q.id === question_id);
-        const i2 = questions.findIndex(q => q.id === questionItem.id);
-        // swap
-        const q1 = questions[i1];
-        questions[i1] = questions[i2];
-        questions[i2] = q1;
-        // update
-        this.questionsList = questions;
+      // At most ONE of these will exist
+      const droppedQuestionId = evt.dataTransfer.getData('question_id');
+      const droppedInsightId = evt.dataTransfer.getData('insight_id');
 
-        // update the store to facilitate questions consumption in other UI places
-        this.setQuestions(this.questionsList);
-
-        // NOTE: re-ordering of questions is not persistent (and shouldn't be)
+      if (droppedQuestionId !== '') {
+        // Move dropped question above questionItem
+        this.$emit(
+          'move-section-above-section',
+          droppedQuestionId,
+          targetQuestion.id
+        );
       }
 
-      const insight_id = evt.dataTransfer.getData('insight_id');
-      if (insight_id !== '') {
+      // implied else
+      if (droppedInsightId !== '') {
         // fetch the dropped insight and use its name in this question's insights
-        const loadedInsight: Insight = await getInsightById(insight_id);
-        if (loadedInsight) {
-          const existingIndex = questionItem.linked_insights.findIndex(id => id === loadedInsight.id);
-          if (existingIndex < 0) {
-            // only add any dropped insight once to each question
-            questionItem.linked_insights.push(loadedInsight.id as string);
-
-            // update question on the backend
-            updateQuestion(questionItem.id as string, questionItem);
-
-            // update the store to facilitate questions consumption in other UI places
-            this.setQuestions(this.questionsList);
-          }
+        const insight = this.getInsightById(droppedInsightId);
+        if (insight) {
+          this.$emit(
+            'add-insight-to-section',
+            droppedInsightId,
+            targetQuestion.id
+          );
           // add the following question (text) to the insight
-          if (!(loadedInsight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
-            loadedInsight.analytical_question.push(questionItem.id as string);
-            updateInsight(loadedInsight.id as string, loadedInsight);
+          if (!(insight.analytical_question.findIndex(qid => qid === targetQuestion.id) >= 0)) {
+            insight.analytical_question.push(targetQuestion.id as string);
+            await updateInsight(droppedInsightId, insight as Insight);
+            this.reFetchInsights();
           }
         }
       }
@@ -380,15 +376,14 @@ export default defineComponent({
       // prevent default action (open as link for some elements)
       evt.preventDefault();
       evt.stopPropagation();
-
-      // Change the source element's background color for enter events
-      evt.currentTarget.style.background = 'lightblue';
+      evt.currentTarget.classList.add('dragging-over');
     },
     onDragEnter(evt: any) {
       // prevent default action
       evt.preventDefault();
       evt.stopPropagation();
       this.lastDragEnter = evt.target; // keep track of element that was first entered while draging
+      evt.currentTarget.classList.add('dragging-over');
     },
     onDragLeave(evt: any) {
       // prevent default action (open as link for some elements)
@@ -396,43 +391,29 @@ export default defineComponent({
       evt.stopPropagation();
       // Change the source element's background color back to white
       if (this.lastDragEnter === evt.target) { // HACK: only flip color back if we leave the original element we entered
-        evt.currentTarget.style.background = 'white';
+        evt.currentTarget.classList.remove('dragging-over');
       }
     },
     removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string) {
       evt.preventDefault();
       evt.stopPropagation();
 
-      //
       // question
-      //
+      this.$emit('remove-insight-from-section', insightId, questionItem.id);
 
-      // filter linked insights of this question
-      questionItem.linked_insights = questionItem.linked_insights.filter(
-        linId => linId !== insightId
-      );
-
-      // update question on the backend
-      updateQuestion(questionItem.id as string, questionItem);
-
-      // update the store to facilitate questions consumption in other UI places
-      this.setQuestions(this.questionsList);
-
-      //
       // insight
-      //
-
       // update an insight, first fetch the insight to grab its list of linked_questions and update it
       // also, remove this insight from the question list
       this.removeQuestionFromInsight(questionItem, insightId);
     },
-    removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
-      const insight: any = this.getInsightsByIDs([insightId]);
+    async removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
+      const insight = this.getInsightById(insightId);
       if (insight) {
         insight.analytical_question = insight?.analytical_question.filter(
           (qid: string) => qid !== questionItem.id
         );
-        updateInsight(insight?.id as string, insight);
+        await updateInsight(insightId, insight as Insight);
+        this.reFetchInsights();
       }
     },
     startTour(question: AnalyticalQuestion) {
@@ -684,29 +665,17 @@ export default defineComponent({
 <style lang="scss" scoped>
   @import "~styles/variables";
 
+  .title {
+    @include header-secondary;
+  }
+
   .question-text {
     margin-bottom: 1rem;
     border-color: gray;
     border-width: thin;
   }
 
-  .insight-action {
-    flex: 1 1 auto;
-    text-align: right;
-    .insight-header-btn {
-      cursor: pointer;
-      padding: 5px;
-      color: gray;
-    }
-  }
-
-  .insight-editor-dropdown {
-    position: absolute;
-    right: 0px;
-    width: fit-content;
-  }
-
-  .analytical-questions-panel-container {
+  .list-analytical-questions-pane-container {
     display: flex;
     flex-direction: column;
 
@@ -718,7 +687,12 @@ export default defineComponent({
         display: flex;
         font-size: $font-size-medium;
         margin-bottom: 25px;
-        margin-top: 5px;
+        margin-top: 3px;
+        border-top: 2px solid transparent;
+
+        &.dragging-over {
+          border-top-color: $selected;
+        }
 
         .checklist-item-question {
           flex-direction: row;
@@ -736,11 +710,15 @@ export default defineComponent({
             min-width: 0;
             margin-right: 5px;
             font-size: $font-size-large;
-          }
-          .public-question-label {
-            @include header-secondary;
-            // Make label the same height as the question so it is centered
-            line-height: $font-size-large;
+
+            &.clickable {
+              cursor: pointer;
+
+              &:hover {
+                text-decoration: underline;
+              }
+
+            }
           }
         }
         .checklist-item-insight {
@@ -757,6 +735,14 @@ export default defineComponent({
             font-style: italic;
             flex: 1;
             min-width: 0;
+
+            &.clickable {
+              cursor: pointer;
+
+              &:hover {
+                text-decoration: underline;
+              }
+            }
           }
           .private-insight-name {
             color: black;
@@ -770,10 +756,6 @@ export default defineComponent({
   .no-insight-warning {
     margin-top: 5px;
     margin-left: 20px;
-  }
-
-  .delete-confirm-alert {
-    margin-bottom: 10px;
   }
 
   .new-question-button {

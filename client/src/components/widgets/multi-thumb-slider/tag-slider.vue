@@ -4,6 +4,7 @@
     :style="{height: (tags.length * 10) + 'vh' }"
     ref="tag_slider_ref"
     @mousemove="handleEventMove"
+    @mouseleave="handleEventUp"
     @mouseup="handleEventUp">
     <tag-section
       v-for="(tag, index) in tags"
@@ -48,6 +49,10 @@ export default defineComponent({
         this.originalSizes = this.sizes;
         // then set tags to trigger vue update
         this.tags = Object.keys(this.sections).map(key => ({ name: this.sections[key].name, color: 'gray' }));
+      } else {
+        this.tags = [];
+        this.originalSizes = [];
+        this.originalSizes = [];
       }
     }
   },

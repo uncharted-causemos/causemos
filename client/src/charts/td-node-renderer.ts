@@ -4,7 +4,7 @@ import { CAGModelSummary, ProjectionConstraint, ScenarioProjection } from '@/typ
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
-import { calculateGenericTicks, calculateYearlyTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
+import { calculateYearlyTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 import {
   hideSvgTooltip,
@@ -42,9 +42,9 @@ const MAJOR_TICK_COLOR = '#A9A9A9';
 const MAJOR_TICK_LABEL_SIZE = 10;
 
 const X_AXIS_HEIGHT = 20;
-const Y_AXIS_WIDTH = 40;
+const Y_AXIS_WIDTH = 20;
 const PADDING_TOP = 10;
-const PADDING_RIGHT = 40;
+const PADDING_RIGHT = 20;
 
 const CONSTRAINT_RADIUS = 4;
 const CONSTRAINT_HOVER_RADIUS = CONSTRAINT_RADIUS * 1.5;
@@ -154,6 +154,7 @@ export default function(
     .selectAll('.segment-line')
     .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
 
+
   // Create brush object and position over scroll bar
   const brush = d3
     .brushX()
@@ -180,6 +181,10 @@ export default function(
     .attr('fill', SCROLL_BAR_RANGE_FILL)
     .attr('stroke', SCROLL_BAR_RANGE_STROKE)
     .attr('opacity', SCROLL_BAR_RANGE_OPACITY);
+
+  scrollBarGroupElement
+    .selectAll('text')
+    .style('pointer-events', 'none');
 
   // Add clipping mask to hide elements that are outside the focus chart area when zoomed in
   // Note We need a little extra buffer to accommodate extra visuals in the last projected timestamp
@@ -258,10 +263,7 @@ export default function(
       xScaleFocus.domain()[1],
       totalWidth
     );
-    const yAxisTicksFocus = calculateGenericTicks(
-      yScaleFocus.domain()[0],
-      yScaleFocus.domain()[1]
-    );
+
     const yOffset = focusHeight - X_AXIS_HEIGHT;
     const xOffset = totalWidth - PADDING_RIGHT;
 
@@ -272,17 +274,20 @@ export default function(
       yOffset,
       DATE_FORMATTER
     );
-    renderYaxis(
-      focusGroupElement,
-      yScaleFocus,
-      yAxisTicksFocus,
-      valueFormatter,
-      xOffset,
-      Y_AXIS_WIDTH
-    );
+    // only render the yAxis if 0 is in the range and longer than 2 elements
+    if (yScaleFocus.domain()[0] < 0 && yScaleFocus.domain()[1] > 0) {
+      renderYaxis(
+        focusGroupElement,
+        yScaleFocus,
+        [0],
+        valueFormatter,
+        xOffset,
+        Y_AXIS_WIDTH
+      );
+    }
 
     focusGroupElement.selectAll('.yAxis .domain').remove();
-    focusGroupElement.selectAll('.yAxis .tick line').remove();
+    focusGroupElement.selectAll('.yAxis .tick line').style('color', '#ddd');
     renderHistoricalTimeseries(
       historicalTimeseries,
       focusGroupElement,
@@ -332,6 +337,8 @@ export default function(
       setConstraints,
       setHistoricalTimeseries
     );
+    // Render major tick labels overtop of ridgelines
+    focusGroupElement.selectAll('.major-tick-label').raise();
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
       .selectChildren('*:not(.xAxis):not(.yAxis)')
@@ -347,23 +354,29 @@ const calculateExtents = (
   maxValue: number,
   isClampAreaHidden: boolean
 ) => {
-  let xExtent: [number, number] = [0, 1];
   const getTimestampFromPoint = (point: { timestamp: number }) => point.timestamp;
 
+  // At least `history_range` steps should be visible before projection start.
+  const minVisibleHistoricalPoint = getTimestampAfterMonths(
+    modelSummary.parameter.projection_start,
+    -modelSummary.parameter.history_range
+  );
+
+  const pointsToInclude = [
+    minVisibleHistoricalPoint,
+    ...historicalTimeseries.map(getTimestampFromPoint)
+  ];
+
   if (!isClampAreaHidden) {
-    const projectedPoints = projections.flatMap(projection => projection.values);
-    const projectedTimestamps = projectedPoints.map(getTimestampFromPoint);
-    xExtent = d3.extent([
-      ...historicalTimeseries.map(getTimestampFromPoint),
-      ...projectedTimestamps
-    ]) as [number, number];
+    const projectedPoints = projections.flatMap(
+      projection => projection.values
+    );
+    pointsToInclude.push(...projectedPoints.map(getTimestampFromPoint));
   } else {
-    // if clamps are hidden, go up to the first projected points (basically projection_start)
-    xExtent = d3.extent([
-      ...historicalTimeseries.map(getTimestampFromPoint),
-      modelSummary.parameter.projection_start
-    ]) as [number, number];
+    // if clamps are hidden, go up to projection_staart
+    pointsToInclude.push(modelSummary.parameter.projection_start);
   }
+  const xExtent = d3.extent(pointsToInclude);
   const yExtent = d3.extent([minValue, maxValue]);
   return [xExtent, yExtent];
 };
@@ -432,7 +445,7 @@ const renderStaticElements = (
     .style('stroke', GRIDLINE_COLOR);
 
   // Render rectangle to delineate between historical data and projection data
-  const historicalStartTimestamp = historicalTimeseries[0].timestamp;
+  const historicalStartTimestamp = xScale.domain()[0];
   const historicalEndTimestamp = getTimestampAfterMonths(projectionStartTimestamp, -monthsPerTimestep);
   groupElement
     .append('rect')
@@ -475,10 +488,10 @@ const renderStaticElements = (
     .style('fill', 'none')
     .style('stroke', MAJOR_TICK_COLOR);
   groupElement
-    .selectAll('.grid-timeslice-label')
+    .selectAll('.major-tick-label')
     .data(majorTickTimestamps)
     .join('text')
-    .classed('grid-timeslice-label', true)
+    .classed('major-tick-label', true)
     .attr('x', (d) => xScale(d))
     .attr('y', offsetFromTop + MAJOR_TICK_LABEL_SIZE)
     .style('text-anchor', 'start')
@@ -500,6 +513,7 @@ const renderStaticElements = (
     .style('text-anchor', 'start')
     .style('font-size', 'x-small')
     .style('fill', 'gray')
+    .style('pointer-events', 'none')
     .text(DATE_FORMATTER(historicalStartTimestamp));
   scrollbarGroupElement
     .append('text')
@@ -509,6 +523,7 @@ const renderStaticElements = (
     .style('text-anchor', 'end')
     .style('font-size', 'x-small')
     .style('fill', 'gray')
+    .style('pointer-events', 'none')
     .text(DATE_FORMATTER(projectionEnd));
 };
 
@@ -565,7 +580,7 @@ const renderProjectionRidgelines = (
 
   // Render each ridgeline
   ridgeLines.forEach(ridgelineWithMetadata => {
-    const { ridgeline, timestamp, monthsAfterNow } = ridgelineWithMetadata;
+    const { timestamp, monthsAfterNow } = ridgelineWithMetadata;
     const contextRange = calculateTypicalChangeBracket(
       historicalTimeseries,
       monthsAfterNow,
@@ -573,14 +588,14 @@ const renderProjectionRidgelines = (
     );
     const elem = renderRidgelines(
       ridgeLineGroup as any,
-      ridgeline,
+      ridgelineWithMetadata,
+      null,
       approximateWidth,
       Math.abs(yScale.range()[1] - yScale.range()[0]),
       minValue,
       maxValue,
       false,
       false,
-      'black',
       '',
       contextRange
     );
@@ -643,7 +658,7 @@ const generateClickableAreas = (
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) => {
-  const startTimestamp = historicalTimeseries[0].timestamp;
+  const startTimestamp = xScale.domain()[0];
   const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
   const stepsInProjection = getStepCountFromTimeScale(timeScale);
   const monthsInProjection = (stepsInProjection - 1) * monthsPerTimestep;

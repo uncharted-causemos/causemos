@@ -3,6 +3,8 @@ import { startPolling, Poller } from '@/api/poller';
 import { Filters, FiltersOptions } from '@/types/Filters';
 import { ReaderOutputRecord } from '@/types/Dart';
 import { SourceTargetPair } from '@/types/CAG';
+import { Statement } from '@/types/Statement';
+import filtersUtil from '@/utils/filters-util';
 
 const KB_LIMIT = 200;
 const PROJECT_LIMIT = 500;
@@ -94,6 +96,19 @@ const getProjectStatements = async (projectId: string, filters: Filters, options
   return result.data;
 };
 
+const getProjectStatementsForConcepts = (
+  concepts: string[],
+  projectId: string
+): Promise<Statement[]> => {
+  const searchFilters = filtersUtil.newFilters();
+  concepts.forEach(concept => {
+    filtersUtil.addSearchTerm(searchFilters, 'topic', concept, 'or', false);
+  });
+  return getProjectStatements(projectId, searchFilters, {
+    size: STATEMENT_LIMIT
+  });
+};
+
 const getProjectGraph = async (projectId: string, filters: Filters) => {
   const result = await API.get(`projects/${projectId}/graphs`, { params: { filters: filters } });
   return result.data;
@@ -134,9 +149,9 @@ const addNewConceptToOntology = async(projectId: string, label: string, examples
   return result.data;
 };
 
-const getConceptSuggestions = async(projectId: string, q: string) => {
+const getConceptSuggestions = async(projectId: string, q: string, useEstimate: boolean | undefined = undefined) => {
   const result = await API.get(`projects/${projectId}/concept-suggestions`, {
-    params: { q }
+    params: { q, estimate: useEstimate }
   });
   return result.data;
 };
@@ -167,6 +182,7 @@ export default {
 
   getProjectStats,
   getProjectStatements,
+  getProjectStatementsForConcepts,
   getProjectGraph,
   getProjectEdges,
   getProjectStatementIdsByEdges,

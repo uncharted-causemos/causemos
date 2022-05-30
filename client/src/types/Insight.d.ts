@@ -1,7 +1,116 @@
-import { Timeseries } from '@/types/Timeseries';
-import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
+import {
+  BASE_LAYER,
+  DATA_LAYER,
+  DATA_LAYER_TRANSPARENCY
+} from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
-import { ComparativeAnalysisMode, BinningOptions, RegionRankingCompositionType, DataTransform } from '@/types/Enums';
+import {
+  ComparativeAnalysisMode,
+  DatacubeViewMode,
+  BinningOptions,
+  RegionRankingCompositionType,
+  DataTransform
+} from '@/types/Enums';
+import { AnalysisItem } from './Analysis';
+import { Filters } from './Filters';
+import { FeatureConfig } from './Outputdata';
+
+// view-specific values (no data dependency)
+export interface ViewState {
+  // data space specific
+  spatialAggregation?: string;
+  temporalAggregation?: string;
+  spatialResolution?: string;
+  temporalResolution?: string;
+  selectedAdminLevel?: number;
+  selectedViewTab?: DatacubeViewMode;
+  selectedOutputIndex?: number;
+  selectedMapBaseLayer?: BASE_LAYER;
+  selectedMapDataLayer?: DATA_LAYER;
+  breakdownOption?: string | null;
+  dataLayerTransparency?: DATA_LAYER_TRANSPARENCY;
+  colorSchemeReversed?: boolean;
+  colorSchemeName?: COLOR;
+  colorScaleType?: ColorScaleType;
+  numberOfColorBins?: number;
+
+  // region-ranking specific
+  regionRankingSelectedAdminLevel?: number;
+  regionRankingSelectedComparativeAnalysisMode?: ComparativeAnalysisMode;
+  regionRankingSelectedNumberOfColorBins?: number;
+  regionRankingSelectedCompositionType?: RegionRankingCompositionType;
+  regionRankingSelectedBinningType?: BinningOptions;
+  regionRankingApplyingBarLimit?: boolean;
+  regionRankingSelectedMaxBarLimit?: number;
+  regionRankingHoverId?: string;
+  regionRankingShowNormalizedData?: boolean;
+
+  analyticalQuestionOrder?: number; // a numeric index to save and restore each question order
+
+  // knowledge/model space specific
+  sensitivityToggle?: any;
+  graphLayout?: any;
+  cameraOrientation?: any;
+
+  // others
+  // ...
+  [propName: string]: any; // allow other properties to be added
+}
+
+// data context/selection (metadata, CAG node, one or more model runs, etc.)
+export interface DataSpaceDataState {
+  selectedModelId: string;
+  selectedScenarioIds: string[];
+  selectedTimestamp: number | null;
+  selectedRegionIds: string[];
+  selectedRegionIdsAtAllLevels: {
+    country: string[];
+    admin1: string[];
+    admin2: string[];
+    admin3: string[];
+  };
+  selectedOutputVariables: string[];
+  activeFeatures: FeatureConfig[];
+  nonDefaultQualifiers: string[];
+  selectedQualifierValues: string[];
+  selectedYears: string[];
+  selectedTransform: DataTransform;
+  activeReferenceOptions: string[];
+  selectedPreGenDataId: string;
+  relativeTo: string | null;
+  searchFilters: Filters; // lex-bar search queries
+}
+
+export interface DatacubeTitle {
+  datacubeName: string;
+  datacubeOutputName: string;
+  source: string;
+}
+
+export interface ComparativeAnalysisDataState {
+  selectedAnalysisItems: AnalysisItem[];
+  selectedTimestamp: number | null;
+  regionRankingWeights: { [key: string]: { name: string; weight: number } };
+  regionRankingDataInversion: { [x: string]: boolean };
+  datacubeTitles: DatacubeTitle[];
+}
+
+export interface QualitativeDataState {
+  modelName: string;
+}
+
+export interface ModelsSpaceDataState extends QualitativeDataState {
+  // FIXME: should this be in the Visual State rather than the Data State?
+  cagVisualState: any | null;
+  currentEngine: string;
+  selectedScenarioId: string;
+}
+
+export type DataState =
+  | DataSpaceDataState
+  | ComparativeAnalysisDataState
+  | QualitativeDataState
+  | ModelsSpaceDataState;
 
 // @base/abstract type
 export interface Snapshot {
@@ -43,9 +152,19 @@ export interface Insight extends Snapshot {
   data_state?: DataState;
   is_default: boolean; // is this the default insight?
   analytical_question: string[]; // question(s) this insight may answer
-  thumbnail: string; // e.g., image url or base64 encoding
-  annotation_state?: AnnotationState;
   modified_at?: number;
+}
+
+// @concrete type
+export interface InsightImage {
+  id: string;
+  thumbnail?: string; // e.g., image url or base64 encoding
+  image: string; // e.g., image url or base64 encoding
+}
+
+// @concrete type
+export interface FullInsight extends Insight, InsightImage {
+  annotation_state?: AnnotationState;
 }
 
 // @concrete type
@@ -54,106 +173,32 @@ export interface AnalyticalQuestion extends Snapshot {
   linked_insights: string[]; // has some insight (using their names/IDs) been linked to satisfy/answer this question?
   tour_name?: string;
   modified_at?: number;
+  view_state: ViewState;
 }
 
-// view-specific values (no data dependency)
-export interface ViewState {
-  // data space specific
-  spatialAggregation?: string;
-  temporalAggregation?: string;
-  spatialResolution?: string;
-  temporalResolution?: string;
-  selectedAdminLevel?: number;
-  isDescriptionView?: boolean;
-  selectedOutputIndex?: number;
-  selectedMapBaseLayer?: BASE_LAYER;
-  selectedMapDataLayer?: DATA_LAYER;
-  breakdownOption?: string | null;
-  dataLayerTransparency?: DATA_LAYER_TRANSPARENCY;
-  colorSchemeReversed?: boolean;
-  colorSchemeName?: COLOR;
-  colorScaleType?: ColorScaleType;
-  numberOfColorBins?: number;
-
-  // region-ranking specific
-  regionRankingSelectedAdminLevel?: number;
-  regionRankingSelectedComparativeAnalysisMode?: ComparativeAnalysisMode;
-  regionRankingSelectedNumberOfColorBins?: number;
-  regionRankingSelectedCompositionType?: RegionRankingCompositionType;
-  regionRankingSelectedBinningType?: BinningOptions;
-  regionRankingApplyingBarLimit?: boolean;
-  regionRankingSelectedMaxBarLimit?: number;
-  regionRankingHoverId?: string;
-  regionRankingShowNormalizedData?: boolean;
-
-  // knowledge/model space specific
-  sensitivityToggle?: any;
-  graphLayout?: any;
-  cameraOrientation?: any;
-
-  // others
-  // ...
-  [propName: string]: any; // allow other properties to be added
+export interface SectionWithInsights {
+  section: AnalyticalQuestion,
+  insights: FullInsight[]
 }
 
-// data-specific context values
-// data context/selection (metadata, CAG node, one or more model runs, etc.)
-export interface DataState {
-  // data space specific
-  selectedModelId?: string;
-  selectedScenarioIds?: string[];
-  selectedTimestamp?: number | null;
-  selectedRegionIds?: string[];
-  selectedRegionIdsAtAllLevels?: { country: Set<string>; admin1: Set<string>; admin2: Set<string>; admin3: Set<string>; };
-  selectedOutputVariables?: string[];
-  nonDefaultQualifiers?: string[];
-  selectedQualifierValues?: string[];
-  selectedYears?: string[];
-  selectedTransform?: DataTransform;
-  activeReferenceOptions?: string[];
-
-  // region-ranking specific
-  regionRankingWeights?: {[key: string]: {name: string; weight: number}};
-
-  //
-  datacubeTitles?: {datacubeName: string; datacubeOutputName: string; source: string}[];
-  datacubeRegions?: string[];
-  relativeTo?: string | null;
-  visibleTimeseriesData?: Timeseries[];
-  searchFilters?: any; // lex-bar search queries
-
-  // knowledge/model space specific
-  selectedScenarioId?: string;
-  selectedNode?: string;
-  selectedEdge?: string; // src + des node names
-  currentEngine?: string;
-  modelName?: string;
-  nodesCount?: number;
-
-  // others
-  // ...
-  [propName: string]: any; // allow other properties to be added
+export interface ReviewPosition {
+  sectionId: string,
+  insightId: string | null
 }
 
 export interface InsightMetadata {
-  projectName: string;
   insightLastUpdate: number;
-  datacubes?: {datasetName: string; outputName: string; source: string}[];
 
-  // data space specific
-  analysisName?: string;
+  // Data space specific
+  datacubes?: { datasetName: string; outputName: string; source: string }[];
 
   // CAG specific
-  cagName?: string;
   ontology?: string;
-  ontology_created_at?: number;
-  ontology_modified_at?: number;
   corpus_id?: string;
   filters?: string;
+  cagName?: string;
   selectedNode?: string;
   selectedEdge?: string;
-  nodesCount?: string;
   currentEngine?: string;
   selectedCAGScenario?: string;
 }
-

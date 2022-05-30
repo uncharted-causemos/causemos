@@ -26,7 +26,8 @@ const MAPBOX_EVENTS = [
   'mouseout',
   'render',
   'sourcedata',
-  'styledata'
+  'styledata',
+  'resize'
   // More events can be added in the future
 ];
 
@@ -148,12 +149,12 @@ export default {
   height: 100%;
   position: relative;
   overflow: hidden;
-  ::v-deep(.mapboxgl-popup-content) {
+  :deep(.mapboxgl-popup-content) {
     background: black;
     border-color: black;
     color: #FFFFFF;
   }
-  ::v-deep(.mapboxgl-popup-tip) {
+  :deep(.mapboxgl-popup-tip) {
     border-top-color: black;
   }
 }

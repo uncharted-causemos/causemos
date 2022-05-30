@@ -27,8 +27,11 @@
     </div>
 
     <!-- Help button -->
+    <!-- Old resources
+      Up until Mar 2022: https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing
+    -->
     <a
-      href="https://docs.google.com/presentation/d/1WnIXxAd639IFMOKEAu3E3C1SUgfzsCO6oLLbKOvAZkI/edit#slide=id.g8c51928f8f_0_200"
+      href="https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing"
       target="_blank"
       class="nav-item clickable"
     >
@@ -67,14 +70,17 @@ export default defineComponent({
       icon: 'fa-clone',
       route: { name: 'overview', params: { project: project.value } }
     }));
-    const datacubeProjectItem = computed<NavBarItem>(() => ({
-      text: projectMetadata.value.name,
-      icon: 'fa-connectdevelop',
-      route: {
-        name: 'domainDatacubeOverview',
-        params: { project: project.value }
-      }
-    }));
+    const datacubeProjectItem = computed<NavBarItem>(() => {
+      const navBarItem = {
+        text: projectMetadata.value.name,
+        icon: 'fa-connectdevelop',
+        route: {
+          name: projectMetadata.value.type === 'model' ? 'domainDatacubeOverview' : 'datasetOverview',
+          params: { project: project.value }
+        }
+      };
+      return navBarItem;
+    });
 
     const quantitativeAnalysisItem = computed(() => ({
       text: analysisName.value,
@@ -109,6 +115,10 @@ export default defineComponent({
       modelPublishingExperiment: [
         datacubeProjectItem.value,
         { icon: 'fa-cube', route: null, text: 'Instance' }
+      ],
+      indicatorPublishingExperiment: [
+        datacubeProjectItem.value,
+        { icon: 'fa-cube', route: null, text: 'Indicator' }
       ],
       overview: [analysisProjectItem.value],
       dataComparative: [

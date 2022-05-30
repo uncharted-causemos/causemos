@@ -1,4 +1,3 @@
-import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
 import {
@@ -19,7 +18,7 @@ import { getYearFromTimestamp } from '@/utils/date-util';
 import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain } from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
-import { getQualifierTimeseries, getRawQualifierTimeseries, getRawTimeseriesData, getRawTimeseriesDataBulk } from '../outputdata-service';
+import { getQualifierTimeseries, getBulkTimeseries, getRawQualifierTimeseries, getRawTimeseriesData, getRawTimeseriesDataBulk, getTimeseries } from '../outputdata-service';
 import { correctIncompleteTimeseriesLists } from '@/utils/incomplete-data-detection';
 
 
@@ -214,9 +213,11 @@ export default function useTimeseriesData(
     const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
     const finalRawDate = new Date(metadata.value?.period?.lte ?? 0);
 
-    const correctedTimeseriesData = correctIncompleteTimeseriesLists(breakdownTimeseriesData,
-      rawResolution, temporalRes.value as TemporalResolutionOption,
-      temporalAgg.value as AggregationOption, finalRawDate);
+    // Breakdown by year modifies timestamps and makes them unreliable to apply corrections
+    const correctedTimeseriesData = breakdownOption.value === TemporalAggregationLevel.Year
+      ? breakdownTimeseriesData
+      : correctIncompleteTimeseriesLists(breakdownTimeseriesData, rawResolution,
+        temporalRes.value as TemporalResolutionOption, temporalAgg.value as AggregationOption, finalRawDate);
 
     const referencedTimeseriesData = referenceOptions && referenceOptions.value && referenceOptions.value.length > 0
       ? applyReference(correctedTimeseriesData, rawTimeseriesData.value, breakdownOption.value, referenceOptions.value)
@@ -260,21 +261,21 @@ export default function useTimeseriesData(
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
         const runId = modelRunIds.value[0];
         promises = isRawDataResolution?.value
-          ? [getRawTimeseriesDataBulk({ dataId, runId, outputVariable: activeFeature.value, spatialAgg }, allRegionIds).then(result => ({ data: result }))]
-          : [API.post('maas/output/bulk-timeseries', { region_ids: allRegionIds }, {
-              params: {
-                data_id: dataId,
-                run_id: runId,
-                feature: activeFeature.value,
-                resolution: temporalRes.value,
-                temporal_agg: temporalAgg.value,
-                spatial_agg: spatialAgg,
-                transform: transform
-              }
-            }).catch(() => {
-              console.error(`Failed to fetch timeseries for ${allRegionIds.join(' ')}`);
-              return null;
-            })];
+          ? [getRawTimeseriesDataBulk({
+              dataId,
+              runId,
+              outputVariable: activeFeature.value,
+              spatialAgg
+            }, allRegionIds).then(result => ({ data: result }))]
+          : [getBulkTimeseries({
+              modelId: dataId,
+              runId,
+              outputVariable: activeFeature.value,
+              temporalResolution: temporalRes.value,
+              temporalAggregation: temporalAgg.value,
+              spatialAggregation: spatialAgg,
+              transform: transform
+            }, allRegionIds)];
       } else if (
         breakdownOption.value === null ||
         breakdownOption.value === TemporalAggregationLevel.Year
@@ -288,18 +289,22 @@ export default function useTimeseriesData(
           regionIds.value.length > 0 ? regionIds.value[0] : undefined;
         promises = modelRunIds.value.map(runId => {
           return isRawDataResolution?.value
-            ? getRawTimeseriesData({ dataId, runId, regionId: (regionId || ''), outputVariable: activeFeature.value, spatialAgg }).then(result => ({ data: result }))
-            : API.get('maas/output/timeseries', {
-              params: {
-                data_id: dataId,
-                run_id: runId,
-                feature: activeFeature.value,
-                resolution: temporalRes.value,
-                temporal_agg: temporalAgg.value,
-                spatial_agg: spatialAgg,
-                transform: transform,
-                region_id: regionId
-              }
+            ? getRawTimeseriesData({
+              dataId,
+              runId,
+              regionId: (regionId || ''),
+              outputVariable: activeFeature.value,
+              spatialAgg
+            }).then(result => ({ data: result }))
+            : getTimeseries({
+              modelId: dataId,
+              runId,
+              outputVariable: activeFeature.value,
+              temporalResolution: temporalRes.value,
+              temporalAggregation: temporalAgg.value,
+              spatialAggregation: spatialAgg,
+              transform: transform,
+              regionId: regionId
             });
         });
       } else if (

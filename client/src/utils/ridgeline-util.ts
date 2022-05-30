@@ -16,6 +16,12 @@ import {
 // Raise the bin count to make the curve less smooth.
 const RIDGELINE_BIN_COUNT = 20;
 
+// If there are fewer than 3 historical intervals of a given length, don't make
+//  any claims about what a typical change is.
+// This cutoff is somewhat arbitrary, but it's high enough that abstract nodes
+//  don't show any change brackets or highlight any projections in orange.
+const MINIMUM_INTERVAL_COUNT = 3;
+
 export interface RidgelinePoint {
   coordinate: number;
   value: number;
@@ -26,6 +32,7 @@ export interface RidgelineWithMetadata {
   timestamp: number;
   monthsAfterNow: number;
   ridgeline: RidgelinePoint[];
+  distributionMean: number;
 }
 
 const convertDistributionToRidgeline = (
@@ -103,17 +110,25 @@ export const convertDistributionTimeseriesToRidgelines = (
 
   const ridgelines: RidgelineWithMetadata[] = [];
 
-  timeseries.forEach(({ timestamp, values }, timestepIndex) => {
+  timeseries.forEach(({ values }, timestepIndex) => {
     const timeSliceAtThisTimestep = getTimeSliceAtStepIndex(timestepIndex);
     if (onlyConvertTimeslices && timeSliceAtThisTimestep === undefined) return;
     // Convert the distribution to a ridgeline, and attach more information for
     //  rendering later.
     const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
     const monthsAfterNow = (timestepIndex + 1) * monthsPerTimestep;
+    // When `timestamp` is returned as a part of the projections, its value
+    //  seems to be slightly offset from the actual month (especially
+    //  noticeable after February), so override it with the correct timestamp.
+    const correctedTimestamp = getTimestampAfterMonths(
+      timeseries[0].timestamp,
+      timestepIndex * monthsPerTimestep
+    );
     ridgelines.push({
-      timestamp,
+      timestamp: correctedTimestamp,
       label: timeSliceAtThisTimestep?.shortLabel ?? '',
       monthsAfterNow,
+      distributionMean: _.mean(values),
       ridgeline: convertDistributionToRidgeline(values, min, max, binCount)
     });
   });
@@ -142,6 +157,11 @@ export const calculateTypicalChangeBracket = (
       changes.push(pointAfterInterval - value);
     }
   });
+  // If there aren't enough historical intervals of this length, don't make
+  //  any claims about what a typical change is.
+  if (changes.length < MINIMUM_INTERVAL_COUNT) {
+    return null;
+  }
   const min = _.min(changes);
   const max = _.max(changes);
   if (min === undefined || max === undefined) {
@@ -153,4 +173,44 @@ export const calculateTypicalChangeBracket = (
   );
   const latestHistoricalValue = _.last(dataBeforeProjectionStart)?.value ?? 0;
   return { min: latestHistoricalValue + min, max: latestHistoricalValue + max };
+};
+
+export const summarizeRidgelineComparison = (
+  target: RidgelineWithMetadata,
+  source: RidgelineWithMetadata,
+  min: number,
+  max: number
+) => {
+  const fivePercentOfRange = (max - min) / 20;
+  const meanDifference =
+    target.distributionMean - source.distributionMean;
+  if (Math.abs(meanDifference) < fivePercentOfRange) {
+    // TODO: use standard deviation to test whether target is more/less
+    //  certain when means are approximately equal
+    // Only works if both distributions are approximately gaussian.
+    return {
+      before: 'No significant change.',
+      emphasized: '',
+      after: ''
+    };
+  }
+  let magnitudeAdjective = '';
+  const twentyFivePercentOfRange = fivePercentOfRange * 5;
+  const fiftyPercentOfRange = fivePercentOfRange * 10;
+  if (Math.abs(meanDifference) < twentyFivePercentOfRange) {
+    magnitudeAdjective = 'small';
+  } else if (Math.abs(meanDifference) < fiftyPercentOfRange) {
+    magnitudeAdjective = 'large';
+  } else {
+    magnitudeAdjective = 'extreme';
+  }
+  const direction =
+    target.distributionMean > source.distributionMean
+      ? 'higher'
+      : 'lower';
+  return {
+    before: _.capitalize(`${magnitudeAdjective} shift toward `),
+    emphasized: direction,
+    after: ' values.'
+  };
 };

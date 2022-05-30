@@ -1,7 +1,7 @@
 <template>
   <div class="node-drilldown-container">
     <analytical-questions-and-insights-panel />
-    <main>
+    <main class="insight-capture">
       <div class="drivers">
         <h5 v-if="drivers.length > 0">Top Drivers</h5>
         <template v-if="scenarioData">
@@ -19,10 +19,15 @@
         </template>
       </div>
       <div class="selected-node-column">
-        <div class="expanded-node insight-capture">
+        <div class="expanded-node">
           <div class="expanded-node-header">
             {{ nodeConceptName }}
             <div class="button-group">
+              <button
+                class="btn btn-primary"
+                @click="scheduleRun()">
+                Run
+              </button>
               <button
                 v-if="areParameterValuesChanged"
                 class="btn btn-primary btn-call-for-action save-parameter-button"
@@ -37,58 +42,61 @@
               >
                 <i class="fa fa-fw fa-compress" />
               </button>
-              <!-- TODO: Set goal button -->
             </div>
           </div>
           <div class="expanded-node-body">
-            <td-node-chart
+            <div
+              class="node-layout"
               v-if="selectedNodeScenarioData !== null"
-              class="scenario-chart"
-              :historical-timeseries="historicalTimeseries"
-              :projections="selectedNodeScenarioData.projections"
-              :unit="selectedNodeScenarioData.unit"
-              :min-value="indicatorMin"
-              :max-value="indicatorMax"
-              :constraints="constraints"
-              :model-summary="modelSummary"
-              :viewing-extent="viewingExtent"
-              :is-clamp-area-hidden="selectedScenarioId === null"
-              @set-constraints="modifyConstraints"
-              @set-historical-timeseries="setHistoricalTimeseries"
-            />
+            >
+              <div class="node-range">
+                <chart-range-input
+                  label="Maximum"
+                  :unit="selectedNodeScenarioData.unit"
+                  v-model.number="indicatorMax"
+                />
+                <chart-range-input
+                  label="Minimum"
+                  :unit="selectedNodeScenarioData.unit"
+                  v-model.number="indicatorMin"
+                />
+              </div>
+              <td-node-chart
+                class="scenario-chart"
+                :historical-timeseries="historicalTimeseries"
+                :projections="selectedNodeScenarioData.projections"
+                :unit="selectedNodeScenarioData.unit"
+                :min-value="indicatorMin"
+                :max-value="indicatorMax"
+                :constraints="constraints"
+                :model-summary="modelSummary"
+                :viewing-extent="viewingExtent"
+                :is-clamp-area-hidden="selectedScenarioId === null"
+                @set-constraints="modifyConstraints"
+                @set-historical-timeseries="setHistoricalTimeseries"
+              />
+            </div>
             <div class="indicator-config">
-              <strong
-                class="indicator-name"
-                v-tooltip.top="selectedNodeScenarioData?.indicatorName ?? ''"
-              >
-                {{ selectedNodeScenarioData?.indicatorName ?? '' }}
+              <strong class="indicator-name">
+                {{ indicatorName }}
               </strong>
-              <span
-                v-if="indicatorDescription.length > 0"
-                class="description"
-                v-tooltip.top="indicatorDescription"
-              > - {{ indicatorDescription }}</span>
-              <span
+              <strong
                 v-if="indicatorRegions.length > 0"
-                class="description"
+                class="indicator-region"
                 v-tooltip.top="indicatorRegions"
-              > - {{ indicatorRegions }}.</span>
-              <span> Data shows</span>
+              > - {{ indicatorRegions }}</strong>
+              <span
+                class="dataset-name"
+                v-tooltip.top="datasetName"
+              > {{ datasetName }}</span>
+              <span class="configure-sentence"> Data shows</span>
               <dropdown-button
                 :items="SEASONALITY_OPTIONS"
                 :selected-item="indicatorPeriod"
                 @item-selected="(period) => { indicatorPeriod = period; }"
               />
-              <span>seasonal trends. </span>
-              <button
-                v-if="indicatorId === null"
-                class="btn btn-sm btn-primary btn-call-for-action"
-                @click="openDataExplorer"
-              >
-                <i class="fa fa-fw fa-search" />
-                Choose a datacube
-              </button>
-              <div class="configure-dropdown-container" v-else>
+              <span class="configure-sentence">seasonal trends. </span>
+              <div class="configure-dropdown-container">
                 <button
                   class="btn btn-sm btn-default"
                   @click="isDatacubeConfigDropdownOpen = !isDatacubeConfigDropdownOpen"
@@ -96,6 +104,26 @@
                   <i class="fa fa-fw fa-pencil" />
                   Configure
                 </button>
+                <dropdown-control
+                  v-if="isDatacubeConfigDropdownOpen && indicatorId === null"
+                  class="configure-dropdown"
+                >
+                  <template #content>
+                    <div
+                      class="dropdown-option"
+                      @click="openDataExplorer">
+                      <i class="fa fa-fw fa-search" />
+                      Choose a datacube
+                    </div>
+                    <div
+                      v-if="selectedNode && selectedNode.match_candidates"
+                      class="dropdown-option"
+                      @click="openDataExplorerWithSuggestions">
+                      <i class="fa fa-fw fa-search" />View suggestions
+                    </div>
+                  </template>
+                </dropdown-control>
+
                 <dropdown-control
                   v-if="isDatacubeConfigDropdownOpen && indicatorId !== null"
                   class="configure-dropdown"
@@ -106,6 +134,11 @@
                       @click="openDataDrilldown"
                     >Edit datacube settings</div>
                     <div
+                      v-if="selectedNode && selectedNode.match_candidates"
+                      class="dropdown-option"
+                      @click="openDataExplorerWithSuggestions"
+                    ><i class="fa fa-fw fa-search" />View suggestions</div>
+                    <div
                       class="dropdown-option"
                       @click="openDataExplorer"
                     ><i class="fa fa-fw fa-search" />Choose a different datacube</div>
@@ -115,19 +148,17 @@
                     ><i class="fa fa-fw fa-times" />Remove datacube</div>
                   </template>
                 </dropdown-control>
-                <!-- <button
-                  v-if="hasConstraints"
-                  v-tooltip.top-center="'Clear constraints'"
-                  type="button"
-                  class="btn btn-danger btn-sm"
-                  @click="clearConstraints">
-                  Clear constraints
-                </button> -->
               </div>
-              <span>Min. value:</span>
-              <input class="form-control input-sm" v-model.number="indicatorMin"/>
-              <span>Max. value:</span>
-              <input class="form-control input-sm" v-model.number="indicatorMax"/>
+              <div class="checkbox configure-sentence">
+                <label
+                  @click="toggleIndicatorDataInversion">
+                  <i
+                    class="fa fa-lg fa-fw"
+                    :class="{ 'fa-check-square-o': indicatorDataInverted, 'fa-square-o': !indicatorDataInverted }"
+                  />
+                  <span>Invert data</span>
+                </label>
+              </div>
             </div>
             <projection-ridgelines
               v-if="
@@ -136,6 +167,7 @@
               "
               class="projection-ridgelines"
               :model-summary="modelSummary"
+              :node-concept-name="nodeConceptName"
               :comparison-baseline-id="comparisonBaselineIdWithFallback"
               :baseline-scenario-id="baselineScenarioId"
               :projections="selectedNodeScenarioData.projections"
@@ -197,11 +229,14 @@ import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
 import ProjectionRidgelines from '@/components/node-drilldown/projection-ridgelines.vue';
-import moment from 'moment';
 import { getStepCountFromTimeScale } from '@/utils/time-scale-util';
 import DropdownControl from '@/components/dropdown-control.vue';
+import ChartRangeInput from '@/components/widgets/chart-range-input.vue';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
+import { normalize } from '@/utils/value-util';
+import { getTimestampAfterMonths } from '@/utils/date-util';
+
 
 const SEASONALITY_OPTIONS: DropdownItem[] = [
   {
@@ -222,7 +257,8 @@ export default defineComponent({
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
     ProjectionRidgelines,
-    DropdownControl
+    DropdownControl,
+    ChartRangeInput
   },
   props: {},
   setup() {
@@ -232,12 +268,18 @@ export default defineComponent({
     const project = computed(() => store.getters['app/project']);
     const nodeId = computed(() => store.getters['app/nodeId']);
 
+    const setRunImmediately = async (val: boolean) => {
+      await store.dispatch('model/setRunImmediately', val);
+    };
+
     const {
       modelSummary,
       modelComponents,
       currentCAG,
       refreshModelData
     } = useQualitativeModel();
+
+    const indicatorDataInverted = ref(false);
 
     const currentEngine = computed(
       () => modelSummary.value?.parameter?.engine ?? null
@@ -248,11 +290,14 @@ export default defineComponent({
     //  similarly to how they are being utilied in the data (quantitative analyses)
     // The same comment applies also to both the TD qualitative/quantitative views
 
-    watchEffect(() => {
-      // Fetch model summary and components
-      if (currentCAG.value === null) return;
-      store.dispatch('insightPanel/setContextId', [currentCAG.value]);
-    });
+    watch(
+      () => [currentCAG.value],
+      () => {
+        if (currentCAG.value === null) return;
+        store.dispatch('insightPanel/setContextId', [currentCAG.value]);
+      },
+      { immediate: true }
+    );
 
     const scenarios = ref<Scenario[]>([]);
 
@@ -274,69 +319,6 @@ export default defineComponent({
     const baselineScenarioId = computed(() => {
       return scenarios.value.find(scenario => scenario.is_baseline)?.id ?? null;
     });
-
-    const saveConstraints = async (updatedConstraints: ProjectionConstraint[]) => {
-      if (
-        selectedScenarioId.value === null ||
-        currentCAG.value === null ||
-        currentEngine.value === null ||
-        modelSummary.value === null ||
-        selectedNode.value === null
-      ) {
-        return;
-      }
-      const selectedScenario = scenarios.value.find(
-        scenario => scenario.id === selectedScenarioId.value
-      );
-      if (selectedScenario === undefined) {
-        console.error(
-          'Unable to find selected scenario with ID',
-          selectedScenarioId.value,
-          'in scenario list',
-          scenarios.value
-        );
-        return;
-      }
-      if (selectedScenario.is_baseline) {
-        toaster(
-          'Please select a non-baseline scenario to place constraints.',
-          'error',
-          true
-        );
-        // Remove constraints from the chart renderer
-        constraints.value = [];
-        return;
-      }
-      const selectedConcept = selectedNode.value.concept;
-      const constraintsParameter = [
-        ...selectedScenario.parameter.constraints.filter(
-          conceptConstraints => conceptConstraints.concept !== selectedConcept
-        ),
-        { concept: selectedConcept, values: updatedConstraints }
-      ];
-      const {
-        time_scale,
-        indicator_time_series_range,
-        projection_start
-      } = modelSummary.value.parameter;
-      const numSteps = getStepCountFromTimeScale(time_scale);
-      const updatedScenario = {
-        id: selectedScenarioId.value,
-        model_id: currentCAG.value,
-        parameter: {
-          constraints: constraintsParameter,
-          num_steps: numSteps,
-          indicator_time_series_range,
-          projection_start
-        }
-      };
-      // Save and reload scenarios
-      await modelService.updateScenario(updatedScenario);
-      // REFACTOR: We shouldn't set scenarios from so many places.
-      // trigger a scenario refresh
-      const _scenarios = await modelService.getScenarios(currentCAG.value, currentEngine.value);
-      scenarios.value = _scenarios;
-    };
 
     const selectedNode = computed(() => {
       if (nodeId.value === undefined || modelComponents.value === null) {
@@ -401,6 +383,69 @@ export default defineComponent({
       };
     });
 
+    const invertDataWasToggled = ref(false);
+    const toggleIndicatorDataInversion = async () => {
+      indicatorDataInverted.value = !indicatorDataInverted.value;
+      invertDataWasToggled.value = true;
+      const indicator = selectedNode.value?.parameter;
+      if (indicator && selectedNode.value) {
+        // enableOverlay('Toggling data inversion');
+
+        if (!indicator.original_timeseries) {
+          // this is a fix for previously quantified nodes where at that time the 'original_timeseries' field was not popoluated
+          indicator.original_timeseries = _.cloneDeep(indicator.timeseries);
+        }
+
+        // need to update the original indicator saved data and force a refresh
+        const timeseries: {value: number; timestamp: number}[] = _.cloneDeep(indicator.original_timeseries);
+
+        // invert timeseries data
+        // if data is not inverted: use the original timeseries data
+        if (indicatorDataInverted.value) {
+          const reverseNumber = (num: number, min: number, max: number) => {
+            return (max + min) - num;
+          };
+          const min = _.min(timeseries.map(item => item.value)) ?? 0;
+          const max = _.max(timeseries.map(item => item.value)) ?? 0;
+          timeseries.forEach(item => {
+            item.value = normalize(reverseNumber(item.value, min, max), min, max);
+          });
+        }
+
+        const nodeParameters = {
+          id: selectedNode?.value?.id,
+          concept: selectedNode?.value?.concept,
+          label: selectedNode?.value?.label,
+          model_id: selectedNode?.value?.model_id,
+          parameter: {
+            id: indicator.id,
+            data_id: indicator.data_id,
+            name: indicator.name,
+            unit: indicator.unit,
+            country: indicator.country,
+            admin1: indicator.admin1,
+            admin2: indicator.admin2,
+            admin3: indicator.admin3,
+            period: indicator.period,
+            timeseries: indicatorDataInverted.value ? timeseries : _.cloneDeep(indicator.original_timeseries),
+            original_timeseries: indicator.original_timeseries,
+            inverted: indicatorDataInverted.value,
+
+            // Filled in by server
+            max: null,
+            min: null
+          },
+          components: selectedNode?.value?.components
+        };
+
+        // FIXME: error when attempting to invert multiple times too quickly
+        //        without waiting a bit between each toggle
+        await modelService.updateNodeParameter(selectedNode.value?.model_id as string, nodeParameters);
+        refreshModelData();
+      }
+    };
+
+
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
     // FIXME: we only want to overwrite historicalTimeseries with the selected
     //  node's timeseries when we first fetch it
@@ -414,7 +459,20 @@ export default defineComponent({
       () => selectedNodeScenarioData.value,
       (newScenarioData, oldScenarioData) => {
         if (oldScenarioData?.indicatorName !== newScenarioData?.indicatorName) {
+          const timeseries = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+          historicalTimeseries.value = timeseries.length > 0 ? timeseries : dummyTimeseries(selectedTemporalResolution.value);
+        }
+      }
+    );
+    // @HACK: An exception to overwriting the historicalTimeseries is
+    //  when the user manually requests to invert the data
+    //  NOTE: this ignores any previously modified paramaterization
+    watch(
+      () => [modelComponents.value],
+      () => {
+        if (modelComponents.value && invertDataWasToggled.value) {
           historicalTimeseries.value = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+          invertDataWasToggled.value = false;
         }
       }
     );
@@ -511,9 +569,13 @@ export default defineComponent({
       return selectedNode.value?.parameter?.id ?? null;
     });
     const indicatorData = useModelMetadata(indicatorId);
-    const indicatorDescription = computed(() => {
+    const indicatorName = computed(() => {
+      if (indicatorData.value === null) return 'Abstract';
+      return indicatorData.value.outputs[0].display_name || indicatorData.value.outputs[0].name;
+    });
+    const datasetName = computed(() => {
       if (indicatorData.value === null) return '';
-      return indicatorData.value.outputs[0].description;
+      return indicatorData.value.name;
     });
     const indicatorMin = ref(0);
     const indicatorMax = ref(1);
@@ -531,11 +593,35 @@ export default defineComponent({
         indicatorRegions.value = [
           indicator.admin3, indicator.admin2, indicator.admin1, indicator.country
         ].filter(d => d !== '').join(', ');
+        // Clear any constraints that fall outside the min/max. This can occur
+        //  when a new indicator is assigned to the node that has a smaller
+        //  range than the previous one.
+        clearConstraintsOutsideRange({ min, max }, true);
+
+        indicatorDataInverted.value = indicator.inverted === true;
       }
     });
+
+    const dummyTimeseries = (resolution: string | null) => {
+      if (resolution === 'year') {
+        return [
+          { value: 0.5, timestamp: Date.UTC(2017, 0) },
+          { value: 0.5, timestamp: Date.UTC(2018, 0) },
+          { value: 0.5, timestamp: Date.UTC(2019, 0) }
+        ];
+      } else {
+        return [
+          { value: 0.5, timestamp: Date.UTC(2017, 0) },
+          { value: 0.5, timestamp: Date.UTC(2017, 1) },
+          { value: 0.5, timestamp: Date.UTC(2017, 2) }
+        ];
+      }
+    };
+
     const clearParameterization = async () => {
       if (selectedNode.value === null) return;
       const { id, concept, label, model_id, components } = selectedNode.value;
+
       const nodeParameters = {
         id,
         concept,
@@ -549,12 +635,14 @@ export default defineComponent({
           admin1: '',
           admin2: '',
           admin3: '',
+          spatialAggregation: 'mean',
+          temporalAggregation: 'mean',
+          temporalResolution: selectedTemporalResolution.value,
           period: 1,
-          timeseries: [
-            { value: 0.5, timestamp: Date.UTC(2017, 0) },
-            { value: 0.5, timestamp: Date.UTC(2017, 1) },
-            { value: 0.5, timestamp: Date.UTC(2017, 2) }
-          ],
+          timeseries: dummyTimeseries(selectedTemporalResolution.value),
+          original_timeseries: dummyTimeseries(selectedTemporalResolution.value),
+          inverted: false,
+
           // Let server determine min/max
           max: null,
           min: null
@@ -576,17 +664,15 @@ export default defineComponent({
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
 
         // FIXME: manually set historical for now because bad watcher
-        historicalTimeseries.value = [
-          { value: 0.5, timestamp: Date.UTC(2017, 0) },
-          { value: 0.5, timestamp: Date.UTC(2017, 1) },
-          { value: 0.5, timestamp: Date.UTC(2017, 2) }
-        ];
+        historicalTimeseries.value = dummyTimeseries(selectedTemporalResolution.value);
 
         refreshModelData();
       } catch {
         console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
         toaster(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, 'error', true);
       }
+      // Pass range where max is lower than min to ensure no constraints are preserved
+      clearConstraintsOutsideRange({ min: 1, max: -1 }, false);
     };
     const areParameterValuesChanged = computed(() => {
       const indicator = selectedNode.value?.parameter;
@@ -616,6 +702,10 @@ export default defineComponent({
         components
       };
       try {
+        clearConstraintsOutsideRange(
+          { min: indicatorMin.value, max: indicatorMax.value },
+          true
+        );
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
         refreshModelData();
       } catch {
@@ -635,14 +725,129 @@ export default defineComponent({
     });
 
     const constraints = ref<ProjectionConstraint[]>([]);
-    const modifyConstraints = (newConstraints: ProjectionConstraint[]) => {
-      constraints.value = newConstraints;
-      saveConstraints(newConstraints);
+
+    const saveConstraintsToSelectedScenario = async (
+      updatedConstraints: ProjectionConstraint[]
+    ) => {
+      if (selectedScenarioId.value === null) {
+        return;
+      }
+      const selectedScenario = scenarios.value.find(
+        scenario => scenario.id === selectedScenarioId.value
+      );
+      if (selectedScenario === undefined) {
+        console.error(
+          'Unable to find selected scenario with ID',
+          selectedScenarioId.value,
+          'in scenario list',
+          scenarios.value
+        );
+        return;
+      }
+      if (selectedScenario.is_baseline) {
+        toaster(
+          'Please select a non-baseline scenario to place constraints.',
+          'error',
+          true
+        );
+        // Remove constraints from the chart renderer
+        constraints.value = [];
+        return;
+      }
+      saveConstraintsToScenario(updatedConstraints, selectedScenario);
     };
 
-    const clearConstraints = () => {
-      constraints.value = [];
-      saveConstraints([]);
+    const saveConstraintsToScenario = async (
+      updatedConstraints: ProjectionConstraint[],
+      scenario: Scenario
+    ) => {
+      if (
+        selectedNode.value === null ||
+        modelSummary.value === null ||
+        currentCAG.value === null ||
+        currentEngine.value === null
+      ) {
+        return;
+      }
+      const selectedConcept = selectedNode.value.concept;
+      const constraintsParameter = [
+        ...scenario.parameter.constraints.filter(
+          conceptConstraints => conceptConstraints.concept !== selectedConcept
+        )
+      ];
+      if (updatedConstraints.length > 0) {
+        constraintsParameter.push(
+          { concept: selectedConcept, values: updatedConstraints }
+        );
+      }
+      const {
+        time_scale,
+        projection_start
+      } = modelSummary.value.parameter;
+      const numSteps = getStepCountFromTimeScale(time_scale);
+      const updatedScenario = {
+        id: scenario.id,
+        model_id: currentCAG.value,
+        parameter: {
+          constraints: constraintsParameter,
+          num_steps: numSteps,
+          projection_start
+        }
+      };
+      // Save and reload scenarios
+      await modelService.updateScenario(updatedScenario);
+      // REFACTOR: We shouldn't set scenarios from so many places.
+      // trigger a scenario refresh
+      const _scenarios = await modelService.getScenarios(currentCAG.value, currentEngine.value);
+      scenarios.value = _scenarios;
+    };
+
+    const modifyConstraints = (newConstraints: ProjectionConstraint[]) => {
+      constraints.value = newConstraints;
+      saveConstraintsToSelectedScenario(newConstraints);
+    };
+
+    /**
+     * Removes constraints that fall outside the provided `range` across all
+     * scenarios. Both bounds of the range are treated as inclusive.
+     */
+    const clearConstraintsOutsideRange = async (
+      range: {min: number; max: number},
+      showToaster = true
+    ) => {
+      if (selectedNode.value === null) {
+        return;
+      }
+      const selectedConcept = selectedNode.value.concept;
+      let removedConstraintCount = 0;
+      let affectedScenarioCount = 0;
+      scenarios.value.forEach(scenario => {
+        // Get current constraints for this concept
+        const constraintsForThisConcept = scenario.parameter.constraints.find(
+          conceptConstraints => conceptConstraints.concept === selectedConcept
+        )?.values ?? [];
+        // Filter constraints that are outside `range`
+        const updatedConstraints = constraintsForThisConcept.filter(
+          constraint => constraint.value >= range.min && constraint.value <= range.max
+        );
+        if (constraintsForThisConcept.length !== updatedConstraints.length) {
+          affectedScenarioCount++;
+          removedConstraintCount += constraintsForThisConcept.length - updatedConstraints.length;
+          saveConstraintsToScenario(updatedConstraints, scenario);
+        }
+      });
+      if (showToaster && removedConstraintCount > 0) {
+        toaster(
+          `Removed ${removedConstraintCount} constraint` +
+            `${removedConstraintCount === 1 ? '' : 's'} from ` +
+            `${affectedScenarioCount} scenario` +
+            `${affectedScenarioCount === 1 ? '' : 's'} because ` +
+            `${removedConstraintCount === 1 ? 'it' : 'they'} fell outside of` +
+            ` the range ${range.min} to ${range.max}.`,
+          'error',
+          false
+        );
+      }
     };
 
     watchEffect(() => {
@@ -673,14 +878,13 @@ export default defineComponent({
             }
           }
         }
-        // FIXME: default viewing extent should be equal to whatever is
-        //  displayed on the graph view
-        const historicalMonthsToDisplay = 5 * 12;
-        const historyStart = moment
-          .utc(parameter.projection_start)
-          .subtract(historicalMonthsToDisplay, 'months')
-          .valueOf();
-        return [historyStart, max];
+
+        const historyRange = parameter.history_range;
+        const viewStart = getTimestampAfterMonths(
+          parameter.projection_start,
+          -historyRange
+        );
+        return [viewStart, max];
       }
     });
 
@@ -707,6 +911,7 @@ export default defineComponent({
     };
 
     return {
+      selectedNode,
       nodeConceptName,
       drilldownPanelTabs,
       drivers,
@@ -724,11 +929,13 @@ export default defineComponent({
       historicalTimeseries,
       setHistoricalTimeseries,
       indicatorId,
-      indicatorDescription,
+      indicatorName,
+      datasetName,
       indicatorMin,
       indicatorMax,
       indicatorPeriod,
       indicatorRegions,
+      indicatorDataInverted,
       areParameterValuesChanged,
       saveParameterValueChanges,
       selectedTemporalResolution,
@@ -742,14 +949,31 @@ export default defineComponent({
       clearParameterization,
       viewingExtent,
       hasConstraints,
-      clearConstraints,
       scenarioData,
       onCreateScenario,
       SEASONALITY_OPTIONS,
-      isDatacubeConfigDropdownOpen: ref(false)
+      isDatacubeConfigDropdownOpen: ref(false),
+      toggleIndicatorDataInversion,
+      setRunImmediately
     };
   },
   methods: {
+    openDataExplorerWithSuggestions() {
+      const filters: any = filtersUtil.newFilters();
+      const ids = (this.selectedNode?.match_candidates?.map(d => d.id) as string[]);
+      filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
+      filtersUtil.setClause(filters, 'id', ids, 'or', false);
+      this.$router.push({
+        name: 'nodeDataExplorer',
+        params: {
+          currentCAG: this.currentCAG,
+          nodeId: this.nodeId,
+          project: this.project,
+          projectType: ProjectType.Analysis
+        },
+        query: { filters }
+      });
+    },
     openDataExplorer() {
       const filters: any = filtersUtil.newFilters();
       filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
@@ -783,6 +1007,17 @@ export default defineComponent({
         return;
       }
       this.setSelectedScenarioId(baseline.id);
+    },
+    scheduleRun() {
+      this.setRunImmediately(true);
+      router.push({
+        name: 'quantitative',
+        params: {
+          project: this.project,
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis
+        }
+      });
     }
   }
 });
@@ -902,15 +1137,26 @@ input[type="radio"] {
   flex-direction: column;
   padding: 10px;
   padding-top: 0;
+  .node-layout {
+    display: flex;
+    .node-range {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 12px;
+      width: 20ch;
+      padding-bottom: 35px;
+    }
+    .scenario-chart {
+      height: 140px;
+    }
+  }
 }
 
 .button-group > *:not(:first-child) {
   margin-left: 5px;
 }
 
-.scenario-chart {
-  height: 140px;
-}
 
 .projection-ridgelines {
   flex: 3;
@@ -945,19 +1191,23 @@ h5 {
   align-items: center;
   gap: 5px;
 
-  .form-control {
-    width: 10ch;
-  }
 
   .indicator-name {
-    max-width: 25ch;
+    white-space: nowrap;
+    min-width: 20px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .indicator-region {
+    min-width: 8ch;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .description {
-    flex-basis: 4ch;
+  .dataset-name {
+    min-width: 4ch;
     flex-grow: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -965,6 +1215,11 @@ h5 {
     color: $text-color-medium;
   }
 
+}
+
+.configure-sentence {
+  // Don't wrap, continue taking as much space as necessary to fit
+  flex-shrink: 0;
 }
 
 .configure-dropdown-container {
@@ -996,6 +1251,24 @@ h5 {
 
 .btn-danger:hover {
   color: white;
+}
+
+
+.checkbox {
+  user-select: none;
+  display: inline-block;
+  align-self: center;
+  margin: 0;
+
+  label {
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    color: black;
+    display: flex;
+    align-items: center;
+  }
 }
 
 </style>

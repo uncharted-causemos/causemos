@@ -5,7 +5,7 @@ const moment = require('moment');
 const { v4: uuid } = require('uuid');
 const router = express.Router();
 const Logger = rootRequire('/config/logger');
-const { setLock, releaseLock } = rootRequire('/cache/node-lru-cache');
+const { setLock, releaseLock, LOCK_TIMEOUT } = rootRequire('/cache/node-lru-cache');
 
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 const cagService = rootRequire('/services/cag-service');
@@ -21,6 +21,7 @@ const senseiService = rootRequire('/services/external/sensei-service');
 const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 const modelUtil = rootRequire('util/model-util');
 
+const TRANSACTION_LOCK_MSG = `Another transaction is running on model, please try again in ${LOCK_TIMEOUT / 1000} seconds`;
 
 const DYSE = 'dyse';
 const DELPHI = 'delphi';
@@ -28,6 +29,24 @@ const DELPHI_DEV = 'delphi_dev';
 const SENSEI = 'sensei';
 
 // const esLock = {};
+
+router.get('/:modelId/history', asyncHandler(async (req, res) => {
+  const { modelId } = req.params;
+  const historyConn = Adapter.get(RESOURCE.MODEL_HISTORY);
+  const historyLogs = await historyConn.find([
+    { field: 'model_id', value: modelId }
+  ], { size: 10000, sort: [{ modified_at: 'asc' }] });
+
+  res.json(historyLogs);
+}));
+
+
+router.post('/:modelId/history', asyncHandler(async (req, res) => {
+  const { modelId } = req.params;
+  const { type, text } = req.body;
+  historyService.logDescription(modelId, type, text);
+  res.json({});
+}));
 
 /**
  * Set node quantifications
@@ -51,14 +70,16 @@ router.put('/:modelId/model-metadata', asyncHandler(async (req, res) => {
   const {
     name,
     description,
-    thumbnail_source: thumbnailSource
+    thumbnail_source: thumbnailSource,
+    data_analysis_id
   } = req.body;
 
   // Update the CAG metadata
   await cagService.updateCAGMetadata(modelId, {
     name: name,
     description: description,
-    thumbnail_source: thumbnailSource
+    thumbnail_source: thumbnailSource,
+    data_analysis_id
   });
   res.status(200).send({ updateToken: editTime });
 }));
@@ -74,26 +95,35 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   const {
     engine,
     projection_start: projectionStart,
-    indicator_time_series_range: indicatorTimeSeriesRange,
+    history_range: historyRange,
     num_steps: numSteps,
-    time_scale: timeScale
+    time_scale: timeScale,
+    geography
   } = req.body;
 
   let invalidateScenarios = false;
+  let reregisterModel = false;
 
   // 1. Build update params
   const modelFields = {};
   const parameter = {};
 
   if (engine) {
+    // Note that setting the engine triggers the model to be reregistered if
+    //  the engine is different than its previous value.
+    // See cagService.updateCAGMetadata().
     parameter.engine = engine;
+  }
+  if (geography) {
+    parameter.geography = geography;
   }
   if (projectionStart) {
     parameter.projection_start = projectionStart;
     invalidateScenarios = true;
+    reregisterModel = true;
   }
-  if (indicatorTimeSeriesRange) {
-    parameter.indicator_time_series_range = indicatorTimeSeriesRange;
+  if (historyRange) {
+    parameter.history_range = historyRange;
   }
   if (numSteps) {
     parameter.num_steps = numSteps;
@@ -102,6 +132,11 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   if (timeScale) {
     parameter.time_scale = timeScale;
     invalidateScenarios = true;
+  }
+
+  if (reregisterModel === true) {
+    modelFields.status = MODEL_STATUS.NOT_REGISTERED;
+    modelFields.engine_status = RESET_ALL_ENGINE_STATUS;
   }
 
   if (!_.isEmpty(parameter)) {
@@ -174,7 +209,6 @@ router.post('/', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
-
 /**
  * DELETE a CAG
  */
@@ -244,6 +278,8 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
 //
 // 1. if edge has no weights, it takes the engine's inferred weights
 // 2. if edge has weights, it retains the values and will send back "overrides"
+//
+// Note for Delphi engineWeights and engineInferredWeights are triples [level, trend, polarity]
 const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
   const components = await cagService.getComponents(modelId);
   const edgesToUpdate = [];
@@ -263,18 +299,40 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
     let updateWeights = false;
     let overrideWeights = false;
 
+    Logger.debug(`${key} => engineInferred=${engineInferredWeights}, current=${currentWeights}, currentEngine=${currentEngineWeights}`);
+
     // Update inferred engine weights
-    if (!_.isEqual(engineInferredWeights, currentEngineWeights)) {
-      updateEngineConfig = true;
-      currentEngineWeightsConfig[engine] = engineInferredWeights;
-      parameter.engine_weights = currentEngineWeightsConfig;
+    // - Both Delphi and Sensei returns extra polarity information, so their arry is of length 3 instead of 2
+    if (engine === DELPHI || engine === DELPHI_DEV || engine === SENSEI) {
+      Logger.debug(`\tcurrentEngine=${currentEngineWeights}, inferred=${engineInferredWeights}`);
+      if (!currentEngineWeights || engineInferredWeights[1] !== currentEngineWeights[1]) {
+        updateEngineConfig = true;
+        currentEngineWeightsConfig[engine] = engineInferredWeights;
+        parameter.engine_weights = currentEngineWeightsConfig;
+      }
+    } else {
+      if (!_.isEqual(engineInferredWeights, currentEngineWeights)) {
+        updateEngineConfig = true;
+        currentEngineWeightsConfig[engine] = engineInferredWeights;
+        parameter.engine_weights = currentEngineWeightsConfig;
+      }
     }
 
     if (_.isEmpty(currentWeights)) {
       updateWeights = true;
       parameter.weights = engineInferredWeights;
     } else {
-      overrideWeights = true;
+      if (engine === DELPHI || engine === DELPHI_DEV) {
+        Logger.debug(`\tcurrent=${currentWeights}, inferred=${engineInferredWeights}`);
+        // Don't bother overriding unless change is somewhat significant. 0.05 is somewaht arbitrary range between [0, 1]
+        if (Math.abs(currentWeights[1] - engineInferredWeights[1]) > 0.05) {
+          overrideWeights = true;
+        }
+      } else {
+        if (!_.isEqual(currentWeights, engineInferredWeights)) {
+          overrideWeights = true;
+        }
+      }
     }
 
     // Resolve state - update on ourside
@@ -315,7 +373,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
   if (setLock(modelId) === false) {
     Logger.warn(`Conflict while registering model ${modelId} with ${engine}. Another transaction in progress`);
-    res.status(409).send('Another transaction is running for this model');
+    res.status(409).send(`Conflict while registering model ${modelId} with ${engine}. ` + TRANSACTION_LOCK_MSG);
     return;
   }
 
@@ -341,7 +399,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     }
   } catch (error) {
     Logger.warn(error);
-    res.status(400).send(`Failed to sync with ${engine} : ${modelId}`);
+    res.status(400).send(`Failed to sync with ${engine} : ${modelId}. ${error}`);
     return;
   }
 
@@ -412,23 +470,43 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
 
   // FIXME: Different engines have slightly different status codes
   // Update model
-  const v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
-  await cagService.updateCAGMetadata(modelId, {
-    status: v,
-    engine_status: {
-      [engine]: v
+  let v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
+
+  // Patch Delphi's progress, sometimes state will be ready but still training
+  if (engine === DELPHI) {
+    const progress = await delphiService.modelTrainingProgress(modelId);
+    modelStatus.progressPercentage = progress.progressPercentage;
+    if (modelStatus.progressPercentage < 1) {
+      v = MODEL_STATUS.TRAINING;
     }
-  });
+  } else if (engine === DELPHI_DEV) {
+    const progress = await delphiDevService.modelTrainingProgress(modelId);
+    modelStatus.progressPercentage = progress.progressPercentage;
+    if (modelStatus.progressPercentage < 1) {
+      v = MODEL_STATUS.TRAINING;
+    }
+  }
 
   // Patch Delphi's inferred weights
-  if ((engine === DELPHI || engine === DELPHI_DEV) && modelStatus.status === 'ready') {
+  let edgeTrainingDelphi = false;
+  if ((engine === DELPHI || engine === DELPHI_DEV) && modelStatus.progressPercentage >= 1.0) {
+    Logger.info('Processing Delphi edge weights');
     const inferredEdgeMap = modelStatus.relations.reduce((acc, edge) => {
       const key = `${edge.source}///${edge.target}`;
       acc[key] = {};
 
-      acc[key].weights = [0.0, Math.abs(edge.weights[0])];
+      // Level, trend, polarity sign
+      const normalizedW = +(edge.weights[0].toFixed(3));
+      let polarity = 0;
+      if (normalizedW > 0) {
+        polarity = 1;
+      } else if (normalizedW < 0) {
+        polarity = -1;
+      }
+      acc[key].weights = [0.0, Math.abs(normalizedW), polarity];
       return acc;
     }, {});
+
 
     // Sort out weights
     const { edgesToUpdate, edgesToOverride } = await processInferredEdgeWeights(
@@ -445,6 +523,14 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
       }
     }
     if (edgesToOverride.length > 0) {
+      Logger.info(`Sending ${edgesToOverride.length} edge-weight overrides to Delphi`);
+      edgeTrainingDelphi = true;
+
+      // HACK: Delphi takes in [trend] as oppose to [level, trend], change the payload
+      edgesToOverride.forEach(edge => {
+        edge.parameter.weights = [edge.parameter.weights[1]];
+      });
+
       if (engine === DELPHI) {
         await delphiService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
       } else if (engine === DELPHI_DEV) {
@@ -453,14 +539,19 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
     }
   }
 
-  // Patch Delphi's progress
-  if (engine === DELPHI) {
-    const progress = await delphiService.modelTrainingProgress(modelId);
-    modelStatus.progressPercentage = progress.progressPercentage;
-  } else if (engine === DELPHI_DEV) {
-    const progress = await delphiService.modelTrainingProgress(modelId);
-    modelStatus.progressPercentage = progress.progressPercentage;
+  // We sent edge-weigts back to Delphi, so it will need to be retrained
+  if (edgeTrainingDelphi === true) {
+    v = MODEL_STATUS.TRAINING;
+    modelStatus.status = 'training';
   }
+
+  // Update model status
+  await cagService.updateCAGMetadata(modelId, {
+    status: v,
+    engine_status: {
+      [engine]: v
+    }
+  });
 
   res.json(modelStatus);
 }));
@@ -499,6 +590,7 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
     res.status(400).send(`Failed to run projection ${engine} : ${modelId}`);
     return;
   }
+
   res.json(result);
 }));
 
@@ -580,8 +672,8 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   const nodeParameter = req.body;
 
   if (setLock(modelId) === false) {
-    Logger.info(`Conflict while updateing model ${modelId} node-parameter. Another transaction in progress`);
-    res.status(409).send('Another transaction is running for this model');
+    Logger.info(`Conflict while updating model ${modelId} node-parameter. Another transaction in progress`);
+    res.status(409).send(`Conflict while updating node for model ${modelId}. ` + TRANSACTION_LOCK_MSG);
     return;
   }
 
@@ -595,21 +687,6 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
 
   // Parse and get meta data
   const model = await modelService.findOne(modelId);
-  const parameter = model.parameter;
-  if (_.isNil(parameter)) {
-    throw new Error('Model does not contain parameter');
-  }
-  const engine = parameter.engine;
-  const payload = modelService.buildNodeParametersPayload([nodeParameter], model);
-
-  // Register update with engine and retrieve new value
-  if (engine === DYSE) {
-    await dyseService.updateNodeParameter(modelId, payload);
-  } else if (engine === SENSEI) {
-    await senseiService.updateNodeParameter(modelId, payload);
-  } else {
-    Logger.warn(`Update node-parameter is undefined for ${engine}`);
-  }
 
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
   const getNodePayload = [
@@ -647,7 +724,8 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     if (!_.isNil(indicatorMatch)) {
       const updateIndicatorMatchPayload = {
         id: indicatorMatch.id,
-        frequency: indicatorMatch.frequency + 1
+        frequency: indicatorMatch.frequency + 1,
+        modified_at: Date.now()
       };
       r = await indicatorMatchHistoryAdapter.update([updateIndicatorMatchPayload], d => d.id);
       if (r.errors) {
@@ -660,11 +738,14 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
         project_id: model.project_id,
         concept: nodeParameter.concept,
         indicator_id: nodeParameter.parameter.id,
-        frequency: 1
+        frequency: 1,
+        modified_at: Date.now()
       };
       await indicatorMatchHistoryAdapter.insert([insertIndicatorMatchPayload], d => d.id);
     }
   }
+
+  await clearEdgeWeightsForNode(modelId, nodeParameter.concept);
 
   await scenarioService.invalidateByModel(modelId);
 
@@ -680,6 +761,37 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   releaseLock(modelId);
 }));
 
+// Clear any edge weights that were manually set on edges coming into or
+//  leaving the node that was updated.
+const clearEdgeWeightsForNode = async (modelId, nodeConcept) => {
+  // Get all incoming and outgoing edges
+  const edgeComponents = await cagService.getAllComponents(modelId, RESOURCE.EDGE_PARAMETER);
+  const adjacentEdges = edgeComponents.filter(
+    edge => edge.source === nodeConcept || edge.target === nodeConcept
+  );
+  const adjacentEdgesToUpdate = adjacentEdges.filter(edge => {
+    // Edge parameter is undefined if the edge was just added and hasn't been
+    //  registered with an engine yet.
+    // No need to update edges whose weights are already cleared.
+    const weights = edge.parameter?.weights;
+    return weights !== undefined && weights.length !== 0;
+  });
+  // Remove the weights for each
+  adjacentEdgesToUpdate.forEach(edge => {
+    edge.parameter.weights = [];
+  });
+  const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+  if (adjacentEdgesToUpdate.length > 0) {
+    const results = await edgeParameterAdapter.update(
+      adjacentEdgesToUpdate,
+      (doc) => doc.id
+    );
+    if (results.errors) {
+      throw new Error(JSON.stringify(results.errors[0]));
+    }
+  }
+};
+
 
 
 /**
@@ -691,7 +803,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
 
   if (setLock(modelId) === false) {
     Logger.info(`Conflict while updateing model ${modelId} edge-parameter. Another transaction in progress`);
-    res.status(409).send('Another transaction is running for this model');
+    res.status(409).send(`Conflict while updating edge for model ${modelId}. ` + TRANSACTION_LOCK_MSG);
     return;
   }
 
@@ -707,7 +819,24 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
   } else if (engine === SENSEI) {
     await senseiService.updateEdgeParameter(modelId, payload);
   } else {
-    throw new Error(`updateEdgeParameter not implemented for ${engine}`);
+    // throw new Error(`updateEdgeParameter not implemented for ${engine}`);
+  }
+
+  // For Delphi we will artificially set the model into unregistered state
+  // so the detection loop will find it and actually send the edge weights
+  // FIXME: Set to TRAINING
+  if (engine === DELPHI || engine === DELPHI_DEV) {
+    Logger.info(`Defer edge upate for ${engine} until next refresh cycle`);
+    const modelAdapter = Adapter.get(RESOURCE.MODEL);
+    await modelAdapter.update([
+      {
+        id: model.id,
+        status: MODEL_STATUS.NOT_REGISTERED,
+        engine_status: {
+          [engine]: MODEL_STATUS.NOT_REGISTERED
+        }
+      }
+    ], d => d.id);
   }
 
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);

@@ -1,6 +1,7 @@
 <template>
   <div class="bar-chart-container">
     <div class="chart">
+      <div v-if="barsData.length === 0" class="no-data">No data available using selected criteria!</div>
       <svg ref="barChart" />
       <resize-observer @notify="resize" />
     </div>
@@ -119,9 +120,16 @@ export default defineComponent({
 }
 
 .chart {
+  display: flex;
   flex: 1;
   min-width: 0;
+  align-items: center;
   position: relative;
+}
+
+.no-data {
+  font-style: italic;
+  width: 100%;
 }
 
 .selected-data {
@@ -131,19 +139,19 @@ export default defineComponent({
   align-items: flex-end;
 }
 
-::v-deep(.xAxis .domain) {
+:deep(.xAxis .domain) {
   stroke: #e3e4e6;
 }
 
-::v-deep(.yAxis .tick line) {
+:deep(.yAxis .tick line) {
   stroke: #e3e4e6;
 }
 
-::v-deep(.yAxis .domain) {
+:deep(.yAxis .domain) {
   opacity: 0;
 }
 
-::v-deep(.segment-line) {
+:deep(.segment-line) {
   opacity: 0.5;
   stroke-width: 2;
 }

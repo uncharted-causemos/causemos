@@ -43,7 +43,7 @@ export const INSIGHTS = {
   ERRONEOUS_ADDITION: 'There was an error in creating a new insight',
   SUCCESSFUL_REMOVAL: 'Insight succesfully removed',
   ERRONEOUS_REMOVAL: 'There was an error in removing the insight',
-  SUCCESFUL_UPDATE: 'Insight succesfully updated',
+  SUCCESSFUL_UPDATE: 'Insight succesfully updated',
   ERRONEOUS_UPDATE: 'There was an error in updating the insight',
   NO_DATA: 'No insights have been saved'
 };
@@ -53,7 +53,7 @@ export const QUESTIONS = {
   ERRONEOUS_ADDITION: 'There was an error in creating a new question',
   SUCCESSFUL_REMOVAL: 'Question succesfully removed',
   ERRONEOUS_REMOVAL: 'There was an error in removing the question',
-  SUCCESFUL_UPDATE: 'Question succesfully updated',
+  SUCCESSFUL_UPDATE: 'Question succesfully updated',
   ERRONEOUS_UPDATE: 'There was an error in updating the question',
   NO_DATA: 'No questions have been saved'
 };

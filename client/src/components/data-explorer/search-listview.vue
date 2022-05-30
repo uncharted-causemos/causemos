@@ -9,7 +9,7 @@
             <th>SOURCE and DESCRIPTION</th>
             <th>PERIOD</th>
             <th>REGION</th>
-            <th><!-- Timeseries chart--> <span class="right-cover" /></th>
+            <th>PREVIEW<span class="right-cover" /></th>
           </tr>
         </thead>
         <tbody>
@@ -80,17 +80,11 @@
               <td class="region-col">
                 <div> {{ formatCountry(d) }} </div>
               </td>
-              <!-- FIXME: do we still have timeseries here?? -->
-              <!--
-              <td
-                v-if="d.timeseries"
-                class="timeseries-col"
-              >
+              <td class="timeseries-col">
                 <div class="timeseries-container">
                   <sparkline :data="formatTimeSeries(d)" />
                 </div>
               </td>
-              -->
             </tr>
         </tbody>
       </table>
@@ -101,19 +95,18 @@
 <script lang="ts">
 
 import moment from 'moment';
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, ref, computed, toRefs, watch } from 'vue';
 import { useStore } from 'vuex';
-// import Sparkline from '@/components/widgets/charts/sparkline.vue';
+import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
 import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { isIndicator, isModel } from '../../utils/datacube-util';
 import { Datacube, ModelParameter } from '@/types/Datacube';
 
-
 export default defineComponent({
   name: 'SearchListview',
   components: {
-    // Sparkline,
+    Sparkline,
     MultilineDescription
   },
   props: {
@@ -126,7 +119,7 @@ export default defineComponent({
       default: false
     }
   },
-  setup() {
+  setup(props) {
     const store = useStore();
     const expandedRowId = ref('');
     const selectedDatacubes = computed<Datacube[]>(() => {
@@ -135,6 +128,18 @@ export default defineComponent({
     const setSelectedDatacubes = (items: Datacube[]) => {
       store.dispatch('dataSearch/setSelectedDatacubes', items);
     };
+
+    const { datacubes } = toRefs(props);
+
+    watch(
+      datacubes,
+      () => {
+        const elem:any = document.getElementsByClassName('table-fixed-head');
+        if (elem.length === 0) return;
+        elem[0].scrollTop = 0;
+      },
+      { immediate: true }
+    );
 
     return {
       expandedRowId,
@@ -171,7 +176,8 @@ export default defineComponent({
         const item = { // AnalysisItem
           datacubeId: datacube.data_id,
           id: datacube.id,
-          viewConfig: {}
+          viewConfig: {},
+          name: datacube.name // set initial name
         };
         if (this.enableMultipleSelection) {
           // if the datacube is not in the list add it, otherwise remove it
@@ -199,16 +205,13 @@ export default defineComponent({
       // We want to display the aggregated resolution rather than the original one.
       return originalResolution === TemporalResolution.Annual ? 'annual' : 'monthly';
     },
-    // formatTimeSeries(cubeRow) {
-    //   const sparklineData = [{ series: [] }];
-    //   if (cubeRow.timeseries) {
-    //     sparklineData[0].series = cubeRow.timeseries;
-    //   } else {
-    //     // empty case
-    //     sparklineData[0].series = [0];
-    //   }
-    //   return sparklineData;
-    // },
+    formatTimeSeries(d: Datacube) {
+      return d.sparkline ? [{
+        name: 'datacube',
+        color: '',
+        series: d.sparkline
+      }] : [];
+    },
     formatPeriod(d: Datacube) {
       if (!d.period) {
         return '';
@@ -223,7 +226,7 @@ export default defineComponent({
       if (!country) return '';
       return this.isExpanded(d) || country.length < 4
         ? country.join(', ')
-        : `${country.slice(0, 3).join(', ')} and ${country.length - 4} more.`;
+        : `${country.slice(0, 3).join(', ')} and ${country.length - 3} more.`;
     },
     formatDescription(d: Datacube) {
       if (!d.description) return '';
@@ -253,7 +256,6 @@ $selected-border: #255DCC;
 $selected-background: #EBF1FC;
 .search-listview-container {
   background: $background-light-2;
-  padding: 0 10px;
   width: 100%;
   table  {
     border-collapse: collapse;
@@ -342,6 +344,7 @@ $selected-background: #EBF1FC;
       }
       .content {
         flex: 1 1 auto;
+        overflow-wrap: anywhere;
         .not-ready-label {
           font-weight: 600;
           border: none;
@@ -354,6 +357,10 @@ $selected-background: #EBF1FC;
       }
     }
   }
+  .desc-col {
+    width: 33%;
+    overflow-wrap: anywhere;
+  }
   .region-col {
     width: 200px;
   }
@@ -364,13 +371,11 @@ $selected-background: #EBF1FC;
   .timeseries-col {
     padding-left: 5px;
     padding-right: 10px;
-    display: none;
   }
   .timeseries-container {
     background-color: #f1f1f1;
     width: 110px;
     height: 50px;
-    display: none;
   }
 }
 </style>

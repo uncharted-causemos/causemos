@@ -20,8 +20,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import _ from 'lodash';
+import { defineComponent, ref, PropType } from 'vue';
+import { cleanConceptString } from '@/utils/concept-util';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
+
+const regex = RegExp('^[A-Za-z0-9/_ ]+$');
 
 export default defineComponent({
   name: 'RenameModal',
@@ -35,16 +39,47 @@ export default defineComponent({
     },
     currentName: {
       type: String,
-      default: ''
+      required: true
+    },
+    restrictedNames: {
+      type: Array as PropType<string[]>,
+      default: []
+    },
+    restrictAlphanumeric: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['confirm', 'cancel'],
-  data: () => ({
-    newNameInput: ''
-  }),
+  emits: ['confirm', 'cancel', 'reject', 'reject-alphanumeric'],
+  setup(props) {
+    const newNameInput = ref(props.currentName);
+
+    return {
+      newNameInput
+    };
+  },
   methods: {
     onConfirm() {
-      this.$emit('confirm', this.newNameInput || this.currentName);
+      const currName = this.currentName;
+      const newName = this.newNameInput;
+
+      // Nothing, same as cancel
+      if (newName === currName) {
+        this.$emit('cancel');
+        return;
+      }
+
+      if (newName) {
+        if (!_.isEmpty(this.restrictedNames) && this.restrictedNames.includes(newName)) {
+          this.$emit('reject', { currentName: currName, newName: newName });
+          return;
+        }
+        if (this.restrictAlphanumeric === true && regex.test(this.newNameInput) === false) {
+          this.$emit('reject-alphanumeric', { currentName: currName, newName: newName });
+          return;
+        }
+        this.$emit('confirm', cleanConceptString(this.newNameInput));
+      }
     },
     onCancel() {
       this.newNameInput = '';

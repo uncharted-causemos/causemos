@@ -17,6 +17,7 @@ import {
   PropType,
   ref,
   toRefs,
+  watch,
   watchEffect
 } from 'vue';
 import { useStore } from 'vuex';
@@ -96,6 +97,22 @@ export default defineComponent({
     const setHistoricalTimeseries = (newPoints: TimeseriesPoint[]) => {
       emit('set-historical-timeseries', newPoints);
     };
+
+    // FIXME: Hack watch for viewingExtent changes and reset existing brush state
+    // In ensure it doesn't conflcit with watchEffect below and this happens first,
+    // the watchEffect render action is slated to the nextTick.
+    watch(
+      () => [viewingExtent.value],
+      () => {
+        const svg = chartRef.value
+          ? d3.select<HTMLElement, null>(chartRef.value)
+          : null;
+        if (!svg) return;
+        svg.select('.scrollBarGroupElement').remove();
+      },
+      { immediate: true }
+    );
+
     watchEffect(() => {
       // Rerender whenever dependencies change
       const parentElement = chartRef.value?.parentElement;
@@ -111,24 +128,28 @@ export default defineComponent({
         svg === null ||
         _projections.length === 0 ||
         parentElement === undefined ||
-        parentElement === null
+        parentElement === null ||
+        !historicalTimeseries.value
       ) {
         return;
       }
-      render(
-        svg,
-        width === 0 ? parentElement.clientWidth : width,
-        height === 0 ? parentElement.clientHeight : height,
-        _projections,
-        selectedScenarioId.value,
-        _constraints,
-        min,
-        max,
-        unit.value,
-        modelSummary.value,
-        isClampAreaHidden.value
-      );
+      nextTick(() => {
+        render(
+          svg,
+          width === 0 ? parentElement.clientWidth : width,
+          height === 0 ? parentElement.clientHeight : height,
+          _projections,
+          selectedScenarioId.value,
+          _constraints,
+          min,
+          max,
+          unit.value,
+          modelSummary.value,
+          isClampAreaHidden.value
+        );
+      });
     });
+
     onMounted(() => {
       // Set initial chart size
       const parentElement = chartRef.value?.parentElement;

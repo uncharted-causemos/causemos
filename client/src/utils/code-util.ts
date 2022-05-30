@@ -172,6 +172,10 @@ export const CODE_TABLE: FieldMap = {
   DOC_BYOD_TAG: {
     ...field('docByodTag', 'Document Corpora'),
     ...searchable('Document Corpora', false)
+  },
+  DOC_GENRE: {
+    ...field('docGenre', 'Document Genre'),
+    ...searchable('Document Genre', false)
   }
 };
 

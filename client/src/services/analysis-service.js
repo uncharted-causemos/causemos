@@ -15,7 +15,8 @@ export const getAnalysis = async (analysisId) => {
  */
 export const getAnalysisState = async (analysisId) => {
   const analysis = await getAnalysis(analysisId);
-  return analysis.state || {};
+  if (analysis) return analysis.state;
+  return {};
 };
 
 /**
@@ -59,12 +60,16 @@ export const createAnalysis = async({ title = '', description = '', projectId, s
 export const updateAnalysis = async(analysisId, payload) => {
   if (!payload) return console.error(new Error('payload object must be provided'));
   const analysis = await getAnalysis(analysisId);
-  const result = await API.put(`analyses/${analysisId}`, { ...analysis, ...payload }, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
-  return result.data;
+  if (analysis) {
+    const result = await API.put(`analyses/${analysisId}`, { ...analysis, ...payload }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return result.data;
+  } else {
+    return console.error(new Error('payload object must be provided'));
+  }
 };
 
 /**
@@ -80,10 +85,10 @@ export const getAnalysesByProjectId = async (projectId) => {
  * Create a copy of the analysis with given Id
  * @param {string} analysisId Analysis Id
  */
-export const duplicateAnalysis = async (analysisId) => {
+export const duplicateAnalysis = async (analysisId, newName = undefined) => {
   const original = await getAnalysis(analysisId);
   const newAnalysis = await createAnalysis({
-    title: `Copy of ${original.title}`,
+    title: newName || `Copy of ${original.title}`,
     description: original.description,
     projectId: original.project_id
   });

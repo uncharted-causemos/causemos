@@ -19,6 +19,8 @@ const EXPERIMENT_TYPE = Object.freeze({
 
 const NUM_LEVELS = 31; // For y-scaling (1 + 6*N)
 
+const regex = RegExp('^[A-Za-z0-9/_ ]+$');
+
 /**
  * Get all models
  *
@@ -364,6 +366,35 @@ const clearNodeParameter = async (modelId, nodeId) => {
   }
 };
 
+// This is a hack that's been in place since before July 2021.
+// DySE needs at least 2 points, results will likely be nonsensical with fewer
+//  than 3. This function injects points immediately preceding the oldest
+//  historical data point (or the projection start if there are no points) until
+//  there are at least 3 points. Each injected point has the oldest historical
+//  data point's value (or 0.5 if there are no points).
+// Timestamps are selected to ensure the points are before projection start, and
+//  don't introduce a gap before any legitimate data.
+const injectDummyData = (timeseries, temporalResolution, projectionStart) => {
+  const pointsToInject = 3 - timeseries.length;
+  if (pointsToInject < 1) {
+    return;
+  }
+  // Assume timeseries is sorted
+  const oldestTimestamp =
+    timeseries.length > 0 ? timeseries[0].timestamp : projectionStart;
+  const value = timeseries.length > 0 ? timeseries[0].value : 0.5;
+  Logger.info(
+    `Insufficient timeseries length. Injecting ${pointsToInject} point(s) with a value of ${value}.`
+  );
+  for (let index = 1; index <= pointsToInject; index++) {
+    const timestamp = moment
+      .utc(oldestTimestamp)
+      .subtract(index, `${temporalResolution}s`)
+      .valueOf();
+    timeseries.unshift({ value, timestamp });
+  }
+};
+
 /**
  *
  */
@@ -373,30 +404,27 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
   const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
 
   nodeParameters.forEach((np, idx) => {
+    if (regex.test(np.concept) === false) {
+      throw new Error(`${np.concept} contains invalid characters.`);
+    }
+
     if (_.isEmpty(np.parameter)) {
       throw new Error(`${np.concept} is not parameterized`);
     } else {
       let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
+      const temporalResolution = _.get(np.parameter, 'temporalResolution', 'month');
+
+      // Historical data should be historical
       indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
 
-      if (_.isEmpty(indicatorTimeSeries)) {
-        // FIXME: Temporary fallback so engines don't blow up - July 2021
-        indicatorTimeSeries = [
-          { value: 0.0, timestamp: Date.UTC(2017, 0) },
-          { value: 0.0, timestamp: Date.UTC(2017, 1) },
-          { value: 0.0, timestamp: Date.UTC(2017, 2) }
-        ];
-      }
+      // Engines may have issues with dates before 1677 (Panda limitation), make it 1800 to be reasonable
+      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp > Date.UTC(1800));
 
-      // More hack: DySE needs at least 2 data points
-      if (indicatorTimeSeries.length === 1) {
-        const timestamp = indicatorTimeSeries[0].timestamp;
-        const prevTimestamp = moment.utc(timestamp).subtract(1, 'months').valueOf();
-        indicatorTimeSeries.unshift({
-          value: indicatorTimeSeries[0].value,
-          timestamp: prevTimestamp
-        });
-      }
+      injectDummyData(
+        indicatorTimeSeries,
+        temporalResolution,
+        projectionStart
+      );
 
       r.push({
         concept: np.concept,
@@ -405,7 +433,7 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
         maxValue: _.get(np.parameter, 'max', 1),
         values: indicatorTimeSeries,
         numLevels: NUM_LEVELS,
-        resolution: _.get(np.parameter, 'temporalResolution', 'month'),
+        resolution: temporalResolution,
         period: _.get(np.parameter, 'period', 12)
       });
     }
@@ -417,8 +445,6 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
 const buildEdgeParametersPayload = (edgeParameters) => {
   const r = [];
   edgeParameters.forEach(edge => {
-    if (edge.polarity === 0) return; // Engine logic tends to be undefined if we update an ambiguous edge (DySE)
-
     r.push({
       source: edge.source,
       target: edge.target,
@@ -477,6 +503,7 @@ const buildCreateModelPayload = async (model, nodeParameters, edgeParameters) =>
 };
 
 
+// @deprecated Only used by Delphi and Delphi_Dev
 const buildCreateModelPayloadDeprecated = async (model, nodeParameters, edgeParameters) => {
   const modelStatements = await buildModelStatements(model.id);
 
@@ -495,38 +522,34 @@ const buildCreateModelPayloadDeprecated = async (model, nodeParameters, edgePara
   };
 };
 
+// @deprecated - Only Delphi and Delphi_Dev
 const buildNodeParametersPayloadDeprecated = (nodeParameters, model) => {
   const r = {};
 
   const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
 
   nodeParameters.forEach((np, idx) => {
+    if (regex.test(np.concept) === false) {
+      throw new Error(`${np.concept} contains invalid characters.`);
+    }
+
     const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
 
     if (_.isEmpty(np.parameter)) {
       throw new Error(`${np.concept} is not parameterized`);
     } else {
       let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
+      const temporalResolution = _.get(np.parameter, 'temporalResolution', 'month');
       indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
 
-      if (_.isEmpty(indicatorTimeSeries)) {
-        // FIXME: Temporary fallback so engines don't blow up - July 2021
-        indicatorTimeSeries = [
-          { value: 0.0, timestamp: Date.UTC(2017, 0) },
-          { value: 0.0, timestamp: Date.UTC(2017, 1) },
-          { value: 0.0, timestamp: Date.UTC(2017, 2) }
-        ];
-      }
+      // Engines may have issues with dates before 1677 (Panda limitation), make it 1800 to be reasonable
+      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp > Date.UTC(1800));
 
-      // More hack: DySE needs at least 2 data points
-      if (indicatorTimeSeries.length === 1) {
-        const timestamp = indicatorTimeSeries[0].timestamp;
-        const prevTimestamp = moment.utc(timestamp).subtract(1, 'months').valueOf();
-        indicatorTimeSeries.unshift({
-          value: indicatorTimeSeries[0].value,
-          timestamp: prevTimestamp
-        });
-      }
+      injectDummyData(
+        indicatorTimeSeries,
+        temporalResolution,
+        projectionStart
+      );
 
       r[np.concept] = {
         // Need to have unique indicator names because Delphi can't handle duplicates
@@ -560,7 +583,7 @@ module.exports = {
 
   buildCreateModelPayload,
 
-  // To deprecated once Graph-like api is in
+  // To deprecated once Graph-like api is in for Delphi
   buildCreateModelPayloadDeprecated,
   buildNodeParametersPayloadDeprecated
 };

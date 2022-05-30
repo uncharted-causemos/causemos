@@ -2,12 +2,9 @@ import _ from 'lodash';
 import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
-import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
-import { getGADMSuggestions } from '@/services/suggestion-service';
-import { REGION_ID_DELIMETER } from './admin-level-util';
-
-// only allow fetching a maximum number of bbox for of a list of regions
-const MAX_NUMBER_BBOX_REGIONS = 10;
+import { isSelectionEmpty, isRegionSelected, stringToAdminLevel, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { getBboxFromRegionIds } from '@/services/geo-service';
+import { AdminRegionSets } from '@/types/Datacubes';
 
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
@@ -28,10 +25,6 @@ export enum DATA_LAYER {
   RAW = 'dot'
 }
 
-export function adminLevelToString(level: number) {
-  const adminLevel = level === 0 ? 'country' : 'admin' + level;
-  return adminLevel;
-}
 export enum SOURCE_LAYER {
   // Note: Vector tile source data for each layer (we currently have 4 different vector data source)
   // has to be referenced by following ids, 'boundaries-adm0' to 'boundaries-adm3' and `maas`.
@@ -89,11 +82,6 @@ export function getMapSourceLayer (dataLayer: DATA_LAYER, adminLevel = 0) {
   }
 }
 
-export function stringToAdminLevel(geoString: string) {
-  const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
-  return adminLevel;
-}
-
 // Resolve edge case where min and max are equal. Often happens when there's single data point when calculating min/max
 // Eg. Region data only has Ethiopia at country level.
 function resolveSameMinMaxValue({ min, max }: { min: number; max: number}) {
@@ -103,6 +91,40 @@ function resolveSameMinMaxValue({ min, max }: { min: number; max: number}) {
   const result = { min, max };
   if (min === max) {
     result[Math.sign(result.min) === -1 ? 'max' : 'min'] = 0;
+  }
+  return result;
+}
+
+// Iterate over all stats for all level and resolve the same min/max for each range. Same min max often happens when there's single data point when calculating min/max.
+// Eg. When region data only has Ethiopia at country level.
+export function resolveSameMinMaxMapStats(analysisMapStats: AnalysisMapStats) {
+  const stats = _.cloneDeep(analysisMapStats);
+  Object.values(stats).forEach((layerStats: MapLayerStats) => {
+    for (const [level, stat] of Object.entries(layerStats)) {
+      layerStats[level] = resolveSameMinMaxValue(stat);
+    }
+  });
+  return stats;
+}
+
+function isNoneRegionId(regionId: string) {
+  const tokens = regionId.split(REGION_ID_DELIMETER);
+  return tokens.reduce((prev, cur) => prev && (cur === 'None'), true);
+}
+
+export function applyRegionFilter(regionalData: RegionalAggregations, selection: AdminRegionSets) {
+  const result: RegionalAggregations = {
+    country: [],
+    admin1: [],
+    admin2: [],
+    admin3: []
+  };
+  for (const [key, data] of Object.entries(regionalData)) {
+    const isAllSelected = isSelectionEmpty(selection, stringToAdminLevel(key), true);
+    result[key as keyof RegionalAggregations] = (data || []).filter(agg => {
+      const isSelected = isAllSelected || isRegionSelected(selection, agg.id, true);
+      return isSelected && !isNoneRegionId(agg.id);
+    });
   }
   return result;
 }
@@ -117,17 +139,17 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
       values.push(...Object.values(_.omit(v.values, '_baseline')));
     }
     if (values.length) {
-      globalStats[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
+      globalStats[key] = { min: Math.min(...values), max: Math.max(...values) };
     }
   }
   const baseline: MapLayerStats = {};
   const difference: MapLayerStats = {};
   if (baselineProp) {
-    // Stats for the baseline run
+    // Stats for the baseline run for each admin level
     for (const [key, data] of Object.entries(regionData)) {
       const values = (data || []).filter(v => v.values[baselineProp] !== undefined).map(v => v.values[baselineProp]);
       if (values.length) {
-        baseline[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
+        baseline[key] = { min: Math.min(...values), max: Math.max(...values) };
       }
     }
 
@@ -140,7 +162,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
         values.push(...diffs.filter(v => _.isFinite(v)));
       });
       if (values.length) {
-        difference[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
+        difference[key] = { min: Math.min(...values), max: Math.max(...values) };
       }
     }
   }
@@ -203,70 +225,23 @@ export function computeRawDataStats(data: RawOutputDataPoint[][]): AnalysisMapSt
 }
 
 export async function computeMapBoundsForCountries(regionIds: string[]) {
-  //
-  // calculate the map bounds covering the geography covered by the input list of countries
-  //
-  if (regionIds && regionIds.length > 0) {
-    // Parse region ids
-    let items = regionIds.map(regionId => {
-      const names = regionId.split(REGION_ID_DELIMETER);
-      let level = DatacubeGeoAttributeVariableType.Country;
-      switch (names.length) {
-        // FIXME: Currently getGADMSuggestions is not reliable for searching admin1-n region bbox
-        // since it could return multiple results for a admin region name if there are same regions in different countries.
-        // For now just return corresponding country of the given admin region name. Later we could implement api endpoint that does exact match for any admin region name.
-        case 2:
-          level = DatacubeGeoAttributeVariableType.Country;
-          break;
-        case 3:
-          level = DatacubeGeoAttributeVariableType.Country;
-          break;
-        case 4:
-          level = DatacubeGeoAttributeVariableType.Country;
-          break;
-      }
-      // return { name: names[names.length - 1], level };
-      return { name: names[0], level };
-    });
+  if (!regionIds?.length) return null;
+  return await getBboxFromRegionIds(regionIds);
+}
 
-    if (items.length > MAX_NUMBER_BBOX_REGIONS) {
-      items = items.slice(0, MAX_NUMBER_BBOX_REGIONS);
-    }
-
-    const allBBox: any = [];
-    // fetch the bbox for country of the input geography
-    const promises = items.map(item => {
-      const debouncedFetchFunction = getGADMSuggestions(item.level, item.name);
-      return debouncedFetchFunction(); // NOTE: a debounced function may return undefined
-    });
-    const allResults = await Promise.all(promises);
-    allResults.forEach(result => {
-      if (result !== undefined) {
-        allBBox.push(...result.map(item => item.bbox ? item.bbox.coordinates : []));
-      }
-    });
-    // allBBox is an array of bbox values for each country of the input geography
-    //  calculate the union bbox by merging all bbox into a global one
-    if (allBBox.length > 0) {
-      const finalBBox: number[][] = allBBox[0];
-      allBBox.forEach((bbox: number[][]) => {
-        // [[minLon, maxLat], [maxLon, minLat]]:
-        if (bbox[0][0] < finalBBox[0][0]) {
-          finalBBox[0][0] = bbox[0][0];
-        }
-        if (bbox[0][1] > finalBBox[0][1]) {
-          finalBBox[0][1] = bbox[0][1];
-        }
-        if (bbox[1][0] > finalBBox[1][0]) {
-          finalBBox[1][0] = bbox[1][0];
-        }
-        if (bbox[1][1] < finalBBox[1][1]) {
-          finalBBox[1][1] = bbox[1][1];
-        }
-      });
-      // return the final, global, bbox
-      return finalBBox;
-    }
-  }
-  return null;
+export function popupFormatter(
+  feature: { state: any },
+  includeNormalizedValue: boolean
+) {
+  const { label, value, normalizedValue } = feature.state || {};
+  if (!label || value === null || value === undefined) return null;
+  return [
+    label.split('__').pop(),
+    includeNormalizedValue
+      ? `Normalized: ${+normalizedValue.toFixed(2)}`
+      : null,
+    `Value: ${+value.toFixed(2)}`
+  ]
+    .filter(x => x !== null)
+    .join('<br>');
 }

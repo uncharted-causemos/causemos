@@ -3,13 +3,15 @@ const { v4: uuid } = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
 const requestAsPromise = rootRequire('/util/request-as-promise');
-const { sendToPipeline } = rootRequire('services/external/prefect-queue-service');
+const { sendToPipeline, getFlowStatus, getFlowLogs } = rootRequire('services/external/prefect-queue-service');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
 const datacubeService = rootRequire('/services/datacube-service');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
+const config = rootRequire('/config/yargs-wrapper');
+const allowModelRuns = config.allowModelRuns;
 const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
 const QUALIFIER_MAX_COUNT = 10000;
 const QUALIFIER_TIMESERIES_MAX_COUNT = 100;
@@ -27,7 +29,7 @@ const submitModelRun = async(metadata) => {
     parameters,
     is_default_run = false
   } = metadata;
-  const isDevEnvironment = process.env.TD_DATA_URL.includes('10.65.18.69');
+
   const filteredMetadata = {
     model_id,
     model_name,
@@ -54,7 +56,7 @@ const submitModelRun = async(metadata) => {
   Logger.info(`Submitting execution request for id: ${filteredMetadata.id}`);
   let result;
   try {
-    if (!isDevEnvironment) {
+    if (allowModelRuns) {
       result = await requestAsPromise(pipelinePayload);
     }
   } catch (err) {
@@ -79,7 +81,8 @@ const submitModelRun = async(metadata) => {
       status: 'SUBMITTED',
       name: runName
     }, d => d.id);
-    if (isDevEnvironment) {
+    // If we didn't send the run to Dojo, "simulate" it and fail after some time
+    if (!allowModelRuns) {
       setTimeout(async () => {
         await connection.update({
           ...filteredMetadata,
@@ -122,13 +125,25 @@ const startModelOutputPostProcessing = async (metadata) => {
   }
 
   const qualifierMap = {};
+  let weightColumn = '';
   if (modelMetadata.qualifier_outputs) {
     modelMetadata.outputs.forEach(output => {
       qualifierMap[output.name] = modelMetadata.qualifier_outputs
-        .filter(q => !IMPLICIT_QUALIFIERS.includes(q.name))
+        .filter(q => !IMPLICIT_QUALIFIERS.includes(q.name) &&
+          (!q.qualifier_role || q.qualifier_role === 'breakdown'))
         .filter(qualifier => qualifier.related_features.includes(output.name))
         .map(q => q.name);
     });
+    // Data pipeline only supports a single weight column
+    // Use the first weight qualifiers
+    const weightQualifier = modelMetadata.qualifier_outputs.find(q =>
+      !IMPLICIT_QUALIFIERS.includes(q.name) &&
+      q.qualifier_role === 'weight' &&
+      q.related_features.length > 0
+    );
+    if (weightQualifier) {
+      weightColumn = weightQualifier.name;
+    }
   }
 
   // Remove extra fields from Jataware
@@ -164,6 +179,7 @@ const startModelOutputPostProcessing = async (metadata) => {
     doc_ids: docIds,
     data_paths: metadata.data_paths,
     qualifier_map: qualifierMap,
+    weight_column: weightColumn,
     compute_tiles: true,
     qualifier_thresholds: {
       max_count: QUALIFIER_MAX_COUNT,
@@ -214,53 +230,60 @@ const getAllModelRuns = async(filter, includeVersion) => {
 };
 
 /**
- * Get the status of a prefect flow submitted with the endpoint above
+ * Get the logs of a model run. Use the flowId if provided, otherwise
+ * get the flowId from ES using the runId.
  *
  * @param {string} runId - model run id
+ * @param {string} flowId - optional flow id in lieu of run id
  */
-const getJobStatus = async (runId) => {
-  Logger.info(`Get job status for run ${runId}`);
+const getJobLogs = async (runId, flowId = undefined) => {
+  Logger.info(`Get logs for ${flowId ? 'flow id' : 'run id'} ${flowId || runId}`);
 
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  const result = await connection.findOne([{ field: 'id', value: runId }], {});
-  const flowId = _.get(result, 'flow_id');
   if (!flowId) {
-    Logger.error(`No model run found for ${runId}`);
-    return;
+    flowId = await _getFlowIdForRun(runId);
+    if (!flowId) {
+      Logger.error(`No model run found for ${runId}`);
+      return;
+    }
   }
 
-  // TODO: Ideally this information should come from an internal source (ie. Redis) rather than prefect directly
-  const graphQLQuery = `
-    query {
-      flow_run(where: { id: {_eq: "${flowId}"}}) {
-        state
-        start_time
-        end_time
-      }
-    }
-  `;
+  return await getFlowLogs(flowId);
+};
 
-  const pipelinePayload = {
-    method: 'POST',
-    url: process.env.WM_PIPELINE_URL,
-    headers: {
-      'Content-type': 'application/json',
-      'Accept': 'application/json'
-    },
-    json: {
-      query: graphQLQuery
-    }
-  };
+/**
+ * Get the status of a prefect flow submitted with the endpoint above.
+ * Use the flowId if provided, otherwise get the flowId from ES using the runId.
+ *
+ * @param {string} runId - model run id
+ * @param {string} flowId - optional flow id in lieu of run id
+ */
+const getJobStatus = async (runId, flowId = undefined) => {
+  Logger.info(`Get job status for ${flowId ? 'flow id' : 'run id'} ${flowId || runId}`);
 
-  return requestAsPromise(pipelinePayload);
+  if (!flowId) {
+    flowId = await _getFlowIdForRun(runId);
+    if (!flowId) {
+      Logger.error(`No model run found for ${runId}`);
+      return;
+    }
+  }
+
+  return await getFlowStatus(flowId);
+};
+
+const _getFlowIdForRun = async (runId) => {
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  const result = await connection.findOne([{ field: 'id', value: runId }], { includes: ['id', 'flow_id'] });
+  return _.get(result, 'flow_id');
 };
 
 /**
  * Start a datacube ingest prefect flow using the provided ids
  *
  * @param {Indicator} metadata -indicator metadata
+ * @param {boolean} fullReplace -should old existing indicators be deleted
  */
-const startIndicatorPostProcessing = async (metadata) => {
+const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
   Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
   if (!metadata.id) {
     const err = 'Required ids for indicator post processing were not provided';
@@ -273,6 +296,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   processFilteredData(metadata);
   removeUnwantedData(metadata);
   metadata.type = 'indicator';
+  metadata.is_hidden = false;
   // ensure for each newly registered indicator datacube a corresponding domain project
   // @TODO: when indicator publish workflow is added,
   //        the following function would be called at:
@@ -283,7 +307,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     clauses: [
       { field: 'dataId', operand: 'or', isNot: false, values: [metadata.id] },
       { field: 'type', operand: 'or', isNot: false, values: ['indicator'] },
-      { field: 'status', operand: 'or', isNot: false, values: ['READY'] }
+      { field: 'status', operand: 'or', isNot: false, values: ['READY', 'PROCESSING', 'PROCESSING FAILED'] }
     ]
   };
   const existingIndicators = await datacubeService.getDatacubes(filters, {
@@ -295,84 +319,99 @@ const startIndicatorPostProcessing = async (metadata) => {
   if (existingIndicators.length > 0) {
     Logger.warn(`Indicators with data_id ${metadata.id} already exist. Duplicates will not be processed.`);
   }
+  const existingIndicatorIds = existingIndicators.reduce((map, i) => map.set(i.default_feature, i.id), new Map());
 
   const acceptedTypes = ['int', 'float', 'boolean', 'datetime'];
   const resolutions = ['annual', 'monthly', 'dekad', 'weekly', 'daily', 'other'];
   let highestRes = 0;
 
   // Exclude all implicit qualifiers
-  const validQualifiers = metadata.qualifier_outputs.filter(
-    q => !IMPLICIT_QUALIFIERS.includes(q.name));
+  const validQualifiers = metadata.qualifier_outputs?.filter(
+    q => !IMPLICIT_QUALIFIERS.includes(q.name)) ?? [];
+
+  // Exclude non-numeric outputs
+  const numericOutputs = metadata.outputs.filter(output => acceptedTypes.includes(output.type));
+  if (numericOutputs.length < metadata.outputs.length) {
+    Logger.warn(`Filtered out ${metadata.outputs.length - numericOutputs.length} indicators`);
+  }
 
   const qualifierMap = {};
-  for (const output of metadata.outputs) {
-    if (acceptedTypes.includes(output.type)) {
-      qualifierMap[output.name] = validQualifiers
-        .filter(qualifier => qualifier.related_features.includes(output.name))
-        .map(q => q.name);
+  let weightColumn = '';
+  for (const output of numericOutputs) {
+    qualifierMap[output.name] = validQualifiers
+      .filter(qualifier => qualifier.related_features.includes(output.name) &&
+        (!qualifier.qualifier_role || qualifier.qualifier_role === 'breakdown'))
+      .map(q => q.name);
+  }
+  // Data pipeline only supports a single weight column
+  // Use the first weight qualifiers
+  const weightQualifier = validQualifiers.find(q =>
+    q.qualifier_role === 'weight' &&
+    q.related_features.length > 0
+  );
+  if (weightQualifier) {
+    weightColumn = weightQualifier.name;
+  }
+
+  // Create data to send to elasticsearch
+  const indicatorMetadata = numericOutputs.map(output => {
+    // Determine the highest available temporal resolution
+    const outputRes = output.data_resolution && output.data_resolution.temporal_resolution;
+    const resIndex = resolutions.indexOf(outputRes || '');
+    highestRes = Math.max(highestRes, resIndex);
+
+    const clonedMetadata = _.cloneDeep(metadata);
+    clonedMetadata.data_id = metadata.id;
+    clonedMetadata.id = existingIndicatorIds.get(output.name) || uuid(); // use existing id if available
+    clonedMetadata.outputs = [output];
+    clonedMetadata.family_name = metadata.family_name;
+    clonedMetadata.default_feature = output.name;
+    clonedMetadata.type = metadata.type;
+    clonedMetadata.status = 'PROCESSING';
+
+    let qualifierMatches = [];
+    if (metadata.qualifier_outputs) {
+      // Filter out unrelated qualifiers
+      clonedMetadata.qualifier_outputs = _.cloneDeep(metadata.qualifier_outputs.filter(
+        qualifier => qualifier.related_features.includes(output.name)));
+
+      // Combine all concepts from the qualifiers into one list
+      qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
+        qualifier.ontologies.concepts,
+        qualifier.ontologies.processes,
+        qualifier.ontologies.properties
+      ]).flat(2);
+
+      // Remove qualifier level ontologies
+      clonedMetadata.qualifier_outputs.forEach(qualifier => { qualifier.ontologies = undefined; });
     }
-  }
 
-  // Create data now to send to elasticsearch
-  const newIndicatorMetadata = metadata.outputs
-    .filter(output => acceptedTypes.includes(output.type)) // Don't process non-numeric data
-    .filter(output => !existingIndicators.some(item => item.default_feature === output.name))
-    .map(output => {
-      // Determine the highest available temporal resolution
-      const outputRes = output.data_resolution && output.data_resolution.temporal_resolution;
-      const resIndex = resolutions.indexOf(outputRes || '');
-      highestRes = Math.max(highestRes, resIndex);
+    // Append to the concepts from the output
+    const allMatches = qualifierMatches.concat(output.ontologies.concepts,
+      output.ontologies.processes,
+      output.ontologies.properties);
 
-      const clonedMetadata = _.cloneDeep(metadata);
-      clonedMetadata.data_id = metadata.id;
-      clonedMetadata.id = uuid();
-      clonedMetadata.outputs = [output];
-      clonedMetadata.family_name = metadata.family_name;
-      clonedMetadata.default_feature = output.name;
-      clonedMetadata.type = metadata.type;
-      clonedMetadata.status = 'PROCESSING';
+    // Remove output level ontologies
+    output.ontologies = undefined;
 
-      let qualifierMatches = [];
-      if (metadata.qualifier_outputs) {
-        // Filter out unrelated qualifiers
-        clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
-          qualifier => qualifier.related_features.includes(output.name));
+    clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+    return clonedMetadata;
+  });
 
-        // Combine all concepts from the qualifiers into one list
-        qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
-          qualifier.ontologies.concepts,
-          qualifier.ontologies.processes,
-          qualifier.ontologies.properties
-        ]).flat(2);
-      }
+  // replaceDocIds are the existing indicator ids in ES that will be replaced
+  // newDocIds are the new indicator ids
+  const [replaceDocIds, newDocIds] = _.partition(indicatorMetadata, meta => existingIndicatorIds.has(meta.default_feature))
+    .map(metaList => metaList.map(meta => meta.id));
 
-      // Append to the concepts from the output
-      const allMatches = qualifierMatches.concat(output.ontologies.concepts,
-        output.ontologies.processes,
-        output.ontologies.properties);
+  // deleteDocIds are old indicators that weren't present in the new dataset
+  const deleteDocIds = fullReplace
+    ? existingIndicators.map(i => i.id).filter(id => !replaceDocIds.includes(id))
+    : [];
 
-      clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
-      return clonedMetadata;
-    });
+  // When processing a NEW datasets, replaceDocIds should be empty.
+  Logger.info(`${newDocIds.length} new indicators will be added. ${replaceDocIds.length} indicators will be replaced.`);
 
-  const newLength = newIndicatorMetadata.length;
-  if (newLength < metadata.outputs.length) {
-    Logger.warn(`Filtered out ${metadata.outputs.length - newLength} indicators`);
-  }
-
-  // When reprocessing a dataset, existingDocIds will be the existing indicator ids in ES,
-  // there should be no new indicators (newLength === 0).
-  // When processing a new datasets, existingDocIds will be empty.
-  const featureNames = metadata.outputs
-    .filter(output => acceptedTypes.includes(output.type))
-    .map(output => output.name);
-  const existingDocIds = existingIndicators
-    .filter(item => featureNames.includes(item.default_feature))
-    .map(item => item.id);
-
-  Logger.info(`${newLength} new indicators will be added. ${existingDocIds.length} indicators will be updated.`);
-
-  const docIds = existingDocIds.concat(newIndicatorMetadata.map(meta => meta.id));
+  const docIds = indicatorMetadata.map(meta => meta.id);
   const flowParameters = {
     model_id: metadata.id,
     doc_ids: docIds,
@@ -380,6 +419,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     data_paths: metadata.data_paths,
     temporal_resolution: resolutions[highestRes],
     qualifier_map: qualifierMap,
+    weight_column: weightColumn,
     is_indicator: true,
     compute_tiles: true,
     qualifier_thresholds: {
@@ -394,29 +434,31 @@ const startIndicatorPostProcessing = async (metadata) => {
     return { result: { error: err }, code: 500 };
   }
 
-  let response = { result: { message: 'No documents added' }, code: 202 }; // Fallback value
-  if (newLength > 0) {
-    try {
-      const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-      const result = await connection.insert(newIndicatorMetadata, d => d.id);
-      response = {
-        result:
-          {
-            es_response: result,
-            message: 'Documents inserted',
-            new_ids: flowParameters.doc_ids,
-            existing_ids: existingIndicators.map(indicator => indicator.id)
-          },
-        code: existingIndicators.length === 0 ? 201 : 200
-      };
-    } catch (err) {
-      return { result: { error: err }, code: 500 };
+  try {
+    const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+    if (deleteDocIds.length > 0) {
+      Logger.info(`${deleteDocIds.length} old indicators will be removed.`);
+      await connection.delete(deleteDocIds.map(id => ({ id })));
     }
+    const result = await connection.insert(indicatorMetadata, d => d.id);
+    const response = {
+      result:
+        {
+          es_response: result,
+          message: 'Documents inserted',
+          new_ids: newDocIds,
+          existing_ids: replaceDocIds,
+          deleted_ids: deleteDocIds
+        },
+      code: existingIndicators.length === 0 ? 201 : 200
+    };
+    if (deprecatedIds) {
+      await datacubeService.deprecateDatacubes(metadata.id, deprecatedIds);
+    }
+    return response;
+  } catch (err) {
+    return { result: { error: err }, code: 500 };
   }
-  if (deprecatedIds) {
-    await datacubeService.deprecateDatacubes(metadata.id, deprecatedIds);
-  }
-  return response;
 };
 
 /**
@@ -504,6 +546,7 @@ module.exports = {
   markModelRunFailed,
   getAllModelRuns,
   getJobStatus,
+  getJobLogs,
   startIndicatorPostProcessing,
   updateModelRun,
   addModelTag,

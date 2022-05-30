@@ -78,7 +78,8 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
       concept: n.concept,
       parameter: n.parameter,
       label: n.label,
-      components: n.components
+      components: n.components,
+      match_candidates: n.match_candidates
     };
   });
 
@@ -131,12 +132,22 @@ router.put('/:mid/components/', asyncHandler(async (req, res) => {
     }
   }
 
+  // We delete by ids, so in order to log contents we need to fetch the relevant parts
+  let nodePartials = [];
+  let edgePartials = [];
+  if (operation === OPERATION.REMOVE) {
+    const nodeConn = Adapter.get(RESOURCE.NODE_PARAMETER);
+    const edgeConn = Adapter.get(RESOURCE.EDGE_PARAMETER);
+    nodePartials = await nodeConn.find([{ field: 'id', value: nodes.map(d => d.id) }], { size: 10000, includes: ['id', 'concept'] });
+    edgePartials = await edgeConn.find([{ field: 'id', value: edges.map(d => d.id) }], { size: 10000, includes: ['id', 'source', 'target'] });
+  }
+
   // Perform the specified operation, or if it's not a supported operation
   // throw an error
   switch (operation) {
     case OPERATION.REMOVE:
       await cagService.pruneCAG(modelId, edges, nodes, updateType);
-      historyService.logHistory(modelId, updateType, nodes, edges);
+      historyService.logHistory(modelId, updateType, nodePartials, edgePartials);
       break;
     case OPERATION.UPDATE:
       await cagService.updateCAG(modelId, edges, nodes, updateType);
@@ -230,13 +241,16 @@ router.post('/:mid/change-concept', asyncHandler(async (req, res) => {
   const change = req.body;
   const modelId = req.params.mid;
 
-  await cagService.changeConcept(modelId, change);
+  const { newConcept, oldConcept } = await cagService.changeConcept(modelId, change);
   await scenarioService.invalidateByModel(modelId);
 
   await cagService.updateCAGMetadata(modelId, {
     status: MODEL_STATUS.NOT_REGISTERED,
     engine_status: RESET_ALL_ENGINE_STATUS
   });
+
+
+  historyService.logDescription(modelId, 'rename node', `Original=${oldConcept}, New=${newConcept}`);
 
   const editTime = Date.now();
   res.status(200).send({ updateToken: editTime });

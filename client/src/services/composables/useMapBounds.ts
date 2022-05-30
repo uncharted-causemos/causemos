@@ -1,14 +1,17 @@
+import _ from 'lodash';
 import { ref } from '@vue/reactivity';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { RegionalAggregations } from '@/types/Outputdata';
-import { ComputedRef, Ref, watchEffect } from 'vue';
-import { computeMapBoundsForCountries } from '@/utils/map-util-new';
+import { Ref, watchEffect } from 'vue';
+import { getBboxFromRegionIds } from '@/services/geo-service';
 
 export default function useMapBounds(
   regionalData: Ref<RegionalAggregations | null>,
-  selectedAdminLevel: Ref<number>,
-  selectedRegionIds: ComputedRef<string[]>
+  selectedRegionIds: Ref<string[]>
 ) {
+  // FIXME: this can be greatly simplified. useMapBounds is only used in two
+  //  places and it's unclear why mapBounds can be set to two different possible
+  //  values.
   const mapBounds = ref<number[][] | { value: number[][], options: any }>([
     [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
     [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
@@ -19,16 +22,16 @@ export default function useMapBounds(
   };
 
   watchEffect(async () => {
-    if (!regionalData.value || !selectedRegionIds.value) {
-      return;
-    }
-    const regionIds = selectedRegionIds.value.length === 0
-      ? (regionalData.value.country || []).map(item => item.id)
+    if (!regionalData.value) return;
+
+    // If there's no selected regions, use countries to get the bounds
+    const regionIds = !selectedRegionIds.value.length
+      ? (regionalData.value?.country || []).map(item => item.id)
       : selectedRegionIds.value;
     //
     // calculate the initial map bounds covering the model geography
     //
-    const newBounds = await computeMapBoundsForCountries(regionIds);
+    const newBounds = await getBboxFromRegionIds(regionIds);
     if (newBounds !== null) {
       // ask the map to fit the new map bounds
       const options = {

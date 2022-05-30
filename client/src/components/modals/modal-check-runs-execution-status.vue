@@ -17,6 +17,7 @@
           </td>
           <td class="params-header">time requested</td>
           <td class="params-header">execution logs</td>
+          <td class="params-header">processing logs</td>
           <td class="params-header">retry</td>
           <td class="params-header">delete</td>
         </tr>
@@ -51,7 +52,14 @@
             {{ timeSinceExecutionFormatted(run) }}
           </td>
           <td class="params-value">
-            <a :href=dojoExecutionLink(run.run_id)>See Logs</a>
+            <a :href=dojoExecutionLink(run.run_id)>Dojo Logs</a>
+          </td>
+          <td class="params-value">
+            <button
+              type="button"
+              class="btn btn-xs btn-primary"
+              :disabled="!run.flow_id"
+              @click="viewCausemosLogs(run.flow_id)">Causemos Logs</button>
           </td>
           <td class="params-value">
             <i v-if="canRetryDelete(run)" class="fa fa-repeat" @click="retryRun(run.run_id)"/>
@@ -86,7 +94,7 @@ import { ModelRunStatus } from '@/types/Enums';
 import DurationFormatter from '@/formatters/duration-formatter';
 import { ModelRun } from '@/types/ModelRun';
 
-const OmittedColumns = ['run_id', 'created_at', 'status'];
+const OmittedColumns = ['run_id', 'created_at', 'status', 'is_default_run', 'flow_id'];
 
 // TODO: add table header with interactivity to rank/re-order
 
@@ -131,7 +139,9 @@ export default defineComponent({
   }),
   methods: {
     canRetryDelete(run: any) {
-      return run.status === ModelRunStatus.ExecutionFailed || (run.created_at && this.timeSinceExecution(run) > 1000 * 60 * 60 * 48);
+      return run.status === ModelRunStatus.ExecutionFailed ||
+        run.status === ModelRunStatus.ProcessingFailed ||
+        (run.created_at && this.timeSinceExecution(run) > 1000 * 60 * 60 * 48);
     },
     close() {
       this.$emit('close');
@@ -140,7 +150,7 @@ export default defineComponent({
       return `https://phantom.dojo-test.com/runlogs/${runId}`;
     },
     timeSinceExecutionFormatted(run: ModelRun) {
-      return `${DurationFormatter(this.timeSinceExecution(run))} ago`;
+      return `${DurationFormatter(this.timeSinceExecution(run), false)} ago`;
     },
     timeSinceExecution(run: ModelRun) {
       return this.currentTime - run.created_at;
@@ -153,6 +163,14 @@ export default defineComponent({
     },
     retryRun(runId: string) {
       this.$emit('retry', runId);
+    },
+    viewCausemosLogs(flowId: string) {
+      this.$router.push({
+        name: 'prefectFlowLogs',
+        params: {
+          flowId: flowId as string
+        }
+      });
     }
   }
 });
@@ -161,7 +179,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-::v-deep(.modal-container) {
+:deep(.modal-container) {
   max-width: 80vw;
   width: max-content;
   .modal-body {

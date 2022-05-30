@@ -41,7 +41,7 @@
     </div>
 
     <div class="card-body">
-      <div class="card-column card-column-wider">
+      <div class="card-column">
         <div class="column-title">Inputs</div>
         <div
           v-for="input in inputKnobs"
@@ -54,30 +54,38 @@
         <div
           v-for="output in validatedOutputs"
           :key="output.name">
-          {{ output.name }}
+          {{ output.display_name || output.name }}
         </div>
       </div>
       <div class="card-column">
-        <div class="column-title">Scope</div>
-        <!-- placeholder for map or image for regional context -->
-        <div style="backgroundColor: #ddd; height: 100px"></div>
-      </div>
-      <div class="card-column">
-        <div class="column-title">Analyses</div>
+        <div class="column-title">Qualifiers</div>
         <div
-          v-for="analysis in ['analysis x', 'analysis y', 'analysis z']"
-          :key="analysis">
-          {{ analysis }}
+          v-for="qualifier in displayedQualifiers"
+          :key="qualifier.name">
+          {{ qualifier.display_name || qualifier.name }}
         </div>
       </div>
-      <div class="card-column" style="display: flex; flex-direction: column">
-        <div class="column-title">Scenarios</div>
-        <div><b>Scenarios</b></div>
-        <div>55</div>
-        <div><b>Insights</b></div>
-        <div>7</div>
-        <div><b>Comments</b></div>
-        <div>3</div>
+      <div class="card-column">
+        <div class="column-title">Domains</div>
+        <div style="display: flex; align-items: center; flex-wrap: wrap">
+          <select name="domains" id="domains" @change="selectedDomain=AVAILABLE_DOMAINS[$event.target.selectedIndex]">
+            <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
+              {{domain}}
+            </option>
+          </select>
+          <button type="button" class="btn btn-default" style="padding: 2px 4px" @click="addDomain">Add</button>
+        </div>
+        <div v-if="datacubeDomains" style="display: flex; flex-wrap: wrap">
+          <div v-for="domain in datacubeDomains" :key="domain">
+            <span style="margin: 2px; background-color: white;">{{domain}} <i @click="removeDomain(domain)" class="fa fa-remove" /></span>
+          </div>
+        </div>
+      </div>
+      <div class="card-column card-column-thin">
+        <div class="column-title">Preview</div>
+        <div class="timeseries-container">
+          <sparkline :data="timeseries" />
+        </div>
       </div>
     </div>
 
@@ -104,13 +112,13 @@
         v-tooltip.top-center="'Edit the metadata and visualization'"
         type="button"
         class="btn btn-primary btn-call-for-action"
-        :disabled="datacube.status === DatacubeStatus.Deprecated"
         @click="edit(datacube.data_id)"
       >
-        <i class="fa fa-edit" />
-        Edit
+        <i v-if="datacube.status !== DatacubeStatus.Deprecated" class="fa fa-edit" />
+        {{datacube.status === DatacubeStatus.Deprecated ? 'View' : 'Edit'}}
       </button>
       <button
+        v-if="datacube.status !== DatacubeStatus.Deprecated"
         v-tooltip.top-center="'Unpublish the datacube instance'"
         type="button"
         class="remove-button"
@@ -126,18 +134,21 @@
 </template>
 
 <script lang="ts">
-
+import _ from 'lodash';
 import { defineComponent, ref, PropType, toRefs } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
-
+import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { Indicator, Model } from '@/types/Datacube';
+import { FeatureQualifier, Indicator, Model } from '@/types/Datacube';
 import { DatacubeStatus } from '@/types/Enums';
-import { getValidatedOutputs, isIndicator } from '@/utils/datacube-util';
+import { AVAILABLE_DOMAINS, getValidatedOutputs, isIndicator } from '@/utils/datacube-util';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import { isBreakdownQualifier } from '@/utils/qualifier-util';
+import { updateDatacube } from '@/services/new-datacube-service';
+import useToaster from '@/services/composables/useToaster';
 
 /**
  * A card-styled widget to view project summary
@@ -146,9 +157,10 @@ export default defineComponent({
   name: 'DomainDatacubeInstanceCard',
   components: {
     ModalConfirmation,
+    Sparkline,
     MessageDisplay
   },
-  emits: ['unpublish'],
+  emits: ['unpublish', 'update-domains'],
   props: {
     datacube: {
       type: Object as PropType<Model | Indicator>,
@@ -171,11 +183,24 @@ export default defineComponent({
     validatedOutputs(): any[] {
       return getValidatedOutputs(this.datacube.outputs);
     },
+    displayedQualifiers(): FeatureQualifier[] {
+      return this.datacube?.qualifier_outputs?.filter((q: FeatureQualifier) => isBreakdownQualifier(q)) ?? [];
+    },
     newVersionLink(): string | null {
       if (this.datacube.status === DatacubeStatus.Deprecated && this.datacube.new_version_data_id !== undefined) {
         return this.datacube.new_version_data_id;
       }
       return null;
+    },
+    timeseries() {
+      return this.datacube?.sparkline ? [{
+        name: 'datacube',
+        color: '',
+        series: this.datacube.sparkline
+      }] : [];
+    },
+    datacubeDomains() {
+      return this.datacube?.domains ?? [];
     }
   },
   setup(props) {
@@ -183,15 +208,19 @@ export default defineComponent({
 
     const showUnpublishModal = ref(false);
     const showEditInDojoModal = ref(false);
+    const selectedDomain = ref(AVAILABLE_DOMAINS[0]);
 
     const { statusColor, statusLabel } = useDatacubeVersioning(datacube);
+
 
     return {
       showUnpublishModal,
       showEditInDojoModal,
       DatacubeStatus,
       statusColor,
-      statusLabel
+      statusLabel,
+      selectedDomain,
+      AVAILABLE_DOMAINS
     };
   },
   methods: {
@@ -200,6 +229,29 @@ export default defineComponent({
       updateAnalysisItemsPreview: 'dataAnalysis/updateAnalysisItemsPreview'
     }),
     dateFormatter,
+    addDomain() {
+      const newDomains = this.datacubeDomains ? _.cloneDeep(this.datacubeDomains) : [];
+      if (!newDomains.includes(this.selectedDomain)) {
+        newDomains.push(this.selectedDomain);
+        this.saveDomains(newDomains);
+      }
+    },
+    removeDomain(domain: string) {
+      const newDomains = this.datacubeDomains.filter(d => d !== domain);
+      this.saveDomains(newDomains);
+    },
+    async saveDomains(newDomains: string[]) {
+      const delta = {
+        id: this.datacube?.id,
+        domains: newDomains
+      };
+      try {
+        await updateDatacube(delta.id, delta);
+        this.$emit('update-domains', delta.id, delta.domains);
+      } catch {
+        useToaster()('Saving Domains failed', 'error');
+      }
+    },
     unpublish() {
       this.$emit('unpublish', this.datacube);
       this.showUnpublishModal = false;
@@ -290,8 +342,8 @@ export default defineComponent({
   }
 }
 
-.card-column-wider {
-  flex: 3;
+.card-column-thin {
+  flex: 1;
 }
 
 .button-row {
@@ -301,6 +353,12 @@ export default defineComponent({
   button:not(:first-child) {
     margin-left: 5px;
   }
+}
+
+.timeseries-container {
+  background-color: #f1f1f1;
+  width: 110px;
+  height: 50px;
 }
 
 .selected {

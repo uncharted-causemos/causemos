@@ -7,9 +7,6 @@
     :is-large="false"
     @set-active="setActive"
   >
-    <list-analytical-questions-pane
-      v-if="currentTab === 'Analysis Checklist'"
-    />
 
     <cag-scenarios-pane
       v-if="currentTab === 'Scenarios'"
@@ -18,6 +15,7 @@
       @update-scenario='$emit("update-scenario", $event)'
       @delete-scenario='$emit("delete-scenario", $event)'
       @delete-scenario-clamp='$emit("delete-scenario-clamp", $event)'
+      @duplicate-scenario='$emit("duplicate-scenario", $event)'
     />
 
     <cag-analytics-pane
@@ -57,7 +55,6 @@
 import SidePanel from '@/components/side-panel/side-panel.vue';
 import { computed, defineComponent, PropType, ref, watchEffect } from 'vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
-import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
 import CagScenariosPane from '@/components/cag/cag-scenarios-pane.vue';
 import CagAnalyticsPane from '@/components/cag/cag-analytics-pane.vue';
 import { mapGetters, useStore } from 'vuex';
@@ -68,11 +65,11 @@ export default defineComponent({
   components: {
     SidePanel,
     ListContextInsightPane,
-    ListAnalyticalQuestionsPane,
+    // ListAnalyticalQuestionsPane,
     CagScenariosPane,
     CagAnalyticsPane
   },
-  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp', 'download-experiment', 'show-path'],
+  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp', 'download-experiment', 'show-path', 'duplicate-scenario'],
   props: {
     isExperimentDownloadVisible: {
       type: Boolean,
@@ -98,13 +95,11 @@ export default defineComponent({
     const tabsQuantitative = [
       { name: 'Scenarios', icon: 'fa fa-circle-o fa-lg' },
       { name: 'Analytics', icon: 'fa fa-fw fa-flask fa-lg' },
-      { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
       { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' },
       { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' }
     ];
 
     const tabsQualitative = [
-      { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
       { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' },
       { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' }
     ];

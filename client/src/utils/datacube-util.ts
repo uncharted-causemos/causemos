@@ -13,6 +13,13 @@ import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service
 import domainProjectService from '@/services/domain-project-service';
 import { DomainProject } from '@/types/Common';
 import { ModelRun } from '@/types/ModelRun';
+import { RegionAgg, RegionalAggregations } from '@/types/Outputdata';
+import { DATA_LAYER_TRANSPARENCY } from './map-util-new';
+import { BarData } from '@/types/BarChart';
+import { adminLevelToString } from './admin-level-util';
+import { normalize } from './value-util';
+import _ from 'lodash';
+import * as d3 from 'd3';
 
 export const DEFAULT_DATE_RANGE_DELIMETER = '__';
 
@@ -39,13 +46,17 @@ const filterArray = (result: string[], hint: string) => {
  * uses string-types while fields can have heterogeneous types.
 */
 export const CODE_TABLE: FieldMap = {
+  ID: {
+    ...field('id', 'Id'),
+    ...searchable('Id', false)
+  },
   ONTOLOGY_MATCH: {
     ...field('conceptName', 'Concept'),
     ...searchable('Concept', false)
   },
   PERIOD: {
     ...field('period', 'Period'),
-    ...searchable('Period', true)
+    ...searchable('Included Years', true)
   },
   SEARCH: {
     // _search is hidden special datacube field that combines text/keyword field values. It's used for text searching.
@@ -79,6 +90,12 @@ export const SUGGESTION_CODE_TABLE: SuggestionFieldMap = {
     searchMessage: 'Select an administrative area',
     filterFunc: filterArray
   },
+  GEO_GRANULARITY: {
+    ...field('geoGranularity', 'Geo Granularity'),
+    ...searchable('Geo Granularity', false),
+    searchMessage: 'Select a level',
+    filterFunc: filterArray
+  },
   OUTPUT_NAME: {
     ...field('variableName', 'Output Name'),
     ...searchable('Output Name', false),
@@ -97,11 +114,14 @@ export const SUGGESTION_CODE_TABLE: SuggestionFieldMap = {
 };
 
 export const CATEGORY = 'category';
+export const DOMAIN = 'domain';
 export const TAGS = 'tags';
 export const COUNTRY = 'country';
 export const ADMIN1 = 'admin1';
 export const ADMIN2 = 'admin2';
 export const ADMIN3 = 'admin3';
+export const GEO_GRANULARITY = 'geoGranularity';
+export const PERIOD = 'period';
 export const PARAMETERS = 'parameters';
 export const DATASET_NAME = 'name';
 export const VARIABLE_UNIT = 'variableUnit';
@@ -119,50 +139,35 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
   admin2: 'Administrative Area 2',
   admin3: 'Administrative Area 3',
   category: 'Category',
+  domain: 'Domain',
   country: 'Country',
+  geoGranularity: 'Geo Granularity',
+  period: 'Included Years',
   maintainerName: 'Maintainer',
-  maintainerOrg: 'Organization',
+  maintainerOrg: 'Source',
   tags: 'Tags',
   temporalResolution: 'Temporal Resolution',
-  type: 'Datacube Types',
+  type: 'Datacube Type',
   status: 'Datacube Status',
   name: 'Dataset Name',
-  variableUnit: 'Output Units',
+  variableUnit: 'Variable Unit',
   familyName: 'Family Name'
 };
 
 export const FACET_FIELDS: string [] = [
   TYPE,
-  CATEGORY,
-  TAGS,
+  DOMAIN,
   COUNTRY,
-  ADMIN1,
-  ADMIN2,
-  ADMIN3,
-  PARAMETERS,
-  DATASET_NAME,
-  VARIABLE_UNIT,
-  FAMILY_NAME,
+  GEO_GRANULARITY,
+  PERIOD,
   TEMPORAL_RESOLUTION,
-  MAINTAINER_NAME,
   MAINTAINER_ORG,
+  VARIABLE_UNIT,
   STATUS
 ];
 
-export const NODE_FACET_FIELDS: string [] = [
-  TAGS,
-  COUNTRY,
-  ADMIN1,
-  ADMIN2,
-  ADMIN3,
-  PARAMETERS,
-  DATASET_NAME,
-  VARIABLE_UNIT,
-  FAMILY_NAME,
-  TEMPORAL_RESOLUTION,
-  MAINTAINER_NAME,
-  MAINTAINER_ORG,
-  STATUS
+export const NUMERICAL_FACETS: string [] = [
+  PERIOD
 ];
 
 export const getDatacubeStatusInfo = (status: DatacubeStatus) => {
@@ -195,12 +200,12 @@ export const getValidatedOutputs = (outputs: DatacubeFeature[]) => {
   return validOutputs.filter(o => o.is_visible);
 };
 
-export function isModel(datacube: Datacube): datacube is Model {
-  return datacube.type === DatacubeType.Model;
+export function isModel(datacube: Datacube | null): datacube is Model {
+  return datacube !== null && datacube.type === DatacubeType.Model;
 }
 
-export function isIndicator(datacube: Datacube): datacube is Indicator {
-  return datacube.type === DatacubeType.Indicator;
+export function isIndicator(datacube: Datacube | null): datacube is Indicator {
+  return datacube !== null && datacube.type === DatacubeType.Indicator;
 }
 
 export function getOutputs(metadata: Datacube) {
@@ -237,6 +242,36 @@ export function getUnitString(unit: string|null, transform: DataTransform) {
   }
 }
 
+// provide mime types for the image extensions listed below
+// taken from https://github.com/jshttp/mime-db/blob/master/db.json
+export function getImageMime(url: string) {
+  const extension = url.toLowerCase().split('.').pop();
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'jpg':
+    case 'jpeg':
+    case 'jfif':
+    case 'pjpeg':
+    case 'pjp':
+      return 'image/jpeg';
+    case 'gif':
+      return 'image/gif';
+    case 'apng':
+      return 'image/apng';
+    case 'avif':
+      return 'image/avif';
+    case 'svg':
+      return 'image/svg+xml';
+    case 'webp':
+      return 'image/webp';
+    case 'bmp':
+      return 'bmp';
+    default:
+      return undefined;
+  }
+}
+
 // supported pre-rendered datacube images
 export function isImage(url: string) {
   url = url.toLowerCase();
@@ -249,6 +284,11 @@ export function isVideo(url: string) {
   return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') ||
     url.endsWith('.ogv') || url.endsWith('.ogg') || url.endsWith('.m4v') || url.endsWith('.m4p') ||
     url.endsWith('.mpg') || url.endsWith('.mpeg') || url.endsWith('.3gp');
+}
+
+export function isWebContent(url: string) {
+  url = url.toLowerCase();
+  return url.endsWith('.html') || url.endsWith('.htm');
 }
 
 export function getAggregationKey(spatial: AggregationOption, temporal: AggregationOption) {
@@ -273,7 +313,8 @@ export const unpublishDatacube = async (datacubeId: string, projectId: string) =
 export const unpublishDatacubeInstance = async (instance: Model, projectId: string) => {
   // unpublish the datacube instance
   instance.status = DatacubeStatus.Registered;
-  await updateDatacube(instance.id, instance);
+  const delta = { id: instance.id, status: instance.status };
+  await updateDatacube(instance.id, delta);
 
   // also, update the project stats count
   const domainProject: DomainProject = await domainProjectService.getProject(projectId);
@@ -305,13 +346,107 @@ export const getFilteredScenariosFromIds = (scenarioIds: string[], allModelRunDa
   return filteredScenarios;
 };
 
+export const hasRegionLevelData = (regionLevelData: RegionAgg[]|undefined): boolean => {
+  return regionLevelData?.reduce((acc: boolean, region: RegionAgg) => {
+    return acc || Object.keys(region.values).length > 0;
+  }, false) ?? false;
+};
+
+export const AVAILABLE_DOMAINS = [
+  'Logic',
+  'Mathematics',
+  'Astronomy and astrophysics',
+  'Physics',
+  'Chemistry',
+  'Life Sciences',
+  'Earth and Space Sciences',
+  'Agricultural Sciences',
+  'Medical Sciences',
+  'Technological Sciences',
+  'Anthropology',
+  'Demographics',
+  'Economic Sciences',
+  'Geography',
+  'History',
+  'Juridical Sciences and Law',
+  'Linguistics',
+  'Pedagogy',
+  'Political Science',
+  'Psychology',
+  'Science of Arts and Letters',
+  'Sociology',
+  'Ethics',
+  'Philosophy'
+];
+
+export const convertRegionalDataToBarData = (
+  regionalData: RegionalAggregations | null,
+  selectedAdminLevel: number,
+  // regionalData contains a nested list of regions. timeseriesKey is used to
+  //  identify the correct entry in a region's `values` object.
+  timeseriesKey: string,
+  numberOfColorBins: number,
+  colorScheme: string[],
+  selectedDataLayerTransparency: DATA_LAYER_TRANSPARENCY
+): BarData[] => {
+  if (regionalData === null) return [];
+  const adminLevelAsString = adminLevelToString(selectedAdminLevel) as keyof RegionalAggregations;
+  const regionLevelData = regionalData[adminLevelAsString];
+  const hasValues = hasRegionLevelData(regionLevelData);
+  if (regionLevelData === undefined || !hasValues) {
+    return [];
+  }
+  const data = regionLevelData.map(({ id, values }) => {
+    return {
+      name: id,
+      value: values[timeseriesKey] ?? 0
+    };
+  });
+  const extent = d3.extent(data.map(({ value }) => value));
+  const scale = d3
+    .scaleLinear()
+    .domain(extent[0] === undefined ? [0, 0] : extent);
+  const dataExtent = scale.domain();
+  // @REVIEW
+  // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
+  // To receive normalized data, send transform=normalization when fetching regional data
+  return data.map((dataItem, index) => {
+    const normalizedValue = normalize(
+      dataItem.value,
+      dataExtent[0],
+      dataExtent[1]
+    );
+    // Linear binning
+    const colorIndex =
+      Math.trunc(normalizedValue * numberOfColorBins);
+    // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
+    const clampedColorIndex = _.clamp(
+      colorIndex,
+      0,
+      colorScheme.length - 1
+    );
+    const regionColor = colorScheme[clampedColorIndex];
+    return {
+      // adjust the ranking so that the highest value will be ranked 1st
+      // REVIEW: do we need this in the Overlay mode?
+      name: (data.length - index).toString(),
+      label: dataItem.name,
+      value: dataItem.value,
+      normalizedValue: normalizedValue,
+      color: regionColor,
+      opacity: Number(selectedDataLayerTransparency)
+    };
+  });
+};
+
 export default {
   CODE_TABLE,
   SUGGESTION_CODE_TABLE,
   DISPLAY_NAMES,
   FACET_FIELDS,
-  NODE_FACET_FIELDS,
+  NUMERICAL_FACETS,
   getValidatedOutputs,
+  hasRegionLevelData,
   unpublishDatacube,
   unpublishDatacubeInstance
 };

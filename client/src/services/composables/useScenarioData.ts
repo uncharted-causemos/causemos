@@ -1,81 +1,90 @@
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
-import { computed, ref, Ref, watchEffect } from 'vue';
+import { computed, onMounted, onUnmounted, ref, Ref, watchEffect } from 'vue';
 import { getModelRunMetadata } from '@/services/new-datacube-service';
-import { getAggregationKey, isImage, isVideo, TAGS, isCategoricalAxis } from '@/utils/datacube-util';
+import { getAggregationKey, isImage, isVideo, isWebContent, TAGS, isCategoricalAxis } from '@/utils/datacube-util';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
+import { Filters } from '@/types/Filters';
+
+const FETCH_INTERVAL_SECONDS = 20;
 
 /**
  * Takes a datacube data ID and a list of scenario IDs, then fetches and
- * returns the metadata for each scenario in one list.
+ * returns the metadata for each scenario in one list. Checks for updates every
+ * `FETCH_INTERVAL_SECONDS` if `isRefreshingPeriodically`.
  */
 export default function useScenarioData(
   dataId: Ref<string | null>,
-  modelRunsFetchedAt: Ref<number>,
-  searchFilters: Ref<any>,
-  dimensions: Ref<ModelParameter[]>
+  searchFilters: Ref<Filters>,
+  dimensions: Ref<ModelParameter[]>,
+  isRefreshingPeriodically: Ref<boolean>
 ) {
   const runData = ref([]) as Ref<ModelRun[]>;
 
   const allModelRunData = computed(() => runData.value
-    .filter(modelRun => modelRun.status !== ModelRunStatus.Deleted)
+    .filter(modelRun => modelRun.status !== ModelRunStatus.Deleted && modelRun.status !== ModelRunStatus.Test)
     .map(modelRun => { return { ...modelRun, _version: undefined }; }));
 
   const filteredRunData = computed(() => {
     let filteredRuns = allModelRunData.value;
 
-    // apply search filters, if any
-    // parse and apply filters to the model runs data
-    if (_.isEmpty(searchFilters.value) || searchFilters.value.clauses.length === 0) {
+    // parse and apply filters, if any, to the model runs data
+    if (searchFilters.value.clauses.length === 0) {
       // do nothing; since we need to cancel existing filters, if any
-    } else {
-      // a map that indicates whether each param is categorical or not
-      const dimTypeMap: { [key: string]: string } = dimensions.value.reduce(
-        (obj, item) => Object.assign(obj, { [item.name]: isCategoricalAxis(item.name, dimensions.value) }), {});
-      const clauses = searchFilters.value.clauses;
-      clauses.forEach((c: any) => {
-        const filterField: string = c.field; // the field to filter on
-        const filterValues = c.values; // array of values to filter upon
-        const isNot = !c.isNot; // is the filter reversed?
-        filteredRuns = filteredRuns.filter(v => {
-          if (filterField === TAGS) {
-            // special search, e.g. by keyword or tags
-            return v.tags && v.tags.length > 0 && filterValues.some((val: string) => v.tags.includes(val) === isNot);
-          } else {
-            // direct query against parameters or output features
-            const paramsMatchingFilterField = v.parameters.find(p => p.name === filterField);
-            if (paramsMatchingFilterField !== undefined) {
-              // this is a param filter
-              // so we can search this parameters array directly
-              //  depending on the param type, we could have range (e.g., rainful multiplier range) or a set of values (e.g., one or more selected countries)
-              if (!dimTypeMap[filterField]) {
-                const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
-                return paramsMatchingFilterField.value >= filterRange[0] && paramsMatchingFilterField.value <= filterRange[1];
-              } else {
-                return filterValues.includes(paramsMatchingFilterField.value.toString()) === isNot;
-              }
-            } else {
-              // this is an output filter
-              //  we need to search the array of v.output_agg_values
-              // note: this will always be a numeric range
-              // TODO: This needs to depend on the selected aggregation functions
-              const aggKey = getAggregationKey(AggregationOption.Mean, AggregationOption.Mean);
-              const outputValue = v.output_agg_values.find(val => val.name === filterField);
-              const runOutputValue = (outputValue && outputValue[aggKey]) ?? NaN;
-              const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
-              return runOutputValue >= filterRange[0] && runOutputValue <= filterRange[1];
-            }
-          }
-        });
-      });
+      return filteredRuns;
     }
-
+    // a map that indicates whether each param is categorical or not
+    const dimTypeMap: { [key: string]: string } = dimensions.value.reduce(
+      (obj, item) => Object.assign(obj, { [item.name]: isCategoricalAxis(item.name, dimensions.value) }), {});
+    const clauses = searchFilters.value.clauses;
+    clauses.forEach((c: any) => {
+      const filterField: string = c.field; // the field to filter on
+      const filterValues = c.values; // array of values to filter upon
+      const isNot = !c.isNot; // is the filter reversed?
+      filteredRuns = filteredRuns.filter(v => {
+        if (filterField === TAGS) {
+          // special search, e.g. by keyword or tags
+          return v.tags && v.tags.length > 0 && filterValues.some((val: string) => v.tags.includes(val) === isNot);
+        } else {
+          // direct query against parameters or output features
+          const paramsMatchingFilterField = v.parameters.find(p => p.name === filterField);
+          if (paramsMatchingFilterField !== undefined) {
+            // this is a param filter
+            // so we can search this parameters array directly
+            //  depending on the param type, we could have range (e.g., rainful multiplier range) or a set of values (e.g., one or more selected countries)
+            if (!dimTypeMap[filterField]) {
+              const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+              return paramsMatchingFilterField.value >= filterRange[0] && paramsMatchingFilterField.value <= filterRange[1];
+            } else {
+              return filterValues.includes(paramsMatchingFilterField.value.toString()) === isNot;
+            }
+          } else {
+            // this is an output filter
+            //  we need to search the array of v.output_agg_values
+            // note: this will always be a numeric range
+            // TODO: This needs to depend on the selected aggregation functions
+            const aggKey = getAggregationKey(AggregationOption.Mean, AggregationOption.Mean);
+            const outputValue = v.output_agg_values.find(val => val.name === filterField);
+            const runOutputValue = (outputValue && outputValue[aggKey]) ?? NaN;
+            const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+            return runOutputValue >= filterRange[0] && runOutputValue <= filterRange[1];
+          }
+        }
+      });
+    });
     return filteredRuns;
   });
 
+
+  const modelRunsFetchedAt = ref(0);
+  const fetchModelRuns = () => {
+    modelRunsFetchedAt.value = Date.now();
+  };
   watchEffect(onInvalidate => {
-    console.log('refetching scenario-data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
+    // This condition should always return true, it's just used to add
+    //  modelRunsFetchedAt to this watchEffect's dependency array
+    if (modelRunsFetchedAt.value < 0) { return; }
     let isCancelled = false;
     async function fetchRunData() {
       if (dataId.value === null) return;
@@ -153,6 +162,9 @@ export default function useScenarioData(
                 if (isVideo(pregen.file)) {
                   pregen.type = 'video';
                 }
+                if (isWebContent(pregen.file)) {
+                  pregen.type = 'web';
+                }
               }
             });
           }
@@ -167,7 +179,25 @@ export default function useScenarioData(
     fetchRunData();
   });
 
+  // Refetch model runs every FETCH_INTERVAL_SECONDS.
+  // isSuppressingFetches is still respected.
+  let timerHandler: number | null = null;
+  onMounted(() => {
+    timerHandler = window.setInterval(
+      () => {
+        if (isRefreshingPeriodically.value) {
+          fetchModelRuns();
+        }
+      },
+      FETCH_INTERVAL_SECONDS * 1000
+    );
+  });
+  onUnmounted(() => {
+    window.clearInterval(timerHandler as number);
+  });
+
   return {
+    fetchModelRuns,
     filteredRunData,
     allModelRunData
   };

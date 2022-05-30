@@ -58,8 +58,34 @@ yarn start-client
 
 # start server - Defaults to localhost:3000
 yarn start-server
+
+# start server in debug mode
+yarn start-server-debug
 ```
 
+### Additional options
+The application maintains several tasks that runs at regular intervals, these are turned off by default and must be opt-in at server start with the `--schedules` flag. The available options are
+- dart: Synchronization process with DART
+- aligner: Periodically request concept-aligner to refresh it's data
+
+```
+# example 1: both dart and aligner
+yarn start-server --schedules dart,aligner
+
+
+# example 2: only aligner and in debug mode
+ yarn start-server-debug --schedules aligner
+```
+
+Features that require communication with Dojo are disabled by default and must be turned on manually.
+Note that these will impact Dojo's production environment. These should only be enabled for careful testing to avoid creating discrepancies between Dojo and Causemos environments 
+- `dojo-sync`: Send datacube metadata changes to Dojo
+- `allow-model-runs`: Submit model runs for execution
+
+```
+# example 3: allow model execution, don't sync updates
+yarn start-server --allow-model-runs
+```
 
 ### Build
 Bulding and packaging the code.

@@ -21,8 +21,9 @@ const _facetQuery = (filters, fields = []) => {
     } else if (fieldMeta.type === FIELD_TYPES.RANGED) {
       aggregations[field] = aggUtil.rangeAggregation(field);
     } else if (fieldMeta.type === FIELD_TYPES.DATE) {
-      // FIXME: reimplement date range aggregation after figuring out how dates should be faceted in the Front end - June 16th 2020
       aggregations[field] = aggUtil.dateRangeAggregation(field);
+    } else if (fieldMeta.type === FIELD_TYPES.DATE_MILLIS) {
+      aggregations[field] = aggUtil.dateRangeAggregation(field, true);
     } else {
       throw new Error(`Unsupported aggregation for field ${field}`);
     }
@@ -39,7 +40,7 @@ const _facetPostProcess = (fields, facets) => {
   const result = {};
   fields.forEach(field => {
     const fieldMeta = FIELDS[field];
-    if (fieldMeta.type === FIELD_TYPES.DATE) {
+    if (fieldMeta.type === FIELD_TYPES.DATE || fieldMeta.type === FIELD_TYPES.DATE_MILLIS) {
       // handle custom result from date histogram aggregation
       const dateHistogramData = facets[field].buckets;
       const dateKeys = Object.keys(dateHistogramData);
@@ -307,6 +308,16 @@ class Datacube {
     return result;
   }
 
+  /**
+   * Data a list of datacubes by id
+   * @param {array} payloadArray
+   * @param {string} refreshOption - one of 'true', 'false', 'wait_for'
+   */
+  async delete(payloadArray, refreshOption = 'true') {
+    const result = await this._bulk('delete', payloadArray, refreshOption);
+    return result;
+  }
+
   async _search(filters, options) {
     const filterQuery = queryUtil.buildQuery(filters);
     const searchPayload = {
@@ -340,7 +351,7 @@ class Datacube {
 
   /**
    * Bulk ES operation
-   * @param {string} operationType - update|index
+   * @param {string} operationType - update|index|create|delete
    * @param {array} payloadArray - array of documents or partials
    * @param {string} refreshOption - one of 'true', 'false', 'wait_for'
    */
@@ -350,8 +361,10 @@ class Datacube {
       bulk.push({ [operationType]: { _index: this.index, _id: _keyFn(doc) } });
       if (operationType === 'update') {
         bulk.push({ doc: doc });
-      } else {
+      } else if (operationType === 'index' || operationType === 'create') {
         bulk.push(doc);
+      } else {
+        // delete doesn't need a second entry
       }
     });
 

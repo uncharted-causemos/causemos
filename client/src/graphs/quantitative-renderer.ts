@@ -1,12 +1,18 @@
 import * as d3 from 'd3';
 import { NodeParameter, EdgeParameter, NodeScenarioData } from '@/types/CAG';
-import { SELECTED_COLOR } from '@/utils/colors-util';
 import svgUtil from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
+import {
+  decodeWeights,
+  Engine,
+  supportsLevelEdges,
+  supportsPolarityInference
+} from '@/services/model-service';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
-import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
+import { DEFAULT_STYLE } from './cag-style';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 
 const GRAPH_HEIGHT = 55;
 const GRAPH_VERTICAL_MARGIN = 6;
@@ -22,8 +28,16 @@ type ScenarioData = {
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
+
+const SHOCK_PATH = 'M9.9375 5.25H7.21875L8.22656 2.22656C8.32031 1.85156 8.03906 1.5 7.6875 1.5H4.3125C4.03125 1.5 3.77344 1.71094 3.75 1.99219L3 7.61719C2.95312 7.96875 3.21094 8.25 3.5625 8.25H6.32812L5.25 12.8203C5.17969 13.1719 5.4375 13.5 5.78906 13.5C6 13.5 6.1875 13.4062 6.28125 13.2188L10.4062 6.09375C10.6406 5.74219 10.3594 5.25 9.9375 5.25Z';
+const EXCLAMATION_PATH = 'M14.3359 11.8359L8.71094 2.0625C8.28906 1.33594 7.1875 1.3125 6.76562 2.0625L1.14062 11.8359C0.71875 12.5625 1.25781 13.5 2.125 13.5H13.3516C14.2188 13.5 14.7578 12.5859 14.3359 11.8359ZM7.75 9.79688C8.33594 9.79688 8.82812 10.2891 8.82812 10.875C8.82812 11.4844 8.33594 11.9531 7.75 11.9531C7.14062 11.9531 6.67188 11.4844 6.67188 10.875C6.67188 10.2891 7.14062 9.79688 7.75 9.79688ZM6.71875 5.92969C6.69531 5.76562 6.83594 5.625 7 5.625H8.47656C8.64062 5.625 8.78125 5.76562 8.75781 5.92969L8.59375 9.11719C8.57031 9.28125 8.45312 9.375 8.3125 9.375H7.16406C7.02344 9.375 6.90625 9.28125 6.88281 9.11719L6.71875 5.92969Z';
+const ICON_OFFSET_SHOCK = 7;
+const ICON_OFFSET_WARN = 8;
+const WARN = '#f80';
+
 export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, EdgeParameter> {
   scenarioData: ScenarioData = {};
+  engine = Engine.DySE;
 
   constructor(options: any) {
     super(options);
@@ -38,34 +52,46 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
           [node.x + node.width / 2, node.y]
         );
       }
+      if (nodeSelection.classed('selected')) {
+        return;
+      }
+      nodeSelection.selectAll('.node-container, .node-container-outer')
+        .style('stroke', SELECTED_COLOR)
+        .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
     });
 
-    this.on('node-mouse-leave', () => {
+    this.on('node-mouse-leave', (_evtName, __event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
       svgUtil.hideSvgTooltip(this.chart);
+      if (nodeSelection.classed('selected')) {
+        return;
+      }
+      nodeSelection.selectAll('.node-container, .node-container-outer')
+        .style('stroke', DEFAULT_STYLE.node.stroke)
+        .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
+    });
+
+    this.on('node-drag-move', () => {
+      svgUtil.hideSvgTooltip(this.chart);
+      this.renderEdgeAnnotations();
+    });
+
+    this.on('node-drag-end', () => {
+      svgUtil.hideSvgTooltip(this.chart);
+      this.renderEdgeAnnotations();
     });
 
     this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      const mousePoint = d3.pointer(evt, selection.node());
-      const pathNode = selection.select('.edge-path').node();
-      const controlPoint = (svgUtil.closestPointOnPath(pathNode as any, mousePoint) as number[]);
-
-      selection.selectAll('.edge-mouseover-handle').remove();
-      selection.append('g')
-        .classed('edge-mouseover-handle', true)
-        .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]))
-        .append('circle')
-        .attr('r', DEFAULT_STYLE.edge.controlRadius)
-        .style('fill', d => calcEdgeColor(d.data))
-        .style('cursor', 'pointer');
-
-      // make sure mouseover doesn't obscure the more important edge-control
-      if (selection.selectAll('.edge-control').node() !== null) {
-        (selection.node() as HTMLElement).insertBefore(selection.selectAll('.edge-mouseover-handle').node() as any, selection.selectAll('.edge-control').node() as any);
-      }
+      selection.select('.edge-path-bg-outline')
+        .style('stroke', SELECTED_COLOR);
     });
 
     this.on('edge-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      selection.selectAll('.edge-mouseover-handle').remove();
+      if (selection.classed('selected')) {
+        return;
+      }
+
+      selection.select('.edge-path-bg-outline')
+        .style('stroke', null);
     });
   }
 
@@ -73,7 +99,25 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     this.scenarioData = scenarioData;
   }
 
+  setEngine(engine: string) {
+    // FIXME: we should use the stricter Engine type in more places and avoid
+    //  casting this far down the line.
+    this.engine = engine as Engine;
+  }
+
   renderNodesAdded(selection: D3SelectionINode<NodeParameter>) {
+    selection.filter(d => d.data.components.length > 1)
+      .append('rect')
+      .classed('node-container-outer', true)
+      .attr('x', -3)
+      .attr('y', -3)
+      .attr('rx', DEFAULT_STYLE.node.borderRadius + 3)
+      .attr('width', d => d.width + 6)
+      .attr('height', d => d.height + 6)
+      .style('fill', DEFAULT_STYLE.node.fill)
+      .style('stroke', DEFAULT_STYLE.node.stroke)
+      .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
+
     selection.append('rect')
       .classed('node-container', true)
       .attr('x', 0)
@@ -130,6 +174,14 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
   renderEdgesAdded(selection: D3SelectionIEdge<EdgeParameter>) {
     selection
       .append('path')
+      .classed('edge-path-bg-outline', true)
+      .style('fill', DEFAULT_STYLE.edgeBg.fill)
+      .style('stroke', null)
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data) + 7)
+      .attr('d', d => pathFn(d.points as any));
+
+    selection
+      .append('path')
       .classed('edge-path-bg', true)
       .attr('d', d => pathFn(d.points as any))
       .style('fill', DEFAULT_STYLE.edgeBg.fill)
@@ -154,6 +206,8 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
         const target = d.data.target.replace(/\s/g, '');
         return `url(#start-${source}-${target})`;
       });
+
+    this.renderEdgeAnnotations();
   }
 
   renderEdgesUpdated(selection: D3SelectionIEdge<EdgeParameter>) {
@@ -241,58 +295,112 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
     return svg;
   }
 
+  renderEdgeAnnotations() {
+    this.chart.selectAll('.shock-relation').remove();
+    this.chart.selectAll('.warn-relation').remove();
 
-  renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
-    this.chart.selectAll('.edge-control').selectAll('*').remove();
-    const edgeControl = selection.select('.edge-control');
-    edgeControl
-      .append('circle')
-      .attr('r', DEFAULT_STYLE.edge.controlRadius + 2)
-      .style('fill', DEFAULT_STYLE.edgeBg.stroke)
-      .attr('stroke', SELECTED_COLOR)
-      .style('cursor', 'pointer');
+    const allEdgeSelection = this.chart.selectAll('.edge') as D3SelectionIEdge<EdgeParameter>;
 
-    edgeControl
-      .append('circle')
-      .attr('r', DEFAULT_STYLE.edge.controlRadius)
-      .style('fill', d => calcEdgeColor(d.data))
-      .style('cursor', 'pointer');
+    const shockEdgesSelection = allEdgeSelection.filter(e => {
+      const param = e.data.parameter;
+      if (!param) {
+        return false;
+      }
+      if (!supportsLevelEdges(this.engine)) {
+        return false;
+      }
+      if (
+        param.weights &&
+        param.weights.length >= 2 &&
+        param.weights[0] > param.weights[1]
+      ) {
+        return true;
+      }
+      return false;
+    });
 
-    edgeControl
-      .append('text')
-      .attr('x', d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.x;
+    shockEdgesSelection.each((_d, i, groups) => {
+      if (groups[i]) {
+        const s = d3.select(groups[i]);
+        const pathNode = s.select('path').node() as SVGPathElement;
+        const total = pathNode.getTotalLength();
+        const point = pathNode.getPointAtLength(total - (ICON_OFFSET_SHOCK * 3));
+
+        const shockGroup = s.append('g')
+          .classed('shock-relation', true);
+
+        shockGroup.append('circle')
+          .attr('cx', point.x)
+          .attr('cy', point.y)
+          .attr('r', DEFAULT_STYLE.edge.controlRadius)
+          .style('stroke', (d: any) => calcEdgeColor(d.data))
+          .style('stroke-opacity', 0.5)
+          .style('fill', DEFAULT_STYLE.edgeBg.stroke);
+
+        shockGroup.append('path')
+          .attr('d', SHOCK_PATH)
+          .attr('transform', `translate(${point.x - ICON_OFFSET_SHOCK}, ${point.y - ICON_OFFSET_SHOCK})`)
+          .style('fill', (d: any) => calcEdgeColor(d.data));
+      }
+    });
+
+    const warnRelations = allEdgeSelection.filter(e => {
+      const param = e.data.parameter;
+      if (!param) {
+        return false;
+      }
+      const current = decodeWeights(param.weights);
+      if (current.weightType === 'stale') {
+        return false;
+      }
+      const inferred = decodeWeights(param.engine_weights[this.engine]);
+
+      // If inferred and current have different types
+      if (
+        supportsLevelEdges(this.engine) &&
+        inferred.weightType !== current.weightType
+      ) {
+        return true;
+      }
+
+      if (Math.abs(inferred.weightValue - current.weightValue) > 0.5) {
+        return true;
+      }
+
+      // If inferred and current have different polarity, Delphi only
+      const polarity = e.data.polarity || 0;
+      if (supportsPolarityInference(this.engine)) {
+        const w = param.engine_weights[this.engine];
+        if (w[2] && w[2] * polarity < 0) {
+          return true;
         }
-        return 0;
-      })
-      .attr('y', d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.y;
-        }
-        return 0;
-      })
-      .style('background-color', 'red')
-      .style('font-family', 'FontAwesome')
-      .style('font-size', d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.fontSize;
-        }
-        return '';
-      })
-      .style('stroke', 'none')
-      .style('fill', 'white')
-      .style('cursor', 'pointer')
-      .text(d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.text;
-        }
-        return '';
-      });
+      }
+      return false;
+    });
+
+    warnRelations.each((_d, i, groups) => {
+      if (groups[i]) {
+        const s = d3.select(groups[i]);
+        const pathNode = s.select('path').node() as SVGPathElement;
+        const total = pathNode.getTotalLength();
+        const point = pathNode.getPointAtLength(total * 0.5);
+
+        const warnGroup = s.append('g')
+          .classed('warn-relation', true);
+
+        warnGroup.append('circle')
+          .attr('cx', point.x)
+          .attr('cy', point.y)
+          .attr('r', DEFAULT_STYLE.edge.controlRadius + 1)
+          .style('stroke', WARN)
+          .style('fill', DEFAULT_STYLE.edgeBg.stroke);
+
+        warnGroup.append('path')
+          .attr('d', EXCLAMATION_PATH)
+          .attr('transform', `translate(${point.x - ICON_OFFSET_WARN + 0.5}, ${point.y - ICON_OFFSET_WARN})`)
+          .style('fill', WARN);
+      }
+    });
   }
 
   // FIXME: Typescript

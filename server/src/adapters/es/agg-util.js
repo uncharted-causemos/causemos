@@ -44,11 +44,12 @@ class AggUtil {
   /**
    * Aggregate dates into year buckets
    * @param {string} field - field to aggregate by
+   * @param {boolean} isEpochMillis - true if the underlying type in ES is epoch_millis
    *
    * Note: we are unsure of how to make use of date aggregations yet in Causemos
    * and would require further refinement depending on how we'd like to aggregate the statement by dates - June 15th 2020
    */
-  dateRangeAggregation(facetField) {
+  dateRangeAggregation(facetField, isEpochMillis = false) {
     const { range } = this.configFields[facetField];
     const fields = this.configFields[facetField].aggFields || this.configFields[facetField].fields;
     const subAggregation = {};
@@ -60,12 +61,14 @@ class AggUtil {
       fields.forEach(f => {
         const resultRange = {};
         if (startYear !== '--') {
-          const startDate = moment.utc([startYear]).format('YYYY-MM-DD'); // first day of the year
-          resultRange.gte = startDate;
+          // first day of the year
+          const startDate = moment.utc([startYear]);
+          resultRange.gte = isEpochMillis ? startDate.valueOf() : startDate.format('YYYY-MM-DD');
         }
         if (endYear !== '--') {
-          const endDate = moment.utc([endYear]).subtract(1, 'days').format('YYYY-MM-DD'); // last day of the previous year
-          resultRange.lte = endDate;
+          // last day of the previous year
+          const endDate = moment.utc([endYear]).subtract(1, 'days');
+          resultRange.lte = isEpochMillis ? endDate.valueOf() : endDate.format('YYYY-MM-DD');
         }
         dateAggs.push({
           range: {

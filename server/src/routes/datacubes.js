@@ -10,7 +10,7 @@ const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
  * Insert a new model or indicator metadata doc
  */
 router.post('/', asyncHandler(async (req, res) => {
-  await respondUsingCode(req, res, datacubeService.insertDatacube);
+  await respondUsingCode(res, datacubeService.insertDatacube, [req.body]);
 }));
 
 /**
@@ -35,11 +35,54 @@ router.put('/:datacubeId/deprecate', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Get status of a submitted job
+ */
+router.get('/:indicatorId/status', asyncHandler(async (req, res) => {
+  const indicatorId = req.params.indicatorId;
+  const flowId = req.query.flow_id;
+
+  try {
+    const result = await datacubeService.getJobStatus(indicatorId, flowId);
+    res.status(200).json(result || {});
+  } catch (err) {
+    console.log(err);
+    res.status(500).send('Internal request returned: ' + err.message);
+  }
+}));
+
+/**
+ * Get processing logs of a submitted job
+ */
+router.get('/:indicatorId/logs', asyncHandler(async (req, res) => {
+  const indicatorId = req.params.indicatorId;
+  const flowId = req.query.flow_id;
+
+  try {
+    const result = await datacubeService.getJobLogs(indicatorId, flowId);
+    res.status(200).json(result || {});
+  } catch (err) {
+    console.log(err);
+    res.status(500).send('Internal request returned: ' + err.message);
+  }
+}));
+
+/**
+ * POST Bulk update multiple indicators
+ *
+ * NOTE: THIS WILL NOT SEND CHANGES TO DOJO
+ */
+router.post('/bulk-update-indicator', asyncHandler(async (req, res) => {
+  const deltas = req.body.deltas;
+  const result = await datacubeService.updateDatacubes(deltas, false);
+  res.json(result);
+}));
+
+/**
  * POST Bulk update multiple datacubes
  */
-router.post('/bulk-update', asyncHandler(async (req, res) => {
-  const deltas = req.body.deltas;
-  const result = await datacubeService.updateDatacubes(deltas);
+router.post('/add-sparklines', asyncHandler(async (req, res) => {
+  const datacubes = req.body.datacubes;
+  const result = await datacubeService.generateSparklines(datacubes);
   res.json(result);
 }));
 

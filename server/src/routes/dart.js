@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const multer = require('multer');
@@ -44,10 +45,14 @@ router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) =
   } else if (project.corpus_id === 'august_embed_new-america_v2') {
     metadata.tenants = ['new-america'];
   } else {
-    throw new Error(`Unable to recognize corpus ${project.corpus_id}`);
+    metadata.tenants = [project.tenant_id];
   }
 
-  console.log(metadata);
+  Logger.info(JSON.stringify(metadata));
+
+  if (_.isEmpty(metadata.tenants)) {
+    throw new Error(`Unable to find tenants for ${project.corpus_id}`);
+  }
 
   Logger.info(`Extending project: ${projectId}`);
   const results = [];

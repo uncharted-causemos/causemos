@@ -22,6 +22,12 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
+    <div
+      v-if="message !== null"
+      class="message"
+    >
+      {{ message }}
+    </div>
     <reference-options-list
       v-if="showReferences"
       :reference-options="referenceOptions"
@@ -77,7 +83,7 @@
       />
       <collapsible-item
         v-if="allowCollapsing && rowsWithoutData.length"
-        :override="true">
+        :override="{value: true}">
         <template #title>{{rowsWithoutData.length}} more without data</template>
         <template #content>
           <aggregation-checklist-item
@@ -287,8 +293,8 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
         // B should be sorted after A
         return -1;
       }
-      // Don't change their order
-      return 0;
+      // Sort by name
+      return nodeA.name > nodeB.name ? 1 : -1;
     });
   }
   newStatefulData.children.forEach(node => {
@@ -366,6 +372,10 @@ export default defineComponent({
     referenceOptions: {
       type: Array as PropType<ModelRunReference[]>,
       default: []
+    },
+    message: {
+      type: String as PropType<string | null>,
+      default: null
     }
   },
   emits: [
@@ -720,5 +730,11 @@ h5 {
   & *:only-child {
     margin-left: auto;
   }
+}
+
+.message {
+  background: $background-light-2;
+  color: $text-color-dark;
+  padding: 5px;
 }
 </style>

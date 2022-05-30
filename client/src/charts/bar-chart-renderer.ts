@@ -5,6 +5,7 @@ import { BarData } from '@/types/BarChart';
 import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { getHoverIdFromValue } from '@/utils/chart-util';
+import _ from 'lodash';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -16,7 +17,7 @@ const MAX_BAR_COUNT_BEFORE_TICK_ROTATION = 40;
 
 const TOOLTIP_BG_COLOUR = 'white';
 const TOOLTIP_BORDER_COLOUR = 'grey';
-const TOOLTIP_WIDTH = 200;
+const MIN_TOOLTIP_WIDTH = 300;
 const TOOLTIP_BORDER_WIDTH = 1.5;
 const TOOLTIP_FONT_SIZE = 10;
 const TOOLTIP_PADDING = TOOLTIP_FONT_SIZE / 2;
@@ -44,8 +45,10 @@ function renderBarChart(
   //
   const allBars = barsData.map(bar => bar.name);
   const allBarsValues = barsData.map(bar => bar.value);
+  const minBarValue = _.min(allBarsValues) ?? 0;
   const xExtent = allBars;
-  const yExtent = [0, Math.ceil(d3.max(allBarsValues) ?? 0)];
+  // ensure that axis starts at 0 if necessary
+  const yExtent = [minBarValue > 0 ? 0 : minBarValue, _.max(allBarsValues) ?? 0];
   if (xExtent[0] === undefined || yExtent[0] === undefined) {
     console.error('Unable to derive extent from data', barsData);
     return;
@@ -57,7 +60,8 @@ function renderBarChart(
   const yScale = d3
     .scaleLinear()
     .domain(yExtent)
-    .range([height - X_AXIS_HEIGHT, PADDING_TOP]);
+    .range([height - X_AXIS_HEIGHT, PADDING_TOP])
+    .nice(); // 😃
 
   const valueFormatter = chartValueFormatter(...yExtent);
   renderAxes(
@@ -130,6 +134,11 @@ function renderHoverTooltips(
     }
     const isRightOfCenter = barX > ((maxX - minX) / 2);
 
+    const maxNameLen = 80; // max number of chars before truncating the text of each bar name
+    const barName = bar.label.length > maxNameLen ? bar.label.substring(0, maxNameLen) + '...' : bar.label;
+    const adaptiveWidth = Math.max(MIN_TOOLTIP_WIDTH, TOOLTIP_FONT_SIZE * barName.length);
+
+
     const markerAndTooltip = selection
       .append('g')
       .attr(
@@ -156,7 +165,7 @@ function renderHoverTooltips(
     const notchSideLength = Math.sqrt(offset * offset + offset * offset);
     let tooltipX = -1;
     if (isRightOfCenter) {
-      tooltipX = -offset - TOOLTIP_WIDTH;
+      tooltipX = -offset - adaptiveWidth;
       // ensure that tooltip does not go before chart left bound
       if ((tooltipX + barX) < 0) {
         tooltipX += Math.abs(tooltipX + barX);
@@ -164,8 +173,8 @@ function renderHoverTooltips(
     } else {
       tooltipX = offset + SELECTED_BAR_WIDTH;
       // ensure that tooltip does not go before chart right bound
-      if ((tooltipX + TOOLTIP_WIDTH) > width) {
-        tooltipX = width - TOOLTIP_WIDTH;
+      if ((tooltipX + adaptiveWidth) > width) {
+        tooltipX = width - adaptiveWidth;
       }
     }
     const tooltip = markerAndTooltip.append('g')
@@ -176,7 +185,7 @@ function renderHoverTooltips(
     const tooltipContentY = barY + PADDING_TOP;
     tooltip
       .append('rect')
-      .attr('width', TOOLTIP_WIDTH)
+      .attr('width', adaptiveWidth)
       .attr('height', tooltipRectHeight)
       .attr('y', barY - PADDING_TOP)
       .attr('fill', TOOLTIP_BG_COLOUR)
@@ -189,7 +198,7 @@ function renderHoverTooltips(
       .attr(
         'transform',
         isRightOfCenter
-          ? translate(TOOLTIP_WIDTH - offset - TOOLTIP_BORDER_WIDTH, tooltipContentY) + 'rotate(-45)'
+          ? translate(adaptiveWidth - offset - TOOLTIP_BORDER_WIDTH, tooltipContentY) + 'rotate(-45)'
           : translate(-TOOLTIP_BORDER_WIDTH - offset, tooltipContentY) + 'rotate(-45)'
       )
       .attr('fill', TOOLTIP_BORDER_COLOUR);
@@ -203,7 +212,7 @@ function renderHoverTooltips(
       .attr(
         'transform',
         isRightOfCenter
-          ? translate(TOOLTIP_WIDTH - 3 * offset, tooltipContentY) + 'rotate(-45)'
+          ? translate(adaptiveWidth - 3 * offset, tooltipContentY) + 'rotate(-45)'
           : translate(-offset, tooltipContentY) + 'rotate(-45)'
       )
       .attr('fill', TOOLTIP_BG_COLOUR);
@@ -211,8 +220,7 @@ function renderHoverTooltips(
     // Render the bar name/value in the tooltip
     //
     const yPosition = tooltipContentY;
-    const maxNameLen = 20; // max number of chars before truncating the text of each bar name
-    const barName = bar.label.length > maxNameLen ? bar.label.substring(0, maxNameLen) + '...' : bar.label;
+
     tooltip
       .append('text')
       .attr('transform', translate(TOOLTIP_PADDING, yPosition))
@@ -221,7 +229,7 @@ function renderHoverTooltips(
       .text(barName);
     tooltip
       .append('text')
-      .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, yPosition))
+      .attr('transform', translate(adaptiveWidth - TOOLTIP_PADDING, yPosition))
       .style('text-anchor', 'end')
       .style('fill', 'blue')
       .text(valueFormatter(bar.value));
@@ -237,7 +245,7 @@ function renderHoverTooltips(
       .text('Ranking');
     tooltip
       .append('text')
-      .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, yPosition2))
+      .attr('transform', translate(adaptiveWidth - TOOLTIP_PADDING, yPosition2))
       .style('text-anchor', 'end')
       .style('fill', 'blue')
       .text(bar.name);

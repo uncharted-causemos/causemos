@@ -19,6 +19,7 @@
       <div style="height:180px">
         <map-points
           :map-data="mapData"
+          :map-bounds="mapBounds"
           :formatterFn="mapFormatter"
         />
       </div>
@@ -236,6 +237,7 @@ import numberFormatter from '@/formatters/number-formatter';
 import useToaster from '@/services/composables/useToaster';
 
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
+import geo from '@/utils/geo-util';
 import { Statement, Evidence, DocumentContext } from '@/types/Statement';
 import { AggChild } from '@/utils/aggregations-util';
 
@@ -433,6 +435,10 @@ export default defineComponent({
         });
       }
       return result;
+    },
+    mapBounds() {
+      const coords: [number, number][] = this.mapData.features.map(feat => feat.geometry.coordinates);
+      return geo.expand(geo.bbox(coords));
     },
     polarity() {
       return this.selectedRelationship.polarity;

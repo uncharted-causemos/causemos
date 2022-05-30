@@ -38,7 +38,7 @@
     </template>
     <template #footer>
       <div class="row estimated-runtime">
-        Estimated execution time: {{ potentialScenarios.length * 2 }} {{ metadata.name.toLowerCase().includes('wash') ? 'hours' : 'minutes' }}
+        Estimated execution time: {{ estimatedRuntime }}.
       </div>
       <ul class="unstyled-list">
         <button
@@ -60,15 +60,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import Modal from '@/components/modals/modal.vue';
-import { ScenarioData } from '@/types/Common';
+import { BoxPlotStats, ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
-import { mapGetters } from 'vuex';
 import { getOutputs, isGeoParameter } from '@/utils/datacube-util';
 import datacubeService from '@/services/new-datacube-service';
 import useToaster from '@/services/composables/useToaster';
+import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import DurationFormatter from '@/formatters/duration-formatter';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -91,24 +92,37 @@ export default defineComponent({
     selectedDimensions: {
       type: Array as PropType<DimensionInfo[]>,
       default: null
+    },
+    runtimeStats: {
+      type: Object as PropType<BoxPlotStats>,
+      default: undefined
     }
   },
   computed: {
     inputParameters(): Array<ModelParameter> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
     },
-    ...mapGetters({
-      datacubeCurrentOutputsMap: 'app/datacubeCurrentOutputsMap'
-    }),
-    currentOutputIndex(): number {
-      return this.metadata.id !== undefined ? this.datacubeCurrentOutputsMap[this.metadata.id] : 0;
+    estimatedRuntime(): string {
+      return DurationFormatter(
+        (this.runtimeStats?.mean ?? NaN) * // average processing time
+        this.potentialRuns.length * // multiply by the number of runs being requested
+        2) || 'unknown'; // add on time for Dojo execution and queue time
     }
   },
   data: () => ({
     potentialRuns: [] as Array<ScenarioData>
   }),
-  setup() {
+  setup(props) {
+    const { metadata } = toRefs(props);
+
+    const itemId = computed(() => metadata.value.data_id);
+
+    // since model runs are shared between all model instances including their duplicate versions,
+    // then it is enough to use the data_id as the itemId that uniquely identify this model
+    const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
+
     return {
+      currentOutputIndex,
       toaster: useToaster()
     };
   },
@@ -162,7 +176,8 @@ export default defineComponent({
         const paramArray: any[] = [];
         Object.keys(modelRun).forEach(key => {
           // exclude output variable values since they will be undefined for potential runs
-          if (key !== outputs[this.currentOutputIndex].name) {
+          // also, exclude the status field since it will be populated by the server
+          if (key !== outputs[this.currentOutputIndex].name && key !== 'status') {
             paramArray.push({
               name: key,
               value: modelRun[key]
@@ -209,7 +224,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-::v-deep(.modal-container) {
+:deep(.modal-container) {
   width: max-content;
   max-width: 80vw;
   .modal-body {

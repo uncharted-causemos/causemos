@@ -11,9 +11,7 @@ const modelUtil = rootRequire('/util/model-util');
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
 const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;
 
-const HISTORY_START_DATE = '2015-01-01';
-const HISTORY_END_DATE = '2020-12-01';
-const PROJECTION_START_DATE = '2021-01-01';
+const PROJECTION_START_DATE = '2022-01-01';
 const DEFAULT_NUM_STEPS = 12;
 
 
@@ -194,8 +192,6 @@ const createCAG = async (modelFields, edges, nodes) => {
   const CAGId = uuid();
   Logger.info('Creating CAG entry: ' + CAGId);
 
-  const defaultTimeSeriesStart = moment.utc(HISTORY_START_DATE).valueOf();
-  const defaultTimeSeriesEnd = moment.utc(HISTORY_END_DATE).valueOf();
   const defaultProjectionStartDate = moment.utc(PROJECTION_START_DATE).valueOf();
 
   const CAGConnection = Adapter.get(RESOURCE.CAG);
@@ -203,6 +199,10 @@ const createCAG = async (modelFields, edges, nodes) => {
     return doc.id;
   };
   const now = Date.now();
+  // time_scale is defined if we're duplicating an existing CAG, or undefined
+  //  if this is a new CAG. If it's the latter, time_scale will be set when the
+  //  CAG is first loaded in the application.
+  const { time_scale, geography, history_range } = modelFields.parameter ?? {};
   const results = await CAGConnection.insert({
     id: CAGId,
     ...modelFields,
@@ -210,14 +210,12 @@ const createCAG = async (modelFields, edges, nodes) => {
     status: MODEL_STATUS.NOT_REGISTERED,
     engine_status: RESET_ALL_ENGINE_STATUS,
     parameter: {
-      indicator_time_series_range: {
-        start: defaultTimeSeriesStart,
-        end: defaultTimeSeriesEnd
-      },
       num_steps: DEFAULT_NUM_STEPS,
       projection_start: defaultProjectionStartDate,
       engine: 'dyse',
-      time_scale: undefined // Will be set when CAG first load in the application
+      time_scale,
+      geography,
+      history_range
     },
     created_at: now,
     modified_at: now
@@ -577,12 +575,26 @@ const checkStaleCAGs = async (projectId, updatedStatementIds) => {
 const recalculateCAG = async (modelId) => {
   const cagAdapter = Adapter.get(RESOURCE.CAG);
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+  const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
   const cag = await _getModel(modelId);
 
   const statementAdapter = Adapter.get(RESOURCE.STATEMENT, cag.project_id);
   const edges = await edgeParameterAdapter.find([
     { field: 'model_id', value: modelId }
   ], { size: SEARCH_LIMIT });
+
+  const nodes = await nodeParameterAdapter.find([
+    { field: 'model_id', value: modelId }
+  ], {
+    size: SEARCH_LIMIT,
+    includes: ['id', 'concept', 'components']
+  });
+
+  const nodeMap = {};
+  for (let i = 0; i < nodes.length; i++) {
+    nodeMap[nodes[i].concept] = nodes[i];
+  }
+
 
   Logger.info(`Recalculate model ${modelId} with ${edges.length} edges and ${_.sumBy(edges, e => e.reference_ids.length)} statements`);
 
@@ -596,11 +608,17 @@ const recalculateCAG = async (modelId) => {
   // same composition with respect to the edge's source/target
   for (let i = 0; i < edges.length; i++) {
     const e = edges[i];
+    const subjComponents = nodeMap[e.source].components;
+    const objComponents = nodeMap[e.target].components;
     const referenceIds = e.reference_ids;
+
+    console.log(subjComponents, objComponents);
 
     // Filter out changed and discarded edges
     promises.push(statementAdapter.find({
       clauses: [
+        { field: 'subjConcept', values: subjComponents, isNot: false, operand: 'OR' },
+        { field: 'objConcept', values: objComponents, isNot: false, operand: 'OR' },
         { field: 'id', values: referenceIds }
       ]
     }, { size: SEARCH_LIMIT, includes: ['id', 'wm.statement_polarity'] }));
@@ -612,6 +630,7 @@ const recalculateCAG = async (modelId) => {
   // Resolve expected edge composition versus the actual edge composition
   for (let i = 0; i < edges.length; i++) {
     const e = edges[i];
+
     const validStatements = edgeResults[i];
     const referenceIds = e.reference_ids;
     // Get polarities from backing statements
@@ -741,6 +760,7 @@ const changeConcept = async (modelId, change) => {
   if (!node) {
     throw new Error(`Node ${nodeId} not found`);
   }
+  const oldConcept = node.concept;
 
   // Find edges
   const sourceEdges = await edgeAdapter.find([
@@ -797,6 +817,8 @@ const changeConcept = async (modelId, change) => {
   if (scenariosToUpdate.length > 0) {
     await scenarioAdapter.update(scenariosToUpdate, d => d.id);
   }
+
+  return { newConcept, oldConcept };
 };
 
 module.exports = {

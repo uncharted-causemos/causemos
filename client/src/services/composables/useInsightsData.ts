@@ -1,23 +1,53 @@
 import { ProjectType } from '@/types/Enums';
-import { Insight } from '@/types/Insight';
+import { Insight, InsightImage, FullInsight } from '@/types/Insight';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
-import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
+import { fetchInsights, fetchPartialInsights, InsightFilterFields } from '@/services/insight-service';
 import _ from 'lodash';
 
-export default function useInsightsData() {
-  const insights = ref([]) as Ref<Insight[]>;
+export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowList?: string[], isContextInsightPanelOpen = false) {
+  const insightMap = ref<Map<string, Insight>>(new Map<string, Insight>());
+  const insightImageMap = ref<Map<string, InsightImage>>(new Map<string, InsightImage>());
+
+  const insights = computed<Insight[]>(() => Array.from(insightMap.value.values()));
 
   const insightsFetchedAt = ref(0);
 
-  const getInsightsByIDs = (insightIDs: string[]) => {
-    const result: Insight[] = [];
-    insightIDs.forEach(insightId => {
-      const ins = insights.value.find(i => i.id === insightId);
-      if (ins) {
-        result.push(ins);
+  /**
+   * Fetches images for previously fetched insights that match the provided IDs.
+   * If an insight with a given ID hasn't been fetched using this composable the image
+   * will not be fetched.
+   * Caching is utilised so that existing images aren't downloaded again.
+   * The cache is cleared when a new set of insights is fetched using this composable.
+   * @param insightIDs
+   */
+  const fetchImagesForInsights = async (insightIDs: string[]): Promise<FullInsight[]> => {
+    const result: FullInsight[] = [];
+    const idsToFetch: string[] = [];
+    // use existing images if available
+    for (const id of insightIDs) {
+      const insight = insightMap.value.get(id);
+      const image = insightImageMap.value.get(id);
+      if (insight) {
+        if (image) {
+          result.push({ ...insight, ...image });
+        } else {
+          idsToFetch.push(id);
+        }
       }
-    });
+    }
+
+    // fetch any images we don't have and store for later
+    if (idsToFetch.length > 0) {
+      const images: InsightImage[] = await fetchPartialInsights({ id: idsToFetch }, ['id', 'thumbnail']);
+      for (const img of images) {
+        const insight = insightMap.value.get(img.id);
+        if (insight && img) {
+          result.push({ ...insight, ...img });
+          insightImageMap.value.set(img.id, img);
+        }
+      }
+    }
     return result;
   };
 
@@ -27,29 +57,43 @@ export default function useInsightsData() {
   const projectType = computed(() => store.getters['app/projectType']);
 
   const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
-  const isContextInsightPanelOpen = computed(() => store.getters['contextInsightPanel/isPanelOpen']);
+  const isSidePanelOpen = computed(() => store.getters['panel/isPanelOpen']);
 
-  const shouldRefetchInsights = computed(() => store.getters['contextInsightPanel/shouldRefetchInsights']);
+  const shouldRefetchInsights = computed(() => store.getters['insightPanel/shouldRefetchInsights']);
 
   const reFetchInsights = () => {
     insightsFetchedAt.value = Date.now();
-    store.dispatch('contextInsightPanel/setRefetchInsights', true);
   };
 
+  watchEffect(() => {
+    if (shouldRefetchInsights.value) {
+      reFetchInsights();
+    }
+  });
+
   watchEffect(onInvalidate => {
-    console.log('refetching insights at: ' + new Date(insightsFetchedAt.value).toTimeString());
+    if (preventFetch?.value) {
+      return;
+    }
+    // This condition should always return true, it's just used to add
+    //  insightsFetchedAt to this watchEffect's dependency array
+    if (insightsFetchedAt.value < 0) { return; }
     let isCancelled = false;
     async function getInsights() {
-      if (shouldRefetchInsights.value === false) {
-        // do not fetch if the panel is not open
-        if (!(isInsightExplorerOpen.value === true || isContextInsightPanelOpen.value === true)) {
-          return;
-        }
+      // do not fetch if the panel is not open
+      const areInsightsVisible = isInsightExplorerOpen.value ||
+        isContextInsightPanelOpen ||
+        isSidePanelOpen.value;
+      // FIXME: this logic doesn't make sense, why would we only want to return
+      //  early if both of these conditions are false? Seems like it should be
+      //  an "or" rather than an "and".
+      // shouldRefetchInsights is only set to false by this function
+      if (!shouldRefetchInsights.value && !areInsightsVisible) {
+        return;
       }
 
       // if context-id is undefined, then it means no datacubes/CAGs are listed, so ignore fetch
       if (contextIds.value === undefined) {
-        store.dispatch('contextInsightPanel/setRefetchInsights', false);
         return;
       }
 
@@ -76,7 +120,14 @@ export default function useInsightsData() {
       }
       // Note that when 'ignoreContextId' is true, this means we are fetching insights for the insight explorer within an analysis project
       // For this case, public insights should not be listed
-      const publicInsights = ignoreContextId ? [] : await fetchInsights([publicInsightsSearchFields]);
+      let publicInsights = [];
+      if (!ignoreContextId) {
+        if (!fieldAllowList || fieldAllowList.length === 0) {
+          publicInsights = await fetchInsights(publicInsightsSearchFields);
+        } else {
+          publicInsights = await fetchPartialInsights(publicInsightsSearchFields, fieldAllowList);
+        }
+      }
 
       //
       // fetch project-specific insights
@@ -90,18 +141,23 @@ export default function useInsightsData() {
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
         contextInsightsSearchFields.context_id = contextIds.value; // note passing potentially an array of context to match against
       }
-      const contextInsights = await fetchInsights([contextInsightsSearchFields]);
+      let contextInsights;
+      if (!fieldAllowList || fieldAllowList.length === 0) {
+        contextInsights = await fetchInsights(contextInsightsSearchFields);
+      } else {
+        contextInsights = await fetchPartialInsights(contextInsightsSearchFields, fieldAllowList);
+      }
 
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.
         return;
       }
-      insights.value = _.uniqBy([...publicInsights, ...contextInsights], 'id');
-      store.dispatch('contextInsightPanel/setCountContextInsights', insights.value.length);
-      store.dispatch('insightPanel/setCountInsights', insights.value.length);
-
-      store.dispatch('contextInsightPanel/setRefetchInsights', false);
+      const deduped = _.uniqBy([...publicInsights, ...contextInsights], 'id');
+      insightMap.value = new Map<string, Insight>(deduped.map(i => [i.id as string, i]));
+      insightImageMap.value.clear(); // remove all stores images to force re-fetch
+      store.dispatch('insightPanel/setCountInsights', deduped.length);
+      store.dispatch('insightPanel/setShouldRefetchInsights', false);
     }
     onInvalidate(() => {
       isCancelled = true;
@@ -111,7 +167,7 @@ export default function useInsightsData() {
 
   return {
     insights,
-    getInsightsByIDs,
-    reFetchInsights
+    reFetchInsights,
+    fetchImagesForInsights
   };
 }

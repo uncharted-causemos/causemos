@@ -9,21 +9,25 @@
       </template>
     </analytical-questions-and-insights-panel>
     <main class="insight-capture">
-      <action-bar />
+      <div class="action-bar-container">
+        <action-bar style="flex: 1" />
+        <div class="shown-datacubes-count">{{shownDatacubesCountLabel}}</div>
+      </div>
+
       <!-- overlay view content -->
       <datacube-comparative-timeline-sync
         v-if="globalTimeseries.length > 0 && comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay"
         :timeseriesData="globalTimeseries"
         :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
-        :selected-timestamp="selectedTimestamp"
+        :selected-timestamp="globalTimestamp"
         :selected-timestamp-range="selectedTimestampRange"
-        @select-timestamp="setSelectedTimestamp"
+        @select-timestamp="setSelectedGlobalTimestamp"
         @select-timestamp-range="handleTimestampRangeSelection"
       />
       <!-- region ranking view content -->
       <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking">
         <div style="display: flex">
-          <h5 class="ranking-header-top">Ranking Results</h5>
+          <h5 class="ranking-header-top">Ranking Results <i style="cursor: pointer" @click="downloadRankingResult" class="fa fa-fw fa-download"></i></h5>
           <i
             :onClick="() => activeDrilldownTab = (activeDrilldownTab === null ? 'region-settings' : null)"
             class="fa fa-gear region-ranking-settings-button"
@@ -31,7 +35,10 @@
           />
         </div>
         <datacube-region-ranking-composite-card
+          v-if="selectedAnalysisItems.length > 0"
           :bars-data="globalBarsData"
+          :max-number-of-chart-bars="maxNumberOfChartBars"
+          :limit-number-of-chart-bars="limitNumberOfChartBars"
           :selected-admin-level="selectedAdminLevel"
           :selected-timestamp="globalRegionRankingTimestamp"
           :selected-color-scheme="finalColorScheme"
@@ -40,8 +47,9 @@
           @bar-chart-hover="onBarChartHover"
           @map-click-region="onMapClickRegion"
         />
-        <div style="display: flex">
-          <h5 class="ranking-header-bottom">Ranking Criteria:</h5>
+        <div class="ranking-header-bottom" v-if="selectedAnalysisItems.length > 0">
+          <h5>Ranking Criteria:</h5>
+          <div>Composition Type: <b>{{regionRankingCompositionType}}</b></div>
           <div class="checkbox">
             <label
               @click="showNormalizedData=!showNormalizedData"
@@ -59,15 +67,16 @@
         listing individual datacube cards
       -->
       <div
-        v-if="analysisItems.length"
+        v-if="selectedAnalysisItems.length"
         class="column">
         <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.List">
           <datacube-comparative-card
-            v-for="(item, indx) in analysisItems"
+            v-for="(item, indx) in selectedAnalysisItems"
             :key="item.datacubeId"
             class="datacube-comparative-card"
             :id="item.id"
             :datacube-id="item.datacubeId"
+            :item-id="item.itemId"
             :datacube-index="indx"
             :selected-timestamp="selectedTimestamp"
             :selected-timestamp-range="selectedTimestampRange"
@@ -78,11 +87,11 @@
         <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay">
           <div class="card-maps-container">
             <div
-              v-for="(item, indx) in analysisItems"
+              v-for="(item, indx) in selectedAnalysisItems"
               :key="item.datacubeId"
               class="card-map-container"
               :class="[
-                `card-count-${analysisItems.length < 5 ? analysisItems.length : 'n'}`
+                `card-count-${selectedAnalysisItems.length < 5 ? selectedAnalysisItems.length : 'n'}`
               ]"
             >
               <datacube-comparative-overlay-region
@@ -90,31 +99,37 @@
                 class="card-map"
                 :id="item.id"
                 :datacube-id="item.datacubeId"
+                :item-id="item.itemId"
                 :datacube-index="indx"
-                :selected-timestamp="selectedTimestamp"
+                :selected-timestamp="globalTimestamp"
                 :selected-timestamp-range="selectedTimestampRange"
                 @loaded-timeseries="onLoadedTimeseries"
-                @select-timestamp="setSelectedTimestamp"
               />
             </div>
           </div>
         </template>
         <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking">
           <datacube-region-ranking-card
-            v-for="item in analysisItems"
+            v-for="item in selectedAnalysisItems"
             :key="item.datacubeId"
             class="datacube-region-ranking-card"
             :id="item.id"
             :datacube-id="item.datacubeId"
+            :item-id="item.itemId"
             :selected-admin-level="selectedAdminLevel"
             :number-of-color-bins="numberOfColorBins"
+            :ranking-weight="getDatacubeRankingWeight(item)"
             :selected-color-scheme="finalColorScheme"
             :region-ranking-binning-type="regionRankingBinningType"
             :bar-chart-hover-id="barChartHoverId"
             :show-normalized-data="showNormalizedData"
+            :is-data-inverted="isDatacubeInverted(item)"
+            :max-number-of-chart-bars="maxNumberOfChartBars"
+            :limit-number-of-chart-bars="limitNumberOfChartBars"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
             @map-click-region="onMapClickRegion"
+            @invert-data-updated="onToggleRegionRankingDataInversion"
           />
         </template>
       </div>
@@ -156,7 +171,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, defineComponent, nextTick, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
 import DatacubeComparativeOverlayRegion from '@/components/widgets/datacube-comparative-overlay-region.vue';
@@ -168,7 +183,7 @@ import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import DatacubeRegionRankingCompositeCard from '@/components/widgets/datacube-region-ranking-composite-card.vue';
 import _ from 'lodash';
-import { DataState, Insight, ViewState } from '@/types/Insight';
+import { ComparativeAnalysisDataState, DatacubeTitle, Insight, ViewState } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
 import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
@@ -183,11 +198,9 @@ import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
 import { AnalysisItem } from '@/types/Analysis';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
-
-// TODO:
-//
-// respect which runs are selected for each datacube and if multiple runs show a dropdown. Also, add a legend for the runs
-// review how the region limits are applied to each datacube vs to the resulting datacube
+import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import { isComparativeAnalysisDataState } from '@/utils/insight-util';
+import { v4 as uuidv4 } from 'uuid';
 
 const DRILLDOWN_TABS = [
   {
@@ -216,6 +229,7 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
+    const selectedAnalysisItems = ref<AnalysisItem[]>([]);
     const comparativeAnalysisViewSelection = computed<string>(() => store.getters['dataAnalysis/comparativeAnalysisViewSelection']);
     const quantitativeAnalysisId = computed(
       () => store.getters['dataAnalysis/analysisId']
@@ -226,46 +240,22 @@ export default defineComponent({
 
     const showNormalizedData = ref(false);
     const regionRankingWeights = ref<{[key: string]: {name: string; weight: number}}>({});
+    const regionRankingDataInversion = ref<{[key: string]: boolean}>({});
 
     const globalBbox = ref<number[][] | undefined>(undefined);
 
-    onMounted(async () => {
-      store.dispatch('app/setAnalysisName', '');
-      const result = await getAnalysis(quantitativeAnalysisId.value);
-      store.dispatch('app/setAnalysisName', result.title);
-    });
-
-    watch(
-      () => analysisItems.value,
-      analysisItems => {
-        if (analysisItems && analysisItems.length > 0) {
-          // set context-ids to fetch insights correctly for all datacubes in this analysis
-          const contextIDs = analysisItems.map((dc: any) => dc.id);
-          store.dispatch('insightPanel/setContextId', contextIDs);
-
-          // set initial equal weights (must be executed only one time on init)
-          const regionRankingEqualCompositionWeight = 1 / (analysisItems.length) * 100;
-          const regionRankingWeightsMap = _.cloneDeep(regionRankingWeights.value);
-          Object.keys(regionRankingWeightsMap).forEach(key => {
-            regionRankingWeightsMap[key] = {
-              name: '', // we don't have datacube names at this point. Upon loading each region-ranking-card, the name will be overriden in onUpdatedBarsData()
-              weight: regionRankingEqualCompositionWeight
-            };
-          });
-          regionRankingWeights.value = regionRankingWeightsMap;
-        } else {
-          // no datacubes in this analysis, so do not fetch any insights/questions
-          store.dispatch('insightPanel/setContextId', undefined);
-        }
-      },
-      { immediate: true }
-    );
-
-    const allTimeseriesMap: {[key: string]: Timeseries[]} = {};
-    const allDatacubesMetadataMap: {[key: string]: {datacubeName: string; datacubeOutputName: string; source: string; region: string[]}} = {};
+    const allTimeseriesMap = ref<{[key: string]: Timeseries[]}>({});
+    const allDatacubesMetadataMap = ref<{
+      [key: string]: {
+        datacubeName: string;
+        datacubeOutputName: string;
+        source: string;
+        region: string[];
+      }
+    }>({});
     const globalTimeseries = ref([]) as Ref<Timeseries[]>;
     const reCalculateGlobalTimeseries = ref(true);
-    const timeseriesToDatacubeMap: {[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }} = {};
+    const timeseriesToDatacubeMap = ref<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>({});
 
     const allRegionalRankingMap = ref<{[key: string]: BarData[]}>({});
     const globalBarsData = ref([]) as Ref<BarData[]>;
@@ -274,23 +264,114 @@ export default defineComponent({
     const selectedTimestamp = ref(null) as Ref<number | null>;
     const selectedTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
 
-    const initialSelectedTimestamp = ref(0);
+    const globalTimestamp = ref(null) as Ref<number | null>;
+    const initialSelectedTimestamp = ref(null) as Ref<number | null>;
     const initialSelectedTimestampRange = ref({}) as Ref<{start: number; end: number}>;
+
+    onMounted(async () => {
+      store.dispatch('app/setAnalysisName', '');
+      const result = await getAnalysis(quantitativeAnalysisId.value);
+      if (result) {
+        store.dispatch('app/setAnalysisName', result.title);
+      }
+    });
+
+    watch(
+      () => analysisItems.value,
+      analysisItems => {
+        if (analysisItems && analysisItems.length > 0) {
+          // set context-ids to fetch insights correctly for all datacubes
+          //  (even the non-selected ones) in this analysis
+          const contextIDs = analysisItems.map(dc => dc.id); // FIXME is it id or datacubeId or itemId?
+          store.dispatch('insightPanel/setContextId', contextIDs);
+
+          // assign initial selection state if possible (to gracefully handle existing analyses)
+          const allAnalysisItems = _.cloneDeep(analysisItems);
+          let shouldUpdateServerData = false;
+          allAnalysisItems.forEach(item => {
+            if (item.selected === undefined) {
+              // ensure that some (valid initial) boolean value is added for each item
+              const currSelectionCount = allAnalysisItems.filter(i => i.selected).length;
+              item.selected = currSelectionCount < MAX_ANALYSIS_DATACUBES_COUNT;
+              shouldUpdateServerData = true;
+            }
+            // handle old analyses created without having uuid for each of their items
+            if (item.itemId === undefined) {
+              item.itemId = uuidv4();
+              shouldUpdateServerData = true;
+            }
+          });
+          const selectedItems = allAnalysisItems.filter(item => item.selected);
+          if (selectedItems.length > MAX_ANALYSIS_DATACUBES_COUNT) {
+            // we need to de-select some of the items
+            const deletedItems = selectedItems.splice(MAX_ANALYSIS_DATACUBES_COUNT);
+            deletedItems.forEach(item => { item.selected = false; });
+            shouldUpdateServerData = true;
+          }
+          if (shouldUpdateServerData) {
+            // update the selection status on the server
+            store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
+          }
+
+          selectedAnalysisItems.value = [];
+          nextTick(() => {
+            selectedAnalysisItems.value = selectedItems;
+          });
+        } else {
+          // no datacubes in this analysis, so do not fetch any insights/questions
+          store.dispatch('insightPanel/setContextId', undefined);
+          // reset the selectedAnalysisItems array to trigger UI update
+          selectedAnalysisItems.value = [];
+        }
+        // clear overlay global timeseries
+        globalTimeseries.value = [];
+        allTimeseriesMap.value = {};
+        timeseriesToDatacubeMap.value = {};
+        reCalculateGlobalTimeseries.value = true;
+        // clear region ranking results
+        globalBarsData.value = [];
+        regionRankingWeights.value = {};
+        allRegionalRankingMap.value = {};
+      },
+      { immediate: true }
+    );
+
+    watch(
+      () => selectedAnalysisItems.value,
+      selectedAnalysisItems => {
+        if (selectedAnalysisItems && selectedAnalysisItems.length > 0) {
+          // set initial equal weights (must be executed only one time on init)
+          const regionRankingEqualCompositionWeight = 1 / (selectedAnalysisItems.length) * 100;
+          const regionRankingWeightsMap = _.cloneDeep(regionRankingWeights.value);
+          Object.keys(regionRankingWeightsMap).forEach(key => {
+            regionRankingWeightsMap[key] = {
+              name: '', // we don't have datacube names at this point. Upon loading each region-ranking-card, the name will be overriden in onUpdatedBarsData()
+              weight: regionRankingEqualCompositionWeight
+            };
+          });
+          regionRankingWeights.value = regionRankingWeightsMap;
+        }
+      },
+      { immediate: true }
+    );
+
+    const shownDatacubesCountLabel = computed(() => {
+      return 'Selected ' + selectedAnalysisItems.value.length + ' / ' + analysisItems.value.length + ' datacubes';
+    });
 
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) return;
       selectedTimestamp.value = value;
     };
 
-    const handleTimestampRangeSelection = (newTimestampRange: {start: number; end: number}) => {
-      // we should pass the incoming (global) range to all datacube-comparative-card components
-      //  so that they may zoom accordingly
-      if (comparativeAnalysisViewSelection.value !== ComparativeAnalysisMode.Overlay) {
-        // if "Overvlay" is disabled do nothing
-        return;
-      }
-      if (selectedTimestampRange.value?.start === newTimestampRange.start &&
-        selectedTimestampRange.value?.end === newTimestampRange.end) {
+    const setSelectedGlobalTimestamp = (value: number) => {
+      if (globalTimestamp.value === value) return;
+      globalTimestamp.value = value;
+    };
+
+    const handleTimestampRangeSelection = (newTimestampRange: {start: number; end: number} | null) => {
+      if (selectedTimestampRange.value?.start === newTimestampRange?.start &&
+        selectedTimestampRange.value?.end === newTimestampRange?.end) {
         return;
       }
       selectedTimestampRange.value = newTimestampRange;
@@ -299,12 +380,14 @@ export default defineComponent({
     watch(
       () => [
         comparativeAnalysisViewSelection.value,
-        initialSelectedTimestamp.value,
         initialSelectedTimestampRange.value
       ],
       () => {
-        setSelectedTimestamp(initialSelectedTimestamp.value);
-        handleTimestampRangeSelection(initialSelectedTimestampRange.value);
+        if (comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay) {
+          handleTimestampRangeSelection(initialSelectedTimestampRange.value);
+        } else { // reset the active selected range non-overlay views
+          handleTimestampRangeSelection(null);
+        }
       }
     );
 
@@ -393,27 +476,34 @@ export default defineComponent({
       }
     );
 
-    watch(
-      () => [
-        regionRankingWeights.value
-      ],
-      () => {
-        const dataState: DataState = {
-          regionRankingWeights: regionRankingWeights.value
-        };
-        store.dispatch('insightPanel/setDataState', dataState);
-      }
-    );
-
     const updateStateFromInsight = async (insight_id: string) => {
       const loadedInsight: Insight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
       //  consider pushing current state to the url to support browser hsitory
       //  in case the user wants to navigate to the original state using back button
       if (loadedInsight) {
-        // data state
-        if (loadedInsight.data_state?.regionRankingWeights !== undefined) {
-          regionRankingWeights.value = loadedInsight.data_state?.regionRankingWeights;
+        const dataState = loadedInsight.data_state;
+        if (dataState && isComparativeAnalysisDataState(dataState)) {
+          regionRankingWeights.value = dataState.regionRankingWeights;
+
+          const allAnalysisItems = _.cloneDeep(analysisItems.value);
+          const selectedItems = dataState.selectedAnalysisItems;
+          allAnalysisItems.forEach(item => {
+            item.selected = selectedItems.findIndex(sItem => sItem.itemId === item.itemId) >= 0;
+          });
+          store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
+
+          regionRankingDataInversion.value =
+            dataState.regionRankingDataInversion;
+
+          if (
+            dataState.selectedTimestamp !== null &&
+            loadedInsight.view_state
+              ?.regionRankingSelectedComparativeAnalysisMode ===
+              ComparativeAnalysisMode.Overlay
+          ) {
+            initialSelectedTimestamp.value = dataState.selectedTimestamp;
+          }
         }
         // view state
         if (loadedInsight.view_state?.regionRankingSelectedAdminLevel !== undefined) {
@@ -446,8 +536,25 @@ export default defineComponent({
       }
     };
 
+    const datacubeTitles = ref<DatacubeTitle[]>([]);
+
+    watchEffect(() => {
+      const newDataState: ComparativeAnalysisDataState = {
+        regionRankingWeights: regionRankingWeights.value,
+        regionRankingDataInversion: regionRankingDataInversion.value,
+        // Only save the selected timestamp when overlap mode is active
+        selectedTimestamp:
+          comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay
+            ? globalTimestamp.value
+            : null,
+        selectedAnalysisItems: selectedAnalysisItems.value,
+        datacubeTitles: datacubeTitles.value
+      };
+      store.dispatch('insightPanel/setDataState', newDataState);
+    });
+
     return {
-      analysisItems,
+      selectedAnalysisItems,
       allTimeseriesMap,
       allDatacubesMetadataMap,
       globalTimeseries,
@@ -455,6 +562,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       handleTimestampRangeSelection,
+      globalTimestamp,
+      setSelectedGlobalTimestamp,
       selectedTimestampRange,
       reCalculateGlobalTimeseries,
       initialSelectedTimestamp,
@@ -487,7 +596,10 @@ export default defineComponent({
       regionRankingWeights,
       showNormalizedData,
       timeseriesToDatacubeMap,
-      colorFromIndex
+      colorFromIndex,
+      regionRankingDataInversion,
+      shownDatacubesCountLabel,
+      datacubeTitles
     };
   },
   mounted() {
@@ -533,12 +645,23 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setDataState: 'insightPanel/setDataState'
+      hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
+    getDatacubeRankingWeight(analysisItem: AnalysisItem) {
+      const datacubeKey = analysisItem.itemId;
+      if (this.regionRankingWeights[datacubeKey]) {
+        const weight = this.regionRankingWeights[datacubeKey].weight;
+        return weight.toFixed(2);
+      }
+      return '0';
+    },
+    isDatacubeInverted(analysisItem: AnalysisItem) {
+      const datacubeKey = analysisItem.itemId;
+      return this.regionRankingDataInversion[datacubeKey];
+    },
     setRegionRankingEqualWeight() {
       // reset to equal weights
-      const regionRankingEqualCompositionWeight = 1 / (this.analysisItems.length) * 100;
+      const regionRankingEqualCompositionWeight = 1 / (this.selectedAnalysisItems.length) * 100;
       const regionRankingWeightsMap = _.cloneDeep(this.regionRankingWeights);
       Object.keys(regionRankingWeightsMap).forEach(key => {
         regionRankingWeightsMap[key] = {
@@ -560,9 +683,18 @@ export default defineComponent({
         this.updateGlobalRegionRankingData();
       }
     },
-    onUpdatedBarsData(regionRankingInfo: {id: string; datacubeId: string; name: string; barsData: BarData[]; selectedTimestamp: number}) {
+    onToggleRegionRankingDataInversion(regionRankingInfo: {id: string; datacubeId: string; itemId: string;}) {
+      const regionRankingDataInversionUpdated = _.cloneDeep(this.regionRankingDataInversion);
+      const datacubeKey = regionRankingInfo.itemId;
+      if (regionRankingDataInversionUpdated[datacubeKey] === undefined) {
+        regionRankingDataInversionUpdated[datacubeKey] = false;
+      }
+      regionRankingDataInversionUpdated[datacubeKey] = !regionRankingDataInversionUpdated[datacubeKey];
+      this.regionRankingDataInversion = regionRankingDataInversionUpdated;
+    },
+    onUpdatedBarsData(regionRankingInfo: {id: string; datacubeId: string; itemId: string; name: string; barsData: BarData[]; selectedTimestamp: number}) {
       // clone and save the incoming regional-ranking data in the global map object
-      const datacubeKey = regionRankingInfo.id + regionRankingInfo.datacubeId;
+      const datacubeKey = regionRankingInfo.itemId;
       this.allRegionalRankingMap[datacubeKey] = _.cloneDeep(regionRankingInfo.barsData);
 
       // save the most recent timestamp from all datacubes as the global one
@@ -572,7 +704,7 @@ export default defineComponent({
 
       // update the name in weights map
       const regionRankingWeightsMap = _.cloneDeep(this.regionRankingWeights);
-      const regionRankingEqualCompositionWeight = 1 / (this.analysisItems.length) * 100;
+      const regionRankingEqualCompositionWeight = 1 / (this.selectedAnalysisItems.length) * 100;
       regionRankingWeightsMap[datacubeKey] = {
         name: regionRankingInfo.name,
         weight: regionRankingWeightsMap[datacubeKey] !== undefined ? regionRankingWeightsMap[datacubeKey].weight : regionRankingEqualCompositionWeight // do not change the weight
@@ -620,7 +752,7 @@ export default defineComponent({
         const equalWeights = Array(regionValues.length).fill(1 / (regionValues.length)); // sometimes not all datacubes are loaded and thus the map size may not match the regions
         const compositeValue = dotProduct(regionValues, weights.length === regionValues.length ? weights : equalWeights);
         const scaledCompositeValue = compositeValue * this.numberOfColorBins;
-        const shouldAddRegionBar = this.regionRankingCompositionType === RegionRankingCompositionType.Union || (this.regionRankingCompositionType === RegionRankingCompositionType.Intersection && regionValues.length === this.analysisItems.length);
+        const shouldAddRegionBar = this.regionRankingCompositionType === RegionRankingCompositionType.Union || (this.regionRankingCompositionType === RegionRankingCompositionType.Intersection && regionValues.length === this.selectedAnalysisItems.length);
         if (shouldAddRegionBar) {
           numBars++;
           compositeData.push({
@@ -656,17 +788,22 @@ export default defineComponent({
       compositeDataSorted.forEach((barItem, indx) => {
         barItem.name = (compositeDataSorted.length - indx).toString();
       });
-      // limit the number of bars to the selected maximum
-      this.globalBarsData = this.limitNumberOfChartBars ? compositeDataSorted.slice(-this.maxNumberOfChartBars) : compositeDataSorted;
+      this.globalBarsData = compositeDataSorted;
     },
-    onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; source: string; region: string[]}) {
+    onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; itemId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; source: string; region: string[]}) {
       // we should only set the global timeseries one time
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
 
+      // if the incoming timeseries should no longer be considered for the computation of the global timeseries
+      //  because, for example, the corresponding datacube is no longer selected, then do not process it
+      if (this.selectedAnalysisItems.findIndex((item: any) => item.id === timeseriesInfo.id && item.datacubeId === timeseriesInfo.datacubeId) < 0) {
+        return;
+      }
+
       // clone and save the incoming timeseries in the map object
       //  where all timeseries lists will be saved
-      const datacubeKey = timeseriesInfo.id + timeseriesInfo.datacubeId;
+      const datacubeKey = timeseriesInfo.itemId;
       this.allTimeseriesMap[datacubeKey] = _.cloneDeep(timeseriesInfo.timeseriesList);
 
       this.allDatacubesMetadataMap[datacubeKey] = {
@@ -678,7 +815,7 @@ export default defineComponent({
       //
       // calculate (the global timeseries)
       //
-      if (this.analysisItems.length === Object.keys(this.allTimeseriesMap).length) {
+      if (this.selectedAnalysisItems.length === Object.keys(this.allTimeseriesMap).length) {
         this.reCalculateGlobalTimeseries = false;
         //
         // all time series data for all datacubes have been loaded
@@ -728,24 +865,24 @@ export default defineComponent({
           const lastTimestamp = _.max(allTimestamps);
           if (lastTimestamp !== undefined) {
             // set initial timestamp selection
-            // this.setSelectedTimestamp(lastTimestamp);
-            this.initialSelectedTimestamp = lastTimestamp;
+            if (this.initialSelectedTimestamp === null) {
+              this.globalTimestamp = lastTimestamp;
+            } else {
+              this.globalTimestamp = this.initialSelectedTimestamp;
+              this.initialSelectedTimestamp = null;
+            }
           }
           // select the timestamp range as the full data extend
           const firstTimestamp = _.min(allTimestamps);
           if (lastTimestamp !== undefined && firstTimestamp !== undefined) {
             // set initial timestamp selection range
             const newTimestampRange = { start: firstTimestamp, end: lastTimestamp };
-            // this.handleTimestampRangeSelection(newTimestampRange);
             this.initialSelectedTimestampRange = newTimestampRange;
           }
         }
 
-        //
         // use the loaded metadata for all analysis-items
-        //  and update the data-state object in the store for future insight capture
-        //
-        const datacubeTitles: any = [];
+        const datacubeTitles: DatacubeTitle[] = [];
         const regions: string[] = [];
         Object.keys(this.allDatacubesMetadataMap).forEach(key => {
           const title = {
@@ -756,15 +893,31 @@ export default defineComponent({
           // for each datacube, save its name and output-name
           datacubeTitles.push(title);
           // also, save a list of all regions (into a big list for all datacubes)
-          const datacubeRegions = this.allDatacubesMetadataMap[key].region && _.isArray(this.allDatacubesMetadataMap[key].region) ? this.allDatacubesMetadataMap[key].region : [];
+          const datacubeRegions =
+            this.allDatacubesMetadataMap[key].region &&
+            _.isArray(this.allDatacubesMetadataMap[key].region)
+              ? this.allDatacubesMetadataMap[key].region
+              : [];
           regions.push(...datacubeRegions);
         });
-        const dataState: DataState = {
-          datacubeTitles: datacubeTitles,
-          datacubeRegions: _.unionBy(_.sortBy(regions)) // FIXME: rank repeated countries from all datacubes and show top 5
-        };
-        this.setDataState(dataState);
+        this.datacubeTitles = datacubeTitles;
       }
+    },
+    downloadRankingResult() {
+      const heading = 'rank,normalized value,region';
+      const content = this.globalBarsData.map(d => {
+        return `${d.name},${d.normalizedValue},${d.label.replace(/,/g, ' ')}`;
+      }).reverse().join('\r\n');
+
+      const weights = Object.values(this.regionRankingWeights);
+      const weightContent = weights.map(d => {
+        return `${d.name.replace(/,/g, ' ')},${d.weight}`;
+      }).join('\r\n');
+
+      const file = new Blob(['Ranking Criteria and Relative Weight (%)' + '\r\n' + weightContent + '\r\n\r\n\r\n' + heading + '\r\n' + content + '\r\n'], {
+        type: 'text/plain'
+      });
+      (window as any).saveAs(file, 'region-ranking-result.csv');
     }
   }
 });
@@ -806,8 +959,12 @@ main {
 }
 
 .ranking-header-bottom {
-  margin-bottom: -1rem;
-  flex: 1;
+  h5 {
+    margin-bottom: -1rem;
+  }
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
 }
 .ranking-header-top {
   margin-bottom: -0.25rem;
@@ -866,12 +1023,12 @@ $marginSize: 6px;
   flex-direction: column;
   padding-top: 1rem;
 
-  ::v-deep(.region-map) {
+  :deep(.region-map) {
     border-style: solid;
     border-color: inherit;
   }
   &.card-count-1 {
-    ::v-deep(.region-map) {
+    :deep(.region-map) {
       border: none;
     }
   }
@@ -890,6 +1047,18 @@ $marginSize: 6px;
 .card-map {
   flex-grow: 1;
   min-height: 0;
+}
+
+.action-bar-container {
+  display: flex;
+  align-items: baseline;
+
+  .shown-datacubes-count {
+    margin-left: 20px;
+    color: darkgray;
+    cursor: default;
+    font-style: italic;
+  }
 }
 
 </style>
