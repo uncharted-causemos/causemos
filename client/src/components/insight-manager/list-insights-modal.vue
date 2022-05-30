@@ -318,7 +318,7 @@ export default defineComponent({
         // Is this code still used? If so, we need to add a getter for `project`
         const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, ''); // this.project);
         if (publicInsightCount === 1) {
-          await unpublishDatacube(datacubeId, this.projectId);
+          await unpublishDatacube(datacubeId);
           this.setRefreshDatacubes(true);
         }
       }
