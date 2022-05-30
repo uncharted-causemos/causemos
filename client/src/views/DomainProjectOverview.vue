@@ -278,7 +278,7 @@ export default {
       this.setRefreshDatacubes(false);
     },
     unpublishInstance(instance) {
-      unpublishDatacubeInstance(instance, this.project);
+      unpublishDatacubeInstance(instance);
     },
     updateDatacubeDomains(id, domains) {
       const datacube = this.datacubeInstances.find(d => d.id === id);
