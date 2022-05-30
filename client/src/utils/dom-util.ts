@@ -48,3 +48,12 @@ export const scrollToElement = (element: Element, behavior:Behavior = 'smooth') 
   };
   element.scrollIntoView(scrollViewOptions);
 };
+
+export const setDragImage = (
+  imgUrlOrDataString: string,
+  dataTransfer: DataTransfer
+) => {
+  const img = document.createElement('img');
+  img.src = imgUrlOrDataString;
+  dataTransfer.setDragImage(img, 0, 0);
+};
