@@ -188,7 +188,9 @@ export default defineComponent({
     datasetsList: [] as DatasetInfo[],
     showSortingDropdownDomainDatacubes: false,
     selectedDatacubeSortingOption: 'Most recent',
-    selectedDataType: 'models'
+    selectedDataType: 'models',
+
+    domainProjectStats: {} as { [key: string]: any }
   }),
   computed: {
     filteredProjects(): Project[] {
@@ -198,15 +200,18 @@ export default defineComponent({
     },
     filteredFamilyList(): DatacubeFamily[] {
       const familyList: DatacubeFamily[] = this.selectedDataType === 'models'
-        ? this.projectsListDomainDatacubes.map(domainModel => ({
-          id: domainModel.id || '',
-          name: domainModel.name || '',
-          type: domainModel.type,
-          numReady: domainModel.ready_instances.length,
-          numDraft: domainModel.draft_instances.length,
-          source: (domainModel.source || (domainModel.maintainer && domainModel.maintainer[0]?.organization)) ?? '',
-          modifiedAt: domainModel.modified_at || domainModel.created_at || 0
-        }))
+        ? this.projectsListDomainDatacubes.map(domainModel => {
+          const stats = this.domainProjectStats[domainModel.name];
+          return {
+            id: domainModel.id || '',
+            name: domainModel.name || '',
+            type: domainModel.type,
+            numReady: stats && stats.READY ? stats.READY : 0,
+            numDraft: stats && stats.REGISTERED ? stats.REGISTERED : 0,
+            source: (domainModel.source || (domainModel.maintainer && domainModel.maintainer[0]?.organization)) ?? '',
+            modifiedAt: domainModel.modified_at || domainModel.created_at || 0
+          };
+        })
         : this.datasetsList.map(dataset => ({
           id: dataset.data_id,
           name: dataset.name,
@@ -270,6 +275,7 @@ export default defineComponent({
     },
     async refreshDomainProjects() {
       this.enableOverlay('Loading projects');
+      this.domainProjectStats = await domainProjectService.getProjectsStats();
 
       const domainProjectSearchFields = { // DomainProjectFilterFields
         type: 'model'
