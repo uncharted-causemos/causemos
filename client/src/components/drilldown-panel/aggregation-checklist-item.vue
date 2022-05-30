@@ -182,7 +182,7 @@ export default defineComponent({
   methods: {
     valueFormatter(v: number | null): string {
       if (v === null) return 'missing';
-      if (v === 0 || Math.abs(v) >= 1) return d3.format(',.2~f')(v);
+      if (v === 0 || Math.abs(v) >= 1) return d3.format(',.2f')(v);
       return exponentFormatter(v);
     },
     toggleExpanded() {

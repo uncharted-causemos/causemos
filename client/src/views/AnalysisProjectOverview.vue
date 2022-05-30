@@ -104,6 +104,7 @@
           @delete-section="deleteSection"
           @move-section-above-section="moveSectionAboveSection"
           @remove-insight-from-section="removeInsightFromSection"
+          @move-insight="moveInsight"
           class="insights"
         />
       </div>
@@ -226,7 +227,8 @@ export default defineComponent({
       updateSectionTitle,
       deleteSection,
       moveSectionAboveSection,
-      removeInsightFromSection
+      removeInsightFromSection,
+      moveInsight
     } = useQuestionsData();
 
     const insightsBySection = computed(() => {
@@ -254,7 +256,7 @@ export default defineComponent({
       deleteSection,
       moveSectionAboveSection,
       removeInsightFromSection,
-
+      moveInsight,
       showDuplicateModal
     };
   },
