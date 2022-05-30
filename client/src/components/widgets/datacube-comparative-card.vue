@@ -42,7 +42,7 @@
           @select-timestamp="setSelectedTimestamp"
         >
           <template #timeseries-footer-contents>
-            <div class="row datacube-footer">
+            <div class="datacube-footer">
               <div>Aggregated by: {{ selectedSpatialAggregation }}</div>
               <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
               <div style="display: flex; align-items: center">

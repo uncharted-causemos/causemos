@@ -36,7 +36,7 @@
           :hover-id="barChartHoverId"
           @bar-chart-hover="$emit('bar-chart-hover', $event)"
         />
-        <div class="row datacube-footer">
+        <div class="datacube-footer">
           <div>Showing data for {{timestampFormatter(selectedTimestamp)}}</div>
           <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
           <div style="display: flex; align-items: center">

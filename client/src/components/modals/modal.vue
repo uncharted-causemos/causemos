@@ -121,6 +121,24 @@ export default defineComponent({
   transition: all .3s ease;
 }
 
+.modal-header {
+  padding: 15px;
+}
+
+.modal-body {
+  padding: 15px;
+}
+
+:deep(.modal-footer) {
+  padding: 15px;
+  text-align: right;
+  border-top: 1px solid #e3e3e3;
+
+  .btn+.btn {
+    margin-left: 5px;
+  }
+}
+
 :deep(.modal-header) {
   position: relative;
   h3, h4 {
@@ -133,11 +151,6 @@ export default defineComponent({
   label {
     font-weight: 300;
   }
-}
-
-:deep(.modal-header, .modal-body, .modal-footer) {
-  padding: 0 10px 10px;
-  border: 0;
 }
 
 /*

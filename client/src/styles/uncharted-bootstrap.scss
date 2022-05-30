@@ -28,8 +28,6 @@
 }
 
 // Grid system
-// Number of columns in the grid.
-$grid-columns: 12 !default;
 // Padding between columns. Gets divided in half for the left and right.
 $grid-gutter-width: 30px !default;
 
@@ -37,92 +35,12 @@ $screen-sm-min: 768px;
 $screen-md-min: 992px;
 $screen-lg-min: 1200px;
 
-// Framework grid generation
-// Used only by Bootstrap to generate the correct number of grid classes given
-//  any value of `$grid-columns`.
-@mixin make-grid-columns($i: 1, $list: ".col-sm-#{$i}, .col-md-#{$i}") {
-  @for $i from (1 + 1) through $grid-columns {
-    $list: "#{$list}, .col-sm-#{$i}, .col-md-#{$i}";
-  }
-  #{$list} {
-    position: relative;
-    // Prevent columns from collapsing when empty
-    min-height: 1px;
-    // Inner gutter via padding
-    padding-left:  ceil(($grid-gutter-width / 2));
-    padding-right: floor(($grid-gutter-width / 2));
-  }
-}
-
-@mixin float-grid-columns($class, $i: 1, $list: ".col-#{$class}-#{$i}") {
-  @for $i from (1 + 1) through $grid-columns {
-    $list: "#{$list}, .col-#{$class}-#{$i}";
-  }
-  #{$list} {
-    float: left;
-  }
-}
-
-@mixin calc-grid-column($index, $class, $type) {
-  @if ($type == width) and ($index > 0) {
-    .col-#{$class}-#{$index} {
-      width: percentage(($index / $grid-columns));
-    }
-  }
-  @if ($type == push) and ($index > 0) {
-    .col-#{$class}-push-#{$index} {
-      left: percentage(($index / $grid-columns));
-    }
-  }
-  @if ($type == push) and ($index == 0) {
-    .col-#{$class}-push-0 {
-      left: auto;
-    }
-  }
-  @if ($type == pull) and ($index > 0) {
-    .col-#{$class}-pull-#{$index} {
-      right: percentage(($index / $grid-columns));
-    }
-  }
-  @if ($type == pull) and ($index == 0) {
-    .col-#{$class}-pull-0 {
-      right: auto;
-    }
-  }
-  @if ($type == offset) {
-    .col-#{$class}-offset-#{$index} {
-      margin-left: percentage(($index / $grid-columns));
-    }
-  }
-}
-
-@mixin loop-grid-columns($columns, $class, $type) {
-  @for $i from 0 through $columns {
-    @include calc-grid-column($i, $class, $type);
-  }
-}
-
-@mixin make-grid($class) {
-  @include float-grid-columns($class);
-  @include loop-grid-columns($grid-columns, $class, width);
-  @include loop-grid-columns($grid-columns, $class, pull);
-  @include loop-grid-columns($grid-columns, $class, push);
-  @include loop-grid-columns($grid-columns, $class, offset);
-}
-
-// Centered container element
-@mixin container-fixed($gutter: $grid-gutter-width) {
-  margin-right: auto;
-  margin-left: auto;
-  padding-left:  floor(($gutter / 2));
-  padding-right: ceil(($gutter / 2));
-  @include clearfix;
-}
-
 .form-control {
   width: 100%;
   height: 37px;
   padding: 8px 16px;
+  background-color: #f2f2f2;
+  background-image: none;
   border-radius: 1px;
   transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
 }
@@ -134,73 +52,6 @@ textarea.form-control {
 .form-group {
   margin-bottom: 15px;
 }
-
-
-
-// Container widths
-//
-// Set the container width, and override it for fixed navbars in media queries.
-
-.container {
-  @include container-fixed;
-
-  @media (min-width: $screen-sm-min) {
-    width: (720px + $grid-gutter-width);
-  }
-  @media (min-width: $screen-md-min) {
-    width: (940px + $grid-gutter-width);
-  }
-  @media (min-width: $screen-lg-min) {
-    width: (1140px + $grid-gutter-width)
-  }
-}
-
-
-// Fluid container
-//
-// Utilizes the mixin meant for fixed width containers, but without any defined
-// width for fluid, full width layouts.
-
-.container-fluid {
-  @include container-fixed;
-}
-
-
-// Row
-//
-// Rows contain and clear the floats of your columns.
-
-.row {
-  margin-left:  ceil(($grid-gutter-width / -2));
-  margin-right: floor(($grid-gutter-width / -2));
-  @include clearfix;
-}
-
-
-// Columns
-//
-// Common styles for small and large grid columns
-
-@include make-grid-columns;
-
-// Small grid
-//
-// Columns, offsets, pushes, and pulls for the small device range, from phones
-// to tablets.
-
-@media (min-width: $screen-sm-min) {
-  @include make-grid(sm);
-}
-
-
-// Medium grid
-//
-// Columns, offsets, pushes, and pulls for the desktop device range.
-
-@media (min-width: $screen-md-min) {
-  @include make-grid(md);
-}
-
 
 h1, h2 {
   letter-spacing: -0.015em;
@@ -227,10 +78,11 @@ h1, h2, h3, h4, h5, h6 {
 // --------------------------------------------------
 
 button, input, select, textarea {
-  // TODO: keep these
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
+  color: inherit;
+  font: inherit;
 }
 // button, html input[type=button], input[type=reset], input[type=submit] {
 //   -webkit-appearance: button;
@@ -392,6 +244,10 @@ a.btn {
   font-size: 12px;
   line-height: 1.42857142857;
   border-radius: 1px;
+}
+
+.table {
+  background-color: #fff;
 }
 
 .table > tbody > tr.active > td {

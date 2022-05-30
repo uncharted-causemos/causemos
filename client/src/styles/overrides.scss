@@ -22,6 +22,11 @@ body {
   -moz-osx-font-smoothing: grayscale; /* Firefox */
 }
 
+h5 {
+  font-size: 18px;
+  margin: 0;
+}
+
 /*
   This file contains styles to override or reset the appearance
   of native elements (like removing margins from <hr>) and elements
@@ -90,6 +95,8 @@ table,
 
 hr {
   margin: 0;
+  border: 0;
+  border-top: 1px solid #e3e3e3;
 }
 
 input {

@@ -13,15 +13,15 @@
         <label>
           <b>Date Options:</b>
         </label>
-        <div v-if="isDateRangeParam" class="row date-option-container">
-          <label class="col-md-6">Date range delimiter</label>
+        <div v-if="isDateRangeParam" class="date-option-container">
+          <label>Date range delimiter</label>
           <input
             v-model="updatedParameter.additional_options.date_range_delimiter"
             type="text"
           >
         </div>
-        <div class="row date-option-container">
-          <label class="col-md-6">Minimum date:</label>
+        <div class="date-option-container">
+          <label>Minimum date:</label>
           <div ref="dateMinPickerElement" class="new-runs-date-picker-container">
             <input class="date-picker-input" placeholder="Select date.." type="text" v-model="updatedParameter.additional_options.date_min" autocomplete="off" data-input />
             <a class="btn btn-default date-picker-buttons" title="toggle" data-toggle>
@@ -32,8 +32,8 @@
             </a>
           </div>
         </div>
-        <div class="row date-option-container">
-          <label class="col-md-6">Maximum date:</label>
+        <div class="date-option-container">
+          <label>Maximum date:</label>
           <div ref="dateMaxPickerElement" class="new-runs-date-picker-container">
             <input class="date-picker-input" placeholder="Select date.." type="text" v-model="updatedParameter.additional_options.date_max" autocomplete="off" data-input />
             <a class="btn btn-default date-picker-buttons" title="toggle" data-toggle>
@@ -66,22 +66,22 @@
             </div>
           </div>
         </div>
-        <div class="row date-option-container">
-          <label class="col-md-6">Default value label</label>
+        <div class="date-option-container">
+          <label>Default value label</label>
           <input
             v-model="updatedParameter.additional_options.default_value_label"
             type="text"
           >
         </div>
-        <div class="row date-option-container">
-          <label class="col-md-6">Region format:</label>
+        <div class="date-option-container">
+          <label>Region format:</label>
           <dropdown-button
             :selected-item="updatedParameter.additional_options.geo_region_format"
             :items="acceptableGeoFormats"
             @item-selected="updateAcceptableGeoFormat"
           />
         </div>
-        <div v-if="updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.GADM_Code" class="row date-option-container checkbox">
+        <div v-if="updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.GADM_Code" class="date-option-container checkbox">
           <label
             @click="toggleOmitGADMCodeVersion()"
             style="cursor: pointer; color: black;">
@@ -92,8 +92,8 @@
             Omit GADM code version
           </label>
         </div>
-        <div v-if="updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.Bounding_Box" class="row date-option-container">
-          <label class="col-md-6">Bounding box format</label>
+        <div v-if="updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.Bounding_Box" class="date-option-container">
+          <label>Bounding box format</label>
           <input
             v-model="updatedParameter.additional_options.geo_bbox_format"
             :style="{ width: (updatedParameter.additional_options.geo_bbox_format.length * 0.75) + 'ch' }"
@@ -107,13 +107,13 @@
               Reset
           </button>
         </div>
-        <div class="row date-option-container">
-          <label class="col-md-6" style="font-style: italic; margin-left: 1rem;">example</label>
+        <div class="date-option-container">
+          <label style="font-style: italic; margin-left: 1rem;">example</label>
           <label style="font-style: italic">{{geoFormatExample}}</label>
         </div>
       </div>
       <!-- choices -->
-      <div class="row" style="padding: 2rem;">
+      <div style="padding: 2rem;">
         <label><b>Data value/Label choices:</b></label>
         <br />
         Value:
@@ -137,15 +137,15 @@
         </button>
       </div>
       <div v-if="updatedParameter.choices && updatedParameter.choices.length > 0" class="param-choices-container">
-        <div class="row">
-          <label class="col-md-7"><b>Value(s)</b></label>
+        <div>
+          <label style="width: 50%"><b>Value(s)</b></label>
           <label><b>Label(s)</b></label>
         </div>
         <div
           v-for="(choice, indx) in updatedParameter.choices"
           :key="choice"
-          class="row" style="padding-bottom: 1rem; display: flex;">
-          <label class="col-md-7">{{choice}}</label>
+          style="padding-bottom: 1rem; display: flex;">
+          <label style="width: 50%">{{choice}}</label>
           <input
             v-model="updatedParameter.choices_labels[indx]"
             type="text"

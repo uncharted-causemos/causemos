@@ -9,36 +9,6 @@
     <template #body>
       <div> What is the concept you could not find in the ontology? </div>
       <input class="form-control" v-model="theme" type="text" placeholder="e.g. heavy rainfall"/>
-      <!--
-      <div class="row form-group">
-        <label class="col-md-3 col-form-label">Theme</label>
-        <div class="col-md-7">
-          <input class="form-control" v-model="theme" type="text" placeholder="Type a theme"/>
-          <div class="input-error-message" v-if="errorMessages.theme">{{errorMessages.theme}}</div>
-        </div>
-      </div>
-      <div class="row form-group">
-        <label class="col-md-3 col-form-label">Theme property</label>
-        <div class="col-md-7">
-          <input class="form-control" v-model="theme_property" type="text" placeholder="Type the theme property (optional)"/>
-          <div class="input-error-message" v-if="errorMessages.theme_property">{{errorMessages.theme_property}}</div>
-        </div>
-      </div>
-      <div class="row form-group">
-        <label class="col-md-3 col-form-label">Process</label>
-        <div class="col-md-7">
-          <input class="form-control" v-model="process" type="text" placeholder="Type a process (optional)"/>
-          <div class="input-error-message" v-if="errorMessages.process">{{errorMessages.process}}</div>
-        </div>
-      </div>
-      <div class="row form-group">
-        <label class="col-md-3 col-form-label">Process property</label>
-        <div class="col-md-7">
-          <input class="form-control" v-model="process_property" type="text" placeholder="Type the process property (optional)"/>
-          <div class="input-error-message" v-if="errorMessages.process_property">{{errorMessages.process_property}}</div>
-        </div>
-      </div>
-      -->
     </template>
     <template #footer>
       <ul class="unstyled-list">
