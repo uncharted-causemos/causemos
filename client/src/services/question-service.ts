@@ -2,8 +2,6 @@ import API from '@/api/api';
 import { AnalyticalQuestion } from '@/types/Insight';
 import _ from 'lodash';
 
-// FIXME: add support for analysisId field
-
 export const getQuestionById = async (question_id: string) => {
   const result = await API.get(`questions/${question_id}`);
   return result.data;

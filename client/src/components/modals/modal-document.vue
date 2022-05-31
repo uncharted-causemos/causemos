@@ -212,9 +212,6 @@ export default {
       this.setFieldsFromDocumentData();
       this.textViewer = createTextViewer(this.documentData.extracted_text);
 
-
-      // FIXME: temporarily return false always - DART is offline and there is a strange bug where the fallover
-      // doesn't work after the code has been transpiled - issue 680.
       const useDART = true;
 
       if (isPdf(this.documentData) && useDART) {
