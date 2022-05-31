@@ -7,6 +7,54 @@ class DatacubeQueryUtil extends QueryUtil {
     super(FIELDS);
   }
 
+  // @override
+  // Custom search for datacube: boost conjunction and specific field
+  // e.g. if we have "water trucking" it becomes something like
+  // "(water AND trucking)^2 OR (water OR trucking)", with field boosters on name and descriptions
+  _regexBuilder(clause) {
+    const { field, values } = clause;
+
+    if (field !== 'keyword') {
+      return super._regexBuilder(clause);
+    }
+
+    // const fieldMeta = this.configFields[field];
+    // const esFields = fieldMeta.fields;
+    //
+    const queries = [];
+    for (const value of values) {
+      let queryStr = '';
+      if (value.split(' ').length > 1) {
+        const conjunctiveStr = `(${value.split(' ').join(' AND ')})^2`;
+        const disjunctiveStr = `(${value.split(' ').join(' OR ')})`;
+        queryStr = `${conjunctiveStr} OR ${disjunctiveStr}`;
+      } else {
+        queryStr = value;
+      }
+
+      queries.push({
+        query_string: {
+          query: queryStr,
+          fields: [
+            'name^2',
+            'descriptions^2',
+            'family_name^2',
+            'parameter.display_name^2',
+            'outputs.display_name^2'
+          ]
+        }
+      });
+    }
+    console.log('');
+    console.log(JSON.stringify(queries, null, 2));
+    console.log('');
+    return {
+      bool: {
+        should: queries
+      }
+    };
+  }
+
   buildQuery (filters) {
     const clauses = _.get(filters, 'clauses') || [];
     const enableClause = clauses.find(clause => clause && clause.field === 'enable');
