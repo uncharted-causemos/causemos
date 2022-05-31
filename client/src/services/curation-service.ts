@@ -349,7 +349,6 @@ export const updateStatementsPolarity = async (projectId: string, statementIds: 
 /**
  * Get curation recommendations for evidence
  */
-// FIXME: Need to decompose to components
 export const getEvidenceRecommendations = async (projectId: string, subjConcept: string, objConcept: string) => {
   const payload = {
     project_id: projectId,

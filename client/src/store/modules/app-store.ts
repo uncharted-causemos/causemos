@@ -9,7 +9,7 @@ interface AppState {
   updateToken: string;
   ontologyConcepts: Array<string>;
   ontologySet: Set<string>;
-  projectMetadata: any; // FIXME
+  projectMetadata: any; // domain project or analysis project
   analysisName: string;
   conceptDefinitions: { [key: string]: string };
   datacubeCurrentOutputsMap: {}; // map for datacubes' currently selected features; each key is the datacube-id and the value is the selected output's index
