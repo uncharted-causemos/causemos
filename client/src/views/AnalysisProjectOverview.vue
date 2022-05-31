@@ -305,7 +305,6 @@ export default defineComponent({
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems',
       setContextId: 'insightPanel/setContextId',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane'
@@ -531,8 +530,7 @@ export default defineComponent({
       });
     },
     async onCreateDataAnalysis() {
-      const initialAnalysisState = { // AnalysisState
-        currentAnalysisId: '',
+      const initialAnalysisState = { // DataAnalysisState
         analysisItems: []
       };
       const analysis = await createAnalysis({
@@ -540,8 +538,6 @@ export default defineComponent({
         projectId: this.project,
         state: initialAnalysisState
       });
-      initialAnalysisState.currentAnalysisId = analysis.id;
-      await this.updateAnalysisItems(initialAnalysisState);
       this.$router.push({
         name: 'dataComparative',
         params: {
