@@ -3,7 +3,7 @@
     <div>{{label}}</div>
     <input
       type="number"
-      class="form-control input-sm"
+      class="form-control"
       :value="modelValue"
       @input="update"
     />
@@ -52,9 +52,18 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-    .form-control {
-      margin-right: 1ch;
-      width: 10ch;
-      display: inline;
-    }
+.form-control {
+  margin-right: 1ch;
+  width: 10ch;
+  display: inline;
+}
+
+input {
+  height: 27px;
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 1px;
+}
+
 </style>

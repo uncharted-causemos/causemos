@@ -190,12 +190,6 @@ export default defineComponent({
 $fa-font-path: '~font-awesome/fonts';
 @import '~font-awesome/scss/font-awesome';
 
-
-/* Uncharted Bootstrap */
-$uncharted-font-path: '~@uncharted/uncharted-bootstrap/dist/fonts/';
-$icon-font-path: '~@uncharted/uncharted-bootstrap/dist/fonts/bootstrap-sass/assets/fonts/bootstrap/';
-@import "~@uncharted/uncharted-bootstrap/scss/uncharted-bootstrap";
-
 /* Sass entrypoint */
 @import "./styles/wm";
 

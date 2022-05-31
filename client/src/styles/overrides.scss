@@ -1,11 +1,8 @@
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins/_vendor-prefixes.scss";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins/_forms.scss";
-
 /*
-  This file contains styles to override or reset the appearance
-  of native elements (like removing margins from <hr>) and elements
-  imported from custom stylesheets (like setting the colours used
-  in the toaster-message library we're using).
+  This file contains styles to override or reset the appearance of native
+  elements (like setting default font sizes) and elements imported from custom
+  stylesheets (like setting the colours used in the toaster-message library
+  we're using).
 
   These styles are applied globally.
 
@@ -14,8 +11,235 @@
   component in `@/components/widgets/` with scoped styles instead.
 */
 
+// Styles extracted from the uncharted-bootstrap library so that we could
+//  remove that dependency.
+
 .form-control {
-  border: 1px solid $color-border-light;
+  width: 100%;
+  height: 37px;
+  padding: 8px 16px;
+  background-color: #f2f2f2;
+  background-image: none;
+  border-radius: 1px;
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+textarea.form-control {
+  height: auto;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+
+h1, h2 {
+  letter-spacing: -0.015em;
+}
+h3, h4 {
+  letter-spacing: -0.01em;
+}
+h3 {
+  font-size: 25px;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: inherit;
+  font-weight: 600;
+  line-height: 1.42857;
+  color: inherit;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  font: inherit;
+}
+
+// Button variants
+//
+// Easily pump out default styles, as well as :hover, :focus, :active,
+// and disabled options for all buttons
+
+@mixin button-variant($color, $background, $border) {
+  color: $color;
+  background-color: $background;
+  border-color: $border;
+
+  &:focus,
+  &.focus {
+    color: $color;
+    background-color: lighten($background, 10%);
+        border-color: lighten($border, 25%);
+  }
+  &:hover {
+    color: $color;
+    background-color: lighten($background, 5%);
+        border-color: lighten($border, 6%);
+  }
+  &:active,
+  &.active,
+  .open > &.dropdown-toggle {
+    color: $color;
+    background-color: lighten($background, 10%);
+        border-color: lighten($border, 12%);
+
+    &:hover,
+    &:focus,
+    &.focus {
+      color: $color;
+      background-color: lighten($background, 7%);
+          border-color: lighten($border, 25%);
+    }
+  }
+  &:active,
+  &.active,
+  .open > &.dropdown-toggle {
+    background-image: none;
+  }
+  &.disabled,
+  &[disabled],
+  fieldset[disabled] & {
+    &:hover,
+    &:focus,
+    &.focus {
+      background-color: $background;
+          border-color: $border;
+    }
+  }
+}
+
+.btn {
+  display: inline-block;
+  margin-bottom: 0; // For input.btn
+  font-weight: 600;
+  text-align: center;
+  vertical-align: middle;
+  touch-action: manipulation;
+  cursor: pointer;
+  background-image: none; // Reset unusual Firefox-on-Android default style; see https://github.com/necolas/normalize.css/issues/214
+  border: 1px solid transparent;
+  white-space: nowrap;
+  padding: 8px 16px;
+  font-size: 14px;
+  line-height: 1.42857;
+  border-radius: 1px;
+  user-select: none;
+
+  &:hover,
+  &:focus,
+  &.focus {
+    color: rgba(0, 0, 0, 0.89);
+    text-decoration: none;
+  }
+
+  &:active,
+  &.active {
+    outline: 0;
+    background-image: none;
+    box-shadow: inset 0 3px 5px rgba(0,0,0,.125);
+  }
+
+  &.disabled,
+  &[disabled],
+  fieldset[disabled] & {
+    cursor: not-allowed;
+    opacity: .65;
+    box-shadow: none;
+  }
+
+}
+
+a.btn {
+  &.disabled,
+  fieldset[disabled] & {
+    pointer-events: none; // Future-proof disabling of clicks on `<a>` elements
+  }
+}
+
+
+// Alternate buttons
+// --------------------------------------------------
+.btn-default {
+  @include button-variant(
+    rgba(0, 0, 0, 0.89),
+    #dedede,
+    #dedede
+  );
+}
+.btn-primary {
+  @include button-variant(
+    white,
+    #545353,
+    #545353
+  );
+}
+// Danger and error appear as red
+.btn-danger {
+  @include button-variant(
+    rgba(0, 0, 0, 0.89),
+    hsl(4.11, 89.62, 58.43),
+    hsl(4.11, 89.62, 58.43)
+  );
+}
+
+.btn-sm {
+  // line-height: ensure proper height of button next to small input
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.42857142857;
+  border-radius: 1px;
+}
+
+.table {
+  background-color: white;
+}
+
+.table > tbody > tr.active > td {
+  color: white;
+}
+
+th {
+  text-align: left;
+}
+
+.alert {
+  padding: 15px;
+  border: 1px solid #e3e3e3;
+  border-radius: 1px;
+}
+
+// End of uncharted-bootstrap styles
+
+*,
+:after,
+:before {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 10px;
+}
+
+body {
+  margin: 0;
+  font-family: Source Sans Pro,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
+  font-size: 14px;
+  line-height: 1.42857;
+  color: rgba(0,0,0,.89);
+  background-color: #f2f2f2;
+  -webkit-font-smoothing: antialiased; /* Chrome, Safari */
+  -moz-osx-font-smoothing: grayscale; /* Firefox */
+}
+
+h5 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.form-control {
+  border: 1px solid lightgray;
   box-shadow: none;
   &:focus {
     border: 1px solid $label-color;
@@ -24,49 +248,7 @@
     border-radius: 2px;
   }
   &::placeholder {
-    color: $input-color-placeholder;
-  }
-}
-
-//
-// Buttons
-// --------------------------------------------------
-
-.btn-default {
-  &,
-  &:active,
-  &.active {
-    &:focus,
-    &.focus {
-      outline: 2px solid;
-      outline-color: darken($color-btn-default-hover, 10%);
-    }
-  }
-  &:hover,
-  &:focus,
-  &.focus {
-    background-color: $color-btn-default-hover;
-    border-color: $color-btn-default-hover;
-  }
-}
-
-.btn-primary {
-  letter-spacing: 0.02em;
-  &,
-  &:active,
-  &.active {
-    &:focus,
-    &.focus {
-      outline: 2px solid;
-      outline-color: darken($color-btn-default-hover, 10%);
-    }
-  }
-  &:hover,
-  &:focus,
-  &.focus {
-    background-color: #353554;
-    border-color: #353554;
-    color: #fff;
+    color: lightgray;
   }
 }
 
@@ -105,12 +287,8 @@ table,
   // Bottom align for column headings
   > thead > tr > th {
     vertical-align: bottom;
-    border-bottom: 2px solid $table-border-color;
+    border-bottom: 2px solid $separator;
   }
-}
-
-hr {
-  margin: 0;
 }
 
 input {

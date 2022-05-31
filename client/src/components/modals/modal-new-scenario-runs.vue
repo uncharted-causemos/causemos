@@ -37,7 +37,7 @@
       </table>
     </template>
     <template #footer>
-      <div class="row estimated-runtime">
+      <div class="estimated-runtime">
         Estimated execution time: {{ estimatedRuntime }}.
       </div>
       <ul class="unstyled-list">

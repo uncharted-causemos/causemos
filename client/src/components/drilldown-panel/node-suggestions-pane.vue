@@ -70,7 +70,7 @@
             </div>
             <button
               type="button"
-              class="btn btn-link"
+              class="btn btn-default"
               @click="openKBExplorer(relationshipGroup.key)"
             >            <i class="fa fa-fw fa-search" />
               Explore All ({{ relationshipGroup.count }})</button>
@@ -300,10 +300,6 @@ export default {
 
 <style lang="scss" scoped>
 @import '~styles/variables';
-
-.btn-link {
-  color: $link-color;
-}
 
 .suggestions-counter {
   padding: 0 5px;

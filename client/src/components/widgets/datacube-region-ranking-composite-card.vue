@@ -16,7 +16,7 @@
           :hover-id="barChartHoverId"
           @bar-chart-hover="$emit('bar-chart-hover', $event)"
         />
-        <div class="row datacube-footer">Showing data for {{timestampFormatter(selectedTimestamp)}} (or earlier)</div>
+        <div class="datacube-footer">Showing data for {{timestampFormatter(selectedTimestamp)}} (or earlier)</div>
       </div>
       <div class="card-maps-box">
         <region-map class="region-map-container"

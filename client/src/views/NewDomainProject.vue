@@ -1,99 +1,88 @@
 <template>
   <div class="new-project-container">
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col-md-1" />
-        <div class="col-md-10">
-          <div class="row title">
-            <h2>Define New Domain Model Project</h2>
-          </div>
-          <div class="row">
-            <form @submit.prevent>
-              <div class="form-group">
-                <label>Name*</label>
-                <input
-                  v-model="projectName"
-                  v-focus
-                  type="text"
-                  class="form-control"
-                  @keyup.enter.stop="create"
-                >
-                <div
-                  v-if="hasError"
-                  class="error-msg">
-                  {{ errorMsg }}
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Description</label>
-                <textarea
-                  v-model="projectDescription"
-                  rows="5"
-                  class="form-control" />
-              </div>
-              <div class="form-group">
-                <label>Website:</label>
-                <input
-                  v-model="projectWebsite"
-                  type="text"
-                  class="form-control"
-                >
-              </div>
-              <div class="form-group">
-                <label>Maintainer</label>
-                <div style="display: flex">
-                  <div style="display: flex; flex-direction: column">
-                    <label style="font-weight: normal">Name</label>
-                    <input
-                      v-model="maintainerName"
-                      type="text"
-                      class="form-control"
-                    >
-                  </div>
-                  <div style="display: flex; flex-direction: column">
-                    <label style="font-weight: normal">Organization</label>
-                    <input
-                      v-model="maintainerOrganization"
-                      type="text"
-                      class="form-control"
-                    >
-                  </div>
-                  <div style="display: flex; flex-direction: column">
-                    <label style="font-weight: normal">Email</label>
-                    <input
-                      v-model="maintainerEmail"
-                      type="text"
-                      class="form-control"
-                    >
-                  </div>
-                </div>
-                <small-text-button
-                  :label="'+ Add Maintainer'"
-                  @click="addMaintainer()" />
-                <div
-                  v-for="maintainer in maintainers"
-                  :key="maintainer.name"
-                  style="display: flex">
-                  {{ maintainer.name }} | {{ maintainer.organization }} | {{ maintainer.email }} <i class="fa fa-fw fa-close delete-maintainer" @click.stop="removeMaintainer(maintainer.name)" />
-                </div>
-              </div>
-            </form>
-            <div class="controls">
-              <button
-                type="button"
-                class="btn btn-default"
-                @click="cancel"
-              >Cancel
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary"
-                @click="create"
-              >Create</button>
-            </div>
-          </div>
+    <h2>Define New Domain Model Project</h2>
+    <form @submit.prevent>
+      <div class="form-group">
+        <label>Name*</label>
+        <input
+          v-model="projectName"
+          v-focus
+          type="text"
+          class="form-control"
+          @keyup.enter.stop="create"
+        >
+        <div
+          v-if="hasError"
+          class="error-msg">
+          {{ errorMsg }}
         </div>
       </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea
+          v-model="projectDescription"
+          rows="5"
+          class="form-control" />
+      </div>
+      <div class="form-group">
+        <label>Website:</label>
+        <input
+          v-model="projectWebsite"
+          type="text"
+          class="form-control"
+        >
+      </div>
+      <div class="form-group">
+        <label>Maintainer</label>
+        <div style="display: flex">
+          <div style="display: flex; flex-direction: column">
+            <label style="font-weight: normal">Name</label>
+            <input
+              v-model="maintainerName"
+              type="text"
+              class="form-control"
+            >
+          </div>
+          <div style="display: flex; flex-direction: column">
+            <label style="font-weight: normal">Organization</label>
+            <input
+              v-model="maintainerOrganization"
+              type="text"
+              class="form-control"
+            >
+          </div>
+          <div style="display: flex; flex-direction: column">
+            <label style="font-weight: normal">Email</label>
+            <input
+              v-model="maintainerEmail"
+              type="text"
+              class="form-control"
+            >
+          </div>
+        </div>
+        <small-text-button
+          :label="'+ Add Maintainer'"
+          @click="addMaintainer()" />
+        <div
+          v-for="maintainer in maintainers"
+          :key="maintainer.name"
+          style="display: flex">
+          {{ maintainer.name }} | {{ maintainer.organization }} | {{ maintainer.email }} <i class="fa fa-fw fa-close delete-maintainer" @click.stop="removeMaintainer(maintainer.name)" />
+        </div>
+      </div>
+    </form>
+    <div class="controls">
+      <button
+        type="button"
+        class="btn btn-default"
+        @click="cancel"
+      >Cancel
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        @click="create"
+      >Create</button>
     </div>
   </div>
 </template>
@@ -218,15 +207,7 @@ export default defineComponent({
 
 .new-project-container {
   max-width: 1000px;
-  .title {
-    display: flex;
-    h2 {
-      flex: 1;
-    }
-    .btn {
-      margin: 20px 0 10px 10px;
-    }
-  }
+  margin-left: 100px;
   .controls {
     display: flex;
     justify-content: flex-start;

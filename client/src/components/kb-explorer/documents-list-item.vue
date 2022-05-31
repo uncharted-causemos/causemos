@@ -1,21 +1,21 @@
 <template>
   <div class="tableview-document-container"
     @click="showDocument">
-    <div class="row tableview-row">
-      <div class="col-sm-4 number-col">
+    <div class="tableview-row">
+      <div style="flex: 4;" class="number-col">
           <div v-tooltip="documentMeta.doc_title" class="row-field" v-if="checkString(documentMeta.doc_title)">{{ documentMeta.doc_title }}</div>
           <div v-tooltip="documentMeta.file_name" class="row-field" v-else-if="checkString(documentMeta.file_name)">{{ documentMeta.file_name }}</div>
           <i v-else class="fa fa-minus"/>
       </div>
-      <div class="col-sm-2 number-col">
+      <div style="flex: 2;" class="number-col">
         <div class="row-field" v-if="checkDate(documentMeta.publication_date)">{{ dateFormatter(documentMeta.publication_date.date, 'yyyy-MM-DD') }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
-      <div class="col-sm-3 number-col">
+      <div style="flex: 3;" class="number-col">
         <div v-tooltip="documentMeta.author" class="row-field" v-if="checkString(documentMeta.author)">{{ documentMeta.author }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
-      <div class="col-sm-3 number-col">
+      <div style="flex: 3;" class="number-col">
         <div v-tooltip="documentMeta.publisher_name" class="row-field" v-if="checkString(documentMeta.publisher_name)">{{ documentMeta.publisher_name }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
@@ -83,6 +83,7 @@ export default defineComponent({
     background: #fcfcfc;
     padding: 0;
     margin: 0;
+    display: flex;
   }
 
   .row-field {
