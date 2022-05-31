@@ -69,7 +69,6 @@ import DatacubeDescription from '@/components/data/datacube-description.vue';
 import { getAnalysis } from '@/services/analysis-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 
-import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { DatacubeStatus, ProjectType, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
@@ -81,6 +80,7 @@ import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning'
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { isDataSpaceDataState } from '@/utils/insight-util';
+import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
 
 export default defineComponent({
   name: 'DatacubeDrilldown',
@@ -95,53 +95,57 @@ export default defineComponent({
 
     const projectType = computed(() => store.getters['app/projectType']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
-    const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
+    const analysisId = computed(() => route.params.analysisId as string);
     const datacubeId = route.query.datacube_id as any;
     const datacubeItemId = route.query.item_id as any;
     const selectedModelId = ref(datacubeId);
     const dataState = computed<DataState | null>(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
 
+    const {
+      analysisItems,
+      setAnalysisItemViewConfig,
+      setAnalysisItemDataState
+    } = useDataAnalysis(analysisId);
+
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataSpaceDataState | null>(null);
-    let datacubeAnalysisItem: AnalysisItem | undefined = analysisItems.value.find(item => item.itemId === datacubeItemId);
-    if (!datacubeAnalysisItem) {
-      datacubeAnalysisItem = analysisItems.value.find(item => item.id === selectedModelId.value);
-    }
-    if (datacubeAnalysisItem) {
-      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
-      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
-    }
+    const haveAnalysisItemsLoaded = ref(false);
+    watch([analysisItems], () => {
+      if (haveAnalysisItemsLoaded.value) {
+        return;
+      }
+      haveAnalysisItemsLoaded.value = true;
+      let item = analysisItems.value.find(
+        item => item.itemId === datacubeItemId
+      );
+      if (!item) {
+        item = analysisItems.value.find(
+          item => item.id === selectedModelId.value
+        );
+      }
+      if (item) {
+        initialViewConfig.value = item.viewConfig;
+        initialDataConfig.value = item.dataConfig;
+      }
+    });
 
     watch(
-      () => [
-        viewState.value,
-        dataState.value
-      ],
+      () => [viewState.value, dataState.value],
       () => {
-        const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-        const currentAnalysisItem = updatedAnalysisItems.find(item => item.itemId === datacubeItemId);
-
-        if (currentAnalysisItem) {
-          currentAnalysisItem.viewConfig = viewState.value;
-          // Note: this is where datacubes get their initial data state. When
-          //  they are added from the data explorer, they have a view state but
-          //  no data state. The datacube-card on this page calls
-          //  initDataStateFromRefs and then sets that new data state object in
-          //  the insightPanelStore. This component watches that value
-          //  (dataState.value), sees that it's not null, and then callss
-          //  dataAnalysis/updateAnalysisItems`.
-          // This could be simplified if the initial data state was created when
-          //  adding a new datacube to the analysis, and it was no longer
-          //  optional.
-          if (
-            dataState.value !== null &&
-            isDataSpaceDataState(dataState.value)
-          ) {
-            currentAnalysisItem.dataConfig = dataState.value;
-          }
-          store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+        setAnalysisItemViewConfig(datacubeItemId, viewState.value);
+        // Note: this is where datacubes get their initial data state. When
+        //  they are added from the data explorer, they have a view state but
+        //  no data state. The datacube-card on this page calls
+        //  initDataStateFromRefs and then sets that new data state object in
+        //  the insightPanelStore. This component watches that value
+        //  (dataState.value), sees that it's not null, and then calls
+        //  setAnalysisItemDataState().
+        // This could be simplified if the initial data state was created when
+        //  adding a new datacube to the analysis, and it was no longer
+        //  optional.
+        if (dataState.value !== null && isDataSpaceDataState(dataState.value)) {
+          setAnalysisItemDataState(datacubeItemId, dataState.value);
         }
       }
     );
@@ -163,21 +167,17 @@ export default defineComponent({
     }
 
     watch(
-      () => [
-        initialViewConfig.value,
-        metadata.value
-      ],
+      () => [initialViewConfig.value, metadata.value],
       () => {
-        if (metadata.value) {
-          if (_.isEmpty(initialViewConfig.value) && !_.isEmpty(metadata.value.default_view)) {
-            const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-            const currentAnalysisItem = updatedAnalysisItems.find(item => item.itemId === datacubeItemId);
-            if (currentAnalysisItem) {
-              currentAnalysisItem.viewConfig = metadata.value.default_view;
-              store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
-              initialViewConfig.value = metadata.value.default_view;
-            }
-          }
+        if (
+          metadata.value &&
+          _.isEmpty(initialViewConfig.value) &&
+          !_.isEmpty(metadata.value.default_view)
+        ) {
+          setAnalysisItemViewConfig(
+            datacubeItemId,
+            metadata.value.default_view
+          );
         }
       }
     );

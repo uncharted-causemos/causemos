@@ -4,6 +4,7 @@ import _ from 'lodash';
 import { computed, Ref, ref, watchEffect } from 'vue';
 import { getAnalysisState, saveAnalysisState } from '../analysis-service';
 import { v4 as uuidv4 } from 'uuid';
+import { DataSpaceDataState } from '@/types/Insight';
 
 const saveState = _.debounce((analysisId, state: DataAnalysisState) => {
   // FIXME: Investigate if and when this occurred before before removing
@@ -80,6 +81,19 @@ export function useDataAnalysis(analysisId: Ref<string>) {
       setAnalysisItems(updatedAnalysisItems);
     }
   };
+  const setAnalysisItemDataState = (
+    itemId: string,
+    dataState: DataSpaceDataState
+  ) => {
+    const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+    const analysisItem = updatedAnalysisItems.find(
+      item => item.itemId === itemId
+    );
+    if (analysisItem) {
+      analysisItem.dataConfig = dataState;
+      setAnalysisItems(updatedAnalysisItems);
+    }
+  };
   // FIXME: run a script to make sure all analysis items have `selected` properties
   // FIXME: run a script to make sure all analyses have the right number of selected items
   // FIXME: check the logic so that when adding an analysis item it's only selected if there's room
@@ -100,6 +114,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     activeTab,
     setActiveTab,
     setAnalysisItemViewConfig,
+    setAnalysisItemDataState,
     removeAnalysisItem,
     duplicateAnalysisItem,
     toggleAnalysisItemSelected

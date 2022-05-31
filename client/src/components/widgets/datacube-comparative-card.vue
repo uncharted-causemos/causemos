@@ -259,16 +259,19 @@ export default defineComponent({
     };
 
     watch(
-      () => [
-        initialViewConfig.value,
-        metadata.value
-      ],
+      () => [initialViewConfig.value, metadata.value],
       () => {
-        if (metadata.value) {
-          if (_.isEmpty(initialViewConfig.value) && !_.isEmpty(metadata.value.default_view)) {
-            emit('set-analysis-item-view-config', itemId.value, metadata.value.default_view);
-            initialViewConfig.value = metadata.value.default_view;
-          }
+        if (
+          metadata.value &&
+          _.isEmpty(initialViewConfig.value) &&
+          !_.isEmpty(metadata.value.default_view)
+        ) {
+          emit(
+            'set-analysis-item-view-config',
+            itemId.value,
+            metadata.value.default_view
+          );
+          initialViewConfig.value = metadata.value.default_view;
         }
       }
     );
