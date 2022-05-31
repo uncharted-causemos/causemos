@@ -84,8 +84,12 @@
             :datacube-index="indx"
             :selected-timestamp="selectedTimestamp"
             :selected-timestamp-range="selectedTimestampRange"
+            :analysis-item="item"
             @loaded-timeseries="onLoadedTimeseries"
             @select-timestamp="setSelectedTimestamp"
+            @set-analysis-item-view-config="setAnalysisItemViewConfig"
+            @remove-analysis-item="removeAnalysisItem"
+            @duplicate-analysis-item="duplicateAnalysisItem"
           />
         </template>
         <template v-if="activeTab === ComparativeAnalysisMode.Overlay">
@@ -107,7 +111,10 @@
                 :datacube-index="indx"
                 :selected-timestamp="globalTimestamp"
                 :selected-timestamp-range="selectedTimestampRange"
+                :analysis-item="item"
                 @loaded-timeseries="onLoadedTimeseries"
+                @remove-analysis-item="removeAnalysisItem"
+                @duplicate-analysis-item="duplicateAnalysisItem"
               />
             </div>
           </div>
@@ -130,10 +137,13 @@
             :is-data-inverted="isDatacubeInverted(item)"
             :max-number-of-chart-bars="maxNumberOfChartBars"
             :limit-number-of-chart-bars="limitNumberOfChartBars"
+            :analysis-item="item"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
             @map-click-region="onMapClickRegion"
             @invert-data-updated="onToggleRegionRankingDataInversion"
+            @remove-analysis-item="removeAnalysisItem"
+            @duplicate-analysis-item="duplicateAnalysisItem"
           />
         </template>
       </div>
@@ -238,7 +248,10 @@ export default defineComponent({
       analysisItems,
       selectedAnalysisItems,
       activeTab,
-      setActiveTab
+      setActiveTab,
+      setAnalysisItemViewConfig,
+      removeAnalysisItem,
+      duplicateAnalysisItem
     } = useDataAnalysis(analysisId);
     const quantitativeAnalysisId = computed(
       () => store.getters['dataAnalysis/analysisId']
@@ -613,7 +626,10 @@ export default defineComponent({
       shownDatacubesCountLabel,
       datacubeTitles,
       activeTab,
-      setActiveTab
+      setActiveTab,
+      setAnalysisItemViewConfig,
+      removeAnalysisItem,
+      duplicateAnalysisItem
     };
   },
   mounted() {

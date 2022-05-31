@@ -91,7 +91,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import * as d3 from 'd3';
-import { mapActions, useStore } from 'vuex';
+import { useStore } from 'vuex';
 import router from '@/router';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
@@ -117,7 +117,7 @@ import { ColorScaleType, COLOR_SCHEME, SCALE_FUNCTION } from '@/utils/colors-uti
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
-import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
+import { openDatacubeDrilldown } from '@/utils/analysis-util';
 import { normalize } from '@/utils/value-util';
 import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
 import MapLegend from '@/components/widgets/map-legend.vue';
@@ -135,7 +135,14 @@ export default defineComponent({
     RegionMap,
     MapLegend
   },
-  emits: ['updated-bars-data', 'bar-chart-hover', 'map-click-region', 'invert-data-updated'],
+  emits: [
+    'updated-bars-data',
+    'bar-chart-hover',
+    'map-click-region',
+    'invert-data-updated',
+    'remove-analysis-item',
+    'duplicate-analysis-item'
+  ],
   props: {
     id: {
       type: String,
@@ -188,6 +195,10 @@ export default defineComponent({
     limitNumberOfChartBars: {
       type: Boolean,
       default: false
+    },
+    analysisItem: {
+      type: Object as PropType<AnalysisItem>,
+      required: true
     }
   },
   setup(props, { emit }) {
@@ -203,7 +214,8 @@ export default defineComponent({
       barChartHoverId,
       isDataInverted,
       limitNumberOfChartBars,
-      maxNumberOfChartBars
+      maxNumberOfChartBars,
+      analysisItem
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -313,16 +325,12 @@ export default defineComponent({
 
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
-    const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataSpaceDataState | null>(null);
-    const datacubeAnalysisItem = analysisItems.value.find(item => item.itemId === itemId.value);
-    if (datacubeAnalysisItem) {
-      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
-      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
-    }
+    initialViewConfig.value = analysisItem.value.viewConfig;
+    initialDataConfig.value = analysisItem.value.dataConfig;
 
     const initialSelectedScenarioIds = ref<string[]>([]);
 
@@ -673,7 +681,6 @@ export default defineComponent({
       AggregationOption,
       visibleTimeseriesData,
       timeseriesDataForSelection,
-      analysisItems,
       project,
       analysisId,
       props,
@@ -695,22 +702,14 @@ export default defineComponent({
     };
   },
   methods: {
-    ...mapActions({
-      removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
-    }),
     openDrilldown() {
       openDatacubeDrilldown(this.props.id, this.itemId, router, this.store);
     },
     clickRemove() {
-      // when removing, it is not enough to only send the datacube id to be removed
-      //  since the datacube may have been duplicated multiple times
-      //  and we need to suport removing one at a time
-      this.removeAnalysisItems([this.itemId]);
+      this.$emit('remove-analysis-item', this.itemId);
     },
     clickDuplicate() {
-      if (this.metadata !== null) {
-        duplicateAnalysisItem(this.metadata, this.id, this.analysisId, this.store);
-      }
+      this.$emit('duplicate-analysis-item', this.itemId);
     }
   }
 });

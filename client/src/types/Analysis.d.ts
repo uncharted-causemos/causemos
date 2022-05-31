@@ -21,7 +21,6 @@ export interface AnalysisItem {
   viewConfig: ViewState;
   dataConfig: DataSpaceDataState;
 
-  name?: string;
   selected?: boolean;
 }
 

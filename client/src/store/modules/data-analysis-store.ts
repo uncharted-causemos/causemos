@@ -47,10 +47,6 @@ const actions: ActionTree<AnalysisState, any> = {
     }];
     // only one datacube is being previewed here, so store its 'id' as the analysisItem detail
     commit('setAnalysisItemsPreview', updatedAnalysisItems);
-  },
-  removeAnalysisItems({ state, commit }, analysisItemIds: string[] = []) {
-    const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.itemId));
-    commit('setAnalysisItems', items);
   }
 };
 

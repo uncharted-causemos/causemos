@@ -73,9 +73,9 @@ import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { convertRegionalDataToBarData, getSelectedOutput, isModel } from '@/utils/datacube-util';
 import { AggregationOption, TemporalResolutionOption, DatacubeStatus, SPLIT_BY_VARIABLE } from '@/types/Enums';
-import { computed, defineComponent, ref, toRefs, watch, watchEffect } from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
-import { mapActions, useStore } from 'vuex';
+import { useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
@@ -84,7 +84,7 @@ import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/
 import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
-import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
+import { openDatacubeDrilldown } from '@/utils/analysis-util';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';
@@ -117,16 +117,25 @@ export default defineComponent({
     datacubeIndex: {
       type: Number,
       default: 0
+    },
+    analysisItem: {
+      type: Object as PropType<AnalysisItem>,
+      required: true
     }
   },
-  emits: ['loaded-timeseries'],
+  emits: [
+    'loaded-timeseries',
+    'remove-analysis-item',
+    'duplicate-analysis-item'
+  ],
   setup(props, { emit }) {
     const {
       itemId,
       id,
       datacubeId,
       globalTimestamp,
-      datacubeIndex
+      datacubeIndex,
+      analysisItem
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -219,16 +228,12 @@ export default defineComponent({
 
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
-    const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataSpaceDataState | null>(null);
-    const datacubeAnalysisItem = analysisItems.value.find(item => item.itemId === itemId.value);
-    if (datacubeAnalysisItem) {
-      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
-      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
-    }
+    initialViewConfig.value = analysisItem.value.viewConfig;
+    initialDataConfig.value = analysisItem.value.dataConfig;
 
     const selectedRegionIds = ref<string[]>([]);
 
@@ -427,7 +432,6 @@ export default defineComponent({
       setBreakdownOption,
       AggregationOption,
       visibleTimeseriesData,
-      analysisItems,
       project,
       analysisId,
       props,
@@ -445,22 +449,14 @@ export default defineComponent({
     };
   },
   methods: {
-    ...mapActions({
-      removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
-    }),
     openDrilldown() {
       openDatacubeDrilldown(this.props.id, this.itemId, router, this.store);
     },
     clickRemove() {
-      // when removing, it is not enough to only send the datacube id to be removed
-      //  since the datacube may have been duplicated multiple times
-      //  and we need to suport removing one at a time
-      this.removeAnalysisItems([this.itemId]);
+      this.$emit('remove-analysis-item', this.itemId);
     },
     clickDuplicate() {
-      if (this.metadata !== null) {
-        duplicateAnalysisItem(this.metadata, this.id, this.analysisId, this.store);
-      }
+      this.$emit('duplicate-analysis-item', this.itemId);
     }
   }
 });
