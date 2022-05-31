@@ -14,22 +14,15 @@ router.post('/', asyncHandler(async (req, res) => {
     description,
     website,
     maintainer,
-    type,
-    // eslint-disable-next-line camelcase
-    ready_instances,
-    // eslint-disable-next-line camelcase
-    draft_instances
+    type
   } = req.body;
   const result = await domainProjectService.createProject(
     name,
     description,
     website,
     maintainer,
-    type,
-    // eslint-disable-next-line camelcase
-    ready_instances,
-    // eslint-disable-next-line camelcase
-    draft_instances);
+    type);
+
   res.json(result);
 }));
 
@@ -48,6 +41,14 @@ router.put('/:id', asyncHandler(async (req, res) => {
 router.get('/', asyncHandler(async (req, res) => {
   const filterParams = req.query;
   const result = await domainProjectService.getAllProjects(filterParams);
+  res.json(result);
+}));
+
+/**
+ * GET domain project stats
+ */
+router.get('/stats', asyncHandler(async (req, res) => {
+  const result = await domainProjectService.getDomainProjectStatistics();
   res.json(result);
 }));
 

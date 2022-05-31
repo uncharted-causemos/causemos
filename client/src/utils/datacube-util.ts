@@ -10,8 +10,6 @@ import {
 } from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
 import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service';
-import domainProjectService from '@/services/domain-project-service';
-import { DomainProject } from '@/types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { RegionAgg, RegionalAggregations } from '@/types/Outputdata';
 import { DATA_LAYER_TRANSPARENCY } from './map-util-new';
@@ -303,36 +301,18 @@ export const isCategoricalAxis = (name: string, dimensions: DimensionInfo[]) => 
   return dim.type.startsWith('str') || isGeoParameter(dim.type) || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
 };
 
-export const unpublishDatacube = async (datacubeId: string, projectId: string) => {
+export const unpublishDatacube = async (datacubeId: string) => {
   const rawMetadata = await getDatacubeById(datacubeId);
   if (rawMetadata) {
-    await unpublishDatacubeInstance(rawMetadata, projectId);
+    await unpublishDatacubeInstance(rawMetadata);
   }
 };
 
-export const unpublishDatacubeInstance = async (instance: Model, projectId: string) => {
+export const unpublishDatacubeInstance = async (instance: Model) => {
   // unpublish the datacube instance
   instance.status = DatacubeStatus.Registered;
   const delta = { id: instance.id, status: instance.status };
   await updateDatacube(instance.id, delta);
-
-  // also, update the project stats count
-  const domainProject: DomainProject = await domainProjectService.getProject(projectId);
-  // add the instance to list of draft instances
-  const updatedDraftInstances = domainProject.draft_instances;
-  if (!updatedDraftInstances.includes(instance.name)) {
-    updatedDraftInstances.push(instance.name);
-  }
-  // remove the instance from the list of ready/published instances
-  const updatedReadyInstances = domainProject.ready_instances.filter(n => n !== instance.name);
-  // update the project doc at the server
-  await domainProjectService.updateDomainProject(
-    projectId,
-    {
-      draft_instances: updatedDraftInstances,
-      ready_instances: updatedReadyInstances
-    }
-  );
 };
 
 export const getFilteredScenariosFromIds = (scenarioIds: string[], allModelRunData: ModelRun[]) => {

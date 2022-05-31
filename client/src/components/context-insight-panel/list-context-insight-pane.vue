@@ -250,7 +250,7 @@ export default {
         const datacubeId = insight.context_id[0];
         const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, this.project);
         if (publicInsightCount === 1) {
-          await unpublishDatacube(datacubeId, this.project);
+          await unpublishDatacube(datacubeId);
           this.setRefreshDatacubes(true);
         }
       }

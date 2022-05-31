@@ -34,8 +34,8 @@ export interface DomainProject {
   website: string;
   maintainer: DatacubeMaintainer[];
   type: DatacubeType; // e.g., model, indicator
-  ready_instances: string[];
-  draft_instances: string[];
+  ready_instances: string[]; // Deprecated - to remove
+  draft_instances: string[]; // Deprecated - to remove
 }
 
 export interface DatasetInfo {
