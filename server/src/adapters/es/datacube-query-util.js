@@ -24,9 +24,12 @@ class DatacubeQueryUtil extends QueryUtil {
     const queries = [];
     for (const value of values) {
       let queryStr = '';
-      if (value.split(' ').length > 1) {
-        const conjunctiveStr = `(${value.split(' ').join(' AND ')})^2`;
-        const disjunctiveStr = `(${value.split(' ').join(' OR ')})`;
+
+      const tokens = value.split(' ');
+      if (tokens.length > 1) {
+        const boostedTokens = tokens.map((str, i) => `${str}^${tokens.length - i}`);
+        const conjunctiveStr = `(${boostedTokens.join(' AND ')})^2`;
+        const disjunctiveStr = `(${boostedTokens.join(' OR ')})`;
         queryStr = `${conjunctiveStr} OR ${disjunctiveStr}`;
       } else {
         queryStr = value;
@@ -37,17 +40,17 @@ class DatacubeQueryUtil extends QueryUtil {
           query: queryStr,
           fields: [
             'name^2',
-            'descriptions^2',
+            'description^2',
             'family_name^2',
-            'parameter.display_name^2',
-            'outputs.display_name^2'
+            'parameters.display_name^2',
+            'outputs.display_name^10',
+
+            'parameters.description',
+            'outputs.description'
           ]
         }
       });
     }
-    console.log('');
-    console.log(JSON.stringify(queries, null, 2));
-    console.log('');
     return {
       bool: {
         should: queries
@@ -72,7 +75,7 @@ class DatacubeQueryUtil extends QueryUtil {
     return {
       query: {
         bool: {
-          filter: allFilters
+          must: allFilters
         }
       }
     };
