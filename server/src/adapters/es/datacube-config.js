@@ -30,13 +30,8 @@ const FIELDS = Object.freeze({
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
-  keyword: { // For search only
-    fields: ['name', 'description', 'family_name', 'category', 'domains',
-      'maintainer.name', 'maintainer.organization', 'tags',
-      'geography.country', 'geography.admin1', 'geography.admin2', 'geography.admin3',
-      'parameters.name', 'parameters.display_name', 'parameters.description',
-      'outputs.name', 'outputs.display_name', 'outputs.description',
-      'qualifier_outputs.name', 'qualifier_outputs.display_name', 'qualifier_outputs.description'
+  keyword: { // Search only, fields are for hardwired in datacube-query-util in order for score boosting to work
+    fields: [
     ],
     type: FIELD_TYPES.REGEXP,
     level: FIELD_LEVELS.DATACUBE
