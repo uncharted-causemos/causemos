@@ -323,6 +323,13 @@ input::-webkit-slider-runnable-track {
   border-radius: 8px;
 }
 
+input[type='radio'] {
+  appearance: radio;
+  cursor: pointer;
+  position: relative;
+  bottom: -2px;
+}
+
 .fa-check-square-o::before {
   // HACK: reduce the visible shift when you
   //  check a checkbox

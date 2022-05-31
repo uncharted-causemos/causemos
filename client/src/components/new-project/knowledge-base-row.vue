@@ -116,11 +116,7 @@ export default defineComponent({
   }
 
   input[type="radio"] {
-    appearance: radio;
     margin: 0 8px;
-    cursor: pointer;
-    position: relative;
-    bottom: -2px;
   }
 
   label {

@@ -1089,26 +1089,6 @@ h6 {
   margin: 2.25rem 5px 0 5px;
 }
 
-input {
-  background: white;
-}
-
-input[type=number] {
-  width: 60px;
-  margin: 0px 5px;
-  display: inline-block;
-  background: white;
-}
-
-input[type="radio"] {
-  appearance: radio;
-  margin: 0;
-  margin-right: 5px;
-  cursor: pointer;
-  position: relative;
-  bottom: -2px;
-}
-
 .expanded-node {
   flex-shrink: 0;
   border: 1px solid #bbb;
