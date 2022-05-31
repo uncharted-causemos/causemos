@@ -62,6 +62,14 @@ export function useDataAnalysis(analysisId: Ref<string>) {
       setAnalysisItems([...analysisItems.value, duplicatedItem]);
     }
   };
+  const toggleAnalysisItemSelected = (itemId: string) => {
+    const items = _.cloneDeep(analysisItems.value);
+    const itemToToggle = items.find(i => i.itemId === itemId);
+    if (itemToToggle) {
+      itemToToggle.selected = !itemToToggle.selected;
+      setAnalysisItems(items);
+    }
+  };
   const setAnalysisItemViewConfig = (itemId: string, viewConfig: any) => {
     const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
     const analysisItem = updatedAnalysisItems.find(
@@ -93,6 +101,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     setActiveTab,
     setAnalysisItemViewConfig,
     removeAnalysisItem,
-    duplicateAnalysisItem
+    duplicateAnalysisItem,
+    toggleAnalysisItemSelected
   };
 }

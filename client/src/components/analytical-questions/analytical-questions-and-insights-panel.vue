@@ -8,7 +8,11 @@
     @set-active="setActive"
   >
       <list-datacubes-drawer-pane
-        v-if="currentTab === 'Available datacubes'" />
+        v-if="currentTab === 'Available datacubes'"
+        :analysis-items="analysisItems"
+        @remove-analysis-item="removeAnalysisItem"
+        @toggle-analysis-item-selected="toggleAnalysisItemSelected"
+      />
 
       <list-context-insight-pane
         v-if="currentTab === 'Context Insights'" />
@@ -21,10 +25,11 @@
 
 <script lang="ts">
 import SidePanel from '@/components/side-panel/side-panel.vue';
-import { computed, defineComponent } from 'vue';
+import { computed, defineComponent, PropType } from 'vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import ListDatacubesDrawerPane from '@/components/data/list-datacubes-drawer-pane.vue';
 import { useStore } from 'vuex';
+import { AnalysisItem } from '@/types/Analysis';
 
 export default defineComponent({
   name: 'AnalyticalQuestionsAndInsightsPanel',
@@ -32,6 +37,12 @@ export default defineComponent({
     SidePanel,
     ListContextInsightPane,
     ListDatacubesDrawerPane
+  },
+  props: {
+    analysisItems: {
+      type: Array as PropType<AnalysisItem[]>,
+      default: () => []
+    }
   },
   setup() {
     const store = useStore();
@@ -61,6 +72,12 @@ export default defineComponent({
   methods: {
     setActive(tab: string) {
       this.currentTab = tab;
+    },
+    toggleAnalysisItemSelected(itemId: string) {
+      this.$emit('toggle-analysis-item-selected', itemId);
+    },
+    removeAnalysisItem(itemId: string) {
+      this.$emit('remove-analysis-item', itemId);
     }
   }
 });
@@ -71,19 +88,5 @@ export default defineComponent({
 
   .analytical-questions-and-insights-panel-container {
     margin-top: 10px;
-
-    .context-insights-container {
-      margin-left: 1rem;
-      margin-right: 1rem;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .analytical-questions-container {
-      margin-left: 1rem;
-      margin-right: 1rem;
-      overflow: auto;
-    }
   }
 </style>

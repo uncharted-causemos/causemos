@@ -3,7 +3,12 @@
     <teleport to="#navbar-trailing-teleport-destination">
       <analysis-options-button />
     </teleport>
-    <analytical-questions-and-insights-panel class="side-panel">
+    <analytical-questions-and-insights-panel
+      class="side-panel"
+      :analysis-items="analysisItems"
+      @remove-analysis-item="removeAnalysisItem"
+      @toggle-analysis-item-selected="toggleAnalysisItemSelected"
+    >
       <template #below-tabs>
         <analysis-comments-button />
       </template>
@@ -251,7 +256,8 @@ export default defineComponent({
       setActiveTab,
       setAnalysisItemViewConfig,
       removeAnalysisItem,
-      duplicateAnalysisItem
+      duplicateAnalysisItem,
+      toggleAnalysisItemSelected
     } = useDataAnalysis(analysisId);
     const quantitativeAnalysisId = computed(
       () => store.getters['dataAnalysis/analysisId']
@@ -580,6 +586,7 @@ export default defineComponent({
     });
 
     return {
+      analysisItems,
       selectedAnalysisItems,
       allTimeseriesMap,
       allDatacubesMetadataMap,
@@ -629,7 +636,8 @@ export default defineComponent({
       setActiveTab,
       setAnalysisItemViewConfig,
       removeAnalysisItem,
-      duplicateAnalysisItem
+      duplicateAnalysisItem,
+      toggleAnalysisItemSelected
     };
   },
   mounted() {

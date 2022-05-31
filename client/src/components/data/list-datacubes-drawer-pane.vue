@@ -1,7 +1,7 @@
 <template>
   <div class="list-datacubes-drawer-pane-container">
-    <template v-if="datacubeItems.length > 0">
-      <div v-for="item in datacubeItems"
+    <template v-if="analysisItems.length > 0">
+      <div v-for="item in analysisItems"
         :key="item.datacubeId">
         <div class="checkbox">
           <label
@@ -31,7 +31,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 
 import { useStore } from 'vuex';
 import MessageDisplay from '@/components/widgets/message-display.vue';
@@ -43,37 +43,27 @@ export default defineComponent({
   components: {
     MessageDisplay
   },
+  props: {
+    analysisItems: {
+      type: Array as PropType<AnalysisItem[]>,
+      required: true
+    }
+  },
+  emits: ['toggle-analysis-item-selected', 'remove-analysis-item'],
   data: () => ({
     messageNoData: 'No Datacubes are added to this analysis. \nPlease add some datacube by clicking on <b>"Search Data Cubes"</b> button!'
   }),
-  setup() {
+  setup(props) {
+    const { analysisItems } = toRefs(props);
     const store = useStore();
-    const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
-    const datacubeItems = ref<AnalysisItem[]>([]);
-
-    watch(
-      () => [
-        analysisItems.value
-      ],
-      () => {
-        datacubeItems.value = _.cloneDeep(analysisItems.value);
-      },
-      {
-        immediate: true
-      }
-    );
-
     const canSelectItem = computed(() => {
-      return datacubeItems.value.filter(item => item.selected).length < MAX_ANALYSIS_DATACUBES_COUNT;
+      return analysisItems.value.filter(item => item.selected).length < MAX_ANALYSIS_DATACUBES_COUNT;
     });
-
-    // save selected datacubes in insights so that restoring an insight should remember which datacubes were selected
 
     return {
       store,
-      datacubeItems,
       analysisId,
       canSelectItem
     };
@@ -81,19 +71,11 @@ export default defineComponent({
   methods: {
     toggleItemSelection(item: AnalysisItem) {
       if (item.selected || this.canSelectItem) {
-        const items = _.cloneDeep(this.datacubeItems);
-        const target = items.find(i => i.itemId === item.itemId);
-        if (target) {
-          target.selected = !target.selected;
-        }
-        this.datacubeItems = items;
-        this.store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: this.analysisId, analysisItems: items });
+        this.$emit('toggle-analysis-item-selected', item.itemId);
       }
     },
     removeItem(item: AnalysisItem) {
-      const items = _.cloneDeep(this.datacubeItems).filter(i => i.itemId !== item.itemId);
-      this.datacubeItems = items;
-      this.store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: this.analysisId, analysisItems: items });
+      this.$emit('remove-analysis-item', item.itemId);
     }
   }
 });
