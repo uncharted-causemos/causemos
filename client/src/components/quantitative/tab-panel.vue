@@ -653,6 +653,8 @@ main {
 
 .side-panel {
   margin-top: 10px;
+  // Must be higher than tab-content's z-index of 1
+  z-index: 2;
 }
 
 .quantitative-drilldown {
