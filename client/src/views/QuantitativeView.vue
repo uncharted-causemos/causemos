@@ -68,7 +68,7 @@ import modelService from '@/services/model-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
-import { createAnalysis, getAnalysisState } from '@/services/analysis-service';
+import { createAnalysis, getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import { ProjectType } from '@/types/Enums';
 import { v4 as uuidv4 } from 'uuid';
@@ -157,8 +157,7 @@ export default defineComponent({
       setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
       setContextId: 'insightPanel/setContextId',
-      setRunImmediately: 'model/setRunImmediately',
-      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems'
+      setRunImmediately: 'model/setRunImmediately'
     }),
     async onCreateScenario(scenarioInfo: { name: string; description: string }) {
       if (this.scenarios === null) {
@@ -570,13 +569,13 @@ export default defineComponent({
         if (existingAnalysisId) {
           // update existing data analysis
           try {
-            const existingAnalysisState = await getAnalysisState(existingAnalysisId);
-            existingAnalysisState.currentAnalysisId = existingAnalysisId;
+            const existingAnalysisState = await getAnalysisState(
+              existingAnalysisId
+            );
             existingAnalysisState.analysisItems = analysisItems;
-            await this.updateAnalysisItems(existingAnalysisState);
+            await saveAnalysisState(existingAnalysisId, existingAnalysisState);
           } catch (e) {
-            // we have an existing analysis id, but the analysis itself is not there
-            //  perhaps it was manually removed, so we need to create a new one
+            // We have an existing analysis id, but not the analysis itself.
             createNewAnalysis = true;
           }
         } else {
@@ -586,7 +585,6 @@ export default defineComponent({
         if (createNewAnalysis) {
           // create a new data analysis
           const initialAnalysisState = { // AnalysisState
-            currentAnalysisId: '',
             analysisItems
           };
           const analysis = await createAnalysis({
@@ -594,9 +592,6 @@ export default defineComponent({
             projectId: this.project,
             state: initialAnalysisState
           } as any);
-          // update the analysis items in case the user wants to redirect to the data analysis momentarily
-          initialAnalysisState.currentAnalysisId = analysis.id;
-          await this.updateAnalysisItems(initialAnalysisState);
           // save the created analysis id with the CAG
           await modelService.updateModelMetadata(this.currentCAG, {
             data_analysis_id: analysis.id
