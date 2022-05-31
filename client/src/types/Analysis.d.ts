@@ -26,7 +26,19 @@ export interface AnalysisItem {
 }
 
 export interface AnalysisState {
+  // FIXME: currently only analysisItems is actually used in practice.
   currentAnalysisId: string;
   analysisItems: AnalysisItem[];
-  comparativeAnalysisViewSelection?: string;
+}
+
+export interface DataAnalysisState {
+  analysisItems: AnalysisItem[];
+  activeTab: ComparativeAnalysisMode;
+  // binCount
+  // selectedAdminLevel
+  // binningType (linear/quartile)
+  // compositionType (union/intersection)
+  // barCountLimit (-1 means no limit)
+  // shouldNormalizeRegionRankingRows
+  // FIXME: there may be some overlap with ViewState
 }

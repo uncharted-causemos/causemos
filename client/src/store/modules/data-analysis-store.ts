@@ -2,7 +2,6 @@ import _ from 'lodash';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
 import { AnalysisItem, AnalysisState } from '@/types/Analysis';
-import { ComparativeAnalysisMode } from '@/types/Enums';
 
 const saveState = _.debounce((state: AnalysisState) => {
   // FIXME: Vue3 A bit hacky, might be a better way
@@ -17,16 +16,14 @@ const saveState = _.debounce((state: AnalysisState) => {
 // Default state for state that can be saved/loaded
 const DEFAULT_STATE: AnalysisState = {
   currentAnalysisId: '',
-  analysisItems: [],
-  comparativeAnalysisViewSelection: ComparativeAnalysisMode.List
+  analysisItems: []
 };
 
 const state = { ...DEFAULT_STATE };
 
 const getters: GetterTree<AnalysisState, any> = {
   analysisItems: state => state.analysisItems,
-  analysisId: state => state.currentAnalysisId,
-  comparativeAnalysisViewSelection: state => state.comparativeAnalysisViewSelection
+  analysisId: state => state.currentAnalysisId
 };
 
 const actions: ActionTree<AnalysisState, any> = {
@@ -54,9 +51,6 @@ const actions: ActionTree<AnalysisState, any> = {
   removeAnalysisItems({ state, commit }, analysisItemIds: string[] = []) {
     const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.itemId));
     commit('setAnalysisItems', items);
-  },
-  setComparativeAnalysisViewSelection({ commit }, newValue: string) {
-    commit('setComparativeAnalysisViewSelection', newValue);
   }
 };
 
@@ -71,9 +65,6 @@ const mutations: MutationTree<AnalysisState> = {
   },
   setAnalysisItemsPreview(state, items = []) {
     state.analysisItems = items;
-  },
-  setComparativeAnalysisViewSelection(state, newValue: string) {
-    state.comparativeAnalysisViewSelection = newValue;
   }
 };
 
