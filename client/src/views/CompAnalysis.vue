@@ -257,7 +257,8 @@ export default defineComponent({
       setAnalysisItemViewConfig,
       removeAnalysisItem,
       duplicateAnalysisItem,
-      toggleAnalysisItemSelected
+      toggleAnalysisItemSelected,
+      setAnalysisItems
     } = useDataAnalysis(analysisId);
     const quantitativeAnalysisId = computed(
       () => store.getters['dataAnalysis/analysisId']
@@ -521,7 +522,7 @@ export default defineComponent({
           allAnalysisItems.forEach(item => {
             item.selected = selectedItems.findIndex(sItem => sItem.itemId === item.itemId) >= 0;
           });
-          store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
+          setAnalysisItems(allAnalysisItems);
 
           regionRankingDataInversion.value =
             dataState.regionRankingDataInversion;

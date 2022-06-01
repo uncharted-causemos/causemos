@@ -117,6 +117,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     setAnalysisItemDataState,
     removeAnalysisItem,
     duplicateAnalysisItem,
-    toggleAnalysisItemSelected
+    toggleAnalysisItemSelected,
+    setAnalysisItems
   };
 }
