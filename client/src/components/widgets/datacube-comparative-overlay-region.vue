@@ -121,6 +121,10 @@ export default defineComponent({
     analysisItem: {
       type: Object as PropType<AnalysisItem>,
       required: true
+    },
+    analysisId: {
+      type: String,
+      required: true
     }
   },
   emits: [
@@ -226,7 +230,6 @@ export default defineComponent({
 
     const store = useStore();
 
-    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
@@ -433,8 +436,6 @@ export default defineComponent({
       AggregationOption,
       visibleTimeseriesData,
       project,
-      analysisId,
-      props,
       store,
       DatacubeStatus,
       statusColor,
@@ -450,7 +451,13 @@ export default defineComponent({
   },
   methods: {
     openDrilldown() {
-      openDatacubeDrilldown(this.props.id, this.itemId, router, this.store);
+      openDatacubeDrilldown(
+        this.id,
+        this.itemId,
+        router,
+        this.project,
+        this.analysisId
+      );
     },
     clickRemove() {
       this.$emit('remove-analysis-item', this.itemId);

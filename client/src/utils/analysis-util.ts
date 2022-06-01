@@ -22,14 +22,12 @@ export const createAnalysisItem = (
   };
 };
 
-export const openDatacubeDrilldown = async (id: string, itemId: string, router: any, store: any) => {
-  const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
-  const project = computed(() => store.getters['app/project']);
+export const openDatacubeDrilldown = async (id: string, itemId: string, router: any, project: string, analysisId: string) => {
   router.push({
     name: 'data',
     params: {
-      project: project.value,
-      analysisId: analysisId.value,
+      project: project,
+      analysisId: analysisId,
       projectType: ProjectType.Analysis
     },
     query: {

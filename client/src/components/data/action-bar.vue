@@ -41,6 +41,10 @@ export default {
     activeTab: {
       type: String,
       required: true
+    },
+    analysisId: {
+      type: String,
+      required: true
     }
   },
   setup() {
@@ -55,7 +59,6 @@ export default {
   }),
   computed: {
     ...mapGetters({
-      analysisId: 'dataAnalysis/analysisId',
       project: 'app/project'
     })
   },

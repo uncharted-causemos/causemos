@@ -56,7 +56,6 @@ export default defineComponent({
   setup(props) {
     const { analysisItems } = toRefs(props);
     const store = useStore();
-    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
     const canSelectItem = computed(() => {
       return analysisItems.value.filter(item => item.selected).length < MAX_ANALYSIS_DATACUBES_COUNT;
@@ -64,7 +63,6 @@ export default defineComponent({
 
     return {
       store,
-      analysisId,
       canSelectItem
     };
   },

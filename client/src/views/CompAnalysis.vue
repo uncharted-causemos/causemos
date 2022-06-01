@@ -1,7 +1,7 @@
 <template>
   <div class="comp-analysis-container">
     <teleport to="#navbar-trailing-teleport-destination">
-      <analysis-options-button />
+      <analysis-options-button :analysis-id="analysisId" />
     </teleport>
     <analytical-questions-and-insights-panel
       class="side-panel"
@@ -10,13 +10,14 @@
       @toggle-analysis-item-selected="toggleAnalysisItemSelected"
     >
       <template #below-tabs>
-        <analysis-comments-button />
+        <analysis-comments-button :analysis-id="analysisId" />
       </template>
     </analytical-questions-and-insights-panel>
     <main class="insight-capture">
       <div class="action-bar-container">
         <action-bar
           :active-tab="activeTab"
+          :analysisId="analysisId"
           @set-active-tab="setActiveTab"
           style="flex: 1"
         />
@@ -90,6 +91,7 @@
             :selected-timestamp="selectedTimestamp"
             :selected-timestamp-range="selectedTimestampRange"
             :analysis-item="item"
+            :analysis-id="analysisId"
             @loaded-timeseries="onLoadedTimeseries"
             @select-timestamp="setSelectedTimestamp"
             @set-analysis-item-view-config="setAnalysisItemViewConfig"
@@ -117,6 +119,7 @@
                 :selected-timestamp="globalTimestamp"
                 :selected-timestamp-range="selectedTimestampRange"
                 :analysis-item="item"
+                :analysis-id="analysisId"
                 @loaded-timeseries="onLoadedTimeseries"
                 @remove-analysis-item="removeAnalysisItem"
                 @duplicate-analysis-item="duplicateAnalysisItem"
@@ -143,6 +146,7 @@
             :max-number-of-chart-bars="maxNumberOfChartBars"
             :limit-number-of-chart-bars="limitNumberOfChartBars"
             :analysis-item="item"
+            :analysis-id="analysisId"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
             @map-click-region="onMapClickRegion"
@@ -260,9 +264,6 @@ export default defineComponent({
       toggleAnalysisItemSelected,
       setAnalysisItems
     } = useDataAnalysis(analysisId);
-    const quantitativeAnalysisId = computed(
-      () => store.getters['dataAnalysis/analysisId']
-    );
 
     const activeDrilldownTab = ref<string|null>('region-settings');
     const selectedAdminLevel = ref(0);
@@ -299,7 +300,7 @@ export default defineComponent({
 
     onMounted(async () => {
       store.dispatch('app/setAnalysisName', '');
-      const result = await getAnalysis(quantitativeAnalysisId.value);
+      const result = await getAnalysis(analysisId.value);
       if (result) {
         store.dispatch('app/setAnalysisName', result.title);
       }
@@ -634,6 +635,7 @@ export default defineComponent({
       shownDatacubesCountLabel,
       datacubeTitles,
       activeTab,
+      analysisId,
       setActiveTab,
       setAnalysisItemViewConfig,
       removeAnalysisItem,
