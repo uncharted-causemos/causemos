@@ -1,4 +1,5 @@
 import API from '@/api/api';
+import { createAnalysis } from './analysis-service-new';
 
 /**
  * Get analysis by ID
@@ -26,23 +27,6 @@ export const getAnalysisState = async (analysisId) => {
  */
 export const saveAnalysisState = async (analysisId, state) => {
   const result = await API.put(`analyses/${analysisId}`, { state }, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
-  return result.data;
-};
-
-/**
- * Create new Analysis resource
- * @param {object} payload Analysis payload
- * @param {string} payload.title Analysis title
- * @param {string} payload.description Analysis description
- * @param {string} payload.projectId Project Id
- */
-export const createAnalysis = async({ title = '', description = '', projectId, state = {} } = {}) => {
-  if (!projectId) return console.error(new Error('projectId must be provided'));
-  const result = await API.post('analyses', { title, description, project_id: projectId, state }, {
     headers: {
       'Content-Type': 'application/json'
     }
@@ -87,14 +71,13 @@ export const getAnalysesByProjectId = async (projectId) => {
  */
 export const duplicateAnalysis = async (analysisId, newName = undefined) => {
   const original = await getAnalysis(analysisId);
-  const newAnalysis = await createAnalysis({
-    title: newName || `Copy of ${original.title}`,
-    description: original.description,
-    projectId: original.project_id
-  });
-  const savedState = await saveAnalysisState(newAnalysis.id, original.state);
-  newAnalysis.state = savedState;
-  return newAnalysis;
+  const { id } = await createAnalysis(
+    newName || `Copy of ${original.title}`,
+    original.description,
+    original.project_id,
+    original.state
+  );
+  return id;
 };
 
 /**
