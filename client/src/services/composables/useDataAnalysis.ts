@@ -7,22 +7,19 @@ import { v4 as uuidv4 } from 'uuid';
 import { DataSpaceDataState } from '@/types/Insight';
 
 const saveState = _.debounce((analysisId, state: DataAnalysisState) => {
-  // FIXME: Investigate if and when this occurred before before removing
-  // if (!analysisId) return; // Current route doesn't support saving analysis state. Just return.
   saveAnalysisState(analysisId, state);
 }, 500);
 
 export function useDataAnalysis(analysisId: Ref<string>) {
   const analysisState = ref<DataAnalysisState>({
     analysisItems: [],
-    // FIXME: script to ensure this exists for each analysis state
     activeTab: ComparativeAnalysisMode.List
   });
   // Whenever analysisId changes, fetch the state for that analysis
   watchEffect(async () => {
     if (!analysisId.value) return;
     const result = await getAnalysisState(analysisId.value);
-    // FIXME: remove
+    // FIXME: run script to ensure tab exists for each analysis then remove:
     if (result.activeTab === undefined) {
       console.error('invalid fetched analysis state', result);
       analysisState.value = {
@@ -90,8 +87,9 @@ export function useDataAnalysis(analysisId: Ref<string>) {
       setAnalysisItems(updatedAnalysisItems);
     }
   };
-  // FIXME: run a script to make sure all analysis items have `selected` properties
-  // FIXME: run a script to make sure all analyses have the right number of selected items
+  // FIXME: run a script to make sure all analysis items have `selected`
+  //  properties, and to make sure all analyses have the right number of
+  //  selected items
   const selectedAnalysisItems = computed(() => analysisItems.value.filter(item => item.selected));
 
   const activeTab = computed(() => analysisState.value.activeTab);
