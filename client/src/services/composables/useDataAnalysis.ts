@@ -109,6 +109,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
   };
 
   return {
+    analysisState,
     analysisItems,
     selectedAnalysisItems,
     activeTab,

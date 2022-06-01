@@ -4,6 +4,9 @@
     <search-listview
       :datacubes="filteredDatacubes"
       :enableMultipleSelection="enableMultipleSelection"
+      :selected-search-items="selectedSearchItems"
+      @toggle-datacube-selected="toggleDatacubeSelected"
+      @set-datacube-selected="setDatacubeSelected"
       class="list-view"
     />
   </div>
@@ -14,7 +17,9 @@ import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 import SearchBar from '@/components/data-explorer/search-bar.vue';
 import SearchListview from '@/components/data-explorer/search-listview.vue';
-import { defineComponent } from 'vue';
+import { defineComponent, PropType } from 'vue';
+import { Datacube } from '@/types/Datacube';
+import { AnalysisItem } from '@/types/Analysis';
 
 export default defineComponent({
   name: 'Search',
@@ -28,16 +33,16 @@ export default defineComponent({
       default: () => {}
     },
     filteredDatacubes: {
-      type: Array,
+      type: Array as PropType<Datacube[]>,
       default: () => []
     },
     enableMultipleSelection: {
       type: Boolean,
       default: false
     },
-    initialDatacubeSelection: {
-      type: Array,
-      default: () => []
+    selectedSearchItems: {
+      type: Array as PropType<AnalysisItem[]>,
+      required: true
     }
   },
   computed: {
@@ -45,6 +50,7 @@ export default defineComponent({
       filters: 'dataSearch/filters'
     })
   },
+  emits: ['toggle-datacube-selected', 'set-datacube-selected'],
   created() {
     // Noote: Since `beforeRouteUpdate` or beforeRouteLeave isn't triggering, use $Watch on route instead.
     // Although this is an valid implementation. further investigation on `beforeRoute` hooks might be needed.
@@ -54,18 +60,19 @@ export default defineComponent({
       { immediate: true }
     );
   },
-  beforeMount() {
-    // Set selected datacubes for ones that are already in the analysis items.
-    this.setSelectedDatacubes(this.initialDatacubeSelection);
-  },
   methods: {
     ...mapActions({
-      setSearchFilters: 'dataSearch/setSearchFilters',
-      setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
+      setSearchFilters: 'dataSearch/setSearchFilters'
     }),
     syncStateFromRoute() {
       const filters = _.get(this.$route, 'query.filters', {});
       this.setSearchFilters(filters);
+    },
+    toggleDatacubeSelected(item: { datacubeId: string; id: string; }) {
+      this.$emit('toggle-datacube-selected', item);
+    },
+    setDatacubeSelected(item: { datacubeId: string; id: string; }) {
+      this.$emit('set-datacube-selected', item);
     }
   }
 });

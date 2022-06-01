@@ -1,8 +1,26 @@
+import { AnalysisItem } from '@/types/Analysis';
 import { ProjectType } from '@/types/Enums';
 import _ from 'lodash';
 import { computed } from 'vue';
+import { v4 as uuidv4 } from 'uuid';
+import { createDataSpaceDataState } from './insight-util';
 
 export const MAX_ANALYSIS_DATACUBES_COUNT = 9;
+
+export const createAnalysisItem = (
+  id: string,
+  datacubeId: string,
+  isSelected: boolean
+): AnalysisItem => {
+  return {
+    id,
+    datacubeId,
+    dataConfig: createDataSpaceDataState(datacubeId),
+    itemId: uuidv4(),
+    viewConfig: {},
+    selected: isSelected
+  };
+};
 
 export const openDatacubeDrilldown = async (id: string, itemId: string, router: any, store: any) => {
   const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
