@@ -13,7 +13,7 @@
               class="fa fa-lg fa-fw"
               :class="{ 'fa-check-square-o': item.selected, 'fa-square-o': !item.selected }"
             />
-            <span v-html="item.name ?? item.datacubeId"></span>
+            <span v-html="item.dataConfig.activeFeatures[item.viewConfig.selectedOutputIndex ?? 0]?.display_name ?? item.datacubeId"></span>
             <i
               class="fa fa-fw fa-close delete-item"
               @click="removeItem(item)"
