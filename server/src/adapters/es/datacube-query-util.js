@@ -39,29 +39,29 @@ class DatacubeQueryUtil extends QueryUtil {
         query_string: {
           query: queryStr,
           fields: [
-            // These are the fields people usually look for
-            'name^2',
-            'description^3',
+            // These are the fields people typically look for
+            'name^4',
             'family_name^2',
             'parameters.display_name^2',
-            'outputs.display_name^10',
+            'outputs.display_name^12',
             'qualifier_outputs.display_name^2',
 
             // Descriptions
-            'parameters.description',
-            'outputs.description',
-            'qualifier_outputs.description',
+            'description^2',
+            'parameters.description^2',
+            'outputs.description^3',
+            'qualifier_outputs.description^2',
 
             // Not as important
-            'geography.country^0.5',
-            'geography.admin1^0.5',
-            'geography.admin2^0.5',
-            'geography.admin3^0.5',
-            'category^0.5',
-            'domains^0.5',
-            'maintainer.name^0.5',
-            'maintainer.organization^0.5',
-            'tags^0.5'
+            'geography.country',
+            'geography.admin1',
+            'geography.admin2',
+            'geography.admin3',
+            'category',
+            'domains',
+            'maintainer.name',
+            'maintainer.organization',
+            'tags'
           ]
         }
       });

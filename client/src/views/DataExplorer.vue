@@ -74,7 +74,7 @@ export default defineComponent({
     selectLabel: 'Add To Analysis',
     analysis: undefined,
     pageCount: 0,
-    pageSize: 100
+    pageSize: 50
   }),
   computed: {
     ...mapGetters({

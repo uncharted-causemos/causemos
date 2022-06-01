@@ -320,6 +320,9 @@ class Datacube {
 
   async _search(filters, options) {
     const filterQuery = queryUtil.buildQuery(filters);
+    console.log('#############');
+    console.log(JSON.stringify(filterQuery));
+    console.log('#############');
     const searchPayload = {
       index: this.index,
       body: filterQuery
