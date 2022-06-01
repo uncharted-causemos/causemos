@@ -133,10 +133,9 @@ export default function useQuestionsData() {
     // Insight created during model publication are visible in the full list of
     //  insights, and as context specific insights on the corresponding model
     //  family instance's page.
-    // The latter is currently supported via a special route named dataPreview.
     const target_view: string[] = projectType === ProjectType.Analysis
       ? [currentView, 'overview', 'dataComparative']
-      : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+      : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
     const newSection: AnalyticalQuestion = {
       question: title,
       description: '',

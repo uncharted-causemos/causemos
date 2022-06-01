@@ -90,16 +90,6 @@
     </div>
 
     <div class="button-row">
-      <!--
-      <button
-        v-tooltip.top-center="'Open datacube instance for review'"
-        type="button"
-        class="btn btn-primary button-spacing btn-call-for-action"
-        @click="open(datacube.data_id)"
-      ><i class="fa fa-folder-open-o" />
-        Open
-      </button>
-      -->
       <button
         v-tooltip.top-center="'Update the model instance in Dojo'"
         type="button"
@@ -225,8 +215,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      clearLastQuery: 'query/clearLastQuery',
-      updateAnalysisItemsPreview: 'dataAnalysis/updateAnalysisItemsPreview'
+      clearLastQuery: 'query/clearLastQuery'
     }),
     dateFormatter,
     addDomain() {
@@ -262,20 +251,6 @@ export default defineComponent({
       const BASE_DOJO_URL = 'https://phantom.dojo-test.com/summary?model=';
       const redirectURL = BASE_DOJO_URL + this.datacube.data_id;
       window.location.href = redirectURL;
-    },
-    async open(id: string) {
-      // Reset filters every time we open
-      this.clearLastQuery();
-      // redirect
-      // open the datacube page similar to the data space
-      await this.updateAnalysisItemsPreview({ datacubeIDs: [id] });
-      this.$router.push({
-        name: 'dataPreview',
-        params: {
-          project: this.project,
-          projectType: this.projectMetadata.type
-        }
-      });
     },
     edit(id: string) {
       // Reset filters every time we edit
