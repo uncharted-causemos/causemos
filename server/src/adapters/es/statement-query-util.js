@@ -71,7 +71,7 @@ class StatementQueryUtil extends QueryUtil {
     return {
       query: {
         bool: {
-          filter: allFilters
+          must: allFilters
         }
       }
     };
