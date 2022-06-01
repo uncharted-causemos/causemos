@@ -314,46 +314,9 @@ export default defineComponent({
           //  (even the non-selected ones) in this analysis
           const contextIDs = analysisItems.map(dc => dc.id); // FIXME is it id or datacubeId or itemId?
           store.dispatch('insightPanel/setContextId', contextIDs);
-
-          // FIXME: remove
-          // // assign initial selection state if possible (to gracefully handle existing analyses)
-          // const allAnalysisItems = _.cloneDeep(analysisItems);
-          // let shouldUpdateServerData = false;
-          // allAnalysisItems.forEach(item => {
-          //   if (item.selected === undefined) {
-          //     // ensure that some (valid initial) boolean value is added for each item
-          //     const currSelectionCount = allAnalysisItems.filter(i => i.selected).length;
-          //     item.selected = currSelectionCount < MAX_ANALYSIS_DATACUBES_COUNT;
-          //     shouldUpdateServerData = true;
-          //   }
-          //   // handle old analyses created without having uuid for each of their items
-          //   if (item.itemId === undefined) {
-          //     item.itemId = uuidv4();
-          //     shouldUpdateServerData = true;
-          //   }
-          // });
-          // const selectedItems = allAnalysisItems.filter(item => item.selected);
-          // if (selectedItems.length > MAX_ANALYSIS_DATACUBES_COUNT) {
-          //   // we need to de-select some of the items
-          //   const deletedItems = selectedItems.splice(MAX_ANALYSIS_DATACUBES_COUNT);
-          //   deletedItems.forEach(item => { item.selected = false; });
-          //   shouldUpdateServerData = true;
-          // }
-          // if (shouldUpdateServerData) {
-          //   // update the selection status on the server
-          //   store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
-          // }
-
-          // selectedAnalysisItems.value = [];
-          // nextTick(() => {
-          //   selectedAnalysisItems.value = selectedItems;
-          // });
         } else {
           // no datacubes in this analysis, so do not fetch any insights/questions
           store.dispatch('insightPanel/setContextId', undefined);
-          // FIXME: remove
-          // reset the selectedAnalysisItems array to trigger UI update
-          // selectedAnalysisItems.value = [];
         }
         // clear overlay global timeseries
         globalTimeseries.value = [];
