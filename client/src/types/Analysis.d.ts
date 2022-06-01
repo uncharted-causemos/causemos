@@ -24,12 +24,6 @@ export interface AnalysisItem {
   selected?: boolean;
 }
 
-export interface AnalysisState {
-  // FIXME: currently only analysisItems is actually used in practice.
-  currentAnalysisId: string;
-  analysisItems: AnalysisItem[];
-}
-
 export interface DataAnalysisState {
   analysisItems: AnalysisItem[];
   activeTab: ComparativeAnalysisMode;

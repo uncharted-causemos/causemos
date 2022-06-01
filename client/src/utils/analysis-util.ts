@@ -7,6 +7,8 @@ import { createDataSpaceDataState } from './insight-util';
 
 export const MAX_ANALYSIS_DATACUBES_COUNT = 9;
 
+// Assumption: isSelected should only be true if the analysis that this item
+//  will be added to has less than MAX_ANALYSIS_DATACUBES_COUNT already selected
 export const createAnalysisItem = (
   id: string,
   datacubeId: string,
