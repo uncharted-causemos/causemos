@@ -208,7 +208,8 @@ export default defineComponent({
           admin1: [],
           admin2: [],
           admin3: []
-        }
+        },
+        searchFilters: { clauses: [] }
       };
     });
 
