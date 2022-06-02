@@ -21,7 +21,6 @@
           :filtered-datacubes="filteredDatacubes"
           :enable-multiple-selection="true"
           :selected-search-items="selectedSearchItems"
-          @set-datacube-selected="setDatacubeSelected"
           @toggle-datacube-selected="toggleDatacubeSelected"
         />
         <simple-pagination
@@ -99,11 +98,6 @@ export default defineComponent({
         ];
       }
     };
-    const setDatacubeSelected = (item: { datacubeId: string; id: string; }) => {
-      selectedSearchItems.value = [
-        createAnalysisItem(item.id, item.datacubeId, true)
-      ];
-    };
 
     return {
       analysisState,
@@ -112,7 +106,6 @@ export default defineComponent({
       analysisItems,
       selectedSearchItems,
       toggleDatacubeSelected,
-      setDatacubeSelected,
       setAnalysisItems
     };
   },
