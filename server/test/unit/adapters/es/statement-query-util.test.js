@@ -145,7 +145,7 @@ describe('query-util', function() {
       const expected = {
         query: {
           bool: {
-            filter: [
+            must: [
               EMPTY_ENABLE_FILTER,
               EMPTY_GENERAL_FILTER
             ]
@@ -159,11 +159,11 @@ describe('query-util', function() {
       const expectedSimple = {
         query: {
           bool: {
-            filter: [
+            must: [
               EMPTY_ENABLE_FILTER,
               {
                 bool: {
-                  filter: [
+                  must: [
                     {
                       bool: {
                         should: [
@@ -191,7 +191,7 @@ describe('query-util', function() {
       const expected = {
         query: {
           bool: {
-            filter: [
+            must: [
               EMPTY_ENABLE_FILTER,
               EMPTY_GENERAL_FILTER,
               NESTED_PUBLICATION_YEAR_QUERY
@@ -218,11 +218,11 @@ describe('query-util', function() {
       const expectedMulti = {
         query: {
           bool: {
-            filter: [
+            must: [
               EMPTY_ENABLE_FILTER,
               {
                 bool: {
-                  filter: [
+                  must: [
                     {
                       bool: {
                         should: [
@@ -251,11 +251,11 @@ describe('query-util', function() {
       const expectedRange = {
         query: {
           bool: {
-            filter: [
+            must: [
               EMPTY_ENABLE_FILTER,
               {
                 bool: {
-                  filter: [
+                  must: [
                     {
                       bool: {
                         should: [
@@ -283,11 +283,11 @@ describe('query-util', function() {
       const expectedRange = {
         query: {
           bool: {
-            filter: [
+            must: [
               EMPTY_ENABLE_FILTER,
               {
                 bool: {
-                  filter: [
+                  must: [
                     {
                       bool: {
                         should: [
@@ -329,11 +329,11 @@ describe('query-util', function() {
       const expectedQuery = {
         query: {
           bool: {
-            filter: [
+            must: [
               EMPTY_ENABLE_FILTER,
               {
                 bool: {
-                  filter: [
+                  must: [
                     {
                       bool: {
                         should: [
@@ -408,11 +408,11 @@ describe('query-util', function() {
       const expectedQuery = {
         query: {
           bool: {
-            filter: [
+            must: [
               EMPTY_ENABLE_FILTER,
               {
                 bool: {
-                  filter: [
+                  must: [
                     {
                       bool: {
                         should: [
@@ -455,7 +455,7 @@ describe('query-util', function() {
       const expectedQuery = {
         query: {
           bool: {
-            filter: [
+            must: [
               {
                 bool: {
                   filter: [
@@ -471,7 +471,7 @@ describe('query-util', function() {
               },
               {
                 bool: {
-                  filter: [
+                  must: [
                     {
                       bool: {
                         should: [
@@ -506,7 +506,7 @@ describe('query-util', function() {
       const expectedQuery = {
         query: {
           bool: {
-            filter: [
+            must: [
               {
                 bool: {
                   filter: [
@@ -527,7 +527,7 @@ describe('query-util', function() {
               },
               {
                 bool: {
-                  filter: [
+                  must: [
                     {
                       bool: {
                         should: [
@@ -572,7 +572,7 @@ describe('query-util', function() {
       const expectedQuery = {
         query: {
           bool: {
-            filter: [
+            must: [
               {
                 bool: {
                   filter: [
@@ -593,7 +593,7 @@ describe('query-util', function() {
               },
               {
                 bool: {
-                  filter: [
+                  must: [
                     {
                       bool: {
                         should: [
