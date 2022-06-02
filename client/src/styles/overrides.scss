@@ -294,6 +294,7 @@ table,
 input {
   -webkit-appearance: none;
   appearance: none;
+  margin: 0;
 
   &:focus {
     outline: none;
@@ -302,6 +303,11 @@ input {
       border: 2px solid $selected;
     }
   }
+}
+
+input[type=range] {
+  display: block;
+  width: 100%;
 }
 
 input::-webkit-slider-thumb {
