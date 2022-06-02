@@ -71,7 +71,7 @@ import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, S
 import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
 import { createAnalysis } from '@/services/analysis-service-new';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
-import { ProjectType } from '@/types/Enums';
+import { ComparativeAnalysisMode, ProjectType } from '@/types/Enums';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -590,7 +590,10 @@ export default defineComponent({
             'analysis from CAG: ' + this.modelSummary?.name,
             '',
             this.project,
-            null
+            {
+              analysisItems: analysisItems,
+              activeTab: ComparativeAnalysisMode.List
+            }
           );
           // save the created analysis id with the CAG
           await modelService.updateModelMetadata(this.currentCAG, {
