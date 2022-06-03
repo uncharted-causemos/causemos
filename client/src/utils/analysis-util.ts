@@ -1,5 +1,4 @@
 import { AnalysisItem } from '@/types/Analysis';
-import { ProjectType } from '@/types/Enums';
 import _ from 'lodash';
 import { computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
@@ -22,21 +21,6 @@ export const createAnalysisItem = (
     viewConfig: {},
     selected: isSelected
   };
-};
-
-export const openDatacubeDrilldown = async (id: string, itemId: string, router: any, project: string, analysisId: string) => {
-  router.push({
-    name: 'data',
-    params: {
-      project: project,
-      analysisId: analysisId,
-      projectType: ProjectType.Analysis
-    },
-    query: {
-      datacube_id: id,
-      item_id: itemId
-    }
-  }).catch(() => {});
 };
 
 export function updateDatacubesOutputsMap(itemId: string, store: any, route: any, newOutputIndex: number) {

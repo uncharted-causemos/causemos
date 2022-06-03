@@ -117,7 +117,7 @@ import { ColorScaleType, COLOR_SCHEME, SCALE_FUNCTION } from '@/utils/colors-uti
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { RegionalAggregations } from '@/types/Outputdata';
 import dateFormatter from '@/formatters/date-formatter';
-import { openDatacubeDrilldown } from '@/utils/analysis-util';
+import { openDatacubeDrilldown } from '@/services/analysis-service-new';
 import { normalize } from '@/utils/value-util';
 import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
 import MapLegend from '@/components/widgets/map-legend.vue';

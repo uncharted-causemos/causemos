@@ -84,7 +84,7 @@ import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/
 import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
-import { openDatacubeDrilldown } from '@/utils/analysis-util';
+import { openDatacubeDrilldown } from '@/services/analysis-service-new';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';

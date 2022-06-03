@@ -100,7 +100,7 @@ import RegionMap from '@/components/widgets/region-map.vue';
 import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
 import { popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
-import { openDatacubeDrilldown } from '@/utils/analysis-util';
+import { openDatacubeDrilldown } from '@/services/analysis-service-new';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';
 import { DatacubeFeature } from '@/types/Datacube';

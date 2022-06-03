@@ -1,6 +1,6 @@
 import API from '@/api/api';
 import { DataAnalysisState } from '@/types/Analysis';
-import { ComparativeAnalysisMode } from '@/types/Enums';
+import { ComparativeAnalysisMode, ProjectType } from '@/types/Enums';
 
 /**
  * Create new data analysis resource
@@ -26,4 +26,19 @@ export const createAnalysis = async (
     }
   );
   return result.data;
+};
+
+export const openDatacubeDrilldown = async (id: string, itemId: string, router: any, project: string, analysisId: string) => {
+  router.push({
+    name: 'data',
+    params: {
+      project: project,
+      analysisId: analysisId,
+      projectType: ProjectType.Analysis
+    },
+    query: {
+      datacube_id: id,
+      item_id: itemId
+    }
+  }).catch(() => {});
 };
