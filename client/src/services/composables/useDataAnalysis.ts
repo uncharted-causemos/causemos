@@ -1,14 +1,18 @@
 import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
 import { ComparativeAnalysisMode } from '@/types/Enums';
 import _ from 'lodash';
-import { computed, Ref, ref, watchEffect } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 import { getAnalysisState, saveAnalysisState } from '../analysis-service';
 import { v4 as uuidv4 } from 'uuid';
 import { DataSpaceDataState } from '@/types/Insight';
 
+// Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to
+//  group requests together.
+const SYNC_DELAY_MS = 2500;
+
 const saveState = _.debounce((analysisId, state: DataAnalysisState) => {
   saveAnalysisState(analysisId, state);
-}, 500);
+}, SYNC_DELAY_MS);
 
 export function useDataAnalysis(analysisId: Ref<string>) {
   const analysisState = ref<DataAnalysisState>({
@@ -16,7 +20,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     activeTab: ComparativeAnalysisMode.List
   });
   // Whenever analysisId changes, fetch the state for that analysis
-  watchEffect(async () => {
+  watch([analysisId], async () => {
     if (!analysisId.value) return;
     const result = await getAnalysisState(analysisId.value);
     // FIXME: run script to ensure tab exists for each analysis then remove:
@@ -29,7 +33,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
       return;
     }
     analysisState.value = result;
-  });
+  }, { immediate: true });
   const setAnalysisState = (newState: DataAnalysisState) => {
     analysisState.value = newState;
     saveState(analysisId.value, newState);
