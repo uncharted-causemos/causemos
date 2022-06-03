@@ -110,12 +110,10 @@ export default defineComponent({
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataSpaceDataState | null>(null);
-    const haveAnalysisItemsLoaded = ref(false);
     watch([analysisItems], () => {
-      if (haveAnalysisItemsLoaded.value) {
+      if (initialViewConfig.value || initialDataConfig) {
         return;
       }
-      haveAnalysisItemsLoaded.value = true;
       let item = analysisItems.value.find(
         item => item.itemId === datacubeItemId
       );
