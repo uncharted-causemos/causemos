@@ -111,7 +111,7 @@ export default defineComponent({
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataSpaceDataState | null>(null);
     watch([analysisItems], () => {
-      if (initialViewConfig.value || initialDataConfig) {
+      if (initialViewConfig.value || initialDataConfig.value) {
         return;
       }
       let item = analysisItems.value.find(
