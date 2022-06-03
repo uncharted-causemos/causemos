@@ -1066,7 +1066,7 @@ export default defineComponent({
     );
 
     // apply initial view config for this datacube
-    watch([initialViewConfig.value], () => {
+    watch([initialViewConfig], () => {
       if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
         if (initialViewConfig.value.spatialAggregation !== undefined) {
           selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation as AggregationOption;

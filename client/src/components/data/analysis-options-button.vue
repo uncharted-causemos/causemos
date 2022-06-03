@@ -8,7 +8,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from 'vue';
+import { computed, defineComponent, toRefs } from 'vue';
 import { deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
 import { useStore } from 'vuex';
 import useToaster from '@/services/composables/useToaster';
@@ -20,10 +20,18 @@ import AnalysisOptionsButtonWidget from '@/components/widgets/analysis-options-b
 export default defineComponent({
   components: { AnalysisOptionsButtonWidget },
   name: 'AnalysisOptionsButton',
-  setup() {
+  props: {
+    analysisId: {
+      type: String,
+      required: true
+    }
+  },
+  setup(props) {
+    const {
+      analysisId
+    } = toRefs(props);
     const toast = useToaster();
     const store = useStore();
-    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const analysisName = computed(() => store.getters['app/analysisName']);
     const project = computed(() => store.getters['app/project']);
 
@@ -85,7 +93,6 @@ export default defineComponent({
 
     return {
       analysisName,
-      analysisId,
       onRenameAnalysis,
       onDeleteAnalysis,
       onDuplicate

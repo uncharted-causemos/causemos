@@ -12,6 +12,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
+import { DataTransform } from '@/types/Enums';
 
 function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId: string | undefined) {
   const separator = '?';
@@ -102,6 +103,32 @@ function parseMetadataDetails (
   return summary;
 }
 
+export const createDataSpaceDataState = (
+  datacubeId: string
+): DataSpaceDataState => {
+  return {
+    activeFeatures: [],
+    activeReferenceOptions: [],
+    nonDefaultQualifiers: [],
+    relativeTo: null,
+    searchFilters: { clauses: [] },
+    selectedModelId: datacubeId,
+    selectedOutputVariables: [],
+    selectedPreGenDataId: '',
+    selectedQualifierValues: [],
+    selectedRegionIds: [],
+    selectedRegionIdsAtAllLevels: {
+      country: [],
+      admin1: [],
+      admin2: [],
+      admin3: []
+    },
+    selectedScenarioIds: [],
+    selectedTimestamp: null,
+    selectedTransform: DataTransform.None,
+    selectedYears: []
+  };
+};
 
 export function isDataSpaceDataState(
   dataState: DataState

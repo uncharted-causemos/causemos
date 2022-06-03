@@ -266,7 +266,6 @@ export default defineComponent({
     },
     questionVisibility() {
       return this.projectType === ProjectType.Analysis ? 'private' : 'public';
-      // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
     },
     editSection(section: AnalyticalQuestion) {
       this.selectedQuestion = section;

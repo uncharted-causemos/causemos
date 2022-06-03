@@ -6,8 +6,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, ref } from 'vue';
-import { useStore } from 'vuex';
+import { defineComponent, onMounted, ref, toRefs } from 'vue';
 import CommentsButtonWidget from '@/components/widgets/comments-button-widget.vue';
 import { getAnalysis, updateAnalysis } from '@/services/analysis-service';
 import useToaster from '@/services/composables/useToaster';
@@ -15,9 +14,16 @@ import { EXPORT_MESSAGES } from '@/utils/messages-util';
 export default defineComponent({
   components: { CommentsButtonWidget },
   name: 'AnalysisCommentsButton',
-  setup() {
-    const store = useStore();
-    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
+  props: {
+    analysisId: {
+      type: String,
+      required: true
+    }
+  },
+  setup(props) {
+    const {
+      analysisId
+    } = toRefs(props);
     const description = ref<null | string>(null);
     const toast = useToaster();
     onMounted(async () => {

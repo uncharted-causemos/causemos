@@ -169,7 +169,8 @@ import { defineComponent, ref } from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
-import { getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
+import { getAnalysesByProjectId, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
+import { createAnalysis } from '@/services/analysis-service-new';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
 import ModalUploadDocument from '@/components/modals/modal-upload-document';
@@ -305,7 +306,6 @@ export default defineComponent({
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems',
       setContextId: 'insightPanel/setContextId',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane'
@@ -459,9 +459,9 @@ export default defineComponent({
 
       if (analysis.analysisId) {
         try {
-          const copy = await duplicateAnalysis(analysis.analysisId, newName);
-          const duplicatedAnalysis = toQuantitative(copy);
-          duplicatedAnalysis.title = newName; // FIXME @HACK since duplicateAnalysis() does not return a full object copy
+          const newId = await duplicateAnalysis(analysis.analysisId, newName);
+          // FIXME @HACK since duplicateAnalysis() does not return a full object copy
+          const duplicatedAnalysis = toQuantitative({ id: newId, title: newName });
           this.analyses.unshift(duplicatedAnalysis);
           this.toaster(ANALYSIS.SUCCESSFUL_DUPLICATE, 'success', false);
         } catch (e) {
@@ -531,17 +531,12 @@ export default defineComponent({
       });
     },
     async onCreateDataAnalysis() {
-      const initialAnalysisState = { // AnalysisState
-        currentAnalysisId: '',
-        analysisItems: []
-      };
-      const analysis = await createAnalysis({
-        title: `untitled at ${dateFormatter(Date.now())}`,
-        projectId: this.project,
-        state: initialAnalysisState
-      });
-      initialAnalysisState.currentAnalysisId = analysis.id;
-      await this.updateAnalysisItems(initialAnalysisState);
+      const analysis = await createAnalysis(
+        `untitled at ${dateFormatter(Date.now())}`,
+        '',
+        this.project,
+        null
+      );
       this.$router.push({
         name: 'dataComparative',
         params: {

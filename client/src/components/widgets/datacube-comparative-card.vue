@@ -90,7 +90,7 @@ import { AggregationOption, TemporalResolutionOption, DatacubeStatus, SPLIT_BY_V
 import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import { mapActions, useStore } from 'vuex';
+import { useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
@@ -100,7 +100,7 @@ import RegionMap from '@/components/widgets/region-map.vue';
 import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
 import { popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
-import { duplicateAnalysisItem, openDatacubeDrilldown } from '@/utils/analysis-util';
+import { openDatacubeDrilldown } from '@/services/analysis-service-new';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';
 import { DatacubeFeature } from '@/types/Datacube';
@@ -136,16 +136,31 @@ export default defineComponent({
     selectedTimestampRange: {
       type: Object as PropType<{start: number; end: number} | null>,
       default: null
+    },
+    analysisItem: {
+      type: Object as PropType<AnalysisItem>,
+      required: true
+    },
+    analysisId: {
+      type: String,
+      required: true
     }
   },
-  emits: ['select-timestamp', 'loaded-timeseries'],
+  emits: [
+    'select-timestamp',
+    'loaded-timeseries',
+    'set-analysis-item-view-config',
+    'remove-analysis-item',
+    'duplicate-analysis-item'
+  ],
   setup(props, { emit }) {
     const {
       itemId,
       id,
       datacubeId,
       selectedTimestamp,
-      datacubeIndex
+      datacubeIndex,
+      analysisItem
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
@@ -230,18 +245,13 @@ export default defineComponent({
 
     const store = useStore();
 
-    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
-    const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataSpaceDataState | null>(null);
-    const datacubeAnalysisItem = analysisItems.value.find(item => item.itemId === itemId.value);
-    if (datacubeAnalysisItem) {
-      initialViewConfig.value = datacubeAnalysisItem.viewConfig;
-      initialDataConfig.value = datacubeAnalysisItem.dataConfig;
-    }
+    initialViewConfig.value = analysisItem.value.viewConfig;
+    initialDataConfig.value = analysisItem.value.dataConfig;
 
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) {
@@ -252,21 +262,19 @@ export default defineComponent({
     };
 
     watch(
-      () => [
-        initialViewConfig.value,
-        metadata.value
-      ],
+      () => [initialViewConfig.value, metadata.value],
       () => {
-        if (metadata.value) {
-          if (_.isEmpty(initialViewConfig.value) && !_.isEmpty(metadata.value.default_view)) {
-            const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-            const datacubeAnalysisItem = updatedAnalysisItems.find(item => item.itemId === itemId.value);
-            if (datacubeAnalysisItem) {
-              datacubeAnalysisItem.viewConfig = metadata.value.default_view;
-              store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
-            }
-            initialViewConfig.value = metadata.value.default_view;
-          }
+        if (
+          metadata.value &&
+          _.isEmpty(initialViewConfig.value) &&
+          !_.isEmpty(metadata.value.default_view)
+        ) {
+          emit(
+            'set-analysis-item-view-config',
+            itemId.value,
+            metadata.value.default_view
+          );
+          initialViewConfig.value = metadata.value.default_view;
         }
       }
     );
@@ -419,30 +427,6 @@ export default defineComponent({
       }
     );
 
-    // NOTE: only the List view within the CompAnalysis page will update the name of the analysis item
-    watch(
-      () => [activeFeature, selectedRegionsString],
-      () => {
-        if (activeFeature.value && datacubeAnalysisItem) {
-          // update the corresponding analysis name; match the card title
-          const outputName = activeFeature.value.display_name !== '' ? activeFeature.value.display_name : activeFeature.value.name;
-          const selectedRegion = selectedRegionsString.value;
-          const datacubeName = metadata.value?.name;
-          const datacubeHeader = '<b>' + outputName + ' - ' + selectedRegion + ' </b> ' + datacubeName;
-          if (datacubeHeader !== datacubeAnalysisItem.name) {
-            datacubeAnalysisItem.name = datacubeHeader;
-            // also, persist the change by updating the analysis item
-            const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-            const item = updatedAnalysisItems.find(item => item.itemId === itemId.value);
-            if (item) {
-              item.name = datacubeHeader;
-            }
-            store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
-          }
-        }
-      }
-    );
-
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
     const selectedScenarioIndex = ref(0);
@@ -492,10 +476,7 @@ export default defineComponent({
       AggregationOption,
       visibleTimeseriesData,
       timeseriesDataForSelection,
-      analysisItems,
       project,
-      analysisId,
-      props,
       store,
       DatacubeStatus,
       statusColor,
@@ -509,22 +490,20 @@ export default defineComponent({
     };
   },
   methods: {
-    ...mapActions({
-      removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
-    }),
     openDrilldown() {
-      openDatacubeDrilldown(this.props.id, this.itemId, router, this.store);
+      openDatacubeDrilldown(
+        this.id,
+        this.itemId,
+        router,
+        this.project,
+        this.analysisId
+      );
     },
     clickRemove() {
-      // when removing, it is not enough to only send the datacube id to be removed
-      //  since the datacube may have been duplicated multiple times
-      //  and we need to suport removing one at a time
-      this.removeAnalysisItems([this.itemId]);
+      this.$emit('remove-analysis-item', this.itemId);
     },
     clickDuplicate() {
-      if (this.metadata !== null) {
-        duplicateAnalysisItem(this.metadata, this.id, this.analysisId, this.store);
-      }
+      this.$emit('duplicate-analysis-item', this.itemId);
     }
   }
 });

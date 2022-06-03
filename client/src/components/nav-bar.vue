@@ -43,6 +43,7 @@
 <script lang="ts">
 import { ProjectType } from '@/types/Enums';
 import { computed, defineComponent } from 'vue';
+import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 
 interface NavBarItem {
@@ -59,8 +60,9 @@ export default defineComponent({
     const projectMetadata = computed(
       () => store.getters['app/projectMetadata']
     );
+    const route = useRoute();
     const quantitativeAnalysisId = computed(
-      () => store.getters['dataAnalysis/analysisId']
+      () => route.params.analysisId as string
     );
     const analysisName = computed(() => store.getters['app/analysisName']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
@@ -89,7 +91,7 @@ export default defineComponent({
         name: 'dataComparative',
         params: {
           project: project.value,
-          currentCAG: quantitativeAnalysisId.value,
+          analysisId: quantitativeAnalysisId.value,
           projectType: ProjectType.Analysis
         }
       }

@@ -1,22 +1,32 @@
 <template>
   <div class="comp-analysis-container">
     <teleport to="#navbar-trailing-teleport-destination">
-      <analysis-options-button />
+      <analysis-options-button :analysis-id="analysisId" />
     </teleport>
-    <analytical-questions-and-insights-panel class="side-panel">
+    <analytical-questions-and-insights-panel
+      class="side-panel"
+      :analysis-items="analysisItems"
+      @remove-analysis-item="removeAnalysisItem"
+      @toggle-analysis-item-selected="toggleAnalysisItemSelected"
+    >
       <template #below-tabs>
-        <analysis-comments-button />
+        <analysis-comments-button :analysis-id="analysisId" />
       </template>
     </analytical-questions-and-insights-panel>
     <main class="insight-capture">
       <div class="action-bar-container">
-        <action-bar style="flex: 1" />
+        <action-bar
+          :active-tab="activeTab"
+          :analysisId="analysisId"
+          @set-active-tab="setActiveTab"
+          style="flex: 1"
+        />
         <div class="shown-datacubes-count">{{shownDatacubesCountLabel}}</div>
       </div>
 
       <!-- overlay view content -->
       <datacube-comparative-timeline-sync
-        v-if="globalTimeseries.length > 0 && comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay"
+        v-if="globalTimeseries.length > 0 && activeTab === ComparativeAnalysisMode.Overlay"
         :timeseriesData="globalTimeseries"
         :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
         :selected-timestamp="globalTimestamp"
@@ -25,7 +35,7 @@
         @select-timestamp-range="handleTimestampRangeSelection"
       />
       <!-- region ranking view content -->
-      <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking">
+      <template v-if="activeTab === ComparativeAnalysisMode.RegionRanking">
         <div style="display: flex">
           <h5 class="ranking-header-top">Ranking Results <i style="cursor: pointer" @click="downloadRankingResult" class="fa fa-fw fa-download"></i></h5>
           <i
@@ -69,7 +79,7 @@
       <div
         v-if="selectedAnalysisItems.length"
         class="column">
-        <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.List">
+        <template v-if="activeTab === ComparativeAnalysisMode.List">
           <datacube-comparative-card
             v-for="(item, indx) in selectedAnalysisItems"
             :key="item.datacubeId"
@@ -80,11 +90,16 @@
             :datacube-index="indx"
             :selected-timestamp="selectedTimestamp"
             :selected-timestamp-range="selectedTimestampRange"
+            :analysis-item="item"
+            :analysis-id="analysisId"
             @loaded-timeseries="onLoadedTimeseries"
             @select-timestamp="setSelectedTimestamp"
+            @set-analysis-item-view-config="setAnalysisItemViewConfig"
+            @remove-analysis-item="removeAnalysisItem"
+            @duplicate-analysis-item="duplicateAnalysisItem"
           />
         </template>
-        <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.Overlay">
+        <template v-if="activeTab === ComparativeAnalysisMode.Overlay">
           <div class="card-maps-container">
             <div
               v-for="(item, indx) in selectedAnalysisItems"
@@ -103,12 +118,16 @@
                 :datacube-index="indx"
                 :selected-timestamp="globalTimestamp"
                 :selected-timestamp-range="selectedTimestampRange"
+                :analysis-item="item"
+                :analysis-id="analysisId"
                 @loaded-timeseries="onLoadedTimeseries"
+                @remove-analysis-item="removeAnalysisItem"
+                @duplicate-analysis-item="duplicateAnalysisItem"
               />
             </div>
           </div>
         </template>
-        <template v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking">
+        <template v-if="activeTab === ComparativeAnalysisMode.RegionRanking">
           <datacube-region-ranking-card
             v-for="item in selectedAnalysisItems"
             :key="item.datacubeId"
@@ -126,17 +145,21 @@
             :is-data-inverted="isDatacubeInverted(item)"
             :max-number-of-chart-bars="maxNumberOfChartBars"
             :limit-number-of-chart-bars="limitNumberOfChartBars"
+            :analysis-item="item"
+            :analysis-id="analysisId"
             @updated-bars-data="onUpdatedBarsData"
             @bar-chart-hover="onBarChartHover"
             @map-click-region="onMapClickRegion"
             @invert-data-updated="onToggleRegionRankingDataInversion"
+            @remove-analysis-item="removeAnalysisItem"
+            @duplicate-analysis-item="duplicateAnalysisItem"
           />
         </template>
       </div>
       <empty-state-instructions v-else />
     </main>
     <drilldown-panel
-      v-if="comparativeAnalysisViewSelection === ComparativeAnalysisMode.RegionRanking"
+      v-if="activeTab === ComparativeAnalysisMode.RegionRanking"
       :active-tab-id="activeDrilldownTab"
       :has-transition="false"
       :hide-close="true"
@@ -171,7 +194,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, nextTick, onMounted, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
 import DatacubeComparativeOverlayRegion from '@/components/widgets/datacube-comparative-overlay-region.vue';
@@ -198,9 +221,9 @@ import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
 import { AnalysisItem } from '@/types/Analysis';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
-import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 import { isComparativeAnalysisDataState } from '@/utils/insight-util';
-import { v4 as uuidv4 } from 'uuid';
+import { useRoute } from 'vue-router';
+import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
 
 const DRILLDOWN_TABS = [
   {
@@ -228,12 +251,19 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
-    const analysisItems = computed<AnalysisItem[]>(() => store.getters['dataAnalysis/analysisItems']);
-    const selectedAnalysisItems = ref<AnalysisItem[]>([]);
-    const comparativeAnalysisViewSelection = computed<string>(() => store.getters['dataAnalysis/comparativeAnalysisViewSelection']);
-    const quantitativeAnalysisId = computed(
-      () => store.getters['dataAnalysis/analysisId']
-    );
+    const route = useRoute();
+    const analysisId = computed(() => route.params.analysisId as string);
+    const {
+      analysisItems,
+      selectedAnalysisItems,
+      activeTab,
+      setActiveTab,
+      setAnalysisItemViewConfig,
+      removeAnalysisItem,
+      duplicateAnalysisItem,
+      toggleAnalysisItemSelected,
+      setAnalysisItems
+    } = useDataAnalysis(analysisId);
 
     const activeDrilldownTab = ref<string|null>('region-settings');
     const selectedAdminLevel = ref(0);
@@ -270,7 +300,7 @@ export default defineComponent({
 
     onMounted(async () => {
       store.dispatch('app/setAnalysisName', '');
-      const result = await getAnalysis(quantitativeAnalysisId.value);
+      const result = await getAnalysis(analysisId.value);
       if (result) {
         store.dispatch('app/setAnalysisName', result.title);
       }
@@ -284,44 +314,9 @@ export default defineComponent({
           //  (even the non-selected ones) in this analysis
           const contextIDs = analysisItems.map(dc => dc.id); // FIXME is it id or datacubeId or itemId?
           store.dispatch('insightPanel/setContextId', contextIDs);
-
-          // assign initial selection state if possible (to gracefully handle existing analyses)
-          const allAnalysisItems = _.cloneDeep(analysisItems);
-          let shouldUpdateServerData = false;
-          allAnalysisItems.forEach(item => {
-            if (item.selected === undefined) {
-              // ensure that some (valid initial) boolean value is added for each item
-              const currSelectionCount = allAnalysisItems.filter(i => i.selected).length;
-              item.selected = currSelectionCount < MAX_ANALYSIS_DATACUBES_COUNT;
-              shouldUpdateServerData = true;
-            }
-            // handle old analyses created without having uuid for each of their items
-            if (item.itemId === undefined) {
-              item.itemId = uuidv4();
-              shouldUpdateServerData = true;
-            }
-          });
-          const selectedItems = allAnalysisItems.filter(item => item.selected);
-          if (selectedItems.length > MAX_ANALYSIS_DATACUBES_COUNT) {
-            // we need to de-select some of the items
-            const deletedItems = selectedItems.splice(MAX_ANALYSIS_DATACUBES_COUNT);
-            deletedItems.forEach(item => { item.selected = false; });
-            shouldUpdateServerData = true;
-          }
-          if (shouldUpdateServerData) {
-            // update the selection status on the server
-            store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
-          }
-
-          selectedAnalysisItems.value = [];
-          nextTick(() => {
-            selectedAnalysisItems.value = selectedItems;
-          });
         } else {
           // no datacubes in this analysis, so do not fetch any insights/questions
           store.dispatch('insightPanel/setContextId', undefined);
-          // reset the selectedAnalysisItems array to trigger UI update
-          selectedAnalysisItems.value = [];
         }
         // clear overlay global timeseries
         globalTimeseries.value = [];
@@ -379,11 +374,11 @@ export default defineComponent({
 
     watch(
       () => [
-        comparativeAnalysisViewSelection.value,
+        activeTab.value,
         initialSelectedTimestampRange.value
       ],
       () => {
-        if (comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay) {
+        if (activeTab.value === ComparativeAnalysisMode.Overlay) {
           handleTimestampRangeSelection(initialSelectedTimestampRange.value);
         } else { // reset the active selected range non-overlay views
           handleTimestampRangeSelection(null);
@@ -451,7 +446,7 @@ export default defineComponent({
       () => [
         // also track whether data is shown as normalized or not
         selectedAdminLevel.value,
-        comparativeAnalysisViewSelection.value,
+        activeTab.value,
         regionRankingCompositionType.value,
         regionRankingBinningType.value,
         limitNumberOfChartBars.value,
@@ -463,7 +458,7 @@ export default defineComponent({
       () => {
         const viewState: ViewState = {
           regionRankingSelectedAdminLevel: selectedAdminLevel.value,
-          regionRankingSelectedComparativeAnalysisMode: comparativeAnalysisViewSelection.value as ComparativeAnalysisMode,
+          regionRankingSelectedComparativeAnalysisMode: activeTab.value,
           regionRankingSelectedCompositionType: regionRankingCompositionType.value,
           regionRankingSelectedBinningType: regionRankingBinningType.value,
           regionRankingApplyingBarLimit: limitNumberOfChartBars.value,
@@ -491,7 +486,7 @@ export default defineComponent({
           allAnalysisItems.forEach(item => {
             item.selected = selectedItems.findIndex(sItem => sItem.itemId === item.itemId) >= 0;
           });
-          store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: quantitativeAnalysisId.value, analysisItems: allAnalysisItems });
+          setAnalysisItems(allAnalysisItems);
 
           regionRankingDataInversion.value =
             dataState.regionRankingDataInversion;
@@ -510,7 +505,9 @@ export default defineComponent({
           setSelectedAdminLevel(loadedInsight.view_state?.regionRankingSelectedAdminLevel);
         }
         if (loadedInsight.view_state?.regionRankingSelectedComparativeAnalysisMode !== undefined) {
-          store.dispatch('dataAnalysis/setComparativeAnalysisViewSelection', loadedInsight.view_state?.regionRankingSelectedComparativeAnalysisMode);
+          setActiveTab(
+            loadedInsight.view_state.regionRankingSelectedComparativeAnalysisMode
+          );
         }
         if (loadedInsight.view_state?.regionRankingSelectedCompositionType !== undefined) {
           setRegionRankingCompositionType(loadedInsight.view_state?.regionRankingSelectedCompositionType);
@@ -544,7 +541,7 @@ export default defineComponent({
         regionRankingDataInversion: regionRankingDataInversion.value,
         // Only save the selected timestamp when overlap mode is active
         selectedTimestamp:
-          comparativeAnalysisViewSelection.value === ComparativeAnalysisMode.Overlay
+          activeTab.value === ComparativeAnalysisMode.Overlay
             ? globalTimestamp.value
             : null,
         selectedAnalysisItems: selectedAnalysisItems.value,
@@ -554,6 +551,7 @@ export default defineComponent({
     });
 
     return {
+      analysisItems,
       selectedAnalysisItems,
       allTimeseriesMap,
       allDatacubesMetadataMap,
@@ -568,7 +566,6 @@ export default defineComponent({
       reCalculateGlobalTimeseries,
       initialSelectedTimestamp,
       initialSelectedTimestampRange,
-      comparativeAnalysisViewSelection,
       activeDrilldownTab,
       drilldownTabs: DRILLDOWN_TABS,
       setNumberOfColorBins,
@@ -599,7 +596,14 @@ export default defineComponent({
       colorFromIndex,
       regionRankingDataInversion,
       shownDatacubesCountLabel,
-      datacubeTitles
+      datacubeTitles,
+      activeTab,
+      analysisId,
+      setActiveTab,
+      setAnalysisItemViewConfig,
+      removeAnalysisItem,
+      duplicateAnalysisItem,
+      toggleAnalysisItemSelected
     };
   },
   mounted() {
