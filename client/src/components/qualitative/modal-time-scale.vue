@@ -136,13 +136,6 @@ export default defineComponent({
   line-height: $font-size-extra-large;
 }
 
-input[type='radio'] {
-  appearance: radio;
-  cursor: pointer;
-  position: relative;
-  bottom: -2px;
-}
-
 .time-scale-option {
   display: flex;
 
