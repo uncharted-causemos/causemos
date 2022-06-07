@@ -257,6 +257,7 @@ export default defineComponent({
     const route = useRoute();
     const analysisId = computed(() => route.params.analysisId as string);
     const {
+      analysisState,
       analysisItems,
       selectedAnalysisItems,
       activeTab,
@@ -427,24 +428,12 @@ export default defineComponent({
     const datacubeTitles = ref<DatacubeTitle[]>([]);
 
     watchEffect(() => {
-      const newDataState: DataAnalysisState = {
-        analysisItems: analysisItems.value,
-        activeTab: activeTab.value,
-        barCountLimit: barCountLimit.value,
-        isBarCountLimitApplied: isBarCountLimitApplied.value,
-        colorBinCount: colorBinCount.value,
-        colorBinType: colorBinType.value,
-        regionRankingCompositionType: regionRankingCompositionType.value,
-        regionRankingItemStates: regionRankingItemStates.value,
-        selectedAdminLevel: selectedAdminLevel.value,
-        areRegionRankingRowsNormalized: areRegionRankingRowsNormalized.value,
-        highlightedRegionId: highlightedRegionId.value,
-        // Only save the selected timestamp when overlap mode is active
-        selectedTimestamp:
-          activeTab.value === ComparativeAnalysisMode.Overlay
-            ? globalTimestamp.value
-            : null
-      };
+      const newDataState: DataAnalysisState = _.cloneDeep(analysisState.value);
+      // Only save the selected timestamp when overlap mode is active
+      newDataState.selectedTimestamp =
+        activeTab.value === ComparativeAnalysisMode.Overlay
+          ? globalTimestamp.value
+          : null;
       store.dispatch('insightPanel/setDataState', newDataState);
     });
 
