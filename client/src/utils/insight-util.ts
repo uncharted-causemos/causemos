@@ -7,12 +7,13 @@ import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
-import { AnalyticalQuestion, Insight, FullInsight, InsightMetadata, QualitativeDataState, DataState, ModelsSpaceDataState, ComparativeAnalysisDataState, DataSpaceDataState, ReviewPosition, SectionWithInsights } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, FullInsight, InsightMetadata, QualitativeDataState, DataState, ModelsSpaceDataState, DataSpaceDataState, ReviewPosition, SectionWithInsights } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
 import { DataTransform } from '@/types/Enums';
+import { DataAnalysisState } from '@/types/Analysis';
 
 function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId: string | undefined) {
   const separator = '?';
@@ -85,17 +86,18 @@ function parseMetadataDetails (
       summary.selectedCAGScenario = dataState.selectedScenarioId ?? undefined;
       summary.currentEngine = dataState.currentEngine ?? undefined;
     }
-  } else if (isComparativeAnalysisDataState(dataState)) {
+  } else if (isDataAnalysisState(dataState)) {
+    // FIXME: add source back
     const datacubes: {
       datasetName: string,
       outputName: string,
-      source: string
+      // source: string
     }[] = [];
-    dataState.datacubeTitles.forEach((title: any) => {
+    dataState.analysisItems.forEach(({ cachedMetadata }) => {
       datacubes.push({
-        datasetName: title.datacubeName,
-        outputName: title.datacubeOutputName,
-        source: title.source
+        datasetName: cachedMetadata.datacubeName,
+        outputName: cachedMetadata.featureName
+        // source: cachedMetadata.source
       });
     });
     summary.datacubes = datacubes;
@@ -148,10 +150,10 @@ function isModelsSpaceDataState(
   return (dataState as ModelsSpaceDataState).selectedScenarioId !== undefined;
 }
 
-export function isComparativeAnalysisDataState(
+export function isDataAnalysisState(
   dataState: DataState
-): dataState is ComparativeAnalysisDataState {
-  return (dataState as ComparativeAnalysisDataState).selectedAnalysisItems !== undefined;
+): dataState is DataAnalysisState {
+  return (dataState as DataAnalysisState).analysisItems !== undefined;
 }
 
 async function removeInsight(id: string, store?: any) {

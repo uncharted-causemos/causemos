@@ -355,11 +355,7 @@ export default defineComponent({
     });
 
     const invertData = () => {
-      emit('invert-data-updated', {
-        id: id.value,
-        datacubeId: datacubeId.value,
-        itemId: itemId.value
-      });
+      emit('invert-data-updated', itemId.value);
     };
 
     // apply the view-config for this datacube

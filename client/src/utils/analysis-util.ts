@@ -1,4 +1,4 @@
-import { AnalysisItem } from '@/types/Analysis';
+import { AnalysisItem, CachedDatacubeMetadata } from '@/types/Analysis';
 import _ from 'lodash';
 import { computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
@@ -11,11 +11,13 @@ export const MAX_ANALYSIS_DATACUBES_COUNT = 9;
 export const createAnalysisItem = (
   id: string,
   datacubeId: string,
+  cachedMetadata: CachedDatacubeMetadata,
   isSelected: boolean
 ): AnalysisItem => {
   return {
     id,
     datacubeId,
+    cachedMetadata,
     dataConfig: createDataSpaceDataState(datacubeId),
     itemId: uuidv4(),
     viewConfig: {},

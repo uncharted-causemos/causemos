@@ -1,6 +1,56 @@
 import API from '@/api/api';
-import { DataAnalysisState } from '@/types/Analysis';
-import { ComparativeAnalysisMode, ProjectType } from '@/types/Enums';
+import { AnalysisItem, DataAnalysisState, RegionRankingItemStates } from '@/types/Analysis';
+import { BinningOptions, ComparativeAnalysisMode, ProjectType, RegionRankingCompositionType } from '@/types/Enums';
+
+/**
+ * Create a new DataAnalysisState object with each of its fields initialized to
+ * a sensible default.
+ */
+export const createAnalysisObject = (): DataAnalysisState => {
+  return {
+    analysisItems: [],
+    activeTab: ComparativeAnalysisMode.List,
+    barCountLimit: 50,
+    isBarCountLimitApplied: false,
+    colorBinCount: 5,
+    colorBinType: BinningOptions.Linear,
+    regionRankingCompositionType: RegionRankingCompositionType.Intersection,
+    regionRankingItemStates: {},
+    selectedAdminLevel: 0,
+    areRegionRankingRowsNormalized: false,
+    selectedTimestamp: null,
+    highlightedRegionId: ''
+  };
+};
+
+export const addItemsToAnalysis = (
+  items: AnalysisItem[],
+  analysis: DataAnalysisState
+) => {
+  items.forEach(item => {
+    analysis.analysisItems.push(item);
+    analysis.regionRankingItemStates[item.datacubeId] = {
+      isInverted: false,
+      weight: 0
+    };
+  });
+};
+
+export const calculateResetRegionRankingWeights = (
+  analysisItems: AnalysisItem[],
+  regionRankingItemStates: RegionRankingItemStates
+) => {
+  const selectedItemCount = analysisItems.filter(item => item.selected).length;
+  const equalWeight = 100 / selectedItemCount;
+  const newStates = {} as RegionRankingItemStates;
+  analysisItems.forEach(item => {
+    newStates[item.itemId] = {
+      weight: item.selected ? equalWeight : 0,
+      isInverted: regionRankingItemStates[item.itemId]?.isInverted ?? false
+    };
+  });
+  return newStates;
+};
 
 /**
  * Create new data analysis resource
@@ -9,16 +59,19 @@ export const createAnalysis = async (
   title: string,
   description: string,
   projectId: string,
-  state: DataAnalysisState | null
+  analysisItems: AnalysisItem[] | null
 ) => {
-  // Initialize defaults if no state is provided
-  const _state: DataAnalysisState = state ?? {
-    analysisItems: [],
-    activeTab: ComparativeAnalysisMode.List
-  };
+  const state = createAnalysisObject();
+  if (analysisItems !== null) {
+    addItemsToAnalysis(analysisItems, state);
+    state.regionRankingItemStates = calculateResetRegionRankingWeights(
+      analysisItems,
+      state.regionRankingItemStates
+    );
+  }
   const result = await API.post(
     'analyses',
-    { title, description, project_id: projectId, state: _state },
+    { title, description, project_id: projectId, state },
     {
       headers: {
         'Content-Type': 'application/json'

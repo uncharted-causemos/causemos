@@ -1,10 +1,11 @@
 import API from '@/api/api';
-import { Model } from '@/types/Datacube';
+import { Datacube, Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
 import { getImageMime } from '@/utils/datacube-util';
 import { FlowLogs } from '@/types/Common';
+import { CachedDatacubeMetadata } from '@/types/Analysis';
 
 /**
  * The parameters required to fetch a timeseries for a datacube and generate the sparkline data.
@@ -276,6 +277,25 @@ const _parseFlowLogs = (data: any): FlowLogs | undefined => {
     logs: data.logs.map((log: any) => ({ timestamp: new Date(log.timestamp), message: log.message })),
     agent: data.agent
   } as FlowLogs;
+};
+
+export const getDefaultFeature = (datacube: Datacube) => {
+  return datacube.outputs.find(
+    output => output.name === datacube.default_feature
+  );
+};
+
+// TODO: comment
+export const getDatacubeMetadataToCache = (
+  datacube: Datacube
+): CachedDatacubeMetadata => {
+  const featureName =
+    getDefaultFeature(datacube)?.display_name ?? datacube.default_feature;
+  return {
+    featureName,
+    datacubeName: datacube.name
+    // source: datacube.
+  };
 };
 
 export default {

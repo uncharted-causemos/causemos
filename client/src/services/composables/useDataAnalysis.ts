@@ -1,10 +1,16 @@
 import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
-import { ComparativeAnalysisMode } from '@/types/Enums';
 import _ from 'lodash';
 import { computed, Ref, ref, watch } from 'vue';
 import { getAnalysisState, saveAnalysisState } from '../analysis-service';
 import { v4 as uuidv4 } from 'uuid';
 import { DataSpaceDataState } from '@/types/Insight';
+import {
+  addItemsToAnalysis,
+  calculateResetRegionRankingWeights,
+  createAnalysisObject
+} from '../analysis-service-new';
+import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
+import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 
 // Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to
 //  group requests together.
@@ -15,37 +21,40 @@ const saveState = _.debounce((analysisId, state: DataAnalysisState) => {
 }, SYNC_DELAY_MS);
 
 export function useDataAnalysis(analysisId: Ref<string>) {
-  const analysisState = ref<DataAnalysisState>({
-    analysisItems: [],
-    activeTab: ComparativeAnalysisMode.List
-  });
+  const analysisState = ref<DataAnalysisState>(createAnalysisObject());
   // Whenever analysisId changes, fetch the state for that analysis
-  watch([analysisId], async () => {
-    if (!analysisId.value) return;
-    const result = await getAnalysisState(analysisId.value);
-    // FIXME: run script to ensure tab exists for each analysis then remove:
-    if (result.activeTab === undefined) {
-      console.error('invalid fetched analysis state', result);
-      analysisState.value = {
-        analysisItems: result.analysisItems,
-        activeTab: ComparativeAnalysisMode.List
-      };
-      return;
-    }
-    analysisState.value = result;
-  }, { immediate: true });
+  watch(
+    [analysisId],
+    async () => {
+      if (!analysisId.value) return;
+      const result = await getAnalysisState(analysisId.value);
+      // FIXME: run script to ensure tab exists for each analysis then remove:
+      if (result.activeTab === undefined) {
+        console.error('invalid fetched analysis state', result);
+        const newState = createAnalysisObject();
+        addItemsToAnalysis(result.analysisItems, newState);
+        analysisState.value = newState;
+        return;
+      }
+      analysisState.value = result;
+    },
+    { immediate: true }
+  );
   const setAnalysisState = (newState: DataAnalysisState) => {
     analysisState.value = newState;
     saveState(analysisId.value, newState);
   };
+  const updateAnalysisState = (partialState: Partial<DataAnalysisState>) => {
+    const newState: DataAnalysisState = {
+      ...analysisState.value,
+      ...partialState
+    };
+    setAnalysisState(newState);
+  };
 
   const analysisItems = computed(() => analysisState.value.analysisItems);
   const setAnalysisItems = (newItems: AnalysisItem[]) => {
-    const newState: DataAnalysisState = {
-      ...analysisState.value,
-      analysisItems: newItems
-    };
-    setAnalysisState(newState);
+    updateAnalysisState({ analysisItems: newItems });
   };
   const removeAnalysisItem = (itemId: string) => {
     setAnalysisItems(
@@ -53,10 +62,21 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     );
   };
   const duplicateAnalysisItem = (itemId: string) => {
-    const itemToDuplicate = analysisItems.value.find(item => item.itemId === itemId);
+    const itemToDuplicate = analysisItems.value.find(
+      item => item.itemId === itemId
+    );
     if (itemToDuplicate !== undefined) {
       const duplicatedItem = _.cloneDeep(itemToDuplicate);
       duplicatedItem.itemId = uuidv4();
+      if (
+        selectedAnalysisItems.value.length < MAX_ANALYSIS_DATACUBES_COUNT &&
+        duplicatedItem.selected
+      ) {
+        // New selected item, so reset region ranking weights
+        resetRegionRankingWeights();
+      } else {
+        duplicatedItem.selected = false;
+      }
       setAnalysisItems([...analysisItems.value, duplicatedItem]);
     }
   };
@@ -66,6 +86,8 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     if (itemToToggle) {
       itemToToggle.selected = !itemToToggle.selected;
       setAnalysisItems(items);
+      // Reset region ranking weights when a datacube is (de)selected
+      resetRegionRankingWeights();
     }
   };
   const setAnalysisItemViewConfig = (itemId: string, viewConfig: any) => {
@@ -94,15 +116,90 @@ export function useDataAnalysis(analysisId: Ref<string>) {
   // FIXME: run a script to make sure all analysis items have `selected`
   //  properties, and to make sure all analyses have the right number of
   //  selected items
-  const selectedAnalysisItems = computed(() => analysisItems.value.filter(item => item.selected));
+  const selectedAnalysisItems = computed(() =>
+    analysisItems.value.filter(item => item.selected)
+  );
 
   const activeTab = computed(() => analysisState.value.activeTab);
   const setActiveTab = (newTab: string) => {
-    const newState: DataAnalysisState = {
-      ...analysisState.value,
-      activeTab: newTab
-    };
-    setAnalysisState(newState);
+    updateAnalysisState({ activeTab: newTab });
+  };
+
+  const selectedAdminLevel = computed(
+    () => analysisState.value.selectedAdminLevel
+  );
+  const setSelectedAdminLevel = (newAdminLevel: number) => {
+    updateAnalysisState({ selectedAdminLevel: newAdminLevel });
+  };
+
+  const areRegionRankingRowsNormalized = computed(
+    () => analysisState.value.areRegionRankingRowsNormalized
+  );
+  const toggleRegionRankingRowsNormalized = () => {
+    const currentValue = areRegionRankingRowsNormalized.value;
+    updateAnalysisState({ areRegionRankingRowsNormalized: !currentValue });
+  };
+
+  const colorBinCount = computed(() => analysisState.value.colorBinCount);
+  const setColorBinCount = (newCount: number) => {
+    updateAnalysisState({ colorBinCount: newCount });
+  };
+  const colorBinType = computed(() => analysisState.value.colorBinType);
+  const setColorBinType = (newType: BinningOptions) => {
+    updateAnalysisState({ colorBinType: newType });
+  };
+
+  const regionRankingCompositionType = computed(
+    () => analysisState.value.regionRankingCompositionType
+  );
+  const setRegionRankingCompositionType = (
+    newType: RegionRankingCompositionType
+  ) => {
+    updateAnalysisState({ regionRankingCompositionType: newType });
+  };
+
+  const barCountLimit = computed(() => analysisState.value.barCountLimit);
+  const setBarCountLimit = (newLimit: number) => {
+    updateAnalysisState({ barCountLimit: newLimit });
+  };
+  const isBarCountLimitApplied = computed(
+    () => analysisState.value.isBarCountLimitApplied
+  );
+  const toggleIsBarCountLimitApplied = () => {
+    const currentValue = isBarCountLimitApplied.value;
+    updateAnalysisState({ isBarCountLimitApplied: !currentValue });
+  };
+
+  const regionRankingItemStates = computed(
+    () => analysisState.value.regionRankingItemStates
+  );
+  const resetRegionRankingWeights = () => {
+    const newStates = calculateResetRegionRankingWeights(
+      analysisItems.value,
+      regionRankingItemStates.value
+    );
+    updateAnalysisState({ regionRankingItemStates: newStates });
+  };
+  const setRegionRankingWeights = (newWeights: {
+    [itemId: string]: { weight: number };
+  }) => {
+    const newStates = _.cloneDeep(regionRankingItemStates.value);
+    Object.keys(newWeights).forEach(itemId => {
+      newStates[itemId].weight = newWeights[itemId].weight;
+    });
+    updateAnalysisState({ regionRankingItemStates: newStates });
+  };
+  const toggleIsItemInverted = (itemId: string) => {
+    const newStates = _.cloneDeep(regionRankingItemStates.value);
+    newStates[itemId].isInverted = !newStates[itemId].isInverted;
+    updateAnalysisState({ regionRankingItemStates: newStates });
+  };
+
+  const highlightedRegionId = computed(
+    () => analysisState.value.highlightedRegionId
+  );
+  const setHighlightedRegionId = (newRegionId: string) => {
+    updateAnalysisState({ highlightedRegionId: newRegionId });
   };
 
   return {
@@ -116,6 +213,27 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     removeAnalysisItem,
     duplicateAnalysisItem,
     toggleAnalysisItemSelected,
-    setAnalysisItems
+    setAnalysisItems,
+    selectedAdminLevel,
+    setSelectedAdminLevel,
+    areRegionRankingRowsNormalized,
+    toggleRegionRankingRowsNormalized,
+    colorBinCount,
+    setColorBinCount,
+    colorBinType,
+    setColorBinType,
+    regionRankingCompositionType,
+    setRegionRankingCompositionType,
+    barCountLimit,
+    setBarCountLimit,
+    isBarCountLimitApplied,
+    toggleIsBarCountLimitApplied,
+    regionRankingItemStates,
+    resetRegionRankingWeights,
+    toggleIsItemInverted,
+    setRegionRankingWeights,
+    highlightedRegionId,
+    setHighlightedRegionId,
+    setAnalysisState
   };
 }

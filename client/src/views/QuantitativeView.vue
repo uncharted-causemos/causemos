@@ -69,9 +69,9 @@ import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
 import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
-import { createAnalysis } from '@/services/analysis-service-new';
+import { calculateResetRegionRankingWeights, createAnalysis } from '@/services/analysis-service-new';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
-import { ComparativeAnalysisMode, ProjectType } from '@/types/Enums';
+import { ProjectType } from '@/types/Enums';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -561,13 +561,18 @@ export default defineComponent({
       if (indicators !== undefined && indicators.length > 0) {
         // do we have an existing analysis that was generated from this CAG?
         const existingAnalysisId = this.modelSummary?.data_analysis_id;
-        const analysisItems = indicators.map((indicator, index) =>
-          createAnalysisItem(
+        const analysisItems = indicators.map((indicator, index) => {
+          // FIXME: to get the correct values here we need to fetch metadata
+          //  using indicator.id and .data_id, then look at the feature in
+          //  metadata.outputs[indicator.selectedOutputIndex]
+          const cachedMetadata = { datacubeName: indicator.name, featureName: '' };
+          return createAnalysisItem(
             indicator.id,
             indicator.data_id,
+            cachedMetadata,
             index < MAX_ANALYSIS_DATACUBES_COUNT
-          )
-        );
+          );
+        });
         let createNewAnalysis = false;
         if (existingAnalysisId) {
           // update existing data analysis
@@ -575,7 +580,13 @@ export default defineComponent({
             const existingAnalysisState = await getAnalysisState(
               existingAnalysisId
             );
+            // Update analysis items and reset region ranking weights
             existingAnalysisState.analysisItems = analysisItems;
+            const newStates = calculateResetRegionRankingWeights(
+              analysisItems,
+              existingAnalysisState.regionRankingItemStates
+            );
+            existingAnalysisState.regionRankingItemStates = newStates;
             await saveAnalysisState(existingAnalysisId, existingAnalysisState);
           } catch (e) {
             // We have an existing analysis id, but not the analysis itself.
@@ -590,10 +601,7 @@ export default defineComponent({
             'analysis from CAG: ' + this.modelSummary?.name,
             '',
             this.project,
-            {
-              analysisItems: analysisItems,
-              activeTab: ComparativeAnalysisMode.List
-            }
+            analysisItems
           );
           // save the created analysis id with the CAG
           await modelService.updateModelMetadata(this.currentCAG, {

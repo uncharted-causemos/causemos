@@ -11,7 +11,6 @@ import {
   RegionRankingCompositionType,
   DataTransform
 } from '@/types/Enums';
-import { AnalysisItem } from './Analysis';
 import { Filters } from './Filters';
 import { FeatureConfig } from './Outputdata';
 
@@ -35,6 +34,7 @@ export interface ViewState {
   numberOfColorBins?: number;
 
   // region-ranking specific
+  // FIXME: remove all of these
   regionRankingSelectedAdminLevel?: number;
   regionRankingSelectedComparativeAnalysisMode?: ComparativeAnalysisMode;
   regionRankingSelectedNumberOfColorBins?: number;
@@ -87,14 +87,6 @@ export interface DatacubeTitle {
   source: string;
 }
 
-export interface ComparativeAnalysisDataState {
-  selectedAnalysisItems: AnalysisItem[];
-  selectedTimestamp: number | null;
-  regionRankingWeights: { [key: string]: { name: string; weight: number } };
-  regionRankingDataInversion: { [x: string]: boolean };
-  datacubeTitles: DatacubeTitle[];
-}
-
 export interface QualitativeDataState {
   modelName: string;
 }
@@ -108,7 +100,7 @@ export interface ModelsSpaceDataState extends QualitativeDataState {
 
 export type DataState =
   | DataSpaceDataState
-  | ComparativeAnalysisDataState
+  | DataAnalysisState
   | QualitativeDataState
   | ModelsSpaceDataState;
 
@@ -190,7 +182,7 @@ export interface InsightMetadata {
   insightLastUpdate: number;
 
   // Data space specific
-  datacubes?: { datasetName: string; outputName: string; source: string }[];
+  datacubes?: { datasetName: string; outputName: string; }[];
 
   // CAG specific
   ontology?: string;
