@@ -199,7 +199,12 @@ export default {
   watch: {
     filters(n, o) {
       if (filtersUtil.isEqual(n, o)) return;
+
+      // Reset edge-selection as filters can make them invalid
+      this.setSelectedSubgraphEdges([]);
+      this.setSelectedRelationships([]);
       this.refresh();
+
       if (this.mostRecentFetchParameters === null) return;
       // Take updated filters into account and re-fetch statements
       //  to be used in the drilldown panes
@@ -259,7 +264,8 @@ export default {
       setDocumentsCount: 'kb/setDocumentsCount',
       setEvidencesCount: 'kb/setEvidencesCount',
       setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges',
-      setSelectedEdge: 'graph/setSelectedEdge'
+      setSelectedEdge: 'graph/setSelectedEdge',
+      setSelectedRelationships: 'graph/setSelectedRelationships'
     }),
     async refresh() {
       if (this.leavingComponent) return;
