@@ -4,13 +4,7 @@ import {
   DATA_LAYER_TRANSPARENCY
 } from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
-import {
-  ComparativeAnalysisMode,
-  DatacubeViewMode,
-  BinningOptions,
-  RegionRankingCompositionType,
-  DataTransform
-} from '@/types/Enums';
+import { DatacubeViewMode, DataTransform } from '@/types/Enums';
 import { Filters } from './Filters';
 import { FeatureConfig } from './Outputdata';
 
@@ -32,18 +26,6 @@ export interface ViewState {
   colorSchemeName?: COLOR;
   colorScaleType?: ColorScaleType;
   numberOfColorBins?: number;
-
-  // region-ranking specific
-  // FIXME: remove all of these
-  regionRankingSelectedAdminLevel?: number;
-  regionRankingSelectedComparativeAnalysisMode?: ComparativeAnalysisMode;
-  regionRankingSelectedNumberOfColorBins?: number;
-  regionRankingSelectedCompositionType?: RegionRankingCompositionType;
-  regionRankingSelectedBinningType?: BinningOptions;
-  regionRankingApplyingBarLimit?: boolean;
-  regionRankingSelectedMaxBarLimit?: number;
-  regionRankingHoverId?: string;
-  regionRankingShowNormalizedData?: boolean;
 
   analyticalQuestionOrder?: number; // a numeric index to save and restore each question order
 

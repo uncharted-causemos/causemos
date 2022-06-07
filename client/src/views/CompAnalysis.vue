@@ -601,17 +601,6 @@ export default defineComponent({
       if (regionRankingInfo.selectedTimestamp > this.globalRegionRankingTimestamp) {
         this.globalRegionRankingTimestamp = regionRankingInfo.selectedTimestamp;
       }
-
-      // update the name in weights map
-      const regionRankingWeightsMap = _.cloneDeep(this.regionRankingWeights);
-      const regionRankingEqualCompositionWeight = 1 / (this.selectedAnalysisItems.length) * 100;
-      regionRankingWeightsMap[datacubeKey] = {
-        name: regionRankingInfo.name,
-        weight: regionRankingWeightsMap[datacubeKey] !== undefined ? regionRankingWeightsMap[datacubeKey].weight : regionRankingEqualCompositionWeight // do not change the weight
-      };
-      // FIXME: shouldn't be setting a computed property
-      this.regionRankingWeights = _.cloneDeep(regionRankingWeightsMap);
-
       // re-build the transform computing the region ranking data
       this.updateGlobalRegionRankingData();
     },

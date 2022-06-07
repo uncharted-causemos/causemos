@@ -113,9 +113,6 @@ export function useDataAnalysis(analysisId: Ref<string>) {
       setAnalysisItems(updatedAnalysisItems);
     }
   };
-  // FIXME: run a script to make sure all analysis items have `selected`
-  //  properties, and to make sure all analyses have the right number of
-  //  selected items
   const selectedAnalysisItems = computed(() =>
     analysisItems.value.filter(item => item.selected)
   );

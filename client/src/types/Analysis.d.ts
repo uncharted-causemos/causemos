@@ -31,7 +31,7 @@ export interface AnalysisItem {
   viewConfig: ViewState;
   dataConfig: DataSpaceDataState;
 
-  selected?: boolean;
+  selected: boolean;
 }
 
 export interface RegionRankingItemStates {
