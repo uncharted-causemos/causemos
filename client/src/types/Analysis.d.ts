@@ -5,8 +5,7 @@ import { BinningOptions, RegionRankingCompositionType } from './Enums';
 export interface CachedDatacubeMetadata {
   featureName: string;
   datacubeName: string;
-  // FIXME: add this back
-  // source: string;
+  source: string;
 }
 export interface AnalysisItem {
   // Generally a UUID that uniquely identifies one instance of a datacube in the
@@ -26,6 +25,8 @@ export interface AnalysisItem {
   // FIXME: rename to dataId to match the rest of the app
   datacubeId: string;
 
+  // A selection of metadata that can be used to summarize the datacube without
+  //  needing to fetch the full metadata object.
   cachedMetadata: CachedDatacubeMetadata
 
   viewConfig: ViewState;

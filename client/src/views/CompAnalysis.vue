@@ -88,7 +88,6 @@
             :key="item.datacubeId"
             class="datacube-comparative-card"
             :id="item.id"
-            :datacube-id="item.datacubeId"
             :item-id="item.itemId"
             :datacube-index="indx"
             :selected-timestamp="selectedTimestamp"
@@ -96,6 +95,8 @@
             :analysis-item="item"
             :analysis-id="analysisId"
             @loaded-timeseries="onLoadedTimeseries"
+            @loaded-metadata="cacheUpdatedMetadata"
+            @updated-feature-display-name="cacheUpdatedFeatureName"
             @select-timestamp="setSelectedTimestamp"
             @set-analysis-item-view-config="setAnalysisItemViewConfig"
             @remove-analysis-item="removeAnalysisItem"
@@ -116,7 +117,6 @@
                 :style="{ borderColor: colorFromIndex(indx) }"
                 class="card-map"
                 :id="item.id"
-                :datacube-id="item.datacubeId"
                 :item-id="item.itemId"
                 :datacube-index="indx"
                 :selected-timestamp="globalTimestamp"
@@ -124,6 +124,7 @@
                 :analysis-item="item"
                 :analysis-id="analysisId"
                 @loaded-timeseries="onLoadedTimeseries"
+                @loaded-metadata="cacheUpdatedMetadata"
                 @remove-analysis-item="removeAnalysisItem"
                 @duplicate-analysis-item="duplicateAnalysisItem"
               />
@@ -136,7 +137,6 @@
             :key="item.datacubeId"
             class="datacube-region-ranking-card"
             :id="item.id"
-            :datacube-id="item.datacubeId"
             :item-id="item.itemId"
             :selected-admin-level="selectedAdminLevel"
             :number-of-color-bins="colorBinCount"
@@ -209,7 +209,7 @@ import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import DatacubeRegionRankingCompositeCard from '@/components/widgets/datacube-region-ranking-composite-card.vue';
 import _ from 'lodash';
-import { DatacubeTitle, Insight } from '@/types/Insight';
+import { Insight } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
 import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
@@ -227,6 +227,7 @@ import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { useRoute } from 'vue-router';
 import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
 import { isDataAnalysisState } from '@/utils/insight-util';
+import { Indicator, Model } from '@/types/Datacube';
 
 const DRILLDOWN_TABS = [
   {
@@ -263,6 +264,7 @@ export default defineComponent({
       activeTab,
       setActiveTab,
       setAnalysisItemViewConfig,
+      updateAnalysisItemCachedMetadata,
       removeAnalysisItem,
       duplicateAnalysisItem,
       toggleAnalysisItemSelected,
@@ -294,14 +296,6 @@ export default defineComponent({
     const globalBbox = ref<number[][] | undefined>(undefined);
 
     const allTimeseriesMap = ref<{[key: string]: Timeseries[]}>({});
-    const allDatacubesMetadataMap = ref<{
-      [key: string]: {
-        datacubeName: string;
-        datacubeOutputName: string;
-        source: string;
-        region: string[];
-      }
-    }>({});
     const globalTimeseries = ref([]) as Ref<Timeseries[]>;
     const reCalculateGlobalTimeseries = ref(true);
     const timeseriesToDatacubeMap = ref<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>({});
@@ -370,6 +364,18 @@ export default defineComponent({
       }
       selectedTimestampRange.value = newTimestampRange;
     };
+    const cacheUpdatedMetadata = (
+      itemId: string,
+      metadata: Model | Indicator
+    ) => {
+      updateAnalysisItemCachedMetadata(itemId, {
+        datacubeName: metadata.name,
+        source: metadata.maintainer.organization
+      });
+    };
+    const cacheUpdatedFeatureName = (itemId: string, featureName: string) => {
+      updateAnalysisItemCachedMetadata(itemId, { featureName });
+    };
 
     watch(
       () => [
@@ -425,8 +431,6 @@ export default defineComponent({
       }
     };
 
-    const datacubeTitles = ref<DatacubeTitle[]>([]);
-
     watchEffect(() => {
       const newDataState: DataAnalysisState = _.cloneDeep(analysisState.value);
       // Only save the selected timestamp when overlap mode is active
@@ -458,7 +462,8 @@ export default defineComponent({
       analysisItems,
       selectedAnalysisItems,
       allTimeseriesMap,
-      allDatacubesMetadataMap,
+      cacheUpdatedMetadata,
+      cacheUpdatedFeatureName,
       globalTimeseries,
       globalBbox,
       selectedTimestamp,
@@ -500,7 +505,6 @@ export default defineComponent({
       timeseriesToDatacubeMap,
       colorFromIndex,
       shownDatacubesCountLabel,
-      datacubeTitles,
       activeTab,
       analysisId,
       setActiveTab,
@@ -581,7 +585,11 @@ export default defineComponent({
       // re-build the transform computing the region ranking data
       this.updateGlobalRegionRankingData();
     },
-    onUpdatedBarsData(regionRankingInfo: {id: string; datacubeId: string; itemId: string; name: string; barsData: BarData[]; selectedTimestamp: number}) {
+    onUpdatedBarsData(regionRankingInfo: {
+      itemId: string;
+      barsData: BarData[];
+      selectedTimestamp: number
+    }) {
       // clone and save the incoming regional-ranking data in the global map object
       const datacubeKey = regionRankingInfo.itemId;
       this.allRegionalRankingMap[datacubeKey] = _.cloneDeep(regionRankingInfo.barsData);
@@ -594,6 +602,8 @@ export default defineComponent({
       this.updateGlobalRegionRankingData();
     },
     updateGlobalRegionRankingData() {
+      // FIXME: confusing to use datacubeId here since itemId's are actually
+      //  being stored in this property.
       type RegionRankingEntry = {datacubeId: string; normalizedValue: number};
 
       // first: build a map where each key is a unique region name
@@ -669,39 +679,34 @@ export default defineComponent({
       });
       this.globalBarsData = compositeDataSorted;
     },
-    onLoadedTimeseries(timeseriesInfo: {id: string; datacubeId: string; itemId: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; source: string; region: string[]}) {
+    onLoadedTimeseries(itemId: string, timeseriesList: Timeseries[]) {
       // we should only set the global timeseries one time
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
 
-      // if the incoming timeseries should no longer be considered for the computation of the global timeseries
-      //  because, for example, the corresponding datacube is no longer selected, then do not process it
-      if (this.selectedAnalysisItems.findIndex((item: any) => item.id === timeseriesInfo.id && item.datacubeId === timeseriesInfo.datacubeId) < 0) {
+      const item = this.selectedAnalysisItems.find((item) =>
+        item.itemId === itemId
+      );
+      if (item === undefined) {
+        // Incoming timeseries should no longer be included in the global
+        //  timeseries because the corresponding datacube is no longer selected.
         return;
       }
 
-      // clone and save the incoming timeseries in the map object
-      //  where all timeseries lists will be saved
-      const datacubeKey = timeseriesInfo.itemId;
-      this.allTimeseriesMap[datacubeKey] = _.cloneDeep(timeseriesInfo.timeseriesList);
-
-      this.allDatacubesMetadataMap[datacubeKey] = {
-        datacubeName: timeseriesInfo.datacubeName,
-        datacubeOutputName: timeseriesInfo.datacubeOutputName,
-        source: timeseriesInfo.source,
-        region: timeseriesInfo.region
-      };
-      //
-      // calculate (the global timeseries)
-      //
-      if (this.selectedAnalysisItems.length === Object.keys(this.allTimeseriesMap).length) {
+      // Clone and save the incoming timeseries into a map object.
+      // This will be used when calculating global timeseries after all
+      //  timeseries are loaded.
+      this.allTimeseriesMap[itemId] = _.cloneDeep(timeseriesList);
+      if (
+        this.selectedAnalysisItems.length ===
+        Object.keys(this.allTimeseriesMap).length
+      ) {
+        // Timeseries data has been loaded for all datacubes so calculate the
+        //  global timeseries.
         this.reCalculateGlobalTimeseries = false;
-        //
-        // all time series data for all datacubes have been loaded
-        //
         const flatMap: Array<Timeseries[]> = [];
-        Object.keys(this.allTimeseriesMap).forEach(key => {
-          const timeseriesList: Timeseries[] = this.allTimeseriesMap[key];
+        Object.keys(this.allTimeseriesMap).forEach(_itemId => {
+          const timeseriesList: Timeseries[] = this.allTimeseriesMap[_itemId];
 
           // normalize the timeseries values for better y-axis scaling when multiple
           //  timeseries from different datacubes are shown together
@@ -713,13 +718,16 @@ export default defineComponent({
           //  the same scale/range since they all relate to a single datacube (variable)
           normalizeTimeseriesList(timeseriesList);
 
-          // build a map that links each timeseries to its owner datacube
           timeseriesList.forEach(timeseries => {
-            timeseries.id = key; // override the timeseries id to match its owner datacube
-            const info = this.allDatacubesMetadataMap[key];
-            this.timeseriesToDatacubeMap[key] = {
-              datacubeName: info.datacubeName,
-              datacubeOutputVariable: info.datacubeOutputName
+            // override the timeseries id to match its owner datacube
+            timeseries.id = _itemId;
+            // build a map that links each timeseries to its owner datacube
+            const info = this.selectedAnalysisItems.find(
+              item => item.itemId === _itemId
+            )?.cachedMetadata;
+            this.timeseriesToDatacubeMap[_itemId] = {
+              datacubeName: info?.datacubeName ?? '',
+              datacubeOutputVariable: info?.featureName ?? ''
             };
           });
 
@@ -759,27 +767,6 @@ export default defineComponent({
             this.initialSelectedTimestampRange = newTimestampRange;
           }
         }
-
-        // use the loaded metadata for all analysis-items
-        const datacubeTitles: DatacubeTitle[] = [];
-        const regions: string[] = [];
-        Object.keys(this.allDatacubesMetadataMap).forEach(key => {
-          const title = {
-            datacubeName: this.allDatacubesMetadataMap[key].datacubeName,
-            datacubeOutputName: this.allDatacubesMetadataMap[key].datacubeOutputName,
-            source: this.allDatacubesMetadataMap[key].source
-          };
-          // for each datacube, save its name and output-name
-          datacubeTitles.push(title);
-          // also, save a list of all regions (into a big list for all datacubes)
-          const datacubeRegions =
-            this.allDatacubesMetadataMap[key].region &&
-            _.isArray(this.allDatacubesMetadataMap[key].region)
-              ? this.allDatacubesMetadataMap[key].region
-              : [];
-          regions.push(...datacubeRegions);
-        });
-        this.datacubeTitles = datacubeTitles;
       }
     },
     downloadRankingResult() {

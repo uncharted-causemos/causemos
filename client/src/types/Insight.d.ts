@@ -63,12 +63,6 @@ export interface DataSpaceDataState {
   searchFilters: Filters; // lex-bar search queries
 }
 
-export interface DatacubeTitle {
-  datacubeName: string;
-  datacubeOutputName: string;
-  source: string;
-}
-
 export interface QualitativeDataState {
   modelName: string;
 }

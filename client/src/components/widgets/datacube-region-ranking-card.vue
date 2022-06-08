@@ -148,10 +148,6 @@ export default defineComponent({
       type: String,
       required: true
     },
-    datacubeId: {
-      type: String,
-      required: true
-    },
     itemId: {
       type: String,
       required: true
@@ -209,7 +205,6 @@ export default defineComponent({
     const {
       itemId,
       id,
-      datacubeId,
       selectedColorScheme,
       numberOfColorBins,
       selectedAdminLevel,
@@ -590,10 +585,7 @@ export default defineComponent({
             barDataWithoutTheNumberOfBarsLimit.value = temp;
 
             emit('updated-bars-data', {
-              id: id.value,
-              datacubeId: datacubeId.value,
               itemId: itemId.value,
-              name: activeFeature.value?.display_name + ' : ' + metadata.value?.name,
               barsData: temp,
               selectedTimestamp: selectedTimestamp.value
             });

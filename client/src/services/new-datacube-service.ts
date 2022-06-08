@@ -285,7 +285,10 @@ export const getDefaultFeature = (datacube: Datacube) => {
   );
 };
 
-// TODO: comment
+// Extract some useful metadata to summarize a datacube.
+// Used when adding a datacube to an analysis from the data explorer so that the
+//  full metadata doesn't need to be fetched before the datacube can be
+//  displayed in the side panel list.
 export const getDatacubeMetadataToCache = (
   datacube: Datacube
 ): CachedDatacubeMetadata => {
@@ -293,8 +296,8 @@ export const getDatacubeMetadataToCache = (
     getDefaultFeature(datacube)?.display_name ?? datacube.default_feature;
   return {
     featureName,
-    datacubeName: datacube.name
-    // source: datacube.
+    datacubeName: datacube.name,
+    source: datacube.maintainer.organization
   };
 };
 

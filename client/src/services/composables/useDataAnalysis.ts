@@ -1,4 +1,4 @@
-import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
+import { AnalysisItem, CachedDatacubeMetadata, DataAnalysisState } from '@/types/Analysis';
 import _ from 'lodash';
 import { computed, Ref, ref, watch } from 'vue';
 import { getAnalysisState, saveAnalysisState } from '../analysis-service';
@@ -115,6 +115,22 @@ export function useDataAnalysis(analysisId: Ref<string>) {
       setAnalysisItems(updatedAnalysisItems);
     }
   };
+  const updateAnalysisItemCachedMetadata = (
+    itemId: string,
+    partialMetadata: Partial<CachedDatacubeMetadata>
+  ) => {
+    const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+    const analysisItem = updatedAnalysisItems.find(
+      item => item.itemId === itemId
+    );
+    if (analysisItem) {
+      analysisItem.cachedMetadata = {
+        ...analysisItem.cachedMetadata,
+        ...partialMetadata
+      };
+      setAnalysisItems(updatedAnalysisItems);
+    }
+  };
   const selectedAnalysisItems = computed(() =>
     analysisItems.value.filter(item => item.selected)
   );
@@ -209,6 +225,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     setActiveTab,
     setAnalysisItemViewConfig,
     setAnalysisItemDataState,
+    updateAnalysisItemCachedMetadata,
     removeAnalysisItem,
     duplicateAnalysisItem,
     toggleAnalysisItemSelected,

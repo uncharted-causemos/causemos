@@ -102,10 +102,6 @@ export default defineComponent({
       type: String,
       required: true
     },
-    datacubeId: {
-      type: String,
-      required: true
-    },
     itemId: {
       type: String,
       required: true
@@ -129,6 +125,8 @@ export default defineComponent({
   },
   emits: [
     'loaded-timeseries',
+    'loaded-metadata',
+    'updated-feature-display-name',
     'remove-analysis-item',
     'duplicate-analysis-item'
   ],
@@ -136,13 +134,17 @@ export default defineComponent({
     const {
       itemId,
       id,
-      datacubeId,
       globalTimestamp,
       datacubeIndex,
       analysisItem
     } = toRefs(props);
 
     const metadata = useModelMetadata(id);
+    watchEffect(() => {
+      if (metadata.value !== null) {
+        emit('loaded-metadata', itemId.value, metadata.value);
+      }
+    });
 
     // FIXME: this watcher is extremely error prone. Seems like its jobs are to:
     // - Search if there's an entry in the store for the current itemId
@@ -152,6 +154,15 @@ export default defineComponent({
     // Can that last case be avoided by using an ID in the datacubeCurrentOutputsMap that is unique between duplicate datacubes?
     // FIXME: this logic is copied between all cards other than datacube-card
     const activeFeature = ref<DatacubeFeature | null>(null);
+    watchEffect(() => {
+      if (activeFeature.value !== null) {
+        emit(
+          'updated-feature-display-name',
+          itemId.value,
+          activeFeature.value.display_name
+        );
+      }
+    });
     const activeFeatureName = computed(() => activeFeature.value?.name ?? '');
     watchEffect(() => {
       if (!metadata.value) {
@@ -371,18 +382,7 @@ export default defineComponent({
 
           regionRunsScenarios.value = timeseriesList.map(timeseries => ({ name: timeseries.name, color: timeseries.color }));
 
-          emit('loaded-timeseries', {
-            id: id.value,
-            datacubeId: datacubeId.value,
-            itemId: itemId.value,
-            timeseriesList,
-            //
-            datacubeName: metadata.value.name,
-            datacubeOutputName: activeFeature.value?.display_name,
-            source: metadata.value.maintainer.organization,
-            //
-            region: metadata.value.geography.country // FIXME: later this could be the selected region for each datacube
-          });
+          emit('loaded-timeseries', itemId.value, timeseriesList);
         }
       }
     });

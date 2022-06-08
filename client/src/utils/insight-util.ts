@@ -87,17 +87,16 @@ function parseMetadataDetails (
       summary.currentEngine = dataState.currentEngine ?? undefined;
     }
   } else if (isDataAnalysisState(dataState)) {
-    // FIXME: add source back
     const datacubes: {
       datasetName: string,
       outputName: string,
-      // source: string
+      source: string
     }[] = [];
     dataState.analysisItems.forEach(({ cachedMetadata }) => {
       datacubes.push({
         datasetName: cachedMetadata.datacubeName,
-        outputName: cachedMetadata.featureName
-        // source: cachedMetadata.source
+        outputName: cachedMetadata.featureName,
+        source: cachedMetadata.source
       });
     });
     summary.datacubes = datacubes;
