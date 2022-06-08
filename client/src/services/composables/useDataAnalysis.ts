@@ -29,7 +29,10 @@ export function useDataAnalysis(analysisId: Ref<string>) {
       if (!analysisId.value) return;
       const result = await getAnalysisState(analysisId.value);
       // FIXME: run script to ensure tab exists for each analysis then remove:
-      if (result.activeTab === undefined) {
+      if (
+        result.activeTab === undefined ||
+        result.colorBinCount === undefined
+      ) {
         console.error('invalid fetched analysis state', result);
         const newState = createAnalysisObject();
         addItemsToAnalysis(result.analysisItems, newState);
@@ -124,11 +127,14 @@ export function useDataAnalysis(analysisId: Ref<string>) {
       item => item.itemId === itemId
     );
     if (analysisItem) {
+      const beforeChange = _.cloneDeep(analysisItem.cachedMetadata);
       analysisItem.cachedMetadata = {
         ...analysisItem.cachedMetadata,
         ...partialMetadata
       };
-      setAnalysisItems(updatedAnalysisItems);
+      if (!_.isEqual(beforeChange, analysisItem.cachedMetadata)) {
+        setAnalysisItems(updatedAnalysisItems);
+      }
     }
   };
   const selectedAnalysisItems = computed(() =>
