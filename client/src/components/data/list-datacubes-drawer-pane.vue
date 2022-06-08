@@ -14,11 +14,7 @@
               :class="{ 'fa-check-square-o': item.selected, 'fa-square-o': !item.selected }"
             />
             <span>
-              {{
-                item.dataConfig.activeFeatures[
-                  item.viewConfig.selectedOutputIndex ?? 0
-                ]?.display_name ?? item.datacubeId
-              }}
+              {{ getDisplayName(item) }}
             </span>
             <i
               class="fa fa-fw fa-close delete-item"
@@ -80,6 +76,12 @@ export default defineComponent({
     },
     removeItem(item: AnalysisItem) {
       this.$emit('remove-analysis-item', item.itemId);
+    },
+    getDisplayName(item: AnalysisItem) {
+      const { datacubeName, featureName, source } = item.cachedMetadata;
+      return [featureName, datacubeName, source]
+        .filter(text => text !== '')
+        .join(' - ');
     }
   }
 });
