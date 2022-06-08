@@ -54,7 +54,17 @@ export function useDataAnalysis(analysisId: Ref<string>) {
 
   const analysisItems = computed(() => analysisState.value.analysisItems);
   const setAnalysisItems = (newItems: AnalysisItem[]) => {
+    const oldSelectedItemIds = selectedAnalysisItems.value.map(
+      item => item.itemId
+    );
     updateAnalysisState({ analysisItems: newItems });
+    // If the list of selected items has changed, reset region ranking weights
+    const newSelectedItemIds = newItems
+      .filter(item => item.selected)
+      .map(item => item.itemId);
+    if (!_.isEqual(oldSelectedItemIds, newSelectedItemIds)) {
+      resetRegionRankingWeights();
+    }
   };
   const removeAnalysisItem = (itemId: string) => {
     setAnalysisItems(
@@ -68,13 +78,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     if (itemToDuplicate !== undefined) {
       const duplicatedItem = _.cloneDeep(itemToDuplicate);
       duplicatedItem.itemId = uuidv4();
-      if (
-        selectedAnalysisItems.value.length < MAX_ANALYSIS_DATACUBES_COUNT &&
-        duplicatedItem.selected
-      ) {
-        // New selected item, so reset region ranking weights
-        resetRegionRankingWeights();
-      } else {
+      if (selectedAnalysisItems.value.length >= MAX_ANALYSIS_DATACUBES_COUNT) {
         duplicatedItem.selected = false;
       }
       setAnalysisItems([...analysisItems.value, duplicatedItem]);
@@ -86,8 +90,6 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     if (itemToToggle) {
       itemToToggle.selected = !itemToToggle.selected;
       setAnalysisItems(items);
-      // Reset region ranking weights when a datacube is (de)selected
-      resetRegionRankingWeights();
     }
   };
   const setAnalysisItemViewConfig = (itemId: string, viewConfig: any) => {
@@ -210,7 +212,6 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     removeAnalysisItem,
     duplicateAnalysisItem,
     toggleAnalysisItemSelected,
-    setAnalysisItems,
     selectedAdminLevel,
     setSelectedAdminLevel,
     areRegionRankingRowsNormalized,

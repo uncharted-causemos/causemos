@@ -59,6 +59,7 @@ import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
 import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 import { Datacube } from '@/types/Datacube';
+import { calculateResetRegionRankingWeights } from '@/services/analysis-service-new';
 
 export default defineComponent({
   name: 'DataExplorer',
@@ -73,8 +74,7 @@ export default defineComponent({
     const analysisId = computed(() => route.params.analysisId as string);
     const {
       analysisState,
-      analysisItems,
-      setAnalysisItems
+      analysisItems
     } = useDataAnalysis(analysisId);
 
     const filteredDatacubes = ref<Datacube[]>([]);
@@ -121,8 +121,7 @@ export default defineComponent({
       toaster: useToaster(),
       analysisItems,
       selectedSearchItems,
-      toggleDatacubeSelected,
-      setAnalysisItems
+      toggleDatacubeSelected
     };
   },
   data: () => ({
@@ -204,6 +203,20 @@ export default defineComponent({
           ...this.analysisState,
           analysisItems: this.selectedSearchItems
         };
+        // If the list of selected datacubes changed, reset region ranking
+        //  weights.
+        const oldSelectedDatacubeIds = this.analysisItems
+          .filter(item => item.selected)
+          .map(item => item.itemId);
+        const newSelectedDatacubeIds = this.selectedSearchItems
+          .filter(item => item.selected)
+          .map(item => item.itemId);
+        if (!_.isEqual(oldSelectedDatacubeIds, newSelectedDatacubeIds)) {
+          newState.regionRankingItemStates = calculateResetRegionRankingWeights(
+            this.selectedSearchItems,
+            newState.regionRankingItemStates
+          );
+        }
         await saveAnalysisState(this.analysisId, newState);
         this.$router.push({
           name: 'dataComparative',
