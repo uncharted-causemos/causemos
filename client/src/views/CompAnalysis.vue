@@ -85,7 +85,7 @@
         <template v-if="activeTab === ComparativeAnalysisMode.List">
           <datacube-comparative-card
             v-for="(item, indx) in selectedAnalysisItems"
-            :key="item.datacubeId"
+            :key="item.itemId"
             class="datacube-comparative-card"
             :id="item.id"
             :item-id="item.itemId"
@@ -107,7 +107,7 @@
           <div class="card-maps-container">
             <div
               v-for="(item, indx) in selectedAnalysisItems"
-              :key="item.datacubeId"
+              :key="item.itemId"
               class="card-map-container"
               :class="[
                 `card-count-${selectedAnalysisItems.length < 5 ? selectedAnalysisItems.length : 'n'}`
@@ -134,7 +134,7 @@
         <template v-if="activeTab === ComparativeAnalysisMode.RegionRanking">
           <datacube-region-ranking-card
             v-for="item in selectedAnalysisItems"
-            :key="item.datacubeId"
+            :key="item.itemId"
             class="datacube-region-ranking-card"
             :id="item.id"
             :item-id="item.itemId"
