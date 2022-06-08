@@ -565,7 +565,13 @@ export default defineComponent({
           // FIXME: to get the correct values here we need to fetch metadata
           //  using indicator.id and .data_id, then look at the feature in
           //  metadata.outputs[indicator.selectedOutputIndex]
-          const cachedMetadata = { datacubeName: indicator.name, featureName: '' };
+          // However, this is a small issue since datacubes in CompAnalysis will
+          //  update their own metadata when it loads.
+          const cachedMetadata = {
+            datacubeName: indicator.name,
+            featureName: '',
+            source: ''
+          };
           return createAnalysisItem(
             indicator.id,
             indicator.data_id,

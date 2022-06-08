@@ -179,10 +179,10 @@ export default defineComponent({
     },
 
     setDatacubeSelected (item: { datacubeId: string; id: string; }) {
-      const cachedMetadata = { featureName: '', datacubeName: '' };
+      // Pass '' for analysis item metadata because the title is only visible
+      //  from the CompAnalysis page.
+      const cachedMetadata = { featureName: '', datacubeName: '', source: '' };
       this.selectedDatacubes = [
-        // Pass '' for analysis item metadata because the title is only visible
-        //  from the CompAnalysis page.
         createAnalysisItem(item.id, item.datacubeId, cachedMetadata, true)
       ];
     },
