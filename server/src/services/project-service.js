@@ -835,6 +835,24 @@ const requestAssembly = async (assemblyRequestId) => {
     ASSEMBLY_REQUEST_ID: assemblyRequestId
   };
 
+
+  // We can either run through Prefect or with Anansi web-service
+  if (process.env.WM_ANANSI_URL && process.env.WM_ANANSI_URL.length) {
+    const anansiOption = {
+      method: 'POST',
+      url: process.env.WM_ANANSI_URL,
+      headers: {
+        'Content-type': 'application/json',
+        'Accept': 'application/json'
+      },
+      json: {
+        id: assemblyRequestId
+      }
+    };
+    const result = await requestAsPromise(anansiOption);
+    return result;
+  }
+
   // We need the two JSON.stringify below to go from
   // JSON object -> JSON string -> escaped JSON string
   const graphQLQuery = `
