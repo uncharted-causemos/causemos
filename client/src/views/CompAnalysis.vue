@@ -30,7 +30,6 @@
         :timeseriesData="globalTimeseries"
         :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
         :selected-timestamp="globalTimestamp"
-        :selected-timestamp-range="selectedTimestampRange"
         @select-timestamp="setSelectedGlobalTimestamp"
         @select-timestamp-range="handleTimestampRangeSelection"
       />
@@ -119,8 +118,7 @@
                 :id="item.id"
                 :item-id="item.itemId"
                 :datacube-index="indx"
-                :selected-timestamp="globalTimestamp"
-                :selected-timestamp-range="selectedTimestampRange"
+                :global-timestamp="globalTimestamp"
                 :analysis-item="item"
                 :analysis-id="analysisId"
                 @loaded-timeseries="onLoadedTimeseries"
@@ -449,7 +447,7 @@ export default defineComponent({
       const result = {} as {
         [itemId: string]: { weight: number, name: string}
       };
-      analysisItems.value.forEach(({ itemId, cachedMetadata }) => {
+      selectedAnalysisItems.value.forEach(({ itemId, cachedMetadata }) => {
         result[itemId] = {
           weight: itemStates[itemId].weight,
           name: `${cachedMetadata.featureName} - ${cachedMetadata.datacubeName}`
@@ -564,7 +562,11 @@ export default defineComponent({
     }),
     getDatacubeRankingWeight(analysisItem: AnalysisItem) {
       const datacubeKey = analysisItem.itemId;
-      return this.regionRankingItemStates[datacubeKey].weight.toFixed(2);
+      if (this.regionRankingItemStates[datacubeKey]) {
+        return this.regionRankingItemStates[datacubeKey].weight.toFixed(2);
+      }
+      console.error('cant find weight for', datacubeKey);
+      return 0;
     },
     isDatacubeInverted(analysisItem: AnalysisItem) {
       const datacubeKey = analysisItem.itemId;

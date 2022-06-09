@@ -41,19 +41,22 @@ export default defineComponent({
     }
   },
   watch: {
-    sections(): void {
-      if (Object.keys(this.sections).length > 0) {
-        // REVIEW: consider merging tags and sizes into one variable
-        // first set weights for all tags
-        this.sizes = Object.keys(this.sections).map(key => this.niceFormat(this.sections[key].weight));
-        this.originalSizes = this.sizes;
-        // then set tags to trigger vue update
-        this.tags = Object.keys(this.sections).map(key => ({ name: this.sections[key].name, color: 'gray' }));
-      } else {
-        this.tags = [];
-        this.originalSizes = [];
-        this.originalSizes = [];
-      }
+    sections: {
+      handler(): void {
+        if (Object.keys(this.sections).length > 0) {
+          // REVIEW: consider merging tags and sizes into one variable
+          // first set weights for all tags
+          this.sizes = Object.keys(this.sections).map(key => this.niceFormat(this.sections[key].weight));
+          this.originalSizes = this.sizes;
+          // then set tags to trigger vue update
+          this.tags = Object.keys(this.sections).map(key => ({ name: this.sections[key].name, color: 'gray' }));
+        } else {
+          this.tags = [];
+          this.originalSizes = [];
+          this.originalSizes = [];
+        }
+      },
+      immediate: true
     }
   },
   data: () => ({
