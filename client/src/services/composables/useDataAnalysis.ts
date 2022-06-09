@@ -7,7 +7,8 @@ import { DataSpaceDataState } from '@/types/Insight';
 import {
   addItemsToAnalysis,
   calculateResetRegionRankingWeights,
-  createAnalysisObject
+  createAnalysisObject,
+  didSelectedItemsChange
 } from '../analysis-service-new';
 import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
 import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
@@ -57,15 +58,13 @@ export function useDataAnalysis(analysisId: Ref<string>) {
 
   const analysisItems = computed(() => analysisState.value.analysisItems);
   const setAnalysisItems = (newItems: AnalysisItem[]) => {
-    const oldSelectedItemIds = selectedAnalysisItems.value.map(
-      item => item.itemId
+    const shouldResetWeights = didSelectedItemsChange(
+      analysisItems.value,
+      newItems
     );
     updateAnalysisState({ analysisItems: newItems });
     // If the list of selected items has changed, reset region ranking weights
-    const newSelectedItemIds = newItems
-      .filter(item => item.selected)
-      .map(item => item.itemId);
-    if (!_.isEqual(oldSelectedItemIds, newSelectedItemIds)) {
+    if (shouldResetWeights) {
       resetRegionRankingWeights();
     }
   };

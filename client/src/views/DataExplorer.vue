@@ -59,7 +59,7 @@ import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
 import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 import { Datacube } from '@/types/Datacube';
-import { calculateResetRegionRankingWeights } from '@/services/analysis-service-new';
+import { calculateResetRegionRankingWeights, didSelectedItemsChange } from '@/services/analysis-service-new';
 
 export default defineComponent({
   name: 'DataExplorer',
@@ -205,13 +205,11 @@ export default defineComponent({
         };
         // If the list of selected datacubes changed, reset region ranking
         //  weights.
-        const oldSelectedDatacubeIds = this.analysisItems
-          .filter(item => item.selected)
-          .map(item => item.itemId);
-        const newSelectedDatacubeIds = this.selectedSearchItems
-          .filter(item => item.selected)
-          .map(item => item.itemId);
-        if (!_.isEqual(oldSelectedDatacubeIds, newSelectedDatacubeIds)) {
+        const shouldResetWeights = didSelectedItemsChange(
+          this.analysisItems,
+          this.selectedSearchItems
+        );
+        if (shouldResetWeights) {
           newState.regionRankingItemStates = calculateResetRegionRankingWeights(
             this.selectedSearchItems,
             newState.regionRankingItemStates

@@ -586,7 +586,12 @@ export default defineComponent({
             const existingAnalysisState = await getAnalysisState(
               existingAnalysisId
             );
-            // Update analysis items and reset region ranking weights
+            // Update analysis items and reset region ranking weights.
+            // Note that as it currently stands, we reset region ranking weights
+            //  every time, regardless of whether the list of selected items
+            //  actually changed since the analysis was last opened. To improve
+            //  this we'd need to check for existing analysis items before
+            //  creating new ones.
             existingAnalysisState.analysisItems = analysisItems;
             const newStates = calculateResetRegionRankingWeights(
               analysisItems,

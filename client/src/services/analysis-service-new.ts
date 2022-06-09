@@ -1,6 +1,7 @@
 import API from '@/api/api';
 import { AnalysisItem, DataAnalysisState, RegionRankingItemStates } from '@/types/Analysis';
 import { BinningOptions, ComparativeAnalysisMode, ProjectType, RegionRankingCompositionType } from '@/types/Enums';
+import _ from 'lodash';
 
 /**
  * Create a new DataAnalysisState object with each of its fields initialized to
@@ -34,6 +35,27 @@ export const addItemsToAnalysis = (
       weight: 0
     };
   });
+};
+
+/**
+ * Finds the selected items in each list and compares their ids for equality.
+ * Assumes that the order of selected items won't change unless an item was
+ *  added or removed.
+ * @param oldItems List of analysis items before potential change occurred.
+ * @param newItems List after the potential change.
+ * @returns True iff an item was selected or deselected.
+ */
+export const didSelectedItemsChange = (
+  oldItems: AnalysisItem[],
+  newItems: AnalysisItem[]
+): boolean => {
+  const oldSelectedItemIds = oldItems
+    .filter(item => item.selected)
+    .map(item => item.id);
+  const newSelectedItemIds = newItems
+    .filter(item => item.selected)
+    .map(item => item.id);
+  return !_.isEqual(oldSelectedItemIds, newSelectedItemIds);
 };
 
 export const calculateResetRegionRankingWeights = (
