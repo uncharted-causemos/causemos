@@ -437,6 +437,10 @@ export default defineComponent({
           ? globalTimestamp.value
           : null;
       store.dispatch('insightPanel/setDataState', newDataState);
+      // No view state for this page. Set it to an empty object so that any view
+      //  state from previous pages is cleared and not associated with insights
+      //  taken from this page.
+      store.dispatch('insightPanel/setViewState', {});
     });
 
     // A data structure that combines the weight of each datacube with a human-
