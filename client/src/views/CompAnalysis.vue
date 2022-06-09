@@ -303,6 +303,8 @@ export default defineComponent({
     const globalRegionRankingTimestamp = ref(0);
 
     const selectedTimestamp = ref(null) as Ref<number | null>;
+    // FIXME: seems like selectedTimestampRange is always set to the full range
+    //  and never affects any behaviour. Investigate and remove.
     const selectedTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
 
     const globalTimestamp = ref(null) as Ref<number | null>;
