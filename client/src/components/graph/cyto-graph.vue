@@ -130,6 +130,9 @@ export default {
   created() {
     this.graphRenderer = null;
     this.currentLayout = 'cose-bilkent';
+
+    this.nodesSelected = null;
+    this.edgesSelected = null;
   },
   mounted() {
     this.graphRenderer = new CytoscapeGraphRenderer({ formatter: this.ontologyFormatter });
@@ -143,12 +146,12 @@ export default {
     const cy = this.graphRenderer.cy;
     cy.boxSelectionEnabled(true); // Enabled box selection
 
-    let nodesSelected = cy.collection();
-    let edgesSelected = cy.collection();
+    this.nodesSelected = cy.collection();
+    this.edgesSelected = cy.collection();
 
     const nodeNeighborhoodHighlights = () => {
-      const nodesSelectedArray = nodesSelected.toArray().map(node => node.id());
-      this.focusedNodes = nodesSelected.toArray().map(node => node.data()); // Array of nodes to add/remove to search
+      const nodesSelectedArray = this.nodesSelected.toArray().map(node => node.id());
+      this.focusedNodes = this.nodesSelected.toArray().map(node => node.data()); // Array of nodes to add/remove to search
 
       // Create edges to add when edges are not shown
       const neighborEdges = this.graphData.edges.filter(e => {
@@ -163,7 +166,7 @@ export default {
       const sizeFn = createLinearScale([minCount, maxCount], [30, 80]); // Make the size range between 30 to 80
 
       // Increases the node size to be able to draw the outer ring
-      nodesSelected.forEach(node => {
+      this.nodesSelected.forEach(node => {
         const size = sizeFn(node.data().count);
         node.data().style.width = size * 1.25;
         node.data().style.height = size * 1.25;
@@ -218,11 +221,11 @@ export default {
 
       // Handle neighborhood highlights in the graph
       if (!node.selected()) {
-        nodesSelected = nodesSelected.union(node);
+        this.nodesSelected = this.nodesSelected.union(node);
         nodeNeighborhoodHighlights();
       } else {
-        nodesSelected = nodesSelected.filter(n => n.id() !== node.id());
-        if (nodesSelected.length >= 1) {
+        this.nodesSelected = this.nodesSelected.filter(n => n.id() !== node.id());
+        if (this.nodesSelected.length >= 1) {
           nodeNeighborhoodHighlights();
         } else {
           // Deselect the node
@@ -230,7 +233,7 @@ export default {
         }
       }
 
-      const nodesSelectedIds = nodesSelected.toArray().map(d => d.id());
+      const nodesSelectedIds = this.nodesSelected.toArray().map(d => d.id());
       const neighborhood = nodesSelectedIds.map(id => calculateNeighborhood(this.graphData, id)); // Calculate neighborhood for each selected node.
       const merged = { edges: [] }; // Group neighborhood by nodes and edges
       neighborhood.forEach(n => {
@@ -244,18 +247,18 @@ export default {
         return ids.indexOf(edge.source + '///' + edge.target) !== -1;
       });
 
-      if (nodesSelected.length > 1) {
+      if (this.nodesSelected.length > 1) {
         this.setSelectedRelationships(edges);
-      } else if (nodesSelected.length === 1) {
-        this.setSelectedNode({ node: nodesSelected.data() });
+      } else if (this.nodesSelected.length === 1) {
+        this.setSelectedNode({ node: this.nodesSelected.data() });
       }
 
       this.setSelectedSubgraphEdges(edges);
     });
 
     const edgeNeighborhoodHighlights = () => {
-      const sources = edgesSelected.sources();
-      const targets = edgesSelected.targets();
+      const sources = this.edgesSelected.sources();
+      const targets = this.edgesSelected.targets();
       const nodes = sources.merge(targets);
 
       const nodesUnselected = cy.nodes(':childless').difference(nodes).nodes();
@@ -267,7 +270,7 @@ export default {
         });
 
         cy.edges().style({ opacity: FADED_OPACITY, lineColor: FADED_COLOR });
-        edgesSelected.style({
+        this.edgesSelected.style({
           opacity: 1.0,
           lineColor: e => e.data().style.edgeColor
         });
@@ -298,8 +301,8 @@ export default {
         node.data().style.height = size;
       });
       cy.style().selector('node').update();
-      nodesSelected = cy.collection();
-      edgesSelected = cy.collection();
+      this.nodesSelected = cy.collection();
+      this.edgesSelected = cy.collection();
       this.focusedNodes = [];
 
       this.clearSelections();
@@ -312,11 +315,11 @@ export default {
 
       // Handle neighborhood highlights
       if (!edge.selected()) {
-        edgesSelected = edgesSelected.union(edge);
+        this.edgesSelected = this.edgesSelected.union(edge);
         edgeNeighborhoodHighlights();
       } else {
-        edgesSelected = edgesSelected.filter(e => e.id() !== edge.id());
-        if (edgesSelected.length >= 1) {
+        this.edgesSelected = this.edgesSelected.filter(e => e.id() !== edge.id());
+        if (this.edgesSelected.length >= 1) {
           edgeNeighborhoodHighlights();
         } else {
           // Deselect all edges
@@ -324,13 +327,13 @@ export default {
         }
       }
 
-      if (edgesSelected.length > 1) {
-        const selectedRelationships = edgesSelected.toArray().map(d => d.data());
+      if (this.edgesSelected.length > 1) {
+        const selectedRelationships = this.edgesSelected.toArray().map(d => d.data());
         this.setSelectedRelationships(selectedRelationships);
-      } else if (edgesSelected.length === 1) {
-        this.setSelectedEdge({ source: edgesSelected.data().source, target: edgesSelected.data().target });
+      } else if (this.edgesSelected.length === 1) {
+        this.setSelectedEdge({ source: this.edgesSelected.data().source, target: this.edgesSelected.data().target });
       }
-      const selectedEdges = edgesSelected.toArray().map(d => d.data());
+      const selectedEdges = this.edgesSelected.toArray().map(d => d.data());
       this.setSelectedSubgraphEdges(selectedEdges);
     });
 
@@ -422,6 +425,12 @@ export default {
       this.setSelectedNode({ node: null });
       this.setSelectedEdge({ source: null, target: null });
       this.setSelectedRelationships([]);
+
+      const cy = this.graphRenderer.cy;
+      if (cy) {
+        this.nodesSelected = cy.collection();
+        this.edgesSelected = cy.collection();
+      }
     }
   }
 };
