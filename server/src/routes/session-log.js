@@ -45,14 +45,8 @@ router.get('/', asyncHandler(async (req, res) => {
         doc.request_path.includes('spanning-bbox') ||
         doc.request_path.includes('questions/search') ||
         doc.request_method === 'GET'
-        /*
-        doc.request_path.includes('kbs') ||
-        doc.request_path.includes('spanning-bbox') ||
-        doc.request_path.includes('tiles') ||
-        doc.request_path.includes('styles') ||
-        (doc.request_method === 'GET' && doc.request_path.includes('model-runs'))
-        */
       ) continue;
+
       entries.push(doc);
     }
 
@@ -84,7 +78,6 @@ router.get('/', asyncHandler(async (req, res) => {
     const groupedEntries = _.groupBy(entries, 'timestamp');
     sessions[key] = groupedEntries;
   }
-
 
   res.json(sessions);
 }));
