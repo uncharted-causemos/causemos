@@ -53,7 +53,6 @@ export default defineComponent({
         } else {
           this.tags = [];
           this.originalSizes = [];
-          this.originalSizes = [];
         }
       },
       immediate: true
