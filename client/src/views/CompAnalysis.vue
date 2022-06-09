@@ -571,8 +571,7 @@ export default defineComponent({
       if (this.regionRankingItemStates[datacubeKey]) {
         return this.regionRankingItemStates[datacubeKey].weight.toFixed(2);
       }
-      console.error('cant find weight for', datacubeKey);
-      return 0;
+      return '0';
     },
     isDatacubeInverted(analysisItem: AnalysisItem) {
       const datacubeKey = analysisItem.itemId;

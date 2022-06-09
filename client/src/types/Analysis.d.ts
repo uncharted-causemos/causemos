@@ -43,7 +43,8 @@ export interface DataAnalysisState {
   analysisItems: AnalysisItem[];
   activeTab: ComparativeAnalysisMode;
   colorBinCount: number;
-  colorBinType: BinningOptions; // linear/quantile
+  // linear/quantile
+  colorBinType: BinningOptions;
   selectedAdminLevel: number;
   // union/intersection
   regionRankingCompositionType: RegionRankingCompositionType;
@@ -51,7 +52,6 @@ export interface DataAnalysisState {
   isBarCountLimitApplied: boolean;
   areRegionRankingRowsNormalized: boolean;
   selectedTimestamp: number | null;
-  // FIXME: need to keep these in sync whenever we add/remove analysis items
   highlightedRegionId: string;
   regionRankingItemStates: RegionRankingItemStates
 }

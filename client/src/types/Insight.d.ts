@@ -158,7 +158,7 @@ export interface InsightMetadata {
   insightLastUpdate: number;
 
   // Data space specific
-  datacubes?: { datasetName: string; outputName: string; }[];
+  datacubes?: { datasetName: string; outputName: string; source: string }[];
 
   // CAG specific
   ontology?: string;
