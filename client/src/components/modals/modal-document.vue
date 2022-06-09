@@ -4,7 +4,7 @@
     @close="close()">
     <template #body>
       <div class="metadata">
-        <table v-if="documentData">
+        <table style="border-bottom: 1px solid #e3e3e3;" v-if="documentData">
           <tr>
             <td class="doc-label">Publication Date</td>
             <td>{{ dateFormatter(documentData.publication_date.date, 'YYYY-MM-DD') }}</td>
@@ -23,7 +23,7 @@
               <input v-model="author" />
             </td>
           </tr>
-           <tr>
+          <tr>
             <td class="doc-label">Title</td>
             <td v-if="!editable" class="doc-value">{{ title }}</td>
             <td v-else class="doc-value">
@@ -31,7 +31,6 @@
             </td>
           </tr>
         </table>
-        <hr />
       </div>
       <div v-if="pdfViewer"
         class="toolbar">
@@ -213,9 +212,6 @@ export default {
       this.setFieldsFromDocumentData();
       this.textViewer = createTextViewer(this.documentData.extracted_text);
 
-
-      // FIXME: temporarily return false always - DART is offline and there is a strange bug where the fallover
-      // doesn't work after the code has been transpiled - issue 680.
       const useDART = true;
 
       if (isPdf(this.documentData) && useDART) {

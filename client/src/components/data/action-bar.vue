@@ -1,7 +1,6 @@
 <template>
   <div>
     <nav class="action-bar-container">
-
       <!-- Actions -->
       <div class="nav-item">
         <button
@@ -9,26 +8,26 @@
           type="button"
           class="btn btn-primary btn-call-for-action"
           @click="openDataExplorer"
-        > <i class="fa fa-fw fa-search" />Search Data Cubes</button>
+        >
+          <i class="fa fa-fw fa-search" />Search Data Cubes
+        </button>
       </div>
       <radio-button-group
         class="nav-item"
-        :selected-button-value="comparativeAnalysisViewSelection"
-        :buttons="comparativeAnalysisGroupButtons"
-        @button-clicked="setComparativeAnalysisView"
+        :selected-button-value="activeTab"
+        :buttons="tabs"
+        @button-clicked="setActiveTab"
       />
     </nav>
   </div>
-
 </template>
 
 <script>
 
-import { mapActions, mapGetters } from 'vuex';
+import { mapGetters } from 'vuex';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { getAnalysis } from '@/services/analysis-service';
 import { ComparativeAnalysisMode } from '@/types/Enums';
-import { ref } from 'vue';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
 import { capitalize } from '@/utils/string-util';
@@ -38,11 +37,21 @@ export default {
   components: {
     RadioButtonGroup
   },
+  props: {
+    activeTab: {
+      type: String,
+      required: true
+    },
+    analysisId: {
+      type: String,
+      required: true
+    }
+  },
   setup() {
-    const comparativeAnalysisGroupButtons = ref(Object.values(ComparativeAnalysisMode)
-      .map(val => ({ label: capitalize(val), value: val })));
     return {
-      comparativeAnalysisGroupButtons
+      tabs: Object
+        .values(ComparativeAnalysisMode)
+        .map(val => ({ label: capitalize(val), value: val }))
     };
   },
   data: () => ({
@@ -50,14 +59,8 @@ export default {
   }),
   computed: {
     ...mapGetters({
-      comparativeAnalysisViewSelection: 'dataAnalysis/comparativeAnalysisViewSelection',
-      analysisId: 'dataAnalysis/analysisId',
-      analysisItems: 'dataAnalysis/analysisItems',
       project: 'app/project'
-    }),
-    emptyDataAnalysis() {
-      return this.analysisItems.length === 0;
-    }
+    })
   },
   async mounted() {
     const result = await getAnalysis(this.analysisId);
@@ -66,23 +69,20 @@ export default {
     }
   },
   methods: {
-    ...mapActions({
-      setComparativeAnalysisViewSelection: 'dataAnalysis/setComparativeAnalysisViewSelection'
-    }),
     openDataExplorer() {
       const filters = filtersUtil.newFilters();
       filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
       this.$router.push({ name: 'dataExplorer', query: { analysisId: this.analysisId, filters } });
     },
-    setComparativeAnalysisView(viewSelection) {
-      this.setComparativeAnalysisViewSelection(viewSelection);
+    setActiveTab(newActiveTab) {
+      this.$emit('set-active-tab', newActiveTab);
     }
   }
 };
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .action-bar-container {
   display: flex;
@@ -100,5 +100,4 @@ export default {
     }
   }
 }
-
 </style>

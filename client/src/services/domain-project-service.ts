@@ -17,15 +17,18 @@ const getProject = async (projectId: string) => {
   return result.data;
 };
 
-const createProject = async (name: string, description: string, website: string, maintainer: DatacubeMaintainer[], type = ProjectType.Model, ready_instances = [], draft_instances = []) => {
+const getProjectsStats = async () => {
+  const result = await API.get('domain-projects/stats');
+  return result.data;
+};
+
+const createProject = async (name: string, description: string, website: string, maintainer: DatacubeMaintainer[], type = ProjectType.Model) => {
   const result = await API.post('domain-projects', {
     name,
     description,
     website,
     type,
-    maintainer,
-    ready_instances,
-    draft_instances
+    maintainer
   });
   const id = result.data.id;
   return id;
@@ -46,6 +49,7 @@ export default {
   createProject,
   getProjects,
   getProject,
+  getProjectsStats,
   deleteProject,
   updateDomainProject
 };

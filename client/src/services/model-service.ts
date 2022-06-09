@@ -449,7 +449,7 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
 
     graphData.scenarios = scenarioDataForThisNode;
 
-    // FIXME: hackin parameters from modelSummary
+    // Inject parameters from modelSummary
     graphData.scenarios.forEach(scenario => {
       const numSteps = getStepCountFromTimeScale(
         modelSummary.parameter.time_scale
@@ -497,7 +497,7 @@ const runSensitivityAnalysis = async (
     `models/${modelId}/sensitivity-analysis`,
     {
       analysisMode,
-      analysisMethodology: 'HYBRID', // FIXME this flexible? either HYBRID or FUNCTION
+      analysisMethodology: 'HYBRID', // Either HYBRID or FUNCTION
       analysisParams,
       analysisType,
       constraints,
@@ -532,7 +532,7 @@ const runPathwaySensitivityAnalysis = async (
   const payload = {
     analysisMode: 'DYNAMIC',
     analysisType: 'PATHWAYS',
-    analysisMethodology: 'HYBRID', // FIXME this flexible? either HYBRID or FUNCTION
+    analysisMethodology: 'HYBRID', // Either HYBRID or FUNCTION
     analysisParams: {
       numPath: 10,
       pathAtt: 'SENSITIVITY',
@@ -768,7 +768,7 @@ export const ENGINE_OPTIONS = [
 const cleanConstraints = (constraints: ConceptProjectionConstraints[]) => {
   const result = _.cloneDeep(constraints);
 
-  // Reorder by step ascending order - FIXME: Check with DySE if we still need this - Sep 2021
+  // Reorder by step in ascending order
   result.forEach(r => {
     r.values = _.orderBy(r.values, v => v.step);
   });

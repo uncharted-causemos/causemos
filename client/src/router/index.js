@@ -22,8 +22,6 @@ import NodeDataExplorer from '@/views/NodeDataExplorer.vue';
 import PrefectFlowLogs from '@/views/PrefectFlowLogs.vue';
 import qs from 'qs';
 import _ from 'lodash';
-import store from '@/store';
-
 
 /* Borrowed from pantera */
 function formatter(item) {
@@ -39,13 +37,6 @@ function formatter(item) {
     return Number(item);
   }
   return item;
-}
-
-// Load analysis state for dataAnalysis store before route enter
-// NOTE: this is specific to the new data space (and the new data explorer)
-async function loadAnalysisState(to, from, next) {
-  await store.dispatch('dataAnalysis/loadState', to.params.analysisId);
-  next();
 }
 
 const routes = [
@@ -82,26 +73,17 @@ const routes = [
   {
     path: '/:projectType/:project/data/:analysisId',
     name: 'data',
-    component: DatacubeDrilldown,
-    beforeEnter: loadAnalysisState
+    component: DatacubeDrilldown
   },
   {
     path: '/:projectType/:project/dataComparative/:analysisId',
     name: 'dataComparative',
-    component: CompAnalysis,
-    beforeEnter: loadAnalysisState
-  },
-  {
-    // @HACK: a special route to view the a domain model instance (or datacube) using the same way an analyst would see it
-    path: '/:projectType/:project/domainDatacubeOverview',
-    name: 'dataPreview',
-    component: DatacubeDrilldown
+    component: CompAnalysis
   },
   {
     path: '/:projectType/:project/data/:analysisId/explorer',
     name: 'dataExplorer',
-    component: DataExplorer,
-    beforeEnter: loadAnalysisState
+    component: DataExplorer
   },
   {
     path: '/:projectType/:project/model-publishing-experiment',

@@ -607,15 +607,12 @@ export default defineComponent({
     },
     insightVisibility(): string {
       return this.projectType === ProjectType.Analysis ? 'private' : 'public';
-      // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
     },
     insightTargetView(): string[] {
       // an insight created during model publication should be listed either
       //  in the full list of insights,
       //  or as a context specific insight when opening the page of the corresponding model family instance
-      //  (the latter is currently supported via a special route named dataPreview)
-      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
-      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
     }
     /*,
     annotation(): any {

@@ -271,7 +271,7 @@ class QueryUtil {
     const translatedFilters = this._translateFilters(clauses);
     const result = {
       bool: {
-        filter: translatedFilters
+        must: translatedFilters
       }
     };
     return result;

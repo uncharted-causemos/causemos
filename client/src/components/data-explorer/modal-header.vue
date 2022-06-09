@@ -8,21 +8,20 @@
       v-tooltip.top-center="selectLabel"
       type="button"
       class="btn btn-primary btn-call-for-action"
-      :disabled="selectedDatacubes.length < 1"
+      :disabled="selectedSearchItems.length < 1"
       @click="onSelection"
     >
       <i class="fa fa-fw fa-plus-circle" />
       {{selectLabel}}
     </button>
     <span>
-      <span class="selected">{{ selectedDatacubes.length }} selected</span>
+      <span class="selected">{{ selectedSearchItems.length }} selected</span>
     </span>
   </full-screen-modal-header>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { mapGetters } from 'vuex';
 import FullScreenModalHeader from '../widgets/full-screen-modal-header.vue';
 
 export default defineComponent({
@@ -42,14 +41,13 @@ export default defineComponent({
     showNamingModal: {
       type: Boolean,
       default: false
+    },
+    selectedSearchItems: {
+      type: Array,
+      required: true
     }
   },
   emits: ['close', 'selection'],
-  computed: {
-    ...mapGetters({
-      selectedDatacubes: 'dataSearch/selectedDatacubes'
-    })
-  },
   methods: {
     onSelection() {
       this.$emit('selection');

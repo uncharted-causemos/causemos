@@ -146,8 +146,7 @@ export default {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
       projectType: 'app/projectType',
-      project: 'app/project',
-      analysisId: 'dataAnalysis/analysisId'
+      project: 'app/project'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
@@ -210,7 +209,7 @@ export default {
           // this is an insight created by the domain modeler during model publication:
           // for applying this insight, do not redirect to the domain project page,
           // instead use the current context and rehydrate the view
-          savedURL = '/analysis/' + this.project + '/data/' + this.analysisId;
+          savedURL = '/analysis/' + this.project + '/data/' + this.$router.params.analysisId;
         }
 
         if (this.projectType === ProjectType.Model) {
@@ -250,7 +249,7 @@ export default {
         const datacubeId = insight.context_id[0];
         const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, this.project);
         if (publicInsightCount === 1) {
-          await unpublishDatacube(datacubeId, this.project);
+          await unpublishDatacube(datacubeId);
           this.setRefreshDatacubes(true);
         }
       }

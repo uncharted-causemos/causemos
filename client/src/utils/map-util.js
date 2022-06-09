@@ -259,6 +259,10 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
       ['==', true, ['feature-state', '_isHidden']], 0.0,
       opacity
     ];
+
+    // Add outline to better distinguish between neighbor polygons
+    style.paint['fill-antialias'] = true; // Needs to be true for fill-outline-color
+    style.paint['fill-outline-color'] = 'rgb(30, 30, 30)';
   }
   return style;
 }

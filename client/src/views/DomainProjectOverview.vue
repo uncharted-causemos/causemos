@@ -278,7 +278,7 @@ export default {
       this.setRefreshDatacubes(false);
     },
     unpublishInstance(instance) {
-      unpublishDatacubeInstance(instance, this.project);
+      unpublishDatacubeInstance(instance);
     },
     updateDatacubeDomains(id, domains) {
       const datacube = this.datacubeInstances.find(d => d.id === id);
@@ -320,7 +320,6 @@ export default {
 <style lang="scss" scoped>
 @import "@/styles/variables";
 
-$padding-size: 3vh;
 .project-overview-container {
   display: flex;
   flex-direction: column;
@@ -451,11 +450,6 @@ main {
   padding-left: 5px;
   padding-right: 5px;
   margin: 5px;
-}
-
-.row {
-  padding-left: $padding-size;
-  padding-right: $padding-size;
 }
 
 .header-prompt {

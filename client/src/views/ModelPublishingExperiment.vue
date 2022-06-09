@@ -65,7 +65,6 @@ import {
 } from '@/types/Enums';
 import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
-import domainProjectService from '@/services/domain-project-service';
 import InsightUtil, { isDataSpaceDataState } from '@/utils/insight-util';
 import useToaster from '@/services/composables/useToaster';
 import { getFirstInsight, InsightFilterFields } from '@/services/insight-service';
@@ -263,23 +262,6 @@ export default defineComponent({
           //
           const updateResult = await updateDatacube(modelToUpdate.id, modelToUpdate);
           console.log('model update status: ' + JSON.stringify(updateResult));
-          // also, update the project stats count
-          const domainProject = await domainProjectService.getProject(projectId.value);
-          // add the instance to list of published instances
-          const updatedReadyInstances = domainProject.ready_instances;
-          if (!updatedReadyInstances.includes(modelToUpdate.name)) {
-            updatedReadyInstances.push(modelToUpdate.name);
-          }
-          // remove the instance from the list of ready/published instances
-          const updatedDraftInstances = domainProject.ready_instances.filter((n: string) => n !== modelToUpdate.name);
-          // update the project doc at the server
-          await domainProjectService.updateDomainProject(
-            projectId.value,
-            {
-              draft_instances: updatedDraftInstances,
-              ready_instances: updatedReadyInstances
-            }
-          );
 
           await disableOverlay();
           // redirect to model family page

@@ -7,6 +7,72 @@ class DatacubeQueryUtil extends QueryUtil {
     super(FIELDS);
   }
 
+  // @override
+  // Custom search for datacube: boost conjunction and specific field
+  // e.g. if we have "water trucking" it becomes something like
+  // "(water AND trucking)^2 OR (water OR trucking)", with field boosters on name and descriptions
+  _regexBuilder(clause) {
+    const { field, values } = clause;
+
+    if (field !== 'keyword') {
+      return super._regexBuilder(clause);
+    }
+
+    // const fieldMeta = this.configFields[field];
+    // const esFields = fieldMeta.fields;
+    //
+    const queries = [];
+    for (const value of values) {
+      let queryStr = '';
+
+      const tokens = value.split(' ');
+      if (tokens.length > 1) {
+        const boostedTokens = tokens.map((str, i) => `${str}^${tokens.length - i}`);
+        const conjunctiveStr = `(${boostedTokens.join(' AND ')})^2`;
+        const disjunctiveStr = `(${boostedTokens.join(' OR ')})`;
+        queryStr = `${conjunctiveStr} OR ${disjunctiveStr}`;
+      } else {
+        queryStr = value;
+      }
+
+      queries.push({
+        query_string: {
+          query: queryStr,
+          fields: [
+            // These are the fields people typically look for
+            'name^4',
+            'family_name^2',
+            'parameters.display_name^2',
+            'outputs.display_name^12',
+            'qualifier_outputs.display_name^2',
+
+            // Descriptions
+            'description^2',
+            'parameters.description^2',
+            'outputs.description^3',
+            'qualifier_outputs.description^2',
+
+            // Not as important
+            'geography.country',
+            'geography.admin1',
+            'geography.admin2',
+            'geography.admin3',
+            'category',
+            'domains',
+            'maintainer.name',
+            'maintainer.organization',
+            'tags'
+          ]
+        }
+      });
+    }
+    return {
+      bool: {
+        should: queries
+      }
+    };
+  }
+
   buildQuery (filters) {
     const clauses = _.get(filters, 'clauses') || [];
     const enableClause = clauses.find(clause => clause && clause.field === 'enable');
@@ -24,7 +90,7 @@ class DatacubeQueryUtil extends QueryUtil {
     return {
       query: {
         bool: {
-          filter: allFilters
+          must: allFilters
         }
       }
     };

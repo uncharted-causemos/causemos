@@ -62,9 +62,9 @@
                       </button>
                       <div class="text-bold">{{ formatOutputName(d) }}</div>
                       <multiline-description :text="formatOutputDescription(d)" />
-                      <div v-if="isExpanded(d) && d.parameters?.length > 0" class="knobs">
+                      <div v-if="isExpanded(d) && (d as any).parameters?.length > 0" class="knobs">
                         Input Knobs:<br/>
-                        {{ formatParameters(d) }}
+                        {{ formatParameters(d as any) }}
                       </div>
                   </div>
                 </div>
@@ -95,13 +95,13 @@
 <script lang="ts">
 
 import moment from 'moment';
-import { defineComponent, ref, computed, toRefs, watch } from 'vue';
-import { useStore } from 'vuex';
+import { defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
 import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { isIndicator, isModel } from '../../utils/datacube-util';
 import { Datacube, ModelParameter } from '@/types/Datacube';
+import { AnalysisItem } from '@/types/Analysis';
 
 export default defineComponent({
   name: 'SearchListview',
@@ -111,23 +111,21 @@ export default defineComponent({
   },
   props: {
     datacubes: {
-      type: Array,
+      type: Array as PropType<Datacube[]>,
       default: () => []
+    },
+    selectedSearchItems: {
+      type: Array as PropType<AnalysisItem[]>,
+      required: true
     },
     enableMultipleSelection: {
       type: Boolean,
       default: false
     }
   },
+  emits: ['toggle-datacube-selected', 'set-datacube-selected'],
   setup(props) {
-    const store = useStore();
     const expandedRowId = ref('');
-    const selectedDatacubes = computed<Datacube[]>(() => {
-      return store.getters['dataSearch/selectedDatacubes'];
-    });
-    const setSelectedDatacubes = (items: Datacube[]) => {
-      store.dispatch('dataSearch/setSelectedDatacubes', items);
-    };
 
     const { datacubes } = toRefs(props);
 
@@ -142,10 +140,7 @@ export default defineComponent({
     );
 
     return {
-      expandedRowId,
-
-      selectedDatacubes,
-      setSelectedDatacubes
+      expandedRowId
     };
   },
   methods: {
@@ -168,35 +163,27 @@ export default defineComponent({
       this.expandedRowId === datacube.id ? this.expandedRowId = '' : this.expandedRowId = datacube.id;
     },
     isSelected(datacube: Datacube) {
-      return this.selectedDatacubes.find(sd => sd.id === datacube.id) !== undefined;
+      return this.selectedSearchItems.find(sd => sd.id === datacube.id) !== undefined;
     },
     updateSelection(datacube: Datacube) {
       if (!this.isDisabled(datacube)) {
-        // FIXME: item is not Datacube type
-        const item = { // AnalysisItem
+        const item = { // Partial analysisItem
           datacubeId: datacube.data_id,
-          id: datacube.id,
-          viewConfig: {},
-          name: datacube.name // set initial name
+          id: datacube.id
         };
         if (this.enableMultipleSelection) {
           // if the datacube is not in the list add it, otherwise remove it
-          if (this.isSelected(datacube)) {
-            const newSelectedDatacubes = this.selectedDatacubes.filter(sd => sd.id !== item.id);
-            this.setSelectedDatacubes(newSelectedDatacubes);
-          } else {
-            this.setSelectedDatacubes([item as any, ...this.selectedDatacubes]);
-          }
+          this.$emit('toggle-datacube-selected', item);
         } else {
-          // only one selection is allowed, so replace the selected datacubes array
-          this.setSelectedDatacubes([item as any]);
+          // only one selection is allowed, so replace the entire array
+          this.$emit('set-datacube-selected', item);
         }
       }
     },
     formatOutputName(d: Datacube) {
       return this.getDefaultOutput(d)?.display_name ?? d.default_feature;
     },
-    formatParameters({ parameters } : { parameters: ModelParameter[] }) {
+    formatParameters({ parameters } : { parameters?: ModelParameter[] }) {
       const params = parameters || [];
       return params.map(p => p.name).join(', ');
     },

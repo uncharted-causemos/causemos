@@ -2,7 +2,7 @@
   <div class="statements-table-container h-100 flex flex-col">
     <template v-if="statements.length > 0">
       <div class="table-container flex-grow-1 h-0">
-        <table class="table table-condensed table-hover table-bordered">
+        <table class="table">
           <thead>
             <tr>
               <th
@@ -278,8 +278,12 @@ export default defineComponent({
     tbody tr td,
     thead tr th,
     thead {
-      border-left: 1px solid $separator;
-      border-right: 1px solid $separator;
+      border: 1px solid $separator;
+      padding: 5px;
+    }
+
+    tbody tr:hover {
+      background: $background-light-2;
     }
 
     td.highlight {

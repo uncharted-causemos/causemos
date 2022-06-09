@@ -68,10 +68,11 @@ import modelService from '@/services/model-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
-import { createAnalysis, getAnalysisState } from '@/services/analysis-service';
+import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
+import { createAnalysis } from '@/services/analysis-service-new';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
-import { ProjectType } from '@/types/Enums';
-import { v4 as uuidv4 } from 'uuid';
+import { ComparativeAnalysisMode, ProjectType } from '@/types/Enums';
+import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
 const MODEL_STATUS = modelService.MODEL_STATUS;
@@ -157,8 +158,7 @@ export default defineComponent({
       setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
       setContextId: 'insightPanel/setContextId',
-      setRunImmediately: 'model/setRunImmediately',
-      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems'
+      setRunImmediately: 'model/setRunImmediately'
     }),
     async onCreateScenario(scenarioInfo: { name: string; description: string }) {
       if (this.scenarios === null) {
@@ -561,22 +561,24 @@ export default defineComponent({
       if (indicators !== undefined && indicators.length > 0) {
         // do we have an existing analysis that was generated from this CAG?
         const existingAnalysisId = this.modelSummary?.data_analysis_id;
-        const analysisItems = indicators.map(indicator => ({ // AnalysisItem
-          itemId: uuidv4(),
-          datacubeId: indicator.data_id, // data_id
-          id: indicator.id
-        }));
+        const analysisItems = indicators.map((indicator, index) =>
+          createAnalysisItem(
+            indicator.id,
+            indicator.data_id,
+            index < MAX_ANALYSIS_DATACUBES_COUNT
+          )
+        );
         let createNewAnalysis = false;
         if (existingAnalysisId) {
           // update existing data analysis
           try {
-            const existingAnalysisState = await getAnalysisState(existingAnalysisId);
-            existingAnalysisState.currentAnalysisId = existingAnalysisId;
+            const existingAnalysisState = await getAnalysisState(
+              existingAnalysisId
+            );
             existingAnalysisState.analysisItems = analysisItems;
-            await this.updateAnalysisItems(existingAnalysisState);
+            await saveAnalysisState(existingAnalysisId, existingAnalysisState);
           } catch (e) {
-            // we have an existing analysis id, but the analysis itself is not there
-            //  perhaps it was manually removed, so we need to create a new one
+            // We have an existing analysis id, but not the analysis itself.
             createNewAnalysis = true;
           }
         } else {
@@ -584,19 +586,15 @@ export default defineComponent({
           createNewAnalysis = true;
         }
         if (createNewAnalysis) {
-          // create a new data analysis
-          const initialAnalysisState = { // AnalysisState
-            currentAnalysisId: '',
-            analysisItems
-          };
-          const analysis = await createAnalysis({
-            title: 'analysis from CAG: ' + this.modelSummary?.name,
-            projectId: this.project,
-            state: initialAnalysisState
-          } as any);
-          // update the analysis items in case the user wants to redirect to the data analysis momentarily
-          initialAnalysisState.currentAnalysisId = analysis.id;
-          await this.updateAnalysisItems(initialAnalysisState);
+          const analysis = await createAnalysis(
+            'analysis from CAG: ' + this.modelSummary?.name,
+            '',
+            this.project,
+            {
+              analysisItems: analysisItems,
+              activeTab: ComparativeAnalysisMode.List
+            }
+          );
           // save the created analysis id with the CAG
           await modelService.updateModelMetadata(this.currentCAG, {
             data_analysis_id: analysis.id

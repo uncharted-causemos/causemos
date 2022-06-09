@@ -1,73 +1,60 @@
 <template>
   <div class="new-project-container">
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col-md-1" />
-        <div class="col-md-10">
-          <div class="row title">
-            <h2>Define New Project</h2>
-          </div>
-          <div class="row">
-            <form @submit.prevent>
-              <div class="form-group">
-                <label>Name*</label>
-                <input
-                  v-model="projectName"
-                  v-focus
-                  type="text"
-                  class="form-control"
-                  @keyup.enter.stop="create"
-                >
-                <div
-                  v-if="hasError"
-                  class="error-msg">
-                  {{ errorMsg }}
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Description</label>
-                <textarea
-                  v-model="projectDescription"
-                  rows="5"
-                  class="form-control" />
-              </div>
-            </form>
-            <div>
-              <h6>Knowledge Base*</h6>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th># Documents</th>
-                    <th>Readers</th>
-                    <th>Created</th>
-                  </tr>
-                </thead>
-                <knowledge-base-row
-                  v-for="kb in kbList"
-                  :key="kb.id"
-                  :kb="kb"
-                  :base-kb="baseKB"
-                  @select="selectKB(kb.id)"
-                />
-              </table>
-            </div>
-            <div class="controls">
-              <button
-                type="button"
-                class="btn btn-default"
-                @click="cancel"
-              >Cancel
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary"
-                @click="create"
-              >Save &amp; Finish</button>
-            </div>
-          </div>
+    <h2>Define New Project</h2>
+    <form @submit.prevent>
+      <div class="form-group">
+        <label>Name*</label>
+        <input
+          v-model="projectName"
+          v-focus
+          type="text"
+          class="form-control"
+          @keyup.enter.stop="create"
+        >
+        <div
+          v-if="hasError"
+          class="error-msg">
+          {{ errorMsg }}
         </div>
       </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea
+          v-model="projectDescription"
+          rows="5"
+          class="form-control" />
+      </div>
+    </form>
+    <label>Knowledge Base*</label>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th># Documents</th>
+          <th>Readers</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <knowledge-base-row
+        v-for="kb in kbList"
+        :key="kb.id"
+        :kb="kb"
+        :base-kb="baseKB"
+        @select="selectKB(kb.id)"
+      />
+    </table>
+    <div class="controls">
+      <button
+        type="button"
+        class="btn btn-default"
+        @click="cancel"
+      >Cancel
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        @click="create"
+      >Save &amp; Finish</button>
     </div>
   </div>
 </template>
@@ -164,16 +151,8 @@ export default defineComponent({
 @import '@/styles/variables';
 
 .new-project-container {
+  margin-left: 100px;
   max-width: 1000px;
-  .title {
-    display: flex;
-    h2 {
-      flex: 1;
-    }
-    .btn {
-      margin: 20px 0 10px 10px;
-    }
-  }
   .controls {
     display: flex;
     justify-content: flex-start;

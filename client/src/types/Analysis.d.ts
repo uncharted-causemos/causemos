@@ -21,12 +21,17 @@ export interface AnalysisItem {
   viewConfig: ViewState;
   dataConfig: DataSpaceDataState;
 
-  name?: string;
   selected?: boolean;
 }
 
-export interface AnalysisState {
-  currentAnalysisId: string;
+export interface DataAnalysisState {
   analysisItems: AnalysisItem[];
-  comparativeAnalysisViewSelection?: string;
+  activeTab: ComparativeAnalysisMode;
+  // binCount
+  // selectedAdminLevel
+  // binningType (linear/quartile)
+  // compositionType (union/intersection)
+  // barCountLimit (-1 means no limit)
+  // shouldNormalizeRegionRankingRows
+  // FIXME: there may be some overlap with ViewState
 }

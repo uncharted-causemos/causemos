@@ -3,6 +3,7 @@
     <modal-header
       :nav-back-label="navBackLabel"
       :select-label="selectLabel"
+      :selected-search-items="selectedDatacubes"
       @close="onClose"
       @selection="selectData"
     />
@@ -19,6 +20,8 @@
           :facets="facets"
           :filtered-datacubes="filteredDatacubes"
           :enableMultipleSelection="false"
+          :selected-search-items="selectedDatacubes"
+          @set-datacube-selected="setDatacubeSelected"
         />
         <simple-pagination
           :current-page-length="filteredDatacubes.length"
@@ -50,6 +53,8 @@ import { ProjectType } from '@/types/Enums';
 import filtersUtil from '@/utils/filters-util';
 import { FACET_FIELDS } from '@/utils/datacube-util';
 import { CAGGraph } from '@/types/CAG';
+import { AnalysisItem } from '@/types/Analysis';
+import { createAnalysisItem } from '@/utils/analysis-util';
 
 export default defineComponent({
   name: 'NodeDataExplorer',
@@ -73,15 +78,15 @@ export default defineComponent({
     filteredDatacubes: [],
     filteredFacets: null,
     pageCount: 0,
-    pageSize: 100
+    pageSize: 100,
+    selectedDatacubes: [] as AnalysisItem[]
   }),
   computed: {
     ...mapGetters({
       filters: 'dataSearch/filters',
       currentCAG: 'app/currentCAG',
       nodeId: 'app/nodeId',
-      project: 'app/project',
-      selectedDatacubes: 'dataSearch/selectedDatacubes'
+      project: 'app/project'
     }),
     selectedNode() {
       if (this.nodeId === undefined || this.modelComponents === null) {
@@ -170,6 +175,12 @@ export default defineComponent({
           projectType: ProjectType.Analysis
         }
       });
+    },
+
+    setDatacubeSelected (item: { datacubeId: string; id: string; }) {
+      this.selectedDatacubes = [
+        createAnalysisItem(item.id, item.datacubeId, true)
+      ];
     },
 
     selectData () {
