@@ -195,7 +195,6 @@ import statementPolarityFormatter from '@/formatters/statement-polarity-formatte
 import contradictionCategoryFormatter from '@/formatters/contradiction-category-formatter';
 import hedgingCategoryFormatter from '@/formatters/hedging-category-formatter';
 import codeUtil from '@/utils/code-util';
-import facetUtil from '@/utils/facet-util';
 import filtersUtil from '@/utils/filters-util';
 
 const CODE_TABLE = codeUtil.CODE_TABLE;
@@ -237,6 +236,11 @@ const FACET_GROUPS: { [key: string]: string[] } = {
   'Evidence quality': STATEMENT_FACETS
 };
 
+const numEvidencesLabelFormatter = (value: string | number) => {
+  const formattedValue = value === '--' ? '5+' : value;
+  return formattedValue;
+};
+
 
 export default defineComponent({
   name: 'FacetsPanel',
@@ -269,8 +273,7 @@ export default defineComponent({
       hedgingCategoryFormatter,
 
       // special type label formatters
-      numEvidencesLabelFormatter: facetUtil.numEvidencesLabelFormatter,
-      monthLabelFormatter: facetUtil.monthLabelFormatter,
+      numEvidencesLabelFormatter: numEvidencesLabelFormatter,
 
       // Static
       CODE_TABLE,
