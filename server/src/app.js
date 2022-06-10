@@ -38,6 +38,7 @@ const datacubeRouter = rootRequire('/routes/datacubes');
 const gadmRouter = rootRequire('/routes/gadm');
 const pipelineReportingRouter = rootRequire('/routes/pipeline-reporting');
 const bibliographyRouter = rootRequire('/routes/bibliography');
+const sessionLogRouter = rootRequire('/routes/session-log');
 const asyncHandler = require('express-async-handler');
 
 const kbsRouter = rootRequire('/routes/knowledge-bases');
@@ -166,6 +167,11 @@ app.use('/api/maas/pipeline-reporting', [
 app.use('/api/gadm', [
   gadmRouter
 ]);
+
+app.use('/api/session-log', [
+  sessionLogRouter
+]);
+
 
 // Forward /api/maas/output/* to WM_GO_URL/maas/output/*
 // Forward /api/maas/tiles/* to WM_GO_URL/maas/tiles/*
