@@ -56,7 +56,6 @@ import DocumentsView from '@/components/kb-explorer/documents-view.vue';
 import SubActionBar from '@/components/kb-explorer/sub-action-bar.vue';
 import MapView from '@/components/kb-explorer/map-view.vue';
 import CytoGraph from '@/components/graph/cyto-graph.vue';
-import MapStyles from '@/utils/map-styles';
 import filtersUtil from '@/utils/filters-util';
 import { transformMapData } from '@/utils/map-util';
 import TabBar from '../widgets/tab-bar.vue';
@@ -248,7 +247,7 @@ export default defineComponent({
           if (selectedLocations.has(feature.properties.name)) {
             feature.properties.color = SELECTED_REGION_STYLE.fillColor;
           } else if (relatedLocations.has(feature.properties.name)) {
-            feature.properties.color = MapStyles.SELECTABLE_REGION_STYLE.fillColor;
+            feature.properties.color = SELECTABLE_REGION_STYLE.fillColor;
           }
           return feature;
         });
