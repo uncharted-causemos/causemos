@@ -64,12 +64,12 @@ router.get('/', asyncHandler(async (req, res) => {
 
   const keys = Object.keys(sessions);
 
-  // Divide into intervals
-  const m15 = 30 * 60 * 1000;
+  // Divide into 30 minutes intervals
+  const mod30min = 30 * 60 * 1000;
   for (const key of keys) {
     const entries = sessions[key];
     for (const e of entries) {
-      e.timestamp = new Date(e.timestamp - (e.timestamp % m15));
+      e.timestamp = new Date(e.timestamp - (e.timestamp % mod30min));
       delete e.parameters;
       delete e.session;
     }
