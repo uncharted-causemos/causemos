@@ -69,7 +69,7 @@ import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
 import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
-import { calculateResetRegionRankingWeights, createAnalysis } from '@/services/analysis-service-new';
+import { calculateResetRegionRankingWeights, createAnalysis, createAnalysisObject } from '@/services/analysis-service-new';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import { ProjectType } from '@/types/Enums';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
@@ -612,7 +612,7 @@ export default defineComponent({
             'analysis from CAG: ' + this.modelSummary?.name,
             '',
             this.project,
-            analysisItems
+            createAnalysisObject(analysisItems)
           );
           // save the created analysis id with the CAG
           await modelService.updateModelMetadata(this.currentCAG, {

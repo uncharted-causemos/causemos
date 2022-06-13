@@ -7,16 +7,17 @@ import _ from 'lodash';
  * Create a new DataAnalysisState object with each of its fields initialized to
  * a sensible default.
  */
-export const createAnalysisObject = (): DataAnalysisState => {
+export const createAnalysisObject = (analysisItems?: AnalysisItem[]): DataAnalysisState => {
   return {
-    analysisItems: [],
+    analysisItems: analysisItems ?? [],
     activeTab: ComparativeAnalysisMode.List,
     barCountLimit: 50,
     isBarCountLimitApplied: false,
     colorBinCount: 5,
     colorBinType: BinningOptions.Linear,
     regionRankingCompositionType: RegionRankingCompositionType.Intersection,
-    regionRankingItemStates: {},
+    regionRankingItemStates:
+      calculateResetRegionRankingWeights(analysisItems ?? [], {}),
     selectedAdminLevel: 0,
     areRegionRankingRowsNormalized: false,
     selectedTimestamp: null,
@@ -81,16 +82,8 @@ export const createAnalysis = async (
   title: string,
   description: string,
   projectId: string,
-  analysisItems: AnalysisItem[] | null
+  state: DataAnalysisState
 ) => {
-  const state = createAnalysisObject();
-  if (analysisItems !== null) {
-    addItemsToAnalysis(analysisItems, state);
-    state.regionRankingItemStates = calculateResetRegionRankingWeights(
-      analysisItems,
-      state.regionRankingItemStates
-    );
-  }
   const result = await API.post(
     'analyses',
     { title, description, project_id: projectId, state },
