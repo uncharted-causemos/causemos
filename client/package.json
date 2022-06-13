@@ -25,6 +25,7 @@
     "@vue/cli-service": "~5.0.0-rc.2",
     "axios": "^0.21.4",
     "babel-eslint": "^10.1.0",
+    "bubblesets-js": "^2.2.0",
     "core-js": "^3.20.3",
     "cropro": "^1.1.0",
     "cytoscape": "^3.8.1",

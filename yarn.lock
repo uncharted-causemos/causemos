@@ -2898,6 +2898,11 @@ browserslist@^4.0.0, browserslist@^4.14.5, browserslist@^4.16.3, browserslist@^4
     node-releases "^2.0.1"
     picocolors "^1.0.0"
 
+bubblesets-js@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/bubblesets-js/-/bubblesets-js-2.2.0.tgz#2ffca57450fa45952e320e8e52aa8f38a67c8abc"
+  integrity sha512-RHrOwJqFetEgkg7ZgjDr9qrvQXUw6JjZTkFtB0EHSp6QCobeLRYh7djmkJKTpy43ENiOJJgmMagNex5z5TbQXQ==
+
 buffer-from@^1.0.0:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/buffer-from/-/buffer-from-1.1.2.tgz#2b146a6fd72e80b4f55d255f35ed59a3a9a41bd5"

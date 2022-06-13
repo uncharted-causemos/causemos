@@ -519,6 +519,17 @@ export default defineComponent({
         this.renderer.isGraphDirty = true;
         await this.renderer.setData(d);
         await this.renderer.render();
+
+        // Testing
+        const bubbleTestNodes = this.data.nodes.map(d => {
+          return {
+            concept: d.concept
+          };
+        });
+        const top10 = _.take(bubbleTestNodes, 16);
+        this.renderer.bubbleSet({ bubbleNodes: top10 });
+
+
         this.$emit('refresh', null);
         this.applyVisualState();
       }

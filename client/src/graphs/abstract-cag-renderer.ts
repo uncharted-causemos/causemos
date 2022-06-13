@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
+import { createOutline } from 'bubblesets-js';
 import svgUtil from '@/utils/svg-util';
 import { DeltaRenderer, IGraph, IEdge, INode, traverseGraph, moveTo, highlight, unHighlight } from 'svg-flowgraph';
 import { DEFAULT_STYLE } from './cag-style';
@@ -188,6 +189,50 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     const flattened = flattenGraph(this.graph);
     const numNodes = flattened.nodes.length;
     return (options.useStableLayout && numNodes <= chart.selectAll('.node').size()) as boolean;
+  }
+
+
+  // Create a contour
+  bubbleSet({ bubbleNodes }: { bubbleNodes: NeighborNode[] }) {
+    console.log('bubble set', bubbleNodes);
+
+    // Calculate contours
+    const nodes = this.graph.nodes;
+    const inSetNodes = nodes.filter(node => {
+      return _.some(bubbleNodes, d => d.concept === node.label);
+    });
+    const outSetNodes = nodes.filter(node => {
+      return !_.some(bubbleNodes, d => d.concept === node.label);
+    });
+
+    const list = createOutline(
+      inSetNodes.map(n => ({
+        x: n.x,
+        y: n.y,
+        width: n.width,
+        height: n.height
+      })) as any,
+      outSetNodes.map(n => ({
+        x: n.x,
+        y: n.y,
+        width: n.width,
+        height: n.height
+      })) as any,
+      [], // edges,
+      {} // options
+    ).sample(1);
+
+    console.log(list.points);
+
+    // Render contour
+    const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
+    this.chart.append('path')
+      .classed('bubbleset', true)
+      .attr('d', pathFn(list.points as any) as any)
+      .style('stroke', '#369')
+      .style('stroke-opacity', 0.4)
+      .style('fill', '#369')
+      .style('fill-opacity', 0.15);
   }
 }
 
