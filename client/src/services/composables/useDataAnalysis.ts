@@ -5,7 +5,6 @@ import { getAnalysisState, saveAnalysisState } from '../analysis-service';
 import { v4 as uuidv4 } from 'uuid';
 import { DataSpaceDataState } from '@/types/Insight';
 import {
-  addItemsToAnalysis,
   calculateResetRegionRankingWeights,
   createAnalysisObject,
   didSelectedItemsChange
@@ -29,17 +28,6 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     async () => {
       if (!analysisId.value) return;
       const result = await getAnalysisState(analysisId.value);
-      // FIXME: run script to ensure tab exists for each analysis then remove:
-      if (
-        result.activeTab === undefined ||
-        result.colorBinCount === undefined
-      ) {
-        console.error('invalid fetched analysis state', result);
-        const newState = createAnalysisObject();
-        addItemsToAnalysis(result.analysisItems, newState);
-        analysisState.value = newState;
-        return;
-      }
       analysisState.value = result;
     },
     { immediate: true }

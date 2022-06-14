@@ -25,19 +25,6 @@ export const createAnalysisObject = (analysisItems?: AnalysisItem[]): DataAnalys
   };
 };
 
-export const addItemsToAnalysis = (
-  items: AnalysisItem[],
-  analysis: DataAnalysisState
-) => {
-  items.forEach(item => {
-    analysis.analysisItems.push(item);
-    analysis.regionRankingItemStates[item.datacubeId] = {
-      isInverted: false,
-      weight: 0
-    };
-  });
-};
-
 /**
  * Finds the selected items in each list and compares their ids for equality.
  * Assumes that the order of selected items won't change unless an item was
