@@ -46,7 +46,7 @@ import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '../components/data-explorer/search.vue';
 import SimplePagination from '../components/data-explorer/simple-pagination.vue';
 
-import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
+import { getDatacubes, getDatacubeFacets, getDatacubeMetadataToCache } from '@/services/new-datacube-service';
 import { getAnalysis, saveAnalysisState } from '@/services/analysis-service';
 
 import filtersUtil from '@/utils/filters-util';
@@ -58,6 +58,8 @@ import { useRoute } from 'vue-router';
 import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
 import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import { Datacube } from '@/types/Datacube';
+import { calculateResetRegionRankingWeights, didSelectedItemsChange } from '@/services/analysis-service-new';
 
 export default defineComponent({
   name: 'DataExplorer',
@@ -72,9 +74,10 @@ export default defineComponent({
     const analysisId = computed(() => route.params.analysisId as string);
     const {
       analysisState,
-      analysisItems,
-      setAnalysisItems
+      analysisItems
     } = useDataAnalysis(analysisId);
+
+    const filteredDatacubes = ref<Datacube[]>([]);
 
     const selectedSearchItems = ref<AnalysisItem[]>([]);
     watch([analysisItems], () => {
@@ -88,30 +91,41 @@ export default defineComponent({
         selectedSearchItems.value = selectedSearchItems.value
           .filter(sd => sd.id !== item.id);
       } else {
+        const datacube = filteredDatacubes.value.find(datacube =>
+          datacube.data_id === item.datacubeId && datacube.id === item.id
+        );
+        if (datacube === undefined) {
+          return;
+        }
+        const cachedMetadata = getDatacubeMetadataToCache(datacube);
         const visibleDatacubeCount = selectedSearchItems.value
           .filter(item => item.selected)
           .length;
         const isSelected = visibleDatacubeCount < MAX_ANALYSIS_DATACUBES_COUNT;
         selectedSearchItems.value = [
           ...selectedSearchItems.value,
-          createAnalysisItem(item.id, item.datacubeId, isSelected)
+          createAnalysisItem(
+            item.id,
+            item.datacubeId,
+            cachedMetadata,
+            isSelected
+          )
         ];
       }
     };
 
     return {
       analysisState,
+      filteredDatacubes,
       analysisId,
       toaster: useToaster(),
       analysisItems,
       selectedSearchItems,
-      toggleDatacubeSelected,
-      setAnalysisItems
+      toggleDatacubeSelected
     };
   },
   data: () => ({
     facets: null,
-    filteredDatacubes: [],
     filteredFacets: null,
     selectLabel: 'Add To Analysis',
     analysis: undefined,
@@ -189,6 +203,18 @@ export default defineComponent({
           ...this.analysisState,
           analysisItems: this.selectedSearchItems
         };
+        // If the list of selected datacubes changed, reset region ranking
+        //  weights.
+        const shouldResetWeights = didSelectedItemsChange(
+          this.analysisItems,
+          this.selectedSearchItems
+        );
+        if (shouldResetWeights) {
+          newState.regionRankingItemStates = calculateResetRegionRankingWeights(
+            this.selectedSearchItems,
+            newState.regionRankingItemStates
+          );
+        }
         await saveAnalysisState(this.analysisId, newState);
         this.$router.push({
           name: 'dataComparative',

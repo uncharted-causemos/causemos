@@ -238,7 +238,9 @@ export default defineComponent({
         .attr('width', 1)
         .attr('height', 1);
     },
-    setRegionRankingCompositionType(regionRankingCompositionType: string) {
+    setRegionRankingCompositionType(
+      regionRankingCompositionType: RegionRankingCompositionType
+    ) {
       this.$emit('set-region-ranking-composition-type', regionRankingCompositionType);
     },
     setRegionRankingBinningType(regionRankingBinningType: string) {

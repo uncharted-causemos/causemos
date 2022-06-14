@@ -1,5 +1,12 @@
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
+import { BinningOptions, RegionRankingCompositionType } from './Enums';
 
+
+export interface CachedDatacubeMetadata {
+  featureName: string;
+  datacubeName: string;
+  source: string;
+}
 export interface AnalysisItem {
   // Generally a UUID that uniquely identifies one instance of a datacube in the
   //  analysis. However, under some circumstances this can be the the datacube's
@@ -18,20 +25,33 @@ export interface AnalysisItem {
   // FIXME: rename to dataId to match the rest of the app
   datacubeId: string;
 
+  // A selection of metadata that can be used to summarize the datacube without
+  //  needing to fetch the full metadata object.
+  cachedMetadata: CachedDatacubeMetadata
+
   viewConfig: ViewState;
   dataConfig: DataSpaceDataState;
 
-  selected?: boolean;
+  selected: boolean;
+}
+
+export interface RegionRankingItemStates {
+  [itemId: string]: { isInverted: boolean; weight: number }
 }
 
 export interface DataAnalysisState {
   analysisItems: AnalysisItem[];
   activeTab: ComparativeAnalysisMode;
-  // binCount
-  // selectedAdminLevel
-  // binningType (linear/quartile)
-  // compositionType (union/intersection)
-  // barCountLimit (-1 means no limit)
-  // shouldNormalizeRegionRankingRows
-  // FIXME: there may be some overlap with ViewState
+  colorBinCount: number;
+  // linear/quantile
+  colorBinType: BinningOptions;
+  selectedAdminLevel: number;
+  // union/intersection
+  regionRankingCompositionType: RegionRankingCompositionType;
+  barCountLimit: number;
+  isBarCountLimitApplied: boolean;
+  areRegionRankingRowsNormalized: boolean;
+  selectedTimestamp: number | null;
+  highlightedRegionId: string;
+  regionRankingItemStates: RegionRankingItemStates
 }

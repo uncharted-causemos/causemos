@@ -170,7 +170,7 @@ import { mapGetters, mapActions } from 'vuex';
 import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
 import { getAnalysesByProjectId, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
-import { createAnalysis } from '@/services/analysis-service-new';
+import { createAnalysis, createAnalysisObject } from '@/services/analysis-service-new';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
 import ModalUploadDocument from '@/components/modals/modal-upload-document';
@@ -535,7 +535,7 @@ export default defineComponent({
         `untitled at ${dateFormatter(Date.now())}`,
         '',
         this.project,
-        null
+        createAnalysisObject()
       );
       this.$router.push({
         name: 'dataComparative',
