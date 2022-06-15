@@ -1172,6 +1172,8 @@ export default defineComponent({
         } else {
           setSelectedScenarioIds([]); // this will update the 'currentTabView'
         }
+      } else if (value === DatacubeViewMode.Media) {
+        currentTabView.value = DatacubeViewMode.Media;
       } else {
         clickData();
       }
