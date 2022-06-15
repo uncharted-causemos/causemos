@@ -209,7 +209,7 @@ export default {
           // this is an insight created by the domain modeler during model publication:
           // for applying this insight, do not redirect to the domain project page,
           // instead use the current context and rehydrate the view
-          savedURL = '/analysis/' + this.project + '/data/' + this.$router.params.analysisId;
+          savedURL = '/analysis/' + this.project + '/data/' + this.$route.params.analysisId;
         }
 
         if (this.projectType === ProjectType.Model) {
