@@ -14,7 +14,7 @@ import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 
 // Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to
 //  group requests together.
-const SYNC_DELAY_MS = 2500;
+const SYNC_DELAY_MS = 500;
 
 const saveState = _.debounce((analysisId, state: DataAnalysisState) => {
   saveAnalysisState(analysisId, state);
