@@ -152,8 +152,6 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/variables';
-
 .config-bar-container {
   display: flex;
   align-items: center;

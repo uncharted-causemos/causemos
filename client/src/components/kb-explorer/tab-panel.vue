@@ -56,10 +56,10 @@ import DocumentsView from '@/components/kb-explorer/documents-view.vue';
 import SubActionBar from '@/components/kb-explorer/sub-action-bar.vue';
 import MapView from '@/components/kb-explorer/map-view.vue';
 import CytoGraph from '@/components/graph/cyto-graph.vue';
-import MapStyles from '@/utils/map-styles';
 import filtersUtil from '@/utils/filters-util';
 import { transformMapData } from '@/utils/map-util';
 import TabBar from '../widgets/tab-bar.vue';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 
 
 interface GEOPoint {
@@ -79,6 +79,30 @@ interface MapData {
   type: string;
   features: GEOPoint[];
 }
+
+// Grey
+const UNSELECTED_REGION_STYLE = Object.freeze({
+  color: '#808080',
+  weight: 1,
+  fillColor: '#808080',
+  fillOpacity: 0.6
+});
+
+const SELECTED_REGION_STYLE = Object.freeze({
+  color: SELECTED_COLOR,
+  borderWidth: 1,
+  fillColor: SELECTED_COLOR,
+  fillOpacity: 0.6
+});
+
+const SELECTABLE_REGION_STYLE = Object.freeze({
+  color: '#ffae19',
+  borderWidth: 1,
+  fillColor: '#e69f00',
+  fillOpacity: 0.6
+});
+
+
 
 export default defineComponent({
   name: 'TabPanel',
@@ -219,11 +243,11 @@ export default defineComponent({
           });
         }
         const features = this.mapData?.features.map((feature: GEOPoint) => {
-          feature.properties.color = MapStyles.UNSELECTED_REGION_STYLE.fillColor;
+          feature.properties.color = UNSELECTED_REGION_STYLE.fillColor;
           if (selectedLocations.has(feature.properties.name)) {
-            feature.properties.color = MapStyles.SELECTED_REGION_STYLE.fillColor;
+            feature.properties.color = SELECTED_REGION_STYLE.fillColor;
           } else if (relatedLocations.has(feature.properties.name)) {
-            feature.properties.color = MapStyles.SELECTABLE_REGION_STYLE.fillColor;
+            feature.properties.color = SELECTABLE_REGION_STYLE.fillColor;
           }
           return feature;
         });
