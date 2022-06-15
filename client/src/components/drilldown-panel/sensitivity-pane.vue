@@ -15,7 +15,7 @@
       class="btn btn-sm btn-primary right"
       @click="openFullDrilldown"
     >
-      Open Node Drilldown
+      Expand {{selectedNode.label}}
     </button>
   </div>
   <div>
