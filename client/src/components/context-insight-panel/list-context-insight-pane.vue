@@ -292,9 +292,6 @@ export default {
   flex-direction: column;
 
   .pane-content {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
     overflow-y: auto;
     flex: 1;
     min-height: 0;
