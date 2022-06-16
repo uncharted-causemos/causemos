@@ -10,7 +10,7 @@ import svgUtil, { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
-import { DEFAULT_STYLE, polaritySettingsMap } from './cag-style';
+import { DEFAULT_STYLE } from './cag-style';
 import { EdgeSuggestion } from '@/utils/relationship-suggestion-util';
 import { createOrUpdateButton, SVG_BUTTON_STYLES } from '@/utils/svg-util-new';
 import { D3Selection } from '@/types/D3';
@@ -703,60 +703,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('d', svgUtil.ARROW)
       .style('fill', '#444')
       .style('stroke', 'none');
-  }
-
-  renderEdgeControls(selection: D3SelectionIEdge<EdgeParameter>) {
-    this.chart.selectAll('.edge-control').selectAll('*').remove();
-    const edgeControl = selection.select('.edge-control');
-
-    edgeControl
-      .append('circle')
-      .attr('r', DEFAULT_STYLE.edge.controlRadius + 2)
-      .style('fill', DEFAULT_STYLE.edgeBg.stroke)
-      .attr('stroke', SELECTED_COLOR)
-      .style('cursor', 'pointer');
-
-    edgeControl
-      .append('circle')
-      .attr('r', DEFAULT_STYLE.edge.controlRadius)
-      .style('fill', d => calcEdgeColor(d.data))
-      .style('cursor', 'pointer');
-
-    edgeControl
-      .append('text')
-      .attr('x', d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.x;
-        }
-        return 0;
-      })
-      .attr('y', d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.y;
-        }
-        return 0;
-      })
-      .style('background-color', 'red')
-      .style('font-family', 'FontAwesome')
-      .style('font-size', d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.fontSize;
-        }
-        return '';
-      })
-      .style('stroke', 'none')
-      .style('fill', 'white')
-      .style('cursor', 'pointer')
-      .text(d => {
-        const setting = polaritySettingsMap.get(d.data.polarity || 0);
-        if (setting) {
-          return setting.text;
-        }
-        return '';
-      });
   }
 
   showNodeMenu(node: D3SelectionINode<NodeParameter>) {
