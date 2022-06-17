@@ -79,7 +79,6 @@ export default function useTimeseriesData(
   isRawDataResolution?: Ref<Boolean>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
-  const referenceTimeseries = ref<Timeseries[]>([]);
   const relativeTo = ref<string | null>(null);
   const selectedYears = shallowRef(new Set<string>());
 
@@ -91,12 +90,8 @@ export default function useTimeseriesData(
     () => processedTimeseriesData.value.timeseriesData
   );
 
-  const allTimeseriesData = computed(() =>
-    timeseriesData.value.concat(referenceTimeseries.value)
-  );
-
   const visibleTimeseriesData = computed(() =>
-    allTimeseriesData.value.filter(
+    timeseriesData.value.filter(
       timeseries => timeseries.id !== relativeTo.value
     )
   );

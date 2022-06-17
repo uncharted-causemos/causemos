@@ -4,7 +4,7 @@
       v-if="selectedScenarioIds.length !== 1"
       class="disabled-dropdown-instructions"
     >
-      Select <strong>exactly one scenario</strong> to enable breakdown options.
+      Select <strong>exactly one model run</strong> to enable breakdown options.
     </p>
     <dropdown-button
       v-else

@@ -55,6 +55,7 @@ import { FACET_FIELDS } from '@/utils/datacube-util';
 import { CAGGraph } from '@/types/CAG';
 import { AnalysisItem } from '@/types/Analysis';
 import { createAnalysisItem } from '@/utils/analysis-util';
+import { Datacube } from '@/types/Datacube';
 
 export default defineComponent({
   name: 'NodeDataExplorer',
@@ -75,7 +76,7 @@ export default defineComponent({
   },
   data: () => ({
     facets: null,
-    filteredDatacubes: [],
+    filteredDatacubes: [] as Datacube[],
     filteredFacets: null,
     pageCount: 0,
     pageSize: 100,
@@ -178,8 +179,11 @@ export default defineComponent({
     },
 
     setDatacubeSelected (item: { datacubeId: string; id: string; }) {
+      // Pass '' for analysis item metadata because the title is only visible
+      //  from the CompAnalysis page.
+      const cachedMetadata = { featureName: '', datacubeName: '', source: '' };
       this.selectedDatacubes = [
-        createAnalysisItem(item.id, item.datacubeId, true)
+        createAnalysisItem(item.id, item.datacubeId, cachedMetadata, true)
       ];
     },
 

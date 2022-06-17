@@ -12,7 +12,7 @@ import {
   translate
 } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-import { getTimestampAfterMonths, roundToNearestMonth } from '@/utils/date-util';
+import { getTimestampAfterMonths } from '@/utils/date-util';
 import {
   getMonthsPerTimestepFromTimeScale,
   getStepCountFromTimeScale,
@@ -681,13 +681,6 @@ const generateClickableAreas = (
     .attr('stroke', 'none')
     .attr('cursor', 'pointer');
 
-  // IMPORTANT: projectionRect specifically refers to the area from the first
-  //  projected timestep to the last.
-  const projectionRectWidth =
-    xScale(projectionLastTimestamp) - xScale(projectionStartTimestamp);
-  // Subtract one from step and y position count because half a clickable area is outside
-  //  of the projection area on the left and on the right
-  const spaceBetweenSteps = projectionRectWidth / (projectionStepCount - 1);
   const spaceBetweenDiscreteYValues =
     timelineRectHeight / (DISCRETE_Y_POSITION_COUNT - 1);
   // FIXME: we should use chartValueFormatter here but it's currently a little wonky,
@@ -731,10 +724,9 @@ const generateClickableAreas = (
       .style('stroke', SELECTED_COLOR);
 
     const value = yScale.invert(discreteYPosition);
-    const timestamp = roundToNearestMonth(xScale.invert(discreteXPosition));
     showSvgTooltip(
       parentGroupElement,
-      `${DATE_FORMATTER(timestamp)}: ${valueFormatter(value)} ${unit}`,
+      `${DATE_FORMATTER(discreteTimestamp)}: ${valueFormatter(value)} ${unit}`,
       [discreteXPosition, discreteYPosition],
       0,
       true
@@ -760,9 +752,7 @@ const generateClickableAreas = (
     );
     if (step < 0) {
       // Modify historical timeseries
-      const discreteXPosition =
-        xScale(projectionStartTimestamp) + step * spaceBetweenSteps;
-      const timestamp = roundToNearestMonth(xScale.invert(discreteXPosition));
+      const timestamp = getTimestampAfterMonths(projectionStartTimestamp, monthsPerTimestep * step);
       const existingPoint = historicalTimeseries.find(
         point => point.timestamp === timestamp
       );

@@ -264,7 +264,7 @@
                       </option>
                     </select>
                   <button
-                    v-if="firstSelectedPreGenOutput.type === 'image'"
+                    v-if="firstSelectedPreGenOutput && firstSelectedPreGenOutput.type === 'image'"
                     type="button"
                     class="btn btn-sm btn-primary btn-call-for-action"
                     style="margin-left: 10px"
@@ -272,8 +272,8 @@
                     <i class="fa fa-fw fa-star fa-lg" />
                     Save As Insight
                   </button>
-                  </div>
-                <div v-if="firstSelectedPreGenOutput.caption" style="padding-left: 5px; padding-right: 10px">{{firstSelectedPreGenOutput.caption}}</div>
+                </div>
+                <div v-if="firstSelectedPreGenOutput && firstSelectedPreGenOutput.caption" style="padding-left: 5px; padding-right: 10px">{{firstSelectedPreGenOutput.caption}}</div>
               </div>
 
               <div class="column card-maps-container" style="flex-direction: revert;">
@@ -306,7 +306,7 @@
                     </iframe>
                   </template>
                   <template v-else>
-                    No pre-generated data available for some selected scenario(s)!
+                    No pre-generated data available for some selected model run(s)!
                   </template>
                 </div>
               </div>
@@ -1172,6 +1172,8 @@ export default defineComponent({
         } else {
           setSelectedScenarioIds([]); // this will update the 'currentTabView'
         }
+      } else if (value === DatacubeViewMode.Media) {
+        currentTabView.value = DatacubeViewMode.Media;
       } else {
         clickData();
       }

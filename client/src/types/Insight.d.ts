@@ -4,14 +4,7 @@ import {
   DATA_LAYER_TRANSPARENCY
 } from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
-import {
-  ComparativeAnalysisMode,
-  DatacubeViewMode,
-  BinningOptions,
-  RegionRankingCompositionType,
-  DataTransform
-} from '@/types/Enums';
-import { AnalysisItem } from './Analysis';
+import { DatacubeViewMode, DataTransform } from '@/types/Enums';
 import { Filters } from './Filters';
 import { FeatureConfig } from './Outputdata';
 
@@ -33,17 +26,6 @@ export interface ViewState {
   colorSchemeName?: COLOR;
   colorScaleType?: ColorScaleType;
   numberOfColorBins?: number;
-
-  // region-ranking specific
-  regionRankingSelectedAdminLevel?: number;
-  regionRankingSelectedComparativeAnalysisMode?: ComparativeAnalysisMode;
-  regionRankingSelectedNumberOfColorBins?: number;
-  regionRankingSelectedCompositionType?: RegionRankingCompositionType;
-  regionRankingSelectedBinningType?: BinningOptions;
-  regionRankingApplyingBarLimit?: boolean;
-  regionRankingSelectedMaxBarLimit?: number;
-  regionRankingHoverId?: string;
-  regionRankingShowNormalizedData?: boolean;
 
   analyticalQuestionOrder?: number; // a numeric index to save and restore each question order
 
@@ -81,20 +63,6 @@ export interface DataSpaceDataState {
   searchFilters: Filters; // lex-bar search queries
 }
 
-export interface DatacubeTitle {
-  datacubeName: string;
-  datacubeOutputName: string;
-  source: string;
-}
-
-export interface ComparativeAnalysisDataState {
-  selectedAnalysisItems: AnalysisItem[];
-  selectedTimestamp: number | null;
-  regionRankingWeights: { [key: string]: { name: string; weight: number } };
-  regionRankingDataInversion: { [x: string]: boolean };
-  datacubeTitles: DatacubeTitle[];
-}
-
 export interface QualitativeDataState {
   modelName: string;
 }
@@ -108,7 +76,7 @@ export interface ModelsSpaceDataState extends QualitativeDataState {
 
 export type DataState =
   | DataSpaceDataState
-  | ComparativeAnalysisDataState
+  | DataAnalysisState
   | QualitativeDataState
   | ModelsSpaceDataState;
 

@@ -1,31 +1,24 @@
 <template>
   <div class="list-datacubes-drawer-pane-container">
     <template v-if="analysisItems.length > 0">
-      <div v-for="item in analysisItems"
-        :key="item.datacubeId">
-        <div class="checkbox">
-          <label
-            @click="toggleItemSelection(item)"
-            style="cursor: pointer;"
-            :style="{ color: item.selected || canSelectItem ? '#000000' : '#707070' }"
-            >
-            <i
-              class="fa fa-lg fa-fw"
-              :class="{ 'fa-check-square-o': item.selected, 'fa-square-o': !item.selected }"
-            />
-            <span>
-              {{
-                item.dataConfig.activeFeatures[
-                  item.viewConfig.selectedOutputIndex ?? 0
-                ]?.display_name ?? item.datacubeId
-              }}
-            </span>
-            <i
-              class="fa fa-fw fa-close delete-item"
-              @click="removeItem(item)"
-            />
-          </label>
-        </div>
+      <div v-for="item in analysisItems" :key="item.datacubeId">
+        <label
+          @click="toggleItemSelection(item)"
+          style="cursor: pointer;"
+          :style="{ color: item.selected || canSelectItem ? '#000000' : '#707070' }"
+          >
+          <i
+            class="fa fa-lg fa-fw"
+            :class="{ 'fa-check-square-o': item.selected, 'fa-square-o': !item.selected }"
+          />
+          <span>
+            {{ getDisplayName(item) }}
+          </span>
+        </label>
+        <i
+          class="fa fa-fw fa-close delete-item"
+          @click="removeItem(item)"
+        />
       </div>
     </template>
     <message-display
@@ -80,6 +73,12 @@ export default defineComponent({
     },
     removeItem(item: AnalysisItem) {
       this.$emit('remove-analysis-item', item.itemId);
+    },
+    getDisplayName(item: AnalysisItem) {
+      const { datacubeName, featureName, source } = item.cachedMetadata;
+      return [featureName, datacubeName, source]
+        .filter(text => text !== '')
+        .join(' - ');
     }
   }
 });
@@ -105,11 +104,6 @@ export default defineComponent({
   }
   .pane-footer {
     margin: 10px 0;
-  }
-
-  .checkbox {
-    margin-right: 10px;
-    user-select: none;
   }
 
   .delete-item {
