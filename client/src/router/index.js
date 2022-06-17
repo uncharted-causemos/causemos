@@ -6,7 +6,7 @@ import AnalysisProjectOverview from '@/views/AnalysisProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import NewDomainProject from '@/views/NewDomainProject.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
-// import GraphExperiment from '@/views/GraphExperiment.vue';
+import GraphExperiment from '@/views/GraphExperiment.vue';
 import QualitativeView from '@/views/QualitativeView.vue';
 import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
@@ -95,11 +95,11 @@ const routes = [
     name: 'indicatorPublishingExperiment',
     component: IndicatorPublishingExperiment
   },
-  // {
-  //   path: '/graph-experiment',
-  //   name: 'graphExperiment',
-  //   component: GraphExperiment
-  // },
+  {
+    path: '/graph-experiment',
+    name: 'graphExperiment',
+    component: GraphExperiment
+  },
   {
     path: '/:projectType/:project/qualitative/:currentCAG',
     name: 'qualitative',

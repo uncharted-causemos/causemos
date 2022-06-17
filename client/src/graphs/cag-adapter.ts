@@ -348,10 +348,12 @@ const extractELKPositions = (root: ELKNode) => {
     } else {
       const parentNode = parentMap.get(node.id);
       const pos = nodeGlobalPosition.get(parentNode.id);
+      // console.log('node', node.label, node.x, node.y);
+      // FIXME: check if need to add parent coord
       if (pos) {
         nodeGlobalPosition.set(node.id, {
-          x: node.x + pos.x,
-          y: node.y + pos.y,
+          x: node.x,
+          y: node.y,
           width: node.width,
           height: node.height
         });
