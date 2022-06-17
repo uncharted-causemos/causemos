@@ -88,9 +88,6 @@ export default defineComponent({
     const containerEl = this.$refs.container;
     this.renderer = new QuantitativeRenderer({
       el: containerEl,
-      useEdgeControl: true,
-      edgeControlOffsetType: 'percentage',
-      edgeControlOffset: 0.5,
       useAStarRouting: true,
       useStableLayout: true,
       useStableZoomPan: true,
