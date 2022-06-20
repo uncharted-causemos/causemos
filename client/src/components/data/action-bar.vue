@@ -22,7 +22,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
 import { mapGetters } from 'vuex';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
@@ -31,8 +31,9 @@ import { ComparativeAnalysisMode } from '@/types/Enums';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
 import { capitalize } from '@/utils/string-util';
+import { defineComponent } from 'vue';
 
-export default {
+export default defineComponent({
   name: 'ActionBar',
   components: {
     RadioButtonGroup
@@ -72,13 +73,13 @@ export default {
     openDataExplorer() {
       const filters = filtersUtil.newFilters();
       filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
-      this.$router.push({ name: 'dataExplorer', query: { analysisId: this.analysisId, filters } });
+      this.$router.push({ name: 'dataExplorer', query: { analysisId: this.analysisId, filters: filters as any } });
     },
-    setActiveTab(newActiveTab) {
+    setActiveTab(newActiveTab: string) {
       this.$emit('set-active-tab', newActiveTab);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
