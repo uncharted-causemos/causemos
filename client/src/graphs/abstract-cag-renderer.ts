@@ -50,7 +50,6 @@ const flattenGraph2 = <V, E>(graph: IGraph<V, E>): { nodes: INode<V>[], edges: I
   };
 };
 
-
 export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
   labelFormatter: (label: string) => string = (s) => s;
 
@@ -194,8 +193,6 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
 
   // Create a contour
   bubbleSet({ bubbleNodes }: { bubbleNodes: NeighborNode[] }, color = '#369') {
-    console.log('bubble set', bubbleNodes);
-
     const flattened = flattenGraph(this.graph);
     const lookup = new Map<string, { x: number, y: number }>();
 
@@ -219,7 +216,6 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     const list = createOutline(
       addPadding(inSetNodes.map(n => {
         const pCoord = lookup.get(n.label) || { x: 0, y: 0 };
-        console.log('>>>>>>>>>>>>', n.label, pCoord, n.x, n.y, n.width, n.height);
         return {
           x: n.x + pCoord.x,
           y: n.y + pCoord.y,
@@ -230,7 +226,6 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
 
       addPadding(outSetNodes.map(n => {
         const pCoord = lookup.get(n.label) || { x: 0, y: 0 };
-        console.log('<<<<<<<<<<<<', pCoord);
         return {
           x: n.x + pCoord.x,
           y: n.y + pCoord.y,
@@ -241,8 +236,6 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
       [], // edges,
       {} // options
     ).sample(8);
-
-    // console.log(list.points);
 
     // Render contour
     const pathFn = svgUtil.pathFn;
