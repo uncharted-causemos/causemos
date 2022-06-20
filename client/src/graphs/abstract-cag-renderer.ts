@@ -192,7 +192,7 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
 
 
   // Create a contour
-  bubbleSet({ bubbleNodes }: { bubbleNodes: NeighborNode[] }, color = '#369') {
+  bubbleSet({ bubbleNodes, bubbleEdges }: { bubbleNodes: NeighborNode[], bubbleEdges: any[] }, color = '#369') {
     const flattened = flattenGraph(this.graph);
     const lookup = new Map<string, { x: number, y: number }>();
 
@@ -233,7 +233,7 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
           height: n.height
         };
       }), 10) as any,
-      [], // edges,
+      bubbleEdges, // edges,
       {} // options
     ).sample(8);
 
