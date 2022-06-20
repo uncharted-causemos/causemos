@@ -140,11 +140,34 @@ export default defineComponent({
         group(renderer, 'nodes I care about', ['famine', 'crop']);
         await renderer.render();
 
-        renderer.bubbleSet({ bubbleNodes: [
-          { concept: 'fertilizer' },
-          { concept: 'rainfall' },
-          { concept: 'crop' }
-        ]}, '#309');
+        renderer.bubbleSet({
+          bubbleNodes: [
+            { concept: 'fertilizer' },
+            { concept: 'rainfall' },
+            { concept: 'crop' }
+          ],
+          bubbleEdges: [
+            {
+              x1: 100,
+              y1: 100,
+              x2: 200,
+              y2: 200
+            },
+            {
+              x1: 200,
+              y1: 200,
+              x2: 400,
+              y2: 200
+            },
+            {
+              x1: 400,
+              y1: 200,
+              x2: 400,
+              y2: 300
+            }
+          ]},
+          '#309'
+        );
 
         renderer.bubbleSet({ bubbleNodes: [
           { concept: 'subsidies' },
