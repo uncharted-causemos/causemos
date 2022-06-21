@@ -346,6 +346,8 @@ const extractELKPositions = (root: ELKNode) => {
         height: node.height
       });
     } else {
+      // FIXME: check if need to add parent coord nodeGlobalPosition.get(parentNode.id);
+      /*
       const parentNode = parentMap.get(node.id);
       const pos = nodeGlobalPosition.get(parentNode.id);
       if (pos) {
@@ -356,6 +358,13 @@ const extractELKPositions = (root: ELKNode) => {
           height: node.height
         });
       }
+      */
+      nodeGlobalPosition.set(node.id, {
+        x: node.x,
+        y: node.y,
+        width: node.width,
+        height: node.height
+      });
     }
   });
 

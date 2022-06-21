@@ -1,7 +1,8 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
+import { createOutline, addPadding } from 'bubblesets-js';
 import svgUtil from '@/utils/svg-util';
-import { DeltaRenderer, IGraph, IEdge, INode, traverseGraph, moveTo, highlight, unHighlight } from 'svg-flowgraph';
+import { DeltaRenderer, IEdge, INode, moveTo, highlight, unHighlight, flattenGraph } from 'svg-flowgraph';
 import { DEFAULT_STYLE } from './cag-style';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { CAGVisualState } from '@/types/CAG';
@@ -36,19 +37,6 @@ const createStatsGroup = (foregroundLayer: any) => {
   }
   return statsGroup;
 };
-
-const flattenGraph = <V, E>(graph: IGraph<V, E>): { nodes: INode<V>[], edges: IEdge<E>[] } => {
-  let nodes: INode<V>[] = [];
-  traverseGraph(graph, (node) => {
-    nodes = nodes.concat(node);
-  });
-
-  return {
-    nodes,
-    edges: graph.edges
-  };
-};
-
 
 export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
   labelFormatter: (label: string) => string = (s) => s;
@@ -188,6 +176,65 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
     const flattened = flattenGraph(this.graph);
     const numNodes = flattened.nodes.length;
     return (options.useStableLayout && numNodes <= chart.selectAll('.node').size()) as boolean;
+  }
+
+
+  // Create a contour
+  bubbleSet({ bubbleNodes, bubbleEdges }: { bubbleNodes: NeighborNode[], bubbleEdges: any[] }, color = '#369') {
+    const flattened = flattenGraph(this.graph);
+    const lookup = new Map<string, { x: number, y: number }>();
+
+    for (const n of flattened.nodes) {
+      if (n.nodes.length > 0) {
+        for (const child of n.nodes) {
+          lookup.set(child.label, { x: n.x, y: n.y });
+        }
+      }
+    }
+
+    // Calculate contours
+    const nodes = flattened.nodes;
+    const inSetNodes = nodes.filter(node => {
+      return _.some(bubbleNodes, d => d.concept === node.label) && node.nodes.length === 0;
+    });
+    const outSetNodes = nodes.filter(node => {
+      return !_.some(bubbleNodes, d => d.concept === node.label) && node.nodes.length === 0;
+    });
+
+    const list = createOutline(
+      addPadding(inSetNodes.map(n => {
+        const pCoord = lookup.get(n.label) || { x: 0, y: 0 };
+        return {
+          x: n.x + pCoord.x,
+          y: n.y + pCoord.y,
+          width: n.width,
+          height: n.height
+        };
+      }), 10) as any,
+
+      addPadding(outSetNodes.map(n => {
+        const pCoord = lookup.get(n.label) || { x: 0, y: 0 };
+        return {
+          x: n.x + pCoord.x,
+          y: n.y + pCoord.y,
+          width: n.width,
+          height: n.height
+        };
+      }), 10) as any,
+      bubbleEdges, // edges,
+      {} // options
+    ).sample(8);
+
+    // Render contour
+    const pathFn = svgUtil.pathFn;
+    this.chart.append('path')
+      .classed('bubbleset', true)
+      .attr('d', pathFn(list.points as any) as any)
+      .style('stroke', color)
+      .style('stroke-width', 2)
+      .style('stroke-opacity', 0.8)
+      .style('fill', color)
+      .style('fill-opacity', 0.15);
   }
 }
 
