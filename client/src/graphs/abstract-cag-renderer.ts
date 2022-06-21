@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import { createOutline, addPadding } from 'bubblesets-js';
 import svgUtil from '@/utils/svg-util';
-import { DeltaRenderer, IGraph, IEdge, INode, traverseGraph, moveTo, highlight, unHighlight, flattenGraph } from 'svg-flowgraph';
+import { DeltaRenderer, IEdge, INode, moveTo, highlight, unHighlight, flattenGraph } from 'svg-flowgraph';
 import { DEFAULT_STYLE } from './cag-style';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { CAGVisualState } from '@/types/CAG';
@@ -36,18 +36,6 @@ const createStatsGroup = (foregroundLayer: any) => {
       .text('');
   }
   return statsGroup;
-};
-
-const flattenGraph2 = <V, E>(graph: IGraph<V, E>): { nodes: INode<V>[], edges: IEdge<E>[] } => {
-  let nodes: INode<V>[] = [];
-  traverseGraph(graph, (node) => {
-    nodes = nodes.concat(node);
-  });
-
-  return {
-    nodes,
-    edges: graph.edges
-  };
 };
 
 export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
@@ -185,7 +173,7 @@ export abstract class AbstractCAGRenderer<V, E> extends DeltaRenderer<V, E> {
   stableLayoutCheck(): boolean {
     const chart = this.chart;
     const options = this.options;
-    const flattened = flattenGraph2(this.graph);
+    const flattened = flattenGraph(this.graph);
     const numNodes = flattened.nodes.length;
     return (options.useStableLayout && numNodes <= chart.selectAll('.node').size()) as boolean;
   }
