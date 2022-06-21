@@ -346,18 +346,25 @@ const extractELKPositions = (root: ELKNode) => {
         height: node.height
       });
     } else {
+      // FIXME: check if need to add parent coord nodeGlobalPosition.get(parentNode.id);
+      /*
       const parentNode = parentMap.get(node.id);
       const pos = nodeGlobalPosition.get(parentNode.id);
-      // console.log('node', node.label, node.x, node.y);
-      // FIXME: check if need to add parent coord
       if (pos) {
         nodeGlobalPosition.set(node.id, {
-          x: node.x,
-          y: node.y,
+          x: node.x + pos.x,
+          y: node.y + pos.y,
           width: node.width,
           height: node.height
         });
       }
+      */
+      nodeGlobalPosition.set(node.id, {
+        x: node.x,
+        y: node.y,
+        width: node.width,
+        height: node.height
+      });
     }
   });
 
