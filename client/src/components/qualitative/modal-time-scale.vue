@@ -41,6 +41,15 @@
           @item-selected="selectCountry"
         />
       </div>
+      <div>
+        <h2 class="header-question">Default engine:&nbsp;
+        <select v-model="selectedEngine">
+          <option value="dyse"> DySE </option>
+          <option value="delphi"> Delphi </option>
+          <option value="sensei"> Sensei </option>
+        </select>
+        </h2>
+      </div>
     </template>
     <template #footer>
       <button
@@ -85,12 +94,14 @@ export default defineComponent({
       selectedTimeScaleOption: ref(
         initiallySelectedTimeScale.value ?? TimeScale.Months
       ),
-      selectedCountry: ref<string | null>(null)
+      selectedCountry: ref<string | null>(null),
+      selectedEngine: ref<string | null>('dyse')
     };
   },
   methods: {
     save() {
       this.$emit('save-cag-params', {
+        engine: this.selectedEngine,
         timeScale: this.selectedTimeScaleOption,
         geography: _.isEmpty(this.selectedCountry) ? undefined : this.selectedCountry
       });
