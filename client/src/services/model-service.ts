@@ -365,7 +365,7 @@ const getExperimentResult = async (modelId: string, experimentId: string, poller
       return _.isEmpty(data.results) ? [false, data] : [true, data];
     } catch (err) {
       // Delphi seems to randomly error out ??
-      if (model.parameter.engine === 'delphi' || model.parameter.engine === 'delphi_dev') {
+      if (model.parameter.engine === 'delphi') {
         console.log('Ignoring Delphi error getting experiment');
         return [false, null];
       }

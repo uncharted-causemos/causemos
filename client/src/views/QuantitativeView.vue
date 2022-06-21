@@ -349,22 +349,6 @@ export default defineComponent({
           this.scheduleRefresh();
           return;
         }
-        // Delphi workaround
-        // else {
-        //   if (trainingInPreviousCycle === true || r.progressPercentage < 1.0) {
-        //     // Artificially inflate waiting time for Delphi to workaround race-conditions
-        //     const waitTime = 10000;
-        //     if (this.currentEngine === 'delphi' || this.currentEngine === 'delphi_dev') {
-        //       this.enableOverlay(`Waiting for ${this.currentEngine} DB`);
-        //       await new Promise((resolve) => {
-        //         window.setTimeout(() => {
-        //           resolve(true);
-        //         }, waitTime);
-        //       });
-        //       this.disableOverlay();
-        //     }
-        //   }
-        // }
       }
 
       // 3. Check if we have scenarios, if not generate one

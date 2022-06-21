@@ -297,7 +297,7 @@ export default defineComponent({
     });
 
     const polarityInconsistency = computed(() => {
-      if (['delphi', 'delphi_dev', 'sensei'].includes(modelSummary.value.parameter.engine) && inferredWeights.value[2]) {
+      if (['delphi', 'sensei'].includes(modelSummary.value.parameter.engine) && inferredWeights.value[2]) {
         return inferredWeights.value[2] * (selectedRelationship.value.polarity as number) < 0;
       }
       return false;
