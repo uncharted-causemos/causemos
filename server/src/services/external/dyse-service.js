@@ -29,7 +29,6 @@ const createModel = async (payload) => {
     throw new Error(JSON.stringify(result));
   }
 
-  console.log(payload.edges);
   Logger.warn(JSON.stringify(result.edges, null, 2));
 
   // Transform result to node/edge initialization maps
@@ -42,11 +41,6 @@ const createModel = async (payload) => {
     const w = edge.weights.map(parseFloat);
     acc[key].weights = w.map(v => Math.abs(v));
 
-    // FIXME: getting weird weights from Jataware translation layer, as far as we are concerned
-    // weights should be positive.
-    // if (w[0] !== 0) {
-    //   acc[key].weights = w.map(v => Math.abs(v));
-    // }
     return acc;
   }, {});
   return { nodes, edges, status: result.status };
@@ -91,10 +85,6 @@ const createExperiment = async (modelId, payload) => {
     },
     json: payload
   };
-
-  console.log('!!!');
-  console.log(JSON.stringify(payload, null, 2));
-  console.log('!!!');
 
   const result = await requestAsPromise(options);
   return result;

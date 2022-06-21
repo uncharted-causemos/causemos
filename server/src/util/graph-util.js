@@ -11,10 +11,6 @@ const buildAdjacency = (edges) => {
     if (!map.has(key)) {
       map.set(key, []);
     }
-    // if (!{}.hasOwnProperty.call(map, key)) {
-    //   map[key] = [];
-    // }
-    // map[key].push(value);
     map.get(key).push(value);
   };
 
