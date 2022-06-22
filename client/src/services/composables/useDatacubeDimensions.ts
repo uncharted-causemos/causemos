@@ -48,12 +48,7 @@ export default function useDatacubeDimensions(
   //    { dim1: value21, dim2: value22 }
   // ]
 
-  const drilldownDimensions = computed(() =>
-    dimensions.value.filter(p => p.is_drilldown)
-  );
-
   return {
-    dimensions,
-    drilldownDimensions
+    dimensions
   };
 }
