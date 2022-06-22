@@ -365,7 +365,7 @@ const getExperimentResult = async (modelId: string, experimentId: string, poller
       return _.isEmpty(data.results) ? [false, data] : [true, data];
     } catch (err) {
       // Delphi seems to randomly error out ??
-      if (model.parameter.engine === 'delphi' || model.parameter.engine === 'delphi_dev') {
+      if (model.parameter.engine === 'delphi') {
         console.log('Ignoring Delphi error getting experiment');
         return [false, null];
       }
@@ -744,12 +744,11 @@ export const hasMergeConflictEdges = (currentCAG: CAGGraph, importCAGs: CAGGraph
 export enum Engine {
   DySE = 'dyse',
   Delphi = 'delphi',
-  DelphiDev = 'delphi_dev',
   Sensei = 'sensei'
 }
 
 export const supportsPolarityInference = (engine: Engine) => {
-  return engine === Engine.Delphi || engine === Engine.DelphiDev || engine === Engine.Sensei;
+  return engine === Engine.Delphi || engine === Engine.Sensei;
 };
 
 export const supportsLevelEdges = (engine: Engine) => {
@@ -760,7 +759,6 @@ export const supportsLevelEdges = (engine: Engine) => {
 export const ENGINE_OPTIONS = [
   { key: 'dyse', value: 'DySE' },
   { key: 'delphi', value: 'Delphi' },
-  { key: 'delphi_dev', value: 'Delphi DEV' },
   { key: 'sensei', value: 'Sensei' }
 ];
 

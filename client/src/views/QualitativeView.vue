@@ -1439,7 +1439,7 @@ export default defineComponent({
         }
       }
     },
-    async saveCAGParams(params: { timeScale: TimeScale; geography: string | undefined}) {
+    async saveCAGParams(params: { engine: string; timeScale: TimeScale; geography: string | undefined}) {
       let historyRange = 24;
       if (params.timeScale === TimeScale.Months) {
         historyRange = 24;
@@ -1447,7 +1447,7 @@ export default defineComponent({
         historyRange = 12 * 20;
       }
 
-      const newParameter: Partial<CAGModelParameter> = { time_scale: params.timeScale, history_range: historyRange, geography: params.geography };
+      const newParameter: Partial<CAGModelParameter> = { engine: params.engine, time_scale: params.timeScale, history_range: historyRange, geography: params.geography };
       await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.refresh();
     }
