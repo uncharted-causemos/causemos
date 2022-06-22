@@ -253,19 +253,6 @@ router.get('/:projectId/ontology-definitions', asyncHandler(async (req, res) => 
   res.json(definitions);
 }));
 
-/* POST update belief score */
-// router.post('/:projectId/update-belief-score', asyncHandler(async (req, res) => {
-//   const modifiedAt = Date.now();
-//   const projectId = req.params.projectId;
-//   const project = getCache(projectId);
-//   const corpusId = project.corpus_id;
-//   const results = await indraService.recalculateBeliefScore(corpusId, projectId);
-//   await updateService.updateAllBeliefScores(projectId, results);
-//   res.status(200).send({
-//     updateToken: modifiedAt
-//   });
-// }));
-
 /**
  * POST Get INDRA statements scores
  * Scores are bloated and seldomly used, so we make it a separate endpoint

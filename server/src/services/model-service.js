@@ -291,7 +291,7 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, projecti
 const buildSensitivityPayload = async (engine, experimentStart, experimentEnd, numTimeSteps,
   constraintParams, analysisType, analysisMode, analysisParams, analysisMethodology) => {
   let payload;
-  if (engine === 'delphi' || engine === 'delphi_dev') {
+  if (engine === 'delphi') {
     payload = {};
   } else if (engine === 'dyse') {
     const constraints = _.isEmpty(constraintParams) ? [] : constraintParams;
@@ -322,7 +322,7 @@ const buildSensitivityPayload = async (engine, experimentStart, experimentEnd, n
  */
 const buildGoalOptimizationPayload = async (modelId, engine, goals) => {
   let payload;
-  if (engine === 'delphi' || engine === 'delphi_dev') {
+  if (engine === 'delphi') {
     payload = {};
   } else if (engine === 'dyse') {
     payload = {
@@ -503,7 +503,7 @@ const buildCreateModelPayload = async (model, nodeParameters, edgeParameters) =>
 };
 
 
-// @deprecated Only used by Delphi and Delphi_Dev
+// @deprecated Only used by Delphi
 const buildCreateModelPayloadDeprecated = async (model, nodeParameters, edgeParameters) => {
   const modelStatements = await buildModelStatements(model.id);
 
@@ -522,7 +522,7 @@ const buildCreateModelPayloadDeprecated = async (model, nodeParameters, edgePara
   };
 };
 
-// @deprecated - Only Delphi and Delphi_Dev
+// @deprecated - Only Delphi
 const buildNodeParametersPayloadDeprecated = (nodeParameters, model) => {
   const r = {};
 
