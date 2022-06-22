@@ -3,13 +3,8 @@ export const ADD_TO_CAG_THRESHOLD = 1000;
 export const SERVICE_NOT_AVAILABLE = 'Service not available at the moment';
 
 export const SIDE_PANEL = {
-  INDICATORS_PANE_NO_INDICATOR: 'Automatic mapping did not find an indicator to quantify this node. Click "Edit" to search for one.',
   EVIDENCE_NO_DATA: 'No evidence in Knowledge Base',
   FACTORS_NO_DATA: 'Concept not in a relationship yet'
-};
-
-export const INDICATOR = {
-  EDITOR_NO_INDICATOR: 'Automatic mapping did not find an indicator to quantify this node.'
 };
 
 export const CORRECTIONS = {
@@ -29,11 +24,6 @@ export const EXPORT_MESSAGES = {
 export const CURATIONS = {
   SUCCESSFUL_CURATION: 'Positive feedback sent to INDRA',
   ERRONEOUS_CURATION: 'Curation was unsuccessful. Try again'
-};
-
-export const DATE_SELECTION = {
-  START_DATE_AFTER_END_DATE: 'The start date you entered occurs after the end date',
-  END_DATE_BEFORE_START_DATE: 'The end date you entered occurs before the start date'
 };
 
 export const EMPTY_INPUT_PARAMS = 'There are no input parameters for this emulator';
@@ -89,13 +79,11 @@ export const SUBGRAPH = {
 
 export default {
   SIDE_PANEL,
-  INDICATOR,
   CORRECTIONS,
   UNKNOWN_POLARITY_BULK_MESSAGE,
   EXPORT_MESSAGES,
   CURATIONS,
   SERVICE_NOT_AVAILABLE,
-  DATE_SELECTION,
   EMPTY_INPUT_PARAMS,
   INSIGHTS,
   CAG,
