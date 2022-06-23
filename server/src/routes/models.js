@@ -414,7 +414,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   }
   if (edgesToOverride.length > 0) {
     if (engine === DELPHI) {
-      console.log('skip edge override for Delphi/Delphi-dev');
+      console.log('skip edge override for Delphi');
     }
     if (engine === DYSE) {
       await dyseService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
