@@ -15,7 +15,6 @@ const modelService = rootRequire('/services/model-service');
 const historyService = rootRequire('/services/history-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
-const delphiDevService = rootRequire('/services/external/delphi_dev-service');
 const senseiService = rootRequire('/services/external/sensei-service');
 
 const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
@@ -25,7 +24,6 @@ const TRANSACTION_LOCK_MSG = `Another transaction is running on model, please tr
 
 const DYSE = 'dyse';
 const DELPHI = 'delphi';
-const DELPHI_DEV = 'delphi_dev';
 const SENSEI = 'sensei';
 
 // const esLock = {};
@@ -303,7 +301,7 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
 
     // Update inferred engine weights
     // - Both Delphi and Sensei returns extra polarity information, so their arry is of length 3 instead of 2
-    if (engine === DELPHI || engine === DELPHI_DEV || engine === SENSEI) {
+    if (engine === DELPHI || engine === SENSEI) {
       Logger.debug(`\tcurrentEngine=${currentEngineWeights}, inferred=${engineInferredWeights}`);
       if (!currentEngineWeights || engineInferredWeights[1] !== currentEngineWeights[1]) {
         updateEngineConfig = true;
@@ -322,7 +320,7 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
       updateWeights = true;
       parameter.weights = engineInferredWeights;
     } else {
-      if (engine === DELPHI || engine === DELPHI_DEV) {
+      if (engine === DELPHI) {
         Logger.debug(`\tcurrent=${currentWeights}, inferred=${engineInferredWeights}`);
         // Don't bother overriding unless change is somewhat significant. 0.05 is somewaht arbitrary range between [0, 1]
         if (Math.abs(currentWeights[1] - engineInferredWeights[1]) > 0.05) {
@@ -387,9 +385,6 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     if (engine === DELPHI) {
       const enginePayload = await buildCreateModelPayloadDeprecated(modelId);
       initialParameters = await delphiService.createModel(enginePayload);
-    } else if (engine === DELPHI_DEV) {
-      const enginePayload = await buildCreateModelPayloadDeprecated(modelId);
-      initialParameters = await delphiDevService.createModel(enginePayload);
     } else if (engine === DYSE) {
       const enginePayload = await buildCreateModelPayload(modelId);
       initialParameters = await dyseService.createModel(enginePayload);
@@ -418,8 +413,8 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     }
   }
   if (edgesToOverride.length > 0) {
-    if (engine === DELPHI || engine === DELPHI_DEV) {
-      console.log('skip edge override for Delphi/Delphi-dev');
+    if (engine === DELPHI) {
+      console.log('skip edge override for Delphi');
     }
     if (engine === DYSE) {
       await dyseService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
@@ -462,8 +457,6 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
   let modelStatus = {};
   if (engine === DELPHI) {
     modelStatus = await delphiService.modelStatus(modelId);
-  } else if (engine === DELPHI_DEV) {
-    modelStatus = await delphiDevService.modelStatus(modelId);
   } else {
     modelStatus = await dyseService.modelStatus(modelId);
   }
@@ -479,17 +472,11 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
     if (modelStatus.progressPercentage < 1) {
       v = MODEL_STATUS.TRAINING;
     }
-  } else if (engine === DELPHI_DEV) {
-    const progress = await delphiDevService.modelTrainingProgress(modelId);
-    modelStatus.progressPercentage = progress.progressPercentage;
-    if (modelStatus.progressPercentage < 1) {
-      v = MODEL_STATUS.TRAINING;
-    }
   }
 
   // Patch Delphi's inferred weights
   let edgeTrainingDelphi = false;
-  if ((engine === DELPHI || engine === DELPHI_DEV) && modelStatus.progressPercentage >= 1.0) {
+  if ((engine === DELPHI) && modelStatus.progressPercentage >= 1.0) {
     Logger.info('Processing Delphi edge weights');
     const inferredEdgeMap = modelStatus.relations.reduce((acc, edge) => {
       const key = `${edge.source}///${edge.target}`;
@@ -533,8 +520,6 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
 
       if (engine === DELPHI) {
         await delphiService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
-      } else if (engine === DELPHI_DEV) {
-        await delphiDevService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
       }
     }
   }
@@ -577,8 +562,6 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
   try {
     if (engine === DELPHI) {
       result = await delphiService.createExperiment(modelId, payload);
-    } else if (engine === DELPHI_DEV) {
-      result = await delphiDevService.createExperiment(modelId, payload);
     } else if (engine === DYSE) {
       result = await dyseService.createExperiment(modelId, payload);
     } else if (engine === SENSEI) {
@@ -644,8 +627,6 @@ router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
   let result;
   if (engine === DELPHI) {
     result = await delphiService.findExperiment(modelId, experimentId);
-  } else if (engine === DELPHI_DEV) {
-    result = await delphiDevService.findExperiment(modelId, experimentId);
   } else if (engine === DYSE) {
     result = await dyseService.findExperiment(modelId, experimentId);
   } else if (engine === SENSEI) {
@@ -825,7 +806,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
   // For Delphi we will artificially set the model into unregistered state
   // so the detection loop will find it and actually send the edge weights
   // FIXME: Set to TRAINING
-  if (engine === DELPHI || engine === DELPHI_DEV) {
+  if (engine === DELPHI) {
     Logger.info(`Defer edge upate for ${engine} until next refresh cycle`);
     const modelAdapter = Adapter.get(RESOURCE.MODEL);
     await modelAdapter.update([
