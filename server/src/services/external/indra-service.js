@@ -1,11 +1,11 @@
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 
-// const INDRA_URL = process.env.INDRA_URL || 'http://wm.indra.bio';
+const INDRA_URL = process.env.INDRA_URL || 'http://wm.indra.bio';
 
 // Changes for August
 // const INDRA_URL = 'http://ec2-44-192-73-245.compute-1.amazonaws.com:8001';
-const INDRA_URL = 'http://ec2-3-91-106-155.compute-1.amazonaws.com:8001';
+// const INDRA_URL = 'http://ec2-3-91-106-155.compute-1.amazonaws.com:8001';
 
 const INDRA_TIMEOUT = 5000; // 5 seconds
 
