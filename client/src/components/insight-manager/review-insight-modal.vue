@@ -207,7 +207,7 @@ import InsightUtil from '@/utils/insight-util';
 import { Insight, InsightMetadata, FullInsight, DataState, SectionWithInsights, ReviewPosition } from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { addInsight, updateInsight, fetchPartialInsights, extractMetadataDetails } from '@/services/insight-service';
+import { addInsight, updateInsight, fetchPartialInsights, extractMetadataDetails, removeInsight } from '@/services/insight-service';
 import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
 import useToaster from '@/services/composables/useToaster';
 import html2canvas from 'html2canvas';
@@ -696,7 +696,8 @@ export default defineComponent({
       // before deletion, find the index of the insight to be removed
       const insightIdToDelete = this.updatedInsight.id;
       // remove the insight from the server
-      InsightUtil.removeInsight(insightIdToDelete, this.store);
+      removeInsight(insightIdToDelete, this.store);
+
       // close editing before deleting insight (this will ensure annotation/crop mode is cleaned up)
       this.cancelInsightEdit();
       // remove this insight from each section that contains it in the store

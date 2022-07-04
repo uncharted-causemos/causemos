@@ -2,11 +2,8 @@ import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import { Clause, Filters } from '@/types/Filters';
 import _ from 'lodash';
-import { countInsights, deleteInsight, InsightFilterFields } from '@/services/insight-service';
 import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-service';
-import { INSIGHTS } from './messages-util';
-import useToaster from '@/services/composables/useToaster';
-import { computed } from 'vue';
+
 import { AnalyticalQuestion, Insight, FullInsight, QualitativeDataState, DataState, ModelsSpaceDataState, DataSpaceDataState, ReviewPosition, SectionWithInsights } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
@@ -97,23 +94,6 @@ export function isDataAnalysisState(
   return (dataState as DataAnalysisState).analysisItems !== undefined;
 }
 
-async function removeInsight(id: string, store?: any) {
-  const result = await deleteInsight(id);
-  const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
-  const toast = useToaster();
-  if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
-    toast(message, 'success', false);
-
-    if (store) {
-      const countInsights = computed(() => store.getters['insightPanel/countInsights']);
-      const count = countInsights.value - 1;
-      store.dispatch('insightPanel/setCountInsights', count);
-    }
-  } else {
-    toast(message, 'error', true);
-  }
-  // FIXME: delete any reference to this insight from its list of analytical_questions
-}
 
 function jumpToInsightContext(insight: Insight, currentURL: string) {
   const savedURL = insight.url;
@@ -654,7 +634,6 @@ export default {
   getSlideFromPosition,
   getFormattedFilterString,
   getSourceUrlForExport,
-  removeInsight,
   jumpToInsightContext,
   exportDOCX,
   exportPPTX

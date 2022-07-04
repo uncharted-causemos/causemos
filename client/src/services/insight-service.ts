@@ -10,6 +10,10 @@ import {
   isQualitativeViewDataState
 } from '@/utils/insight-util';
 
+import { INSIGHTS } from '@/utils//messages-util';
+import useToaster from '@/services/composables/useToaster';
+import { computed } from 'vue';
+
 // This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
   id?: string[]; // allows searching by multiple IDs
@@ -197,5 +201,24 @@ export const countPublicInsights = async (datacubeId: string, projectId: string)
   publicInsightsSearchFields.context_id = datacubeId;
   const count = await countInsights(publicInsightsSearchFields);
   return count as number;
+};
+
+
+export const removeInsight = async (id: string, store?: any) => {
+  const result = await deleteInsight(id);
+  const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
+  const toast = useToaster();
+  if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
+    toast(message, 'success', false);
+
+    if (store) {
+      const countInsights = computed(() => store.getters['insightPanel/countInsights']);
+      const count = countInsights.value - 1;
+      store.dispatch('insightPanel/setCountInsights', count);
+    }
+  } else {
+    toast(message, 'error', true);
+  }
+  // FIXME: delete any reference to this insight from its list of analytical_questions
 };
 

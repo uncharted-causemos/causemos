@@ -109,7 +109,7 @@ import MessageDisplay from '@/components/widgets/message-display.vue';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
-import { fetchPartialInsights, countPublicInsights } from '@/services/insight-service';
+import { fetchPartialInsights, countPublicInsights, removeInsight } from '@/services/insight-service';
 import {
   AnalyticalQuestion,
   FullInsight,
@@ -325,7 +325,7 @@ export default defineComponent({
 
       const id = insight.id as string;
       // remove the insight from the server
-      await InsightUtil.removeInsight(id, this.store);
+      await removeInsight(id, this.store);
       this.removeCuration(id);
       // refresh the latest list from the server
       this.reFetchInsights();
