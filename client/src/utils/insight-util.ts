@@ -355,7 +355,7 @@ function generateAPACiteDOCX(b: Bibliography): TextRun[] {
   cite.push(new TextRun({
     break: 1,
     size: 24,
-    text: b.author.length > 0 ? `${b.author} ` : ''
+    text: b.author.length > 0 ? b.author : ''
   }));
 
   // date
@@ -402,7 +402,7 @@ async function generateAppendixDOCX(
       children: [
         new TextRun({
           break: 1,
-          text: `${cagInfo?.modelName}`
+          text: cagInfo?.modelName
         })
       ]
     }));
