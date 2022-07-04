@@ -7,7 +7,7 @@ import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-
 import { INSIGHTS } from './messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
-import { AnalyticalQuestion, Insight, FullInsight, InsightMetadata, QualitativeDataState, DataState, ModelsSpaceDataState, DataSpaceDataState, ReviewPosition, SectionWithInsights } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, FullInsight, QualitativeDataState, DataState, ModelsSpaceDataState, DataSpaceDataState, ReviewPosition, SectionWithInsights } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
 import { saveAs } from 'file-saver';
@@ -45,64 +45,6 @@ function getFormattedFilterString(filters: Filters) {
   return `${filterString.length > 0 ? filterString : ''}`;
 }
 
-function parseMetadataDetails (
-  dataState: DataState | null,
-  projectMetadata: any,
-  insightLastUpdate?: number
-): InsightMetadata {
-  const summary: InsightMetadata = {
-    insightLastUpdate: insightLastUpdate ?? Date.now()
-  };
-  if (!dataState || !projectMetadata) return summary;
-
-  // FIXME: Previously, formattedFilterString came from 'dataSearch/filters',
-  //  then was converted to a string by getFormattedFilterString(this.filters).
-  //  Maybe it should instead be loaded from DataSpaceDataState.searchFilters?
-  //  But either way it needs to be stored with the insight if we want to
-  //  display it here.
-  // if (formattedFilterString.length > 0) {
-  //   summary.filters = formattedFilterString;
-  // }
-
-  // FIXME: Previously, analysisName came from 'app/analysisName'
-  //  It needs to be saved with the insight if we want to display it here
-  // if (quantitativeView) {
-  //   if (projectType === ProjectType.Analysis) {
-  //     summary.analysisName = analysisName;
-  //   }
-  // }
-
-  if (isQualitativeViewDataState(dataState)) {
-    // Only show the project's ontology and corpus for CAG analysis insights
-    if (projectMetadata?.ontology) {
-      summary.ontology = projectMetadata.ontology;
-    }
-    if (projectMetadata?.corpus_id) {
-      summary.corpus_id = projectMetadata.corpus_id;
-    }
-
-    summary.cagName = dataState.modelName;
-    if (isModelsSpaceDataState(dataState)) {
-      summary.selectedCAGScenario = dataState.selectedScenarioId ?? undefined;
-      summary.currentEngine = dataState.currentEngine ?? undefined;
-    }
-  } else if (isDataAnalysisState(dataState)) {
-    const datacubes: {
-      datasetName: string,
-      outputName: string,
-      source: string
-    }[] = [];
-    dataState.analysisItems.forEach(({ cachedMetadata }) => {
-      datacubes.push({
-        datasetName: cachedMetadata.datacubeName,
-        outputName: cachedMetadata.featureName,
-        source: cachedMetadata.source
-      });
-    });
-    summary.datacubes = datacubes;
-  }
-  return summary;
-}
 
 export const createDataSpaceDataState = (
   datacubeId: string
@@ -137,13 +79,13 @@ export function isDataSpaceDataState(
   return (dataState as DataSpaceDataState).selectedModelId !== undefined;
 }
 
-function isQualitativeViewDataState(
+export function isQualitativeViewDataState(
   dataState: DataState
 ): dataState is QualitativeDataState {
   return (dataState as QualitativeDataState).modelName !== undefined;
 }
 
-function isModelsSpaceDataState(
+export function isModelsSpaceDataState(
   dataState: QualitativeDataState
 ): dataState is ModelsSpaceDataState {
   return (dataState as ModelsSpaceDataState).selectedScenarioId !== undefined;
@@ -704,19 +646,10 @@ function exportPPTX(
   });
 }
 
-async function countPublicInsights(datacubeId: string, projectId: string) {
-  const publicInsightsSearchFields: InsightFilterFields = {};
-  publicInsightsSearchFields.visibility = 'public';
-  publicInsightsSearchFields.project_id = projectId;
-  publicInsightsSearchFields.context_id = datacubeId;
-  const count = await countInsights(publicInsightsSearchFields);
-  return count as number;
-}
 
 export default {
   instanceOfFullInsight,
   instanceOfQuestion,
-  parseMetadataDetails,
   createEmptyChecklistSection,
   getSlideFromPosition,
   getFormattedFilterString,
@@ -724,6 +657,5 @@ export default {
   removeInsight,
   jumpToInsightContext,
   exportDOCX,
-  exportPPTX,
-  countPublicInsights
+  exportPPTX
 };

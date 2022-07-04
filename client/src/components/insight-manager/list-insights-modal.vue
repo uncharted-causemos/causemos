@@ -109,7 +109,7 @@ import MessageDisplay from '@/components/widgets/message-display.vue';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
-import { fetchPartialInsights } from '@/services/insight-service';
+import { fetchPartialInsights, countPublicInsights } from '@/services/insight-service';
 import {
   AnalyticalQuestion,
   FullInsight,
@@ -316,7 +316,7 @@ export default defineComponent({
         // This component doesn't have access to `this.project`, the following
         //  line would have thrown an error if it was reached.
         // Is this code still used? If so, we need to add a getter for `project`
-        const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, ''); // this.project);
+        const publicInsightCount = await countPublicInsights(datacubeId, ''); // this.project);
         if (publicInsightCount === 1) {
           await unpublishDatacube(datacubeId);
           this.setRefreshDatacubes(true);

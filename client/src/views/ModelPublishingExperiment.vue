@@ -65,9 +65,9 @@ import {
 } from '@/types/Enums';
 import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
-import InsightUtil, { isDataSpaceDataState } from '@/utils/insight-util';
+import { isDataSpaceDataState } from '@/utils/insight-util';
 import useToaster from '@/services/composables/useToaster';
-import { getFirstInsight, InsightFilterFields } from '@/services/insight-service';
+import { getFirstInsight, InsightFilterFields, countPublicInsights } from '@/services/insight-service';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
@@ -183,7 +183,7 @@ export default defineComponent({
       async () => {
         if (metadata.value) {
           const insightStep = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Capture_Insight);
-          const publicInsightCount = await InsightUtil.countPublicInsights(metadata.value.id, projectId.value);
+          const publicInsightCount = await countPublicInsights(metadata.value.id, projectId.value);
           // mark the relevant step as completed based on the availability of at least one public insight
           if (insightStep) { insightStep.completed = publicInsightCount > 0; }
           if (publicInsightCount === 0 && metadata.value.status === DatacubeStatus.Ready && currentView.value === 'modelPublishingExperiment') {

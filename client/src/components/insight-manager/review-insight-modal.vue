@@ -207,7 +207,7 @@ import InsightUtil from '@/utils/insight-util';
 import { Insight, InsightMetadata, FullInsight, DataState, SectionWithInsights, ReviewPosition } from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { addInsight, updateInsight, fetchPartialInsights } from '@/services/insight-service';
+import { addInsight, updateInsight, fetchPartialInsights, extractMetadataDetails } from '@/services/insight-service';
 import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
 import useToaster from '@/services/composables/useToaster';
 import html2canvas from 'html2canvas';
@@ -590,7 +590,7 @@ export default defineComponent({
       const insightLastUpdate = this.isNewModeActive || this.updatedInsight === null
         ? undefined
         : this.updatedInsight.modified_at;
-      const insightSummary = InsightUtil.parseMetadataDetails(
+      const insightSummary = extractMetadataDetails(
         dState,
         this.projectMetadata,
         insightLastUpdate

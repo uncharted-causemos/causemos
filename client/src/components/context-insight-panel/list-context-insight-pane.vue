@@ -97,6 +97,7 @@ import InsightUtil from '@/utils/insight-util';
 
 import router from '@/router';
 import useInsightsData from '@/services/composables/useInsightsData';
+import { countPublicInsights } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
 import MessageDisplay from '@/components/widgets/message-display';
 import OptionsButton from '@/components/widgets/options-button.vue';
@@ -247,7 +248,7 @@ export default {
         // is this the last public insight for the relevant dataube?
         //  if so, unpublish the model datacube
         const datacubeId = insight.context_id[0];
-        const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, this.project);
+        const publicInsightCount = await countPublicInsights(datacubeId, this.project);
         if (publicInsightCount === 1) {
           await unpublishDatacube(datacubeId);
           this.setRefreshDatacubes(true);

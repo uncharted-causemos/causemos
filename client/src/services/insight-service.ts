@@ -1,5 +1,14 @@
 import API from '@/api/api';
-import { Insight } from '@/types/Insight';
+import {
+  Insight,
+  InsightMetadata,
+  DataState
+} from '@/types/Insight';
+import {
+  isDataAnalysisState,
+  isModelsSpaceDataState,
+  isQualitativeViewDataState
+} from '@/utils/insight-util';
 
 // This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
@@ -119,3 +128,74 @@ const _fetchParamsToFilters = (fetchParams: InsightFilterFields) => {
     .map(field => ({ field: field, value: (fetchParams as any)[field] }))
     .filter(f => f.value !== undefined && f.value !== null);
 };
+
+
+export const extractMetadataDetails = (
+  dataState: DataState | null,
+  projectMetadata: any,
+  insightLastUpdate?: number
+): InsightMetadata => {
+  const summary: InsightMetadata = {
+    insightLastUpdate: insightLastUpdate ?? Date.now()
+  };
+  if (!dataState || !projectMetadata) return summary;
+
+  // FIXME: Previously, formattedFilterString came from 'dataSearch/filters',
+  //  then was converted to a string by getFormattedFilterString(this.filters).
+  //  Maybe it should instead be loaded from DataSpaceDataState.searchFilters?
+  //  But either way it needs to be stored with the insight if we want to
+  //  display it here.
+  // if (formattedFilterString.length > 0) {
+  //   summary.filters = formattedFilterString;
+  // }
+
+  // FIXME: Previously, analysisName came from 'app/analysisName'
+  //  It needs to be saved with the insight if we want to display it here
+  // if (quantitativeView) {
+  //   if (projectType === ProjectType.Analysis) {
+  //     summary.analysisName = analysisName;
+  //   }
+  // }
+
+  if (isQualitativeViewDataState(dataState)) {
+    // Only show the project's ontology and corpus for CAG analysis insights
+    if (projectMetadata?.ontology) {
+      summary.ontology = projectMetadata.ontology;
+    }
+    if (projectMetadata?.corpus_id) {
+      summary.corpus_id = projectMetadata.corpus_id;
+    }
+
+    summary.cagName = dataState.modelName;
+    if (isModelsSpaceDataState(dataState)) {
+      summary.selectedCAGScenario = dataState.selectedScenarioId ?? undefined;
+      summary.currentEngine = dataState.currentEngine ?? undefined;
+    }
+  } else if (isDataAnalysisState(dataState)) {
+    const datacubes: {
+      datasetName: string,
+      outputName: string,
+      source: string
+    }[] = [];
+    dataState.analysisItems.forEach(({ cachedMetadata }) => {
+      datacubes.push({
+        datasetName: cachedMetadata.datacubeName,
+        outputName: cachedMetadata.featureName,
+        source: cachedMetadata.source
+      });
+    });
+    summary.datacubes = datacubes;
+  }
+  return summary;
+};
+
+
+export const countPublicInsights = async (datacubeId: string, projectId: string) => {
+  const publicInsightsSearchFields: InsightFilterFields = {};
+  publicInsightsSearchFields.visibility = 'public';
+  publicInsightsSearchFields.project_id = projectId;
+  publicInsightsSearchFields.context_id = datacubeId;
+  const count = await countInsights(publicInsightsSearchFields);
+  return count as number;
+};
+
