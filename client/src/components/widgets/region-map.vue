@@ -149,10 +149,6 @@ export default defineComponent({
         return `${label.split('__').pop()}<br> Rank: ${name}<br> Value: ${+value.toFixed(2)}`;
       }
     },
-    selectedRegionIds: {
-      type: Array,
-      default: () => []
-    },
     disablePanZoom: {
       type: Boolean,
       default: false

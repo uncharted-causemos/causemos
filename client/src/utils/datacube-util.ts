@@ -370,18 +370,23 @@ export const convertRegionalDataToBarData = (
   selectedDataLayerTransparency: DATA_LAYER_TRANSPARENCY
 ): BarData[] => {
   if (regionalData === null) return [];
+  // Pull out the regions at the given admin level
   const adminLevelAsString = adminLevelToString(selectedAdminLevel) as keyof RegionalAggregations;
   const regionLevelData = regionalData[adminLevelAsString];
   const hasValues = hasRegionLevelData(regionLevelData);
   if (regionLevelData === undefined || !hasValues) {
     return [];
   }
+  // Each region has a list of values, one for each timeseries (for example,
+  //  each selected feature). Pull the value for the selected timeseries out of
+  //  each region.
   const data = regionLevelData.map(({ id, values }) => {
     return {
       name: id,
       value: values[timeseriesKey] ?? 0
     };
   });
+  // Calculate normalized value and color based on supplied color scheme
   const extent = d3.extent(data.map(({ value }) => value));
   const scale = d3
     .scaleLinear()
