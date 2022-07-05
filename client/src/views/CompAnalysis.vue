@@ -450,16 +450,11 @@ export default defineComponent({
     //  region-ranking-options-pane.
     const regionRankingWeights = computed(() => {
       const itemStates = regionRankingItemStates.value;
-      const result = {} as {
-        [itemId: string]: { weight: number, name: string}
-      };
-      selectedAnalysisItems.value.forEach(({ itemId, cachedMetadata }) => {
-        result[itemId] = {
-          weight: itemStates[itemId].weight,
-          name: `${cachedMetadata.featureName} - ${cachedMetadata.datacubeName}`
-        };
-      });
-      return result;
+      return selectedAnalysisItems.value.map(({ itemId, cachedMetadata }) => ({
+        itemId,
+        weight: itemStates[itemId].weight,
+        name: `${cachedMetadata.featureName} - ${cachedMetadata.datacubeName}`
+      }));
     });
 
     return {
@@ -582,7 +577,7 @@ export default defineComponent({
       // re-build the transform computing the region ranking data
       this.updateGlobalRegionRankingData();
     },
-    onRegionRankingWeightsUpdated(newWeights: {[key: string]: {name: string; weight: number}}) {
+    onRegionRankingWeightsUpdated(newWeights: {itemId: string; name: string; weight: number}[]) {
       // if new weights are not different from current weights, do nothing
       if (_.isEqual(this.regionRankingWeights, newWeights)) {
         return;
@@ -644,7 +639,8 @@ export default defineComponent({
         // for each region, create a bar
         const regionDatacubesList = globalRegionsMap[key];
         const regionValues = regionDatacubesList.map(item => item.normalizedValue);
-        const weights = Object.keys(this.regionRankingWeights).map(key => this.regionRankingWeights[key].weight / 100);
+        const weights = this.regionRankingWeights
+          .map(({ weight }) => weight / 100);
         const equalWeights = Array(regionValues.length).fill(1 / (regionValues.length)); // sometimes not all datacubes are loaded and thus the map size may not match the regions
         const compositeValue = dotProduct(regionValues, weights.length === regionValues.length ? weights : equalWeights);
         const scaledCompositeValue = compositeValue * this.colorBinCount;
@@ -782,8 +778,7 @@ export default defineComponent({
         return `${d.name},${d.normalizedValue},${d.label.replace(/,/g, ' ')}`;
       }).reverse().join('\r\n');
 
-      const weights = Object.values(this.regionRankingWeights);
-      const weightContent = weights.map(d => {
+      const weightContent = this.regionRankingWeights.map(d => {
         return `${d.name.replace(/,/g, ' ')},${d.weight}`;
       }).join('\r\n');
 
