@@ -1,4 +1,8 @@
-import { AnalysisItem, CachedDatacubeMetadata, DataAnalysisState } from '@/types/Analysis';
+import {
+  AnalysisItem,
+  CachedDatacubeMetadata,
+  DataAnalysisState
+} from '@/types/Analysis';
 import _ from 'lodash';
 import { computed, Ref, ref, watch } from 'vue';
 import { getAnalysisState, saveAnalysisState } from '../analysis-service';
@@ -188,12 +192,12 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     );
     updateAnalysisState({ regionRankingItemStates: newStates });
   };
-  const setRegionRankingWeights = (newWeights: {
-    [itemId: string]: { weight: number };
-  }) => {
+  const setRegionRankingWeights = (
+    newWeights: { itemId: string; weight: number }[]
+  ) => {
     const newStates = _.cloneDeep(regionRankingItemStates.value);
-    Object.keys(newWeights).forEach(itemId => {
-      newStates[itemId].weight = newWeights[itemId].weight;
+    newWeights.forEach(({ itemId, weight }) => {
+      newStates[itemId].weight = weight;
     });
     updateAnalysisState({ regionRankingItemStates: newStates });
   };

@@ -66,7 +66,7 @@
         @click="setEqualWeights">
           Equal Weights
       </button>
-      <tag-slider :sections="regionRankingWeights" @sections-size-updated="$emit('region-ranking-weights-updated', $event)" />
+      <tag-slider :sections="regionRankingWeights" @update-sizes="$emit('region-ranking-weights-updated', $event)" />
     </div>
     <div class="config-sub-group">
       <div class="checkbox">
@@ -150,7 +150,7 @@ export default defineComponent({
       default: false
     },
     regionRankingWeights: {
-      type: Object as PropType<{[key: string]: {name: string; weight: number}}>,
+      type: Array as PropType<{itemId: string, name: string; weight: number}[]>,
       default: () => ({})
     }
   },

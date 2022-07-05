@@ -30,26 +30,32 @@ import _ from 'lodash';
 
 export default defineComponent({
   name: 'TagSlider',
-  emits: ['sections-size-updated'],
+  emits: ['update-sizes'],
   components: {
     TagSection
   },
   props: {
     sections: {
-      type: Object as PropType<{[key: string]: {name: string; weight: number}}>,
-      default: () => ({})
+      type: Object as PropType<{
+        itemId: string;
+        name: string;
+        weight: number
+      }[]>,
+      default: () => ([])
     }
   },
   watch: {
     sections: {
       handler(): void {
-        if (Object.keys(this.sections).length > 0) {
+        if (this.sections.length > 0) {
           // REVIEW: consider merging tags and sizes into one variable
           // first set weights for all tags
-          this.sizes = Object.keys(this.sections).map(key => this.niceFormat(this.sections[key].weight));
+          this.sizes =
+            this.sections.map(({ weight }) => this.niceFormat(weight));
           this.originalSizes = this.sizes;
           // then set tags to trigger vue update
-          this.tags = Object.keys(this.sections).map(key => ({ name: this.sections[key].name, color: 'gray' }));
+          this.tags = this.sections
+            .map(({ name }) => ({ name, color: 'gray' }));
         } else {
           this.tags = [];
           this.originalSizes = [];
@@ -132,10 +138,10 @@ export default defineComponent({
 
       // emit the updated weights/percentages
       const updatedSections = _.cloneDeep(this.sections);
-      Object.keys(updatedSections).forEach((s, indx) => {
-        updatedSections[s].weight = this.sizes[indx];
+      updatedSections.forEach((section, indx) => {
+        section.weight = this.sizes[indx];
       });
-      this.$emit('sections-size-updated', updatedSections);
+      this.$emit('update-sizes', updatedSections);
     }
   }
 });
