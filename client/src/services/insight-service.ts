@@ -49,6 +49,9 @@ export const deleteInsight = async (id: string) => {
 };
 
 
+// ==================================================================
+
+
 export const countInsights = async (fetchParams: InsightFilterFields): Promise<number> => {
   const filters = _fetchParamsToFilters(fetchParams);
   const { data } = await API.get('insights/count', { params: { filters: JSON.stringify(filters) } });
@@ -144,15 +147,6 @@ export const extractMetadataDetails = (
   };
   if (!dataState || !projectMetadata) return summary;
 
-  // FIXME: Previously, formattedFilterString came from 'dataSearch/filters',
-  //  then was converted to a string by getFormattedFilterString(this.filters).
-  //  Maybe it should instead be loaded from DataSpaceDataState.searchFilters?
-  //  But either way it needs to be stored with the insight if we want to
-  //  display it here.
-  // if (formattedFilterString.length > 0) {
-  //   summary.filters = formattedFilterString;
-  // }
-
   // FIXME: Previously, analysisName came from 'app/analysisName'
   //  It needs to be saved with the insight if we want to display it here
   // if (quantitativeView) {
@@ -221,4 +215,3 @@ export const removeInsight = async (id: string, store?: any) => {
   }
   // FIXME: delete any reference to this insight from its list of analytical_questions
 };
-

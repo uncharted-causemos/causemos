@@ -1,8 +1,5 @@
-import FilterValueFormatter from '@/formatters/filter-value-formatter';
-import FilterKeyFormatter from '@/formatters/filter-key-formatter';
-import { Clause, Filters } from '@/types/Filters';
 import _ from 'lodash';
-import { Bibliography, getBibiographyFromCagIds } from '@/services/bibliography-service';
+import { Bibliography } from '@/services/bibliography-service';
 
 import { AnalyticalQuestion, Insight, FullInsight, QualitativeDataState, DataState, ModelsSpaceDataState, DataSpaceDataState, ReviewPosition, SectionWithInsights } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
@@ -31,15 +28,6 @@ function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId
     searchParams.delete(datacubeIdKey);
   }
   return urlPrefix + separator + searchParams.toString();
-}
-
-function getFormattedFilterString(filters: Filters) {
-  const filterString = filters?.clauses?.reduce((a: string, c: Clause) => {
-    return a + `${a.length > 0 ? ' AND ' : ''} ` +
-      `${FilterKeyFormatter(c.field)} ${c.isNot ? 'is not' : 'is'} ` +
-      `${c.values.map(v => FilterValueFormatter(v, null)).join(', ')}`;
-  }, '');
-  return `${filterString.length > 0 ? filterString : ''}`;
 }
 
 
@@ -355,7 +343,7 @@ function generateAPACiteDOCX(b: Bibliography): TextRun[] {
   cite.push(new TextRun({
     break: 1,
     size: 24,
-    text: b.author.length > 0 ? b.author : ''
+    text: (b.author && b.author.length) > 0 ? b.author : ''
   }));
 
   // date
@@ -372,7 +360,7 @@ function generateAPACiteDOCX(b: Bibliography): TextRun[] {
   }));
 
   // publisher name
-  if (b.publisher_name.length > 0) {
+  if (b.publisher_name && b.publisher_name.length > 0) {
     cite.push(new TextRun({
       italics: true,
       size: 24,
@@ -385,12 +373,13 @@ function generateAPACiteDOCX(b: Bibliography): TextRun[] {
 
 async function generateAppendixDOCX(
   insights: Insight[],
-  metadataSummary: string
+  metadataSummary: string,
+  bibliography: any
 ) {
   const cags = getCagMapFromInsights(insights);
   const cagIds = Array.from(cags.keys());
   // FIXME: Not an ideal place to make this call, but generally need consider overhauling this with insights
-  const result = await getBibiographyFromCagIds(cagIds);
+  // const result = await getBibiographyFromCagIds(cagIds);
   const children = <Paragraph[]>[];
 
   cagIds.forEach(id => {
@@ -407,7 +396,7 @@ async function generateAppendixDOCX(
       ]
     }));
 
-    result.data[id].forEach((b: Bibliography) => {
+    bibliography.data[id].forEach((b: Bibliography) => {
       children.push(new Paragraph({
         indent: {
           start: convertInchesToTwip(0.5)
@@ -436,7 +425,7 @@ async function generateAppendixDOCX(
   };
 }
 
-function getCagMapFromInsights (insights: Insight[]) {
+export function getCagMapFromInsights (insights: Insight[]) {
   const cags = insights.reduce((acc, item) => {
     if (
       item.context_id &&
@@ -462,7 +451,8 @@ function getCagMapFromInsights (insights: Insight[]) {
 async function exportDOCX(
   insights: FullInsight[],
   projectMetadata: any,
-  questions?: AnalyticalQuestion[]
+  questions?: AnalyticalQuestion[],
+  bibliography?: any
 ) {
   const allData = questions
     ? parseReportFromQuestionsAndInsights(insights, questions)
@@ -480,7 +470,7 @@ async function exportDOCX(
   }, <ISectionOptions[]>[]);
 
 
-  const bibliographyPages = await generateAppendixDOCX(insights, metadataSummary);
+  const bibliographyPages = await generateAppendixDOCX(insights, metadataSummary, bibliography);
   sections.push(bibliographyPages);
 
   const doc = new Document({
@@ -632,9 +622,9 @@ export default {
   instanceOfQuestion,
   createEmptyChecklistSection,
   getSlideFromPosition,
-  getFormattedFilterString,
   getSourceUrlForExport,
   jumpToInsightContext,
+  getCagMapFromInsights,
   exportDOCX,
   exportPPTX
 };

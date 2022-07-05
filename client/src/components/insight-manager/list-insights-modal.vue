@@ -117,6 +117,7 @@ import {
 } from '@/types/Insight';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import { setDragImage } from '@/utils/dom-util';
+import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
@@ -358,9 +359,13 @@ export default defineComponent({
         });
         insights = this.selectedInsights;
       }
+
+      const cagMap = InsightUtil.getCagMapFromInsights(insights);
+      const bibliographyMap = await getBibiographyFromCagIds([...cagMap.keys()]);
+
       switch (outputFormat) {
         case 'Word':
-          InsightUtil.exportDOCX(insights, this.projectMetadata, questions);
+          InsightUtil.exportDOCX(insights, this.projectMetadata, questions, bibliographyMap);
           break;
         case 'Powerpoint':
           InsightUtil.exportPPTX(insights, this.projectMetadata, questions);
