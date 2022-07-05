@@ -207,7 +207,7 @@ import InsightUtil from '@/utils/insight-util';
 import { Insight, InsightMetadata, FullInsight, DataState, SectionWithInsights, ReviewPosition } from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { addInsight, updateInsight, fetchPartialInsights } from '@/services/insight-service';
+import { addInsight, updateInsight, fetchPartialInsights, extractMetadataDetails, removeInsight } from '@/services/insight-service';
 import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
 import useToaster from '@/services/composables/useToaster';
 import html2canvas from 'html2canvas';
@@ -223,6 +223,7 @@ import { updateQuestion } from '@/services/question-service';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { fetchImageAsBase64 } from '@/services/new-datacube-service';
+import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
@@ -590,7 +591,7 @@ export default defineComponent({
       const insightLastUpdate = this.isNewModeActive || this.updatedInsight === null
         ? undefined
         : this.updatedInsight.modified_at;
-      const insightSummary = InsightUtil.parseMetadataDetails(
+      const insightSummary = extractMetadataDetails(
         dState,
         this.projectMetadata,
         insightLastUpdate
@@ -696,7 +697,8 @@ export default defineComponent({
       // before deletion, find the index of the insight to be removed
       const insightIdToDelete = this.updatedInsight.id;
       // remove the insight from the server
-      InsightUtil.removeInsight(insightIdToDelete, this.store);
+      removeInsight(insightIdToDelete, this.store);
+
       // close editing before deleting insight (this will ensure annotation/crop mode is cleaned up)
       this.cancelInsightEdit();
       // remove this insight from each section that contains it in the store
@@ -896,10 +898,13 @@ export default defineComponent({
       }
       this.hideInsightPanel();
     },
-    exportInsight(exportType: string) {
+    async exportInsight(exportType: string) {
+      const cagMap = InsightUtil.getCagMapFromInsights([this.updatedInsight]);
+      const bibliographyMap = await getBibiographyFromCagIds([...cagMap.keys()]);
+
       switch (exportType) {
         case 'Word':
-          InsightUtil.exportDOCX([this.updatedInsight], this.projectMetadata);
+          InsightUtil.exportDOCX([this.updatedInsight], this.projectMetadata, undefined, bibliographyMap);
           break;
         case 'Powerpoint':
           InsightUtil.exportPPTX([this.updatedInsight], this.projectMetadata);

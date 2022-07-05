@@ -1,5 +1,18 @@
 import API from '@/api/api';
-import { Insight } from '@/types/Insight';
+import {
+  Insight,
+  InsightMetadata,
+  DataState
+} from '@/types/Insight';
+import {
+  isDataAnalysisState,
+  isModelsSpaceDataState,
+  isQualitativeViewDataState
+} from '@/utils/insight-util';
+
+import { INSIGHTS } from '@/utils//messages-util';
+import useToaster from '@/services/composables/useToaster';
+import { computed } from 'vue';
 
 // This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
@@ -34,6 +47,9 @@ export const deleteInsight = async (id: string) => {
   const result = await API.delete(`insights/${id}`);
   return result;
 };
+
+
+// ==================================================================
 
 
 export const countInsights = async (fetchParams: InsightFilterFields): Promise<number> => {
@@ -118,4 +134,84 @@ const _fetchParamsToFilters = (fetchParams: InsightFilterFields) => {
   return Object.keys(fetchParams)
     .map(field => ({ field: field, value: (fetchParams as any)[field] }))
     .filter(f => f.value !== undefined && f.value !== null);
+};
+
+
+export const extractMetadataDetails = (
+  dataState: DataState | null,
+  projectMetadata: any,
+  insightLastUpdate?: number
+): InsightMetadata => {
+  const summary: InsightMetadata = {
+    insightLastUpdate: insightLastUpdate ?? Date.now()
+  };
+  if (!dataState || !projectMetadata) return summary;
+
+  // FIXME: Previously, analysisName came from 'app/analysisName'
+  //  It needs to be saved with the insight if we want to display it here
+  // if (quantitativeView) {
+  //   if (projectType === ProjectType.Analysis) {
+  //     summary.analysisName = analysisName;
+  //   }
+  // }
+
+  if (isQualitativeViewDataState(dataState)) {
+    // Only show the project's ontology and corpus for CAG analysis insights
+    if (projectMetadata?.ontology) {
+      summary.ontology = projectMetadata.ontology;
+    }
+    if (projectMetadata?.corpus_id) {
+      summary.corpus_id = projectMetadata.corpus_id;
+    }
+
+    summary.cagName = dataState.modelName;
+    if (isModelsSpaceDataState(dataState)) {
+      summary.selectedCAGScenario = dataState.selectedScenarioId ?? undefined;
+      summary.currentEngine = dataState.currentEngine ?? undefined;
+    }
+  } else if (isDataAnalysisState(dataState)) {
+    const datacubes: {
+      datasetName: string,
+      outputName: string,
+      source: string
+    }[] = [];
+    dataState.analysisItems.forEach(({ cachedMetadata }) => {
+      datacubes.push({
+        datasetName: cachedMetadata.datacubeName,
+        outputName: cachedMetadata.featureName,
+        source: cachedMetadata.source
+      });
+    });
+    summary.datacubes = datacubes;
+  }
+  return summary;
+};
+
+
+export const countPublicInsights = async (datacubeId: string, projectId: string) => {
+  const publicInsightsSearchFields: InsightFilterFields = {};
+  publicInsightsSearchFields.visibility = 'public';
+  publicInsightsSearchFields.project_id = projectId;
+  publicInsightsSearchFields.context_id = datacubeId;
+  const count = await countInsights(publicInsightsSearchFields);
+  return count as number;
+};
+
+
+export const removeInsight = async (id: string, store?: any) => {
+  const result = await deleteInsight(id);
+  const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
+  const toast = useToaster();
+  if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
+    toast(message, 'success', false);
+
+    if (store) {
+      const countInsights = computed(() => store.getters['insightPanel/countInsights']);
+      const count = countInsights.value - 1;
+      store.dispatch('insightPanel/setCountInsights', count);
+    }
+  } else {
+    toast(message, 'error', true);
+  }
+  // FIXME: delete any reference to this insight from its list of analytical_questions
 };

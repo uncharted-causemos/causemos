@@ -109,7 +109,7 @@ import MessageDisplay from '@/components/widgets/message-display.vue';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
-import { fetchPartialInsights } from '@/services/insight-service';
+import { fetchPartialInsights, countPublicInsights, removeInsight } from '@/services/insight-service';
 import {
   AnalyticalQuestion,
   FullInsight,
@@ -117,6 +117,7 @@ import {
 } from '@/types/Insight';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import { setDragImage } from '@/utils/dom-util';
+import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
@@ -316,7 +317,7 @@ export default defineComponent({
         // This component doesn't have access to `this.project`, the following
         //  line would have thrown an error if it was reached.
         // Is this code still used? If so, we need to add a getter for `project`
-        const publicInsightCount = await InsightUtil.countPublicInsights(datacubeId, ''); // this.project);
+        const publicInsightCount = await countPublicInsights(datacubeId, ''); // this.project);
         if (publicInsightCount === 1) {
           await unpublishDatacube(datacubeId);
           this.setRefreshDatacubes(true);
@@ -325,7 +326,7 @@ export default defineComponent({
 
       const id = insight.id as string;
       // remove the insight from the server
-      await InsightUtil.removeInsight(id, this.store);
+      await removeInsight(id, this.store);
       this.removeCuration(id);
       // refresh the latest list from the server
       this.reFetchInsights();
@@ -358,9 +359,13 @@ export default defineComponent({
         });
         insights = this.selectedInsights;
       }
+
+      const cagMap = InsightUtil.getCagMapFromInsights(insights);
+      const bibliographyMap = await getBibiographyFromCagIds([...cagMap.keys()]);
+
       switch (outputFormat) {
         case 'Word':
-          InsightUtil.exportDOCX(insights, this.projectMetadata, questions);
+          InsightUtil.exportDOCX(insights, this.projectMetadata, questions, bibliographyMap);
           break;
         case 'Powerpoint':
           InsightUtil.exportPPTX(insights, this.projectMetadata, questions);
