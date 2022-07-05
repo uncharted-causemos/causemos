@@ -40,7 +40,7 @@ import { useStore } from 'vuex';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select.vue';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
-import GraphSearch from '@/components/widgets/graph-search.vue';
+import GraphSearch from '@/components/graph/graph-search.vue';
 
 import { QualitativeRenderer } from '@/graphs/qualitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';

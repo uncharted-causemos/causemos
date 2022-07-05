@@ -19,7 +19,7 @@ import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import { D3SelectionINode, D3SelectionIEdge } from '@/graphs/abstract-cag-renderer';
 import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
-import GraphSearch from '@/components/widgets/graph-search.vue';
+import GraphSearch from '@/components/graph/graph-search.vue';
 import { IGraph, moveToLabel } from 'svg-flowgraph';
 import { NodeParameter, EdgeParameter, CAGModelSummary, CAGVisualState } from '@/types/CAG';
 
