@@ -197,8 +197,8 @@
 <script lang="ts">
 import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
-import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
-import DatacubeComparativeOverlayRegion from '@/components/widgets/datacube-comparative-overlay-region.vue';
+import DatacubeComparativeCard from '@/components/comp-analysis/datacube-comparative-card.vue';
+import DatacubeComparativeOverlayRegion from '@/components/comp-analysis/datacube-comparative-overlay-region.vue';
 import DatacubeRegionRankingCard from '@/components/region-ranking/datacube-region-ranking-card.vue';
 import ActionBar from '@/components/data/action-bar.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';

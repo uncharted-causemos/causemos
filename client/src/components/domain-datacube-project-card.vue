@@ -92,9 +92,6 @@ export default defineComponent({
     showWarningModal() {
       this.showModal = true;
     },
-    closeWarning() {
-      this.showModal = false;
-    },
     open() {
       // Reset filters every time we open a new project
       this.clearLastQuery();
