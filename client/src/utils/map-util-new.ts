@@ -247,11 +247,8 @@ export function popupFormatter(
 }
 
 
-// Produce an array representing color stops
-// For example, with [c1, v1, c2, v2, c3], colors will be mapped as following
-// * c1, when value is less than v1
-// * c2, when value is between v1 and v2
-// * c3, when value is greater than or equal to v2
+// Split the domain into bins and return an array of numbers that represents the
+//  boundaries between each bin.
 export function createColorStops(
   domain: [number, number],
   colors: string[],
