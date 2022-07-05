@@ -112,7 +112,7 @@ function isNoneRegionId(regionId: string) {
   return tokens.reduce((prev, cur) => prev && (cur === 'None'), true);
 }
 
-export function removeHiddenRegions(regionalData: RegionalAggregations, selection: AdminRegionSets) {
+export function getActiveRegions(regionalData: RegionalAggregations, selection: AdminRegionSets) {
   const result: RegionalAggregations = {
     country: [],
     admin1: [],

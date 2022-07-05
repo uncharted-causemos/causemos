@@ -3,7 +3,7 @@ import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { MapLegendColor, AnalysisMapStats, MapLayerStats, AnalysisMapRange, AnalysisMapColorOptions } from '@/types/Common';
 import { OutputSpecWithId, OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
-import { removeHiddenRegions, computeRegionalStats, resolveSameMinMaxMapStats, computeRawDataStats, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
+import { getActiveRegions, computeRegionalStats, resolveSameMinMaxMapStats, computeRawDataStats, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
 import { adminLevelToString } from '@/utils/admin-level-util';
 import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';
@@ -61,7 +61,7 @@ export default function useAnalysisMapStats(
       return;
     }
     const adminStats = computeRegionalStats(
-      removeHiddenRegions(regionalData.value, regionSelection.value),
+      getActiveRegions(regionalData.value, regionSelection.value),
       relativeTo.value,
       showPercentChange.value
     );

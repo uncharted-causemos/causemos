@@ -88,7 +88,7 @@ import { openDatacubeDrilldown } from '@/services/analysis-service-new';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';
-import { removeHiddenRegions, popupFormatter } from '@/utils/map-util-new';
+import { getActiveRegions, popupFormatter } from '@/utils/map-util-new';
 
 export default defineComponent({
   name: 'DatacubeComparativeOverlayRegion',
@@ -412,7 +412,7 @@ export default defineComponent({
       } else {
         timeseriesKey = timeseriesToGetRegionDataFrom.id;
       }
-      const selectedRegionalData = removeHiddenRegions(
+      const selectedRegionalData = getActiveRegions(
         regionalData.value,
         selectedRegionIdsAtAllLevels.value
       );

@@ -98,7 +98,7 @@ import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning'
 import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
-import { removeHiddenRegions, popupFormatter } from '@/utils/map-util-new';
+import { getActiveRegions, popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
 import { openDatacubeDrilldown } from '@/services/analysis-service-new';
 import { isDataSpaceDataState } from '@/utils/insight-util';
@@ -330,7 +330,7 @@ export default defineComponent({
       } else {
         timeseriesKey = timeseriesToGetRegionDataFrom.id;
       }
-      const selectedRegionalData = removeHiddenRegions(
+      const selectedRegionalData = getActiveRegions(
         regionalData.value,
         selectedRegionIdsAtAllLevels.value
       );
