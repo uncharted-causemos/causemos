@@ -41,7 +41,17 @@ const getBaseTiles = async (res, url) => {
       res.statusCode = 500;
       res.json({ error: error });
     }
-  }).pipe(res);
+  }).pipe(res).on('end', () => {
+    res.set('Cache-control', 'public, max-age=86400');
+  });
+
+  // request.get(url, (error) => {
+  //   if (error && error.code) {
+  //     Logger.info('Error ' + error.code);
+  //     res.statusCode = 500;
+  //     res.json({ error: error });
+  //   }
+  // }).pipe(res);
 };
 
 /**
@@ -83,6 +93,7 @@ router.get('/styles/default', asyncHandler(async (req, res) => {
     type: 'vector',
     tiles: ['wmmap://vector-tiles/{z}/{x}/{y}']
   };
+  res.set('Cache-control', 'max-age=86400');
   res.json(stylesheet);
 }));
 
