@@ -432,7 +432,10 @@
               <div class="card-maps-box" v-if="breakdownOption !== SPLIT_BY_VARIABLE">
                 <div v-if="outputSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
-                  <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :isContinuos="isContinuousScale" />
+                  <map-legend
+                    :ramp="mapLegendData[0]"
+                    :isContinuous="isContinuousScale"
+                  />
                 </div>
                 <div
                   v-if="mapReady && currentTabView === DatacubeViewMode.Data && regionalData !== null"
@@ -487,7 +490,12 @@
                 </div>
                 <div v-if="outputSpecs.length > 0" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
-                  <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" :isContinuos="isContinuousScale" />
+                  <map-legend
+                    :ramp="mapLegendData.length === 2
+                      ? mapLegendData[1]
+                      : mapLegendData[0]"
+                    :isContinuous="isContinuousScale"
+                  />
                 </div>
               </div>
             </div>

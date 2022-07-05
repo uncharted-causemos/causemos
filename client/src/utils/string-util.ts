@@ -1,4 +1,5 @@
 import numberFormatter from '@/formatters/number-formatter';
+import * as d3 from 'd3';
 import { RuntimeStage } from '@/types/Common';
 
 const cleanTextFragment = (text: string) => {
@@ -42,6 +43,15 @@ const defaultValueFormatter = (v: number) => {
 export const exponentFormatter = (v: number) => {
   if (v === 0) return '0';
   return Math.abs(v) < 0.0001 || Math.abs(v) > 999 ? v.toExponential(2) : rangedFormatter(v);
+};
+
+// null becomes 'missing'
+// values greater than 0 and less than 1 become exponents
+// otherwise round to 2 decimal places
+export const valueFormatter = (v: number | null): string => {
+  if (v === null) return 'missing';
+  if (v === 0 || Math.abs(v) >= 1) return d3.format(',.2f')(v);
+  return exponentFormatter(v);
 };
 
 const rangedFormatter = (v: number) => {

@@ -151,8 +151,8 @@ export interface AnalysisMapFilter {
 
 export interface MapLegendColor {
   color: string;
-  label?: string;
-  decor?: string; // optional label decorator to provide extra text in addition to the label text
+  minLabel: number;
+  maxLabel: number;
 }
 export interface AnalysisMapColorOptions {
   scheme: string[];
