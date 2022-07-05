@@ -671,7 +671,8 @@ import {
   DATA_LAYER,
   SOURCE_LAYERS,
   getMapSourceLayer,
-  popupFormatter
+  popupFormatter,
+  removeHiddenRegions
 } from '@/utils/map-util-new';
 
 import {
@@ -1699,9 +1700,10 @@ export default defineComponent({
       if (breakdownOption.value !== SPLIT_BY_VARIABLE || regionalData.value === null) {
         return result;
       }
+      const selectedRegionalData = removeHiddenRegions(regionalData.value, selectedRegionIdsAtAllLevels.value);
       selectedFeatures.value.forEach(({ name: selectedFeature }) => {
         result[selectedFeature] = convertRegionalDataToBarData(
-          regionalData.value,
+          selectedRegionalData,
           selectedAdminLevel.value,
           selectedFeature,
           numberOfColorBins.value,

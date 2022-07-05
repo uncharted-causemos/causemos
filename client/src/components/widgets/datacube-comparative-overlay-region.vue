@@ -88,7 +88,7 @@ import { openDatacubeDrilldown } from '@/services/analysis-service-new';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';
-import { popupFormatter } from '@/utils/map-util-new';
+import { removeHiddenRegions, popupFormatter } from '@/utils/map-util-new';
 
 export default defineComponent({
   name: 'DatacubeComparativeOverlayRegion',
@@ -394,6 +394,9 @@ export default defineComponent({
 
     // FIXME: See note in datacube-card
     const regionMapData = computed<BarData[]>(() => {
+      if (regionalData.value === null) {
+        return [];
+      }
       const timeseriesToGetRegionDataFrom =
         timeseriesDataForSelection.value[selectedScenarioIndex.value];
       let timeseriesKey = '';
@@ -409,8 +412,12 @@ export default defineComponent({
       } else {
         timeseriesKey = timeseriesToGetRegionDataFrom.id;
       }
-      return convertRegionalDataToBarData(
+      const selectedRegionalData = removeHiddenRegions(
         regionalData.value,
+        selectedRegionIdsAtAllLevels.value
+      );
+      return convertRegionalDataToBarData(
+        selectedRegionalData,
         selectedAdminLevel.value,
         timeseriesKey,
         numberOfColorBins.value,
