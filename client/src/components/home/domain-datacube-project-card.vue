@@ -47,10 +47,10 @@ import { mapActions } from 'vuex';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
-import MessageDisplay from './widgets/message-display.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import { DatacubeFamily } from '@/types/Common';
-import SmallIconButton from './widgets/small-icon-button.vue';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 
 /**
  * A card-styled widget to view project summary
@@ -91,9 +91,6 @@ export default defineComponent({
     },
     showWarningModal() {
       this.showModal = true;
-    },
-    closeWarning() {
-      this.showModal = false;
     },
     open() {
       // Reset filters every time we open a new project

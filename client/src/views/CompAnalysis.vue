@@ -197,15 +197,15 @@
 <script lang="ts">
 import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
-import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
-import DatacubeComparativeOverlayRegion from '@/components/widgets/datacube-comparative-overlay-region.vue';
-import DatacubeRegionRankingCard from '@/components/widgets/datacube-region-ranking-card.vue';
+import DatacubeComparativeCard from '@/components/comp-analysis/datacube-comparative-card.vue';
+import DatacubeComparativeOverlayRegion from '@/components/comp-analysis/datacube-comparative-overlay-region.vue';
+import DatacubeRegionRankingCard from '@/components/region-ranking/datacube-region-ranking-card.vue';
 import ActionBar from '@/components/data/action-bar.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
-import DatacubeRegionRankingCompositeCard from '@/components/widgets/datacube-region-ranking-composite-card.vue';
+import DatacubeRegionRankingCompositeCard from '@/components/region-ranking/datacube-region-ranking-composite-card.vue';
 import _ from 'lodash';
 import { Insight } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
