@@ -73,7 +73,7 @@ import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 
 export default defineComponent({
-  name: 'ModelPublishingExperiment',
+  name: 'ModelPublisher',
   components: {
     AnalyticalQuestionsAndInsightsPanel,
     DatacubeCard,
@@ -186,7 +186,7 @@ export default defineComponent({
           const publicInsightCount = await countPublicInsights(metadata.value.id, projectId.value);
           // mark the relevant step as completed based on the availability of at least one public insight
           if (insightStep) { insightStep.completed = publicInsightCount > 0; }
-          if (publicInsightCount === 0 && metadata.value.status === DatacubeStatus.Ready && currentView.value === 'modelPublishingExperiment') {
+          if (publicInsightCount === 0 && metadata.value.status === DatacubeStatus.Ready && currentView.value === 'modelPublisher') {
             toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', 'error', false);
           }
         }
@@ -366,7 +366,7 @@ export default defineComponent({
     $route: {
       handler(/* newValue, oldValue */) {
         // NOTE:  this is only valid when the route is focused on the 'model publishing experiment' space
-        if (this.$route.name === 'modelPublishingExperiment' && this.$route.query) {
+        if (this.$route.name === 'modelPublisher' && this.$route.query) {
           // check for 'insight_id' first to apply insight, then if not found, then 'datacube_id'
           // const insight_id = this.$route.query.insight_id as any;
           const datacubeid = this.$route.query.datacube_id as any;
@@ -415,7 +415,7 @@ export default defineComponent({
           this.toast('An existing published insight was found!\nLoading default configurations...', 'success', false);
         }
       } else {
-        if (this.metadata?.status === DatacubeStatus.Ready && this.currentView === 'modelPublishingExperiment') {
+        if (this.metadata?.status === DatacubeStatus.Ready && this.currentView === 'modelPublisher') {
           this.toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', 'error', false);
         }
       }

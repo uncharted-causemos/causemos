@@ -137,7 +137,7 @@ import { isDataSpaceDataState } from '@/utils/insight-util';
 
 
 export default defineComponent({
-  name: 'NodeCompExperiment',
+  name: 'NodeDataDrilldown',
   components: {
     Modal,
     DatacubeCard,

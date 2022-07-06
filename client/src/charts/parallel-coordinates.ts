@@ -12,7 +12,7 @@ import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
 import { DatacubeGeoAttributeVariableType, DatacubeGenericAttributeVariableType, ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
 import { isCategoricalAxis, isGeoParameter } from '@/utils/datacube-util';
-import { getHoverIdFromValue } from '@/utils/chart-util';
+import { safeD3StringId } from '@/utils/string-util';
 import { colorFromIndex } from '@/utils/colors-util';
 
 //
@@ -1147,7 +1147,7 @@ function renderParallelCoordinates(
               const xLoc = segmentData.x + ((max - min) / 2);
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverId = getHoverIdFromValue(hoverValue);
+              const hoverId = safeD3StringId(hoverValue);
 
               // Specify where to put label of text
               gElement.append('text')
@@ -1165,7 +1165,7 @@ function renderParallelCoordinates(
               const hoverValue: string = segmentData.start.toString();
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverId = getHoverIdFromValue(hoverValue);
+              const hoverId = safeD3StringId(hoverValue);
 
               // Select text by id and then remove
               gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
@@ -1274,7 +1274,7 @@ function renderParallelCoordinates(
               const xLoc = x + ((max - min) / 2);
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverId = getHoverIdFromValue(hoverValue);
+              const hoverId = safeD3StringId(hoverValue);
 
               // Specify where to put label of text
               gElement.append('text')
@@ -1294,7 +1294,7 @@ function renderParallelCoordinates(
               const hoverValue: string = d3.select(this).attr('start').toString();
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
-              const hoverId = getHoverIdFromValue(hoverValue);
+              const hoverId = safeD3StringId(hoverValue);
 
               // Select text by id and then remove
               gElement.select('#h' + '-' + hoverId).remove(); // Remove text location

@@ -1,10 +1,9 @@
 import * as d3 from 'd3';
-import { chartValueFormatter } from '@/utils/string-util';
+import { chartValueFormatter, safeD3StringId } from '@/utils/string-util';
 import { D3GElementSelection, D3Selection } from '@/types/D3';
 import { BarData } from '@/types/BarChart';
 import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-import { getHoverIdFromValue } from '@/utils/chart-util';
 import _ from 'lodash';
 
 const X_AXIS_HEIGHT = 20;
@@ -148,7 +147,7 @@ function renderHoverTooltips(
       .attr('visibility', 'hidden')
       .classed('markerAndTooltip', true)
       .style('pointer-events', 'none')
-      .attr('id', getHoverIdFromValue(bar.label)) // assign id to control hover state externally
+      .attr('id', safeD3StringId(bar.label)) // assign id to control hover state externally
     ;
     //
     // draw rectangle highlight on top of the hovered bar
@@ -350,7 +349,7 @@ function updateHover(selection: D3Selection, barLabel: string) {
   // special case: if empty barLabel is provided, then hide all bars
   selection.selectAll('.markerAndTooltip').attr('visibility', 'hidden');
   if (barLabel !== '') {
-    selection.select('#' + getHoverIdFromValue(barLabel))
+    selection.select('#' + safeD3StringId(barLabel))
       .attr('visibility', 'visible')
       .style('opacity', '1');
   }

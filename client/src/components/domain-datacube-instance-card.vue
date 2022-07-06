@@ -257,7 +257,7 @@ export default defineComponent({
       this.clearLastQuery();
       // redirect
       this.$router.push({
-        name: 'modelPublishingExperiment',
+        name: 'modelPublisher',
         query: { datacube_id: id },
         params: {
           project: this.project,

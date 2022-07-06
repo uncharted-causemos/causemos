@@ -189,7 +189,7 @@ export default defineComponent({
 
     selectData () {
       this.$router.push({
-        name: 'nodeCompExperiment',
+        name: 'nodeDataDrilldown',
         params: {
           currentCAG: this.currentCAG,
           indicatorId: this.selectedDatacubes[0].id,

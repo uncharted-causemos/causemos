@@ -62,7 +62,7 @@ import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/u
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 
 export default defineComponent({
-  name: 'IndicatorPublishingExperiment',
+  name: 'IndicatorPublisher',
   components: {
     DatacubeCard,
     DatacubeDescription
@@ -203,7 +203,7 @@ export default defineComponent({
     $route: {
       handler(/* newValue, oldValue */) {
         // NOTE:  this is only valid when the route is focused on the 'indicator publishing experiment' space
-        if (this.$route.name === 'indicatorPublishingExperiment' && this.$route.query) {
+        if (this.$route.name === 'indicatorPublisher' && this.$route.query) {
           const datacubeid = this.$route.query.datacube_id as any;
           if (datacubeid !== undefined) {
             // update selected datacube id to start datacube card update
