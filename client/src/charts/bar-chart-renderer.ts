@@ -1,10 +1,9 @@
 import * as d3 from 'd3';
-import { chartValueFormatter } from '@/utils/string-util';
+import { chartValueFormatter, safeD3StringId } from '@/utils/string-util';
 import { D3GElementSelection, D3Selection } from '@/types/D3';
 import { BarData } from '@/types/BarChart';
 import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-import { safeD3StringId } from '@/utils/string-util';
 import _ from 'lodash';
 
 const X_AXIS_HEIGHT = 20;
