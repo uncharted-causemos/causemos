@@ -135,7 +135,7 @@ export default function useQuestionsData() {
     //  family instance's page.
     const target_view: string[] = projectType === ProjectType.Analysis
       ? [currentView, 'overview', 'dataComparative']
-      : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+      : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher'];
     const newSection: AnalyticalQuestion = {
       question: title,
       description: '',

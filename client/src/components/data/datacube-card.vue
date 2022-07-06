@@ -1984,8 +1984,8 @@ export default defineComponent({
   watch: {
     $route: {
       handler(/* newValue, oldValue */) {
-        // NOTE:  this is only valid when the route is focused on the 'data' or 'modelPublishingExperiment' spaces
-        if ((this.$route.name === 'data' || this.$route.name === 'modelPublishingExperiment') && this.$route.query) {
+        // NOTE:  this is only valid when the route is focused on the 'data' or 'modelPublisher' spaces
+        if ((this.$route.name === 'data' || this.$route.name === 'modelPublisher') && this.$route.query) {
           const insight_id = this.$route.query.insight_id as any;
           if (insight_id !== undefined) {
             this.updateStateFromInsight(insight_id);
