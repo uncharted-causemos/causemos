@@ -42,6 +42,8 @@ const getBaseTiles = async (res, url) => {
       res.json({ error: error });
     }
   }).pipe(res).on('end', () => {
+    res.removeHeader('expires');
+    res.removeHeader('pragma');
     res.set('Cache-control', 'public, max-age=86400');
   });
 
@@ -93,6 +95,9 @@ router.get('/styles/default', asyncHandler(async (req, res) => {
     type: 'vector',
     tiles: ['wmmap://vector-tiles/{z}/{x}/{y}']
   };
+
+  res.removeHeader('expires');
+  res.removeHeader('pragma');
   res.set('Cache-control', 'max-age=86400');
   res.json(stylesheet);
 }));
