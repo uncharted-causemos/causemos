@@ -97,6 +97,17 @@ export const isValidUrl = (value: string) => {
   return url.protocol === 'http:' || url.protocol === 'https:';
 };
 
+// Remove dots/spaces from the string since it will conflict with the d3 selected later on
+export const safeD3StringId = (hoverValue: string) => {
+  let hoverValueNoDots = hoverValue.split('.').join('');
+  hoverValueNoDots = hoverValueNoDots.split(',').join('');
+  hoverValueNoDots = hoverValueNoDots.split('[').join('');
+  hoverValueNoDots = hoverValueNoDots.split(']').join('');
+  hoverValueNoDots = hoverValueNoDots.split('-').join('');
+  hoverValueNoDots = hoverValueNoDots.split('\'').join('');
+  return hoverValueNoDots.split(' ').join('');
+};
+
 export default {
   cleanTextFragment,
   truncateString,
@@ -108,3 +119,4 @@ export default {
   runtimeFormatter,
   isValidUrl
 };
+
