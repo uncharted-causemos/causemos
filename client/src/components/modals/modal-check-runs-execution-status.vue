@@ -1,73 +1,72 @@
 <template>
   <modal @close="close()">
     <template #header>
-      <div class="modal-header">
-        <h4><i class="fa fa-fw fa-book" /> Model Execution Status</h4>
-      </div>
+      <h4>Model Execution Status</h4>
     </template>
     <template #body>
       <table class="table">
-        <tr>
-          <td class="params-header">ID</td>
-          <td class="params-header">status</td>
-          <td
-            v-for="(dim, idx) in potentialRunsParameters"
-            :key="idx">
-            <div class="params-header">{{ dim }}</div>
-          </td>
-          <td class="params-header">time requested</td>
-          <td class="params-header">execution logs</td>
-          <td class="params-header">processing logs</td>
-          <td class="params-header">retry</td>
-          <td class="params-header">delete</td>
-        </tr>
-        <tr
-          v-for="(run, sidx) in potentialRuns"
-          :key="run.run_id">
-          <td class="params-value">{{ sidx }}</td>
-          <td class="params-value">
-            <div class="status-contents">
-              <div
-                class="run-status"
-                :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
+        <thead>
+          <th>Status</th>
+          <th v-for="(dim, idx) in potentialRunsParameters" :key="idx">
+            <div>{{ dim }}</div>
+          </th>
+          <th>Requested</th>
+          <th></th>
+        </thead>
+        <tbody>
+          <tr v-for="run in potentialRuns" :key="run.run_id">
+            <td class="status-contents">
+              <i
+                class="fa fa-fw"
+                :class="
+                  run.status === ModelRunStatus.Submitted
+                    ? 'fa-spinner fa-spin'
+                    : 'fa-times-circle'
+                "
+                :style="{
+                  color:
+                    run.status === ModelRunStatus.ExecutionFailed
+                      ? 'red'
+                      : 'blue'
+                }"
+              />
+              <span>{{
+                run.status === ModelRunStatus.Submitted ? 'Running' : 'Failed'
+              }}</span>
+              <small-text-button
+                v-if="canRetryDelete(run)"
+                :label="'Retry'"
+                @click="retryRun(run.run_id)"
               >
-                <i
-                  v-if="run['status'] === ModelRunStatus.Submitted"
-                  class="fa fa-fw fa-spinner"
-                />
-                <i
-                  v-else
-                  class="fa fa-fw fa-times-circle"
-                />
-              </div>
-              <label>{{ run.status }}</label>
-            </div>
-          </td>
-          <td v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))"
-            :key="idx"
-            class="params-value">
-            <label>{{ run[dimName] }}</label>
-          </td>
-          <td class="params-value">
-            {{ timeSinceExecutionFormatted(run) }}
-          </td>
-          <td class="params-value">
-            <a :href=dojoExecutionLink(run.run_id)>Dojo Logs</a>
-          </td>
-          <td class="params-value">
-            <button
-              type="button"
-              class="btn btn-xs btn-primary"
-              :disabled="!run.flow_id"
-              @click="viewCausemosLogs(run.flow_id)">Causemos Logs</button>
-          </td>
-          <td class="params-value">
-            <i v-if="canRetryDelete(run)" class="fa fa-repeat" @click="retryRun(run.run_id)"/>
-          </td>
-          <td class="params-value">
-            <i v-if="canRetryDelete(run)" class="fa fa-trash" @click="deleteRun(run.run_id)"/>
-          </td>
-        </tr>
+                <i class="fa fa-repeat" />
+              </small-text-button>
+            </td>
+            <td
+              v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))"
+              :key="idx"
+            >
+              <label>{{ run[dimName] }}</label>
+            </td>
+            <td>
+              {{ timeSinceExecutionFormatted(run) }}
+            </td>
+            <td>
+              <router-link :to="dojoExecutionLink(run.run_id)">
+                <small-text-button :label="'See execution logs'" />
+              </router-link>
+              <br />
+              <small-text-button
+                :label="'See processing logs'"
+                :disabled="!run.flow_id"
+                @click="viewCausemosLogs(run.flow_id)"
+              />
+              <br />
+              <small-icon-button v-if="canRetryDelete(run)">
+                <i class="fa fa-trash" @click="deleteRun(run.run_id)"/>
+              </small-icon-button>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </template>
     <template #footer>
@@ -93,6 +92,8 @@ import _ from 'lodash';
 import { ModelRunStatus } from '@/types/Enums';
 import DurationFormatter from '@/formatters/duration-formatter';
 import { ModelRun } from '@/types/ModelRun';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
+import SmallTextButton from '../widgets/small-text-button.vue';
 
 const OmittedColumns = ['run_id', 'created_at', 'status', 'is_default_run', 'flow_id'];
 
@@ -102,7 +103,9 @@ const OmittedColumns = ['run_id', 'created_at', 'status', 'is_default_run', 'flo
 export default defineComponent({
   name: 'ModalCheckRunsExecutionStatus',
   components: {
-    Modal
+    Modal,
+    SmallIconButton,
+    SmallTextButton
   },
   emits: [
     'close',
@@ -188,37 +191,13 @@ export default defineComponent({
   }
 }
 
-.status-contents {
-  display: flex;
-  label {
-    margin: auto 0;
-  }
+table {
+  border-collapse: separate;
+  border-spacing: 10px;
 }
 
-.run-status {
-  font-size: $font-size-large;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 3px;
+.status-contents > *:not(:first-child) {
+  margin-left: 5px;
 }
 
-.params-header {
-  font-weight: bold;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  text-align: center;
-}
-
-.params-value {
-  padding-left: 1rem;
-  padding-right: 1rem;
-  align-content: center;
-  text-align: center;
-  .fa-repeat, .fa-trash {
-    cursor: pointer;
-  }
-}
 </style>
