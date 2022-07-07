@@ -45,8 +45,11 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import '~styles/variables';
+@import '~styles/overrides';
 // HACK: this is a hardcoded dependency on the Bootstrap .btn styles
 $buttonHeight: 37px;
+// The styles in this component need to be kept in sync with the
+//  `.btn-call-to-action` styles.
 // This component adds a diamond behind the button to create the arrow effect
 // The diagonal of the diamond should be the height of the button
 // 2 ^ (-1 / 2) = 0.70710678118
@@ -79,7 +82,7 @@ $diamondSideLength: 0.70710678118 * $buttonHeight;
     z-index: -1;
     width: $diamondSideLength;
     height: $diamondSideLength;
-    border-radius: 0px 4px 0px 4px;
+    border-radius: 0px 2px 0px 2px;
     background: $call-to-action-color;
     cursor: pointer;
     // Rotate square into a diamond
@@ -87,6 +90,10 @@ $diamondSideLength: 0.70710678118 * $buttonHeight;
     top: ($buttonHeight - $diamondSideLength) / 2;
     // Attach it to the right side
     right: 0;
+  }
+
+  &:hover::before {
+    background-color: lighten($call-to-action-color, 5%);
   }
 
   &.pointing-left {
@@ -98,12 +105,5 @@ $diamondSideLength: 0.70710678118 * $buttonHeight;
       left: 0;
     }
   }
-}
-
-button,
-button:hover,
-button:active,
-button:focus {
-  color: white;
 }
 </style>
