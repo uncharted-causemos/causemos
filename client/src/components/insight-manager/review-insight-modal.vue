@@ -28,7 +28,7 @@
         <button type="button" class="btn " @click="cropImage">
           Crop
         </button>
-        <button class="btn  btn-extra-margin" @click="cancelInsightEdit">
+        <button class="btn btn-extra-margin" @click="cancelInsightEdit">
           Cancel
         </button>
         <button
@@ -43,7 +43,7 @@
       </div>
       <button
         v-if="updatedInsight !== null"
-        class="btn  btn-delete"
+        class="btn btn-delete"
         :disabled="!isInsight"
         @click="removeInsight"
       >

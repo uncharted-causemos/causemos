@@ -5,7 +5,7 @@
         <header>
           <slot name="datacube-model-header" />
           <button
-            class="btn  breakdown-button"
+            class="btn breakdown-button"
             :onClick="() => isBreakdownPaneOpen = !isBreakdownPaneOpen"
           >
             {{ isBreakdownPaneOpen === false ? 'Show' : 'Hide' }} Breakdown
@@ -97,10 +97,10 @@
             <div v-if="dateModelParam">
               <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
                 <input class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
-                <a class="btn  date-picker-buttons" title="toggle" data-toggle>
+                <a class="btn date-picker-buttons" title="toggle" data-toggle>
                     <i class="fa fa-calendar"></i>
                 </a>
-                <a class="btn  date-picker-buttons" title="clear" data-clear>
+                <a class="btn date-picker-buttons" title="clear" data-clear>
                     <i class="fa fa-close"></i>
                 </a>
               </div>

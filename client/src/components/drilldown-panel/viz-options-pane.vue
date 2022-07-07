@@ -124,7 +124,7 @@
         />
         <button
           type="button"
-          class="btn  dropdown-button"
+          class="btn dropdown-button"
           @click="reverseColorScale">
             <i class="fa fa-arrows-h" />
             Reverse Scale

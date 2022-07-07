@@ -78,7 +78,7 @@
     />
     <button
       type="button"
-      class="btn  pane-footer"
+      class="btn pane-footer"
       @click="openInsightsExplorer">
         <i class="fa fa-fw fa-star fa-lg" />
         Review All Insights
