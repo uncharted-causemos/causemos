@@ -395,6 +395,12 @@ export default defineComponent({
     });
 
     const timestampFormatter = (timestamp: number) => {
+      if (
+        selectedBreakdownOption.value === TemporalAggregationLevel.Year &&
+        selectedTemporalResolution.value === TemporalResolutionOption.Year
+      ) {
+        return 'each selected year';
+      }
       return formatTimestamp(
         timestamp,
         selectedBreakdownOption.value,
