@@ -4,7 +4,10 @@
       <h4>Model Execution Status</h4>
     </template>
     <template #body>
-      <table class="table">
+      <div v-if="potentialRuns.length === 0" class="empty-state">
+        <span>There are no pending runs.</span>
+      </div>
+      <table class="table" v-else>
         <thead>
           <th>Status</th>
           <th v-for="(dim, idx) in potentialRunsParameters" :key="idx">
@@ -211,6 +214,16 @@ export default defineComponent({
     height: 300px;
     overflow-y: scroll;
   }
+}
+
+.empty-state {
+  // FIXME: replace with $tinted-background;
+  background: ghostwhite;
+  width: 500px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 table {
