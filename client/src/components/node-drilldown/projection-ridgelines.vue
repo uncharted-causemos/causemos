@@ -118,7 +118,7 @@
         Add new scenario
       </button>
       <button
-        class="btn "
+        class="btn"
         style="align-self: flex-start; margin-top: 10px"
         @click="switchToHistoricalOnlyScenario"
       >

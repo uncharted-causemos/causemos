@@ -158,7 +158,7 @@
             </button>
             <button
               v-else
-              class="btn "
+              class="btn"
               @click="showModelExecutionStatus()"
             >
               Check execution status
@@ -196,7 +196,7 @@
                   </div>
                   Relative to
                   <button
-                    class="btn "
+                    class="btn"
                     @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
                     :style="{ color: baselineMetadata?.color ?? 'black' }"
                   >
@@ -226,7 +226,7 @@
                   </dropdown-control>
                 </div>
                 <button
-                  class="btn "
+                  class="btn"
                   :class="{ 'viz-option-invalid': someVizOptionsInvalid }"
                   title="Toggle visualization options"
                   :onClick="() => activeVizOptionsTab = (activeVizOptionsTab === null ? 'vizoptions' : null)"

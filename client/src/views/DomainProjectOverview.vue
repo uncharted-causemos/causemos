@@ -82,7 +82,7 @@
               <div>
                 <button
                   type="button"
-                  class="btn "
+                  class="btn"
                   @click="toggleSortingDropdownDatacubeInstances"
                 ><span class="lbl">Sort by</span> - {{ selectedSortingOptionDatacubeInstances }}
                   <i class="fa fa-caret-down" />

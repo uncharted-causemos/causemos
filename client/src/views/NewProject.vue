@@ -46,7 +46,7 @@
     <div class="controls">
       <button
         type="button"
-        class="btn "
+        class="btn"
         @click="cancel"
       >Cancel
       </button>

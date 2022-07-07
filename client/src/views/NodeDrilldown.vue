@@ -37,7 +37,7 @@
               </button>
               <button
                 v-tooltip="'Collapse node'"
-                class="btn "
+                class="btn"
                 @click="collapseNode"
               >
                 <i class="fa fa-fw fa-compress" />
@@ -182,7 +182,7 @@
                 selectedScenarioId === null &&
                 selectedNodeScenarioData !== null
               "
-              class="btn "
+              class="btn"
               style="align-self: flex-start"
               @click="switchToBaselineScenario"
             >View scenarios</button>

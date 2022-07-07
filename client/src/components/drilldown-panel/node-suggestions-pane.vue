@@ -70,7 +70,7 @@
             </div>
             <button
               type="button"
-              class="btn "
+              class="btn"
               @click="openKBExplorer(relationshipGroup.key)"
             >            <i class="fa fa-fw fa-search" />
               Explore All ({{ relationshipGroup.count }})</button>

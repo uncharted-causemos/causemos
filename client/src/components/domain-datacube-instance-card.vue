@@ -73,7 +73,7 @@
               {{domain}}
             </option>
           </select>
-          <button type="button" class="btn " style="padding: 2px 4px" @click="addDomain">Add</button>
+          <button type="button" class="btn" style="padding: 2px 4px" @click="addDomain">Add</button>
         </div>
         <div v-if="datacubeDomains" style="display: flex; flex-wrap: wrap">
           <div v-for="domain in datacubeDomains" :key="domain">

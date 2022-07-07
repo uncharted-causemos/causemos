@@ -9,7 +9,7 @@
     <div
       v-if="cancelFn"
       style="font-size: 2rem">
-      <button class="btn " @click="cancelFn">Cancel</button>
+      <button class="btn" @click="cancelFn">Cancel</button>
     </div>
   </div>
 </template>
