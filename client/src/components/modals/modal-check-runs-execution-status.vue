@@ -18,27 +18,18 @@
             <td class="status-contents">
               <i
                 class="fa fa-fw"
-                :class="
-                  run.status === ModelRunStatus.Submitted
-                    ? 'fa-spinner fa-spin'
-                    : 'fa-times-circle'
-                "
-                :style="{
-                  color:
-                    run.status === ModelRunStatus.ExecutionFailed
-                      ? 'red'
-                      : 'blue'
-                }"
+                :class="getStatusIcon(run)"
+                :style="{ color: getStatusColor(run) }"
               />
-              <span>{{
-                run.status === ModelRunStatus.Submitted ? 'Running' : 'Failed'
-              }}</span>
+              <span>{{ getStatusString(run) }}</span>
               <small-text-button
                 v-if="canRetryDelete(run)"
                 :label="'Retry'"
                 @click="retryRun(run.run_id)"
               >
-                <i class="fa fa-repeat" />
+                <template #leading>
+                  <i class="fa fa-repeat" />
+                </template>
               </small-text-button>
             </td>
             <td
@@ -61,9 +52,15 @@
                 @click="viewCausemosLogs(run.flow_id)"
               />
               <br />
-              <small-icon-button v-if="canRetryDelete(run)">
-                <i class="fa fa-trash" @click="deleteRun(run.run_id)"/>
-              </small-icon-button>
+              <small-text-button
+                v-if="canRetryDelete(run)"
+                :label="'Delete'"
+                @click="deleteRun(run.run_id)"
+              >
+                <template #leading>
+                  <i class="fa fa-trash" />
+                </template>
+              </small-text-button>
             </td>
           </tr>
         </tbody>
@@ -92,7 +89,6 @@ import _ from 'lodash';
 import { ModelRunStatus } from '@/types/Enums';
 import DurationFormatter from '@/formatters/duration-formatter';
 import { ModelRun } from '@/types/ModelRun';
-import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import SmallTextButton from '../widgets/small-text-button.vue';
 
 const OmittedColumns = ['run_id', 'created_at', 'status', 'is_default_run', 'flow_id'];
@@ -104,7 +100,6 @@ export default defineComponent({
   name: 'ModalCheckRunsExecutionStatus',
   components: {
     Modal,
-    SmallIconButton,
     SmallTextButton
   },
   emits: [
@@ -145,6 +140,33 @@ export default defineComponent({
       return run.status === ModelRunStatus.ExecutionFailed ||
         run.status === ModelRunStatus.ProcessingFailed ||
         (run.created_at && this.timeSinceExecution(run) > 1000 * 60 * 60 * 48);
+    },
+    getStatusString(run: { status: ModelRunStatus }) {
+      switch (run.status) {
+        case ModelRunStatus.ExecutionFailed:
+        case ModelRunStatus.ProcessingFailed: return 'Failed';
+        case ModelRunStatus.Submitted:
+        case ModelRunStatus.Processing: return 'Running';
+        default: return run.status;
+      }
+    },
+    getStatusColor(run: { status: ModelRunStatus }) {
+      switch (run.status) {
+        case ModelRunStatus.ExecutionFailed:
+        case ModelRunStatus.ProcessingFailed: return 'red';
+        case ModelRunStatus.Submitted:
+        case ModelRunStatus.Processing: return 'blue';
+        default: return 'grey';
+      }
+    },
+    getStatusIcon(run: { status: ModelRunStatus }) {
+      switch (run.status) {
+        case ModelRunStatus.ExecutionFailed:
+        case ModelRunStatus.ProcessingFailed: return 'fa-times-circle';
+        case ModelRunStatus.Submitted:
+        case ModelRunStatus.Processing: return 'fa-spin fa-spinner';
+        default: return 'fa-ellipsis';
+      }
     },
     close() {
       this.$emit('close');
