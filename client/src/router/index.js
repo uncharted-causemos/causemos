@@ -14,9 +14,9 @@ import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
 import DatacubeDrilldown from '@/views/DatacubeDrilldown';
 import CompAnalysis from '@/views/CompAnalysis';
-import ModelPublishingExperiment from '@/views/ModelPublishingExperiment';
-import IndicatorPublishingExperiment from '@/views/IndicatorPublishingExperiment';
-import NodeCompExperiment from '@/views/NodeCompExperiment';
+import ModelPublisher from '@/views/ModelPublisher';
+import IndicatorPublisher from '@/views/IndicatorPublisher';
+import NodeDataDrilldown from '@/views/NodeDataDrilldown';
 import NodeDrilldown from '@/views/NodeDrilldown';
 import NodeDataExplorer from '@/views/NodeDataExplorer.vue';
 import PrefectFlowLogs from '@/views/PrefectFlowLogs.vue';
@@ -87,13 +87,13 @@ const routes = [
   },
   {
     path: '/:projectType/:project/model-publishing-experiment',
-    name: 'modelPublishingExperiment',
-    component: ModelPublishingExperiment
+    name: 'modelPublisher',
+    component: ModelPublisher
   },
   {
     path: '/:projectType/:project/indicator-publishing-experiment',
-    name: 'indicatorPublishingExperiment',
-    component: IndicatorPublishingExperiment
+    name: 'indicatorPublisher',
+    component: IndicatorPublisher
   },
   {
     path: '/graph-experiment',
@@ -117,8 +117,8 @@ const routes = [
   },
   {
     path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/indicator/:indicatorId',
-    name: 'nodeCompExperiment',
-    component: NodeCompExperiment
+    name: 'nodeDataDrilldown',
+    component: NodeDataDrilldown
   },
   {
     path: '/:projectType/:project/quantitative/:currentCAG/:nodeId',

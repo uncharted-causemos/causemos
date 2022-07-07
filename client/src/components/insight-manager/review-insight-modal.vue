@@ -613,7 +613,7 @@ export default defineComponent({
       // an insight created during model publication should be listed either
       //  in the full list of insights,
       //  or as a context specific insight when opening the page of the corresponding model family instance
-      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher'];
     }
     /*,
     annotation(): any {

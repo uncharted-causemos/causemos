@@ -81,7 +81,10 @@
           :disable-pan-zoom="true"
           @click-region="$emit('map-click-region', $event)" />
         <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
-          <map-legend :ramp="mapLegendData[0]" :label-position="{ top: false, right: true }" :isContinuos="false" />
+          <map-legend
+            :ramp="mapLegendData[0]"
+            :isContinuous="false"
+          />
         </div>
       </div>
     </main>
@@ -825,7 +828,6 @@ main {
 .card-maps-legend-container {
   display: flex;
   flex-direction: column;
-  width: 25%;
   .top-padding {
     height: 19px;
   }
@@ -833,7 +835,7 @@ main {
 
 .card-maps-box {
   display: flex;
-  width: 180px;
+  width: 220px;
   height: 100%;
   padding: 5px;
 }

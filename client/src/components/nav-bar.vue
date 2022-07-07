@@ -114,11 +114,11 @@ export default defineComponent({
       newDomainProject: [],
       domainDatacubeOverview: [datacubeProjectItem.value],
       datasetOverview: [datacubeProjectItem.value],
-      modelPublishingExperiment: [
+      modelPublisher: [
         datacubeProjectItem.value,
         { icon: 'fa-cube', route: null, text: 'Instance' }
       ],
-      indicatorPublishingExperiment: [
+      indicatorPublisher: [
         datacubeProjectItem.value,
         { icon: 'fa-cube', route: null, text: 'Indicator' }
       ],
@@ -139,7 +139,7 @@ export default defineComponent({
         qualitativeAnalysisItem.value,
         { icon: 'fa-circle', route: null, text: 'Node drilldown' }
       ]
-      // 'nodeCompExperiment',
+      // 'nodeDataDrilldown',
       // 'nodeDataExplorer',
       // 'kbExplorer',
       // 'dataExplorer',

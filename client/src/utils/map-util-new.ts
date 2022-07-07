@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
-import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
+import { AnalysisMapStats, MapLayerStats, MapLegendColor } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
 import { isSelectionEmpty, isRegionSelected, stringToAdminLevel, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { getBboxFromRegionIds } from '@/services/geo-service';
@@ -245,3 +245,59 @@ export function popupFormatter(
     .filter(x => x !== null)
     .join('<br>');
 }
+
+
+// Split the domain into bins and return an array of numbers that represents the
+//  boundaries between each bin.
+export function createColorStops(
+  domain: [number, number],
+  colors: string[],
+  scaleFn: Function
+): number[] {
+  const scale = scaleFn()
+    .domain(domain)
+    .range([0, 1]);
+  const step = 1 / colors.length;
+  const stops = colors.map((_, index) => {
+    // Add a stop for the minimum value that this colour will be used for.
+    return scale.invert(index * step);
+  });
+  // Add a stop for the maximum value (also ensures that we don't get a
+  //  rounding error)
+  stops.push(domain[1]);
+  return stops;
+}
+
+export function createDivergingColorStops(
+  domain: [number, number],
+  colors: string[],
+  scaleFn: Function
+): number[] {
+  const absoluteMax = Math.max(...domain.map(Math.abs));
+  const scale = scaleFn()
+    .domain([-absoluteMax, 0, absoluteMax])
+    .range([-1, 0, 1]);
+  const step = 2 / colors.length;
+  const stops = colors.map((_, index) => {
+    // Add a stop for the minimum value that this colour will be used for.
+    return scale.invert(-1 + (index * step));
+  });
+  // Add a stop for the maximum value (also ensures that we don't get a
+  //  rounding error)
+  stops.push(absoluteMax);
+  return stops;
+}
+
+export const createMapLegendData = (
+  domain: [number, number],
+  colors: string[],
+  scaleFn: Function,
+  isDiverging: boolean
+): MapLegendColor[] => {
+  const stops = isDiverging
+    ? createDivergingColorStops(domain, colors, scaleFn)
+    : createColorStops(domain, colors, scaleFn);
+  return colors.map((color, index) => {
+    return { color, minLabel: stops[index], maxLabel: stops[index + 1] };
+  });
+};

@@ -29,7 +29,7 @@
         type="range"
         style="margin-bottom: 1rem;"
         min="2"
-        :max="maxNumberOfColorBins"
+        :max="7"
         step="1"
         ref="number-of-color-bins-slider"
         :value="numberOfColorBins"
@@ -95,7 +95,7 @@
 </template>
 
 <script lang="ts">
-import { COLOR, COLOR_PALETTE_SIZE, COLOR_SCHEME, isDiscreteScale } from '@/utils/colors-util';
+import { COLOR_PALETTE_SIZE, COLOR_SCHEME, isDiscreteScale } from '@/utils/colors-util';
 import { defineComponent, PropType, ref } from 'vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import * as d3 from 'd3';
@@ -183,11 +183,6 @@ export default defineComponent({
     },
     selectedColorScheme() {
       this.renderColorScale();
-    }
-  },
-  computed: {
-    maxNumberOfColorBins(): number {
-      return COLOR.PRIORITIZATION.length;
     }
   },
   mounted() {

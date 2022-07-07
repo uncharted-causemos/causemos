@@ -3,9 +3,8 @@ import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { MapLegendColor, AnalysisMapStats, MapLayerStats, AnalysisMapRange, AnalysisMapColorOptions } from '@/types/Common';
 import { OutputSpecWithId, OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
-import { getActiveRegions, computeRegionalStats, resolveSameMinMaxMapStats, computeRawDataStats, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
+import { getActiveRegions, computeRegionalStats, resolveSameMinMaxMapStats, computeRawDataStats, computeGridLayerStats, DATA_LAYER, createMapLegendData } from '@/utils/map-util-new';
 import { adminLevelToString } from '@/utils/admin-level-util';
-import { createMapLegendData } from '@/utils/map-util';
 import { calculateDiff } from '@/utils/value-util';
 import { getOutputStats } from '@/services/outputdata-service';
 import { SpatialAggregationLevel } from '@/types/Enums';
@@ -90,7 +89,7 @@ export default function useAnalysisMapStats(
       const baseline = getStats(adminStatsResolved.baseline, selectedAdminLevel.value);
       const difference = getStats(adminStatsResolved.difference, selectedAdminLevel.value);
       adminMapLayerLegendData.value = (baseline && difference) ? [
-        createMapLegendData([baseline.min, baseline.max], colorOptions.value.relativeToSchemes[0], colorOptions.value.scaleFn),
+        createMapLegendData([baseline.min, baseline.max], colorOptions.value.relativeToSchemes[0], colorOptions.value.scaleFn, false),
         createMapLegendData([difference.min, difference.max], colorOptions.value.relativeToSchemes[1], colorOptions.value.scaleFn, true)
       ] : [];
     } else {
@@ -160,7 +159,7 @@ export default function useAnalysisMapStats(
       const baseline = gridLayerStats.value?.baseline[String(mapCurZoom.value)];
       const difference = gridLayerStats.value?.difference?.diff;
       gridMapLayerLegendData.value = (baseline && difference) ? [
-        createMapLegendData([baseline.min, baseline.max], colorOptions.value.relativeToSchemes[0], colorOptions.value.scaleFn),
+        createMapLegendData([baseline.min, baseline.max], colorOptions.value.relativeToSchemes[0], colorOptions.value.scaleFn, false),
         createMapLegendData([difference.min, difference.max], colorOptions.value.relativeToSchemes[1], colorOptions.value.scaleFn, true)
       ] : [];
     } else {

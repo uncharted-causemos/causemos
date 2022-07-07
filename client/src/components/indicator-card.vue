@@ -182,7 +182,7 @@ export default defineComponent({
     dateFormatter,
     edit(id: string) {
       this.$router.push({
-        name: 'indicatorPublishingExperiment',
+        name: 'indicatorPublisher',
         query: { datacube_id: id },
         params: {
           project: this.project,

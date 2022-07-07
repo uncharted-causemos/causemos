@@ -990,7 +990,7 @@ export default defineComponent({
     },
     openDataDrilldown() {
       this.$router.push({
-        name: 'nodeCompExperiment',
+        name: 'nodeDataDrilldown',
         params: {
           currentCAG: this.currentCAG,
           indicatorId: this.indicatorId,

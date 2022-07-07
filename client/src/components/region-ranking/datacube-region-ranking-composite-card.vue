@@ -27,7 +27,7 @@
           :disable-pan-zoom="true"
           @click-region="$emit('map-click-region', $event)"/>
         <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
-          <map-legend :ramp="mapLegendData" :label-position="{ top: false, right: true }" :isContinuos="false" />
+          <map-legend :ramp="mapLegendData" :isContinuous="false" />
         </div>
       </div>
     </main>
@@ -104,12 +104,13 @@ export default defineComponent({
       ],
       () => {
         if (selectedColorScheme.value.length > 0) {
-          const data: MapLegendColor[] = [];
-          selectedColorScheme.value.forEach((colorStop, index) => {
-            data.push({ color: colorStop, label: (index + 1).toString() });
-          });
-          data[0].decor = '0'; // FIXME: this should be set properly to align the composite mini-map with the other maps
-          mapLegendData.value = data;
+          mapLegendData.value = selectedColorScheme.value.map(
+            (color, index) => ({
+              color,
+              minLabel: index,
+              maxLabel: index + 1
+            })
+          );
         }
       },
       { immediate: true }
@@ -164,16 +165,10 @@ export default defineComponent({
 .datacube-region-ranking-composite-container {
   background: $background-light-1;
   border-radius: 3px;
-  height: 160px;
   display: flex;
   flex-direction: column;
   border: 1px solid $background-light-3;
   padding: 1rem;
-}
-
-.bar-chart {
-  flex: 1;
-  min-width: 0;
 }
 
 main {
@@ -220,7 +215,7 @@ main {
 
 .card-maps-box {
   display: flex;
-  width: 180px;
+  width: 220px;
   height: 100%;
   padding: 5px;
 }
@@ -228,7 +223,6 @@ main {
 .card-maps-legend-container {
   display: flex;
   flex-direction: column;
-  width: 25%;
   align-items: baseline;
   .top-padding {
     height: 19px;

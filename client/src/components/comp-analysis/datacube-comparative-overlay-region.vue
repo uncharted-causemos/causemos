@@ -40,7 +40,10 @@
           :disable-pan-zoom="true"
         />
         <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
-          <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" :isContinuos="isContinuousScale" />
+          <map-legend
+            :ramp="mapLegendData[0]"
+            :isContinuous="isContinuousScale"
+          />
         </div>
       </div>
       <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
