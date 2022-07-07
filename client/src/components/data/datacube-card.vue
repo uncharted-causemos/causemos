@@ -386,8 +386,12 @@
                 , or choose 'Split by none'.
               </p>
               <div class="card-maps-box" v-if="breakdownOption === SPLIT_BY_VARIABLE">
-                <div v-if="selectedFeatures.length > 0" class="card-maps-legend-container">
-                  <span v-if="selectedFeatures.length > 1" class="top-padding"></span>
+              <!-- FIXME: there must be a better way to do this -->
+                <div
+                  v-if="selectedFeatures.length > 0"
+                  class="card-maps-legend-container"
+                  :class="selectedFeatures.length > 1 ? 'top-padding' : ''"
+                >
                 </div>
                 <div
                   v-if="regionalData !== null"
@@ -425,13 +429,20 @@
                   <!-- Empty div to reduce jumpiness when the maps are loading -->
                   <div class="card-map" />
                 </div>
-                <div v-if="selectedFeatures.length > 0" class="card-maps-legend-container">
-                  <span v-if="selectedFeatures.length > 1" class="top-padding"></span>
+                <!-- FIXME: there must be a better way to do this -->
+                <div
+                  v-if="selectedFeatures.length > 0"
+                  class="card-maps-legend-container"
+                  :class="selectedFeatures.length > 1 ? 'top-padding' : ''"
+                >
                 </div>
               </div>
               <div class="card-maps-box" v-if="breakdownOption !== SPLIT_BY_VARIABLE">
-                <div v-if="outputSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
-                  <span v-if="outputSpecs.length > 1" class="top-padding"></span>
+                <div
+                  v-if="outputSpecs.length > 0 && mapLegendData.length === 2"
+                  class="card-maps-legend-container"
+                  :class="outputSpecs.length > 1 ? 'top-padding right-margin' : ''"
+                >
                   <map-legend
                     :ramp="mapLegendData[0]"
                     :isContinuous="isContinuousScale"
@@ -488,8 +499,11 @@
                   <!-- Empty div to reduce jumpiness when the maps are loading -->
                   <div class="card-map" />
                 </div>
-                <div v-if="outputSpecs.length > 0" class="card-maps-legend-container">
-                  <span v-if="outputSpecs.length > 1" class="top-padding"></span>
+                <div
+                  v-if="outputSpecs.length > 0"
+                  class="card-maps-legend-container"
+                  :class="outputSpecs.length > 1 ? 'top-padding left-margin' : ''"
+                >
                   <map-legend
                     :ramp="mapLegendData.length === 2
                       ? mapLegendData[1]
@@ -2335,11 +2349,17 @@ $marginSize: 5px;
 }
 
 .card-maps-legend-container {
-    display: flex;
-    flex-direction: column;
-    .top-padding {
-      height: 19px;
-    }
+  display: flex;
+  flex-direction: column;
+  &.top-padding {
+    padding-top: 19px;
+  }
+  &.right-margin {
+    margin-right: 2px;
+  }
+  &.left-margin {
+    margin-left: 2px;
+  }
 }
 
 .card-map-container {

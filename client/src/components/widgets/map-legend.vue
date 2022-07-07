@@ -98,8 +98,6 @@ $font-size: 12px;
   position: relative;
   height: 100%;
   width: 12ch;
-  // FIXME: parents should control whitespace between children
-  margin-left: 2px;
 }
 svg {
   position: absolute;
