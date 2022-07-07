@@ -1,27 +1,28 @@
 <template>
-  <div class="map-legend-container" v-bind:class="{ 'label-right': labelPosition.right, 'label-top': labelPosition.top }">
+  <div class="map-legend-container">
+    <svg ref="colorRamp"></svg>
     <div class="label-container">
-      <div
-        v-for="d in ramp"
-        :key="d.color"
+      <span
+        v-if="ramp.length > 0"
         class="color-label"
       >
-          <span>{{d.label}}</span>
-          <span>{{d.decor}}</span>
-          <!-- Theses are dummy duplicates which are not visible to just make the width to auto fit the text since original labels are absolute positioned -->
-          <div class="flex-col" style="height: 0; visibility: hidden;">
-            <span style="position: relative;">{{d.label}}</span>
-            <span style="position: relative;">{{d.decor}}</span>
-          </div>
-      </div>
+        {{formatter(ramp[0].minLabel)}}
+      </span>
+      <span
+        v-for="bin in ramp"
+        :key="bin.color"
+        class="color-label"
+      >
+        {{formatter(bin.maxLabel)}}
+      </span>
     </div>
-    <svg class="color-ramp" ref="colorRamp" />
   </div>
 </template>
 <script lang="ts">
 import * as d3 from 'd3';
 import { defineComponent, PropType } from 'vue';
 import { MapLegendColor } from '@/types/Common';
+import { exponentFormatter, valueFormatter } from '@/utils/string-util';
 import { ramp } from '@/utils/colors-util';
 
 export default defineComponent({
@@ -32,11 +33,7 @@ export default defineComponent({
       type: Array as PropType<MapLegendColor[]>,
       default: []
     },
-    labelPosition: {
-      type: Object as PropType<{ top: boolean; right: boolean }>,
-      default: { top: true, right: true }
-    },
-    isContinuos: {
+    isContinuous: {
       type: Boolean,
       default: true
     }
@@ -45,10 +42,7 @@ export default defineComponent({
     ramp() {
       this.refresh();
     },
-    labelPosition() {
-      this.refresh();
-    },
-    isContinuos() {
+    isContinuous() {
       this.refresh();
     }
   },
@@ -67,7 +61,7 @@ export default defineComponent({
         .attr('preserveAspectRatio', 'none')
         .style('display', 'block');
 
-      if (this.isContinuos) {
+      if (this.isContinuous) {
         refSelection.append('image')
           .attr('width', '100%')
           .attr('height', '100%')
@@ -84,52 +78,46 @@ export default defineComponent({
           .attr('width', 1)
           .attr('height', 1 - (margin * 2));
       }
+    },
+    formatter(value: number) {
+      const result = valueFormatter(value);
+      if (result.length > 12) {
+        return exponentFormatter(value);
+      }
+      return result;
     }
   }
 });
 
 </script>
 <style lang="scss" scoped>
+$font-size: 12px;
 .map-legend-container {
+  font-size: $font-size;
+  line-height: $font-size;
   position: relative;
   height: 100%;
-  display: flex;
-  padding: 0 1px;
-  &.label-right {
-    flex-direction: row-reverse;
-  }
+  width: 12ch;
 }
 svg {
-  width: 17px;
+  position: absolute;
+  right: 0;
+  top: $font-size / 2;
+  width: 50%;
+  height: calc(100% - #{$font-size});
 }
 .label-container {
   position: relative;
   display: flex;
   flex-direction: column-reverse;
-  padding: 0 2px;
+  justify-content: space-between;
+  height: 100%;
 }
 .color-label {
-  flex-grow: 1;
-  font-size: 10px;
   position: relative;
-
-  span {
-    position: absolute;
-    right: 0px;
-    &:first-child {
-      top: -7px;
-    }
-    &:nth-child(2) {
-      bottom: -7px;
-    }
-  }
-}
-.label-right {
-  .color-label {
-    span {
-      left: 0px;
-    }
-  }
+  text-align: right;
+  background: white;
+  padding: 2px 0;
 }
 
 </style>
