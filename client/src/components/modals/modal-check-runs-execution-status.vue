@@ -45,9 +45,11 @@
               {{ timeSinceExecutionFormatted(run) }}
             </td>
             <td>
-              <router-link :to="dojoExecutionLink(run.run_id)">
-                <small-text-button :label="'See execution logs'" />
-              </router-link>
+              <a :href="dojoExecutionLink(run.run_id)">
+                <small-text-button
+                  :label="'See execution logs'"
+                />
+              </a>
               <br />
               <small-text-button
                 :label="'See processing logs'"
