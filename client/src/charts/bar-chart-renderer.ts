@@ -86,7 +86,7 @@ function renderBarChart(
     .attr('y', function(d) { return yScale(d.value); })
     .attr('width', xScale.bandwidth())
     .attr('height', function(d) { return height - yScale(d.value) - X_AXIS_HEIGHT; })
-    .style('fill', function(d) { return d.color ?? 'skyblue'; })
+    .style('fill', function(d) { return d.color ?? 'grey'; })
   ;
 
   renderHoverTooltips(
@@ -223,14 +223,14 @@ function renderHoverTooltips(
     tooltip
       .append('text')
       .attr('transform', translate(TOOLTIP_PADDING, yPosition))
-      .style('fill', 'blue')
+      .style('fill', 'black')
       .style('font-weight', 'bold')
       .text(barName);
     tooltip
       .append('text')
       .attr('transform', translate(adaptiveWidth - TOOLTIP_PADDING, yPosition))
       .style('text-anchor', 'end')
-      .style('fill', 'blue')
+      .style('fill', 'black')
       .text(valueFormatter(bar.value));
     //
     // Render the ranking () in the tooltip
@@ -239,14 +239,14 @@ function renderHoverTooltips(
     tooltip
       .append('text')
       .attr('transform', translate(TOOLTIP_PADDING, yPosition2))
-      .style('fill', 'blue')
+      .style('fill', 'black')
       .style('font-weight', 'bold')
       .text('Ranking');
     tooltip
       .append('text')
       .attr('transform', translate(adaptiveWidth - TOOLTIP_PADDING, yPosition2))
       .style('text-anchor', 'end')
-      .style('fill', 'blue')
+      .style('fill', 'black')
       .text(bar.name);
     // Hover hitbox
     selection

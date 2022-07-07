@@ -13,7 +13,7 @@
       <button
         v-tooltip.top-center="'Add to CAG'"
         type="button"
-        class="btn btn-sm btn-primary btn-call-for-action"
+        class="btn btn-sm btn-call-to-action"
         @click="addToCAG"
       >
         <i class="fa fa-fw fa-plus-circle" />

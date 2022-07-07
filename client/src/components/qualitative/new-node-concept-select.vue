@@ -510,7 +510,7 @@ export default defineComponent({
   &.focused {
     background: #EAEBEC; // `dropdown-control` hover colour
 
-    // Blue bar along the left edge
+    // Bar along the left edge
     &::after {
       content: '';
       position: absolute;

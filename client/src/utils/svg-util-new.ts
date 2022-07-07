@@ -5,6 +5,7 @@
 import * as d3 from 'd3';
 import { D3Selection } from '@/types/D3';
 import { translate } from './svg-util';
+import { SELECTED_COLOR, SELECTED_COLOR_DARK } from './colors-util';
 
 const BUTTON_PADDING = 10;
 
@@ -20,8 +21,8 @@ const STYLES = {
     textColor: 'black'
   },
   [SVG_BUTTON_STYLES.PRIMARY]: {
-    fill: '#2255BB',
-    hoverFill: '#4c7fe6',
+    fill: SELECTED_COLOR_DARK,
+    hoverFill: SELECTED_COLOR,
     textColor: 'white'
   }
 };

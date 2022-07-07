@@ -7,7 +7,7 @@
     <button
       v-tooltip.top-center="text"
       type="button"
-      class="btn btn-call-for-action"
+      class="btn btn-call-to-action"
       :class="{ 'pointing-left': isPointingLeft }"
       :disabled="disabled"
     >
@@ -80,7 +80,7 @@ $diamondSideLength: 0.70710678118 * $buttonHeight;
     width: $diamondSideLength;
     height: $diamondSideLength;
     border-radius: 0px 4px 0px 4px;
-    background: $call-for-action-gradient;
+    background: $call-to-action-color;
     cursor: pointer;
     // Rotate square into a diamond
     transform: rotate(45deg);

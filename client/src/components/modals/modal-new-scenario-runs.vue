@@ -49,7 +49,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           :disabled="potentialRuns.length == 0"
           @click.stop="startExecution()">
             Start Execution

@@ -7,7 +7,7 @@
     <button
       v-tooltip.top-center="selectLabel"
       type="button"
-      class="btn btn-primary btn-call-for-action"
+      class="btn btn-call-to-action"
       :disabled="selectedSearchItems.length < 1"
       @click="onSelection"
     >

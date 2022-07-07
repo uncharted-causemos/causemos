@@ -19,11 +19,15 @@ $positive: #0072b2;
 // Negative values
 $negative: #d55e00;
 
-// Selection color
-$selected: #56b3e9;
-$selected-dark: #1673aa;
+$call-to-action-color: hsl(260, 39%, 43%);
 
-$call-for-action-gradient: linear-gradient(180deg, #255DCC 0%, #2255BB 100%);
+// Selection color
+// If you'rechanging these, you likely want to change their JavaScript
+//  equivalents in colors-util.ts
+$selected: #8858e9;
+$selected-dark: $call-to-action-color;
+
+$tinted-background: ghostwhite;
 
 // Color used for button links
 $link-color: $selected-dark;

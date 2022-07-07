@@ -33,12 +33,12 @@
         This CAG contains <strong>{{ nodeCount }}</strong> node{{ nodeCount !== 1 ? 's' : '' }}
         and <strong>{{ edgeCount }}</strong> edge{{ edgeCount !== 1 ? 's' : '' }}.
       </p>
-      <button class="btn btn-default" @click="onDownload">
+      <button class="btn " @click="onDownload">
         Download CAG as JSON
       </button>
       <button
         v-if="isExperimentDownloadVisible"
-        class="btn btn-default"
+        class="btn "
         @click="onDownloadExperiment"
       >
         Download experiment as JSON

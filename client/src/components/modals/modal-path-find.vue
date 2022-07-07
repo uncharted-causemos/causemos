@@ -48,7 +48,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           :disabled="!hasSelection"
           @click.stop="addSuggestedPaths()">Add to CAG
         </button>

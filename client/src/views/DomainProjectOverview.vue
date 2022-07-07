@@ -13,13 +13,12 @@
             type="text"
             class="model-attribute-desc"
           />
-          <span
-            class="edit-model-desc"
+          <small-icon-button
             @click="updateDesc"
             v-tooltip.top-center="'Edit description'"
           >
             <i class="fa fa-edit" />
-          </span>
+          </small-icon-button>
         </div>
         <a
           :href="maintainerWebsite"
@@ -53,7 +52,7 @@
         <div class="instance-list-header">
           <div class="column-title">Instances
             <button
-              class="btn btn-primary btn-call-for-action"
+              class="btn btn-call-to-action"
               disabled>
               <i class="fa fa-plus-circle" />
               Register New
@@ -83,7 +82,7 @@
               <div>
                 <button
                   type="button"
-                  class="btn btn-default"
+                  class="btn "
                   @click="toggleSortingDropdownDatacubeInstances"
                 ><span class="lbl">Sort by</span> - {{ selectedSortingOptionDatacubeInstances }}
                   <i class="fa fa-caret-down" />
@@ -134,6 +133,7 @@ import ListContextInsightPane from '@/components/context-insight-panel/list-cont
 import domainProjectService from '@/services/domain-project-service';
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { unpublishDatacubeInstance, getDatacubeStatusInfo } from '@/utils/datacube-util';
 
 import { DatacubeStatus } from '@/types/Enums';
@@ -144,7 +144,8 @@ export default {
     DomainDatacubeInstanceCard,
     ListContextInsightPane,
     DropdownControl,
-    MessageDisplay
+    MessageDisplay,
+    SmallIconButton
   },
   data: () => ({
     datacubeInstances: [],
@@ -349,12 +350,6 @@ header {
   .description {
     max-width: 90ch;
   }
-}
-
-.edit-model-desc {
-  font-size: medium;
-  color: blue;
-  cursor: pointer;
 }
 
 .model-attribute-desc {

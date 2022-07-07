@@ -89,7 +89,7 @@
               {{domain}}
             </option>
           </select>
-          <button type="button" class="btn btn-default" style="padding: 2px 4px" @click="addDomain">Add</button>
+          <button type="button" class="btn " style="padding: 2px 4px" @click="addDomain">Add</button>
         </div>
         <div v-if="editedDataset.domains" style="display: flex; flex-wrap: wrap">
           <div v-for="domain in editedDataset.domains" :key="domain">
@@ -139,7 +139,7 @@
               <div>
                 <button
                   type="button"
-                  class="btn btn-default"
+                  class="btn "
                   @click="toggleSortingDropdown"
                 ><span class="lbl">Sort by</span> - {{ selectedSortingOption }}
                   <i class="fa fa-caret-down" />

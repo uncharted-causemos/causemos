@@ -89,7 +89,7 @@
       <button
         v-tooltip.top-center="'Set visualization options'"
         type="button"
-        class="btn btn-primary btn-call-for-action"
+        class="btn btn-call-to-action"
         :disabled="!allowEditing"
         @click="edit(datacube.id)"
       >
@@ -101,7 +101,7 @@
       <button
         v-tooltip.top-center="'Save changes'"
         type="button"
-        class="btn btn-primary btn-call-for-action"
+        class="btn btn-call-to-action"
         @click="saveMetaChanges"
       >
         Save

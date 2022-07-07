@@ -10,7 +10,7 @@
           v-tooltip.top-center="selectLabel"
           :disabled="stepsBeforeCanConfirm.length > 0"
           type="button"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           @click="attemptToSaveUpdatedNodeParameter"
         >
           <i class="fa fa-fw fa-plus-circle" />
@@ -63,7 +63,7 @@
             </button>
             <button
               type="button"
-              class="btn btn-primary btn-call-for-action"
+              class="btn btn-call-to-action"
               @click.stop="saveUpdatedNodeParameter">
                 Select
             </button>

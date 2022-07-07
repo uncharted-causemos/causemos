@@ -25,7 +25,7 @@
       <button
         v-tooltip.top-center="'Fix factors in bulk'"
         type="button"
-        class="btn btn-sm btn-primary btn-call-for-action"
+        class="btn btn-sm btn-call-to-action"
         @click="updateGrounding"
       >
         Fix it

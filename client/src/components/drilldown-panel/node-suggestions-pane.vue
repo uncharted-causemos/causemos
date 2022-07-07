@@ -16,7 +16,7 @@
       <button
         v-tooltip.top-center="'Add to CAG'"
         type="button"
-        class="btn btn-sm btn-primary btn-call-for-action"
+        class="btn btn-sm btn-call-to-action"
         @click="addToCAG"
       >
         <i class="fa fa-fw fa-plus-circle" />
@@ -70,7 +70,7 @@
             </div>
             <button
               type="button"
-              class="btn btn-default"
+              class="btn "
               @click="openKBExplorer(relationshipGroup.key)"
             >            <i class="fa fa-fw fa-search" />
               Explore All ({{ relationshipGroup.count }})</button>

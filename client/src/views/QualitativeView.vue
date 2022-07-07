@@ -55,7 +55,7 @@
               Time scale of interest:
               <strong>{{ selectedTimeScaleLabel}} </strong>
               <button
-                class="btn btn-sm btn-default"
+                class="btn btn-sm "
                 disabled
                 @click="showModalTimeScale = true"
               >

@@ -6,7 +6,7 @@
         <button
           v-tooltip.top-center="'Search Data Cubes'"
           type="button"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           @click="openDataExplorer"
         >
           <i class="fa fa-fw fa-search" />Search Data Cubes

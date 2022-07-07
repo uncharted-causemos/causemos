@@ -10,7 +10,7 @@
     <button
       v-if="allowNewInsights"
       type="button"
-      class="btn btn-primary btn-call-for-action"
+      class="btn btn-call-to-action"
       @click.stop="newInsight">
         <i class="fa fa-fw fa-star fa-lg" />
         New Insight
@@ -78,7 +78,7 @@
     />
     <button
       type="button"
-      class="btn btn-default pane-footer"
+      class="btn  pane-footer"
       @click="openInsightsExplorer">
         <i class="fa fa-fw fa-star fa-lg" />
         Review All Insights

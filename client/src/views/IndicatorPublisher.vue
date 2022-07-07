@@ -24,7 +24,7 @@
                 -->
               </div>
               <button
-                class="btn btn-primary btn-call-for-action"
+                class="btn btn-call-to-action"
                 style="border-radius: 2px; margin-left: 1rem; align-self: center; height: 75%;"
                 v-tooltip.top-center="'Save the visualization options for this indicator'"
                 @click="updateIndicator()">

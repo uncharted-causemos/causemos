@@ -1,6 +1,5 @@
 import * as d3 from 'd3';
 import { translate } from '@/utils/svg-util';
-import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
@@ -29,8 +28,9 @@ const DASHED_LINE = {
   opacity: 0.5
 };
 
+const SELECTED_TIMESTAMP_COLOR = '#9C9D9E';
 const SELECTED_TIMESTAMP_WIDTH = 1;
-const SELECTABLE_TIMESTAMP_OPACITY = 0.5;
+const SELECTABLE_TIMESTAMP_OPACITY = 1;
 
 export default function(
   selection: D3Selection,
@@ -182,7 +182,7 @@ function generateMarkerAndTooltip(
     .append('rect')
     .attr('width', SELECTED_TIMESTAMP_WIDTH)
     .attr('height', markerHeight)
-    .attr('fill', SELECTED_COLOR)
+    .attr('fill', SELECTED_TIMESTAMP_COLOR)
     .attr('fill-opacity', SELECTABLE_TIMESTAMP_OPACITY);
 
   const notchSideLength = Math.sqrt(
@@ -222,7 +222,7 @@ function generateMarkerAndTooltip(
     .append('text')
     .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, markerHeight - TOOLTIP_PADDING))
     .style('text-anchor', 'end')
-    .style('fill', SELECTED_COLOR_DARK);
+    .style('fill', SELECTED_TIMESTAMP_COLOR);
 
   const updateMarkerAndTooltip = (
     timestamp: number,
@@ -441,7 +441,7 @@ function generateSelectedTimestampLine(
 
   selectedTimestampGroup
     .append('line')
-    .attr('stroke', SELECTED_COLOR_DARK)
+    .attr('stroke', SELECTED_TIMESTAMP_COLOR)
     .attr('stroke-width', SELECTED_TIMESTAMP_WIDTH)
     .attr('stroke-dasharray', `${DASHED_LINE.length},${DASHED_LINE.gap}`)
     .attr('stroke-opacity', DASHED_LINE.opacity)

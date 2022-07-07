@@ -62,7 +62,7 @@
     <label class="header-secondary">Ranking Criteria Relative Weight:</label>
       <button
         type="button"
-        class="btn btn-default dropdown-button"
+        class="btn  dropdown-button"
         @click="setEqualWeights">
           Equal Weights
       </button>

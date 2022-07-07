@@ -5,7 +5,7 @@
         <header>
           <slot name="datacube-model-header" />
           <button
-            class="btn btn-default breakdown-button"
+            class="btn  breakdown-button"
             :onClick="() => isBreakdownPaneOpen = !isBreakdownPaneOpen"
           >
             {{ isBreakdownPaneOpen === false ? 'Show' : 'Hide' }} Breakdown
@@ -97,10 +97,10 @@
             <div v-if="dateModelParam">
               <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
                 <input class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
-                <a class="btn btn-default date-picker-buttons" title="toggle" data-toggle>
+                <a class="btn  date-picker-buttons" title="toggle" data-toggle>
                     <i class="fa fa-calendar"></i>
                 </a>
-                <a class="btn btn-default date-picker-buttons" title="clear" data-clear>
+                <a class="btn  date-picker-buttons" title="clear" data-clear>
                     <i class="fa fa-close"></i>
                 </a>
               </div>
@@ -130,7 +130,7 @@
             />
             <button
               v-if="isPublishing && !hasDefaultRun && !runningDefaultRun"
-              class="btn toggle-new-runs-button btn-primary btn-call-for-action"
+              class="btn toggle-new-runs-button btn-call-to-action"
               :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
               @click="createRunWithDefaults()"
             >
@@ -140,8 +140,8 @@
               v-if="!isPublishing || hasDefaultRun"
               class="btn toggle-new-runs-button"
               :class="{
-                'btn-primary btn-call-for-action': !newRunsMode,
-                'btn-default': newRunsMode
+                'btn-call-to-action': !newRunsMode,
+                '': newRunsMode
               }"
               :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
               @click="toggleNewRunsMode()"
@@ -150,7 +150,7 @@
             </button>
             <button
               v-if="newRunsMode"
-              class="btn btn-primary btn-call-for-action"
+              class="btn btn-call-to-action"
               :class="{ 'disabled': potentialScenarioCount === 0}"
               @click="requestNewModelRuns()"
             >
@@ -158,7 +158,7 @@
             </button>
             <button
               v-else
-              class="btn btn-default"
+              class="btn "
               @click="showModelExecutionStatus()"
             >
               Check execution status
@@ -196,7 +196,7 @@
                   </div>
                   Relative to
                   <button
-                    class="btn btn-default"
+                    class="btn "
                     @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
                     :style="{ color: baselineMetadata?.color ?? 'black' }"
                   >
@@ -226,7 +226,7 @@
                   </dropdown-control>
                 </div>
                 <button
-                  class="btn btn-default"
+                  class="btn "
                   :class="{ 'viz-option-invalid': someVizOptionsInvalid }"
                   title="Toggle visualization options"
                   :onClick="() => activeVizOptionsTab = (activeVizOptionsTab === null ? 'vizoptions' : null)"
@@ -266,7 +266,7 @@
                   <button
                     v-if="firstSelectedPreGenOutput && firstSelectedPreGenOutput.type === 'image'"
                     type="button"
-                    class="btn btn-sm btn-primary btn-call-for-action"
+                    class="btn btn-sm btn-call-to-action"
                     style="margin-left: 10px"
                     @click="savePreGenAsInsight">
                     <i class="fa fa-fw fa-star fa-lg" />
@@ -335,7 +335,7 @@
               </template>
               <template #footer>
                 <div
-                  class="btn btn-primary btn-call-for-action"
+                  class="btn btn-call-to-action"
                   @click="showDatasets = false"
                 >
                   Close

@@ -1,7 +1,7 @@
 <template>
   <div class="search-bar-container">
     <div ref="lexContainer" />
-    <button class="btn btn-default clear-button" @click="clearSearch()">
+    <button class="btn  clear-button" @click="clearSearch()">
       <i class="fa fa-remove" /> Clear
     </button>
   </div>

@@ -38,7 +38,7 @@
           <button
             type="button"
             :disabled="selectedCAGIds.length === 0"
-            class="btn btn-primary btn-call-for-action"
+            class="btn btn-call-to-action"
             @click.stop="importCAG()">Import CAG
           </button>
         </li>

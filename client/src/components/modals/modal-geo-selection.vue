@@ -66,7 +66,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           :class="{ 'disabled': selectedRegions.length === 0}"
           @click.stop="saveSelectedRegions()">
             Save

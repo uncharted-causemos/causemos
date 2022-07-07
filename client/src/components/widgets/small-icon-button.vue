@@ -52,6 +52,7 @@ button {
   height: 20px;
   width: 20px;
   position: relative;
+  cursor: pointer;
 
   &:not(.has-dropdown) i {
     // Center icon inside button

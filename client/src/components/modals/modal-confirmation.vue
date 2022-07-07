@@ -17,7 +17,7 @@
         <button
           ref="confirm"
           type="button"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           @click.stop="confirm()">Confirm
         </button>
       </ul>

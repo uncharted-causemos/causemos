@@ -14,7 +14,7 @@
       <button
         v-if="updatedInsight !== null && !isEditingInsight"
         type="button"
-        class="btn btn-primary btn-call-for-action"
+        class="btn btn-call-to-action"
         :disabled="!isInsight"
         @click="editInsight"
         >
@@ -22,19 +22,19 @@
         Edit
       </button>
       <div v-else class="insight-edit-controls">
-        <button type="button" class="btn btn-default" @click="annotateImage">
+        <button type="button" class="btn " @click="annotateImage">
           Annotate
         </button>
-        <button type="button" class="btn btn-default" @click="cropImage">
+        <button type="button" class="btn " @click="cropImage">
           Crop
         </button>
-        <button class="btn btn-default btn-extra-margin" @click="cancelInsightEdit">
+        <button class="btn  btn-extra-margin" @click="cancelInsightEdit">
           Cancel
         </button>
         <button
           :disabled="hasError"
           type="button"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           v-tooltip="'Save insight'"
           @click="confirmInsightEdit"
         >
@@ -43,7 +43,7 @@
       </div>
       <button
         v-if="updatedInsight !== null"
-        class="btn btn-default btn-delete"
+        class="btn  btn-delete"
         :disabled="!isInsight"
         @click="removeInsight"
       >
@@ -55,7 +55,7 @@
           <button
             v-if="updatedInsight !== null"
             type="button"
-            class="btn btn-default"
+            class="btn "
             v-tooltip="'Toggle metadata'"
             :disabled="!isInsight"
             @click="showMetadataPanel=!showMetadataPanel"
@@ -65,7 +65,7 @@
           <button
             v-if="updatedInsight !== null"
             type="button"
-            class="btn btn-default"
+            class="btn "
             v-tooltip="'Jump to live context'"
             :disabled="!isInsight"
             @click="selectInsight"
@@ -75,12 +75,12 @@
           <div class="export" v-if="updatedInsight !== null">
             <span>Export insight as</span>
             <button
-              class="btn btn-default"
+              class="btn "
               @click="() => exportInsight('Powerpoint')"
             >
               PowerPoint
             </button>
-            <button class="btn btn-default" @click="() => exportInsight('Word')">
+            <button class="btn " @click="() => exportInsight('Word')">
               Word
             </button>
           </div>
@@ -92,7 +92,7 @@
         v-if="!isNewModeActive"
         :disabled="previousSlide === null"
         type="button"
-        class="btn btn-default"
+        class="btn "
         v-tooltip="'Previous insight'"
         @click="goToPreviousSlide"
         >
@@ -188,7 +188,7 @@
         v-if="!isNewModeActive"
         :disabled="nextSlide === null"
         type="button"
-        class="btn btn-default"
+        class="btn "
         v-tooltip="'Next insight'"
         @click="goToNextSlide"
         >

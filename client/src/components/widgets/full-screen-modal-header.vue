@@ -46,7 +46,8 @@ export default defineComponent({
 @import "~styles/variables";
 
 .full-screen-modal-header-container {
-  background-color: #0e3480;
+  background-color: #352556;
+;
   display: flex;
   align-items: center;
   min-height: 48px;

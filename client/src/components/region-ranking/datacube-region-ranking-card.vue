@@ -548,7 +548,7 @@ export default defineComponent({
                   const finalNormalizedValue = isDataInverted.value ? (1 - normalizedValue) : normalizedValue;
                   const barValue = showNormalizedData.value ? (finalNormalizedValue * numberOfColorBins.value) : dataItem.value;
 
-                  let barColor = 'skyblue';
+                  let barColor = 'grey';
                   let binIndex = -1;
                   if (regionRankingBinningType.value === BinningOptions.Linear) {
                     binIndex = Math.trunc(finalNormalizedValue * numberOfColorBins.value);
@@ -789,7 +789,6 @@ main {
   border-style: solid;
   border-radius: 2px;
   background-color: #F4F4F4;
-  color: blue;
   z-index: 1;
   padding: 4px;
 }

@@ -24,7 +24,7 @@
           <button
             v-tooltip.top-center="'Create a new analysis project'"
             type="button"
-            class="btn btn-primary"
+            class="btn btn-call-to-action"
             @click="gotoNewProject"
           >New Analysis Project</button>
         </div>
@@ -76,7 +76,7 @@
           <button
             v-tooltip.top-center="'Create a new domain family project'"
             type="button"
-            class="btn btn-primary"
+            class="btn btn-call-to-action"
             @click="gotoNewFamilyProject"
           >New Domain Model Project</button>
         </div>
@@ -352,7 +352,7 @@ $padding-size: 12.5vh;
   flex: 1;
   min-height: 0;
   padding: 2rem;
-  background-color: ghostwhite;
+  background-color: $tinted-background;
 }
 
 .logo-container {

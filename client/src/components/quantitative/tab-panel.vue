@@ -667,22 +667,6 @@ main {
   position: relative;
 }
 
-.augment-model {
-  display: flex;
-  align-items: center;
-  background-color: transparent;
-  margin-right: 10px;
-  flex: 1;
-  min-width: 0;
-  justify-content: flex-end;
-  box-sizing: border-box;
-  .btn {
-    &:active {
-      background-color: #255DCC;
-    }
-  }
-}
-
 .legend-config-row {
   position: absolute;
   bottom: 0;
