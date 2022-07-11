@@ -23,6 +23,7 @@ import projectService from '@/services/project-service';
 import domainProjectService from '@/services/domain-project-service';
 import { ProjectType } from '@/types/Enums';
 import InsightManager from '@/components/insight-manager/insight-manager.vue';
+import { enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
@@ -69,6 +70,10 @@ export default defineComponent({
   },
   mounted() {
     console.log(process.env.VUE_APP_GIT_HASH); // print out current git commit SHA
+
+    // Enable global map cache
+    enableConcurrentTileRequestsCaching();
+
     if (_.isEmpty(this.project)) {
       this.setProjectMetadata({});
       return;

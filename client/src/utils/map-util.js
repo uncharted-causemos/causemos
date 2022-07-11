@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import mapboxgl from 'mapbox-gl';
 import { BASE_LAYER } from '@/utils/map-util-new';
 import { COLOR_PALETTE_SIZE } from '@/utils/colors-util';
+// import { FIFOCache } from '@/utils/fifo-cache';
 
 export const ETHIOPIA_BOUNDING_BOX = {
   TOP: 18,
@@ -86,8 +87,65 @@ function interceptFetch() {
   // self is the reference to the global scope of a worker
   const originalFetch = self.fetch;
   const TILE_URLS = ['/api/maas/tiles', '/api/map/vector-tiles'];
-  const requestCache = new Map();
-  const CACHE_EXPIRE = 300;
+
+  class FIFOCache {
+    constructor(size, retationPolicy = null) {
+      this._size = size;
+      this._retationPolicy = retationPolicy;
+      this._map = new Map();
+
+      // Debugging
+      this.hits = 0;
+      this.misses = 0;
+      this.cnt = 0;
+      this.debug = false;
+    }
+
+    trim() {
+      const maxSize = this._size;
+
+      if (this._map.size <= maxSize) return;
+
+      if (!this._retationPolicy) {
+        while (this._map.size > maxSize) {
+          const key = this._map.keys().next().value;
+          this._map.delete(key);
+        }
+      } else {
+        while (this._map.size / maxSize > this._retationPolicy) {
+          const key = this._map.keys().next().value;
+          this._map.delete(key);
+        }
+      }
+    }
+
+    set(k, v) {
+      this._map.set(k, v);
+      this.trim();
+    }
+
+    get(k) {
+      if (this.debug === true) {
+        if (this._map.has(k)) {
+          this.hits++;
+        } else {
+          this.misses++;
+        }
+        const pct = (this.hits / (this.hits + this.misses));
+        console.log('debug cache', this.hits, this.misses, `pct=${pct.toFixed(2)}`);
+      }
+      return this._map.get(k);
+    }
+
+    delete(k) { return this._map.delete(k); }
+    size() { return this._map.size; }
+  }
+
+
+  const requestCache = new FIFOCache(1000, 0.9);
+  let cacheHit = 0;
+  let cacheMiss = 0;
+  // const CACHE_EXPIRE = 300;
 
   self.fetch = (...args) => {
     const { url, signal } = new Request(args[0], args[1]); // webpack/babel fails with ...args here :(
@@ -104,17 +162,20 @@ function interceptFetch() {
       // Each cache object will be expired after CACHE_EXPIRE ms
       // Note: Mapbox abort fetch requests for tiles when the request is no longer valid (eg. when zoom level changes)
       if (!request || reqSignal.aborted) {
+        cacheMiss++;
         clearTimeout(request && request.timeout); // clear previous timeout if exists
         request = {
           signal,
-          promise: originalFetch(...args),
-          timeout: setTimeout(() => {
-            requestCache.delete(cacheKey);
-          }, CACHE_EXPIRE)
+          promise: originalFetch(...args)
+          // timeout: setTimeout(() => {
+          //   requestCache.delete(cacheKey);
+          // }, CACHE_EXPIRE)
         };
         requestCache.set(cacheKey, request);
         return request.promise.then(res => res.clone());
       }
+      cacheHit++;
+      console.log(cacheHit, cacheMiss);
       return request.promise.then(res => res.clone()).catch(error => {
         // If cached request you are waiting on for the response is aborted before you
         // get the response, make a new cached request
