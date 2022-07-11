@@ -156,8 +156,8 @@ function renderHoverTooltips(
       .append('rect')
       .attr('width', SELECTED_BAR_WIDTH)
       .attr('height', markerHeight)
-      .attr('fill', SELECTED_COLOR)
-      .attr('fill-opacity', 0.5);
+      .attr('fill', 'transparent')
+      .attr('stroke', SELECTED_COLOR);
     // How far the tooltip is shifted horizontally from the hovered bar
     //  also the "radius" of the notch diamond
     const offset = 6;
