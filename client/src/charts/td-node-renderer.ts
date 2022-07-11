@@ -241,6 +241,17 @@ export default function(
   //  Also gets called with "initialBrushSelection"
   function brushed({ selection }: { selection: number[] }) {
     // FIXME: Tie data to group element, should make renderer stateful instead of a single function
+    // If right handle is outside the scrollbar range, clamp it back into the
+    //  range. This can happen if the analyst resizes the page to be narrower.
+    const rangeMax = xScaleScrollbar.range()[1];
+    const rightHandleXPosition = selection[1] <= rangeMax
+      ? selection[1]
+      : rangeMax;
+    // Similarly, ensure the left handle is always below the right handle
+    const leftHandleXPosition = selection[0] < rightHandleXPosition
+      ? selection[0]
+      : rightHandleXPosition - 1;
+    selection = [leftHandleXPosition, rightHandleXPosition];
     scrollBarGroupElement.datum(selection);
     scrollBarGroupElement.select('.brush').call(brushHandle as any, selection);
 
@@ -447,17 +458,21 @@ const renderStaticElements = (
   // Render rectangle to delineate between historical data and projection data
   const historicalStartTimestamp = xScale.domain()[0];
   const historicalEndTimestamp = getTimestampAfterMonths(projectionStartTimestamp, -monthsPerTimestep);
-  groupElement
-    .append('rect')
-    .attr('y', offsetFromTop)
-    .attr('x', xScale(historicalStartTimestamp))
-    .attr('height', bottomYValue - offsetFromTop)
-    .attr(
-      'width',
-      xScale(historicalEndTimestamp) - xScale(historicalStartTimestamp)
-    )
-    .attr('stroke', 'none')
-    .attr('fill', historicalDataUncertaintyColor(historicalTimeseries, projectionStartTimestamp, timeScale));
+  if (historicalEndTimestamp > historicalStartTimestamp) {
+    // Don't render the rectangle if it's not visible (avoids error from trying
+    //  to render a rectangle with a negative width)
+    groupElement
+      .append('rect')
+      .attr('y', offsetFromTop)
+      .attr('x', xScale(historicalStartTimestamp))
+      .attr('height', bottomYValue - offsetFromTop)
+      .attr(
+        'width',
+        xScale(historicalEndTimestamp) - xScale(historicalStartTimestamp)
+      )
+      .attr('stroke', 'none')
+      .attr('fill', historicalDataUncertaintyColor(historicalTimeseries, projectionStartTimestamp, timeScale));
+  }
 
   // Render major ticks
   // "Now" is one timestep before projection start
