@@ -44,19 +44,25 @@
             <td>
               {{ timeSinceExecutionFormatted(run) }}
             </td>
-            <td>
+            <td class="action-buttons">
               <a :href="dojoExecutionLink(run.run_id)">
                 <small-text-button
-                  :label="'See execution logs'"
-                />
+                  :label="'View Dojo logs'"
+                >
+                  <template #leading>
+                    <i class="fa fa-align-left" />
+                  </template>
+                </small-text-button>
               </a>
-              <br />
               <small-text-button
-                :label="'See processing logs'"
+                :label="'View Causemos logs'"
                 :disabled="!run.flow_id"
                 @click="viewCausemosLogs(run.flow_id)"
-              />
-              <br />
+              >
+                <template #leading>
+                  <i class="fa fa-align-left" />
+                </template>
+              </small-text-button>
               <small-text-button
                 v-if="canRetryDelete(run)"
                 :label="'Delete'"
@@ -228,13 +234,31 @@ export default defineComponent({
   justify-content: center;
 }
 
-table {
-  border-collapse: separate;
-  border-spacing: 10px;
+tr:hover {
+  background: $background-light-1-faded;
+}
+
+// Add gap between columns that won't obstruct the tr:hover color like
+//  table { border-spacing } will
+td:not(:last-child),
+th:not(:last-child) {
+  padding-right: 10px;
+}
+
+// Add gap between rows
+td {
+  padding: 10px 0;
 }
 
 .status-contents > *:not(:first-child) {
   margin-left: 5px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
 }
 
 </style>
