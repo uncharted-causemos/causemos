@@ -860,7 +860,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       //  contains rectangle and text element
       const gElement = d3.select(mouseEvent.target.parentNode);
       gElement.select('rect').style('fill', SELECTED_COLOR);
-      gElement.select('text').style('fill', 'black');
+      gElement.select('text').style('fill', 'white');
     };
 
     const onHandleLeave = (mouseEvent: any) => {
