@@ -89,9 +89,9 @@ function interceptFetch() {
   const TILE_URLS = ['/api/maas/tiles', '/api/map/vector-tiles'];
 
   class FIFOCache {
-    constructor(size, retationPolicy = null) {
+    constructor(size, retentionPolicy = null) {
       this._size = size;
-      this._retationPolicy = retationPolicy;
+      this._retentionPolicy= retentionPolicy;
       this._map = new Map();
 
       // Debugging
@@ -106,13 +106,13 @@ function interceptFetch() {
 
       if (this._map.size <= maxSize) return;
 
-      if (!this._retationPolicy) {
+      if (!this._retentionPolicy) {
         while (this._map.size > maxSize) {
           const key = this._map.keys().next().value;
           this._map.delete(key);
         }
       } else {
-        while (this._map.size / maxSize > this._retationPolicy) {
+        while (this._map.size / maxSize > this._retentionPolicy) {
           const key = this._map.keys().next().value;
           this._map.delete(key);
         }
@@ -143,8 +143,6 @@ function interceptFetch() {
 
 
   const requestCache = new FIFOCache(1000, 0.9);
-  let cacheHit = 0;
-  let cacheMiss = 0;
   // const CACHE_EXPIRE = 300;
 
   self.fetch = (...args) => {
@@ -162,7 +160,6 @@ function interceptFetch() {
       // Each cache object will be expired after CACHE_EXPIRE ms
       // Note: Mapbox abort fetch requests for tiles when the request is no longer valid (eg. when zoom level changes)
       if (!request || reqSignal.aborted) {
-        cacheMiss++;
         clearTimeout(request && request.timeout); // clear previous timeout if exists
         request = {
           signal,
@@ -174,8 +171,6 @@ function interceptFetch() {
         requestCache.set(cacheKey, request);
         return request.promise.then(res => res.clone());
       }
-      cacheHit++;
-      console.log(cacheHit, cacheMiss);
       return request.promise.then(res => res.clone()).catch(error => {
         // If cached request you are waiting on for the response is aborted before you
         // get the response, make a new cached request

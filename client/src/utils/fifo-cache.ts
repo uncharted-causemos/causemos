@@ -1,20 +1,20 @@
-type RETAINTION_POLICY = number | null | undefined;
+type RETENTION_POLICY = number | null | undefined;
 
 /**
  * A first-in-first-out cache built on top of js Map.
  *
- * The retaintion policy is either null, or a number the percentage of entries we want to
- * retain when trim is called. E.g. if retationPolicy=0.75, then when the size is exceeded it
+ * The retention policy is either null, or a number denoting the percentage of entries we want to
+ * retain when trim is called. E.g. if retentionPolicyPolicy=0.75, then when the size is exceeded it
  * will expunge the first 25% of the entries.
  */
 export class FIFOCache<T> {
   private _size: number;
-  private _retationPolicy: RETAINTION_POLICY;
+  private retentionPolicy: RETENTION_POLICY;
   private _map: Map<string, T>;
 
-  constructor(size: number, retationPolicy: RETAINTION_POLICY = null) {
+  constructor(size: number, retentionPolicyPolicy: RETENTION_POLICY = null) {
     this._size = size;
-    this._retationPolicy = retationPolicy;
+    this.retentionPolicy = retentionPolicyPolicy;
     this._map = new Map();
   }
 
@@ -23,13 +23,13 @@ export class FIFOCache<T> {
 
     if (this._map.size <= maxSize) return;
 
-    if (!this._retationPolicy) {
+    if (!this.retentionPolicy) {
       while (this._map.size > maxSize) {
         const key = this._map.keys().next().value;
         this._map.delete(key);
       }
     } else {
-      while (this._map.size / maxSize > this._retationPolicy) {
+      while (this._map.size / maxSize > this.retentionPolicy) {
         const key = this._map.keys().next().value;
         this._map.delete(key);
       }
