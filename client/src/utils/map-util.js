@@ -91,7 +91,7 @@ function interceptFetch() {
   class FIFOCache {
     constructor(size, retentionPolicy = null) {
       this._size = size;
-      this._retentionPolicy= retentionPolicy;
+      this._retentionPolicy = retentionPolicy;
       this._map = new Map();
 
       // Debugging
