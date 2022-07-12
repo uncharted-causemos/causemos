@@ -164,7 +164,7 @@ export default defineComponent({
   height: $navbar-outer-height;
   display: flex;
   justify-content: space-between;
-  background: #221A33;
+  background: $accent-darkest;
   padding: 0 15px;
 }
 

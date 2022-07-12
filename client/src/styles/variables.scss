@@ -19,18 +19,24 @@ $positive: #0072b2;
 // Negative values
 $negative: #d55e00;
 
-$call-to-action-color: hsl(260, 39%, 43%);
+// Accent colors
+$accent-lightest: hsl(265, 100%, 99%);
+$accent-main: hsl(260, 77%, 63%);
+$accent-medium: hsl(250, 39%, 43%);
+$accent-dark: hsl(245, 40%, 24%);
+$accent-darkest: hsl(240, 32%, 15%);
+
+// Used for the most important buttons on each screen
+$call-to-action-color: $accent-medium;
 
 // Selection color
 // If you'rechanging these, you likely want to change their JavaScript
 //  equivalents in colors-util.ts
-$selected: #8858e9;
-$selected-dark: $call-to-action-color;
+$selected: $accent-main;
+$selected-dark: $accent-medium;
 
-$tinted-background: ghostwhite;
 
-// Color used for button links
-$link-color: $selected-dark;
+$tinted-background: $accent-lightest;
 
 $vetted-state-dark: #009e74;
 
@@ -79,3 +85,9 @@ $shadow-level-2:
 
 // Transitions
 $layout-transition: .3s ease;
+
+// Due to some sort of SCSS restrictions, the :deep() selectors within facets-
+//  overrides don't apply correctly if this import is in "wm.scss" or 
+//  "overrides.scss", but work here.
+// Further investigation may shed more light on this.
+@import "facets-overrides";

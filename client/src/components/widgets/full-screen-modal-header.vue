@@ -46,7 +46,7 @@ export default defineComponent({
 @import "~styles/variables";
 
 .full-screen-modal-header-container {
-  background-color: #352556;
+  background-color: $accent-dark;
 ;
   display: flex;
   align-items: center;
