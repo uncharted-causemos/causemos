@@ -1,73 +1,80 @@
 <template>
   <modal @close="close()">
     <template #header>
-      <div class="modal-header">
-        <h4><i class="fa fa-fw fa-book" /> Model Execution Status</h4>
-      </div>
+      <h4>Model Execution Status</h4>
     </template>
     <template #body>
-      <table class="table">
-        <tr>
-          <td class="params-header">ID</td>
-          <td class="params-header">status</td>
-          <td
-            v-for="(dim, idx) in potentialRunsParameters"
-            :key="idx">
-            <div class="params-header">{{ dim }}</div>
-          </td>
-          <td class="params-header">time requested</td>
-          <td class="params-header">execution logs</td>
-          <td class="params-header">processing logs</td>
-          <td class="params-header">retry</td>
-          <td class="params-header">delete</td>
-        </tr>
-        <tr
-          v-for="(run, sidx) in potentialRuns"
-          :key="run.run_id">
-          <td class="params-value">{{ sidx }}</td>
-          <td class="params-value">
-            <div class="status-contents">
-              <div
-                class="run-status"
-                :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
+      <div v-if="potentialRuns.length === 0" class="empty-state">
+        <span>There are no pending runs.</span>
+      </div>
+      <table class="table" v-else>
+        <thead>
+          <th>Status</th>
+          <th v-for="(dim, idx) in potentialRunsParameters" :key="idx">
+            <div>{{ dim }}</div>
+          </th>
+          <th>Requested</th>
+          <th></th>
+        </thead>
+        <tbody>
+          <tr v-for="run in potentialRuns" :key="run.run_id">
+            <td class="status-contents">
+              <i
+                class="fa fa-fw"
+                :class="getStatusIcon(run)"
+                :style="{ color: getStatusColor(run) }"
+              />
+              <span>{{ getStatusString(run) }}</span>
+              <small-text-button
+                v-if="canRetryDelete(run)"
+                :label="'Retry'"
+                @click="retryRun(run.run_id)"
               >
-                <i
-                  v-if="run['status'] === ModelRunStatus.Submitted"
-                  class="fa fa-fw fa-spinner"
-                />
-                <i
-                  v-else
-                  class="fa fa-fw fa-times-circle"
-                />
-              </div>
-              <label>{{ run.status }}</label>
-            </div>
-          </td>
-          <td v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))"
-            :key="idx"
-            class="params-value">
-            <label>{{ run[dimName] }}</label>
-          </td>
-          <td class="params-value">
-            {{ timeSinceExecutionFormatted(run) }}
-          </td>
-          <td class="params-value">
-            <a :href=dojoExecutionLink(run.run_id)>Dojo Logs</a>
-          </td>
-          <td class="params-value">
-            <button
-              type="button"
-              class="btn btn-xs btn-primary"
-              :disabled="!run.flow_id"
-              @click="viewCausemosLogs(run.flow_id)">Causemos Logs</button>
-          </td>
-          <td class="params-value">
-            <i v-if="canRetryDelete(run)" class="fa fa-repeat" @click="retryRun(run.run_id)"/>
-          </td>
-          <td class="params-value">
-            <i v-if="canRetryDelete(run)" class="fa fa-trash" @click="deleteRun(run.run_id)"/>
-          </td>
-        </tr>
+                <template #leading>
+                  <i class="fa fa-repeat" />
+                </template>
+              </small-text-button>
+            </td>
+            <td
+              v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))"
+              :key="idx"
+            >
+              <label>{{ run[dimName] }}</label>
+            </td>
+            <td>
+              {{ timeSinceExecutionFormatted(run) }}
+            </td>
+            <td class="action-buttons">
+              <a :href="dojoExecutionLink(run.run_id)">
+                <small-text-button
+                  :label="'View Dojo logs'"
+                >
+                  <template #leading>
+                    <i class="fa fa-align-left" />
+                  </template>
+                </small-text-button>
+              </a>
+              <small-text-button
+                :label="'View Causemos logs'"
+                :disabled="!run.flow_id"
+                @click="viewCausemosLogs(run.flow_id)"
+              >
+                <template #leading>
+                  <i class="fa fa-align-left" />
+                </template>
+              </small-text-button>
+              <small-text-button
+                v-if="canRetryDelete(run)"
+                :label="'Delete'"
+                @click="deleteRun(run.run_id)"
+              >
+                <template #leading>
+                  <i class="fa fa-trash" />
+                </template>
+              </small-text-button>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </template>
     <template #footer>
@@ -93,6 +100,7 @@ import _ from 'lodash';
 import { ModelRunStatus } from '@/types/Enums';
 import DurationFormatter from '@/formatters/duration-formatter';
 import { ModelRun } from '@/types/ModelRun';
+import SmallTextButton from '../widgets/small-text-button.vue';
 
 const OmittedColumns = ['run_id', 'created_at', 'status', 'is_default_run', 'flow_id'];
 
@@ -102,7 +110,8 @@ const OmittedColumns = ['run_id', 'created_at', 'status', 'is_default_run', 'flo
 export default defineComponent({
   name: 'ModalCheckRunsExecutionStatus',
   components: {
-    Modal
+    Modal,
+    SmallTextButton
   },
   emits: [
     'close',
@@ -142,6 +151,33 @@ export default defineComponent({
       return run.status === ModelRunStatus.ExecutionFailed ||
         run.status === ModelRunStatus.ProcessingFailed ||
         (run.created_at && this.timeSinceExecution(run) > 1000 * 60 * 60 * 48);
+    },
+    getStatusString(run: { status: ModelRunStatus }) {
+      switch (run.status) {
+        case ModelRunStatus.ExecutionFailed:
+        case ModelRunStatus.ProcessingFailed: return 'Failed';
+        case ModelRunStatus.Submitted:
+        case ModelRunStatus.Processing: return 'Running';
+        default: return run.status;
+      }
+    },
+    getStatusColor(run: { status: ModelRunStatus }) {
+      switch (run.status) {
+        case ModelRunStatus.ExecutionFailed:
+        case ModelRunStatus.ProcessingFailed: return 'red';
+        case ModelRunStatus.Submitted:
+        case ModelRunStatus.Processing: return 'blue';
+        default: return 'grey';
+      }
+    },
+    getStatusIcon(run: { status: ModelRunStatus }) {
+      switch (run.status) {
+        case ModelRunStatus.ExecutionFailed:
+        case ModelRunStatus.ProcessingFailed: return 'fa-times-circle';
+        case ModelRunStatus.Submitted:
+        case ModelRunStatus.Processing: return 'fa-spin fa-spinner';
+        default: return 'fa-ellipsis';
+      }
     },
     close() {
       this.$emit('close');
@@ -188,37 +224,41 @@ export default defineComponent({
   }
 }
 
-.status-contents {
-  display: flex;
-  label {
-    margin: auto 0;
-  }
-}
-
-.run-status {
-  font-size: $font-size-large;
-  width: 32px;
-  height: 32px;
+.empty-state {
+  // FIXME: replace with $tinted-background;
+  background: ghostwhite;
+  width: 500px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 3px;
 }
 
-.params-header {
-  font-weight: bold;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  text-align: center;
+tr:hover {
+  background: $background-light-1-faded;
 }
 
-.params-value {
-  padding-left: 1rem;
-  padding-right: 1rem;
-  align-content: center;
-  text-align: center;
-  .fa-repeat, .fa-trash {
-    cursor: pointer;
-  }
+// Add gap between columns that won't obstruct the tr:hover color like
+//  table { border-spacing } will
+td:not(:last-child),
+th:not(:last-child) {
+  padding-right: 10px;
 }
+
+// Add gap between rows
+td {
+  padding: 10px 0;
+}
+
+.status-contents > *:not(:first-child) {
+  margin-left: 5px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+}
+
 </style>

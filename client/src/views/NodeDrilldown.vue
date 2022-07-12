@@ -1129,6 +1129,8 @@ h6 {
     }
     .scenario-chart {
       height: 140px;
+      flex: 1;
+      min-width: 0;
     }
   }
 }
