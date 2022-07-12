@@ -175,8 +175,24 @@ app.use('/api/session-log', [
 
 // Forward /api/maas/output/* to WM_GO_URL/maas/output/*
 // Forward /api/maas/tiles/* to WM_GO_URL/maas/tiles/*
-app.use('/api/maas/output', proxy(process.env.WM_GO_URL, { proxyReqPathResolver: req => '/maas/output' + req.url }));
-app.use('/api/maas/tiles', proxy(process.env.WM_GO_URL, { proxyReqPathResolver: req => '/maas/tiles' + req.url }));
+app.use('/api/maas/output', proxy(process.env.WM_GO_URL, {
+  proxyReqPathResolver: req => '/maas/output' + req.url,
+  userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
+    userRes.removeHeader('expires');
+    userRes.removeHeader('pragma');
+    userRes.set('Cache-control', 'max-age=86400');
+    return proxyResData;
+  }
+}));
+app.use('/api/maas/tiles', proxy(process.env.WM_GO_URL, {
+  proxyReqPathResolver: req => '/maas/tiles' + req.url,
+  userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
+    userRes.removeHeader('expires');
+    userRes.removeHeader('pragma');
+    userRes.set('Cache-control', 'max-age=86400');
+    return proxyResData;
+  }
+}));
 
 app.use('/api/map', [
   mapProxyRouter

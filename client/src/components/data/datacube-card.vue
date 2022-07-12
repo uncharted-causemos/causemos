@@ -449,7 +449,7 @@
                   />
                 </div>
                 <div
-                  v-if="mapReady && currentTabView === DatacubeViewMode.Data && regionalData !== null"
+                  v-if="currentTabView === DatacubeViewMode.Data && regionalData !== null"
                   class="card-maps-container">
                   <div
                     v-for="(spec, indx) in outputSpecs"
@@ -704,7 +704,7 @@ import {
   removeModelRunsTag,
   updateModelRun
 } from '@/services/new-datacube-service';
-import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
+
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
@@ -941,7 +941,6 @@ export default defineComponent({
     const geoModelParam = ref<ModelParameter | null>(null);
     const showNewRunsModal = ref<boolean>(false);
     const showModelRunsExecutionStatus = ref<boolean>(false);
-    const mapReady = ref<boolean>(false);
 
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const setBaseLayer = (val: BASE_LAYER) => {
@@ -1886,7 +1885,6 @@ export default defineComponent({
       mapBoundsForEachSpec,
       mapColorOptions,
       mapLegendData,
-      mapReady,
       mapSelectedLayerId,
       mapSelectedRegions,
       modelRunsSearchData,
@@ -2016,12 +2014,6 @@ export default defineComponent({
       },
       immediate: true
     }
-  },
-  created() {
-    enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
-  },
-  unmounted() {
-    disableConcurrentTileRequestsCaching();
   },
   data: () => ({
     idToDelete: '',
