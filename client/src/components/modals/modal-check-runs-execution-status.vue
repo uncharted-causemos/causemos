@@ -225,8 +225,7 @@ export default defineComponent({
 }
 
 .empty-state {
-  // FIXME: replace with $tinted-background;
-  background: ghostwhite;
+  background: $tinted-background;
   width: 500px;
   height: 100%;
   display: flex;
