@@ -95,7 +95,7 @@
         <button
           v-tooltip.top-center="'Add a new model scenario'"
           type="button"
-          class="btn btn-primary btn-call-for-action new-scenario-button"
+          class="btn btn-call-to-action new-scenario-button"
           @click="addNewScenario">
             <i class="fa fa-plus-circle" />
             Add new scenario

@@ -25,7 +25,7 @@ export const DEFAULT_STYLE = {
     stroke: '#F2F2F2'
   },
   nodeHeader: {
-    fill: '#FFFFFF',
+    fill: 'none',
     stroke: '#999',
     strokeWidth: 0.5,
     borderRadius: 4,

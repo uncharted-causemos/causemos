@@ -26,9 +26,8 @@
         <span v-if="metadata && metadata.status === DatacubeStatus.Deprecated" style="margin: 2px; padding: 2px 5px; font-size: large; font-weight: bolder" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
         <button
           v-if="metadata && metadata.status !== DatacubeStatus.Deprecated"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           :class="{ 'disabled': allStepsCompleted === false}"
-          style="padding: 6px 10px; border-radius: 4px;"
           @click="publishModel()">
             Publish model
         </button>

@@ -22,7 +22,7 @@
           @move-insight="moveInsight"
         >
           <button
-            class="btn btn-primary btn-call-for-action review-button"
+            class="btn btn-call-to-action review-button"
             :disabled="insightsBySection.length === 0"
             @click="() => reviewChecklist(null, null)"
           >
@@ -49,13 +49,13 @@
           />
           as
           <button
-            class="btn btn-sm btn-default"
+            class="btn btn-sm "
             @click="() => exportInsights('Powerpoint')"
           >
             PowerPoint
           </button>
           <button
-            class="btn btn-sm btn-default"
+            class="btn btn-sm "
             @click="() => exportInsights('Word')"
           >
             Word

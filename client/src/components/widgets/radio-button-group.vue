@@ -5,7 +5,7 @@
       :key="button.value"
       :disabled="button.value === selectedButtonValue"
       v-tooltip.top-center="button.tooltip ?? button.label"
-      class="btn btn-sm btn-default"
+      class="btn btn-sm "
       :class="{ 'button-active': button.value === selectedButtonValue }"
       @click="emitButtonClicked(button.value)"
     >

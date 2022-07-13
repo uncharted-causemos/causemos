@@ -30,14 +30,14 @@
               </button>
               <button
                 v-if="areParameterValuesChanged"
-                class="btn btn-primary btn-call-for-action save-parameter-button"
+                class="btn btn-call-to-action save-parameter-button"
                 @click="saveParameterValueChanges"
               >
                 Save parameterization changes
               </button>
               <button
                 v-tooltip="'Collapse node'"
-                class="btn btn-default"
+                class="btn"
                 @click="collapseNode"
               >
                 <i class="fa fa-fw fa-compress" />
@@ -98,7 +98,7 @@
               <span class="configure-sentence">seasonal trends. </span>
               <div class="configure-dropdown-container">
                 <button
-                  class="btn btn-sm btn-default"
+                  class="btn btn-sm "
                   @click="isDatacubeConfigDropdownOpen = !isDatacubeConfigDropdownOpen"
                 >
                   <i class="fa fa-fw fa-pencil" />
@@ -182,7 +182,7 @@
                 selectedScenarioId === null &&
                 selectedNodeScenarioData !== null
               "
-              class="btn btn-default"
+              class="btn"
               style="align-self: flex-start"
               @click="switchToBaselineScenario"
             >View scenarios</button>

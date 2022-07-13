@@ -4,15 +4,18 @@
     :selected-parameter="selectedParameter"
     @close="onEditParamOptionsModalClose" />
   <div class="desc-header">
-    <a @click="scrollToSection('inputknobs')">
-      Input Knobs
-    </a>
-    <a @click="scrollToSection('outputknobs')">
-      Output Features
-    </a>
-    <a @click="scrollToSection('outputqualifiers')" style="margin-right: 1rem;" >
-      Qualifiers
-    </a>
+    <small-text-button
+      @click="scrollToSection('inputknobs')"
+      :label="'Input Knobs'"
+    />
+    <small-text-button
+      @click="scrollToSection('outputknobs')"
+      :label="'Output Features'"
+    />
+    <small-text-button
+      @click="scrollToSection('outputqualifiers')"
+      :label="'Qualifiers'"
+    />
   </div>
   <div class="model-description-container">
     <!-- inputs -->
@@ -538,29 +541,20 @@ export default defineComponent({
 }
 
 .desc-header {
-  padding-bottom: 1rem;
+  margin: 5px 0;
   display: flex;
   justify-content: flex-end;
-
-  a {
-    margin-left: 2rem;
-    color: blue;
-    cursor: pointer;
-  }
+  gap: 2px;
 }
 
 .model-table tbody tr td {
   border-width: 0px;
 }
 
-table.model-table thead tr th {
-  background-color: lavender;
-}
-
 .primary-output {
   border-left-style: solid;
-  border-left-color: cadetblue;
-  border-left-width: 20px;
+  border-left-color: $selected;
+  border-left-width: 5px;
 }
 
 .model-attribute-pair {
@@ -603,6 +597,7 @@ table.model-table thead tr th {
   flex-direction: column;
   overflow: auto;
   position: relative;
+  gap: 20px;
 }
 
 .checkbox {

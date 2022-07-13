@@ -260,7 +260,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('type', 'text')
       .style('width', `${EDGE_SUGGESTION_WIDTH}px`)
       .style('height', `${NODE_HEIGHT}px`)
-      .style('border', '1px solid dodgerblue')
+      .style('border', `1px solid ${SELECTED_COLOR}`)
       .style('border-radius', '3px')
       .on('keyup', (event) => {
         this.emit('search-for-concepts', (event.target as any).value);
@@ -860,7 +860,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       //  contains rectangle and text element
       const gElement = d3.select(mouseEvent.target.parentNode);
       gElement.select('rect').style('fill', SELECTED_COLOR);
-      gElement.select('text').style('fill', 'black');
+      gElement.select('text').style('fill', 'white');
     };
 
     const onHandleLeave = (mouseEvent: any) => {

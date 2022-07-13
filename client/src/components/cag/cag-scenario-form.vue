@@ -26,7 +26,7 @@
     </button>
     <button
       type="button"
-      class="btn btn-primary btn-call-for-action"
+      class="btn btn-call-to-action"
       style="width: 50%"
       :disabled="n.length == 0"
       @click.stop="save">

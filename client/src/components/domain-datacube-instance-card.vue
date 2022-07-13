@@ -73,7 +73,7 @@
               {{domain}}
             </option>
           </select>
-          <button type="button" class="btn btn-default" style="padding: 2px 4px" @click="addDomain">Add</button>
+          <button type="button" class="btn" style="padding: 2px 4px" @click="addDomain">Add</button>
         </div>
         <div v-if="datacubeDomains" style="display: flex; flex-wrap: wrap">
           <div v-for="domain in datacubeDomains" :key="domain">
@@ -101,7 +101,7 @@
       <button
         v-tooltip.top-center="'Edit the metadata and visualization'"
         type="button"
-        class="btn btn-primary btn-call-for-action"
+        class="btn btn-call-to-action"
         @click="edit(datacube.data_id)"
       >
         <i v-if="datacube.status !== DatacubeStatus.Deprecated" class="fa fa-edit" />

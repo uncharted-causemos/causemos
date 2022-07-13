@@ -6,7 +6,7 @@
         <button
           v-tooltip.top-center="'Search Knowledge Base'"
           type="button"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           @click="openKBExplorer"
         > <i class="fa fa-fw fa-search" />Search Knowledge Base</button>
       </li>
@@ -14,7 +14,7 @@
         <button
           v-tooltip.top-center="'Add a new concept'"
           type="button"
-          class="btn btn-primary"
+          class="btn"
           @click="addConcept"
         ><i class="fa fa-fw fa-plus" />Add Concept</button>
       </li>
@@ -22,7 +22,7 @@
         <button
           v-tooltip.top-center="'Import existing CAG'"
           type="button"
-          class="btn btn-primary"
+          class="btn"
           @click="importCAG"
         ><i class="fa fa-fw fa-connectdevelop" />Import CAG</button>
       </li>
@@ -30,7 +30,7 @@
         <button
           v-tooltip.top-center="'reset CAG positioning'"
           type="button"
-          class="btn btn-primary"
+          class="btn"
           @click="resetCAG"
         ><i class="fa fa-fw fa-undo" />Reset Layout</button>
       </li>

@@ -124,6 +124,7 @@ import { Statement } from '@/types/Statement';
 import { getInsightById } from '@/services/insight-service';
 import { ModelsSpaceDataState } from '@/types/Insight';
 import useToaster from '@/services/composables/useToaster';
+import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -385,7 +386,7 @@ export default defineComponent({
           },
           outline: {
             nodes: [
-              { concept: node.concept, color: '#8767c8' },
+              { concept: node.concept, color: SELECTED_COLOR_DARK },
               { concept: this.selectedNode.concept }
             ],
             edges: []
@@ -665,22 +666,6 @@ main {
   width: 100%;
   height: 100%;
   position: relative;
-}
-
-.augment-model {
-  display: flex;
-  align-items: center;
-  background-color: transparent;
-  margin-right: 10px;
-  flex: 1;
-  min-width: 0;
-  justify-content: flex-end;
-  box-sizing: border-box;
-  .btn {
-    &:active {
-      background-color: #255DCC;
-    }
-  }
 }
 
 .legend-config-row {

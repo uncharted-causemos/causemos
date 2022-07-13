@@ -54,7 +54,7 @@
         @item-selected="changePathTarget"
       />
       <div class="pathway-exec-summary">
-        <button class="btn btn-small btn-primary"
+        <button class="btn btn-small btn-call-to-action"
           @click="runPathwayAnalysis">
           Run pathway sensitivity
         </button>

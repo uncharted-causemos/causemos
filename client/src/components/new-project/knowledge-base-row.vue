@@ -112,7 +112,7 @@ export default defineComponent({
   cursor: pointer;
 
   &.active {
-    border-left-color: #255DCC;
+    border-left-color: $selected;
   }
 
   input[type="radio"] {

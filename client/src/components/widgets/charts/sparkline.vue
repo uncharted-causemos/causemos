@@ -10,6 +10,9 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import { defineComponent, PropType } from 'vue';
+import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
+
+const DEFAULT_LINE_COLOR = SELECTED_COLOR_DARK;
 
 interface SparklineData {
   series: number[];
@@ -83,7 +86,13 @@ export default defineComponent({
 
       const yScale = d3.scaleLinear().range([yExtent[1], yExtent[0]]).domain(yExtent);
       const xScale = d3.scaleLinear().range([xExtent[0], xExtent[1]]).domain(xExtent);
-      const color = d3.scaleOrdinal(d3.schemeCategory10).domain(this.data.map(s => s.name));
+      // If data is supplied for only one line, return the DEFAULT_LINE_COLOR.
+      // Else the user wants to render multiple lines on the same axis, so
+      //  return a different color for each line (assuming their `name`s are
+      //  different.)
+      const getDefaultLineColor = this.data.length === 1
+        ? () => DEFAULT_LINE_COLOR
+        : d3.scaleOrdinal(d3.schemeCategory10).domain(this.data.map(s => s.name));
 
       const valueFn = d3.line()
         .x(function(_d, i) { return xScale(i); })
@@ -105,7 +114,7 @@ export default defineComponent({
         .attr('d', (d) => {
           return valueFn(d.series as any);
         })
-        .style('stroke', (d) => d.color || color(d.name))
+        .style('stroke', (d) => d.color || getDefaultLineColor(d.name))
         .style('stroke-width', 2)
         .style('vector-effect', 'non-scaling-stroke')
         .style('fill', 'none')

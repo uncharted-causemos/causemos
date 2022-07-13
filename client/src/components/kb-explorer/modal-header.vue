@@ -7,7 +7,7 @@
     <button
       v-tooltip.top-center="addToCagTooltip"
       type="button"
-      class="btn btn-primary btn-call-for-action"
+      class="btn btn-call-to-action"
       :disabled="!canAddToCAG"
       @click="addToCAG"
     >

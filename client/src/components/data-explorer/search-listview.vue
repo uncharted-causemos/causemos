@@ -239,8 +239,6 @@ export default defineComponent({
 
 <style lang='scss' scoped>
 @import "~styles/variables";
-$selected-border: #255DCC;
-$selected-background: #EBF1FC;
 .search-listview-container {
   background: $background-light-2;
   width: 100%;
@@ -302,12 +300,12 @@ $selected-background: #EBF1FC;
     height: 50px;
   }
   .tr-item.selected {
-    border: 2px double $selected-border;
+    border: 2px double $selected;
     .output-col {
-      border-left: 4px solid $selected-border;
+      border-left: 4px solid $selected;
     }
     td {
-      background-color: $selected-background;
+      background-color: $tinted-background;
     }
   }
   .text-bold {

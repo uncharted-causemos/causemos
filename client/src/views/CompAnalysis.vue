@@ -660,7 +660,7 @@ export default defineComponent({
       numBars = Math.max(numBars, 1); // should never be 0 to avoid invalid slope
       const slope = 1.0 * (colors.length) / numBars;
       compositeDataSorted.forEach((key, indx) => {
-        let barColor = 'skyblue';
+        let barColor = 'grey';
         let binIndex = -1;
         if (this.colorBinType === BinningOptions.Linear) {
           binIndex = Math.trunc(key.normalizedValue);

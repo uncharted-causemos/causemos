@@ -5,7 +5,7 @@
     </div>
     <button
       v-if="showGetSuggestionsButton"
-      class="btn btn-primary btn-call-for-action find-more-button"
+      class="btn btn-call-to-action find-more-button"
       @click="showRelationshipSuggestions"
     >
       <i class="fa fa-fw fa-plus" />

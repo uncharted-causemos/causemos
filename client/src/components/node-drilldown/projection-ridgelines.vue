@@ -55,7 +55,7 @@
               this the comparison baseline-->
             <button
               v-else-if="rowsToDisplay.length > 1"
-              class="btn btn-sm btn-default comparison-baseline-control"
+              class="btn btn-sm  comparison-baseline-control"
               @click="$emit('set-comparison-baseline-id', row.scenarioId)"
             >
               Use as comparison baseline
@@ -110,7 +110,7 @@
         v-else
         v-tooltip.top-center="'Add a new model scenario'"
         type="button"
-        class="btn btn-primary btn-call-for-action"
+        class="btn btn-call-to-action"
         style="align-self: flex-start"
         @click="addNewScenario"
       >
@@ -118,7 +118,7 @@
         Add new scenario
       </button>
       <button
-        class="btn btn-default"
+        class="btn"
         style="align-self: flex-start; margin-top: 10px"
         @click="switchToHistoricalOnlyScenario"
       >

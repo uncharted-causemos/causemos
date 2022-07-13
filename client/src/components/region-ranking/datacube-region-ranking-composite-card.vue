@@ -244,7 +244,6 @@ main {
   border-style: solid;
   border-radius: 2px;
   background-color: #F4F4F4;
-  color: blue;
   z-index: 1;
   padding: 4px;
 }

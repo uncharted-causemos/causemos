@@ -13,7 +13,7 @@ import _ from 'lodash';
 import { DatacubeGeoAttributeVariableType, DatacubeGenericAttributeVariableType, ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
 import { isCategoricalAxis, isGeoParameter } from '@/utils/datacube-util';
 import { safeD3StringId } from '@/utils/string-util';
-import { colorFromIndex } from '@/utils/colors-util';
+import { colorFromIndex, SELECTED_COLOR } from '@/utils/colors-util';
 
 //
 // custom data types
@@ -56,9 +56,9 @@ const lineOpacityNewRunsModeContext = 0.1;
 // hover styling
 const highlightDuration = 50; // in milliseconds
 
-const lineColorsDraft = '#296AE9ff';
-const lineColorsReady = '#296AE9ff';
-const lineColorsSubmitted = '#296AE9ff';
+const lineColorsDraft = 'grey';
+const lineColorsReady = 'grey';
+const lineColorsSubmitted = 'grey';
 const lineColorsFailed = '#ff2962ff';
 const lineColorsUnknown = '#000000ff';
 
@@ -1515,7 +1515,7 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
         .style('font-size', 'medium')
         .style('line-height', 'normal')
         .style('font-weight', 'bold')
-        .style('background-color', 'deepskyblue')
+        .style('background-color', SELECTED_COLOR)
         .on('click', function(this: any, event: PointerEvent) {
           const d3Input = d3.select(this);
           const d = d3Input.datum() as ModelParameter;

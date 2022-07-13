@@ -124,7 +124,7 @@
         />
         <button
           type="button"
-          class="btn btn-default dropdown-button"
+          class="btn dropdown-button"
           @click="reverseColorScale">
             <i class="fa fa-arrows-h" />
             Reverse Scale
@@ -496,11 +496,6 @@ export default defineComponent({
 
 .dropdown-button {
   width: max-content;
-}
-
-.add-second-variable {
-  color: blue;
-  cursor: pointer;
 }
 
 .config-group {

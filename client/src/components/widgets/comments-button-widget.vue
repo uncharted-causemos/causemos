@@ -3,7 +3,7 @@
     <button
       v-tooltip.top-center="'Comments'"
       type="button"
-      class="btn btn-default"
+      class="btn"
       @click="toggleIsOpen"
     >
       <i

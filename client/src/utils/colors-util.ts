@@ -27,9 +27,9 @@ export const COLOR_PALETTE_SIZE = 256;
 
 export const UNDEFINED_COLOR = '#000000';
 export const GRAPH_BACKGROUND_COLOR = '#FFFFFF';
-export const SELECTED_COLOR = '#56b3e9';
-export const SELECTED_COLOR_DARK = '#1673aa'; // For svg text
-export const SELECTED_COLOR_RGBA = 'rgb(86, 180, 233, .1)'; // For overlays
+export const SELECTED_COLOR = '#8858e9';
+export const SELECTED_COLOR_DARK = '#5f4398'; // For svg text
+export const SELECTED_COLOR_RGBA = 'rgb(136, 88, 233, .1)'; // For overlays
 export const BORDER_COLOR = '#ccc';
 export const DEFAULT_COLOR = '#4C7079';
 export const FADED_COLOR = '#D6DBDF';

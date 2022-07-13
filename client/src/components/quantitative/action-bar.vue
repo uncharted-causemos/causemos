@@ -34,8 +34,8 @@
         </dropdown-control>
       </button>
       <button
-        class="btn btn-default"
-        :class="{ 'btn-primary btn-call-for-action': isDirty }"
+        class="btn"
+        :class="{ 'btn-call-to-action': isDirty }"
         @click="runModel"
       >
         Run
@@ -56,7 +56,7 @@
         v-if="activeTab === 'flow'"
         v-tooltip.top-center="'reset CAG positioning'"
         type="button"
-        class="btn btn-default"
+        class="btn"
         @click="resetCAG"
       >
         <i class="fa fa-fw fa-undo" />Reset Layout
@@ -66,20 +66,18 @@
       <button
         v-tooltip.top-center="'open data analysis with CAG indicators'"
         type="button"
-        class="btn btn-default"
+        class="btn"
         style="margin-right: 1rem;"
         @click="openDataAnalysis"
       >
         Data Analysis
       </button>
-      <div class="augment-model">
-        <arrow-button
-          :text="'Modify CAG'"
-          :icon="'fa-book'"
-          :is-pointing-left="true"
-          @click="onAugmentCAG"
-        />
-      </div>
+      <arrow-button
+        :text="'Modify CAG'"
+        :icon="'fa-book'"
+        :is-pointing-left="true"
+        @click="onAugmentCAG"
+      />
     </div>
   </div>
 </template>

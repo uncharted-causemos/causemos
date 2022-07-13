@@ -74,13 +74,13 @@
     <div class="controls">
       <button
         type="button"
-        class="btn btn-default"
+        class="btn"
         @click="cancel"
       >Cancel
       </button>
       <button
         type="button"
-        class="btn btn-primary"
+        class="btn btn-call-to-action"
         @click="create"
       >Create</button>
     </div>

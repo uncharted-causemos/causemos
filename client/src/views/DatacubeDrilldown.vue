@@ -38,7 +38,7 @@
           <template #datacube-model-header-collapse>
             <button
               v-tooltip="'Collapse datacube'"
-              class="btn btn-default"
+              class="btn"
               @click="onClose"
             >
               <i class="fa fa-fw fa-compress" />

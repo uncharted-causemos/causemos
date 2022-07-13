@@ -32,31 +32,27 @@
             class="description-hint-text">
             Add a description
           </div>
-          <div
-            v-if="isEditingDesc"
-            class="edit-model-desc"
-          >
+          <small-icon-button v-if="isEditingDesc">
             <i
               class="fa fa-check"
               @click="saveDesc"
               v-tooltip.top-center="'Save changes'"
             />
+          </small-icon-button>
+          <small-icon-button v-if="isEditingDesc">
             <i
               class="fa fa-close"
               @click="discardDesc"
               v-tooltip.top-center="'Discard changes'"
             />
-          </div>
-          <div
-            v-else
-            class="edit-model-desc"
-          >
+          </small-icon-button>
+          <small-icon-button v-else>
             <i
               class="fa fa-edit"
               @click="editDesc"
               v-tooltip.top-center="'Edit description'"
             />
-          </div>
+          </small-icon-button>
         </div>
         <div>
           <strong>Contributors</strong>
@@ -91,7 +87,7 @@
       <div class="insights-column">
         <button
           type="button"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           @click.stop="openInsightsExplorer">
             <i class="fa fa-fw fa-star fa-lg" />
             Review All Insights
@@ -126,7 +122,7 @@
             <button
               v-tooltip.top-center="'Create a new Qualitative Model'"
               type="button"
-              class="btn btn-primary btn-call-for-action"
+              class="btn btn-call-to-action"
               @click="onCreateCAG"
               ><i class="fa fa-plus" />
                 Create CAG
@@ -134,7 +130,7 @@
             <button
               v-tooltip.top-center="'Create a new Quantitative Analysis'"
               type="button"
-              class="btn btn-primary btn-call-for-action"
+              class="btn btn-call-to-action"
               @click="onCreateDataAnalysis"
               ><i class="fa fa-plus" />
                 Create Quantitative Analysis
@@ -186,6 +182,7 @@ import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import useInsightsData from '@/services/composables/useInsightsData';
 import { computed } from '@vue/reactivity';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -216,7 +213,8 @@ export default defineComponent({
     RenameModal,
     DuplicateModal,
     DropdownButton,
-    EmptyStateInstructions
+    EmptyStateInstructions,
+    SmallIconButton
   },
   setup() {
     const { insights } = useInsightsData(undefined,
@@ -614,15 +612,6 @@ header {
   .description {
     max-width: 90ch;
   }
-}
-
-.edit-model-desc {
-    font-size: medium;
-    color: blue;
-    cursor: pointer;
-    i {
-      margin-right: 5px;
-    }
 }
 
 .model-attribute-desc {

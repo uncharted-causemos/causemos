@@ -79,6 +79,7 @@ import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
 import dateFormatter from '@/formatters/date-formatter';
 import { getDocument, updateDocument } from '@/services/document-service';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 
 const isPdf = (data) => {
   const fileType = data && data.file_type;
@@ -86,7 +87,7 @@ const isPdf = (data) => {
 };
 
 const reformat = (v) => {
-  return `<span class='extract-text-anchor' style='background: #56b3e9'>${v}</span>`;
+  return `<span class='extract-text-anchor' style='border-bottom: 2px solid${SELECTED_COLOR}'>${v}</span>`;
 };
 
 // Run through a list of inexpensive, sucessive transforms to try to find the correct match

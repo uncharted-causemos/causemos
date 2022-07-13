@@ -236,7 +236,7 @@ export default defineComponent({
 }
 
 .timestamp {
-  color: $selected-dark
+  color: $text-color-medium;
 }
 
 .timeseries-footer {

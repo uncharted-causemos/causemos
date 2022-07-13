@@ -24,10 +24,10 @@
           <label>Minimum date:</label>
           <div ref="dateMinPickerElement" class="new-runs-date-picker-container">
             <input class="date-picker-input" placeholder="Select date.." type="text" v-model="updatedParameter.additional_options.date_min" autocomplete="off" data-input />
-            <a class="btn btn-default date-picker-buttons" title="toggle" data-toggle>
+            <a class="btn date-picker-buttons" title="toggle" data-toggle>
                 <i class="fa fa-calendar"></i>
             </a>
-            <a class="btn btn-default date-picker-buttons" title="clear" data-clear>
+            <a class="btn date-picker-buttons" title="clear" data-clear>
                 <i class="fa fa-close"></i>
             </a>
           </div>
@@ -36,10 +36,10 @@
           <label>Maximum date:</label>
           <div ref="dateMaxPickerElement" class="new-runs-date-picker-container">
             <input class="date-picker-input" placeholder="Select date.." type="text" v-model="updatedParameter.additional_options.date_max" autocomplete="off" data-input />
-            <a class="btn btn-default date-picker-buttons" title="toggle" data-toggle>
+            <a class="btn date-picker-buttons" title="toggle" data-toggle>
                 <i class="fa fa-calendar"></i>
             </a>
-            <a class="btn btn-default date-picker-buttons" title="clear" data-clear>
+            <a class="btn date-picker-buttons" title="clear" data-clear>
                 <i class="fa fa-close"></i>
             </a>
           </div>
@@ -164,7 +164,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-primary btn-call-for-action"
+          class="btn btn-call-to-action"
           @click.stop="saveUpdatedParamOptions()">
             Update
         </button>
