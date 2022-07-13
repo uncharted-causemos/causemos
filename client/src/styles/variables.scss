@@ -86,8 +86,8 @@ $shadow-level-2:
 // Transitions
 $layout-transition: .3s ease;
 
-// Due to some sort of SCSS restrictions, the :deep() selectors within facets-
-//  overrides don't apply correctly if this import is in "wm.scss" or 
+// FIXME: Due to some sort of SCSS restrictions, the :deep() selectors within
+//  facets-overrides don't apply correctly if this import is in "wm.scss" or 
 //  "overrides.scss", but work here.
 // Further investigation may shed more light on this.
 @import "facets-overrides";
