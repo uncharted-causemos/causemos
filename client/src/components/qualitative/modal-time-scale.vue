@@ -149,9 +149,15 @@ export default defineComponent({
 
 .time-scale-option {
   display: flex;
+  align-items: flex-start;
 
   &:not(:first-child) {
     margin-top: 10px;
+  }
+
+  input {
+    // Align radio button with the first line of text in the option
+    margin-top: 3px;
   }
 }
 
