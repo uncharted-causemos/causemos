@@ -47,10 +47,13 @@
     <header>
       <slot name="datacube-model-header" />
       <button
-        class="btn breakdown-button"
-        :onClick="() => isBreakdownPaneOpen = !isBreakdownPaneOpen"
+        class="btn"
+        :class="{ 'viz-option-invalid': someVizOptionsInvalid }"
+        style="margin: 0 1rem"
+        title="Toggle visualization options"
+        :onClick="() => activeVizOptionsTab = (activeVizOptionsTab === null ? 'vizoptions' : null)"
       >
-        {{ isBreakdownPaneOpen === false ? 'Show' : 'Hide' }} Breakdown
+        <i class="fa fa-gear" /> Configure
       </button>
       <slot name="datacube-model-header-collapse" />
     </header>
@@ -187,7 +190,7 @@
               @click="showDatasets = true"
             />
           </div>
-          <div style="display: flex">
+          <div style="display: flex; gap: 5px">
             <div
               v-if="currentTabView === DatacubeViewMode.Data && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
               class="relative-box"
@@ -205,7 +208,7 @@
               </div>
               Relative to
               <button
-                class="btn"
+                class="btn btn-sm"
                 @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
                 :style="{ color: baselineMetadata?.color ?? 'black' }"
               >
@@ -235,12 +238,11 @@
               </dropdown-control>
             </div>
             <button
-              class="btn"
-              :class="{ 'viz-option-invalid': someVizOptionsInvalid }"
-              title="Toggle visualization options"
-              :onClick="() => activeVizOptionsTab = (activeVizOptionsTab === null ? 'vizoptions' : null)"
+              v-if="isBreakdownPaneOpen === false"
+              class="btn btn-sm"
+              @click="() => isBreakdownPaneOpen = true"
             >
-              <i class="fa fa-gear"></i>
+              Show breakdown
             </button>
           </div>
         </div>
@@ -493,90 +495,87 @@
           </div>
         </div>
       </div>
-      <div style="position: relative">
-        <drilldown-panel
-          class="drilldown"
-          :active-tab-id="'tabId'"
-          :has-transition="false"
-          :hide-close="true"
-          :is-open="isBreakdownPaneOpen"
-          :tabs="[{ name: 'Breakdown', id: 'tabId', icon: '' }]"
-          @close="() => { isBreakdownPaneOpen = false }"
-        >
-          <template #content>
-            <breakdown-pane
-              v-if="isBreakdownPaneOpen"
-              :selected-admin-level="selectedAdminLevel"
-              :qualifier-breakdown-data="qualifierBreakdownData"
-              :qualifier-fetch-info="qualifierFetchInfo"
-              :regional-data="regionalData"
-              :temporal-breakdown-data="temporalBreakdownData"
-              :feature-breakdown-data="featureBreakdownData"
-              :selected-spatial-aggregation="selectedSpatialAggregation"
-              :selected-temporal-aggregation="selectedTemporalAggregation"
-              :selected-temporal-resolution="selectedTemporalResolution"
-              :selected-timestamp="selectedTimestamp"
-              :selected-scenario-ids="selectedScenarioIds"
-              :selected-region-ids="selectedRegionIds"
-              :selected-region-ids-at-all-levels="selectedRegionIdsAtAllLevels"
-              :selected-qualifier-values="selectedQualifierValues"
-              :selected-breakdown-option="breakdownOption"
-              :selected-timeseries-points="selectedTimeseriesPoints"
-              :selected-years="selectedYears"
-              :selected-feature-names="selectedFeatureNames"
-              :reference-options="availableReferenceOptions"
-              :unit="unit"
-              @toggle-is-region-selected="toggleIsRegionSelected"
-              @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-              @toggle-is-year-selected="toggleIsYearSelected"
-              @toggle-is-output-variable-selected="toggleIsFeatureSelected"
-              @toggle-reference-options="toggleReferenceOptions"
-              @set-selected-admin-level="setSelectedAdminLevel"
-              @set-breakdown-option="setBreakdownOption"
-              @request-qualifier-data="requestAdditionalQualifier"
-            />
-          </template>
-        </drilldown-panel>
-        <!-- viz options if visible will always be on top of the breakdown panel -->
-        <div class="viz-options-modal-mask"
-          v-if="activeVizOptionsTab !== null"
-          @click="activeVizOptionsTab = null"
-        >
-          <!-- Catch click events and stop propagation to avoid closing
-          the modal every time an interaction occurs within it -->
-          <div class="viz-options-modal" @click.stop="">
-            <h4>Configuration</h4>
-            <viz-options-pane
-              :metadata="metadata"
-              :item-id="itemId"
-              :aggregation-options="filteredAggregationOptions"
-              :resolution-options="temporalResolutionOptions"
-              :selected-spatial-aggregation="selectedSpatialAggregation"
-              :selected-temporal-aggregation="selectedTemporalAggregation"
-              :selected-transform="selectedTransform"
-              :selected-resolution="selectedTemporalResolution"
-              :selected-base-layer="selectedBaseLayer"
-              :selected-data-layer="selectedDataLayer"
-              :selected-data-layer-transparency="selectedDataLayerTransparency"
-              :color-scheme-reversed="colorSchemeReversed"
-              :selected-color-scheme-name="selectedColorSchemeName"
-              :selected-color-scale-type="selectedColorScaleType"
-              :number-of-color-bins="numberOfColorBins"
-              :selected-color-scheme="finalColorScheme"
-              @set-spatial-aggregation-selection="setSpatialAggregationSelection"
-              @set-temporal-aggregation-selection="setTemporalAggregationSelection"
-              @set-resolution-selection="setTemporalResolutionSelection"
-              @set-base-layer-selection="setBaseLayer"
-              @set-data-layer-transparency-selection="setDataLayerTransparency"
-              @set-data-layer-selection="setDataLayer"
-              @set-color-scheme-reversed="setColorSchemeReversed"
-              @set-color-scheme-name="setColorSchemeName"
-              @set-color-scale-type="setColorScaleType"
-              @set-number-color-bins="setNumberOfColorBins"
-              @set-transform-selection="setTransformSelection"
-            />
-          </div>
+      <div v-if="isBreakdownPaneOpen" class="breakdown-pane">
+        <div class="breakdown-pane-header">
+          <h4>Breakdown</h4>
+          <button
+            class="btn btn-sm"
+            :onClick="() => isBreakdownPaneOpen = false"
+          >
+            Hide
+          </button>
         </div>
+        <breakdown-pane
+          class="breakdown-pane-content"
+          :selected-admin-level="selectedAdminLevel"
+          :qualifier-breakdown-data="qualifierBreakdownData"
+          :qualifier-fetch-info="qualifierFetchInfo"
+          :regional-data="regionalData"
+          :temporal-breakdown-data="temporalBreakdownData"
+          :feature-breakdown-data="featureBreakdownData"
+          :selected-spatial-aggregation="selectedSpatialAggregation"
+          :selected-temporal-aggregation="selectedTemporalAggregation"
+          :selected-temporal-resolution="selectedTemporalResolution"
+          :selected-timestamp="selectedTimestamp"
+          :selected-scenario-ids="selectedScenarioIds"
+          :selected-region-ids="selectedRegionIds"
+          :selected-region-ids-at-all-levels="selectedRegionIdsAtAllLevels"
+          :selected-qualifier-values="selectedQualifierValues"
+          :selected-breakdown-option="breakdownOption"
+          :selected-timeseries-points="selectedTimeseriesPoints"
+          :selected-years="selectedYears"
+          :selected-feature-names="selectedFeatureNames"
+          :reference-options="availableReferenceOptions"
+          :unit="unit"
+          @toggle-is-region-selected="toggleIsRegionSelected"
+          @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+          @toggle-is-year-selected="toggleIsYearSelected"
+          @toggle-is-output-variable-selected="toggleIsFeatureSelected"
+          @toggle-reference-options="toggleReferenceOptions"
+          @set-selected-admin-level="setSelectedAdminLevel"
+          @set-breakdown-option="setBreakdownOption"
+          @request-qualifier-data="requestAdditionalQualifier"
+        />
+      </div>
+    </div>
+    <!-- viz options if visible will always be on top of the breakdown panel -->
+    <div class="viz-options-modal-mask"
+      v-if="activeVizOptionsTab !== null"
+      @click="activeVizOptionsTab = null"
+    >
+      <!-- Catch click events and stop propagation to avoid closing
+      the modal every time an interaction occurs within it -->
+      <div class="viz-options-modal" @click.stop="">
+        <h4>Configuration</h4>
+        <viz-options-pane
+          :metadata="metadata"
+          :item-id="itemId"
+          :aggregation-options="filteredAggregationOptions"
+          :resolution-options="temporalResolutionOptions"
+          :selected-spatial-aggregation="selectedSpatialAggregation"
+          :selected-temporal-aggregation="selectedTemporalAggregation"
+          :selected-transform="selectedTransform"
+          :selected-resolution="selectedTemporalResolution"
+          :selected-base-layer="selectedBaseLayer"
+          :selected-data-layer="selectedDataLayer"
+          :selected-data-layer-transparency="selectedDataLayerTransparency"
+          :color-scheme-reversed="colorSchemeReversed"
+          :selected-color-scheme-name="selectedColorSchemeName"
+          :selected-color-scale-type="selectedColorScaleType"
+          :number-of-color-bins="numberOfColorBins"
+          :selected-color-scheme="finalColorScheme"
+          @set-spatial-aggregation-selection="setSpatialAggregationSelection"
+          @set-temporal-aggregation-selection="setTemporalAggregationSelection"
+          @set-resolution-selection="setTemporalResolutionSelection"
+          @set-base-layer-selection="setBaseLayer"
+          @set-data-layer-transparency-selection="setDataLayerTransparency"
+          @set-data-layer-selection="setDataLayer"
+          @set-color-scheme-reversed="setColorSchemeReversed"
+          @set-color-scheme-name="setColorSchemeName"
+          @set-color-scale-type="setColorScaleType"
+          @set-number-color-bins="setNumberOfColorBins"
+          @set-transform-selection="setTransformSelection"
+        />
       </div>
     </div>
   </div>
@@ -595,7 +594,6 @@ import VizOptionsPane from '@/components/drilldown-panel/viz-options-pane.vue';
 import DataAnalysisMap from '@/components/data/analysis-map.vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
-import DrilldownPanel from '@/components/drilldown-panel.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import Modal from '@/components/modals/modal.vue';
@@ -728,7 +726,6 @@ export default defineComponent({
     VizOptionsPane,
     DataAnalysisMap,
     DatacubeScenarioHeader,
-    DrilldownPanel,
     DropdownControl,
     MapLegend,
     MessageDisplay,
@@ -2187,12 +2184,6 @@ $cardSpacing: 10px;
   padding-left: $cardSpacing;
 }
 
-
-.drilldown {
-  height: 100%;
-  box-shadow: none;
-}
-
 .flex-row {
   display: flex;
   flex: 1;
@@ -2392,14 +2383,6 @@ $marginSize: 5px;
   }
 }
 
-.hidden-timeseries-message {
-  margin: 15px 0;
-
-  .timestamp {
-    color: $selected-dark;
-  }
-}
-
 .tags-area-container {
   display: flex;
   flex-wrap: wrap;
@@ -2444,10 +2427,35 @@ $marginSize: 5px;
   z-index: 3;
 }
 
-$drilldownWidth: 25vw;
+$breakdown-pane-width: 25vw;
+
+.breakdown-pane {
+  width: $breakdown-pane-width;
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid $background-light-3;
+  padding: 5px 10px 0;
+}
+
+.breakdown-pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  h4 {
+    margin: 0;
+    @include header-secondary;
+  }
+}
+
+.breakdown-pane-content {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
 .viz-options-modal {
   background: $background-light-1;
-  width: calc(#{$drilldownWidth} + 20px);
+  width: calc(#{$breakdown-pane-width} + 20px);
   position: absolute;
   right: 0;
   top: calc(calc(#{$navbar-outer-height} * 2) + 10px);

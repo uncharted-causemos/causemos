@@ -528,7 +528,7 @@ export default defineComponent({
 @import '~styles/variables';
 
 .breakdown-pane-container {
-  margin-bottom: 40px;
+  padding-bottom: 40px;
 }
 
 .aggregation-description {
