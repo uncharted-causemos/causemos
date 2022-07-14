@@ -1,607 +1,38 @@
 <template>
-  <div class="datacube-card-parent">
-    <div class="datacube-card-container">
-      <div class="capture-box">
-        <header>
-          <slot name="datacube-model-header" />
-          <button
-            class="btn breakdown-button"
-            :onClick="() => isBreakdownPaneOpen = !isBreakdownPaneOpen"
-          >
-            {{ isBreakdownPaneOpen === false ? 'Show' : 'Hide' }} Breakdown
-          </button>
-          <slot name="datacube-model-header-collapse" />
-        </header>
-        <modal-new-scenario-runs
-          v-if="isModel(metadata) && showNewRunsModal === true"
-          :metadata="metadata"
-          :potential-scenarios="potentialScenarios"
-          :selected-dimensions="dimensions"
-          :runtime-stats="runtimeStats"
-          @close="onNewScenarioRunsModalClose" />
-        <modal-check-runs-execution-status
-          v-if="isModel(metadata) && showModelRunsExecutionStatus === true"
-          :metadata="metadata"
-          :potential-scenarios="runParameterValues"
-          @close="showModelRunsExecutionStatus = false"
-          @delete="prepareDelete"
-          @retry="retryRun"
-        />
-        <modal-geo-selection
-          v-if="showGeoSelectionModal === true"
-          :model-param="geoModelParam"
-          :metadata="metadata"
-          @close="onGeoSelectionModalClose" />
-        <rename-modal
-          v-if="showTagNameModal"
-          :modal-title="`Add new tag to ${selectedScenarioIds.length} selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
-          @confirm="addNewTag"
-          @cancel="showTagNameModal = false"
-        />
-        <rename-modal
-          v-if="showRunNameModal"
-          :modal-title="'Rename run'"
-          :current-name="selectedScenarios[0].name"
-          @confirm="renameRun"
-          @cancel="showRunNameModal = false"
-        />
-        <div class="flex-row">
-          <!-- if has multiple scenarios -->
-          <div v-if="isModel(metadata)" class="scenario-selector">
-            <div class="tags-area-container">
-              <span class="scenario-count" v-if="selectedScenarioIds.length === 0">
-                {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
-              </span>
-              <span class="scenario-count" v-if="selectedScenarioIds.length > 0">
-                {{selectedScenarioIds.length}} model run{{selectedScenarioIds.length === 1 ? '' : 's'}} selected.
-              </span>
-              <small-text-button
-                v-if="isPublishing && selectedScenarios.length === 1"
-                :label="'Rename ' + selectedScenarios[0].name"
-                @click="showRunNameModal = true"
-              >
-                <template #leading>
-                  <i class="fa fa-edit" />
-                </template>
-              </small-text-button>
-              <span v-if="selectedScenarioIds.length > 0">Tags:</span>
-              <small-text-button
-                v-for="(tag, index) in tagsSharedBySelectedRuns"
-                v-tooltip="'Remove from selected run' + (selectedScenarioIds.length === 1 ? '' : 's')"
-                :key="index"
-                :label="tag"
-                @click="removeTagFromSelectedRuns(tag)"
-              >
-                <template #trailing>
-                  <i class="fa fa-close" />
-                </template>
-              </small-text-button>
-              <small-text-button
-                v-if="selectedScenarioIds.length > 0"
-                v-tooltip="'Add to selected run' + (selectedScenarioIds.length === 1 ? '' : 's')"
-                :label="`Add tag`"
-                @click="showTagNameModal = true"
-              >
-                <template #leading>
-                  <i class="fa fa-plus-circle" />
-                </template>
-              </small-text-button>
-            </div>
-            <model-runs-search-bar
-              class="model-runs-search-bar"
-              v-if="isModel(metadata)"
-              :data="modelRunsSearchData"
-              :filters="modelRunSearchFilters"
-              @filters-updated="filters => modelRunSearchFilters = filters"
-            />
-            <div v-if="dateModelParam">
-              <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
-                <input class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
-                <a class="btn date-picker-buttons" title="toggle" data-toggle>
-                    <i class="fa fa-calendar"></i>
-                </a>
-                <a class="btn date-picker-buttons" title="clear" data-clear>
-                    <i class="fa fa-close"></i>
-                </a>
-              </div>
-              <temporal-facet
-                v-else
-                :model-run-data="filteredRunData"
-                :selected-scenarios="selectedScenarioIds"
-                :model-parameter="dateModelParam"
-                @update-scenario-selection="setSelectedScenarioIds"
-              />
-            </div>
-            <parallel-coordinates-chart
-              class="pc-chart"
-              :dimensions-data="runParameterValues"
-              :selected-dimensions="dimensions"
-              :initial-data-selection="selectedScenarioIds"
-              :new-runs-mode="newRunsMode"
-              @select-scenario="setSelectedScenarios"
-              @generated-scenarios="updateGeneratedScenarios"
-              @geo-selection="openGeoSelectionModal"
-            />
-            <message-display
-              style="margin-bottom: 10px;"
-              v-if="isPublishing && !hasDefaultRun"
-              :message="runningDefaultRun ? 'The default run is currently being executed' : 'You must execute a default run by clicking the button below'"
-              :message-type="'warning'"
-            />
-            <button
-              v-if="isPublishing && !hasDefaultRun && !runningDefaultRun"
-              class="btn toggle-new-runs-button btn-call-to-action"
-              :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
-              @click="createRunWithDefaults()"
-            >
-              {{ defaultRunButtonCaption }}
-            </button>
-            <button
-              v-if="!isPublishing || hasDefaultRun"
-              class="btn toggle-new-runs-button"
-              :class="{
-                'btn-call-to-action': !newRunsMode,
-                '': newRunsMode
-              }"
-              :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
-              @click="toggleNewRunsMode()"
-            >
-              {{ newRunsMode ? 'Cancel' : 'Request new runs' }}
-            </button>
-            <button
-              v-if="newRunsMode"
-              class="btn btn-call-to-action"
-              :class="{ 'disabled': potentialScenarioCount === 0}"
-              @click="requestNewModelRuns()"
-            >
-              Review {{ potentialScenarioCount }} new scenario{{ potentialScenarioCount !== 1 ? 's' : '' }}
-            </button>
-            <button
-              v-else
-              class="btn"
-              @click="showModelExecutionStatus()"
-            >
-              Check execution status
-            </button>
-          </div>
-          <div class="column center-column">
-            <div class="button-row">
-              <div class="button-row-group">
-                <radio-button-group
-                  :selected-button-value="currentTabView"
-                  :buttons="headerGroupButtons"
-                  @button-clicked="onTabClick"
-                />
-                <small-text-button
-                  v-if="dataPaths.length > 0"
-                  :label="'Download raw data'"
-                  @click="showDatasets = true"
-                />
-              </div>
-              <div style="display: flex">
-                <div
-                  v-if="currentTabView === DatacubeViewMode.Data && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
-                  class="relative-box"
-                >
-                  <div class="checkbox" v-if="relativeTo">
-                    <label
-                      @click="showPercentChange = !showPercentChange"
-                      style="cursor: pointer; color: black;">
-                      <i
-                        class="fa fa-lg fa-fw"
-                        :class="{ 'fa-check-square-o': showPercentChange, 'fa-square-o': !showPercentChange }"
-                      />
-                      Use % Change
-                    </label>
-                  </div>
-                  Relative to
-                  <button
-                    class="btn"
-                    @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
-                    :style="{ color: baselineMetadata?.color ?? 'black' }"
-                  >
-                    {{baselineMetadata?.name ?? 'none'}}</button
-                  >
-                  <dropdown-control
-                    v-if="isRelativeDropdownOpen"
-                    class="relative-dropdown">
-                    <template #content>
-                      <div
-                        v-if="relativeTo !== null"
-                        class="dropdown-option"
-                        @click="setRelativeTo(null); isRelativeDropdownOpen = false;"
-                      >
-                        none
-                      </div>
-                      <div
-                        v-for="(timeseries, index) in visibleTimeseriesData"
-                        class="dropdown-option"
-                        :style="{ color: timeseries.color }"
-                        :key="index"
-                        @click="setRelativeTo(timeseries.id); isRelativeDropdownOpen = false;"
-                      >
-                        {{timeseries.name}}
-                      </div>
-                    </template>
-                  </dropdown-control>
-                </div>
-                <button
-                  class="btn"
-                  :class="{ 'viz-option-invalid': someVizOptionsInvalid }"
-                  title="Toggle visualization options"
-                  :onClick="() => activeVizOptionsTab = (activeVizOptionsTab === null ? 'vizoptions' : null)"
-                >
-                  <i class="fa fa-gear"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Description tab content -->
-            <slot name="datacube-description" v-if="currentTabView === DatacubeViewMode.Description" />
-
-            <!-- Pre-rendered viz tab content -->
-            <!--
-              outputSpecs.length > 0 means we have one or more selected run
-              FIXME: this should be done directly against allModelRunData
-            -->
-            <div
-              v-if="currentTabView === DatacubeViewMode.Media && outputSpecs.length > 0"
-              style="display: flex; height: 100%; flex-direction: column">
-
-              <!-- a global list
-                of all pre-rendered-viz items from all runs,
-                and enable selection by item name/id instead of index
-                which won't work when different model runs have different list of pre-rendered items -->
-              <div v-if="preGenDataIds.length > 0">
-                <div style="display: flex; padding: 5px;">
-                  <div style="padding-right: 10px">Selected Viz:</div>
-                    <select name="pre-gen-outputs" @change="selectedPreGenDataId = preGenDataIds[$event.target.selectedIndex]">
-                      <option
-                        v-for="pregenId in preGenDataIds" :key="pregenId"
-                        :selected="pregenId === selectedPreGenDataId"
-                      >
-                        {{pregenId}}
-                      </option>
-                    </select>
-                  <button
-                    v-if="firstSelectedPreGenOutput && firstSelectedPreGenOutput.type === 'image'"
-                    type="button"
-                    class="btn btn-sm btn-call-to-action"
-                    style="margin-left: 10px"
-                    @click="savePreGenAsInsight">
-                    <i class="fa fa-fw fa-star fa-lg" />
-                    Save As Insight
-                  </button>
-                </div>
-                <div v-if="firstSelectedPreGenOutput && firstSelectedPreGenOutput.caption" style="padding-left: 5px; padding-right: 10px">{{firstSelectedPreGenOutput.caption}}</div>
-              </div>
-
-              <div class="column card-maps-container" style="flex-direction: revert;">
-                <div v-for="(spec, indx) in outputSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec.id)"
-                  class="card-map-container"
-                  :style="{ borderColor: colorFromIndex(indx) }"
-                  style="border-width: 2px; border-style: solid;"
-                  :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
-                >
-                  <!-- spec here represents one selected model run -->
-                  <template v-if="spec.preGeneratedOutput && pregenDataForSpec !== undefined" >
-                    <!-- display only a single pre-rendered-viz item for each selected run -->
-                    <img
-                      v-if="pregenDataForSpec.type === 'image'"
-                      :src="pregenDataForSpec.embeddedSrc ?? pregenDataForSpec.file"
-                      alt="Pre-rendered Visualization"
-                      class="pre-rendered-content"
-                    >
-                    <video
-                      v-if="pregenDataForSpec.type === 'video'"
-                      controls muted
-                      class="pre-rendered-content"
-                      :src="pregenDataForSpec.file"
-                    >
-                    </video>
-                    <iframe
-                      v-if="pregenDataForSpec.type === 'web'"
-                      :src="pregenDataForSpec.file"
-                      class="pre-rendered-content" style="height: 100%;">
-                    </iframe>
-                  </template>
-                  <template v-else>
-                    No pre-generated data available for some selected model run(s)!
-                  </template>
-                </div>
-              </div>
-            </div>
-
-            <datacube-scenario-header
-              v-if="currentTabView === DatacubeViewMode.Data && activeFeature && isModel(metadata)"
-              :metadata="metadata"
-              :model-run-data="filteredRunData"
-              :selected-scenario-ids="selectedScenarioIds"
-              :color-from-index="colorFromIndex"
-            />
-            <modal v-if="showDatasets">
-              <template #header>
-                <h4 class="header"> Parquet files used to populate this datacube </h4>
-              </template>
-              <template #body>
-                <div v-for="dataPath in dataPaths" :key="dataPath">
-                  <a class="dataset-link" :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
-                  <br/>
-                  <br/>
-                </div>
-                <p>
-                  <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
-                </p>
-              </template>
-              <template #footer>
-                <div
-                  class="btn btn-call-to-action"
-                  @click="showDatasets = false"
-                >
-                  Close
-                </div>
-              </template>
-            </modal>
-
-
-            <!-- Data tab content -->
-            <div v-if="currentTabView === DatacubeViewMode.Data" class="column">
-              <timeseries-chart
-                v-if="visibleTimeseriesData.length > 0 && breakdownOption !== SPLIT_BY_VARIABLE"
-                class="timeseries-chart"
-                :timeseries-data="timeseriesData"
-                :selected-temporal-resolution="selectedTemporalResolution"
-                :selected-timestamp="selectedTimestamp"
-                :breakdown-option="breakdownOption"
-                :unit="timeseriesUnit"
-                @select-timestamp="setSelectedTimestamp"
-              />
-              <datacube-comparative-timeline-sync
-                v-if="breakdownOption === SPLIT_BY_VARIABLE && selectedFeatureNames.size > 0 && globalTimeseries.length > 0"
-                :timeseriesData="globalTimeseries"
-                :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
-                :selected-timestamp="selectedGlobalTimestamp"
-                :selected-timestamp-range="selectedGlobalTimestampRange"
-                :breakdown-option="breakdownOption"
-                @select-timestamp="setSelectedGlobalTimestamp"
-                @select-timestamp-range="setSelectedGlobalTimestampRange"
-              />
-              <p
-                v-if="
-                  breakdownOption !== null &&
-                  ((visibleTimeseriesData.length === 0 && breakdownOption !== SPLIT_BY_VARIABLE) ||
-                  (selectedFeatureNames.size === 0 && breakdownOption === SPLIT_BY_VARIABLE))
-                "
-              >
-                Please select one or more
-                {{
-                  breakdownOption === SpatialAggregationLevel.Region
-                    ? 'regions'
-                    : breakdownOption === TemporalAggregationLevel.Year
-                    ? 'years'
-                    : breakdownOption === SPLIT_BY_VARIABLE
-                    ? 'variables'
-                    : 'qualifier values'
-                }}
-                , or choose 'Split by none'.
-              </p>
-              <div class="card-maps-box" v-if="breakdownOption === SPLIT_BY_VARIABLE">
-              <!-- FIXME: there must be a better way to do this -->
-                <div
-                  v-if="selectedFeatures.length > 0"
-                  class="card-maps-legend-container"
-                  :class="selectedFeatures.length > 1 ? 'top-padding' : ''"
-                >
-                </div>
-                <div
-                  v-if="regionalData !== null"
-                  class="card-maps-container">
-                  <div
-                    v-for="({ name: featureName }, indx) in selectedFeatures"
-                    :key="featureName"
-                    class="card-map-container"
-                    :class="[
-                      `card-count-${selectedFeatures.length < 5 ? selectedFeatures.length : 'n'}`
-                    ]"
-                  >
-                    <span
-                      v-if="selectedFeatures.length > 1"
-                      :style="{ color: colorFromIndex(indx)}"
-                    >
-                      {{ featureName }}
-                    </span>
-                    <region-map
-                      class="card-map"
-                      :style="{ borderColor: colorFromIndex(indx) }"
-                      :data="regionMapData[featureName]"
-                      :map-bounds="mapBounds"
-                      :popup-Formatter="popupFormatter"
-                      :region-filter="selectedRegionIdsAtAllLevels"
-                      :selected-admin-level="selectedAdminLevel"
-                      @sync-bounds="onSyncMapBounds"
-                    />
-                  </div>
-                </div>
-                <div
-                  v-else-if="currentTabView === DatacubeViewMode.Data"
-                  class="card-maps-container"
-                >
-                  <!-- Empty div to reduce jumpiness when the maps are loading -->
-                  <div class="card-map" />
-                </div>
-                <!-- FIXME: there must be a better way to do this -->
-                <div
-                  v-if="selectedFeatures.length > 0"
-                  class="card-maps-legend-container"
-                  :class="selectedFeatures.length > 1 ? 'top-padding' : ''"
-                >
-                </div>
-              </div>
-              <div class="card-maps-box" v-if="breakdownOption !== SPLIT_BY_VARIABLE">
-                <div
-                  v-if="outputSpecs.length > 0 && mapLegendData.length === 2"
-                  class="card-maps-legend-container"
-                  :class="outputSpecs.length > 1 ? 'top-padding right-margin' : ''"
-                >
-                  <map-legend
-                    :ramp="mapLegendData[0]"
-                    :isContinuous="isContinuousScale"
-                  />
-                </div>
-                <div
-                  v-if="currentTabView === DatacubeViewMode.Data && regionalData !== null"
-                  class="card-maps-container">
-                  <div
-                    v-for="(spec, indx) in outputSpecs"
-                    :key="spec.id"
-                    class="card-map-container"
-                    :class="[
-                      {'is-default-run': spec.isDefaultRun },
-                      `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
-                    ]"
-                  >
-                    <span
-                      v-if="outputSpecs.length > 1"
-                      :style="{ color: colorFromIndex(indx)}"
-                    >
-                      {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
-                    </span>
-                    <data-analysis-map
-                      class="card-map"
-                      :style="{ borderColor: colorFromIndex(indx) }"
-                      :output-source-specs="outputSpecs"
-                      :output-selection=spec.id
-                      :relative-to="relativeTo"
-                      :show-tooltip="true"
-                      :selected-layer-id="getSelectedLayer(spec.id)"
-                      :map-bounds="isSplitByRegionMode ? mapBoundsForEachSpec[spec.id] : mapBounds"
-                      :region-data="regionalData"
-                      :raw-data="rawDataPointsList[indx]"
-                      :selected-regions="mapSelectedRegions"
-                      :admin-layer-stats="adminLayerStats"
-                      :grid-layer-stats="gridLayerStats"
-                      :points-layer-stats="pointsLayerStats"
-                      :selected-base-layer="selectedBaseLayer"
-                      :unit="unit"
-                      :color-options="mapColorOptions"
-                      :show-percent-change="showPercentChange"
-                      @sync-bounds="(bounds) => isSplitByRegionMode ? () => {} : onSyncMapBounds(bounds)"
-                      @on-map-load="onMapLoad"
-                      @zoom-change="updateMapCurSyncedZoom"
-                      @map-update="recalculateGridMapDiffStats"
-                    />
-                  </div>
-                </div>
-                <div
-                  v-else-if="currentTabView === DatacubeViewMode.Data"
-                  class="card-maps-container"
-                >
-                  <!-- Empty div to reduce jumpiness when the maps are loading -->
-                  <div class="card-map" />
-                </div>
-                <div
-                  v-if="outputSpecs.length > 0"
-                  class="card-maps-legend-container"
-                  :class="outputSpecs.length > 1 ? 'top-padding left-margin' : ''"
-                >
-                  <map-legend
-                    :ramp="mapLegendData.length === 2
-                      ? mapLegendData[1]
-                      : mapLegendData[0]"
-                    :isContinuous="isContinuousScale"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div style="position: relative">
-            <drilldown-panel
-              class="drilldown"
-              :active-tab-id="'tabId'"
-              :has-transition="false"
-              :hide-close="true"
-              :is-open="isBreakdownPaneOpen"
-              :tabs="[{ name: 'Breakdown', id: 'tabId', icon: '' }]"
-              @close="() => { isBreakdownPaneOpen = false }"
-            >
-              <template #content>
-                <breakdown-pane
-                  v-if="isBreakdownPaneOpen"
-                  :selected-admin-level="selectedAdminLevel"
-                  :qualifier-breakdown-data="qualifierBreakdownData"
-                  :qualifier-fetch-info="qualifierFetchInfo"
-                  :regional-data="regionalData"
-                  :temporal-breakdown-data="temporalBreakdownData"
-                  :feature-breakdown-data="featureBreakdownData"
-                  :selected-spatial-aggregation="selectedSpatialAggregation"
-                  :selected-temporal-aggregation="selectedTemporalAggregation"
-                  :selected-temporal-resolution="selectedTemporalResolution"
-                  :selected-timestamp="selectedTimestamp"
-                  :selected-scenario-ids="selectedScenarioIds"
-                  :selected-region-ids="selectedRegionIds"
-                  :selected-region-ids-at-all-levels="selectedRegionIdsAtAllLevels"
-                  :selected-qualifier-values="selectedQualifierValues"
-                  :selected-breakdown-option="breakdownOption"
-                  :selected-timeseries-points="selectedTimeseriesPoints"
-                  :selected-years="selectedYears"
-                  :selected-feature-names="selectedFeatureNames"
-                  :reference-options="availableReferenceOptions"
-                  :unit="unit"
-                  @toggle-is-region-selected="toggleIsRegionSelected"
-                  @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-                  @toggle-is-year-selected="toggleIsYearSelected"
-                  @toggle-is-output-variable-selected="toggleIsFeatureSelected"
-                  @toggle-reference-options="toggleReferenceOptions"
-                  @set-selected-admin-level="setSelectedAdminLevel"
-                  @set-breakdown-option="setBreakdownOption"
-                  @request-qualifier-data="requestAdditionalQualifier"
-                />
-              </template>
-            </drilldown-panel>
-            <!-- viz options if visible will always be on top of the breakdown panel -->
-            <div class="viz-options-modal-mask"
-              v-if="activeVizOptionsTab !== null"
-              @click="activeVizOptionsTab = null"
-            >
-              <!-- Catch click events and stop propagation to avoid closing
-              the modal every time an interaction occurs within it -->
-              <div class="viz-options-modal" @click.stop="">
-                <h4>Configuration</h4>
-                <viz-options-pane
-                  :metadata="metadata"
-                  :item-id="itemId"
-                  :aggregation-options="filteredAggregationOptions"
-                  :resolution-options="temporalResolutionOptions"
-                  :selected-spatial-aggregation="selectedSpatialAggregation"
-                  :selected-temporal-aggregation="selectedTemporalAggregation"
-                  :selected-transform="selectedTransform"
-                  :selected-resolution="selectedTemporalResolution"
-                  :selected-base-layer="selectedBaseLayer"
-                  :selected-data-layer="selectedDataLayer"
-                  :selected-data-layer-transparency="selectedDataLayerTransparency"
-                  :color-scheme-reversed="colorSchemeReversed"
-                  :selected-color-scheme-name="selectedColorSchemeName"
-                  :selected-color-scale-type="selectedColorScaleType"
-                  :number-of-color-bins="numberOfColorBins"
-                  :selected-color-scheme="finalColorScheme"
-                  @set-spatial-aggregation-selection="setSpatialAggregationSelection"
-                  @set-temporal-aggregation-selection="setTemporalAggregationSelection"
-                  @set-resolution-selection="setTemporalResolutionSelection"
-                  @set-base-layer-selection="setBaseLayer"
-                  @set-data-layer-transparency-selection="setDataLayerTransparency"
-                  @set-data-layer-selection="setDataLayer"
-                  @set-color-scheme-reversed="setColorSchemeReversed"
-                  @set-color-scheme-name="setColorSchemeName"
-                  @set-color-scale-type="setColorScaleType"
-                  @set-number-color-bins="setNumberOfColorBins"
-                  @set-transform-selection="setTransformSelection"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="datacube-card-container">
+    <modal-new-scenario-runs
+      v-if="isModel(metadata) && showNewRunsModal === true"
+      :metadata="metadata"
+      :potential-scenarios="potentialScenarios"
+      :selected-dimensions="dimensions"
+      :runtime-stats="runtimeStats"
+      @close="onNewScenarioRunsModalClose" />
+    <modal-check-runs-execution-status
+      v-if="isModel(metadata) && showModelRunsExecutionStatus === true"
+      :metadata="metadata"
+      :potential-scenarios="runParameterValues"
+      @close="showModelRunsExecutionStatus = false"
+      @delete="prepareDelete"
+      @retry="retryRun"
+    />
+    <modal-geo-selection
+      v-if="showGeoSelectionModal === true"
+      :model-param="geoModelParam"
+      :metadata="metadata"
+      @close="onGeoSelectionModalClose" />
+    <rename-modal
+      v-if="showTagNameModal"
+      :modal-title="`Add new tag to ${selectedScenarioIds.length} selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
+      @confirm="addNewTag"
+      @cancel="showTagNameModal = false"
+    />
+    <rename-modal
+      v-if="showRunNameModal"
+      :modal-title="'Rename run'"
+      :current-name="selectedScenarios[0].name"
+      @confirm="renameRun"
+      @cancel="showRunNameModal = false"
+    />
     <modal-confirmation
       v-if="showDelete"
       :autofocus-confirm="false"
@@ -613,6 +44,541 @@
         <p>Are you sure you want to delete this model run?</p>
       </template>
     </modal-confirmation>
+    <header>
+      <slot name="datacube-model-header" />
+      <button
+        class="btn breakdown-button"
+        :onClick="() => isBreakdownPaneOpen = !isBreakdownPaneOpen"
+      >
+        {{ isBreakdownPaneOpen === false ? 'Show' : 'Hide' }} Breakdown
+      </button>
+      <slot name="datacube-model-header-collapse" />
+    </header>
+    <div class="flex-row">
+      <!-- if has multiple scenarios -->
+      <div v-if="isModel(metadata)" class="scenario-selector">
+        <div class="tags-area-container">
+          <span class="scenario-count" v-if="selectedScenarioIds.length === 0">
+            {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
+          </span>
+          <span class="scenario-count" v-if="selectedScenarioIds.length > 0">
+            {{selectedScenarioIds.length}} model run{{selectedScenarioIds.length === 1 ? '' : 's'}} selected.
+          </span>
+          <small-text-button
+            v-if="isPublishing && selectedScenarios.length === 1"
+            :label="'Rename ' + selectedScenarios[0].name"
+            @click="showRunNameModal = true"
+          >
+            <template #leading>
+              <i class="fa fa-edit" />
+            </template>
+          </small-text-button>
+          <span v-if="selectedScenarioIds.length > 0">Tags:</span>
+          <small-text-button
+            v-for="(tag, index) in tagsSharedBySelectedRuns"
+            v-tooltip="'Remove from selected run' + (selectedScenarioIds.length === 1 ? '' : 's')"
+            :key="index"
+            :label="tag"
+            @click="removeTagFromSelectedRuns(tag)"
+          >
+            <template #trailing>
+              <i class="fa fa-close" />
+            </template>
+          </small-text-button>
+          <small-text-button
+            v-if="selectedScenarioIds.length > 0"
+            v-tooltip="'Add to selected run' + (selectedScenarioIds.length === 1 ? '' : 's')"
+            :label="`Add tag`"
+            @click="showTagNameModal = true"
+          >
+            <template #leading>
+              <i class="fa fa-plus-circle" />
+            </template>
+          </small-text-button>
+        </div>
+        <model-runs-search-bar
+          class="model-runs-search-bar"
+          v-if="isModel(metadata)"
+          :data="modelRunsSearchData"
+          :filters="modelRunSearchFilters"
+          @filters-updated="filters => modelRunSearchFilters = filters"
+        />
+        <div v-if="dateModelParam">
+          <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
+            <input class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
+            <a class="btn date-picker-buttons" title="toggle" data-toggle>
+                <i class="fa fa-calendar"></i>
+            </a>
+            <a class="btn date-picker-buttons" title="clear" data-clear>
+                <i class="fa fa-close"></i>
+            </a>
+          </div>
+          <temporal-facet
+            v-else
+            :model-run-data="filteredRunData"
+            :selected-scenarios="selectedScenarioIds"
+            :model-parameter="dateModelParam"
+            @update-scenario-selection="setSelectedScenarioIds"
+          />
+        </div>
+        <parallel-coordinates-chart
+          class="pc-chart"
+          :dimensions-data="runParameterValues"
+          :selected-dimensions="dimensions"
+          :initial-data-selection="selectedScenarioIds"
+          :new-runs-mode="newRunsMode"
+          @select-scenario="setSelectedScenarios"
+          @generated-scenarios="updateGeneratedScenarios"
+          @geo-selection="openGeoSelectionModal"
+        />
+        <message-display
+          style="margin-bottom: 10px;"
+          v-if="isPublishing && !hasDefaultRun"
+          :message="runningDefaultRun ? 'The default run is currently being executed' : 'You must execute a default run by clicking the button below'"
+          :message-type="'warning'"
+        />
+        <button
+          v-if="isPublishing && !hasDefaultRun && !runningDefaultRun"
+          class="btn toggle-new-runs-button btn-call-to-action"
+          :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
+          @click="createRunWithDefaults()"
+        >
+          {{ defaultRunButtonCaption }}
+        </button>
+        <button
+          v-if="!isPublishing || hasDefaultRun"
+          class="btn toggle-new-runs-button"
+          :class="{
+            'btn-call-to-action': !newRunsMode,
+            '': newRunsMode
+          }"
+          :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
+          @click="toggleNewRunsMode()"
+        >
+          {{ newRunsMode ? 'Cancel' : 'Request new runs' }}
+        </button>
+        <button
+          v-if="newRunsMode"
+          class="btn btn-call-to-action"
+          :class="{ 'disabled': potentialScenarioCount === 0}"
+          @click="requestNewModelRuns()"
+        >
+          Review {{ potentialScenarioCount }} new scenario{{ potentialScenarioCount !== 1 ? 's' : '' }}
+        </button>
+        <button
+          v-else
+          class="btn"
+          @click="showModelExecutionStatus()"
+        >
+          Check execution status
+        </button>
+      </div>
+      <div class="column center-column">
+        <div class="button-row">
+          <div class="button-row-group">
+            <radio-button-group
+              :selected-button-value="currentTabView"
+              :buttons="headerGroupButtons"
+              @button-clicked="onTabClick"
+            />
+            <small-text-button
+              v-if="dataPaths.length > 0"
+              :label="'Download raw data'"
+              @click="showDatasets = true"
+            />
+          </div>
+          <div style="display: flex">
+            <div
+              v-if="currentTabView === DatacubeViewMode.Data && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
+              class="relative-box"
+            >
+              <div class="checkbox" v-if="relativeTo">
+                <label
+                  @click="showPercentChange = !showPercentChange"
+                  style="cursor: pointer; color: black;">
+                  <i
+                    class="fa fa-lg fa-fw"
+                    :class="{ 'fa-check-square-o': showPercentChange, 'fa-square-o': !showPercentChange }"
+                  />
+                  Use % Change
+                </label>
+              </div>
+              Relative to
+              <button
+                class="btn"
+                @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
+                :style="{ color: baselineMetadata?.color ?? 'black' }"
+              >
+                {{baselineMetadata?.name ?? 'none'}}</button
+              >
+              <dropdown-control
+                v-if="isRelativeDropdownOpen"
+                class="relative-dropdown">
+                <template #content>
+                  <div
+                    v-if="relativeTo !== null"
+                    class="dropdown-option"
+                    @click="setRelativeTo(null); isRelativeDropdownOpen = false;"
+                  >
+                    none
+                  </div>
+                  <div
+                    v-for="(timeseries, index) in visibleTimeseriesData"
+                    class="dropdown-option"
+                    :style="{ color: timeseries.color }"
+                    :key="index"
+                    @click="setRelativeTo(timeseries.id); isRelativeDropdownOpen = false;"
+                  >
+                    {{timeseries.name}}
+                  </div>
+                </template>
+              </dropdown-control>
+            </div>
+            <button
+              class="btn"
+              :class="{ 'viz-option-invalid': someVizOptionsInvalid }"
+              title="Toggle visualization options"
+              :onClick="() => activeVizOptionsTab = (activeVizOptionsTab === null ? 'vizoptions' : null)"
+            >
+              <i class="fa fa-gear"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Description tab content -->
+        <slot name="datacube-description" v-if="currentTabView === DatacubeViewMode.Description" />
+
+        <!-- Pre-rendered viz tab content -->
+        <!--
+          outputSpecs.length > 0 means we have one or more selected run
+          FIXME: this should be done directly against allModelRunData
+        -->
+        <div
+          v-if="currentTabView === DatacubeViewMode.Media && outputSpecs.length > 0"
+          style="display: flex; height: 100%; flex-direction: column">
+
+          <!-- a global list of all pre-rendered-viz items from all runs.
+            FIXME: enable selection by item name/id instead of index which won't
+            work when different model runs have different lists of
+            pre-rendered items -->
+          <div v-if="preGenDataIds.length > 0">
+            <div style="display: flex; padding: 5px;">
+              <div style="padding-right: 10px">Selected Viz:</div>
+              <select
+                name="pre-gen-outputs"
+                @change="selectedPreGenDataId = preGenDataIds[$event.target.selectedIndex]"
+              >
+                <option
+                  v-for="pregenId in preGenDataIds"
+                  :key="pregenId"
+                  :selected="pregenId === selectedPreGenDataId"
+                >
+                  {{pregenId}}
+                </option>
+              </select>
+              <button
+                v-if="firstSelectedPreGenOutput && firstSelectedPreGenOutput.type === 'image'"
+                type="button"
+                class="btn btn-sm btn-call-to-action"
+                style="margin-left: 10px"
+                @click="savePreGenAsInsight">
+                <i class="fa fa-fw fa-star fa-lg" />
+                Save As Insight
+              </button>
+            </div>
+            <div v-if="firstSelectedPreGenOutput && firstSelectedPreGenOutput.caption" style="padding-left: 5px; padding-right: 10px">{{firstSelectedPreGenOutput.caption}}</div>
+          </div>
+
+          <div class="card-maps-container" style="flex-direction: revert;">
+            <div v-for="(spec, indx) in outputSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec.id)"
+              class="card-map-container"
+              :style="{ borderColor: colorFromIndex(indx) }"
+              style="border-width: 2px; border-style: solid;"
+              :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
+            >
+              <!-- spec here represents one selected model run -->
+              <template v-if="spec.preGeneratedOutput && pregenDataForSpec !== undefined" >
+                <!-- display only a single pre-rendered-viz item for each selected run -->
+                <img
+                  v-if="pregenDataForSpec.type === 'image'"
+                  :src="pregenDataForSpec.embeddedSrc ?? pregenDataForSpec.file"
+                  alt="Pre-rendered Visualization"
+                  class="pre-rendered-content"
+                >
+                <video
+                  v-if="pregenDataForSpec.type === 'video'"
+                  controls muted
+                  class="pre-rendered-content"
+                  :src="pregenDataForSpec.file"
+                >
+                </video>
+                <iframe
+                  v-if="pregenDataForSpec.type === 'web'"
+                  :src="pregenDataForSpec.file"
+                  class="pre-rendered-content" style="height: 100%;">
+                </iframe>
+              </template>
+              <template v-else>
+                No pre-generated data available for some selected model run(s)!
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <datacube-scenario-header
+          v-if="currentTabView === DatacubeViewMode.Data && activeFeature && isModel(metadata)"
+          :metadata="metadata"
+          :model-run-data="filteredRunData"
+          :selected-scenario-ids="selectedScenarioIds"
+          :color-from-index="colorFromIndex"
+        />
+        <modal v-if="showDatasets">
+          <template #header>
+            <h4 class="header"> Parquet files used to populate this datacube </h4>
+          </template>
+          <template #body>
+            <div v-for="dataPath in dataPaths" :key="dataPath">
+              <a class="dataset-link" :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
+              <br/>
+              <br/>
+            </div>
+            <p>
+              <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
+            </p>
+          </template>
+          <template #footer>
+            <div
+              class="btn btn-call-to-action"
+              @click="showDatasets = false"
+            >
+              Close
+            </div>
+          </template>
+        </modal>
+
+
+        <!-- Data tab content -->
+        <div v-if="currentTabView === DatacubeViewMode.Data" class="column">
+          <timeseries-chart
+            v-if="visibleTimeseriesData.length > 0 && breakdownOption !== SPLIT_BY_VARIABLE"
+            class="timeseries-chart"
+            :timeseries-data="timeseriesData"
+            :selected-temporal-resolution="selectedTemporalResolution"
+            :selected-timestamp="selectedTimestamp"
+            :breakdown-option="breakdownOption"
+            :unit="timeseriesUnit"
+            @select-timestamp="setSelectedTimestamp"
+          />
+          <datacube-comparative-timeline-sync
+            v-if="breakdownOption === SPLIT_BY_VARIABLE && selectedFeatureNames.size > 0 && globalTimeseries.length > 0"
+            :timeseriesData="globalTimeseries"
+            :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
+            :selected-timestamp="selectedGlobalTimestamp"
+            :selected-timestamp-range="selectedGlobalTimestampRange"
+            :breakdown-option="breakdownOption"
+            @select-timestamp="setSelectedGlobalTimestamp"
+            @select-timestamp-range="setSelectedGlobalTimestampRange"
+          />
+          <p
+            v-if="
+              breakdownOption !== null &&
+              ((visibleTimeseriesData.length === 0 && breakdownOption !== SPLIT_BY_VARIABLE) ||
+              (selectedFeatureNames.size === 0 && breakdownOption === SPLIT_BY_VARIABLE))
+            "
+          >
+            Please select one or more
+            {{
+              breakdownOption === SpatialAggregationLevel.Region
+                ? 'regions'
+                : breakdownOption === TemporalAggregationLevel.Year
+                ? 'years'
+                : breakdownOption === SPLIT_BY_VARIABLE
+                ? 'variables'
+                : 'qualifier values'
+            }}
+            , or choose 'Split by none'.
+          </p>
+          <div class="card-maps-box" v-if="breakdownOption === SPLIT_BY_VARIABLE">
+            <div class="card-maps-container">
+              <div
+                v-for="({ name: featureName }, indx) in selectedFeatures"
+                :key="featureName"
+                class="card-map-container"
+                :class="[
+                  `card-count-${selectedFeatures.length < 5 ? selectedFeatures.length : 'n'}`
+                ]"
+              >
+                <span
+                  v-if="selectedFeatures.length > 1"
+                  :style="{ color: colorFromIndex(indx)}"
+                >
+                  {{ featureName }}
+                </span>
+                <region-map
+                  class="card-map"
+                  :style="{ borderColor: colorFromIndex(indx) }"
+                  :data="regionMapData[featureName]"
+                  :map-bounds="mapBounds"
+                  :popup-Formatter="popupFormatter"
+                  :region-filter="selectedRegionIdsAtAllLevels"
+                  :selected-admin-level="selectedAdminLevel"
+                  @sync-bounds="onSyncMapBounds"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="card-maps-box" v-else>
+            <map-legend
+              v-if="outputSpecs.length > 0 && mapLegendData.length === 2"
+              class="map-legend"
+              :class="{'top-margin right-margin' : outputSpecs.length > 1 }"
+              :ramp="mapLegendData[0]"
+              :isContinuous="isContinuousScale"
+            />
+            <div v-if="regionalData !== null" class="card-maps-container">
+              <div
+                v-for="(spec, indx) in outputSpecs"
+                :key="spec.id"
+                class="card-map-container"
+                :class="[
+                  spec.isDefaultRun ? 'is-default-run' : '',
+                  `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
+                ]"
+              >
+                <span
+                  v-if="outputSpecs.length > 1"
+                  :style="{ color: colorFromIndex(indx)}"
+                >
+                  {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
+                </span>
+                <data-analysis-map
+                  class="card-map"
+                  :style="{ borderColor: colorFromIndex(indx) }"
+                  :output-source-specs="outputSpecs"
+                  :output-selection=spec.id
+                  :relative-to="relativeTo"
+                  :show-tooltip="true"
+                  :selected-layer-id="getSelectedLayer(spec.id)"
+                  :map-bounds="isSplitByRegionMode ? mapBoundsForEachSpec[spec.id] : mapBounds"
+                  :region-data="regionalData"
+                  :raw-data="rawDataPointsList[indx]"
+                  :selected-regions="mapSelectedRegions"
+                  :admin-layer-stats="adminLayerStats"
+                  :grid-layer-stats="gridLayerStats"
+                  :points-layer-stats="pointsLayerStats"
+                  :selected-base-layer="selectedBaseLayer"
+                  :unit="unit"
+                  :color-options="mapColorOptions"
+                  :show-percent-change="showPercentChange"
+                  @sync-bounds="(bounds) => isSplitByRegionMode ? () => {} : onSyncMapBounds(bounds)"
+                  @on-map-load="onMapLoad"
+                  @zoom-change="updateMapCurSyncedZoom"
+                  @map-update="recalculateGridMapDiffStats"
+                />
+              </div>
+            </div>
+            <div v-else class="card-maps-container">
+              <!-- Empty div to reduce jumpiness when the maps are loading -->
+              <div class="card-map" />
+            </div>
+            <map-legend
+              v-if="outputSpecs.length > 0"
+              class="map-legend"
+              :class="{'top-margin left-margin' : outputSpecs.length > 1 }"
+              :ramp="mapLegendData.length === 2
+                ? mapLegendData[1]
+                : mapLegendData[0]"
+              :isContinuous="isContinuousScale"
+            />
+          </div>
+        </div>
+      </div>
+      <div style="position: relative">
+        <drilldown-panel
+          class="drilldown"
+          :active-tab-id="'tabId'"
+          :has-transition="false"
+          :hide-close="true"
+          :is-open="isBreakdownPaneOpen"
+          :tabs="[{ name: 'Breakdown', id: 'tabId', icon: '' }]"
+          @close="() => { isBreakdownPaneOpen = false }"
+        >
+          <template #content>
+            <breakdown-pane
+              v-if="isBreakdownPaneOpen"
+              :selected-admin-level="selectedAdminLevel"
+              :qualifier-breakdown-data="qualifierBreakdownData"
+              :qualifier-fetch-info="qualifierFetchInfo"
+              :regional-data="regionalData"
+              :temporal-breakdown-data="temporalBreakdownData"
+              :feature-breakdown-data="featureBreakdownData"
+              :selected-spatial-aggregation="selectedSpatialAggregation"
+              :selected-temporal-aggregation="selectedTemporalAggregation"
+              :selected-temporal-resolution="selectedTemporalResolution"
+              :selected-timestamp="selectedTimestamp"
+              :selected-scenario-ids="selectedScenarioIds"
+              :selected-region-ids="selectedRegionIds"
+              :selected-region-ids-at-all-levels="selectedRegionIdsAtAllLevels"
+              :selected-qualifier-values="selectedQualifierValues"
+              :selected-breakdown-option="breakdownOption"
+              :selected-timeseries-points="selectedTimeseriesPoints"
+              :selected-years="selectedYears"
+              :selected-feature-names="selectedFeatureNames"
+              :reference-options="availableReferenceOptions"
+              :unit="unit"
+              @toggle-is-region-selected="toggleIsRegionSelected"
+              @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+              @toggle-is-year-selected="toggleIsYearSelected"
+              @toggle-is-output-variable-selected="toggleIsFeatureSelected"
+              @toggle-reference-options="toggleReferenceOptions"
+              @set-selected-admin-level="setSelectedAdminLevel"
+              @set-breakdown-option="setBreakdownOption"
+              @request-qualifier-data="requestAdditionalQualifier"
+            />
+          </template>
+        </drilldown-panel>
+        <!-- viz options if visible will always be on top of the breakdown panel -->
+        <div class="viz-options-modal-mask"
+          v-if="activeVizOptionsTab !== null"
+          @click="activeVizOptionsTab = null"
+        >
+          <!-- Catch click events and stop propagation to avoid closing
+          the modal every time an interaction occurs within it -->
+          <div class="viz-options-modal" @click.stop="">
+            <h4>Configuration</h4>
+            <viz-options-pane
+              :metadata="metadata"
+              :item-id="itemId"
+              :aggregation-options="filteredAggregationOptions"
+              :resolution-options="temporalResolutionOptions"
+              :selected-spatial-aggregation="selectedSpatialAggregation"
+              :selected-temporal-aggregation="selectedTemporalAggregation"
+              :selected-transform="selectedTransform"
+              :selected-resolution="selectedTemporalResolution"
+              :selected-base-layer="selectedBaseLayer"
+              :selected-data-layer="selectedDataLayer"
+              :selected-data-layer-transparency="selectedDataLayerTransparency"
+              :color-scheme-reversed="colorSchemeReversed"
+              :selected-color-scheme-name="selectedColorSchemeName"
+              :selected-color-scale-type="selectedColorScaleType"
+              :number-of-color-bins="numberOfColorBins"
+              :selected-color-scheme="finalColorScheme"
+              @set-spatial-aggregation-selection="setSpatialAggregationSelection"
+              @set-temporal-aggregation-selection="setTemporalAggregationSelection"
+              @set-resolution-selection="setTemporalResolutionSelection"
+              @set-base-layer-selection="setBaseLayer"
+              @set-data-layer-transparency-selection="setDataLayerTransparency"
+              @set-data-layer-selection="setDataLayer"
+              @set-color-scheme-reversed="setColorSchemeReversed"
+              @set-color-scheme-name="setColorSchemeName"
+              @set-color-scale-type="setColorScaleType"
+              @set-number-color-bins="setNumberOfColorBins"
+              @set-transform-selection="setTransformSelection"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -2209,32 +2175,22 @@ $cardSpacing: 10px;
   text-decoration: underline;
 }
 
-.datacube-card-parent {
-  width: 100%;
-  display: flex;
-}
-
 .datacube-card-container {
   background-color: $background-light-1;
   border: 2px solid $separator;
   border-radius: 3px;
   display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   width: 100%;
+  padding-top: $cardSpacing;
+  padding-left: $cardSpacing;
 }
 
 
 .drilldown {
   height: 100%;
   box-shadow: none;
-}
-
-.capture-box {
-  padding-top: $cardSpacing;
-  padding-left: $cardSpacing;
-  display: flex;
-  width: 100%;
-  flex-direction: column;
 }
 
 .flex-row {
@@ -2340,11 +2296,9 @@ $marginSize: 5px;
   flex-direction: row;
 }
 
-.card-maps-legend-container {
-  display: flex;
-  flex-direction: column;
-  &.top-padding {
-    padding-top: 19px;
+.map-legend {
+  &.top-margin {
+    margin-top: 19px;
   }
   &.right-margin {
     margin-right: 2px;

@@ -96,7 +96,6 @@ $font-size: 12px;
   font-size: $font-size;
   line-height: $font-size;
   position: relative;
-  height: 100%;
   width: 12ch;
 }
 svg {
