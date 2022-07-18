@@ -487,7 +487,12 @@ export default defineComponent({
 @import '~styles/variables';
 
 .invalid-option {
-  color: red !important;
+  color: red;
+
+  // Override dropdown button color styles
+  :deep(button) {
+    color: inherit;
+  }
 }
 
 .breakdown-pane-container {

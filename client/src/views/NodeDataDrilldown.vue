@@ -530,8 +530,4 @@ main {
 .datacube-header {
   flex: 1;
 }
-
-.dropdown-config:not(:first-child) {
-  margin-left: 5px;
-}
 </style>

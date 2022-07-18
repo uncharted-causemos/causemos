@@ -361,8 +361,4 @@ export default defineComponent({
   flex: 1;
   margin: 0;
 }
-
-.dropdown-config:not(:first-child) {
-  margin-left: 5px;
-}
 </style>

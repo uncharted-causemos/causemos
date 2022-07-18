@@ -2406,14 +2406,6 @@ $marginSize: 5px;
   }
 }
 
-.dropdown-row {
-  display: flex;
-  margin-top: 5px;
-  .dropdown-config:not(:first-child) {
-    margin-left: 5px;
-  }
-}
-
 .data-analysis-card-container {
   background: white;
   padding: 5px 0;
