@@ -352,7 +352,8 @@ export default defineComponent({
           const filteredRegionLevelData = filterRegionalLevelData(regionalData.value, selectedRegionIdsAtAllLevels.value, false /* apply filtering to country level */);
           filteredRegionalData.value = filteredRegionLevelData as BreakdownData | null;
         }
-      }
+      },
+      { immediate: true }
     );
 
     const isTemporalBreakdownDataValid = computed(
@@ -528,7 +529,7 @@ export default defineComponent({
 @import '~styles/variables';
 
 .breakdown-pane-container {
-  margin-bottom: 40px;
+  padding-bottom: 40px;
 }
 
 .aggregation-description {
