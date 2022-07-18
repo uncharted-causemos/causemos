@@ -2,7 +2,7 @@
 import * as d3 from 'd3';
 import svgUtil from '@/utils/svg-util';
 
-import { getRandomNumber } from '@/utils/random';
+import { getSeededRandomNumber } from '@/utils/random';
 
 import { D3Selection, D3Scale, D3ScaleLinear, D3ScalePoint, D3GElementSelection } from '@/types/D3';
 import { ScenarioData } from '@/types/Common';
@@ -305,7 +305,7 @@ function renderParallelCoordinates(
           //  instead of distributing the lines over the segment for ordinal axes, use the segment center
           xPos = min + (max - min) / 2;
         } else {
-          xPos = getRandomNumber(min, max);
+          xPos = getSeededRandomNumber(min, max);
         }
       }
       const yPos = yScale(dimName);

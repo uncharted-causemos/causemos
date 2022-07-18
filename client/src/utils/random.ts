@@ -24,6 +24,35 @@ export function getRandomNumber(min = Number.MIN_VALUE / 2, max = Number.MAX_VAL
   return number;
 }
 
+// From https://stackoverflow.com/a/47593316
+const seed = 1337 ^ 0xDEADBEEF; // 32-bit seed with optional XOR value
+// Pad seed with Phi, Pi and E.
+// https://en.wikipedia.org/wiki/Nothing-up-my-sleeve_number
+const seededRandomFunction = sfc32(0x9E3779B9, 0x243F6A88, 0xB7E15162, seed);
+
+export function getSeededRandomNumber(
+  min = Number.MIN_VALUE / 2,
+  max = Number.MAX_VALUE / 2
+) {
+  return seededRandomFunction() * (max - min) + min;
+}
+
+// A small and fast random number generator that can be seeded, unlike
+//  Math.random()
+function sfc32(a: number, b: number, c: number, d: number) {
+  return function() {
+    a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0;
+    let t = (a + b) | 0;
+    a = b ^ b >>> 9;
+    b = c + (c << 3) | 0;
+    c = (c << 21 | c >>> 11);
+    d = d + 1 | 0;
+    t = t + d | 0;
+    c = c + t | 0;
+    return (t >>> 0) / 4294967296;
+  };
+}
+
 export function getRandomInt(min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER) {
   return Math.floor(getRandomNumber(min, max + 1, null));
 }
