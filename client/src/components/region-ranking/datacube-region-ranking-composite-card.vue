@@ -26,9 +26,11 @@
           :selected-id="barChartHoverId"
           :disable-pan-zoom="true"
           @click-region="$emit('map-click-region', $event)"/>
-        <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
-          <map-legend :ramp="mapLegendData" :isContinuous="false" />
-        </div>
+        <map-legend
+          v-if="mapLegendData.length > 0"
+          :ramp="mapLegendData"
+          :isContinuous="false"
+        />
       </div>
     </main>
   </div>
@@ -218,15 +220,6 @@ main {
   width: 220px;
   height: 100%;
   padding: 5px;
-}
-
-.card-maps-legend-container {
-  display: flex;
-  flex-direction: column;
-  align-items: baseline;
-  .top-padding {
-    height: 19px;
-  }
 }
 
 :deep(.color-ramp) {

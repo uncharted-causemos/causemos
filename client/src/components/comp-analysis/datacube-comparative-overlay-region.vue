@@ -39,12 +39,11 @@
           :selected-admin-level="selectedAdminLevel"
           :disable-pan-zoom="true"
         />
-        <div v-if="mapLegendData.length > 0" class="card-maps-legend-container">
-          <map-legend
-            :ramp="mapLegendData[0]"
-            :isContinuous="isContinuousScale"
-          />
-        </div>
+        <map-legend
+          v-if="mapLegendData.length > 0"
+          :ramp="mapLegendData[0]"
+          :isContinuous="isContinuousScale"
+        />
       </div>
       <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
       <div style="display: flex; align-items: center; align-self: center">
@@ -542,14 +541,6 @@ main {
   flex: 1;
   min-height: 0;
   flex-direction: column;
-}
-
-.card-maps-legend-container {
-  display: flex;
-  flex-direction: column;
-  .top-padding {
-    height: 19px;
-  }
 }
 
 .card-maps-box {
