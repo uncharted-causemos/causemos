@@ -39,6 +39,15 @@ div.lex-box {
     }
   }
 
+  // Replace messy drop shadows with solid border
+  .token.active {
+    .token-input.rewindable,
+    .token-input.active {
+      box-shadow: none;
+      border: 1px solid grey;
+    }
+  }
+
   .token {
     margin: 0;
     font-size: 1.4rem;
@@ -46,6 +55,9 @@ div.lex-box {
 
     button.token-remove,
     button.token-cancel {
+      // The "x" inside this button is absolutely positioned so the background
+      //  doesn't contain it. Hide the background.
+      background: none;
       position: relative;
       top: unset;
       transform: none;
