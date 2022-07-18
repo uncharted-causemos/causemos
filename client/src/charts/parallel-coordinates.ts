@@ -2,7 +2,10 @@
 import * as d3 from 'd3';
 import svgUtil from '@/utils/svg-util';
 
-import { getSeededRandomNumber } from '@/utils/random';
+import {
+  getRandomNumberGenerator,
+  getSeededRandomNumber
+} from '@/utils/random';
 
 import { D3Selection, D3Scale, D3ScaleLinear, D3ScalePoint, D3GElementSelection } from '@/types/D3';
 import { ScenarioData } from '@/types/Common';
@@ -273,7 +276,10 @@ function renderParallelCoordinates(
   // The path function take a row of input (e.g., csv values),
   //  and return x and y coordinates of the line to draw for this raw.
   // NOTE: for ordinal axes, lines would map to any part of the line segment based on the input value
-  function pathDefinitionFunc(d: ScenarioData) {
+  function pathDefinitionFunc(
+    d: ScenarioData,
+    randomNumberGenerator: () => number
+  ) {
     const line = d3.line()
       // curveMonotone curveCatmullRom curveLinear curveCardinal
       .curve(d3.curveCatmullRom /* .tension(0.01) */);
@@ -305,7 +311,7 @@ function renderParallelCoordinates(
           //  instead of distributing the lines over the segment for ordinal axes, use the segment center
           xPos = min + (max - min) / 2;
         } else {
-          xPos = getSeededRandomNumber(min, max);
+          xPos = getSeededRandomNumber(randomNumberGenerator, min, max);
         }
       }
       const yPos = yScale(dimName);
@@ -315,13 +321,17 @@ function renderParallelCoordinates(
   }
 
   function renderLines() {
+    // Re-initialize random number generator with the same seed each time lines
+    //  are rendered. Each line will be given the same x positions across
+    //  renders and we avoid jumps.
+    const randomNumberGenerator = getRandomNumberGenerator();
     const lines = gElement
       .selectAll<SVGPathElement, ScenarioData>('myPath')
       .data(data)
       .enter()
       .append('path')
       .attr('class', function () { return 'line'; }) // @REVIEW: this could be used to style lines externally
-      .attr('d', pathDefinitionFunc)
+      .attr('d', d => pathDefinitionFunc(d, randomNumberGenerator))
       .style('fill', 'none')
       .attr('stroke-width', (d) => getLineWidth(d))
       .style('stroke', colorFunc)
@@ -379,9 +389,9 @@ function renderParallelCoordinates(
 
     // utility function that takes a map of markers per dimension and split them
     /**
-     Get all combinations of the keys of an object and split into multiple objects.
+      Get all combinations of the keys of an object and split into multiple objects.
 
-     For example, convert the following;
+      For example, convert the following;
       { key1: [value1, value2], key2: [value3, value4] }
 
       into the following 4 objects
@@ -390,7 +400,7 @@ function renderParallelCoordinates(
       { key1: value1, key2: value4 }
       { key1: value2, key2: value3 }
       { key1: value2, key2: value4 }
-     */
+    */
     function spreadKeys(master: {[key: string]: (string | number)[]}, objects: Array<any>): Array<ScenarioData> {
       const masterKeys = Object.keys(master);
       const nextKey = masterKeys.pop();
@@ -439,13 +449,17 @@ function renderParallelCoordinates(
     onNewRuns(potentialModelRuns);
 
     // render all potential model-run lines
+    // Re-initialize random number generator with the same seed each time lines
+    //  are rendered. Each line will be given the same x positions across
+    //  renders and we avoid jumps.
+    const randomNumberGenerator = getRandomNumberGenerator();
     gElement
       .selectAll<SVGPathElement, ScenarioData>('myPath')
       .data(newScenarioData)
       .enter()
       .append('path')
       .attr('class', 'marker-line')
-      .attr('d', pathDefinitionFunc)
+      .attr('d', d => pathDefinitionFunc(d, randomNumberGenerator))
       .style('fill', 'none')
       .attr('stroke-width', lineStrokeWidthHover)
       .style('stroke', colorFunc)
