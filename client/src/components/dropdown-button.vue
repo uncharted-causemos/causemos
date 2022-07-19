@@ -201,6 +201,5 @@ export default defineComponent({
   align-items: center;
   font-weight: normal;
   padding: 5px;
-  border: 1px solid gray;
 }
 </style>
