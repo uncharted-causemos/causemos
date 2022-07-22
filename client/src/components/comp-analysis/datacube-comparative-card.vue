@@ -404,12 +404,6 @@ export default defineComponent({
               setSelectedTimestamp(initialDataConfig.value?.selectedTimestamp as number);
             }
           }
-          // FIXME: can we remove this? can we remove selectedRegionIds from the datastate entirely?selectedRegionIdsAtAllLevels should be loaded, and selectedRegionIds should just be calculated from that.
-          // if (initialDataConfig.value.selectedRegionIds !== undefined) {
-          //   initialDataConfig.value.selectedRegionIds.forEach(regionId => {
-          //     selectedRegionIds.push(regionId);
-          //   });
-          // }
           if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
             const regions = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
             const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
