@@ -138,7 +138,6 @@ export interface SourceTargetPair {
 }
 
 export interface CAGModelParameter {
-  num_steps: number; // Deprecated, should now be derived from time_scale
   history_range: number; // number in months
   projection_start: number;
   engine: string;
