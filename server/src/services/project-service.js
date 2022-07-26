@@ -19,7 +19,7 @@ const {
 } = rootRequire('adapters/es/graph-query-util');
 const { setCache, delCache, getCache } = rootRequire('/cache/node-lru-cache');
 
-const MAX_NUMBER_PROJECTS = 500;
+const MAX_NUMBER_PROJECTS = 100;
 
 const INCREMENTAL_ASSEMBLY_FLOW_ID = '90a09440-e504-4db9-ad89-9db370933c8b';
 
@@ -32,7 +32,10 @@ const dartService = rootRequire('/services/external/dart-service');
  */
 const listProjects = async () => {
   const project = Adapter.get(RESOURCE.PROJECT);
-  return project.find({}, { size: MAX_NUMBER_PROJECTS });
+  return project.find({}, {
+    size: MAX_NUMBER_PROJECTS,
+    sort: { modified_at: { order: 'desc' } }
+  });
 };
 
 
