@@ -390,9 +390,9 @@ export default defineComponent({
         if (initialViewConfig.value?.breakdownOption === SPLIT_BY_VARIABLE) {
           initialSelectedGlobalTimestamp.value = dataConfig.value.selectedTimestamp;
         } else {
-          // FIXME: we should select the most recent timestamp if no timestamp is currently selected
           if (dataConfig.value.selectedTimestamp === null) {
-            setSelectedTimestamp(0);
+            // No timestamp is currently selected, so select the most recent
+            //  timestamp when visibleTimeseriesData is loaded. (see below)
           } else {
             setSelectedTimestamp(dataConfig.value.selectedTimestamp);
           }
@@ -422,6 +422,27 @@ export default defineComponent({
       {
         immediate: true
       });
+
+    // No timestamp is currently selected, so select the most recent
+    //  timestamp when visibleTimeseriesData is loaded.
+    // This occurs when viewing a new datacube on the region ranking page before
+    //  ever drilling down on it.
+    watch(
+      [initialViewConfig, dataConfig, visibleTimeseriesData],
+      () => {
+        if (
+          initialViewConfig.value?.breakdownOption !== SPLIT_BY_VARIABLE &&
+          dataConfig.value.selectedTimestamp === null
+        ) {
+          const allTimestamps = visibleTimeseriesData.value
+            .map(timeseries => timeseries.points)
+            .flat()
+            .map(point => point.timestamp);
+          const lastTimestamp = _.max(allTimestamps);
+          setSelectedTimestamp(lastTimestamp ?? null);
+        }
+      }
+    );
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
@@ -631,7 +652,6 @@ export default defineComponent({
       outputs,
       timeseriesData,
       AggregationOption,
-      visibleTimeseriesData,
       timeseriesDataForSelection,
       project,
       store,
