@@ -40,16 +40,16 @@
           <div>Showing data for {{timestampFormatter(selectedTimestamp)}}</div>
           <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
           <div style="display: flex; align-items: center">
-            <div style="margin-right: 1rem">Total Timeseries: {{regionRunsScenarios.length}}</div>
+            <div style="margin-right: 1rem">Total Timeseries: {{timeseriesDataForSelection.length}}</div>
             <div style="display: flex; align-items: center">
               <div style="margin-right: 4px">Selected:</div>
               <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
                 @change="selectedRegionRankingScenario = $event.target.selectedIndex"
-                :disabled="regionRunsScenarios.length === 1"
-                :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedRegionRankingScenario ? regionRunsScenarios[selectedRegionRankingScenario].color : 'black' }"
+                :disabled="timeseriesDataForSelection.length === 1"
+                :style="{ color: timeseriesDataForSelection.length > selectedRegionRankingScenario ? timeseriesDataForSelection[selectedRegionRankingScenario].color : 'black' }"
               >
                 <option
-                  v-for="(selectedRun, indx) in regionRunsScenarios"
+                  v-for="(selectedRun, indx) in timeseriesDataForSelection"
                   :key="selectedRun.name"
                   :selected="indx === selectedRegionRankingScenario"
                 >
@@ -112,7 +112,7 @@ import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } 
 import OptionsButton from '@/components/widgets/options-button.vue';
 import BarChart from '@/components/widgets/charts/bar-chart.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
-import { DataSpaceDataState, ViewState } from '@/types/Insight';
+import { ViewState } from '@/types/Insight';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { BarData } from '@/types/BarChart';
 import { ColorScaleType, COLOR_SCHEME, SCALE_FUNCTION } from '@/utils/colors-util';
@@ -123,7 +123,6 @@ import { openDatacubeDrilldown } from '@/services/analysis-service-new';
 import { normalize } from '@/utils/value-util';
 import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
 import MapLegend from '@/components/widgets/map-legend.vue';
-import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/services/composables/useDatacube';
 import { chartValueFormatter } from '@/utils/string-util';
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
@@ -278,6 +277,7 @@ export default defineComponent({
       selectedDataLayerTransparency,
       datacubeHierarchy,
       selectedTimestamp,
+      setSelectedTimestamp,
       timeseriesDataForSelection,
       visibleTimeseriesData,
       regionalData,
@@ -320,7 +320,6 @@ export default defineComponent({
     );
 
     const selectedRegionRankingScenario = ref(0);
-    const regionRunsScenarios = ref([] as {name: string; color: string}[]);
 
     const store = useStore();
 
@@ -328,19 +327,18 @@ export default defineComponent({
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
     const initialViewConfig = ref<ViewState | null>(null);
-    const initialDataConfig = ref<DataSpaceDataState | null>(null);
+    // FIXME: same with viewConfig?
     initialViewConfig.value = analysisItem.value.viewConfig;
-    initialDataConfig.value = analysisItem.value.dataConfig;
+    const dataConfig = computed(() => analysisItem.value.dataConfig);
 
-    const initialSelectedScenarioIds = ref<string[]>([]);
 
     // FIXME: this logic is shared by other cards. Can we extract it?
     watchEffect(() => {
       if (!isModel(metadata.value) || allModelRunData.value.length === 0) {
         return;
       }
-      if (initialSelectedScenarioIds.value.length > 0) {
-        selectedScenarioIds.value = initialSelectedScenarioIds.value;
+      if (dataConfig.value.selectedScenarioIds.length > 0) {
+        selectedScenarioIds.value = dataConfig.value.selectedScenarioIds;
         return;
       }
       const baselineRunIds = allModelRunData.value
@@ -359,7 +357,7 @@ export default defineComponent({
     watch(
       () => [
         initialViewConfig.value,
-        initialDataConfig.value
+        dataConfig.value
       ],
       () => {
         if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
@@ -390,79 +388,43 @@ export default defineComponent({
         }
 
         // apply initial data config for this datacube
-        if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
-          if (initialDataConfig.value.selectedTimestamp !== undefined) {
-            if (initialViewConfig.value?.breakdownOption && initialViewConfig.value?.breakdownOption === SPLIT_BY_VARIABLE) {
-              initialSelectedGlobalTimestamp.value = initialDataConfig.value.selectedTimestamp;
-            } else {
-              // setSelectedTimestamp(initialDataConfig.value.selectedTimestamp);
-            }
-          }
-          if (initialDataConfig.value.selectedScenarioIds !== undefined) {
-            initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
-          }
-          if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
-            const regions = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
-            const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
-            selectedRegionIdsAtAllLevels.value = validRegions;
-          }
-          if (initialDataConfig.value.selectedQualifierValues !== undefined) {
-            initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
-          }
-          modelRunSearchFilters.value = _.clone(initialDataConfig.value.searchFilters);
-
-          const dataState = initialDataConfig.value;
-          if (dataState && isDataSpaceDataState(dataState)) {
-            initialNonDefaultQualifiers.value = _.clone(dataState.nonDefaultQualifiers);
-
-            selectedFeatureNames.value = new Set(_.clone(dataState.selectedOutputVariables));
-
-            initialActiveFeatures.value = _.clone(dataState.activeFeatures);
-            // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
-            initialSelectedQualifierValues.value = _.clone(dataState.selectedQualifierValues);
-            // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
-            initialSelectedYears.value = _.clone(dataState.selectedYears);
-            // @NOTE: 'initialActiveReferenceOptions' must be set after 'breakdownOption'
-            initialActiveReferenceOptions.value = _.clone(dataState.activeReferenceOptions);
+        if (initialViewConfig.value?.breakdownOption === SPLIT_BY_VARIABLE) {
+          initialSelectedGlobalTimestamp.value = dataConfig.value.selectedTimestamp;
+        } else {
+          // FIXME: we should select the most recent timestamp if no timestamp is currently selected
+          if (dataConfig.value.selectedTimestamp === null) {
+            setSelectedTimestamp(0);
+          } else {
+            setSelectedTimestamp(dataConfig.value.selectedTimestamp);
           }
         }
+        // selected region IDs
+        const regions = fromStateSelectedRegionsAtAllLevels(dataConfig.value.selectedRegionIdsAtAllLevels);
+        const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
+        selectedRegionIdsAtAllLevels.value = validRegions;
+        // FIXME: do we need to apply search filters on pages where we can't
+        //  view or set that state?
+        modelRunSearchFilters.value = _.clone(dataConfig.value.searchFilters);
+
+        initialNonDefaultQualifiers.value =
+          _.clone(dataConfig.value.nonDefaultQualifiers);
+
+        selectedFeatureNames.value =
+          new Set(_.clone(dataConfig.value.selectedOutputVariables));
+
+        initialActiveFeatures.value = _.clone(dataConfig.value.activeFeatures);
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        initialSelectedQualifierValues.value =
+          _.clone(dataConfig.value.selectedQualifierValues);
+        // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
+        initialSelectedYears.value = _.clone(dataConfig.value.selectedYears);
+        // @NOTE: 'initialActiveReferenceOptions' must be set after 'breakdownOption'
+        initialActiveReferenceOptions.value =
+          _.clone(dataConfig.value.activeReferenceOptions);
       },
       {
         immediate: true
       });
-
-    // FIXME: This appears to be mostly copy-pasted from useTimeseriesData.
-    // Differences:
-    //  - Looks at timeseriesDataForSelection instead of just timeseriesData. The difference there is that the former is equal to "globalTimeseries" when split by variable is active. This can be removed if useMultiTimeseriesData and useTimeseriesData are merged.
-    //  - selects the last point of the timeseries with index selectedRegionRankingScenario, instead of the last point of all timeseries in the datacube. We probably want to change the logic in useTimeseriesData so that visibleTimeseries only retains one timeseries in places where only one timeseries is everr shown, and change the onNewLastTimestamp watcher to use visibleTimeseries instead of all of them.
-    watchEffect(() => {
-      const timeseriesList = timeseriesDataForSelection.value;
-
-      if (timeseriesList.length > 0) {
-        regionRunsScenarios.value = timeseriesList.map(timeseries => ({ name: timeseries.name, color: timeseries.color }));
-
-        // flatten the list of timeseries for all selected runs and extract the last timestmap
-        let allTimestamps = visibleTimeseriesData.value
-          .map(timeseries => timeseries.points)
-          .flat()
-          .map(point => point.timestamp);
-
-        const timeseriesForSelectedRun = visibleTimeseriesData.value
-          .find((timeseries, indx) => indx === selectedRegionRankingScenario.value);
-        if (timeseriesForSelectedRun !== undefined) {
-          allTimestamps = timeseriesForSelectedRun.points
-            .flat()
-            .map(point => point.timestamp);
-        }
-
-        // select the last timestamp as the initial value
-        const lastTimestamp = _.max(allTimestamps);
-        if (lastTimestamp !== undefined) {
-          // set initial timestamp selection
-          selectedTimestamp.value = lastTimestamp;
-        }
-      }
-    });
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
@@ -683,7 +645,6 @@ export default defineComponent({
       selectedTimestamp,
       timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY'),
       selectedRegionRankingScenario,
-      regionRunsScenarios,
       bbox,
       mapLegendData,
       invertData,
