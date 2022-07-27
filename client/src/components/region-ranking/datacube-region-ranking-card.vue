@@ -327,7 +327,6 @@ export default defineComponent({
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
     const initialViewConfig = ref<ViewState | null>(null);
-    // FIXME: same with viewConfig?
     initialViewConfig.value = analysisItem.value.viewConfig;
     const dataConfig = computed(() => analysisItem.value.dataConfig);
 
@@ -402,8 +401,6 @@ export default defineComponent({
         const regions = fromStateSelectedRegionsAtAllLevels(dataConfig.value.selectedRegionIdsAtAllLevels);
         const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
         selectedRegionIdsAtAllLevels.value = validRegions;
-        // FIXME: do we need to apply search filters on pages where we can't
-        //  view or set that state?
         modelRunSearchFilters.value = _.clone(dataConfig.value.searchFilters);
 
         initialNonDefaultQualifiers.value =
