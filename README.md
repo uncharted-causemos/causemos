@@ -6,7 +6,7 @@ World Modelers application for exploring and building models!!
 
 ### Prerequisite
 The following need to be installed
-- NodeJS version 12
+- NodeJS version 18
 - Yarn 1.22+
 
 
