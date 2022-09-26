@@ -1,4 +1,5 @@
-image: docker-hub.uncharted.software/mhart/alpine-node:16
+image: docker-hub.uncharted.software/node:18.8.0-slim
+
 
 # Cache modules in between builds
 cache:
