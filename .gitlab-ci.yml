@@ -9,8 +9,9 @@ cache:
 before_script:
   - apt-get update
   - apt-get -y install git
-  - npm config set @uncharted:registry=https://npm.uncharted.software/
-  - npm config set //npm.uncharted.software/:_authToken=${NPM_TOKEN}
+  - apt-get -y install python3
+  - apt-get -y install g++
+  - apt-get -y install make
   - yarn install
 
 test:
