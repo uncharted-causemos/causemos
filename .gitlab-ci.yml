@@ -1,4 +1,5 @@
-image: docker-hub.uncharted.software/mhart/alpine-node:16
+image: docker-hub.uncharted.software/node:18.8.0-slim
+
 
 # Cache modules in between builds
 cache:
@@ -6,9 +7,11 @@ cache:
   - node_modules/
 
 before_script:
-  - apk add --no-cache git
-  - npm config set @uncharted:registry=https://npm.uncharted.software/
-  - npm config set //npm.uncharted.software/:_authToken=${NPM_TOKEN}
+  - apt-get update
+  - apt-get -y install git
+  - apt-get -y install python3
+  - apt-get -y install g++
+  - apt-get -y install make
   - yarn install
 
 test:
