@@ -7,7 +7,7 @@ cache:
   - node_modules/
 
 before_script:
-  - apt-get -y install --no-cache git
+  - apt-get -y install git
   - npm config set @uncharted:registry=https://npm.uncharted.software/
   - npm config set //npm.uncharted.software/:_authToken=${NPM_TOKEN}
   - yarn install
