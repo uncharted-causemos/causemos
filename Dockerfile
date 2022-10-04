@@ -1,9 +1,9 @@
 # docker build -t docker.uncharted.software/worldmodeler/wm-server:latest .
 
-FROM node:18.8.0-slim
+FROM mhart/alpine-node:16
 # ENV LOG_LEVEL="warn"
 
-# RUN apk update && apk add curl
+RUN apk update && apk add curl
 
 ADD ./package.json /package.json
 ADD ./yarn.lock /yarn.lock
