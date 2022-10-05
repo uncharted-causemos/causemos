@@ -187,6 +187,17 @@ const startModelOutputPostProcessing = async (metadata) => {
       regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL
     }
   };
+  // If custom target S3 is provided,
+  if (process.env.S3_URL) {
+    flowParameters.dest = {
+      endpoint_url: process.env.S3_URL,
+      region_name: 'us-east-1',
+      key: process.env.S3_ID,
+      secret: process.env.S3_SECRET
+    };
+    flowParameters.model_bucket = process.env.S3_MODELS_BUCKET;
+    flowParameters.indicator_bucket = process.env.S3_INDICATORS_BUCKET;
+  }
   try {
     await sendToPipeline(flowParameters);
   } catch (err) {
@@ -428,6 +439,17 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
       regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL
     }
   };
+  // If custom target S3 is provided,
+  if (process.env.S3_URL) {
+    flowParameters.dest = {
+      endpoint_url: process.env.S3_URL,
+      region_name: 'us-east-1',
+      key: process.env.S3_ID,
+      secret: process.env.S3_SECRET
+    };
+    flowParameters.model_bucket = process.env.S3_MODELS_BUCKET;
+    flowParameters.indicator_bucket = process.env.S3_INDICATORS_BUCKET;
+  }
   try {
     await sendToPipeline(flowParameters);
   } catch (err) {
