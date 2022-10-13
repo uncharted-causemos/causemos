@@ -29,6 +29,7 @@ async function runStartup() {
   Logger.info(`\tDELPHI_URL: ${process.env.DELPHI_URL}`);
   Logger.info(`\tDYSE_URL: ${process.env.DYSE_URL}`);
   Logger.info(`\tSENSEI_URL: ${process.env.SENSEI_URL}`);
+  Logger.info(`\tDOJO_URL: ${process.env.DOJO_URL}`);
   Logger.info(`\tWM_CURATION_SERVICE_URL: ${process.env.WM_CURATION_SERVICE_URL}`);
   Logger.info(`\tSyncing changes to Dojo: ${serverConfiguration.dojoSync}`);
   Logger.info(`\tExecute model runs: ${serverConfiguration.allowModelRuns}`);
