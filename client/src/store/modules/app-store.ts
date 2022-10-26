@@ -1,3 +1,4 @@
+import { ApplicationConfiguration } from '@/types/ApplicationConfiguration';
 import _ from 'lodash';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
@@ -13,6 +14,7 @@ interface AppState {
   analysisName: string;
   conceptDefinitions: { [key: string]: string };
   datacubeCurrentOutputsMap: {}; // map for datacubes' currently selected features; each key is the datacube-id and the value is the selected output's index
+  applicationConfiguration: ApplicationConfiguration,
 }
 
 const state: AppState = {
@@ -26,7 +28,10 @@ const state: AppState = {
   projectMetadata: {},
   analysisName: '',
   conceptDefinitions: {},
-  datacubeCurrentOutputsMap: {}
+  datacubeCurrentOutputsMap: {},
+  applicationConfiguration: {
+    CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true
+  }
 };
 
 
@@ -63,7 +68,8 @@ const getters: GetterTree<AppState, any> = {
   projectMetadata: state => state.projectMetadata,
   analysisName: state => state.analysisName,
   conceptDefinitions: state => state.conceptDefinitions,
-  datacubeCurrentOutputsMap: state => state.datacubeCurrentOutputsMap
+  datacubeCurrentOutputsMap: state => state.datacubeCurrentOutputsMap,
+  applicationConfiguration: state => state.applicationConfiguration
 };
 
 
@@ -108,6 +114,9 @@ const actions: ActionTree<AppState, any> = {
   },
   setDatacubeCurrentOutputsMap: ({ commit }, value) => {
     commit('setDatacubeCurrentOutputsMap', value);
+  },
+  setApplicationConfiguration: ({ commit }, value) => {
+    commit('setApplicationConfiguration', value);
   }
 };
 
@@ -151,6 +160,9 @@ const mutations: MutationTree<AppState> = {
   },
   setDatacubeCurrentOutputsMap(state, value) {
     state.datacubeCurrentOutputsMap = value;
+  },
+  setApplicationConfiguration(state, value) {
+    state.applicationConfiguration = value;
   }
 };
 
