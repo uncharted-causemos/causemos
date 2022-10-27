@@ -10,7 +10,6 @@ const CLIENT_VAR_PREFIX = 'CLIENT__';
 router.get('/settings', function(req, res, next) {
   const env = process.env;
   res.json({
-    envMode: env.ENV_MODE,
     logLevel: config.logLevel,
     cacheSize: config.cacheSize,
     dojoSync: config.dojoSync,
