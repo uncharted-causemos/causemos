@@ -8,7 +8,7 @@ import { useStore } from 'vuex';
 const RETRY_DELAY_LENGTHS_IN_SECONDS = [1, 5, 10, 30, 60, 0];
 
 const getConfiguration = async () => {
-  const result = await API.get('app-settings', {});
+  const result = await API.get('client-settings', {});
   return result.data;
 };
 
