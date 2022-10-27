@@ -4,7 +4,7 @@ const router = express.Router();
 const config = require('../config/yargs-wrapper');
 const schedules = _.isEmpty(config.schedules) ? [] : config.schedules.split(',');
 
-const CLIENT_VAR_PREFIX = 'CLIENT';
+const CLIENT_VAR_PREFIX = 'CLIENT__';
 
 /* GET server settings */
 router.get('/settings', function(req, res, next) {
