@@ -3,8 +3,9 @@ import { onMounted } from 'vue';
 import { useStore } from 'vuex';
 
 // If the attempt to fetch the application configuration fails, check again
-//  after a progressively longer delay.
-const RETRY_DELAY_LENGTHS_IN_SECONDS = [1, 5, 10, 30, 60];
+//  after a progressively longer delay. No fetch is attempted after the last
+//  delay.
+const RETRY_DELAY_LENGTHS_IN_SECONDS = [1, 5, 10, 30, 60, 0];
 
 const getConfiguration = async () => {
   const result = await API.get('app-settings', {});
@@ -30,7 +31,7 @@ export default function useApplicationConfiguration() {
       }
     }
     console.error(
-      `Unable to fetch application configuration after ${RETRY_DELAY_LENGTHS_IN_SECONDS.length + 1} attempts.`
+      `Unable to fetch application configuration after ${RETRY_DELAY_LENGTHS_IN_SECONDS.length} attempts.`
     );
   };
 
