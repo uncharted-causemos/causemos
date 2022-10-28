@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import StringUtil from '@/utils/string-util';
+import StringUtil, { convertStringToBoolean } from '@/utils/string-util';
 
 describe('string-util', () => {
   it('clean text fragment - new lines', () => {
@@ -28,7 +28,24 @@ describe('string-util', () => {
     expect(formatter(0.001)).to.equal('0.001');
     expect(formatter(0.00123)).to.equal('0.0012');
   });
+
+  describe('convertStringToBoolean', () => {
+    it('parses true and false as booleans regardless of capitalization', () => {
+      expect(convertStringToBoolean('true')).to.equal(true);
+      expect(convertStringToBoolean('True')).to.equal(true);
+      expect(convertStringToBoolean('TRUE')).to.equal(true);
+      expect(convertStringToBoolean('false')).to.equal(false);
+      expect(convertStringToBoolean('False')).to.equal(false);
+      expect(convertStringToBoolean('FALSE')).to.equal(false);
+    });
+
+    it('throws an error for any other string', () => {
+      const invalidStrings = ['', 'truefalse', 'true ', ' false'];
+      invalidStrings.forEach(invalidString => {
+        expect(convertStringToBoolean.bind(this, invalidString)).to.throw(
+          `Unable to convert string "${invalidString}" to boolean.`
+        );
+      });
+    });
+  });
 });
-
-
-

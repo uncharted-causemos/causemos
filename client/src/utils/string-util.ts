@@ -118,6 +118,16 @@ export const safeD3StringId = (hoverValue: string) => {
   return hoverValueNoDots.split(' ').join('');
 };
 
+export const convertStringToBoolean = (input: string) => {
+  if (input.toLowerCase() === 'true') {
+    return true;
+  }
+  if (input.toLowerCase() === 'false') {
+    return false;
+  }
+  throw new Error(`Unable to convert string "${input}" to boolean.`);
+};
+
 export default {
   cleanTextFragment,
   truncateString,
