@@ -3,6 +3,7 @@ import { ApplicationConfiguration } from '@/types/ApplicationConfiguration';
 import { convertStringToBoolean } from '@/utils/string-util';
 import { onMounted } from 'vue';
 import { useStore } from 'vuex';
+import _ from 'lodash';
 
 // If the attempt to fetch the application configuration fails, check again
 //  after a progressively longer delay. No fetch is attempted after the last
@@ -10,22 +11,34 @@ import { useStore } from 'vuex';
 const RETRY_DELAY_LENGTHS_IN_SECONDS = [1, 5, 10, 30, 60, 0];
 
 export const DEFAULT_APPLICATION_CONFIGURATION: ApplicationConfiguration = {
-  CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true
+  CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true,
+  CLIENT__DOJO_LOG_API_URL: 'https://phantom.dojo-test.com'
 };
 
-const getConfiguration = async (): Promise<ApplicationConfiguration> => {
-  const result = await API.get('client-settings', {});
-  const config: ApplicationConfiguration = {
-    CLIENT__IS_ANALYST_WORKFLOW_VISIBLE:
-      DEFAULT_APPLICATION_CONFIGURATION.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
-  };
+// Parse client settings object and return parsed results.
+// If parsing fails for a field of the object, omit the field from the result object.
+const parseSettings = (clientSettings: { [key: string]: string }) => {
+  const {
+    CLIENT__DOJO_LOG_API_URL
+  } = clientSettings;
+  let CLIENT__IS_ANALYST_WORKFLOW_VISIBLE;
   try {
-    config.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = convertStringToBoolean(
-      result.data.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
-    );
+    CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = convertStringToBoolean(clientSettings.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE);
   } catch (e) {
     console.error(e);
   }
+  const result: { [key: string]: string | number | boolean | undefined} = {
+    CLIENT__DOJO_LOG_API_URL,
+    CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
+  };
+  // Filter out undefined and return
+  return _.omit(result, 'undefined') as { [key: string]: string | number | boolean };
+};
+
+const getConfiguration = async (): Promise<ApplicationConfiguration> => {
+  const { data } = await API.get('client-settings', {});
+  const settings = parseSettings(data as { [key: string]: string });
+  const config = { ...DEFAULT_APPLICATION_CONFIGURATION, ...settings };
   return config;
 };
 
