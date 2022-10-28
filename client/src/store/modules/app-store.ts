@@ -1,3 +1,4 @@
+import { DEFAULT_APPLICATION_CONFIGURATION } from '@/services/composables/useApplicationConfiguration';
 import { ApplicationConfiguration } from '@/types/ApplicationConfiguration';
 import _ from 'lodash';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
@@ -29,9 +30,7 @@ const state: AppState = {
   analysisName: '',
   conceptDefinitions: {},
   datacubeCurrentOutputsMap: {},
-  applicationConfiguration: {
-    CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true
-  }
+  applicationConfiguration: DEFAULT_APPLICATION_CONFIGURATION
 };
 
 

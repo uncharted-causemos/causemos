@@ -1,4 +1,6 @@
 import API from '@/api/api';
+import { ApplicationConfiguration } from '@/types/ApplicationConfiguration';
+import { convertStringToBoolean } from '@/utils/string-util';
 import { onMounted } from 'vue';
 import { useStore } from 'vuex';
 
@@ -7,9 +9,24 @@ import { useStore } from 'vuex';
 //  delay.
 const RETRY_DELAY_LENGTHS_IN_SECONDS = [1, 5, 10, 30, 60, 0];
 
-const getConfiguration = async () => {
+export const DEFAULT_APPLICATION_CONFIGURATION: ApplicationConfiguration = {
+  CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true
+};
+
+const getConfiguration = async (): Promise<ApplicationConfiguration> => {
   const result = await API.get('client-settings', {});
-  return result.data;
+  const config: ApplicationConfiguration = {
+    CLIENT__IS_ANALYST_WORKFLOW_VISIBLE:
+      DEFAULT_APPLICATION_CONFIGURATION.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
+  };
+  try {
+    config.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = convertStringToBoolean(
+      result.data.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
+    );
+  } catch (e) {
+    console.error(e);
+  }
+  return config;
 };
 
 export default function useApplicationConfiguration() {
