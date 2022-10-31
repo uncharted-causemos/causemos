@@ -27,12 +27,12 @@ const parseSettings = (clientSettings: { [key: string]: string }) => {
   } catch (e) {
     console.error(e);
   }
-  const result: { [key: string]: string | number | boolean | undefined} = {
+  const result: Partial<ApplicationConfiguration> = {
     CLIENT__DOJO_LOG_API_URL,
     CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
   };
   // Filter out undefined and return
-  return _.omit(result, 'undefined') as { [key: string]: string | number | boolean };
+  return _.omit(result, 'undefined');
 };
 
 const getConfiguration = async (): Promise<ApplicationConfiguration> => {
