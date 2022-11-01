@@ -93,6 +93,7 @@
 <script lang="ts">
 
 import { defineComponent, PropType } from 'vue';
+import { mapGetters } from 'vuex';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
 import { Model } from '@/types/Datacube';
@@ -129,6 +130,9 @@ export default defineComponent({
     }
   },
   computed: {
+    ...mapGetters({
+      applicationConfiguration: 'app/applicationConfiguration'
+    }),
     potentialRunsParameters(): Array<any> {
       return this.potentialRuns.length > 0 ? this.withoutOmittedColumns(Object.keys(this.potentialRuns[0])) : [];
     },
@@ -183,7 +187,7 @@ export default defineComponent({
       this.$emit('close');
     },
     dojoExecutionLink(runId: string) {
-      return `https://phantom.dojo-test.com/runlogs/${runId}`;
+      return `${this.applicationConfiguration.CLIENT__DOJO_LOG_API_URL}/runlogs/${runId}`;
     },
     timeSinceExecutionFormatted(run: ModelRun) {
       return `${DurationFormatter(this.timeSinceExecution(run), false)} ago`;

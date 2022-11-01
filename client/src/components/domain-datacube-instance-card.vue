@@ -160,7 +160,8 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       project: 'app/project',
-      projectMetadata: 'app/projectMetadata'
+      projectMetadata: 'app/projectMetadata',
+      applicationConfiguration: 'app/applicationConfiguration'
     }),
     breakdownParameters(): any[] {
       if (isIndicator(this.datacube)) return [];
@@ -248,7 +249,7 @@ export default defineComponent({
     requestEditInDojo() {
       this.showEditInDojoModal = false;
       // redirect to DOJO to update the datacube
-      const BASE_DOJO_URL = 'https://phantom.dojo-test.com/summary?model=';
+      const BASE_DOJO_URL = this.applicationConfiguration.CLIENT__DOJO_LOG_API_URL + '/summary?model=';
       const redirectURL = BASE_DOJO_URL + this.datacube.data_id;
       window.location.href = redirectURL;
     },
