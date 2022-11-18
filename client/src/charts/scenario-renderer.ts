@@ -99,6 +99,9 @@ function render(
   }
 
   const xScale = d3.scaleLinear().domain(xDomain).range([0, width]);
+
+  const monthsBetweenFirstAndLastTimestamp = Math.ceil((xScale.domain()[1] - xScale.domain()[0]) / (1000 * 60 * 60 * 24 * 30));
+
   const yExtent = [min, max];
   const formatter = chartValueFormatter(...yExtent);
   const yScale = d3
@@ -126,6 +129,15 @@ function render(
         nodeScenarioData.time_scale
       )
     );
+
+  svgGroup
+    .append('text')
+    .attr('x', width)
+    .attr('y', height + 1.5)
+    .attr('text-anchor', 'end')
+    .attr('fill', LABEL_COLOR)
+    .attr('font-size', '0.4em')
+    .text(monthsBetweenFirstAndLastTimestamp);
 
   const historicG = svgGroup.append('g');
   historicG
