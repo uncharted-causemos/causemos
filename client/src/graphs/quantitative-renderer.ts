@@ -124,7 +124,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       .attr('y', 0)
       .attr('rx', DEFAULT_STYLE.node.borderRadius)
       .attr('width', d => d.width)
-      .attr('height', d => d.height)
+      .attr('height', d => d.height + 4)
       .style('fill', DEFAULT_STYLE.node.fill)
       .style('stroke', DEFAULT_STYLE.node.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
@@ -441,7 +441,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
         .append('text')
         .classed('indicator-label', true)
         .attr('x', PADDING_HORIZONTAL)
-        .attr('y', nodeHeight - PADDING_BOTTOM)
+        .attr('y', nodeHeight)
         .attr('width', nodeWidth)
         .style('font-size', INDICATOR_NAME_SIZE + 'px')
         .attr('fill', INDICATOR_NAME_COLOR)

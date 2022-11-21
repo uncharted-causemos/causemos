@@ -100,8 +100,6 @@ function render(
 
   const xScale = d3.scaleLinear().domain(xDomain).range([0, width]);
 
-  const monthsBetweenFirstAndLastTimestamp = Math.ceil((xScale.domain()[1] - xScale.domain()[0]) / (1000 * 60 * 60 * 24 * 30));
-
   const yExtent = [min, max];
   const formatter = chartValueFormatter(...yExtent);
   const yScale = d3
@@ -130,14 +128,16 @@ function render(
       )
     );
 
+  const labelText = 'Viewing last ' + nodeScenarioData.history_range + ' months';
+
   svgGroup
     .append('text')
-    .attr('x', width)
-    .attr('y', height + 1.5)
+    .attr('x', (width + labelText.length + 20) / 2)
+    .attr('y', height + 5)
     .attr('text-anchor', 'end')
     .attr('fill', LABEL_COLOR)
     .attr('font-size', '0.4em')
-    .text(monthsBetweenFirstAndLastTimestamp);
+    .text(labelText);
 
   const historicG = svgGroup.append('g');
   historicG
