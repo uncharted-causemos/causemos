@@ -128,12 +128,15 @@ function render(
       )
     );
 
-  const labelText = 'Viewing last ' + nodeScenarioData.history_range + ' months';
+  const labelText = 'Viewing last ' + nodeScenarioData.history_range + ' ' + nodeScenarioData.time_scale.toLowerCase();
+
+  const additionalMarginToPlaceLabelBelowGraph = 5;
+  const additionalPaddingLeftTocenterLabel = 10;
 
   svgGroup
     .append('text')
-    .attr('x', (width + labelText.length + 20) / 2)
-    .attr('y', height + 5)
+    .attr('x', (width + labelText.length) / 2 + additionalPaddingLeftTocenterLabel)
+    .attr('y', height + additionalMarginToPlaceLabelBelowGraph)
     .attr('text-anchor', 'end')
     .attr('fill', LABEL_COLOR)
     .attr('font-size', '0.4em')
