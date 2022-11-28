@@ -125,6 +125,7 @@ import { getInsightById } from '@/services/insight-service';
 import { ModelsSpaceDataState } from '@/types/Insight';
 import useToaster from '@/services/composables/useToaster';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
+import { saveAs } from 'file-saver';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -491,7 +492,7 @@ export default defineComponent({
       const file = new Blob([JSON.stringify(experimentPayload)], {
         type: 'application/json'
       });
-      (window as any).saveAs(file, 'experiment.json');
+      saveAs(file, 'experiment.json');
     },
     showPath(item: any) {
       const path = item.path;

@@ -226,6 +226,7 @@ import { useRoute } from 'vue-router';
 import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
 import { isDataAnalysisState } from '@/utils/insight-util';
 import { Indicator, Model } from '@/types/Datacube';
+import { saveAs } from 'file-saver';
 
 const DRILLDOWN_TABS = [
   {
@@ -785,7 +786,7 @@ export default defineComponent({
       const file = new Blob(['Ranking Criteria and Relative Weight (%)' + '\r\n' + weightContent + '\r\n\r\n\r\n' + heading + '\r\n' + content + '\r\n'], {
         type: 'text/plain'
       });
-      (window as any).saveAs(file, 'region-ranking-result.csv');
+      saveAs(file, 'region-ranking-result.csv');
     }
   }
 });
