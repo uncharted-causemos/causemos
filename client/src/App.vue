@@ -28,6 +28,7 @@ import { enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
 import { getDataset } from '@/services/new-datacube-service';
+import useApplicationConfiguration from '@/services/composables/useApplicationConfiguration';
 
 export default defineComponent({
   name: 'App',
@@ -35,6 +36,9 @@ export default defineComponent({
     NavBar,
     Overlay,
     InsightManager
+  },
+  setup() {
+    useApplicationConfiguration();
   },
   computed: {
     ...mapGetters({
