@@ -16,7 +16,6 @@
           :hover-id="barChartHoverId"
           @bar-chart-hover="$emit('bar-chart-hover', $event)"
         />
-        <div class="datacube-footer">Showing data for {{timestampFormatter(selectedTimestamp)}} (or earlier)</div>
       </div>
       <div class="card-maps-box">
         <region-map class="region-map-container"
@@ -39,7 +38,6 @@
 <script lang="ts">
 import { defineComponent, PropType, ref, toRefs, watch, computed } from 'vue';
 import { BarData } from '@/types/BarChart';
-import dateFormatter from '@/formatters/date-formatter';
 import BarChart from '@/components/widgets/charts/bar-chart.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
@@ -67,10 +65,6 @@ export default defineComponent({
     limitNumberOfChartBars: {
       type: Boolean,
       default: false
-    },
-    selectedTimestamp: {
-      type: Number,
-      default: 0
     },
     selectedAdminLevel: {
       type: Number,
@@ -150,7 +144,6 @@ export default defineComponent({
 
     return {
       mapLegendData,
-      timestampFormatter: (value: any) => dateFormatter(value, 'MMM DD, YYYY'),
       topBarsData,
 
       hiddenRegionName,
@@ -179,40 +172,15 @@ main {
   min-height: 0;
 }
 
-.datacube-footer {
-  margin-left: 2rem;
-  font-size: small;
-  display: flex;
-  justify-content: space-around;
-}
-
-.checkbox {
-  user-select: none; /* Standard syntax */
-  display: inline-block;
-  margin: 0;
-  padding: 0;
-  label {
-    font-weight: normal;
-    margin: 0;
-    padding: 0;
-    cursor: auto;
-    color: gray;
-  }
-}
-
-.datacube-footer {
-  margin-left: 2rem;
-  font-size: small;
-  display: flex;
-  justify-content: space-around;
-}
-
 .chart-and-footer {
   position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  // Add space below chart so that map and legend are approximately equal size
+  //  across all the cards.
+  padding-bottom: 1.5rem;
 }
 
 .card-maps-box {
@@ -220,10 +188,6 @@ main {
   width: 220px;
   height: 100%;
   padding: 5px;
-}
-
-:deep(.color-ramp) {
-  width: 10px; // FIXME: ideally this should be dynamic somehow to match the width of the legend colors in non-composite cards
 }
 
 .region-map-container {
