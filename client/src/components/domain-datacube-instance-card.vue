@@ -1,83 +1,65 @@
 <template>
   <div class="project-card-container">
-    <modal-confirmation
-      v-if="showUnpublishModal"
-      :autofocus-confirm="false"
-      @confirm="unpublish"
-      @close="showUnpublishModal = false"
-    >
+    <modal-confirmation v-if="showUnpublishModal" :autofocus-confirm="false" @confirm="unpublish"
+      @close="showUnpublishModal = false">
       <template #title>Unpublish Datacube Instance</template>
       <template #message>
         <p>Are you sure you want to unpublish<strong>{{ datacube.name }}</strong>?</p>
-        <message-display
-          :message="'Warning: This action cannot be undone.'"
-          :message-type="'alert-warning'"
-        />
+        <message-display :message="'Warning: This action cannot be undone.'" :message-type="'alert-warning'" />
       </template>
     </modal-confirmation>
-    <modal-confirmation
-      v-if="showEditInDojoModal"
-      :autofocus-confirm="false"
-      @confirm="requestEditInDojo"
-      @close="showEditInDojoModal = false"
-    >
+    <modal-confirmation v-if="showEditInDojoModal" :autofocus-confirm="false" @confirm="requestEditInDojo"
+      @close="showEditInDojoModal = false">
       <template #title>Update Datacube Instance in DOJO</template>
       <template #message>
-        <p>Are you sure you want to update the <strong>{{ datacube.name }}</strong> model instance? This will deprecate the current model instance and create a new version.</p>
+        <p>Are you sure you want to update the <strong>{{ datacube.name }}</strong> model instance? This will deprecate
+          the current model instance and create a new version.</p>
       </template>
     </modal-confirmation>
     <div>
       <b>
-      {{datacube.name}}: <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
-      <span
-        v-if="newVersionLink"
-        @click="edit(newVersionLink)"
-        rel="noopener noreferrer"
-        class="deprecated-datacube"
-      >
-        Link to new version
-      </span>
+        {{ datacube.name }}: <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+        <span v-if="newVersionLink" @click="edit(newVersionLink)" rel="noopener noreferrer" class="deprecated-datacube">
+          Link to new version
+        </span>
       </b>
     </div>
 
     <div class="card-body">
       <div class="card-column">
         <div class="column-title">Inputs</div>
-        <div
-          v-for="input in inputKnobs"
-          :key="input.name">
+        <div v-for="input in inputKnobs" :key="input.name">
           {{ input.display_name }}
         </div>
       </div>
       <div class="card-column">
         <div class="column-title">Outputs</div>
-        <div
-          v-for="output in validatedOutputs"
-          :key="output.name">
+        <div v-for="output in validatedOutputs" :key="output.name">
           {{ output.display_name || output.name }}
         </div>
       </div>
       <div class="card-column">
         <div class="column-title">Qualifiers</div>
-        <div
-          v-for="qualifier in displayedQualifiers"
-          :key="qualifier.name">
+        <div v-for="qualifier in displayedQualifiers" :key="qualifier.name">
           {{ qualifier.display_name || qualifier.name }}
         </div>
       </div>
       <div class="card-column">
         <div class="column-title">Domains</div>
         <div style="display: flex; align-items: center; flex-wrap: wrap">
-          <select name="domains" id="domains" @change="selectedDomain=AVAILABLE_DOMAINS[$event.target.selectedIndex]">
+          <select name="domains" style="margin-right: 7px;" id="domains"
+            @change="selectedDomain = AVAILABLE_DOMAINS[$event.target.selectedIndex - 1]">
+            <option disabled selected value="''">Select a domain</option>
             <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
-              {{domain}}
+              {{ domain }}
             </option>
           </select>
-          <button type="button" class="btn" style="padding: 2px 4px" @click="addDomain">Add</button>
+          <button type="button" class="btn" style="padding: 2px 4px" @click="addDomain" :disabled="selectedDomain === ''">Add</button>
         </div>
         <div v-if="datacubeDomains" style="display: flex; flex-wrap: wrap">
           <div v-for="domain in datacubeDomains" :key="domain">
-            <span style="margin: 2px; background-color: white;">{{domain}} <i @click="removeDomain(domain)" class="fa fa-remove" /></span>
+            <span style="margin: 2px; background-color: white;">{{ domain }} <i @click="removeDomain(domain)"
+                class="fa fa-remove" /></span>
           </div>
         </div>
       </div>
@@ -90,32 +72,20 @@
     </div>
 
     <div class="button-row">
-      <button
-        v-tooltip.top-center="'Update the model instance in Dojo'"
-        type="button"
-        class="btn btn-primary"
-        @click="showEditInDojoModal=true"
-      >
+      <button v-tooltip.top-center="'Update the model instance in Dojo'" type="button" class="btn btn-primary"
+        @click="showEditInDojoModal = true">
         Update model
       </button>
-      <button
-        v-tooltip.top-center="'Edit the metadata and visualization'"
-        type="button"
-        class="btn btn-call-to-action"
-        @click="edit(datacube.data_id)"
-      >
+      <button v-tooltip.top-center="'Edit the metadata and visualization'" type="button" class="btn btn-call-to-action"
+        @click="edit(datacube.data_id)">
         <i v-if="datacube.status !== DatacubeStatus.Deprecated" class="fa fa-edit" />
-        {{datacube.status === DatacubeStatus.Deprecated ? 'View' : 'Edit'}}
+        {{ datacube.status === DatacubeStatus.Deprecated ? 'View' : 'Edit' }}
       </button>
-      <button
-        v-if="datacube.status !== DatacubeStatus.Deprecated"
-        v-tooltip.top-center="'Unpublish the datacube instance'"
-        type="button"
-        class="remove-button"
-        :class="{ 'disabled': datacube.status === DatacubeStatus.Registered || datacube.status === DatacubeStatus.Deprecated}"
+      <button v-if="datacube.status !== DatacubeStatus.Deprecated"
+        v-tooltip.top-center="'Unpublish the datacube instance'" type="button" class="remove-button"
+        :class="{ 'disabled': datacube.status === DatacubeStatus.Registered || datacube.status === DatacubeStatus.Deprecated }"
         :disabled="datacube.status === DatacubeStatus.Registered || datacube.status === DatacubeStatus.Deprecated"
-        @click.stop="showUnpublishModal = true"
-      >
+        @click.stop="showUnpublishModal = true">
         <i class="fa fa-trash" />
         Unpublish
       </button>
@@ -199,7 +169,7 @@ export default defineComponent({
 
     const showUnpublishModal = ref(false);
     const showEditInDojoModal = ref(false);
-    const selectedDomain = ref(AVAILABLE_DOMAINS[0]);
+    const selectedDomain = ref('');
 
     const { statusColor, statusLabel } = useDatacubeVersioning(datacube);
 
@@ -221,7 +191,7 @@ export default defineComponent({
     dateFormatter,
     addDomain() {
       const newDomains = this.datacubeDomains ? _.cloneDeep(this.datacubeDomains) : [];
-      if (!newDomains.includes(this.selectedDomain)) {
+      if (this.selectedDomain !== '' && !newDomains.includes(this.selectedDomain)) {
         newDomains.push(this.selectedDomain);
         this.saveDomains(newDomains);
       }
@@ -276,6 +246,7 @@ export default defineComponent({
 .deprecated-datacube {
   color: blue;
   padding-left: 4px;
+
   &:hover {
     cursor: pointer;
     text-decoration: underline;
