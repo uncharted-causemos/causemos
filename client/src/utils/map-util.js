@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
-import mapboxgl from 'mapbox-gl';
+import mapboxgl from 'maplibre-gl';
 import { BASE_LAYER } from '@/utils/map-util-new';
 import { COLOR_PALETTE_SIZE } from '@/utils/colors-util';
 // import { FIFOCache } from '@/utils/fifo-cache';
