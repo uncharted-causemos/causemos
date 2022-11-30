@@ -1,49 +1,26 @@
 <template>
   <div class="home-container">
     <div class="logo-container">
-      <img
-        class="logo"
-        src="../assets/causemos-logo-colour.svg"
-        alt="CauseMos logo"
-      />
+      <img class="logo" src="../assets/causemos-logo-colour.svg" alt="CauseMos logo" />
       <div class="descriptions">
         Understand complex multi-domain issues by leveraging integrated
         knowledge, data, and models
       </div>
     </div>
     <div class="columns">
-      <div
-        v-if="applicationConfiguration.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE"
-        class="project-column"
-      >
+      <div v-if="applicationConfiguration.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE" class="project-column">
         <div class="title">
           <h3>Analysis Projects</h3>
-          <message-display
-            v-if="newKnowledgeBase"
+          <message-display v-if="newKnowledgeBase"
             :message="'New Knowledge Base (KB): Create a new project to check out the newly created KB.'"
-            :message-type="'primary'"
-            :dismissable="true"
-            @dismiss="onDismiss" />
-          <button
-            v-tooltip.top-center="'Create a new analysis project'"
-            type="button"
-            class="btn btn-call-to-action"
-            @click="gotoNewProject"
-          >New Analysis Project</button>
+            :message-type="'primary'" :dismissable="true" @dismiss="onDismiss" />
+          <button v-tooltip.top-center="'Create a new analysis project'" type="button" class="btn btn-call-to-action"
+            @click="gotoNewProject">New Analysis Project</button>
         </div>
         <div class="controls">
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Search projects..."
-            class="form-control"
-          >
-          <dropdown-button
-            :inner-button-label="'Sort by'"
-            :items="sortingOptions"
-            :selected-item="selectedSortingOption"
-            @item-selected="sort"
-          />
+          <input v-model="search" type="text" placeholder="Search projects..." class="form-control">
+          <dropdown-button :inner-button-label="'Sort by'" :items="sortingOptions"
+            :selected-item="selectedSortingOption" @item-selected="sort" />
         </div>
         <div class="projects-list">
           <div class="projects-list-header">
@@ -64,46 +41,26 @@
             </div>
           </div>
           <div class="projects-list-elements">
-            <project-card
-              v-for="project in filteredProjects"
-              :key="project.id"
-              :project="project"
-              @delete="deleteProject"
-            />
+            <project-card v-for="project in filteredProjects" :key="project.id" :project="project"
+              @delete="deleteProject" />
           </div>
         </div>
       </div>
       <div class="project-column">
         <div class="title">
           <h3>Domain Models and Datasets</h3>
-          <button
-            v-tooltip.top-center="'Create a new domain family project'"
-            type="button"
-            class="btn btn-call-to-action"
-            @click="gotoNewFamilyProject"
-          >New Domain Model Project</button>
+          <button v-tooltip.top-center="'Create a new domain family project'" type="button"
+            class="btn btn-call-to-action" @click="gotoNewFamilyProject">New Domain Model Project</button>
         </div>
         <div class="controls">
-          <radio-button-group
-            :selected-button-value="selectedDataType"
-            :buttons="[
-              { label: 'Domain Models', value: 'models' },
-              { label: 'Datasets', value: 'datasets' }
-            ]"
-            @button-clicked="setDataType"
-          />
-          <input
-            v-model="searchDomainDatacubes"
-            type="text"
-            :placeholder="`Search ${selectedDataType}...`"
-            class="form-control"
-          >
-          <dropdown-button
-            :inner-button-label="'Sort by'"
-            :items="sortingOptions"
-            :selected-item="selectedDatacubeSortingOption"
-            @item-selected="setDatacubeSort"
-          />
+          <radio-button-group :selected-button-value="selectedDataType" :buttons="[
+            { label: 'Domain Models', value: 'models' },
+            { label: 'Datasets', value: 'datasets' }
+          ]" @button-clicked="setDataType" />
+          <input v-model="searchDomainDatacubes" type="text" :placeholder="`Search ${selectedDataType}...`"
+            class="form-control">
+          <dropdown-button :inner-button-label="'Sort by'" :items="sortingOptions"
+            :selected-item="selectedDatacubeSortingOption" @item-selected="setDatacubeSort" />
         </div>
         <div class="projects-list">
           <div v-if="selectedDataType === 'models'" class="projects-list-header">
@@ -141,12 +98,8 @@
             </div>
           </div>
           <div class="projects-list-elements">
-            <domain-datacube-project-card
-              v-for="project in filteredFamilyList"
-              :key="project.id"
-              :project="project"
-              @delete="deleteDomainProject"
-            />
+            <domain-datacube-project-card v-for="project in filteredFamilyList" :key="project.id" :project="project"
+              @delete="deleteDomainProject" />
           </div>
         </div>
       </div>
@@ -183,7 +136,7 @@ export default defineComponent({
     search: '',
     projectsList: [] as Project[],
     showSortingDropdown: false,
-    sortingOptions: ['Most recent', 'Oldest'],
+    sortingOptions: ['Most recent', 'Oldest', 'A-Z', 'Z-A'],
     selectedSortingOption: 'Most recent',
     newKnowledgeBase: false,
     searchDomainDatacubes: '',
@@ -227,9 +180,22 @@ export default defineComponent({
       const filtered = familyList.filter(family => family.name.toLowerCase()
         .includes(this.searchDomainDatacubes.toLowerCase()));
 
-      const sortFunc = this.sortingOptions.indexOf(this.selectedDatacubeSortingOption) === 1
-        ? 'asc' : 'desc';
-      return _.orderBy(filtered, 'modifiedAt', sortFunc).slice(0, DISPLAYED_FAMILY_LIMIT);
+      filtered.forEach(function (family) {
+        family.name = family.name.trim();
+      });
+
+      switch (this.selectedDatacubeSortingOption) {
+        case 'Most recent':
+          return _.orderBy(filtered, ['modifiedAt'], ['desc']).slice(0, DISPLAYED_FAMILY_LIMIT);
+        case 'Oldest':
+          return _.orderBy(filtered, ['modifiedAt'], ['asc']).slice(0, DISPLAYED_FAMILY_LIMIT);
+        case 'A-Z':
+          return _.orderBy(filtered, ['name'], ['asc']).slice(0, DISPLAYED_FAMILY_LIMIT);
+        case 'Z-A':
+          return _.orderBy(filtered, ['name'], ['desc']).slice(0, DISPLAYED_FAMILY_LIMIT);
+        default:
+          return filtered;
+      }
     },
     ...mapGetters({
       applicationConfiguration: 'app/applicationConfiguration'
@@ -317,6 +283,16 @@ export default defineComponent({
         return a.modified_at - b.modified_at;
       });
     },
+    sortAlphabetically() {
+      this.projectsList.sort((a, b) => {
+        return a.name.localeCompare(b.name);
+      });
+    },
+    sortReverseAlphabetically() {
+      this.projectsList.sort((a, b) => {
+        return b.name.localeCompare(a.name);
+      });
+    },
     sort(option: string) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
@@ -326,6 +302,12 @@ export default defineComponent({
           break;
         case this.sortingOptions[1]:
           this.sortByEarliestDate();
+          break;
+        case this.sortingOptions[2]:
+          this.sortAlphabetically();
+          break;
+        case this.sortingOptions[3]:
+          this.sortReverseAlphabetically();
           break;
         default:
           this.sortByMostRecentDate();
@@ -383,13 +365,16 @@ $padding-size: 12.5vh;
 .title {
   display: flex;
   align-items: center;
+
   h3 {
     flex: 1;
   }
+
   div {
     flex: 1;
   }
 }
+
 .projects-list {
   flex: 1;
   overflow: hidden;
@@ -406,12 +391,13 @@ $padding-size: 12.5vh;
     // Add 15px right padding to accommodate for scrollbar
     padding-right: 25px;
   }
+
   .projects-list-elements {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
 
-    & > *:not(:first-child) {
+    &>*:not(:first-child) {
       margin-top: 1px;
     }
   }
@@ -435,32 +421,40 @@ $padding-size: 12.5vh;
     flex-basis: 20px;
   }
 }
+
 .controls {
   display: flex;
   justify-content: space-between;
+
   input[type=text] {
     padding: 8px;
     width: 250px;
     margin-right: 10px;
   }
+
   .sorting {
     position: relative;
+
     .btn {
       width: 180px !important;
       text-align: left;
+
       .lbl {
         font-weight: normal;
       }
+
       .fa {
-        position:absolute;
+        position: absolute;
         right: 20px;
       }
     }
+
     .dropdown {
       position: absolute;
       width: 100%;
     }
   }
+
   .form-control {
     background: #fff;
   }
