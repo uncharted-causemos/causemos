@@ -4,6 +4,7 @@
       <!-- Actions -->
       <li class="nav-item">
         <button
+          v-if="applicationConfiguration.HIDE_SEARCH_KNOWLEDGE_BASE"
           v-tooltip.top-center="'Search Knowledge Base'"
           type="button"
           class="btn btn-call-to-action"
@@ -88,7 +89,8 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       project: 'app/project',
-      currentCAG: 'app/currentCAG'
+      currentCAG: 'app/currentCAG',
+      applicationConfiguration: 'app/applicationConfiguration'
     }),
     numEdges(): number {
       return _.get(this.modelComponents, 'edges', []).length;
