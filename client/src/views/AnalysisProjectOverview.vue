@@ -139,8 +139,8 @@
         </div>
         <div class="analysis-list" v-if="filteredAnalyses.length > 0">
           <analysis-overview-card
-            v-for="analysis in filteredAnalyses"
-            :key="analysis.id"
+            v-for="(analysis, index) in filteredAnalyses"
+            :key="`${analysis.id}${index}`"
             class="analysis-overview-card"
             :analysis="analysis"
             @open="onOpen(analysis)"
@@ -268,7 +268,7 @@ export default defineComponent({
     KBname: '-',
     searchText: '',
     showSortingDropdownAnalyses: false,
-    analysisSortingOptions: ['Most recent', 'Earliest'],
+    analysisSortingOptions: ['Most recent', 'Earliest', 'A-Z', 'Z-A'],
     selectedAnalysisSortingOption: 'Most recent',
     isEditingDesc: false,
     showDocumentModal: false,
@@ -557,6 +557,16 @@ export default defineComponent({
         return a.modified_at && b.modified_at ? a.modified_at - b.modified_at : 0;
       });
     },
+    sortAnalysesByAlphabeticalOrder() {
+      this.analyses.sort((a, b) => {
+        return a.title && b.title ? a.title.trim().localeCompare(b.title.trim()) : 0;
+      });
+    },
+    sortAnalysesByReverseAlphabeticalOrder() {
+      this.analyses.sort((a, b) => {
+        return a.title && b.title ? b.title.trim().localeCompare(a.title.trim()) : 0;
+      });
+    },
     sortAnalyses(option) {
       this.selectedAnalysisSortingOption = option;
       this.showSortingDropdownAnalyses = false;
@@ -566,6 +576,12 @@ export default defineComponent({
           break;
         case this.analysisSortingOptions[1]:
           this.sortAnalysesByEarliestDate();
+          break;
+        case this.analysisSortingOptions[2]:
+          this.sortAnalysesByAlphabeticalOrder();
+          break;
+        case this.analysisSortingOptions[3]:
+          this.sortAnalysesByReverseAlphabeticalOrder();
           break;
         default:
           this.sortAnalysesByMostRecentDate();

@@ -151,7 +151,7 @@ export default {
     datacubeInstances: [],
     searchDatacubeInstances: '',
     showSortingDropdownDatacubeInstances: false,
-    sortingOptionsDatacubeInstances: ['Most recent', 'Earliest'],
+    sortingOptionsDatacubeInstances: ['Most recent', 'Earliest', 'A-Z', 'Z-A'],
     selectedSortingOptionDatacubeInstances: 'Most recent',
     isEditingDesc: false,
     filterOptions: [
@@ -300,6 +300,17 @@ export default {
         return a.modified_at && b.modified_at ? a.modified_at - b.modified_at : 0;
       });
     },
+    sortDatacubeInstancesByAlphabeticalOrder() {
+      this.datacubeInstances.sort((a, b) => {
+        return a.name && b.name ? a.name.localeCompare(b.name) : 0;
+      });
+    },
+    sortDatacubeInstancesByReverseAlphabeticalOrder() {
+      this.datacubeInstances.sort((a, b) => {
+        return a.name && b.name ? b.name.localeCompare(a.name) : 0;
+      });
+    },
+
     sortDatacubeInstances(option) {
       this.selectedSortingOptionDatacubeInstances = option;
       this.showSortingDropdownDatacubeInstances = false;
@@ -309,6 +320,12 @@ export default {
           break;
         case this.sortingOptionsDatacubeInstances[1]:
           this.sortDatacubeInstancesByEarliestDate();
+          break;
+        case this.sortingOptionsDatacubeInstances[2]:
+          this.sortDatacubeInstancesByAlphabeticalOrder();
+          break;
+        case this.sortingOptionsDatacubeInstances[3]:
+          this.sortDatacubeInstancesByReverseAlphabeticalOrder();
           break;
         default:
           this.sortDatacubeInstancesByMostRecentDate();

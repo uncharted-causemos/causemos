@@ -219,7 +219,7 @@ export default defineComponent({
     editedDataset: { name: '', description: '', maintainer: {}, domains: [] as string[] } as DatasetEditable,
     searchTerm: '',
     showSortingDropdown: false,
-    sortingOptions: ['Most recent', 'Oldest'],
+    sortingOptions: ['Most recent', 'Oldest', 'A-Z', 'Z-A'],
     selectedSortingOption: 'Most recent',
     showApplyToAllModal: false,
     AVAILABLE_DOMAINS,
@@ -238,9 +238,18 @@ export default defineComponent({
         indicator.outputs[0].display_name.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
 
-      const sortFunc = this.sortingOptions.indexOf(this.selectedSortingOption) === 1
-        ? 'asc' : 'desc';
-      return _.orderBy(filtered, ['created_at', 'name'], [sortFunc, 'asc']);
+      switch (this.selectedSortingOption) {
+        case 'Most recent':
+          return _.orderBy(filtered, ['created_at'], ['desc']);
+        case 'Oldest':
+          return _.orderBy(filtered, ['created_at'], ['asc']);
+        case 'A-Z':
+          return _.orderBy(filtered, ['outputs[0].display_name'], ['asc']);
+        case 'Z-A':
+          return _.orderBy(filtered, ['outputs[0].display_name'], ['desc']);
+        default:
+          return filtered;
+      }
     },
     isReady() {
       return this.dataset.status === DatacubeStatus.Ready;
