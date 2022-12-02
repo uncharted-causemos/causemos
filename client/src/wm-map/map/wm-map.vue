@@ -10,11 +10,11 @@
 
 <script>
 import _, { isEqual } from 'lodash';
-import mapboxgl from 'mapbox-gl';
+import mapboxgl from 'maplibre-gl';
 import options from './options';
 import { eventEmitter } from '../mixins';
 
-import 'mapbox-gl/dist/mapbox-gl.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 // Ref: https://docs.mapbox.com/mapbox-gl-js/api/#map.event:resize
 const MAPBOX_EVENTS = [

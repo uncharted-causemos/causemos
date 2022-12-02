@@ -110,7 +110,7 @@ export const getRawOutputDataByTimestamp = async (
     dataId: string,
     runId: string,
     outputVariable: string,
-    timestamp: number|undefined
+    timestamp: number | undefined
   }
 ): Promise<RawOutputDataPoint[]> => {
   const rawData = await getRawOutputData(param);
@@ -126,7 +126,7 @@ export const getRawQualifierTimeseries = async (
     qualifierVariableId: string,
     qualifierOptions: string[],
     regionId?: string
-}) => {
+  }) => {
   if (param.qualifierOptions.length === 0) {
     return [];
   }
@@ -179,7 +179,7 @@ export const getTimeseries = async (
   }
 };
 
-export const getBulkTimeseries = async(
+export const getBulkTimeseries = async (
   spec: OutputSpec,
   regionIds: string[]
 ): Promise<any> => {
@@ -213,7 +213,7 @@ export const getRawQualifierBreakdown = async (
   qualifierVariableIds: string[],
   aggregation: string,
   timestamp: number
-) : Promise<QualifierBreakdownResponse[]> => {
+): Promise<QualifierBreakdownResponse[]> => {
   const rawDataByTs = await getRawOutputDataByTimestamp({
     dataId,
     runId,
@@ -337,7 +337,7 @@ export const getQualifierBreakdown = async (
   spatialAggregation: string,
   timestamp: number,
   regionId: string
-) : Promise<QualifierBreakdownResponse[]> => {
+): Promise<QualifierBreakdownResponse[]> => {
   if (regionId.length > 0) {
     const [global, regional] = await Promise.all([
       getGlobalQualifierBreakdown(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp),
@@ -389,7 +389,7 @@ export const getQualifierBreakdownByRegionId = async (
   spatialAggregation: string,
   timestamp: number,
   regionId: string
-) : Promise<QualifierBreakdownResponse[]> => {
+): Promise<QualifierBreakdownResponse[]> => {
   const outputSpec: OutputSpec = {
     modelId: dataId,
     runId,
@@ -501,7 +501,7 @@ export const getRegionAggregations = async (
 
   if (isSplitByQualifierActive(breakdownOption)) {
     results = await Promise.all(specs.map((spec) => getRegionAggregationWithQualifiers(spec, breakdownOption)));
-  // reduce duplicate calls without branching the more complex result processing logic.
+    // reduce duplicate calls without branching the more complex result processing logic.
   } else if (breakdownOption === SpatialAggregationLevel.Region) {
     const ret = await getRegionAggregation(specs[0]);
     results = new Array(specs.length).fill(ret) as RegionalAggregation[];
@@ -515,18 +515,18 @@ export const getRegionAggregations = async (
     if (bulkResults.regional_data) {
       results = bulkResults?.regional_data.map(rd => rd.data);
     } else {
-      results = <RegionalAggregation[]> [];
+      results = <RegionalAggregation[]>[];
     }
     if (bulkResults.all_agg && allTimestamps && allTimestamps.length > 0) {
       results.push(bulkResults.all_agg);
-      const newSpec = <OutputSpecWithId> {
+      const newSpec = <OutputSpecWithId>{
         id: ReferenceSeriesOption.AllYears as string
       };
       specs.push(newSpec);
     }
     if (bulkResults.select_agg) {
       results.push(bulkResults.select_agg);
-      const newSpec = <OutputSpecWithId> {
+      const newSpec = <OutputSpecWithId>{
         id: ReferenceSeriesOption.SelectYears as string
       };
       specs.push(newSpec);
@@ -544,8 +544,8 @@ export const getRegionAggregations = async (
     admin2: {},
     admin3: {}
   } as {
-    [key in AdminLevel]: { [key: string]: RegionAgg };
-  };
+      [key in AdminLevel]: { [key: string]: RegionAgg };
+    };
   // FIXME: cast to make compatible with objects indexed by AdminLevel
   const _allRegions = allRegions as { [key in AdminLevel]: string[] };
   // Initialize dict with an entry for each region in the entire hierarchy,
@@ -566,29 +566,33 @@ export const getRegionAggregations = async (
     }
   });
   // Insert results into the hierarchy
-  results.forEach((result: RegionalAggregation|RegionalAggregations, index: number) => {
+  results.forEach((result: RegionalAggregation | RegionalAggregations, index: number) => {
     Object.values(AdminLevel).forEach(level => {
-      (result[level] || []).forEach((item: RegionAgg|{id: string; value: number}) => {
+      (result[level] || []).forEach((item: RegionAgg | { id: string; value: number }) => {
         if (!dict[level][item.id]) {
-          // TODO: See useDatacubeHierarchy, 'None' regions may be filtered out
-          console.warn(
+          // check if there is a similar region in the hierarchy
+          console.log(
             "getRegionAggregation returned a region that doesn't exist in the hierarchy",
-            item.id,
-            allRegions
+            dict,
+            'result[level]', result[level],
+            'level', level,
+            'itemid', item.id,
+            'allregion', allRegions
           );
+
           return;
         }
 
         // if we have item value, as in the normal regional aggregation use that.
-        if (_.isFinite((item as {id: string; value: number}).value)) {
+        if (_.isFinite((item as { id: string; value: number }).value)) {
           // but only use that if we're not in regional aggregation, or we are and the specs id and item id match
           if (
             breakdownOption !== SpatialAggregationLevel.Region ||
             (breakdownOption === SpatialAggregationLevel.Region && specs[index].id === item.id)
           ) {
-            dict[level][item.id].values[specs[index].id] = (item as {id: string; value: number}).value;
+            dict[level][item.id].values[specs[index].id] = (item as { id: string; value: number }).value;
           }
-        // otherwise use the qualifier info to look up the data in item.values
+          // otherwise use the qualifier info to look up the data in item.values
         } else if ((item as RegionAgg).values?.[specs[index].id]) {
           dict[level][item.id].values[specs[index].id] = (item as RegionAgg).values?.[specs[index].id];
         }
@@ -603,7 +607,7 @@ export const getRegionAggregations = async (
   };
 };
 
-export const getBulkRegionalData = async(
+export const getBulkRegionalData = async (
   spec: BaseSpec,
   selectedTimestamps: string[],
   allTimestamps: string[],

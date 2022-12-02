@@ -47,7 +47,7 @@
     "html2canvas": "^1.0.0-rc.7",
     "jquery": "^3.3.1",
     "lodash": "^4.17.21",
-    "mapbox-gl": "^1.10.0",
+    "maplibre-gl": "^2.4.0",
     "markerjs2": "^2.13.0",
     "moment": "^2.22.2",
     "moment-timezone": "^0.5.21",
