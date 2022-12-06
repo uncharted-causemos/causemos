@@ -13,7 +13,7 @@
     <dropdown-control
       class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
-        <div class="tab-row">
+        <div class="tab-row" v-if="!showCustomConceptDisplay">
           <div>
             Filter by: &nbsp;
           </div>
@@ -68,6 +68,16 @@
           style="display: flex; flex-direction: row">
           <div class="left-column">
             <div
+              class="dropdown-option"
+              @click="saveCustomConcept"
+            >
+              <div class="dropdown-option-label">
+                <div class="dropdown-option-label-text">
+                  Create a new concept for <b>{{ userInput }}</b>
+                </div>
+              </div>
+            </div>
+            <div
               v-for="(suggestion, index) in conceptSuggestions"
               :key="suggestion.doc.key"
               class="dropdown-option"
@@ -117,16 +127,6 @@
             Explore Knowledge Base
           </button>
         </div>
-
-        <!-- Empty -->
-        <div v-if="showCustomConceptDisplay" class="new-concept-section">
-          <div> No matches. Try searching something else or create a custom concept</div>
-          <button class="btn btn-primary"
-            @click="$emit('show-custom-concept')">
-            Create custom concept
-          </button>
-        </div>
-
       </template>
     </dropdown-control>
   </div>
@@ -135,7 +135,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
-import { useStore } from 'vuex';
+import { useStore, mapActions } from 'vuex';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import dateFormatter from '@/formatters/date-formatter';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -354,6 +354,19 @@ export default defineComponent({
     }
   },
   methods: {
+    ...mapActions({
+      updateOntologyCache: 'app/updateOntologyCache'
+    }),
+    saveCustomConcept() {
+      // Update ontology
+      console.log(this.ontologyConcepts, this.userInput, this.conceptSuggestions);
+      if (this.ontologyConcepts[this.userInput] === false) {
+        projectService.addNewConceptToOntology(this.project, this.userInput, [], '');
+        this.updateOntologyCache(this.userInput);
+      } else {
+        console.error(`Trying to add existing concept ${this.userInput}, ignoring...`);
+      }
+    },
     // `delta` is 1 if moving down the list, -1 if moving up the list
     shiftFocus(delta: number) {
       let newFocusIndex = this.focusedSuggestionIndex + delta;
