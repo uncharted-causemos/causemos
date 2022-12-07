@@ -1,7 +1,11 @@
 <template>
   <div class="home-container">
     <div class="logo-container">
-      <img class="logo" src="../assets/causemos-logo-colour.svg" alt="CauseMos logo" />
+      <img
+        class="logo"
+        src="../assets/causemos-logo-colour.svg"
+        alt="CauseMos logo"
+      />
       <div class="descriptions">
         Understand complex multi-domain issues by leveraging integrated
         knowledge, data, and models
