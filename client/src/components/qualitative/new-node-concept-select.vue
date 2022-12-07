@@ -13,7 +13,7 @@
     <dropdown-control
       class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
-        <div class="tab-row" v-if="!showCustomConceptDisplay">
+        <div class="tab-row" v-if="!showCustomConceptDisplay || userInput.length > 0">
           <div>
             Filter by: &nbsp;
           </div>
@@ -64,12 +64,13 @@
 
         <!-- concepts -->
         <div
-          v-if="activeTab === 'concepts' && conceptSuggestions.length > 0"
+          v-if="(activeTab === 'concepts' && userInput.length > 0)"
           style="display: flex; flex-direction: row">
           <div class="left-column">
             <div
               class="dropdown-option"
               @click="saveCustomConcept"
+              :class="{'focused': focusedSuggestionIndex === -1}"
             >
               <div class="dropdown-option-label">
                 <div class="dropdown-option-label-text">
@@ -90,7 +91,7 @@
             </div>
           </div>
           <div
-            v-if="conceptSuggestions.length"
+            v-if="(conceptSuggestions.length > 0)"
             class="right-column">
             <div>
               <div
@@ -135,7 +136,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
-import { useStore, mapActions } from 'vuex';
+import { useStore, mapActions, mapGetters } from 'vuex';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import dateFormatter from '@/formatters/date-formatter';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -155,6 +156,7 @@ import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { logHistoryEntry } from '@/services/model-service';
 import { getTimeseries } from '@/services/outputdata-service';
 import filtersUtil from '@/utils/filters-util';
+import { cleanConceptString } from '@/utils/concept-util';
 
 const CONCEPT_SUGGESTION_COUNT = 30;
 
@@ -188,14 +190,15 @@ export default defineComponent({
   emits: [
     'suggestion-selected',
     'datacube-selected',
-    'show-custom-concept'
+    'show-custom-concept',
+    'save-custom-concept'
   ],
   setup(props) {
     const { selectedTimeScale } = toRefs(props);
 
     const store = useStore();
     const userInput = ref('');
-    const focusedSuggestionIndex = ref(0);
+    const focusedSuggestionIndex = ref(-1);
     const mouseOverIndex = ref(-1);
     const activeTab = ref('concepts');
     const conceptSuggestions = ref([]) as Ref<any[]>;
@@ -359,10 +362,11 @@ export default defineComponent({
     }),
     saveCustomConcept() {
       // Update ontology
-      console.log(this.ontologyConcepts, this.userInput, this.conceptSuggestions);
-      if (this.ontologyConcepts[this.userInput] === false) {
+      if (this.ontologySet.has(this.userInput) === false) {
         projectService.addNewConceptToOntology(this.project, this.userInput, [], '');
         this.updateOntologyCache(this.userInput);
+        this.$emit('show-custom-concept');
+        this.$emit('save-custom-concept', this.customGrounding);
       } else {
         console.error(`Trying to add existing concept ${this.userInput}, ignoring...`);
       }
@@ -402,7 +406,12 @@ export default defineComponent({
       }
     },
     onEnterPressed() {
-      if (this.conceptSuggestions.length === 0) return;
+      if (this.conceptSuggestions.length === 0) {
+        if (this.userInput.length > 0) {
+          this.saveCustomConcept();
+        }
+        return;
+      }
       const suggestion = this.conceptSuggestions[this.focusedSuggestionIndex];
       this.selectSuggestion(suggestion);
     },
@@ -472,6 +481,19 @@ export default defineComponent({
         name: 'kbExplorer',
         query: { cag: this.currentCAG, view: 'statements', filters: filters as any }
       });
+    }
+  },
+  computed: {
+    ...mapGetters({
+      ontologySet: 'app/ontologySet'
+    }),
+    customGrounding(): { [key: string]: string } {
+      return {
+        theme: cleanConceptString(this.userInput),
+        theme_property: cleanConceptString(''),
+        process: cleanConceptString(''),
+        process_property: cleanConceptString('')
+      };
     }
   }
 });

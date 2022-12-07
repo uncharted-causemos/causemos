@@ -17,7 +17,8 @@
       :selected-time-scale="selectedTimeScale"
       @suggestion-selected="onSuggestionSelected"
       @datacube-selected="onDatacubeSelected"
-      @show-custom-concept="showCustomConcept = true"
+      @show-custom-concept="(showCustomConcept = false)"
+      @save-custom-concept="saveCustomConcept"
     />
     <teleport to="body">
       <modal-custom-concept
