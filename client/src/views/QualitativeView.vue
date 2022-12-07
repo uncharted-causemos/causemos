@@ -664,6 +664,10 @@ export default defineComponent({
     }) {
       const edge = { source: source.concept, target: target.concept };
 
+      if (edge.source === edge.target) {
+        return;
+      }
+
       const edges = this.modelComponents.edges.map(
         edge => edge.source + '///' + edge.target
       );
@@ -677,6 +681,43 @@ export default defineComponent({
             relationsToAdd.push({ source, target });
           });
         });
+
+        // get all edges on map and return as array
+        const allEdges = this.modelComponents.edges.map(edge => {
+          return { source: edge.source, target: edge.target };
+        });
+
+        // function to combine edges to find if their is a way to get back to the source
+        const findPath = (source: string, target: string, edges: { source: string; target: string; }[]) => {
+          const paths: any[] = [];
+          const findPathRecursive = (source: any, target: any, edges: string | any[], path: any[] | null) => {
+            path = path || [];
+            path.push(source);
+            if (source === target) {
+              paths.push(path);
+            } else {
+              for (let i = 0; i < edges.length; i++) {
+                const edge = edges[i];
+                if (edge.source === source && path.indexOf(edge.target) === -1) {
+                  const newPath = path.slice();
+                  findPathRecursive(edge.target, target, edges, newPath);
+                }
+              }
+            }
+          };
+          findPathRecursive(source, target, edges, null);
+          findPathRecursive(target, source, edges, null);
+          return paths;
+        };
+
+        // find all paths from source to target
+        const paths = findPath(source.concept, target.concept, allEdges);
+
+        // if there is a path, then return
+        if (paths.length > 0) {
+          return;
+        }
+
         const edgeData = await projectService.getProjectStatementIdsByEdges(
           this.project,
           relationsToAdd,
