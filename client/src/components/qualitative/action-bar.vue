@@ -4,7 +4,7 @@
       <!-- Actions -->
       <li class="nav-item">
         <button
-          v-if="applicationConfiguration.HIDE_SEARCH_KNOWLEDGE_BASE"
+          v-if="applicationConfiguration.CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE"
           v-tooltip.top-center="'Search Knowledge Base'"
           type="button"
           class="btn btn-call-to-action"
