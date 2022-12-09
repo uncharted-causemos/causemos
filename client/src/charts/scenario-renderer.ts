@@ -25,6 +25,7 @@ import { SELECTED_COLOR } from '@/utils/colors-util';
 
 const HISTORY_LINE_COLOR = '#999';
 const LABEL_COLOR = HISTORY_LINE_COLOR;
+const CHARACTER_WIDTH = 2;
 
 export default function (
   selection: D3Selection,
@@ -128,14 +129,15 @@ function render(
       )
     );
 
-  const labelText = 'Viewing last ' + nodeScenarioData.history_range + ' ' + nodeScenarioData.time_scale.toLowerCase();
-
+  const nodeScenarioDataHistoryRange = nodeScenarioData.time_scale.toLowerCase() === 'months' ? nodeScenarioData.history_range : nodeScenarioData.history_range / 12;
+  const labelText = 'Viewing last ' + nodeScenarioDataHistoryRange + ' ' + nodeScenarioData.time_scale.toLowerCase();
+  const textWidth = labelText.length * CHARACTER_WIDTH;
   const additionalMarginToPlaceLabelBelowGraph = 5;
-  const additionalPaddingLeftTocenterLabel = 10;
+  const rectWidth = xScale(historyEnd) - xScale(historyStart);
 
   svgGroup
     .append('text')
-    .attr('x', (width + labelText.length) / 2 + additionalPaddingLeftTocenterLabel)
+    .attr('x', (rectWidth + textWidth) / 2)
     .attr('y', height + additionalMarginToPlaceLabelBelowGraph)
     .attr('text-anchor', 'end')
     .attr('fill', LABEL_COLOR)
