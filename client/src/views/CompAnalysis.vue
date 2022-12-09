@@ -49,7 +49,6 @@
           :max-number-of-chart-bars="barCountLimit"
           :limit-number-of-chart-bars="isBarCountLimitApplied"
           :selected-admin-level="selectedAdminLevel"
-          :selected-timestamp="globalRegionRankingTimestamp"
           :selected-color-scheme="finalColorScheme"
           :bar-chart-hover-id="highlightedRegionId"
           :map-bounds="globalBbox"
@@ -226,6 +225,7 @@ import { useRoute } from 'vue-router';
 import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
 import { isDataAnalysisState } from '@/utils/insight-util';
 import { Indicator, Model } from '@/types/Datacube';
+import { saveAs } from 'file-saver';
 
 const DRILLDOWN_TABS = [
   {
@@ -300,7 +300,6 @@ export default defineComponent({
 
     const allRegionalRankingMap = ref<{[key: string]: BarData[]}>({});
     const globalBarsData = ref([]) as Ref<BarData[]>;
-    const globalRegionRankingTimestamp = ref(0);
 
     const selectedTimestamp = ref(null) as Ref<number | null>;
     // FIXME: seems like selectedTimestampRange is always set to the full range
@@ -486,7 +485,6 @@ export default defineComponent({
       allRegionalRankingMap,
       regionRankingCompositionType,
       setRegionRankingCompositionType,
-      globalRegionRankingTimestamp,
       setBarCountLimit,
       barCountLimit,
       isBarCountLimitApplied,
@@ -596,10 +594,6 @@ export default defineComponent({
       const datacubeKey = regionRankingInfo.itemId;
       this.allRegionalRankingMap[datacubeKey] = _.cloneDeep(regionRankingInfo.barsData);
 
-      // save the most recent timestamp from all datacubes as the global one
-      if (regionRankingInfo.selectedTimestamp > this.globalRegionRankingTimestamp) {
-        this.globalRegionRankingTimestamp = regionRankingInfo.selectedTimestamp;
-      }
       // re-build the transform computing the region ranking data
       this.updateGlobalRegionRankingData();
     },
@@ -785,7 +779,7 @@ export default defineComponent({
       const file = new Blob(['Ranking Criteria and Relative Weight (%)' + '\r\n' + weightContent + '\r\n\r\n\r\n' + heading + '\r\n' + content + '\r\n'], {
         type: 'text/plain'
       });
-      (window as any).saveAs(file, 'region-ranking-result.csv');
+      saveAs(file, 'region-ranking-result.csv');
     }
   }
 });

@@ -497,7 +497,7 @@ header {
   }
 
   .description {
-    max-width: 90ch;
+    text-align: justify;
   }
 }
 
