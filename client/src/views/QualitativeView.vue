@@ -254,7 +254,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalPathFind from '@/components/modals/modal-path-find.vue';
 import ModalImportCag from '@/components/qualitative/modal-import-cag.vue';
 import ModalImportConflict from '@/components/qualitative/modal-import-conflict.vue';
-import { calculateNeighborhood } from '@/utils/graphs-util';
+import { calculateNeighborhood, findCycles } from '@/utils/graphs-util';
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
@@ -687,34 +687,13 @@ export default defineComponent({
           return { source: edge.source, target: edge.target };
         });
 
-        // function to combine edges to find if their is a way to get back to the source
-        const findPath = (source: string, target: string, edges: { source: string; target: string; }[]) => {
-          const paths: any[] = [];
-          const findPathRecursive = (source: any, target: any, edges: string | any[], path: any[] | null) => {
-            path = path || [];
-            path.push(source);
-            if (source === target) {
-              paths.push(path);
-            } else {
-              for (let i = 0; i < edges.length; i++) {
-                const edge = edges[i];
-                if (edge.source === source && path.indexOf(edge.target) === -1) {
-                  const newPath = path.slice();
-                  findPathRecursive(edge.target, target, edges, newPath);
-                }
-              }
-            }
-          };
-          findPathRecursive(source, target, edges, null);
-          findPathRecursive(target, source, edges, null);
-          return paths;
-        };
+        allEdges.push({ source: source.concept, target: target.concept });
 
-        // find all paths from source to target
-        const paths = findPath(source.concept, target.concept, allEdges);
+        // check for cycles
+        const findpaths = findCycles(allEdges);
 
-        // if there is a path, then return
-        if (paths.length > 0) {
+        // if there are cycles, do not add edge
+        if (findpaths.length > 0) {
           return;
         }
 
