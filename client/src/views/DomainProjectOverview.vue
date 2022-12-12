@@ -126,6 +126,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { unpublishDatacubeInstance, getDatacubeStatusInfo } from '@/utils/datacube-util';
+import { sortItem, modifiedAtSorter, nameSorter } from '@/utils/sort/sort-items';
 
 import { DatacubeStatus } from '@/types/Enums';
 
@@ -290,24 +291,7 @@ export default {
     sortDatacubeInstances(option) {
       this.selectedSortingOptionDatacubeInstances = option;
       this.showSortingDropdownDatacubeInstances = false;
-      const nameSorter = (listItem) => listItem.name.trim().toLowerCase();
-
-      switch (option) {
-        case this.sortingOptionsDatacubeInstances[0]:
-          this.datacubeInstances = _.orderBy(this.datacubeInstances, ['modified_at'], ['desc']);
-          break;
-        case this.sortingOptionsDatacubeInstances[1]:
-          this.datacubeInstances = _.orderBy(this.datacubeInstances, ['modified_at'], ['asc']);
-          break;
-        case this.sortingOptionsDatacubeInstances[2]:
-          this.datacubeInstances = _.orderBy(this.datacubeInstances, [nameSorter], ['asc']);
-          break;
-        case this.sortingOptionsDatacubeInstances[3]:
-          this.datacubeInstances = _.orderBy(this.datacubeInstances, [nameSorter], ['desc']);
-          break;
-        default:
-          return this.datacubeInstances;
-      }
+      this.datacubeInstances = sortItem(this.datacubeInstances, { date: modifiedAtSorter, name: nameSorter }, this.selectedSortingOptionDatacubeInstances);
     }
   }
 };

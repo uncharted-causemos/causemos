@@ -201,6 +201,7 @@ import moment from 'moment';
 import useToaster from '@/services/composables/useToaster';
 import { runtimeFormatter } from '@/utils/string-util';
 import { ViewState } from '@/types/Insight';
+import { sortItem, createdAtSorter } from '@/utils/sort/sort-items';
 
 const MAX_COUNTRIES = 40;
 
@@ -238,18 +239,7 @@ export default defineComponent({
         indicator.outputs[0].display_name.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
 
-      switch (this.selectedSortingOption) {
-        case 'Most recent':
-          return _.orderBy(filtered, ['created_at'], ['desc']);
-        case 'Oldest':
-          return _.orderBy(filtered, ['created_at'], ['asc']);
-        case 'A-Z':
-          return _.orderBy(filtered, ['outputs[0].display_name'], ['asc']);
-        case 'Z-A':
-          return _.orderBy(filtered, ['outputs[0].display_name'], ['desc']);
-        default:
-          return filtered;
-      }
+      return sortItem(filtered, { date: createdAtSorter, name: 'outputs[0].display_name' }, this.selectedSortingOption);
     },
     isReady() {
       return this.dataset.status === DatacubeStatus.Ready;

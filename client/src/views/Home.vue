@@ -124,6 +124,7 @@ import { Project, DomainProject, KnowledgeBase, DatasetInfo, DatacubeFamily } fr
 import domainProjectService from '@/services/domain-project-service';
 import DropdownButton from '@/components/dropdown-button.vue';
 import API from '@/api/api';
+import { modifiedAtSorter, nameSorter, sortItem } from '@/utils/sort/sort-items';
 
 const DISPLAYED_FAMILY_LIMIT = 100;
 
@@ -184,22 +185,7 @@ export default defineComponent({
       const filtered = familyList.filter(family => family.name.toLowerCase()
         .includes(this.searchDomainDatacubes.toLowerCase()));
 
-      filtered.forEach(function (family) {
-        family.name = family.name.trim();
-      });
-
-      switch (this.selectedDatacubeSortingOption) {
-        case 'Most recent':
-          return _.orderBy(filtered, ['modifiedAt'], ['desc']).slice(0, DISPLAYED_FAMILY_LIMIT);
-        case 'Oldest':
-          return _.orderBy(filtered, ['modifiedAt'], ['asc']).slice(0, DISPLAYED_FAMILY_LIMIT);
-        case 'A-Z':
-          return _.orderBy(filtered, ['name'], ['asc']).slice(0, DISPLAYED_FAMILY_LIMIT);
-        case 'Z-A':
-          return _.orderBy(filtered, ['name'], ['desc']).slice(0, DISPLAYED_FAMILY_LIMIT);
-        default:
-          return filtered;
-      }
+      return sortItem(filtered, { date: modifiedAtSorter, name: nameSorter }, this.selectedDatacubeSortingOption).slice(0, DISPLAYED_FAMILY_LIMIT);
     },
     ...mapGetters({
       applicationConfiguration: 'app/applicationConfiguration'
@@ -232,7 +218,7 @@ export default defineComponent({
       projectService.getProjects().then(projects => {
         this.projectsList = projects;
         // Sort by modified_at date with latest on top
-        this.sortByMostRecentDate();
+        this.projectsList = sortItem(this.projectsList, { date: modifiedAtSorter, name: nameSorter }, this.sortingOptions[0]).slice(0, DISPLAYED_FAMILY_LIMIT);
       });
 
       // Local Storage is where we are keeping track of all encountered KB for now
@@ -277,33 +263,10 @@ export default defineComponent({
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
-    sortByMostRecentDate() {
-      this.projectsList.sort((a, b) => {
-        return b.modified_at - a.modified_at;
-      });
-    },
     sort(option: string) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
-
-      const nameSorter = (listItem: { name: string; }) => listItem.name.trim().toLowerCase();
-
-      switch (option) {
-        case this.sortingOptions[0]:
-          this.projectsList = _.orderBy(this.projectsList, ['modified_at'], ['desc']).slice(0, DISPLAYED_FAMILY_LIMIT);
-          break;
-        case this.sortingOptions[1]:
-          this.projectsList = _.orderBy(this.projectsList, ['modified_at'], ['asc']).slice(0, DISPLAYED_FAMILY_LIMIT);
-          break;
-        case this.sortingOptions[2]:
-          this.projectsList = _.orderBy(this.projectsList, [nameSorter], ['asc']).slice(0, DISPLAYED_FAMILY_LIMIT);
-          break;
-        case this.sortingOptions[3]:
-          this.projectsList = _.orderBy(this.projectsList, [nameSorter], ['desc']).slice(0, DISPLAYED_FAMILY_LIMIT);
-          break;
-        default:
-          return this.projectsList;
-      }
+      this.projectsList = sortItem(this.projectsList, { date: modifiedAtSorter, name: nameSorter }, this.selectedSortingOption).slice(0, DISPLAYED_FAMILY_LIMIT);
     },
     setDatacubeSort(option: string) {
       this.selectedDatacubeSortingOption = option;

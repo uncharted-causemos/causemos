@@ -179,6 +179,7 @@ import useQuestionsData from '@/services/composables/useQuestionsData';
 import useInsightsData from '@/services/composables/useInsightsData';
 import { computed } from '@vue/reactivity';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
+import { sortItem, modifiedAtSorter, titleSorter } from '@/utils/sort/sort-items';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -551,24 +552,9 @@ export default defineComponent({
     sortAnalyses(option) {
       this.selectedAnalysisSortingOption = option;
       this.showSortingDropdownAnalyses = false;
-      const nameSorter = (listItem) => listItem.name.trim().toLowerCase();
-
-      switch (option) {
-        case this.analysisSortingOptions[0]:
-          this.analyses = _.orderBy(this.analyses, ['modified_at'], ['desc']);
-          break;
-        case this.analysisSortingOptions[1]:
-          this.analyses = _.orderBy(this.analyses, ['modified_at'], ['asc']);
-          break;
-        case this.analysisSortingOptions[2]:
-          this.analyses = _.orderBy(this.analyses, [nameSorter], ['asc']);
-          break;
-        case this.analysisSortingOptions[3]:
-          this.analyses = _.orderBy(this.analyses, [nameSorter], ['asc']);
-          break;
-        default:
-          return this.analyses;
-      }
+      console.log(this.selectedAnalysisSortingOption);
+      console.log(this.analyses);
+      this.analyses = sortItem(this.analyses, { date: modifiedAtSorter, name: titleSorter }, this.selectedAnalysisSortingOption);
     }
   }
 });
