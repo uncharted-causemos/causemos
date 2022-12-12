@@ -184,9 +184,6 @@ export default defineComponent({
         }));
       const filtered = familyList.filter(family => family.name.toLowerCase()
         .includes(this.searchDomainDatacubes.toLowerCase()));
-      console.log('filtered', filtered);
-      console.log('this.selectedDatacubeSortingOption', this.selectedDatacubeSortingOption);
-
       return sortItem(filtered, { date: modifiedAtSorter, name: nameSorter }, this.selectedDatacubeSortingOption).slice(0, DISPLAYED_FAMILY_LIMIT);
     },
     ...mapGetters({
