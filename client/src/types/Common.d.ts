@@ -54,7 +54,7 @@ export interface DatacubeFamily {
   numReady: number;
   numDraft: number;
   source: string;
-  modifiedAt: number;
+  modified_at: number;
 }
 
 export interface RuntimeStage {

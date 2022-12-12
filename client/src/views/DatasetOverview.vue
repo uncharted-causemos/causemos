@@ -201,7 +201,7 @@ import moment from 'moment';
 import useToaster from '@/services/composables/useToaster';
 import { runtimeFormatter } from '@/utils/string-util';
 import { ViewState } from '@/types/Insight';
-import { sortItem, createdAtSorter } from '@/utils/sort/sort-items';
+import { sortItem, createdAtSorter, SortOptions } from '@/utils/sort/sort-items';
 
 const MAX_COUNTRIES = 40;
 
@@ -220,8 +220,8 @@ export default defineComponent({
     editedDataset: { name: '', description: '', maintainer: {}, domains: [] as string[] } as DatasetEditable,
     searchTerm: '',
     showSortingDropdown: false,
-    sortingOptions: ['Most recent', 'Oldest', 'A-Z', 'Z-A'],
-    selectedSortingOption: 'Most recent',
+    sortingOptions: Object.values(SortOptions),
+    selectedSortingOption: SortOptions.MostRecent,
     showApplyToAllModal: false,
     AVAILABLE_DOMAINS,
     selectedDomain: AVAILABLE_DOMAINS[0]

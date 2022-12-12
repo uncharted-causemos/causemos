@@ -22,3 +22,10 @@ export const modifiedAtSorter = (listItem: { modified_at: string; }) => listItem
 export const createdAtSorter = (listItem: { created_at: string; }) => listItem.created_at;
 
 export const titleSorter = (listItem: { title: string; }) => listItem.title.trim().toLowerCase();
+
+export enum SortOptions {
+    MostRecent = 'Most recent',
+    Oldest = 'Oldest',
+    AtoZ = 'A-Z',
+    ZtoA = 'Z-A',
+}

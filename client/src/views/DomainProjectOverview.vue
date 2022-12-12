@@ -126,7 +126,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { unpublishDatacubeInstance, getDatacubeStatusInfo } from '@/utils/datacube-util';
-import { sortItem, modifiedAtSorter, nameSorter } from '@/utils/sort/sort-items';
+import { sortItem, modifiedAtSorter, nameSorter, SortOptions } from '@/utils/sort/sort-items';
 
 import { DatacubeStatus } from '@/types/Enums';
 
@@ -143,8 +143,8 @@ export default {
     datacubeInstances: [],
     searchDatacubeInstances: '',
     showSortingDropdownDatacubeInstances: false,
-    sortingOptionsDatacubeInstances: ['Most recent', 'Earliest', 'A-Z', 'Z-A'],
-    selectedSortingOptionDatacubeInstances: 'Most recent',
+    sortingOptionsDatacubeInstances: Object.values(SortOptions),
+    selectedSortingOptionDatacubeInstances: SortOptions.MostRecent,
     isEditingDesc: false,
     filterOptions: [
       { status: DatacubeStatus.Ready, selected: true },

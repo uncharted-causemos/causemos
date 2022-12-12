@@ -124,7 +124,7 @@ import { Project, DomainProject, KnowledgeBase, DatasetInfo, DatacubeFamily } fr
 import domainProjectService from '@/services/domain-project-service';
 import DropdownButton from '@/components/dropdown-button.vue';
 import API from '@/api/api';
-import { modifiedAtSorter, nameSorter, sortItem } from '@/utils/sort/sort-items';
+import { modifiedAtSorter, nameSorter, sortItem, SortOptions } from '@/utils/sort/sort-items';
 
 const DISPLAYED_FAMILY_LIMIT = 100;
 
@@ -141,14 +141,14 @@ export default defineComponent({
     search: '',
     projectsList: [] as Project[],
     showSortingDropdown: false,
-    sortingOptions: ['Most recent', 'Oldest', 'A-Z', 'Z-A'],
-    selectedSortingOption: 'Most recent',
+    sortingOptions: Object.values(SortOptions),
+    selectedSortingOption: SortOptions.MostRecent,
     newKnowledgeBase: false,
     searchDomainDatacubes: '',
     projectsListDomainDatacubes: [] as DomainProject[],
     datasetsList: [] as DatasetInfo[],
     showSortingDropdownDomainDatacubes: false,
-    selectedDatacubeSortingOption: 'Most recent',
+    selectedDatacubeSortingOption: SortOptions.MostRecent,
     selectedDataType: 'models',
 
     domainProjectStats: {} as { [key: string]: any }
@@ -170,7 +170,7 @@ export default defineComponent({
             numReady: stats && stats.READY ? stats.READY : 0,
             numDraft: stats && stats.REGISTERED ? stats.REGISTERED : 0,
             source: (domainModel.source || (domainModel.maintainer && domainModel.maintainer[0]?.organization)) ?? '',
-            modifiedAt: domainModel.modified_at || domainModel.created_at || 0
+            modified_at: domainModel.modified_at || domainModel.created_at || 0
           };
         })
         : this.datasetsList.map(dataset => ({
@@ -180,10 +180,12 @@ export default defineComponent({
           numReady: dataset.indicator_count,
           numDraft: 0,
           source: dataset.source ?? '',
-          modifiedAt: dataset.created_at
+          modified_at: dataset.created_at
         }));
       const filtered = familyList.filter(family => family.name.toLowerCase()
         .includes(this.searchDomainDatacubes.toLowerCase()));
+      console.log('filtered', filtered);
+      console.log('this.selectedDatacubeSortingOption', this.selectedDatacubeSortingOption);
 
       return sortItem(filtered, { date: modifiedAtSorter, name: nameSorter }, this.selectedDatacubeSortingOption).slice(0, DISPLAYED_FAMILY_LIMIT);
     },
@@ -217,8 +219,7 @@ export default defineComponent({
     refresh() {
       projectService.getProjects().then(projects => {
         this.projectsList = projects;
-        // Sort by modified_at date with latest on top
-        this.projectsList = sortItem(this.projectsList, { date: modifiedAtSorter, name: nameSorter }, this.sortingOptions[0]).slice(0, DISPLAYED_FAMILY_LIMIT);
+        this.projectsList = sortItem(this.projectsList, { date: modifiedAtSorter, name: nameSorter }, SortOptions.MostRecent).slice(0, DISPLAYED_FAMILY_LIMIT);
       });
 
       // Local Storage is where we are keeping track of all encountered KB for now
@@ -263,12 +264,12 @@ export default defineComponent({
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
-    sort(option: string) {
+    sort(option: SortOptions) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
       this.projectsList = sortItem(this.projectsList, { date: modifiedAtSorter, name: nameSorter }, this.selectedSortingOption).slice(0, DISPLAYED_FAMILY_LIMIT);
     },
-    setDatacubeSort(option: string) {
+    setDatacubeSort(option: SortOptions) {
       this.selectedDatacubeSortingOption = option;
       this.showSortingDropdownDomainDatacubes = false;
     },

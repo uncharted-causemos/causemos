@@ -179,7 +179,7 @@ import useQuestionsData from '@/services/composables/useQuestionsData';
 import useInsightsData from '@/services/composables/useInsightsData';
 import { computed } from '@vue/reactivity';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
-import { sortItem, modifiedAtSorter, titleSorter } from '@/utils/sort/sort-items';
+import { sortItem, modifiedAtSorter, titleSorter, SortOptions } from '@/utils/sort/sort-items';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -265,8 +265,8 @@ export default defineComponent({
     KBname: '-',
     searchText: '',
     showSortingDropdownAnalyses: false,
-    analysisSortingOptions: ['Most recent', 'Earliest', 'A-Z', 'Z-A'],
-    selectedAnalysisSortingOption: 'Most recent',
+    analysisSortingOptions: Object.values(SortOptions),
+    selectedAnalysisSortingOption: SortOptions.MostRecent,
     isEditingDesc: false,
     showDocumentModal: false,
     showRenameModal: false,
@@ -552,8 +552,6 @@ export default defineComponent({
     sortAnalyses(option) {
       this.selectedAnalysisSortingOption = option;
       this.showSortingDropdownAnalyses = false;
-      console.log(this.selectedAnalysisSortingOption);
-      console.log(this.analyses);
       this.analyses = sortItem(this.analyses, { date: modifiedAtSorter, name: titleSorter }, this.selectedAnalysisSortingOption);
     }
   }
