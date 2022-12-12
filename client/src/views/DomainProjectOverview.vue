@@ -286,40 +286,27 @@ export default {
         return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
       });
     },
-    sortDatacubeInstancesByEarliestDate() {
-      this.datacubeInstances.sort((a, b) => {
-        return a.modified_at && b.modified_at ? a.modified_at - b.modified_at : 0;
-      });
-    },
-    sortDatacubeInstancesByAlphabeticalOrder() {
-      this.datacubeInstances.sort((a, b) => {
-        return a.name && b.name ? a.name.localeCompare(b.name) : 0;
-      });
-    },
-    sortDatacubeInstancesByReverseAlphabeticalOrder() {
-      this.datacubeInstances.sort((a, b) => {
-        return a.name && b.name ? b.name.localeCompare(a.name) : 0;
-      });
-    },
 
     sortDatacubeInstances(option) {
       this.selectedSortingOptionDatacubeInstances = option;
       this.showSortingDropdownDatacubeInstances = false;
+      const nameSorter = (listItem) => listItem.name.trim().toLowerCase();
+
       switch (option) {
         case this.sortingOptionsDatacubeInstances[0]:
-          this.sortDatacubeInstancesByMostRecentDate();
+          this.datacubeInstances = _.orderBy(this.datacubeInstances, ['modified_at'], ['desc']);
           break;
         case this.sortingOptionsDatacubeInstances[1]:
-          this.sortDatacubeInstancesByEarliestDate();
+          this.datacubeInstances = _.orderBy(this.datacubeInstances, ['modified_at'], ['asc']);
           break;
         case this.sortingOptionsDatacubeInstances[2]:
-          this.sortDatacubeInstancesByAlphabeticalOrder();
+          this.datacubeInstances = _.orderBy(this.datacubeInstances, [nameSorter], ['asc']);
           break;
         case this.sortingOptionsDatacubeInstances[3]:
-          this.sortDatacubeInstancesByReverseAlphabeticalOrder();
+          this.datacubeInstances = _.orderBy(this.datacubeInstances, [nameSorter], ['desc']);
           break;
         default:
-          this.sortDatacubeInstancesByMostRecentDate();
+          return this.datacubeInstances;
       }
     }
   }

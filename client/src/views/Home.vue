@@ -282,39 +282,27 @@ export default defineComponent({
         return b.modified_at - a.modified_at;
       });
     },
-    sortByEarliestDate() {
-      this.projectsList.sort((a, b) => {
-        return a.modified_at - b.modified_at;
-      });
-    },
-    sortAlphabetically() {
-      this.projectsList.sort((a, b) => {
-        return a.name.localeCompare(b.name);
-      });
-    },
-    sortReverseAlphabetically() {
-      this.projectsList.sort((a, b) => {
-        return b.name.localeCompare(a.name);
-      });
-    },
     sort(option: string) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
+
+      const nameSorter = (listItem: { name: string; }) => listItem.name.trim().toLowerCase();
+
       switch (option) {
         case this.sortingOptions[0]:
-          this.sortByMostRecentDate();
+          this.projectsList = _.orderBy(this.projectsList, ['modified_at'], ['desc']).slice(0, DISPLAYED_FAMILY_LIMIT);
           break;
         case this.sortingOptions[1]:
-          this.sortByEarliestDate();
+          this.projectsList = _.orderBy(this.projectsList, ['modified_at'], ['asc']).slice(0, DISPLAYED_FAMILY_LIMIT);
           break;
         case this.sortingOptions[2]:
-          this.sortAlphabetically();
+          this.projectsList = _.orderBy(this.projectsList, [nameSorter], ['asc']).slice(0, DISPLAYED_FAMILY_LIMIT);
           break;
         case this.sortingOptions[3]:
-          this.sortReverseAlphabetically();
+          this.projectsList = _.orderBy(this.projectsList, [nameSorter], ['desc']).slice(0, DISPLAYED_FAMILY_LIMIT);
           break;
         default:
-          this.sortByMostRecentDate();
+          return this.projectsList;
       }
     },
     setDatacubeSort(option: string) {

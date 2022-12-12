@@ -548,39 +548,26 @@ export default defineComponent({
         return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
       });
     },
-    sortAnalysesByEarliestDate() {
-      this.analyses.sort((a, b) => {
-        return a.modified_at && b.modified_at ? a.modified_at - b.modified_at : 0;
-      });
-    },
-    sortAnalysesByAlphabeticalOrder() {
-      this.analyses.sort((a, b) => {
-        return a.title && b.title ? a.title.trim().localeCompare(b.title.trim()) : 0;
-      });
-    },
-    sortAnalysesByReverseAlphabeticalOrder() {
-      this.analyses.sort((a, b) => {
-        return a.title && b.title ? b.title.trim().localeCompare(a.title.trim()) : 0;
-      });
-    },
     sortAnalyses(option) {
       this.selectedAnalysisSortingOption = option;
       this.showSortingDropdownAnalyses = false;
+      const nameSorter = (listItem) => listItem.name.trim().toLowerCase();
+
       switch (option) {
         case this.analysisSortingOptions[0]:
-          this.sortAnalysesByMostRecentDate();
+          this.analyses = _.orderBy(this.analyses, ['modified_at'], ['desc']);
           break;
         case this.analysisSortingOptions[1]:
-          this.sortAnalysesByEarliestDate();
+          this.analyses = _.orderBy(this.analyses, ['modified_at'], ['asc']);
           break;
         case this.analysisSortingOptions[2]:
-          this.sortAnalysesByAlphabeticalOrder();
+          this.analyses = _.orderBy(this.analyses, [nameSorter], ['asc']);
           break;
         case this.analysisSortingOptions[3]:
-          this.sortAnalysesByReverseAlphabeticalOrder();
+          this.analyses = _.orderBy(this.analyses, [nameSorter], ['asc']);
           break;
         default:
-          this.sortAnalysesByMostRecentDate();
+          return this.analyses;
       }
     }
   }
