@@ -459,7 +459,7 @@ export default defineComponent({
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
-    setDatacubeSort(option: string) {
+    setDatacubeSort(option: SortOptions) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
     }

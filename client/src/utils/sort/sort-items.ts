@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-export function sortItem(collection: any, sortBy: { date: Function; name: Function; }, sortOption: string) {
+export function sortItem(collection: any, sortBy: { date: Function; name: Function | string; }, sortOption: string) {
   switch (sortOption) {
     case 'Most recent':
       return _.orderBy(collection, [sortBy.date], ['desc']);
