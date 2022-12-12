@@ -33,15 +33,6 @@
           <span class="maintainer">{{ projectSource }}</span>
         </div>
       </div>
-      <div v-if="tags.length > 0" class="tags-column">
-        <strong>Tags</strong>
-        <span v-for="tag in tags" :key="tag" class="tag">
-          {{ tag }}
-        </span>
-      </div>
-      <div class="map">
-        <!-- placeholder for family regional image -->
-      </div>
     </header>
     <main>
       <div class="insights-column">
@@ -365,7 +356,7 @@ header {
   }
 
   .description {
-    max-width: 90ch;
+    text-align: justify;
   }
 }
 

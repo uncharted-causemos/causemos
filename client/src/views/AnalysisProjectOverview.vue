@@ -78,10 +78,6 @@
           v-if="showDocumentModal === true"
           @close="showDocumentModal = false" />
       </div>
-      <div class="map">
-        <img src="../assets/GenericWorld.png" alt="Generic world map">
-        <!-- placeholder for area-of-interest image -->
-      </div>
     </header>
     <main>
       <div class="insights-column">
@@ -626,7 +622,7 @@ header {
   }
 
   .description {
-    max-width: 90ch;
+    text-align: justify;
   }
 }
 

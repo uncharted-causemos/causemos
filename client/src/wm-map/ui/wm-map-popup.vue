@@ -4,7 +4,7 @@
 
 <script>
 
-import mapboxgl from 'mapbox-gl';
+import mapboxgl from 'maplibre-gl';
 import { eventEmitter } from '../mixins';
 
 export default {

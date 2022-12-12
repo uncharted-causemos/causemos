@@ -1,33 +1,29 @@
 # docker build -t docker.uncharted.software/worldmodeler/wm-server:latest .
 
-FROM mhart/alpine-node:16
-# ENV LOG_LEVEL="warn"
-
-RUN apk update && apk add curl
-
-ADD ./package.json /package.json
-ADD ./yarn.lock /yarn.lock
-ADD ./server/src /server/src
-ADD ./server/public /server/public
-ADD ./server/docker_scripts /server/docker_scripts
-ADD ./server/package.json /server/package.json
-# ADD ./server/package-lock.json /wm-server/package-lock.json
-
-
-# When running as root, npm won't run any scripts by default. --unsafe-perm let npm to run the scripts
-#
-# `If npm was invoked with root privileges, then it will change the uid to the user account or uid specified by the user config, which defaults to nobody. Set the unsafe-perm flag to run scripts with root privileges.`
-# Ref: https://docs.npmjs.com/misc/scripts#user
-
-# Hack: get around docker-compose needing wm-server - Feb 11, 2021
-RUN ln -s /server /wm-server
-
-WORKDIR /server
-
-# HEALTHCHECK --interval=20s --timeout=2s --start-period=60s \
-# CMD node ./docker_scripts/health_check.js
-
-WORKDIR /
+# In order to keep the final image size small, we use docker multi-stage buids. clientBuilder builds
+# client dist files and only those files are copied over to the final image. It helps keeping the image size small 
+# by excluding all the client side node modules installed for building the client.
+FROM  docker-hub.uncharted.software/node:16.18-alpine AS clientBuilder
+# Install git which is required by node-gyp which is one of the node-saas dependencies
+RUN apk update && apk add git
+ADD ./yarn.lock /client/yarn.lock
+ADD ./client/package.json /client/package.json
+WORKDIR /client
+# In order to build the client, we need dev dependencies, so yarn install without the --prod flag
 RUN yarn install
-CMD yarn workspace server run start --log-level info --schedules dart,aligner --dojo-sync --allow-model-runs
+# Add client files
+ADD ./client /client
+# Build client
+RUN yarn run build
 
+FROM  docker-hub.uncharted.software/node:16.18-alpine
+ADD ./yarn.lock /server/yarn.lock
+ADD ./server/package.json /server/package.json
+WORKDIR /server
+RUN yarn install --prod 
+# Copy client files
+COPY --from=clientBuilder /client/dist /server/public
+# Add server files
+ADD ./server /server
+
+CMD yarn run start --log-level info --schedules dart,aligner --dojo-sync --allow-model-runs
