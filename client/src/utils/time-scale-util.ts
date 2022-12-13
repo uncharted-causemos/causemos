@@ -92,4 +92,3 @@ export const getRangeFromTimeScale = (timeScale: TimeScale, history_range: numbe
   return history_range / getMonthsPerTimestepFromTimeScale(timeScale);
 };
 
-
