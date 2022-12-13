@@ -254,7 +254,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalPathFind from '@/components/modals/modal-path-find.vue';
 import ModalImportCag from '@/components/qualitative/modal-import-cag.vue';
 import ModalImportConflict from '@/components/qualitative/modal-import-conflict.vue';
-import { calculateNeighborhood } from '@/utils/graphs-util';
+import { calculateNeighborhood, findCycles } from '@/utils/graphs-util';
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
@@ -664,6 +664,11 @@ export default defineComponent({
     }) {
       const edge = { source: source.concept, target: target.concept };
 
+      if (edge.source === edge.target) {
+        this.toaster('Cannot add an edge from a concept to itself', 'error', false);
+        return;
+      }
+
       const edges = this.modelComponents.edges.map(
         edge => edge.source + '///' + edge.target
       );
@@ -677,6 +682,23 @@ export default defineComponent({
             relationsToAdd.push({ source, target });
           });
         });
+
+        // get all edges on map and return as array
+        const allEdges = this.modelComponents.edges.map(edge => {
+          return { source: edge.source, target: edge.target };
+        });
+
+        allEdges.push({ source: source.concept, target: target.concept });
+
+        // check for cycles
+        const cycles = findCycles(allEdges);
+
+        // if there are cycles, do not add edge
+        if (cycles.length > 0) {
+          this.toaster('Cannot add edge. It would create a cycle.', 'error', false);
+          return;
+        }
+
         const edgeData = await projectService.getProjectStatementIdsByEdges(
           this.project,
           relationsToAdd,
