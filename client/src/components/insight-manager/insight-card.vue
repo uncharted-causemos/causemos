@@ -1,12 +1,10 @@
 <template>
-  <card class="insight" :class="{ 'card-mode': cardMode }">
+  <Card class="insight" :class="{ 'card-mode': cardMode }">
     <div class="insight-content" @click="selectInsight()">
       <div class="insight-thumbnail">
-        <img
-          v-if="insight.thumbnail"
-          :src="insight.thumbnail"
-          class="thumbnail">
-        <i v-else class="fa fa-spin fa-spinner" />
+        <img-lazy
+          :src="`/api/insights/${props.insight.id}/thumbnail`"
+          class="thumbnail" />
       </div>
       <div
         v-if="showDescription"
@@ -52,73 +50,61 @@
         </div>
       </div>
     </div>
-  </card>
+  </Card>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
+<script setup lang="ts">
+import { defineProps, defineEmits } from 'vue';
 import Card from '@/components/widgets/card.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import stringFormatter from '@/formatters/string-formatter';
 import DropdownControl from '../dropdown-control.vue';
+import ImgLazy from '../widgets/img-lazy.vue';
 
-export default defineComponent({
-  name: 'InsightCard',
-  components: {
-    Card,
-    DropdownControl
+const props = defineProps({
+  activeInsight: {
+    type: String,
+    default: ''
   },
-  props: {
-    activeInsight: {
-      type: String,
-      default: ''
-    },
-    insight: {
-      type: Object,
-      default: null
-    },
-    cardMode: {
-      type: Boolean,
-      default: false
-    },
-    curated: {
-      type: Boolean,
-      default: false
-    },
-    showDescription: {
-      type: Boolean,
-      default: false
-    }
+  insight: {
+    type: Object,
+    default: null
   },
-  emits: ['remove-insight', 'edit-insight', 'open-editor', 'select-insight', 'update-curation'],
-  methods: {
-    dateFormatter,
-    stringFormatter,
-
-    editInsight() {
-      this.$emit('edit-insight');
-    },
-    removeInsight() {
-      this.$emit('remove-insight');
-    },
-    openEditor() {
-      this.$emit('open-editor');
-    },
-    selectInsight() {
-      this.$emit('select-insight');
-    },
-    updateCuration() {
-      this.$emit('update-curation');
-    }
+  cardMode: {
+    type: Boolean,
+    default: false
+  },
+  curated: {
+    type: Boolean,
+    default: false
+  },
+  showDescription: {
+    type: Boolean,
+    default: false
   }
 });
+const emit = defineEmits(['remove-insight', 'edit-insight', 'open-editor', 'select-insight', 'update-curation']);
 
+const editInsight = () => {
+  emit('edit-insight');
+};
+const removeInsight = () => {
+  emit('remove-insight');
+};
+const openEditor = () => {
+  emit('open-editor');
+};
+const selectInsight = () => {
+  emit('select-insight');
+};
+const updateCuration = () => {
+  emit('update-curation');
+};
 </script>
 
 <style lang="scss" scoped>
 .card-mode {
-  max-width: 300px;
+  width: 300px;
+  min-height: 250px;
 }
 
 .insight {

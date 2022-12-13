@@ -25,6 +25,8 @@ module.exports = {
     //  TypeScript features, such as types
     '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_' }],
 
+    'vue/script-setup-uses-vars': 2,
+
     'quote-props': ['error', 'consistent-as-needed'],
 
     // Turn off pure stylistic rules

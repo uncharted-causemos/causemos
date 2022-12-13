@@ -65,7 +65,7 @@
           <div v-if="searchedInsights.length > 0" class="pane-content">
             <insight-card
               v-for="insight in searchedInsights"
-              :active-insight="activeInsightId"
+              :active-insight="activeInsightId ?? ''"
               :card-mode="true"
               :curated="isCuratedInsight(insight.id as string)"
               :key="insight.id"
@@ -100,7 +100,7 @@ import { INSIGHTS } from '@/utils/messages-util';
 import InsightCard from '@/components/insight-manager/insight-card.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 
-import { ref, watch, computed, defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
 import useInsightsData from '@/services/composables/useInsightsData';
@@ -109,14 +109,13 @@ import MessageDisplay from '@/components/widgets/message-display.vue';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
-import { fetchPartialInsights, countPublicInsights, removeInsight } from '@/services/insight-service';
+import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
 import {
   AnalyticalQuestion,
-  FullInsight,
+  Insight,
   SectionWithInsights
 } from '@/types/Insight';
 import useQuestionsData from '@/services/composables/useQuestionsData';
-import { setDragImage } from '@/utils/dom-util';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 
 const EXPORT_OPTIONS = {
@@ -147,32 +146,7 @@ export default defineComponent({
     const toaster = useToaster();
     // prevent insight fetches if the gallery is closed
     const preventFetches = computed(() => !store.getters['insightPanel/isPanelOpen']);
-    const { insights, reFetchInsights, fetchImagesForInsights } = useInsightsData(preventFetches);
-    const fullInsights = ref<FullInsight[]>([]);
-
-    watch([insights], () => {
-      // first fill it without images, once the downloads finish, fill them in
-      // use '' to represent that the thumbnail is loading
-      fullInsights.value = insights.value.map(insight => ({ ...insight, image: '' }));
-      (async () => {
-        // Insight IDs should only be undefined before they've been saved on
-        //  the backend, so it is safe to assert the string[] type here.
-        const ids = insights.value.map(insight => insight.id) as string[];
-        // First, get just the thumbnails, set annotation_state to null to indicate it's still coming
-        const images = await fetchImagesForInsights(ids);
-        // If insights changed, abort
-        if (_.xor(ids, insights.value.map(insight => insight.id)).length > 0) {
-          return;
-        }
-        // FIXME: FullInsight.annotation_state should never be null.
-        // Either this should be `undefined` or more likely we should update
-        //  the type to be optionally `null` instead of `undefined`.
-        // @ts-ignore
-        fullInsights.value = images.filter(i => ids.includes(i.id))
-          .map(i => ({ ...i, annotation_state: null }));
-      })();
-    });
-
+    const { insights, reFetchInsights } = useInsightsData(preventFetches);
     const {
       questionsList,
       updateSectionTitle,
@@ -192,7 +166,7 @@ export default defineComponent({
         // FIXME: optimize by using maps
         const _insights = section.linked_insights
           .map(insightId =>
-            fullInsights.value.find(insight => insight.id === insightId)
+            insights.value.find(insight => insight.id === insightId)
           )
           .filter(insight => insight !== undefined);
         return {
@@ -203,7 +177,7 @@ export default defineComponent({
     });
 
     return {
-      fullInsights,
+      fullInsights: insights,
       reFetchInsights,
       updateSectionTitle,
       addSection,
@@ -234,7 +208,7 @@ export default defineComponent({
         label: 'Export All Questions & Insights'
       }];
     },
-    searchedInsights(): FullInsight[] {
+    searchedInsights(): Insight[] {
       if (this.search.length > 0) {
         const result = this.fullInsights.filter((insight) => {
           return insight.name.toLowerCase().includes(this.search.toLowerCase());
@@ -244,7 +218,7 @@ export default defineComponent({
         return this.fullInsights;
       }
     },
-    selectedInsights(): FullInsight[] {
+    selectedInsights(): Insight[] {
       if (this.curatedInsightIds.length > 0) {
         const curatedSet = this.fullInsights.filter(i => this.curatedInsightIds.find(e => e === i.id));
         return curatedSet;
@@ -274,7 +248,7 @@ export default defineComponent({
       this.hideInsightPanel();
       this.activeInsightId = null;
     },
-    startDrag(evt: DragEvent, insight: FullInsight) {
+    startDrag(evt: DragEvent, insight: Insight) {
       if (
         evt.dataTransfer === null ||
         !(evt.currentTarget instanceof HTMLElement)
@@ -287,14 +261,15 @@ export default defineComponent({
       evt.dataTransfer.effectAllowed = 'link';
       evt.dataTransfer.setData('insight_id', insight.id as string);
 
-      if (insight.thumbnail !== undefined) {
-        setDragImage(insight.thumbnail, evt.dataTransfer);
+      const img = (evt.target as HTMLElement).querySelector('img');
+      if (img) {
+        evt.dataTransfer.setDragImage(img, 0, 0);
       }
     },
     dragEnd(evt: DragEvent) {
       (evt.currentTarget as HTMLElement).style.border = 'none';
     },
-    editInsight(insight: FullInsight) {
+    editInsight(insight: Insight) {
       this.setUpdatedInsight(insight);
       const dummySection = InsightUtil.createEmptyChecklistSection();
       this.setPositionInReview({
@@ -308,7 +283,7 @@ export default defineComponent({
       // open the preview in the edit mode
       this.setCurrentPane('review-edit-insight');
     },
-    async removeInsight(insight: FullInsight) {
+    async removeInsight(insight: Insight) {
       // are removing a public insight?
       if (insight.visibility === 'public' && Array.isArray(insight.context_id) && insight.context_id.length > 0) {
         // is this the last public insight for the relevant dataube?
@@ -332,33 +307,16 @@ export default defineComponent({
       this.reFetchInsights();
     },
     async exportInsights(outputFormat: string) {
-      let insights: FullInsight[] = [];
-      let questions: AnalyticalQuestion[] | undefined;
-
-      const imageMap = new Map();
-      const ids = this.activeExportOption === EXPORT_OPTIONS.questions
+      const questions = this.activeExportOption === EXPORT_OPTIONS.questions
+        ? this.questionsList
+        : undefined;
+      const insightIds = this.activeExportOption === EXPORT_OPTIONS.questions
         ? this.fullInsights.map(d => d.id)
         : this.selectedInsights.map(d => d.id);
 
-      this.enableOverlay('Collecting insights data');
-      const images = await fetchPartialInsights({ id: ids } as any, ['id', 'image']);
-      images.forEach(d => {
-        imageMap.set(d.id, d.image);
-      });
+      this.enableOverlay('Preparing to export insights');
+      const insights = await fetchFullInsights({ id: insightIds as string[] });
       this.disableOverlay();
-
-      if (this.activeExportOption === EXPORT_OPTIONS.questions) {
-        this.fullInsights.forEach(insight => {
-          insight.image = imageMap.get(insight.id);
-        });
-        insights = this.fullInsights;
-        questions = this.questionsList;
-      } else {
-        this.selectedInsights.forEach(insight => {
-          insight.image = imageMap.get(insight.id);
-        });
-        insights = this.selectedInsights;
-      }
 
       const cagMap = InsightUtil.getCagMapFromInsights(insights);
       const bibliographyMap = await getBibiographyFromCagIds([...cagMap.keys()]);
@@ -390,7 +348,7 @@ export default defineComponent({
     removeCuration(id: string) {
       this.curatedInsightIds = this.curatedInsightIds.filter((ci) => ci !== id);
     },
-    reviewInsight(insight: FullInsight) {
+    reviewInsight(insight: Insight) {
       // open review modal (i.e., insight gallery view)
       this.setUpdatedInsight(insight);
       const dummySection = InsightUtil.createEmptyChecklistSection();

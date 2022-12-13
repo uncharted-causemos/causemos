@@ -261,6 +261,7 @@ export default defineComponent({
     const updatedInsight = computed(
       () => store.getters['insightPanel/updatedInsight']
     );
+    const isInsight = computed(() => InsightUtil.instanceOfInsight(updatedInsight.value));
 
     const insightCache = new Map<string, any>();
 
@@ -272,7 +273,7 @@ export default defineComponent({
       async () => {
         // FIXME: updatedInsight can be a question, an insight, or null.
         // There is nothing to fetch for a question or null.
-        if (!updatedInsight.value?.thumbnail) return;
+        if (!isInsight.value) return;
 
         let cache = insightCache.get(updatedInsight.value.id);
         if (!cache) {
@@ -298,7 +299,6 @@ export default defineComponent({
     );
     const positionInReview = computed<ReviewPosition | null>(() => store.getters['insightPanel/positionInReview']);
 
-    const isInsight = computed(() => InsightUtil.instanceOfFullInsight(updatedInsight.value));
 
     const selectedInsightQuestions = ref<string[]>([]);
     const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
