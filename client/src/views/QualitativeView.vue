@@ -694,6 +694,7 @@ export default defineComponent({
 
         // if there are cycles, do not add edge
         if (findpaths.length > 0) {
+          this.toaster('Cannot add edge. It would create a cycle.', 'error', false);
           return;
         }
 
