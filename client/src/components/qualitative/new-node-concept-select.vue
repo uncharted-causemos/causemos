@@ -136,7 +136,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
-import { useStore, mapActions, mapGetters } from 'vuex';
+import { useStore } from 'vuex';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import dateFormatter from '@/formatters/date-formatter';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -193,7 +193,7 @@ export default defineComponent({
     'show-custom-concept',
     'save-custom-concept'
   ],
-  setup(props) {
+  setup(props, { emit }) {
     const { selectedTimeScale } = toRefs(props);
 
     const store = useStore();
@@ -238,6 +238,31 @@ export default defineComponent({
     const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
     const project = computed(() => store.getters['app/project']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
+    const ontologySet = computed(() => store.getters['app/ontologySet']);
+    const updateOntologyCache = (userInput: string) => {
+      store.dispatch('app/updateOntologyCache', userInput);
+    };
+
+    const customGrounding = () => {
+      return {
+        theme: cleanConceptString(userInput.value),
+        theme_property: cleanConceptString(''),
+        process: cleanConceptString(''),
+        process_property: cleanConceptString('')
+      };
+    };
+
+    const saveCustomConcept = () => {
+      // Update ontology
+      if (ontologySet.value.has(userInput) === false) {
+        projectService.addNewConceptToOntology(project.value, userInput.value, [], '');
+        updateOntologyCache(userInput.value);
+        emit('show-custom-concept');
+        emit('save-custom-concept', customGrounding);
+      } else {
+        console.error(`Trying to add existing concept ${userInput.value}, ignoring...`);
+      }
+    };
 
     watch(userInput, _.debounce(async () => {
       if (_.isEmpty(userInput.value)) {
@@ -331,7 +356,9 @@ export default defineComponent({
       currentSuggestion,
       ontologyConcepts,
       project,
+      ontologySet,
 
+      saveCustomConcept,
       dateFormatter,
       ontologyFormatter: useOntologyFormatter(),
       TemporalResolutionOption,
@@ -357,20 +384,6 @@ export default defineComponent({
     }
   },
   methods: {
-    ...mapActions({
-      updateOntologyCache: 'app/updateOntologyCache'
-    }),
-    saveCustomConcept() {
-      // Update ontology
-      if (this.ontologySet.has(this.userInput) === false) {
-        projectService.addNewConceptToOntology(this.project, this.userInput, [], '');
-        this.updateOntologyCache(this.userInput);
-        this.$emit('show-custom-concept');
-        this.$emit('save-custom-concept', this.customGrounding);
-      } else {
-        console.error(`Trying to add existing concept ${this.userInput}, ignoring...`);
-      }
-    },
     // `delta` is 1 if moving down the list, -1 if moving up the list
     shiftFocus(delta: number) {
       let newFocusIndex = this.focusedSuggestionIndex + delta;
@@ -481,19 +494,6 @@ export default defineComponent({
         name: 'kbExplorer',
         query: { cag: this.currentCAG, view: 'statements', filters: filters as any }
       });
-    }
-  },
-  computed: {
-    ...mapGetters({
-      ontologySet: 'app/ontologySet'
-    }),
-    customGrounding(): { [key: string]: string } {
-      return {
-        theme: cleanConceptString(this.userInput),
-        theme_property: cleanConceptString(''),
-        process: cleanConceptString(''),
-        process_property: cleanConceptString('')
-      };
     }
   }
 });
