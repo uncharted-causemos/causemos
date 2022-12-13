@@ -258,7 +258,7 @@ export default defineComponent({
         projectService.addNewConceptToOntology(project.value, userInput.value, [], '');
         updateOntologyCache(userInput.value);
         emit('show-custom-concept');
-        emit('save-custom-concept', customGrounding);
+        emit('save-custom-concept', customGrounding());
       } else {
         console.error(`Trying to add existing concept ${userInput.value}, ignoring...`);
       }
