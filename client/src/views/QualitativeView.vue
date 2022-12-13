@@ -665,6 +665,7 @@ export default defineComponent({
       const edge = { source: source.concept, target: target.concept };
 
       if (edge.source === edge.target) {
+        this.toaster('Cannot add an edge to itself', 'error', false);
         return;
       }
 
@@ -690,10 +691,10 @@ export default defineComponent({
         allEdges.push({ source: source.concept, target: target.concept });
 
         // check for cycles
-        const findpaths = findCycles(allEdges);
+        const cycles = findCycles(allEdges);
 
         // if there are cycles, do not add edge
-        if (findpaths.length > 0) {
+        if (cycles.length > 0) {
           this.toaster('Cannot add edge. It would create a cycle.', 'error', false);
           return;
         }
