@@ -665,7 +665,7 @@ export default defineComponent({
       const edge = { source: source.concept, target: target.concept };
 
       if (edge.source === edge.target) {
-        this.toaster('Cannot add an edge to itself', 'error', false);
+        this.toaster('Cannot add an edge from a concept to itself', 'error', false);
         return;
       }
 
