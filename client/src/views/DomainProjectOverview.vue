@@ -126,6 +126,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { unpublishDatacubeInstance, getDatacubeStatusInfo } from '@/utils/datacube-util';
+import { sortItem, modifiedAtSorter, nameSorter, SortOptions } from '@/utils/sort/sort-items';
 
 import { DatacubeStatus } from '@/types/Enums';
 
@@ -142,8 +143,8 @@ export default {
     datacubeInstances: [],
     searchDatacubeInstances: '',
     showSortingDropdownDatacubeInstances: false,
-    sortingOptionsDatacubeInstances: ['Most recent', 'Earliest'],
-    selectedSortingOptionDatacubeInstances: 'Most recent',
+    sortingOptionsDatacubeInstances: Object.values(SortOptions),
+    selectedSortingOptionDatacubeInstances: SortOptions.MostRecent,
     isEditingDesc: false,
     filterOptions: [
       { status: DatacubeStatus.Ready, selected: true },
@@ -286,24 +287,11 @@ export default {
         return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
       });
     },
-    sortDatacubeInstancesByEarliestDate() {
-      this.datacubeInstances.sort((a, b) => {
-        return a.modified_at && b.modified_at ? a.modified_at - b.modified_at : 0;
-      });
-    },
+
     sortDatacubeInstances(option) {
       this.selectedSortingOptionDatacubeInstances = option;
       this.showSortingDropdownDatacubeInstances = false;
-      switch (option) {
-        case this.sortingOptionsDatacubeInstances[0]:
-          this.sortDatacubeInstancesByMostRecentDate();
-          break;
-        case this.sortingOptionsDatacubeInstances[1]:
-          this.sortDatacubeInstancesByEarliestDate();
-          break;
-        default:
-          this.sortDatacubeInstancesByMostRecentDate();
-      }
+      this.datacubeInstances = sortItem(this.datacubeInstances, { date: modifiedAtSorter, name: nameSorter }, this.selectedSortingOptionDatacubeInstances);
     }
   }
 };

@@ -201,6 +201,7 @@ import moment from 'moment';
 import useToaster from '@/services/composables/useToaster';
 import { runtimeFormatter } from '@/utils/string-util';
 import { ViewState } from '@/types/Insight';
+import { sortItem, createdAtSorter, SortOptions } from '@/utils/sort/sort-items';
 
 const MAX_COUNTRIES = 40;
 
@@ -219,8 +220,8 @@ export default defineComponent({
     editedDataset: { name: '', description: '', maintainer: {}, domains: [] as string[] } as DatasetEditable,
     searchTerm: '',
     showSortingDropdown: false,
-    sortingOptions: ['Most recent', 'Oldest'],
-    selectedSortingOption: 'Most recent',
+    sortingOptions: Object.values(SortOptions),
+    selectedSortingOption: SortOptions.MostRecent,
     showApplyToAllModal: false,
     AVAILABLE_DOMAINS,
     selectedDomain: AVAILABLE_DOMAINS[0]
@@ -238,9 +239,7 @@ export default defineComponent({
         indicator.outputs[0].display_name.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
 
-      const sortFunc = this.sortingOptions.indexOf(this.selectedSortingOption) === 1
-        ? 'asc' : 'desc';
-      return _.orderBy(filtered, ['created_at', 'name'], [sortFunc, 'asc']);
+      return sortItem(filtered, { date: createdAtSorter, name: 'outputs[0].display_name' }, this.selectedSortingOption);
     },
     isReady() {
       return this.dataset.status === DatacubeStatus.Ready;
@@ -460,7 +459,7 @@ export default defineComponent({
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
-    setDatacubeSort(option: string) {
+    setDatacubeSort(option: SortOptions) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
     }

@@ -135,8 +135,8 @@
         </div>
         <div class="analysis-list" v-if="filteredAnalyses.length > 0">
           <analysis-overview-card
-            v-for="analysis in filteredAnalyses"
-            :key="analysis.id"
+            v-for="(analysis, index) in filteredAnalyses"
+            :key="`${analysis.id}${index}`"
             class="analysis-overview-card"
             :analysis="analysis"
             @open="onOpen(analysis)"
@@ -179,6 +179,7 @@ import useQuestionsData from '@/services/composables/useQuestionsData';
 import useInsightsData from '@/services/composables/useInsightsData';
 import { computed } from '@vue/reactivity';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
+import { sortItem, modifiedAtSorter, titleSorter, SortOptions } from '@/utils/sort/sort-items';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -264,8 +265,8 @@ export default defineComponent({
     KBname: '-',
     searchText: '',
     showSortingDropdownAnalyses: false,
-    analysisSortingOptions: ['Most recent', 'Earliest'],
-    selectedAnalysisSortingOption: 'Most recent',
+    analysisSortingOptions: Object.values(SortOptions),
+    selectedAnalysisSortingOption: SortOptions.MostRecent,
     isEditingDesc: false,
     showDocumentModal: false,
     showRenameModal: false,
@@ -548,24 +549,10 @@ export default defineComponent({
         return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
       });
     },
-    sortAnalysesByEarliestDate() {
-      this.analyses.sort((a, b) => {
-        return a.modified_at && b.modified_at ? a.modified_at - b.modified_at : 0;
-      });
-    },
     sortAnalyses(option) {
       this.selectedAnalysisSortingOption = option;
       this.showSortingDropdownAnalyses = false;
-      switch (option) {
-        case this.analysisSortingOptions[0]:
-          this.sortAnalysesByMostRecentDate();
-          break;
-        case this.analysisSortingOptions[1]:
-          this.sortAnalysesByEarliestDate();
-          break;
-        default:
-          this.sortAnalysesByMostRecentDate();
-      }
+      this.analyses = sortItem(this.analyses, { date: modifiedAtSorter, name: titleSorter }, this.selectedAnalysisSortingOption);
     }
   }
 });

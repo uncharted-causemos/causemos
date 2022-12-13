@@ -12,38 +12,19 @@
       </div>
     </div>
     <div class="columns">
-      <div
-        v-if="applicationConfiguration.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE"
-        class="project-column"
-      >
+      <div v-if="applicationConfiguration.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE" class="project-column">
         <div class="title">
           <h3>Analysis Projects</h3>
-          <message-display
-            v-if="newKnowledgeBase"
+          <message-display v-if="newKnowledgeBase"
             :message="'New Knowledge Base (KB): Create a new project to check out the newly created KB.'"
-            :message-type="'primary'"
-            :dismissable="true"
-            @dismiss="onDismiss" />
-          <button
-            v-tooltip.top-center="'Create a new analysis project'"
-            type="button"
-            class="btn btn-call-to-action"
-            @click="gotoNewProject"
-          >New Analysis Project</button>
+            :message-type="'primary'" :dismissable="true" @dismiss="onDismiss" />
+          <button v-tooltip.top-center="'Create a new analysis project'" type="button" class="btn btn-call-to-action"
+            @click="gotoNewProject">New Analysis Project</button>
         </div>
         <div class="controls">
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Search projects..."
-            class="form-control"
-          >
-          <dropdown-button
-            :inner-button-label="'Sort by'"
-            :items="sortingOptions"
-            :selected-item="selectedSortingOption"
-            @item-selected="sort"
-          />
+          <input v-model="search" type="text" placeholder="Search projects..." class="form-control">
+          <dropdown-button :inner-button-label="'Sort by'" :items="sortingOptions"
+            :selected-item="selectedSortingOption" @item-selected="sort" />
         </div>
         <div class="projects-list">
           <div class="projects-list-header">
@@ -64,46 +45,26 @@
             </div>
           </div>
           <div class="projects-list-elements">
-            <project-card
-              v-for="project in filteredProjects"
-              :key="project.id"
-              :project="project"
-              @delete="deleteProject"
-            />
+            <project-card v-for="project in filteredProjects" :key="project.id" :project="project"
+              @delete="deleteProject" />
           </div>
         </div>
       </div>
       <div class="project-column">
         <div class="title">
           <h3>Domain Models and Datasets</h3>
-          <button
-            v-tooltip.top-center="'Create a new domain family project'"
-            type="button"
-            class="btn btn-call-to-action"
-            @click="gotoNewFamilyProject"
-          >New Domain Model Project</button>
+          <button v-tooltip.top-center="'Create a new domain family project'" type="button"
+            class="btn btn-call-to-action" @click="gotoNewFamilyProject">New Domain Model Project</button>
         </div>
         <div class="controls">
-          <radio-button-group
-            :selected-button-value="selectedDataType"
-            :buttons="[
-              { label: 'Domain Models', value: 'models' },
-              { label: 'Datasets', value: 'datasets' }
-            ]"
-            @button-clicked="setDataType"
-          />
-          <input
-            v-model="searchDomainDatacubes"
-            type="text"
-            :placeholder="`Search ${selectedDataType}...`"
-            class="form-control"
-          >
-          <dropdown-button
-            :inner-button-label="'Sort by'"
-            :items="sortingOptions"
-            :selected-item="selectedDatacubeSortingOption"
-            @item-selected="setDatacubeSort"
-          />
+          <radio-button-group :selected-button-value="selectedDataType" :buttons="[
+            { label: 'Domain Models', value: 'models' },
+            { label: 'Datasets', value: 'datasets' }
+          ]" @button-clicked="setDataType" />
+          <input v-model="searchDomainDatacubes" type="text" :placeholder="`Search ${selectedDataType}...`"
+            class="form-control">
+          <dropdown-button :inner-button-label="'Sort by'" :items="sortingOptions"
+            :selected-item="selectedDatacubeSortingOption" @item-selected="setDatacubeSort" />
         </div>
         <div class="projects-list">
           <div v-if="selectedDataType === 'models'" class="projects-list-header">
@@ -141,12 +102,8 @@
             </div>
           </div>
           <div class="projects-list-elements">
-            <domain-datacube-project-card
-              v-for="project in filteredFamilyList"
-              :key="project.id"
-              :project="project"
-              @delete="deleteDomainProject"
-            />
+            <domain-datacube-project-card v-for="project in filteredFamilyList" :key="project.id" :project="project"
+              @delete="deleteDomainProject" />
           </div>
         </div>
       </div>
@@ -167,6 +124,7 @@ import { Project, DomainProject, KnowledgeBase, DatasetInfo, DatacubeFamily } fr
 import domainProjectService from '@/services/domain-project-service';
 import DropdownButton from '@/components/dropdown-button.vue';
 import API from '@/api/api';
+import { modifiedAtSorter, nameSorter, sortItem, SortOptions } from '@/utils/sort/sort-items';
 
 const DISPLAYED_FAMILY_LIMIT = 100;
 
@@ -183,14 +141,14 @@ export default defineComponent({
     search: '',
     projectsList: [] as Project[],
     showSortingDropdown: false,
-    sortingOptions: ['Most recent', 'Oldest'],
-    selectedSortingOption: 'Most recent',
+    sortingOptions: Object.values(SortOptions),
+    selectedSortingOption: SortOptions.MostRecent,
     newKnowledgeBase: false,
     searchDomainDatacubes: '',
     projectsListDomainDatacubes: [] as DomainProject[],
     datasetsList: [] as DatasetInfo[],
     showSortingDropdownDomainDatacubes: false,
-    selectedDatacubeSortingOption: 'Most recent',
+    selectedDatacubeSortingOption: SortOptions.MostRecent,
     selectedDataType: 'models',
 
     domainProjectStats: {} as { [key: string]: any }
@@ -212,7 +170,7 @@ export default defineComponent({
             numReady: stats && stats.READY ? stats.READY : 0,
             numDraft: stats && stats.REGISTERED ? stats.REGISTERED : 0,
             source: (domainModel.source || (domainModel.maintainer && domainModel.maintainer[0]?.organization)) ?? '',
-            modifiedAt: domainModel.modified_at || domainModel.created_at || 0
+            modified_at: domainModel.modified_at || domainModel.created_at || 0
           };
         })
         : this.datasetsList.map(dataset => ({
@@ -222,14 +180,11 @@ export default defineComponent({
           numReady: dataset.indicator_count,
           numDraft: 0,
           source: dataset.source ?? '',
-          modifiedAt: dataset.created_at
+          modified_at: dataset.created_at
         }));
       const filtered = familyList.filter(family => family.name.toLowerCase()
         .includes(this.searchDomainDatacubes.toLowerCase()));
-
-      const sortFunc = this.sortingOptions.indexOf(this.selectedDatacubeSortingOption) === 1
-        ? 'asc' : 'desc';
-      return _.orderBy(filtered, 'modifiedAt', sortFunc).slice(0, DISPLAYED_FAMILY_LIMIT);
+      return sortItem(filtered, { date: modifiedAtSorter, name: nameSorter }, this.selectedDatacubeSortingOption).slice(0, DISPLAYED_FAMILY_LIMIT);
     },
     ...mapGetters({
       applicationConfiguration: 'app/applicationConfiguration'
@@ -261,8 +216,7 @@ export default defineComponent({
     refresh() {
       projectService.getProjects().then(projects => {
         this.projectsList = projects;
-        // Sort by modified_at date with latest on top
-        this.sortByMostRecentDate();
+        this.projectsList = sortItem(this.projectsList, { date: modifiedAtSorter, name: nameSorter }, SortOptions.MostRecent).slice(0, DISPLAYED_FAMILY_LIMIT);
       });
 
       // Local Storage is where we are keeping track of all encountered KB for now
@@ -307,31 +261,12 @@ export default defineComponent({
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
-    sortByMostRecentDate() {
-      this.projectsList.sort((a, b) => {
-        return b.modified_at - a.modified_at;
-      });
-    },
-    sortByEarliestDate() {
-      this.projectsList.sort((a, b) => {
-        return a.modified_at - b.modified_at;
-      });
-    },
-    sort(option: string) {
+    sort(option: SortOptions) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
-      switch (option) {
-        case this.sortingOptions[0]:
-          this.sortByMostRecentDate();
-          break;
-        case this.sortingOptions[1]:
-          this.sortByEarliestDate();
-          break;
-        default:
-          this.sortByMostRecentDate();
-      }
+      this.projectsList = sortItem(this.projectsList, { date: modifiedAtSorter, name: nameSorter }, this.selectedSortingOption).slice(0, DISPLAYED_FAMILY_LIMIT);
     },
-    setDatacubeSort(option: string) {
+    setDatacubeSort(option: SortOptions) {
       this.selectedDatacubeSortingOption = option;
       this.showSortingDropdownDomainDatacubes = false;
     },
@@ -383,13 +318,16 @@ $padding-size: 12.5vh;
 .title {
   display: flex;
   align-items: center;
+
   h3 {
     flex: 1;
   }
+
   div {
     flex: 1;
   }
 }
+
 .projects-list {
   flex: 1;
   overflow: hidden;
@@ -406,12 +344,13 @@ $padding-size: 12.5vh;
     // Add 15px right padding to accommodate for scrollbar
     padding-right: 25px;
   }
+
   .projects-list-elements {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
 
-    & > *:not(:first-child) {
+    &>*:not(:first-child) {
       margin-top: 1px;
     }
   }
@@ -435,32 +374,40 @@ $padding-size: 12.5vh;
     flex-basis: 20px;
   }
 }
+
 .controls {
   display: flex;
   justify-content: space-between;
+
   input[type=text] {
     padding: 8px;
     width: 250px;
     margin-right: 10px;
   }
+
   .sorting {
     position: relative;
+
     .btn {
       width: 180px !important;
       text-align: left;
+
       .lbl {
         font-weight: normal;
       }
+
       .fa {
-        position:absolute;
+        position: absolute;
         right: 20px;
       }
     }
+
     .dropdown {
       position: absolute;
       width: 100%;
     }
   }
+
   .form-control {
     background: #fff;
   }
