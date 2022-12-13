@@ -1,5 +1,6 @@
 import API from '@/api/api';
 import {
+  FullInsight,
   Insight,
   InsightMetadata,
   DataState
@@ -75,6 +76,26 @@ export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<I
   };
   return await _fetchInsights(fetchParams, options);
 };
+
+/**
+ * Fetch full insights using the specified filter parameters
+ * @param fetchParams an object of field-value pairs to filter by
+ */
+export const fetchFullInsights = async (fetchParams: InsightFilterFields, includeAnnotationState = false): Promise<FullInsight[]> => {
+  const excludes = [
+    'thumbnail'
+  ];
+  if (!includeAnnotationState) excludes.push('annotation_state');
+  const options = {
+    excludes,
+    sort: [
+      { modified_at: { order: 'desc' } }
+    ]
+  };
+  return await _fetchInsights(fetchParams, options);
+};
+
+
 
 /**
  * Fetch insights using the specified filter parameters, only the fields

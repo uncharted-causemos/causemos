@@ -148,6 +148,14 @@ const getInsight = async (insightId, fieldAllowList) => {
   return result;
 };
 
+const getInsightThumbnail = async (insightId) => {
+  const insight = await getInsight(insightId, ['thumbnail']);
+  const uri = insight.thumbnail;
+  const data = uri.split(',')[1];
+  const buf = Buffer.from(data, 'base64');
+  return buf;
+};
+
 /**
  * Count the number of insights that math a filter
  */
@@ -174,6 +182,7 @@ module.exports = {
   createInsight,
   getAllInsights,
   getInsight,
+  getInsightThumbnail,
   count,
   remove,
   updateInsight

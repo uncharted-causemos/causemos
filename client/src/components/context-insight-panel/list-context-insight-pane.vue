@@ -53,12 +53,10 @@
           </options-button>
         </div>
         <div class="context-insight-content">
-          <img
-            v-if="contextInsight.thumbnail"
-            :src="contextInsight.thumbnail"
+          <img-lazy
+            :src="`/api/insights/${contextInsight.id}/thumbnail`"
             class="context-insight-thumbnail"
-          >
-          <div v-else class="context-insight-thumbnail"><i class="fa fa-spin fa-spinner" /></div>
+          />
           <div
             v-if="contextInsight.description.length > 0"
             class="context-insight-description"
@@ -88,16 +86,17 @@
 
 <script>
 import _ from 'lodash';
-import { ref, watch, computed } from 'vue';
+import { computed } from 'vue';
 import { mapGetters, mapActions, useStore } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
+import ImgLazy from '@/components/widgets/img-lazy.vue';
 
 import { INSIGHTS } from '@/utils/messages-util';
 import InsightUtil from '@/utils/insight-util';
 
 import router from '@/router';
 import useInsightsData from '@/services/composables/useInsightsData';
-import { countPublicInsights, fetchPartialInsights } from '@/services/insight-service';
+import { countPublicInsights, fetchFullInsights } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
 import MessageDisplay from '@/components/widgets/message-display';
 import OptionsButton from '@/components/widgets/options-button.vue';
@@ -109,7 +108,8 @@ export default {
   components: {
     DropdownButton,
     MessageDisplay,
-    OptionsButton
+    OptionsButton,
+    ImgLazy
   },
   props: {
     allowNewInsights: {
@@ -125,22 +125,10 @@ export default {
     const store = useStore();
     // the gallery opens over top of this side panel, prevent fetches while the gallery is open
     const preventFetches = computed(() => store.getters['insightPanel/isPanelOpen']);
-    const { insights, reFetchInsights, fetchImagesForInsights } = useInsightsData(preventFetches, undefined, true);
-    const listContextInsights = ref([])/* as Ref<FullInsight[]> */;
-
-    watch([insights], () => {
-      // first fill it without images, once the downloads finish, fill the image in
-      // use '' to represent that the thumbnail is loading
-      listContextInsights.value = insights.value.map(insight => ({ ...insight, image: '' }));
-      (async () => {
-        const images = await fetchImagesForInsights(insights.value.map(insight => insight.id));
-        const ids = insights.value.map(insight => insight.id);
-        listContextInsights.value = images.filter(i => ids.includes(i.id));
-      })();
-    });
+    const { insights, reFetchInsights } = useInsightsData(preventFetches, undefined, true);
 
     return {
-      listContextInsights,
+      listContextInsights: insights,
       reFetchInsights
     };
   },
@@ -159,6 +147,8 @@ export default {
   },
   methods: {
     ...mapActions({
+      enableOverlay: 'app/enableOverlay',
+      disableOverlay: 'app/disableOverlay',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
@@ -179,22 +169,18 @@ export default {
     },
     async exportContextInsight(item) {
       const cagMap = InsightUtil.getCagMapFromInsights(this.listContextInsights);
-      const bibliographyMap = await getBibiographyFromCagIds([...cagMap.keys()]);
-      const images = await fetchPartialInsights({ id: this.listContextInsights.map(d => d.id) }, ['id', 'image']);
 
-      images.forEach(image => {
-        const insight = this.listContextInsights.find(d => d.id === image.id);
-        if (insight) {
-          insight.image = image.image;
-        }
-      });
+      this.enableOverlay('Preparing to export insights');
+      const bibliographyMap = await getBibiographyFromCagIds([...cagMap.keys()]);
+      const insights = await fetchFullInsights({ id: this.listContextInsights.map(d => d.id) });
+      this.disableOverlay();
 
       switch (item) {
         case 'Word':
-          InsightUtil.exportDOCX(this.listContextInsights, this.projectMetadata, undefined, bibliographyMap);
+          InsightUtil.exportDOCX(insights, this.projectMetadata, undefined, bibliographyMap);
           break;
         case 'Powerpoint':
-          InsightUtil.exportPPTX(this.listContextInsights, this.projectMetadata);
+          InsightUtil.exportPPTX(insights, this.projectMetadata);
           break;
         default:
           break;

@@ -1,5 +1,5 @@
 import { ProjectType } from '@/types/Enums';
-import { Insight, InsightImage, FullInsight } from '@/types/Insight';
+import { Insight, InsightImage } from '@/types/Insight';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { fetchInsights, fetchPartialInsights, InsightFilterFields } from '@/services/insight-service';
@@ -12,44 +12,6 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
   const insights = computed<Insight[]>(() => Array.from(insightMap.value.values()));
 
   const insightsFetchedAt = ref(0);
-
-  /**
-   * Fetches images for previously fetched insights that match the provided IDs.
-   * If an insight with a given ID hasn't been fetched using this composable the image
-   * will not be fetched.
-   * Caching is utilised so that existing images aren't downloaded again.
-   * The cache is cleared when a new set of insights is fetched using this composable.
-   * @param insightIDs
-   */
-  const fetchImagesForInsights = async (insightIDs: string[]): Promise<FullInsight[]> => {
-    const result: FullInsight[] = [];
-    const idsToFetch: string[] = [];
-    // use existing images if available
-    for (const id of insightIDs) {
-      const insight = insightMap.value.get(id);
-      const image = insightImageMap.value.get(id);
-      if (insight) {
-        if (image) {
-          result.push({ ...insight, ...image });
-        } else {
-          idsToFetch.push(id);
-        }
-      }
-    }
-
-    // fetch any images we don't have and store for later
-    if (idsToFetch.length > 0) {
-      const images: InsightImage[] = await fetchPartialInsights({ id: idsToFetch }, ['id', 'thumbnail']);
-      for (const img of images) {
-        const insight = insightMap.value.get(img.id);
-        if (insight && img) {
-          result.push({ ...insight, ...img });
-          insightImageMap.value.set(img.id, img);
-        }
-      }
-    }
-    return result;
-  };
 
   const store = useStore();
   const contextIds = computed(() => store.getters['insightPanel/contextId']);
@@ -167,7 +129,6 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
 
   return {
     insights,
-    reFetchInsights,
-    fetchImagesForInsights
+    reFetchInsights
   };
 }

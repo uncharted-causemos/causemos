@@ -96,6 +96,19 @@ router.get('/:id', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET an insight thumbnail by id
+ */
+router.get('/:id/thumbnail', asyncHandler(async (req, res) => {
+  const insightId = req.params.id;
+  const thumbnail = await insightService.getInsightThumbnail(insightId);
+  res.writeHead(200, {
+    'Content-Type': 'image/png',
+    'Content-Length': thumbnail.length
+  });
+  res.end(thumbnail);
+}));
+
+/**
  * DELETE existing insight
  */
 router.delete('/:id', asyncHandler(async (req, res) => {
