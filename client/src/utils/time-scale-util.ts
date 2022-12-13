@@ -87,3 +87,9 @@ export const getStepCountFromTimeScale = (timeScale: TimeScale) => {
   const monthsInProjection = getProjectionLengthFromTimeScale(timeScale);
   return monthsInProjection / getMonthsPerTimestepFromTimeScale(timeScale);
 };
+
+export const getRangeFromTimeScale = (timeScale: TimeScale, history_range: number) => {
+  return history_range / getMonthsPerTimestepFromTimeScale(timeScale);
+};
+
+

@@ -11,6 +11,7 @@ import { historicalDataUncertaintyColor } from '@/services/model-service';
 import {
   getLastTimeStepIndexFromTimeScale,
   getMonthsPerTimestepFromTimeScale,
+  getRangeFromTimeScale,
   getTimeScaleOption
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
@@ -129,7 +130,7 @@ function render(
       )
     );
 
-  const nodeScenarioDataHistoryRange = nodeScenarioData.time_scale.toLowerCase() === 'months' ? nodeScenarioData.history_range : nodeScenarioData.history_range / 12;
+  const nodeScenarioDataHistoryRange = getRangeFromTimeScale(nodeScenarioData.time_scale, nodeScenarioData.history_range);
   const labelText = 'Viewing last ' + nodeScenarioDataHistoryRange + ' ' + nodeScenarioData.time_scale.toLowerCase();
   const textWidth = labelText.length * CHARACTER_WIDTH;
   const additionalMarginToPlaceLabelBelowGraph = 5;
