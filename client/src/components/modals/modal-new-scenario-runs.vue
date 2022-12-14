@@ -70,6 +70,7 @@ import datacubeService from '@/services/new-datacube-service';
 import useToaster from '@/services/composables/useToaster';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import DurationFormatter from '@/formatters/duration-formatter';
+import { TYPE } from 'vue-toastification';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -199,15 +200,15 @@ export default defineComponent({
         const allResponses = await Promise.all(promises);
         const allResults = allResponses.flatMap((res: any) => res.data.run_id);
         if (allResults.length > 0 && this.potentialRuns.length === allResults.length) {
-          this.toaster('New run(s) requested\nPlease check back later!', 'success');
+          this.toaster('New run(s) requested\nPlease check back later!', TYPE.SUCCESS);
           this.close(false);
         } else {
-          this.toaster('Some issue occured while requesting new model runs!', 'error');
+          this.toaster('Some issue occured while requesting new model runs!', TYPE.INFO);
           this.close(true);
         }
       } catch (error) {
         console.warn(error);
-        this.toaster('Some issue occured while requesting new model runs!', 'error');
+        this.toaster('Some issue occured while requesting new model runs!', TYPE.INFO);
         this.close(true);
       }
     },

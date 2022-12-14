@@ -59,6 +59,7 @@ import { defineComponent, ref, computed } from 'vue';
 import dartService from '@/services/dart-service';
 import Modal from '@/components/modals/modal.vue';
 import useToaster from '@/services/composables/useToaster';
+import { TYPE } from 'vue-toastification';
 
 const MB = 1024 * 1024;
 
@@ -114,7 +115,7 @@ export default defineComponent({
 
       // TODO: save project to  doc_id mapping
       await dartService.uploadDocument(formData);
-      this.toaster(`Successfully uploaded ${names.join(', ')} for processing`, 'success', false);
+      this.toaster(`Successfully uploaded ${names.join(', ')} for processing`, TYPE.SUCCESS, false);
       this.loading = false;
       this.metadataGenre = '';
       this.metadataLabels = '';

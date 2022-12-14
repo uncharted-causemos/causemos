@@ -14,6 +14,7 @@ import {
 import { INSIGHTS } from '@/utils//messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
+import { TYPE } from 'vue-toastification';
 
 // This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
@@ -224,7 +225,7 @@ export const removeInsight = async (id: string, store?: any) => {
   const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
   const toast = useToaster();
   if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
-    toast(message, 'success', false);
+    toast(message, TYPE.SUCCESS, false);
 
     if (store) {
       const countInsights = computed(() => store.getters['insightPanel/countInsights']);
@@ -232,7 +233,7 @@ export const removeInsight = async (id: string, store?: any) => {
       store.dispatch('insightPanel/setCountInsights', count);
     }
   } else {
-    toast(message, 'error', true);
+    toast(message, TYPE.INFO, true);
   }
   // FIXME: delete any reference to this insight from its list of analytical_questions
 };

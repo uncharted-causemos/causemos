@@ -236,6 +236,7 @@ import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
 import { normalize } from '@/utils/value-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
+import { TYPE } from 'vue-toastification';
 
 
 const SEASONALITY_OPTIONS: DropdownItem[] = [
@@ -669,7 +670,7 @@ export default defineComponent({
         refreshModelData();
       } catch {
         console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
-        toaster(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, 'error', true);
+        toaster(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, TYPE.INFO, true);
       }
       // Pass range where max is lower than min to ensure no constraints are preserved
       clearConstraintsOutsideRange({ min: 1, max: -1 }, false);
@@ -710,7 +711,7 @@ export default defineComponent({
         refreshModelData();
       } catch {
         console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
-        toaster(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, 'error', true);
+        toaster(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, TYPE.INFO, true);
       }
     };
 
@@ -747,7 +748,7 @@ export default defineComponent({
       if (selectedScenario.is_baseline) {
         toaster(
           'Please select a non-baseline scenario to place constraints.',
-          'error',
+          TYPE.INFO,
           true
         );
         // Remove constraints from the chart renderer
@@ -844,7 +845,7 @@ export default defineComponent({
             `${affectedScenarioCount === 1 ? '' : 's'} because ` +
             `${removedConstraintCount === 1 ? 'it' : 'they'} fell outside of` +
             ` the range ${range.min} to ${range.max}.`,
-          'error',
+          TYPE.INFO,
           false
         );
       }

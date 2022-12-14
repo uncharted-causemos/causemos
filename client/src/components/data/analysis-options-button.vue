@@ -12,6 +12,7 @@ import { computed, defineComponent, toRefs } from 'vue';
 import { deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
 import { useStore } from 'vuex';
 import useToaster from '@/services/composables/useToaster';
+import { TYPE } from 'vue-toastification';
 import { ANALYSIS } from '@/utils/messages-util';
 import router from '@/router';
 import { ProjectType } from '@/types/Enums';
@@ -44,13 +45,13 @@ export default defineComponent({
       } catch (e) {
         // Update failed, so undo name change
         store.dispatch('app/setAnalysisName', previousName);
-        toast(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
+        toast(ANALYSIS.ERRONEOUS_RENAME, TYPE.INFO, true);
       }
     };
     const onDeleteAnalysis = async () => {
       try {
         await deleteAnalysis(analysisId.value);
-        toast(ANALYSIS.SUCCESSFUL_DELETION, 'success', false);
+        toast(ANALYSIS.SUCCESSFUL_DELETION, TYPE.SUCCESS, false);
         // We need to wait for a short delay here before navigating back to the
         //  start page, since ES can take some time to refresh its indices after
         //  the delete operation, meaning the deleted analysis would still show
@@ -70,13 +71,13 @@ export default defineComponent({
         });
       } catch (e) {
         console.error('Error occurred when deleting analysis:', e);
-        toast(ANALYSIS.ERRONEOUS_DELETION, 'error', true);
+        toast(ANALYSIS.ERRONEOUS_DELETION, TYPE.INFO, true);
       }
     };
 
     const onDuplicate = (newName: string) => {
       duplicateAnalysis(analysisId.value, newName).then((newId) => {
-        toast(ANALYSIS.SUCCESSFUL_DUPLICATE, 'success', false);
+        toast(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
         store.dispatch('app/setAnalysisName', newName);
         router.push({
           name: 'dataComparative',
@@ -87,7 +88,7 @@ export default defineComponent({
           }
         });
       }).catch(() => {
-        toast(ANALYSIS.ERRONEOUS_DUPLICATE, 'error', true);
+        toast(ANALYSIS.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
       });
     };
 

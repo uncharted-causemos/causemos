@@ -65,6 +65,7 @@
 <script>
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
+import { TYPE } from 'vue-toastification';
 
 import { updateStatementsFactorGrounding, trackCurations } from '@/services/curation-service';
 import ModalDocument from '@/components/modals/modal-document';
@@ -226,9 +227,9 @@ export default {
 
       const updateResult = await updateStatementsFactorGrounding(this.project, statementIds, subj, obj);
       if (updateResult.status === 200) {
-        this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, 'success', false);
+        this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, TYPE.SUCCESS, false);
       } else {
-        this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
+        this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, TYPE.INFO, true);
       }
 
       if (this.curationTrackingId !== null) {

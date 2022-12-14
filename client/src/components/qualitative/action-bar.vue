@@ -61,6 +61,7 @@ import { CAG } from '@/utils/messages-util';
 import ArrowButton from '@/components/widgets/arrow-button.vue';
 import { ProjectType, TemporalResolutionOption, TimeScale } from '@/types/Enums';
 import { CAGModelSummary } from '@/types/CAG';
+import { TYPE } from 'vue-toastification';
 
 export default defineComponent({
   name: 'ActionBar',
@@ -139,7 +140,7 @@ export default defineComponent({
           }
         });
       } catch {
-        this.toaster(CAG.ERRONEOUS_MODEL_RUN, 'error', true);
+        this.toaster(CAG.ERRONEOUS_MODEL_RUN, TYPE.INFO, true);
         return;
       } finally {
         this.isRunningModel = false;

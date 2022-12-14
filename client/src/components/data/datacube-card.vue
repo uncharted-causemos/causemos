@@ -671,6 +671,7 @@ import {
 
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
+import { TYPE } from 'vue-toastification';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
@@ -990,9 +991,9 @@ export default defineComponent({
       });
       showTagNameModal.value = false;
       if (numAdded > 0) {
-        toaster(`Successfully added '${tagName}' to ${numAdded} run${numAdded === 1 ? '' : 's'}`, 'success', false);
+        toaster(`Successfully added '${tagName}' to ${numAdded} run${numAdded === 1 ? '' : 's'}`, TYPE.SUCCESS, false);
       } else {
-        toaster(`Selected run${selectedScenarios.value.length === 1 ? ' is' : 's are'} already tagged with '${tagName}'`, 'success', false);
+        toaster(`Selected run${selectedScenarios.value.length === 1 ? ' is' : 's are'} already tagged with '${tagName}'`, TYPE.SUCCESS, false);
       }
       addModelRunsTag(selectedScenarios.value.map(run => run.id), tagName);
     };
@@ -1176,7 +1177,7 @@ export default defineComponent({
 
     const clickData = () => {
       if (!canClickDataTab.value) {
-        toaster(`At least one run must match the default parameters. Click "${defaultRunButtonCaption}"`, 'error', true);
+        toaster(`At least one run must match the default parameters. Click "${defaultRunButtonCaption}"`, TYPE.INFO, true);
         return;
       }
       // FIXME: This code to select a model run when switching to the data tab
@@ -2103,14 +2104,14 @@ export default defineComponent({
         response
           .then((res: any) => {
             if (res.data && res.data.run_id && res.data.run_id.length > 0) {
-              this.toaster('Retrying model run\nPlease check back later!', 'success');
+              this.toaster('Retrying model run\nPlease check back later!', TYPE.SUCCESS);
             } else {
-              this.toaster('Some issue occured while retrying model run!', 'error');
+              this.toaster('Some issue occured while retrying model run!', TYPE.INFO);
             }
           })
           .catch((error) => {
             console.warn(error);
-            this.toaster('Some issue occured while retrying model run!', 'error');
+            this.toaster('Some issue occured while retrying model run!', TYPE.INFO);
           });
       }
       await this.deleteWithRun(modelRun);
@@ -2134,7 +2135,7 @@ export default defineComponent({
           });
         }
       } catch (e) {
-        this.toaster('Run failed', 'error', true);
+        this.toaster('Run failed', TYPE.INFO, true);
       }
     },
     removeTagFromSelectedRuns(tag: string) {
