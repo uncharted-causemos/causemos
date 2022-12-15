@@ -126,6 +126,7 @@ import { ModelsSpaceDataState } from '@/types/Insight';
 import useToaster from '@/services/composables/useToaster';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { saveAs } from 'file-saver';
+import { TYPE } from 'vue-toastification';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
@@ -579,7 +580,7 @@ export default defineComponent({
       this.visualState = newVisualState;
 
       if (scenarioId && !this.scenarios.some(sc => sc.id === scenarioId)) {
-        this.toaster(`Cannot restore deleted scenario ${scenarioId}`, 'error', true);
+        this.toaster(`Cannot restore deleted scenario ${scenarioId}`, TYPE.INFO, true);
         return;
       }
 
@@ -591,12 +592,12 @@ export default defineComponent({
       const engineStatus = this.modelSummary.engine_status;
 
       if (engineStatus[insightEngine] === modelService.MODEL_STATUS.TRAINING) {
-        this.toaster(`Cannot restore back to ${insightEngine} because there is training in progress`, 'error', true);
+        this.toaster(`Cannot restore back to ${insightEngine} because there is training in progress`, TYPE.INFO, true);
         console.error(`Cannot restore back to ${insightEngine} because there is training in progress`);
         return;
       }
       if (!insightEngine || engineStatus[insightEngine] === modelService.MODEL_STATUS.NOT_REGISTERED) {
-        this.toaster(`Cannot restore back to ${insightEngine}, bad state`, 'error', true);
+        this.toaster(`Cannot restore back to ${insightEngine}, bad state`, TYPE.INFO, true);
         console.error(`Cannot restore back to ${insightEngine}, bad state`);
         return;
       }
@@ -610,7 +611,7 @@ export default defineComponent({
         await modelService.updateModelParameter(this.currentCAG, {
           engine: insightEngine
         });
-        this.toaster(`Engine switched from ${currentEngine} to ${insightEngine}`, 'success', true);
+        this.toaster(`Engine switched from ${currentEngine} to ${insightEngine}`, TYPE.SUCCESS, true);
         this.$emit('model-parameter-changed');
       }
     },

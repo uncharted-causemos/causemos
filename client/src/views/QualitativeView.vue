@@ -280,6 +280,7 @@ import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import CagLegend from '@/components/graph/cag-legend.vue';
 import { Statement } from '@/types/Statement';
 import { getInsightById } from '@/services/insight-service';
+import { TYPE } from 'vue-toastification';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -665,7 +666,7 @@ export default defineComponent({
       const edge = { source: source.concept, target: target.concept };
 
       if (edge.source === edge.target) {
-        this.toaster('Cannot add an edge from a concept to itself', 'error', false);
+        this.toaster('Cannot add an edge from a concept to itself', TYPE.INFO, false);
         return;
       }
 
@@ -695,7 +696,7 @@ export default defineComponent({
 
         // if there are cycles, do not add edge
         if (cycles.length > 0) {
-          this.toaster('Cannot add edge. It would create a cycle.', 'error', false);
+          this.toaster('Cannot add edge. It would create a cycle.', TYPE.INFO, false);
           return;
         }
 
@@ -738,7 +739,7 @@ export default defineComponent({
             ' ' +
             this.ontologyFormatter(edge.target) +
             ' already exists in the CAG',
-          'error',
+          TYPE.INFO,
           false
         );
       }
@@ -1057,7 +1058,7 @@ export default defineComponent({
       return this.conceptsInCag.indexOf(concept) > -1;
     },
     showConceptExistsToaster(concept: string) {
-      this.toaster(concept + ' already exists in the CAG', 'error', false);
+      this.toaster(concept + ' already exists in the CAG', TYPE.INFO, false);
     },
     async onShowFactorRecommendations(
       factor: string,
@@ -1322,14 +1323,14 @@ export default defineComponent({
     rejectRenameNode({ currentName, newName }: { currentName: string; newName: string }) {
       this.toaster(
         `Cannot rename "${currentName}" to "${newName}". Node "${newName}" already exists.`,
-        'error',
+        TYPE.INFO,
         true
       );
     },
     rejectAlphanumeric({ currentName, newName }: { currentName: string; newName: string }) {
       this.toaster(
         `Cannot rename "${currentName}" to "${newName}". Only alphanumeric characters are allowed.`,
-        'error',
+        TYPE.INFO,
         true
       );
     },

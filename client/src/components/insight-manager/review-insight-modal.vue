@@ -224,6 +224,7 @@ import useQuestionsData from '@/services/composables/useQuestionsData';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { fetchImageAsBase64 } from '@/services/new-datacube-service';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
+import { TYPE } from 'vue-toastification';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
@@ -653,14 +654,14 @@ export default defineComponent({
     addNewQuestion(newQuestionText: string) {
       this.showNewQuestion = false;
       const handleSuccessfulAddition = () => {
-        this.toaster(QUESTIONS.SUCCESSFUL_ADDITION, 'success', false);
+        this.toaster(QUESTIONS.SUCCESSFUL_ADDITION, TYPE.SUCCESS, false);
         // FIXME: seems like there's a bug here. If we already have a section
         //  assigned to the insight and we add a new one, we want to append to
         //  the list, not replace it.
         this.setInsightQuestions([newQuestionText]);
       };
       const handleFailedAddition = () => {
-        this.toaster(QUESTIONS.ERRONEOUS_ADDITION, 'error', true);
+        this.toaster(QUESTIONS.ERRONEOUS_ADDITION, TYPE.INFO, true);
       };
       this.addSection(
         newQuestionText,
@@ -831,7 +832,7 @@ export default defineComponent({
           .then((result) => {
             const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
             if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
-              this.toaster(message, 'success', false);
+              this.toaster(message, TYPE.SUCCESS, false);
               const count = this.countInsights + 1;
               this.setCountInsights(count);
 
@@ -843,7 +844,7 @@ export default defineComponent({
                 });
               }
             } else {
-              this.toaster(message, 'error', true);
+              this.toaster(message, TYPE.INFO, true);
             }
             this.closeInsightReview();
             this.setShouldRefetchInsights(true);
@@ -866,7 +867,7 @@ export default defineComponent({
           updateInsight(this.updatedInsight.id, updatedInsight)
             .then((result) => {
               if (result.updated === 'success') {
-                this.toaster(INSIGHTS.SUCCESSFUL_UPDATE, 'success', false);
+                this.toaster(INSIGHTS.SUCCESSFUL_UPDATE, TYPE.SUCCESS, false);
 
                 // ensure when updating an insight to also update its linked questions
                 const insightId = this.updatedInsight.id;
@@ -877,7 +878,7 @@ export default defineComponent({
                   }
                 });
               } else {
-                this.toaster(INSIGHTS.ERRONEOUS_UPDATE, 'error', true);
+                this.toaster(INSIGHTS.ERRONEOUS_UPDATE, TYPE.INFO, true);
               }
             });
         }

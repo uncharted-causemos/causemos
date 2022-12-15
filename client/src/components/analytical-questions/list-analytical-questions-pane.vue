@@ -157,6 +157,7 @@ import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import useToaster from '@/services/composables/useToaster';
+import { TYPE } from 'vue-toastification';
 
 type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
 
@@ -277,7 +278,7 @@ export default defineComponent({
         return;
       }
       const handleFailedUpdate = () => {
-        this.toaster(QUESTIONS.ERRONEOUS_UPDATE, 'error', true);
+        this.toaster(QUESTIONS.ERRONEOUS_UPDATE, TYPE.INFO, true);
       };
       this.$emit(
         'update-section-title',
@@ -298,10 +299,10 @@ export default defineComponent({
     onNewAnalyticalQuestion() {
       this.showNewAnalyticalQuestion = false;
       const handleSuccessfulAddition = () => {
-        this.toaster(QUESTIONS.SUCCESSFUL_ADDITION, 'success', false);
+        this.toaster(QUESTIONS.SUCCESSFUL_ADDITION, TYPE.SUCCESS, false);
       };
       const handleFailedAddition = () => {
-        this.toaster(QUESTIONS.ERRONEOUS_ADDITION, 'error', true);
+        this.toaster(QUESTIONS.ERRONEOUS_ADDITION, TYPE.INFO, true);
       };
       this.$emit(
         'add-section',
@@ -323,10 +324,10 @@ export default defineComponent({
         });
 
         const handleSuccessfulDeletion = () => {
-          this.toaster(QUESTIONS.SUCCESSFUL_REMOVAL, 'success', false);
+          this.toaster(QUESTIONS.SUCCESSFUL_REMOVAL, TYPE.SUCCESS, false);
         };
         const handleFailedDeletion = () => {
-          this.toaster(QUESTIONS.ERRONEOUS_REMOVAL, 'error', true);
+          this.toaster(QUESTIONS.ERRONEOUS_REMOVAL, TYPE.INFO, true);
         };
         this.$emit(
           'delete-section',

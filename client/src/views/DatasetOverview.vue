@@ -202,6 +202,7 @@ import useToaster from '@/services/composables/useToaster';
 import { runtimeFormatter } from '@/utils/string-util';
 import { ViewState } from '@/types/Insight';
 import { sortItem, createdAtSorter, SortOptions } from '@/utils/sort/sort-items';
+import { TYPE } from 'vue-toastification';
 
 const MAX_COUNTRIES = 40;
 
@@ -357,9 +358,9 @@ export default defineComponent({
       }));
       try {
         await updateIndicatorsBulk(deltas);
-        toaster(`Updated ${deltas.length} indicators`, 'success');
+        toaster(`Updated ${deltas.length} indicators`, TYPE.SUCCESS);
       } catch {
-        toaster('There was an issue with updating the indicators', 'error');
+        toaster('There was an issue with updating the indicators', TYPE.INFO);
       }
       await this.fetchIndicators();
     },
@@ -400,14 +401,14 @@ export default defineComponent({
 
           this.enableOverlay(`Updating ${deltas.length} indicators`);
           await updateIndicatorsBulk(deltas);
-          toaster(`Updated ${deltas.length} indicators`, 'success');
+          toaster(`Updated ${deltas.length} indicators`, TYPE.SUCCESS);
         } catch {
-          toaster('The was an issue with applying the settings', 'error');
+          toaster('The was an issue with applying the settings', TYPE.INFO);
         }
         this.disableOverlay();
         await this.fetchIndicators();
       } else {
-        toaster('Invalid template indicator', 'error');
+        toaster('Invalid template indicator', TYPE.INFO);
       }
     },
     getSparklineParams(meta: Datacube, selections?: ViewState) {
@@ -442,9 +443,9 @@ export default defineComponent({
           id: id,
           outputs: [meta]
         }]);
-        toaster('Indicator updated successfully', 'success');
+        toaster('Indicator updated successfully', TYPE.SUCCESS);
       } catch {
-        toaster('There was an issue with saving the changes', 'error');
+        toaster('There was an issue with saving the changes', TYPE.INFO);
       }
       await this.fetchIndicators();
     },

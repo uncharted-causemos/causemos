@@ -60,6 +60,7 @@ import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 import { Datacube } from '@/types/Datacube';
 import { calculateResetRegionRankingWeights, didSelectedItemsChange } from '@/services/analysis-service-new';
+import { TYPE } from 'vue-toastification';
 
 export default defineComponent({
   name: 'DataExplorer',
@@ -225,7 +226,7 @@ export default defineComponent({
           }
         });
       } catch (e) {
-        this.toaster(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
+        this.toaster(ANALYSIS.ERRONEOUS_RENAME, TYPE.INFO, true);
       }
     },
     async onClose() {

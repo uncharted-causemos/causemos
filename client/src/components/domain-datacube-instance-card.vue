@@ -109,7 +109,7 @@ import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning'
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { updateDatacube } from '@/services/new-datacube-service';
 import useToaster from '@/services/composables/useToaster';
-
+import { TYPE } from 'vue-toastification';
 /**
  * A card-styled widget to view project summary
  */
@@ -209,7 +209,7 @@ export default defineComponent({
         await updateDatacube(delta.id, delta);
         this.$emit('update-domains', delta.id, delta.domains);
       } catch {
-        useToaster()('Saving Domains failed', 'error');
+        useToaster()('Saving Domains failed', TYPE.INFO);
       }
     },
     unpublish() {

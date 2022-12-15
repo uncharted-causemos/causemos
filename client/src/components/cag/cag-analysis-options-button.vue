@@ -11,6 +11,7 @@
 import { computed, defineComponent, ref, toRefs } from 'vue';
 import { useStore } from 'vuex';
 import useToaster from '@/services/composables/useToaster';
+import { TYPE } from 'vue-toastification';
 import { CAG } from '@/utils/messages-util';
 import router from '@/router';
 import { ProjectType } from '@/types/Enums';
@@ -58,14 +59,14 @@ export default defineComponent({
         })
         .catch(() => {
           newCagName.value = '';
-          toast(CAG.ERRONEOUS_RENAME, 'error', true);
+          toast(CAG.ERRONEOUS_RENAME, TYPE.INFO, true);
         });
     };
     const onDeleteAnalysis = async () => {
       modelService
         .removeModel(currentCAG.value)
         .then(() => {
-          toast(CAG.SUCCESSFUL_DELETION, 'success', false);
+          toast(CAG.SUCCESSFUL_DELETION, TYPE.SUCCESS, false);
           // Back to splash page
           router.push({
             name: viewAfterDeletion.value,
@@ -76,12 +77,12 @@ export default defineComponent({
           });
         })
         .catch(() => {
-          toast(CAG.ERRONEOUS_DELETION, 'error', true);
+          toast(CAG.ERRONEOUS_DELETION, TYPE.INFO, true);
         });
     };
     const onDuplicate = (name: string) => {
       modelService.duplicateModel(currentCAG.value, name).then((result) => {
-        toast(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
+        toast(CAG.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
         router.push({
           name: 'qualitative',
           params: {
@@ -91,7 +92,7 @@ export default defineComponent({
           }
         });
       }).catch(() => {
-        toast(CAG.ERRONEOUS_DUPLICATE, 'error', false);
+        toast(CAG.ERRONEOUS_DUPLICATE, TYPE.INFO, false);
       });
     };
 
