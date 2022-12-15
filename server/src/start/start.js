@@ -26,9 +26,7 @@ async function runStartup() {
   Logger.info(`\tPipeline Target S3 Indicators Bucket: [${process.env.S3_INDICATORS_BUCKET}]`);
   Logger.info(`\tPipeline Target S3 Model Bucket: [${process.env.S3_MODELS_BUCKET}]`);
   Logger.info(`\tQueue Service URL: ${process.env.WM_QUEUE_SERVICE_URL}`);
-  Logger.info(`\tDELPHI_URL: ${process.env.DELPHI_URL}`);
   Logger.info(`\tDYSE_URL: ${process.env.DYSE_URL}`);
-  Logger.info(`\tSENSEI_URL: ${process.env.SENSEI_URL}`);
   Logger.info(`\tDOJO_URL: ${process.env.DOJO_URL}`);
   Logger.info(`\tWM_CURATION_SERVICE_URL: ${process.env.WM_CURATION_SERVICE_URL}`);
   Logger.info(`\tSyncing changes to Dojo: ${serverConfiguration.dojoSync}`);
