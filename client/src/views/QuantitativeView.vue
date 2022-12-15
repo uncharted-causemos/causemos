@@ -486,12 +486,8 @@ export default defineComponent({
           this.setOverlaySecondaryMessage(`CAG=${this.currentCAG} Experiment=${experimentId}`);
 
           const experiment: any = await modelService.getExperimentResult(this.currentCAG, experimentId, poller, this.updateProgress);
-          // FIXME: Delphi uses .results, DySE uses .results.data
-          if (!_.isEmpty(experiment.results.data)) {
-            scenario.result = experiment.results.data;
-          } else {
-            scenario.result = experiment.results;
-          }
+          // DySE uses .results.data
+          scenario.result = experiment.results.data;
           scenario.experiment_id = experimentId;
           scenario.is_valid = true;
           updateList.push(scenario);
