@@ -148,9 +148,7 @@ const EDGE_DRILLDOWN_TABS = [
 ];
 
 const PROJECTION_ENGINES = {
-  DELPHI: 'delphi',
-  DYSE: 'dyse',
-  SENSEI: 'sensei'
+  DYSE: 'dyse'
 };
 
 const blankVisualState = (): CAGVisualState => {
@@ -242,9 +240,6 @@ export default defineComponent({
       // if we ever need more state than this
       // add a query store for model
       return this.$route.query?.activeTab || 'flow';
-    },
-    showComponent() {
-      return this.currentEngine !== PROJECTION_ENGINES.DELPHI;
     },
     timeScale() {
       return this.modelSummary.parameter.time_scale;

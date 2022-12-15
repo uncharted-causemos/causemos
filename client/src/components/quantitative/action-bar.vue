@@ -95,7 +95,6 @@ import RadioButtonGroup from '../widgets/radio-button-group.vue';
 import { CAGModelSummary, Scenario } from '@/types/CAG';
 
 const PROJECTION_ENGINES = {
-  DELPHI: 'delphi',
   DYSE: 'dyse'
 };
 

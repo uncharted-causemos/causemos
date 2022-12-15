@@ -364,11 +364,6 @@ const getExperimentResult = async (modelId: string, experimentId: string, poller
       const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: model.parameter.engine, experiment_id: experimentId } });
       return _.isEmpty(data.results) ? [false, data] : [true, data];
     } catch (err) {
-      // Delphi seems to randomly error out ??
-      if (model.parameter.engine === 'delphi') {
-        console.log('Ignoring Delphi error getting experiment');
-        return [false, null];
-      }
       throw new Error(err as any);
     }
   };
@@ -575,13 +570,8 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Pol
     };
     const { id } = await createScenario(scenario);
 
-    // FIXME: Delphi uses .results, DySE uses .results.data
-    let r = [];
-    if (!_.isEmpty(experiment.results.data)) {
-      r = experiment.results.data;
-    } else {
-      r = experiment.results;
-    }
+    // DySE uses .results.data
+    const r = experiment.results.data;
 
     // Fire  off a sensitivity request in the background
     if (modelSummary.parameter.engine === 'dyse') {
@@ -743,24 +733,11 @@ export const hasMergeConflictEdges = (currentCAG: CAGGraph, importCAGs: CAGGraph
 
 export enum Engine {
   DySE = 'dyse',
-  Delphi = 'delphi',
-  Sensei = 'sensei'
 }
-
-export const supportsPolarityInference = (engine: Engine) => {
-  return engine === Engine.Delphi || engine === Engine.Sensei;
-};
 
 export const supportsLevelEdges = (engine: Engine) => {
   return [Engine.DySE].includes(engine);
 };
-
-// FIXME: we should replace these string keys with the stricter Engine type
-export const ENGINE_OPTIONS = [
-  { key: 'dyse', value: 'DySE' },
-  { key: 'delphi', value: 'Delphi' },
-  { key: 'sensei', value: 'Sensei' }
-];
 
 // Cleanse constraint payload
 const cleanConstraints = (constraints: ConceptProjectionConstraints[]) => {
@@ -930,7 +907,6 @@ export default {
 
   decodeWeights,
 
-  ENGINE_OPTIONS,
   MODEL_STATUS,
   MODEL_MSGS
 };
