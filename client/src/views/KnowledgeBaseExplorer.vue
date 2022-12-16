@@ -176,7 +176,6 @@ export default {
       filters: 'query/filters',
       project: 'app/project',
       updateToken: 'app/updateToken',
-      ontologyConcepts: 'app/ontologyConcepts',
       layout: 'query/layout',
       selectedSubgraphEdges: 'graph/selectedSubgraphEdges',
       cag: 'query/cag',
