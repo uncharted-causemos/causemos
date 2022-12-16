@@ -184,7 +184,6 @@
 
 <script>
 import _ from 'lodash';
-import { mapGetters } from 'vuex';
 import {
   getFactorConceptSuggestions,
   groupByConceptFactor,
@@ -194,7 +193,6 @@ import {
   getSimilarConcepts,
   CORRECTION_TYPES
 } from '@/services/curation-service';
-import projectService from '@/services/project-service';
 import ModalDocument from '@/components/modals/modal-document';
 import EvidenceItem from '@/components/evidence-item';
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
@@ -261,34 +259,12 @@ export default {
     messageNoData: SIDE_PANEL.FACTORS_NO_DATA,
     suggestions: [],
     similarConcepts: [],
-    ontologyComposition: {},
     showComponents: true,
     showSimilarConcepts: true
   }),
   computed: {
-    ...mapGetters({
-      conceptDefinitions: 'app/conceptDefinitions'
-    }),
     numSelectedItems: function() {
       return this.summaryData.children.filter(d => d.meta.checked === true).length;
-    },
-    compositionDefinitions() {
-      if (_.isEmpty(this.ontologyComposition)) return '';
-      const lookup = this.conceptDefinitions;
-
-      // FIXME: Remove when ontology versions are consolidated upstream - Mar 15, 2021
-      const defn = (v) => {
-        const alternate = v.replace('wm_compositional', 'wm');
-        const text = (lookup[v] || lookup[alternate]) || '';
-        return text;
-      };
-
-      return [
-        defn(this.ontologyComposition.theme),
-        defn(this.ontologyComposition.theme_property),
-        defn(this.ontologyComposition.process),
-        defn(this.ontologyComposition.process_property)
-      ].filter(d => d !== '').join(', ');
     },
     factorCount() {
       return this.summaryData.children.length;
@@ -322,10 +298,6 @@ export default {
         children: groupByConceptFactor(this.statements, this.selectedItem.concept),
         meta: { checked: false, isSomeChildChecked: false }
       };
-
-      projectService.getProjectOntologyComposition(this.project, this.selectedItem.concept).then(d => {
-        this.ontologyComposition = d;
-      });
 
       // for each component concept get similar concepts
       const allSimilarConcepts = this.selectedItem.components.map(concept => getSimilarConcepts(this.project, concept));
