@@ -41,9 +41,6 @@
           @item-selected="selectCountry"
         />
       </div>
-      <div>
-        <h2 class="header-question">Default engine: DySE </h2>
-      </div>
     </template>
     <template #footer>
       <button

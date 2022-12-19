@@ -7,7 +7,6 @@ const modelUtil = rootRequire('/util/model-util');
 
 const DEFAULT_BATCH_SIZE = 1000;
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
-const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;
 
 
 // Type of experiment that can be performed in modeling Engine
@@ -346,7 +345,7 @@ const clearNodeParameter = async (modelId, nodeId) => {
   const modelPayload = {
     id: modelId,
     status: MODEL_STATUS.NOT_REGISTERED,
-    engine_status: RESET_ALL_ENGINE_STATUS,
+    engine_status: MODEL_STATUS.NOT_REGISTERED,
     modified_at: modifiedAt
   };
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
