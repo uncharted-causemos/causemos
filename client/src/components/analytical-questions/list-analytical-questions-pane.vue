@@ -254,12 +254,8 @@ export default defineComponent({
             this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
     }
   },
-  mounted() {
-    this.showSidePanel();
-  },
   methods: {
     ...mapActions({
-      showSidePanel: 'panel/showSidePanel',
       setTour: 'tour/setTour'
     }),
     hasTour(questionItem: AnalyticalQuestion): boolean {

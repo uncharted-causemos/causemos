@@ -85,7 +85,6 @@ export default {
   },
   methods: {
     ...mapActions({
-      setCurrentTab: 'panel/setCurrentTab',
       setSelectedNode: 'graph/setSelectedNode',
       setSelectedEdge: 'graph/setSelectedEdge'
     }),
