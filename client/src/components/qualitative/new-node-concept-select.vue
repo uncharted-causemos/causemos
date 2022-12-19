@@ -46,7 +46,7 @@
             </div>
           </div>
           <div
-            v-if="datacubeSuggestions.length"
+            v-if="focusedSuggestionIndex > 0 && datacubeSuggestions.length"
             class="right-column">
             <div style="font-weight: 600">{{ currentSuggestion.doc.display_name }}</div>
             <div style="color: #888">{{ currentSuggestion.doc.name }}</div>
@@ -80,7 +80,7 @@
             </div>
             <div
               v-for="(suggestion, index) in conceptSuggestions"
-              :key="suggestion.doc.key"
+              :key="suggestion + index"
               class="dropdown-option"
               :class="{'focused': index === focusedSuggestionIndex, 'light': !suggestion.hasEvidence}"
               @click="selectSuggestion(suggestion)"
@@ -91,7 +91,7 @@
             </div>
           </div>
           <div
-            v-if="(conceptSuggestions.length > 0)"
+            v-if="(focusedSuggestionIndex > 0 && conceptSuggestions.length > 0)"
             class="right-column">
             <div>
               <div
@@ -361,7 +361,7 @@ export default defineComponent({
   watch: {
     conceptSuggestions(n, o) {
       if (!_.isEqual(n, o)) {
-        this.focusedSuggestionIndex = 0;
+        this.focusedSuggestionIndex = -1;
       }
     },
     activeTab(n, o) {
