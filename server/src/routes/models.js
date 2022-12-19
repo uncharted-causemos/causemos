@@ -20,8 +20,6 @@ const modelUtil = rootRequire('util/model-util');
 
 const TRANSACTION_LOCK_MSG = `Another transaction is running on model, please try again in ${LOCK_TIMEOUT / 1000} seconds`;
 
-const DYSE = 'dyse';
-
 // const esLock = {};
 
 router.get('/:modelId/history', asyncHandler(async (req, res) => {
