@@ -46,7 +46,7 @@
             </div>
           </div>
           <div
-            v-if="focusedSuggestionIndex > 0 && datacubeSuggestions.length"
+            v-if="focusedSuggestionIndex >= 0 && datacubeSuggestions.length"
             class="right-column">
             <div style="font-weight: 600">{{ currentSuggestion.doc.display_name }}</div>
             <div style="color: #888">{{ currentSuggestion.doc.name }}</div>
@@ -91,7 +91,7 @@
             </div>
           </div>
           <div
-            v-if="(focusedSuggestionIndex > 0 && conceptSuggestions.length > 0)"
+            v-if="(focusedSuggestionIndex >= 0 && conceptSuggestions.length > 0)"
             class="right-column">
             <div>
               <div
