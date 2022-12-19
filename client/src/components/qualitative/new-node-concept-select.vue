@@ -13,7 +13,7 @@
     <dropdown-control
       class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
-        <div class="tab-row" v-if="!showCustomConceptDisplay || userInput.length > 0">
+        <div class="tab-row" v-if="userInput.length > 0">
           <div>
             Filter by: &nbsp;
           </div>
@@ -190,7 +190,6 @@ export default defineComponent({
   emits: [
     'suggestion-selected',
     'datacube-selected',
-    'show-custom-concept',
     'save-custom-concept'
   ],
   setup(props, { emit }) {
@@ -213,16 +212,6 @@ export default defineComponent({
     const input = ref(null) as Ref<HTMLInputElement | null>;
     const newNodeTop = ref(null) as Ref<HTMLDivElement | null>;
     const newNodeContainer = ref(null) as Ref<HTMLDivElement | null>;
-
-    const showCustomConceptDisplay = computed(() => {
-      if (activeTab.value === 'concepts' && conceptSuggestions.value.length === 0) {
-        return true;
-      }
-      if (activeTab.value === 'datacubes' && datacubeSuggestions.value.length === 0) {
-        return true;
-      }
-      return false;
-    });
 
     const currentSuggestion = computed(() => {
       const idx = focusedSuggestionIndex.value;
@@ -257,7 +246,6 @@ export default defineComponent({
       if (ontologySet.value.has(userInput) === false) {
         projectService.addNewConceptToOntology(project.value, userInput.value, [], '');
         updateOntologyCache(userInput.value);
-        emit('show-custom-concept');
         emit('save-custom-concept', customGrounding());
       } else {
         console.error(`Trying to add existing concept ${userInput.value}, ignoring...`);
@@ -344,7 +332,6 @@ export default defineComponent({
       conceptSuggestions,
       conceptEstimatedHits,
       datacubeSuggestions,
-      showCustomConceptDisplay,
       dropdownLeftOffset,
       dropdownTopOffset,
       timeseries,

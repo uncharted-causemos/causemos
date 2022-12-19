@@ -17,17 +17,8 @@
       :selected-time-scale="selectedTimeScale"
       @suggestion-selected="onSuggestionSelected"
       @datacube-selected="onDatacubeSelected"
-      @show-custom-concept="(showCustomConcept = false)"
       @save-custom-concept="saveCustomConcept"
     />
-    <teleport to="body">
-      <modal-custom-concept
-        v-if="showCustomConcept"
-        ref="customGrounding"
-        @close="showCustomConcept = false"
-        @save-custom-concept="saveCustomConcept"
-      />
-    </teleport>
   </div>
 
 </template>
@@ -40,7 +31,6 @@ import { defineComponent, computed, ref, Ref, PropType } from 'vue';
 import { useStore } from 'vuex';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select.vue';
-import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 import GraphSearch from '@/components/graph/graph-search.vue';
 
 import { QualitativeRenderer } from '@/graphs/qualitative-renderer';
@@ -78,8 +68,7 @@ export default defineComponent({
   name: 'CAGGraph',
   components: {
     NewNodeConceptSelect,
-    GraphSearch,
-    ModalCustomConcept
+    GraphSearch
   },
   props: {
     data: {
@@ -120,7 +109,6 @@ export default defineComponent({
     const newNodeX = ref(0);
     const newNodeY = ref(0);
 
-    const showCustomConcept = ref(false);
     const mouseTrap = new Mousetrap(document as any);
     const project = computed(() => store.getters['app/project']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
@@ -152,8 +140,6 @@ export default defineComponent({
     return {
       renderer,
       mouseTrap,
-
-      showCustomConcept,
 
       // Tracking new node
       svgX,
