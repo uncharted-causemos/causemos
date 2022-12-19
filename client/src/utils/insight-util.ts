@@ -204,8 +204,12 @@ function getSlideFromPosition(
   ) ?? null;
 }
 
+function instanceOfInsight(data: any): data is Insight {
+  return data !== null && 'name' in data && 'analytical_question' in data;
+}
+
 function instanceOfFullInsight(data: any): data is FullInsight {
-  return data !== null && 'thumbnail' in data;
+  return instanceOfInsight(data) && 'image' in data;
 }
 
 function instanceOfQuestion(data: any): data is AnalyticalQuestion {
@@ -618,6 +622,7 @@ function exportPPTX(
 
 
 export default {
+  instanceOfInsight,
   instanceOfFullInsight,
   instanceOfQuestion,
   createEmptyChecklistSection,

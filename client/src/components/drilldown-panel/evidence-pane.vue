@@ -235,6 +235,7 @@ import { CORRECTIONS, CURATIONS, SIDE_PANEL } from '@/utils/messages-util';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import numberFormatter from '@/formatters/number-formatter';
 import useToaster from '@/services/composables/useToaster';
+import { TYPE } from 'vue-toastification';
 
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 import geo from '@/utils/geo-util';
@@ -549,9 +550,9 @@ export default defineComponent({
     },
     checkResult(result: any, successMsg: string, errorMsg: string) {
       if (result.status === 200) {
-        this.toaster(successMsg, 'success', false);
+        this.toaster(successMsg, TYPE.SUCCESS, false);
       } else {
-        this.toaster(errorMsg, 'error', true);
+        this.toaster(errorMsg, TYPE.INFO, true);
       }
     },
     confirmUpdatePolarity(item: AggChild<Statement>, newPolarity: any) {

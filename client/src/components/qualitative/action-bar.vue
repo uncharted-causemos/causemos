@@ -4,6 +4,7 @@
       <!-- Actions -->
       <li class="nav-item">
         <button
+          v-if="(applicationConfiguration.CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE === false)"
           v-tooltip.top-center="'Search Knowledge Base'"
           type="button"
           class="btn btn-call-to-action"
@@ -60,6 +61,7 @@ import { CAG } from '@/utils/messages-util';
 import ArrowButton from '@/components/widgets/arrow-button.vue';
 import { ProjectType, TemporalResolutionOption, TimeScale } from '@/types/Enums';
 import { CAGModelSummary } from '@/types/CAG';
+import { TYPE } from 'vue-toastification';
 
 export default defineComponent({
   name: 'ActionBar',
@@ -88,7 +90,8 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       project: 'app/project',
-      currentCAG: 'app/currentCAG'
+      currentCAG: 'app/currentCAG',
+      applicationConfiguration: 'app/applicationConfiguration'
     }),
     numEdges(): number {
       return _.get(this.modelComponents, 'edges', []).length;
@@ -137,7 +140,7 @@ export default defineComponent({
           }
         });
       } catch {
-        this.toaster(CAG.ERRONEOUS_MODEL_RUN, 'error', true);
+        this.toaster(CAG.ERRONEOUS_MODEL_RUN, TYPE.INFO, true);
         return;
       } finally {
         this.isRunningModel = false;

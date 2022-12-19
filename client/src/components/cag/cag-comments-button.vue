@@ -8,11 +8,13 @@
 <script lang="ts">
 import useToaster from '@/services/composables/useToaster';
 import modelService from '@/services/model-service';
+import { TYPE } from 'vue-toastification';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import _ from 'lodash';
 import { computed, defineComponent, ref, toRefs, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import CommentsButtonWidget from '../widgets/comments-button-widget.vue';
+
 export default defineComponent({
   components: {
     CommentsButtonWidget
@@ -40,7 +42,7 @@ export default defineComponent({
       modelService
         .updateModelMetadata(currentCAG.value, { description: commentsText })
         .catch(() => {
-          toast(EXPORT_MESSAGES.COMMENT_NOT_SAVED, 'error', true);
+          toast(EXPORT_MESSAGES.COMMENT_NOT_SAVED, TYPE.INFO, true);
         });
     };
 

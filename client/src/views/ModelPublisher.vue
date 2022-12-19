@@ -71,6 +71,7 @@ import { getFirstInsight, InsightFilterFields, countPublicInsights } from '@/ser
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import { TYPE } from 'vue-toastification';
 
 export default defineComponent({
   name: 'ModelPublisher',
@@ -187,7 +188,7 @@ export default defineComponent({
           // mark the relevant step as completed based on the availability of at least one public insight
           if (insightStep) { insightStep.completed = publicInsightCount > 0; }
           if (publicInsightCount === 0 && metadata.value.status === DatacubeStatus.Ready && currentView.value === 'modelPublisher') {
-            toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', 'error', false);
+            toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', TYPE.INFO, false);
           }
         }
       },
@@ -273,7 +274,7 @@ export default defineComponent({
             }
           });
         } catch {
-          toast('Failed to publish model', 'error', true);
+          toast('Failed to publish model', TYPE.INFO, true);
           await disableOverlay();
         }
       }
@@ -412,11 +413,11 @@ export default defineComponent({
           if (defaultInsight.view_state !== undefined) {
             this.initialViewConfig = defaultInsight.view_state;
           }
-          this.toast('An existing published insight was found!\nLoading default configurations...', 'success', false);
+          this.toast('An existing published insight was found!\nLoading default configurations...', TYPE.SUCCESS, false);
         }
       } else {
         if (this.metadata?.status === DatacubeStatus.Ready && this.currentView === 'modelPublisher') {
-          this.toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', 'error', false);
+          this.toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', TYPE.INFO, false);
         }
       }
     }

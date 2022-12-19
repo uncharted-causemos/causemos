@@ -73,6 +73,7 @@ import { calculateResetRegionRankingWeights, createAnalysis, createAnalysisObjec
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import { ProjectType } from '@/types/Enums';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import { TYPE } from 'vue-toastification';
 
 const MODEL_MSGS = modelService.MODEL_MSGS;
 const MODEL_STATUS = modelService.MODEL_STATUS;
@@ -327,7 +328,7 @@ export default defineComponent({
             this.isTraining = true;
             this.scheduleRefresh();
           } else {
-            this.toaster(errors[0], 'error', true);
+            this.toaster(errors[0], TYPE.INFO, true);
           }
           console.error(errors);
           return;
@@ -359,7 +360,7 @@ export default defineComponent({
         const poller = new Poller(PROJECTION_EXPERIMENT_INTERVAL, PROJECTION_EXPERIMENT_THRESHOLD);
         const cancelFn = () => {
           poller.stop();
-          this.toaster('No baseline generated, you may need to refresh the page', 'error', true);
+          this.toaster('No baseline generated, you may need to refresh the page', TYPE.INFO, true);
         };
 
         // Now we are up to date, create base scenario
@@ -371,7 +372,7 @@ export default defineComponent({
         } catch (error) {
           console.error(error);
           const errorMessage: string = error && (error as any).message ? (error as any).message : error;
-          this.toaster(errorMessage, 'error', true);
+          this.toaster(errorMessage, TYPE.INFO, true);
           this.disableOverlay();
           return;
         }
@@ -434,7 +435,7 @@ export default defineComponent({
             this.isTraining = true;
             this.scheduleRefresh();
           } else {
-            this.toaster(errors[0], 'error', true);
+            this.toaster(errors[0], TYPE.INFO, true);
           }
           console.error(errors);
           return [];
@@ -497,7 +498,7 @@ export default defineComponent({
           this.currentScenarioName = '';
         } catch (error) {
           console.error(error);
-          this.toaster(error as string, 'error', true);
+          this.toaster(error as string, TYPE.INFO, true);
           this.disableOverlay();
           this.currentScenarioName = '';
           return [];
@@ -611,7 +612,7 @@ export default defineComponent({
         this.showOpenDataAnalysisConfirmation = true;
         // this.toaster('Data analysis created/updated successfully', 'success', false);
       } else {
-        this.toaster('Please have at least one quantified node before opening data analysis!', 'error', false);
+        this.toaster('Please have at least one quantified node before opening data analysis!', TYPE.INFO, false);
       }
     },
     onConfirmRedirectionToDataAnalysis() {

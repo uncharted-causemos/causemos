@@ -60,6 +60,7 @@ import useToaster from '@/services/composables/useToaster';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import { TYPE } from 'vue-toastification';
 
 export default defineComponent({
   name: 'IndicatorPublisher',
@@ -151,7 +152,7 @@ export default defineComponent({
           await enableOverlay('Saving changes');
           await updateIndicatorsBulk(deltas);
           await disableOverlay();
-          toast('Indicator updated', 'success');
+          toast('Indicator updated', TYPE.SUCCESS);
           // redirect to dataset family page
           router.push({
             name: 'datasetOverview',
@@ -163,7 +164,7 @@ export default defineComponent({
           });
         } catch {
           await disableOverlay();
-          toast('The was an issue with applying the settings', 'error');
+          toast('The was an issue with applying the settings', TYPE.INFO);
         }
       }
     };

@@ -29,7 +29,7 @@
         {{ project.source }}
       </div>
       <div class="table-column">
-        {{ dateFormatter(project.modifiedAt, 'MMM DD, YYYY') }}
+        {{ dateFormatter(project.modified_at, 'MMM DD, YYYY') }}
       </div>
       <div v-if="project.type !== 'dataset'" class="table-column extra-small">
         <small-icon-button :use-white-bg="true" @click.stop="showWarningModal">

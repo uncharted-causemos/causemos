@@ -1,5 +1,6 @@
 import API from '@/api/api';
 import {
+  FullInsight,
   Insight,
   InsightMetadata,
   DataState
@@ -13,6 +14,7 @@ import {
 import { INSIGHTS } from '@/utils//messages-util';
 import useToaster from '@/services/composables/useToaster';
 import { computed } from 'vue';
+import { TYPE } from 'vue-toastification';
 
 // This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
@@ -75,6 +77,26 @@ export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<I
   };
   return await _fetchInsights(fetchParams, options);
 };
+
+/**
+ * Fetch full insights using the specified filter parameters
+ * @param fetchParams an object of field-value pairs to filter by
+ */
+export const fetchFullInsights = async (fetchParams: InsightFilterFields, includeAnnotationState = false): Promise<FullInsight[]> => {
+  const excludes = [
+    'thumbnail'
+  ];
+  if (!includeAnnotationState) excludes.push('annotation_state');
+  const options = {
+    excludes,
+    sort: [
+      { modified_at: { order: 'desc' } }
+    ]
+  };
+  return await _fetchInsights(fetchParams, options);
+};
+
+
 
 /**
  * Fetch insights using the specified filter parameters, only the fields
@@ -203,7 +225,7 @@ export const removeInsight = async (id: string, store?: any) => {
   const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
   const toast = useToaster();
   if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
-    toast(message, 'success', false);
+    toast(message, TYPE.SUCCESS, false);
 
     if (store) {
       const countInsights = computed(() => store.getters['insightPanel/countInsights']);
@@ -211,7 +233,7 @@ export const removeInsight = async (id: string, store?: any) => {
       store.dispatch('insightPanel/setCountInsights', count);
     }
   } else {
-    toast(message, 'error', true);
+    toast(message, TYPE.INFO, true);
   }
   // FIXME: delete any reference to this insight from its list of analytical_questions
 };

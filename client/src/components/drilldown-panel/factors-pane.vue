@@ -146,6 +146,7 @@ import SmallIconButton from '@/components/widgets/small-icon-button';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
 import numberFormatter from '@/formatters/number-formatter';
 import messagesUtil from '@/utils/messages-util';
+import { TYPE } from 'vue-toastification';
 import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header.vue';
 const CORRECTIONS = messagesUtil.CORRECTIONS;
 const SIDE_PANEL = messagesUtil.SIDE_PANEL;
@@ -352,9 +353,9 @@ export default {
       const updateResult = await discardStatements(this.project, statementIds);
 
       if (updateResult.status === 200) {
-        this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, 'success', false);
+        this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, TYPE.SUCCESS, false);
       } else {
-        this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
+        this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, TYPE.INFO, true);
       }
     },
     confirmUpdateGrounding(item, curGrounding, newGrounding) {
@@ -422,17 +423,17 @@ export default {
         if (result.status === 200) {
           recommendations = result.data.recommendations;
         } else {
-          this.toaster(SERVICE_NOT_AVAILABLE, 'error', false);
+          this.toaster(SERVICE_NOT_AVAILABLE, TYPE.INFO, false);
         }
       }
 
       const result = await updateStatementsFactorGrounding(this.project, statementIds, subj, obj);
       let batchId = null;
       if (result.status === 200) {
-        this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, 'success', false);
+        this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, TYPE.SUCCESS, false);
         batchId = result.data.batchId;
       } else {
-        this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
+        this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, TYPE.INFO, true);
       }
 
       if (item !== null && !_.isEmpty(recommendations)) {

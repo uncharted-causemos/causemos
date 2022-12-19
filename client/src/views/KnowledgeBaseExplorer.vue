@@ -101,6 +101,7 @@ import filtersUtil from '@/utils/filters-util';
 import projectService from '@/services/project-service';
 import modelService from '@/services/model-service';
 import * as curationService from '@/services/curation-service';
+import { TYPE } from 'vue-toastification';
 
 import messagesUtil from '@/utils/messages-util';
 
@@ -352,9 +353,9 @@ export default {
 
       const updateResult = await curationService.discardStatements(this.project, statementIds);
       if (updateResult.status === 200) {
-        this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, 'success', false);
+        this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, TYPE.SUCCESS, false);
       } else {
-        this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
+        this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, TYPE.INFO, true);
       }
     },
     onSearch() {

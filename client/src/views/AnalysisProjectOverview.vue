@@ -135,8 +135,8 @@
         </div>
         <div class="analysis-list" v-if="filteredAnalyses.length > 0">
           <analysis-overview-card
-            v-for="analysis in filteredAnalyses"
-            :key="analysis.id"
+            v-for="(analysis, index) in filteredAnalyses"
+            :key="`${analysis.id}${index}`"
             class="analysis-overview-card"
             :analysis="analysis"
             @open="onOpen(analysis)"
@@ -179,6 +179,8 @@ import useQuestionsData from '@/services/composables/useQuestionsData';
 import useInsightsData from '@/services/composables/useInsightsData';
 import { computed } from '@vue/reactivity';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
+import { sortItem, modifiedAtSorter, titleSorter, SortOptions } from '@/utils/sort/sort-items';
+import { TYPE } from 'vue-toastification';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -264,8 +266,8 @@ export default defineComponent({
     KBname: '-',
     searchText: '',
     showSortingDropdownAnalyses: false,
-    analysisSortingOptions: ['Most recent', 'Earliest'],
-    selectedAnalysisSortingOption: 'Most recent',
+    analysisSortingOptions: Object.values(SortOptions),
+    selectedAnalysisSortingOption: SortOptions.MostRecent,
     isEditingDesc: false,
     showDocumentModal: false,
     showRenameModal: false,
@@ -421,9 +423,9 @@ export default defineComponent({
       if (id && oldName !== newName) {
         modelService.updateModelMetadata(id, { name: newName }).then(() => {
           this.selectedAnalysis.title = newName;
-          this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
+          this.toaster(CAG.SUCCESSFUL_RENAME, TYPE.SUCCESS, false);
         }).catch(() => {
-          this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);
+          this.toaster(CAG.ERRONEOUS_RENAME, TYPE.INFO, true);
         });
       }
 
@@ -433,9 +435,9 @@ export default defineComponent({
         try {
           await updateAnalysis(analysisId, { title: newName });
           this.selectedAnalysis.title = newName;
-          this.toaster(ANALYSIS.SUCCESSFUL_RENAME, 'success', false);
+          this.toaster(ANALYSIS.SUCCESSFUL_RENAME, TYPE.SUCCESS, false);
         } catch (e) {
-          this.toaster(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
+          this.toaster(ANALYSIS.ERRONEOUS_RENAME, TYPE.INFO, true);
         }
       }
 
@@ -457,9 +459,9 @@ export default defineComponent({
           // FIXME @HACK since duplicateAnalysis() does not return a full object copy
           const duplicatedAnalysis = toQuantitative({ id: newId, title: newName });
           this.analyses.unshift(duplicatedAnalysis);
-          this.toaster(ANALYSIS.SUCCESSFUL_DUPLICATE, 'success', false);
+          this.toaster(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
         } catch (e) {
-          this.toaster(ANALYSIS.ERRONEOUS_DUPLICATE, 'error', true);
+          this.toaster(ANALYSIS.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
         }
       }
       if (analysis.id) { // cag-id
@@ -467,9 +469,9 @@ export default defineComponent({
           const duplicatedAnalysis = toQualitative(copy);
           duplicatedAnalysis.title = newName; // FIXME @HACK since duplicateModel() does not return a full object copy
           this.analyses.unshift(duplicatedAnalysis);
-          this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
+          this.toaster(CAG.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
         }).catch(() => {
-          this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
+          this.toaster(CAG.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
         });
       }
       this.showDuplicateModal = false;
@@ -479,17 +481,17 @@ export default defineComponent({
         try {
           await deleteAnalysis(analysis.analysisId);
           this.analyses = this.analyses.filter(item => item.analysisId !== analysis.analysisId);
-          this.toaster(ANALYSIS.SUCCESSFUL_DELETION, 'success', false);
+          this.toaster(ANALYSIS.SUCCESSFUL_DELETION, TYPE.SUCCESS, false);
         } catch (e) {
-          this.toaster(ANALYSIS.ERRONEOUS_DELETION, 'error', true);
+          this.toaster(ANALYSIS.ERRONEOUS_DELETION, TYPE.INFO, true);
         }
       }
       if (analysis.id) { // cag-id
         modelService.removeModel(analysis.id).then(() => {
           this.analyses = this.analyses.filter(item => item.id !== analysis.id);
-          this.toaster(CAG.SUCCESSFUL_DELETION, 'success', false);
+          this.toaster(CAG.SUCCESSFUL_DELETION, TYPE.SUCCESS, false);
         }).catch(() => {
-          this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
+          this.toaster(CAG.ERRONEOUS_DELETION, TYPE.INFO, true);
         });
       }
     },
@@ -548,24 +550,10 @@ export default defineComponent({
         return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
       });
     },
-    sortAnalysesByEarliestDate() {
-      this.analyses.sort((a, b) => {
-        return a.modified_at && b.modified_at ? a.modified_at - b.modified_at : 0;
-      });
-    },
     sortAnalyses(option) {
       this.selectedAnalysisSortingOption = option;
       this.showSortingDropdownAnalyses = false;
-      switch (option) {
-        case this.analysisSortingOptions[0]:
-          this.sortAnalysesByMostRecentDate();
-          break;
-        case this.analysisSortingOptions[1]:
-          this.sortAnalysesByEarliestDate();
-          break;
-        default:
-          this.sortAnalysesByMostRecentDate();
-      }
+      this.analyses = sortItem(this.analyses, { date: modifiedAtSorter, name: titleSorter }, this.selectedAnalysisSortingOption);
     }
   }
 });

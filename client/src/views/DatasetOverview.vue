@@ -201,6 +201,8 @@ import moment from 'moment';
 import useToaster from '@/services/composables/useToaster';
 import { runtimeFormatter } from '@/utils/string-util';
 import { ViewState } from '@/types/Insight';
+import { sortItem, createdAtSorter, SortOptions } from '@/utils/sort/sort-items';
+import { TYPE } from 'vue-toastification';
 
 const MAX_COUNTRIES = 40;
 
@@ -219,8 +221,8 @@ export default defineComponent({
     editedDataset: { name: '', description: '', maintainer: {}, domains: [] as string[] } as DatasetEditable,
     searchTerm: '',
     showSortingDropdown: false,
-    sortingOptions: ['Most recent', 'Oldest'],
-    selectedSortingOption: 'Most recent',
+    sortingOptions: Object.values(SortOptions),
+    selectedSortingOption: SortOptions.MostRecent,
     showApplyToAllModal: false,
     AVAILABLE_DOMAINS,
     selectedDomain: AVAILABLE_DOMAINS[0]
@@ -238,9 +240,7 @@ export default defineComponent({
         indicator.outputs[0].display_name.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
 
-      const sortFunc = this.sortingOptions.indexOf(this.selectedSortingOption) === 1
-        ? 'asc' : 'desc';
-      return _.orderBy(filtered, ['created_at', 'name'], [sortFunc, 'asc']);
+      return sortItem(filtered, { date: createdAtSorter, name: 'outputs[0].display_name' }, this.selectedSortingOption);
     },
     isReady() {
       return this.dataset.status === DatacubeStatus.Ready;
@@ -358,9 +358,9 @@ export default defineComponent({
       }));
       try {
         await updateIndicatorsBulk(deltas);
-        toaster(`Updated ${deltas.length} indicators`, 'success');
+        toaster(`Updated ${deltas.length} indicators`, TYPE.SUCCESS);
       } catch {
-        toaster('There was an issue with updating the indicators', 'error');
+        toaster('There was an issue with updating the indicators', TYPE.INFO);
       }
       await this.fetchIndicators();
     },
@@ -401,14 +401,14 @@ export default defineComponent({
 
           this.enableOverlay(`Updating ${deltas.length} indicators`);
           await updateIndicatorsBulk(deltas);
-          toaster(`Updated ${deltas.length} indicators`, 'success');
+          toaster(`Updated ${deltas.length} indicators`, TYPE.SUCCESS);
         } catch {
-          toaster('The was an issue with applying the settings', 'error');
+          toaster('The was an issue with applying the settings', TYPE.INFO);
         }
         this.disableOverlay();
         await this.fetchIndicators();
       } else {
-        toaster('Invalid template indicator', 'error');
+        toaster('Invalid template indicator', TYPE.INFO);
       }
     },
     getSparklineParams(meta: Datacube, selections?: ViewState) {
@@ -443,9 +443,9 @@ export default defineComponent({
           id: id,
           outputs: [meta]
         }]);
-        toaster('Indicator updated successfully', 'success');
+        toaster('Indicator updated successfully', TYPE.SUCCESS);
       } catch {
-        toaster('There was an issue with saving the changes', 'error');
+        toaster('There was an issue with saving the changes', TYPE.INFO);
       }
       await this.fetchIndicators();
     },
@@ -460,7 +460,7 @@ export default defineComponent({
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
-    setDatacubeSort(option: string) {
+    setDatacubeSort(option: SortOptions) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
     }

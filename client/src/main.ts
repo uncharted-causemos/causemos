@@ -20,14 +20,12 @@ app.use(Toast);
 app.mixin({
   methods: {
     // toaster(message, type, close) {
-    // FIXME: Use TYPE
-    toaster(message: string, msgType: string, sticky = false) {
+    toaster(message: string, msgType: TYPE, sticky = false) {
       const toast = useToast();
-      const t = msgType === 'error' ? TYPE.INFO : TYPE.SUCCESS;
       const timeout = sticky === true ? false : 3000;
       toast(message, {
         timeout: timeout,
-        type: t
+        type: msgType
       });
     },
     ontologyFormatter(concept: string) {
