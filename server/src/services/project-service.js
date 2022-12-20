@@ -4,8 +4,6 @@ const { v4: uuid } = require('uuid');
 
 const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
-const indraService = rootRequire('/services/external/indra-service');
-const conceptAlignerService = rootRequire('/services/external/concept-aligner-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const { StatementQueryUtil } = rootRequire('adapters/es/statement-query-util');
@@ -24,8 +22,6 @@ const MAX_NUMBER_PROJECTS = 100;
 const INCREMENTAL_ASSEMBLY_FLOW_ID = '90a09440-e504-4db9-ad89-9db370933c8b';
 
 const queryUtil = new StatementQueryUtil();
-
-const dartService = rootRequire('/services/external/dart-service');
 
 /**
  * Returns projects summary
