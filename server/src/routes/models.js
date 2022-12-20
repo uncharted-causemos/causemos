@@ -395,7 +395,6 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
 
   const modelStatus = await dyseService.modelStatus(modelId);
 
-  // FIXME: Different engines have slightly different status codes
   // Update model
   const v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
 
