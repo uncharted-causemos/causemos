@@ -13,7 +13,7 @@
     <dropdown-control
       class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
       <template #content>
-        <div class="tab-row">
+        <div class="tab-row" v-if="userInput.length > 0">
           <div>
             Filter by: &nbsp;
           </div>
@@ -46,7 +46,7 @@
             </div>
           </div>
           <div
-            v-if="datacubeSuggestions.length"
+            v-if="focusedSuggestionIndex >= 0 && datacubeSuggestions.length"
             class="right-column">
             <div style="font-weight: 600">{{ currentSuggestion.doc.display_name }}</div>
             <div style="color: #888">{{ currentSuggestion.doc.name }}</div>
@@ -64,12 +64,23 @@
 
         <!-- concepts -->
         <div
-          v-if="activeTab === 'concepts' && conceptSuggestions.length > 0"
+          v-if="(activeTab === 'concepts' && userInput.length > 0)"
           style="display: flex; flex-direction: row">
           <div class="left-column">
             <div
+              class="dropdown-option"
+              @click="saveCustomConcept"
+              :class="{'focused': focusedSuggestionIndex === -1}"
+            >
+              <div class="dropdown-option-label">
+                <div class="dropdown-option-label-text">
+                  Create a new concept for <b>{{ userInput }}</b>
+                </div>
+              </div>
+            </div>
+            <div
               v-for="(suggestion, index) in conceptSuggestions"
-              :key="suggestion.doc.key"
+              :key="suggestion + index"
               class="dropdown-option"
               :class="{'focused': index === focusedSuggestionIndex, 'light': !suggestion.hasEvidence}"
               @click="selectSuggestion(suggestion)"
@@ -80,7 +91,7 @@
             </div>
           </div>
           <div
-            v-if="conceptSuggestions.length"
+            v-if="(focusedSuggestionIndex >= 0 && conceptSuggestions.length > 0)"
             class="right-column">
             <div>
               <div
@@ -117,16 +128,6 @@
             Explore Knowledge Base
           </button>
         </div>
-
-        <!-- Empty -->
-        <div v-if="showCustomConceptDisplay" class="new-concept-section">
-          <div> No matches. Try searching something else or create a custom concept</div>
-          <button class="btn btn-primary"
-            @click="$emit('show-custom-concept')">
-            Create custom concept
-          </button>
-        </div>
-
       </template>
     </dropdown-control>
   </div>
@@ -155,6 +156,7 @@ import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { logHistoryEntry } from '@/services/model-service';
 import { getTimeseries } from '@/services/outputdata-service';
 import filtersUtil from '@/utils/filters-util';
+import { cleanConceptString } from '@/utils/concept-util';
 
 const CONCEPT_SUGGESTION_COUNT = 30;
 
@@ -188,14 +190,14 @@ export default defineComponent({
   emits: [
     'suggestion-selected',
     'datacube-selected',
-    'show-custom-concept'
+    'save-custom-concept'
   ],
-  setup(props) {
+  setup(props, { emit }) {
     const { selectedTimeScale } = toRefs(props);
 
     const store = useStore();
     const userInput = ref('');
-    const focusedSuggestionIndex = ref(0);
+    const focusedSuggestionIndex = ref(-1);
     const mouseOverIndex = ref(-1);
     const activeTab = ref('concepts');
     const conceptSuggestions = ref([]) as Ref<any[]>;
@@ -211,16 +213,6 @@ export default defineComponent({
     const newNodeTop = ref(null) as Ref<HTMLDivElement | null>;
     const newNodeContainer = ref(null) as Ref<HTMLDivElement | null>;
 
-    const showCustomConceptDisplay = computed(() => {
-      if (activeTab.value === 'concepts' && conceptSuggestions.value.length === 0) {
-        return true;
-      }
-      if (activeTab.value === 'datacubes' && datacubeSuggestions.value.length === 0) {
-        return true;
-      }
-      return false;
-    });
-
     const currentSuggestion = computed(() => {
       const idx = focusedSuggestionIndex.value;
       if (activeTab.value === 'concepts' && conceptSuggestions.value.length && idx > -1) {
@@ -235,6 +227,30 @@ export default defineComponent({
     const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
     const project = computed(() => store.getters['app/project']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
+    const ontologySet = computed(() => store.getters['app/ontologySet']);
+    const updateOntologyCache = (userInput: string) => {
+      store.dispatch('app/updateOntologyCache', userInput);
+    };
+
+    const customGrounding = () => {
+      return {
+        theme: cleanConceptString(userInput.value),
+        theme_property: '',
+        process: '',
+        process_property: ''
+      };
+    };
+
+    const saveCustomConcept = () => {
+      // Update ontology
+      if (ontologySet.value.has(userInput) === false) {
+        projectService.addNewConceptToOntology(project.value, userInput.value, [], '');
+        updateOntologyCache(userInput.value);
+        emit('save-custom-concept', customGrounding());
+      } else {
+        console.error(`Trying to add existing concept ${userInput.value}, ignoring...`);
+      }
+    };
 
     watch(userInput, _.debounce(async () => {
       if (_.isEmpty(userInput.value)) {
@@ -316,7 +332,6 @@ export default defineComponent({
       conceptSuggestions,
       conceptEstimatedHits,
       datacubeSuggestions,
-      showCustomConceptDisplay,
       dropdownLeftOffset,
       dropdownTopOffset,
       timeseries,
@@ -328,7 +343,9 @@ export default defineComponent({
       currentSuggestion,
       ontologyConcepts,
       project,
+      ontologySet,
 
+      saveCustomConcept,
       dateFormatter,
       ontologyFormatter: useOntologyFormatter(),
       TemporalResolutionOption,
@@ -344,7 +361,7 @@ export default defineComponent({
   watch: {
     conceptSuggestions(n, o) {
       if (!_.isEqual(n, o)) {
-        this.focusedSuggestionIndex = 0;
+        this.focusedSuggestionIndex = -1;
       }
     },
     activeTab(n, o) {
@@ -389,7 +406,12 @@ export default defineComponent({
       }
     },
     onEnterPressed() {
-      if (this.conceptSuggestions.length === 0) return;
+      if (this.conceptSuggestions.length === 0) {
+        if (this.userInput.length > 0) {
+          this.saveCustomConcept();
+        }
+        return;
+      }
       const suggestion = this.conceptSuggestions[this.focusedSuggestionIndex];
       this.selectSuggestion(suggestion);
     },
