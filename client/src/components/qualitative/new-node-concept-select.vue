@@ -235,9 +235,9 @@ export default defineComponent({
     const customGrounding = () => {
       return {
         theme: cleanConceptString(userInput.value),
-        theme_property: cleanConceptString(''),
-        process: cleanConceptString(''),
-        process_property: cleanConceptString('')
+        theme_property: '',
+        process: '',
+        process_property: ''
       };
     };
 
