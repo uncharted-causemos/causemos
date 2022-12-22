@@ -574,10 +574,8 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary, poller: Pol
     const r = experiment.results.data;
 
     // Fire  off a sensitivity request in the background
-    if (modelSummary.parameter.engine === 'dyse') {
-      const sensitivityExperimentId = await runSensitivityAnalysis(modelSummary, 'GLOBAL', 'DYNAMIC', []);
-      await createScenarioSensitivityResult(modelId, id, modelSummary.parameter.engine, sensitivityExperimentId, null);
-    }
+    const sensitivityExperimentId = await runSensitivityAnalysis(modelSummary, 'GLOBAL', 'DYNAMIC', []);
+    await createScenarioSensitivityResult(modelId, id, modelSummary.parameter.engine, sensitivityExperimentId, null);
 
     await createScenarioResult(modelId, id, modelSummary.parameter.engine, experimentId, r);
   } catch (error) {
