@@ -9,6 +9,7 @@ const { client } = rootRequire('/adapters/es/client');
 const modelUtil = rootRequire('/util/model-util');
 
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
+const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;
 
 const PROJECTION_START_DATE = '2022-01-01';
 const DEFAULT_NUM_STEPS = 12;
@@ -207,7 +208,7 @@ const createCAG = async (modelFields, edges, nodes) => {
     ...modelFields,
     is_stale: false,
     status: MODEL_STATUS.NOT_REGISTERED,
-    engine_status: MODEL_STATUS.NOT_REGISTERED,
+    engine_status: RESET_ALL_ENGINE_STATUS,
     parameter: {
       num_steps: DEFAULT_NUM_STEPS,
       projection_start: defaultProjectionStartDate,
@@ -380,7 +381,7 @@ const updateCAG = async(modelId, edges, nodes) => {
   const results = await CAGConnection.update({
     id: modelId,
     status: MODEL_STATUS.NOT_REGISTERED,
-    engine_status: MODEL_STATUS.NOT_REGISTERED,
+    engine_status: RESET_ALL_ENGINE_STATUS,
     modified_at: Date.now()
   }, d => d.id);
   if (results.errors) {
@@ -409,7 +410,7 @@ const pruneCAG = async(modelId, edges, nodes) => {
   const results = await CAGConnection.update({
     id: modelId,
     status: MODEL_STATUS.NOT_REGISTERED,
-    engine_status: MODEL_STATUS.NOT_REGISTERED,
+    engine_status: RESET_ALL_ENGINE_STATUS,
     modified_at: Date.now()
   }, d => d.id);
   if (results.errors) {
@@ -665,7 +666,7 @@ const recalculateCAG = async (modelId) => {
         id: cag.id,
         is_stale: false,
         status: MODEL_STATUS.NOT_REGISTERED,
-        engine_status: MODEL_STATUS.NOT_REGISTERED,
+        engine_status: RESET_ALL_ENGINE_STATUS,
         is_ambiguous: isAmbiguous
         // modified_at: timestamp
       }

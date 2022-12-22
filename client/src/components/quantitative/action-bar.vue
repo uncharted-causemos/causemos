@@ -43,6 +43,7 @@
     </div>
     <div class="group">
       <radio-button-group
+        v-if="isSensitivityAnalysisSupported"
         class="tour-matrix-tab"
         :buttons="[
           { label: 'Causal Flow', value: 'flow' },
@@ -92,6 +93,10 @@ import { ProjectType } from '@/types/Enums';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
 
 import { CAGModelSummary, Scenario } from '@/types/CAG';
+
+const PROJECTION_ENGINES = {
+  DYSE: 'dyse'
+};
 
 export default defineComponent({
   name: 'QuantitativeActionBar',
@@ -165,6 +170,9 @@ export default defineComponent({
     },
     isDirty() {
       return _.some(this.scenarios, s => s.is_valid === false);
+    },
+    isSensitivityAnalysisSupported() {
+      return this.currentEngine === PROJECTION_ENGINES.DYSE;
     },
     activeTab() {
       // if we ever need more state than this

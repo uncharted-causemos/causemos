@@ -66,8 +66,13 @@ const MODEL_STATUS = {
   READY: 2
 };
 
+const RESET_ALL_ENGINE_STATUS = {
+  dyse: MODEL_STATUS.NOT_REGISTERED
+};
+
 module.exports = {
   isEdgeAmbiguous,
   projectionValueRange,
-  MODEL_STATUS
+  MODEL_STATUS,
+  RESET_ALL_ENGINE_STATUS
 };

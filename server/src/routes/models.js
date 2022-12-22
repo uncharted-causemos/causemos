@@ -15,7 +15,7 @@ const modelService = rootRequire('/services/model-service');
 const historyService = rootRequire('/services/history-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 
-const { MODEL_STATUS } = rootRequire('/util/model-util');
+const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 const modelUtil = rootRequire('util/model-util');
 
 const TRANSACTION_LOCK_MSG = `Another transaction is running on model, please try again in ${LOCK_TIMEOUT / 1000} seconds`;
@@ -128,7 +128,7 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
 
   if (reregisterModel === true) {
     modelFields.status = MODEL_STATUS.NOT_REGISTERED;
-    modelFields.engine_status = MODEL_STATUS.NOT_REGISTERED;
+    modelFields.engine_status = RESET_ALL_ENGINE_STATUS;
   }
 
   if (!_.isEmpty(parameter)) {
@@ -274,6 +274,7 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
     Logger.debug(`${key} => engineInferred=${engineInferredWeights}, current=${currentWeights}, currentEngine=${currentEngineWeights}`);
 
     // Update inferred engine weights
+    // - Both Delphi and Sensei returns extra polarity information, so their arry is of length 3 instead of 2
     if (!_.isEqual(engineInferredWeights, currentEngineWeights)) {
       updateEngineConfig = true;
       currentEngineWeightsConfig[engine] = engineInferredWeights;
@@ -359,7 +360,9 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     }
   }
   if (edgesToOverride.length > 0) {
-    await dyseService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
+    if (engine === DYSE) {
+      await dyseService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
+    }
   }
 
   // 4. Update model status
@@ -428,7 +431,11 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
   // 3. Create experiment (experiment) in modelling engine
   let result;
   try {
-    result = await dyseService.createExperiment(modelId, payload);
+    if (engine === DYSE) {
+      result = await dyseService.createExperiment(modelId, payload);
+    } else {
+      throw new Error('Unsupported engine type');
+    }
   } catch (error) {
     res.status(400).send(`Failed to run projection ${engine} : ${modelId}`);
     return;
@@ -451,10 +458,32 @@ router.post('/:modelId/sensitivity-analysis', asyncHandler(async (req, res) => {
     experimentStart, experimentEnd, numTimeSteps, constraints, analysisType, analysisMode, analysisParams, analysisMethodology);
 
   // 3. Create experiment (experiment) in modelling engine
-  const result = await dyseService.createExperiment(modelId, payload);
-
+  let result;
+  if (engine === DYSE) {
+    result = await dyseService.createExperiment(modelId, payload);
+  } else {
+    throw new Error(`sensitivity-analysis not implemented for ${engine}`);
+  }
   res.json(result);
 }));
+
+// router.post('/:modelId/goal-optimization', asyncHandler(async (req, res) => {
+//   // 1. Initialize
+//   const { modelId } = req.params;
+//   const { engine, goals } = req.body;
+//
+//   // 2. Build experiment request payload
+//   const payload = await modelService.buildGoalOptimizationPayload(modelId, engine, goals);
+//
+//   // 3. Create experiment (experiment) in modelling engine
+//   let result;
+//   if (engine === DYSE) {
+//     result = await dyseService.createExperiment(modelId, payload);
+//   } else {
+//     throw new Error(`goal-optimization not implemented for ${engine}`);
+//   }
+//   res.json(result);
+// }));
 
 router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
@@ -560,7 +589,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
 
   await cagService.updateCAGMetadata(modelId, {
     status: MODEL_STATUS.NOT_REGISTERED,
-    engine_status: MODEL_STATUS.NOT_REGISTERED
+    engine_status: RESET_ALL_ENGINE_STATUS
   });
 
   historyService.logHistory(modelId, 'set parameter', [nodeBeforeUpdate], []);
@@ -616,9 +645,18 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
     return;
   }
 
+  // Parse and get meta data
+  const model = await modelService.findOne(modelId);
+  const modelParameter = model.parameter;
+  const engine = modelParameter.engine;
+
   const payload = modelService.buildEdgeParametersPayload([{ source, target, polarity, parameter }]);
 
-  await dyseService.updateEdgeParameter(modelId, payload);
+  if (engine === DYSE) {
+    await dyseService.updateEdgeParameter(modelId, payload);
+  } else {
+    throw new Error(`Engine ${engine} not supported`);
+  }
 
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const r = await edgeParameterAdapter.update([{
