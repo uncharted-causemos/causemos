@@ -274,7 +274,6 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
     Logger.debug(`${key} => engineInferred=${engineInferredWeights}, current=${currentWeights}, currentEngine=${currentEngineWeights}`);
 
     // Update inferred engine weights
-    // - Both Delphi and Sensei returns extra polarity information, so their arry is of length 3 instead of 2
     if (!_.isEqual(engineInferredWeights, currentEngineWeights)) {
       updateEngineConfig = true;
       currentEngineWeightsConfig[engine] = engineInferredWeights;
@@ -360,9 +359,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     }
   }
   if (edgesToOverride.length > 0) {
-    if (engine === DYSE) {
-      await dyseService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
-    }
+    await dyseService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
   }
 
   // 4. Update model status
@@ -431,11 +428,7 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
   // 3. Create experiment (experiment) in modelling engine
   let result;
   try {
-    if (engine === DYSE) {
-      result = await dyseService.createExperiment(modelId, payload);
-    } else {
-      throw new Error('Unsupported engine type');
-    }
+    result = await dyseService.createExperiment(modelId, payload);
   } catch (error) {
     res.status(400).send(`Failed to run projection ${engine} : ${modelId}`);
     return;
@@ -466,24 +459,6 @@ router.post('/:modelId/sensitivity-analysis', asyncHandler(async (req, res) => {
   }
   res.json(result);
 }));
-
-// router.post('/:modelId/goal-optimization', asyncHandler(async (req, res) => {
-//   // 1. Initialize
-//   const { modelId } = req.params;
-//   const { engine, goals } = req.body;
-//
-//   // 2. Build experiment request payload
-//   const payload = await modelService.buildGoalOptimizationPayload(modelId, engine, goals);
-//
-//   // 3. Create experiment (experiment) in modelling engine
-//   let result;
-//   if (engine === DYSE) {
-//     result = await dyseService.createExperiment(modelId, payload);
-//   } else {
-//     throw new Error(`goal-optimization not implemented for ${engine}`);
-//   }
-//   res.json(result);
-// }));
 
 router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
   const { modelId } = req.params;

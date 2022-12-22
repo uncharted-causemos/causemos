@@ -418,7 +418,7 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
 
       r.push({
         concept: np.concept,
-        indicator: np.parameter.name + ` ${idx}`, // Delphi doesn't like duplicate indicators across nodes
+        indicator: np.parameter.name + ` ${idx}`,
         minValue: _.get(np.parameter, 'min', 0),
         maxValue: _.get(np.parameter, 'max', 1),
         values: indicatorTimeSeries,

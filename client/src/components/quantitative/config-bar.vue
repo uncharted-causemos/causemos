@@ -10,7 +10,6 @@
       :data="projectionStartDate"
       @date-updated="setProjectionStartDate"
     />
-    , using the DySE engine.
     &nbsp;
     Display the last
     <dropdown-button

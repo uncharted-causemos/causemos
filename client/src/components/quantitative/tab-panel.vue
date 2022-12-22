@@ -147,10 +147,6 @@ const EDGE_DRILLDOWN_TABS = [
   }
 ];
 
-const PROJECTION_ENGINES = {
-  DYSE: 'dyse'
-};
-
 const blankVisualState = (): CAGVisualState => {
   return {
     focus: { nodes: [], edges: [] },
@@ -298,20 +294,17 @@ export default defineComponent({
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
 
-      // Get sensitivity results, note these results may still be pending
-      if (this.currentEngine === 'dyse') {
-        modelService.getScenarioSensitivity(this.currentCAG, this.currentEngine).then(sensitivityResults => {
-          // If historical data mode is active, use sensitivity results from
-          //  the baseline scenario
-          let scenarioId = this.selectedScenarioId;
-          if (this.selectedScenarioId === null) {
-            scenarioId = this.scenarios.find(scenario => scenario.is_baseline === true)?.id;
-          }
-          this.sensitivityResult = sensitivityResults.find(
-            (d: any) => d.scenario_id === scenarioId
-          );
-        });
-      }
+      modelService.getScenarioSensitivity(this.currentCAG, this.currentEngine).then(sensitivityResults => {
+        // If historical data mode is active, use sensitivity results from
+        //  the baseline scenario
+        let scenarioId = this.selectedScenarioId;
+        if (this.selectedScenarioId === null) {
+          scenarioId = this.scenarios.find(scenario => scenario.is_baseline === true)?.id;
+        }
+        this.sensitivityResult = sensitivityResults.find(
+          (d: any) => d.scenario_id === scenarioId
+        );
+      });
 
       this.updateDataState();
     },
@@ -597,10 +590,7 @@ export default defineComponent({
         return;
       }
 
-      // Only DySE curently handle sensitivity analysis
-      if (insightEngine !== PROJECTION_ENGINES.DYSE) {
-        this.sensitivityResult = null;
-      }
+      this.sensitivityResult = null;
 
       if (insightEngine !== currentEngine) {
         await modelService.updateModelParameter(this.currentCAG, {
