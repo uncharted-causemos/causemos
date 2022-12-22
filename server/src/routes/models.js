@@ -451,12 +451,7 @@ router.post('/:modelId/sensitivity-analysis', asyncHandler(async (req, res) => {
     experimentStart, experimentEnd, numTimeSteps, constraints, analysisType, analysisMode, analysisParams, analysisMethodology);
 
   // 3. Create experiment (experiment) in modelling engine
-  let result;
-  if (engine === DYSE) {
-    result = await dyseService.createExperiment(modelId, payload);
-  } else {
-    throw new Error(`sensitivity-analysis not implemented for ${engine}`);
-  }
+  const result = await dyseService.createExperiment(modelId, payload);
   res.json(result);
 }));
 
@@ -620,18 +615,9 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
     return;
   }
 
-  // Parse and get meta data
-  const model = await modelService.findOne(modelId);
-  const modelParameter = model.parameter;
-  const engine = modelParameter.engine;
-
   const payload = modelService.buildEdgeParametersPayload([{ source, target, polarity, parameter }]);
 
-  if (engine === DYSE) {
-    await dyseService.updateEdgeParameter(modelId, payload);
-  } else {
-    throw new Error(`Engine ${engine} not supported`);
-  }
+  await dyseService.updateEdgeParameter(modelId, payload);
 
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const r = await edgeParameterAdapter.update([{
