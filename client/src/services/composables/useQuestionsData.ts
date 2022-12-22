@@ -37,10 +37,6 @@ export default function useQuestionsData() {
     if (questionsFetchedAt.value < 0) { return; }
     let isCancelled = false;
     async function getQuestions() {
-      // do not fetch if the panel is not open
-      if (isInsightExplorerOpen.value === true) {
-        return;
-      }
       // if context-id is undefined, then it means no datacubes/CAGs are listed, so ignore fetch
       if (contextIds.value === undefined) {
         return;
