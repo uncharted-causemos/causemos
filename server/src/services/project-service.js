@@ -72,7 +72,8 @@ const createProject = async (kbId, name, description) => {
 
   Logger.info(`Caching Project data for ${projectId}`);
   setCache(projectId, {
-    ...projectData
+    ...projectData,
+    ontologyMap: {}
   });
   return result;
 };
