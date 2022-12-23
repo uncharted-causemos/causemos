@@ -100,8 +100,7 @@ export default defineComponent({
   methods: {
     ...mapActions({
       setOntologyConcepts: 'app/setOntologyConcepts',
-      setProjectMetadata: 'app/setProjectMetadata',
-      setConceptDefinitions: 'app/setConceptDefinitions'
+      setProjectMetadata: 'app/setProjectMetadata'
     }),
     async refreshDomainProject() {
       if (_.isEmpty(this.project)) {
@@ -147,7 +146,6 @@ export default defineComponent({
       });
 
       projectService.getProjectOntologyDefinitions(this.project).then(data => {
-        this.setConceptDefinitions(data);
         this.setOntologyConcepts(Object.keys(data));
       });
     }

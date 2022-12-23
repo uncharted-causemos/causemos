@@ -58,7 +58,7 @@ const createProject = async (baseId: string, projectName: string, projectDescrip
     return status.data.indexStatus === 'green' ? [true, status] : [false, null];
   };
 
-  const poller = new Poller(2000, 10);
+  const poller = new Poller(3000, 20);
   await startPolling(poller, taskFn, null);
   return id;
 };

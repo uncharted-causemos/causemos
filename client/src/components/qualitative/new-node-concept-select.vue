@@ -224,7 +224,6 @@ export default defineComponent({
       return null;
     });
 
-    const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
     const project = computed(() => store.getters['app/project']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
     const ontologySet = computed(() => store.getters['app/ontologySet']);
@@ -341,7 +340,6 @@ export default defineComponent({
       // Computed
       currentCAG,
       currentSuggestion,
-      ontologyConcepts,
       project,
       ontologySet,
 
