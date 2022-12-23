@@ -29,7 +29,6 @@ export default function useQuestionsData() {
   const project = computed(() => store.getters['app/project']);
   const projectType = computed(() => store.getters['app/projectType']);
 
-  const isPanelOpen = computed(() => store.getters['panel/isPanelOpen']);
   const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
 
   watchEffect(onInvalidate => {
@@ -38,10 +37,6 @@ export default function useQuestionsData() {
     if (questionsFetchedAt.value < 0) { return; }
     let isCancelled = false;
     async function getQuestions() {
-      // do not fetch if the panel is not open
-      if (!(isPanelOpen.value === true || isInsightExplorerOpen.value === true)) {
-        return;
-      }
       // if context-id is undefined, then it means no datacubes/CAGs are listed, so ignore fetch
       if (contextIds.value === undefined) {
         return;

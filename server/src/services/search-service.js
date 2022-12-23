@@ -375,7 +375,6 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
   }));
 
   // Assemble KB's result
-  const ontologyMap = getCache(projectId).ontologyMap;
   const result = [];
   for (const entry of sortedMap.entries()) {
     const key = entry[0];
@@ -393,12 +392,7 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
       'process_property'
     ].forEach(str => {
       if (members[str] && !_.isEmpty(members[str])) {
-        const ontologyMemberData = ontologyMap[members[str]];
-        let examples = [];
-        if (ontologyMemberData) {
-          examples = ontologyMemberData.examples;
-        }
-
+        const examples = [];
         doc.members.push({
           label: members[str],
           examples,
