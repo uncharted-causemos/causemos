@@ -13,11 +13,11 @@ export default class MappedOptionState extends ValueState {
     this.keyMap = config.map ? config.map : {};
   }
 
-  unformatUnboxedValue (displayKey, context = []) { // eslint-disable-line @typescript-eslint/no-unused-vars
+  unformatUnboxedValue(displayKey /*, context = [] */) {
     return _.invert(this.keyMap)[displayKey] || displayKey;
   }
 
-  formatUnboxedValue (key, context = []) { // eslint-disable-line @typescript-eslint/no-unused-vars
+  formatUnboxedValue(key /*, context = [] */) {
     return this.keyMap[key] || key;
   }
 }

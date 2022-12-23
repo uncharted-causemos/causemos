@@ -16,19 +16,18 @@ import { DEFAULT_COLOR } from '@/utils/colors-util';
 //
 /// /////////////////////////////////////////////////////////////////////////////
 
-
 export function colaLayout(direction) {
   const stage = {
     id: 'cola',
     extract: (cache, cy) => {
       // Hack - override width, height and background
       cy.batch(() => {
-        const counts = cy.nodes().map(d => d.data().count);
+        const counts = cy.nodes().map((d) => d.data().count);
         const maxCount = Math.max(...counts);
         const minCount = Math.min(...counts);
         const sizeFn = createLinearScale([minCount, maxCount], [30, 80]); // Make the size range between 30 to 80
 
-        cy.nodes().forEach(node => {
+        cy.nodes().forEach((node) => {
           const groundingScore = node.data().groundingScore;
           const size = sizeFn(node.data().count);
           const halfSize = 0.5 * size;
@@ -48,12 +47,15 @@ export function colaLayout(direction) {
                 </filter>
                 <g transform="translate(${halfSize}, ${halfSize})">
                   <circle cx="0"  cy="0" r="${halfSize}" fill="none" stroke="#888" stroke-width="1" />
-                  <circle cx="0"  cy="0" r="${halfSize - 1}" fill="${fillColor}" filter="url(#blur)" />
+                  <circle cx="0"  cy="0" r="${
+                    halfSize - 1
+                  }" fill="${fillColor}" filter="url(#blur)" />
                 </g>
               </svg>
             `;
 
-            node.data().style['background-image'] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+            node.data().style['background-image'] =
+              'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
             node.data().style['background-color'] = 'white';
 
             cy.style().selector('node').update();
@@ -62,24 +64,24 @@ export function colaLayout(direction) {
       });
       return cy.nodes();
     },
-    layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+    layout: (/* selection, cache, cy */) => {
       return {
         name: 'cola',
         flow: {
           axis: direction || 'x',
-          minSeparation: 20
+          minSeparation: 20,
         },
         animate: true,
         randomize: false,
         tilingPaddingVertical: 20,
         tilingPaddingHorizontal: 30,
         nodeDimensionsIncludeLabels: true,
-        maxSimulationTime: 300
+        maxSimulationTime: 300,
       };
     },
-    postLayout(selection, cache, cy) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    postLayout(/* selection, cache, */ cy) {
       cy.edges().style({ display: null });
-    }
+    },
   };
   return [stage];
 }
@@ -96,12 +98,12 @@ export function coseBilkentLayout() {
 
       // Hack - override width, height and background
       cy.batch(() => {
-        const counts = cy.nodes().map(d => d.data().count);
+        const counts = cy.nodes().map((d) => d.data().count);
         const maxCount = Math.max(...counts);
         const minCount = Math.min(...counts);
         const sizeFn = createLinearScale([minCount, maxCount], [30, 80]); // Make the size range between 30 to 80
 
-        cy.nodes().forEach(node => {
+        cy.nodes().forEach((node) => {
           const groundingScore = node.data().groundingScore;
           const size = sizeFn(node.data().count);
           const halfSize = 0.5 * size;
@@ -121,12 +123,15 @@ export function coseBilkentLayout() {
                 </filter>
                 <g transform="translate(${halfSize}, ${halfSize})">
                   <circle cx="0"  cy="0" r="${halfSize}" fill="none" stroke="#888" stroke-width="1" />
-                  <circle cx="0"  cy="0" r="${halfSize - 1}" fill="${fillColor}" filter="url(#blur)" />
+                  <circle cx="0"  cy="0" r="${
+                    halfSize - 1
+                  }" fill="${fillColor}" filter="url(#blur)" />
                 </g>
               </svg>
             `;
 
-            node.data().style['background-image'] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+            node.data().style['background-image'] =
+              'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
             node.data().style['background-color'] = 'white';
 
             cy.style().selector('node').update();
@@ -135,27 +140,25 @@ export function coseBilkentLayout() {
       });
       return cy.nodes();
     },
-    layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+    layout: (/* selection, cache, cy */) => {
       return {
         name: 'cose-bilkent',
         animate: true,
         randomize: false,
         tilingPaddingVertical: 20,
         tilingPaddingHorizontal: 30,
-        nodeDimensionsIncludeLabels: true
+        nodeDimensionsIncludeLabels: true,
       };
     },
-    postLayout(selection, cache, cy) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    postLayout(/* selection, */ cache, cy) {
       cy.batch(() => {
         cache.edges.restore();
         // cache.edges.style({ display: 'none' });
       });
-    }
+    },
   };
   return [stage];
 }
-
-
 
 /**
  * A circular layout provides that a graph overview
@@ -181,23 +184,23 @@ export function circularBFSLayout(hideEdgesAfterRender = false) {
     {
       id: 'circularBFS',
       extract: (cache, cy) => {
-        const orderedNodes = _.sortBy(cy.nodes(), node => node.data().id);
+        const orderedNodes = _.sortBy(cy.nodes(), (node) => node.data().id);
         return cy.collection(orderedNodes);
       },
-      layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+      layout: (/* selection, cache, cy */) => {
         return {
           name: 'breadthfirst',
           circle: true,
-          spacingFactor: 4.5
+          spacingFactor: 4.5,
         };
       },
-      postLayout(selection, cache, cy) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      postLayout(selection, cache, cy) {
         // Figure out approximate center
         let x = 0;
         let y = 0;
-        const nonZeroNodes = cy.nodes().filter(node => node.data().count > 0);
+        const nonZeroNodes = cy.nodes().filter((node) => node.data().count > 0);
         const numNodes = nonZeroNodes.length;
-        nonZeroNodes.forEach(node => {
+        nonZeroNodes.forEach((node) => {
           x += node.position().x;
           y += node.position().y;
         });
@@ -212,7 +215,7 @@ export function circularBFSLayout(hideEdgesAfterRender = false) {
           return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
         };
         cy.batch(() => {
-          cy.edges().forEach(edge => {
+          cy.edges().forEach((edge) => {
             const sPosition = edge.source().position();
             const tPosition = edge.target().position();
 
@@ -223,7 +226,7 @@ export function circularBFSLayout(hideEdgesAfterRender = false) {
             // if very short edge/chord just use haystack
             if (dist < 0.2 * r) {
               edge.style({
-                'curve-style': 'haystack'
+                'curve-style': 'haystack',
               });
               return;
             }
@@ -243,15 +246,15 @@ export function circularBFSLayout(hideEdgesAfterRender = false) {
             edge.style({
               'curve-style': 'unbundled-bezier',
               'control-point-weights': [0.5],
-              'control-point-distances': [opp * dir]
+              'control-point-distances': [opp * dir],
             });
           });
           if (hideEdgesAfterRender) {
             cy.edges().style({ display: 'none' });
           }
         });
-      }
-    }
+      },
+    },
   ];
 }
 
@@ -261,20 +264,19 @@ export function centralityLayout() {
       id: 'compute_centrality',
       extract: (cache, cy) => {
         const ccn = cy.elements().closenessCentralityNormalized({ directed: true });
-        cy.nodes().forEach(n => {
+        cy.nodes().forEach((n) => {
           n.data({
-            ccn: ccn.closeness(n)
+            ccn: ccn.closeness(n),
           });
         });
         return cy.elements();
       },
-      layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+      layout: (/* selection, cache, cy */) => {
         return {
-          name: 'random'
+          name: 'random',
         };
       },
-      postLayout(selection, cache, cy) { // eslint-disable-line @typescript-eslint/no-unused-vars
-      }
+      postLayout(/* selection, cache, cy */) {},
     },
     {
       id: 'fade_out_nodes',
@@ -282,21 +284,20 @@ export function centralityLayout() {
         const nodesToRemove = cy.elements('node[ccn <= 0.7] ');
         return nodesToRemove;
       },
-      layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+      layout: (/* selection, cache, cy */) => {
         return {
-          name: 'cola'
+          name: 'cola',
         };
       },
-      postLayout(selection, cache, cy) { // eslint-disable-line @typescript-eslint/no-unused-vars
-        selection.positions(ele => {
+      postLayout(selection /* cache, cy */) {
+        selection.positions((ele) => {
           return ele.addClass('hidden');
         });
-      }
-    }
+      },
+    },
   ];
   return CENTRALITY_TEST;
 }
-
 
 export function testLayout() {
   const DC_GOAL = 0.65;
@@ -304,29 +305,29 @@ export function testLayout() {
     {
       id: 'circle1',
       extract: (cache, cy) => {
-        return cy.nodes().filter(d => d.data().groundingScore > DC_GOAL);
+        return cy.nodes().filter((d) => d.data().groundingScore > DC_GOAL);
       },
-      layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+      layout: (/* selection, cache, cy */) => {
         return {
           name: 'circle',
           animate: true,
-          boundingBox: { x1: 600, y1: 300, w: 400, h: 500 }
+          boundingBox: { x1: 600, y1: 300, w: 400, h: 500 },
         };
-      }
+      },
     },
     {
       id: 'circle2',
       extract: (cache, cy) => {
-        return cy.nodes().filter(d => d.data().groundingScore <= DC_GOAL);
+        return cy.nodes().filter((d) => d.data().groundingScore <= DC_GOAL);
       },
-      layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+      layout: (/* selection, cache, cy */) => {
         return {
           name: 'circle',
           animate: true,
-          boundingBox: { x1: 0, y1: 300, w: 300, h: 300 }
+          boundingBox: { x1: 0, y1: 300, w: 300, h: 300 },
         };
-      }
-    }
+      },
+    },
   ];
   return DC_TEST;
 }

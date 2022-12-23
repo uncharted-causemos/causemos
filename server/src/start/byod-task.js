@@ -46,11 +46,11 @@ const startBYOD = (interval) => {
           // );
           return;
         }
-        const { project_id } = matchingExtension;
-        if (assemblyRequests[project_id] === undefined) {
-          assemblyRequests[project_id] = [];
+        const { project_id: projectId } = matchingExtension;
+        if (assemblyRequests[projectId] === undefined) {
+          assemblyRequests[projectId] = [];
         }
-        assemblyRequests[project_id].push(record);
+        assemblyRequests[projectId].push(record);
       });
 
       // For each project, add an entry to the `assembly-request` index

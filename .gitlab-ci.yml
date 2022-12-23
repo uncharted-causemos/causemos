@@ -11,7 +11,7 @@ stages:
   image: docker-hub.uncharted.software/mhart/alpine-node:16
   cache:
     paths:
-    - node_modules/
+      - node_modules/
   before_script:
     - apk add --no-cache git
     - npm config set @uncharted:registry=https://npm.uncharted.software/
@@ -21,8 +21,7 @@ stages:
 lint:
   extends: .test_common
   script:
-    - yarn workspace client run lint -- --no-fix
-    - yarn workspace server run lint
+    - yarn run lint:ci
 
 test:
   extends: .test_common
@@ -30,7 +29,7 @@ test:
     - yarn workspace client run test:unit
     - yarn workspace server run test
 
-# Jobs don't share it's local env variables. So Setup up variables you want to share and save it to a file. 
+# Jobs don't share it's local env variables. So Setup up variables you want to share and save it to a file.
 # The file can be passed to other jobs as an artifacts
 environment:
   stage: prepare
@@ -54,7 +53,6 @@ environment:
 
       esac
     - 'echo "DOCKER_TAG: ${DOCKER_TAG}"'
-
     # prepare should fail if the docker tag version is empty
     - if [ -z "${DOCKER_TAG}" ]; then exit 1; fi
     - echo "DOCKER_TAG=${DOCKER_TAG}" > ci.env

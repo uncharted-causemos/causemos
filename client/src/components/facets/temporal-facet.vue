@@ -6,7 +6,6 @@
     ref="timeline"
     @facet-element-updated="updateSelection"
   >
-
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
     <div slot="header" class="temporal-resolution-buttons">
       <small-text-button
@@ -19,22 +18,19 @@
       />
     </div>
 
-    <facet-template
-      target="facet-bars-value"
-      title="${tooltip}"
-      class="facet-pointer"
-    />
+    <facet-template target="facet-bars-value" title="${tooltip}" class="facet-pointer" />
 
-    <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
-    <facet-plugin-zoom-bar slot="scrollbar"
+    <!-- eslint-disable vue/no-deprecated-slot-attribute -->
+    <facet-plugin-zoom-bar
+      slot="scrollbar"
       min-bar-width="8"
       auto-hide="true"
       round-caps="true"
       ref="zoomBar"
     />
+    <!-- eslint-enable vue/no-deprecated-slot-attribute -->
   </facet-timeline>
 </template>
-
 
 <script>
 import '@uncharted.software/facets-core';
@@ -57,22 +53,24 @@ export default {
   props: {
     modelRunData: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
-    selectedScenarios: { // IDs
+    selectedScenarios: {
+      // IDs
       type: Array,
-      default: () => []
+      default: () => [],
     },
-    modelParameter: { // which (date) model param this facet is representing
+    modelParameter: {
+      // which (date) model param this facet is representing
       type: Object,
-      default: () => {}
-    }
+      default: () => {},
+    },
   },
   data: () => ({
     selection: [],
     facetView: [0, 0],
     dateParamResolution: TemporalResolution.Annual,
-    TemporalResolution
+    TemporalResolution,
   }),
   async mounted() {
     // The Facets 3.0 library doesn't expose the style options we need, so we
@@ -83,8 +81,9 @@ export default {
     try {
       const facetBlueprint = this.$refs.timeline.shadowRoot.querySelector('.facet-blueprint');
       facetBlueprint.style.background = 'none';
-      const content = facetBlueprint
-        .querySelector('.facet-blueprint-body .facet-blueprint-content');
+      const content = facetBlueprint.querySelector(
+        '.facet-blueprint-body .facet-blueprint-content'
+      );
       content.style.padding = '0';
       const zoomBar = this.$refs.zoomBar.shadowRoot.querySelector('.zoom-bar-container');
       zoomBar.style.marginBottom = '0';
@@ -99,18 +98,19 @@ export default {
       //  find the bars that include the selected runs
 
       // FIXME: disable this feature for date-range since current facet limitation end up selecting bars which overlap with other runs date range causing a cycle ultimately that ends when all runs/bars are selected
-      const isDateRange = this.modelParameter.type === DatacubeGenericAttributeVariableType.DateRange;
+      const isDateRange =
+        this.modelParameter.type === DatacubeGenericAttributeVariableType.DateRange;
       if (isDateRange) return;
 
       let rangeStartIndex = -1;
       let rangeEndIndex = -1;
-      this.selectedScenarios.forEach(runID => {
+      this.selectedScenarios.forEach((runID) => {
         for (const [key, value] of Object.entries(this.temporalDataMap)) {
           // note: each value is an array of model runs
-          if (value.map(r => r.id).includes(runID)) {
+          if (value.map((r) => r.id).includes(runID)) {
             // use the key to find the bar index
             if (this.facetData) {
-              const indx = this.facetData.findIndex(bar => bar.label === key);
+              const indx = this.facetData.findIndex((bar) => bar.label === key);
               if (indx !== -1) {
                 // include this index in the facet selection range
                 if (rangeStartIndex === -1) {
@@ -129,7 +129,8 @@ export default {
       //          if a range is provided and it is not consecutive, then all bars in the range will be selected
 
       rangeEndIndex += 1; // facet range works by selecting all bars between start and end excluding the end
-      const sameSelection = this.selection[0] === rangeStartIndex && this.selection[1] === rangeEndIndex;
+      const sameSelection =
+        this.selection[0] === rangeStartIndex && this.selection[1] === rangeEndIndex;
       if (!sameSelection) {
         this.selection = [rangeStartIndex, rangeEndIndex];
       }
@@ -139,9 +140,12 @@ export default {
         // update facet view
         //  i.e., try to fit all bars in view unless the number is larger than the max-allowed-visible
         const maxVisibleBars = 8;
-        this.facetView = [0, this.facetData.length > maxVisibleBars ? maxVisibleBars : this.facetData.length];
+        this.facetView = [
+          0,
+          this.facetData.length > maxVisibleBars ? maxVisibleBars : this.facetData.length,
+        ];
       }
-    }
+    },
   },
   computed: {
     temporalDataMap() {
@@ -152,17 +156,19 @@ export default {
       // build a histogram for bins only relevant to the available model runs
       const isYearlyResolution = this.dateParamResolution === TemporalResolution.Annual;
       const isMonthlyResolution = this.dateParamResolution === TemporalResolution.Monthly;
-      const isDateRange = this.modelParameter.type === DatacubeGenericAttributeVariableType.DateRange;
+      const isDateRange =
+        this.modelParameter.type === DatacubeGenericAttributeVariableType.DateRange;
 
       // key will always be either the full, original ISO, date or a combination of year+month
       // const getKeyFromDate = (date) => date.getFullYear() + '_' + (date.getMonth() + 1); // e.g. 2015-05 (note getMonth() is zero-based)
 
       // first pass, add all key date (based on run data)
-      this.modelRunData.forEach(modelRun => {
-        const dateParam = modelRun.parameters.find(p => p.name === this.modelParameter.name);
+      this.modelRunData.forEach((modelRun) => {
+        const dateParam = modelRun.parameters.find((p) => p.name === this.modelParameter.name);
         if (dateParam) {
           const key = dateParam.value;
-          let k1 = ''; let k2 = '';
+          let k1 = '';
+          let k2 = '';
           if (isDateRange) {
             const k12 = key.split(delimiter);
             k1 = k12[0];
@@ -197,9 +203,12 @@ export default {
 
       const addRunsToDateBucket = (bucketDate) => {
         // TODO: optimize: instead of search for every model run, utilize a map for quick access
-        const getDateKey = (date) => isYearlyResolution ? date.getFullYear() : date.getFullYear() + '-' + (date.getMonth() + 1);
-        this.modelRunData.forEach(modelRun => {
-          const dateParam = modelRun.parameters.find(p => p.name === this.modelParameter.name);
+        const getDateKey = (date) =>
+          isYearlyResolution
+            ? date.getFullYear()
+            : date.getFullYear() + '-' + (date.getMonth() + 1);
+        this.modelRunData.forEach((modelRun) => {
+          const dateParam = modelRun.parameters.find((p) => p.name === this.modelParameter.name);
           if (dateParam) {
             let key = dateParam.value;
             if (!isDateRange) {
@@ -209,7 +218,8 @@ export default {
                 temporalDataMap[key].push(modelRun);
               }
             } else {
-              let k1 = ''; let k2 = '';
+              let k1 = '';
+              let k2 = '';
               const k12 = key.split(delimiter);
               k1 = k12[0];
               k2 = k12[1];
@@ -238,7 +248,7 @@ export default {
         temporalDataMap = {};
 
         // extract the first/last date to identify the full date range
-        const allDates = allDateKeys.map(dateKeyStr => new Date(dateKeyStr));
+        const allDates = allDateKeys.map((dateKeyStr) => new Date(dateKeyStr));
         const allRunsStartDate = _.min(allDates);
         const allRunsEndDate = _.max(allDates);
 
@@ -257,8 +267,8 @@ export default {
             addRunsToDateBucket(year);
           }
           if (isMonthlyResolution) {
-            const monthStart = year === yearStart ? (allRunsStartDate.getMonth() + 1) : 1;
-            const monthEnd = year === yearEnd ? (allRunsEndDate.getMonth() + 1) : 12;
+            const monthStart = year === yearStart ? allRunsStartDate.getMonth() + 1 : 1;
+            const monthEnd = year === yearEnd ? allRunsEndDate.getMonth() + 1 : 12;
             for (let month = monthStart; month <= monthEnd; month++) {
               const newKey = year + '-' + month;
               if (temporalDataMap[newKey] === undefined) {
@@ -277,31 +287,39 @@ export default {
       const bars = [];
       const numAllRuns = this.modelRunData.length === 0 ? 1 : this.modelRunData.length; // avoid divide by zero
       const maxTooltipItems = 5;
-      const isDateRange = this.modelParameter.type === DatacubeGenericAttributeVariableType.DateRange;
+      const isDateRange =
+        this.modelParameter.type === DatacubeGenericAttributeVariableType.DateRange;
 
       const getBarTooltip = (key, runNames) => {
         // if number of runs to be listed in a tooltip is too large, then truncate
         let runNamesAndValues = runNames;
         if (isDateRange) {
-          runNamesAndValues = runNames.map(name => {
-            const run = this.modelRunData.find(run => run.name === name);
-            const dateParam = run.parameters.find(p => p.name === this.modelParameter.name);
+          runNamesAndValues = runNames.map((name) => {
+            const run = this.modelRunData.find((run) => run.name === name);
+            const dateParam = run.parameters.find((p) => p.name === this.modelParameter.name);
             return name + '\t' + dateParam.value;
           });
         }
         if (runNamesAndValues.length > maxTooltipItems) {
-          return key + '\n' + [...runNamesAndValues.slice(0, maxTooltipItems), '... and more'].join('\n');
+          return (
+            key + '\n' + [...runNamesAndValues.slice(0, maxTooltipItems), '... and more'].join('\n')
+          );
         }
         return key + '\n' + runNamesAndValues.join('\n');
       };
       // ensure insertion in correct order to reflect a timeline
-      const sortedKeys = _.sortBy(Object.keys(this.temporalDataMap), function (d) { return new Date(d); }); // Object.keys(this.temporalDataMap).sort(compFunc);
-      sortedKeys.forEach(key => {
+      const sortedKeys = _.sortBy(Object.keys(this.temporalDataMap), function (d) {
+        return new Date(d);
+      }); // Object.keys(this.temporalDataMap).sort(compFunc);
+      sortedKeys.forEach((key) => {
         const value = this.temporalDataMap[key];
         bars.push({
           ratio: value.length / numAllRuns, // normalized between 0 and 1
           label: key,
-          tooltip: getBarTooltip(key, value.map(r => r.name))
+          tooltip: getBarTooltip(
+            key,
+            value.map((r) => r.name)
+          ),
         });
       });
       return bars;
@@ -310,20 +328,21 @@ export default {
       const temporalResolutions = [
         {
           value: TemporalResolution.Annual,
-          label: 'Annual'
+          label: 'Annual',
         },
         {
           value: TemporalResolution.Monthly,
-          label: 'Monthly'
-        }];
+          label: 'Monthly',
+        },
+      ];
       if (this.modelParameter.type === DatacubeGenericAttributeVariableType.Date) {
         temporalResolutions.push({
           value: TemporalResolution.Other,
-          label: 'No Gaps'
+          label: 'No Gaps',
         });
       }
       return temporalResolutions;
-    }
+    },
   },
   methods: {
     updateSelection(event) {
@@ -333,17 +352,16 @@ export default {
           // this will returns an array with two values reflection the lower/uppoer bounds of the selected bars
           const selectedBars = this.facetData.slice(facet.selection[0], facet.selection[1]);
           const selectedScenarioIDs = [];
-          selectedBars.forEach(bar => {
+          selectedBars.forEach((bar) => {
             const runsForLabel = this.temporalDataMap[bar.label];
-            selectedScenarioIDs.push(...runsForLabel.map(run => run.id));
+            selectedScenarioIDs.push(...runsForLabel.map((run) => run.id));
           });
           this.$emit('update-scenario-selection', _.uniq(selectedScenarioIDs));
         }
       }
-    }
-  }
+    },
+  },
 };
-
 </script>
 
 <style scoped lang="scss">
@@ -359,5 +377,4 @@ export default {
 .temporal-resolution-button:not(:first-child) {
   margin-left: 5px;
 }
-
 </style>

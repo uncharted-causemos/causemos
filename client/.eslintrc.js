@@ -8,7 +8,8 @@ module.exports = {
   extends: [
     'plugin:vue/vue3-essential',
     '@vue/standard',
-    '@vue/typescript/recommended'
+    '@vue/typescript/recommended',
+    'prettier'
   ],
 
   rules: {
@@ -18,45 +19,29 @@ module.exports = {
     '@typescript-eslint/ban-ts-comment': 'warn',
 
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
 
     'no-unused-vars': 'off',
     // This rule extends and replaces `eslint-no-unused-vars` to add support for
     //  TypeScript features, such as types
     '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_' }],
 
-    'vue/script-setup-uses-vars': 2,
-
-    'quote-props': ['error', 'consistent-as-needed'],
-
-    // Turn off pure stylistic rules
-    'space-before-function-paren': 'off',
-    'no-multiple-empty-lines': 'off',
-    'vue/html-closing-bracket-newline': 'off',
-    'vue/singleline-html-element-content-newline': 'off',
-    'vue/multiline-html-element-content-newline': 'off',
-    'vue/component-name-in-template-casing': 'off',
-
-    // Annoying vue defult
+    // Annoying vue default
     'vue/require-valid-default-prop': 'off',
     'vue/multi-word-component-names': 'off',
     'vue/no-useless-template-attributes': 'off', // FIXME: might want to address
     '@typescript-eslint/ban-types': 'off', // FIXME: might want to address
 
-    'camelcase': 'off',
-    'multiline-ternary': 'off',
-    'prefer-regex-literals': 'off',
-
-    // Enforce semicolon
-    'semi': [2, 'always'],
-    'no-extra-semi': 2
+    camelcase: 'off',
+    'prefer-regex-literals': 'off'
   },
 
   globals: {
     d3: true
   },
 
+  parser: 'vue-eslint-parser',
   parserOptions: {
-    parser: '@typescript-eslint/parser'
+    parser: '@typescript-eslint/parser',
+    sourceType: 'module'
   }
 };

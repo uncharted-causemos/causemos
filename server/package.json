@@ -11,8 +11,15 @@
     "debug": "node --inspect ./src//bin/www --log-level debug",
     "dev": "nodemon --inspect ./src//bin/www --log-level debug",
     "lint": "eslint ./src --fix",
-    "lint:nofix": "eslint ./src",
+    "lint:ci": "eslint ./src",
     "test": "mocha 'test/unit/**/*.js'"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "!*.js": "prettier --write --ignore-unknown"
   },
   "dependencies": {
     "@elastic/elasticsearch": "7.4.0",
@@ -44,7 +51,8 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "eslint": "^6.8.0",
+    "eslint": "^8.30.0",
+    "eslint-config-prettier": "^8.5.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.20.1",
     "eslint-plugin-node": "^11.0.0",
