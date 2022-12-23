@@ -13,7 +13,7 @@ const registryFunctions = [
   'edgeClick',
   'edgeMouseEnter',
   'edgeMouseLeave',
-  'edgeCtx'
+  'edgeCtx',
 ];
 
 /**
@@ -42,8 +42,7 @@ export default class GraphRenderer {
     delete this.registry[name];
   }
 
-
-  initialize(element) { // eslint-disable-line @typescript-eslint/no-unused-vars
+  initialize(/* element */) {
     throw new Error('Needs impl');
   }
 

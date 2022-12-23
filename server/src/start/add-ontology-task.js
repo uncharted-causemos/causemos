@@ -8,7 +8,7 @@ const addUAzOntology = async () => {
   const addedOntologies = {};
 
   for (const project of projects) {
-    if (!project.ontology.startsWith("http") && !(project.ontology in addedOntologies)) {
+    if (!project.ontology.startsWith('http') && !(project.ontology in addedOntologies)) {
       Logger.info('Calling addOntology for ontology ' + project.ontology);
       const options = {
         method: 'PUT',

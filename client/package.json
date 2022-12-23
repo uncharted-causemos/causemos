@@ -7,10 +7,18 @@
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit --timeout 5000",
     "test:e2e": "vue-cli-service test:e2e",
-    "lint": "vue-cli-service lint",
+    "lint": "eslint . --fix --ext .js,.ts,.vue",
+    "lint:ci": "eslint . --ext .js,.ts,.vue",
     "postinstall": "check-node-version --package",
     "prep": "npm run lint && npm run test:unit",
     "test:debug": "vue-cli-service test:unit --inspect-brk --watch"
+  },
+  "lint-staged": {
+    "*.{js,ts,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "!*.{js,ts,vue}": "prettier --write --ignore-unknown"
   },
   "dependencies": {
     "@uncharted.software/facets-core": "^3.1.0",
@@ -83,7 +91,8 @@
     "@vue/test-utils": "^2.0.0-0",
     "babel-eslint": "^10.1.0",
     "chai": "^4.1.2",
-    "eslint": "^7.32.0",
+    "eslint": "^8.30.0",
+    "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.1.0",
@@ -92,7 +101,8 @@
     "git-describe": "^4.1.1",
     "node-sass": "^6.0.1",
     "sass-loader": "^12.4.0",
-    "typescript": "~4.1.5"
+    "typescript": "~4.1.5",
+    "vue-eslint-parser": "^9.1.0"
   },
   "engines": {
     "node": ">=16.x <=18.x"
