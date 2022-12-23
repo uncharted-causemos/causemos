@@ -11,6 +11,7 @@ import { historicalDataUncertaintyColor } from '@/services/model-service';
 import {
   getLastTimeStepIndexFromTimeScale,
   getMonthsPerTimestepFromTimeScale,
+  getRangeFromTimeScale,
   getTimeScaleOption
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
@@ -25,6 +26,7 @@ import { SELECTED_COLOR } from '@/utils/colors-util';
 
 const HISTORY_LINE_COLOR = '#999';
 const LABEL_COLOR = HISTORY_LINE_COLOR;
+const CHARACTER_WIDTH = 2;
 
 export default function (
   selection: D3Selection,
@@ -99,6 +101,7 @@ function render(
   }
 
   const xScale = d3.scaleLinear().domain(xDomain).range([0, width]);
+
   const yExtent = [min, max];
   const formatter = chartValueFormatter(...yExtent);
   const yScale = d3
@@ -126,6 +129,21 @@ function render(
         nodeScenarioData.time_scale
       )
     );
+
+  const nodeScenarioDataHistoryRange = getRangeFromTimeScale(nodeScenarioData.time_scale, nodeScenarioData.history_range);
+  const labelText = 'Viewing last ' + nodeScenarioDataHistoryRange + ' ' + nodeScenarioData.time_scale.toLowerCase();
+  const textWidth = labelText.length * CHARACTER_WIDTH;
+  const additionalMarginToPlaceLabelBelowGraph = 5;
+  const rectWidth = xScale(historyEnd) - xScale(historyStart);
+
+  svgGroup
+    .append('text')
+    .attr('x', (rectWidth + textWidth) / 2)
+    .attr('y', height + additionalMarginToPlaceLabelBelowGraph)
+    .attr('text-anchor', 'end')
+    .attr('fill', LABEL_COLOR)
+    .attr('font-size', '0.4em')
+    .text(labelText);
 
   const historicG = svgGroup.append('g');
   historicG

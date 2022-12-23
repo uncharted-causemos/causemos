@@ -117,13 +117,16 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
       .style('stroke', DEFAULT_STYLE.node.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
 
+    // additional padding below the text label to account for the newly added x-axis label
+    const increaseRectHeight = 4;
+
     selection.append('rect')
       .classed('node-container', true)
       .attr('x', 0)
       .attr('y', 0)
       .attr('rx', DEFAULT_STYLE.node.borderRadius)
       .attr('width', d => d.width)
-      .attr('height', d => d.height)
+      .attr('height', d => d.height + increaseRectHeight)
       .style('fill', DEFAULT_STYLE.node.fill)
       .style('stroke', DEFAULT_STYLE.node.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
@@ -432,7 +435,7 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
         .append('text')
         .classed('indicator-label', true)
         .attr('x', PADDING_HORIZONTAL)
-        .attr('y', nodeHeight - PADDING_BOTTOM)
+        .attr('y', nodeHeight) // removed padding bottom that was here as it pushed hte label position up and overlayed the graph
         .attr('width', nodeWidth)
         .style('font-size', INDICATOR_NAME_SIZE + 'px')
         .attr('fill', INDICATOR_NAME_COLOR)
