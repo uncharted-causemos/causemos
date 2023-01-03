@@ -19,7 +19,7 @@ import { DEFAULT_COLOR } from '@/utils/colors-util';
 export function colaLayout(direction) {
   const stage = {
     id: 'cola',
-    extract: (cache, cy) => {
+    extract: (_cache, cy) => {
       // Hack - override width, height and background
       cy.batch(() => {
         const counts = cy.nodes().map((d) => d.data().count);
@@ -79,7 +79,7 @@ export function colaLayout(direction) {
         maxSimulationTime: 300,
       };
     },
-    postLayout(/* selection, cache, */ cy) {
+    postLayout(_selection, _cache, cy) {
       cy.edges().style({ display: null });
     },
   };
@@ -150,7 +150,7 @@ export function coseBilkentLayout() {
         nodeDimensionsIncludeLabels: true,
       };
     },
-    postLayout(/* selection, */ cache, cy) {
+    postLayout(_selection, cache, cy) {
       cy.batch(() => {
         cache.edges.restore();
         // cache.edges.style({ display: 'none' });
@@ -183,7 +183,7 @@ export function circularBFSLayout(hideEdgesAfterRender = false) {
   return [
     {
       id: 'circularBFS',
-      extract: (cache, cy) => {
+      extract: (_cache, cy) => {
         const orderedNodes = _.sortBy(cy.nodes(), (node) => node.data().id);
         return cy.collection(orderedNodes);
       },
@@ -194,7 +194,7 @@ export function circularBFSLayout(hideEdgesAfterRender = false) {
           spacingFactor: 4.5,
         };
       },
-      postLayout(selection, cache, cy) {
+      postLayout(_selection, _cache, cy) {
         // Figure out approximate center
         let x = 0;
         let y = 0;
@@ -262,7 +262,7 @@ export function centralityLayout() {
   const CENTRALITY_TEST = [
     {
       id: 'compute_centrality',
-      extract: (cache, cy) => {
+      extract: (_cache, cy) => {
         const ccn = cy.elements().closenessCentralityNormalized({ directed: true });
         cy.nodes().forEach((n) => {
           n.data({
@@ -280,7 +280,7 @@ export function centralityLayout() {
     },
     {
       id: 'fade_out_nodes',
-      extract: (cache, cy) => {
+      extract: (_cache, cy) => {
         const nodesToRemove = cy.elements('node[ccn <= 0.7] ');
         return nodesToRemove;
       },
@@ -304,7 +304,7 @@ export function testLayout() {
   const DC_TEST = [
     {
       id: 'circle1',
-      extract: (cache, cy) => {
+      extract: (_cache, cy) => {
         return cy.nodes().filter((d) => d.data().groundingScore > DC_GOAL);
       },
       layout: (/* selection, cache, cy */) => {
@@ -317,7 +317,7 @@ export function testLayout() {
     },
     {
       id: 'circle2',
-      extract: (cache, cy) => {
+      extract: (_cache, cy) => {
         return cy.nodes().filter((d) => d.data().groundingScore <= DC_GOAL);
       },
       layout: (/* selection, cache, cy */) => {
