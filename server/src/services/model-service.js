@@ -290,25 +290,20 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, projecti
  */
 const buildSensitivityPayload = async (engine, experimentStart, experimentEnd, numTimeSteps,
   constraintParams, analysisType, analysisMode, analysisParams, analysisMethodology) => {
-  let payload;
-  if (engine === 'delphi') {
-    payload = {};
-  } else if (engine === 'dyse') {
-    const constraints = _.isEmpty(constraintParams) ? [] : constraintParams;
-    payload = {
-      experimentType: EXPERIMENT_TYPE.SENSITIVITY_ANALYSIS,
-      experimentParam: {
-        numTimesteps: numTimeSteps,
-        startTime: experimentStart,
-        endTime: experimentEnd,
-        constraints,
-        analysisType,
-        analysisMode,
-        analysisParam: analysisParams,
-        analysisMethodology
-      }
-    };
-  }
+  const constraints = _.isEmpty(constraintParams) ? [] : constraintParams;
+  const payload = {
+    experimentType: EXPERIMENT_TYPE.SENSITIVITY_ANALYSIS,
+    experimentParam: {
+      numTimesteps: numTimeSteps,
+      startTime: experimentStart,
+      endTime: experimentEnd,
+      constraints,
+      analysisType,
+      analysisMode,
+      analysisParam: analysisParams,
+      analysisMethodology
+    }
+  };
 
   return payload;
 };
@@ -321,17 +316,12 @@ const buildSensitivityPayload = async (engine, experimentStart, experimentEnd, n
  * @param {array} goals - array of concepts and target values
  */
 const buildGoalOptimizationPayload = async (modelId, engine, goals) => {
-  let payload;
-  if (engine === 'delphi') {
-    payload = {};
-  } else if (engine === 'dyse') {
-    payload = {
-      experimentType: EXPERIMENT_TYPE.GOAL_OPTIMIZATION,
-      experimentParam: {
-        goals
-      }
-    };
-  }
+  const payload = {
+    experimentType: EXPERIMENT_TYPE.GOAL_OPTIMIZATION,
+    experimentParam: {
+      goals
+    }
+  };
 
   return payload;
 };
@@ -428,7 +418,7 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
 
       r.push({
         concept: np.concept,
-        indicator: np.parameter.name + ` ${idx}`, // Delphi doesn't like duplicate indicators across nodes
+        indicator: np.parameter.name + ` ${idx}`,
         minValue: _.get(np.parameter, 'min', 0),
         maxValue: _.get(np.parameter, 'max', 1),
         values: indicatorTimeSeries,
@@ -502,72 +492,6 @@ const buildCreateModelPayload = async (model, nodeParameters, edgeParameters) =>
   };
 };
 
-
-// @deprecated Only used by Delphi
-const buildCreateModelPayloadDeprecated = async (model, nodeParameters, edgeParameters) => {
-  const modelStatements = await buildModelStatements(model.id);
-
-  // Sanity check
-  const allNodeConcepts = nodeParameters.map(n => n.concept);
-  const allEdgeConcepts = edgeParameters.map(e => [e.source, e.target]).flat();
-  const extraNodes = _.difference(allNodeConcepts, allEdgeConcepts);
-  if (_.isEmpty(modelStatements) || extraNodes.length > 0) {
-    throw new Error('Unabled to process model. Ensure the model has no isolated nodes.');
-  }
-
-  return {
-    id: model.id,
-    statements: modelStatements,
-    conceptIndicators: buildNodeParametersPayloadDeprecated(nodeParameters, model)
-  };
-};
-
-// @deprecated - Only Delphi
-const buildNodeParametersPayloadDeprecated = (nodeParameters, model) => {
-  const r = {};
-
-  const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
-
-  nodeParameters.forEach((np, idx) => {
-    if (regex.test(np.concept) === false) {
-      throw new Error(`${np.concept} contains invalid characters.`);
-    }
-
-    const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
-
-    if (_.isEmpty(np.parameter)) {
-      throw new Error(`${np.concept} is not parameterized`);
-    } else {
-      let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
-      const temporalResolution = _.get(np.parameter, 'temporalResolution', 'month');
-      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
-
-      // Engines may have issues with dates before 1677 (Panda limitation), make it 1800 to be reasonable
-      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp > Date.UTC(1800));
-
-      injectDummyData(
-        indicatorTimeSeries,
-        temporalResolution,
-        projectionStart
-      );
-
-      r[np.concept] = {
-        // Need to have unique indicator names because Delphi can't handle duplicates
-        name: np.parameter.name + ` ${idx}`,
-        minValue: _.get(np.parameter, 'min', 0),
-        maxValue: _.get(np.parameter, 'max', 1),
-        func: valueFunc,
-        values: indicatorTimeSeries,
-        numLevels: NUM_LEVELS,
-        resolution: _.get(np.parameter, 'temporalResolution', 'month'),
-        period: _.get(np.parameter, 'period', 12)
-      };
-    }
-  });
-  return r;
-};
-
-
 module.exports = {
   find,
   findOne,
@@ -580,10 +504,5 @@ module.exports = {
   buildNodeParametersPayload,
   buildEdgeParametersPayload,
   clearNodeParameter,
-
-  buildCreateModelPayload,
-
-  // To deprecated once Graph-like api is in for Delphi
-  buildCreateModelPayloadDeprecated,
-  buildNodeParametersPayloadDeprecated
+  buildCreateModelPayload
 };

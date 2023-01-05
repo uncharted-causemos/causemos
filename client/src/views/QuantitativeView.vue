@@ -455,14 +455,12 @@ export default defineComponent({
 
       // 2. Run experiments where necessary, run sensitivity analyses in the backround where necessary
       // 2.1 Process sensitivity analyses, these run in the background
-      if (this.currentEngine === 'dyse') {
-        for (const scenario of scenarios) {
-          if (scenario.is_valid === true) continue;
+      for (const scenario of scenarios) {
+        if (scenario.is_valid === true) continue;
 
-          const constraints = modelService.cleanConstraints(scenario.parameter?.constraints ?? []);
-          const sensitivityExperimentId = await modelService.runSensitivityAnalysis(this.modelSummary, 'GLOBAL', 'DYNAMIC', constraints);
-          await modelService.createScenarioSensitivityResult(this.currentCAG, scenario.id, this.currentEngine, sensitivityExperimentId, null);
-        }
+        const constraints = modelService.cleanConstraints(scenario.parameter?.constraints ?? []);
+        const sensitivityExperimentId = await modelService.runSensitivityAnalysis(this.modelSummary, 'GLOBAL', 'DYNAMIC', constraints);
+        await modelService.createScenarioSensitivityResult(this.currentCAG, scenario.id, this.currentEngine, sensitivityExperimentId, null);
       }
 
       // 2.2 Process projection experiments
@@ -486,12 +484,8 @@ export default defineComponent({
           this.setOverlaySecondaryMessage(`CAG=${this.currentCAG} Experiment=${experimentId}`);
 
           const experiment: any = await modelService.getExperimentResult(this.currentCAG, experimentId, poller, this.updateProgress);
-          // FIXME: Delphi uses .results, DySE uses .results.data
-          if (!_.isEmpty(experiment.results.data)) {
-            scenario.result = experiment.results.data;
-          } else {
-            scenario.result = experiment.results;
-          }
+          // DySE uses .results.data
+          scenario.result = experiment.results.data;
           scenario.experiment_id = experimentId;
           scenario.is_valid = true;
           updateList.push(scenario);

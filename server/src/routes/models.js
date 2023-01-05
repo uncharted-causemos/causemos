@@ -14,17 +14,11 @@ const indicatorService = rootRequire('/services/indicator-service');
 const modelService = rootRequire('/services/model-service');
 const historyService = rootRequire('/services/history-service');
 const dyseService = rootRequire('/services/external/dyse-service');
-const delphiService = rootRequire('/services/external/delphi-service');
-const senseiService = rootRequire('/services/external/sensei-service');
 
 const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 const modelUtil = rootRequire('util/model-util');
 
 const TRANSACTION_LOCK_MSG = `Another transaction is running on model, please try again in ${LOCK_TIMEOUT / 1000} seconds`;
-
-const DYSE = 'dyse';
-const DELPHI = 'delphi';
-const SENSEI = 'sensei';
 
 // const esLock = {};
 
@@ -235,25 +229,6 @@ const buildCreateModelPayload = async (modelId) => {
   return payload;
 };
 
-const buildCreateModelPayloadDeprecated = async (modelId) => {
-  const model = await modelService.findOne(modelId);
-  const modelComponents = await cagService.getComponents(modelId);
-
-  // Sanity check
-  const allNodeConcepts = modelComponents.nodes.map(n => n.concept);
-  const allEdgeConcepts = modelComponents.edges.map(e => [e.source, e.target]).flat();
-  const extraNodes = _.difference(allNodeConcepts, allEdgeConcepts);
-
-  if (extraNodes.length > 0) {
-    Logger.warn(`Bad model structure detected. Isolated nodes: ${extraNodes}`);
-    throw new Error('Unabled to process model. Ensure the model has no isolated nodes.');
-  }
-  const payload = await modelService.buildCreateModelPayloadDeprecated(model, modelComponents.nodes, modelComponents.edges);
-  return payload;
-};
-
-
-
 /**
  * GET register payload as a downlodable JSON
  */
@@ -277,7 +252,6 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
 // 1. if edge has no weights, it takes the engine's inferred weights
 // 2. if edge has weights, it retains the values and will send back "overrides"
 //
-// Note for Delphi engineWeights and engineInferredWeights are triples [level, trend, polarity]
 const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
   const components = await cagService.getComponents(modelId);
   const edgesToUpdate = [];
@@ -300,37 +274,17 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
     Logger.debug(`${key} => engineInferred=${engineInferredWeights}, current=${currentWeights}, currentEngine=${currentEngineWeights}`);
 
     // Update inferred engine weights
-    // - Both Delphi and Sensei returns extra polarity information, so their arry is of length 3 instead of 2
-    if (engine === DELPHI || engine === SENSEI) {
-      Logger.debug(`\tcurrentEngine=${currentEngineWeights}, inferred=${engineInferredWeights}`);
-      if (!currentEngineWeights || engineInferredWeights[1] !== currentEngineWeights[1]) {
-        updateEngineConfig = true;
-        currentEngineWeightsConfig[engine] = engineInferredWeights;
-        parameter.engine_weights = currentEngineWeightsConfig;
-      }
-    } else {
-      if (!_.isEqual(engineInferredWeights, currentEngineWeights)) {
-        updateEngineConfig = true;
-        currentEngineWeightsConfig[engine] = engineInferredWeights;
-        parameter.engine_weights = currentEngineWeightsConfig;
-      }
+    if (!_.isEqual(engineInferredWeights, currentEngineWeights)) {
+      updateEngineConfig = true;
+      currentEngineWeightsConfig[engine] = engineInferredWeights;
+      parameter.engine_weights = currentEngineWeightsConfig;
     }
 
     if (_.isEmpty(currentWeights)) {
       updateWeights = true;
       parameter.weights = engineInferredWeights;
-    } else {
-      if (engine === DELPHI) {
-        Logger.debug(`\tcurrent=${currentWeights}, inferred=${engineInferredWeights}`);
-        // Don't bother overriding unless change is somewhat significant. 0.05 is somewaht arbitrary range between [0, 1]
-        if (Math.abs(currentWeights[1] - engineInferredWeights[1]) > 0.05) {
-          overrideWeights = true;
-        }
-      } else {
-        if (!_.isEqual(currentWeights, engineInferredWeights)) {
-          overrideWeights = true;
-        }
-      }
+    } else if (!_.isEqual(currentWeights, engineInferredWeights)) {
+      overrideWeights = true;
     }
 
     // Resolve state - update on ourside
@@ -382,16 +336,8 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   // 2. register model to engine
   let initialParameters;
   try {
-    if (engine === DELPHI) {
-      const enginePayload = await buildCreateModelPayloadDeprecated(modelId);
-      initialParameters = await delphiService.createModel(enginePayload);
-    } else if (engine === DYSE) {
-      const enginePayload = await buildCreateModelPayload(modelId);
-      initialParameters = await dyseService.createModel(enginePayload);
-    } else if (engine === SENSEI) {
-      const enginePayload = await buildCreateModelPayload(modelId);
-      initialParameters = await senseiService.createModel(enginePayload);
-    }
+    const enginePayload = await buildCreateModelPayload(modelId);
+    initialParameters = await dyseService.createModel(enginePayload);
   } catch (error) {
     Logger.warn(error);
     res.status(400).send(`Failed to sync with ${engine} : ${modelId}. ${error}`);
@@ -413,14 +359,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     }
   }
   if (edgesToOverride.length > 0) {
-    if (engine === DELPHI) {
-      console.log('skip edge override for Delphi');
-    }
-    if (engine === DYSE) {
-      await dyseService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
-    } else if (engine === SENSEI) {
-      await senseiService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
-    }
+    await dyseService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
   }
 
   // 4. Update model status
@@ -454,81 +393,10 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
   const engine = req.query.engine;
 
-  let modelStatus = {};
-  if (engine === DELPHI) {
-    modelStatus = await delphiService.modelStatus(modelId);
-  } else {
-    modelStatus = await dyseService.modelStatus(modelId);
-  }
+  const modelStatus = await dyseService.modelStatus(modelId);
 
-  // FIXME: Different engines have slightly different status codes
   // Update model
-  let v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
-
-  // Patch Delphi's progress, sometimes state will be ready but still training
-  if (engine === DELPHI) {
-    const progress = await delphiService.modelTrainingProgress(modelId);
-    modelStatus.progressPercentage = progress.progressPercentage;
-    if (modelStatus.progressPercentage < 1) {
-      v = MODEL_STATUS.TRAINING;
-    }
-  }
-
-  // Patch Delphi's inferred weights
-  let edgeTrainingDelphi = false;
-  if ((engine === DELPHI) && modelStatus.progressPercentage >= 1.0) {
-    Logger.info('Processing Delphi edge weights');
-    const inferredEdgeMap = modelStatus.relations.reduce((acc, edge) => {
-      const key = `${edge.source}///${edge.target}`;
-      acc[key] = {};
-
-      // Level, trend, polarity sign
-      const normalizedW = +(edge.weights[0].toFixed(3));
-      let polarity = 0;
-      if (normalizedW > 0) {
-        polarity = 1;
-      } else if (normalizedW < 0) {
-        polarity = -1;
-      }
-      acc[key].weights = [0.0, Math.abs(normalizedW), polarity];
-      return acc;
-    }, {});
-
-
-    // Sort out weights
-    const { edgesToUpdate, edgesToOverride } = await processInferredEdgeWeights(
-      modelId,
-      engine,
-      inferredEdgeMap
-    );
-
-    if (edgesToUpdate.length > 0) {
-      const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-      const r = await edgeParameterAdapter.update(edgesToUpdate, d => d.id, 'wait_for');
-      if (r.errors) {
-        throw new Error(JSON.stringify(r.items[0]));
-      }
-    }
-    if (edgesToOverride.length > 0) {
-      Logger.info(`Sending ${edgesToOverride.length} edge-weight overrides to Delphi`);
-      edgeTrainingDelphi = true;
-
-      // HACK: Delphi takes in [trend] as oppose to [level, trend], change the payload
-      edgesToOverride.forEach(edge => {
-        edge.parameter.weights = [edge.parameter.weights[1]];
-      });
-
-      if (engine === DELPHI) {
-        await delphiService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesToOverride));
-      }
-    }
-  }
-
-  // We sent edge-weigts back to Delphi, so it will need to be retrained
-  if (edgeTrainingDelphi === true) {
-    v = MODEL_STATUS.TRAINING;
-    modelStatus.status = 'training';
-  }
+  const v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
 
   // Update model status
   await cagService.updateCAGMetadata(modelId, {
@@ -560,15 +428,7 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
   // 3. Create experiment (experiment) in modelling engine
   let result;
   try {
-    if (engine === DELPHI) {
-      result = await delphiService.createExperiment(modelId, payload);
-    } else if (engine === DYSE) {
-      result = await dyseService.createExperiment(modelId, payload);
-    } else if (engine === SENSEI) {
-      result = await senseiService.createExperiment(modelId, payload);
-    } else {
-      throw new Error('Unsupported engine type');
-    }
+    result = await dyseService.createExperiment(modelId, payload);
   } catch (error) {
     res.status(400).send(`Failed to run projection ${engine} : ${modelId}`);
     return;
@@ -591,47 +451,14 @@ router.post('/:modelId/sensitivity-analysis', asyncHandler(async (req, res) => {
     experimentStart, experimentEnd, numTimeSteps, constraints, analysisType, analysisMode, analysisParams, analysisMethodology);
 
   // 3. Create experiment (experiment) in modelling engine
-  let result;
-  if (engine === DYSE) {
-    result = await dyseService.createExperiment(modelId, payload);
-  } else if (engine === SENSEI) {
-    result = await senseiService.createExperiment(modelId, payload);
-  } else {
-    throw new Error(`sensitivity-analysis not implemented for ${engine}`);
-  }
+  const result = await dyseService.createExperiment(modelId, payload);
   res.json(result);
 }));
 
-// router.post('/:modelId/goal-optimization', asyncHandler(async (req, res) => {
-//   // 1. Initialize
-//   const { modelId } = req.params;
-//   const { engine, goals } = req.body;
-//
-//   // 2. Build experiment request payload
-//   const payload = await modelService.buildGoalOptimizationPayload(modelId, engine, goals);
-//
-//   // 3. Create experiment (experiment) in modelling engine
-//   let result;
-//   if (engine === DYSE) {
-//     result = await dyseService.createExperiment(modelId, payload);
-//   } else {
-//     throw new Error(`goal-optimization not implemented for ${engine}`);
-//   }
-//   res.json(result);
-// }));
-
 router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
-  const engine = req.query.engine;
   const experimentId = req.query.experiment_id;
-  let result;
-  if (engine === DELPHI) {
-    result = await delphiService.findExperiment(modelId, experimentId);
-  } else if (engine === DYSE) {
-    result = await dyseService.findExperiment(modelId, experimentId);
-  } else if (engine === SENSEI) {
-    result = await senseiService.findExperiment(modelId, experimentId);
-  }
+  const result = await dyseService.findExperiment(modelId, experimentId);
   res.json(result);
 }));
 
@@ -788,37 +615,9 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
     return;
   }
 
-  // Parse and get meta data
-  const model = await modelService.findOne(modelId);
-  const modelParameter = model.parameter;
-  const engine = modelParameter.engine;
-
   const payload = modelService.buildEdgeParametersPayload([{ source, target, polarity, parameter }]);
 
-  if (engine === DYSE) {
-    await dyseService.updateEdgeParameter(modelId, payload);
-  } else if (engine === SENSEI) {
-    await senseiService.updateEdgeParameter(modelId, payload);
-  } else {
-    // throw new Error(`updateEdgeParameter not implemented for ${engine}`);
-  }
-
-  // For Delphi we will artificially set the model into unregistered state
-  // so the detection loop will find it and actually send the edge weights
-  // FIXME: Set to TRAINING
-  if (engine === DELPHI) {
-    Logger.info(`Defer edge upate for ${engine} until next refresh cycle`);
-    const modelAdapter = Adapter.get(RESOURCE.MODEL);
-    await modelAdapter.update([
-      {
-        id: model.id,
-        status: MODEL_STATUS.NOT_REGISTERED,
-        engine_status: {
-          [engine]: MODEL_STATUS.NOT_REGISTERED
-        }
-      }
-    ], d => d.id);
-  }
+  await dyseService.updateEdgeParameter(modelId, payload);
 
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const r = await edgeParameterAdapter.update([{

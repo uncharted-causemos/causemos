@@ -6,8 +6,7 @@ import { hasBackingEvidence } from '@/utils/graphs-util';
 import {
   decodeWeights,
   Engine,
-  supportsLevelEdges,
-  supportsPolarityInference
+  supportsLevelEdges
 } from '@/services/model-service';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
@@ -370,14 +369,6 @@ export class QuantitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edg
         return true;
       }
 
-      // If inferred and current have different polarity, Delphi only
-      const polarity = e.data.polarity || 0;
-      if (supportsPolarityInference(this.engine)) {
-        const w = param.engine_weights[this.engine];
-        if (w[2] && w[2] * polarity < 0) {
-          return true;
-        }
-      }
       return false;
     });
 

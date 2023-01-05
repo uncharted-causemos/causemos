@@ -10,11 +10,6 @@
       v-if="valueInconsistency=== true && isEdgeWeightEditable">
       <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship strength is different than selected strength.
     </div>
-    <div
-      class="warning-message"
-      v-if="polarityInconsistency=== true && isEdgeWeightEditable">
-      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred polarity conflicts with existing polarity.
-    </div>
 
     <message-display
       v-if="isEdgeWeightStale"
@@ -122,7 +117,7 @@
       <span
         class="clickable-dropdown"
         :class="{
-          'warning-message': isEdgeWeightEditable && polarityInconsistency
+          'warning-message': isEdgeWeightEditable
         }"
         @click.stop="openEdgePolarityDropdown()">
         {{ polarityLabel }}
@@ -296,13 +291,6 @@ export default defineComponent({
       return Math.abs(inferredWeightValue.value - currentEdgeWeight.value) > 0.5;
     });
 
-    const polarityInconsistency = computed(() => {
-      if (['delphi', 'sensei'].includes(modelSummary.value.parameter.engine) && inferredWeights.value[2]) {
-        return inferredWeights.value[2] * (selectedRelationship.value.polarity as number) < 0;
-      }
-      return false;
-    });
-
     return {
       currentView,
       currentEngine,
@@ -323,7 +311,6 @@ export default defineComponent({
 
       typeInconsistency,
       valueInconsistency,
-      polarityInconsistency,
 
       STATEMENT_POLARITY,
       supportsLevelEdges

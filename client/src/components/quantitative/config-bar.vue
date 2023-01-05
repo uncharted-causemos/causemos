@@ -10,15 +10,6 @@
       :data="projectionStartDate"
       @date-updated="setProjectionStartDate"
     />
-    , using the
-    <dropdown-button
-      :items="engineOptions"
-      :selected-item="selectedEngine"
-      :is-dropdown-above="true"
-      :is-dropdown-left-aligned="true"
-      @item-selected="setEngine"
-    />
-    engine.
     &nbsp;
     Display the last
     <dropdown-button
@@ -41,7 +32,7 @@
 <script lang="ts">
 import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import { defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
-import modelService, { ENGINE_OPTIONS } from '@/services/model-service';
+import modelService from '@/services/model-service';
 import dropdownButton, { DropdownItem } from '../dropdown-button.vue';
 import DateDropdown from '@/components/widgets/date-dropdown.vue';
 import { CAGModelParameter, CAGModelSummary } from '@/types/CAG';
@@ -74,7 +65,6 @@ export default defineComponent({
   emits: ['model-parameter-changed'],
   setup(props) {
     const { modelSummary } = toRefs(props);
-    const selectedEngine = ref(modelSummary.value.parameter.engine);
     const selectedTimeScale = ref(modelSummary.value.parameter.time_scale);
     const projectionStartDate = ref(
       modelSummary.value.parameter.projection_start
@@ -86,13 +76,11 @@ export default defineComponent({
 
     watchEffect(() => {
       // Whenever modelSummary changes, update local state variables
-      selectedEngine.value = modelSummary.value.parameter.engine;
       selectedHistoryRange.value = modelSummary.value.parameter.history_range;
       selectedTimeScale.value = modelSummary.value.parameter.time_scale;
       projectionStartDate.value = modelSummary.value.parameter.projection_start;
     });
     return {
-      selectedEngine,
       selectedTimeScale,
       projectionStartDate,
       selectedHistoryRange,
@@ -108,12 +96,6 @@ export default defineComponent({
       const timeScale = this.modelSummary.parameter.time_scale;
       return historyConfigs[timeScale];
     },
-    engineOptions(): DropdownItem[] {
-      return ENGINE_OPTIONS.map(option => ({
-        displayName: option.value,
-        value: option.key
-      }));
-    },
     timeScaleLabel(): string {
       return TIME_SCALE_OPTIONS_MAP.get(this.selectedTimeScale)?.label ?? '';
     }
@@ -124,13 +106,6 @@ export default defineComponent({
         history_range: range
       };
       await modelService.updateModelParameter(this.currentCAG, newParameter);
-      this.$emit('model-parameter-changed');
-    },
-    async setEngine(newEngine: string) {
-      this.selectedEngine = newEngine;
-      await modelService.updateModelParameter(this.currentCAG, {
-        engine: newEngine
-      });
       this.$emit('model-parameter-changed');
     },
     async setProjectionStartDate(newStartDate: number) {
