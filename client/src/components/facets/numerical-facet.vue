@@ -18,30 +18,18 @@
       class="facet-pointer"
     />
 
-
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
     <div v-else slot="content" />
 
-
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
-    <div slot="footer"
-      v-if="facetData.values.length > 0"
-      class="facet-footer-container"
-    >
-      <facet-plugin-zoom-bar
-        min-bar-width="8"
-        auto-hide="true"
-        round-caps="true"
-      />
+    <div slot="footer" v-if="facetData.values.length > 0" class="facet-footer-container">
+      <facet-plugin-zoom-bar min-bar-width="8" auto-hide="true" round-caps="true" />
     </div>
 
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
-    <div v-else slot="footer" class="facet-footer-container">
-      No Data Available
-    </div>
+    <div v-else slot="footer" class="facet-footer-container">No Data Available</div>
   </facet-bars>
 </template>
-
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
@@ -66,27 +54,27 @@ export default {
   props: {
     label: {
       type: String,
-      default: 'Facet'
+      default: 'Facet',
     },
     facet: {
       type: String,
-      default: null
+      default: null,
     },
     selectedData: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     baseData: {
       type: Array,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   computed: {
     ...mapGetters({
-      filters: 'query/filters'
+      filters: 'query/filters',
     }),
     max() {
-      const values = this.baseData.map(b => b.value);
+      const values = this.baseData.map((b) => b.value);
       return Math.max(...values);
     },
     facetData() {
@@ -94,26 +82,29 @@ export default {
         return {
           ratio: b.value / this.max,
           label: b.key,
-          tooltip: `${this.label}: ${b.key}\nCount: ${b.value}`
+          tooltip: `${this.label}: ${b.key}\nCount: ${b.value}`,
         };
       });
       return {
         label: this.label,
-        values
+        values,
       };
     },
     selection() {
       const facetClause = filtersUtil.findPositiveFacetClause(this.filters, this.facet);
       if (facetClause) {
         const values = facetClause.values[0];
-        const selIndexes = this.baseData.reduce((a, b, i) => {
-          if (parseFloat(b.key) <= parseFloat(values[0])) {
-            a[0] = i; // largest matching index for the start
-          } else if (parseFloat(b.key) <= parseFloat(values[1])) {
-            a[1] = i; // largest matching index for the end
-          }
-          return a;
-        }, [null, null]);
+        const selIndexes = this.baseData.reduce(
+          (a, b, i) => {
+            if (parseFloat(b.key) <= parseFloat(values[0])) {
+              a[0] = i; // largest matching index for the start
+            } else if (parseFloat(b.key) <= parseFloat(values[1])) {
+              a[1] = i; // largest matching index for the end
+            }
+            return a;
+          },
+          [null, null]
+        );
 
         // if the largest key is still less than the last value or is a special string
         // set to the max length of the baseData array
@@ -126,12 +117,12 @@ export default {
       }
     },
     subSelection() {
-      return this.selectedData ? this.selectedData.map(s => s.value / this.max) : [];
-    }
+      return this.selectedData ? this.selectedData.map((s) => s.value / this.max) : [];
+    },
   },
   methods: {
     ...mapActions({
-      setSearchClause: 'query/setSearchClause'
+      setSearchClause: 'query/setSearchClause',
     }),
     updateSelection(event) {
       const facet = event.currentTarget;
@@ -143,25 +134,27 @@ export default {
           const from = this.baseData[facet.selection[0]].key;
 
           // HACK: numEvidence key has a custom filter expectation for 5+
-          const to = this.facet === 'numEvidence' && facet.selection[1] >= 5
-            ? '--'
-            : facet.selection[1] !== this.baseData.length
+          const to =
+            this.facet === 'numEvidence' && facet.selection[1] >= 5
+              ? '--'
+              : facet.selection[1] !== this.baseData.length
               ? this.baseData[facet.selection[1]].key
-              : (this.baseData[1].key - this.baseData[0].key) * this.baseData.length + this.baseData[0].key;
+              : (this.baseData[1].key - this.baseData[0].key) * this.baseData.length +
+                this.baseData[0].key;
           this.setSearchClause({ field: this.facet, values: [[from, to]] });
         } else {
           this.setSearchClause({ field: this.facet, values: [[0, this.baseData.length]] });
         }
       }
-    }
-  }
+    },
+  },
 };
-
 </script>
 
 <style scoped lang="scss">
 .facet-font {
-  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 }
 .facet-pointer {
   cursor: pointer;

@@ -12,20 +12,21 @@ const refreshProjectCache = async () => {
 
   for (let i = 0; i < projects.length; i++) {
     const project = projects[i];
-    const ontology = await Adapter.get(RESOURCE.ONTOLOGY).find([
-      { field: 'project_id', value: project.id }
-    ], {
-      size: SEARCH_LIMIT
-    });
+    const ontology = await Adapter.get(RESOURCE.ONTOLOGY).find(
+      [{ field: 'project_id', value: project.id }],
+      {
+        size: SEARCH_LIMIT,
+      }
+    );
 
     const ontologyMap = {};
-    ontology.forEach(o => {
+    ontology.forEach((o) => {
       ontologyMap[o.label] = o;
     });
 
     setCache(project.id, {
       ...project,
-      ontologyMap
+      ontologyMap,
     });
   }
 };

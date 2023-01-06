@@ -5,12 +5,10 @@
 export default {
   methods: {
     $_layersBySource(source) {
-      return this.$_layerDefsBySource(source).map(l => l.id);
+      return this.$_layerDefsBySource(source).map((l) => l.id);
     },
     $_layerDefsBySource(source) {
-      return this.map
-        .getStyle()
-        .layers.filter(l => l.source === source);
+      return this.map.getStyle().layers.filter((l) => l.source === source);
     },
     $_removeLayer(layer) {
       const remove = this.map.getLayer(layer);
@@ -19,9 +17,9 @@ export default {
     $_removeSource(source) {
       // remove layers that use this source first
       const layers = this.$_layersBySource(source);
-      layers.forEach(layer => this.$_removeLayer(layer));
+      layers.forEach((layer) => this.$_removeLayer(layer));
       const remove = this.map.getSource(this.sourceId);
       remove && this.map.removeSource(this.sourceId);
-    }
-  }
+    },
+  },
 };

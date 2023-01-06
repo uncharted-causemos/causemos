@@ -4,19 +4,20 @@ const STATES = Object.freeze({
   STAGED: 0,
   NORMAL: 1,
   VETTED: 2,
-  DELETED: 3
+  DELETED: 3,
 });
-
 
 // Helper function to recompute wm data structure
 const _recalculateWM = (statement) => {
   statement.wm.edge = statement.subj.concept + '///' + statement.obj.concept;
   statement.wm.is_selfloop = statement.subj.concept === statement.obj.concept;
-  statement.wm.min_grounding_score = Math.min(statement.subj.concept_score, statement.obj.concept_score);
+  statement.wm.min_grounding_score = Math.min(
+    statement.subj.concept_score,
+    statement.obj.concept_score
+  );
   statement.wm.statement_polarity = statement.subj.polarity * statement.obj.polarity;
   statement.wm.edited = 1;
 };
-
 
 /**
  * Factor regrounding update generator.
@@ -24,7 +25,7 @@ const _recalculateWM = (statement) => {
 const updateFactorGrounding = (statement, updateConfig) => {
   // FIXME: do we really want to do this??
   const updateCandidates = (target, config) => {
-    const match = target.candidates.find(d => d.name === config.oldValue);
+    const match = target.candidates.find((d) => d.name === config.oldValue);
     if (!_.isNil(match)) {
       match.score = 1.0;
     } else {
@@ -60,7 +61,6 @@ const updateFactorGrounding = (statement, updateConfig) => {
   _recalculateWM(statement);
 };
 
-
 /**
  * Set statement to deleted state
  */
@@ -93,7 +93,6 @@ const updateFactorPolarity = (statement, updateConfig) => {
   _recalculateWM(statement);
 };
 
-
 /**
  * Basically swap subject and object
  */
@@ -111,5 +110,5 @@ module.exports = {
   updateFactorGrounding,
   vetStatement,
   discardStatement,
-  reverseRelation
+  reverseRelation,
 };

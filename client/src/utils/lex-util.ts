@@ -13,7 +13,9 @@ export interface Field {
   searchDisplay?: string;
 }
 
-export interface FieldMap { [key: string]: Field }
+export interface FieldMap {
+  [key: string]: Field;
+}
 
 /**
  * Marking a field as searchable makes known to LEX.
@@ -26,7 +28,9 @@ export interface FieldMap { [key: string]: Field }
  */
 export const searchable = (searchDisplay: string, ranged: boolean) => {
   return {
-    searchable: true, ranged, searchDisplay
+    searchable: true,
+    ranged,
+    searchDisplay,
   };
 };
 
@@ -43,8 +47,7 @@ export const field = (field: string, display: string, icon = '', iconText = '') 
   return { field, display, icon, iconText };
 };
 
-
 export default {
   searchable,
-  field
+  field,
 };

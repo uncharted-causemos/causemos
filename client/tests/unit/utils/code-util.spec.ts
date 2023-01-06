@@ -5,7 +5,7 @@ describe('code-util', () => {
   const entries = Object.values(CodeUtil.CODE_TABLE);
 
   it('meets minimal requirement', () => {
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       expect({}.hasOwnProperty.call(entry, 'field')).to.equal(true);
 
       if (entry.searchable) {
@@ -17,7 +17,7 @@ describe('code-util', () => {
 
   it('field should be unique', () => {
     const dupeCounter: { [key: string]: number } = {};
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       // Should not duplicate
       const isDuped = {}.hasOwnProperty.call(dupeCounter, entry.field);
       expect(isDuped).to.equal(false);
@@ -25,5 +25,3 @@ describe('code-util', () => {
     });
   });
 });
-
-

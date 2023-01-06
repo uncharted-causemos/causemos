@@ -1,16 +1,11 @@
 <template>
   <div class="dropdown-option">
-    <i
-      class="fa fa-fw"
-      :class="'fa-circle' + (value !== selectedValue ? '-o' : '')"
-    />
+    <i class="fa fa-fw" :class="'fa-circle' + (value !== selectedValue ? '-o' : '')" />
     <div style="display: flex; flex-direction: column">
       <div v-if="isInferred" class="inferred-label">Inferred</div>
       <span>
         {{ label }}
-        <span v-if="detailedValue" class="secondary">
-          ({{ detailedValue }})
-        </span>
+        <span v-if="detailedValue" class="secondary"> ({{ detailedValue }}) </span>
       </span>
     </div>
   </div>
@@ -23,25 +18,25 @@ export default defineComponent({
   props: {
     value: {
       type: [String, Number] as PropType<string | number>,
-      required: true
+      required: true,
     },
     detailedValue: {
       type: String as PropType<string | null>,
-      default: null
+      default: null,
     },
     selectedValue: {
       type: [String, Number] as PropType<string | number>,
-      required: true
+      required: true,
     },
     label: {
       type: String,
-      required: true
+      required: true,
     },
     isInferred: {
       type: Boolean,
-      default: false
-    }
-  }
+      default: false,
+    },
+  },
 });
 </script>
 

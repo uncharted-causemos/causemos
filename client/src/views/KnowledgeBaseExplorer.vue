@@ -1,10 +1,6 @@
 <template>
   <div class="knowledge-base-explorer-container">
-    <modal-header
-      :nav-back-label="navBackLabel"
-      @close="onCancel"
-      @add-to-CAG="onAddToCAG"
-    />
+    <modal-header :nav-back-label="navBackLabel" @close="onCancel" @add-to-CAG="onAddToCAG" />
     <div class="body flex">
       <facets-panel />
 
@@ -12,8 +8,7 @@
       <div class="body-main-content flex-col">
         <!-- searchbar -->
 
-        <search-bar
-          class="search" />
+        <search-bar class="search" />
 
         <div class="flex-grow-1 min-width-0">
           <tab-panel />
@@ -56,7 +51,9 @@
             :is-fetching-statements="isFetchingStatements"
           />
           <multi-relationships-pane
-            v-if="activeDrilldownTab === PANE_ID.MULTIRELATIONSHIPS && selectedRelationships.length > 0"
+            v-if="
+              activeDrilldownTab === PANE_ID.MULTIRELATIONSHIPS && selectedRelationships.length > 0
+            "
             :relationships="selectedRelationships"
             :graph-data="graphData"
             @add-to-CAG="onAddToCAG"
@@ -114,34 +111,34 @@ const PANE_ID = {
   RELATIONSHIPS: 'relationships',
   EVIDENCE: 'evidence',
   MULTIRELATIONSHIPS: 'multirelationships',
-  EVIDENCE_OVERLAY: 'evidence_overlay'
+  EVIDENCE_OVERLAY: 'evidence_overlay',
 };
 
 const NODE_DRILLDOWN_TABS = [
   {
     name: 'Factors',
     id: PANE_ID.FACTORS,
-    icon: 'fa-sitemap'
+    icon: 'fa-sitemap',
   },
   {
     name: 'Relationships',
     id: PANE_ID.RELATIONSHIPS,
-    icon: 'fa-long-arrow-right'
-  }
+    icon: 'fa-long-arrow-right',
+  },
 ];
 
 const EDGE_DRILLDOWN_TABS = [
   {
     name: 'Relationship',
-    id: PANE_ID.EVIDENCE
-  }
+    id: PANE_ID.EVIDENCE,
+  },
 ];
 
 const RELATIONSHIPS_DRILLDOWN_TABS = [
   {
     name: 'Selected Relationships',
-    id: PANE_ID.MULTIRELATIONSHIPS
-  }
+    id: PANE_ID.MULTIRELATIONSHIPS,
+  },
 ];
 
 export default {
@@ -156,7 +153,7 @@ export default {
     RelationshipsPane,
     FactorsPane,
     ModalAddedToCag,
-    ModalHeader
+    ModalHeader,
   },
   data: () => ({
     isDrilldownOpen: false,
@@ -170,7 +167,7 @@ export default {
     showEvidenceOverlay: false,
     numberOfRelationsAdded: 0,
     graphData: {},
-    navBackLabel: 'Knowledge Space'
+    navBackLabel: 'Knowledge Space',
   }),
   computed: {
     ...mapGetters({
@@ -183,7 +180,7 @@ export default {
       selectedNode: 'graph/selectedNode',
       selectedEdge: 'graph/selectedEdge',
       selectedRelationships: 'graph/selectedRelationships',
-      view: 'query/view'
+      view: 'query/view',
     }),
     restructuredNode() {
       // Massages the structure of selectedEdge to line up with the format used by
@@ -194,7 +191,7 @@ export default {
     },
     showDrilldownPanel() {
       return this.view === 'graphs' && this.isDrilldownOpen;
-    }
+    },
   },
   watch: {
     filters(n, o) {
@@ -244,7 +241,7 @@ export default {
         }
         this.switchToTab(PANE_ID.MULTIRELATIONSHIPS);
       }
-    }
+    },
   },
   async created() {
     this.PANE_ID = PANE_ID;
@@ -265,7 +262,7 @@ export default {
       setEvidencesCount: 'kb/setEvidencesCount',
       setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges',
       setSelectedEdge: 'graph/setSelectedEdge',
-      setSelectedRelationships: 'graph/setSelectedRelationships'
+      setSelectedRelationships: 'graph/setSelectedRelationships',
     }),
     async refresh() {
       if (this.leavingComponent) return;
@@ -282,10 +279,10 @@ export default {
       const selectedEdges = this.selectedSubgraphEdges;
 
       // all 'selected' nodes
-      const edgeSources = selectedEdges.map(edge => {
+      const edgeSources = selectedEdges.map((edge) => {
         return { id: edge.source };
       });
-      const edgeTargets = selectedEdges.map(edge => {
+      const edgeTargets = selectedEdges.map((edge) => {
         return { id: edge.target };
       });
       let selectedNodes = [];
@@ -300,15 +297,23 @@ export default {
       // Retrieve reference ids for the selected edges to be able to compare statement ids with the existing CAG
       const selectedEdgesData = await projectService.getProjectStatementIdsByEdges(
         this.project,
-        selectedEdges.map(e => ({ source: e.source, target: e.target })),
-        this.filters);
+        selectedEdges.map((e) => ({ source: e.source, target: e.target })),
+        this.filters
+      );
 
-      const formattedNodes = nodesToAdd.map(node => {
-        return { id: '', concept: node.id, label: this.ontologyFormatter(node.id), components: [node.id] };
+      const formattedNodes = nodesToAdd.map((node) => {
+        return {
+          id: '',
+          concept: node.id,
+          label: this.ontologyFormatter(node.id),
+          components: [node.id],
+        };
       });
 
-      const formattedEdges = selectedEdges.map(selectedEdge => {
-        const existingEdge = currentCAG.edges.find(e => e.source === selectedEdge.source && e.target === selectedEdge.target);
+      const formattedEdges = selectedEdges.map((selectedEdge) => {
+        const existingEdge = currentCAG.edges.find(
+          (e) => e.source === selectedEdge.source && e.target === selectedEdge.target
+        );
         const edgeId = selectedEdge.source + '///' + selectedEdge.target;
 
         if (_.isEmpty(existingEdge)) {
@@ -320,7 +325,7 @@ export default {
             reference_ids: selectedEdgesData[edgeId],
             parameter: {
               // weights: [0.0, 0.5]
-            }
+            },
           };
         } else {
           // Existing edge, merge reference_ids
@@ -328,7 +333,7 @@ export default {
             id: existingEdge.id,
             source: selectedEdge.source,
             target: selectedEdge.target,
-            reference_ids: _.uniq(existingEdge.reference_ids.concat(selectedEdgesData[edgeId]))
+            reference_ids: _.uniq(existingEdge.reference_ids.concat(selectedEdgesData[edgeId])),
           };
         }
       });
@@ -341,7 +346,7 @@ export default {
       // Get edge ids from CAG to be able to remove them
       let statementIds = [];
       for (let i = 0; i < edges.length; i++) {
-        const statement = this.selectedStatements.find(s => {
+        const statement = this.selectedStatements.find((s) => {
           return s.subj.concept === edges[i].source && s.obj.concept === edges[i].target;
         });
         if (!_.isNil(statement)) {
@@ -364,12 +369,18 @@ export default {
       this.showModalAddedToCag = false;
       this.setSelectedSubgraphEdges([]);
       this.leavingComponent = true;
-      this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag, projectType: ProjectType.Analysis } });
+      this.$router.push({
+        name: 'qualitative',
+        params: { project: this.project, currentCAG: this.cag, projectType: ProjectType.Analysis },
+      });
     },
     onCancel() {
       this.setSelectedSubgraphEdges([]);
       this.leavingComponent = true;
-      this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag, projectType: ProjectType.Analysis } });
+      this.$router.push({
+        name: 'qualitative',
+        params: { project: this.project, currentCAG: this.cag, projectType: ProjectType.Analysis },
+      });
     },
     onRelationshipClick(relationship) {
       this.showEvidenceOverlay = true;
@@ -435,17 +446,22 @@ export default {
       const searchFilters = _.cloneDeep(this.filters);
       filtersUtil.addSearchTerm(searchFilters, field, term, 'or', false);
 
-      projectService.getProjectStatements(this.project, searchFilters, { size: projectService.STATEMENT_LIMIT, documents: true }).then(result => {
-        this.selectedStatements = result;
-        this.isFetchingStatements = false;
-      });
-    }
-  }
+      projectService
+        .getProjectStatements(this.project, searchFilters, {
+          size: projectService.STATEMENT_LIMIT,
+          documents: true,
+        })
+        .then((result) => {
+          this.selectedStatements = result;
+          this.isFetchingStatements = false;
+        });
+    },
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .knowledge-base-explorer-container {
   height: 100vh;
@@ -477,5 +493,4 @@ export default {
 .kb-drilldown-panel {
   z-index: 1;
 }
-
 </style>

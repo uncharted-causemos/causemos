@@ -8,13 +8,19 @@ const removeUnwantedData = (metadata) => {
     metadata.geography.coordinates = undefined;
   }
   if (metadata.outputs) {
-    metadata.outputs.forEach(output => { output.id = undefined; });
+    metadata.outputs.forEach((output) => {
+      output.id = undefined;
+    });
   }
   if (metadata.parameters) {
-    metadata.parameters.forEach(param => { param.id = undefined; });
-    metadata.parameters.forEach(param => { param.template = undefined; });
+    metadata.parameters.forEach((param) => {
+      param.id = undefined;
+    });
+    metadata.parameters.forEach((param) => {
+      param.template = undefined;
+    });
   }
-}
+};
 
 const processFilteredData = (metadata) => {
   metadata.family_name = metadata.family_name || metadata.name;
@@ -23,5 +29,5 @@ const processFilteredData = (metadata) => {
 
 module.exports = {
   processFilteredData,
-  removeUnwantedData
+  removeUnwantedData,
 };

@@ -1,7 +1,6 @@
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import { BinningOptions, RegionRankingCompositionType } from './Enums';
 
-
 export interface CachedDatacubeMetadata {
   featureName: string;
   datacubeName: string;
@@ -27,7 +26,7 @@ export interface AnalysisItem {
 
   // A selection of metadata that can be used to summarize the datacube without
   //  needing to fetch the full metadata object.
-  cachedMetadata: CachedDatacubeMetadata
+  cachedMetadata: CachedDatacubeMetadata;
 
   viewConfig: ViewState;
   dataConfig: DataSpaceDataState;
@@ -36,7 +35,7 @@ export interface AnalysisItem {
 }
 
 export interface RegionRankingItemStates {
-  [itemId: string]: { isInverted: boolean; weight: number }
+  [itemId: string]: { isInverted: boolean; weight: number };
 }
 
 export interface DataAnalysisState {
@@ -53,5 +52,5 @@ export interface DataAnalysisState {
   areRegionRankingRowsNormalized: boolean;
   selectedTimestamp: number | null;
   highlightedRegionId: string;
-  regionRankingItemStates: RegionRankingItemStates
+  regionRankingItemStates: RegionRankingItemStates;
 }

@@ -3,7 +3,7 @@ import API from '@/api/api';
 export const fetchIndicator = async (variable: string, model: string, unit: string) => {
   const params = {
     indicator: variable,
-    model
+    model,
   };
   if (unit) {
     Object.assign(params, { unit });

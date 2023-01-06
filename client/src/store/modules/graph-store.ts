@@ -19,7 +19,6 @@ interface GraphState {
   selectedSubgraphEdges: Array<SelectedEdge>;
 }
 
-
 const state: GraphState = {
   selectedNode: { node: null },
   selectedEdge: { source: null, target: null },
@@ -27,20 +26,18 @@ const state: GraphState = {
   selectedNodesCount: 0,
   filteredNodesCount: 0,
   filteredEdgesCount: 0,
-  selectedSubgraphEdges: []
+  selectedSubgraphEdges: [],
 };
-
 
 const getters: GetterTree<GraphState, any> = {
-  selectedNode: state => state.selectedNode,
-  selectedEdge: state => state.selectedEdge,
-  selectedRelationships: state => state.selectedRelationships,
-  selectedNodesCount: state => state.selectedNodesCount,
-  filteredNodesCount: state => state.filteredNodesCount,
-  filteredEdgesCount: state => state.filteredEdgesCount,
-  selectedSubgraphEdges: state => state.selectedSubgraphEdges
+  selectedNode: (state) => state.selectedNode,
+  selectedEdge: (state) => state.selectedEdge,
+  selectedRelationships: (state) => state.selectedRelationships,
+  selectedNodesCount: (state) => state.selectedNodesCount,
+  filteredNodesCount: (state) => state.filteredNodesCount,
+  filteredEdgesCount: (state) => state.filteredEdgesCount,
+  selectedSubgraphEdges: (state) => state.selectedSubgraphEdges,
 };
-
 
 const actions: ActionTree<GraphState, any> = {
   setSelectedNode: ({ commit }, newValue) => {
@@ -63,9 +60,8 @@ const actions: ActionTree<GraphState, any> = {
   },
   setSelectedSubgraphEdges({ commit }, newValue) {
     commit('setSelectedSubgraphEdges', newValue);
-  }
+  },
 };
-
 
 const mutations: MutationTree<GraphState> = {
   setSelectedNode(state, value) {
@@ -88,7 +84,7 @@ const mutations: MutationTree<GraphState> = {
   },
   setSelectedSubgraphEdges(state, value) {
     state.selectedSubgraphEdges = value;
-  }
+  },
 };
 
 export default {
@@ -96,5 +92,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

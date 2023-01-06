@@ -6,7 +6,7 @@ const constructDisplayString = (evidenceItem: Evidence) => {
   const {
     author,
     publisher_name: publisherName,
-    publication_date: publicationDate
+    publication_date: publicationDate,
   } = evidenceItem.document_context;
   // Display author name if provided,
   //  otherwise fallback to publisher name
@@ -34,5 +34,5 @@ const constructDisplayString = (evidenceItem: Evidence) => {
 };
 
 export default {
-  constructDisplayString
+  constructDisplayString,
 };

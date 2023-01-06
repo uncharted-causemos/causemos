@@ -17,24 +17,34 @@
       <div v-if="cyclesPaths && cyclesPaths.balancing.length > 0" class="cycles-result">
         <strong> Balancing Loops </strong>
         <div v-for="(path, idx) of cyclesPaths.balancing" :key="idx">
-          <cag-path-item :path-item="path" :selected="path === selectedPathItem" @click="showPath(path)" />
+          <cag-path-item
+            :path-item="path"
+            :selected="path === selectedPathItem"
+            @click="showPath(path)"
+          />
         </div>
       </div>
       <div v-if="cyclesPaths && cyclesPaths.reinforcing.length > 0" class="cycles-result">
         <strong> Reinforcing Loops</strong>
         <div v-for="(path, idx) of cyclesPaths.reinforcing" :key="idx">
-          <cag-path-item :path-item="path" :selected="path === selectedPathItem" @click="showPath(path)" />
+          <cag-path-item
+            :path-item="path"
+            :selected="path === selectedPathItem"
+            @click="showPath(path)"
+          />
         </div>
       </div>
       <div v-if="cyclesPaths && cyclesPaths.ambiguous.length > 0" class="cycles-result">
         <strong> Ambiguous Loops </strong>
         <div v-for="(path, idx) of cyclesPaths.ambiguous" :key="idx">
-          <cag-path-item :path-item="path" :selected="path === selectedPathItem" @click="showPath(path)" />
+          <cag-path-item
+            :path-item="path"
+            :selected="path === selectedPathItem"
+            @click="showPath(path)"
+          />
         </div>
       </div>
-      <div v-if="totalCycles === 0">
-        No cycles detected.
-      </div>
+      <div v-if="totalCycles === 0">No cycles detected.</div>
     </div>
 
     <div v-if="currentAnalysis === 'paths'">
@@ -54,8 +64,7 @@
         @item-selected="changePathTarget"
       />
       <div class="pathway-exec-summary">
-        <button class="btn btn-small btn-call-to-action"
-          @click="runPathwayAnalysis">
+        <button class="btn btn-small btn-call-to-action" @click="runPathwayAnalysis">
           Run pathway sensitivity
         </button>
       </div>
@@ -65,12 +74,14 @@
         <div v-if="pathExperimentId && pathExperimentResult.length === 0 && noPathsFound === false">
           <i class="fa fa-spinner fa-spin" /> Running experiment
         </div>
-        <div v-if="pathExperimentId && noPathsFound === true">
-          No results found
-        </div>
+        <div v-if="pathExperimentId && noPathsFound === true">No results found</div>
         <div v-if="pathExperimentId && pathExperimentResult.length > 0">
           <div v-for="(path, idx) of pathExperimentResult" :key="idx">
-            <cag-path-item :path-item="path" :selected="path === selectedPath" @click="showPath(path)" />
+            <cag-path-item
+              :path-item="path"
+              :selected="path === selectedPath"
+              @click="showPath(path)"
+            />
           </div>
         </div>
       </div>
@@ -89,11 +100,17 @@ import modelService from '@/services/model-service';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { CAGGraph, CAGModelSummary, Scenario, GraphPath, ConceptProjectionConstraints } from '@/types/CAG';
+import {
+  CAGGraph,
+  CAGModelSummary,
+  Scenario,
+  GraphPath,
+  ConceptProjectionConstraints,
+} from '@/types/CAG';
 
 const ANALYSES = [
   { displayName: 'Feedback Loops', value: 'cycles' },
-  { displayName: 'Influence Paths', value: 'paths' }
+  { displayName: 'Influence Paths', value: 'paths' },
 ];
 
 interface CycleAnalysis {
@@ -111,31 +128,39 @@ export default defineComponent({
   components: {
     DropdownButton,
     CagPathItem,
-    MessageDisplay
+    MessageDisplay,
   },
   emits: ['show-path'],
   props: {
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
-      default: null
+      default: null,
     },
     modelComponents: {
       type: Object as PropType<CAGGraph>,
-      default: null
+      default: null,
     },
     scenarios: {
       type: Array as PropType<Scenario[]>,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   setup(props) {
     const store = useStore();
     const currentAnalysis = ref('cycles');
-    const cyclesPaths = ref({ balancing: [], reinforcing: [], ambiguous: [] }) as Ref<CycleAnalysis>;
+    const cyclesPaths = ref({
+      balancing: [],
+      reinforcing: [],
+      ambiguous: [],
+    }) as Ref<CycleAnalysis>;
 
     const totalCycles = computed(() => {
       if (_.isEmpty(cyclesPaths.value)) return 0;
-      return cyclesPaths.value.balancing.length + cyclesPaths.value.reinforcing.length + cyclesPaths.value.ambiguous.length;
+      return (
+        cyclesPaths.value.balancing.length +
+        cyclesPaths.value.reinforcing.length +
+        cyclesPaths.value.ambiguous.length
+      );
     });
 
     const currentPathSource = ref('');
@@ -155,17 +180,19 @@ export default defineComponent({
     // FIXME: SHould have adapatble lists depending on selection e.g. reachable nodes
     const availableNodes = computed(() => {
       if (!props.modelComponents) return [];
-      return props.modelComponents.nodes.map(node => {
-        return {
-          value: node.concept,
-          displayName: ontologyFormatter(node.concept)
-        };
-      }).sort((a, b) => {
-        return a.displayName.localeCompare(b.displayName);
-      });
+      return props.modelComponents.nodes
+        .map((node) => {
+          return {
+            value: node.concept,
+            displayName: ontologyFormatter(node.concept),
+          };
+        })
+        .sort((a, b) => {
+          return a.displayName.localeCompare(b.displayName);
+        });
     });
 
-    const selectedPathItem = ref<GraphPath|null>(null);
+    const selectedPathItem = ref<GraphPath | null>(null);
 
     const modelStale = ref(false);
     const scenariosStale = ref(false);
@@ -174,8 +201,10 @@ export default defineComponent({
     watch(
       () => [modelSummary.value, scenarios.value],
       () => {
-        modelStale.value = props.modelSummary.engine_status[props.modelSummary.parameter.engine] !== modelService.MODEL_STATUS.READY;
-        scenariosStale.value = _.some(props.scenarios, s => s.is_valid === false);
+        modelStale.value =
+          props.modelSummary.engine_status[props.modelSummary.parameter.engine] !==
+          modelService.MODEL_STATUS.READY;
+        scenariosStale.value = _.some(props.scenarios, (s) => s.is_valid === false);
       },
       { immediate: true }
     );
@@ -199,7 +228,7 @@ export default defineComponent({
       pathExperimentResult,
       noPathsFound,
 
-      analyses: ANALYSES
+      analyses: ANALYSES,
     };
   },
   mounted() {
@@ -220,12 +249,12 @@ export default defineComponent({
       const cycleResult = classifyCycles(findCycles(edges), edges);
 
       const reformat = (p: Vertex[]) => {
-        const fullPath = p.map(pItem => pItem.name);
+        const fullPath = p.map((pItem) => pItem.name);
         // Complete the cycle
         fullPath.push(p[0].name);
         return {
           path: fullPath,
-          score: 1.0
+          score: 1.0,
         };
       };
 
@@ -236,19 +265,18 @@ export default defineComponent({
       this.cyclesPaths = {
         balancing: balancing.sort(shortestToLongest),
         reinforcing: reinforcing.sort(shortestToLongest),
-        ambiguous: ambiguous.sort(shortestToLongest)
+        ambiguous: ambiguous.sort(shortestToLongest),
       };
     },
     async runPathwayAnalysis() {
       if (_.isEmpty(this.currentPathSource) || _.isEmpty(this.currentPathTarget)) return;
-
 
       let constraints: ConceptProjectionConstraints[] = [];
       // If we're in "historical data only" mode, run pathway analysis with no
       //  constraints.
       if (this.selectedScenarioId !== null) {
         // Extract constraints
-        const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+        const scenario = this.scenarios.find((s) => s.id === this.selectedScenarioId);
         if (!scenario) return;
         constraints = scenario.parameter.constraints;
       }
@@ -264,7 +292,11 @@ export default defineComponent({
       this.pollPathExperimentResult();
     },
     async pollPathExperimentResult() {
-      const r = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.pathExperimentId);
+      const r = await modelService.getExperimentResultOnce(
+        this.currentCAG,
+        'dyse',
+        this.pathExperimentId
+      );
 
       if (r.status === 'completed' && r.results) {
         const pathResult = r.results.pathways;
@@ -293,15 +325,15 @@ export default defineComponent({
       this.currentPathTarget = v;
     },
     onClickOutside(event: MouseEvent) {
-      const containerElement = (this.$refs.containerElement as HTMLElement);
+      const containerElement = this.$refs.containerElement as HTMLElement;
       // input just lost focus, but was that because the user clicked on one of the suggestions?
-      if ((event.target instanceof Element) && containerElement.contains(event.target)) {
+      if (event.target instanceof Element && containerElement.contains(event.target)) {
         // Click was within this element, so do nothing
         return;
       }
       this.selectedPathItem = null;
-    }
-  }
+    },
+  },
 });
 </script>
 

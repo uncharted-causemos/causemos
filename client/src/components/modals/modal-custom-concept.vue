@@ -1,27 +1,22 @@
 <template>
-  <modal
-    :show-close-button="true"
-    @close="close()"
-  >
+  <modal :show-close-button="true" @close="close()">
     <template #header>
       <h5>Add custom concept</h5>
     </template>
     <template #body>
-      <div> What is the concept you could not find in the ontology? </div>
-      <input class="form-control" v-model="theme" type="text" placeholder="e.g. heavy rainfall"/>
+      <div>What is the concept you could not find in the ontology?</div>
+      <input class="form-control" v-model="theme" type="text" placeholder="e.g. heavy rainfall" />
     </template>
     <template #footer>
       <ul class="unstyled-list">
-        <button
-          type="button"
-          class="btn first-button"
-          @click.stop="close()">Cancel
-        </button>
+        <button type="button" class="btn first-button" @click.stop="close()">Cancel</button>
         <button
           type="button"
           class="btn btn-call-to-action"
           :disabled="!isValid"
-          @click.stop="saveCustomConcept">Save Concept
+          @click.stop="saveCustomConcept"
+        >
+          Save Concept
         </button>
       </ul>
     </template>
@@ -41,7 +36,7 @@ const ALPHANUMERIC_ERROR = 'This field can only contain alphanumeric characters'
 export default defineComponent({
   name: 'modal-custom-concept',
   components: {
-    Modal
+    Modal,
   },
   setup() {
     return {
@@ -49,7 +44,12 @@ export default defineComponent({
       theme_property: ref(''),
       process: ref(''),
       process_property: ref(''),
-      errorMessages: ref({ theme: 'This field is required', theme_property: '', process: '', process_property: '' }) as Ref<{ [key: string]: string }>
+      errorMessages: ref({
+        theme: 'This field is required',
+        theme_property: '',
+        process: '',
+        process_property: '',
+      }) as Ref<{ [key: string]: string }>,
     };
   },
   watch: {
@@ -84,11 +84,11 @@ export default defineComponent({
       } else {
         this.errorMessages.process_property = ALPHANUMERIC_ERROR;
       }
-    }
+    },
   },
   methods: {
     ...mapActions({
-      updateOntologyCache: 'app/updateOntologyCache'
+      updateOntologyCache: 'app/updateOntologyCache',
     }),
     saveCustomConcept() {
       const concept = this.customGrounding.theme;
@@ -109,15 +109,20 @@ export default defineComponent({
     },
     close() {
       this.$emit('close', null);
-    }
+    },
   },
   computed: {
     ...mapGetters({
       project: 'app/project',
-      ontologySet: 'app/ontologySet'
+      ontologySet: 'app/ontologySet',
     }),
     isValid() {
-      if (this.errorMessages.theme || this.errorMessages.theme_property || this.errorMessages.process || this.errorMessages.process_property) {
+      if (
+        this.errorMessages.theme ||
+        this.errorMessages.theme_property ||
+        this.errorMessages.process ||
+        this.errorMessages.process_property
+      ) {
         return false;
       }
       return true;
@@ -127,14 +132,11 @@ export default defineComponent({
         theme: cleanConceptString(this.theme),
         theme_property: cleanConceptString(this.theme_property),
         process: cleanConceptString(this.process),
-        process_property: cleanConceptString(this.process_property)
+        process_property: cleanConceptString(this.process_property),
       };
-    }
+    },
   },
-  emits: [
-    'close',
-    'saveCustomConcept'
-  ]
+  emits: ['close', 'saveCustomConcept'],
 });
 </script>
 

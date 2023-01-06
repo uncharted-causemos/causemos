@@ -8,14 +8,16 @@ const Logger = rootRequire('/config/logger');
  * The status is set to 'READY', the runtime of the pipeline is recorded,
  * and the pipeline results file is read from wm-go and added to the metadata.
  */
-const setProcessingSucceeded = async(metadata) => {
+const setProcessingSucceeded = async (metadata) => {
   const dataId = metadata.data_id;
   const runId = metadata.run_id;
   const docIds = metadata.doc_ids;
   const isIndicator = metadata.is_indicator;
   const flowId = metadata.flow_id;
 
-  Logger.info(`Marking pipeline job successful data_id=${dataId}, run_id=${runId}, flow_id=${flowId}`);
+  Logger.info(
+    `Marking pipeline job successful data_id=${dataId}, run_id=${runId}, flow_id=${flowId}`
+  );
   if (!docIds || docIds.length === 0) {
     Logger.warn('No document IDs have been provided. Skipping...');
     return { result: { message: 'No document IDs' }, code: 400 };
@@ -36,13 +38,13 @@ const setProcessingSucceeded = async(metadata) => {
     if (runs && runs.length > 0 && runs[0].is_default_run) {
       const modelDelta = {
         id: runs[0].model_id,
-        data_info: results.data_info
+        data_info: results.data_info,
       };
       await datacubeService.updateDatacube(modelDelta);
     }
   }
 
-  const updateDelta = docIds.map(docId => {
+  const updateDelta = docIds.map((docId) => {
     return {
       id: docId,
       status: 'READY',
@@ -50,10 +52,10 @@ const setProcessingSucceeded = async(metadata) => {
       runtimes: {
         post_processing: {
           end_time: metadata.end_time,
-          start_time: metadata.start_time
-        }
+          start_time: metadata.start_time,
+        },
       },
-      ...results
+      ...results,
     };
   });
   return await updateDocuments(updateDelta, isIndicator);
@@ -62,7 +64,7 @@ const setProcessingSucceeded = async(metadata) => {
 /**
  * Update a set of documents so that their status is now `PROCESSING_FAILED`
  */
-const setProcessingFailed = async(metadata) => {
+const setProcessingFailed = async (metadata) => {
   const dataId = metadata.data_id;
   const runId = metadata.run_id;
   const docIds = metadata.doc_ids;
@@ -75,11 +77,11 @@ const setProcessingFailed = async(metadata) => {
     return { result: { message: 'No document IDs' }, code: 400 };
   }
 
-  const updateDelta = docIds.map(docId => {
+  const updateDelta = docIds.map((docId) => {
     return {
       id: docId,
       flow_id: flowId,
-      status: 'PROCESSING FAILED'
+      status: 'PROCESSING FAILED',
     };
   });
   return await updateDocuments(updateDelta, isIndicator);
@@ -88,7 +90,7 @@ const setProcessingFailed = async(metadata) => {
 /**
  * Sets the runtimes.queued timestamps for some documents
  */
-const setRuntimeQueued = async(metadata) => {
+const setRuntimeQueued = async (metadata) => {
   const dataId = metadata.data_id;
   const runId = metadata.run_id;
   const docIds = metadata.doc_ids;
@@ -100,15 +102,15 @@ const setRuntimeQueued = async(metadata) => {
     return { result: { message: 'No document IDs' }, code: 400 };
   }
 
-  const updateDelta = docIds.map(docId => {
+  const updateDelta = docIds.map((docId) => {
     return {
       id: docId,
       runtimes: {
         queued: {
           end_time: metadata.end_time,
-          start_time: metadata.start_time
-        }
-      }
+          start_time: metadata.start_time,
+        },
+      },
     };
   });
   return await updateDocuments(updateDelta, isIndicator);
@@ -117,7 +119,7 @@ const setRuntimeQueued = async(metadata) => {
 /**
  * Update either the model run or the datacube ES index depending on whether this is an indicator
  */
-const updateDocuments = async(updateDelta, isIndicator) => {
+const updateDocuments = async (updateDelta, isIndicator) => {
   if (isIndicator) {
     await datacubeService.updateDatacubes(updateDelta);
     return { result: { message: 'Datacube updated' }, code: 200 };
@@ -130,16 +132,17 @@ const updateDocuments = async(updateDelta, isIndicator) => {
 /**
  * Fetch the pipeline results for this run/indicator from wm-go
  */
-const fetchPipelineResults = async(dataId, runId) => {
+const fetchPipelineResults = async (dataId, runId) => {
   const options = {
     method: 'GET',
-    url: process.env.WM_GO_URL +
+    url:
+      process.env.WM_GO_URL +
       `/maas/output/pipeline-results?data_id=${encodeURI(dataId)}&run_id=${encodeURI(runId)}`,
     headers: {
       'Content-type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     },
-    json: {}
+    json: {},
   };
   const response = await requestAsPromise(options);
   return response;
@@ -148,5 +151,5 @@ const fetchPipelineResults = async(dataId, runId) => {
 module.exports = {
   setProcessingFailed,
   setProcessingSucceeded,
-  setRuntimeQueued
+  setRuntimeQueued,
 };

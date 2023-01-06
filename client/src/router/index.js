@@ -43,118 +43,117 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: Home
+    component: Home,
   },
   {
     path: '/newProject',
     name: 'newProject',
-    component: NewProject
+    component: NewProject,
   },
   {
     path: '/newDomainProject',
     name: 'newDomainProject',
-    component: NewDomainProject
+    component: NewDomainProject,
   },
   {
     path: '/:projectType/:project/overview',
     name: 'overview',
-    component: AnalysisProjectOverview
+    component: AnalysisProjectOverview,
   },
   {
     path: '/:projectType/:project/domainDatacubeOverview',
     name: 'domainDatacubeOverview',
-    component: DomainProjectOverview
+    component: DomainProjectOverview,
   },
   {
     path: '/:projectType/:project/datasetOverview',
     name: 'datasetOverview',
-    component: DatasetOverview
+    component: DatasetOverview,
   },
   {
     path: '/:projectType/:project/data/:analysisId',
     name: 'data',
-    component: DatacubeDrilldown
+    component: DatacubeDrilldown,
   },
   {
     path: '/:projectType/:project/dataComparative/:analysisId',
     name: 'dataComparative',
-    component: CompAnalysis
+    component: CompAnalysis,
   },
   {
     path: '/:projectType/:project/data/:analysisId/explorer',
     name: 'dataExplorer',
-    component: DataExplorer
+    component: DataExplorer,
   },
   {
     path: '/:projectType/:project/model-publishing-experiment',
     name: 'modelPublisher',
-    component: ModelPublisher
+    component: ModelPublisher,
   },
   {
     path: '/:projectType/:project/indicator-publishing-experiment',
     name: 'indicatorPublisher',
-    component: IndicatorPublisher
+    component: IndicatorPublisher,
   },
   {
     path: '/graph-experiment',
     name: 'graphExperiment',
-    component: GraphExperiment
+    component: GraphExperiment,
   },
   {
     path: '/:projectType/:project/qualitative/:currentCAG',
     name: 'qualitative',
-    component: QualitativeView
+    component: QualitativeView,
   },
   {
     path: '/:projectType/:project/kb-explorer',
     name: 'kbExplorer',
-    component: KnowledgeBaseExplorer
+    component: KnowledgeBaseExplorer,
   },
   {
     path: '/:projectType/:project/quantitative/:currentCAG',
     name: 'quantitative',
-    component: QuantitativeView
+    component: QuantitativeView,
   },
   {
     path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/indicator/:indicatorId',
     name: 'nodeDataDrilldown',
-    component: NodeDataDrilldown
+    component: NodeDataDrilldown,
   },
   {
     path: '/:projectType/:project/quantitative/:currentCAG/:nodeId',
     name: 'nodeDrilldown',
-    component: NodeDrilldown
+    component: NodeDrilldown,
   },
   {
     path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/explorer',
     name: 'nodeDataExplorer',
-    component: NodeDataExplorer
+    component: NodeDataExplorer,
   },
   {
     path: '/prefectFlowLogs/:flowId',
     name: 'prefectFlowLogs',
-    component: PrefectFlowLogs
+    component: PrefectFlowLogs,
   },
   {
     path: '/:projectType/:project/audit-trail',
     name: 'auditTrail',
-    component: AuditTrail
+    component: AuditTrail,
   },
   /* 404, this has to go last */
   {
     path: '/:pathMatch(.*)*',
-    component: NotFound
-  }
+    component: NotFound,
+  },
 ];
-
 
 export default createRouter({
   parseQuery: (query) => {
     /**
-    * Override depth from default 5 to 8
-    * Override arrayLimit from default 20 to 300 for filters like geo_context
-    * see: https://github.com/ljharb/qs#parsing-objects
-    */
+     * Override depth from default 5 to 8
+     * Override arrayLimit from default 20 to 300 for filters like geo_context
+     * see: https://github.com/ljharb/qs#parsing-objects
+     */
     const result = qs.parse(query, { depth: 8, arrayLimit: 300 });
     return formatter(result);
   },
@@ -163,5 +162,5 @@ export default createRouter({
     return result ? `${result}` : '';
   },
   history: createWebHashHistory(process.env.BASE_URL),
-  routes: routes
+  routes: routes,
 });

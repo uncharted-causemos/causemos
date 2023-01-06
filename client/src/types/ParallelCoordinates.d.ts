@@ -1,4 +1,3 @@
-
 export interface ParallelCoordinatesOptions {
   width: number;
   height: number;

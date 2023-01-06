@@ -1,15 +1,15 @@
-import { SpatialAggregationLevel, TemporalAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import {
-  Timeseries,
-  TimeseriesPoint,
-  TimeseriesPointSelection
-} from '@/types/Timeseries';
+  SpatialAggregationLevel,
+  TemporalAggregationLevel,
+  SPLIT_BY_VARIABLE,
+} from '@/types/Enums';
+import { Timeseries, TimeseriesPoint, TimeseriesPointSelection } from '@/types/Timeseries';
 import { getTimestampMillis } from '@/utils/date-util';
 import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { computed, Ref } from 'vue';
 
 const isTimestampInPoints = (timestamp: number, points: TimeseriesPoint[]) => {
-  return points.find(point => point.timestamp === timestamp) !== undefined;
+  return points.find((point) => point.timestamp === timestamp) !== undefined;
 };
 
 export default function useSelectedTimeseriesPoints(
@@ -27,7 +27,7 @@ export default function useSelectedTimeseriesPoints(
       return [];
     }
     const _selectedTimestamp = selectedTimestamp.value;
-    return timeseriesData.value.map(timeseries => {
+    return timeseriesData.value.map((timeseries) => {
       const { id, name, color, points } = timeseries;
       let scenarioId, timestamp;
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
@@ -62,22 +62,19 @@ export default function useSelectedTimeseriesPoints(
         // Each timeseries uses the same timestamp
         timestamp = _selectedTimestamp;
       }
-      const isTimestampInTimeseries = isTimestampInPoints(
-        _selectedTimestamp,
-        points
-      );
+      const isTimestampInTimeseries = isTimestampInPoints(_selectedTimestamp, points);
       return {
         timeseriesId: breakdownOption.value === SPLIT_BY_VARIABLE ? name : id,
         scenarioId,
         timestamp,
         isTimestampInTimeseries,
         timeseriesName: name,
-        color
+        color,
       };
     });
   });
 
   return {
-    selectedTimeseriesPoints
+    selectedTimeseriesPoints,
   };
 }

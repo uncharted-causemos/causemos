@@ -18,8 +18,11 @@ export default class KeyValuePill extends BasePill {
   }
 
   makeBranch() {
-    return Lex.from('relation', BinaryRelationState, TransitionFactory.valueMetaCompare({ searchKey: this.searchKey }))
-      .to('value', MappedOptionState, this.branchConfig);
+    return Lex.from(
+      'relation',
+      BinaryRelationState,
+      TransitionFactory.valueMetaCompare({ searchKey: this.searchKey })
+    ).to('value', MappedOptionState, this.branchConfig);
   }
 
   /**
@@ -33,7 +36,9 @@ export default class KeyValuePill extends BasePill {
     lexQuery.push({
       field: selectedPill,
       relation: isNot ? BinaryRelationState.IS_NOT : BinaryRelationState.IS,
-      value: clause.values.map((v) => new ValueStateValue(v, {}, { displayKey: this.displayFormatter(this.keyMap[v]) }))
+      value: clause.values.map(
+        (v) => new ValueStateValue(v, {}, { displayKey: this.displayFormatter(this.keyMap[v]) })
+      ),
     });
   }
 }

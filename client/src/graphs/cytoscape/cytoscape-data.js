@@ -5,7 +5,7 @@ import { DEFAULT_COLOR } from '@/utils/colors-util';
 /* Convert graph.edges to cytoscape edge construct */
 const createEdges = (edges) => {
   const result = [];
-  edges.forEach(e => {
+  edges.forEach((e) => {
     const property = {
       source: e.source,
       target: e.target,
@@ -14,7 +14,7 @@ const createEdges = (edges) => {
       same: e.same,
       opposite: e.opposite,
       unknown: e.unknown,
-      contradictions: e.contradictions
+      contradictions: e.contradictions,
     };
     result.push(_createEdge(property));
   });
@@ -25,8 +25,8 @@ const createEdges = (edges) => {
 const createNodes = (nodes, depth = 100, formatter) => {
   const registry = {};
   const result = [];
-  const orderedNodes = _.orderBy(nodes, n => n.id);
-  orderedNodes.forEach(n => {
+  const orderedNodes = _.orderBy(nodes, (n) => n.id);
+  orderedNodes.forEach((n) => {
     const tokens = n.id.split('/');
 
     let last = '';
@@ -35,7 +35,7 @@ const createNodes = (nodes, depth = 100, formatter) => {
       const pid = _.take(tokens, i).join('/');
       if ({}.hasOwnProperty.call(registry, pid) === false) {
         const property = {
-          id: pid
+          id: pid,
         };
 
         if (i === tokens.length) {
@@ -68,8 +68,8 @@ const _createNode = (d, parent, formatter) => {
       groundingScore: d.groundingScore,
       style: {
         /* Defines the default node style */
-        'background-color': DEFAULT_COLOR
-      }
+        'background-color': DEFAULT_COLOR,
+      },
     },
     group: 'nodes',
     removed: false,
@@ -78,7 +78,7 @@ const _createNode = (d, parent, formatter) => {
     locked: false,
     grabbed: false,
     grabbable: true,
-    classes: null
+    classes: null,
   };
 };
 
@@ -97,8 +97,8 @@ const _createEdge = (d) => {
         /* Defines the default edge style */
         edgeColor: calcEdgeColor(d),
         edgeStyle: 'solid',
-        opacity: 0.5
-      }
+        opacity: 0.5,
+      },
     },
     position: {},
     group: 'edges',
@@ -108,12 +108,11 @@ const _createEdge = (d) => {
     locked: false,
     grabbed: false,
     grabbable: true,
-    classes: d.classes
+    classes: d.classes,
   };
 };
 
 export default {
   createEdges,
-  createNodes
+  createNodes,
 };
-

@@ -3,8 +3,7 @@ import _ from 'lodash';
 /**
  * Operations for statements-related aggregations for the side panel
  *
-*/
-
+ */
 
 /**
  * Generalized multi-level data aggregation
@@ -47,14 +46,12 @@ export interface AggChild<T> {
   children?: AggChild<T>[];
 }
 
-
 interface AggConfig<T> {
   keyFn: (arg1: T) => string | number;
   filterFn?: (arg1: T, arg2: number) => boolean;
   metaFn?: (arg1: AggChild<T>, arg2: number) => any; // FIXME
   sortFn?: (arg1: AggChild<T>) => number | string;
 }
-
 
 const groupDataArray = <T>(dataArray: T[], configs: AggConfig<T>[]) => {
   const config = configs.splice(0, 1)[0];
@@ -70,7 +67,7 @@ const groupDataArray = <T>(dataArray: T[], configs: AggConfig<T>[]) => {
     children.push({
       key: k,
       count: v.length,
-      dataArray: v
+      dataArray: v,
     });
   });
 
@@ -83,7 +80,7 @@ const groupDataArray = <T>(dataArray: T[], configs: AggConfig<T>[]) => {
 
   // Recurse down configuration list, if applicable
   if (configs.length > 0) {
-    children.forEach(c => {
+    children.forEach((c) => {
       c.children = groupDataArray(c.dataArray, _.cloneDeep(configs));
       // delete c.dataArray; // FIXME: should make this optional to allow keeping intermediate results
       c.dataArray = [];
@@ -91,7 +88,6 @@ const groupDataArray = <T>(dataArray: T[], configs: AggConfig<T>[]) => {
   }
   return config.sortFn ? _.sortBy(children, config.sortFn) : children;
 };
-
 
 /**
  * Less general variation on groupDataArray with a lighter-weight output structure
@@ -121,7 +117,7 @@ const groupRepeatedly = (dataArray: any, groupingFunctions: any) => {
   if (groupingFunctions.length === 0) return dataArray;
   const [groupingFunction, ...remainingFunctions] = groupingFunctions;
   const grouped = _.groupBy(dataArray, groupingFunction);
-  Object.keys(grouped).forEach(key => {
+  Object.keys(grouped).forEach((key) => {
     const subArray = grouped[key];
     grouped[key] = groupRepeatedly(subArray, remainingFunctions);
   });
@@ -147,6 +143,6 @@ const groupRepeatedly = (dataArray: any, groupingFunctions: any) => {
 
 export default {
   groupDataArray,
-  groupRepeatedly
+  groupRepeatedly,
   // getMostFrequentPolarityPair
 };

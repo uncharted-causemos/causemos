@@ -14,17 +14,17 @@ export default defineComponent({
   props: {
     evidence: {
       type: Object,
-      default: () => null
+      default: () => null,
     },
     resourceType: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   watch: {
     evidence() {
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -76,28 +76,27 @@ export default defineComponent({
       } else {
         divEl.innerHTML = '';
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
-<style lang='scss' scoped>
-
+<style lang="scss" scoped>
 .evidence-highlights-container {
   :deep(.highlight) {
     font-weight: 800;
   }
   :deep(.negation-highlight) {
-    border-bottom:3px red dashed;
+    border-bottom: 3px red dashed;
     display: inline-block;
     line-height: 0.85;
   }
   :deep(.hedging-highlight) {
-    background-color: #BEBEBE;
+    background-color: #bebebe;
     font-style: italic;
   }
   :deep(.selected-highlight) {
-    background-color: #B6D8FC;
+    background-color: #b6d8fc;
   }
 }
 </style>

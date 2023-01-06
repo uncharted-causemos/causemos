@@ -2,7 +2,7 @@ import {
   AggregationOption,
   IncompleteDataCorrectiveAction,
   TemporalResolution,
-  TemporalResolutionOption
+  TemporalResolutionOption,
 } from '@/types/Enums';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import _ from 'lodash';
@@ -12,16 +12,20 @@ const NO_CHANGE_ABOVE = 0.9;
 
 const SUPERSCRIPTS = new Map([
   [IncompleteDataCorrectiveAction.DataRemoved, '*'],
-  [IncompleteDataCorrectiveAction.DataExtrapolated, '\u2020'] // dagger
+  [IncompleteDataCorrectiveAction.DataExtrapolated, '\u2020'], // dagger
 ]);
 const TOOLTIPS = new Map([
-  [IncompleteDataCorrectiveAction.DataRemoved,
+  [
+    IncompleteDataCorrectiveAction.DataRemoved,
     '* There was insufficient data to produce an accurate aggregate value for the final timeframe.' +
-    '<br>\u2002 The outlier point has been removed from the time series.'],
-  [IncompleteDataCorrectiveAction.DataExtrapolated,
+      '<br>\u2002 The outlier point has been removed from the time series.',
+  ],
+  [
+    IncompleteDataCorrectiveAction.DataExtrapolated,
     '\u2020 The final timeframe contained fewer data points than required to produce an accurate ' +
-    'aggregate value.<br>\u2002 The final point in the time series has been scaled based on the ' +
-    'number of data points.']
+      'aggregate value.<br>\u2002 The final point in the time series has been scaled based on the ' +
+      'number of data points.',
+  ],
 ]);
 
 /**
@@ -49,12 +53,17 @@ export function correctIncompleteTimeseriesLists(
   finalRawDate: Date
 ): Timeseries[] {
   return timeseriesData.map((timeseries: Timeseries) => {
-    const { action, points } = correctIncompleteTimeseries(timeseries.points, rawResolution,
-      temporalResolution, temporalAggregation, finalRawDate);
+    const { action, points } = correctIncompleteTimeseries(
+      timeseries.points,
+      rawResolution,
+      temporalResolution,
+      temporalAggregation,
+      finalRawDate
+    );
     return {
       ...timeseries,
       points,
-      correctiveAction: action
+      correctiveAction: action,
     };
   });
 }
@@ -81,7 +90,7 @@ export function correctIncompleteTimeseries(
   temporalResolution: TemporalResolutionOption,
   temporalAggregation: AggregationOption,
   finalRawDate: Date
-): { action: IncompleteDataCorrectiveAction, points: TimeseriesPoint[] } {
+): { action: IncompleteDataCorrectiveAction; points: TimeseriesPoint[] } {
   const sortedPoints = _.cloneDeep(_.sortBy(timeseries, 'timestamp'));
   const lastPoint = _.last(sortedPoints);
 
@@ -92,7 +101,8 @@ export function correctIncompleteTimeseries(
   }
 
   const lastAggDate = new Date(lastPoint.timestamp);
-  const areDatesValid = lastAggDate.getUTCFullYear() === finalRawDate.getUTCFullYear() &&
+  const areDatesValid =
+    lastAggDate.getUTCFullYear() === finalRawDate.getUTCFullYear() &&
     (temporalResolution === TemporalResolutionOption.Year ||
       (temporalResolution === TemporalResolutionOption.Month &&
         lastAggDate.getUTCMonth() === finalRawDate.getUTCMonth()));
@@ -107,7 +117,7 @@ export function correctIncompleteTimeseries(
     sortedPoints.pop();
     return { action: IncompleteDataCorrectiveAction.DataRemoved, points: sortedPoints };
   } else if (coverage < NO_CHANGE_ABOVE) {
-    lastPoint.value *= (1 / coverage);
+    lastPoint.value *= 1 / coverage;
     return { action: IncompleteDataCorrectiveAction.DataExtrapolated, points: sortedPoints };
   } else {
     return { action: IncompleteDataCorrectiveAction.CompleteData, points: sortedPoints };
@@ -139,12 +149,16 @@ export function correctIncompleteTimeseries(
  * Negative values indicate inconsistent raw data and aggregated data timestamps.
  * Since approximations are used, the value could be greater than 1.
  */
-const computeCoverage = (finalRawDate: Date, rawRes: TemporalResolution, aggRes: TemporalResolutionOption) => {
+const computeCoverage = (
+  finalRawDate: Date,
+  rawRes: TemporalResolution,
+  aggRes: TemporalResolutionOption
+) => {
   const lastMonth = finalRawDate.getUTCMonth();
 
   if (aggRes === TemporalResolutionOption.Year) {
     const lastMonthNum = lastMonth + 1; // range 1-12
-    const lastDayOfYear = (lastMonth * 30) + finalRawDate.getUTCDate();
+    const lastDayOfYear = lastMonth * 30 + finalRawDate.getUTCDate();
     switch (rawRes) {
       case TemporalResolution.Other:
       case TemporalResolution.Annual:
@@ -152,9 +166,9 @@ const computeCoverage = (finalRawDate: Date, rawRes: TemporalResolution, aggRes:
       case TemporalResolution.Monthly: // 12 months in a year
         return lastMonthNum / 12;
       case TemporalResolution.Dekad: // 36 dekad in a year
-        return (lastDayOfYear / 10) / 36;
+        return lastDayOfYear / 10 / 36;
       case TemporalResolution.Weekly: // 52 weeks in a year
-        return (lastDayOfYear / 7) / 52;
+        return lastDayOfYear / 7 / 52;
       case TemporalResolution.Daily: // 365 days in a year
         return lastDayOfYear / 365;
     }
@@ -166,9 +180,9 @@ const computeCoverage = (finalRawDate: Date, rawRes: TemporalResolution, aggRes:
       case TemporalResolution.Monthly:
         return 1;
       case TemporalResolution.Dekad: // 3 dekad in a month
-        return (lastDayOfMonth / 10) / 3;
+        return lastDayOfMonth / 10 / 3;
       case TemporalResolution.Weekly: // 4 weeks in a month
-        return (lastDayOfMonth / 7) / 4;
+        return lastDayOfMonth / 7 / 4;
       case TemporalResolution.Daily: // 30 days in a month
         return lastDayOfMonth / 30;
     }
@@ -184,15 +198,21 @@ export const getActionTooltip = (action?: IncompleteDataCorrectiveAction) => {
 };
 
 export const getFootnotes = (actionList: (IncompleteDataCorrectiveAction | undefined)[]) => {
-  return _.uniq(actionList).map((action: IncompleteDataCorrectiveAction|undefined) =>
-    action === undefined || !SUPERSCRIPTS.has(action)
-      ? undefined
-      : `${SUPERSCRIPTS.get(action)}${action}`
-  ).filter(a => a !== undefined).join('  ');
+  return _.uniq(actionList)
+    .map((action: IncompleteDataCorrectiveAction | undefined) =>
+      action === undefined || !SUPERSCRIPTS.has(action)
+        ? undefined
+        : `${SUPERSCRIPTS.get(action)}${action}`
+    )
+    .filter((a) => a !== undefined)
+    .join('  ');
 };
 
 export const getFootnoteTooltip = (actionList: (IncompleteDataCorrectiveAction | undefined)[]) => {
-  return _.uniq(actionList).map((action: IncompleteDataCorrectiveAction|undefined) =>
-    action === undefined || !TOOLTIPS.has(action) ? undefined : TOOLTIPS.get(action)
-  ).filter(a => a !== undefined).join('<br><br>');
+  return _.uniq(actionList)
+    .map((action: IncompleteDataCorrectiveAction | undefined) =>
+      action === undefined || !TOOLTIPS.has(action) ? undefined : TOOLTIPS.get(action)
+    )
+    .filter((a) => a !== undefined)
+    .join('<br><br>');
 };

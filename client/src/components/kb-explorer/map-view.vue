@@ -7,11 +7,9 @@
     :show-tooltip="true"
     @select-location="handleSelectedLocation"
   />
-
 </template>
 
 <script lang="ts">
-
 import _ from 'lodash';
 import { defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
@@ -22,35 +20,39 @@ import MapPoints from '@/components/kb-explorer/map-points.vue';
 export default defineComponent({
   name: 'MapView',
   components: {
-    MapPoints
+    MapPoints,
   },
   props: {
     mapData: {
       type: Object,
-      default: () => null
-    }
+      default: () => null,
+    },
   },
   setup() {
     return {
       layerId: 'point-layer',
-      layerSourceId: 'point-data'
+      layerSourceId: 'point-data',
     };
   },
   computed: {
     ...mapGetters({
-      filters: 'query/filters'
-    })
+      filters: 'query/filters',
+    }),
   },
   methods: {
     ...mapActions({
-      setSearchClause: 'query/setSearchClause'
+      setSearchClause: 'query/setSearchClause',
     }),
-    popupValueFormatter(feature: any) { // FIXME: MapboxGL types?
+    popupValueFormatter(feature: any) {
+      // FIXME: MapboxGL types?
       const value = _.isNil(feature) ? 0 : feature.properties.count;
       return `Name: ${feature.properties.name} <br> Occurrences: ${value}`;
     },
     handleSelectedLocation(selections: string[]) {
-      const geoLocationFacet = filtersUtil.findPositiveFacetClause(this.filters, 'factorLocationName');
+      const geoLocationFacet = filtersUtil.findPositiveFacetClause(
+        this.filters,
+        'factorLocationName'
+      );
       const clearSelection = _.isEmpty(selections);
       if (clearSelection && geoLocationFacet) {
         this.setSearchClause({ field: 'factorLocationName', values: [] });
@@ -62,13 +64,13 @@ export default defineComponent({
 
         // Single value is toggle, everything else is additive
         if (selections.length === 1 && values.includes(selections[0])) {
-          _.remove(values, d => d === selections[0]);
+          _.remove(values, (d) => d === selections[0]);
         } else {
           values = _.uniq(values.concat(selections));
         }
         this.setSearchClause({ field: 'factorLocationName', values: values });
       }
-    }
-  }
+    },
+  },
 });
 </script>

@@ -15,7 +15,10 @@ export default class ValuePill extends BasePill {
   }
 
   makeBranch() {
-    return Lex.from('relation', BinaryRelationState, TransitionFactory.valueMetaCompare({ searchKey: this.searchKey }))
-      .to('value', ValueState, this.branchConfig);
+    return Lex.from(
+      'relation',
+      BinaryRelationState,
+      TransitionFactory.valueMetaCompare({ searchKey: this.searchKey })
+    ).to('value', ValueState, this.branchConfig);
   }
 }

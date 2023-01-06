@@ -1,29 +1,20 @@
 <template>
-  <div
-    class="side-panel-container"
-    :class="{'large': isLarge}"
-  >
+  <div class="side-panel-container" :class="{ large: isLarge }">
     <div class="tab-column">
       <side-panel-nav
         class="side-panel-nav"
         :tabs="tabs"
         :current-tab-name="currentTabName"
-        @set-active="tabName => $emit('set-active', tabName)"
+        @set-active="(tabName) => $emit('set-active', tabName)"
       />
-      <slot name="below-tabs"/>
+      <slot name="below-tabs" />
     </div>
     <transition name="slide-fade">
-      <div
-        v-if="isPanelOpen"
-        class="side-panel-body"
-      >
+      <div v-if="isPanelOpen" class="side-panel-body">
         <div class="side-panel-header">
           <h5>{{ currentTabName }}</h5>
         </div>
-        <div
-          class="side-panel-content"
-          :class="{'has-padding': addPadding}"
-        >
+        <div class="side-panel-content" :class="{ 'has-padding': addPadding }">
           <slot />
         </div>
       </div>
@@ -36,11 +27,10 @@ import { defineComponent, PropType } from 'vue';
 import SidePanelNav from '@/components/side-panel/side-panel-nav.vue';
 import { SidePanelTab } from '@/types/Common';
 
-
 export default defineComponent({
   name: 'SidePanel',
   components: {
-    SidePanelNav
+    SidePanelNav,
   },
   props: {
     /**
@@ -62,20 +52,20 @@ export default defineComponent({
      */
     tabs: {
       type: Array as PropType<SidePanelTab[]>,
-      default: () => []
+      default: () => [],
     },
     currentTabName: {
       type: String,
-      default: () => ''
+      default: () => '',
     },
     addPadding: {
       type: Boolean,
-      default: false
+      default: false,
     },
     isLarge: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['set-active'],
   computed: {
@@ -84,8 +74,8 @@ export default defineComponent({
         if (this.tabs[i].name === this.currentTabName) return true;
       }
       return false;
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -161,11 +151,12 @@ $large-width: 380px;
   height: 100%;
 }
 
-.slide-fade-enter-active, .slide-fade-leave-active {
+.slide-fade-enter-active,
+.slide-fade-leave-active {
   transition: all $layout-transition;
   .side-panel-content,
   .side-panel-header {
-    transition: opacity .1s ease;
+    transition: opacity 0.1s ease;
   }
 }
 
@@ -179,5 +170,4 @@ $large-width: 380px;
     padding: 0 10px;
   }
 }
-
 </style>

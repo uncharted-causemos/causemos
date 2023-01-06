@@ -1,6 +1,11 @@
 import API from '@/api/api';
 import { AnalysisItem, DataAnalysisState, RegionRankingItemStates } from '@/types/Analysis';
-import { BinningOptions, ComparativeAnalysisMode, ProjectType, RegionRankingCompositionType } from '@/types/Enums';
+import {
+  BinningOptions,
+  ComparativeAnalysisMode,
+  ProjectType,
+  RegionRankingCompositionType,
+} from '@/types/Enums';
 import _ from 'lodash';
 
 /**
@@ -16,12 +21,11 @@ export const createAnalysisObject = (analysisItems?: AnalysisItem[]): DataAnalys
     colorBinCount: 5,
     colorBinType: BinningOptions.Linear,
     regionRankingCompositionType: RegionRankingCompositionType.Intersection,
-    regionRankingItemStates:
-      calculateResetRegionRankingWeights(analysisItems ?? [], {}),
+    regionRankingItemStates: calculateResetRegionRankingWeights(analysisItems ?? [], {}),
     selectedAdminLevel: 0,
     areRegionRankingRowsNormalized: false,
     selectedTimestamp: null,
-    highlightedRegionId: ''
+    highlightedRegionId: '',
   };
 };
 
@@ -37,12 +41,8 @@ export const didSelectedItemsChange = (
   oldItems: AnalysisItem[],
   newItems: AnalysisItem[]
 ): boolean => {
-  const oldSelectedItemIds = oldItems
-    .filter(item => item.selected)
-    .map(item => item.id);
-  const newSelectedItemIds = newItems
-    .filter(item => item.selected)
-    .map(item => item.id);
+  const oldSelectedItemIds = oldItems.filter((item) => item.selected).map((item) => item.id);
+  const newSelectedItemIds = newItems.filter((item) => item.selected).map((item) => item.id);
   return !_.isEqual(oldSelectedItemIds, newSelectedItemIds);
 };
 
@@ -50,13 +50,13 @@ export const calculateResetRegionRankingWeights = (
   analysisItems: AnalysisItem[],
   regionRankingItemStates: RegionRankingItemStates
 ) => {
-  const selectedItemCount = analysisItems.filter(item => item.selected).length;
+  const selectedItemCount = analysisItems.filter((item) => item.selected).length;
   const equalWeight = 100 / selectedItemCount;
   const newStates = {} as RegionRankingItemStates;
-  analysisItems.forEach(item => {
+  analysisItems.forEach((item) => {
     newStates[item.itemId] = {
       weight: item.selected ? equalWeight : 0,
-      isInverted: regionRankingItemStates[item.itemId]?.isInverted ?? false
+      isInverted: regionRankingItemStates[item.itemId]?.isInverted ?? false,
     };
   });
   return newStates;
@@ -76,24 +76,32 @@ export const createAnalysis = async (
     { title, description, project_id: projectId, state },
     {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     }
   );
   return result.data;
 };
 
-export const openDatacubeDrilldown = async (id: string, itemId: string, router: any, project: string, analysisId: string) => {
-  router.push({
-    name: 'data',
-    params: {
-      project: project,
-      analysisId: analysisId,
-      projectType: ProjectType.Analysis
-    },
-    query: {
-      datacube_id: id,
-      item_id: itemId
-    }
-  }).catch(() => {});
+export const openDatacubeDrilldown = async (
+  id: string,
+  itemId: string,
+  router: any,
+  project: string,
+  analysisId: string
+) => {
+  router
+    .push({
+      name: 'data',
+      params: {
+        project: project,
+        analysisId: analysisId,
+        projectType: ProjectType.Analysis,
+      },
+      query: {
+        datacube_id: id,
+        item_id: itemId,
+      },
+    })
+    .catch(() => {});
 };

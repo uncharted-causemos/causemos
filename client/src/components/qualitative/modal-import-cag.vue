@@ -1,20 +1,18 @@
 <template>
-  <modal
-    :show-close-button="true"
-    @close="close()">
+  <modal :show-close-button="true" @close="close()">
     <template #header>
-      <h4> Import CAGs into workspace </h4>
+      <h4>Import CAGs into workspace</h4>
     </template>
     <template #body>
       <div class="available-cags-container">
         <card
           v-for="cag in compatibleCAGs"
           :key="cag.id"
-          :class="{ 'selected': cag.selected ? true : false }"
-          @click="toggleCAGSelection(cag)">
-          <div
-            class="preview">
-            <img :src="cag.thumbnail_source">
+          :class="{ selected: cag.selected ? true : false }"
+          @click="toggleCAGSelection(cag)"
+        >
+          <div class="preview">
+            <img :src="cag.thumbnail_source" />
           </div>
           <h5>{{ cag.name }}</h5>
         </card>
@@ -24,22 +22,20 @@
       <ul class="unstyled-list">
         <span v-if="compatibleCAGs.length < allCAGs.length - 1">
           Only
-          {{ currentTimeScale === TimeScale.Years ? "yearly" : "monthly" }}
+          {{ currentTimeScale === TimeScale.Years ? 'yearly' : 'monthly' }}
           CAGs are shown.
         </span>
         <li>
-          <button
-            type="button"
-            class="btn"
-            @click.stop="close()">Cancel
-          </button>
+          <button type="button" class="btn" @click.stop="close()">Cancel</button>
         </li>
         <li>
           <button
             type="button"
             :disabled="selectedCAGIds.length === 0"
             class="btn btn-call-to-action"
-            @click.stop="importCAG()">Import CAG
+            @click.stop="importCAG()"
+          >
+            Import CAG
           </button>
         </li>
       </ul>
@@ -48,7 +44,6 @@
 </template>
 
 <script lang="ts">
-
 import { defineComponent, ref, computed, Ref } from 'vue';
 import { useStore } from 'vuex';
 import Modal from '@/components/modals/modal.vue';
@@ -65,11 +60,9 @@ export default defineComponent({
   name: 'ModalImportCag',
   components: {
     Modal,
-    Card
+    Card,
   },
-  emits: [
-    'import-cag', 'close'
-  ],
+  emits: ['import-cag', 'close'],
   setup() {
     const store = useStore();
     const allCAGs = ref([]) as Ref<SelectableCAGModelSummary[]>;
@@ -77,17 +70,15 @@ export default defineComponent({
     const project = computed(() => store.getters['app/project']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
     const currentTimeScale = computed(
-      () =>
-        allCAGs.value.find(cag => cag.id === currentCAG.value)?.parameter
-          .time_scale
+      () => allCAGs.value.find((cag) => cag.id === currentCAG.value)?.parameter.time_scale
     );
     const compatibleCAGs = computed(() => {
       return allCAGs.value
-        .filter(d => d.id !== currentCAG.value)
-        .filter(d => d.parameter.time_scale === currentTimeScale.value);
+        .filter((d) => d.id !== currentCAG.value)
+        .filter((d) => d.parameter.time_scale === currentTimeScale.value);
     });
     const selectedCAGIds = computed(() => {
-      return compatibleCAGs.value.filter(d => d.selected === true).map(d => d.id);
+      return compatibleCAGs.value.filter((d) => d.selected === true).map((d) => d.id);
     });
 
     return {
@@ -97,7 +88,7 @@ export default defineComponent({
       currentTimeScale,
       allCAGs,
       selectedCAGIds,
-      TimeScale
+      TimeScale,
     };
   },
   mounted() {
@@ -105,7 +96,7 @@ export default defineComponent({
   },
   methods: {
     refresh() {
-      modelService.getProjectModels(this.project).then(result => {
+      modelService.getProjectModels(this.project).then((result) => {
         this.allCAGs = result.models;
       });
     },
@@ -121,13 +112,13 @@ export default defineComponent({
     },
     close() {
       this.$emit('close', null);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .unstyled-list > *:not(:first-child) {
   margin-left: 10px;
@@ -139,7 +130,6 @@ export default defineComponent({
 }
 
 :deep(.modal-body) {
-
   .available-cags-container {
     display: flex;
     flex-wrap: wrap;
@@ -167,8 +157,6 @@ export default defineComponent({
         border: 2px solid $selected;
       }
     }
-
   }
 }
-
 </style>

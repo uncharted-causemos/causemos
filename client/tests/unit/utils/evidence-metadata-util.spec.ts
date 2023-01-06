@@ -9,7 +9,7 @@ const PUBLICATION_DATE = {
   date: '2016-04-18',
   day: 18,
   month: 4,
-  year: 2016
+  year: 2016,
 };
 const FORMATTED_PUBLICATION_DATE = 'Apr 18, 2016';
 
@@ -20,11 +20,11 @@ const document_context: DocumentContext = {
   file_type: null,
   ner_analytics: {
     loc: [],
-    org: []
+    org: [],
   },
   publication_date: null,
   publisher_name: null,
-  title: null
+  title: null,
 };
 const evidence_context: EvidenceContext = {
   agents_text: [],
@@ -32,52 +32,50 @@ const evidence_context: EvidenceContext = {
   hedging_words: [],
   source_api: 'dummy',
   source_hash: 123,
-  text: 'dummy'
+  text: 'dummy',
 };
 
 const x = {
   document_context,
-  evidence_context
+  evidence_context,
 };
 
 describe('evidence-metadata-util', () => {
   it('displays author name when it is available', () => {
     const EVIDENCE_ITEM = _.cloneDeep(x);
     EVIDENCE_ITEM.document_context.author = AUTHOR_NAME;
-    expect(evidenceMetadataUtil.constructDisplayString(EVIDENCE_ITEM))
-      .to.equal(AUTHOR_NAME);
+    expect(evidenceMetadataUtil.constructDisplayString(EVIDENCE_ITEM)).to.equal(AUTHOR_NAME);
   });
 
   it('displays publisher name when author is unavailable', () => {
     const EVIDENCE_ITEM = _.cloneDeep(x);
     EVIDENCE_ITEM.document_context.publisher_name = PUBLISHER_NAME;
-    expect(evidenceMetadataUtil.constructDisplayString(EVIDENCE_ITEM))
-      .to.equal(PUBLISHER_NAME);
+    expect(evidenceMetadataUtil.constructDisplayString(EVIDENCE_ITEM)).to.equal(PUBLISHER_NAME);
   });
 
   it('displays date when available', () => {
     const EVIDENCE_ITEM = _.cloneDeep(x);
     EVIDENCE_ITEM.document_context.publication_date = PUBLICATION_DATE;
-    expect(evidenceMetadataUtil.constructDisplayString(EVIDENCE_ITEM))
-      .to.equal(FORMATTED_PUBLICATION_DATE);
+    expect(evidenceMetadataUtil.constructDisplayString(EVIDENCE_ITEM)).to.equal(
+      FORMATTED_PUBLICATION_DATE
+    );
   });
 
   it('displays author and date when available', () => {
     const EVIDENCE_ITEM = _.cloneDeep(x);
     EVIDENCE_ITEM.document_context.author = AUTHOR_NAME;
     EVIDENCE_ITEM.document_context.publication_date = PUBLICATION_DATE;
-    expect(evidenceMetadataUtil.constructDisplayString(EVIDENCE_ITEM))
-      .to.equal(AUTHOR_NAME + ' - ' + FORMATTED_PUBLICATION_DATE);
+    expect(evidenceMetadataUtil.constructDisplayString(EVIDENCE_ITEM)).to.equal(
+      AUTHOR_NAME + ' - ' + FORMATTED_PUBLICATION_DATE
+    );
   });
 
   it('displays publisher and date when available', () => {
     const EVIDENCE_ITEM = _.cloneDeep(x);
     EVIDENCE_ITEM.document_context.publisher_name = PUBLISHER_NAME;
     EVIDENCE_ITEM.document_context.publication_date = PUBLICATION_DATE;
-    expect(evidenceMetadataUtil.constructDisplayString(EVIDENCE_ITEM))
-      .to.equal(PUBLISHER_NAME + ' - ' + FORMATTED_PUBLICATION_DATE);
+    expect(evidenceMetadataUtil.constructDisplayString(EVIDENCE_ITEM)).to.equal(
+      PUBLISHER_NAME + ' - ' + FORMATTED_PUBLICATION_DATE
+    );
   });
 });
-
-
-

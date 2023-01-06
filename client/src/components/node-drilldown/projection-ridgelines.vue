@@ -14,39 +14,25 @@
       </h3>
     </div>
     <div class="scrollable">
-      <div
-        v-for="row of rowsToDisplay"
-        :key="row.scenarioId"
-        class="scenario-row"
-      >
+      <div v-for="row of rowsToDisplay" :key="row.scenarioId" class="scenario-row">
         <div class="grid-row">
           <div class="first-column">
             <div class="scenario-name" @click="selectScenario(row.scenarioId)">
-              <i
-                v-if="selectedScenarioId === row.scenarioId"
-                class="fa fa-circle"
-              />
+              <i v-if="selectedScenarioId === row.scenarioId" class="fa fa-circle" />
               <i v-else class="fa fa-circle-o" />
               <h3 style="margin-left: 5px">{{ row.scenarioName }}</h3>
             </div>
             <span class="scenario-desc" v-tooltip.top-start="row.scenarioDesc">
               {{ row.scenarioDesc }}
             </span>
-            <div
-              v-for="clamp in getScenarioClamps(row)"
-              :key="clamp.concept"
-              class="clamp-name"
-            >
+            <div v-for="clamp in getScenarioClamps(row)" :key="clamp.concept" class="clamp-name">
               <i class="fa fa-circle scenario-clamp-icon" />
               {{ ontologyFormatter(clamp.concept) }}
             </div>
             <!-- If there is more than one scenario and this is the comparison
               baseline, label it -->
             <h4
-              v-if="
-                rowsToDisplay.length > 1 &&
-                row.scenarioId === comparisonBaselineId
-              "
+              v-if="rowsToDisplay.length > 1 && row.scenarioId === comparisonBaselineId"
               class="comparison-baseline-control"
             >
               Comparison baseline
@@ -55,7 +41,7 @@
               this the comparison baseline-->
             <button
               v-else-if="rowsToDisplay.length > 1"
-              class="btn btn-sm  comparison-baseline-control"
+              class="btn btn-sm comparison-baseline-control"
               @click="$emit('set-comparison-baseline-id', row.scenarioId)"
             >
               Use as comparison baseline
@@ -70,9 +56,7 @@
               class="ridgeline"
               :ridgeline-data="ridgelineData"
               :comparison-baseline="
-                row.comparisonBaseline
-                  ? row.comparisonBaseline[timeSliceIndex]
-                  : null
+                row.comparisonBaseline ? row.comparisonBaseline[timeSliceIndex] : null
               "
               :min="indicatorMin"
               :max="indicatorMax"
@@ -96,15 +80,8 @@
           </div>
         </div>
       </div>
-      <div
-        v-if="requestAddingNewScenario"
-        class="new-scenario-row"
-        id="new-scenario-row"
-      >
-        <cag-scenario-form
-          @save="saveScenario"
-          @cancel="requestAddingNewScenario = false"
-        />
+      <div v-if="requestAddingNewScenario" class="new-scenario-row" id="new-scenario-row">
+        <cag-scenario-form @save="saveScenario" @cancel="requestAddingNewScenario = false" />
       </div>
       <button
         v-else
@@ -129,11 +106,7 @@
 </template>
 
 <script lang="ts">
-import {
-  CAGModelSummary,
-  ScenarioParameter,
-  ScenarioProjection
-} from '@/types/CAG';
+import { CAGModelSummary, ScenarioParameter, ScenarioProjection } from '@/types/CAG';
 import { defineComponent, nextTick, PropType } from 'vue';
 import Ridgeline from '@/components/widgets/charts/ridgeline.vue';
 import { getTimeScaleOption } from '@/utils/time-scale-util';
@@ -144,7 +117,7 @@ import {
   calculateTypicalChangeBracket,
   convertDistributionTimeseriesToRidgelines,
   RidgelineWithMetadata,
-  summarizeRidgelineComparison
+  summarizeRidgelineComparison,
 } from '@/utils/ridgeline-util';
 import { scrollToElement, scrollToElementWithId } from '@/utils/dom-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
@@ -158,7 +131,7 @@ interface RidgelineRow {
   ridgelines: RidgelineWithMetadata[];
   comparisonBaseline: RidgelineWithMetadata[] | null;
   // TODO: extract type
-  summaries: { before: string; emphasized: string; after: string; }[];
+  summaries: { before: string; emphasized: string; after: string }[];
   contextRanges: ({ min: number; max: number } | null)[];
 }
 
@@ -169,48 +142,48 @@ export default defineComponent({
   props: {
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
-      required: true
+      required: true,
     },
     nodeConceptName: {
       type: String,
-      default: ''
+      default: '',
     },
     comparisonBaselineId: {
       type: String,
-      default: null
+      default: null,
     },
     baselineScenarioId: {
       type: String,
-      default: null
+      default: null,
     },
     projections: {
       type: Array as PropType<ScenarioProjection[]>,
-      default: []
+      default: [],
     },
     indicatorMin: {
       type: Number,
-      required: true
+      required: true,
     },
     indicatorMax: {
       type: Number,
-      required: true
+      required: true,
     },
     historicalTimeseries: {
       type: Array as PropType<TimeseriesPoint[]>,
-      default: []
-    }
+      default: [],
+    },
   },
   data: () => ({
-    requestAddingNewScenario: false
+    requestAddingNewScenario: false,
   }),
   setup() {
     return {
-      ontologyFormatter: useOntologyFormatter()
+      ontologyFormatter: useOntologyFormatter(),
     };
   },
   computed: {
     ...mapGetters({
-      selectedScenarioId: 'model/selectedScenarioId'
+      selectedScenarioId: 'model/selectedScenarioId',
     }),
     timeSliceLabels(): string[] {
       const timeScale = this.modelSummary.parameter.time_scale;
@@ -225,30 +198,22 @@ export default defineComponent({
     ridgelinesAtTimeslices(): RidgelineRow[] {
       if (this.baselineScenarioId === null) return [];
       const baselineProjections = this.projections.find(
-        projection => projection.scenarioId === this.baselineScenarioId
+        (projection) => projection.scenarioId === this.baselineScenarioId
       );
       if (baselineProjections === undefined) {
         console.error(
-          'Unable to find projection data for baseline scenario ' +
-            this.baselineScenarioId
+          'Unable to find projection data for baseline scenario ' + this.baselineScenarioId
         );
         return [];
       }
-      const rows: RidgelineRow[] = this.projections.map(scenarioProjection => {
-        const {
-          scenarioId,
-          scenarioName,
-          scenarioDesc,
-          values,
-          is_valid,
-          parameter
-        } = scenarioProjection;
+      const rows: RidgelineRow[] = this.projections.map((scenarioProjection) => {
+        const { scenarioId, scenarioName, scenarioDesc, values, is_valid, parameter } =
+          scenarioProjection;
         // If scenario has no projections, use the projections from the
         //  baseline scenario, because
         //  - they are guaranteed to exist
         //  - they will be the correct projections until clamps are added
-        const projectionValues =
-          values.length > 0 ? values : baselineProjections.values;
+        const projectionValues = values.length > 0 ? values : baselineProjections.values;
 
         // Convert the distributions at each timeslice to ridgelines with
         //  metadata for each slice
@@ -259,7 +224,7 @@ export default defineComponent({
           this.indicatorMin,
           this.indicatorMax
         );
-        ridgelines.forEach(ridgelinesWithMetadata => {
+        ridgelines.forEach((ridgelinesWithMetadata) => {
           // Calculate context range
           const contextRange = calculateTypicalChangeBracket(
             this.historicalTimeseries,
@@ -280,30 +245,27 @@ export default defineComponent({
           comparisonBaseline: null,
           // Summaries will also be injected once comparisonBaseline is.
           summaries: [],
-          contextRanges
+          contextRanges,
         };
       });
       return rows;
     },
     rowsToDisplay(): RidgelineRow[] {
       // Move selected scenario to othe top
-      const rows = this.moveRidgelineRowToTop(
-        this.selectedScenarioId,
-        this.ridgelinesAtTimeslices
-      );
+      const rows = this.moveRidgelineRowToTop(this.selectedScenarioId, this.ridgelinesAtTimeslices);
       // Inject comparison baseline into each other row for rendering within
       //  `ridgeline.vue`
       // Note that the "comparison baseline scenario" may not be the scenario
       //  without clamps (also referred to as the "baseline scenario")
       const baselineId = this.comparisonBaselineId;
       const comparisonBaselineRidgelines =
-        rows.find(row => row.scenarioId === baselineId)?.ridgelines ?? null;
-      rows.forEach(row => {
+        rows.find((row) => row.scenarioId === baselineId)?.ridgelines ?? null;
+      rows.forEach((row) => {
         row.comparisonBaseline =
           row.scenarioId === baselineId ? null : comparisonBaselineRidgelines;
       });
       // Calculate and store the summary for each ridgeline
-      rows.forEach(row => {
+      rows.forEach((row) => {
         // New row objects are only created when the projections or
         //  parameterization changes, so reset the `summaries` property.
         row.summaries = [];
@@ -313,8 +275,7 @@ export default defineComponent({
         row.ridgelines.forEach((ridgeline, index) => {
           // Assert that row.comparisonBaseline is not null because of the check
           //  above.
-          const sourceRidgelines =
-            row.comparisonBaseline as RidgelineWithMetadata[];
+          const sourceRidgelines = row.comparisonBaseline as RidgelineWithMetadata[];
           const sourceRidgeline = sourceRidgelines[index];
           const summary = summarizeRidgelineComparison(
             ridgeline,
@@ -328,14 +289,15 @@ export default defineComponent({
       return rows;
     },
     comparisonBaselineName() {
-      return this.ridgelinesAtTimeslices.find(
-        row => row.scenarioId === this.comparisonBaselineId
-      )?.scenarioName ?? '';
-    }
+      return (
+        this.ridgelinesAtTimeslices.find((row) => row.scenarioId === this.comparisonBaselineId)
+          ?.scenarioName ?? ''
+      );
+    },
   },
   methods: {
     ...mapActions({
-      setSelectedScenarioId: 'model/setSelectedScenarioId'
+      setSelectedScenarioId: 'model/setSelectedScenarioId',
     }),
     getScenarioClamps(row: RidgelineRow) {
       return row.parameter.constraints;
@@ -356,7 +318,7 @@ export default defineComponent({
     saveScenario(info: { name: string; description: string }) {
       this.$emit('new-scenario', {
         name: info.name,
-        description: info.description
+        description: info.description,
       });
       this.requestAddingNewScenario = false;
       this.scrollToTop();
@@ -372,22 +334,14 @@ export default defineComponent({
       this.setSelectedScenarioId(null);
     },
     moveRidgelineRowToTop(scenarioId: string, rows: RidgelineRow[]) {
-      const row = rows.find(
-        ridgelineRow => ridgelineRow.scenarioId === scenarioId
-      );
+      const row = rows.find((ridgelineRow) => ridgelineRow.scenarioId === scenarioId);
       if (row === undefined) {
-        console.error(
-          'Unable to find ridgelines for a scenario with ID',
-          scenarioId
-        );
+        console.error('Unable to find ridgelines for a scenario with ID', scenarioId);
         return rows;
       }
-      return [
-        row,
-        ...rows.filter(ridgelineRow => ridgelineRow.scenarioId !== scenarioId)
-      ];
-    }
-  }
+      return [row, ...rows.filter((ridgelineRow) => ridgelineRow.scenarioId !== scenarioId)];
+    },
+  },
 });
 </script>
 
@@ -552,7 +506,6 @@ $grid-row-gap-size: 5px;
 .comparison-baseline-control {
   margin-top: 5px;
 }
-
 
 h4 {
   @include header-secondary;

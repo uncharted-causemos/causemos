@@ -1,25 +1,12 @@
 <template>
   <span>
-    <i
-      v-if="currentSort===null"
-      class="fa fa-fw fa-sort"
-      @click="changeSort('asc')"
-    />
-    <i
-      v-if="currentSort==='asc'"
-      class="fa fa-fw fa-sort-asc"
-      @click="changeSort('desc')"
-    />
-    <i
-      v-if="currentSort==='desc'"
-      class="fa fa-fw fa-sort-desc"
-      @click="changeSort('asc')"
-    />
+    <i v-if="currentSort === null" class="fa fa-fw fa-sort" @click="changeSort('asc')" />
+    <i v-if="currentSort === 'asc'" class="fa fa-fw fa-sort-asc" @click="changeSort('desc')" />
+    <i v-if="currentSort === 'desc'" class="fa fa-fw fa-sort-desc" @click="changeSort('asc')" />
   </span>
 </template>
 
 <script lang="ts">
-
 import _ from 'lodash';
 import { defineComponent, computed, ref } from 'vue';
 import { useStore } from 'vuex';
@@ -29,8 +16,8 @@ export default defineComponent({
   props: {
     field: {
       type: String,
-      default: null
-    }
+      default: null,
+    },
   },
   setup(props) {
     const store = useStore();
@@ -46,14 +33,18 @@ export default defineComponent({
       currentSort,
 
       changeSort: (order: string) => {
-        store.dispatch('query/setOrderBy', { view: view.value, field: props.field, sortOrder: order });
-      }
+        store.dispatch('query/setOrderBy', {
+          view: view.value,
+          field: props.field,
+          sortOrder: order,
+        });
+      },
     };
   },
   watch: {
     sort() {
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -65,7 +56,7 @@ export default defineComponent({
       } else {
         this.currentSort = this.sort[this.field];
       }
-    }
-  }
+    },
+  },
 });
 </script>

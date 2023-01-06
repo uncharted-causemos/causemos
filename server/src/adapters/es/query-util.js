@@ -18,21 +18,21 @@ class QueryUtil {
   _termsBuilder(clause) {
     const { field, values } = clause;
     const esFields = this.configFields[field].aggFields || this.configFields[field].fields;
-    const result = esFields.map(field => {
+    const result = esFields.map((field) => {
       return { terms: { [field]: values } };
     });
 
     if (clause.isNot === true) {
       return {
         bool: {
-          must_not: result
-        }
+          must_not: result,
+        },
       };
     }
     return {
       bool: {
-        should: result
-      }
+        should: result,
+      },
     };
   }
 
@@ -50,8 +50,8 @@ class QueryUtil {
     const esFields = fieldMeta.fields;
     const queries = [];
 
-    esFields.forEach(esField => {
-      values.forEach(range => {
+    esFields.forEach((esField) => {
+      values.forEach((range) => {
         const resultRange = {};
         if (range[0] !== '--') {
           resultRange.gte = range[0];
@@ -61,22 +61,22 @@ class QueryUtil {
         }
         queries.push({
           range: {
-            [esField]: resultRange
-          }
+            [esField]: resultRange,
+          },
         });
       });
     });
     if (clause.isNot === true) {
       return {
         bool: {
-          must_not: queries
-        }
+          must_not: queries,
+        },
       };
     }
     return {
       bool: {
-        should: queries
-      }
+        should: queries,
+      },
     };
   }
 
@@ -90,7 +90,7 @@ class QueryUtil {
    */
   _dateToEpochMillis(clause) {
     const { values } = clause;
-    values.forEach(range => {
+    values.forEach((range) => {
       if (range[0] !== '--') {
         range[0] = moment.utc(range[0].toString()).valueOf();
       }
@@ -111,28 +111,29 @@ class QueryUtil {
     const fieldMeta = this.configFields[field];
     const esFields = fieldMeta.fields;
     const queries = [];
-    esFields.forEach(field => {
-      values.forEach(value => {
+    esFields.forEach((field) => {
+      values.forEach((value) => {
         queries.push({
-          query_string: { // case insensitive search
+          query_string: {
+            // case insensitive search
             query: `${value}*`,
             fields: [field],
-            default_operator: 'AND'
-          }
+            default_operator: 'AND',
+          },
         });
       });
     });
     if (clause.isNot === true) {
       return {
         bool: {
-          must_not: queries
-        }
+          must_not: queries,
+        },
       };
     }
     return {
       bool: {
-        should: queries
-      }
+        should: queries,
+      },
     };
   }
 
@@ -164,26 +165,23 @@ class QueryUtil {
     if (isUnevaluated) {
       queries.push({
         bool: {
-          filter: [
-            { term: { 'wm.edited': 0 } },
-            { term: { 'wm.state': 1 } }
-          ]
-        }
+          filter: [{ term: { 'wm.edited': 0 } }, { term: { 'wm.state': 1 } }],
+        },
       });
     }
 
     if (clause.isNot === true) {
       return {
         bool: {
-          must_not: queries
-        }
+          must_not: queries,
+        },
       };
     }
 
     return {
       bool: {
-        should: queries
-      }
+        should: queries,
+      },
     };
   }
 
@@ -209,7 +207,7 @@ class QueryUtil {
    * @param {Integer} documentLevel
    */
   levelFilter(clauses, documentLevel) {
-    const result = clauses.filter(clause => {
+    const result = clauses.filter((clause) => {
       let fieldType;
       if (!_.isNil(clause)) {
         const fieldMeta = this.configFields[clause.field];
@@ -226,7 +224,7 @@ class QueryUtil {
    * */
   _translateFilters(clauses) {
     const translatedFilters = [];
-    clauses.forEach(clause => {
+    clauses.forEach((clause) => {
       this._validClauseCheck(clause);
       const field = clause.field;
       const fieldMeta = this.configFields[field];
@@ -262,17 +260,17 @@ class QueryUtil {
         bool: {
           filter: [
             {
-              match_all: {}
-            }
-          ]
-        }
+              match_all: {},
+            },
+          ],
+        },
       };
     }
     const translatedFilters = this._translateFilters(clauses);
     const result = {
       bool: {
-        must: translatedFilters
-      }
+        must: translatedFilters,
+      },
     };
     return result;
   }
@@ -287,8 +285,8 @@ class QueryUtil {
     const result = {
       nested: {
         path: nestedPath,
-        query: translatedFilters
-      }
+        query: translatedFilters,
+      },
     };
     return result;
   }

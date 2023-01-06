@@ -1,22 +1,19 @@
 <template>
-  <div class="slider-section" :style="{height: size + '%' }">
+  <div class="slider-section" :style="{ height: size + '%' }">
     <!-- left side -->
-    <div
-      class='tag'
-      :style="{background: color}"
-      v-tooltip.left="name"
-    >
+    <div class="tag" :style="{ background: color }" v-tooltip.left="name">
       <div
-        class='slider-button'
+        class="slider-button"
         @mousedown="$emit('slider-button-down', $event)"
-        @mouseup="$emit('slider-button-up', $event)">
-        <img :src='getImgUrl' style="height: 30%" />
+        @mouseup="$emit('slider-button-up', $event)"
+      >
+        <img :src="getImgUrl" style="height: 30%" />
       </div>
     </div>
     <!-- right side -->
     <div class="label-area">
-      <div class="line-content">{{name}}</div>
-      <label class="line-content">{{size + '%'}}</label>
+      <div class="line-content">{{ name }}</div>
+      <label class="line-content">{{ size + '%' }}</label>
     </div>
   </div>
 </template>
@@ -30,29 +27,29 @@ export default defineComponent({
   props: {
     name: {
       type: String,
-      required: true
+      required: true,
     },
     color: {
       type: String,
-      required: true
+      required: true,
     },
     size: {
       type: Number,
-      required: true
-    }
+      required: true,
+    },
   },
   computed: {
     getImgUrl() {
       const imgSrc = 'slider-arrows.svg';
       const assetFolder = require.context('@/assets/');
       return assetFolder('./' + imgSrc);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 $slider-section-rounding: 4px;
 
@@ -117,7 +114,7 @@ $slider-section-rounding: 4px;
   }
 }
 
-.slider-section:first-of-type{
+.slider-section:first-of-type {
   .tag {
     border-radius: $slider-section-rounding $slider-section-rounding 0px 0px;
   }
@@ -129,8 +126,8 @@ $slider-section-rounding: 4px;
 }
 
 .slider-section:last-of-type {
-  .tag>.slider-button {
-    display:none !important;
+  .tag > .slider-button {
+    display: none !important;
   }
 }
 </style>

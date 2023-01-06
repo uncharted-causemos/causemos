@@ -9,28 +9,30 @@ const queryUtil = new StatementQueryUtil();
 
 const facetQuery = (filters, fieldNames) => {
   const facets = {};
-  fieldNames.forEach(field => {
+  fieldNames.forEach((field) => {
     // We do not support multi-field facets, so fields is a single element array.
     const esField = (FIELDS[field].aggFields || FIELDS[field].fields)[0];
 
     facets[field] = {
       terms: {
         field: esField,
-        size: 200
+        size: 200,
       },
       aggs: {
         uniques: {
           cardinality: {
-            field: 'evidence.document_context.doc_id'
-          }
-        }
-      }
+            field: 'evidence.document_context.doc_id',
+          },
+        },
+      },
     };
   });
 
   const q = queryUtil.buildQuery(filters);
   const clauses = filters.clauses || [];
-  const nestedFilters = queryUtil.buildFilters(queryUtil.levelFilter(clauses, FIELD_LEVELS.EVIDENCE));
+  const nestedFilters = queryUtil.buildFilters(
+    queryUtil.levelFilter(clauses, FIELD_LEVELS.EVIDENCE)
+  );
 
   return {
     size: 0,
@@ -38,17 +40,17 @@ const facetQuery = (filters, fieldNames) => {
     aggs: {
       docs: {
         nested: {
-          path: 'evidence'
+          path: 'evidence',
         },
         aggs: {
           filtered: {
             filter: nestedFilters,
             // filter: { match_all: {} },
-            aggs: facets
-          }
-        }
-      }
-    }
+            aggs: facets,
+          },
+        },
+      },
+    },
   };
 };
 
@@ -56,7 +58,9 @@ const facetQuery = (filters, fieldNames) => {
 const idQuery = (filters) => {
   const q = queryUtil.buildQuery(filters);
   const clauses = filters.clauses || [];
-  const nestedFilters = queryUtil.buildFilters(queryUtil.levelFilter(clauses, FIELD_LEVELS.EVIDENCE));
+  const nestedFilters = queryUtil.buildFilters(
+    queryUtil.levelFilter(clauses, FIELD_LEVELS.EVIDENCE)
+  );
 
   return {
     size: 0,
@@ -64,7 +68,7 @@ const idQuery = (filters) => {
     aggs: {
       document_context: {
         nested: {
-          path: 'evidence'
+          path: 'evidence',
         },
         aggs: {
           filtered: {
@@ -73,14 +77,14 @@ const idQuery = (filters) => {
               document_id: {
                 terms: {
                   field: 'evidence.document_context.doc_id',
-                  size: MAX_DOCUMENT_CONTEXT
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+                  size: MAX_DOCUMENT_CONTEXT,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   };
 };
 
@@ -90,17 +94,17 @@ const attrsQuery = (ids) => {
     size: MAX_DOCUMENT_CONTEXT,
     _source: {
       // Fields are too large or not useful
-      excludes: ['extracted_text', 'ner_analytics']
+      excludes: ['extracted_text', 'ner_analytics'],
     },
     query: {
       bool: {
         filter: {
           terms: {
-            id: ids
-          }
-        }
-      }
-    }
+            id: ids,
+          },
+        },
+      },
+    },
   };
 };
 
@@ -129,7 +133,7 @@ class DocumentContext {
    * @param {object} options
    * @param {number} options.size - number of results to return
    * @param {number} options.from - pagination start
-  */
+   */
   async find(filters, options) {
     let response = null;
     let result = null;
@@ -137,12 +141,12 @@ class DocumentContext {
     // 1) Find document ids
     const searchIDs = {
       index: this.index,
-      body: idQuery(filters)
+      body: idQuery(filters),
     };
 
     response = await this.client.search(searchIDs);
     result = response.body;
-    const ids = result.aggregations.document_context.filtered.document_id.buckets.map(d => d.key);
+    const ids = result.aggregations.document_context.filtered.document_id.buckets.map((d) => d.key);
 
     const from = _.isNil(options.from) ? 0 : +options.from;
     const size = _.isNil(options.size) ? 50 : +options.size;
@@ -155,12 +159,12 @@ class DocumentContext {
     const filteredIds = ids.splice(from, size);
     const searchDocs = {
       index: this.corpusIndex,
-      body: attrsQuery(filteredIds)
+      body: attrsQuery(filteredIds),
     };
     response = await this.client.search(searchDocs);
 
     const docs = response.body.hits.hits;
-    return docs.map(d => d._source);
+    return docs.map((d) => d._source);
   }
 
   /**
@@ -172,7 +176,7 @@ class DocumentContext {
   async getFacets(filters, fieldNames) {
     // Sanity check, remove invalid fields
     const filteredFieldNames = [];
-    fieldNames.forEach(f => {
+    fieldNames.forEach((f) => {
       if (FIELDS[f] && FIELDS[f].level === FIELD_LEVELS.EVIDENCE) {
         filteredFieldNames.push(f);
       }
@@ -184,18 +188,18 @@ class DocumentContext {
     // Run query
     const response = await this.client.search({
       index: this.index,
-      body: facetQuery(filters, filteredFieldNames)
+      body: facetQuery(filters, filteredFieldNames),
     });
 
     const facets = response.body.aggregations.docs.filtered;
     const result = {};
 
     // Pull out uniques
-    filteredFieldNames.forEach(fieldName => {
-      result[fieldName] = facets[fieldName].buckets.map(bucket => {
+    filteredFieldNames.forEach((fieldName) => {
+      result[fieldName] = facets[fieldName].buckets.map((bucket) => {
         return {
           key: bucket.key,
-          value: bucket.uniques.value
+          value: bucket.uniques.value,
         };
       });
     });

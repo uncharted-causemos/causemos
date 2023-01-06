@@ -17,11 +17,11 @@ const createModel = async (payload) => {
     method: 'POST',
     url: DYSE_URL + '/create-model',
     headers: {
-      'Authorization': basicAuthToken,
+      Authorization: basicAuthToken,
       'Content-type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     },
-    json: payload
+    json: payload,
   };
 
   const result = await requestAsPromise(dyseOptions);
@@ -39,13 +39,12 @@ const createModel = async (payload) => {
       acc[key] = {};
     }
     const w = edge.weights.map(parseFloat);
-    acc[key].weights = w.map(v => Math.abs(v));
+    acc[key].weights = w.map((v) => Math.abs(v));
 
     return acc;
   }, {});
   return { nodes, edges, status: result.status };
 };
-
 
 /**
  * Get current model status and parameterizations
@@ -57,10 +56,10 @@ const modelStatus = async (modelId) => {
     method: 'GET',
     url: DYSE_URL + '/models/' + modelId,
     headers: {
-      'Authorization': basicAuthToken,
+      Authorization: basicAuthToken,
       'Content-type': 'application/json',
-      'Accept': 'application/json'
-    }
+      Accept: 'application/json',
+    },
   };
   const result = await requestAsPromise(dyseOptions);
   return result;
@@ -79,11 +78,11 @@ const createExperiment = async (modelId, payload) => {
     url: DYSE_URL + `/models/${modelId}/experiments`,
     method: 'POST',
     headers: {
-      'Authorization': basicAuthToken,
+      Authorization: basicAuthToken,
       'Content-Type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     },
-    json: payload
+    json: payload,
   };
 
   const result = await requestAsPromise(options);
@@ -102,16 +101,15 @@ const findExperiment = async (modelId, experimentId) => {
     method: 'GET',
     headers: {
       Authorization: basicAuthToken,
-      Accept: 'application/json'
+      Accept: 'application/json',
     },
     // HACK: This causes DySE to send back properly formatted json in the response. Note that the json option is not meant for this purpose.
     // TODO: Resolve this issue on the DySE side
-    json: {}
+    json: {},
   };
   const result = await requestAsPromise(options);
   return result;
 };
-
 
 /**
  * Update node parameterization of a model
@@ -125,14 +123,13 @@ const updateNodeParameter = async (modelId, parameter) => {
     method: 'POST',
     headers: {
       Authorization: basicAuthToken,
-      Accept: 'application/json'
+      Accept: 'application/json',
     },
-    json: parameter
+    json: parameter,
   };
   const result = await requestAsPromise(options);
   return result;
 };
-
 
 /**
  * Update edge weights
@@ -146,14 +143,13 @@ const updateEdgeParameter = async (modelId, edges) => {
     method: 'POST',
     headers: {
       Authorization: basicAuthToken,
-      Accept: 'application/json'
+      Accept: 'application/json',
     },
-    json: { edges: edges }
+    json: { edges: edges },
   };
   const result = await requestAsPromise(options);
   return result;
 };
-
 
 module.exports = {
   createModel,
@@ -161,5 +157,5 @@ module.exports = {
   createExperiment,
   findExperiment,
   updateNodeParameter,
-  updateEdgeParameter
+  updateEdgeParameter,
 };

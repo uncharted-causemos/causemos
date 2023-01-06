@@ -4,9 +4,9 @@
       <div v-for="item in analysisItems" :key="item.datacubeId">
         <label
           @click="toggleItemSelection(item)"
-          style="cursor: pointer;"
+          style="cursor: pointer"
           :style="{ color: item.selected || canSelectItem ? '#000000' : '#707070' }"
-          >
+        >
           <i
             class="fa fa-lg fa-fw"
             :class="{ 'fa-check-square-o': item.selected, 'fa-square-o': !item.selected }"
@@ -15,16 +15,10 @@
             {{ getDisplayName(item) }}
           </span>
         </label>
-        <i
-          class="fa fa-fw fa-close delete-item"
-          @click="removeItem(item)"
-        />
+        <i class="fa fa-fw fa-close delete-item" @click="removeItem(item)" />
       </div>
     </template>
-    <message-display
-      v-else
-      :message="messageNoData"
-    />
+    <message-display v-else :message="messageNoData" />
   </div>
 </template>
 
@@ -40,29 +34,32 @@ import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 export default defineComponent({
   name: 'ListDatacubesDrawerPane',
   components: {
-    MessageDisplay
+    MessageDisplay,
   },
   props: {
     analysisItems: {
       type: Array as PropType<AnalysisItem[]>,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: ['toggle-analysis-item-selected', 'remove-analysis-item'],
   data: () => ({
-    messageNoData: 'No Datacubes are added to this analysis. \nPlease add some datacube by clicking on <b>"Search Data Cubes"</b> button!'
+    messageNoData:
+      'No Datacubes are added to this analysis. \nPlease add some datacube by clicking on <b>"Search Data Cubes"</b> button!',
   }),
   setup(props) {
     const { analysisItems } = toRefs(props);
     const store = useStore();
 
     const canSelectItem = computed(() => {
-      return analysisItems.value.filter(item => item.selected).length < MAX_ANALYSIS_DATACUBES_COUNT;
+      return (
+        analysisItems.value.filter((item) => item.selected).length < MAX_ANALYSIS_DATACUBES_COUNT
+      );
     });
 
     return {
       store,
-      canSelectItem
+      canSelectItem,
     };
   },
   methods: {
@@ -76,16 +73,14 @@ export default defineComponent({
     },
     getDisplayName(item: AnalysisItem) {
       const { datacubeName, featureName, source } = item.cachedMetadata;
-      return [featureName, datacubeName, source]
-        .filter(text => text !== '')
-        .join(' - ');
-    }
-  }
+      return [featureName, datacubeName, source].filter((text) => text !== '').join(' - ');
+    },
+  },
 });
 </script>
 
 <style lang="scss">
-@import "~styles/variables";
+@import '~styles/variables';
 
 .list-datacubes-drawer-pane-container {
   color: #707070;
@@ -119,5 +114,4 @@ export default defineComponent({
     }
   }
 }
-
 </style>

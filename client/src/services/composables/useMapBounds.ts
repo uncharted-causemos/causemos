@@ -12,9 +12,9 @@ export default function useMapBounds(
   // FIXME: this can be greatly simplified. useMapBounds is only used in two
   //  places and it's unclear why mapBounds can be set to two different possible
   //  values.
-  const mapBounds = ref<number[][] | { value: number[][], options: any }>([
+  const mapBounds = ref<number[][] | { value: number[][]; options: any }>([
     [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-    [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
+    [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
   ]);
 
   const onSyncMapBounds = (bounds: number[][]) => {
@@ -26,7 +26,7 @@ export default function useMapBounds(
 
     // If there's no selected regions, use countries to get the bounds
     const regionIds = !selectedRegionIds.value.length
-      ? (regionalData.value?.country || []).map(item => item.id)
+      ? (regionalData.value?.country || []).map((item) => item.id)
       : selectedRegionIds.value;
     //
     // calculate the initial map bounds covering the model geography
@@ -37,7 +37,7 @@ export default function useMapBounds(
       const options = {
         padding: 20, // pixels
         duration: 1000, // milliseconds
-        essential: true // this animation is considered essential with respect to prefers-reduced-motion
+        essential: true, // this animation is considered essential with respect to prefers-reduced-motion
       };
       mapBounds.value = { value: newBounds, options };
     }
@@ -45,6 +45,6 @@ export default function useMapBounds(
 
   return {
     onSyncMapBounds,
-    mapBounds
+    mapBounds,
   };
 }

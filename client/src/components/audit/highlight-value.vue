@@ -1,5 +1,5 @@
 <template>
-  <span :class="{ 'highlight': displayValue !== compareValue }">
+  <span :class="{ highlight: displayValue !== compareValue }">
     {{ displayValue }}
   </span>
 </template>
@@ -12,18 +12,18 @@ export default defineComponent({
   props: {
     displayValue: {
       type: String,
-      default: ''
+      default: '',
     },
     compareValue: {
       type: String,
-      default: ''
-    }
-  }
+      default: '',
+    },
+  },
 });
 </script>
 
-<style scoped lang='scss'>
-  .highlight {
-    background-color: rgb(255, 200, 168);
-  }
+<style scoped lang="scss">
+.highlight {
+  background-color: rgb(255, 200, 168);
+}
 </style>

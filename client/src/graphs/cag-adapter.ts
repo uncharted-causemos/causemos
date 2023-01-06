@@ -20,7 +20,7 @@ const makeGeneralLayout = (numLeafNodes: number) => {
       'elk.spacing.edgeEdge': 5,
       'elk.spacing.edgeNode': 5,
       'elk.layered.spacing.edgeEdgeBetweenLayers': 8,
-      'elk.layered.spacing.edgeNodeBetweenLayers': 10
+      'elk.layered.spacing.edgeNodeBetweenLayers': 10,
     };
   } else if (numLeafNodes > 15) {
     spacingOptions = {
@@ -31,7 +31,7 @@ const makeGeneralLayout = (numLeafNodes: number) => {
       'elk.spacing.edgeEdge': 10,
       'elk.spacing.edgeNode': 10,
       'elk.layered.spacing.edgeEdgeBetweenLayers': 15,
-      'elk.layered.spacing.edgeNodeBetweenLayers': 10
+      'elk.layered.spacing.edgeNodeBetweenLayers': 10,
     };
   } else {
     spacingOptions = {
@@ -42,7 +42,7 @@ const makeGeneralLayout = (numLeafNodes: number) => {
       'elk.spacing.edgeEdge': 10,
       'elk.spacing.edgeNode': 10,
       'elk.layered.spacing.edgeEdgeBetweenLayers': 15,
-      'elk.layered.spacing.edgeNodeBetweenLayers': 10
+      'elk.layered.spacing.edgeNodeBetweenLayers': 10,
     };
   }
 
@@ -54,7 +54,7 @@ const makeGeneralLayout = (numLeafNodes: number) => {
     'elk.randomSeed': 666, // might as well be a coool number
     'elk.padding': '[top=25, left=25, bottom=25, right=25]',
     'elk.validateGraph': true,
-    ...spacingOptions
+    ...spacingOptions,
   };
 };
 
@@ -64,7 +64,7 @@ const makeNodeLayout = () => {
     'elk.portAlignment.default': 'DISTRIBUTED',
     'elk.padding': '[top=20, left=20, bottom=20, right=20]', // Hierarchical padding
     'elk.layered.spacing.edgeEdgeBetweenLayers': 5,
-    'elk.layered.spacing.edgeNodeBetweenLayers': 1
+    'elk.layered.spacing.edgeNodeBetweenLayers': 1,
   };
 };
 
@@ -75,8 +75,6 @@ const makePortLayout = (port: any) => {
     return { 'elk.port.side': 'WEST' };
   }
 };
-
-
 
 const makeEdgeMaps = (edges: any) => {
   const incoming: Map<string, number> = new Map();
@@ -103,14 +101,14 @@ const makeEdgeMaps = (edges: any) => {
 
   return {
     incoming,
-    outgoing
+    outgoing,
   };
 };
 
-
-
 /* Coherce CAG to a hierarchical format for rendering */
-export const buildInitialGraph = (modelComponents: CAGGraph): IGraph<NodeParameter, EdgeParameter> => {
+export const buildInitialGraph = (
+  modelComponents: CAGGraph
+): IGraph<NodeParameter, EdgeParameter> => {
   const nodes: INode<NodeParameter>[] = [];
   const edges: IEdge<EdgeParameter>[] = [];
 
@@ -123,7 +121,7 @@ export const buildInitialGraph = (modelComponents: CAGGraph): IGraph<NodeParamet
       x: 0,
       y: 0,
       width: 0,
-      height: 0
+      height: 0,
     });
   }
 
@@ -133,15 +131,15 @@ export const buildInitialGraph = (modelComponents: CAGGraph): IGraph<NodeParamet
       source: edge.source,
       target: edge.target,
       points: [],
-      data: edge
+      data: edge,
     });
   }
 
   return {
-    nodes, edges
+    nodes,
+    edges,
   };
 };
-
 
 interface ELKEdge {
   id: string;
@@ -171,7 +169,7 @@ const walkNode = <T>(node: INode<T>, parentNode: ELKNode | null): ELKNode => {
     id: node.label, // Note we use label in place of id, makes working wigh edges a little easier
     label: node.label,
     children: [],
-    edges: []
+    edges: [],
   };
   if (parentNode) {
     parentNode.children.push(elkNode);
@@ -182,7 +180,7 @@ const walkNode = <T>(node: INode<T>, parentNode: ELKNode | null): ELKNode => {
   return elkNode;
 };
 
-export const convert2ELK = <V, E> (graph: IGraph<V, E>): ELKNode => {
+export const convert2ELK = <V, E>(graph: IGraph<V, E>): ELKNode => {
   const elkNodes = [];
   const elkEdges = [];
 
@@ -193,7 +191,7 @@ export const convert2ELK = <V, E> (graph: IGraph<V, E>): ELKNode => {
     elkEdges.push({
       id: edge.id,
       source: edge.source,
-      target: edge.target
+      target: edge.target,
     });
   }
 
@@ -201,10 +199,9 @@ export const convert2ELK = <V, E> (graph: IGraph<V, E>): ELKNode => {
     id: 'root',
     label: 'root',
     children: elkNodes,
-    edges: elkEdges
+    edges: elkEdges,
   };
 };
-
 
 const traverseELK = (root: ELKNode, callBackFn: (node: ELKNode) => void) => {
   callBackFn(root);
@@ -214,7 +211,6 @@ const traverseELK = (root: ELKNode, callBackFn: (node: ELKNode) => void) => {
     }
   }
 };
-
 
 const reshuffle = (elkGraph: ELKNode): void => {
   const nodeMap = new Map();
@@ -233,7 +229,6 @@ const reshuffle = (elkGraph: ELKNode): void => {
     nodeMap.get(elkGraph.id).edges.push(edge);
   }
 };
-
 
 const extractEdgePoints = (
   edge: ELKEdge,
@@ -288,10 +283,10 @@ const extractEdgePoints = (
     }
   }
 
-  const points = [startPoint, ...bendPoints, endPoint].map(p => {
+  const points = [startPoint, ...bendPoints, endPoint].map((p) => {
     return {
       x: p.x + tx,
-      y: p.y + ty
+      y: p.y + ty,
     };
   });
   return points;
@@ -304,7 +299,7 @@ const splitLineSegments = (points: { x: number; y: number }[]) => {
   for (let i = 1; i < points.length - 1; i++) {
     result.push({
       x: 0.5 * (p.x + points[i].x),
-      y: 0.5 * (p.y + points[i].y)
+      y: 0.5 * (p.y + points[i].y),
     });
     result.push(points[i]);
     p = points[i];
@@ -312,8 +307,6 @@ const splitLineSegments = (points: { x: number; y: number }[]) => {
   result.push(_.last(points));
   return result;
 };
-
-
 
 /**
  * Given an ELK layout, extract the node and edge positions
@@ -323,13 +316,14 @@ const extractELKPositions = (root: ELKNode) => {
   const parentMap: Map<string, ELKNode> = new Map();
   const nodeMap: Map<string, ELKNode> = new Map();
 
-  const nodeGlobalPosition: Map<string, { x: number; y: number; width: number; height: number }> = new Map();
+  const nodeGlobalPosition: Map<string, { x: number; y: number; width: number; height: number }> =
+    new Map();
   const edgeGlobalPOsition: Map<string, { x: number; y: number }[]> = new Map();
 
   // 1. Prepare lookups - need parent map first
   traverseELK(root, (node) => {
     if (node.children && node.children.length > 0) {
-      node.children.forEach(child => {
+      node.children.forEach((child) => {
         parentMap.set(child.id, node);
       });
     }
@@ -343,7 +337,7 @@ const extractELKPositions = (root: ELKNode) => {
         x: node.x,
         y: node.y,
         width: node.width,
-        height: node.height
+        height: node.height,
       });
     } else {
       // FIXME: check if need to add parent coord nodeGlobalPosition.get(parentNode.id);
@@ -363,7 +357,7 @@ const extractELKPositions = (root: ELKNode) => {
         x: node.x,
         y: node.y,
         width: node.width,
-        height: node.height
+        height: node.height,
       });
     }
   });
@@ -372,12 +366,9 @@ const extractELKPositions = (root: ELKNode) => {
   traverseELK(root, (node) => {
     if (node.edges && node.edges.length > 0) {
       for (const edge of node.edges) {
-        const edgePathPoints = splitLineSegments(extractEdgePoints(
-          edge,
-          nodeMap,
-          parentMap,
-          nodeGlobalPosition
-        ));
+        const edgePathPoints = splitLineSegments(
+          extractEdgePoints(edge, nodeMap, parentMap, nodeGlobalPosition)
+        );
         edgeGlobalPOsition.set(edge.id, edgePathPoints);
       }
     }
@@ -386,18 +377,17 @@ const extractELKPositions = (root: ELKNode) => {
   // Return positions
   return {
     nodeGlobalPosition,
-    edgeGlobalPOsition
+    edgeGlobalPOsition,
   };
 };
-
 
 /**
  * The functions works by creating a graph structure in ELK's format, run the layout and extract the
  * positional/dimension coordinates, which are then merged into the IGraph data structure
  */
-export const runELKLayout = async <V, E> (
+export const runELKLayout = async <V, E>(
   graphData: IGraph<V, E>,
-  nodeSize: { width: number; height: number}
+  nodeSize: { width: number; height: number }
 ): Promise<IGraph<V, E>> => {
   const R_PADDING = 10; // Edge spacer
 
@@ -436,7 +426,7 @@ export const runELKLayout = async <V, E> (
     node.ports = ports;
 
     // Align edges to the ports
-    node.edges.forEach(edge => {
+    node.edges.forEach((edge) => {
       const source = edge.source;
       const target = edge.target;
       if (!outgoingMap.has(source)) {
@@ -455,7 +445,7 @@ export const runELKLayout = async <V, E> (
 
     // Assign layout options
     node.layoutOptions = makeNodeLayout();
-    node.ports.forEach(p => {
+    node.ports.forEach((p) => {
       p.layoutOptions = makePortLayout(p);
     });
   });
@@ -488,7 +478,7 @@ export const runELKLayout = async <V, E> (
     const first = ep[0];
     ep.unshift({
       x: first.x - R_PADDING,
-      y: first.y
+      y: first.y,
     });
     edge.points = ep;
   }

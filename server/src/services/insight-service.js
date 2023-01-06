@@ -34,8 +34,6 @@ const resizeImage = async (base64Str, targetWidthInPixels) => {
   return resizedStr;
 };
 
-
-
 /**
  * Wrapper to create a new insight.
  *
@@ -61,7 +59,8 @@ const createInsight = async (
   viewState,
   dataState,
   // eslint-disable-next-line camelcase
-  annotation_state) => {
+  annotation_state
+) => {
   const newId = uuid();
   Logger.info('Creating insight entry: ' + newId);
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
@@ -70,31 +69,31 @@ const createInsight = async (
   };
 
   // Create a thumbnail
-  const thumbnail = await resizeImage(
-    image,
-    TARGET_THUMBNAIL_WIDTH
-  );
+  const thumbnail = await resizeImage(image, TARGET_THUMBNAIL_WIDTH);
 
-  await insightsConnection.insert({
-    id: newId,
-    name,
-    description,
-    modified_at: Date.now(),
-    visibility,
-    project_id: projectId,
-    context_id: contextId,
-    url,
-    target_view: targetView,
-    pre_actions: preActions,
-    post_actions: postActions,
-    is_default: isDefault,
-    analytical_question: analytical_question,
-    image,
-    thumbnail,
-    view_state: viewState,
-    data_state: dataState,
-    annotation_state: annotation_state
-  }, keyFn);
+  await insightsConnection.insert(
+    {
+      id: newId,
+      name,
+      description,
+      modified_at: Date.now(),
+      visibility,
+      project_id: projectId,
+      context_id: contextId,
+      url,
+      target_view: targetView,
+      pre_actions: preActions,
+      post_actions: postActions,
+      is_default: isDefault,
+      analytical_question: analytical_question,
+      image,
+      thumbnail,
+      view_state: viewState,
+      data_state: dataState,
+      annotation_state: annotation_state,
+    },
+    keyFn
+  );
 
   // Acknowledge success
   return { id: newId };
@@ -103,21 +102,21 @@ const createInsight = async (
 /**
  * Update an insight with the specified changes
  */
-const updateInsight = async(id, insight) => {
+const updateInsight = async (id, insight) => {
   const connection = Adapter.get(RESOURCE.INSIGHT);
 
   // Create a thumbnail
   if (insight.image) {
-    insight.thumbnail = await resizeImage(
-      insight.image,
-      TARGET_THUMBNAIL_WIDTH
-    );
+    insight.thumbnail = await resizeImage(insight.image, TARGET_THUMBNAIL_WIDTH);
   }
 
-  const result = await connection.update({
-    id: id,
-    ...insight
-  }, d => d.id);
+  const result = await connection.update(
+    {
+      id: id,
+      ...insight,
+    },
+    (d) => d.id
+  );
   if (result.errors) {
     throw new Error(JSON.stringify(result.items[0]));
   }
@@ -185,5 +184,5 @@ module.exports = {
   getInsightThumbnail,
   count,
   remove,
-  updateInsight
+  updateInsight,
 };

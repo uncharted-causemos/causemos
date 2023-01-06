@@ -1,43 +1,47 @@
 <template>
-  <div class="new-node-container" ref="newNodeContainer" :style="{left: placement.x + 'px', top: placement.y + 'px' }">
+  <div
+    class="new-node-container"
+    ref="newNodeContainer"
+    :style="{ left: placement.x + 'px', top: placement.y + 'px' }"
+  >
     <div class="new-node-top" ref="newNodeTop">
       <input
         ref="input"
         v-model="userInput"
         type="text"
         placeholder="Type a concept"
-        style="height: 2.5rem;"
+        style="height: 2.5rem"
         @keydown="onKeyDown"
-      >
+      />
     </div>
     <dropdown-control
-      class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px'}">
+      class="suggestion-dropdown"
+      :style="{ left: dropdownLeftOffset + 'px', top: dropdownTopOffset + 'px' }"
+    >
       <template #content>
         <div class="tab-row" v-if="userInput.length > 0">
-          <div>
-            Filter by: &nbsp;
-          </div>
+          <div>Filter by: &nbsp;</div>
           <radio-button-group
             :buttons="[
               { label: 'Concepts', value: 'concepts' },
-              { label: 'Datacubes', value: 'datacubes' }
+              { label: 'Datacubes', value: 'datacubes' },
             ]"
             :selected-button-value="activeTab"
             @button-clicked="setActive"
           />
         </div>
 
-
         <!-- datacubes -->
         <div
           v-if="activeTab === 'datacubes' && datacubeSuggestions.length > 0"
-          style="display: flex; flex-direction: row">
+          style="display: flex; flex-direction: row"
+        >
           <div class="left-column">
             <div
               v-for="(suggestion, index) in datacubeSuggestions"
               :key="suggestion.doc.variableName"
               class="dropdown-option"
-              :class="{'focused': index === focusedSuggestionIndex}"
+              :class="{ focused: index === focusedSuggestionIndex }"
               @click="selectSuggestion(suggestion)"
               @mouseenter="mouseEnter(index)"
               @mouseleave="mouseLeave(index)"
@@ -47,30 +51,41 @@
           </div>
           <div
             v-if="focusedSuggestionIndex >= 0 && datacubeSuggestions.length"
-            class="right-column">
+            class="right-column"
+          >
             <div style="font-weight: 600">{{ currentSuggestion.doc.display_name }}</div>
             <div style="color: #888">{{ currentSuggestion.doc.name }}</div>
             <div>&nbsp;</div>
             <div v-if="currentSuggestion.doc.period">
-              {{ dateFormatter(currentSuggestion.doc.period.gte, temporalResolution === TemporalResolutionOption.Year ? 'YYYY' : 'MMMM YYYY') }} to {{ dateFormatter(currentSuggestion.doc.period.lte, temporalResolution === TemporalResolutionOption.Year ? 'YYYY' : 'MMMM YYYY') }}
+              {{
+                dateFormatter(
+                  currentSuggestion.doc.period.gte,
+                  temporalResolution === TemporalResolutionOption.Year ? 'YYYY' : 'MMMM YYYY'
+                )
+              }}
+              to
+              {{
+                dateFormatter(
+                  currentSuggestion.doc.period.lte,
+                  temporalResolution === TemporalResolutionOption.Year ? 'YYYY' : 'MMMM YYYY'
+                )
+              }}
             </div>
-            <sparkline
-              :data="sparklineData"
-              :size="[220, 90]"
-            />
+            <sparkline :data="sparklineData" :size="[220, 90]" />
             <div>{{ currentSuggestion.doc.description }}</div>
           </div>
         </div>
 
         <!-- concepts -->
         <div
-          v-if="(activeTab === 'concepts' && userInput.length > 0)"
-          style="display: flex; flex-direction: row">
+          v-if="activeTab === 'concepts' && userInput.length > 0"
+          style="display: flex; flex-direction: row"
+        >
           <div class="left-column">
             <div
               class="dropdown-option"
               @click="saveCustomConcept"
-              :class="{'focused': focusedSuggestionIndex === -1}"
+              :class="{ focused: focusedSuggestionIndex === -1 }"
             >
               <div class="dropdown-option-label">
                 <div class="dropdown-option-label-text">
@@ -82,7 +97,7 @@
               v-for="(suggestion, index) in conceptSuggestions"
               :key="suggestion + index"
               class="dropdown-option"
-              :class="{'focused': index === focusedSuggestionIndex, 'light': !suggestion.hasEvidence}"
+              :class="{ focused: index === focusedSuggestionIndex, light: !suggestion.hasEvidence }"
               @click="selectSuggestion(suggestion)"
               @mouseenter="mouseEnter(index)"
               @mouseleave="mouseLeave(index)"
@@ -91,14 +106,13 @@
             </div>
           </div>
           <div
-            v-if="(focusedSuggestionIndex >= 0 && conceptSuggestions.length > 0)"
-            class="right-column">
+            v-if="focusedSuggestionIndex >= 0 && conceptSuggestions.length > 0"
+            class="right-column"
+          >
             <div>
-              <div
-                v-for="(member, idx) in currentSuggestion.doc.members"
-                :key="idx">
+              <div v-for="(member, idx) in currentSuggestion.doc.members" :key="idx">
                 <strong>{{ ontologyFormatter(member.label) }} </strong>
-                <br>
+                <br />
                 <div>
                   <small>{{ member.label }}</small>
                 </div>
@@ -110,11 +124,11 @@
                     Examples:
                     <highlight-text
                       :text="member.examples.join(', ')"
-                      :highlights="member.highlight ? member.highlight.examples: []"
+                      :highlights="member.highlight ? member.highlight.examples : []"
                     />
                   </small>
                 </div>
-                <br>
+                <br />
               </div>
             </div>
           </div>
@@ -122,7 +136,9 @@
 
         <div
           v-if="activeTab === 'concepts' && conceptSuggestions.length > 0"
-          class="tab-row" style="border-top: 1px solid #ddd; border-bottom: 0; margin: 2px; padding: 2px">
+          class="tab-row"
+          style="border-top: 1px solid #ddd; border-bottom: 0; margin: 2px; padding: 2px"
+        >
           Showing top {{ conceptSuggestions.length }} matches&nbsp;&nbsp;
           <button class="btn btn-primrary btn-xs" @click="openExplorer">
             Explore Knowledge Base
@@ -151,7 +167,12 @@ import projectService from '@/services/project-service';
 import datacubeService from '@/services/new-datacube-service';
 import numberFormatter from '@/formatters/number-formatter';
 
-import { AggregationOption, TemporalResolution, TemporalResolutionOption, TimeScale } from '@/types/Enums';
+import {
+  AggregationOption,
+  TemporalResolution,
+  TemporalResolutionOption,
+  TimeScale,
+} from '@/types/Enums';
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { logHistoryEntry } from '@/services/model-service';
 import { getTimeseries } from '@/services/outputdata-service';
@@ -171,27 +192,23 @@ export default defineComponent({
     DropdownControl,
     HighlightText,
     RadioButtonGroup,
-    Sparkline
+    Sparkline,
   },
   props: {
     conceptsInCag: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     placement: {
       type: Object as PropType<{ x: number; y: number }>,
-      default: () => ({ x: 0, y: 0 })
+      default: () => ({ x: 0, y: 0 }),
     },
     selectedTimeScale: {
       type: String as PropType<TimeScale>,
-      required: true
-    }
+      required: true,
+    },
   },
-  emits: [
-    'suggestion-selected',
-    'datacube-selected',
-    'save-custom-concept'
-  ],
+  emits: ['suggestion-selected', 'datacube-selected', 'save-custom-concept'],
   setup(props, { emit }) {
     const { selectedTimeScale } = toRefs(props);
 
@@ -236,7 +253,7 @@ export default defineComponent({
         theme: cleanConceptString(userInput.value),
         theme_property: '',
         process: '',
-        process_property: ''
+        process_property: '',
       };
     };
 
@@ -251,22 +268,29 @@ export default defineComponent({
       }
     };
 
-    watch(userInput, _.debounce(async () => {
-      if (_.isEmpty(userInput.value)) {
-        conceptSuggestions.value = [];
-        datacubeSuggestions.value = [];
-      } else {
-        let results: any = null;
-        results = await projectService.getConceptSuggestions(project.value, userInput.value, true);
-        conceptSuggestions.value = results.result.splice(0, CONCEPT_SUGGESTION_COUNT);
-        conceptEstimatedHits.value = results.estimate;
+    watch(
+      userInput,
+      _.debounce(async () => {
+        if (_.isEmpty(userInput.value)) {
+          conceptSuggestions.value = [];
+          datacubeSuggestions.value = [];
+        } else {
+          let results: any = null;
+          results = await projectService.getConceptSuggestions(
+            project.value,
+            userInput.value,
+            true
+          );
+          conceptSuggestions.value = results.result.splice(0, CONCEPT_SUGGESTION_COUNT);
+          conceptEstimatedHits.value = results.estimate;
 
-        results = await datacubeService.getDatacubeSuggestions(userInput.value);
-        datacubeSuggestions.value = results.splice(0, 5);
+          results = await datacubeService.getDatacubeSuggestions(userInput.value);
+          datacubeSuggestions.value = results.splice(0, 5);
 
-        logHistoryEntry(currentCAG.value, 'search', userInput.value);
-      }
-    }, 300));
+          logHistoryEntry(currentCAG.value, 'search', userInput.value);
+        }
+      }, 300)
+    );
 
     const temporalResolution = ref(TemporalResolutionOption.Month);
 
@@ -295,24 +319,32 @@ export default defineComponent({
         const periodEndDate = new Date(doc.period?.lte ?? 0);
         const agg = AggregationOption.Mean;
 
-        const result = (await getTimeseries({
-          modelId: doc.data_id,
-          runId,
-          outputVariable: doc.feature,
-          temporalResolution: temporalResolution.value,
-          temporalAggregation: agg,
-          spatialAggregation: agg,
-          regionId: ''
-        })).data as TimeseriesPoint[];
+        const result = (
+          await getTimeseries({
+            modelId: doc.data_id,
+            runId,
+            outputVariable: doc.feature,
+            temporalResolution: temporalResolution.value,
+            temporalAggregation: agg,
+            spatialAggregation: agg,
+            regionId: '',
+          })
+        ).data as TimeseriesPoint[];
 
-        const { points } = correctIncompleteTimeseries(result, rawResolution, temporalResolution.value, agg, periodEndDate);
+        const { points } = correctIncompleteTimeseries(
+          result,
+          rawResolution,
+          temporalResolution.value,
+          agg,
+          periodEndDate
+        );
 
         timeseries.value = points;
         sparklineData.value = [
           {
             name: 'test',
-            series: result.map(d => d.value)
-          }
+            series: result.map((d) => d.value),
+          },
         ];
       }
     });
@@ -349,7 +381,7 @@ export default defineComponent({
       TemporalResolutionOption,
 
       // Fn
-      numberFormatter
+      numberFormatter,
     };
   },
   mounted() {
@@ -366,7 +398,7 @@ export default defineComponent({
       if (!_.isEqual(n, o)) {
         this.focusedSuggestionIndex = 0;
       }
-    }
+    },
   },
   methods: {
     // `delta` is 1 if moving down the list, -1 if moving up the list
@@ -419,7 +451,7 @@ export default defineComponent({
           concept: suggestion.doc.key,
           label: this.ontologyFormatter(suggestion.doc.key),
           shortName: '', // FIXME unused
-          hasEvidence: false // FIXME unused
+          hasEvidence: false, // FIXME unused
         });
       } else {
         const doc = this.currentSuggestion.doc;
@@ -441,7 +473,7 @@ export default defineComponent({
           timeseries: this.timeseries,
           // Filled in by server
           min: null,
-          max: null
+          max: null,
         });
       }
       this.userInput = '';
@@ -456,7 +488,9 @@ export default defineComponent({
       if (this.newNodeTop && this.newNodeContainer) {
         const buffer = 100; // Discourage flipped orientation by allow bottom-boundary to exceed by buffer amount
         const inputBoundingBox = this.newNodeTop.getBoundingClientRect();
-        const cagContainerBoundingBox = (this.newNodeContainer.parentNode as HTMLElement).getBoundingClientRect();
+        const cagContainerBoundingBox = (
+          this.newNodeContainer.parentNode as HTMLElement
+        ).getBoundingClientRect();
 
         const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
         const dropdownHeight = 330; // Match CSS
@@ -477,16 +511,15 @@ export default defineComponent({
       filtersUtil.setClause(filters, 'keyword', [this.userInput], 'or', false);
       this.$router.push({
         name: 'kbExplorer',
-        query: { cag: this.currentCAG, view: 'statements', filters: filters as any }
+        query: { cag: this.currentCAG, view: 'statements', filters: filters as any },
       });
-    }
-  }
+    },
+  },
 });
-
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables.scss";
+@import '~styles/variables.scss';
 
 .new-node-container {
   position: absolute;
@@ -520,15 +553,15 @@ export default defineComponent({
 
   // Lighten default hover bg to emphasize focused item
   &:hover {
-    background: #F8F8F8;
+    background: #f8f8f8;
   }
 
   &.light {
-    color: #6E6E6E;
+    color: #6e6e6e;
   }
 
   &.focused {
-    background: #EAEBEC; // `dropdown-control` hover colour
+    background: #eaebec; // `dropdown-control` hover colour
 
     // Bar along the left edge
     &::after {
@@ -549,7 +582,7 @@ export default defineComponent({
   padding-bottom: 5px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #DDD;
+  border-bottom: 1px solid #ddd;
 }
 
 .left-column {
@@ -561,7 +594,7 @@ export default defineComponent({
 .right-column {
   flex-grow: 1;
   padding: 8px;
-  border-left: 1px solid #DDD;
+  border-left: 1px solid #ddd;
   height: 290px;
   overflow-y: scroll;
 }
@@ -578,5 +611,4 @@ export default defineComponent({
     margin-top: 10px;
   }
 }
-
 </style>

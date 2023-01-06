@@ -12,9 +12,9 @@ describe('indicator-run-formatter', () => {
       parameters: {
         basin: {
           name: 'basin',
-          value: 'Guder'
-        }
-      }
+          value: 'Guder',
+        },
+      },
     };
     expect(indicatorRunFormatter(input)).to.equal('basin: Guder');
   });
@@ -23,13 +23,13 @@ describe('indicator-run-formatter', () => {
       parameters: {
         basin: {
           name: 'basin',
-          value: 'Guder'
+          value: 'Guder',
         },
         evotranspiration: {
           name: 'evotranspiration',
-          value: '1.0'
-        }
-      }
+          value: '1.0',
+        },
+      },
     };
     expect(indicatorRunFormatter(input)).to.equal('basin: Guder, evotranspiration: 1.0');
   });
@@ -38,9 +38,9 @@ describe('indicator-run-formatter', () => {
       parameters: {
         additional_extension: {
           name: 'additional_extension',
-          value: '0.0'
-        }
-      }
+          value: '0.0',
+        },
+      },
     };
     expect(indicatorRunFormatter(input)).to.equal('additional extension: 0.0');
   });

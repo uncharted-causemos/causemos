@@ -7,7 +7,7 @@ const _ = require('lodash');
 const extractOntologyMetadata = (resultBuffer, node, prefix) => {
   const entry = {
     definition: node.descriptions || [],
-    examples: node.examples || []
+    examples: node.examples || [],
   };
 
   // Recurse
@@ -20,7 +20,6 @@ const extractOntologyMetadata = (resultBuffer, node, prefix) => {
   }
 };
 
-
 const getOntologyShortName = (name) => {
   if (_.isNil(name)) return '';
 
@@ -30,5 +29,5 @@ const getOntologyShortName = (name) => {
 
 module.exports = {
   extractOntologyMetadata,
-  getOntologyShortName
+  getOntologyShortName,
 };

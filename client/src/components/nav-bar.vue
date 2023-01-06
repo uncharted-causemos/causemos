@@ -2,11 +2,7 @@
   <nav class="navbar-container" v-if="isNavbarVisible">
     <div class="navbar-left-group">
       <a href="#/" class="nav-item nav-item--logo clickable">
-        <img
-          class="logo"
-          src="../assets/causemos-icon-white.svg"
-          alt="CauseMos logo"
-        />
+        <img class="logo" src="../assets/causemos-icon-white.svg" alt="CauseMos logo" />
       </a>
       <template v-for="(navItem, index) of navItems" :key="index">
         <router-link
@@ -57,29 +53,26 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const project = computed(() => store.getters['app/project']);
-    const projectMetadata = computed(
-      () => store.getters['app/projectMetadata']
-    );
+    const projectMetadata = computed(() => store.getters['app/projectMetadata']);
     const route = useRoute();
-    const quantitativeAnalysisId = computed(
-      () => route.params.analysisId as string
-    );
+    const quantitativeAnalysisId = computed(() => route.params.analysisId as string);
     const analysisName = computed(() => store.getters['app/analysisName']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
 
     const analysisProjectItem = computed<NavBarItem>(() => ({
       text: projectMetadata.value.name,
       icon: 'fa-clone',
-      route: { name: 'overview', params: { project: project.value } }
+      route: { name: 'overview', params: { project: project.value } },
     }));
     const datacubeProjectItem = computed<NavBarItem>(() => {
       const navBarItem = {
         text: projectMetadata.value.name,
         icon: 'fa-connectdevelop',
         route: {
-          name: projectMetadata.value.type === 'model' ? 'domainDatacubeOverview' : 'datasetOverview',
-          params: { project: project.value }
-        }
+          name:
+            projectMetadata.value.type === 'model' ? 'domainDatacubeOverview' : 'datasetOverview',
+          params: { project: project.value },
+        },
       };
       return navBarItem;
     });
@@ -92,9 +85,9 @@ export default defineComponent({
         params: {
           project: project.value,
           analysisId: quantitativeAnalysisId.value,
-          projectType: ProjectType.Analysis
-        }
-      }
+          projectType: ProjectType.Analysis,
+        },
+      },
     }));
     const qualitativeAnalysisItem = computed(() => ({
       text: analysisName.value,
@@ -104,9 +97,9 @@ export default defineComponent({
         params: {
           project: project.value,
           currentCAG: currentCAG.value,
-          projectType: ProjectType.Analysis
-        }
-      }
+          projectType: ProjectType.Analysis,
+        },
+      },
     }));
 
     const siteMap = computed<{ [key: string]: NavBarItem[] }>(() => ({
@@ -116,29 +109,26 @@ export default defineComponent({
       datasetOverview: [datacubeProjectItem.value],
       modelPublisher: [
         datacubeProjectItem.value,
-        { icon: 'fa-cube', route: null, text: 'Instance' }
+        { icon: 'fa-cube', route: null, text: 'Instance' },
       ],
       indicatorPublisher: [
         datacubeProjectItem.value,
-        { icon: 'fa-cube', route: null, text: 'Indicator' }
+        { icon: 'fa-cube', route: null, text: 'Indicator' },
       ],
       overview: [analysisProjectItem.value],
-      dataComparative: [
-        analysisProjectItem.value,
-        quantitativeAnalysisItem.value
-      ],
+      dataComparative: [analysisProjectItem.value, quantitativeAnalysisItem.value],
       data: [
         analysisProjectItem.value,
         quantitativeAnalysisItem.value,
-        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' }
+        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
       ],
       qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       nodeDrilldown: [
         analysisProjectItem.value,
         qualitativeAnalysisItem.value,
-        { icon: 'fa-circle', route: null, text: 'Node drilldown' }
-      ]
+        { icon: 'fa-circle', route: null, text: 'Node drilldown' },
+      ],
       // 'nodeDataDrilldown',
       // 'nodeDataExplorer',
       // 'kbExplorer',
@@ -151,9 +141,9 @@ export default defineComponent({
 
     return {
       navItems,
-      isNavbarVisible
+      isNavbarVisible,
     };
-  }
+  },
 });
 </script>
 

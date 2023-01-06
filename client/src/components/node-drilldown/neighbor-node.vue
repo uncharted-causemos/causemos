@@ -9,10 +9,7 @@
     <div class="arrow" :class="{ 'is-outgoing-arrow': isDriver }">
       <div class="arrow-head" :style="{ borderLeftColor: edgeColor }"></div>
       <div class="arrow-tail" :style="{ height: `${edgeStyle.strokeWidth}px` }">
-        <div
-          class="arrow-tail-segment"
-          :style="{ background: edgeColor }"
-        ></div>
+        <div class="arrow-tail-segment" :style="{ background: edgeColor }"></div>
         <div
           v-if="edgeStyle.isDashed"
           class="arrow-tail-segment"
@@ -38,36 +35,36 @@ export default defineComponent({
   props: {
     node: {
       type: Object as PropType<NodeParameter>,
-      required: true
+      required: true,
     },
     edge: {
       type: Object as PropType<EdgeParameter>,
-      required: true
+      required: true,
     },
     isDriver: {
       type: Boolean,
-      default: false
+      default: false,
     },
     neighborhoodChartData: {
       type: Object,
-      default: () => {}
+      default: () => {},
     },
     selectedScenarioId: {
-      type: String as PropType<(string | null)>,
-      default: null
-    }
+      type: String as PropType<string | null>,
+      default: null,
+    },
   },
   watch: {
     selectedScenarioId() {
       this.refresh();
-    }
+    },
   },
   setup(props) {
     const edgeColor = computed(() => calcEdgeColor(props.edge));
     const edgeStyle = computed(() => {
       return {
         isDashed: !hasBackingEvidence(props.edge),
-        strokeWidth: scaleByWeight(BASE_EDGE_WIDTH, props.edge)
+        strokeWidth: scaleByWeight(BASE_EDGE_WIDTH, props.edge),
       };
     });
 
@@ -80,7 +77,7 @@ export default defineComponent({
       edgeStyle,
       edgeColor,
       nodeChartData,
-      chartRef
+      chartRef,
     };
   },
   mounted() {
@@ -93,24 +90,27 @@ export default defineComponent({
       el.selectAll('*').remove();
       const renderOptions = {
         margin: {
-          top: 3, bottom: 3, left: 3, right: 3
+          top: 3,
+          bottom: 3,
+          left: 3,
+          right: 3,
         },
         // FIXME: auto detect dimensions
         viewport: {
           x1: 0,
           y1: 0,
           x2: 136,
-          y2: 55
+          y2: 55,
         },
         width: 136,
-        height: 55
+        height: 55,
       };
 
       renderHistoricalProjectionsChart(el, this.nodeChartData, renderOptions, {
-        selectedScenarioId: this.selectedScenarioId
+        selectedScenarioId: this.selectedScenarioId,
       });
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -186,5 +186,4 @@ $arrow-tail-overlap: 2.5px;
   flex: 1;
   min-width: 0;
 }
-
 </style>

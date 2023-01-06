@@ -3,7 +3,6 @@
 </template>
 
 <script>
-
 import mapboxgl from 'maplibre-gl';
 import { eventEmitter } from '../mixins';
 
@@ -16,25 +15,25 @@ export default {
      */
     layerId: {
       type: String,
-      required: true
+      required: true,
     },
     formatterFn: {
       type: Function,
-      required: true
+      required: true,
     },
     cursor: {
       type: String,
-      default: 'crosshair'
-    }
+      default: 'crosshair',
+    },
   },
   data: () => ({
-    popup: null
+    popup: null,
   }),
   watch: {
     layerId(val, oldVal) {
       this.removeEvents(oldVal);
       this.addEvents(val);
-    }
+    },
   },
   mounted() {
     this.mapComponent = this.$parent;
@@ -44,7 +43,7 @@ export default {
     this.map = this.mapComponent.map;
     this.popup = new mapboxgl.Popup({
       closeButton: false,
-      closeOnClick: false
+      closeOnClick: false,
     });
     this.addEvents(this.layerId);
   },
@@ -59,10 +58,7 @@ export default {
         this.popup.remove();
       } else {
         this.map.getCanvas().style.cursor = this.cursor;
-        this.popup
-          .setLngLat(event.lngLat)
-          .setHTML(formattedValue)
-          .addTo(this.map);
+        this.popup.setLngLat(event.lngLat).setHTML(formattedValue).addTo(this.map);
       }
     },
     onMouseLeave() {
@@ -82,7 +78,7 @@ export default {
     finish() {
       this.removeEvents(this.layerId);
       this.popup.remove();
-    }
-  }
+    },
+  },
 };
 </script>

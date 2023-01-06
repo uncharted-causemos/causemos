@@ -27,7 +27,7 @@ const logRequest = async (req) => {
     timestamp: Date.now(),
     request_path: req.path,
     request_method: req.method,
-    parameters: parameters
+    parameters: parameters,
   });
 
   // Buffer up the logs so we don't put too much strain, wait 30 seconds before flushing to datastore
@@ -47,5 +47,5 @@ const logRequest = async (req) => {
 };
 
 module.exports = {
-  logRequest
+  logRequest,
 };

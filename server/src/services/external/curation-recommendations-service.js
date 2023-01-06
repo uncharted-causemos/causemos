@@ -7,7 +7,7 @@ const { getCache } = rootRequire('/cache/node-lru-cache');
 
 const headers = {
   'Content-type': 'application/json',
-  'Accept': 'application/json'
+  Accept: 'application/json',
 };
 
 const statementIncludes = [
@@ -22,7 +22,7 @@ const statementIncludes = [
   'evidence.document_context.doc_id',
   'evidence.document_context.author',
   'evidence.document_context.publication_date',
-  'evidence.document_context.publisher_name'
+  'evidence.document_context.publisher_name',
 ];
 
 // Note: Since we sometimes filter the results from the curation service based on the statementIds in the CAG,
@@ -38,22 +38,28 @@ const PRE_FILTERED_NUM_RECOMMENDATIONS = 500;
  * @param {number} numRecommendations
  */
 const getFactorRecommendations = async (projectId, statementIds, factor, numRecommendations) => {
-  Logger.info(`Factor recommendation: Project=${projectId}, Factor=${factor}, ${statementIds.length} statements,`);
+  Logger.info(
+    `Factor recommendation: Project=${projectId}, Factor=${factor}, ${statementIds.length} statements,`
+  );
   const payload = {
     knowledge_base_id: getCache(projectId).kb_id,
     factor,
-    num_recommendations: PRE_FILTERED_NUM_RECOMMENDATIONS
+    num_recommendations: PRE_FILTERED_NUM_RECOMMENDATIONS,
   };
   const options = {
     url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/' + projectId + '/regrounding',
     method: 'POST',
     headers: headers,
-    json: payload
+    json: payload,
   };
   let result = { recommendations: [] };
   try {
     result = await requestAsPromise(options);
-    result.recommendations = await _mapRegroundingRecommendationsToStatementIds(projectId, statementIds, result.recommendations);
+    result.recommendations = await _mapRegroundingRecommendationsToStatementIds(
+      projectId,
+      statementIds,
+      result.recommendations
+    );
     result.recommendations = result.recommendations.slice(0, numRecommendations);
   } catch (err) {
     Logger.error(err);
@@ -71,25 +77,39 @@ const getFactorRecommendations = async (projectId, statementIds, factor, numReco
  * @param {number} polarity before the curation
  * @param {number} numRecommendations
  */
-const getPolarityRecommendations = async (projectId, statementIds, subjFactor, objFactor, polarity, numRecommendations) => {
-  Logger.info(`Polarity recommendation: Project=${projectId}, Subj=${subjFactor}, Obj=${objFactor}, Polarity=${polarity},  ${statementIds.length} statements,`);
+const getPolarityRecommendations = async (
+  projectId,
+  statementIds,
+  subjFactor,
+  objFactor,
+  polarity,
+  numRecommendations
+) => {
+  Logger.info(
+    `Polarity recommendation: Project=${projectId}, Subj=${subjFactor}, Obj=${objFactor}, Polarity=${polarity},  ${statementIds.length} statements,`
+  );
   const payload = {
     knowledge_base_id: getCache(projectId).kb_id,
     subj_factor: subjFactor,
     obj_factor: objFactor,
-    num_recommendations: PRE_FILTERED_NUM_RECOMMENDATIONS
+    num_recommendations: PRE_FILTERED_NUM_RECOMMENDATIONS,
   };
 
   const options = {
     url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/' + projectId + '/polarity',
     method: 'POST',
     headers: headers,
-    json: payload
+    json: payload,
   };
   let result = { recommendations: [] };
   try {
     result = await requestAsPromise(options);
-    result.recommendations = await _mapPolarityRecommendationsToStatements(projectId, statementIds, polarity, result.recommendations);
+    result.recommendations = await _mapPolarityRecommendationsToStatements(
+      projectId,
+      statementIds,
+      polarity,
+      result.recommendations
+    );
     result.recommendations = result.recommendations.slice(0, numRecommendations);
   } catch (err) {
     Logger.error(err);
@@ -103,31 +123,38 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
  * @param {string} projectId - project identifier
  * @param {number} numRecommendations
  */
-const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, numRecommendations) => {
+const getEmptyEdgeRecommendations = async (
+  projectId,
+  subjConcept,
+  objConcept,
+  numRecommendations
+) => {
   Logger.info(`Edge recommendation: Project=${projectId}`);
   const payload = {
     knowledge_base_id: getCache(projectId).kb_id,
     subj_concept: subjConcept,
     obj_concept: objConcept,
-    num_recommendations: numRecommendations
+    num_recommendations: numRecommendations,
   };
 
   const options = {
     url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/' + projectId + '/edge-regrounding',
     method: 'POST',
     headers: headers,
-    json: payload
+    json: payload,
   };
   let result = { recommendations: [] };
   try {
     result = await requestAsPromise(options);
-    result.recommendations = await _mapEmptyEdgeRecommendationsToStatements(projectId, result.recommendations);
+    result.recommendations = await _mapEmptyEdgeRecommendationsToStatements(
+      projectId,
+      result.recommendations
+    );
   } catch (err) {
     Logger.error(err);
   }
   return result;
 };
-
 
 /**
  * Track curation and recommendations
@@ -135,14 +162,13 @@ const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, nu
  * @param {string} trackingId - Identifier for the curation being upserted
  * @param {object} payload - any additional logging data such as statementId, curationType etc...
  */
-const trackCuration = async(trackingId, payload) => {
+const trackCuration = async (trackingId, payload) => {
   Logger.info(`Tracking curation with id: ${trackingId}`);
   const curationTracking = Adapter.get(RESOURCE.CURATION_TRACKING);
   const newDoc = { id: trackingId, tracking_data: payload };
   const idFn = (d) => d.id;
   curationTracking.insert(newDoc, idFn);
 };
-
 
 /**
  * Get similar concepts from the knowledge base given a concept
@@ -153,18 +179,18 @@ const trackCuration = async(trackingId, payload) => {
  *
  * returns {similar_concepts: [{concept: string, score: float}]}
  */
-const getSimilarConcepts = async(projectId, concept, numRecommendations) => {
+const getSimilarConcepts = async (projectId, concept, numRecommendations) => {
   const payload = {
     knowledge_base_id: getCache(projectId).kb_id,
     concept: concept,
-    num_recommendations: numRecommendations
+    num_recommendations: numRecommendations,
   };
 
   const options = {
     url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/similar-concepts',
     method: 'POST',
     headers: headers,
-    json: payload
+    json: payload,
   };
 
   let result = { similar_concepts: [] };
@@ -176,17 +202,26 @@ const getSimilarConcepts = async(projectId, concept, numRecommendations) => {
   return result;
 };
 
-
-const _mapRegroundingRecommendationsToStatementIds = async (projectId, statementIds, recommendations) => {
-  const statementDocs = await _getStatementsForRegroundingRecommendations(projectId, statementIds, recommendations);
+const _mapRegroundingRecommendationsToStatementIds = async (
+  projectId,
+  statementIds,
+  recommendations
+) => {
+  const statementDocs = await _getStatementsForRegroundingRecommendations(
+    projectId,
+    statementIds,
+    recommendations
+  );
   if (_.isEmpty(statementDocs)) return [];
   const factorToStatementsMap = _buildFactorsToStatmentsMap(statementDocs);
-  recommendations = recommendations.filter(r => r.factor in factorToStatementsMap && factorToStatementsMap[r.factor].length > 0);
-  recommendations = recommendations.map(r => {
+  recommendations = recommendations.filter(
+    (r) => r.factor in factorToStatementsMap && factorToStatementsMap[r.factor].length > 0
+  );
+  recommendations = recommendations.map((r) => {
     return {
       statements: factorToStatementsMap[r.factor],
       highlights: r.factor,
-      score: r.score
+      score: r.score,
     };
   });
   recommendations.sort((r1, r2) => {
@@ -195,29 +230,33 @@ const _mapRegroundingRecommendationsToStatementIds = async (projectId, statement
   return recommendations;
 };
 
-const _getStatementsForRegroundingRecommendations = async (projectId, statementIds, recommendations) => {
-  const factors = recommendations.map(r => r.factor);
+const _getStatementsForRegroundingRecommendations = async (
+  projectId,
+  statementIds,
+  recommendations
+) => {
+  const factors = recommendations.map((r) => r.factor);
   const client = ES.client;
   const response = await client.search({
     index: projectId,
     body: {
       size: SEARCH_LIMIT,
       _source: {
-        includes: statementIncludes
+        includes: statementIncludes,
       },
       query: {
         bool: {
           filter: {
-            terms: { id: statementIds }
+            terms: { id: statementIds },
           },
           should: [
             { terms: { 'subj.factor.raw': factors } },
-            { terms: { 'obj.factor.raw': factors } }
+            { terms: { 'obj.factor.raw': factors } },
           ],
-          minimum_should_match: 1
-        }
-      }
-    }
+          minimum_should_match: 1,
+        },
+      },
+    },
   });
   const statementDocs = response.body.hits.hits;
   return statementDocs;
@@ -232,7 +271,7 @@ const _buildFactorsToStatmentsMap = (statementDocs) => {
     factorToStatementsMap[factor] = statements;
   };
 
-  statementDocs.forEach(stmtDoc => {
+  statementDocs.forEach((stmtDoc) => {
     _updateMap(stmtDoc._source.subj.factor, stmtDoc);
     _updateMap(stmtDoc._source.obj.factor, stmtDoc);
   });
@@ -245,18 +284,30 @@ const _buildFactorsToStatmentsMap = (statementDocs) => {
  *
  * The assumption here is that there will only ever be one unique subj/factor/polarity tuple in the database.
  */
-const _mapPolarityRecommendationsToStatements = async (projectId, statementIds, polarity, recommendations) => {
-  const statementDocs = await _getStatementsForPolarityRecommendations(projectId, statementIds, polarity, recommendations);
+const _mapPolarityRecommendationsToStatements = async (
+  projectId,
+  statementIds,
+  polarity,
+  recommendations
+) => {
+  const statementDocs = await _getStatementsForPolarityRecommendations(
+    projectId,
+    statementIds,
+    polarity,
+    recommendations
+  );
   if (_.isEmpty(statementDocs)) return [];
   const factorPairsToStatementsMap = _buildFactorPairsToStatmentsMap(statementDocs);
 
   const key = (r) => r.subj_factor + r.obj_factor;
 
-  recommendations = recommendations.filter(r => key(r) in factorPairsToStatementsMap && factorPairsToStatementsMap[key(r)].length > 0);
-  recommendations = recommendations.map(r => {
+  recommendations = recommendations.filter(
+    (r) => key(r) in factorPairsToStatementsMap && factorPairsToStatementsMap[key(r)].length > 0
+  );
+  recommendations = recommendations.map((r) => {
     return {
       statements: factorPairsToStatementsMap[key(r)],
-      score: r.score
+      score: r.score,
     };
   });
   recommendations.sort((r1, r2) => {
@@ -265,45 +316,49 @@ const _mapPolarityRecommendationsToStatements = async (projectId, statementIds, 
   return recommendations;
 };
 
-const _getStatementsForPolarityRecommendations = async (projectId, statementIds, polarity, recommendations) => {
+const _getStatementsForPolarityRecommendations = async (
+  projectId,
+  statementIds,
+  polarity,
+  recommendations
+) => {
   const client = ES.client;
   const response = await client.search({
     index: projectId,
     body: {
       size: SEARCH_LIMIT,
       _source: {
-        includes: statementIncludes
+        includes: statementIncludes,
       },
       query: {
         bool: {
           filter: [
             { terms: { id: statementIds } },
-            { term: { 'wm.statement_polarity': polarity } }
+            { term: { 'wm.statement_polarity': polarity } },
           ],
-          should: _.map(recommendations, r => {
+          should: _.map(recommendations, (r) => {
             return {
               bool: {
                 must: [
                   { term: { 'subj.factor.raw': r.subj_factor } },
-                  { term: { 'obj.factor.raw': r.obj_factor } }
-                ]
-              }
+                  { term: { 'obj.factor.raw': r.obj_factor } },
+                ],
+              },
             };
           }),
-          minimum_should_match: 1
-        }
-      }
-    }
+          minimum_should_match: 1,
+        },
+      },
+    },
   });
   const statementDocs = response.body.hits.hits;
   return statementDocs;
 };
 
-
 const _buildFactorPairsToStatmentsMap = (statementDocs) => {
   const factorPairsToStatementsMap = {};
 
-  statementDocs.forEach(stmtDoc => {
+  statementDocs.forEach((stmtDoc) => {
     const mapKey = stmtDoc._source.subj.factor + stmtDoc._source.obj.factor;
     const statements = _.get(factorPairsToStatementsMap, mapKey, []);
     statements.push(stmtDoc._source);
@@ -313,31 +368,32 @@ const _buildFactorPairsToStatmentsMap = (statementDocs) => {
   return factorPairsToStatementsMap;
 };
 
-const _mapEmptyEdgeRecommendationsToStatements = async(projectId, recommendations) => {
-  const statementIds = recommendations.map(r => r.id);
+const _mapEmptyEdgeRecommendationsToStatements = async (projectId, recommendations) => {
+  const statementIds = recommendations.map((r) => r.id);
   const statementIdToScoreMap = {};
-  recommendations.forEach(r => {
+  recommendations.forEach((r) => {
     statementIdToScoreMap[r.id] = r.score;
   });
 
   let statements = await _getStatementsForEmptyEdgeRecommendations(projectId, statementIds);
-  statements = statements.map(s => {
+  statements = statements.map((s) => {
     return {
       score: statementIdToScoreMap[s.id],
-      statement: s
+      statement: s,
     };
   });
 
   return statements;
 };
 
-const _getStatementsForEmptyEdgeRecommendations = async(projectId, statementIds) => {
+const _getStatementsForEmptyEdgeRecommendations = async (projectId, statementIds) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
-  const response = await statement.find({
-    clauses: [
-      { field: 'id', values: statementIds, isNot: false, operand: 'AND' }
-    ]
-  }, { size: SEARCH_LIMIT, includes: statementIncludes });
+  const response = await statement.find(
+    {
+      clauses: [{ field: 'id', values: statementIds, isNot: false, operand: 'AND' }],
+    },
+    { size: SEARCH_LIMIT, includes: statementIncludes }
+  );
 
   return response;
 };
@@ -347,6 +403,5 @@ module.exports = {
   getPolarityRecommendations,
   getEmptyEdgeRecommendations,
   getSimilarConcepts,
-  trackCuration
+  trackCuration,
 };
-

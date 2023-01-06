@@ -20,12 +20,7 @@ describe('concept-util', () => {
   });
 
   it('concept human readable', () => {
-    const set = new Set<string>([
-      'drought',
-      'livestock',
-      'price_or_cost',
-      'agriculture'
-    ]);
+    const set = new Set<string>(['drought', 'livestock', 'price_or_cost', 'agriculture']);
     const r1 = ConceptUtil.conceptHumanName('agriculture_drought', set);
     expect(r1).to.equal('agriculture drought');
 

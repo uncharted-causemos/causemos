@@ -12,13 +12,13 @@ import {
   getLastTimeStepIndexFromTimeScale,
   getMonthsPerTimestepFromTimeScale,
   getRangeFromTimeScale,
-  getTimeScaleOption
+  getTimeScaleOption,
 } from '@/utils/time-scale-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
 import {
   calculateTypicalChangeBracket,
   convertDistributionTimeseriesToRidgelines,
-  RidgelineWithMetadata
+  RidgelineWithMetadata,
 } from '@/utils/ridgeline-util';
 import { renderRidgelines } from './ridgeline-renderer';
 
@@ -51,23 +51,17 @@ function render(
   const projection_start = nodeScenarioData.projection_start;
 
   const visibleHistoricalMonthCount = nodeScenarioData.history_range;
-  const historyStart = getTimestampAfterMonths(
-    projection_start,
-    -visibleHistoricalMonthCount
-  );
+  const historyStart = getTimestampAfterMonths(projection_start, -visibleHistoricalMonthCount);
 
   const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(time_scale);
   // Historical data should end 1 month (or year, depending on time
   //  scale) before projection start. "Projection start date" means the date at
   //  which the first projected timestamp will be returned.
-  const historyEnd = getTimestampAfterMonths(
-    projection_start,
-    -monthsPerTimestep
-  );
+  const historyEnd = getTimestampAfterMonths(projection_start, -monthsPerTimestep);
 
   // Filter out timeseries points that aren't within the range we're displaying
   const filteredTimeSeries = indicator_time_series.filter(
-    d => d.timestamp >= historyStart && d.timestamp <= historyEnd
+    (d) => d.timestamp >= historyStart && d.timestamp <= historyEnd
   );
 
   // Chart dimensions
@@ -82,9 +76,7 @@ function render(
     getLastTimeStepIndexFromTimeScale(nodeScenarioData.time_scale)
   );
 
-  const xScaleEndTimestamp = isHistoricalDataOnlyMode
-    ? historyEnd
-    : lastProjectedTimestamp;
+  const xScaleEndTimestamp = isHistoricalDataOnlyMode ? historyEnd : lastProjectedTimestamp;
   const xDomain = [historyStart, xScaleEndTimestamp];
   if (!isHistoricalDataOnlyMode) {
     // To avoid the last ridgeline plot overflowing, we need to add enough space
@@ -92,10 +84,8 @@ function render(
     // Width won't be exactly the same between timeslices since some months/years
     //  are longer than others, but this will serve as a useful estimate of the
     //  maximum width a ridgeline can take up without overlapping the next one.
-    const firstSliceMonths =
-      getTimeScaleOption(time_scale).timeSlices[0].months;
-    const timeBetweenSlices =
-      getTimestampAfterMonths(historyEnd, firstSliceMonths) - historyEnd;
+    const firstSliceMonths = getTimeScaleOption(time_scale).timeSlices[0].months;
+    const timeBetweenSlices = getTimestampAfterMonths(historyEnd, firstSliceMonths) - historyEnd;
 
     xDomain[1] += timeBetweenSlices;
   }
@@ -104,11 +94,7 @@ function render(
 
   const yExtent = [min, max];
   const formatter = chartValueFormatter(...yExtent);
-  const yScale = d3
-    .scaleLinear()
-    .domain(yExtent)
-    .range([height, 0])
-    .clamp(true);
+  const yScale = d3.scaleLinear().domain(yExtent).range([height, 0]).clamp(true);
 
   const svgGroup = chart.g;
   svgGroup.selectAll('*').remove();
@@ -130,8 +116,15 @@ function render(
       )
     );
 
-  const nodeScenarioDataHistoryRange = getRangeFromTimeScale(nodeScenarioData.time_scale, nodeScenarioData.history_range);
-  const labelText = 'Viewing last ' + nodeScenarioDataHistoryRange + ' ' + nodeScenarioData.time_scale.toLowerCase();
+  const nodeScenarioDataHistoryRange = getRangeFromTimeScale(
+    nodeScenarioData.time_scale,
+    nodeScenarioData.history_range
+  );
+  const labelText =
+    'Viewing last ' +
+    nodeScenarioDataHistoryRange +
+    ' ' +
+    nodeScenarioData.time_scale.toLowerCase();
   const textWidth = labelText.length * CHARACTER_WIDTH;
   const additionalMarginToPlaceLabelBelowGraph = 5;
   const rectWidth = xScale(historyEnd) - xScale(historyStart);
@@ -153,10 +146,7 @@ function render(
       'd',
       // FIXME: TypeScript shenanigans are necessary because timeseriesLine()
       //  is in a JS file. See svg-util.js for more details.
-      timeseriesLine(
-        xScale,
-        yScale
-      )(filteredTimeSeries as any as [number, number][]) as string
+      timeseriesLine(xScale, yScale)(filteredTimeSeries as any as [number, number][]) as string
     )
     .style('stroke', HISTORY_LINE_COLOR)
     .style('stroke-width', 1)
@@ -211,11 +201,8 @@ function renderScenarioProjections(
   // Collect/extract all the pieces of data needed to convert projections into
   //  ridgeline plot format.
   const { selectedScenarioId } = runOptions;
-  const { scenarios, time_scale, projection_start, indicator_time_series } =
-    nodeScenarioData;
-  const projection = scenarios.find(
-    scenario => scenario.id === selectedScenarioId
-  );
+  const { scenarios, time_scale, projection_start, indicator_time_series } = nodeScenarioData;
+  const projection = scenarios.find((scenario) => scenario.id === selectedScenarioId);
   if (projection === undefined) {
     console.error(
       'Scenario renderer is unable to find selected scenario with ID',
@@ -243,9 +230,7 @@ function renderScenarioProjections(
   // Convert baseline scenario distribution to ridgeline
   let comparisonRidgeline: RidgelineWithMetadata[] | null = null;
   if (projection.is_baseline !== true) {
-    const baselineScenario = scenarios.find(
-      scenario => scenario.is_baseline === true
-    );
+    const baselineScenario = scenarios.find((scenario) => scenario.is_baseline === true);
     const baselineValues = baselineScenario?.result?.values;
     if (baselineValues !== undefined) {
       comparisonRidgeline = convertDistributionTimeseriesToRidgelines(
@@ -260,14 +245,16 @@ function renderScenarioProjections(
   // Calculate how wide a single ridgeline can be
   const firstSliceMonths = getTimeScaleOption(time_scale).timeSlices[0].months;
   const widthBetweenTimeslices =
-    xScale(getTimestampAfterMonths(projection_start, firstSliceMonths)) -
-    xScale(projection_start);
+    xScale(getTimestampAfterMonths(projection_start, firstSliceMonths)) - xScale(projection_start);
 
   const domain = xScale.domain();
   ridgelinesWithMetadata.forEach((ridgelineWithMetadata, index) => {
     // Don't render ridgelines if they are out of bound - this can happen if people start
     // to play around with projection_start parameter
-    if (ridgelineWithMetadata.timestamp > domain[1] || ridgelineWithMetadata.timestamp < domain[0]) {
+    if (
+      ridgelineWithMetadata.timestamp > domain[1] ||
+      ridgelineWithMetadata.timestamp < domain[0]
+    ) {
       return;
     }
 
@@ -300,9 +287,7 @@ function renderScenarioProjections(
       label,
       contextRange
     );
-    containerElementSelection.attr('transform', () =>
-      translate(xScale(timestamp), 0)
-    );
+    containerElementSelection.attr('transform', () => translate(xScale(timestamp), 0));
   });
 
   // Apply constraints to the graph

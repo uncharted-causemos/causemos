@@ -25,22 +25,21 @@ app.mixin({
       const timeout = sticky === true ? false : 3000;
       toast(message, {
         timeout: timeout,
-        type: msgType
+        type: msgType,
       });
     },
     ontologyFormatter(concept: string) {
       // This is a bit hacky here, but we use concept formatters all over the place
       // and it is a bit of a pain to inject this across every single component.
       return conceptHumanName(concept, store.getters['app/ontologySet']);
-    }
-  }
+    },
+  },
 });
-
 
 app.directive('focus', {
   mounted(el) {
     el.focus();
-  }
+  },
 });
 
 app.mount('#app');

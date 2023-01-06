@@ -6,7 +6,7 @@
         :class="{
           'fa-check-square-o': summaryData.meta.checked,
           'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
-          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
+          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked,
         }"
         @click="toggle(summaryData)"
       />
@@ -26,18 +26,24 @@
         v-for="(relationship, idx) in summaryData.children"
         :key="idx"
         class="relationships-item"
-        :class="{ 'disabled': relationship.meta.style.disabled, '': !relationship.meta.style.disabled }"
+        :class="{
+          disabled: relationship.meta.style.disabled,
+          '': !relationship.meta.style.disabled,
+        }"
       >
         <i
           class="fa fa-lg fa-fw"
-          :class="{ 'fa-check-square-o': relationship.meta.checked, 'fa-square-o': !relationship.meta.checked }"
-          @click.stop="toggle(relationship)" />
-        <span @click="handleClick(relationship)"> {{ ontologyFormatter(relationship.source) }}
-          <i
-            class="fa fa-fw  fa-long-arrow-right"
-            :style="relationship.meta.style"
-          />
-          {{ ontologyFormatter(relationship.target) }} </span>
+          :class="{
+            'fa-check-square-o': relationship.meta.checked,
+            'fa-square-o': !relationship.meta.checked,
+          }"
+          @click.stop="toggle(relationship)"
+        />
+        <span @click="handleClick(relationship)">
+          {{ ontologyFormatter(relationship.source) }}
+          <i class="fa fa-fw fa-long-arrow-right" :style="relationship.meta.style" />
+          {{ ontologyFormatter(relationship.target) }}
+        </span>
       </div>
     </div>
   </div>
@@ -62,38 +68,36 @@ type SummaryData = {
   meta: any;
 };
 
-
 export default defineComponent({
   name: 'MultiRelationshipsPane',
-  components: {
-  },
+  components: {},
   props: {
     relationships: {
       type: Array as PropType<RelationEdge[]>,
-      default: () => []
+      default: () => [],
     },
     graphData: {
       type: Object,
-      default: () => ({ })
-    }
+      default: () => ({}),
+    },
   },
   setup() {
     const summaryData = ref<SummaryData>({ children: [], meta: { checked: false } });
 
     return {
-      summaryData
+      summaryData,
     };
   },
   computed: {
     numselectedRelationships() {
       let cnt = 0;
-      this.summaryData.children.forEach(relationship => {
+      this.summaryData.children.forEach((relationship) => {
         if (relationship.meta.checked) {
           cnt++;
         }
       });
       return cnt;
-    }
+    },
   },
   watch: {
     relationships(n, o) {
@@ -102,38 +106,43 @@ export default defineComponent({
     },
     graphData() {
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
   },
   methods: {
     ...mapActions({
-      setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges'
+      setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges',
     }),
     numberFormatter,
     refresh() {
       // Massage the structure to include checked states and styles
-      let children = this.relationships.map(relationship => Object.assign({}, relationship, {
-        meta: {
-          checked: true,
-          style: {
-            color: calcEdgeColor(relationship),
-            disabled: this.isEdgeinCAG({ source: relationship.source, target: relationship.target })
-          }
-        }
-      }));
+      let children = this.relationships.map((relationship) =>
+        Object.assign({}, relationship, {
+          meta: {
+            checked: true,
+            style: {
+              color: calcEdgeColor(relationship),
+              disabled: this.isEdgeinCAG({
+                source: relationship.source,
+                target: relationship.target,
+              }),
+            },
+          },
+        })
+      );
 
-      children = _.orderBy(children, d => d.belief_score, ['desc']);
+      children = _.orderBy(children, (d) => d.belief_score, ['desc']);
 
       this.summaryData = {
         children,
-        meta: { checked: true, isSomeChildChecked: false }
+        meta: { checked: true, isSomeChildChecked: false },
       };
     },
     updateSelectedSubgraphEdges() {
       const edges: RelationEdge[] = [];
-      this.summaryData.children.forEach(relationship => {
+      this.summaryData.children.forEach((relationship) => {
         if (relationship.meta.checked === true) {
           edges.push(relationship);
         }
@@ -151,7 +160,9 @@ export default defineComponent({
       const recursiveUp = (item: any) => {
         if (!_.isEmpty(item.children)) {
           item.children.forEach((child: any) => recursiveUp(child));
-          const numChecked = item.children.filter((d: any) => d.meta.checked || d.meta.isSomeChildChecked).length;
+          const numChecked = item.children.filter(
+            (d: any) => d.meta.checked || d.meta.isSomeChildChecked
+          ).length;
           item.meta.checked = numChecked === item.children.length;
           item.meta.isSomeChildChecked = numChecked > 0;
         }
@@ -170,7 +181,7 @@ export default defineComponent({
     isEdgeinCAG(edge: { source: string; target: string }) {
       if (_.isEmpty(this.graphData)) return;
       const graphData = this.graphData;
-      const edges = graphData.edges.map((edge : any) => edge.source + '///' + edge.target);
+      const edges = graphData.edges.map((edge: any) => edge.source + '///' + edge.target);
       return edges.indexOf(edge.source + '///' + edge.target) !== -1;
     },
     addToCAG() {
@@ -179,8 +190,8 @@ export default defineComponent({
     },
     handleClick(edge: RelationEdge) {
       this.$emit('select-edge', edge);
-    }
-  }
+    },
+  },
 });
 </script>
 

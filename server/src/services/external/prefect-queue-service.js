@@ -7,20 +7,19 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
  *
  * @param flowParameters - flow parameters for prefect
  */
-const sendToPipeline = async(flowParameters) => {
+const sendToPipeline = async (flowParameters) => {
   const pipelinePayload = {
     method: 'PUT',
     url: QUEUE_SERVICE_URL,
     headers: {
       'Content-type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     },
-    json: flowParameters
+    json: flowParameters,
   };
 
   await requestAsPromise(pipelinePayload);
 };
-
 
 /**
  * Get the logs of a prefect flow using a flow_id
@@ -51,11 +50,11 @@ const getFlowLogs = async (flowId) => {
     url: process.env.WM_PIPELINE_URL,
     headers: {
       'Content-type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     },
     json: {
-      query: graphQLQuery
-    }
+      query: graphQLQuery,
+    },
   };
 
   const response = await requestAsPromise(pipelinePayload);
@@ -83,11 +82,11 @@ const getFlowStatus = async (flowId) => {
     url: process.env.WM_PIPELINE_URL,
     headers: {
       'Content-type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     },
     json: {
-      query: graphQLQuery
-    }
+      query: graphQLQuery,
+    },
   };
 
   const response = await requestAsPromise(pipelinePayload);
@@ -97,5 +96,5 @@ const getFlowStatus = async (flowId) => {
 module.exports = {
   sendToPipeline,
   getFlowLogs,
-  getFlowStatus
+  getFlowStatus,
 };

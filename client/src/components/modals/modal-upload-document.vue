@@ -6,8 +6,8 @@
     <template #body>
       <div>
         <p>
-        Based on the numbers and sizes of documents, it may 10 to 20 minutes to process, assemble,
-        and ingest into the project.
+          Based on the numbers and sizes of documents, it may 10 to 20 minutes to process, assemble,
+          and ingest into the project.
         </p>
         <form>
           <input
@@ -16,8 +16,9 @@
             type="file"
             accept=".html, .csv, .doc, .pdf, .txt"
             class="form-control-file"
-            @change="updateInputFile">
-          <p class="instruction-set">.html, .csv, .doc, .pdf, or .txt (max. 100MB total) </p>
+            @change="updateInputFile"
+          />
+          <p class="instruction-set">.html, .csv, .doc, .pdf, or .txt (max. 100MB total)</p>
           <div v-if="inputFile">
             <table class="table table-condensed table-bordered">
               <tbody>
@@ -28,24 +29,20 @@
               </tbody>
             </table>
           </div>
-          <div
-            v-if="loading"
-            class="upload-file-label">
+          <div v-if="loading" class="upload-file-label">
             {{ sendStatus }}
           </div>
         </form>
       </div>
     </template>
     <template #footer>
-      <button
-        class="btn btn-light"
-        @click.stop="close()"> Close
-      </button>
+      <button class="btn btn-light" @click.stop="close()">Close</button>
       <button
         type="button"
         class="btn btn-primary"
         :disabled="loading || !isValid"
-        @click="onClickUpload">
+        @click="onClickUpload"
+      >
         Upload
       </button>
     </template>
@@ -69,11 +66,9 @@ const MB = 1024 * 1024;
 export default defineComponent({
   name: 'ModalDocumentUpload',
   components: {
-    Modal
+    Modal,
   },
-  emits: [
-    'close'
-  ],
+  emits: ['close'],
   setup() {
     const store = useStore();
     const inputFile = ref(null as any);
@@ -91,7 +86,7 @@ export default defineComponent({
       toMB: (v: number) => {
         return (v / MB).toFixed(2) + 'MB';
       },
-      toaster: useToaster()
+      toaster: useToaster(),
     };
   },
   methods: {
@@ -107,10 +102,13 @@ export default defineComponent({
         formData.append('file', this.inputFile[i]);
         names.push(this.inputFile[i].name);
       }
-      formData.append('metadata', JSON.stringify({
-        genre: this.metadataGenre,
-        labels: this.metadataLabels.split(',')
-      }));
+      formData.append(
+        'metadata',
+        JSON.stringify({
+          genre: this.metadataGenre,
+          labels: this.metadataLabels.split(','),
+        })
+      );
       formData.append('project', this.project);
 
       // TODO: save project to  doc_id mapping
@@ -127,8 +125,8 @@ export default defineComponent({
         // this.inputFile = el.files[0];
         this.inputFile = el.files;
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -136,7 +134,6 @@ export default defineComponent({
 @import '~styles/variables';
 
 :deep(.modal-container) {
-
   .modal-header {
     height: 50px;
   }

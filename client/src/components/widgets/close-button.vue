@@ -1,11 +1,6 @@
 <template>
-  <div
-    class="close-button"
-    @click="$emit('click')"
-  >
-    <i
-      class="fa fa-fw fa-close"
-    />
+  <div class="close-button" @click="$emit('click')">
+    <i class="fa fa-fw fa-close" />
   </div>
 </template>
 
@@ -14,14 +9,12 @@ import { defineComponent } from 'vue';
 
 export default defineComponent({
   name: 'CloseButton',
-  emits: [
-    'click'
-  ]
+  emits: ['click'],
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .close-button {
   font-size: $font-size-large;
@@ -31,7 +24,7 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   border-radius: 3px;
-  color: #C1C1DE;
+  color: #c1c1de;
   cursor: pointer;
 
   &:hover {

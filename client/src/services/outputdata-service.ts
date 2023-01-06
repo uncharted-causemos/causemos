@@ -6,7 +6,7 @@ import {
   SpatialAggregationLevel,
   AggregationOption,
   ReferenceSeriesOption,
-  TemporalAggregationLevel
+  TemporalAggregationLevel,
 } from '@/types/Enums';
 import {
   OutputSpec,
@@ -22,7 +22,7 @@ import {
   QualifierListsResponse,
   OutputSpecWithRegionId,
   BaseSpec,
-  BulkRegionalAggregationData
+  BulkRegionalAggregationData,
 } from '@/types/Outputdata';
 import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
@@ -31,7 +31,9 @@ import { getLevelFromRegionId, adminLevelToString } from '@/utils/admin-level-ut
 import { TimeseriesPoint } from '@/types/Timeseries';
 
 const RAW_DATA_REQUEST_CACHE_SIZE = 20;
-const rawDataRequestCache = new FIFOCache<Promise<RawOutputDataPoint[]>>(RAW_DATA_REQUEST_CACHE_SIZE);
+const rawDataRequestCache = new FIFOCache<Promise<RawOutputDataPoint[]>>(
+  RAW_DATA_REQUEST_CACHE_SIZE
+);
 
 /*
   getRaw[something] functions:
@@ -39,13 +41,11 @@ const rawDataRequestCache = new FIFOCache<Promise<RawOutputDataPoint[]>>(RAW_DAT
   - only use getRaw naming pattern for functions that use data from that endpoint
 */
 
-export const getRawOutputData = async (
-  param: {
-    dataId: string,
-    runId: string,
-    outputVariable: string
-  }
-): Promise<RawOutputDataPoint[]> => {
+export const getRawOutputData = async (param: {
+  dataId: string;
+  runId: string;
+  outputVariable: string;
+}): Promise<RawOutputDataPoint[]> => {
   // Fetching raw data is expensive and this function can be called by multiple functions in multiple places
   // simultaneously with same parameter set, cache the request and retrieve the result for the same request
   // from the cache to avoid overheads.
@@ -58,16 +58,18 @@ export const getRawOutputData = async (
       params: {
         data_id: param.dataId,
         run_id: param.runId,
-        feature: param.outputVariable
-      }
-    }).then(res => {
-      // Remove invalid data points and make sure all values are number
-      return res.data.filter((d: RawOutputDataPoint) => _.isNumber(d.value));
-    }).catch(() => {
-      // if there was an error in the request, remove itself from the cache.
-      rawDataRequestCache.remove(cacheKey);
-      return [];
-    });
+        feature: param.outputVariable,
+      },
+    })
+      .then((res) => {
+        // Remove invalid data points and make sure all values are number
+        return res.data.filter((d: RawOutputDataPoint) => _.isNumber(d.value));
+      })
+      .catch(() => {
+        // if there was an error in the request, remove itself from the cache.
+        rawDataRequestCache.remove(cacheKey);
+        return [];
+      });
     // Add the request to the cache
     rawDataRequestCache.set(cacheKey, requestPromise);
   }
@@ -76,62 +78,61 @@ export const getRawOutputData = async (
   return data;
 };
 
-export const getRawTimeseriesData = async (
-  param: {
-    dataId: string,
-    runId: string,
-    outputVariable: string,
-    spatialAgg: string,
-    regionId: string
-  }
-): Promise<TimeseriesPoint[]> => {
+export const getRawTimeseriesData = async (param: {
+  dataId: string;
+  runId: string;
+  outputVariable: string;
+  spatialAgg: string;
+  regionId: string;
+}): Promise<TimeseriesPoint[]> => {
   const rawData = await getRawOutputData(param);
-  const filteredData = param.regionId ? filterRawDataByRegionIds(rawData, [param.regionId]) : rawData;
+  const filteredData = param.regionId
+    ? filterRawDataByRegionIds(rawData, [param.regionId])
+    : rawData;
   const result = computeTimeseriesFromRawData(filteredData, param.spatialAgg as AggregationOption);
   return result;
 };
 
 export const getRawTimeseriesDataBulk = async (
   param: {
-    dataId: string,
-    runId: string,
-    outputVariable: string,
-    spatialAgg: string,
+    dataId: string;
+    runId: string;
+    outputVariable: string;
+    spatialAgg: string;
   },
   regionIds: string[]
-): Promise<{ region_id: string, timeseries: TimeseriesPoint[] }[]> => {
-  const promises = regionIds.map(regionId => getRawTimeseriesData({ regionId, ...param }));
+): Promise<{ region_id: string; timeseries: TimeseriesPoint[] }[]> => {
+  const promises = regionIds.map((regionId) => getRawTimeseriesData({ regionId, ...param }));
   const data = await Promise.all(promises);
   return data.map((series, index) => ({ region_id: regionIds[index], timeseries: series }));
 };
 
-export const getRawOutputDataByTimestamp = async (
-  param: {
-    dataId: string,
-    runId: string,
-    outputVariable: string,
-    timestamp: number | undefined
-  }
-): Promise<RawOutputDataPoint[]> => {
+export const getRawOutputDataByTimestamp = async (param: {
+  dataId: string;
+  runId: string;
+  outputVariable: string;
+  timestamp: number | undefined;
+}): Promise<RawOutputDataPoint[]> => {
   const rawData = await getRawOutputData(param);
-  return rawData.filter(d => d.timestamp === param.timestamp);
+  return rawData.filter((d) => d.timestamp === param.timestamp);
 };
 
-export const getRawQualifierTimeseries = async (
-  param: {
-    dataId: string,
-    runId: string,
-    outputVariable: string,
-    aggregation: string,
-    qualifierVariableId: string,
-    qualifierOptions: string[],
-    regionId?: string
-  }) => {
+export const getRawQualifierTimeseries = async (param: {
+  dataId: string;
+  runId: string;
+  outputVariable: string;
+  aggregation: string;
+  qualifierVariableId: string;
+  qualifierOptions: string[];
+  regionId?: string;
+}) => {
   if (param.qualifierOptions.length === 0) {
     return [];
   }
   const rawData = await getRawOutputData(param);
-  const filteredData = param.regionId ? filterRawDataByRegionIds(rawData, [param.regionId]) : rawData;
+  const filteredData = param.regionId
+    ? filterRawDataByRegionIds(rawData, [param.regionId])
+    : rawData;
 
   // Init an object to store raw data points grouped by each qualifier option provided by param
   const dataByOptions: { [opt: string]: RawOutputDataPoint[] } = {};
@@ -147,46 +148,43 @@ export const getRawQualifierTimeseries = async (
     }
   }
 
-  const result = Object.keys(dataByOptions).map(option => {
-    const timeseries = computeTimeseriesFromRawData(dataByOptions[option], param.aggregation as AggregationOption);
+  const result = Object.keys(dataByOptions).map((option) => {
+    const timeseries = computeTimeseriesFromRawData(
+      dataByOptions[option],
+      param.aggregation as AggregationOption
+    );
     return { name: option, timeseries };
   });
 
   return result;
 };
 
-export const getTimeseries = async (
-  spec: OutputSpecWithRegionId
-): Promise<any> => {
+export const getTimeseries = async (spec: OutputSpecWithRegionId): Promise<any> => {
   try {
-    const result = await API.get('maas/output/timeseries',
-      {
-        params: {
-          data_id: spec.modelId,
-          run_id: spec.runId,
-          feature: spec.outputVariable,
-          resolution: spec.temporalResolution,
-          temporal_agg: spec.temporalAggregation,
-          spatial_agg: spec.spatialAggregation,
-          transform: spec.transform,
-          region_id: spec.regionId
-        }
-      }
-    );
+    const result = await API.get('maas/output/timeseries', {
+      params: {
+        data_id: spec.modelId,
+        run_id: spec.runId,
+        feature: spec.outputVariable,
+        resolution: spec.temporalResolution,
+        temporal_agg: spec.temporalAggregation,
+        spatial_agg: spec.spatialAggregation,
+        transform: spec.transform,
+        region_id: spec.regionId,
+      },
+    });
     return result;
   } catch (e) {
     return [];
   }
 };
 
-export const getBulkTimeseries = async (
-  spec: OutputSpec,
-  regionIds: string[]
-): Promise<any> => {
+export const getBulkTimeseries = async (spec: OutputSpec, regionIds: string[]): Promise<any> => {
   try {
-    const result = await API.post('maas/output/bulk-timeseries/regions',
+    const result = await API.post(
+      'maas/output/bulk-timeseries/regions',
       {
-        region_ids: regionIds
+        region_ids: regionIds,
       },
       {
         params: {
@@ -196,8 +194,8 @@ export const getBulkTimeseries = async (
           resolution: spec.temporalResolution,
           temporal_agg: spec.temporalAggregation,
           spatial_agg: spec.spatialAggregation,
-          transform: spec.transform
-        }
+          transform: spec.transform,
+        },
       }
     );
     return result;
@@ -218,13 +216,13 @@ export const getRawQualifierBreakdown = async (
     dataId,
     runId,
     outputVariable,
-    timestamp
+    timestamp,
   });
   interface qualifierAgg {
     [qualVal: string]: { count: number; sum: number };
   }
   interface qualifierAggs {
-    [qualifierVarId: string]: qualifierAgg
+    [qualifierVarId: string]: qualifierAgg;
   }
   const aggs: qualifierAggs = {};
   // Init aggs object
@@ -241,11 +239,11 @@ export const getRawQualifierBreakdown = async (
     }
   }
   // For each qualifier variable Id, compute QualifierBreakdownResponse
-  const result = qualifierVariableIds.map(varId => {
-    const options = Object.keys(aggs[varId]).map(qualVal => {
+  const result = qualifierVariableIds.map((varId) => {
+    const options = Object.keys(aggs[varId]).map((qualVal) => {
       const count = aggs[varId][qualVal].count;
       const sum = aggs[varId][qualVal].sum;
-      const value = aggregation === AggregationOption.Sum ? sum : (sum / count);
+      const value = aggregation === AggregationOption.Sum ? sum : sum / count;
       return { name: qualVal, value };
     });
     return { name: varId, options } as QualifierBreakdownResponse;
@@ -260,17 +258,13 @@ export const getRawQualifierBreakdown = async (
  * @param runId the ID of the model run. If this is an indicator, should be 'indicator'
  * @param feature the output feature
  */
-export const getQualifierCounts = async (
-  dataId: string,
-  runId: string,
-  feature: string
-) => {
+export const getQualifierCounts = async (dataId: string, runId: string, feature: string) => {
   const { data } = await API.get('maas/output/qualifier-counts', {
     params: {
       data_id: dataId,
       run_id: runId,
-      feature
-    }
+      feature,
+    },
   });
   return data as QualifierCountsResponse;
 };
@@ -293,8 +287,8 @@ export const getQualifierLists = async (
       data_id: dataId,
       run_id: runId,
       feature,
-      qlf: qualifiers
-    }
+      qlf: qualifiers,
+    },
   });
   return data as QualifierListsResponse;
 };
@@ -322,8 +316,8 @@ export const getQualifierTimeseries = async (
       region_id: regionId,
       transform: transform,
       qualifier: qualifierVariableId,
-      q_opt: qualifierOptions
-    }
+      q_opt: qualifierOptions,
+    },
   });
 };
 
@@ -340,8 +334,27 @@ export const getQualifierBreakdown = async (
 ): Promise<QualifierBreakdownResponse[]> => {
   if (regionId.length > 0) {
     const [global, regional] = await Promise.all([
-      getGlobalQualifierBreakdown(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp),
-      getQualifierBreakdownByRegionId(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp, regionId)
+      getGlobalQualifierBreakdown(
+        dataId,
+        runId,
+        feature,
+        qualifierVariableIds,
+        temporalResolution,
+        temporalAggregation,
+        spatialAggregation,
+        timestamp
+      ),
+      getQualifierBreakdownByRegionId(
+        dataId,
+        runId,
+        feature,
+        qualifierVariableIds,
+        temporalResolution,
+        temporalAggregation,
+        spatialAggregation,
+        timestamp,
+        regionId
+      ),
     ]);
     // Remove all values from global qualifier, use only qualifier option name as placeholder
     for (const qual of global) {
@@ -351,7 +364,16 @@ export const getQualifierBreakdown = async (
     }
     return _.merge(global, regional);
   }
-  return await getGlobalQualifierBreakdown(dataId, runId, feature, qualifierVariableIds, temporalResolution, temporalAggregation, spatialAggregation, timestamp);
+  return await getGlobalQualifierBreakdown(
+    dataId,
+    runId,
+    feature,
+    qualifierVariableIds,
+    temporalResolution,
+    temporalAggregation,
+    spatialAggregation,
+    timestamp
+  );
 };
 
 export const getGlobalQualifierBreakdown = async (
@@ -373,8 +395,8 @@ export const getGlobalQualifierBreakdown = async (
       temporal_agg: temporalAggregation,
       spatial_agg: spatialAggregation,
       timestamp,
-      qlf: qualifierVariableIds
-    }
+      qlf: qualifierVariableIds,
+    },
   });
   return data as QualifierBreakdownResponse[];
 };
@@ -398,21 +420,25 @@ export const getQualifierBreakdownByRegionId = async (
     temporalAggregation,
     spatialAggregation,
     timestamp,
-    isDefaultRun: false
+    isDefaultRun: false,
   };
   const adminLevel = adminLevelToString(getLevelFromRegionId(regionId));
-  const promises = qualifierVariableIds.map(varId => getRegionAggregationWithQualifiers(outputSpec, varId));
+  const promises = qualifierVariableIds.map((varId) =>
+    getRegionAggregationWithQualifiers(outputSpec, varId)
+  );
   const regionalData = await Promise.all(promises);
-  const result = regionalData.map((data, index) => {
-    // Filter by region Id
-    const regionAgg = data[adminLevel]?.filter(regionAgg => regionAgg.id === regionId)[0];
-    if (!regionAgg) return undefined;
-    // Get qualifier options which is an array of object that represent qualifier option name and value pair
-    const options = Object.entries((regionAgg as RegionAgg).values).map(([name, value]) => {
-      return { name, value: value as number };
-    });
-    return { name: qualifierVariableIds[index], options };
-  }).filter(d => !!d);
+  const result = regionalData
+    .map((data, index) => {
+      // Filter by region Id
+      const regionAgg = data[adminLevel]?.filter((regionAgg) => regionAgg.id === regionId)[0];
+      if (!regionAgg) return undefined;
+      // Get qualifier options which is an array of object that represent qualifier option name and value pair
+      const options = Object.entries((regionAgg as RegionAgg).values).map(([name, value]) => {
+        return { name, value: value as number };
+      });
+      return { name: qualifierVariableIds[index], options };
+    })
+    .filter((d) => !!d);
   return result as QualifierBreakdownResponse[];
 };
 
@@ -423,24 +449,18 @@ export const getQualifierBreakdownByRegionId = async (
  * @param runIds the IDs of the model runs. If this is an indicator, should be ['indicator']
  * @param feature the output feature
  */
-export const getRegionLists = async (
-  dataId: string,
-  runIds: string[],
-  feature: string
-) => {
+export const getRegionLists = async (dataId: string, runIds: string[], feature: string) => {
   const { data } = await API.get('maas/output/region-lists', {
     params: {
       data_id: dataId,
       run_ids: runIds,
-      feature
-    }
+      feature,
+    },
   });
   return data;
 };
 
-export const getRegionAggregation = async (
-  spec: OutputSpec
-): Promise<RegionalAggregation> => {
+export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
   // TODO: Handle http error properly in the backend and respond with correct error code if necessary.
   //       Meanwhile just ignore the error.
   try {
@@ -453,8 +473,8 @@ export const getRegionAggregation = async (
         temporal_agg: spec.temporalAggregation,
         spatial_agg: spec.spatialAggregation,
         timestamp: spec.timestamp,
-        transform: spec.transform
-      }
+        transform: spec.transform,
+      },
     });
     return data;
   } catch (e) {
@@ -479,8 +499,8 @@ export const getRegionAggregationWithQualifiers = async (
         spatial_agg: spec.spatialAggregation,
         timestamp: spec.timestamp,
         qualifier,
-        transform: spec.transform
-      }
+        transform: spec.transform,
+      },
     });
     return data;
   } catch (e) {
@@ -500,34 +520,41 @@ export const getRegionAggregations = async (
   const specs = baseSpecs; // we generate additional specs on the fly for yearly reference series;
 
   if (isSplitByQualifierActive(breakdownOption)) {
-    results = await Promise.all(specs.map((spec) => getRegionAggregationWithQualifiers(spec, breakdownOption)));
+    results = await Promise.all(
+      specs.map((spec) => getRegionAggregationWithQualifiers(spec, breakdownOption))
+    );
     // reduce duplicate calls without branching the more complex result processing logic.
   } else if (breakdownOption === SpatialAggregationLevel.Region) {
     const ret = await getRegionAggregation(specs[0]);
     results = new Array(specs.length).fill(ret) as RegionalAggregation[];
   } else if (breakdownOption === TemporalAggregationLevel.Year) {
     const selectedTimestamps = specs
-      .map(s => s.timestamp?.toString())
-      .filter(s => s !== undefined) as string[];
+      .map((s) => s.timestamp?.toString())
+      .filter((s) => s !== undefined) as string[];
 
     // get bulk results then parse them into a format usable for the formatting section afterwards
-    const bulkResults = await getBulkRegionalData(specs[0], selectedTimestamps, allTimestamps ?? [], referenceSeries);
+    const bulkResults = await getBulkRegionalData(
+      specs[0],
+      selectedTimestamps,
+      allTimestamps ?? [],
+      referenceSeries
+    );
     if (bulkResults.regional_data) {
-      results = bulkResults?.regional_data.map(rd => rd.data);
+      results = bulkResults?.regional_data.map((rd) => rd.data);
     } else {
       results = <RegionalAggregation[]>[];
     }
     if (bulkResults.all_agg && allTimestamps && allTimestamps.length > 0) {
       results.push(bulkResults.all_agg);
       const newSpec = <OutputSpecWithId>{
-        id: ReferenceSeriesOption.AllYears as string
+        id: ReferenceSeriesOption.AllYears as string,
       };
       specs.push(newSpec);
     }
     if (bulkResults.select_agg) {
       results.push(bulkResults.select_agg);
       const newSpec = <OutputSpecWithId>{
-        id: ReferenceSeriesOption.SelectYears as string
+        id: ReferenceSeriesOption.SelectYears as string,
       };
       specs.push(newSpec);
     }
@@ -542,23 +569,21 @@ export const getRegionAggregations = async (
     country: {},
     admin1: {},
     admin2: {},
-    admin3: {}
+    admin3: {},
   } as {
-      [key in AdminLevel]: { [key: string]: RegionAgg };
-    };
+    [key in AdminLevel]: { [key: string]: RegionAgg };
+  };
   // FIXME: cast to make compatible with objects indexed by AdminLevel
   const _allRegions = allRegions as { [key in AdminLevel]: string[] };
   // Initialize dict with an entry for each region in the entire hierarchy,
   //  regardless of whether it exists in the fetched results
-  Object.values(AdminLevel).forEach(adminLevel => {
+  Object.values(AdminLevel).forEach((adminLevel) => {
     const selectedDictEntry = dict[adminLevel];
     if (_allRegions[adminLevel] !== undefined) {
-      _allRegions[adminLevel].forEach(regionId => {
+      _allRegions[adminLevel].forEach((regionId) => {
         // Sanity check
         if (selectedDictEntry[regionId] !== undefined) {
-          console.error(
-            `Hierarchy data contains duplicate entry for "${regionId}"`
-          );
+          console.error(`Hierarchy data contains duplicate entry for "${regionId}"`);
           return;
         }
         selectedDictEntry[regionId] = { id: regionId, values: {} };
@@ -567,17 +592,21 @@ export const getRegionAggregations = async (
   });
   // Insert results into the hierarchy
   results.forEach((result: RegionalAggregation | RegionalAggregations, index: number) => {
-    Object.values(AdminLevel).forEach(level => {
+    Object.values(AdminLevel).forEach((level) => {
       (result[level] || []).forEach((item: RegionAgg | { id: string; value: number }) => {
         if (!dict[level][item.id]) {
           // check if there is a similar region in the hierarchy
           console.log(
             "getRegionAggregation returned a region that doesn't exist in the hierarchy",
             dict,
-            'result[level]', result[level],
-            'level', level,
-            'itemid', item.id,
-            'allregion', allRegions
+            'result[level]',
+            result[level],
+            'level',
+            level,
+            'itemid',
+            item.id,
+            'allregion',
+            allRegions
           );
 
           return;
@@ -590,11 +619,15 @@ export const getRegionAggregations = async (
             breakdownOption !== SpatialAggregationLevel.Region ||
             (breakdownOption === SpatialAggregationLevel.Region && specs[index].id === item.id)
           ) {
-            dict[level][item.id].values[specs[index].id] = (item as { id: string; value: number }).value;
+            dict[level][item.id].values[specs[index].id] = (
+              item as { id: string; value: number }
+            ).value;
           }
           // otherwise use the qualifier info to look up the data in item.values
         } else if ((item as RegionAgg).values?.[specs[index].id]) {
-          dict[level][item.id].values[specs[index].id] = (item as RegionAgg).values?.[specs[index].id];
+          dict[level][item.id].values[specs[index].id] = (item as RegionAgg).values?.[
+            specs[index].id
+          ];
         }
       });
     });
@@ -603,7 +636,7 @@ export const getRegionAggregations = async (
     country: Object.values(dict.country),
     admin1: Object.values(dict.admin1),
     admin2: Object.values(dict.admin2),
-    admin3: Object.values(dict.admin3)
+    admin3: Object.values(dict.admin3),
   };
 };
 
@@ -618,11 +651,13 @@ export const getBulkRegionalData = async (
       'maas/output/bulk-regional-data',
       {
         all_timestamps: allTimestamps,
-        timestamps: selectedTimestamps
+        timestamps: selectedTimestamps,
       },
       {
         params: {
-          aggForSelect: referenceSeries?.includes(ReferenceSeriesOption.SelectYears) ? 'mean' : null,
+          aggForSelect: referenceSeries?.includes(ReferenceSeriesOption.SelectYears)
+            ? 'mean'
+            : null,
           aggForAll: referenceSeries?.includes(ReferenceSeriesOption.AllYears) ? 'mean' : null,
           data_id: spec.modelId,
           run_id: spec.runId,
@@ -630,8 +665,8 @@ export const getBulkRegionalData = async (
           resolution: spec.temporalResolution,
           temporal_agg: spec.temporalAggregation,
           spatial_agg: spec.spatialAggregation,
-          transform: spec.transform
-        }
+          transform: spec.transform,
+        },
       }
     );
     return data;
@@ -639,7 +674,6 @@ export const getBulkRegionalData = async (
     return {} as BulkRegionalAggregationData;
   }
 };
-
 
 export const getOutputStat = async (spec: OutputSpec): Promise<OutputStatWithZoom[]> => {
   try {
@@ -651,8 +685,8 @@ export const getOutputStat = async (spec: OutputSpec): Promise<OutputStatWithZoo
         resolution: spec.temporalResolution,
         temporal_agg: spec.temporalAggregation,
         spatial_agg: spec.spatialAggregation,
-        timestamp: spec.timestamp
-      }
+        timestamp: spec.timestamp,
+      },
     });
     return data;
   } catch (e) {
@@ -665,7 +699,7 @@ export const getOutputStats = async (specs: OutputSpecWithId[]): Promise<OutputS
   const stats = results.map((result, index) => {
     return {
       outputSpecId: specs[index].id,
-      stats: result
+      stats: result,
     };
   });
   return stats;
@@ -721,5 +755,5 @@ export default {
   getRegionAggregations,
   getBulkRegionalData,
   getOutputStat,
-  getOutputStats
+  getOutputStats,
 };

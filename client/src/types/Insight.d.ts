@@ -1,8 +1,4 @@
-import {
-  BASE_LAYER,
-  DATA_LAYER,
-  DATA_LAYER_TRANSPARENCY
-} from '@/utils/map-util-new';
+import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { DatacubeViewMode, DataTransform } from '@/types/Enums';
 import { Filters } from './Filters';
@@ -145,13 +141,13 @@ export interface AnalyticalQuestion extends Snapshot {
 }
 
 export interface SectionWithInsights {
-  section: AnalyticalQuestion,
-  insights: FullInsight[]
+  section: AnalyticalQuestion;
+  insights: FullInsight[];
 }
 
 export interface ReviewPosition {
-  sectionId: string,
-  insightId: string | null
+  sectionId: string;
+  insightId: string | null;
 }
 
 export interface InsightMetadata {

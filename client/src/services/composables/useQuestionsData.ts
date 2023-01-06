@@ -31,10 +31,12 @@ export default function useQuestionsData() {
 
   const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
 
-  watchEffect(onInvalidate => {
+  watchEffect((onInvalidate) => {
     // This condition should always return true, it's just used to add
     //  questionsFetchedAt to this watchEffect's dependency array
-    if (questionsFetchedAt.value < 0) { return; }
+    if (questionsFetchedAt.value < 0) {
+      return;
+    }
     let isCancelled = false;
     async function getQuestions() {
       // if context-id is undefined, then it means no datacubes/CAGs are listed, so ignore fetch
@@ -49,7 +51,8 @@ export default function useQuestionsData() {
       // a more proper solution would be to store all context-id(s) for an analysis project,
       // and set those everytime prior to opening the insight explorer,
       // and finally restore that specific context-id once the insight explorer is closed!
-      const ignoreContextId = isInsightExplorerOpen.value === true && projectType.value === ProjectType.Analysis;
+      const ignoreContextId =
+        isInsightExplorerOpen.value === true && projectType.value === ProjectType.Analysis;
 
       //
       // fetch public insights
@@ -66,7 +69,9 @@ export default function useQuestionsData() {
       }
       // Note that when 'ignoreContextId' is true, this means we are fetching questions for the insight explorer within an analysis project
       // For this case, public questions should not be listed
-      const publicQuestions = ignoreContextId ? [] : await fetchQuestions([publicQuestionsSearchFields]);
+      const publicQuestions = ignoreContextId
+        ? []
+        : await fetchQuestions([publicQuestionsSearchFields]);
 
       //
       // fetch context-specific questions
@@ -110,9 +115,7 @@ export default function useQuestionsData() {
     handleSuccessfulUpdate: () => void,
     handleFailedUpdate: () => void
   ) => {
-    const view_state: ViewState = _.cloneDeep(
-      store.getters['insightPanel/viewState']
-    );
+    const view_state: ViewState = _.cloneDeep(store.getters['insightPanel/viewState']);
     const lastSection = _.last(sortedQuestionsList.value);
     let newSectionOrderIndex = sortedQuestionsList.value.length;
     if (lastSection) {
@@ -128,9 +131,17 @@ export default function useQuestionsData() {
     // Insight created during model publication are visible in the full list of
     //  insights, and as context specific insights on the corresponding model
     //  family instance's page.
-    const target_view: string[] = projectType === ProjectType.Analysis
-      ? [currentView, 'overview', 'dataComparative']
-      : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher'];
+    const target_view: string[] =
+      projectType === ProjectType.Analysis
+        ? [currentView, 'overview', 'dataComparative']
+        : [
+            'data',
+            'nodeDrilldown',
+            'dataComparative',
+            'overview',
+            'domainDatacubeOverview',
+            'modelPublisher',
+          ];
     const newSection: AnalyticalQuestion = {
       question: title,
       description: '',
@@ -142,7 +153,7 @@ export default function useQuestionsData() {
       pre_actions: null,
       post_actions: null,
       linked_insights: [],
-      view_state
+      view_state,
     };
     const result = await addQuestion(newSection);
     if (result.status === 200) {
@@ -158,9 +169,7 @@ export default function useQuestionsData() {
     newSectionTitle: string,
     handleFailedUpdate: () => void
   ) => {
-    const section = questionsList.value.find(
-      section => section.id === sectionId
-    );
+    const section = questionsList.value.find((section) => section.id === sectionId);
     if (section === undefined) {
       console.error(
         'Unable to find section with ID',
@@ -174,12 +183,9 @@ export default function useQuestionsData() {
     }
     const updatedSection = {
       ...section,
-      question: newSectionTitle
+      question: newSectionTitle,
     };
-    const result = await updateQuestion(
-      updatedSection.id as string,
-      updatedSection
-    );
+    const result = await updateQuestion(updatedSection.id as string, updatedSection);
     if (result.status === 200) {
       reFetchQuestions();
     } else {
@@ -193,9 +199,7 @@ export default function useQuestionsData() {
     handleFailedUpdate: () => void
   ) => {
     const listBeforeDeletion = questionsList.value;
-    questionsList.value = questionsList.value.filter(
-      section => section.id !== sectionId
-    );
+    questionsList.value = questionsList.value.filter((section) => section.id !== sectionId);
 
     const result = await deleteQuestion(sectionId as string);
     if (result.status === 200) {
@@ -206,36 +210,26 @@ export default function useQuestionsData() {
     }
   };
 
-  const moveSectionAboveSection = async (
-    movedSectionId: string,
-    targetSectionId: string
-  ) => {
+  const moveSectionAboveSection = async (movedSectionId: string, targetSectionId: string) => {
     const sections = _.cloneDeep(sortedQuestionsList.value);
-    const movedSection = sections.find(
-      section => section.id === movedSectionId
-    );
-    const targetSection = sections.find(
-      section => section.id === targetSectionId
-    );
+    const movedSection = sections.find((section) => section.id === movedSectionId);
+    const targetSection = sections.find((section) => section.id === targetSectionId);
     if (movedSection === undefined || targetSection === undefined) {
       return;
     }
-    const targetSectionIndex = sections.findIndex(
-      section => section.id === targetSectionId
-    );
+    const targetSectionIndex = sections.findIndex((section) => section.id === targetSectionId);
     let newPosition = 0;
-    const targetSectionOrderNumber = targetSection.view_state
-      .analyticalQuestionOrder as number;
+    const targetSectionOrderNumber = targetSection.view_state.analyticalQuestionOrder as number;
     if (targetSectionIndex === 0) {
       // Dropped onto the question that's currently first in the list
       newPosition = targetSectionOrderNumber - 1;
     } else {
       // Dropping between two questions
       const questionAbove = sections[targetSectionIndex - 1];
-      const questionAboveOrderNumber = questionAbove.view_state
-        .analyticalQuestionOrder as number;
+      const questionAboveOrderNumber = questionAbove.view_state.analyticalQuestionOrder as number;
       // New position is halfway between their order numbers
-      newPosition = questionAboveOrderNumber + (targetSectionOrderNumber - questionAboveOrderNumber) / 2;
+      newPosition =
+        questionAboveOrderNumber + (targetSectionOrderNumber - questionAboveOrderNumber) / 2;
     }
     // The list of sections automatically resorts itself
     movedSection.view_state.analyticalQuestionOrder = newPosition;
@@ -245,7 +239,7 @@ export default function useQuestionsData() {
   };
 
   const addInsightToSection = async (insightId: string, sectionId: string) => {
-    const section = questionsList.value.find(section => section.id === sectionId);
+    const section = questionsList.value.find((section) => section.id === sectionId);
     if (section === undefined) {
       console.error(
         'Unable to find section with ID',
@@ -266,7 +260,7 @@ export default function useQuestionsData() {
   };
 
   const removeInsightFromSection = async (insightId: string, sectionId: string) => {
-    const section = questionsList.value.find(section => section.id === sectionId);
+    const section = questionsList.value.find((section) => section.id === sectionId);
     if (section === undefined) {
       console.error(
         'Unable to find section with ID',
@@ -278,7 +272,7 @@ export default function useQuestionsData() {
       return;
     }
     section.linked_insights = section.linked_insights.filter(
-      linkedInsightId => linkedInsightId !== insightId
+      (linkedInsightId) => linkedInsightId !== insightId
     );
     // update question on the backend
     await updateQuestion(sectionId, section);
@@ -297,8 +291,7 @@ export default function useQuestionsData() {
     toSectionId: string,
     newPosition: number
   ) => {
-    const toSection =
-      questionsList.value.find(section => section.id === toSectionId);
+    const toSection = questionsList.value.find((section) => section.id === toSectionId);
     if (toSection === undefined) {
       return;
     }
@@ -306,13 +299,9 @@ export default function useQuestionsData() {
       removeInsightFromSection(insightId, fromSectionId);
     }
     const listWithoutInsight = toSection.linked_insights.filter(
-      _insightId => _insightId !== insightId
+      (_insightId) => _insightId !== insightId
     );
-    listWithoutInsight.splice(
-      newPosition,
-      0,
-      insightId
-    );
+    listWithoutInsight.splice(newPosition, 0, insightId);
     toSection.linked_insights = listWithoutInsight;
     // Update section on the backend
     await updateQuestion(toSectionId, toSection);
@@ -326,6 +315,6 @@ export default function useQuestionsData() {
     moveSectionAboveSection,
     addInsightToSection,
     removeInsightFromSection,
-    moveInsight
+    moveInsight,
   };
 }

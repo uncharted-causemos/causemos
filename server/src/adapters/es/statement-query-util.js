@@ -7,7 +7,6 @@ class StatementQueryUtil extends QueryUtil {
     super(FIELDS);
   }
 
-
   /**
    * query builder to filter at the global (index) level
    *
@@ -23,8 +22,8 @@ class StatementQueryUtil extends QueryUtil {
     if (values.indexOf('self-loop') < 0) {
       queries.push({
         term: {
-          'wm.is_selfloop': false
-        }
+          'wm.is_selfloop': false,
+        },
       });
     }
     /**
@@ -43,37 +42,37 @@ class StatementQueryUtil extends QueryUtil {
     }
     queries.push({
       terms: {
-        'wm.state': states
-      }
+        'wm.state': states,
+      },
     });
     const result = {
       bool: {
-        filter: queries
-      }
+        filter: queries,
+      },
     };
     return result;
   }
 
   buildQuery(filters) {
     const clauses = _.get(filters, 'clauses') || [];
-    const enableClause = clauses.find(clause => clause && clause.field === 'enable');
+    const enableClause = clauses.find((clause) => clause && clause.field === 'enable');
     const filterClauses = this.levelFilter(clauses, FIELD_LEVELS.STATEMENT);
     const nestedEvidenceClauses = this.levelFilter(clauses, FIELD_LEVELS.EVIDENCE);
     const enableFilters = this.buildEnableFilters(enableClause);
     const generalFilters = this.buildFilters(filterClauses);
-    const nestedEvidenceFilters = this.buildNestedFilters(nestedEvidenceClauses, NESTED_FIELD_PATHS.EVIDENCE);
+    const nestedEvidenceFilters = this.buildNestedFilters(
+      nestedEvidenceClauses,
+      NESTED_FIELD_PATHS.EVIDENCE
+    );
 
-    const allFilters = [
-      enableFilters,
-      generalFilters
-    ];
+    const allFilters = [enableFilters, generalFilters];
     if (nestedEvidenceFilters != null) allFilters.push(nestedEvidenceFilters);
     return {
       query: {
         bool: {
-          must: allFilters
-        }
-      }
+          must: allFilters,
+        },
+      },
     };
   }
 }

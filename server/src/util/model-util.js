@@ -11,7 +11,7 @@ function isEdgeAmbiguous(polarities) {
   let same = 0;
   let opposite = 0;
   let unknown = 0;
-  polarities.forEach(polarity => {
+  polarities.forEach((polarity) => {
     if (polarity === 1) {
       same++;
     } else if (polarity === -1) {
@@ -20,9 +20,8 @@ function isEdgeAmbiguous(polarities) {
       unknown++;
     }
   });
-  return ((same > 0 && opposite > 0) || unknown > 0);
+  return (same > 0 && opposite > 0) || unknown > 0;
 }
-
 
 /**
  * Get "available" max and min ranges. This is for the engine to
@@ -31,7 +30,7 @@ function isEdgeAmbiguous(polarities) {
 const projectionValueRange = (values) => {
   if (_.isEmpty(values)) return { max: 1, min: 0 };
 
-  const hasNegative = _.some(values, v => v < 0);
+  const hasNegative = _.some(values, (v) => v < 0);
 
   let max = _.max(values);
   let min = _.min(values);
@@ -59,20 +58,19 @@ const projectionValueRange = (values) => {
   return { max, min };
 };
 
-
 const MODEL_STATUS = {
   NOT_REGISTERED: 0,
   TRAINING: 1,
-  READY: 2
+  READY: 2,
 };
 
 const RESET_ALL_ENGINE_STATUS = {
-  dyse: MODEL_STATUS.NOT_REGISTERED
+  dyse: MODEL_STATUS.NOT_REGISTERED,
 };
 
 module.exports = {
   isEdgeAmbiguous,
   projectionValueRange,
   MODEL_STATUS,
-  RESET_ALL_ENGINE_STATUS
+  RESET_ALL_ENGINE_STATUS,
 };

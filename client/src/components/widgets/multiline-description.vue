@@ -1,6 +1,5 @@
 <template>
-  <p v-for="(p, idx) in paragraphs"
-    :key="idx">
+  <p v-for="(p, idx) in paragraphs" :key="idx">
     {{ p }}
   </p>
 </template>
@@ -14,17 +13,16 @@ export default defineComponent({
   props: {
     text: {
       type: String as PropType<string>,
-      required: true
-    }
+      required: true,
+    },
   },
   setup(props) {
-    const paragraphs = computed(() => props.text?.split(/\r|\n/).filter(d => d !== '') ?? []);
+    const paragraphs = computed(() => props.text?.split(/\r|\n/).filter((d) => d !== '') ?? []);
     return {
-      paragraphs
+      paragraphs,
     };
-  }
+  },
 });
 </script>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

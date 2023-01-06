@@ -1,15 +1,8 @@
 <template>
   <div class="switcher">
-    <span
-      v-if="label.length > 0"
-      class="title"> {{ label }}
-    </span>
+    <span v-if="label.length > 0" class="title"> {{ label }} </span>
     <label>
-      <input
-        v-model="checkboxModel"
-        :name="name"
-        type="checkbox"
-        @change="handleToggle">
+      <input v-model="checkboxModel" :name="name" type="checkbox" @change="handleToggle" />
       <span><small /></span>
     </label>
   </div>
@@ -23,27 +16,25 @@ export default {
   props: {
     value: {
       type: Boolean,
-      default: true
+      default: true,
     },
     name: {
       type: String,
-      default: _.uniqueId()
+      default: _.uniqueId(),
     },
     label: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
-  emits: [
-    'change'
-  ],
+  emits: ['change'],
   data: () => ({
-    checkboxModel: true
+    checkboxModel: true,
   }),
   watch: {
     value() {
       this.checkboxModel = this.value;
-    }
+    },
   },
   created() {
     this.checkboxModel = this.value;
@@ -51,16 +42,15 @@ export default {
   methods: {
     handleToggle() {
       this.$emit('change', this.checkboxModel);
-    }
-  }
+    },
+  },
 };
 </script>
 
-
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
-$toggle-on: #4E4E54;
+$toggle-on: #4e4e54;
 $toggle-off: $label-color;
 
 $toggle-size: 40px;
@@ -88,7 +78,7 @@ $toggle-size: 40px;
     input {
       display: none;
 
-      &+span {
+      & + span {
         content: '';
         position: relative;
         display: inline-block;
@@ -104,29 +94,29 @@ $toggle-size: 40px;
           display: block;
           width: 50%;
           height: 100%;
-          background: #FFFFFF;
+          background: #ffffff;
           border-radius: 50%;
           transition: all 0.3s ease-in-out;
           left: 0;
         }
       }
-      &:checked+span {
+      &:checked + span {
         background: $toggle-on;
         border-color: $toggle-on;
         small {
           left: 50%;
-          background: #FFFFFF;
+          background: #ffffff;
         }
       }
-      &+span::after {
+      & + span::after {
         content: 'Off';
-        color: #FFFFFF;
+        color: #ffffff;
         position: absolute;
         right: 3px;
         font-size: $font-size-small;
         height: 12px;
       }
-      &:checked+span::after {
+      &:checked + span::after {
         content: 'On';
         left: 3px;
       }

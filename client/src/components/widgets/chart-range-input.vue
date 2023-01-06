@@ -1,17 +1,9 @@
 <template>
   <div>
-    <div>{{label}}</div>
-    <input
-      type="number"
-      class="form-control"
-      :value="modelValue"
-      @input="update"
-    />
-    <span
-      v-if="unit.length > 5"
-      v-tooltip.right="unit"
-      >
-      {{ unit.slice(0,3) }}
+    <div>{{ label }}</div>
+    <input type="number" class="form-control" :value="modelValue" @input="update" />
+    <span v-if="unit.length > 5" v-tooltip.right="unit">
+      {{ unit.slice(0, 3) }}
     </span>
     <span v-else>
       {{ unit }}
@@ -27,16 +19,16 @@ export default defineComponent({
   props: {
     unit: {
       type: String as PropType<string>,
-      default: ''
+      default: '',
     },
     label: {
       type: String as PropType<string>,
-      default: ''
+      default: '',
     },
     modelValue: {
       type: Number as PropType<Number>,
-      default: 0
-    }
+      default: 0,
+    },
   },
   emits: ['update:modelValue'],
   methods: {
@@ -44,11 +36,9 @@ export default defineComponent({
       if (event === null || event?.target === null) return;
       const update = event.target as HTMLTextAreaElement;
       this.$emit('update:modelValue', update.value);
-    }
-  }
-
+    },
+  },
 });
-
 </script>
 
 <style scoped lang="scss">
@@ -65,5 +55,4 @@ input {
   line-height: 1.42857;
   border-radius: 1px;
 }
-
 </style>

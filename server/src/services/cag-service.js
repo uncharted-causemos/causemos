@@ -14,12 +14,11 @@ const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;
 const PROJECTION_START_DATE = '2022-01-01';
 const DEFAULT_NUM_STEPS = 12;
 
-
 // Get model with no thumbnail
 const _getModel = async (modelId) => {
   const cagConnection = Adapter.get(RESOURCE.CAG);
   const modelData = await cagConnection.findOne([{ field: 'id', value: modelId }], {
-    excludes: ['thumbnail_source']
+    excludes: ['thumbnail_source'],
   });
   const groupConnection = Adapter.get(RESOURCE.NODE_GROUP);
   const modelGroups = await groupConnection.find([{ field: 'model_id', value: modelId }], {});
@@ -33,7 +32,7 @@ const _getModel = async (modelId) => {
  * @param {string} modelId - model id
  * @param {object} groups - groups
  */
-const updateGroups = async(modelId, groups) => {
+const updateGroups = async (modelId, groups) => {
   // If the components is an empty array return null
   if (_.isEmpty(groups)) return null;
 
@@ -51,7 +50,7 @@ const updateGroups = async(modelId, groups) => {
   const modifiedAt = Date.now();
   const indexList = [];
 
-  groups.forEach(group => {
+  groups.forEach((group) => {
     group.model_id = modelId;
     group.modified_at = modifiedAt;
     if (_.isNil(group.id)) {
@@ -68,7 +67,7 @@ const updateGroups = async(modelId, groups) => {
     }
   }
 };
-const deleteGroups = async(modelId, groups) => {
+const deleteGroups = async (modelId, groups) => {
   if (_.isEmpty(groups)) return null;
 
   Logger.info(`Removing ${groups.length} group(s) from model: ` + modelId);
@@ -79,7 +78,7 @@ const deleteGroups = async(modelId, groups) => {
     groups = [groups];
   }
 
-  const results = await groupConnection.removeMany({ id: groups.map(group => group.id) });
+  const results = await groupConnection.removeMany({ id: groups.map((group) => group.id) });
   if (!results.deleted) {
     throw new Error(`Unable to delete group of model: ${modelId}`);
   }
@@ -95,7 +94,7 @@ const deleteGroups = async(modelId, groups) => {
  * @param {string} resource - resource
  * @param {object} components - components
  */
-const resolveComponents = async(modelId, resource, components) => {
+const resolveComponents = async (modelId, resource, components) => {
   // If the components is an empty array return null
   if (_.isEmpty(components)) return null;
 
@@ -114,7 +113,7 @@ const resolveComponents = async(modelId, resource, components) => {
   const updateList = [];
   const indexList = [];
 
-  components.forEach(component => {
+  components.forEach((component) => {
     component.model_id = modelId;
     component.modified_at = modifiedAt;
 
@@ -147,9 +146,11 @@ const resolveComponents = async(modelId, resource, components) => {
  * @param{string} modelId - model id
  * @param{string} resource - resource
  */
-const getAllComponents = async(modelId, resource) => {
+const getAllComponents = async (modelId, resource) => {
   const connection = Adapter.get(resource);
-  const results = await connection.find([{ field: 'model_id', value: modelId }], { size: SEARCH_LIMIT });
+  const results = await connection.find([{ field: 'model_id', value: modelId }], {
+    size: SEARCH_LIMIT,
+  });
   return results;
 };
 
@@ -160,7 +161,7 @@ const getAllComponents = async(modelId, resource) => {
  * @param{string} resource - resource
  * @param{array}  components - component ids
  */
-const deleteComponents = async(modelId, resource, components) => {
+const deleteComponents = async (modelId, resource, components) => {
   if (_.isEmpty(components)) return null;
 
   Logger.info(`Removing ${components.length} ${resource} component(s) from model: ` + modelId);
@@ -171,7 +172,9 @@ const deleteComponents = async(modelId, resource, components) => {
     components = [components];
   }
 
-  const results = await componentConnection.removeMany({ id: components.map(component => component.id) });
+  const results = await componentConnection.removeMany({
+    id: components.map((component) => component.id),
+  });
   if (!results.deleted) {
     throw new Error(`Unable to delete ${resource} of model: ${modelId}`);
   }
@@ -203,23 +206,26 @@ const createCAG = async (modelFields, edges, nodes) => {
   //  if this is a new CAG. If it's the latter, time_scale will be set when the
   //  CAG is first loaded in the application.
   const { time_scale, geography, history_range } = modelFields.parameter ?? {};
-  const results = await CAGConnection.insert({
-    id: CAGId,
-    ...modelFields,
-    is_stale: false,
-    status: MODEL_STATUS.NOT_REGISTERED,
-    engine_status: RESET_ALL_ENGINE_STATUS,
-    parameter: {
-      num_steps: DEFAULT_NUM_STEPS,
-      projection_start: defaultProjectionStartDate,
-      engine: 'dyse',
-      time_scale,
-      geography,
-      history_range
+  const results = await CAGConnection.insert(
+    {
+      id: CAGId,
+      ...modelFields,
+      is_stale: false,
+      status: MODEL_STATUS.NOT_REGISTERED,
+      engine_status: RESET_ALL_ENGINE_STATUS,
+      parameter: {
+        num_steps: DEFAULT_NUM_STEPS,
+        projection_start: defaultProjectionStartDate,
+        engine: 'dyse',
+        time_scale,
+        geography,
+        history_range,
+      },
+      created_at: now,
+      modified_at: now,
     },
-    created_at: now,
-    modified_at: now
-  }, keyFn);
+    keyFn
+  );
 
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
@@ -231,7 +237,7 @@ const createCAG = async (modelFields, edges, nodes) => {
 
   // Acknowledge success
   return {
-    id: CAGId
+    id: CAGId,
   };
 };
 
@@ -241,7 +247,7 @@ const createCAG = async (modelFields, edges, nodes) => {
  * @param {string} modelId - model id
  * @param {object} modelFields - model fields
  */
-const updateCAGMetadata = async(modelId, modelFields) => {
+const updateCAGMetadata = async (modelId, modelFields) => {
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const modelData = await _getModel(modelId);
 
@@ -259,23 +265,28 @@ const updateCAGMetadata = async(modelId, modelFields) => {
     return doc.id;
   };
 
-  const nonNullKeys = Object.keys(modelFields).filter(d => !_.isNil(modelFields[d]));
+  const nonNullKeys = Object.keys(modelFields).filter((d) => !_.isNil(modelFields[d]));
   let results = null;
 
-
   if (nonNullKeys.includes('thumbnail_source') && nonNullKeys.length <= 2) {
-    results = await CAGConnection.update({
-      id: modelId,
-      status: currentStatus,
-      ...modelFields
-    }, keyFn);
+    results = await CAGConnection.update(
+      {
+        id: modelId,
+        status: currentStatus,
+        ...modelFields,
+      },
+      keyFn
+    );
   } else {
-    results = await CAGConnection.update({
-      id: modelId,
-      status: currentStatus,
-      modified_at: Date.now(),
-      ...modelFields
-    }, keyFn);
+    results = await CAGConnection.update(
+      {
+        id: modelId,
+        status: currentStatus,
+        modified_at: Date.now(),
+        ...modelFields,
+      },
+      keyFn
+    );
   }
 
   if (results.errors) {
@@ -285,13 +296,12 @@ const updateCAGMetadata = async(modelId, modelFields) => {
   return results;
 };
 
-
 /**
  * Returns the underlying components (node/edges) of a given model
  *
  * @param {string} modelId - model id
  */
-const getComponents = async(modelId) => {
+const getComponents = async (modelId) => {
   // Get the CAG Metadata, if there is no CAG with the given ID, then
   // throw an error
   const modelData = await _getModel(modelId);
@@ -307,52 +317,57 @@ const getComponents = async(modelId) => {
   const edges = await getAllComponents(modelId, RESOURCE.EDGE_PARAMETER);
   edges.sort((a, b) => a.id.localeCompare(b.id));
 
-  const augmentedEdges = await Promise.all(edges.map(async edge => {
-    if (_.isEmpty(edge.reference_ids)) {
-      edge.same = 0;
-      edge.opposite = 0;
-      edge.unknown = 0;
-      edge.belief_score = 1;
-    } else {
-      const statements = await projectAdapter.find({
-        clauses: [
+  const augmentedEdges = await Promise.all(
+    edges.map(async (edge) => {
+      if (_.isEmpty(edge.reference_ids)) {
+        edge.same = 0;
+        edge.opposite = 0;
+        edge.unknown = 0;
+        edge.belief_score = 1;
+      } else {
+        const statements = await projectAdapter.find(
           {
-            field: 'id',
-            operand: 'or',
-            isNot: false,
-            values: edge.reference_ids
+            clauses: [
+              {
+                field: 'id',
+                operand: 'or',
+                isNot: false,
+                values: edge.reference_ids,
+              },
+            ],
+          },
+          { size: SEARCH_LIMIT, includes: ['wm.statement_polarity', 'belief'] }
+        );
+
+        let belief = 0;
+        let same = 0;
+        let opposite = 0;
+        let unknown = 0;
+        statements.forEach((s) => {
+          const polarity = s.wm.statement_polarity;
+          if (polarity === 1) {
+            same++;
+          } else if (polarity === -1) {
+            opposite++;
+          } else {
+            unknown++;
           }
-        ]
-      }, { size: SEARCH_LIMIT, includes: ['wm.statement_polarity', 'belief'] });
+          belief += s.belief;
+        });
+        edge.same = same;
+        edge.opposite = opposite;
+        edge.unknown = unknown;
+        edge.belief_score = belief / statements.length;
+      }
 
-      let belief = 0;
-      let same = 0;
-      let opposite = 0;
-      let unknown = 0;
-      statements.forEach(s => {
-        const polarity = s.wm.statement_polarity;
-        if (polarity === 1) {
-          same++;
-        } else if (polarity === -1) {
-          opposite++;
-        } else {
-          unknown++;
-        }
-        belief += s.belief;
-      });
-      edge.same = same;
-      edge.opposite = opposite;
-      edge.unknown = unknown;
-      edge.belief_score = belief / statements.length;
-    }
+      if (!_.isNil(edge.user_polarity)) edge.polarity = edge.user_polarity;
+      else if (edge.same > 0 && edge.opposite === 0) edge.polarity = 1;
+      else if (edge.opposite > 0 && edge.same === 0) edge.polarity = -1;
+      else edge.polarity = 0;
 
-    if (!_.isNil(edge.user_polarity)) edge.polarity = edge.user_polarity;
-    else if (edge.same > 0 && edge.opposite === 0) edge.polarity = 1;
-    else if (edge.opposite > 0 && edge.same === 0) edge.polarity = -1;
-    else edge.polarity = 0;
-
-    return edge;
-  }));
+      return edge;
+    })
+  );
 
   const nodes = await getAllComponents(modelId, RESOURCE.NODE_PARAMETER);
   nodes.sort((a, b) => a.id.localeCompare(b.id));
@@ -360,7 +375,7 @@ const getComponents = async(modelId) => {
   return {
     ...modelData,
     nodes: nodes,
-    edges: augmentedEdges
+    edges: augmentedEdges,
   };
 };
 
@@ -371,25 +386,28 @@ const getComponents = async(modelId) => {
  * @param {array}  edges - edges
  * @param {array}  nodes - nodes
  */
-const updateCAG = async(modelId, edges, nodes) => {
+const updateCAG = async (modelId, edges, nodes) => {
   // Add edges and nodes to the CAG
   await resolveComponents(modelId, RESOURCE.EDGE_PARAMETER, edges);
   await resolveComponents(modelId, RESOURCE.NODE_PARAMETER, nodes);
 
   // Mark model as unsynced
   const CAGConnection = Adapter.get(RESOURCE.CAG);
-  const results = await CAGConnection.update({
-    id: modelId,
-    status: MODEL_STATUS.NOT_REGISTERED,
-    engine_status: RESET_ALL_ENGINE_STATUS,
-    modified_at: Date.now()
-  }, d => d.id);
+  const results = await CAGConnection.update(
+    {
+      id: modelId,
+      status: MODEL_STATUS.NOT_REGISTERED,
+      engine_status: RESET_ALL_ENGINE_STATUS,
+      modified_at: Date.now(),
+    },
+    (d) => d.id
+  );
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
   }
 
   return {
-    id: results.id
+    id: results.id,
   };
 };
 
@@ -400,28 +418,30 @@ const updateCAG = async(modelId, edges, nodes) => {
  * @param{array}  edges - array of edge ids
  * @param{array}  nodes - array of node ids
  */
-const pruneCAG = async(modelId, edges, nodes) => {
+const pruneCAG = async (modelId, edges, nodes) => {
   // Remove specified edges and nodes
   const edgeResults = await deleteComponents(modelId, RESOURCE.EDGE_PARAMETER, edges);
   const nodeResults = await deleteComponents(modelId, RESOURCE.NODE_PARAMETER, nodes);
 
   // Mark model as unsynced
   const CAGConnection = Adapter.get(RESOURCE.CAG);
-  const results = await CAGConnection.update({
-    id: modelId,
-    status: MODEL_STATUS.NOT_REGISTERED,
-    engine_status: RESET_ALL_ENGINE_STATUS,
-    modified_at: Date.now()
-  }, d => d.id);
+  const results = await CAGConnection.update(
+    {
+      id: modelId,
+      status: MODEL_STATUS.NOT_REGISTERED,
+      engine_status: RESET_ALL_ENGINE_STATUS,
+      modified_at: Date.now(),
+    },
+    (d) => d.id
+  );
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
   }
 
-
   return {
     id: modelId,
     edges: edgeResults,
-    nodes: nodeResults
+    nodes: nodeResults,
   };
 };
 
@@ -430,7 +450,7 @@ const pruneCAG = async(modelId, edges, nodes) => {
  *
  * @param {string} modelId - model id
  */
-const deleteCAG = async(modelId) => {
+const deleteCAG = async (modelId) => {
   Logger.info('Deleting CAG: ' + modelId);
 
   // Delete CAG
@@ -466,14 +486,17 @@ const deleteCAG = async(modelId) => {
 /**
  * Updates the user_polarity for an edge which overwrites .polarity produced by the edge statements
  */
-const updateEdgeUserPolarity = async(modelId, edgeId, userPolarity) => {
+const updateEdgeUserPolarity = async (modelId, edgeId, userPolarity) => {
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-  const results = await edgeAdapter.update([
-    {
-      id: edgeId,
-      user_polarity: userPolarity
-    }
-  ], d => d.id);
+  const results = await edgeAdapter.update(
+    [
+      {
+        id: edgeId,
+        user_polarity: userPolarity,
+      },
+    ],
+    (d) => d.id
+  );
 
   if (results.errors) {
     throw new Error(`Unable to set edge user_polarity: ${edgeId}`);
@@ -494,29 +517,27 @@ const _buildCAGStatementIntersectionSearch = (modelIds, statementIds) => {
         filter: [
           {
             terms: {
-              model_id: modelIds
-            }
+              model_id: modelIds,
+            },
           },
           {
             terms: {
-              reference_ids: statementIds
-            }
-          }
-        ]
-      }
+              reference_ids: statementIds,
+            },
+          },
+        ],
+      },
     },
     aggs: {
       modelIds: {
         terms: {
           size: 10000,
-          field: 'model_id'
-        }
-      }
-    }
+          field: 'model_id',
+        },
+      },
+    },
   };
 };
-
-
 
 /**
  * If CAG is built from updatedStatementIds, then it possibly is
@@ -533,21 +554,24 @@ const checkStaleCAGs = async (projectId, updatedStatementIds) => {
   const CAGConnection = Adapter.get(RESOURCE.CAG);
 
   // 1) Get model ids
-  const models = await CAGConnection.find([
-    { field: 'project_id', value: projectId },
-    { field: 'is_stale', value: false } // If already stale, then no point marking it stale again
-  ], { size: SEARCH_LIMIT });
-  const modelIds = models.map(m => m.id);
+  const models = await CAGConnection.find(
+    [
+      { field: 'project_id', value: projectId },
+      { field: 'is_stale', value: false }, // If already stale, then no point marking it stale again
+    ],
+    { size: SEARCH_LIMIT }
+  );
+  const modelIds = models.map((m) => m.id);
 
   // 2) Find models with outdated statements
   const searchBody = _buildCAGStatementIntersectionSearch(modelIds, updatedStatementIds);
   const result = await client.search({
     index: RESOURCE.EDGE_PARAMETER,
-    body: searchBody
+    body: searchBody,
   });
 
   // 3) Parse out models and update
-  const staleModels = result.body.aggregations.modelIds.buckets.map(d => d.key);
+  const staleModels = result.body.aggregations.modelIds.buckets.map((d) => d.key);
 
   Logger.info('Found stale models : ' + JSON.stringify(staleModels));
 
@@ -555,14 +579,14 @@ const checkStaleCAGs = async (projectId, updatedStatementIds) => {
 
   // 4) Mark CAGs as stale
   const timestamp = Date.now();
-  const updatePayload = staleModels.map(id => {
+  const updatePayload = staleModels.map((id) => {
     return {
       id: id,
       is_stale: true,
-      modified_at: timestamp
+      modified_at: timestamp,
     };
   });
-  CAGConnection.update(updatePayload, d => d.id, 'true', 3);
+  CAGConnection.update(updatePayload, (d) => d.id, 'true', 3);
   return staleModels;
 };
 
@@ -579,15 +603,13 @@ const recalculateCAG = async (modelId) => {
   const cag = await _getModel(modelId);
 
   const statementAdapter = Adapter.get(RESOURCE.STATEMENT, cag.project_id);
-  const edges = await edgeParameterAdapter.find([
-    { field: 'model_id', value: modelId }
-  ], { size: SEARCH_LIMIT });
-
-  const nodes = await nodeParameterAdapter.find([
-    { field: 'model_id', value: modelId }
-  ], {
+  const edges = await edgeParameterAdapter.find([{ field: 'model_id', value: modelId }], {
     size: SEARCH_LIMIT,
-    includes: ['id', 'concept', 'components']
+  });
+
+  const nodes = await nodeParameterAdapter.find([{ field: 'model_id', value: modelId }], {
+    size: SEARCH_LIMIT,
+    includes: ['id', 'concept', 'components'],
   });
 
   const nodeMap = {};
@@ -595,9 +617,12 @@ const recalculateCAG = async (modelId) => {
     nodeMap[nodes[i].concept] = nodes[i];
   }
 
-
-  Logger.info(`Recalculate model ${modelId} with ${edges.length} edges and ${_.sumBy(edges, e => e.reference_ids.length)} statements`);
-
+  Logger.info(
+    `Recalculate model ${modelId} with ${edges.length} edges and ${_.sumBy(
+      edges,
+      (e) => e.reference_ids.length
+    )} statements`
+  );
 
   // Remove invalid reference_ids
   const timestamp = Date.now();
@@ -615,13 +640,18 @@ const recalculateCAG = async (modelId) => {
     console.log(subjComponents, objComponents);
 
     // Filter out changed and discarded edges
-    promises.push(statementAdapter.find({
-      clauses: [
-        { field: 'subjConcept', values: subjComponents, isNot: false, operand: 'OR' },
-        { field: 'objConcept', values: objComponents, isNot: false, operand: 'OR' },
-        { field: 'id', values: referenceIds }
-      ]
-    }, { size: SEARCH_LIMIT, includes: ['id', 'wm.statement_polarity'] }));
+    promises.push(
+      statementAdapter.find(
+        {
+          clauses: [
+            { field: 'subjConcept', values: subjComponents, isNot: false, operand: 'OR' },
+            { field: 'objConcept', values: objComponents, isNot: false, operand: 'OR' },
+            { field: 'id', values: referenceIds },
+          ],
+        },
+        { size: SEARCH_LIMIT, includes: ['id', 'wm.statement_polarity'] }
+      )
+    );
   }
 
   const edgeResults = await Promise.all(promises);
@@ -634,7 +664,7 @@ const recalculateCAG = async (modelId) => {
     const validStatements = edgeResults[i];
     const referenceIds = e.reference_ids;
     // Get polarities from backing statements
-    let edgePolarities = validStatements.map(s => s.wm.statement_polarity);
+    let edgePolarities = validStatements.map((s) => s.wm.statement_polarity);
 
     // use edge polarity if no back statements found
     if (edgePolarities.length === 0) {
@@ -649,7 +679,7 @@ const recalculateCAG = async (modelId) => {
 
     if (referenceIds.length !== validStatements.length) {
       Logger.info(`checking edge ${e.source} - ${e.target} changed`);
-      e.reference_ids = validStatements.map(d => d.id);
+      e.reference_ids = validStatements.map((d) => d.id);
       e.modified_at = timestamp;
       updatePayload.push(e);
     }
@@ -658,22 +688,24 @@ const recalculateCAG = async (modelId) => {
 
   // Write back result and update CAG status when there is something to update
   if (updatePayload.length > 0) {
-    await edgeParameterAdapter.update(updatePayload, d => d.id);
+    await edgeParameterAdapter.update(updatePayload, (d) => d.id);
   }
   if (updatePayload.length > 0 || cag.is_ambiguous !== isAmbiguous || cag.is_stale === true) {
-    await cagAdapter.update([
-      {
-        id: cag.id,
-        is_stale: false,
-        status: MODEL_STATUS.NOT_REGISTERED,
-        engine_status: RESET_ALL_ENGINE_STATUS,
-        is_ambiguous: isAmbiguous
-        // modified_at: timestamp
-      }
-    ], d => d.id);
+    await cagAdapter.update(
+      [
+        {
+          id: cag.id,
+          is_stale: false,
+          status: MODEL_STATUS.NOT_REGISTERED,
+          engine_status: RESET_ALL_ENGINE_STATUS,
+          is_ambiguous: isAmbiguous,
+          // modified_at: timestamp
+        },
+      ],
+      (d) => d.id
+    );
   }
 };
-
 
 /**
  * Get statements data by ids
@@ -683,11 +715,12 @@ const recalculateCAG = async (modelId) => {
  */
 const _getCAGStatements = async (projectId, referenceIds) => {
   const statementAdapter = Adapter.get(RESOURCE.STATEMENT, projectId);
-  return statementAdapter.find({
-    clauses: [
-      { field: 'id', values: referenceIds, operand: 'or', isNot: false }
-    ]
-  }, { size: SEARCH_LIMIT, excludes: ['subj.candidates', 'obj.candidates'] });
+  return statementAdapter.find(
+    {
+      clauses: [{ field: 'id', values: referenceIds, operand: 'or', isNot: false }],
+    },
+    { size: SEARCH_LIMIT, excludes: ['subj.candidates', 'obj.candidates'] }
+  );
 };
 
 /**
@@ -699,13 +732,16 @@ const getStatementsByEdge = async (modelId, edge) => {
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const projectId = (await _getModel(modelId)).project_id;
 
-  const result = await edgeAdapter.find([
-    { field: 'source', value: edge.source },
-    { field: 'target', value: edge.target },
-    { field: 'model_id', value: modelId }
-  ], { size: SEARCH_LIMIT });
+  const result = await edgeAdapter.find(
+    [
+      { field: 'source', value: edge.source },
+      { field: 'target', value: edge.target },
+      { field: 'model_id', value: modelId },
+    ],
+    { size: SEARCH_LIMIT }
+  );
 
-  return _getCAGStatements(projectId, _.flatten(result.map(d => d.reference_ids)));
+  return _getCAGStatements(projectId, _.flatten(result.map((d) => d.reference_ids)));
 };
 
 /**
@@ -717,23 +753,27 @@ const getStatementsByNode = async (modelId, concept) => {
   const projectId = (await _getModel(modelId)).project_id;
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
 
-  const sourceResult = await edgeAdapter.find([
-    { field: 'source', value: concept },
-    { field: 'model_id', value: modelId }
-  ], { size: SEARCH_LIMIT });
+  const sourceResult = await edgeAdapter.find(
+    [
+      { field: 'source', value: concept },
+      { field: 'model_id', value: modelId },
+    ],
+    { size: SEARCH_LIMIT }
+  );
 
-  const targetResult = await edgeAdapter.find([
-    { field: 'target', value: concept },
-    { field: 'model_id', value: modelId }
-  ], { size: SEARCH_LIMIT });
-
+  const targetResult = await edgeAdapter.find(
+    [
+      { field: 'target', value: concept },
+      { field: 'model_id', value: modelId },
+    ],
+    { size: SEARCH_LIMIT }
+  );
 
   return _getCAGStatements(projectId, [
-    ..._.flatten(sourceResult.map(d => d.reference_ids)),
-    ..._.flatten(targetResult.map(d => d.reference_ids))
+    ..._.flatten(sourceResult.map((d) => d.reference_ids)),
+    ..._.flatten(targetResult.map((d) => d.reference_ids)),
   ]);
 };
-
 
 /**
  * Change the name/label of a given node, if the node is connected then also
@@ -753,9 +793,7 @@ const changeConcept = async (modelId, change) => {
   const nodeId = change.id;
 
   // Find node
-  const node = await nodeAdapter.findOne([
-    { field: 'id', value: nodeId }
-  ], {});
+  const node = await nodeAdapter.findOne([{ field: 'id', value: nodeId }], {});
 
   if (!node) {
     throw new Error(`Node ${nodeId} not found`);
@@ -763,25 +801,33 @@ const changeConcept = async (modelId, change) => {
   const oldConcept = node.concept;
 
   // Find edges
-  const sourceEdges = await edgeAdapter.find([
-    { field: 'model_id', value: modelId },
-    { field: 'source', value: node.concept }
-  ], { size: SEARCH_LIMIT });
+  const sourceEdges = await edgeAdapter.find(
+    [
+      { field: 'model_id', value: modelId },
+      { field: 'source', value: node.concept },
+    ],
+    { size: SEARCH_LIMIT }
+  );
 
-  const targetEdges = await edgeAdapter.find([
-    { field: 'model_id', value: modelId },
-    { field: 'target', value: node.concept }
-  ], { size: SEARCH_LIMIT });
+  const targetEdges = await edgeAdapter.find(
+    [
+      { field: 'model_id', value: modelId },
+      { field: 'target', value: node.concept },
+    ],
+    { size: SEARCH_LIMIT }
+  );
 
   const edges = _.uniqBy([...sourceEdges, ...targetEdges], 'id');
 
-  Logger.info(`Change concept ${node.concept} to ${newConcept} in ${modelId}, affecting ${edges.length} edges`);
+  Logger.info(
+    `Change concept ${node.concept} to ${newConcept} in ${modelId}, affecting ${edges.length} edges`
+  );
 
   // FIX scenario constraints
   const scenariosToUpdate = [];
-  const scenarios = await scenarioAdapter.find([
-    { field: 'model_id', value: modelId }
-  ], { size: SEARCH_LIMIT });
+  const scenarios = await scenarioAdapter.find([{ field: 'model_id', value: modelId }], {
+    size: SEARCH_LIMIT,
+  });
   for (const scenario of scenarios) {
     let needToUpdate = false;
     const constraints = _.get(scenario, 'parameter.constraints', []);
@@ -797,7 +843,9 @@ const changeConcept = async (modelId, change) => {
       scenariosToUpdate.push(scenario);
     }
   }
-  Logger.info(`Change concept ${node.concept} to ${newConcept} in ${modelId}, affecting ${scenariosToUpdate.length} scenarios`);
+  Logger.info(
+    `Change concept ${node.concept} to ${newConcept} in ${modelId}, affecting ${scenariosToUpdate.length} scenarios`
+  );
 
   // Apply concept updates
   for (let i = 0; i < edges.length; i++) {
@@ -811,11 +859,11 @@ const changeConcept = async (modelId, change) => {
   node.label = newConcept;
 
   // Reindex
-  await nodeAdapter.update(node, d => d.id);
-  await edgeAdapter.update(edges, d => d.id);
+  await nodeAdapter.update(node, (d) => d.id);
+  await edgeAdapter.update(edges, (d) => d.id);
 
   if (scenariosToUpdate.length > 0) {
-    await scenarioAdapter.update(scenariosToUpdate, d => d.id);
+    await scenarioAdapter.update(scenariosToUpdate, (d) => d.id);
   }
 
   return { newConcept, oldConcept };
@@ -838,5 +886,5 @@ module.exports = {
   getStatementsByEdge,
   getStatementsByNode,
 
-  changeConcept
+  changeConcept,
 };

@@ -3,7 +3,6 @@
 </template>
 
 <script>
-
 import layerBase from './layerBase';
 import layerUtils from './layerUtils';
 
@@ -13,13 +12,13 @@ export default {
   props: {
     coords: {
       type: Array, // {lat: number, long: number}[]
-      required: true
-    }
+      required: true,
+    },
   },
   watch: {
     source() {
       this._updateSource();
-    }
+    },
   },
   mounted() {
     // Add source if a source with given id doens't exist
@@ -42,19 +41,22 @@ export default {
       const payload = {
         type: 'image',
         url: imageUrl,
-        coordinates: this.convertToMapBoxCoords(this.coords)
+        coordinates: this.convertToMapBoxCoords(this.coords),
       };
       this.map.addSource(this.sourceId, payload);
       // Re-add the layers
-      layerDefs.forEach(layer => this.map.addLayer(layer));
+      layerDefs.forEach((layer) => this.map.addLayer(layer));
     },
     _addLayer() {
       this.$_removeLayer(this.layerId);
-      this.map.addLayer({
-        id: this.layerId,
-        type: 'raster',
-        source: this.sourceId
-      }, this.beforeId);
+      this.map.addLayer(
+        {
+          id: this.layerId,
+          type: 'raster',
+          source: this.sourceId,
+        },
+        this.beforeId
+      );
     },
     convertToMapBoxCoords(coords) {
       // mapbox gl expects an array with four pairs in the format [long, lat]
@@ -74,7 +76,7 @@ export default {
       result.push([coords[1].long, coords[0].lat]);
 
       return result;
-    }
-  }
+    },
+  },
 };
 </script>

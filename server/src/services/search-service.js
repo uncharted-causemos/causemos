@@ -12,13 +12,15 @@ const formatOntologyDoc = (d) => {
   return {
     label: d.label,
     definition: d.definition,
-    examples: d.examples
+    examples: d.examples,
   };
 };
 
 const formatDatacubeDoc = (d) => {
-  const defaultFeature = d.outputs.find(output => output.name === d.default_feature);
-  const res = defaultFeature.data_resolution ? defaultFeature.data_resolution.temporal_resolution : undefined;
+  const defaultFeature = d.outputs.find((output) => output.name === d.default_feature);
+  const res = defaultFeature.data_resolution
+    ? defaultFeature.data_resolution.temporal_resolution
+    : undefined;
 
   return {
     id: d.id,
@@ -32,17 +34,19 @@ const formatDatacubeDoc = (d) => {
     feature: defaultFeature.name,
     display_name: defaultFeature.display_name,
     description: defaultFeature.description,
-    raw_temporal_resolution: res
+    raw_temporal_resolution: res,
   };
 };
 
 // Search against ontology concepts
 const rawConceptEntitySearch = async (projectId, queryString) => {
-  const filters = [{
-    terms: {
-      project_id: [projectId]
-    }
-  }];
+  const filters = [
+    {
+      terms: {
+        project_id: [projectId],
+      },
+    },
+  ];
 
   const reserved = ['or', 'and'];
 
@@ -52,34 +56,35 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
 
   queryString
     .split(' ')
-    .filter(s => {
+    .filter((s) => {
       return !reserved.includes(s.toLowerCase());
     })
-    .forEach(v => builder.addWildCard(v));
+    .forEach((v) => builder.addWildCard(v));
 
   const results = await searchAndHighlight(RESOURCE.ONTOLOGY, builder.build(), filters, [
     'label',
-    'examples'
+    'examples',
   ]);
 
-  return results.map(d => {
+  return results.map((d) => {
     return {
       doc_type: 'concept',
       score: d._score,
       doc: formatOntologyDoc(d._source),
-      highlight: d.highlight
+      highlight: d.highlight,
     };
   });
 };
 
-
 // Search against ontology concepts
 const rawConceptEntitySearch2 = async (projectId, queryString) => {
-  const filters = [{
-    terms: {
-      project_id: [projectId]
-    }
-  }];
+  const filters = [
+    {
+      terms: {
+        project_id: [projectId],
+      },
+    },
+  ];
 
   const reserved = ['or', 'and'];
 
@@ -87,11 +92,9 @@ const rawConceptEntitySearch2 = async (projectId, queryString) => {
     .setOperator('OR')
     .setFields(['examples', 'label^2', 'definition']);
 
-  const tokens = queryString
-    .split(' ')
-    .filter(s => {
-      return !reserved.includes(s.toLowerCase()) && s.trim() !== '';
-    });
+  const tokens = queryString.split(' ').filter((s) => {
+    return !reserved.includes(s.toLowerCase()) && s.trim() !== '';
+  });
 
   // Assumes 1st token > 2nd token > 3rd token ... in terms of importance
   let weight = tokens.length * 2;
@@ -102,49 +105,42 @@ const rawConceptEntitySearch2 = async (projectId, queryString) => {
 
   const results = await searchAndHighlight(RESOURCE.ONTOLOGY, builder.build(), filters, [
     'label',
-    'examples'
+    'examples',
   ]);
 
-  return results.map(d => {
+  return results.map((d) => {
     return {
       doc_type: 'concept',
       score: d._score,
       doc: formatOntologyDoc(d._source),
-      highlight: d.highlight
+      highlight: d.highlight,
     };
   });
 };
-
 
 const rawDatacubeSearch = async (queryString) => {
   const filters = [];
   const reserved = ['or', 'and'];
-  const builder = queryStringBuilder()
-    .setOperator('OR')
-    .setFields([
-      'outputs.description'
-    ]);
+  const builder = queryStringBuilder().setOperator('OR').setFields(['outputs.description']);
 
   queryString
     .split(' ')
-    .filter(s => {
+    .filter((s) => {
       return !reserved.includes(s.toLowerCase());
     })
-    .forEach(v => builder.addWildCard(v));
+    .forEach((v) => builder.addWildCard(v));
 
-  const results = await searchAndHighlight(RESOURCE.DATA_DATACUBE, builder.build(), filters, [
-  ]);
+  const results = await searchAndHighlight(RESOURCE.DATA_DATACUBE, builder.build(), filters, []);
 
-  return results.map(d => {
+  return results.map((d) => {
     return {
       doc_type: 'data_cube',
       score: d._score,
       doc: formatDatacubeDoc(d._source),
-      highlight: d.highlight
+      highlight: d.highlight,
     };
   });
 };
-
 
 /**
  * Given a flattened-concept, return a list of compositional ontology concepts.
@@ -188,7 +184,6 @@ const reverseFlattenedConcept = (name, conceptSet) => {
   return [token];
 };
 
-
 /**
  * Build an ES query to search by compositional ontology concepts
  *
@@ -206,19 +201,19 @@ const buildSubjObjAggregation = (concepts) => {
             { terms: { 'subj.theme': concepts } },
             { terms: { 'subj.theme_property': concepts } },
             { terms: { 'subj.process': concepts } },
-            { terms: { 'subj.process_property': concepts } }
+            { terms: { 'subj.process_property': concepts } },
           ],
-          minimum_should_match: minimumShouldMatch
-        }
+          minimum_should_match: minimumShouldMatch,
+        },
       },
       aggs: {
         fieldAgg: {
           terms: {
             field: 'subj.concept.raw',
-            size: limit
-          }
-        }
-      }
+            size: limit,
+          },
+        },
+      },
     },
     filteredObj: {
       filter: {
@@ -227,36 +222,36 @@ const buildSubjObjAggregation = (concepts) => {
             { terms: { 'obj.theme': concepts } },
             { terms: { 'obj.theme_property': concepts } },
             { terms: { 'obj.process': concepts } },
-            { terms: { 'obj.process_property': concepts } }
+            { terms: { 'obj.process_property': concepts } },
           ],
-          minimum_should_match: minimumShouldMatch
-        }
+          minimum_should_match: minimumShouldMatch,
+        },
       },
       aggs: {
         fieldAgg: {
           terms: {
             field: 'obj.concept.raw',
-            size: limit
-          }
-        }
-      }
-    }
+            size: limit,
+          },
+        },
+      },
+    },
   };
 };
 
-
-
-const statementConceptEntitySearch = async (projectId, queryString, returnEstimateCount = false) => {
+const statementConceptEntitySearch = async (
+  projectId,
+  queryString,
+  returnEstimateCount = false
+) => {
   const reserved = ['or', 'and'];
-  const tokens = queryString
-    .split(' ')
-    .filter(s => {
-      return !reserved.includes(s.toLowerCase()) && s.trim() !== '';
-    });
+  const tokens = queryString.split(' ').filter((s) => {
+    return !reserved.includes(s.toLowerCase()) && s.trim() !== '';
+  });
 
   // 1. Search for obj and subj matches against the project directly
   // Rank edit-distance match to be twice as important
-  const q = tokens.map(s => `(${s}~^2 OR ${s}*)`).join(' AND ');
+  const q = tokens.map((s) => `(${s}~^2 OR ${s}*)`).join(' AND ');
 
   const SEARCH_LIMIT = 15;
 
@@ -269,16 +264,14 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
           filter: {
             query_string: {
               query: q,
-              fields: [
-                'subj.concept'
-              ]
-            }
+              fields: ['subj.concept'],
+            },
           },
           aggs: {
             concept: {
               terms: {
                 field: 'subj.concept.raw',
-                size: SEARCH_LIMIT
+                size: SEARCH_LIMIT,
               },
               aggs: {
                 sample: {
@@ -289,29 +282,27 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
                         'subj.theme',
                         'subj.theme_property',
                         'subj.process',
-                        'subj.process_property'
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          }
+                        'subj.process_property',
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         filteredObj: {
           filter: {
             query_string: {
               query: q,
-              fields: [
-                'obj.concept'
-              ]
-            }
+              fields: ['obj.concept'],
+            },
           },
           aggs: {
             concept: {
               terms: {
                 field: 'obj.concept.raw',
-                size: SEARCH_LIMIT
+                size: SEARCH_LIMIT,
               },
               aggs: {
                 sample: {
@@ -322,17 +313,17 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
                         'obj.theme',
                         'obj.theme_property',
                         'obj.process',
-                        'obj.process_property'
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+                        'obj.process_property',
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
   const filteredSubj = results.body.aggregations.filteredSubj;
@@ -340,7 +331,6 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
 
   const subjConcepts = filteredSubj.concept.buckets;
   const objConcepts = filteredObj.concept.buckets;
-
 
   const map = new Map();
   const refMap = new Map();
@@ -354,7 +344,7 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
       theme: source.subj.theme,
       theme_property: source.subj.theme_property,
       process: source.subj.process,
-      process_property: source.subj.process_property
+      process_property: source.subj.process_property,
     });
   }
   for (const bucket of objConcepts) {
@@ -366,13 +356,15 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
       theme: source.obj.theme,
       theme_property: source.obj.theme_property,
       process: source.obj.process,
-      process_property: source.obj.process_property
+      process_property: source.obj.process_property,
     });
   }
 
-  const sortedMap = new Map([...map.entries()].sort((a, b) => {
-    return b.doc_count - a.doc_count;
-  }));
+  const sortedMap = new Map(
+    [...map.entries()].sort((a, b) => {
+      return b.doc_count - a.doc_count;
+    })
+  );
 
   // Assemble KB's result
   const result = [];
@@ -382,21 +374,16 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
 
     const doc = {
       key: key,
-      members: []
+      members: [],
     };
 
-    [
-      'theme',
-      'theme_property',
-      'process',
-      'process_property'
-    ].forEach(str => {
+    ['theme', 'theme_property', 'process', 'process_property'].forEach((str) => {
       if (members[str] && !_.isEmpty(members[str])) {
         const examples = [];
         doc.members.push({
           label: members[str],
           examples,
-          highlight: null
+          highlight: null,
         });
       }
     });
@@ -404,20 +391,19 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
     result.push({
       doc_type: 'concept',
       score: 1,
-      doc
+      doc,
     });
   }
 
   // 2. Broader search for concepts using leveraging ontology and examples
   const rawConcepts = await rawConceptEntitySearch2(projectId, queryString);
 
-
   for (const rawConcept of rawConcepts) {
     // Hack: label => key
     // rawConcept.doc.key = rawConcept.doc.label;
     // delete rawConcept.doc.label;
 
-    if (!_.some(result, d => d.doc.key === rawConcept.doc.label)) {
+    if (!_.some(result, (d) => d.doc.key === rawConcept.doc.label)) {
       result.push({
         doc_type: 'concept',
         doc: {
@@ -426,14 +412,13 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
             {
               label: rawConcept.doc.label,
               examples: rawConcept.doc.examples,
-              highlight: rawConcept.highlight
-            }
-          ]
-        }
+              highlight: rawConcept.highlight,
+            },
+          ],
+        },
       });
     }
   }
-
 
   if (returnEstimateCount === false) {
     return result;
@@ -452,7 +437,6 @@ const statementConceptEntitySearch = async (projectId, queryString, returnEstima
   }
 };
 
-
 // @deprecated
 // Search for concepts within a given project's INDRA statements
 const statementConceptEntitySearchOld = async (projectId, queryString) => {
@@ -463,19 +447,19 @@ const statementConceptEntitySearchOld = async (projectId, queryString) => {
   if (_.isEmpty(rawResult)) return [];
 
   const scoreMap = new Map();
-  rawResult.forEach(r => {
+  rawResult.forEach((r) => {
     scoreMap.set(r.doc.label, r.score);
   });
 
-  const matchedRawConcepts = rawResult.map(d => d.doc.label);
+  const matchedRawConcepts = rawResult.map((d) => d.doc.label);
   const aggFilter = buildSubjObjAggregation(matchedRawConcepts);
 
   const result = await client.search({
     index: projectId,
     body: {
       size: 0,
-      aggs: aggFilter
-    }
+      aggs: aggFilter,
+    },
   });
 
   const aggResult = result.body.aggregations;
@@ -485,9 +469,9 @@ const statementConceptEntitySearchOld = async (projectId, queryString) => {
     ...aggResult.filteredObj.fieldAgg.buckets,
 
     // Search result in raw ontology space
-    ...matchedRawConcepts.map(d => {
+    ...matchedRawConcepts.map((d) => {
       return { key: d };
-    })
+    }),
   ];
 
   // Start post processing, unique and attach matched metadata
@@ -497,7 +481,7 @@ const statementConceptEntitySearchOld = async (projectId, queryString) => {
   const ontologyMap = getCache(projectId).ontologyMap;
   const ontologyKeys = Object.keys(ontologyMap);
   const ontologyValues = Object.values(ontologyMap);
-  const set = new Set(ontologyKeys.map(d => _.last(d.split('/'))));
+  const set = new Set(ontologyKeys.map((d) => _.last(d.split('/'))));
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -509,16 +493,18 @@ const statementConceptEntitySearchOld = async (projectId, queryString) => {
     let members = [];
     let score = 0;
     if (ontologyMap[item.key]) {
-      members = ontologyValues.filter(d => d.label === item.key).map(formatOntologyDoc);
+      members = ontologyValues.filter((d) => d.label === item.key).map(formatOntologyDoc);
     } else {
-      members = ontologyValues.filter(d => {
-        return memberStrings.includes(_.last(d.label.split('/')));
-      }).map(formatOntologyDoc);
+      members = ontologyValues
+        .filter((d) => {
+          return memberStrings.includes(_.last(d.label.split('/')));
+        })
+        .map(formatOntologyDoc);
     }
 
     // Attach highlight if applicable
     for (let j = 0; j < members.length; j++) {
-      const highlightMatch = rawResult.find(d => d.doc.label === members[j].label);
+      const highlightMatch = rawResult.find((d) => d.doc.label === members[j].label);
       if (_.isNil(highlightMatch)) continue;
       members[j].highlight = highlightMatch.highlight;
       score += scoreMap.get(members[j].label);
@@ -529,13 +515,12 @@ const statementConceptEntitySearchOld = async (projectId, queryString) => {
       score,
       doc: {
         key: item.key,
-        members: members
-      }
+        members: members,
+      },
     };
     finalResults.push(r);
     dupeMap.set(item.key, 1);
   }
-
 
   // Temporary counter tokens
   const tokens = queryString.split(' ');
@@ -558,7 +543,6 @@ const statementConceptEntitySearchOld = async (projectId, queryString) => {
   return finalResults;
 };
 
-
 const indicatorConceptFilter = (concepts) => {
   let minimumMatchNumber = 0;
 
@@ -570,40 +554,42 @@ const indicatorConceptFilter = (concepts) => {
     minimumMatchNumber = Math.floor(len / 2) + 1;
   }
 
-  const termQueries = concepts.map(concept => {
+  const termQueries = concepts.map((concept) => {
     return {
       nested: {
         path: 'ontology_matches',
         query: {
           term: {
-            'ontology_matches.name.raw': concept
-          }
-        }
-      }
+            'ontology_matches.name.raw': concept,
+          },
+        },
+      },
     };
   });
 
   return {
     bool: {
       should: termQueries,
-      minimum_should_match: minimumMatchNumber
-    }
+      minimum_should_match: minimumMatchNumber,
+    },
   };
 };
 const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
   const ontologyMap = getCache(projectId).ontologyMap;
   const ontologyValues = Object.values(ontologyMap);
   const ontologyKeys = Object.keys(ontologyMap);
-  const set = new Set(ontologyKeys.map(d => _.last(d.split('/'))));
+  const set = new Set(ontologyKeys.map((d) => _.last(d.split('/'))));
 
   let allMembers = [];
   for (let i = 0; i < flatConcepts.length; i++) {
     const flattenedConcept = flatConcepts[i];
     const memberStrings = reverseFlattenedConcept(flattenedConcept, set);
 
-    const members = ontologyValues.filter(d => {
-      return memberStrings.includes(_.last(d.label.split('/')));
-    }).map(d => d.label);
+    const members = ontologyValues
+      .filter((d) => {
+        return memberStrings.includes(_.last(d.label.split('/')));
+      })
+      .map((d) => d.label);
 
     if (members.length) {
       allMembers = allMembers.concat(members);
@@ -621,17 +607,16 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
           must: [
             indicatorConceptFilter(allMembers),
             { match: { type: 'indicator' } },
-            { match: { status: 'READY' } }
-          ]
-        }
-      }
-    }
+            { match: { status: 'READY' } },
+          ],
+        },
+      },
+    },
   };
 
   const results = await client.search(searchPayload);
-  return results.body.hits.hits.map(d => d._source);
+  return results.body.hits.hits.map((d) => d._source);
 };
-
 
 /**
  * @param {string} projectId
@@ -646,18 +631,21 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k, geography)
   const ontologyMap = getCache(projectId).ontologyMap;
   const ontologyValues = Object.values(ontologyMap);
   const ontologyKeys = Object.keys(ontologyMap);
-  const set = new Set(ontologyKeys.map(d => _.last(d.split('/'))));
+  const set = new Set(ontologyKeys.map((d) => _.last(d.split('/'))));
 
   const allIndicators = [];
   const bulkSearchPayload = [];
   for (const node of nodes) {
     // match using the component that gets the highest matching score
-    for (let i = 0; i < 1; i++) { // i < 1 to work with first component for now
+    for (let i = 0; i < 1; i++) {
+      // i < 1 to work with first component for now
       const component = node.components[i];
       const memberStrings = reverseFlattenedConcept(component, set);
-      const members = ontologyValues.filter(d => {
-        return memberStrings.includes(_.last(d.label.split('/')));
-      }).map(d => d.label);
+      const members = ontologyValues
+        .filter((d) => {
+          return memberStrings.includes(_.last(d.label.split('/')));
+        })
+        .map((d) => d.label);
 
       const homeId = {};
       let foundConcept = false;
@@ -678,7 +666,7 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k, geography)
       bulkSearchPayload.push({
         homeId,
         awayId: [], // TODO: next step involves constructing an adjacency list to make awayIds
-        context: '' // TODO: add text descriptions
+        context: '', // TODO: add text descriptions
       });
     }
   }
@@ -686,7 +674,13 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k, geography)
   const ontologyId = project.ontology;
   try {
     Logger.debug(`Concept aligner payload ${JSON.stringify(bulkSearchPayload)}`);
-    const response = await conceptAlignerService.bulkSearch(ontologyId, bulkSearchPayload, k, 0.3, geography);
+    const response = await conceptAlignerService.bulkSearch(
+      ontologyId,
+      bulkSearchPayload,
+      k,
+      0.3,
+      geography
+    );
 
     for (const matches of response) {
       const indicatorsForMatches = [];
@@ -719,7 +713,12 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k, geography)
   } catch (error) {
     console.error(error);
   }
-  return allIndicators.map(indicators => indicators.sort((a, b) => b.score - a.score).slice(0, k).map(x => x.candidate));
+  return allIndicators.map((indicators) =>
+    indicators
+      .sort((a, b) => b.score - a.score)
+      .slice(0, k)
+      .map((x) => x.candidate)
+  );
 };
 
 // Deprecated
@@ -727,16 +726,19 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
   const ontologyMap = getCache(projectId).ontologyMap;
   const ontologyValues = Object.values(ontologyMap);
   const ontologyKeys = Object.keys(ontologyMap);
-  const set = new Set(ontologyKeys.map(d => _.last(d.split('/'))));
+  const set = new Set(ontologyKeys.map((d) => _.last(d.split('/'))));
 
   const indicators = [];
   // match using the component that gets the highest matching score
-  for (let i = 0; i < 1; i++) { // i < 1 to work with first component for now
+  for (let i = 0; i < 1; i++) {
+    // i < 1 to work with first component for now
     const component = node.components[i];
     const memberStrings = reverseFlattenedConcept(component, set);
-    const members = ontologyValues.filter(d => {
-      return memberStrings.includes(_.last(d.label.split('/')));
-    }).map(d => d.label);
+    const members = ontologyValues
+      .filter((d) => {
+        return memberStrings.includes(_.last(d.label.split('/')));
+      })
+      .map((d) => d.label);
 
     const homeId = {};
     let foundConcept = false;
@@ -757,12 +759,12 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
       url: `http://linking.cs.arizona.edu/v1/compositionalSearch?maxHits=${k}&threshold=${0.3}`,
       headers: {
         'Content-type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json',
       },
       json: {
         homeId,
-        awayId: [] // FIXME: next step involves constructing an adjacency list to make awayIds
-      }
+        awayId: [], // FIXME: next step involves constructing an adjacency list to make awayIds
+      },
     };
     try {
       const response = await requestAsPromise(options);
@@ -790,7 +792,10 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
       console.error(error);
     }
   }
-  return indicators.sort((a, b) => b.score - a.score).slice(0, k).map(x => x.candidate);
+  return indicators
+    .sort((a, b) => b.score - a.score)
+    .slice(0, k)
+    .map((x) => x.candidate);
 };
 
 const indicatorSeachByDatasetId = async (dataId, name) => {
@@ -802,22 +807,22 @@ const indicatorSeachByDatasetId = async (dataId, name) => {
         bool: {
           must: [
             {
-              term: { data_id: dataId }
+              term: { data_id: dataId },
             },
             {
-              term: { 'outputs.name': name }
+              term: { 'outputs.name': name },
             },
             {
-              term: { status: 'READY' }
-            }
-          ]
-        }
-      }
-    }
+              term: { status: 'READY' },
+            },
+          ],
+        },
+      },
+    },
   };
 
   const results = await client.search(searchPayload);
-  return results.body.hits.hits.map(d => d._source);
+  return results.body.hits.hits.map((d) => d._source);
 };
 
 const modelSearchWithName = async (id, name) => {
@@ -830,26 +835,24 @@ const modelSearchWithName = async (id, name) => {
         bool: {
           must: [
             {
-              term: { id: id }
+              term: { id: id },
             },
             {
-              term: { 'outputs.name': name }
+              term: { 'outputs.name': name },
             },
             {
-              term: { status: 'READY' }
-            }
-          ]
-        }
-      }
-    }
+              term: { status: 'READY' },
+            },
+          ],
+        },
+      },
+    },
   };
 
   const results = await client.search(searchPayload);
   // Set default_feature to name to force that output to be used
-  return results.body.hits.hits.map(d => ({ ...d._source, default_feature: name }));
+  return results.body.hits.hits.map((d) => ({ ...d._source, default_feature: name }));
 };
-
-
 
 module.exports = {
   statementConceptEntitySearch,
@@ -858,5 +861,5 @@ module.exports = {
   rawDatacubeSearch,
   indicatorSearchByConcepts,
   indicatorSearchConceptAligner,
-  indicatorSearchConceptAlignerBulk
+  indicatorSearchConceptAlignerBulk,
 };

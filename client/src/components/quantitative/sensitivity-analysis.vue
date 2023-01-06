@@ -7,13 +7,11 @@
     <div class="x-axis-label">
       <h5>IMPACTS / EFFECTS</h5>
       <div class="actions">
-        <p
-          v-if="selectedRowOrColumn.concept !== null"
-          class="sort-description"
-        >
-          {{ selectedRowOrColumn.isRow
-            ? 'Columns sorted by most impacted by '
-            : 'Rows sorted by most impact on '
+        <p v-if="selectedRowOrColumn.concept !== null" class="sort-description">
+          {{
+            selectedRowOrColumn.isRow
+              ? 'Columns sorted by most impacted by '
+              : 'Rows sorted by most impact on '
           }}
           <span class="concept">{{ selectedRowOrColumn.concept }}</span>
         </p>
@@ -36,14 +34,8 @@
       <h5>DRIVERS / CAUSES</h5>
     </div>
     <div class="matrix-container">
-      <resize-observer
-        ref="resizeObserver"
-        @notify="handleResize"
-      />
-      <svg
-        ref="matrix-container"
-        :class="{'faded': matrixData === null}"
-      ></svg>
+      <resize-observer ref="resizeObserver" @notify="handleResize" />
+      <svg ref="matrix-container" :class="{ faded: matrixData === null }"></svg>
     </div>
   </div>
 </template>
@@ -73,21 +65,22 @@ export default {
   props: {
     modelSummary: {
       type: Object,
-      required: true
+      required: true,
     },
     sensitivityResult: {
       type: Object,
-      default: null
+      default: null,
     },
-    analysisType: { // Deprecated
+    analysisType: {
+      // Deprecated
       type: String,
-      default: 'GLOBAL'
-    }
+      default: 'GLOBAL',
+    },
   },
   setup() {
     const ontologyFormatter = useOntologyFormatter();
     return {
-      ontologyFormatter
+      ontologyFormatter,
     };
   },
   data: () => ({
@@ -100,12 +93,12 @@ export default {
     }, RESIZE_DELAY),
     selectedRowOrColumn: { isRow: false, concept: null },
     matrixData: null,
-    statusMessage: null
+    statusMessage: null,
   }),
   computed: {
     ...mapGetters({
       tour: 'tour/tour',
-      currentCAG: 'app/currentCAG'
+      currentCAG: 'app/currentCAG',
     }),
     rowOrder() {
       if (this.matrixData === null) return [];
@@ -129,17 +122,19 @@ export default {
         return {
           row: this.matrixData.rows[i],
           column: this.matrixData.columns[i],
-          value
+          value,
         };
       });
-      const rankedValues = cleanData.map(d => d.value).sort(d3.descending);
+      const rankedValues = cleanData.map((d) => d.value).sort(d3.descending);
       return cleanData.reduce((a, v) => {
         if (a[v.row] === undefined) a[v.row] = {};
-        const cellRank = rankedValues.findIndex(rankedValue => rankedValue === v.value) + 1;
-        a[v.row][v.column] = `${v.row}'s impact on ${v.column}\nis the ${ordinalNumberFormatter(cellRank)} most impactful on the model.`;
+        const cellRank = rankedValues.findIndex((rankedValue) => rankedValue === v.value) + 1;
+        a[v.row][v.column] = `${v.row}'s impact on ${v.column}\nis the ${ordinalNumberFormatter(
+          cellRank
+        )} most impactful on the model.`;
         return a;
       }, {});
-    }
+    },
   },
   watch: {
     sensitivityResult() {
@@ -154,7 +149,7 @@ export default {
     },
     columnOrder() {
       this.render();
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -168,13 +163,17 @@ export default {
   },
   methods: {
     ...mapActions({
-      enableNextStep: 'tour/enableNextStep'
+      enableNextStep: 'tour/enableNextStep',
     }),
     setAnalysisType(e) {
       this.$emit('set-analysis-type', e.target.value);
     },
     async poll() {
-      const r = await modelService.getExperimentResultOnce(this.currentCAG, 'dyse', this.sensitivityResult.experiment_id);
+      const r = await modelService.getExperimentResultOnce(
+        this.currentCAG,
+        'dyse',
+        this.sensitivityResult.experiment_id
+      );
       if (r.status === 'completed' && r.results) {
         this.processSensitivityResult(r);
       } else {
@@ -183,7 +182,9 @@ export default {
     },
     updatePollingProgress(result) {
       console.log('update polling progress', result);
-      const progressMessage = result.progressPercentage ? ` - ${(result.progressPercentage * 100, 2).toFixed(2)}% Complete` : '';
+      const progressMessage = result.progressPercentage
+        ? ` - ${(result.progressPercentage * 100, 2).toFixed(2)}% Complete`
+        : '';
       this.statusMessage = `Sensitivity Analysis In Progress${progressMessage}`;
       window.setTimeout(() => {
         this.poll();
@@ -196,7 +197,8 @@ export default {
       await modelService.updateScenarioSensitivityResult(
         this.sensitivityResult.id,
         this.sensitivityResult.experiment_id,
-        result);
+        result
+      );
       const csrResults = csrUtil.resultsToCsrFormat(result.results.global);
       csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
       csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
@@ -221,12 +223,11 @@ export default {
       if (this.matrixData === null) return;
 
       const refSelection = d3.select(this.$refs['matrix-container']);
-      const svgWidth = _.uniq(this.matrixData.columns).length * CELL_WIDTH_PX + AXIS_LABEL_MARGIN_PX;
+      const svgWidth =
+        _.uniq(this.matrixData.columns).length * CELL_WIDTH_PX + AXIS_LABEL_MARGIN_PX;
       const svgHeight = _.uniq(this.matrixData.rows).length * CELL_HEIGHT_PX + AXIS_LABEL_MARGIN_PX;
 
-      refSelection
-        .attr('height', svgHeight)
-        .attr('width', svgWidth);
+      refSelection.attr('height', svgHeight).attr('width', svgWidth);
 
       const options = {
         axisLabelMargin: AXIS_LABEL_MARGIN_PX,
@@ -234,7 +235,7 @@ export default {
         height: svgHeight,
         rowOrder: this.rowOrder,
         columnOrder: this.columnOrder,
-        showRankLabels: true
+        showRankLabels: true,
       };
       refSelection.selectAll('*').remove();
       renderSensitivityMatrix(
@@ -282,123 +283,124 @@ export default {
       const tooltipText = this.tooltipTexts[rowName][columnName];
 
       return tooltipText || null;
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-  @import "~styles/variables";
-  $axisMargin: 90px; // Should equal the AXIS_LABEL_MARGIN_PX in this file
+@import '~styles/variables';
+$axisMargin: 90px; // Should equal the AXIS_LABEL_MARGIN_PX in this file
 
-  .sensitivity-analysis-container {
-    width: 100%;
-    height: 100%;
-    display: grid;
-    padding: 2rem;
-    grid-template-columns: 4rem auto;
-    grid-template-rows: 4rem auto;
-    grid-template-areas:
-      'empty x-axis-label'
-      'y-axis-label matrix';
-    position: relative;
-    overflow: hidden;
-    background-color: rgb(242, 242, 242);
+.sensitivity-analysis-container {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  padding: 2rem;
+  grid-template-columns: 4rem auto;
+  grid-template-rows: 4rem auto;
+  grid-template-areas:
+    'empty x-axis-label'
+    'y-axis-label matrix';
+  position: relative;
+  overflow: hidden;
+  background-color: rgb(242, 242, 242);
+}
+
+.x-axis-label h5,
+.y-axis-label h5 {
+  position: absolute;
+  margin: 0;
+}
+
+.x-axis-label {
+  position: relative;
+  grid-area: x-axis-label;
+  margin-left: $axisMargin;
+  border-bottom: 1px solid #000;
+
+  h5 {
+    bottom: 5px;
+    left: 0;
   }
 
-  .x-axis-label h5, .y-axis-label h5 {
+  .actions {
     position: absolute;
-    margin: 0;
-  }
+    bottom: 5px;
+    right: 0;
+    display: flex;
+    align-items: center;
 
-  .x-axis-label {
-    position: relative;
-    grid-area: x-axis-label;
-    margin-left: $axisMargin;
-    border-bottom: 1px solid #000;
-
-    h5 {
-      bottom: 5px;
-      left: 0;
+    label {
+      margin: 0;
     }
 
-    .actions {
-      position: absolute;
-      bottom: 5px;
-      right: 0;
-      display: flex;
-      align-items: center;
-
-      label {
-        margin: 0;
-      }
-
-      & > * {
-        margin-left: 5px;
-      }
+    & > * {
+      margin-left: 5px;
     }
   }
+}
 
-  .y-axis-label {
-    position: relative;
-    grid-area: y-axis-label;
-    margin-top: $axisMargin;
-    border-right: 1px solid #000;
+.y-axis-label {
+  position: relative;
+  grid-area: y-axis-label;
+  margin-top: $axisMargin;
+  border-right: 1px solid #000;
 
-    h5 {
-      bottom: 100%;
-      right: 5px;
-      transform-origin: bottom right;
-      white-space: nowrap;
-      transform: rotateZ(-90deg);
+  h5 {
+    bottom: 100%;
+    right: 5px;
+    transform-origin: bottom right;
+    white-space: nowrap;
+    transform: rotateZ(-90deg);
+  }
+}
+
+.matrix-container {
+  grid-area: matrix;
+  position: relative;
+  overflow: scroll;
+
+  svg {
+    transition: opacity 0.3s ease-out;
+
+    &.faded {
+      opacity: 0.5;
+      transition: opacity 1s ease;
     }
   }
+}
 
-  .matrix-container {
-    grid-area: matrix;
-    position: relative;
-    overflow: scroll;
+:deep(.grid-lines path) {
+  stroke-width: 0;
+}
 
-    svg {
-      transition: opacity 0.3s ease-out;
+:deep(.grid-lines line) {
+  stroke-width: 4px;
+  stroke: $background-light-2;
+}
 
-      &.faded {
-        opacity: 0.5;
-        transition: opacity 1s ease;
-      }
-    }
+:deep(.tick text) {
+  cursor: pointer;
+
+  &:hover {
+    color: grey;
   }
 
-  :deep(.grid-lines path) {
-    stroke-width: 0;
-  }
-
-  :deep(.grid-lines line) {
-    stroke-width: 4px;
-    stroke: $background-light-2;
-  }
-
-  :deep(.tick text) {
-    cursor: pointer;
-
+  &.selected {
+    color: $selected-dark;
     &:hover {
-      color: grey;
-    }
-
-    &.selected {
-      color: $selected-dark;
-      &:hover {
-        color: $selected;
-      }
+      color: $selected;
     }
   }
+}
 
-  .sort-description {
-    margin: 0;
-    margin-right: 20px;
+.sort-description {
+  margin: 0;
+  margin-right: 20px;
 
-    .concept {
-      color: $selected-dark;
-    }
+  .concept {
+    color: $selected-dark;
   }
+}
 </style>

@@ -1,15 +1,7 @@
 <template>
-  <div
-    class="line-chart-container"
-  >
-    <resize-observer
-      ref="resizeObserver"
-      @notify="handleResize"
-    />
-    <svg
-      ref="container"
-      class="chart"
-    />
+  <div class="line-chart-container">
+    <resize-observer ref="resizeObserver" @notify="handleResize" />
+    <svg ref="container" class="chart" />
   </div>
 </template>
 
@@ -29,8 +21,8 @@ const DEFAULT_CONFIG = {
     top: 20,
     right: 40,
     bottom: 35,
-    left: 50
-  }
+    left: 50,
+  },
 };
 const BAND_WIDTH = 30;
 
@@ -67,36 +59,40 @@ export default {
   props: {
     data: {
       type: Array,
-      default: () => { return []; }
+      default: () => {
+        return [];
+      },
     },
     size: {
       type: Array,
-      default: undefined
+      default: undefined,
     },
     config: {
       type: Object,
-      default: () => (DEFAULT_CONFIG)
+      default: () => DEFAULT_CONFIG,
     },
     showSelectionActions: {
       type: Boolean, // To display vertical bands to select specific date
-      default: false
+      default: false,
     },
     selectableTimeSlices: {
       type: Array,
-      default: () => { return []; }
+      default: () => {
+        return [];
+      },
     },
     selectedTimeSliceIndex: {
       type: Number,
-      default: () => -1
+      default: () => -1,
     },
     markedRegion: {
       type: Object,
-      default: () => null
+      default: () => null,
     },
     enableKeystrokes: {
       type: Boolean, // To enable keystroke navigation
-      default: false
-    }
+      default: false,
+    },
   },
   data: () => ({
     // FIXME
@@ -108,21 +104,21 @@ export default {
     //  by debounce() except one.
     resize: _.debounce(function () {
       this.refresh();
-    }, RESIZE_DELAY)
+    }, RESIZE_DELAY),
   }),
   computed: {
     mainTimeSeries() {
-      return this.data.filter(series => series.name === '')[0];
+      return this.data.filter((series) => series.name === '')[0];
     },
     seriesData() {
       let seriesData = this.mainTimeSeries.series;
       if (!_.isEmpty(this.selectableTimeSlices)) {
-        seriesData = this.selectableTimeSlices.map(slice => {
-          return seriesData.find(s => s.timestamp === slice);
+        seriesData = this.selectableTimeSlices.map((slice) => {
+          return seriesData.find((s) => s.timestamp === slice);
         });
       }
       return seriesData;
-    }
+    },
   },
   watch: {
     size(n, o) {
@@ -137,7 +133,7 @@ export default {
       if (n === o) return;
       const selected = this.seriesData[n];
       this.select(selected, false);
-    }
+    },
   },
   created() {
     this.chart = null;
@@ -178,7 +174,8 @@ export default {
       }
 
       svg.selectAll('*').remove();
-      const chart = svgUtil.createChart(svg, this.width, this.height)
+      const chart = svgUtil
+        .createChart(svg, this.width, this.height)
         .append('g')
         .attr('transform', svgUtil.translate(margin.left, margin.top));
       this.chart = chart;
@@ -205,8 +202,8 @@ export default {
       const innerHeight = this.height - margin.top - margin.bottom;
 
       // Define scales
-      let xextent = d3.extent(allSeries, d => d.timestamp);
-      let yextent = d3.extent(allSeries, d => d.value);
+      let xextent = d3.extent(allSeries, (d) => d.timestamp);
+      let yextent = d3.extent(allSeries, (d) => d.value);
       if (_.isEmpty(allSeries)) {
         xextent = [0, 1];
         yextent = [0, 1];
@@ -229,20 +226,16 @@ export default {
       // Create the value formatter
       this.valueFormatter = chartValueFormatter(...yextent);
 
-      const xscale = d3.scaleLinear()
-        .domain(xextent)
-        .range([0, innerWidth]);
+      const xscale = d3.scaleLinear().domain(xextent).range([0, innerWidth]);
 
-      const yscale = d3.scaleLinear()
-        .domain(yextent)
-        .range([innerHeight, 0])
-        .clamp(true);
+      const yscale = d3.scaleLinear().domain(yextent).range([innerHeight, 0]).clamp(true);
 
       this.xscale = xscale;
       this.yscale = yscale;
 
       if (this.markedRegion) {
-        this.chart.append('rect')
+        this.chart
+          .append('rect')
           .attr('class', 'marked-region')
           .attr('x', xscale(this.markedRegion.start))
           .attr('y', 0)
@@ -252,58 +245,61 @@ export default {
           .style('fill-opacity', 0.1);
       }
 
-      const group = this.chart.selectAll('.lines')
+      const group = this.chart
+        .selectAll('.lines')
         .data(data)
         .enter()
         .append('g')
         .classed('lines', true);
 
-
       if (data[0].series.length === 1) {
         // If only a single data point
         group
-          .filter(d => d.name === '')
+          .filter((d) => d.name === '')
           .append('circle')
           .attr('class', 'line')
-          .attr('cx', d => {
+          .attr('cx', (d) => {
             return xscale(d.series[0].timestamp);
           })
-          .attr('cy', d => {
+          .attr('cy', (d) => {
             return yscale(d.series[0].value);
           })
           .attr('r', MARKER_RADIUS)
-          .style('fill', (d) => d.color ? d3.color(d.color) : DEFAULT_COLOR);
+          .style('fill', (d) => (d.color ? d3.color(d.color) : DEFAULT_COLOR));
 
-        group.append('text')
-          .filter(d => d.name !== '')
-          .attr('transform', d => svgUtil.translate(innerWidth + 3, yscale(d.series[0].value)))
+        group
+          .append('text')
+          .filter((d) => d.name !== '')
+          .attr('transform', (d) => svgUtil.translate(innerWidth + 3, yscale(d.series[0].value)))
           .attr('dy', '.25em')
           .attr('text-anchor', 'start')
-          .style('fill', (d) => d.color ? d3.color(d.color) : SELECTED_COLOR)
-          .text(d => d.name);
+          .style('fill', (d) => (d.color ? d3.color(d.color) : SELECTED_COLOR))
+          .text((d) => d.name);
       } else {
         // Add line
         group
           .append('path')
           .attr('class', 'line')
-          .attr('d', d => svgUtil.timeseriesLine(xscale, yscale)(d.series))
+          .attr('d', (d) => svgUtil.timeseriesLine(xscale, yscale)(d.series))
           .style('stroke-width', 2)
-          .style('stroke', (d) => d.color ? d3.color(d.color) : DEFAULT_COLOR)
+          .style('stroke', (d) => (d.color ? d3.color(d.color) : DEFAULT_COLOR))
           .style('fill', 'transparent');
 
         // Mark where we have data points. Don't show if length > 50 as it produce too much clutter.
-        group.filter(d => d.name === '' && d.series.length < 50).each(function(d) {
-          d3.select(this).selectAll('circle')
-            .data(d.series)
-            .enter()
-            .append('circle')
-            .attr('cx', d => xscale(d.timestamp))
-            .attr('cy', d => yscale(d.value))
-            .attr('r', 3)
-            .style('stroke', '#FFF')
-            .style('fill', DEFAULT_COLOR);
-        });
-
+        group
+          .filter((d) => d.name === '' && d.series.length < 50)
+          .each(function (d) {
+            d3.select(this)
+              .selectAll('circle')
+              .data(d.series)
+              .enter()
+              .append('circle')
+              .attr('cx', (d) => xscale(d.timestamp))
+              .attr('cy', (d) => yscale(d.value))
+              .attr('r', 3)
+              .style('stroke', '#FFF')
+              .style('fill', DEFAULT_COLOR);
+          });
 
         // Add area above 0
         // group
@@ -324,13 +320,14 @@ export default {
         //   .style('opacity', 0.3);
 
         // Add line label
-        group.append('text')
-          .filter(d => d.name !== '')
-          .attr('transform', d => svgUtil.translate(innerWidth + 3, yscale(d.series[0].value)))
+        group
+          .append('text')
+          .filter((d) => d.name !== '')
+          .attr('transform', (d) => svgUtil.translate(innerWidth + 3, yscale(d.series[0].value)))
           .attr('dy', '.25em')
           .attr('text-anchor', 'start')
-          .style('fill', (d) => d.color ? d3.color(d.color) : SELECTED_COLOR)
-          .text(d => d.name);
+          .style('fill', (d) => (d.color ? d3.color(d.color) : SELECTED_COLOR))
+          .text((d) => d.name);
       }
       this.tooltip = svgUtil.addCrosshairTooltip({
         chart: this.chart,
@@ -338,7 +335,7 @@ export default {
         yscale: this.yscale,
         seriesData: this.seriesData,
         valueFormatter: this.valueFormatter,
-        dateFormatter: dateFormatter
+        dateFormatter: dateFormatter,
       });
     },
     renderAxis() {
@@ -368,46 +365,43 @@ export default {
       // Calculate tick values for Y axis (min, max, and the first value for the selected function timeseries)
       const [min, max] = yscale.domain();
       let ticksYAxis = [min, max];
-      if (!_.isEmpty(this.data.filter(d => d.name !== ''))) {
-        const func = this.data.filter(d => d.name !== '')[0].series[0].value; // We pick the first value of that array because the rest of the values are the same
+      if (!_.isEmpty(this.data.filter((d) => d.name !== ''))) {
+        const func = this.data.filter((d) => d.name !== '')[0].series[0].value; // We pick the first value of that array because the rest of the values are the same
         ticksYAxis = _.uniq([min, func, max]);
       }
 
       // Define the axes
-      const xaxis = d3.axisBottom()
-        .scale(xscale)
-        .tickSizeOuter(0)
-        .tickValues(ticksXaxis);
+      const xaxis = d3.axisBottom().scale(xscale).tickSizeOuter(0).tickValues(ticksXaxis);
 
-      const yaxis = d3.axisLeft()
+      const yaxis = d3
+        .axisLeft()
         .scale(yscale)
         .tickValues(ticksYAxis)
         .tickFormat(this.valueFormatter);
 
       // Add the X axis
-      this.chart.append('g')
+      this.chart
+        .append('g')
         .call(xaxis)
         .attr('class', 'x-axis')
         .attr('transform', svgUtil.translate(0, yscale(0)))
         .attr('stroke-opacity', 0.5);
 
       // Break tick x axis labels in two lines
-      this.chart.selectAll('.x-axis .tick text')
+      this.chart
+        .selectAll('.x-axis .tick text')
         .text('')
         .append('tspan')
         .attr('x', 0)
         .attr('dy', '.6em')
-        .text(d => dateFormatter(d, 'MMM'))
+        .text((d) => dateFormatter(d, 'MMM'))
         .append('tspan')
         .attr('x', 0)
         .attr('dy', '.9em')
-        .text(d => dateFormatter(d, 'YYYY'));
+        .text((d) => dateFormatter(d, 'YYYY'));
 
       // Add the Y axis
-      this.chart.append('g')
-        .call(yaxis)
-        .attr('class', 'y-axis')
-        .attr('stroke-opacity', 0.5);
+      this.chart.append('g').call(yaxis).attr('class', 'y-axis').attr('stroke-opacity', 0.5);
     },
     renderSelectionActions() {
       const xscale = this.xscale;
@@ -424,12 +418,11 @@ export default {
 
       // Create annotation to show on click
       const BAND_WIDTH = 30;
-      const group = this.chart
-        .append('g')
-        .classed('annotation-container', true);
+      const group = this.chart.append('g').classed('annotation-container', true);
 
       // add band
-      group.append('rect')
+      group
+        .append('rect')
         .attr('class', 'annotation-band')
         .attr('width', BAND_WIDTH * 0.5)
         .attr('height', innerHeight)
@@ -438,7 +431,8 @@ export default {
         .style('display', 'none');
 
       // add circle
-      group.append('circle')
+      group
+        .append('circle')
         .attr('class', 'annotation-circle')
         .attr('r', MARKER_RADIUS * 2) // slightly larger than our points
         .style('fill', MARKER_COLOR)
@@ -446,13 +440,11 @@ export default {
         .style('display', 'none');
 
       // add labels
-      group.append('text')
-        .attr('class', 'annotation-date');
-      group.append('text')
-        .attr('class', 'annotation-value');
+      group.append('text').attr('class', 'annotation-date');
+      group.append('text').attr('class', 'annotation-value');
 
       // Selection of a time point
-      const bisectDate = d3.bisector(d => d.timestamp).left;
+      const bisectDate = d3.bisector((d) => d.timestamp).left;
       this.chart.select('.event-overlay').on('click', (evt) => {
         if (!series.length) {
           return;
@@ -462,24 +454,33 @@ export default {
           return;
         }
         const xPos = xscale.invert(d3.pointer(evt)[0]);
-        const elementIndex = bisectDate(series, xPos, 1) >= series.length ? series.length - 1 : bisectDate(series, xPos, 1);
+        const elementIndex =
+          bisectDate(series, xPos, 1) >= series.length
+            ? series.length - 1
+            : bisectDate(series, xPos, 1);
         const prevElement = series[elementIndex - 1];
         const nextElement = series[elementIndex];
-        const d = xPos - prevElement.timestamp > nextElement.timestamp - xPos ? nextElement : prevElement;
+        const d =
+          xPos - prevElement.timestamp > nextElement.timestamp - xPos ? nextElement : prevElement;
 
         this.select(d);
       });
       // Select last time slice by default or preset selected timeseries index
-      const selectedTimeSlice = _.isNil(this.selectedTimeSliceIndex) ? _.last(series) : series[this.selectedTimeSliceIndex];
+      const selectedTimeSlice = _.isNil(this.selectedTimeSliceIndex)
+        ? _.last(series)
+        : series[this.selectedTimeSliceIndex];
       this.select(selectedTimeSlice, false);
     },
     keyStrokeBinding() {
       // Keystrokes binding
-      d3.select('body')
-        .on('keyup', (evt) => {
-          if (evt.keyCode === RIGHT_ARROW_EVENT_CODE) { this.next(); }
-          if (evt.keyCode === LEFT_ARROW_EVENT_CODE) { this.prev(); }
-        });
+      d3.select('body').on('keyup', (evt) => {
+        if (evt.keyCode === RIGHT_ARROW_EVENT_CODE) {
+          this.next();
+        }
+        if (evt.keyCode === LEFT_ARROW_EVENT_CODE) {
+          this.prev();
+        }
+      });
     },
     next() {
       let nextIndex = this._selectedTimeSliceIndex + 1;
@@ -521,7 +522,7 @@ export default {
       // Draw the annotation
       band
         .style('display', null)
-        .attr('x', xscale(data.timestamp) - (BAND_WIDTH * 0.5) * 0.5)
+        .attr('x', xscale(data.timestamp) - BAND_WIDTH * 0.5 * 0.5)
         .attr('y', 0);
 
       circle
@@ -547,10 +548,10 @@ export default {
         .style('fill', MARKER_COLOR)
         .text(this.valueFormatter(data.value));
 
-      this._selectedTimeSliceIndex = series.findIndex(d => d.timestamp === data.timestamp);
+      this._selectedTimeSliceIndex = series.findIndex((d) => d.timestamp === data.timestamp);
       emitEvent && this.$emit('selection', this._selectedTimeSliceIndex);
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -562,6 +563,6 @@ export default {
   padding: 5px;
   box-sizing: border-box;
   cursor: pointer;
-  background: #FFF;
+  background: #fff;
 }
 </style>

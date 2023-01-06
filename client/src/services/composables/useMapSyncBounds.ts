@@ -24,6 +24,6 @@ export default function useMapSyncBounds(emit: (event: 'sync-bounds', ...args: a
     });
   };
   return {
-    syncBounds
+    syncBounds,
   };
 }

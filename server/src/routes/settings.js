@@ -7,7 +7,7 @@ const schedules = _.isEmpty(config.schedules) ? [] : config.schedules.split(',')
 const CLIENT_VAR_PREFIX = 'CLIENT__';
 
 /* GET server settings */
-router.get('/settings', function(req, res, next) {
+router.get('/settings', function (req, res, next) {
   const env = process.env;
   res.json({
     logLevel: config.logLevel,
@@ -26,13 +26,12 @@ router.get('/settings', function(req, res, next) {
     pipelineTargetS3IndicatorsBucket: env.S3_INDICATORS_BUCKET,
     pipelineTargetS3ModelsBucket: env.S3_MODELS_BUCKET,
     requestQueueURL: env.WM_QUEUE_SERVICE_URL,
-    schedules
+    schedules,
   });
 });
 
-
 /* GET client settings */
-router.get('/client-settings', function(req, res, next) {
+router.get('/client-settings', function (req, res, next) {
   const env = process.env;
   const clientSettings = {};
   Object.entries(env).filter(([key, value]) => {

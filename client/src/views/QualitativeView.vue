@@ -14,10 +14,7 @@
       @reset-cag="resetCAGLayout()"
     />
     <main>
-      <cag-side-panel
-        class="side-panel"
-        :model-components="modelComponents"
-      >
+      <cag-side-panel class="side-panel" :model-components="modelComponents">
         <template #below-tabs>
           <cag-comments-button :model-summary="modelSummary" />
         </template>
@@ -48,17 +45,11 @@
             @add-to-CAG="onAddToCAG"
           />
           <div class="legend-config-row">
-            <cag-legend
-              v-if="!showEmptyStateInstructions"
-            />
+            <cag-legend v-if="!showEmptyStateInstructions" />
             <div class="config-bar" v-if="selectedTimeScaleLabel !== null">
               Time scale of interest:
-              <strong>{{ selectedTimeScaleLabel}} </strong>
-              <button
-                class="btn btn-sm "
-                disabled
-                @click="showModalTimeScale = true"
-              >
+              <strong>{{ selectedTimeScaleLabel }} </strong>
+              <button class="btn btn-sm" disabled @click="showModalTimeScale = true">
                 <i class="fa fa-fw fa-pencil" />
               </button>
               .
@@ -88,24 +79,18 @@
               @updated-relations="resolveUpdatedRelations"
               @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
             >
-                <edge-polarity-switcher
-                  :model-summary="modelSummary"
-                  :selected-relationship="selectedEdge"
-                  @edge-set-user-polarity="setEdgeUserPolarity"
-                  @edge-set-weights="setEdgeWeights"
-                />
-                <button
-                  style="font-weight: normal; width: 100%"
-                  class="btn"
-                  @click="openPathFind">
-                  Indirect path
-                </button>
+              <edge-polarity-switcher
+                :model-summary="modelSummary"
+                :selected-relationship="selectedEdge"
+                @edge-set-user-polarity="setEdgeUserPolarity"
+                @edge-set-weights="setEdgeWeights"
+              />
+              <button style="font-weight: normal; width: 100%" class="btn" @click="openPathFind">
+                Indirect path
+              </button>
             </evidence-pane>
             <relationships-pane
-              v-if="
-                activeDrilldownTab === PANE_ID.RELATIONSHIPS &&
-                  selectedNode !== null
-              "
+              v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
               :selected-node="selectedNode"
               :model-components="modelComponents"
               :statements="selectedStatements"
@@ -114,14 +99,10 @@
               :show-get-suggestions-button="true"
               @select-edge="onRelationshipClick"
               @remove-edge="onRemoveRelationship"
-              @show-relationship-suggestions="
-                openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)
-              "
+              @show-relationship-suggestions="openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)"
             />
             <qualitative-factors-pane
-              v-if="
-                activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null
-              "
+              v-if="activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null"
               :selected-item="selectedNode"
               :number-relationships="countNodeRelationships"
               :statements="selectedStatements"
@@ -136,10 +117,7 @@
           </template>
           <template #overlay-pane>
             <node-suggestions-pane
-              v-if="
-                activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS &&
-                  selectedNode !== null
-              "
+              v-if="activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS && selectedNode !== null"
               :selected-node="selectedNode"
               :statements="selectedStatements"
               :graph-data="modelComponents"
@@ -149,8 +127,8 @@
             <factors-recommendations-pane
               v-if="
                 activeDrilldownTab === PANE_ID.FACTOR_RECOMMENDATIONS &&
-                  selectedNode !== null &&
-                  factorRecommendationsList.length > 0
+                selectedNode !== null &&
+                factorRecommendationsList.length > 0
               "
               :correction="correction"
               :recommendations="factorRecommendationsList"
@@ -184,8 +162,7 @@
         <div v-if="selectedNode !== null">
           <div>
             Are you sure you want to remove
-            <strong>{{ ontologyFormatter(selectedNode.concept) }}</strong> from
-            your CAG?
+            <strong>{{ ontologyFormatter(selectedNode.concept) }}</strong> from your CAG?
           </div>
           <ul>
             <li>{{ countIncomingRelationships }} incoming relationship(s)</li>
@@ -196,8 +173,7 @@
         <div v-if="selectedEdge !== null">
           <div>Are you sure you want to remove the relationship between</div>
           <strong>{{ ontologyFormatter(selectedEdge.source) }}</strong> and
-          <strong>{{ ontologyFormatter(selectedEdge.target) }}</strong> from
-          this CAG?
+          <strong>{{ ontologyFormatter(selectedEdge.target) }}</strong> from this CAG?
         </div>
       </template>
     </modal-confirmation>
@@ -266,7 +242,7 @@ import {
   EdgeParameter,
   NodeParameter,
   SourceTargetPair,
-  CAGVisualState
+  CAGVisualState,
 } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import useToaster from '@/services/composables/useToaster';
@@ -287,27 +263,27 @@ const PANE_ID = {
   RELATIONSHIPS: 'relationships',
   EVIDENCE: 'evidence',
   NODE_SUGGESTIONS: 'node-suggestions',
-  FACTOR_RECOMMENDATIONS: 'factor-recommendations'
+  FACTOR_RECOMMENDATIONS: 'factor-recommendations',
 };
 
 const NODE_DRILLDOWN_TABS = [
   {
     name: 'Factors',
     id: PANE_ID.FACTORS,
-    icon: 'fa-sitemap'
+    icon: 'fa-sitemap',
   },
   {
     name: 'Relationships in CAG',
     id: PANE_ID.RELATIONSHIPS,
-    icon: 'fa-long-arrow-right'
-  }
+    icon: 'fa-long-arrow-right',
+  },
 ];
 
 const EDGE_DRILLDOWN_TABS = [
   {
     name: 'Relationship',
-    id: PANE_ID.EVIDENCE
-  }
+    id: PANE_ID.EVIDENCE,
+  },
 ];
 
 interface Suggestion {
@@ -339,13 +315,13 @@ export default defineComponent({
     CagAnalysisOptionsButton,
     RenameModal,
     ModalTimeScale,
-    CagLegend
+    CagLegend,
   },
   setup() {
     return {
       ontologyFormatter: useOntologyFormatter(),
       toaster: useToaster(),
-      cagGraph: ref<any>()
+      cagGraph: ref<any>(),
     };
   },
   data: () => ({
@@ -371,7 +347,7 @@ export default defineComponent({
     initialSelectedEdge: null as string[] | null,
     visualState: {
       focus: { nodes: [], edges: [] },
-      outline: { nodes: [], edges: [] }
+      outline: { nodes: [], edges: [] },
     } as CAGVisualState,
 
     drilldownTabs: [] as { name: string; id: string }[],
@@ -396,13 +372,13 @@ export default defineComponent({
     PANE_ID,
     timerId: null as number | null,
     cagsToImport: [] as CAGGraphInterface[],
-    prevStabilitySetting: true // matching CAG Renderer init
+    prevStabilitySetting: true, // matching CAG Renderer init
   }),
   computed: {
     ...mapGetters({
       currentCAG: 'app/currentCAG',
       project: 'app/project',
-      updateToken: 'app/updateToken'
+      updateToken: 'app/updateToken',
     }),
     showEmptyStateInstructions(): boolean {
       return (
@@ -412,23 +388,21 @@ export default defineComponent({
       );
     },
     countIncomingRelationships(): number {
-      return this.modelComponents.edges.filter(
-        edge => edge.target === this.selectedNode?.concept
-      ).length;
+      return this.modelComponents.edges.filter((edge) => edge.target === this.selectedNode?.concept)
+        .length;
     },
     countOutgoingRelationships(): number {
-      return this.modelComponents.edges.filter(
-        edge => edge.source === this.selectedNode?.concept
-      ).length;
+      return this.modelComponents.edges.filter((edge) => edge.source === this.selectedNode?.concept)
+        .length;
     },
     countNodeRelationships(): number {
       const concept = this.selectedNode?.concept;
       return this.modelComponents.edges.filter(
-        edge => edge.target === concept || edge.source === concept
+        (edge) => edge.target === concept || edge.source === concept
       ).length;
     },
     conceptsInCag(): string[] {
-      return this.modelComponents.nodes.map(node => node.concept);
+      return this.modelComponents.nodes.map((node) => node.concept);
     },
     overlayPaneTitle() {
       let title = '';
@@ -446,8 +420,8 @@ export default defineComponent({
     },
     restrictedNames() {
       if (!this.modelComponents) return [];
-      return this.modelComponents.nodes.map(node => node.concept);
-    }
+      return this.modelComponents.nodes.map((node) => node.concept);
+    },
   },
   watch: {
     $route: {
@@ -459,13 +433,13 @@ export default defineComponent({
             this.updateStateFromInsight(insight_id);
             this.$router.push({
               query: {
-                insight_id: undefined
-              }
+                insight_id: undefined,
+              },
             });
           }
         }
       },
-      immediate: true
+      immediate: true,
     },
     updateToken(n, o) {
       if (_.isEqual(n, o)) return;
@@ -486,7 +460,7 @@ export default defineComponent({
         // The selected edge may have been deleted, or its polarity may have changed,
         //  so update selectedEdge to point to the updated version of the same edge.
         const updatedSelectedEdge = this.modelComponents.edges.find(
-          newEdge => newEdge.id === selectedEdge.id
+          (newEdge) => newEdge.id === selectedEdge.id
         );
         if (updatedSelectedEdge === undefined) {
           this.selectedEdge = null;
@@ -501,7 +475,7 @@ export default defineComponent({
     },
     selectedEdge() {
       this.updateDataState();
-    }
+    },
   },
   created() {
     // update insight related state
@@ -519,7 +493,7 @@ export default defineComponent({
       setUpdateToken: 'app/setUpdateToken',
       setAnalysisName: 'app/setAnalysisName',
       setContextId: 'insightPanel/setContextId',
-      setDataState: 'insightPanel/setDataState'
+      setDataState: 'insightPanel/setDataState',
     }),
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);
@@ -552,7 +526,7 @@ export default defineComponent({
         if (!loadedInsight.data_state?.selectedEdge && !loadedInsight.data_state?.selectedNode) {
           this.visualState = {
             focus: { nodes: [], edges: [] },
-            outline: { nodes: [], edges: [] }
+            outline: { nodes: [], edges: [] },
           };
           this.closeDrilldown();
         }
@@ -560,7 +534,9 @@ export default defineComponent({
     },
     applyNodeSelection(selectedNode: string) {
       if (selectedNode) {
-        const nodeToSelect = this.modelComponents.nodes.find(node => node.concept === selectedNode);
+        const nodeToSelect = this.modelComponents.nodes.find(
+          (node) => node.concept === selectedNode
+        );
 
         if (nodeToSelect) {
           const neighborhood = calculateNeighborhood(this.modelComponents, nodeToSelect.concept);
@@ -568,11 +544,9 @@ export default defineComponent({
           this.visualState = {
             focus: neighborhood,
             outline: {
-              nodes: [
-                { concept: nodeToSelect.concept }
-              ],
-              edges: []
-            }
+              nodes: [{ concept: nodeToSelect.concept }],
+              edges: [],
+            },
           };
         }
       }
@@ -580,18 +554,20 @@ export default defineComponent({
     applyEdgeSelection(selectedEdge: string[]) {
       if (selectedEdge) {
         const [source, target] = selectedEdge;
-        const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
+        const edgeToSelect = this.modelComponents.edges.find(
+          (edge) => edge.source === source && edge.target === target
+        );
         if (edgeToSelect) {
           this.selectEdge(edgeToSelect);
           this.visualState = {
             focus: {
               nodes: [{ concept: source }, { concept: target }],
-              edges: [{ source, target }]
+              edges: [{ source, target }],
             },
             outline: {
               nodes: [],
-              edges: [{ source, target }]
-            }
+              edges: [{ source, target }],
+            },
           };
         }
       }
@@ -608,7 +584,7 @@ export default defineComponent({
       if (this.edgeToSelectOnNextRefresh !== null) {
         const { source, target } = this.edgeToSelectOnNextRefresh;
         const foundEdge = this.modelComponents.edges.find(
-          edge => edge.source === source && edge.target === target
+          (edge) => edge.source === source && edge.target === target
         );
         if (foundEdge !== undefined) {
           this.selectEdge(foundEdge);
@@ -636,7 +612,7 @@ export default defineComponent({
       // Save dataState to the store. It will be used by review-insight-modal
       //  if we are creating a new insight.
       const dataState: QualitativeDataState = {
-        modelName: this.modelSummary?.name
+        modelName: this.modelSummary?.name,
       };
       this.setDataState(dataState);
     },
@@ -650,19 +626,10 @@ export default defineComponent({
       // });
       return modelService.addComponents(this.currentCAG, nodes, edges, updateType);
     },
-    async removeCAGComponents(
-      nodes: { id: string }[],
-      edges: { id: string }[]
-    ) {
+    async removeCAGComponents(nodes: { id: string }[], edges: { id: string }[]) {
       return modelService.removeComponents(this.currentCAG, nodes, edges);
     },
-    async addEdge({
-      source,
-      target
-    }: {
-      source: NodeParameter;
-      target: NodeParameter;
-    }) {
+    async addEdge({ source, target }: { source: NodeParameter; target: NodeParameter }) {
       const edge = { source: source.concept, target: target.concept };
 
       if (edge.source === edge.target) {
@@ -670,22 +637,20 @@ export default defineComponent({
         return;
       }
 
-      const edges = this.modelComponents.edges.map(
-        edge => edge.source + '///' + edge.target
-      );
+      const edges = this.modelComponents.edges.map((edge) => edge.source + '///' + edge.target);
 
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
         const relationsToAdd: SourceTargetPair[] = [];
 
         // Search for all possible combinations of source/target
-        source.components.forEach(source => {
-          target.components.forEach(target => {
+        source.components.forEach((source) => {
+          target.components.forEach((target) => {
             relationsToAdd.push({ source, target });
           });
         });
 
         // get all edges on map and return as array
-        const allEdges = this.modelComponents.edges.map(edge => {
+        const allEdges = this.modelComponents.edges.map((edge) => {
           return { source: edge.source, target: edge.target };
         });
 
@@ -713,7 +678,7 @@ export default defineComponent({
             user_polarity: null,
             source: source.concept,
             target: target.concept,
-            reference_ids: []
+            reference_ids: [],
           };
           const data = await this.addCAGComponents([], [newEdge], 'add:manual');
           this.setUpdateToken(data.updateToken);
@@ -723,14 +688,14 @@ export default defineComponent({
             user_polarity: null,
             source: source.concept,
             target: target.concept,
-            reference_ids: backingStatements
+            reference_ids: backingStatements,
           };
           const data = await this.addCAGComponents([], [newEdge], 'add:manual');
           this.setUpdateToken(data.updateToken);
         }
         this.edgeToSelectOnNextRefresh = {
           source: edge.source,
-          target: edge.target
+          target: edge.target,
         };
       } else {
         // FIXME: We should allow partial cases
@@ -764,7 +729,7 @@ export default defineComponent({
         concept: cleanedName,
         components: [cleanedName],
         label: cleanedName,
-        parameter: datacubeParam
+        parameter: datacubeParam,
       };
       this.saveNodeToGraph(node);
       this.setNewNodeVisible(false);
@@ -785,7 +750,7 @@ export default defineComponent({
         id: new Date().getTime().toString(),
         concept: suggestion.concept,
         label: suggestion.label,
-        components: [suggestion.concept]
+        components: [suggestion.concept],
       };
       this.saveNodeToGraph(node);
     },
@@ -812,20 +777,15 @@ export default defineComponent({
           [{ id: selectedNode.id }],
           this.modelComponents.edges
             .filter(
-              edge =>
-                edge.source === selectedNode.concept ||
-                edge.target === selectedNode.concept
+              (edge) => edge.source === selectedNode.concept || edge.target === selectedNode.concept
             )
-            .map(edge => ({ id: edge.id }))
+            .map((edge) => ({ id: edge.id }))
         );
         this.setUpdateToken(data.updateToken);
       }
 
       if (this.selectedEdge !== null) {
-        const data = await this.removeCAGComponents(
-          [],
-          [{ id: this.selectedEdge.id }]
-        );
+        const data = await this.removeCAGComponents([], [{ id: this.selectedEdge.id }]);
         this.setUpdateToken(data.updateToken);
       }
 
@@ -853,11 +813,9 @@ export default defineComponent({
       this.clearThumbnailTimer();
       this.timerId = window.setTimeout(async () => {
         const el = this.$el.querySelector('.CAG-graph-container');
-        const thumbnailSource = (
-          await html2canvas(el, { scale: 0.25 })
-        ).toDataURL();
+        const thumbnailSource = (await html2canvas(el, { scale: 0.25 })).toDataURL();
         modelService.updateModelMetadata(this.currentCAG, {
-          thumbnail_source: thumbnailSource
+          thumbnail_source: thumbnailSource,
         });
       }, 2000);
     },
@@ -881,11 +839,8 @@ export default defineComponent({
       // Reference IDs for the relationship's statements are not stored in the relationships pane
       //  but can be found by searching the CAG for the edge that represents the relationship,
       //  and surfacing it's underlying array of reference IDs.
-      const foundEdge = this.modelComponents.edges.find(edge => {
-        return (
-          edge.source === relationship.source &&
-          edge.target === relationship.target
-        );
+      const foundEdge = this.modelComponents.edges.find((edge) => {
+        return edge.source === relationship.source && edge.target === relationship.target;
       });
       if (foundEdge === undefined) return;
       this.selectEdge(foundEdge);
@@ -1006,19 +961,17 @@ export default defineComponent({
       this.isFetchingStatements = true;
       modelService
         .getEdgeStatements(this.currentCAG, edge.source, edge.target)
-        .then(statements => {
+        .then((statements) => {
           this.selectedStatements = statements;
           this.isFetchingStatements = false;
         });
     },
     loadCAGNodeStatements(node: NodeParameter) {
       this.isFetchingStatements = true;
-      modelService
-        .getNodeStatements(this.currentCAG, node.concept)
-        .then(statements => {
-          this.selectedStatements = statements;
-          this.isFetchingStatements = false;
-        });
+      modelService.getNodeStatements(this.currentCAG, node.concept).then((statements) => {
+        this.selectedStatements = statements;
+        this.isFetchingStatements = false;
+      });
     },
     async loadStatementsKB() {
       this.selectedStatements = [];
@@ -1026,7 +979,10 @@ export default defineComponent({
       const concepts = this.selectedNode.components;
       this.isFetchingStatements = true;
 
-      const statements = await projectService.getProjectStatementsForConcepts(concepts, this.project);
+      const statements = await projectService.getProjectStatementsForConcepts(
+        concepts,
+        this.project
+      );
       this.selectedStatements = statements;
       this.isFetchingStatements = false;
     },
@@ -1038,15 +994,14 @@ export default defineComponent({
       // Get edge ids from CAG to be able to remove them
       // FIXME: This is not ideal. We will need to expand the API to operate on source/target instead of id.
       const edgesToRemove = edges
-        .map(e => {
+        .map((e) => {
           const found = this.modelComponents.edges.find(
-            edge =>
-              edge.source + '///' + edge.target === e.source + '///' + e.target
+            (edge) => edge.source + '///' + edge.target === e.source + '///' + e.target
           );
           if (found === undefined) return null;
           return { id: found.id };
         })
-        .filter(edge => edge !== null) as { id: string }[];
+        .filter((edge) => edge !== null) as { id: string }[];
 
       const data = await this.removeCAGComponents([], edgesToRemove);
       this.setUpdateToken(data.updateToken);
@@ -1084,14 +1039,8 @@ export default defineComponent({
       }
 
       // Check to see if there are conflicting indicators
-      const hasNodeConflict = modelService.hasMergeConflictNodes(
-        current,
-        this.cagsToImport
-      );
-      const hasEdgeConflict = modelService.hasMergeConflictEdges(
-        current,
-        this.cagsToImport
-      );
+      const hasNodeConflict = modelService.hasMergeConflictNodes(current, this.cagsToImport);
+      const hasEdgeConflict = modelService.hasMergeConflictEdges(current, this.cagsToImport);
       if (hasNodeConflict === true || hasEdgeConflict === true) {
         this.showModalConflict = true;
       } else {
@@ -1103,37 +1052,31 @@ export default defineComponent({
       this.showModalImportCAG = false;
 
       // FIXME: Might want to move this server side, not very efficient if merge a lot of graphs
-      const current: CAGGraphInterface = await modelService.getComponents(
-        this.currentCAG
-      );
+      const current: CAGGraphInterface = await modelService.getComponents(this.currentCAG);
       for (let i = 0; i < this.cagsToImport.length; i++) {
-        modelService.mergeCAG(
-          current,
-          this.cagsToImport[i],
-          overwriteParameterisation
-        );
+        modelService.mergeCAG(current, this.cagsToImport[i], overwriteParameterisation);
       }
 
       // Strip off uneeded edge properties
-      const edges = current.edges.map(e => {
+      const edges = current.edges.map((e) => {
         return {
           id: e.id,
           source: e.source,
           target: e.target,
           reference_ids: e.reference_ids,
           user_polarity: e.user_polarity,
-          parameter: e.parameter
+          parameter: e.parameter,
         };
       });
 
       // Strip off uneeded node properties
-      const nodes = current.nodes.map(n => {
+      const nodes = current.nodes.map((n) => {
         return {
           id: n.id,
           concept: n.concept,
           label: n.label,
           parameter: n.parameter,
-          components: n.components
+          components: n.components,
         };
       });
 
@@ -1157,20 +1100,20 @@ export default defineComponent({
       const newNodes: string[] = [];
       const edgeSet = new Set<string>();
       const nodeSet = new Set<string>();
-      this.modelComponents.edges.forEach(edge => {
+      this.modelComponents.edges.forEach((edge) => {
         edgeSet.add(key(edge));
       });
-      this.modelComponents.nodes.forEach(node => {
+      this.modelComponents.nodes.forEach((node) => {
         nodeSet.add(node.concept);
       });
 
-      paths.forEach(path => {
-        path.forEach(edge => {
+      paths.forEach((path) => {
+        path.forEach((edge) => {
           if (
             !edgeSet.has(key(edge)) &&
             !_.some(
               newSourceTargetPairs,
-              e => e.source === edge.source && e.target === edge.target
+              (e) => e.source === edge.source && e.target === edge.target
             )
           ) {
             // handling the grouped nodes and the possiblity we need to get backing
@@ -1187,16 +1130,10 @@ export default defineComponent({
               newSourceTargetPairs.push(edge);
             }
           }
-          if (
-            !nodeSet.has(edge.source) &&
-            newNodes.indexOf(edge.source) === -1
-          ) {
+          if (!nodeSet.has(edge.source) && newNodes.indexOf(edge.source) === -1) {
             newNodes.push(edge.source);
           }
-          if (
-            !nodeSet.has(edge.target) &&
-            newNodes.indexOf(edge.target) === -1
-          ) {
+          if (!nodeSet.has(edge.target) && newNodes.indexOf(edge.target) === -1) {
             newNodes.push(edge.target);
           }
         });
@@ -1212,48 +1149,53 @@ export default defineComponent({
       // build a dictionary of the new edges with the backing data/reference ids
       // being aggregated for all of the components when the edge references a
       // source or target node
-      const newEdgeDictionary: {[key: string]: EdgeParameter} = newSourceTargetPairs.reduce((edges, sourceTargetPair) => {
-        const { source, target } = sourceTargetPair;
-        const currentReferenceIds = edgeData[key(sourceTargetPair)] || [];
-        const baseNewEdge = {
-          id: '',
-          reference_ids: currentReferenceIds,
-          user_polarity: null,
-          source,
-          target
-        };
+      const newEdgeDictionary: { [key: string]: EdgeParameter } = newSourceTargetPairs.reduce(
+        (edges, sourceTargetPair) => {
+          const { source, target } = sourceTargetPair;
+          const currentReferenceIds = edgeData[key(sourceTargetPair)] || [];
+          const baseNewEdge = {
+            id: '',
+            reference_ids: currentReferenceIds,
+            user_polarity: null,
+            source,
+            target,
+          };
 
-        if (this.pathSuggestionSource?.components.includes(source)) {
-          const normalizedKey = key({ source: this.pathSuggestionSource.concept, target });
-          if (edges[normalizedKey]) {
-            edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(currentReferenceIds);
+          if (this.pathSuggestionSource?.components.includes(source)) {
+            const normalizedKey = key({ source: this.pathSuggestionSource.concept, target });
+            if (edges[normalizedKey]) {
+              edges[normalizedKey].reference_ids =
+                edges[normalizedKey].reference_ids.concat(currentReferenceIds);
+            } else {
+              baseNewEdge.source = this.pathSuggestionSource.concept;
+              edges[normalizedKey] = baseNewEdge;
+            }
+          } else if (this.pathSuggestionTarget?.components.includes(target)) {
+            const normalizedKey = key({ source, target: this.pathSuggestionTarget.concept });
+            if (edges[normalizedKey]) {
+              edges[normalizedKey].reference_ids =
+                edges[normalizedKey].reference_ids.concat(currentReferenceIds);
+            } else {
+              baseNewEdge.target = this.pathSuggestionTarget.concept;
+              edges[normalizedKey] = baseNewEdge;
+            }
           } else {
-            baseNewEdge.source = this.pathSuggestionSource.concept;
-            edges[normalizedKey] = baseNewEdge;
+            edges[key(sourceTargetPair)] = baseNewEdge;
           }
-        } else if (this.pathSuggestionTarget?.components.includes(target)) {
-          const normalizedKey = key({ source, target: this.pathSuggestionTarget.concept });
-          if (edges[normalizedKey]) {
-            edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(currentReferenceIds);
-          } else {
-            baseNewEdge.target = this.pathSuggestionTarget.concept;
-            edges[normalizedKey] = baseNewEdge;
-          }
-        } else {
-          edges[key(sourceTargetPair)] = baseNewEdge;
-        }
-        return edges;
-      }, {} as {[key: string]: EdgeParameter});
+          return edges;
+        },
+        {} as { [key: string]: EdgeParameter }
+      );
 
       const newEdges: EdgeParameter[] = Object.values(newEdgeDictionary);
 
       // 3 Save
-      const newNodesPayload = newNodes.map(concept => {
+      const newNodesPayload = newNodes.map((concept) => {
         return {
           id: '',
           concept: concept,
           label: this.ontologyFormatter(concept),
-          components: [concept]
+          components: [concept],
         };
       });
       const result = await this.addCAGComponents(newNodesPayload, newEdges, 'add:path');
@@ -1275,12 +1217,17 @@ export default defineComponent({
       const nodePayload: NodeParameter[] = [];
 
       const hasNode = (concept: string) => {
-        return _.some(currentNodes, n => n.concept === concept) || _.some(nodePayload, n => n.concept === concept);
+        return (
+          _.some(currentNodes, (n) => n.concept === concept) ||
+          _.some(nodePayload, (n) => n.concept === concept)
+        );
       };
 
       // Process new relations
-      edges.forEach(edge => {
-        const existingEdge = currentEdges.find(ce => ce.source === edge.source && ce.target === edge.target);
+      edges.forEach((edge) => {
+        const existingEdge = currentEdges.find(
+          (ce) => ce.source === edge.source && ce.target === edge.target
+        );
         if (existingEdge) {
           // Exists, need to transfer statements
           edgePayload.push({
@@ -1288,10 +1235,7 @@ export default defineComponent({
             source: existingEdge.source,
             target: existingEdge.target,
             user_polarity: existingEdge.user_polarity,
-            reference_ids: _.uniq([
-              ...existingEdge.reference_ids,
-              ...edge.reference_ids
-            ])
+            reference_ids: _.uniq([...existingEdge.reference_ids, ...edge.reference_ids]),
           });
         } else {
           // Does not exist, need to create new edge and check for new nodes
@@ -1300,16 +1244,16 @@ export default defineComponent({
             source: edge.source,
             target: edge.target,
             user_polarity: null,
-            reference_ids: edge.reference_ids
+            reference_ids: edge.reference_ids,
           });
 
-          [edge.source, edge.target].forEach(concept => {
+          [edge.source, edge.target].forEach((concept) => {
             if (hasNode(concept) === false) {
               nodePayload.push({
                 id: '',
                 concept: concept,
                 label: this.ontologyFormatter(concept),
-                components: [concept]
+                components: [concept],
               });
             }
           });
@@ -1338,7 +1282,9 @@ export default defineComponent({
       // FIXME: Stableness hack, because the node has changed, we end up caching the
       // DOM which refers to the old values. To get it to cache new values we need to swap new/old
       // into place. Needs better support from renderer itself!!
-      const oldName = this.modelComponents.nodes.find(node => node.id === this.renameNodeId)?.concept;
+      const oldName = this.modelComponents.nodes.find(
+        (node) => node.id === this.renameNodeId
+      )?.concept;
       const node = this.cagGraph.renderer.graph.nodes.find((node: any) => node.label === oldName);
 
       node.label = newName;
@@ -1375,7 +1321,7 @@ export default defineComponent({
           source: this.selectedEdge.source,
           target: this.selectedEdge.target,
           user_polarity: null,
-          reference_ids: ids
+          reference_ids: ids,
         };
         this.selectedEdge.reference_ids = ids;
         const data = await this.addCAGComponents([], [payload], 'curation');
@@ -1385,17 +1331,18 @@ export default defineComponent({
     async mergeNodes(mergeData: NodeParameter, targetData: NodeParameter) {
       // 1. collect all of the relevant data for the following steps
       const updatedComponents = [...mergeData.components, ...targetData.components];
-      const mergeNodeEdges = this.modelComponents.edges.filter(e => e.target === mergeData.concept || e.source === mergeData.concept);
-      const removedEdges = mergeNodeEdges
-        .map(e => {
-          return { id: e.id };
-        });
+      const mergeNodeEdges = this.modelComponents.edges.filter(
+        (e) => e.target === mergeData.concept || e.source === mergeData.concept
+      );
+      const removedEdges = mergeNodeEdges.map((e) => {
+        return { id: e.id };
+      });
 
       // create replacement edges with updated targets & sources - these are the "updatedEdges"
       const updatedEdges = mergeNodeEdges
-        .filter(e => e.target !== targetData.concept && e.source !== targetData.concept)
-        .map(e => {
-          const updatedEdge = { } as any;
+        .filter((e) => e.target !== targetData.concept && e.source !== targetData.concept)
+        .map((e) => {
+          const updatedEdge = {} as any;
           updatedEdge.id = '';
           updatedEdge.user_polarity = e.user_polarity !== undefined ? e.user_polarity : null;
           updatedEdge.reference_ids = e.reference_ids;
@@ -1412,8 +1359,8 @@ export default defineComponent({
 
       // find any duplicate edges that might exist the graph relative to the updatedEdges
       // add the duplicates to the set to be removed, then combine their supporting data in the updatedEdges
-      updatedEdges.forEach(e => {
-        const duplicateEdge = this.modelComponents.edges.find(edge => {
+      updatedEdges.forEach((e) => {
+        const duplicateEdge = this.modelComponents.edges.find((edge) => {
           return e.source === edge.source && e.target === edge.target;
         });
 
@@ -1425,7 +1372,9 @@ export default defineComponent({
       });
 
       const removedNode = { id: mergeData.id };
-      const updatedNode = { ...this.modelComponents.nodes.filter(e => e.concept === targetData.concept)[0] };
+      const updatedNode = {
+        ...this.modelComponents.nodes.filter((e) => e.concept === targetData.concept)[0],
+      };
       updatedNode.components = updatedComponents;
 
       // 2. remove the node to be merged, it's dependent edges and the duplicate edges
@@ -1441,7 +1390,10 @@ export default defineComponent({
       graphOptions.useStableLayout = false;
 
       // 4. if either target or merge node are currently selected, then select the updated node.
-      if (targetData.concept !== this.selectedNode?.concept || mergeData.concept !== this.selectedNode?.concept) {
+      if (
+        targetData.concept !== this.selectedNode?.concept ||
+        mergeData.concept !== this.selectedNode?.concept
+      ) {
         this.selectedNode = updatedNode;
       }
 
@@ -1453,8 +1405,8 @@ export default defineComponent({
         const target = this.selectedEdge.target;
         const nodes = this.modelComponents.nodes;
 
-        const sourceNode = nodes.find(n => n.concept === source);
-        const targetNode = nodes.find(n => n.concept === target);
+        const sourceNode = nodes.find((n) => n.concept === source);
+        const targetNode = nodes.find((n) => n.concept === target);
         if (sourceNode && targetNode) {
           this.pathSuggestionSource = sourceNode;
           this.pathSuggestionTarget = targetNode;
@@ -1462,7 +1414,11 @@ export default defineComponent({
         }
       }
     },
-    async saveCAGParams(params: { engine: string; timeScale: TimeScale; geography: string | undefined}) {
+    async saveCAGParams(params: {
+      engine: string;
+      timeScale: TimeScale;
+      geography: string | undefined;
+    }) {
       let historyRange = 24;
       if (params.timeScale === TimeScale.Months) {
         historyRange = 24;
@@ -1470,11 +1426,16 @@ export default defineComponent({
         historyRange = 12 * 20;
       }
 
-      const newParameter: Partial<CAGModelParameter> = { engine: params.engine, time_scale: params.timeScale, history_range: historyRange, geography: params.geography };
+      const newParameter: Partial<CAGModelParameter> = {
+        engine: params.engine,
+        time_scale: params.timeScale,
+        history_range: historyRange,
+        geography: params.geography,
+      };
       await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.refresh();
-    }
-  }
+    },
+  },
 });
 </script>
 

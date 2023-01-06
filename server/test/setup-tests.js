@@ -1,6 +1,6 @@
 const path = require('path');
 
-const pathFromProjectRoot = function(name) {
+const pathFromProjectRoot = function (name) {
   const projectRoot = path.resolve(path.join(__dirname, '..')); // __dirname is the test directory.
   return path.join(projectRoot, name);
 };
@@ -10,7 +10,7 @@ const pathFromProjectRoot = function(name) {
  * @param name
  * @returns {any}
  */
-global.rootRequire = function(name) {
+global.rootRequire = function (name) {
   return require(pathFromProjectRoot(path.join('src', name)));
 };
 
@@ -19,7 +19,6 @@ global.rootRequire = function(name) {
  * @param name
  * @returns {any}
  */
-global.testRequire = function(name) {
+global.testRequire = function (name) {
   return require(pathFromProjectRoot(path.join('test', name)));
 };
-

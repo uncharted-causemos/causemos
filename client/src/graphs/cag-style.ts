@@ -10,19 +10,19 @@ export const DEFAULT_STYLE = {
     highlighted: {
       stroke: SELECTED_COLOR,
       borderRadius: 2,
-      strokeWidth: 2
+      strokeWidth: 2,
     },
-    matched: '#FD0'
+    matched: '#FD0',
   },
   edge: {
     fill: 'none',
     strokeWidth: 5,
     controlRadius: 9,
-    strokeDash: '3,2'
+    strokeDash: '3,2',
   },
   edgeBg: {
     fill: 'none',
-    stroke: '#F2F2F2'
+    stroke: '#F2F2F2',
   },
   nodeHeader: {
     fill: 'none',
@@ -32,12 +32,12 @@ export const DEFAULT_STYLE = {
     highlighted: {
       stroke: '#60B5E2',
       borderRadius: 4,
-      strokeWidth: 2
-    }
+      strokeWidth: 2,
+    },
   },
   nodeHandles: {
-    width: 20
-  }
+    width: 20,
+  },
 };
 
 type PolaritySetting = {
@@ -54,6 +54,4 @@ polaritySettingsMap.set(-1, opposite);
 polaritySettingsMap.set(0, unknown);
 polaritySettingsMap.set(1, same);
 
-export {
-  polaritySettingsMap
-};
+export { polaritySettingsMap };

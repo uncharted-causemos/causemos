@@ -23,13 +23,16 @@ describe('app-store', () => {
     expect(store.state.overlayActivated).to.equal(false);
 
     // action test
-    store.dispatch('enableOverlay', testMessage).then(() => {
-      expect(store.state.overlayActivated).to.equal(true);
-      expect(store.state.overlayMessage).to.equal(testMessage);
-      done();
-    }).catch(err => {
-      console.log('error', err);
-      done(err);
-    });
+    store
+      .dispatch('enableOverlay', testMessage)
+      .then(() => {
+        expect(store.state.overlayActivated).to.equal(true);
+        expect(store.state.overlayMessage).to.equal(testMessage);
+        done();
+      })
+      .catch((err) => {
+        console.log('error', err);
+        done(err);
+      });
   });
 });

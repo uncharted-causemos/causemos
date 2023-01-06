@@ -1,7 +1,5 @@
 <template>
-  <div
-    ref="container"
-    class="spark-container">
+  <div ref="container" class="spark-container">
     <svg class="chart" />
   </div>
 </template>
@@ -25,23 +23,25 @@ export default defineComponent({
   props: {
     data: {
       type: Array as PropType<SparklineData[]>,
-      default: () => { return []; }
+      default: () => {
+        return [];
+      },
     },
     size: {
       type: Array as PropType<number[]>,
-      default: () => ([110, 50])
+      default: () => [110, 50],
     },
     viewBox: {
       type: Array as PropType<number[]>,
-      default: () => (null)
-    }
+      default: () => null,
+    },
   },
   watch: {
     data(n) {
       if (n) {
         this.refresh();
       }
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -59,8 +59,7 @@ export default defineComponent({
       chart.attr('width', W + 'px');
       chart.attr('height', H + 'px');
 
-
-      const yExtent = d3.extent(_.flatten(this.data.map(s => s.series))) as [number, number];
+      const yExtent = d3.extent(_.flatten(this.data.map((s) => s.series))) as [number, number];
       const xExtent = [0, this.data[0].series.length];
 
       // Degenerate case where everything is the same value
@@ -77,8 +76,8 @@ export default defineComponent({
         autoViewBox = [
           xExtent[0] - xPadding, // min-x
           yExtent[0] - yPadding, // min-y
-          (xExtent[1] - xExtent[0]) + (2 * xPadding), // width
-          (yExtent[1] - yExtent[0]) + (2 * yPadding) // height
+          xExtent[1] - xExtent[0] + 2 * xPadding, // width
+          yExtent[1] - yExtent[0] + 2 * yPadding, // height
         ];
       }
       chart.attr('viewBox', autoViewBox.join(' '));
@@ -90,15 +89,22 @@ export default defineComponent({
       // Else the user wants to render multiple lines on the same axis, so
       //  return a different color for each line (assuming their `name`s are
       //  different.)
-      const getDefaultLineColor = this.data.length === 1
-        ? () => DEFAULT_LINE_COLOR
-        : d3.scaleOrdinal(d3.schemeCategory10).domain(this.data.map(s => s.name));
+      const getDefaultLineColor =
+        this.data.length === 1
+          ? () => DEFAULT_LINE_COLOR
+          : d3.scaleOrdinal(d3.schemeCategory10).domain(this.data.map((s) => s.name));
 
-      const valueFn = d3.line()
-        .x(function(_d, i) { return xScale(i); })
-        .y(function(d) { return yScale(d as any); });
+      const valueFn = d3
+        .line()
+        .x(function (_d, i) {
+          return xScale(i);
+        })
+        .y(function (d) {
+          return yScale(d as any);
+        });
 
-      chart.append('rect')
+      chart
+        .append('rect')
         .attr('x', autoViewBox[0])
         .attr('y', autoViewBox[1])
         .attr('width', autoViewBox[2])
@@ -106,7 +112,8 @@ export default defineComponent({
         .style('stroke', 'none')
         .style('fill', '#F4F4F4');
 
-      chart.selectAll('path')
+      chart
+        .selectAll('path')
         .data(this.data)
         .enter()
         .append('path')
@@ -119,8 +126,8 @@ export default defineComponent({
         .style('vector-effect', 'non-scaling-stroke')
         .style('fill', 'none')
         .style('fill-opacity', 0.8);
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -131,6 +138,4 @@ export default defineComponent({
   padding: 1px;
   justify-content: center;
 }
-
 </style>
-

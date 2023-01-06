@@ -68,5 +68,5 @@ export default {
   conceptPrefix,
   conceptSuffix,
   conceptHumanName,
-  cleanConceptString
+  cleanConceptString,
 };

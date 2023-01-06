@@ -2,10 +2,18 @@ import { ProjectType } from '@/types/Enums';
 import { Insight, InsightImage } from '@/types/Insight';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
-import { fetchInsights, fetchPartialInsights, InsightFilterFields } from '@/services/insight-service';
+import {
+  fetchInsights,
+  fetchPartialInsights,
+  InsightFilterFields,
+} from '@/services/insight-service';
 import _ from 'lodash';
 
-export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowList?: string[], isContextInsightPanelOpen = false) {
+export default function useInsightsData(
+  preventFetch?: Ref<boolean>,
+  fieldAllowList?: string[],
+  isContextInsightPanelOpen = false
+) {
   const insightMap = ref<Map<string, Insight>>(new Map<string, Insight>());
   const insightImageMap = ref<Map<string, InsightImage>>(new Map<string, InsightImage>());
 
@@ -33,19 +41,20 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
     }
   });
 
-  watchEffect(onInvalidate => {
+  watchEffect((onInvalidate) => {
     if (preventFetch?.value) {
       return;
     }
     // This condition should always return true, it's just used to add
     //  insightsFetchedAt to this watchEffect's dependency array
-    if (insightsFetchedAt.value < 0) { return; }
+    if (insightsFetchedAt.value < 0) {
+      return;
+    }
     let isCancelled = false;
     async function getInsights() {
       // do not fetch if the panel is not open
-      const areInsightsVisible = isInsightExplorerOpen.value ||
-        isContextInsightPanelOpen ||
-        isSidePanelOpen.value;
+      const areInsightsVisible =
+        isInsightExplorerOpen.value || isContextInsightPanelOpen || isSidePanelOpen.value;
       // FIXME: this logic doesn't make sense, why would we only want to return
       //  early if both of these conditions are false? Seems like it should be
       //  an "or" rather than an "and".
@@ -66,7 +75,8 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
       // a more proper solution would be to store all context-id(s) for an analysis project,
       // and set those everytime prior to opening the insight explorer,
       // and finally restore that specific context-id once the insight explorer is closed!
-      const ignoreContextId = isInsightExplorerOpen.value === true && projectType.value === ProjectType.Analysis;
+      const ignoreContextId =
+        isInsightExplorerOpen.value === true && projectType.value === ProjectType.Analysis;
 
       //
       // fetch public insights
@@ -116,7 +126,7 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
         return;
       }
       const deduped = _.uniqBy([...publicInsights, ...contextInsights], 'id');
-      insightMap.value = new Map<string, Insight>(deduped.map(i => [i.id as string, i]));
+      insightMap.value = new Map<string, Insight>(deduped.map((i) => [i.id as string, i]));
       insightImageMap.value.clear(); // remove all stores images to force re-fetch
       store.dispatch('insightPanel/setCountInsights', deduped.length);
       store.dispatch('insightPanel/setShouldRefetchInsights', false);
@@ -129,6 +139,6 @@ export default function useInsightsData(preventFetch?: Ref<boolean>, fieldAllowL
 
   return {
     insights,
-    reFetchInsights
+    reFetchInsights,
   };
 }

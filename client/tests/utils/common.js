@@ -8,7 +8,6 @@ import AppStore from '@/store/modules/app-store';
 import PanelStore from '@/store/modules/panel-store';
 import KnowledgebaseStore from '@/store/modules/knowledgebase-store';
 
-
 /**
  * Provide the very basic plumbings to test components
  */
@@ -19,8 +18,8 @@ const defaultStoreConfig = {
     statements: StatementsStore,
     app: AppStore,
     panel: PanelStore,
-    kb: KnowledgebaseStore
-  }
+    kb: KnowledgebaseStore,
+  },
 };
 
 /**
@@ -44,12 +43,11 @@ const simpleWMMount = (component, propsData, storeConfig = defaultStoreConfig) =
   return shallowMount(component, {
     propsData,
     store,
-    localVue
+    localVue,
   });
 };
 
-
 export default {
   simpleWMMount,
-  defaultStoreConfig
+  defaultStoreConfig,
 };

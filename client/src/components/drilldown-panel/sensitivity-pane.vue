@@ -1,86 +1,77 @@
 <template>
-<div>
-  <h5>
-    {{selectedNode.label}}
-  </h5>
-  <div class="inline-group-justified">
-    <RadioButtonGroup
-      :buttons="tabs"
-      :selected-button-value="activeTab"
-      @button-clicked="setActiveTab"
-    >
-
-    </RadioButtonGroup>
-    <button
-      class="btn btn-sm btn-primary right"
-      @click="openFullDrilldown"
-    >
-      Expand {{selectedNode.label}}
-    </button>
-  </div>
   <div>
-    <message-display
-      v-if="modelStale"
-      :message="'CAG is stale. Node sensitivity may be invalid, please click Run to synchronize and get the updated results.'"
-    />
-    <div v-if="paneSensitivityResult?.result?.status && paneSensitivityResult?.result?.status !== 'completed'">
-      Sensitivity Analysis In Progress
-      <div v-if="paneSensitivityResult?.result?.progressPercentage">
-        {{(paneSensitivityResult.result.progressPercentage * 100, 2).toFixed(2)}}% Complete
-      </div>
+    <h5>
+      {{ selectedNode.label }}
+    </h5>
+    <div class="inline-group-justified">
+      <RadioButtonGroup
+        :buttons="tabs"
+        :selected-button-value="activeTab"
+        @button-clicked="setActiveTab"
+      >
+      </RadioButtonGroup>
+      <button class="btn btn-sm btn-primary right" @click="openFullDrilldown">
+        Expand {{ selectedNode.label }}
+      </button>
     </div>
-    <div v-if="activeTab === TAB_IDS.DRIVERS">
+    <div>
+      <message-display
+        v-if="modelStale"
+        :message="'CAG is stale. Node sensitivity may be invalid, please click Run to synchronize and get the updated results.'"
+      />
       <div
-        class="inline-group"
-        v-for="driver in drivers"
-        :active="driver.node?.id === activeNode?.id"
-        :key="driver.concept"
-        @click="highlightNodePaths(driver.node, 'source')"
+        v-if="
+          paneSensitivityResult?.result?.status &&
+          paneSensitivityResult?.result?.status !== 'completed'
+        "
       >
-        <importance-bars
-          v-if="maxSensitivity"
-          class="sensitivity-margin"
-          label="driver"
-          :importance="driver.value"
-          :max="maxSensitivity"
+        Sensitivity Analysis In Progress
+        <div v-if="paneSensitivityResult?.result?.progressPercentage">
+          {{ (paneSensitivityResult.result.progressPercentage * 100, 2).toFixed(2) }}% Complete
+        </div>
+      </div>
+      <div v-if="activeTab === TAB_IDS.DRIVERS">
+        <div
+          class="inline-group"
+          v-for="driver in drivers"
+          :active="driver.node?.id === activeNode?.id"
+          :key="driver.concept"
+          @click="highlightNodePaths(driver.node, 'source')"
         >
-        </importance-bars>
-        {{driver.node?.label}}
+          <importance-bars
+            v-if="maxSensitivity"
+            class="sensitivity-margin"
+            label="driver"
+            :importance="driver.value"
+            :max="maxSensitivity"
+          >
+          </importance-bars>
+          {{ driver.node?.label }}
+        </div>
+        <div v-if="drivers.length === 0" class="inline-group">No drivers available.</div>
       </div>
-      <div
-        v-if="drivers.length === 0"
-        class="inline-group"
-      >
-        No drivers available.
-      </div>
-    </div>
-    <div v-if="activeTab === TAB_IDS.IMPACTS">
-      <div
-        class="inline-group"
-        v-for="impact in impacts"
-        :active="impact.node?.id === activeNode?.id"
-        :key="impact.concept"
-        @click="highlightNodePaths(impact.node, 'target')"
-      >
-        <importance-bars
-          v-if="maxSensitivity"
-          class="sensitivity-margin"
-          label="impact"
-          :importance="impact.value"
-          :max="maxSensitivity"
+      <div v-if="activeTab === TAB_IDS.IMPACTS">
+        <div
+          class="inline-group"
+          v-for="impact in impacts"
+          :active="impact.node?.id === activeNode?.id"
+          :key="impact.concept"
+          @click="highlightNodePaths(impact.node, 'target')"
         >
-        </importance-bars>
-        {{impact.node?.label}}
-      </div>
-      <div
-        v-if="impacts.length === 0"
-        class="inline-group"
-      >
-        No impacts available.
+          <importance-bars
+            v-if="maxSensitivity"
+            class="sensitivity-margin"
+            label="impact"
+            :importance="impact.value"
+            :max="maxSensitivity"
+          >
+          </importance-bars>
+          {{ impact.node?.label }}
+        </div>
+        <div v-if="impacts.length === 0" class="inline-group">No impacts available.</div>
       </div>
     </div>
   </div>
-</div>
 </template>
 <script lang="ts">
 import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
@@ -96,35 +87,30 @@ export default defineComponent({
   components: {
     ImportanceBars,
     RadioButtonGroup,
-    MessageDisplay
+    MessageDisplay,
   },
   emits: ['open-drilldown', 'highlight-node-paths'],
   props: {
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
-      required: true
+      required: true,
     },
     modelComponents: {
       type: Object as PropType<CAGGraph>,
-      default: null
+      default: null,
     },
     selectedNode: {
       type: Object as PropType<NodeParameter>,
-      default: null
+      default: null,
     },
     sensitivityResult: {
       type: Object as PropType<Record<string, any>>,
-      default: null
-    }
+      default: null,
+    },
   },
   setup(props) {
     const store = useStore();
-    const {
-      modelSummary,
-      modelComponents,
-      selectedNode,
-      sensitivityResult
-    } = toRefs(props);
+    const { modelSummary, modelComponents, selectedNode, sensitivityResult } = toRefs(props);
 
     const paneSensitivityResult = ref(sensitivityResult.value);
 
@@ -132,24 +118,28 @@ export default defineComponent({
 
     const TAB_IDS = {
       DRIVERS: 'drivers',
-      IMPACTS: 'impacts'
+      IMPACTS: 'impacts',
     };
     const tabs = [
       {
         label: 'Drivers',
-        value: TAB_IDS.DRIVERS
+        value: TAB_IDS.DRIVERS,
       },
       {
         label: 'Impacts',
-        value: TAB_IDS.IMPACTS
-      }
+        value: TAB_IDS.IMPACTS,
+      },
     ];
     const activeTab = ref('');
-    const activeNode = ref({} as NodeParameter|null);
+    const activeNode = ref({} as NodeParameter | null);
 
     // polling code as sensitivity may not be ready on panel open
     const poll = async (): Promise<void> => {
-      const r = await modelService.getExperimentResultOnce(currentCAG.value, 'dyse', sensitivityResult.value.experiment_id);
+      const r = await modelService.getExperimentResultOnce(
+        currentCAG.value,
+        'dyse',
+        sensitivityResult.value.experiment_id
+      );
       if (r.status === 'completed' && r.results) {
         processSensitivityResult(r);
       } else {
@@ -166,11 +156,13 @@ export default defineComponent({
       await modelService.updateScenarioSensitivityResult(
         sensitivityResult.value.id,
         sensitivityResult.value.experiment_id,
-        result);
+        result
+      );
       paneSensitivityResult.value.result = result;
     };
 
-    if (sensitivityResult.value !== null &&
+    if (
+      sensitivityResult.value !== null &&
       (!sensitivityResult.value.result || sensitivityResult.value.is_valid === false)
     ) {
       poll();
@@ -195,7 +187,7 @@ export default defineComponent({
       return paneSensitivityResult.value.result.results.global;
     });
 
-    const concepts = computed((): string[]|null => {
+    const concepts = computed((): string[] | null => {
       if (sensitivityData.value === null) {
         return null;
       }
@@ -207,7 +199,9 @@ export default defineComponent({
         return null;
       }
       const sensitivities = concepts.value.reduce((acc, concept) => {
-        return acc.concat(Object.values(sensitivityData.value[concept]).filter(v => v !== 0) as number[]);
+        return acc.concat(
+          Object.values(sensitivityData.value[concept]).filter((v) => v !== 0) as number[]
+        );
       }, [] as number[]);
       return Math.max(...sensitivities);
     });
@@ -224,13 +218,13 @@ export default defineComponent({
       const { nodes } = modelComponents.value;
 
       return concepts.value
-        .filter(concept => sensitivityData.value[concept][selectedConcept.value as string] !== 0)
-        .map(concept => {
+        .filter((concept) => sensitivityData.value[concept][selectedConcept.value as string] !== 0)
+        .map((concept) => {
           return {
             concept,
-            node: nodes.find(node => node.concept === concept),
+            node: nodes.find((node) => node.concept === concept),
             // as string needed because despite the null check, compiler complained about possible null
-            value: sensitivityData.value[concept][selectedConcept.value as string]
+            value: sensitivityData.value[concept][selectedConcept.value as string],
           };
         })
         .sort((a, b) => b.value - a.value);
@@ -247,12 +241,12 @@ export default defineComponent({
       const { nodes } = modelComponents.value;
       const impactSet = sensitivityData.value[selectedConcept.value];
       return concepts.value
-        .filter(concept => impactSet[concept] !== 0)
-        .map(concept => {
+        .filter((concept) => impactSet[concept] !== 0)
+        .map((concept) => {
           return {
             concept,
-            node: nodes.find(node => node.concept === concept),
-            value: impactSet[concept]
+            node: nodes.find((node) => node.concept === concept),
+            value: impactSet[concept],
           };
         })
         .sort((a, b) => b.value - a.value);
@@ -281,16 +275,19 @@ export default defineComponent({
 
     const modelStale = ref(false);
 
-    watch(modelSummary, () => {
-      const engine = modelSummary.value.parameter.engine;
-      const status = modelSummary.value.engine_status[engine];
-      if (modelService.MODEL_STATUS.NOT_REGISTERED === status) {
-        modelStale.value = true;
-      } else {
-        modelStale.value = false;
-      }
-    }, { immediate: true });
-
+    watch(
+      modelSummary,
+      () => {
+        const engine = modelSummary.value.parameter.engine;
+        const status = modelSummary.value.engine_status[engine];
+        if (modelService.MODEL_STATUS.NOT_REGISTERED === status) {
+          modelStale.value = true;
+        } else {
+          modelStale.value = false;
+        }
+      },
+      { immediate: true }
+    );
 
     return {
       modelStale,
@@ -301,7 +298,7 @@ export default defineComponent({
       maxSensitivity,
       paneSensitivityResult,
       tabs,
-      TAB_IDS
+      TAB_IDS,
     };
   },
   methods: {
@@ -314,8 +311,8 @@ export default defineComponent({
     },
     setActiveTab(activeTab: string) {
       this.activeTab = activeTab;
-    }
-  }
+    },
+  },
 });
 </script>
 <style lang="scss" scoped>
@@ -338,7 +335,7 @@ $annotation-color: lighten(#8767c8, 30%);
     background-color: $annotation-color;
     cursor: pointer;
   }
-  &[active=true]{
+  &[active='true'] {
     background-color: $annotation-color;
   }
 }

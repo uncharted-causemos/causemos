@@ -37,11 +37,7 @@ const ORGANIZATION_MSG = 'Select an organization';
 const GEO_LOCATION_MSG = 'Select a location';
 const DOC_LOCATION_MSG = 'Select a location';
 
-const QUALITY = [
-  'Not Evaluated',
-  'Edited',
-  'Vetted'
-];
+const QUALITY = ['Not Evaluated', 'Edited', 'Vetted'];
 
 // const EVIDENCE_SOURCE = [
 //   'User',
@@ -54,14 +50,14 @@ export default {
     ...mapGetters({
       filters: 'query/filters',
       ontologyConcepts: 'app/ontologyConcepts',
-      project: 'app/project'
-    })
+      project: 'app/project',
+    }),
   },
   watch: {
     filters(n, o) {
       if (filtersUtil.isEqual(n, o)) return;
       this.setQuery();
-    }
+    },
   },
   created() {
     this.lexRef = null;
@@ -89,26 +85,19 @@ export default {
       true,
       BinaryRelationState
     );
-    const edgePill = new EdgePill(CODE_TABLE.EDGE,
-      suggestionService.getConceptSuggestionFunction(this.project, this.ontologyConcepts));
+    const edgePill = new EdgePill(
+      CODE_TABLE.EDGE,
+      suggestionService.getConceptSuggestionFunction(this.project, this.ontologyConcepts)
+    );
     const numEvidencePill = new NumEvidencePill(CODE_TABLE.NUM_EVIDENCES);
     // Concept formatter
-    [
-      topicPill,
-      causePill,
-      effectPill,
-      edgePill
-    ].forEach(pill => {
+    [topicPill, causePill, effectPill, edgePill].forEach((pill) => {
       pill.setFormatter(this.ontologyFormatter);
     });
 
     // Defines a list of searchable fields for LEX
     this.pills = [
-      new KeyValuePill(
-        CODE_TABLE.POLARITY,
-        polarityUtil.POLARITY_MAP,
-        'Select polarity'
-      ),
+      new KeyValuePill(CODE_TABLE.POLARITY, polarityUtil.POLARITY_MAP, 'Select polarity'),
       new KeyValuePill(
         CODE_TABLE.STATEMENT_POLARITY,
         polarityUtil.STATEMENT_POLARITY_MAP,
@@ -131,16 +120,8 @@ export default {
       //   EVIDENCE_SOURCE,
       //   'Select one or more evidence source categories'
       // ),
-      new ValuePill(
-        CODE_TABLE.QUALITY,
-        QUALITY,
-        'Select one or more quality categories'
-      ),
-      new ValuePill(
-        CODE_TABLE.READERS,
-        codeUtil.READERS_NAMES,
-        'Select one or more readers'
-      ),
+      new ValuePill(CODE_TABLE.QUALITY, QUALITY, 'Select one or more quality categories'),
+      new ValuePill(CODE_TABLE.READERS, codeUtil.READERS_NAMES, 'Select one or more readers'),
 
       topicPill,
       causePill,
@@ -151,42 +132,56 @@ export default {
       new TextPill(CODE_TABLE.DOC_PUBLICATION_YEAR),
       new TextPill(CODE_TABLE.DOC_ID),
 
-      new DynamicValuePill(CODE_TABLE.DOC_GENRE,
+      new DynamicValuePill(
+        CODE_TABLE.DOC_GENRE,
         suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_GENRE.field),
         'Select genre',
         true,
-        SingleRelationState),
+        SingleRelationState
+      ),
 
-      new DynamicValuePill(CODE_TABLE.DOC_LABEL,
+      new DynamicValuePill(
+        CODE_TABLE.DOC_LABEL,
         suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_LABEL.field),
         LABEL_MSG,
         true,
-        SingleRelationState),
-      new DynamicValuePill(CODE_TABLE.DOC_BYOD_TAG,
+        SingleRelationState
+      ),
+      new DynamicValuePill(
+        CODE_TABLE.DOC_BYOD_TAG,
         suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_BYOD_TAG.field),
         BYOD_TAG_MSG,
         true,
-        SingleRelationState),
-      new DynamicValuePill(CODE_TABLE.DOC_AUTHOR,
+        SingleRelationState
+      ),
+      new DynamicValuePill(
+        CODE_TABLE.DOC_AUTHOR,
         suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_AUTHOR.field),
         AUTHOR_MSG,
         true,
-        SingleRelationState),
-      new DynamicValuePill(CODE_TABLE.GEO_LOCATION_NAME,
+        SingleRelationState
+      ),
+      new DynamicValuePill(
+        CODE_TABLE.GEO_LOCATION_NAME,
         suggestionService.getSuggestionFunction(this.project, CODE_TABLE.GEO_LOCATION_NAME.field),
         GEO_LOCATION_MSG,
         true,
-        SingleRelationState),
-      new DynamicValuePill(CODE_TABLE.DOC_LOCATION,
+        SingleRelationState
+      ),
+      new DynamicValuePill(
+        CODE_TABLE.DOC_LOCATION,
         suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_LOCATION.field),
         DOC_LOCATION_MSG,
         true,
-        SingleRelationState),
-      new DynamicValuePill(CODE_TABLE.DOC_ORGANIZATION,
+        SingleRelationState
+      ),
+      new DynamicValuePill(
+        CODE_TABLE.DOC_ORGANIZATION,
         suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_ORGANIZATION.field),
         ORGANIZATION_MSG,
         true,
-        SingleRelationState),
+        SingleRelationState
+      ),
       new TextPill(CODE_TABLE.DOC_STANCE),
       new TextPill(CODE_TABLE.DOC_SENTIMENT),
 
@@ -200,48 +195,39 @@ export default {
       edgePill,
 
       // Specialized - number of evidence (with open-ended maximum range)
-      numEvidencePill
+      numEvidencePill,
     ];
 
     const language = Lex.from('field', ValueState, {
       name: 'Choose a field to search',
-      suggestions: _.sortBy(this.pills, p => p.searchDisplay).map(pill =>
-        pill.makeOption()
-      ),
+      suggestions: _.sortBy(this.pills, (p) => p.searchDisplay).map((pill) => pill.makeOption()),
       suggestionLimit: 30,
-      icon: v => {
+      icon: (v) => {
         if (_.isNil(v)) return '<i class="fa fa-search"></i>';
-        const pill = this.pills.find(
-          pill => pill.searchKey === v.meta.searchKey
-        );
+        const pill = this.pills.find((pill) => pill.searchKey === v.meta.searchKey);
         return pill.makeIcon();
-      }
-    }).branch(...this.pills.map(pill => pill.makeBranch()));
+      },
+    }).branch(...this.pills.map((pill) => pill.makeBranch()));
 
     this.lexRef = new Lex({
       language: language,
       placeholder: 'Search items...',
-      tokenXIcon: '<i class="fa fa-remove"></i>'
+      tokenXIcon: '<i class="fa fa-remove"></i>',
     });
 
     this.lexRef.on('query changed', (...args) => {
       const model = args[0];
       const newFilters = filtersUtil.newFilters();
 
-      model.forEach(item => {
-        const pill = this.pills.find(
-          pill => pill.searchKey === item.field.meta.searchKey
-        );
+      model.forEach((item) => {
+        const pill = this.pills.find((pill) => pill.searchKey === item.field.meta.searchKey);
         if (!_.isNil(pill)) {
           pill.lex2Filters(item, newFilters);
         }
       });
 
       // Add hidden filters back to the newly created filters if applicable
-      const enableClause = filtersUtil.findPositiveFacetClause(
-        this.filters,
-        'enable'
-      );
+      const enableClause = filtersUtil.findPositiveFacetClause(this.filters, 'enable');
       if (!_.isNil(enableClause)) {
         filtersUtil.setClause(
           newFilters,
@@ -267,13 +253,13 @@ export default {
   },
   methods: {
     ...mapActions({
-      setSearchFilters: 'query/setSearchFilters'
+      setSearchFilters: 'query/setSearchFilters',
     }),
     setQuery() {
       if (!this.lexRef) return;
       const lexQuery = [];
-      this.filters.clauses.forEach(clause => {
-        const pill = this.pills.find(pill => pill.searchKey === clause.field);
+      this.filters.clauses.forEach((clause) => {
+        const pill = this.pills.find((pill) => pill.searchKey === clause.field);
         if (!_.isNil(pill)) {
           const selectedPill = pill.makeOption();
           pill.filters2Lex(clause, selectedPill, lexQuery);
@@ -283,16 +269,14 @@ export default {
     },
     clearSearch() {
       this.lexRef.reset();
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-
 .search-bar-container :deep {
   @import '@/styles/lex-overrides';
   @include lex-wrapper;
 }
-
 </style>

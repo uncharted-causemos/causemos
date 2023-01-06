@@ -8,7 +8,10 @@
     >
       <template #title>Delete Project</template>
       <template #message>
-        <p>Are you sure you want to delete <strong>{{ project.name }}</strong> and all associated instances?</p>
+        <p>
+          Are you sure you want to delete <strong>{{ project.name }}</strong> and all associated
+          instances?
+        </p>
         <message-display
           :message="'Warning: This action cannot be undone.'"
           :message-type="'alert-warning'"
@@ -17,13 +20,15 @@
     </modal-confirmation>
     <div class="project-card-header" @click="open()">
       <span class="table-column extra-wide overflow-ellipsis project-name">
-        {{project.name}}
+        {{ project.name }}
       </span>
       <div class="table-column">
         {{ project.numReady }}
       </div>
       <div v-if="project.type !== 'dataset'" class="table-column">
-        <span :style="{color: project.numDraft > 0 ? 'red' : 'black'}">{{ project.numDraft }}</span>
+        <span :style="{ color: project.numDraft > 0 ? 'red' : 'black' }">{{
+          project.numDraft
+        }}</span>
       </div>
       <div class="table-column extra-wide overflow-ellipsis">
         {{ project.source }}
@@ -41,7 +46,6 @@
 </template>
 
 <script lang="ts">
-
 import { defineComponent, ref, PropType } from 'vue';
 import { mapActions } from 'vuex';
 
@@ -60,13 +64,13 @@ export default defineComponent({
   components: {
     ModalConfirmation,
     MessageDisplay,
-    SmallIconButton
+    SmallIconButton,
   },
   props: {
     project: {
       type: Object as PropType<DatacubeFamily>,
-      default: () => ({})
-    }
+      default: () => ({}),
+    },
   },
   setup() {
     const showMore = ref(false);
@@ -74,12 +78,12 @@ export default defineComponent({
 
     return {
       showMore,
-      showModal
+      showModal,
     };
   },
   methods: {
     ...mapActions({
-      clearLastQuery: 'query/clearLastQuery'
+      clearLastQuery: 'query/clearLastQuery',
     }),
     dateFormatter,
     toggleShowMore() {
@@ -99,16 +103,16 @@ export default defineComponent({
         name: this.project.type === 'dataset' ? 'datasetOverview' : 'domainDatacubeOverview',
         params: {
           project: this.project.id as string,
-          projectType: this.project.type
-        }
+          projectType: this.project.type,
+        },
       });
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style scoped lang="scss">
-@import "~styles/variables";
+@import '~styles/variables';
 
 .project-card-container {
   background: white;

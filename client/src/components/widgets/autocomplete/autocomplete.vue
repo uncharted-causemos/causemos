@@ -11,26 +11,27 @@
       @keydown.down="onArrowDown"
       @keydown.up="onArrowUp"
       @keydown.enter="onEnter"
-    >
+    />
     <div
       v-if="showSuggestions"
       class="autocomplete-results-container"
-      :style="suggestionsResultStyle">
-      <ul
-        class="autocomplete-results">
+      :style="suggestionsResultStyle"
+    >
+      <ul class="autocomplete-results">
         <li
           v-for="(suggestion, i) in suggestions"
           :key="i"
           class="autocomplete-result dropdown-option"
-          :class="{ 'is-active': (i === selectedIndex || selectedFn(suggestion)) }"
-          @click.stop.prevent="setSearchTerm(suggestion)">
+          :class="{ 'is-active': i === selectedIndex || selectedFn(suggestion) }"
+          @click.stop.prevent="setSearchTerm(suggestion)"
+        >
           <component
             v-if="displayType && displayType !== ''"
             :is="displayType"
             :item="suggestion"
           />
           <div v-else>
-            {{suggestion}}
+            {{ suggestion }}
           </div>
         </li>
       </ul>
@@ -39,44 +40,43 @@
 </template>
 
 <script lang="ts">
-
 import { defineComponent } from 'vue';
 import ConceptDisplay from '@/components/widgets/autocomplete/concept-display.vue';
 
 export default defineComponent({
   name: 'AutoComplete',
   components: {
-    ConceptDisplay
+    ConceptDisplay,
   },
   props: {
     placeholderMessage: {
       type: String,
       required: false,
-      default: () => ''
+      default: () => '',
     },
     displayType: {
-      type: String
+      type: String,
     },
     focusInput: {
       type: Boolean,
-      default: false
+      default: false,
     },
     styleResults: {
       type: Boolean,
-      default: false
+      default: false,
     },
     placeholderColor: {
       type: String,
-      default: 'black'
+      default: 'black',
     },
     searchFn: {
       type: Function,
-      required: true
+      required: true,
     },
     selectedFn: {
       type: Function,
-      default: () => false
-    }
+      default: () => false,
+    },
   },
   emits: ['item-selected'],
   computed: {
@@ -85,13 +85,13 @@ export default defineComponent({
     },
     suggestionsResultStyle(): string {
       return 'position: ' + (this.styleResults ? 'absolute' : 'relative');
-    }
+    },
   },
   data: () => ({
     searchTerm: '',
     suggestions: [],
     selectedIndex: -1,
-    showSuggestions: false
+    showSuggestions: false,
   }),
   mounted() {
     this.onChange();
@@ -129,9 +129,9 @@ export default defineComponent({
       this.searchTerm = suggestion;
     },
     onClickOutside(event: MouseEvent) {
-      const containerElement = (this.$refs.containerElement as HTMLElement);
+      const containerElement = this.$refs.containerElement as HTMLElement;
       // input just lost focus, but was that because the user clicked on one of the suggestions?
-      if ((event.target instanceof Element) && containerElement.contains(event.target)) {
+      if (event.target instanceof Element && containerElement.contains(event.target)) {
         // Click was within this element, so do nothing
         return;
       }
@@ -141,8 +141,8 @@ export default defineComponent({
       this.searchTerm = suggestion;
       this.$emit('item-selected', suggestion);
       this.showSuggestions = false;
-    }
-  }
+    },
+  },
 });
 </script>
 

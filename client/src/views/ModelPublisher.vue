@@ -53,21 +53,35 @@ import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import { updateDatacube, generateSparklines, getDefaultModelRunMetadata } from '@/services/new-datacube-service';
-import { Datacube, DatacubeFeature, Model, ModelParameter, ModelPublishingStep } from '@/types/Datacube';
+import {
+  updateDatacube,
+  generateSparklines,
+  getDefaultModelRunMetadata,
+} from '@/services/new-datacube-service';
+import {
+  Datacube,
+  DatacubeFeature,
+  Model,
+  ModelParameter,
+  ModelPublishingStep,
+} from '@/types/Datacube';
 import {
   AggregationOption,
   TemporalResolutionOption,
   DatacubeStatus,
   ModelPublishingStepID,
   TemporalResolution,
-  DatacubeViewMode
+  DatacubeViewMode,
 } from '@/types/Enums';
 import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useToaster from '@/services/composables/useToaster';
-import { getFirstInsight, InsightFilterFields, countPublicInsights } from '@/services/insight-service';
+import {
+  getFirstInsight,
+  InsightFilterFields,
+  countPublicInsights,
+} from '@/services/insight-service';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
@@ -80,7 +94,7 @@ export default defineComponent({
     DatacubeCard,
     DatacubeModelHeader,
     ModelDescription,
-    ModelPublishingChecklist
+    ModelPublishingChecklist,
   },
   setup() {
     const store = useStore();
@@ -88,15 +102,20 @@ export default defineComponent({
     const toast = useToaster();
     const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
     const countInsights = computed(() => store.getters['insightPanel/countInsights']);
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const datacubeCurrentOutputsMap = computed(
+      () => store.getters['app/datacubeCurrentOutputsMap']
+    );
     const dataState = computed<DataState | null>(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const currentView = computed(() => store.getters['app/currentView']);
 
-    const currentPublishStep: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentPublishStep']);
+    const currentPublishStep: ComputedRef<number> = computed(
+      () => store.getters['modelPublishStore/currentPublishStep']
+    );
 
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
-    const setCurrentPublishStep = (step: ModelPublishingStepID) => store.dispatch('modelPublishStore/setCurrentPublishStep', step);
+    const setCurrentPublishStep = (step: ModelPublishingStepID) =>
+      store.dispatch('modelPublishStore/setCurrentPublishStep', step);
 
     const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
     const disableOverlay = () => store.dispatch('app/disableOverlay');
@@ -105,7 +124,7 @@ export default defineComponent({
     const initialViewConfig = ref<ViewState | null>({
       temporalAggregation: AggregationOption.None,
       spatialAggregation: AggregationOption.None,
-      temporalResolution: TemporalResolutionOption.None
+      temporalResolution: TemporalResolutionOption.None,
     });
 
     // reset on init:
@@ -121,18 +140,18 @@ export default defineComponent({
       {
         id: ModelPublishingStepID.Enrich_Description,
         text: 'Enrich your description',
-        completed: false
+        completed: false,
       },
       {
         id: ModelPublishingStepID.Tweak_Visualization,
         text: 'Tweak the visualization',
-        completed: false
+        completed: false,
       },
       {
         id: ModelPublishingStepID.Capture_Insight,
         text: 'Capture model insight',
-        completed: false
-      }
+        completed: false,
+      },
     ]);
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -157,7 +176,10 @@ export default defineComponent({
           // we have a store entry for the selected output of the current model
           initialOutputIndex = currentOutputEntry;
         } else {
-          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+          initialOutputIndex =
+            metadata.value.validatedOutputs?.findIndex(
+              (o) => o.name === metadata.value?.default_feature
+            ) ?? 0;
 
           // update the store
           updateDatacubesOutputsMap(datacubeKey, store, route, initialOutputIndex);
@@ -178,54 +200,70 @@ export default defineComponent({
     };
 
     watch(
-      () => [
-        countInsights.value
-      ],
+      () => [countInsights.value],
       async () => {
         if (metadata.value) {
-          const insightStep = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Capture_Insight);
+          const insightStep = publishingSteps.value.find(
+            (s) => s.id === ModelPublishingStepID.Capture_Insight
+          );
           const publicInsightCount = await countPublicInsights(metadata.value.id, projectId.value);
           // mark the relevant step as completed based on the availability of at least one public insight
-          if (insightStep) { insightStep.completed = publicInsightCount > 0; }
-          if (publicInsightCount === 0 && metadata.value.status === DatacubeStatus.Ready && currentView.value === 'modelPublisher') {
-            toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', TYPE.INFO, false);
+          if (insightStep) {
+            insightStep.completed = publicInsightCount > 0;
+          }
+          if (
+            publicInsightCount === 0 &&
+            metadata.value.status === DatacubeStatus.Ready &&
+            currentView.value === 'modelPublisher'
+          ) {
+            toast(
+              "There isn't an insight found!\nPlease save an insight or unpublish the model!",
+              TYPE.INFO,
+              false
+            );
           }
         }
       },
       {
-        immediate: true
+        immediate: true,
       }
     );
 
-    const showPublishingStep = (publishStepInfo: {publishStep: ModelPublishingStep}) => {
+    const showPublishingStep = (publishStepInfo: { publishStep: ModelPublishingStep }) => {
       setCurrentPublishStep(publishStepInfo.publishStep.id);
       // @NOTE: some strange Vue issue does not force the update to "tabState.value" to be triggered in the datacube-card
       //         so the following hack is used
       tabState.value = '';
       nextTick(() => {
-        tabState.value = publishStepInfo.publishStep.id === ModelPublishingStepID.Enrich_Description ? DatacubeViewMode.Description : DatacubeViewMode.Data;
+        tabState.value =
+          publishStepInfo.publishStep.id === ModelPublishingStepID.Enrich_Description
+            ? DatacubeViewMode.Description
+            : DatacubeViewMode.Data;
       });
     };
 
-    const addSparkline = async(meta: Datacube) => {
+    const addSparkline = async (meta: Datacube) => {
       const feature = meta.default_feature;
-      const output = meta.outputs.find(output => output.name === feature);
-      const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+      const output = meta.outputs.find((output) => output.name === feature);
+      const rawResolution =
+        output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
       const finalRawTimestamp = meta.period?.lte ?? 0;
       const defaultRun = await getDefaultModelRunMetadata(meta.id);
-      const sparklineResult = await generateSparklines([{
-        id: meta.id,
-        dataId: meta.data_id,
-        // This function is called when publishing model, which means it's safe
-        //  to assert that selectedScenarioIds is defined
-        runId: defaultRun?.id ?? (selectedScenarioIds.value as string[])[0],
-        feature: feature,
-        resolution: selectedTemporalResolution.value,
-        temporalAgg: selectedTemporalAggregation.value,
-        spatialAgg: selectedSpatialAggregation.value,
-        rawResolution: rawResolution,
-        finalRawTimestamp: finalRawTimestamp
-      }]);
+      const sparklineResult = await generateSparklines([
+        {
+          id: meta.id,
+          dataId: meta.data_id,
+          // This function is called when publishing model, which means it's safe
+          //  to assert that selectedScenarioIds is defined
+          runId: defaultRun?.id ?? (selectedScenarioIds.value as string[])[0],
+          feature: feature,
+          resolution: selectedTemporalResolution.value,
+          temporalAgg: selectedTemporalAggregation.value,
+          spatialAgg: selectedSpatialAggregation.value,
+          rawResolution: rawResolution,
+          finalRawTimestamp: finalRawTimestamp,
+        },
+      ]);
       console.log('Sparkline requested: ' + sparklineResult);
     };
 
@@ -247,7 +285,7 @@ export default defineComponent({
           const modelToUpdate = _.cloneDeep(metadata.value);
           delete modelToUpdate.sparkline;
           delete modelToUpdate.validatedOutputs;
-          const drilldownParams = modelToUpdate.parameters.filter(p => p.is_drilldown);
+          const drilldownParams = modelToUpdate.parameters.filter((p) => p.is_drilldown);
           drilldownParams.forEach((p: any) => {
             // legacy field
             if (p.roles) {
@@ -270,8 +308,8 @@ export default defineComponent({
             name: 'domainDatacubeOverview',
             params: {
               project: projectId.value,
-              projectType: modelToUpdate.type
-            }
+              projectType: modelToUpdate.type,
+            },
           });
         } catch {
           toast('Failed to publish model', TYPE.INFO, true);
@@ -284,12 +322,15 @@ export default defineComponent({
       () => [
         selectedSpatialAggregation.value,
         selectedTemporalAggregation.value,
-        selectedTemporalResolution.value
+        selectedTemporalResolution.value,
       ],
       () => {
-        const vizConfigStep = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Tweak_Visualization);
+        const vizConfigStep = publishingSteps.value.find(
+          (s) => s.id === ModelPublishingStepID.Tweak_Visualization
+        );
         if (vizConfigStep) {
-          vizConfigStep.completed = selectedSpatialAggregation.value !== AggregationOption.None &&
+          vizConfigStep.completed =
+            selectedSpatialAggregation.value !== AggregationOption.None &&
             selectedTemporalAggregation.value !== AggregationOption.None &&
             selectedTemporalResolution.value !== TemporalResolutionOption.None;
         }
@@ -300,7 +341,7 @@ export default defineComponent({
       () => [
         selectedScenarioIds.value,
         selectedTemporalAggregation.value,
-        selectedTemporalResolution.value
+        selectedTemporalResolution.value,
       ],
       () => {
         if (selectedScenarioIds.value && selectedScenarioIds.value.length > 0) {
@@ -320,14 +361,18 @@ export default defineComponent({
 
     const onModelParamUpdated = (updatedModelParam: ModelParameter) => {
       if (metadata.value !== null) {
-        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(p => p.name === updatedModelParam.name);
+        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(
+          (p) => p.name === updatedModelParam.name
+        );
         (metadata.value as Model).parameters[updatedParamIndex] = updatedModelParam;
         refreshMetadata();
       }
     };
 
     const updateModelMetadataValidity = (valid: boolean) => {
-      const metadataStep = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Enrich_Description);
+      const metadataStep = publishingSteps.value.find(
+        (s) => s.id === ModelPublishingStepID.Enrich_Description
+      );
       if (metadataStep) {
         metadataStep.completed = valid;
       }
@@ -360,7 +405,7 @@ export default defineComponent({
       getFirstPublicInsight,
       projectId,
       toast,
-      currentView
+      currentView,
     };
   },
   watch: {
@@ -377,8 +422,8 @@ export default defineComponent({
           }
         }
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   async mounted() {
     // ensure the insight explorer panel is closed in case the user has
@@ -395,7 +440,10 @@ export default defineComponent({
       // check if a public insight exist for this model instance
       // first, fetch public insights to load the publication status, as needed
       // FIXME: Fetch the first default insight, not the first public insight
-      const defaultInsight = await this.getFirstPublicInsight(this.metadata?.id as string, this.projectId);
+      const defaultInsight = await this.getFirstPublicInsight(
+        this.metadata?.id as string,
+        this.projectId
+      );
       if (defaultInsight) {
         //
         // FIXME: only apply public insight if no, other, insight is being applied
@@ -413,22 +461,33 @@ export default defineComponent({
           if (defaultInsight.view_state !== undefined) {
             this.initialViewConfig = defaultInsight.view_state;
           }
-          this.toast('An existing published insight was found!\nLoading default configurations...', TYPE.SUCCESS, false);
+          this.toast(
+            'An existing published insight was found!\nLoading default configurations...',
+            TYPE.SUCCESS,
+            false
+          );
         }
       } else {
-        if (this.metadata?.status === DatacubeStatus.Ready && this.currentView === 'modelPublisher') {
-          this.toast('There isn\'t an insight found!\nPlease save an insight or unpublish the model!', TYPE.INFO, false);
+        if (
+          this.metadata?.status === DatacubeStatus.Ready &&
+          this.currentView === 'modelPublisher'
+        ) {
+          this.toast(
+            "There isn't an insight found!\nPlease save an insight or unpublish the model!",
+            TYPE.INFO,
+            false
+          );
         }
       }
     }
     if (markInsightStepAsCompleted) {
       // mark the last step (i.e., the insight step) as completed
-      const step = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Capture_Insight);
+      const step = this.publishingSteps.find((s) => s.id === ModelPublishingStepID.Capture_Insight);
       if (step) {
         step.completed = true;
       }
     }
-  }
+  },
 });
 </script>
 
@@ -454,5 +513,4 @@ export default defineComponent({
   flex: 1;
   margin: 0 10px 10px 0;
 }
-
 </style>

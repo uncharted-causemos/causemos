@@ -4,24 +4,25 @@ import { CAGModelSummary, ProjectionConstraint, ScenarioProjection } from '@/typ
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
-import { calculateYearlyTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
-import * as d3 from 'd3';
 import {
-  hideSvgTooltip,
-  showSvgTooltip,
-  translate
-} from '@/utils/svg-util';
+  calculateYearlyTicks,
+  renderLine,
+  renderXaxis,
+  renderYaxis,
+} from '@/utils/timeseries-util';
+import * as d3 from 'd3';
+import { hideSvgTooltip, showSvgTooltip, translate } from '@/utils/svg-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { getTimestampAfterMonths } from '@/utils/date-util';
 import {
   getMonthsPerTimestepFromTimeScale,
   getStepCountFromTimeScale,
-  getTimeScaleOption
+  getTimeScaleOption,
 } from '@/utils/time-scale-util';
 
 import {
   calculateTypicalChangeBracket,
-  convertDistributionTimeseriesToRidgelines
+  convertDistributionTimeseriesToRidgelines,
 } from '@/utils/ridgeline-util';
 
 import { TimeScale } from '@/types/Enums';
@@ -55,7 +56,7 @@ const DISCRETE_Y_POSITION_COUNT = 31;
 
 const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
 
-export default function(
+export default function (
   selection: D3Selection,
   totalWidth: number,
   totalHeight: number,
@@ -112,9 +113,7 @@ export default function(
     xExtent,
     yExtent
   );
-  const focusGroupElement = selection
-    .append('g')
-    .classed('focusGroupElement', true);
+  const focusGroupElement = selection.append('g').classed('focusGroupElement', true);
 
   // Build scroll bar for zooming and panning
   const scrollBarHeight = totalHeight * SCROLL_BAR_HEIGHT_PERCENTAGE;
@@ -126,9 +125,7 @@ export default function(
     xExtent,
     yExtent
   );
-  const scrollBarGroupElement = selection
-    .append('g')
-    .classed('scrollBarGroupElement', true);
+  const scrollBarGroupElement = selection.append('g').classed('scrollBarGroupElement', true);
 
   // Add background to scrollbar
   scrollBarGroupElement
@@ -150,17 +147,14 @@ export default function(
     xScaleScrollbar,
     yScaleScrollbar
   );
-  scrollBarGroupElement
-    .selectAll('.segment-line')
-    .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
-
+  scrollBarGroupElement.selectAll('.segment-line').attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
 
   // Create brush object and position over scroll bar
   const brush = d3
     .brushX()
     .extent([
       [xScaleScrollbar.range()[0], yScaleScrollbar.range()[1]],
-      [xScaleScrollbar.range()[1], yScaleScrollbar.range()[0]]
+      [xScaleScrollbar.range()[1], yScaleScrollbar.range()[0]],
     ])
     .on('start brush end', brushed);
 
@@ -182,9 +176,7 @@ export default function(
     .attr('stroke', SCROLL_BAR_RANGE_STROKE)
     .attr('opacity', SCROLL_BAR_RANGE_OPACITY);
 
-  scrollBarGroupElement
-    .selectAll('text')
-    .style('pointer-events', 'none');
+  scrollBarGroupElement.selectAll('text').style('pointer-events', 'none');
 
   // Add clipping mask to hide elements that are outside the focus chart area when zoomed in
   // Note We need a little extra buffer to accommodate extra visuals in the last projected timestamp
@@ -198,32 +190,36 @@ export default function(
     .attr('height', yScaleFocus.range()[0] - yScaleFocus.range()[1])
     .attr('transform', translate(PADDING_RIGHT, PADDING_TOP));
 
-
   function brushHandle(g: D3GElementSelection, selection: number[]) {
     const enterFn = (enter: D3Selection) => {
       const handleW = 9;
       const handleWGap = -2;
       const handleHGap = 0;
-      const handleH = (SCROLL_BAR_HEIGHT_PERCENTAGE * totalHeight) - 2 * handleHGap;
+      const handleH = SCROLL_BAR_HEIGHT_PERCENTAGE * totalHeight - 2 * handleHGap;
 
-      const container = enter.append('g')
+      const container = enter
+        .append('g')
         .attr('class', 'custom-handle')
         .attr('cursor', 'ew-resize');
 
-      container.append('rect')
+      container
+        .append('rect')
         .attr('fill', '#f8f8f8')
         .attr('stroke', '#888888')
         .attr('y', handleHGap)
-        .attr('x', (d, i) => i === 0 ? -(handleW + handleWGap) : handleWGap)
+        .attr('x', (d, i) => (i === 0 ? -(handleW + handleWGap) : handleWGap))
         .attr('rx', 4)
         .attr('ry', 4)
         .attr('width', handleW)
         .attr('height', handleH);
 
       // Vertical dots
-      [0.3, 0.5, 0.7].forEach(value => {
-        container.append('circle')
-          .attr('cx', (d, i) => i === 0 ? -(0.5 * handleW + handleWGap) : 0.5 * handleW + handleWGap)
+      [0.3, 0.5, 0.7].forEach((value) => {
+        container
+          .append('circle')
+          .attr('cx', (d, i) =>
+            i === 0 ? -(0.5 * handleW + handleWGap) : 0.5 * handleW + handleWGap
+          )
           .attr('cy', handleHGap + handleH * value)
           .attr('r', 1.25)
           .attr('fill', '#888888');
@@ -236,7 +232,6 @@ export default function(
       .attr('transform', (d, i) => translate(selection[i], 0));
   }
 
-
   // Redraw chart whenever axis is brushed
   //  Also gets called with "initialBrushSelection"
   function brushed({ selection }: { selection: number[] }) {
@@ -244,13 +239,10 @@ export default function(
     // If right handle is outside the scrollbar range, clamp it back into the
     //  range. This can happen if the analyst resizes the page to be narrower.
     const rangeMax = xScaleScrollbar.range()[1];
-    const rightHandleXPosition = selection[1] <= rangeMax
-      ? selection[1]
-      : rangeMax;
+    const rightHandleXPosition = selection[1] <= rangeMax ? selection[1] : rangeMax;
     // Similarly, ensure the left handle is always below the right handle
-    const leftHandleXPosition = selection[0] < rightHandleXPosition
-      ? selection[0]
-      : rightHandleXPosition - 1;
+    const leftHandleXPosition =
+      selection[0] < rightHandleXPosition ? selection[0] : rightHandleXPosition - 1;
     selection = [leftHandleXPosition, rightHandleXPosition];
     scrollBarGroupElement.datum(selection);
     scrollBarGroupElement.select('.brush').call(brushHandle as any, selection);
@@ -278,33 +270,15 @@ export default function(
     const yOffset = focusHeight - X_AXIS_HEIGHT;
     const xOffset = totalWidth - PADDING_RIGHT;
 
-    renderXaxis(
-      focusGroupElement,
-      xScaleFocus,
-      xAxisTicksFocus,
-      yOffset,
-      DATE_FORMATTER
-    );
+    renderXaxis(focusGroupElement, xScaleFocus, xAxisTicksFocus, yOffset, DATE_FORMATTER);
     // only render the yAxis if 0 is in the range and longer than 2 elements
     if (yScaleFocus.domain()[0] < 0 && yScaleFocus.domain()[1] > 0) {
-      renderYaxis(
-        focusGroupElement,
-        yScaleFocus,
-        [0],
-        valueFormatter,
-        xOffset,
-        Y_AXIS_WIDTH
-      );
+      renderYaxis(focusGroupElement, yScaleFocus, [0], valueFormatter, xOffset, Y_AXIS_WIDTH);
     }
 
     focusGroupElement.selectAll('.yAxis .domain').remove();
     focusGroupElement.selectAll('.yAxis .tick line').style('color', '#ddd');
-    renderHistoricalTimeseries(
-      historicalTimeseries,
-      focusGroupElement,
-      xScaleFocus,
-      yScaleFocus
-    );
+    renderHistoricalTimeseries(historicalTimeseries, focusGroupElement, xScaleFocus, yScaleFocus);
     const { projection_start, time_scale } = modelSummary.parameter;
     // get the correct number of steps based on the currently selected time_scale
     //  rather than the deprecated value from the parameter.num_steps
@@ -375,13 +349,11 @@ const calculateExtents = (
 
   const pointsToInclude = [
     minVisibleHistoricalPoint,
-    ...historicalTimeseries.map(getTimestampFromPoint)
+    ...historicalTimeseries.map(getTimestampFromPoint),
   ];
 
   if (!isClampAreaHidden) {
-    const projectedPoints = projections.flatMap(
-      projection => projection.values
-    );
+    const projectedPoints = projections.flatMap((projection) => projection.values);
     pointsToInclude.push(...projectedPoints.map(getTimestampFromPoint));
   } else {
     // if clamps are hidden, go up to projection_staart
@@ -400,10 +372,7 @@ const calculateScales = (
   xExtent: [number, number],
   yExtent: [number, number]
 ) => {
-  const xScale = d3
-    .scaleLinear()
-    .domain(xExtent)
-    .range([left, width]);
+  const xScale = d3.scaleLinear().domain(xExtent).range([left, width]);
   const yScale = d3
     .scaleLinear()
     .domain(yExtent)
@@ -421,34 +390,27 @@ const renderStaticElements = (
   historicalTimeseries: TimeseriesPoint[],
   modelSummary: CAGModelSummary
 ) => {
-  const {
-    projection_start: projectionStartTimestamp,
-    time_scale: timeScale
-  } = modelSummary.parameter;
+  const { projection_start: projectionStartTimestamp, time_scale: timeScale } =
+    modelSummary.parameter;
   const stepCount = getStepCountFromTimeScale(timeScale);
   const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
-  const stepTimestamps = _.range(stepCount).map(stepIndex =>
-    getTimestampAfterMonths(
-      projectionStartTimestamp,
-      stepIndex * monthsPerTimestep
-    )
+  const stepTimestamps = _.range(stepCount).map((stepIndex) =>
+    getTimestampAfterMonths(projectionStartTimestamp, stepIndex * monthsPerTimestep)
   );
   // Draw a vertical line at each step
   const bottomYValue = offsetFromTop + yScale.range()[0] - yScale.range()[1];
   const lineGenerator = d3
     .line<{ timestamp: number; isBottom: boolean }>()
-    .x(d => xScale(d.timestamp))
-    .y(d =>
-      d.isBottom ? bottomYValue : offsetFromTop
-    );
+    .x((d) => xScale(d.timestamp))
+    .y((d) => (d.isBottom ? bottomYValue : offsetFromTop));
   groupElement
     .selectAll('.grid-timestamp-line')
     .data(stepTimestamps)
     .join('path')
-    .attr('d', timestamp =>
+    .attr('d', (timestamp) =>
       lineGenerator([
         { timestamp, isBottom: false },
-        { timestamp, isBottom: true }
+        { timestamp, isBottom: true },
       ])
     )
     .classed('grid-timestamp-line', true)
@@ -457,7 +419,10 @@ const renderStaticElements = (
 
   // Render rectangle to delineate between historical data and projection data
   const historicalStartTimestamp = xScale.domain()[0];
-  const historicalEndTimestamp = getTimestampAfterMonths(projectionStartTimestamp, -monthsPerTimestep);
+  const historicalEndTimestamp = getTimestampAfterMonths(
+    projectionStartTimestamp,
+    -monthsPerTimestep
+  );
   if (historicalEndTimestamp > historicalStartTimestamp) {
     // Don't render the rectangle if it's not visible (avoids error from trying
     //  to render a rectangle with a negative width)
@@ -466,37 +431,34 @@ const renderStaticElements = (
       .attr('y', offsetFromTop)
       .attr('x', xScale(historicalStartTimestamp))
       .attr('height', bottomYValue - offsetFromTop)
-      .attr(
-        'width',
-        xScale(historicalEndTimestamp) - xScale(historicalStartTimestamp)
-      )
+      .attr('width', xScale(historicalEndTimestamp) - xScale(historicalStartTimestamp))
       .attr('stroke', 'none')
-      .attr('fill', historicalDataUncertaintyColor(historicalTimeseries, projectionStartTimestamp, timeScale));
+      .attr(
+        'fill',
+        historicalDataUncertaintyColor(historicalTimeseries, projectionStartTimestamp, timeScale)
+      );
   }
 
   // Render major ticks
   // "Now" is one timestep before projection start
-  const nowTimestamp = getTimestampAfterMonths(
-    projectionStartTimestamp,
-    -1 * monthsPerTimestep
-  );
+  const nowTimestamp = getTimestampAfterMonths(projectionStartTimestamp, -1 * monthsPerTimestep);
   const timeSlices = getTimeScaleOption(timeScale).timeSlices;
   const timeSliceTimestamps = timeSlices.map(({ months }) => {
     return getTimestampAfterMonths(nowTimestamp, months);
   });
   const majorTickTimestamps = [nowTimestamp, ...timeSliceTimestamps];
   const timeSliceLabels = getTimeScaleOption(timeScale).timeSlices.map(
-    timeslice => timeslice.label
+    (timeslice) => timeslice.label
   );
   const majorTickLabels = ['now', ...timeSliceLabels];
   groupElement
     .selectAll('.grid-timeslice-line')
     .data(majorTickTimestamps)
     .join('path')
-    .attr('d', timestamp =>
+    .attr('d', (timestamp) =>
       lineGenerator([
         { timestamp, isBottom: false },
-        { timestamp, isBottom: true }
+        { timestamp, isBottom: true },
       ])
     )
     .classed('grid-timeslice-line', true)
@@ -548,13 +510,7 @@ const renderHistoricalTimeseries = (
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>
 ) => {
-  renderLine(
-    parentGroupElement,
-    historicalTimeseries,
-    xScale,
-    yScale,
-    HISTORICAL_DATA_COLOR
-  );
+  renderLine(parentGroupElement, historicalTimeseries, xScale, yScale, HISTORICAL_DATA_COLOR);
 };
 
 const renderProjectionRidgelines = (
@@ -571,7 +527,7 @@ const renderProjectionRidgelines = (
   yScale: d3.ScaleLinear<number, number>
 ) => {
   const ridgeLineGroup = parentGroupElement.append('g');
-  const currentProjection = projections.find(p => p.scenarioId === selectedScenarioId);
+  const currentProjection = projections.find((p) => p.scenarioId === selectedScenarioId);
 
   if (!currentProjection) {
     console.error(`Unable to find selected scenario ${selectedScenarioId}`);
@@ -594,7 +550,7 @@ const renderProjectionRidgelines = (
   }
 
   // Render each ridgeline
-  ridgeLines.forEach(ridgelineWithMetadata => {
+  ridgeLines.forEach((ridgelineWithMetadata) => {
     const { timestamp, monthsAfterNow } = ridgelineWithMetadata;
     const contextRange = calculateTypicalChangeBracket(
       historicalTimeseries,
@@ -632,17 +588,20 @@ const renderConstraints = (
     ...historicalTimeseries.map(({ timestamp, value }) => ({
       cx: xScale(timestamp),
       cy: yScale(value),
-      color: HISTORICAL_DATA_COLOR
+      color: HISTORICAL_DATA_COLOR,
     })),
     ...constraints.map(({ step, value }) => {
       const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
-      const constraintTimestamp = getTimestampAfterMonths(projectionStartTimestamp, monthsPerTimestep * step);
+      const constraintTimestamp = getTimestampAfterMonths(
+        projectionStartTimestamp,
+        monthsPerTimestep * step
+      );
       return {
         cx: xScale(constraintTimestamp),
         cy: yScale(value),
-        color: SELECTED_COLOR
+        color: SELECTED_COLOR,
       };
-    })
+    }),
   ];
   // Render circles
   parentGroupElement
@@ -696,12 +655,11 @@ const generateClickableAreas = (
     .attr('stroke', 'none')
     .attr('cursor', 'pointer');
 
-  const spaceBetweenDiscreteYValues =
-    timelineRectHeight / (DISCRETE_Y_POSITION_COUNT - 1);
+  const spaceBetweenDiscreteYValues = timelineRectHeight / (DISCRETE_Y_POSITION_COUNT - 1);
   // FIXME: we should use chartValueFormatter here but it's currently a little wonky,
   // showing far too many digits
   const valueFormatter = (v: number) => v.toPrecision(3);
-  timelineRect.on('mousemove', function(event: MouseEvent) {
+  timelineRect.on('mousemove', function (event: MouseEvent) {
     const { step, yPositionIndex } = getDiscreteIndicesFromMouseEvent(
       event,
       PADDING_TOP,
@@ -712,10 +670,12 @@ const generateClickableAreas = (
       timeScale
     );
     const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
-    const discreteTimestamp = getTimestampAfterMonths(projectionStartTimestamp, monthsPerTimestep * step);
+    const discreteTimestamp = getTimestampAfterMonths(
+      projectionStartTimestamp,
+      monthsPerTimestep * step
+    );
     const discreteXPosition = xScale(discreteTimestamp);
-    const discreteYPosition =
-      PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues;
+    const discreteYPosition = PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues;
     parentGroupElement.select('.constraint-selector').remove();
     parentGroupElement.select('.constraint-selector-support-line').remove();
     parentGroupElement
@@ -735,7 +695,7 @@ const generateClickableAreas = (
       .attr('x2', discreteXPosition)
       .attr('y2', discreteYPosition)
       .style('pointer-events', 'none')
-      .style('stroke-dasharray', ('3, 3'))
+      .style('stroke-dasharray', '3, 3')
       .style('stroke', SELECTED_COLOR);
 
     const value = yScale.invert(discreteYPosition);
@@ -747,12 +707,12 @@ const generateClickableAreas = (
       true
     );
   });
-  timelineRect.on('mouseleave', function() {
+  timelineRect.on('mouseleave', function () {
     parentGroupElement.select('.constraint-selector').remove();
     parentGroupElement.select('.constraint-selector-support-line').remove();
     hideSvgTooltip(parentGroupElement);
   });
-  timelineRect.on('click', function(event) {
+  timelineRect.on('click', function (event) {
     const { step, yPositionIndex } = getDiscreteIndicesFromMouseEvent(
       event,
       PADDING_TOP,
@@ -762,18 +722,12 @@ const generateClickableAreas = (
       projectionStartTimestamp,
       timeScale
     );
-    const value = yScale.invert(
-      PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues
-    );
+    const value = yScale.invert(PADDING_TOP + yPositionIndex * spaceBetweenDiscreteYValues);
     if (step < 0) {
       // Modify historical timeseries
       const timestamp = getTimestampAfterMonths(projectionStartTimestamp, monthsPerTimestep * step);
-      const existingPoint = historicalTimeseries.find(
-        point => point.timestamp === timestamp
-      );
-      const otherPoints = historicalTimeseries.filter(
-        point => point.timestamp !== timestamp
-      );
+      const existingPoint = historicalTimeseries.find((point) => point.timestamp === timestamp);
+      const otherPoints = historicalTimeseries.filter((point) => point.timestamp !== timestamp);
       // If constraint exists at this timestamp and value, remove it
       if (existingPoint?.value === value) {
         setHistoricalTimeseries(otherPoints);
@@ -787,12 +741,8 @@ const generateClickableAreas = (
       return;
     }
     // Otherwise, modify projection constraints
-    const existingConstraint = constraints.find(
-      constraint => constraint.step === step
-    );
-    const otherConstraints = constraints.filter(
-      constraint => constraint.step !== step
-    );
+    const existingConstraint = constraints.find((constraint) => constraint.step === step);
+    const otherConstraints = constraints.filter((constraint) => constraint.step !== step);
     // If constraint exists at this step and value, remove it
     if (existingConstraint?.value === value) {
       setConstraints(otherConstraints);
@@ -837,11 +787,10 @@ const getDiscreteIndicesFromMouseEvent = (
   // Subtract 1 from Y position count to get indices from 0 to
   //  position count - 1
   const yPositionIndex = Math.round(
-    ((pointerY - timelineRectY) / timelineRectHeight) *
-      (DISCRETE_Y_POSITION_COUNT - 1)
+    ((pointerY - timelineRectY) / timelineRectHeight) * (DISCRETE_Y_POSITION_COUNT - 1)
   );
   return {
     step: closestStepIndex,
-    yPositionIndex
+    yPositionIndex,
   };
 };

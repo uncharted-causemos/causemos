@@ -31,7 +31,8 @@ const initialize = (selection, options) => {
   const selectionConstructor = selection.node().constructor;
 
   if (selectionConstructor === SVGGElement) {
-    const g = selection.append('g')
+    const g = selection
+      .append('g')
       .attr('transform', translate(options.margin.left, options.margin.top));
 
     return {
@@ -39,7 +40,7 @@ const initialize = (selection, options) => {
       x1: options.margin.left,
       y1: options.margin.top,
       x2: options.width - options.margin.right,
-      y2: options.height - options.margin.bottom
+      y2: options.height - options.margin.bottom,
     };
   } else if (selectionConstructor === SVGSVGElement) {
     if (options.width && options.height) {
@@ -53,7 +54,8 @@ const initialize = (selection, options) => {
     const y2 = options.viewport.y2 - options.viewport.y1;
     selection.attr('viewBox', `${x1} ${y1} ${x2} ${y2}`);
 
-    const g = selection.append('g')
+    const g = selection
+      .append('g')
       .attr('transform', translate(options.margin.left, options.margin.top));
 
     return {
@@ -61,12 +63,11 @@ const initialize = (selection, options) => {
       x1: options.viewport.x1 + options.margin.left,
       y1: options.viewport.y1 + options.margin.top,
       x2: options.viewport.x2 - options.margin.right,
-      y2: options.viewport.y2 - options.margin.bottom
+      y2: options.viewport.y2 - options.margin.bottom,
     };
   } else {
     throw new Error(`Unable to initialize render context in ${selectionConstructor}`);
   }
 };
-
 
 export default initialize;

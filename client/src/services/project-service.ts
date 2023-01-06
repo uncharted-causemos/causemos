@@ -33,13 +33,15 @@ const getProjectOntologyDefinitions = async (projectId: string) => {
 // Take flattened concept the derive the original compositions
 // e.g. WM_FOO_BAR => { WM_FOO, WM_BAR }
 const getProjectOntologyComposition = async (projectId: string, concept: string) => {
-  const result = await API.get(`projects/${projectId}/ontology-composition`, { params: { concept: concept } });
+  const result = await API.get(`projects/${projectId}/ontology-composition`, {
+    params: { concept: concept },
+  });
   return result.data;
 };
 
 const getProjectFacetsPromise = async (projectId: string, facets: string[], filters: Filters) => {
   return API.get(`projects/${projectId}/facets?facets=${JSON.stringify(facets)}`, {
-    params: { filters: filters }
+    params: { filters: filters },
   });
 };
 
@@ -48,7 +50,7 @@ const createProject = async (baseId: string, projectName: string, projectDescrip
   const result = await API.post('projects', {
     baseId: baseId,
     projectName: projectName,
-    projectDescription: projectDescription
+    projectDescription: projectDescription,
   });
   const id = result.data.index;
 
@@ -73,25 +75,31 @@ const deleteProject = async (projectId: string) => {
  * @param {string} projectId Project ID
  * @param {string} description project description
  */
-const updateProjectMetadata = async(projectId: string, metadata: any) => {
+const updateProjectMetadata = async (projectId: string, metadata: any) => {
   const result = await API.put(`/projects/${projectId}/metadata`, {
-    metadata
+    metadata,
   });
   return result.data;
 };
 
 const getProjectStats = async (projectId: string, filters: Filters) => {
-  const result = await API.get(`projects/${projectId}/count-stats`, { params: { filters: filters } });
+  const result = await API.get(`projects/${projectId}/count-stats`, {
+    params: { filters: filters },
+  });
   return result.data;
 };
 
-const getProjectStatements = async (projectId: string, filters: Filters, options: FiltersOptions) => {
+const getProjectStatements = async (
+  projectId: string,
+  filters: Filters,
+  options: FiltersOptions
+) => {
   if (options.size && options.size > STATEMENT_LIMIT) options.size = STATEMENT_LIMIT;
   const result = await API.get(`projects/${projectId}/statements`, {
     params: {
       filters,
-      ...options
-    }
+      ...options,
+    },
   });
   return result.data;
 };
@@ -101,11 +109,11 @@ const getProjectStatementsForConcepts = (
   projectId: string
 ): Promise<Statement[]> => {
   const searchFilters = filtersUtil.newFilters();
-  concepts.forEach(concept => {
+  concepts.forEach((concept) => {
     filtersUtil.addSearchTerm(searchFilters, 'topic', concept, 'or', false);
   });
   return getProjectStatements(projectId, searchFilters, {
-    size: STATEMENT_LIMIT
+    size: STATEMENT_LIMIT,
   });
 };
 
@@ -123,35 +131,52 @@ const getProjectEdges = async (projectId: string, filters: Filters) => {
 };
 
 // Given a list of source/target pair and filters, get corresponding statements
-const getProjectStatementIdsByEdges = async (projectId: string, edges: SourceTargetPair[], filters: Filters) => {
+const getProjectStatementIdsByEdges = async (
+  projectId: string,
+  edges: SourceTargetPair[],
+  filters: Filters
+) => {
   const result = await API.post(`projects/${projectId}/edge-data`, { edges, filters: filters });
   return result.data;
 };
 
 const getProjectLocationsPromise = async (projectId: string, filters: Filters) => {
   const promise = API.get(`projects/${projectId}/locations`, {
-    params: { filters: filters }
+    params: { filters: filters },
   });
   return promise;
 };
 
-const createAssemblyRequest = async (projectId: string, payload: ReaderOutputRecord[], timestamp: number) => {
+const createAssemblyRequest = async (
+  projectId: string,
+  payload: ReaderOutputRecord[],
+  timestamp: number
+) => {
   const result = await API.post(`projects/${projectId}/assembly`, { records: payload, timestamp });
   return result.data;
 };
 
-const addNewConceptToOntology = async(projectId: string, label: string, examples: string[], definition: string) => {
+const addNewConceptToOntology = async (
+  projectId: string,
+  label: string,
+  examples: string[],
+  definition: string
+) => {
   const result = await API.post(`projects/${projectId}/ontology-concept`, {
     label,
     examples,
-    definition
+    definition,
   });
   return result.data;
 };
 
-const getConceptSuggestions = async(projectId: string, q: string, useEstimate: boolean | undefined = undefined) => {
+const getConceptSuggestions = async (
+  projectId: string,
+  q: string,
+  useEstimate: boolean | undefined = undefined
+) => {
   const result = await API.get(`projects/${projectId}/concept-suggestions`, {
-    params: { q, estimate: useEstimate }
+    params: { q, estimate: useEstimate },
   });
   return result.data;
 };
@@ -164,10 +189,11 @@ const getConceptSuggestions = async(projectId: string, q: string, useEstimate: b
  * @param {string} queryString - string to use to get suggestions
  */
 const getSuggestions = async (projectId: string, field: string, queryString: string) => {
-  const { data } = await API.get(`projects/${projectId}/suggestions`, { params: { field, q: queryString } });
+  const { data } = await API.get(`projects/${projectId}/suggestions`, {
+    params: { field, q: queryString },
+  });
   return data;
 };
-
 
 export default {
   getKBs,
@@ -195,6 +221,5 @@ export default {
   getConceptSuggestions,
   getSuggestions,
 
-  STATEMENT_LIMIT
+  STATEMENT_LIMIT,
 };
-

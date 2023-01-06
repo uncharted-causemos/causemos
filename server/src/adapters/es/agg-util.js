@@ -12,8 +12,8 @@ class AggUtil {
     const result = {
       terms: {
         size: DEFAULT_SIZE,
-        field: fields[0]
-      }
+        field: fields[0],
+      },
     };
     return result;
   }
@@ -36,8 +36,8 @@ class AggUtil {
     return {
       range: {
         field: fields[0],
-        ranges
-      }
+        ranges,
+      },
     };
   }
 
@@ -53,12 +53,12 @@ class AggUtil {
     const { range } = this.configFields[facetField];
     const fields = this.configFields[facetField].aggFields || this.configFields[facetField].fields;
     const subAggregation = {};
-    range.forEach(dates => {
+    range.forEach((dates) => {
       const startYear = dates.from;
       const endYear = dates.to;
       const dateAggs = [];
       // build date field range filters;
-      fields.forEach(f => {
+      fields.forEach((f) => {
         const resultRange = {};
         if (startYear !== '--') {
           // first day of the year
@@ -72,20 +72,20 @@ class AggUtil {
         }
         dateAggs.push({
           range: {
-            [f]: resultRange
-          }
+            [f]: resultRange,
+          },
         });
       });
       subAggregation[startYear] = {
         bool: {
-          should: dateAggs
-        }
+          should: dateAggs,
+        },
       };
     });
     const result = {
       filters: {
-        filters: subAggregation
-      }
+        filters: subAggregation,
+      },
     };
     return result;
   }

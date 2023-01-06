@@ -9,15 +9,15 @@ export const COLOR_MAP = Object.freeze({
   YELLOW: '#ffffbf',
   LIGHT_GREEN: '#a6d96a',
   GREEN: '#1a9641',
-  GRAY: '#bdc3c7'
+  GRAY: '#bdc3c7',
 });
 
 export const nodeBlurScale = d3.scaleLinear().domain([0, 1]).range([15, 0]);
 export const nodeColorScale = d3.scaleSequential(d3.interpolateGreys);
 
-
 // FIXME: This is weird, we should be able to use a domain [0, 0.5, 1]. We need to re-evaluate if we need to keep using VSUP or if we can build it ourselves.
-const edgeColorScale = d3.scaleLinear()
+const edgeColorScale = d3
+  .scaleLinear()
   .domain([0.15, 0.5, 0.85])
   .range(EDGE_COLOR_PALETTE)
   .interpolate(d3.interpolateLab);
@@ -40,7 +40,6 @@ export function createVSUPscale() {
   return scale;
 }
 
-
 export function calcEdgeColor(edge) {
   const colorScale = createVSUPscale();
   const belief = edge.belief_score;
@@ -48,7 +47,7 @@ export function calcEdgeColor(edge) {
     return UNDEFINED_COLOR;
   } else if (!_.isNil(edge.polarity)) {
     return colorScale(edge.polarity, belief);
-  } else if ((edge.unknown > 0) || (edge.opposite > 0 && edge.same > 0)) {
+  } else if (edge.unknown > 0 || (edge.opposite > 0 && edge.same > 0)) {
     return colorScale(0, belief).toString();
   } else if (edge.same > edge.opposite) {
     return colorScale(1, belief).toString(); // Needed to convert the output from vsup to string for cytoscape
@@ -57,7 +56,6 @@ export function calcEdgeColor(edge) {
   }
   return UNDEFINED_COLOR;
 }
-
 
 /**
  * Use weights array to scale the edge width
@@ -77,4 +75,3 @@ export function scaleByWeight(baseWidth, edgeParameter) {
     return 2 + baseWidth * w[0];
   }
 }
-

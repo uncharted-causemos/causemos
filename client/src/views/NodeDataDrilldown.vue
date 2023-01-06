@@ -1,10 +1,6 @@
 <template>
   <div class="comp-analysis-experiment-container">
-    <full-screen-modal-header
-      icon="angle-left"
-      :nav-back-label="navBackLabel"
-      @close="onBack"
-    >
+    <full-screen-modal-header icon="angle-left" :nav-back-label="navBackLabel" @close="onBack">
       <div class="header-content">
         <button
           v-tooltip.top-center="selectLabel"
@@ -14,18 +10,13 @@
           @click="attemptToSaveUpdatedNodeParameter"
         >
           <i class="fa fa-fw fa-plus-circle" />
-          {{selectLabel}}
+          {{ selectLabel }}
         </button>
-        <span v-if="stepsBeforeCanConfirm.length > 0">{{
-          stepsBeforeCanConfirm[0]
-        }}</span>
+        <span v-if="stepsBeforeCanConfirm.length > 0">{{ stepsBeforeCanConfirm[0] }}</span>
       </div>
     </full-screen-modal-header>
     <main class="insight-capture">
-      <modal
-        class="timeseries-selection-modal"
-        v-if="isTimeseriesSelectionModalOpen"
-      >
+      <modal class="timeseries-selection-modal" v-if="isTimeseriesSelectionModalOpen">
         <template #header>
           <!-- FIXME: awkward wording -->
           <h3>Please select one timeseries data</h3>
@@ -37,17 +28,19 @@
                 class="fa fa-lg fa-fw"
                 :class="{
                   'fa-circle': selectedTimeseriesIndex === index,
-                  'fa-circle-o': selectedTimeseriesIndex !== index
+                  'fa-circle-o': selectedTimeseriesIndex !== index,
                 }"
                 @click="selectedTimeseriesIndex = index"
               />
-              <strong :style="{ color: d.color }">{{d.name}}</strong>
+              <strong :style="{ color: d.color }">{{ d.name }}</strong>
               <sparkline
-                :data="[{
-                  series: d.points.map(p => p.value),
-                  name: d.name,
-                  color: d.color
-                }]"
+                :data="[
+                  {
+                    series: d.points.map((p) => p.value),
+                    name: d.name,
+                    color: d.color,
+                  },
+                ]"
                 :size="[350, 20]"
               />
             </div>
@@ -58,14 +51,16 @@
             <button
               type="button"
               class="btn first-button"
-              @click.stop="closeTimeseriesSelectionModal">
-                Cancel
+              @click.stop="closeTimeseriesSelectionModal"
+            >
+              Cancel
             </button>
             <button
               type="button"
               class="btn btn-call-to-action"
-              @click.stop="saveUpdatedNodeParameter">
-                Select
+              @click.stop="saveUpdatedNodeParameter"
+            >
+              Select
             </button>
           </ul>
         </template>
@@ -78,12 +73,18 @@
         :aggregation-options="aggregationOptionFiltered"
         :temporal-resolution-options="temporalResolutionOption"
         @update-model-parameter="onModelParamUpdated"
-        @visible-timeseries-changed="(newValue) => { visibleTimeseries = newValue; }"
+        @visible-timeseries-changed="
+          (newValue) => {
+            visibleTimeseries = newValue;
+          }
+        "
       >
         <template #datacube-model-header>
           <div class="datacube-header" v-if="metadata && mainModelOutput">
             <h5>
-              <select name="outputs" id="outputs"
+              <select
+                name="outputs"
+                id="outputs"
                 v-if="outputs.length > 1"
                 @change="onOutputSelectionChange($event)"
               >
@@ -91,18 +92,29 @@
                   v-for="(output, indx) in outputs"
                   :key="output.name"
                   :selected="indx === currentOutputIndex"
-                >{{output.display_name !== '' ? output.display_name : output.name}}</option>
+                >
+                  {{ output.display_name !== '' ? output.display_name : output.name }}
+                </option>
               </select>
-              <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-              <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
-              <span v-if="metadata.status === DatacubeStatus.Deprecated" v-tooltip.top-center="'Show current version of datacube'" style="margin-left: 1rem" :style="{ backgroundColor: statusColor, cursor: 'pointer' }" @click="showCurrentDatacube">{{ statusLabel }} <i class="fa fa-search"></i></span>
+              <span v-else>{{
+                mainModelOutput.display_name !== ''
+                  ? mainModelOutput.display_name
+                  : mainModelOutput.name
+              }}</span>
+              <label style="margin-left: 1rem; font-weight: normal">| {{ metadata.name }}</label>
+              <span
+                v-if="metadata.status === DatacubeStatus.Deprecated"
+                v-tooltip.top-center="'Show current version of datacube'"
+                style="margin-left: 1rem"
+                :style="{ backgroundColor: statusColor, cursor: 'pointer' }"
+                @click="showCurrentDatacube"
+                >{{ statusLabel }} <i class="fa fa-search"></i
+              ></span>
             </h5>
           </div>
         </template>
         <template #datacube-description>
-          <datacube-description
-            :metadata="metadata"
-          />
+          <datacube-description :metadata="metadata" />
         </template>
       </datacube-card>
     </main>
@@ -123,18 +135,27 @@ import modelService from '@/services/model-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { ProjectType, DatacubeStatus, TemporalResolutionOption, TimeScale, TemporalAggregationLevel, SPLIT_BY_VARIABLE } from '@/types/Enums';
+import {
+  ProjectType,
+  DatacubeStatus,
+  TemporalResolutionOption,
+  TimeScale,
+  TemporalAggregationLevel,
+  SPLIT_BY_VARIABLE,
+} from '@/types/Enums';
 import { getOutputs, getSelectedOutput, getValidatedOutputs, STATUS } from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
-import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
+import {
+  aggregationOptionFiltered,
+  temporalResolutionOptionFiltered,
+} from '@/utils/drilldown-util';
 import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { Timeseries } from '@/types/Timeseries';
 import { isDataSpaceDataState } from '@/utils/insight-util';
-
 
 export default defineComponent({
   name: 'NodeDataDrilldown',
@@ -143,7 +164,7 @@ export default defineComponent({
     DatacubeCard,
     DatacubeDescription,
     FullScreenModalHeader,
-    Sparkline
+    Sparkline,
   },
   setup() {
     const selectLabel = 'Quantify Node';
@@ -152,14 +173,14 @@ export default defineComponent({
     const route = useRoute();
     // NOTE: only one indicator id (model or indicator) will be provided as a selection from the data explorer
     const currentCAG = computed(() => store.getters['app/currentCAG']);
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const datacubeCurrentOutputsMap = computed(
+      () => store.getters['app/datacubeCurrentOutputsMap']
+    );
     const indicatorId = computed<string>(() => store.getters['app/indicatorId']);
     const metadata = useModelMetadata(indicatorId);
     const nodeId = computed(() => store.getters['app/nodeId']);
     const project = computed(() => store.getters['app/project']);
-    const dataState = computed<DataState | null>(
-      () => store.getters['insightPanel/dataState']
-    );
+    const dataState = computed<DataState | null>(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<Partial<DataSpaceDataState> | null>(null);
@@ -178,7 +199,9 @@ export default defineComponent({
         return temporalResolutionOptionFiltered;
       }
       if (modelComponents.value.parameter.time_scale === TimeScale.Years) {
-        return Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.Year as string === tro);
+        return Object.values(TemporalResolutionOption).filter(
+          (tro) => (TemporalResolutionOption.Year as string) === tro
+        );
       }
       return temporalResolutionOptionFiltered;
     });
@@ -207,17 +230,14 @@ export default defineComponent({
           country,
           admin1: [],
           admin2: [],
-          admin3: []
+          admin3: [],
         },
-        searchFilters: { clauses: [] }
+        searchFilters: { clauses: [] },
       };
     });
 
     watch(
-      () => [
-        metadata.value,
-        selectedNode.value
-      ],
+      () => [metadata.value, selectedNode.value],
       () => {
         if (metadata.value) {
           const existingViewState = selectedNode?.value?.parameter;
@@ -266,9 +286,9 @@ export default defineComponent({
             currentCAG: currentCAG.value,
             nodeId: nodeId.value,
             project: project.value,
-            projectType: ProjectType.Analysis
+            projectType: ProjectType.Analysis,
           },
-          query: { filters }
+          query: { filters },
         });
       }
     };
@@ -308,9 +328,7 @@ export default defineComponent({
         );
         return;
       }
-      const selectedIndex = visibleTimeseries.value.length > 1
-        ? selectedTimeseriesIndex.value
-        : 0;
+      const selectedIndex = visibleTimeseries.value.length > 1 ? selectedTimeseriesIndex.value : 0;
       const timeseries = visibleTimeseries.value[selectedIndex].points;
       let country = '';
       let admin1 = '';
@@ -347,9 +365,9 @@ export default defineComponent({
           original_timeseries: _.cloneDeep(timeseries),
           // Filled in by server
           max: null,
-          min: null
+          min: null,
         },
-        components: selectedNode?.value?.components
+        components: selectedNode?.value?.components,
       };
 
       Object.keys(viewState.value).forEach((key: string) => {
@@ -370,8 +388,8 @@ export default defineComponent({
           currentCAG: currentCAG.value,
           nodeId: nodeId.value,
           project: project.value,
-          projectType: ProjectType.Analysis
-        }
+          projectType: ProjectType.Analysis,
+        },
       });
     };
 
@@ -387,7 +405,10 @@ export default defineComponent({
           // we have a store entry for the selected output of the current model
           initialOutputIndex = currentOutputEntry;
         } else {
-          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+          initialOutputIndex =
+            metadata.value.validatedOutputs?.findIndex(
+              (o) => o.name === metadata.value?.default_feature
+            ) ?? 0;
 
           // update the store
           updateDatacubesOutputsMap(datacubeKey, store, route, initialOutputIndex);
@@ -408,7 +429,9 @@ export default defineComponent({
 
     const onModelParamUpdated = (updatedModelParam: ModelParameter) => {
       if (metadata.value !== null) {
-        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(p => p.name === updatedModelParam.name);
+        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(
+          (p) => p.name === updatedModelParam.name
+        );
         (metadata.value as Model).parameters[updatedParamIndex] = updatedModelParam;
         refreshMetadata();
       }
@@ -446,17 +469,18 @@ export default defineComponent({
       stepsBeforeCanConfirm,
       onModelParamUpdated,
       temporalResolutionOption,
-      visibleTimeseries
+      visibleTimeseries,
     };
   },
   mounted() {
     // Load the CAG so we can find relevant components
-    modelService.getComponents(this.currentCAG).then(_modelComponents => {
+    modelService.getComponents(this.currentCAG).then((_modelComponents) => {
       this.modelComponents = _modelComponents;
     });
   },
   methods: {
-    showCurrentDatacube() { // direct user to update the deprecated datacube to the current version
+    showCurrentDatacube() {
+      // direct user to update the deprecated datacube to the current version
       const currentCAG = this.currentCAG ?? '';
       const nodeId = this.nodeId ?? '';
       const project = this.project ?? '';
@@ -470,12 +494,12 @@ export default defineComponent({
           currentCAG: currentCAG,
           nodeId: nodeId,
           project: project,
-          projectType: ProjectType.Analysis
+          projectType: ProjectType.Analysis,
         },
-        query: { filters }
+        query: { filters },
       });
-    }
-  }
+    },
+  },
 });
 </script>
 

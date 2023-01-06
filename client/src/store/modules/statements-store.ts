@@ -43,46 +43,44 @@ const state: StatementViewState = {
 
     { id: FIELDS.SENTENCES, visible: true, group: 'evidence' },
     { id: FIELDS.NUM_EVIDENCES, visible: true, group: 'evidence' },
-    { id: FIELDS.READERS, visible: false }
-  ]
+    { id: FIELDS.READERS, visible: false },
+  ],
 };
 
 const getters: GetterTree<StatementViewState, any> = {
-  columns: state => state.columns,
-  visibleColumns: state => {
+  columns: (state) => state.columns,
+  visibleColumns: (state) => {
     return _.chain(state.columns).keyBy('id').mapValues('visible').value();
   },
-  numSubjVisible: state => {
-    return state.columns.filter(d => d.group === 'subj' && d.visible === true).length;
+  numSubjVisible: (state) => {
+    return state.columns.filter((d) => d.group === 'subj' && d.visible === true).length;
   },
-  numObjVisible: state => {
-    return state.columns.filter(d => d.group === 'obj' && d.visible === true).length;
+  numObjVisible: (state) => {
+    return state.columns.filter((d) => d.group === 'obj' && d.visible === true).length;
   },
-  numRelVisible: state => {
-    return state.columns.filter(d => d.group === 'relation' && d.visible === true).length;
+  numRelVisible: (state) => {
+    return state.columns.filter((d) => d.group === 'relation' && d.visible === true).length;
   },
-  numContextVisible: state => {
-    return state.columns.filter(d => d.group === 'context' && d.visible === true).length;
+  numContextVisible: (state) => {
+    return state.columns.filter((d) => d.group === 'context' && d.visible === true).length;
   },
-  numEvidenceVisible: state => {
-    return state.columns.filter(d => d.group === 'evidence' && d.visible === true).length;
-  }
+  numEvidenceVisible: (state) => {
+    return state.columns.filter((d) => d.group === 'evidence' && d.visible === true).length;
+  },
 };
-
 
 const actions: ActionTree<StatementViewState, any> = {
   toggleColumn({ commit }, idx) {
     commit('toggleColumn', idx);
-  }
+  },
 };
-
 
 const mutations: MutationTree<StatementViewState> = {
   toggleColumn(state, idx) {
     const columnsClone = _.cloneDeep(state.columns);
     columnsClone[idx].visible = !columnsClone[idx].visible;
     state.columns = columnsClone;
-  }
+  },
 };
 
 export default {
@@ -90,6 +88,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };
-

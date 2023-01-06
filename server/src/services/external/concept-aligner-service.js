@@ -12,7 +12,7 @@ const queryOntology = async (ontologyId) => {
     url: `${URL}/v2/status?ontologyId=${ontologyId}`,
     method: 'GET',
     json: {},
-    timeout: TIMEOUT
+    timeout: TIMEOUT,
   };
   const result = await requestAsPromise(options);
   return result;
@@ -25,7 +25,7 @@ const addOntology = async (ontologyId) => {
     url: `${URL}/v2/addOntology?ontologyId=${ontologyId}&secret=${SECRET}`,
     method: 'PUT',
     json: {},
-    timeout: TIMEOUT
+    timeout: TIMEOUT,
   };
   const result = await requestAsPromise(options);
   return result;
@@ -38,7 +38,7 @@ const reindex = async () => {
     url: `${URL}/v1/reindex?secret=${SECRET}`,
     method: 'PUT',
     json: {},
-    timeout: TIMEOUT
+    timeout: TIMEOUT,
   };
   const result = await requestAsPromise(options);
   return result;
@@ -46,7 +46,9 @@ const reindex = async () => {
 
 // Bulk search
 const bulkSearch = async (ontologyId, payload, maxHits, threshold, geography) => {
-  Logger.info(`Calling ${URL}/v2/bulkCompositionalSearch?maxHits=${maxHits}&threshold=${threshold}&geography=${geography}`);
+  Logger.info(
+    `Calling ${URL}/v2/bulkCompositionalSearch?maxHits=${maxHits}&threshold=${threshold}&geography=${geography}`
+  );
 
   let url = `${URL}/v2/bulkCompositionalSearch?ontologyId=${ontologyId}&secret=${SECRET}&maxHits=${maxHits}&threshold=${threshold}`;
   if (geography) {
@@ -57,7 +59,7 @@ const bulkSearch = async (ontologyId, payload, maxHits, threshold, geography) =>
     url: url,
     method: 'PUT',
     json: payload,
-    timeout: TIMEOUT
+    timeout: TIMEOUT,
   };
   const result = await requestAsPromise(options);
   return result;
@@ -67,5 +69,5 @@ module.exports = {
   queryOntology,
   addOntology,
   reindex,
-  bulkSearch
+  bulkSearch,
 };

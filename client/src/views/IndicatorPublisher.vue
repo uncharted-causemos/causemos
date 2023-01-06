@@ -12,31 +12,31 @@
           @update-model-parameter="onModelParamUpdated"
         >
           <template #datacube-model-header>
-            <h5
-              v-if="metadata && mainModelOutput"
-              class="datacube-header"
-            >
+            <h5 v-if="metadata && mainModelOutput" class="datacube-header">
               <div>
-                <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-                <span class="datacube-name"> | {{metadata.name}} </span>
+                <span>{{
+                  mainModelOutput.display_name !== ''
+                    ? mainModelOutput.display_name
+                    : mainModelOutput.name
+                }}</span>
+                <span class="datacube-name"> | {{ metadata.name }} </span>
                 <!--
                 <span v-if="metadata.status === DatacubeStatus.Deprecated" v-tooltip.top-center="'Show current version of datacube'" style="margin-left: 1rem" :style="{ backgroundColor: statusColor, cursor: 'pointer' }" @click="showCurrentDatacube">{{ statusLabel }} <i class="fa fa-search"></i></span>
                 -->
               </div>
               <button
                 class="btn btn-call-to-action"
-                style="border-radius: 2px; margin-left: 1rem; align-self: center; height: 75%;"
+                style="border-radius: 2px; margin-left: 1rem; align-self: center; height: 75%"
                 v-tooltip.top-center="'Save the visualization options for this indicator'"
-                @click="updateIndicator()">
-                  Update Indicator
+                @click="updateIndicator()"
+              >
+                Update Indicator
               </button>
             </h5>
           </template>
 
           <template #datacube-description>
-            <datacube-description
-              :metadata="metadata"
-            />
+            <datacube-description :metadata="metadata" />
           </template>
         </datacube-card>
       </div>
@@ -53,12 +53,25 @@ import DatacubeCard from '@/components/data/datacube-card.vue';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { generateSparklines, updateIndicatorsBulk } from '@/services/new-datacube-service';
 import { Datacube, DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { AggregationOption, TemporalResolutionOption, DatacubeStatus, TemporalResolution } from '@/types/Enums';
+import {
+  AggregationOption,
+  TemporalResolutionOption,
+  DatacubeStatus,
+  TemporalResolution,
+} from '@/types/Enums';
 import { ViewState } from '@/types/Insight';
-import { getSelectedOutput, getValidatedOutputs, isIndicator, getOutputs } from '@/utils/datacube-util';
+import {
+  getSelectedOutput,
+  getValidatedOutputs,
+  isIndicator,
+  getOutputs,
+} from '@/utils/datacube-util';
 import useToaster from '@/services/composables/useToaster';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
-import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
+import {
+  aggregationOptionFiltered,
+  temporalResolutionOptionFiltered,
+} from '@/utils/drilldown-util';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { TYPE } from 'vue-toastification';
 
@@ -66,7 +79,7 @@ export default defineComponent({
   name: 'IndicatorPublisher',
   components: {
     DatacubeCard,
-    DatacubeDescription
+    DatacubeDescription,
   },
   setup() {
     const store = useStore();
@@ -80,7 +93,7 @@ export default defineComponent({
     const initialViewConfig = ref<ViewState | null>({
       temporalAggregation: AggregationOption.Mean,
       spatialAggregation: AggregationOption.Mean,
-      temporalResolution: TemporalResolutionOption.Month
+      temporalResolution: TemporalResolutionOption.Month,
     });
 
     const viewState = computed(() => store.getters['insightPanel/viewState']);
@@ -113,21 +126,28 @@ export default defineComponent({
       }
     };
 
-    const generateSparkline = async (meta: Datacube, output?: DatacubeFeature, selections?: ViewState) => {
+    const generateSparkline = async (
+      meta: Datacube,
+      output?: DatacubeFeature,
+      selections?: ViewState
+    ) => {
       const feature = output?.name ?? meta.default_feature;
-      const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+      const rawResolution =
+        output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
       const finalRawTimestamp = meta.period?.lte ?? 0;
-      const sparklineResult = await generateSparklines([{
-        id: meta.id,
-        dataId: meta.data_id,
-        runId: 'indicator',
-        feature: feature,
-        resolution: selections?.temporalResolution ?? 'month',
-        temporalAgg: selections?.temporalAggregation ?? 'mean',
-        spatialAgg: selections?.spatialAggregation ?? 'mean',
-        rawResolution: rawResolution,
-        finalRawTimestamp: finalRawTimestamp
-      }]);
+      const sparklineResult = await generateSparklines([
+        {
+          id: meta.id,
+          dataId: meta.data_id,
+          runId: 'indicator',
+          feature: feature,
+          resolution: selections?.temporalResolution ?? 'month',
+          temporalAgg: selections?.temporalAggregation ?? 'mean',
+          spatialAgg: selections?.spatialAggregation ?? 'mean',
+          rawResolution: rawResolution,
+          finalRawTimestamp: finalRawTimestamp,
+        },
+      ]);
       console.log('Sparkline requested: ' + sparklineResult);
     };
 
@@ -141,11 +161,10 @@ export default defineComponent({
         //
         const indicatorToUpdate = _.cloneDeep(metadata.value);
         indicatorToUpdate.default_view = viewState.value;
-        const deltas = [indicatorToUpdate]
-          .map(indicator => ({
-            id: indicator.id,
-            default_view: indicator.default_view
-          }));
+        const deltas = [indicatorToUpdate].map((indicator) => ({
+          id: indicator.id,
+          default_view: indicator.default_view,
+        }));
         try {
           await enableOverlay('Generating preview');
           await generateSparkline(metadata.value, mainModelOutput.value, viewState.value);
@@ -159,8 +178,8 @@ export default defineComponent({
             query: { template_id: selectedIndicatorId.value },
             params: {
               project: projectId.value,
-              projectType: projectType.value
-            }
+              projectType: projectType.value,
+            },
           });
         } catch {
           await disableOverlay();
@@ -171,7 +190,9 @@ export default defineComponent({
 
     const onModelParamUpdated = (updatedModelParam: ModelParameter) => {
       if (metadata.value !== null) {
-        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(p => p.name === updatedModelParam.name);
+        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(
+          (p) => p.name === updatedModelParam.name
+        );
         (metadata.value as Model).parameters[updatedParamIndex] = updatedModelParam;
         refreshMetadata();
       }
@@ -197,7 +218,7 @@ export default defineComponent({
       aggregationOptionFiltered,
       temporalResolutionOptionFiltered,
       statusColor,
-      statusLabel
+      statusLabel,
     };
   },
   watch: {
@@ -212,9 +233,9 @@ export default defineComponent({
           }
         }
       },
-      immediate: true
-    }
-  }
+      immediate: true,
+    },
+  },
 });
 </script>
 
@@ -246,5 +267,4 @@ export default defineComponent({
   flex: 1;
   margin: 0;
 }
-
 </style>

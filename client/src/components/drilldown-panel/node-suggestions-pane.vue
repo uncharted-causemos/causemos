@@ -9,7 +9,7 @@
         :class="{
           'fa-check-square-o': summaryData.meta.checked,
           'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
-          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
+          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked,
         }"
         @click="toggle(summaryData)"
       />
@@ -22,12 +22,10 @@
         <i class="fa fa-fw fa-plus-circle" />
         Add to CAG
       </button>
-      <span
-        v-if="numselectedRelationships > 0"
-        class="suggestions-counter">{{ numselectedRelationships }}  relationship(s)</span>
-      <div
-        v-if="numselectedRelationships === 0 && hasError"
-        class="error-msg "> {{ errorMsg }} </div>
+      <span v-if="numselectedRelationships > 0" class="suggestions-counter"
+        >{{ numselectedRelationships }} relationship(s)</span
+      >
+      <div v-if="numselectedRelationships === 0 && hasError" class="error-msg">{{ errorMsg }}</div>
     </div>
     <div v-if="!isFetchingStatements">
       <div
@@ -35,22 +33,16 @@
         :key="relationshipGroup.key"
         class="suggestions-group"
       >
-        <span
-          class="suggestions-title"
-        >
+        <span class="suggestions-title">
           <span v-if="relationshipGroup.key === 'cause'">
-            Drivers ( ? <i
-              class="fa fa-fw  fa-long-arrow-right"
-            />
+            Drivers ( ? <i class="fa fa-fw fa-long-arrow-right" />
             {{ ontologyFormatter(selectedNode.concept) }} )
           </span>
           <span v-else>
-            Impacts ({{ ontologyFormatter(selectedNode.concept) }} <i
-              class="fa fa-fw  fa-long-arrow-right"
-            />
+            Impacts ({{ ontologyFormatter(selectedNode.concept) }}
+            <i class="fa fa-fw fa-long-arrow-right" />
             ?)
           </span>
-
         </span>
         <div v-if="relationshipGroup.children.length > 0">
           <div class="suggestions-list">
@@ -58,30 +50,32 @@
               v-for="relationship in relationshipGroup.children"
               :key="relationship.key"
               class="suggestions-item"
-              :class="{ 'disabled': relationship.meta.disabled, '': !relationship.meta.disabled }"
+              :class="{ disabled: relationship.meta.disabled, '': !relationship.meta.disabled }"
             >
               <i
                 class="fa fa-lg fa-fw"
-                :class="{ 'fa-check-square-o': relationship.meta.checked, 'fa-square-o': !relationship.meta.checked }"
-                @click.stop="toggle(relationship)" />
-              <span :style="relationship.meta.style" >
-                {{ ontologyFormatter(filterRedundantConcept(relationshipGroup.key, relationship.meta)) }}
+                :class="{
+                  'fa-check-square-o': relationship.meta.checked,
+                  'fa-square-o': !relationship.meta.checked,
+                }"
+                @click.stop="toggle(relationship)"
+              />
+              <span :style="relationship.meta.style">
+                {{
+                  ontologyFormatter(
+                    filterRedundantConcept(relationshipGroup.key, relationship.meta)
+                  )
+                }}
               </span>
             </div>
-            <button
-              type="button"
-              class="btn"
-              @click="openKBExplorer(relationshipGroup.key)"
-            >            <i class="fa fa-fw fa-search" />
-              Explore All ({{ relationshipGroup.count }})</button>
+            <button type="button" class="btn" @click="openKBExplorer(relationshipGroup.key)">
+              <i class="fa fa-fw fa-search" /> Explore All ({{ relationshipGroup.count }})
+            </button>
           </div>
         </div>
       </div>
     </div>
-    <div
-      v-if="isFetchingStatements"
-      class="pane-loading-message"
-    >
+    <div v-if="isFetchingStatements" class="pane-loading-message">
       <i class="fa fa-spin fa-spinner pane-loading-icon" /><span>{{ loadingMessage }}</span>
     </div>
   </div>
@@ -92,12 +86,16 @@ import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
 import filtersUtil from '@/utils/filters-util';
-import { calculateNewNodesAndEdges, extractEdgesFromStatements, sortSuggestionsByEvidenceCount } from '@/utils/relationship-suggestion-util';
+import {
+  calculateNewNodesAndEdges,
+  extractEdgesFromStatements,
+  sortSuggestionsByEvidenceCount,
+} from '@/utils/relationship-suggestion-util';
 import { EdgeDirection } from '@/types/Enums';
 
 const RELATIONSHIP_GROUP_KEY = {
   CAUSE: 'cause',
-  EFFECT: 'effect'
+  EFFECT: 'effect',
 };
 
 const MSG_EMPTY_SELECTION = 'There are no selected relationships';
@@ -110,11 +108,11 @@ const convertEdgeSuggestionToChecklistItem = (suggestion) => {
       source,
       target,
       style: {
-        color
+        color,
       },
-      numEvidence: _.sumBy(statements, s => s.wm.num_evidence)
+      numEvidence: _.sumBy(statements, (s) => s.wm.num_evidence),
     },
-    dataArray: statements
+    dataArray: statements,
   };
 };
 
@@ -123,39 +121,37 @@ export default {
   props: {
     selectedNode: {
       type: Object,
-      default: null
+      default: null,
     },
     statements: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     graphData: {
       type: Object,
-      default: () => ({ })
+      default: () => ({}),
     },
     isFetchingStatements: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  emits: [
-    'add-to-CAG'
-  ],
+  emits: ['add-to-CAG'],
   data: () => ({
     summaryData: { children: [], meta: { checked: false, isSomeChildChecked: false } },
-    hasError: false
+    hasError: false,
   }),
   computed: {
     ...mapGetters({
-      currentCAG: 'app/currentCAG'
+      currentCAG: 'app/currentCAG',
     }),
     numselectedRelationships() {
       let cnt = 0;
-      this.summaryData.children.forEach(resourceGroup => {
-        cnt += resourceGroup.children.filter(d => d.meta.checked === true).length;
+      this.summaryData.children.forEach((resourceGroup) => {
+        cnt += resourceGroup.children.filter((d) => d.meta.checked === true).length;
       });
       return cnt;
-    }
+    },
   },
   watch: {
     statements(n, o) {
@@ -164,7 +160,7 @@ export default {
     },
     graphData() {
       this.refresh();
-    }
+    },
   },
   created() {
     this.errorMsg = MSG_EMPTY_SELECTION;
@@ -175,7 +171,7 @@ export default {
   },
   methods: {
     ...mapActions({
-      setSearchClause: 'query/setSearchClause'
+      setSearchClause: 'query/setSearchClause',
     }),
     refresh() {
       const causeEdges = extractEdgesFromStatements(
@@ -190,30 +186,28 @@ export default {
         this.graphData,
         EdgeDirection.Outgoing
       );
-      const topCauseEdges = _.take(
-        sortSuggestionsByEvidenceCount(causeEdges),
-        5
-      ).map(convertEdgeSuggestionToChecklistItem);
-      const topEffectEdges = _.take(
-        sortSuggestionsByEvidenceCount(effectEdges),
-        5
-      ).map(convertEdgeSuggestionToChecklistItem);
+      const topCauseEdges = _.take(sortSuggestionsByEvidenceCount(causeEdges), 5).map(
+        convertEdgeSuggestionToChecklistItem
+      );
+      const topEffectEdges = _.take(sortSuggestionsByEvidenceCount(effectEdges), 5).map(
+        convertEdgeSuggestionToChecklistItem
+      );
       this.summaryData = {
         children: [
           {
             key: RELATIONSHIP_GROUP_KEY.CAUSE,
             count: causeEdges.length,
             children: topCauseEdges,
-            meta: { checked: false }
+            meta: { checked: false },
           },
           {
             key: RELATIONSHIP_GROUP_KEY.EFFECT,
             count: effectEdges.length,
             children: topEffectEdges,
-            meta: { checked: false }
-          }
+            meta: { checked: false },
+          },
         ],
-        meta: { checked: false, isSomeChildChecked: false }
+        meta: { checked: false, isSomeChildChecked: false },
       };
     },
     toggle(item) {
@@ -223,14 +217,14 @@ export default {
           item.meta.checked = newState;
         }
         if (!item.children) return;
-        item.children.forEach(child => recursiveDown(child, newState));
+        item.children.forEach((child) => recursiveDown(child, newState));
       };
 
       const recursiveUp = (item) => {
         if (!_.isEmpty(item.children)) {
-          item.children.forEach(child => recursiveUp(child));
-          const numChecked = item.children.filter(d => d.meta.checked === true).length;
-          const numPartiallyChecked = item.children.filter(d => d.meta.isSomeChildChecked).length;
+          item.children.forEach((child) => recursiveUp(child));
+          const numChecked = item.children.filter((d) => d.meta.checked === true).length;
+          const numPartiallyChecked = item.children.filter((d) => d.meta.isSomeChildChecked).length;
           item.meta.isSomeChildChecked = numChecked > 0 || numPartiallyChecked > 0;
           item.meta.checked = numChecked === item.children.length;
         }
@@ -255,10 +249,16 @@ export default {
 
       if (relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE) {
         filtersUtil.setClause(filters, 'objConcept', components, 'or', false);
-        this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs', filters: filters } });
+        this.$router.push({
+          name: 'kbExplorer',
+          query: { cag: this.currentCAG, view: 'graphs', filters: filters },
+        });
       } else {
         filtersUtil.setClause(filters, 'subjConcept', components, 'or', false);
-        this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs', filters: filters } });
+        this.$router.push({
+          name: 'kbExplorer',
+          query: { cag: this.currentCAG, view: 'graphs', filters: filters },
+        });
       }
     },
     addToCAG() {
@@ -272,29 +272,37 @@ export default {
 
       const newEdges = [];
       if (!_.isEmpty(causeGroup.children)) {
-        causeGroup.children.filter(c => c.meta.checked).forEach(edge => {
-          newEdges.push({
-            source: edge.meta.source,
-            target: rootConcept,
-            reference_ids: edge.dataArray.map(s => s.id)
+        causeGroup.children
+          .filter((c) => c.meta.checked)
+          .forEach((edge) => {
+            newEdges.push({
+              source: edge.meta.source,
+              target: rootConcept,
+              reference_ids: edge.dataArray.map((s) => s.id),
+            });
           });
-        });
       }
       if (!_.isEmpty(effectGroup.children)) {
-        effectGroup.children.filter(c => c.meta.checked).forEach(edge => {
-          newEdges.push({
-            source: rootConcept,
-            target: edge.meta.target,
-            reference_ids: edge.dataArray.map(s => s.id)
+        effectGroup.children
+          .filter((c) => c.meta.checked)
+          .forEach((edge) => {
+            newEdges.push({
+              source: rootConcept,
+              target: edge.meta.target,
+              reference_ids: edge.dataArray.map((s) => s.id),
+            });
           });
-        });
       }
 
       // Calculate if there are new nodes
-      const newSubgraph = calculateNewNodesAndEdges(newEdges, this.graphData, this.ontologyFormatter);
+      const newSubgraph = calculateNewNodesAndEdges(
+        newEdges,
+        this.graphData,
+        this.ontologyFormatter
+      );
       this.$emit('add-to-CAG', newSubgraph);
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -339,5 +347,4 @@ export default {
     margin-right: 5px;
   }
 }
-
 </style>

@@ -1,20 +1,8 @@
 <template>
   <div class="data-pagination">
-    <button
-      class="btn btn-primary"
-      :disabled="hasPrev"
-      @click="prevPage"
-    >
-      Previous
-    </button>
-    Viewing {{currentStart}} to {{currentFinish}}
-    <button
-      class="btn btn-primary"
-      :disabled="hasNext"
-      @click="nextPage"
-    >
-      Next
-    </button>
+    <button class="btn btn-primary" :disabled="hasPrev" @click="prevPage">Previous</button>
+    Viewing {{ currentStart }} to {{ currentFinish }}
+    <button class="btn btn-primary" :disabled="hasNext" @click="nextPage">Next</button>
   </div>
 </template>
 
@@ -26,21 +14,18 @@ export default defineComponent({
   props: {
     pageCount: {
       type: Number,
-      default: 0
+      default: 0,
     },
     pageSize: {
       type: Number,
-      default: 100
+      default: 100,
     },
     currentPageLength: {
       type: Number,
-      default: 100
-    }
+      default: 100,
+    },
   },
-  emits: [
-    'next-page',
-    'prev-page'
-  ],
+  emits: ['next-page', 'prev-page'],
   computed: {
     hasPrev(): boolean {
       return this.pageCount === 0;
@@ -50,11 +35,11 @@ export default defineComponent({
     },
     currentStart(): string {
       const offset = this.currentPageLength > 0 ? 1 : 0;
-      return ((this.pageCount * this.pageSize) + offset).toLocaleString();
+      return (this.pageCount * this.pageSize + offset).toLocaleString();
     },
     currentFinish(): string {
       return (this.pageCount * this.pageSize + this.currentPageLength).toLocaleString();
-    }
+    },
   },
   methods: {
     nextPage() {
@@ -62,15 +47,15 @@ export default defineComponent({
     },
     prevPage() {
       this.$emit('prev-page');
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style>
-  .data-pagination {
-    padding: 8px;
-    text-align: center;
-    width: 100%;
-  }
+.data-pagination {
+  padding: 8px;
+  text-align: center;
+  width: 100%;
+}
 </style>

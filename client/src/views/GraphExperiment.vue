@@ -2,17 +2,20 @@
   <div>
     <div
       id="test"
-      style="width:100%; height: 450px; border: 1px solid #888; background: #FCFCFC"
+      style="width: 100%; height: 450px; border: 1px solid #888; background: #fcfcfc"
     />
   </div>
 </template>
-
 
 <script lang="ts">
 /* eslint-disable */
 import * as d3 from 'd3';
 import _ from 'lodash';
-import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from '@/graphs/abstract-cag-renderer';
+import {
+  AbstractCAGRenderer,
+  D3SelectionINode,
+  D3SelectionIEdge,
+} from '@/graphs/abstract-cag-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';
 import svgUtil from '@/utils/svg-util';
 import { IGraph, group } from 'svg-flowgraph';
@@ -33,19 +36,20 @@ class TestRenderer extends AbstractCAGRenderer<any, any> {
       .attr('x', -3)
       .attr('y', -3)
       .attr('rx', 2)
-      .attr('width', d => d.width)
-      .attr('height', d => d.height)
+      .attr('width', (d) => d.width)
+      .attr('height', (d) => d.height)
       .style('stroke', '#222')
-      .style('stroke-dasharray', (d: any) => d.nodes.length > 0 ? '4' : null)
+      .style('stroke-dasharray', (d: any) => (d.nodes.length > 0 ? '4' : null))
       .style('stroke-width', 2)
       .style('cursor', 'pointer')
-      .style('fill', (d: any) => d.nodes.length > 0 ? 'none' : '#EEE');
+      .style('fill', (d: any) => (d.nodes.length > 0 ? 'none' : '#EEE'));
 
-    selection.append('text')
-      .attr('x', (d: any) => d.nodes.length > 0 ? 250 : 5)
-      .attr('y', (d: any) => d.nodes .length > 0 ? -8 : 15)
+    selection
+      .append('text')
+      .attr('x', (d: any) => (d.nodes.length > 0 ? 250 : 5))
+      .attr('y', (d: any) => (d.nodes.length > 0 ? -8 : 15))
       .style('font-size', 16)
-      .text(d => d.label);
+      .text((d) => d.label);
   }
 
   renderEdgesAdded(selection: D3SelectionIEdge<any>) {
@@ -55,8 +59,7 @@ class TestRenderer extends AbstractCAGRenderer<any, any> {
       .style('fill', 'none')
       .style('stroke', '#888')
       .style('stroke-width', 4)
-      .attr('d', d => pathFn(d.points as any));
-
+      .attr('d', (d) => pathFn(d.points as any));
   }
 
   renderNodesUpdated(_selection: D3SelectionINode<any>) {}
@@ -65,55 +68,54 @@ class TestRenderer extends AbstractCAGRenderer<any, any> {
   renderEdgesRemoved(_selection: D3SelectionIEdge<any>) {}
 }
 
-
 const G = {
   nodes: [
     {
       id: 'rainfall',
-      concept: 'rainfall'
+      concept: 'rainfall',
     },
     {
       id: 'fertilizer',
-      concept: 'fertilizer'
+      concept: 'fertilizer',
     },
     {
       id: 'crop',
-      concept: 'crop'
+      concept: 'crop',
     },
     {
       id: 'famine',
-      concept: 'famine'
+      concept: 'famine',
     },
     {
       id: 'subsidies',
-      concept: 'subsidies'
-    }
+      concept: 'subsidies',
+    },
   ],
   edges: [
     {
       id: 1,
       source: 'rainfall',
-      target: 'crop'
+      target: 'crop',
     },
     {
       id: 2,
       source: 'fertilizer',
-      target: 'crop'
+      target: 'crop',
     },
     {
       id: 3,
       source: 'crop',
-      target: 'famine'
+      target: 'famine',
     },
     {
       id: 4,
       source: 'subsidies',
-      target: 'fertilizer'
-    }
-  ]
+      target: 'fertilizer',
+    },
+  ],
 };
 
-let renderer:any = null;
+let renderer: any = null;
 
 export default defineComponent({
   name: 'GraphExperiment',
@@ -126,7 +128,7 @@ export default defineComponent({
       useStableZoomPan: true,
       runLayout: (graphData: IGraph<any, any>) => {
         return runELKLayout(graphData, { width: 160, height: 50 });
-      }
+      },
     });
     this.refresh();
   },
@@ -140,45 +142,41 @@ export default defineComponent({
         group(renderer, 'nodes I care about', ['famine', 'crop']);
         await renderer.render();
 
-        renderer.bubbleSet({
-          bubbleNodes: [
-            { concept: 'fertilizer' },
-            { concept: 'rainfall' },
-            { concept: 'crop' }
-          ],
-          bubbleEdges: [
-            {
-              x1: 100,
-              y1: 100,
-              x2: 200,
-              y2: 200
-            },
-            {
-              x1: 200,
-              y1: 200,
-              x2: 400,
-              y2: 200
-            },
-            {
-              x1: 400,
-              y1: 200,
-              x2: 400,
-              y2: 300
-            }
-          ]},
+        renderer.bubbleSet(
+          {
+            bubbleNodes: [{ concept: 'fertilizer' }, { concept: 'rainfall' }, { concept: 'crop' }],
+            bubbleEdges: [
+              {
+                x1: 100,
+                y1: 100,
+                x2: 200,
+                y2: 200,
+              },
+              {
+                x1: 200,
+                y1: 200,
+                x2: 400,
+                y2: 200,
+              },
+              {
+                x1: 400,
+                y1: 200,
+                x2: 400,
+                y2: 300,
+              },
+            ],
+          },
           '#309'
         );
 
-        renderer.bubbleSet({ bubbleNodes: [
-          { concept: 'subsidies' },
-          { concept: 'fertilizer' }
-        ]}, '#1E2');
-
+        renderer.bubbleSet(
+          { bubbleNodes: [{ concept: 'subsidies' }, { concept: 'fertilizer' }] },
+          '#1E2'
+        );
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

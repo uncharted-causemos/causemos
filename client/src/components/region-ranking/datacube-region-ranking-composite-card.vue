@@ -4,10 +4,12 @@
       <div class="chart-and-footer">
         <div v-if="hiddenRegionRank > 0" class="hover-not-visible">
           <div style="display: flex; justify-content: space-between; min-width: 150px">
-            <div>{{hiddenRegionName}}</div><div>{{hiddenRegionValue}}</div>
+            <div>{{ hiddenRegionName }}</div>
+            <div>{{ hiddenRegionValue }}</div>
           </div>
           <div style="display: flex; justify-content: space-between; min-width: 150px">
-            <div>Rank</div><div>{{hiddenRegionRank}}</div>
+            <div>Rank</div>
+            <div>{{ hiddenRegionRank }}</div>
           </div>
         </div>
         <bar-chart
@@ -18,18 +20,16 @@
         />
       </div>
       <div class="card-maps-box">
-        <region-map class="region-map-container"
+        <region-map
+          class="region-map-container"
           :data="topBarsData"
           :selected-admin-level="selectedAdminLevel"
           :map-bounds="mapBounds"
           :selected-id="barChartHoverId"
           :disable-pan-zoom="true"
-          @click-region="$emit('map-click-region', $event)"/>
-        <map-legend
-          v-if="mapLegendData.length > 0"
-          :ramp="mapLegendData"
-          :isContinuous="false"
+          @click-region="$emit('map-click-region', $event)"
         />
+        <map-legend v-if="mapLegendData.length > 0" :ramp="mapLegendData" :isContinuous="false" />
       </div>
     </main>
   </div>
@@ -50,63 +50,58 @@ export default defineComponent({
   components: {
     BarChart,
     RegionMap,
-    MapLegend
+    MapLegend,
   },
   emits: ['bar-chart-hover', 'map-click-region'],
   props: {
     barsData: {
       type: Array as PropType<BarData[]>,
-      default: []
+      default: [],
     },
     maxNumberOfChartBars: {
       type: Number,
-      default: -1
+      default: -1,
     },
     limitNumberOfChartBars: {
       type: Boolean,
-      default: false
+      default: false,
     },
     selectedAdminLevel: {
       type: Number,
-      default: 0
+      default: 0,
     },
     selectedColorScheme: {
       type: Array as PropType<string[]>,
-      default: COLOR_SCHEME.PRIORITIZATION
+      default: COLOR_SCHEME.PRIORITIZATION,
     },
     barChartHoverId: {
       type: String,
-      default: ''
+      default: '',
     },
     mapBounds: {
       type: Array,
-      default: () => undefined
-    }
+      default: () => undefined,
+    },
   },
   setup(props) {
-    const {
-      selectedColorScheme,
-      barChartHoverId
-    } = toRefs(props);
+    const { selectedColorScheme, barChartHoverId } = toRefs(props);
     const mapLegendData = ref<MapLegendColor[]>([]);
 
     const topBarsData = computed(() => {
-      return props.limitNumberOfChartBars ? props.barsData.slice(-props.maxNumberOfChartBars) : props.barsData;
+      return props.limitNumberOfChartBars
+        ? props.barsData.slice(-props.maxNumberOfChartBars)
+        : props.barsData;
     });
 
     watch(
-      () => [
-        selectedColorScheme.value
-      ],
+      () => [selectedColorScheme.value],
       () => {
         if (selectedColorScheme.value.length > 0) {
-          mapLegendData.value = selectedColorScheme.value.map(
-            (color, index) => ({
-              color,
-              minLabel: index,
-              maxLabel: index + 1
-            })
-          );
+          mapLegendData.value = selectedColorScheme.value.map((color, index) => ({
+            color,
+            minLabel: index,
+            maxLabel: index + 1,
+          }));
         }
       },
       { immediate: true }
@@ -124,9 +119,11 @@ export default defineComponent({
         hiddenRegionName.value = '';
 
         if (barChartHoverId.value && props.maxNumberOfChartBars > 0) {
-          const targetBarInfo = props.barsData.find(regionInfo => regionInfo.label === barChartHoverId.value);
+          const targetBarInfo = props.barsData.find(
+            (regionInfo) => regionInfo.label === barChartHoverId.value
+          );
 
-          const valueFormatter = chartValueFormatter(...props.barsData.map(d => d.value));
+          const valueFormatter = chartValueFormatter(...props.barsData.map((d) => d.value));
 
           if (targetBarInfo) {
             const rank = +targetBarInfo.name;
@@ -148,9 +145,9 @@ export default defineComponent({
 
       hiddenRegionName,
       hiddenRegionValue,
-      hiddenRegionRank
+      hiddenRegionRank,
     };
-  }
+  },
 });
 </script>
 
@@ -197,13 +194,11 @@ main {
 .hover-not-visible {
   position: absolute;
   left: 50%;
-  border: #BBB;
+  border: #bbb;
   border-style: solid;
   border-radius: 2px;
-  background-color: #F4F4F4;
+  background-color: #f4f4f4;
   z-index: 1;
   padding: 4px;
 }
-
-
 </style>

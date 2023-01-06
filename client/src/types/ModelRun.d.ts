@@ -1,5 +1,5 @@
 import { ModelRunStatus } from '@/types/Enums';
-import { DataPipelineInfo, RuntimeStage } from "@/types/Common";
+import { DataPipelineInfo, RuntimeStage } from '@/types/Common';
 
 export interface ModelRunParameter {
   name: string;
@@ -18,7 +18,7 @@ export interface PreGeneratedModelRunData {
   timestamp?: number; // timestamp value associated with the resource
   type?: string; // resource type, e.g., image, video
   target?: string; // target component, e.g., map, timeseries, none
-  coords?: {lat: number; long: number}[]; // geo coordinates of the rect region starting top-left, clock-wise
+  coords?: { lat: number; long: number }[]; // geo coordinates of the rect region starting top-left, clock-wise
   caption?: string; // caption associated with the resource
   description?: string; // accessory desc
 }
@@ -44,7 +44,7 @@ export interface ModelRun {
     post_processing: RuntimeStage;
   };
   data_info?: DataPipelineInfo;
-  _version?: number
+  _version?: number;
 }
 
 export interface RunsTag {

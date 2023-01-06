@@ -6,7 +6,7 @@ describe('filter-key-formatter', () => {
   const entries = Object.values(CodeUtil.CODE_TABLE);
 
   it('format known keys', () => {
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       expect(FilterKeyFormatter(entry.field)).to.equal(entry.display);
     });
   });

@@ -3,7 +3,9 @@ const { v4: uuid } = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
 const requestAsPromise = rootRequire('/util/request-as-promise');
-const { sendToPipeline, getFlowStatus, getFlowLogs } = rootRequire('services/external/prefect-queue-service');
+const { sendToPipeline, getFlowStatus, getFlowLogs } = rootRequire(
+  'services/external/prefect-queue-service'
+);
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
@@ -12,7 +14,17 @@ const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process
 
 const config = rootRequire('/config/yargs-wrapper');
 const allowModelRuns = config.allowModelRuns;
-const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
+const IMPLICIT_QUALIFIERS = [
+  'timestamp',
+  'country',
+  'admin1',
+  'admin2',
+  'admin3',
+  'lat',
+  'lng',
+  'feature',
+  'value',
+];
 const QUALIFIER_MAX_COUNT = 10000;
 const QUALIFIER_TIMESERIES_MAX_COUNT = 100;
 const QUALIFIER_TIMESERIES_MAX_LEVEL = 1;
@@ -22,13 +34,8 @@ const QUALIFIER_TIMESERIES_MAX_LEVEL = 1;
  *
  * @param {ModelRun} metadata - model run metadata
  */
-const submitModelRun = async(metadata) => {
-  const {
-    model_id,
-    model_name,
-    parameters,
-    is_default_run = false
-  } = metadata;
+const submitModelRun = async (metadata) => {
+  const { model_id, model_name, parameters, is_default_run = false } = metadata;
 
   const filteredMetadata = {
     model_id,
@@ -38,7 +45,7 @@ const submitModelRun = async(metadata) => {
     data_paths: [],
     is_default_run,
     created_at: Date.now(),
-    tags: []
+    tags: [],
   };
   Logger.info('Submitting model run for execution');
 
@@ -46,11 +53,11 @@ const submitModelRun = async(metadata) => {
     method: 'POST',
     url: process.env.DOJO_URL + '/runs',
     headers: {
-      'Authorization': basicAuthToken,
+      Authorization: basicAuthToken,
       'Content-type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     },
-    json: filteredMetadata
+    json: filteredMetadata,
   };
 
   Logger.info(`Submitting execution request for id: ${filteredMetadata.id}`);
@@ -72,22 +79,28 @@ const submitModelRun = async(metadata) => {
     // special case if this run is the default run
     const existingRunsCount = await connection.count([
       { field: 'model_id', value: filteredMetadata.model_id },
-      { field: 'is_default_run', value: false }
+      { field: 'is_default_run', value: false },
     ]);
     const runName = filteredMetadata.is_default_run ? 'Default' : 'Run ' + (existingRunsCount + 1);
 
-    const result = await connection.insert({
-      ...filteredMetadata,
-      status: 'SUBMITTED',
-      name: runName
-    }, d => d.id);
+    const result = await connection.insert(
+      {
+        ...filteredMetadata,
+        status: 'SUBMITTED',
+        name: runName,
+      },
+      (d) => d.id
+    );
     // If we didn't send the run to Dojo, "simulate" it and fail after some time
     if (!allowModelRuns) {
       setTimeout(async () => {
-        await connection.update({
-          ...filteredMetadata,
-          status: 'PROCESSING'
-        }, d => d.id);
+        await connection.update(
+          {
+            ...filteredMetadata,
+            status: 'PROCESSING',
+          },
+          (d) => d.id
+        );
         setTimeout(async () => {
           await markModelRunFailed(filteredMetadata);
         }, 20000);
@@ -112,34 +125,43 @@ const startModelOutputPostProcessing = async (metadata) => {
     return { result: { error: err }, code: 400 };
   }
   const filters = {
-    clauses: [
-      { field: 'id', operand: 'or', isNot: false, values: [metadata.model_id] }
-    ]
+    clauses: [{ field: 'id', operand: 'or', isNot: false, values: [metadata.model_id] }],
   };
-  const modelMetadata = (await datacubeService.getDatacubes(filters, {
-    includes: ['outputs', 'qualifier_outputs'],
-    size: 1
-  }))[0];
+  const modelMetadata = (
+    await datacubeService.getDatacubes(filters, {
+      includes: ['outputs', 'qualifier_outputs'],
+      size: 1,
+    })
+  )[0];
   if (!modelMetadata) {
-    return { result: { error: `Unable to process run. Model metadata for model id ${metadata.model_id} was not found.` }, code: 409 };
+    return {
+      result: {
+        error: `Unable to process run. Model metadata for model id ${metadata.model_id} was not found.`,
+      },
+      code: 409,
+    };
   }
 
   const qualifierMap = {};
   let weightColumn = '';
   if (modelMetadata.qualifier_outputs) {
-    modelMetadata.outputs.forEach(output => {
+    modelMetadata.outputs.forEach((output) => {
       qualifierMap[output.name] = modelMetadata.qualifier_outputs
-        .filter(q => !IMPLICIT_QUALIFIERS.includes(q.name) &&
-          (!q.qualifier_role || q.qualifier_role === 'breakdown'))
-        .filter(qualifier => qualifier.related_features.includes(output.name))
-        .map(q => q.name);
+        .filter(
+          (q) =>
+            !IMPLICIT_QUALIFIERS.includes(q.name) &&
+            (!q.qualifier_role || q.qualifier_role === 'breakdown')
+        )
+        .filter((qualifier) => qualifier.related_features.includes(output.name))
+        .map((q) => q.name);
     });
     // Data pipeline only supports a single weight column
     // Use the first weight qualifiers
-    const weightQualifier = modelMetadata.qualifier_outputs.find(q =>
-      !IMPLICIT_QUALIFIERS.includes(q.name) &&
-      q.qualifier_role === 'weight' &&
-      q.related_features.length > 0
+    const weightQualifier = modelMetadata.qualifier_outputs.find(
+      (q) =>
+        !IMPLICIT_QUALIFIERS.includes(q.name) &&
+        q.qualifier_role === 'weight' &&
+        q.related_features.length > 0
     );
     if (weightQualifier) {
       weightColumn = weightQualifier.name;
@@ -156,17 +178,23 @@ const startModelOutputPostProcessing = async (metadata) => {
   try {
     const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
     if (await connection.exists([{ field: 'id', value: metadata.id }])) {
-      result = await connection.update({
-        ...metadata,
-        status: 'PROCESSING'
-      }, d => d.id);
+      result = await connection.update(
+        {
+          ...metadata,
+          status: 'PROCESSING',
+        },
+        (d) => d.id
+      );
       docIds = [metadata.id];
       httpResponse = { result: { es_response: result }, code: 200 };
     } else {
-      result = await connection.insert({
-        ...metadata,
-        status: 'TEST'
-      }, d => d.id);
+      result = await connection.insert(
+        {
+          ...metadata,
+          status: 'TEST',
+        },
+        (d) => d.id
+      );
       httpResponse = { result: { es_response: result }, code: 201 };
     }
   } catch (err) {
@@ -184,8 +212,8 @@ const startModelOutputPostProcessing = async (metadata) => {
     qualifier_thresholds: {
       max_count: QUALIFIER_MAX_COUNT,
       regional_timeseries_count: QUALIFIER_TIMESERIES_MAX_COUNT,
-      regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL
-    }
+      regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL,
+    },
   };
   // If custom target S3 is provided,
   if (process.env.S3_URL) {
@@ -193,7 +221,7 @@ const startModelOutputPostProcessing = async (metadata) => {
       endpoint_url: process.env.S3_URL,
       region_name: 'us-east-1',
       key: process.env.S3_ID,
-      secret: process.env.S3_SECRET
+      secret: process.env.S3_SECRET,
     };
     flowParameters.model_bucket = process.env.S3_MODELS_BUCKET;
     flowParameters.indicator_bucket = process.env.S3_INDICATORS_BUCKET;
@@ -219,10 +247,13 @@ const markModelRunFailed = async (metadata) => {
 
   try {
     const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-    const result = await connection.update({
-      id: metadata.id,
-      status: 'EXECUTION FAILED'
-    }, d => d.id);
+    const result = await connection.update(
+      {
+        id: metadata.id,
+        status: 'EXECUTION FAILED',
+      },
+      (d) => d.id
+    );
     return { result: { es_response: result }, code: 200 };
   } catch (err) {
     return { result: { error: err }, code: 500 };
@@ -235,7 +266,7 @@ const markModelRunFailed = async (metadata) => {
  * @param{array} filter - simple ES filter
  * @param{boolean} includeVersion - should the ES doc version be returned
  */
-const getAllModelRuns = async(filter, includeVersion) => {
+const getAllModelRuns = async (filter, includeVersion) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
   return connection.find(filter, { size: SEARCH_LIMIT, version: includeVersion });
 };
@@ -284,7 +315,9 @@ const getJobStatus = async (runId, flowId = undefined) => {
 
 const _getFlowIdForRun = async (runId) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  const result = await connection.findOne([{ field: 'id', value: runId }], { includes: ['id', 'flow_id'] });
+  const result = await connection.findOne([{ field: 'id', value: runId }], {
+    includes: ['id', 'flow_id'],
+  });
   return _.get(result, 'flow_id');
 };
 
@@ -318,30 +351,40 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
     clauses: [
       { field: 'dataId', operand: 'or', isNot: false, values: [metadata.id] },
       { field: 'type', operand: 'or', isNot: false, values: ['indicator'] },
-      { field: 'status', operand: 'or', isNot: false, values: ['READY', 'PROCESSING', 'PROCESSING FAILED'] }
-    ]
+      {
+        field: 'status',
+        operand: 'or',
+        isNot: false,
+        values: ['READY', 'PROCESSING', 'PROCESSING FAILED'],
+      },
+    ],
   };
   const existingIndicators = await datacubeService.getDatacubes(filters, {
-    includes: ['id', 'default_feature']
+    includes: ['id', 'default_feature'],
   });
 
   // Since id is a random uuid, ES will not provide any duplicate protection
   // We will check ourselves using data_id and feature
   if (existingIndicators.length > 0) {
-    Logger.warn(`Indicators with data_id ${metadata.id} already exist. Duplicates will not be processed.`);
+    Logger.warn(
+      `Indicators with data_id ${metadata.id} already exist. Duplicates will not be processed.`
+    );
   }
-  const existingIndicatorIds = existingIndicators.reduce((map, i) => map.set(i.default_feature, i.id), new Map());
+  const existingIndicatorIds = existingIndicators.reduce(
+    (map, i) => map.set(i.default_feature, i.id),
+    new Map()
+  );
 
   const acceptedTypes = ['int', 'float', 'boolean', 'datetime'];
   const resolutions = ['annual', 'monthly', 'dekad', 'weekly', 'daily', 'other'];
   let highestRes = 0;
 
   // Exclude all implicit qualifiers
-  const validQualifiers = metadata.qualifier_outputs?.filter(
-    q => !IMPLICIT_QUALIFIERS.includes(q.name)) ?? [];
+  const validQualifiers =
+    metadata.qualifier_outputs?.filter((q) => !IMPLICIT_QUALIFIERS.includes(q.name)) ?? [];
 
   // Exclude non-numeric outputs
-  const numericOutputs = metadata.outputs.filter(output => acceptedTypes.includes(output.type));
+  const numericOutputs = metadata.outputs.filter((output) => acceptedTypes.includes(output.type));
   if (numericOutputs.length < metadata.outputs.length) {
     Logger.warn(`Filtered out ${metadata.outputs.length - numericOutputs.length} indicators`);
   }
@@ -350,22 +393,24 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
   let weightColumn = '';
   for (const output of numericOutputs) {
     qualifierMap[output.name] = validQualifiers
-      .filter(qualifier => qualifier.related_features.includes(output.name) &&
-        (!qualifier.qualifier_role || qualifier.qualifier_role === 'breakdown'))
-      .map(q => q.name);
+      .filter(
+        (qualifier) =>
+          qualifier.related_features.includes(output.name) &&
+          (!qualifier.qualifier_role || qualifier.qualifier_role === 'breakdown')
+      )
+      .map((q) => q.name);
   }
   // Data pipeline only supports a single weight column
   // Use the first weight qualifiers
-  const weightQualifier = validQualifiers.find(q =>
-    q.qualifier_role === 'weight' &&
-    q.related_features.length > 0
+  const weightQualifier = validQualifiers.find(
+    (q) => q.qualifier_role === 'weight' && q.related_features.length > 0
   );
   if (weightQualifier) {
     weightColumn = weightQualifier.name;
   }
 
   // Create data to send to elasticsearch
-  const indicatorMetadata = numericOutputs.map(output => {
+  const indicatorMetadata = numericOutputs.map((output) => {
     // Determine the highest available temporal resolution
     const outputRes = output.data_resolution && output.data_resolution.temporal_resolution;
     const resIndex = resolutions.indexOf(outputRes || '');
@@ -383,46 +428,61 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
     let qualifierMatches = [];
     if (metadata.qualifier_outputs) {
       // Filter out unrelated qualifiers
-      clonedMetadata.qualifier_outputs = _.cloneDeep(metadata.qualifier_outputs.filter(
-        qualifier => qualifier.related_features.includes(output.name)));
+      clonedMetadata.qualifier_outputs = _.cloneDeep(
+        metadata.qualifier_outputs.filter((qualifier) =>
+          qualifier.related_features.includes(output.name)
+        )
+      );
 
       // Combine all concepts from the qualifiers into one list
-      qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
-        qualifier.ontologies.concepts,
-        qualifier.ontologies.processes,
-        qualifier.ontologies.properties
-      ]).flat(2);
+      qualifierMatches = clonedMetadata.qualifier_outputs
+        .map((qualifier) => [
+          qualifier.ontologies.concepts,
+          qualifier.ontologies.processes,
+          qualifier.ontologies.properties,
+        ])
+        .flat(2);
 
       // Remove qualifier level ontologies
-      clonedMetadata.qualifier_outputs.forEach(qualifier => { qualifier.ontologies = undefined; });
+      clonedMetadata.qualifier_outputs.forEach((qualifier) => {
+        qualifier.ontologies = undefined;
+      });
     }
 
     // Append to the concepts from the output
-    const allMatches = qualifierMatches.concat(output.ontologies.concepts,
+    const allMatches = qualifierMatches.concat(
+      output.ontologies.concepts,
       output.ontologies.processes,
-      output.ontologies.properties);
+      output.ontologies.properties
+    );
 
     // Remove output level ontologies
     output.ontologies = undefined;
 
-    clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+    clonedMetadata.ontology_matches = _.sortedUniqBy(
+      _.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']),
+      'name'
+    );
     return clonedMetadata;
   });
 
   // replaceDocIds are the existing indicator ids in ES that will be replaced
   // newDocIds are the new indicator ids
-  const [replaceDocIds, newDocIds] = _.partition(indicatorMetadata, meta => existingIndicatorIds.has(meta.default_feature))
-    .map(metaList => metaList.map(meta => meta.id));
+  const [replaceDocIds, newDocIds] = _.partition(indicatorMetadata, (meta) =>
+    existingIndicatorIds.has(meta.default_feature)
+  ).map((metaList) => metaList.map((meta) => meta.id));
 
   // deleteDocIds are old indicators that weren't present in the new dataset
   const deleteDocIds = fullReplace
-    ? existingIndicators.map(i => i.id).filter(id => !replaceDocIds.includes(id))
+    ? existingIndicators.map((i) => i.id).filter((id) => !replaceDocIds.includes(id))
     : [];
 
   // When processing a NEW datasets, replaceDocIds should be empty.
-  Logger.info(`${newDocIds.length} new indicators will be added. ${replaceDocIds.length} indicators will be replaced.`);
+  Logger.info(
+    `${newDocIds.length} new indicators will be added. ${replaceDocIds.length} indicators will be replaced.`
+  );
 
-  const docIds = indicatorMetadata.map(meta => meta.id);
+  const docIds = indicatorMetadata.map((meta) => meta.id);
   const flowParameters = {
     model_id: metadata.id,
     doc_ids: docIds,
@@ -436,8 +496,8 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
     qualifier_thresholds: {
       max_count: QUALIFIER_MAX_COUNT,
       regional_timeseries_count: QUALIFIER_TIMESERIES_MAX_COUNT,
-      regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL
-    }
+      regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL,
+    },
   };
   // If custom target S3 is provided,
   if (process.env.S3_URL) {
@@ -445,7 +505,7 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
       endpoint_url: process.env.S3_URL,
       region_name: 'us-east-1',
       key: process.env.S3_ID,
-      secret: process.env.S3_SECRET
+      secret: process.env.S3_SECRET,
     };
     flowParameters.model_bucket = process.env.S3_MODELS_BUCKET;
     flowParameters.indicator_bucket = process.env.S3_INDICATORS_BUCKET;
@@ -460,19 +520,18 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
     if (deleteDocIds.length > 0) {
       Logger.info(`${deleteDocIds.length} old indicators will be removed.`);
-      await connection.delete(deleteDocIds.map(id => ({ id })));
+      await connection.delete(deleteDocIds.map((id) => ({ id })));
     }
-    const result = await connection.insert(indicatorMetadata, d => d.id);
+    const result = await connection.insert(indicatorMetadata, (d) => d.id);
     const response = {
-      result:
-        {
-          es_response: result,
-          message: 'Documents inserted',
-          new_ids: newDocIds,
-          existing_ids: replaceDocIds,
-          deleted_ids: deleteDocIds
-        },
-      code: existingIndicators.length === 0 ? 201 : 200
+      result: {
+        es_response: result,
+        message: 'Documents inserted',
+        new_ids: newDocIds,
+        existing_ids: replaceDocIds,
+        deleted_ids: deleteDocIds,
+      },
+      code: existingIndicators.length === 0 ? 201 : 200,
     };
     if (deprecatedIds) {
       await datacubeService.deprecateDatacubes(metadata.id, deprecatedIds);
@@ -486,21 +545,21 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
 /**
  * Update a model run  with the specified changes
  */
-const updateModelRun = async(modelRun) => {
+const updateModelRun = async (modelRun) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  return await connection.update(modelRun, doc => doc.id);
+  return await connection.update(modelRun, (doc) => doc.id);
 };
 
 /**
  * Add a tag to multiple model runs
  */
-const addModelTag = async(filter, tag) => {
+const addModelTag = async (filter, tag) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
 
   const script = {
     lang: 'painless',
     params: {
-      tag: tag
+      tag: tag,
     },
     source: `
       if (ctx._source.tags != null) {
@@ -510,7 +569,7 @@ const addModelTag = async(filter, tag) => {
       } else {
         ctx._source.tags = [params.tag];
       }
-    `
+    `,
   };
   return await connection.updateByQuery(filter, script);
 };
@@ -518,13 +577,13 @@ const addModelTag = async(filter, tag) => {
 /**
  * Remove a tag from multiple model runs
  */
-const removeModelTag = async(filter, tag) => {
+const removeModelTag = async (filter, tag) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
 
   const script = {
     lang: 'painless',
     params: {
-      tag: tag
+      tag: tag,
     },
     source: `
       if (ctx._source.tags != null) {
@@ -533,7 +592,7 @@ const removeModelTag = async(filter, tag) => {
           ctx._source.tags.remove(i);
         }
       }
-    `
+    `,
   };
   return await connection.updateByQuery(filter, script);
 };
@@ -541,14 +600,14 @@ const removeModelTag = async(filter, tag) => {
 /**
  * Rename a tag used multiple model runs
  */
-const renameModelTag = async(filter, oldTag, newTag) => {
+const renameModelTag = async (filter, oldTag, newTag) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
 
   const script = {
     lang: 'painless',
     params: {
       oldTag: oldTag,
-      newTag: newTag
+      newTag: newTag,
     },
     source: `
       if (ctx._source.tags != null) {
@@ -557,7 +616,7 @@ const renameModelTag = async(filter, oldTag, newTag) => {
           ctx._source.tags.set(i, params.newTag);
         }
       }
-    `
+    `,
   };
   return await connection.updateByQuery(filter, script);
 };
@@ -573,6 +632,5 @@ module.exports = {
   updateModelRun,
   addModelTag,
   removeModelTag,
-  renameModelTag
+  renameModelTag,
 };
-

@@ -2,20 +2,12 @@
   <div class="action-bar-container">
     <div>
       Scenario
-      <button
-        class="btn btn-primary scenario-button"
-        @click="toggleScenarioDropdownOpen"
-      >
+      <button class="btn btn-primary scenario-button" @click="toggleScenarioDropdownOpen">
         {{
-          selectedScenario.is_valid
-            ? selectedScenario.name
-            : selectedScenario.name + ' (Stale)  '
+          selectedScenario.is_valid ? selectedScenario.name : selectedScenario.name + ' (Stale)  '
         }}
         <i class="fa fa-fw fa-angle-down" />
-        <dropdown-control
-          v-if="isScendarioDropdownOpen"
-          class="scenario-dropdown"
-        >
+        <dropdown-control v-if="isScendarioDropdownOpen" class="scenario-dropdown">
           <template #content>
             <div
               v-for="scenario of scenarioOptions"
@@ -24,29 +16,19 @@
               :class="{ selected: scenario.id === selectedScenarioId }"
               @click.stop="onClickScenario(scenario.id)"
             >
-              {{
-                scenario.is_valid
-                  ? scenario.name
-                  : scenario.name + ' (Stale - rerun scenario) '
-              }}
+              {{ scenario.is_valid ? scenario.name : scenario.name + ' (Stale - rerun scenario) ' }}
             </div>
           </template>
         </dropdown-control>
       </button>
-      <button
-        class="btn"
-        :class="{ 'btn-call-to-action': isDirty }"
-        @click="runModel"
-      >
-        Run
-      </button>
+      <button class="btn" :class="{ 'btn-call-to-action': isDirty }" @click="runModel">Run</button>
     </div>
     <div class="group">
       <radio-button-group
         class="tour-matrix-tab"
         :buttons="[
           { label: 'Causal Flow', value: 'flow' },
-          { label: 'Matrix', value: 'matrix' }
+          { label: 'Matrix', value: 'matrix' },
         ]"
         :selected-button-value="activeTab"
         @button-clicked="setActive"
@@ -66,7 +48,7 @@
         v-tooltip.top-center="'open data analysis with CAG indicators'"
         type="button"
         class="btn"
-        style="margin-right: 1rem;"
+        style="margin-right: 1rem"
         @click="openDataAnalysis"
       >
         Data Analysis
@@ -98,28 +80,23 @@ export default defineComponent({
   components: {
     DropdownControl,
     ArrowButton,
-    RadioButtonGroup
+    RadioButtonGroup,
   },
   props: {
     currentEngine: {
       type: String,
-      default: null
+      default: null,
     },
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
-      required: true
+      required: true,
     },
     scenarios: {
       type: Array as PropType<Scenario[]>,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
-  emits: [
-    'run-model',
-    'reset-cag',
-    'tab-click',
-    'open-data-analysis-for-cag'
-  ],
+  emits: ['run-model', 'reset-cag', 'tab-click', 'open-data-analysis-for-cag'],
   setup() {
     const store = useStore();
     const isScendarioDropdownOpen = ref(false);
@@ -138,13 +115,13 @@ export default defineComponent({
       currentCAG,
 
       // actions
-      setSelectedScenarioId
+      setSelectedScenarioId,
     };
   },
   computed: {
     selectedScenario() {
       const found = this.scenarioOptions.find(
-        scenario => scenario.id === this.selectedScenarioId
+        (scenario) => scenario.id === this.selectedScenarioId
       );
       if (found !== undefined) return found;
 
@@ -154,23 +131,20 @@ export default defineComponent({
         `Scenarios: ${this.scenarios}`
       );
       return {
-        name: '[No Scenarios Exist]'
+        name: '[No Scenarios Exist]',
       };
     },
     scenarioOptions() {
-      return [
-        { id: null, name: 'Historical data', is_valid: true },
-        ...this.scenarios
-      ];
+      return [{ id: null, name: 'Historical data', is_valid: true }, ...this.scenarios];
     },
     isDirty() {
-      return _.some(this.scenarios, s => s.is_valid === false);
+      return _.some(this.scenarios, (s) => s.is_valid === false);
     },
     activeTab() {
       // if we ever need more state than this
       // add a query store for model
       return this.$route.query?.activeTab || 'flow';
-    }
+    },
   },
   methods: {
     runModel() {
@@ -196,15 +170,15 @@ export default defineComponent({
         params: {
           project: this.project,
           currentCAG: this.currentCAG,
-          projectType: ProjectType.Analysis
-        }
+          projectType: ProjectType.Analysis,
+        },
       });
     },
     setActive(activeTab: string) {
       this.$router.push({ query: { activeTab } }).catch(() => {});
       this.$emit('tab-click', activeTab);
-    }
-  }
+    },
+  },
 });
 </script>
 

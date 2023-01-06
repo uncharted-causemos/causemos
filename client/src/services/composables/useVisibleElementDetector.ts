@@ -7,7 +7,7 @@
 export default function useVisibleElementDetector(targetElement: Element, callback: Function) {
   const options = {
     rootMargin: '0px',
-    threshold: 0
+    threshold: 0,
   };
   const observer = new IntersectionObserver((entries, ob) => {
     if (entries[0].isIntersecting) {

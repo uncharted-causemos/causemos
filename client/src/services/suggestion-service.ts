@@ -12,10 +12,14 @@ import { RegionalGADMDetail } from '@/types/Common';
  * @returns an array of regional info matching the query
  */
 export const getGADMSuggestions = (field: string, query: string) => {
-  return _.debounce(async () => {
-    const result = await API.get('gadm/suggestions', { params: { field, q: query } });
-    return result.data as Array<RegionalGADMDetail>;
-  }, 300, { trailing: true, leading: true });
+  return _.debounce(
+    async () => {
+      const result = await API.get('gadm/suggestions', { params: { field, q: query } });
+      return result.data as Array<RegionalGADMDetail>;
+    },
+    300,
+    { trailing: true, leading: true }
+  );
 };
 
 /**
@@ -26,18 +30,26 @@ export const getGADMSuggestions = (field: string, query: string) => {
  * @param {function(array<string>, string): array<string>} [postProcessFn] - optional processing on the fetched suggestions
  * @returns {DebouncedFunc<function(*=): Promise<*>>} a function used to fetch suggestions
  */
-const getConceptSuggestionFunction = (projectId: string, ontology: Array<string>, postProcessFn?: Function) => {
-  return _.debounce(async function(hint = '') {
-    let result = ontology;
-    if (!_.isEmpty(hint)) {
-      const suggestions = await projectService.getConceptSuggestions(projectId, hint);
-      result = suggestions.map((s: any) => s.doc.key);
-    }
-    if (postProcessFn) {
-      return postProcessFn(result, hint);
-    }
-    return result;
-  }, 500, { trailing: true, leading: true });
+const getConceptSuggestionFunction = (
+  projectId: string,
+  ontology: Array<string>,
+  postProcessFn?: Function
+) => {
+  return _.debounce(
+    async function (hint = '') {
+      let result = ontology;
+      if (!_.isEmpty(hint)) {
+        const suggestions = await projectService.getConceptSuggestions(projectId, hint);
+        result = suggestions.map((s: any) => s.doc.key);
+      }
+      if (postProcessFn) {
+        return postProcessFn(result, hint);
+      }
+      return result;
+    },
+    500,
+    { trailing: true, leading: true }
+  );
 };
 
 /**
@@ -52,16 +64,20 @@ const getConceptSuggestionFunction = (projectId: string, ontology: Array<string>
  * @returns {DebouncedFunc<function(*=): Promise<*>>} a function used to fetch suggestions
  */
 const getSuggestionFunction = (projectId: string, field: string, postProcessFn?: Function) => {
-  return _.debounce(async function(hint = '') {
-    let result = [];
-    if (!_.isEmpty(hint)) {
-      result = await projectService.getSuggestions(projectId, field, hint);
-    }
-    if (postProcessFn) {
-      return postProcessFn(result, hint);
-    }
-    return result;
-  }, 500, { trailing: true, leading: true });
+  return _.debounce(
+    async function (hint = '') {
+      let result = [];
+      if (!_.isEmpty(hint)) {
+        result = await projectService.getSuggestions(projectId, field, hint);
+      }
+      if (postProcessFn) {
+        return postProcessFn(result, hint);
+      }
+      return result;
+    },
+    500,
+    { trailing: true, leading: true }
+  );
 };
 
 /**
@@ -74,16 +90,20 @@ const getSuggestionFunction = (projectId: string, field: string, postProcessFn?:
  * @returns {DebouncedFunc<function(*=): Promise<*>>} a function used to fetch suggestions
  */
 const getDatacubeFieldSuggestionFunction = (field: string, postProcessFn?: Function) => {
-  return _.debounce(async function(hint = '') {
-    let result = [];
-    if (!_.isEmpty(hint)) {
-      result = await datacubeService.getSuggestions(field, hint);
-    }
-    if (postProcessFn) {
-      return postProcessFn(result, hint);
-    }
-    return result;
-  }, 500, { trailing: true, leading: true });
+  return _.debounce(
+    async function (hint = '') {
+      let result = [];
+      if (!_.isEmpty(hint)) {
+        result = await datacubeService.getSuggestions(field, hint);
+      }
+      if (postProcessFn) {
+        return postProcessFn(result, hint);
+      }
+      return result;
+    },
+    500,
+    { trailing: true, leading: true }
+  );
 };
 
 // Find indirect paths between source/target
@@ -95,7 +115,10 @@ const getPathSuggestions = async (projectId: string, source: string, target: str
 
 // Find indirect paths between sources/targets for merged nodes
 const getGroupPathSuggestions = async (projectId: string, sources: string[], targets: string[]) => {
-  const result = await API.post(`projects/${projectId}/group-path-suggestions`, { sources, targets });
+  const result = await API.post(`projects/${projectId}/group-path-suggestions`, {
+    sources,
+    targets,
+  });
   return result.data;
 };
 
@@ -104,5 +127,5 @@ export default {
   getSuggestionFunction,
   getDatacubeFieldSuggestionFunction,
   getPathSuggestions,
-  getGroupPathSuggestions
+  getGroupPathSuggestions,
 };

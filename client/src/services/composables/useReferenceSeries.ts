@@ -1,7 +1,7 @@
 import {
   ReferenceSeriesOption,
   SpatialAggregationLevel,
-  TemporalAggregationLevel
+  TemporalAggregationLevel,
 } from '@/types/Enums';
 import { ModelRunReference } from '@/types/ModelRunReference';
 import { RegionalAggregations } from '@/types/Outputdata';
@@ -29,9 +29,7 @@ export default function useReferenceSeries(
   });
   const toggleReferenceOptions = (value: string) => {
     if (activeReferenceOptions.value.includes(value)) {
-      activeReferenceOptions.value = activeReferenceOptions.value.filter(
-        r => r !== value
-      );
+      activeReferenceOptions.value = activeReferenceOptions.value.filter((r) => r !== value);
     } else {
       activeReferenceOptions.value.push(value);
     }
@@ -43,20 +41,20 @@ export default function useReferenceSeries(
       options = [
         {
           id: ReferenceSeriesOption.AllYears,
-          displayName: 'Average All Years'
+          displayName: 'Average All Years',
         },
         {
           id: ReferenceSeriesOption.SelectYears,
-          displayName: 'Average Selected Years'
-        }
+          displayName: 'Average Selected Years',
+        },
       ];
     } else if (breakdownOption.value === SpatialAggregationLevel.Region) {
       // if selected admin level is lower than country, add countries as references.
       if (selectedAdminLevel.value > 0 && regionalData.value?.country) {
-        regionalData.value.country.forEach(refRegion => {
+        regionalData.value.country.forEach((refRegion) => {
           options.push({
             id: refRegion.id,
-            displayName: refRegion.id
+            displayName: refRegion.id,
           });
         });
       }
@@ -69,13 +67,13 @@ export default function useReferenceSeries(
     return options.map(({ id, displayName }) => ({
       id,
       displayName,
-      checked: activeReferenceOptions.value.includes(id)
+      checked: activeReferenceOptions.value.includes(id),
     }));
   });
 
   return {
     activeReferenceOptions,
     availableReferenceOptions,
-    toggleReferenceOptions
+    toggleReferenceOptions,
   };
 }

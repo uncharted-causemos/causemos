@@ -11,24 +11,27 @@
       v-if="allowNewInsights"
       type="button"
       class="btn btn-call-to-action"
-      @click.stop="newInsight">
-        <i class="fa fa-fw fa-star fa-lg" />
-        New Insight
-    </button>
-    <div
-      v-if="listContextInsights.length > 0"
-      class="pane-content"
+      @click.stop="newInsight"
     >
+      <i class="fa fa-fw fa-star fa-lg" />
+      New Insight
+    </button>
+    <div v-if="listContextInsights.length > 0" class="pane-content">
       <div
         v-for="contextInsight in listContextInsights"
         :key="contextInsight.id"
         class="context-insight"
-        :class="{ 'selected': selectedContextInsight === contextInsight, '': selectedContextInsight !== contextInsight }"
-        @click="selectContextInsight(contextInsight)">
+        :class="{
+          selected: selectedContextInsight === contextInsight,
+          '': selectedContextInsight !== contextInsight,
+        }"
+        @click="selectContextInsight(contextInsight)"
+      >
         <div class="context-insight-header">
           <div
             class="context-insight-title"
-            :class="{ 'private-insight-title': contextInsight.visibility === 'private' }">
+            :class="{ 'private-insight-title': contextInsight.visibility === 'private' }"
+          >
             {{ contextInsight.name }}
           </div>
           <options-button :dropdown-below="true">
@@ -60,26 +63,18 @@
           <div
             v-if="contextInsight.description.length > 0"
             class="context-insight-description"
-            :class="{ 'private-insight-description': contextInsight.visibility === 'private' }">
+            :class="{ 'private-insight-description': contextInsight.visibility === 'private' }"
+          >
             {{ contextInsight.description }}
           </div>
-          <span
-            v-else
-            class="context-insight-empty-description">No description.
-          </span>
+          <span v-else class="context-insight-empty-description">No description. </span>
         </div>
       </div>
     </div>
-    <message-display
-      v-else
-      :message="messageNoData"
-    />
-    <button
-      type="button"
-      class="btn pane-footer"
-      @click="openInsightsExplorer">
-        <i class="fa fa-fw fa-star fa-lg" />
-        Review All Insights
+    <message-display v-else :message="messageNoData" />
+    <button type="button" class="btn pane-footer" @click="openInsightsExplorer">
+      <i class="fa fa-fw fa-star fa-lg" />
+      Review All Insights
     </button>
   </div>
 </template>
@@ -109,17 +104,17 @@ export default {
     DropdownButton,
     MessageDisplay,
     OptionsButton,
-    ImgLazy
+    ImgLazy,
   },
   props: {
     allowNewInsights: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
   data: () => ({
     messageNoData: INSIGHTS.NO_DATA,
-    selectedContextInsight: null
+    selectedContextInsight: null,
   }),
   setup() {
     const store = useStore();
@@ -129,21 +124,27 @@ export default {
 
     return {
       listContextInsights: insights,
-      reFetchInsights
+      reFetchInsights,
     };
   },
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
       projectType: 'app/projectType',
-      project: 'app/project'
+      project: 'app/project',
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
       const projectModifiedDate = new Date(this.projectMetadata.modified_at);
-      return `Project: ${this.projectMetadata.name} - Created: ${projectCreatedDate.toLocaleString()} - ` +
-        `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${this.projectMetadata.corpus_id}`;
-    }
+      return (
+        `Project: ${
+          this.projectMetadata.name
+        } - Created: ${projectCreatedDate.toLocaleString()} - ` +
+        `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${
+          this.projectMetadata.corpus_id
+        }`
+      );
+    },
   },
   methods: {
     ...mapActions({
@@ -155,7 +156,7 @@ export default {
       setInsightsBySection: 'insightPanel/setInsightsBySection',
       setPositionInReview: 'insightPanel/setPositionInReview',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
-      setSnapshotUrl: 'insightPanel/setSnapshotUrl'
+      setSnapshotUrl: 'insightPanel/setSnapshotUrl',
     }),
     newInsight() {
       this.setSnapshotUrl(undefined);
@@ -172,7 +173,7 @@ export default {
 
       this.enableOverlay('Preparing to export insights');
       const bibliographyMap = await getBibiographyFromCagIds([...cagMap.keys()]);
-      const insights = await fetchFullInsights({ id: this.listContextInsights.map(d => d.id) });
+      const insights = await fetchFullInsights({ id: this.listContextInsights.map((d) => d.id) });
       this.disableOverlay();
 
       switch (item) {
@@ -200,11 +201,16 @@ export default {
       //  because, for example, the comparative analysis (region-ranking) page does not
       //  need/understand a specific datacube_id,
       //  and setting it regardless may have a negative side effect
-      const datacubeId = savedURL.includes('/dataComparative/') ? undefined : _.first(contextInsight.context_id);
+      const datacubeId = savedURL.includes('/dataComparative/')
+        ? undefined
+        : _.first(contextInsight.context_id);
 
       if (savedURL !== currentURL) {
         // special case
-        if (this.projectType === ProjectType.Analysis && this.selectedContextInsight.visibility === 'public') {
+        if (
+          this.projectType === ProjectType.Analysis &&
+          this.selectedContextInsight.visibility === 'public'
+        ) {
           // this is an insight created by the domain modeler during model publication:
           // for applying this insight, do not redirect to the domain project page,
           // instead use the current context and rehydrate the view
@@ -218,19 +224,24 @@ export default {
         }
 
         // add 'insight_id' as a URL param so that the target page can apply it
-        const finalURL = InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id, datacubeId);
+        const finalURL = InsightUtil.getSourceUrlForExport(
+          savedURL,
+          this.selectedContextInsight.id,
+          datacubeId
+        );
 
         try {
           this.$router.push(finalURL);
-        } catch (e) {
-        }
+        } catch (e) {}
       } else {
-        router.push({
-          query: {
-            insight_id: this.selectedContextInsight.id,
-            datacube_id: datacubeId
-          }
-        }).catch(() => {});
+        router
+          .push({
+            query: {
+              insight_id: this.selectedContextInsight.id,
+              datacube_id: datacubeId,
+            },
+          })
+          .catch(() => {});
       }
     },
     isDisabled(insight) {
@@ -242,7 +253,11 @@ export default {
       }
 
       // are removing a public insight (from the context panel within a domain project)?
-      if (insight.visibility === 'public' && Array.isArray(insight.context_id) && insight.context_id.length > 0) {
+      if (
+        insight.visibility === 'public' &&
+        Array.isArray(insight.context_id) &&
+        insight.context_id.length > 0
+      ) {
         // is this the last public insight for the relevant dataube?
         //  if so, unpublish the model datacube
         const datacubeId = insight.context_id[0];
@@ -265,23 +280,25 @@ export default {
       this.showInsightPanel();
       this.setUpdatedInsight(insight);
       const dummySection = InsightUtil.createEmptyChecklistSection();
-      const insightsBySection = [{
-        section: dummySection,
-        insights: this.listContextInsights
-      }];
+      const insightsBySection = [
+        {
+          section: dummySection,
+          insights: this.listContextInsights,
+        },
+      ];
       this.setInsightsBySection(insightsBySection);
       this.setPositionInReview({
         sectionId: dummySection.id,
-        insightId: insight.id
+        insightId: insight.id,
       });
       this.setCurrentPane('review-edit-insight');
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style lang="scss">
-@import "~styles/variables";
+@import '~styles/variables';
 
 .list-context-insights-pane-container {
   color: #707070;
@@ -323,7 +340,7 @@ export default {
     }
     .context-insight-content {
       .context-insight-thumbnail {
-        width:  100%;
+        width: 100%;
       }
       .context-insight-description {
         color: gray;
@@ -352,5 +369,4 @@ export default {
   cursor: none;
   color: lightgray;
 }
-
 </style>

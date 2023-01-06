@@ -1,7 +1,7 @@
 <template>
   <div
     class="arrow-button-container"
-    :class="{ 'pointing-left': isPointingLeft, 'disabled': disabled }"
+    :class="{ 'pointing-left': isPointingLeft, disabled: disabled }"
     @click="if (!disabled) $emit('click');"
   >
     <button
@@ -25,21 +25,21 @@ export default defineComponent({
   props: {
     text: {
       type: String,
-      required: true
+      required: true,
     },
     icon: {
       type: String,
-      default: 'fa-connectdevelop'
+      default: 'fa-connectdevelop',
     },
     isPointingLeft: {
       type: Boolean,
-      default: false
+      default: false,
     },
     disabled: {
       type: Boolean,
-      default: false
-    }
-  }
+      default: false,
+    },
+  },
 });
 </script>
 

@@ -1,9 +1,5 @@
 <template>
-  <modal-confirmation
-    :autofocus-confirm="false"
-    @confirm="onConfirm"
-    @close="onCancel"
-  >
+  <modal-confirmation :autofocus-confirm="false" @confirm="onConfirm" @close="onCancel">
     <template #title>{{ modalTitle }}</template>
     <template #message>
       <input
@@ -14,7 +10,7 @@
         @focus="$event.target.select()"
         @input="newNameInput = $event.target.value"
         @keyup.enter="onConfirm"
-      >
+      />
     </template>
   </modal-confirmation>
 </template>
@@ -26,21 +22,21 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 export default defineComponent({
   name: 'DuplicateModal',
   components: {
-    ModalConfirmation
+    ModalConfirmation,
   },
   props: {
     modalTitle: {
       type: String,
-      default: 'Duplicate CAG'
+      default: 'Duplicate CAG',
     },
     currentName: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   emits: ['confirm', 'cancel'],
   data: () => ({
-    newNameInput: ''
+    newNameInput: '',
   }),
   methods: {
     onConfirm() {
@@ -49,7 +45,7 @@ export default defineComponent({
     onCancel() {
       this.newNameInput = '';
       this.$emit('cancel');
-    }
-  }
+    },
+  },
 });
 </script>

@@ -29,7 +29,6 @@ export function uniqueEdges(graphs) {
   return _edgesNumOccurrence(graphs, 1);
 }
 
-
 /**
  * Returns nodes that appear across graphs cnt times
  *
@@ -38,13 +37,13 @@ export function uniqueEdges(graphs) {
  */
 function _nodesNumOccurrence(graphs, cnt) {
   const key = 'id';
-  const nodeSets = graphs.map(graph => graph.nodes);
+  const nodeSets = graphs.map((graph) => graph.nodes);
   const keyedNodes = {};
   const keyCounts = {};
   const results = [];
 
-  nodeSets.forEach(set => {
-    set.forEach(node => {
+  nodeSets.forEach((set) => {
+    set.forEach((node) => {
       if (keyCounts[node[key]]) {
         keyCounts[node[key]] += 1;
       } else {
@@ -68,13 +67,13 @@ function _nodesNumOccurrence(graphs, cnt) {
  * @param {number} cnt - filter by cnt occurrences
  */
 function _edgesNumOccurrence(graphs, cnt) {
-  const edgeSets = graphs.map(graph => graph.edges);
+  const edgeSets = graphs.map((graph) => graph.edges);
   const keyedEdges = {};
   const keyCounts = {};
   const results = [];
 
-  edgeSets.forEach(set => {
-    set.forEach(edge => {
+  edgeSets.forEach((set) => {
+    set.forEach((edge) => {
       const id = _edgeId(edge);
       if (keyCounts[id]) {
         keyCounts[id] += 1;
@@ -96,5 +95,5 @@ export default {
   commonNodes,
   commonEdges,
   uniqueNodes,
-  uniqueEdges
+  uniqueEdges,
 };

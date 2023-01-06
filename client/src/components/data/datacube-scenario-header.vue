@@ -1,10 +1,6 @@
 <template>
   <div class="run-header">
-    <span
-      v-for="parameter in inputParameters"
-      :key="parameter.name"
-      class="scenario-input"
-    >
+    <span v-for="parameter in inputParameters" :key="parameter.name" class="scenario-input">
       <label>{{ parameter.name }}</label>
       <span v-for="(value, index) of parameter.values" :key="index">
         {{ index > 0 ? ', ' : '' }}
@@ -17,14 +13,7 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs,
-  watchEffect
-} from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
 import { ModelRun, ModelRunParameter } from '@/types/ModelRun';
 import { Model } from '@/types/Datacube';
 
@@ -35,27 +24,27 @@ export default defineComponent({
   props: {
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
-      required: true
+      required: true,
     },
     colorFromIndex: {
       type: Function as PropType<(index: number) => string>,
-      default: () => '#000'
+      default: () => '#000',
     },
     metadata: {
       type: Object as PropType<Model | null>,
-      default: null
+      default: null,
     },
     modelRunData: {
       type: Array as PropType<ModelRun[]>,
-      default: []
-    }
+      default: [],
+    },
   },
   setup(props) {
     const { metadata, selectedScenarioIds, modelRunData } = toRefs(props);
     const inputNames = computed(() => {
       if (metadata.value === null) return {};
       const inputNamesMap: { [key: string]: string } = {};
-      metadata.value.parameters.forEach(parameter => {
+      metadata.value.parameters.forEach((parameter) => {
         inputNamesMap[parameter.name] = parameter.display_name;
       });
       return inputNamesMap;
@@ -63,7 +52,11 @@ export default defineComponent({
     const scenarioDescriptions = ref<ScenarioDescription[]>([]);
     watchEffect(() => {
       scenarioDescriptions.value = [];
-      if (metadata.value === null || selectedScenarioIds.value.length === 0 || modelRunData.value.length === 0) {
+      if (
+        metadata.value === null ||
+        selectedScenarioIds.value.length === 0 ||
+        modelRunData.value.length === 0
+      ) {
         return [];
       }
       scenarioDescriptions.value = modelRunData.value
@@ -73,20 +66,19 @@ export default defineComponent({
         });
     });
     const inputParameters = computed(() => {
-      return Object.keys(inputNames.value).map(inputName => ({
+      return Object.keys(inputNames.value).map((inputName) => ({
         name: inputNames.value[inputName],
         values: scenarioDescriptions.value.map(
-          parameterValues =>
-            parameterValues.find(({ name }) => name === inputName)?.value ??
-            'missing'
-        )
+          (parameterValues) =>
+            parameterValues.find(({ name }) => name === inputName)?.value ?? 'missing'
+        ),
       }));
     });
 
     return {
-      inputParameters
+      inputParameters,
     };
-  }
+  },
 });
 </script>
 

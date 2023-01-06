@@ -19,19 +19,17 @@ const state: ModelPublishState = {
   selectedTemporalResolution: TemporalResolutionOption.None,
   selectedSpatialAggregation: AggregationOption.None,
   selectedTimestamp: null,
-  selectedScenarioIds: []
+  selectedScenarioIds: [],
 };
-
 
 const getters: GetterTree<ModelPublishState, any> = {
-  currentPublishStep: state => state.currentPublishStep,
-  selectedTemporalAggregation: state => state.selectedTemporalAggregation,
-  selectedTemporalResolution: state => state.selectedTemporalResolution,
-  selectedSpatialAggregation: state => state.selectedSpatialAggregation,
-  selectedTimestamp: state => state.selectedTimestamp,
-  selectedScenarioIds: state => state.selectedScenarioIds
+  currentPublishStep: (state) => state.currentPublishStep,
+  selectedTemporalAggregation: (state) => state.selectedTemporalAggregation,
+  selectedTemporalResolution: (state) => state.selectedTemporalResolution,
+  selectedSpatialAggregation: (state) => state.selectedSpatialAggregation,
+  selectedTimestamp: (state) => state.selectedTimestamp,
+  selectedScenarioIds: (state) => state.selectedScenarioIds,
 };
-
 
 const actions: ActionTree<ModelPublishState, any> = {
   setCurrentPublishStep: ({ commit }, value) => {
@@ -51,9 +49,8 @@ const actions: ActionTree<ModelPublishState, any> = {
   },
   setSelectedScenarioIds: ({ commit }, value) => {
     commit('setSelectedScenarioIds', value);
-  }
+  },
 };
-
 
 const mutations: MutationTree<ModelPublishState> = {
   setCurrentPublishStep(state, value) {
@@ -73,7 +70,7 @@ const mutations: MutationTree<ModelPublishState> = {
   },
   setSelectedScenarioIds(state, value) {
     state.selectedScenarioIds = value;
-  }
+  },
 };
 
 export default {
@@ -81,5 +78,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

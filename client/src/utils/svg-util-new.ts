@@ -11,20 +11,20 @@ const BUTTON_PADDING = 10;
 
 export enum SVG_BUTTON_STYLES {
   DEFAULT = 'DEFAULT',
-  PRIMARY = 'PRIMARY'
+  PRIMARY = 'PRIMARY',
 }
 
 const STYLES = {
   [SVG_BUTTON_STYLES.DEFAULT]: {
     fill: '#dedede',
     hoverFill: '#e8e8e8',
-    textColor: 'black'
+    textColor: 'black',
   },
   [SVG_BUTTON_STYLES.PRIMARY]: {
     fill: SELECTED_COLOR_DARK,
     hoverFill: SELECTED_COLOR,
-    textColor: 'white'
-  }
+    textColor: 'white',
+  },
 };
 
 /**
@@ -52,12 +52,12 @@ export const createOrUpdateButton = (
   // Create button label
   const label = buttonSelection
     .selectAll('text.button-label')
-    .data(text => [text])
+    .data((text) => [text])
     .join('text')
     .classed('button-label', true)
     .attr('transform', translate(BUTTON_PADDING, 20))
     .style('fill', selectedStyle.textColor)
-    .text(text => text);
+    .text((text) => text);
   // Get the text length in pixels to set the background width accordingly
   let labelWidth = 150;
   try {
@@ -67,7 +67,7 @@ export const createOrUpdateButton = (
   const dynamicWidth = labelWidth + 2 * BUTTON_PADDING;
   buttonSelection
     .selectAll('rect.button-background')
-    .data(text => [text])
+    .data((text) => [text])
     .join('rect')
     .classed('button-background', true)
     .attr('width', dynamicWidth)
@@ -77,13 +77,11 @@ export const createOrUpdateButton = (
     .style('fill', selectedStyle.fill);
   // Hover styles
   buttonSelection
-    .on('mouseenter', function() {
-      d3.select(this).select('.button-background')
-        .style('fill', selectedStyle.hoverFill);
+    .on('mouseenter', function () {
+      d3.select(this).select('.button-background').style('fill', selectedStyle.hoverFill);
     })
-    .on('mouseleave', function() {
-      d3.select(this).select('.button-background')
-        .style('fill', selectedStyle.fill);
+    .on('mouseleave', function () {
+      d3.select(this).select('.button-background').style('fill', selectedStyle.fill);
     });
   // Move the label in front of the button background
   label.raise();

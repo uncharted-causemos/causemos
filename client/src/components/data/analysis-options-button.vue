@@ -24,13 +24,11 @@ export default defineComponent({
   props: {
     analysisId: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
   setup(props) {
-    const {
-      analysisId
-    } = toRefs(props);
+    const { analysisId } = toRefs(props);
     const toast = useToaster();
     const store = useStore();
     const analysisName = computed(() => store.getters['app/analysisName']);
@@ -56,7 +54,7 @@ export default defineComponent({
         //  start page, since ES can take some time to refresh its indices after
         //  the delete operation, meaning the deleted analysis would still show
         //  up in the start page list.
-        await new Promise<void>(resolve => {
+        await new Promise<void>((resolve) => {
           setTimeout(() => {
             resolve();
           }, 500);
@@ -66,8 +64,8 @@ export default defineComponent({
           name: 'overview',
           params: {
             project: project.value,
-            projectType: ProjectType.Analysis
-          }
+            projectType: ProjectType.Analysis,
+          },
         });
       } catch (e) {
         console.error('Error occurred when deleting analysis:', e);
@@ -76,28 +74,30 @@ export default defineComponent({
     };
 
     const onDuplicate = (newName: string) => {
-      duplicateAnalysis(analysisId.value, newName).then((newId) => {
-        toast(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
-        store.dispatch('app/setAnalysisName', newName);
-        router.push({
-          name: 'dataComparative',
-          params: {
-            project: project.value,
-            analysisId: newId,
-            projectType: ProjectType.Analysis
-          }
+      duplicateAnalysis(analysisId.value, newName)
+        .then((newId) => {
+          toast(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
+          store.dispatch('app/setAnalysisName', newName);
+          router.push({
+            name: 'dataComparative',
+            params: {
+              project: project.value,
+              analysisId: newId,
+              projectType: ProjectType.Analysis,
+            },
+          });
+        })
+        .catch(() => {
+          toast(ANALYSIS.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
         });
-      }).catch(() => {
-        toast(ANALYSIS.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
-      });
     };
 
     return {
       analysisName,
       onRenameAnalysis,
       onDeleteAnalysis,
-      onDuplicate
+      onDuplicate,
     };
-  }
+  },
 });
 </script>

@@ -1,15 +1,14 @@
-
 // Simple first in first out cache
 export class FIFOCache<ValueType> {
   private size: number;
-  private queue: { key: string, value: ValueType }[];
+  private queue: { key: string; value: ValueType }[];
   constructor(size = 20) {
     this.size = size;
     this.queue = [];
   }
 
-  private getItem (key: string) {
-    return this.queue.find(item => item.key === key);
+  private getItem(key: string) {
+    return this.queue.find((item) => item.key === key);
   }
 
   get(key: string) {
@@ -33,6 +32,6 @@ export class FIFOCache<ValueType> {
   }
 
   remove(key: string) {
-    this.queue = this.queue.filter(item => item.key !== key);
+    this.queue = this.queue.filter((item) => item.key !== key);
   }
 }

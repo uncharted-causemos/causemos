@@ -15,13 +15,15 @@ describe('knowledgebase-store', () => {
     expect(store.state.filteredStatementCount).to.equal(99);
 
     // action test
-    store.dispatch('setFilteredStatementCount', 10).then(() => {
-      expect(store.state.filteredStatementCount).to.equal(10);
-      done();
-    }).catch(err => {
-      console.log('error', err);
-      done(err);
-    });
+    store
+      .dispatch('setFilteredStatementCount', 10)
+      .then(() => {
+        expect(store.state.filteredStatementCount).to.equal(10);
+        done();
+      })
+      .catch((err) => {
+        console.log('error', err);
+        done(err);
+      });
   });
 });
-

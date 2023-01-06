@@ -13,7 +13,7 @@ const {
   NODE_AGGREGATION_QUERY,
   EDGE_AGGREGATION_QUERY,
   formatNodeAggregation,
-  formatEdgeAggregation
+  formatEdgeAggregation,
 } = rootRequire('adapters/es/graph-query-util');
 const { setCache, delCache, getCache } = rootRequire('/cache/node-lru-cache');
 
@@ -28,12 +28,14 @@ const queryUtil = new StatementQueryUtil();
  */
 const listProjects = async () => {
   const project = Adapter.get(RESOURCE.PROJECT);
-  return project.find({}, {
-    size: MAX_NUMBER_PROJECTS,
-    sort: { modified_at: { order: 'desc' } }
-  });
+  return project.find(
+    {},
+    {
+      size: MAX_NUMBER_PROJECTS,
+      sort: { modified_at: { order: 'desc' } },
+    }
+  );
 };
-
 
 /**
  * Returns a specified project
@@ -42,7 +44,6 @@ const findProject = async (projectId) => {
   const project = Adapter.get(RESOURCE.PROJECT);
   return project.findOne([{ field: 'id', value: projectId }], {});
 };
-
 
 /**
  * Creates the metadata and invokes cloning.
@@ -61,19 +62,22 @@ const createProject = async (kbId, name, description) => {
 
   // Create an extension entry to house new project specific documents
   const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
-  await projectExtension.insert([
-    {
-      project_id: projectId,
-      document: []
-    }
-  ], () => projectId);
+  await projectExtension.insert(
+    [
+      {
+        project_id: projectId,
+        document: [],
+      },
+    ],
+    () => projectId
+  );
 
   const projectData = await projectAdapter.findOne([{ field: 'id', value: projectId }], {});
 
   Logger.info(`Caching Project data for ${projectId}`);
   setCache(projectId, {
     ...projectData,
-    ontologyMap: {}
+    ontologyMap: {},
   });
   return result;
 };
@@ -91,10 +95,13 @@ const updateProject = async (projectId, projectFields) => {
     return doc.id;
   };
 
-  const results = await project.update({
-    id: projectId,
-    ...projectFields
-  }, keyFn);
+  const results = await project.update(
+    {
+      id: projectId,
+      ...projectFields,
+    },
+    keyFn
+  );
 
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
@@ -111,7 +118,6 @@ const checkIndexStatus = async (projectId) => {
   const r = await project.health(projectId);
   return r;
 };
-
 
 /**
  * Cascade deletion of project and its resources
@@ -202,14 +208,13 @@ const deleteProject = async (projectId) => {
   // Delete project data
   Logger.info(`Deleting ${projectId} index data`);
   response = await projectAdapter.client.indices.delete({
-    index: projectId
+    index: projectId,
   });
   Logger.info(JSON.stringify(response));
 
   // Remove deleted project from cache
   delCache(projectId);
 };
-
 
 /**
  * Return tabular representation of the filters state
@@ -243,7 +248,7 @@ const findProjectStatements = async (projectId, filters, options) => {
     size: options.size,
     from: options.from,
     sort: options.sort,
-    excludes: defaultExclusions
+    excludes: defaultExclusions,
   });
 };
 
@@ -257,7 +262,7 @@ const findProjectStatementsByEdges = async (projectId, filters, edges) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
   const filterQuery = queryUtil.buildQuery(filters);
 
-  const formattedEdges = edges.map(edge => edge.source + '///' + edge.target);
+  const formattedEdges = edges.map((edge) => edge.source + '///' + edge.target);
 
   // 1) Execute ES aggregation query to group by wm.edge
   const result = await statement.client.search({
@@ -270,38 +275,36 @@ const findProjectStatementsByEdges = async (projectId, filters, edges) => {
           terms: {
             field: 'wm.edge',
             size: MAX_ES_BUCKET_SIZE,
-            include: formattedEdges
+            include: formattedEdges,
           },
           aggs: {
             ids: {
               terms: {
                 field: 'id',
-                size: MAX_ES_BUCKET_SIZE
-              }
-            }
-          }
-        }
-      }
-    }
+                size: MAX_ES_BUCKET_SIZE,
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
   // 2) Format data
   const aggs = result.body.aggregations;
   const finalResult = {};
-  aggs.edges.buckets.forEach(bucket => {
-    finalResult[bucket.key] = bucket.ids.buckets.map(b => b.key);
+  aggs.edges.buckets.forEach((bucket) => {
+    finalResult[bucket.key] = bucket.ids.buckets.map((b) => b.key);
   });
 
   return finalResult;
 };
 
-
-
 /**
  * Return graph representation of the filters state
  * @param {string} projectId - id of project
  * @param {object} filters
-*/
+ */
 const findProjectGraph = async (projectId, filters) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
   const filterQuery = queryUtil.buildQuery(filters);
@@ -311,39 +314,37 @@ const findProjectGraph = async (projectId, filters) => {
     body: {
       size: 0,
       query: filterQuery.query,
-      aggs: EDGE_AGGREGATION_QUERY.aggs
-    }
+      aggs: EDGE_AGGREGATION_QUERY.aggs,
+    },
   });
   const graphNodes = await statement.client.search({
     index: statement.index,
     body: {
       size: 0,
       query: filterQuery.query,
-      aggs: NODE_AGGREGATION_QUERY.aggs
-    }
+      aggs: NODE_AGGREGATION_QUERY.aggs,
+    },
   });
 
   return {
     nodes: formatNodeAggregation(graphNodes, graphEdges),
-    edges: formatEdgeAggregation(graphEdges)
+    edges: formatEdgeAggregation(graphEdges),
   };
 };
-
 
 /**
  * Return document representation of the filters state
  * @param {string} projectId - id of project
  * @param {object} filters
  * @param {object} options - pagination configs
-*/
+ */
 const findProjectDocuments = async (projectId, filters, options) => {
   const documentContext = Adapter.get(RESOURCE.DOCUMENT_CONTEXT, projectId);
   return documentContext.find(filters, {
     size: options.size,
-    from: options.from
+    from: options.from,
   });
 };
-
 
 /**
  * Return map/location representation of the filters state.
@@ -355,7 +356,7 @@ const findProjectDocuments = async (projectId, filters, options) => {
  *
  * @param {string} projectId - id of project
  * @param {object} filters
-*/
+ */
 const findProjectLocations = async (projectId, filters) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
   const filterQuery = queryUtil.buildQuery(filters);
@@ -372,87 +373,87 @@ const findProjectLocations = async (projectId, filters) => {
         subjLocations: {
           terms: {
             field: 'subj.geo_context.name',
-            size: MAX_SIZE
+            size: MAX_SIZE,
           },
           aggs: {
             coordinate: {
               top_hits: {
                 size: 1,
                 _source: {
-                  includes: ['subj.geo_context.location']
-                }
-              }
-            }
-          }
+                  includes: ['subj.geo_context.location'],
+                },
+              },
+            },
+          },
         },
         objLocations: {
           terms: {
             field: 'obj.geo_context.name',
-            size: MAX_SIZE
+            size: MAX_SIZE,
           },
           aggs: {
             coordinate: {
               top_hits: {
                 size: 1,
                 _source: {
-                  includes: ['obj.geo_context.location']
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+                  includes: ['obj.geo_context.location'],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
   // 2) Wrangle basic formatting and bad data
   const aggs = result.body.aggregations;
-  const subjLocations = aggs.subjLocations.buckets.filter(d => {
+  const subjLocations = aggs.subjLocations.buckets.filter((d) => {
     const src = d.coordinate.hits.hits[0]._source;
     return !_.isEmpty(src);
   });
 
-  const objLocations = aggs.objLocations.buckets.filter(d => {
+  const objLocations = aggs.objLocations.buckets.filter((d) => {
     const src = d.coordinate.hits.hits[0]._source;
     return !_.isEmpty(src);
   });
 
-  const subjFormatted = subjLocations.map(d => {
+  const subjFormatted = subjLocations.map((d) => {
     const src = d.coordinate.hits.hits[0]._source;
     return {
       name: d.key,
       count: d.doc_count,
-      coords: src.subj.geo_context.location
+      coords: src.subj.geo_context.location,
     };
   });
 
-  const objFormatted = objLocations.map(d => {
+  const objFormatted = objLocations.map((d) => {
     const src = d.coordinate.hits.hits[0]._source;
     return {
       name: d.key,
       count: d.doc_count,
-      coords: src.obj.geo_context.location
+      coords: src.obj.geo_context.location,
     };
   });
 
   // 3) Join subj and obj make make features array
-  const grouped = _.groupBy([...subjFormatted, ...objFormatted], d => {
+  const grouped = _.groupBy([...subjFormatted, ...objFormatted], (d) => {
     return d.name;
   });
 
   const finalResult = [];
-  Object.keys(grouped).forEach(key => {
+  Object.keys(grouped).forEach((key) => {
     const coords = grouped[key][0].coords;
     finalResult.push({
       type: 'Feature',
       properties: {
         name: key,
-        count: _.sum(grouped[key].map(d => d.count))
+        count: _.sum(grouped[key].map((d) => d.count)),
       },
       geometry: {
         type: 'Point',
-        coordinates: [coords.lon, coords.lat]
-      }
+        coordinates: [coords.lon, coords.lat],
+      },
     });
   });
 
@@ -460,13 +461,12 @@ const findProjectLocations = async (projectId, filters) => {
   return {
     geoJSON: {
       type: 'FeatureCollection',
-      features: finalResult
+      features: finalResult,
     },
-    maxCount: Math.max(...finalResult.map(d => d.properties.count)),
-    minCount: Math.min(...finalResult.map(d => d.properties.count))
+    maxCount: Math.max(...finalResult.map((d) => d.properties.count)),
+    minCount: Math.min(...finalResult.map((d) => d.properties.count)),
   };
 };
-
 
 const countStats = async (projectId, filters) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
@@ -489,7 +489,7 @@ const facets = async (projectId, filters, fields) => {
 
   return {
     ...statementFacets,
-    ...documentContextFacets
+    ...documentContextFacets,
   };
 };
 
@@ -501,17 +501,16 @@ const getOntologyDefinitions = async (projectId) => {
   const MAX_SIZE = 5000;
   const ontology = Adapter.get(RESOURCE.ONTOLOGY);
 
-  const ontologyConcepts = await ontology.find([
-    { field: 'project_id', value: projectId }
-  ], { size: MAX_SIZE });
+  const ontologyConcepts = await ontology.find([{ field: 'project_id', value: projectId }], {
+    size: MAX_SIZE,
+  });
 
   const result = {};
-  ontologyConcepts.forEach(concept => {
+  ontologyConcepts.forEach((concept) => {
     result[concept.label] = concept.definition;
   });
   return result;
 };
-
 
 /**
  * Retrieves the candidate scoring portions of a set of INDRA statements
@@ -523,23 +522,20 @@ const getProjectStatementsScores = async (projectId, ids) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
 
   if (ids.length > SEARCH_LIMIT) {
-    throw new Error(`Score lookup of ${ids.length} statements exceeds search limit ${SEARCH_LIMIT}`);
+    throw new Error(
+      `Score lookup of ${ids.length} statements exceeds search limit ${SEARCH_LIMIT}`
+    );
   }
 
-  const results = await statement.find({
-    clauses: [
-      { field: 'id', values: ids, operand: 'OR', isNot: 'false' }
-    ]
-  }, {
-    size: ids.length,
-    includes: [
-      'id',
-      'subj.candidates',
-      'subj.factor',
-      'obj.candidates',
-      'obj.factor'
-    ]
-  });
+  const results = await statement.find(
+    {
+      clauses: [{ field: 'id', values: ids, operand: 'OR', isNot: 'false' }],
+    },
+    {
+      size: ids.length,
+      includes: ['id', 'subj.candidates', 'subj.factor', 'obj.candidates', 'obj.factor'],
+    }
+  );
   return results;
 };
 
@@ -558,22 +554,22 @@ const getProjectEdgesByPartition = async (projectId, filters, totalPartitions, p
             field: 'wm.edge',
             include: {
               partition: partition,
-              num_partitions: totalPartitions
+              num_partitions: totalPartitions,
             },
-            size: MAX_ES_BUCKET_SIZE
-          }
-        }
-      }
-    }
+            size: MAX_ES_BUCKET_SIZE,
+          },
+        },
+      },
+    },
   });
 
   // tranform to simple edge format (source and target)
   const statementEdges = result.body.aggregations.edgePartitions.buckets;
-  const edges = statementEdges.map(s => {
+  const edges = statementEdges.map((s) => {
     const [source, target] = s.key.split('///');
     return {
       source,
-      target
+      target,
     };
   });
 
@@ -588,9 +584,11 @@ const getProjectEdgesByPartition = async (projectId, filters, totalPartitions, p
  */
 const getProjectEdges = async (projectId, filters) => {
   const totalPartitions = 50;
-  const partitionsOfEdges = (await Promise.all([...Array(totalPartitions).keys()].map(partition =>
-    getProjectEdgesByPartition(projectId, filters, totalPartitions, partition)
-  )));
+  const partitionsOfEdges = await Promise.all(
+    [...Array(totalPartitions).keys()].map((partition) =>
+      getProjectEdgesByPartition(projectId, filters, totalPartitions, partition)
+    )
+  );
   return partitionsOfEdges.flat();
 };
 
@@ -600,10 +598,14 @@ const getProjectEdges = async (projectId, filters) => {
  */
 const searchFields = async (projectId, searchField, queryString, defaultOperator = 'AND') => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
-  const matchedTerms = await statement.searchFields(projectId, searchField, queryString, defaultOperator);
+  const matchedTerms = await statement.searchFields(
+    projectId,
+    searchField,
+    queryString,
+    defaultOperator
+  );
   return matchedTerms;
 };
-
 
 const _graphKey = (projectId) => 'graph-' + projectId;
 /**
@@ -648,7 +650,6 @@ const bustProjectGraphCache = async (projectId) => {
   setCache(_graphKey(projectId), promise);
 };
 
-
 /**
  * Given a flattened concept, search the statements and return
  * the viable themes/process/properties in the compositional ontology.
@@ -666,36 +667,35 @@ const ontologyComposition = async (projectId, concept) => {
           should: [
             {
               term: {
-                'subj.candidates.name': concept
-              }
+                'subj.candidates.name': concept,
+              },
             },
             {
               term: {
-                'obj.candidates.name': concept
-              }
-            }
-          ]
-        }
-      }
-    }
+                'obj.candidates.name': concept,
+              },
+            },
+          ],
+        },
+      },
+    },
   });
 
   if (_.isEmpty(result.body.hits.hits)) {
     return {};
   }
   const st = result.body.hits.hits[0]._source;
-  const candidate = st.subj.candidates.filter(d => d.name === concept).concat(
-    st.obj.candidates.filter(d => d.name === concept)
-  )[0];
+  const candidate = st.subj.candidates
+    .filter((d) => d.name === concept)
+    .concat(st.obj.candidates.filter((d) => d.name === concept))[0];
 
   return {
     theme: candidate.theme,
     theme_property: candidate.theme_property,
     process: candidate.process,
-    process_property: candidate.process_property
+    process_property: candidate.process_property,
   };
 };
-
 
 /**
  * For incremental assembly
@@ -708,23 +708,28 @@ const addReaderOutput = async (projectId, records, timestamp) => {
 
   // create new records
   const id = uuid();
-  await assemblyRequest.insert([
-    {
-      id,
-      created_at: (new Date()).getTime(),
-      project_id: projectId,
-      records: records
-    }
-  ], d => d.id);
-
+  await assemblyRequest.insert(
+    [
+      {
+        id,
+        created_at: new Date().getTime(),
+        project_id: projectId,
+        records: records,
+      },
+    ],
+    (d) => d.id
+  );
 
   // Update last updated time
-  await project.update([
-    {
-      id: projectId,
-      extended_at: +timestamp
-    }
-  ], d => d.id);
+  await project.update(
+    [
+      {
+        id: projectId,
+        extended_at: +timestamp,
+      },
+    ],
+    (d) => d.id
+  );
 
   return id;
 };
@@ -747,9 +752,8 @@ const requestAssembly = async (assemblyRequestId) => {
 
   const runName = `requestAssembly-${assemblyRequestId}`;
   const flowParameters = {
-    ASSEMBLY_REQUEST_ID: assemblyRequestId
+    ASSEMBLY_REQUEST_ID: assemblyRequestId,
   };
-
 
   // We can either run through Prefect or with Anansi web-service
   if (process.env.WM_ANANSI_URL && process.env.WM_ANANSI_URL.length) {
@@ -758,11 +762,11 @@ const requestAssembly = async (assemblyRequestId) => {
       url: process.env.WM_ANANSI_URL,
       headers: {
         'Content-type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json',
       },
       json: {
-        id: assemblyRequestId
-      }
+        id: assemblyRequestId,
+      },
     };
     const result = await requestAsPromise(anansiOption);
     return result;
@@ -787,11 +791,11 @@ const requestAssembly = async (assemblyRequestId) => {
     url: process.env.WM_PIPELINE_URL,
     headers: {
       'Content-type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     },
     json: {
-      query: graphQLQuery
-    }
+      query: graphQLQuery,
+    },
   };
 
   const result = await requestAsPromise(pipelinePayload);
@@ -814,13 +818,13 @@ const extendProject = async (projectId, docs) => {
     body: {
       script: {
         lang: 'painless',
-        inline: 'ctx._source.document.addAll(params.docs); ctx._source.modified_at = params.timestamp',
-        params: { docs, timestamp: Date.now() }
-      }
-    }
+        inline:
+          'ctx._source.document.addAll(params.docs); ctx._source.modified_at = params.timestamp',
+        params: { docs, timestamp: Date.now() },
+      },
+    },
   });
 };
-
 
 /**
  * Parse compositional ontology metadata
@@ -842,7 +846,6 @@ const parseOntology = async (url) => {
   }
   return metadata;
 };
-
 
 module.exports = {
   listProjects,
@@ -877,5 +880,5 @@ module.exports = {
 
   // misc
   ontologyComposition,
-  parseOntology
+  parseOntology,
 };

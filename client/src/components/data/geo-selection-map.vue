@@ -1,10 +1,6 @@
 <template>
   <div class="analysis-map-container">
-    <wm-map
-      v-bind="mapFixedOptions"
-      :bounds="mapBounds"
-      @load="onMapLoad"
-    >
+    <wm-map v-bind="mapFixedOptions" :bounds="mapBounds" @load="onMapLoad">
       <wm-map-vector
         v-if="vectorSource"
         :source="vectorSource"
@@ -15,30 +11,25 @@
         :layer="baseLayer"
       />
 
-      <wm-map-bounding-box
-        :bbox="bbox"
-      />
+      <wm-map-bounding-box :bbox="bbox" />
     </wm-map>
   </div>
 </template>
 
 <script>
-
 import _ from 'lodash';
 import { WmMap, WmMapVector, WmMapBoundingBox } from '@/wm-map';
-import {
-  BASE_MAP_OPTIONS,
-  ETHIOPIA_BOUNDING_BOX,
-  STYLE_URL_PREFIX
-} from '@/utils/map-util';
+import { BASE_MAP_OPTIONS, ETHIOPIA_BOUNDING_BOX, STYLE_URL_PREFIX } from '@/utils/map-util';
 import { BASE_LAYER } from '@/utils/map-util-new';
 import { adminLevelToString } from '@/utils/admin-level-util';
 
 // selectedLayer cycles one by one through these layers
-const layers = Object.freeze([0, 1, 2, 3].map(i => ({
-  vectorSourceLayer: `boundaries-adm${i}`,
-  idPropName: { [`boundaries-adm${i}`]: 'id' }
-})));
+const layers = Object.freeze(
+  [0, 1, 2, 3].map((i) => ({
+    vectorSourceLayer: `boundaries-adm${i}`,
+    idPropName: { [`boundaries-adm${i}`]: 'id' },
+  }))
+);
 
 const baseLayer = () => {
   return Object.freeze({
@@ -48,11 +39,13 @@ const baseLayer = () => {
       'fill-outline-color': 'black',
       'fill-opacity': [
         'case',
-        ['==', null, ['feature-state', 'selected']], 0.0,
-        ['boolean', ['feature-state', 'selected'], false], 0.2,
-        0.1 // default
-      ]
-    }
+        ['==', null, ['feature-state', 'selected']],
+        0.0,
+        ['boolean', ['feature-state', 'selected'], false],
+        0.2,
+        0.1, // default
+      ],
+    },
   });
 };
 
@@ -61,39 +54,40 @@ export default {
   components: {
     WmMap,
     WmMapVector,
-    WmMapBoundingBox
+    WmMapBoundingBox,
   },
   props: {
     selectedLayerId: {
       type: Number,
-      default: 0
+      default: 0,
     },
     selectedRegion: {
       type: String,
-      default: ''
+      default: '',
     },
     bbox: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
-    mapBounds: { // initial map bounds; default bounds to the bbox of the model country/countries
+    mapBounds: {
+      // initial map bounds; default bounds to the bbox of the model country/countries
       type: Array,
       default: () => [
         [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
-      ]
-    }
+        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
+      ],
+    },
   },
   data: () => ({
     baseLayer: undefined,
     map: undefined,
-    extent: undefined
+    extent: undefined,
   }),
   computed: {
     mapFixedOptions() {
       const options = {
         minZoom: 1,
-        ...BASE_MAP_OPTIONS
+        ...BASE_MAP_OPTIONS,
       };
       options.style = this.selectedBaseLayerEndpoint;
       options.mapStyle = this.selectedBaseLayerEndpoint;
@@ -117,7 +111,7 @@ export default {
     },
     vectorSource() {
       return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
-    }
+    },
   },
   watch: {
     selectedLayer() {
@@ -131,16 +125,16 @@ export default {
       const cameraOptions = {
         padding: 20, // pixels
         duration: 1000, // milliseconds
-        essential: true // this animation is considered essential with respect to prefers-reduced-motion
+        essential: true, // this animation is considered essential with respect to prefers-reduced-motion
       };
       this.map.fitBounds(this.bbox, cameraOptions);
-    }
+    },
   },
   created() {
     this.vectorSourceId = 'maas-vector-source';
     this.baseLayerId = 'base-layer';
 
-    this.debouncedRefresh = _.debounce(function() {
+    this.debouncedRefresh = _.debounce(function () {
       this.refresh();
     }, 50);
 
@@ -165,16 +159,18 @@ export default {
       // Remove all states of the source.
       this.map.removeFeatureState({
         source: this.vectorSourceId,
-        sourceLayer: this.vectorSourceLayer
+        sourceLayer: this.vectorSourceLayer,
       });
 
       // enable the map feature state based on the region name
       if (this.selectedRegion !== '') {
-        this.map.setFeatureState({
-          id: this.selectedRegion,
-          source: this.vectorSourceId,
-          sourceLayer: this.vectorSourceLayer
-        }, { selected: true }
+        this.map.setFeatureState(
+          {
+            id: this.selectedRegion,
+            source: this.vectorSourceId,
+            sourceLayer: this.vectorSourceLayer,
+          },
+          { selected: true }
         );
       }
     },
@@ -189,8 +185,8 @@ export default {
 
       // Init layers
       this.refreshLayers();
-    }
-  }
+    },
+  },
 };
 </script>
 

@@ -13,42 +13,23 @@
 
     <facet-template target="facet-terms-value" class="facet-pointer">
       <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
-      <div slot="label"
-        class="facet-label-truncated facet-font"
-        title="${label} - ${value}"
-      >
+      <div slot="label" class="facet-label-truncated facet-font" title="${label} - ${value}">
         ${label}
       </div>
       <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
-      <div slot="value" class="facet-font">
-        ${value}
-      </div>
+      <div slot="value" class="facet-font">${value}</div>
     </facet-template>
 
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
     <div slot="footer" class="facet-footer-container">
-      <div
-        class="facet-footer-more"
-      >
+      <div class="facet-footer-more">
         <div class="facet-footer-more-section">
           <div class="facet-footer-more-count">
             <span v-if="facetMoreCount > 0">{{ facetMoreCount }} more</span>
           </div>
           <div class="facet-footer-more-controls">
-            <span
-              v-if="hasLess"
-              class="less"
-              @click="viewLess"
-            >
-              less
-            </span>
-            <span
-              v-if="hasMore"
-              class="more"
-              @click="viewMore"
-            >
-              more
-            </span>
+            <span v-if="hasLess" class="less" @click="viewLess"> less </span>
+            <span v-if="hasMore" class="more" @click="viewMore"> more </span>
           </div>
         </div>
       </div>
@@ -79,37 +60,37 @@ export default {
   props: {
     baseData: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     facet: {
       type: String,
-      default: null
+      default: null,
     },
     formatterFn: {
       type: Function,
-      default: null
+      default: null,
     },
     label: {
       type: String,
-      default: 'Facet'
+      default: 'Facet',
     },
     selectedData: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     rescaleAfterSelect: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   data() {
     return {
-      moreLevel: 0
+      moreLevel: 0,
     };
   },
   computed: {
     ...mapGetters({
-      filters: 'query/filters'
+      filters: 'query/filters',
     }),
     facetData() {
       const values = [];
@@ -119,12 +100,12 @@ export default {
         values.push({
           label: labelName,
           ratio: b.value / this.max,
-          value: `${b.selectedValue}/${b.value}`
+          value: `${b.selectedValue}/${b.value}`,
         });
       }
       return {
         label: this.label,
-        values
+        values,
       };
     },
     facetMoreCount() {
@@ -144,10 +125,10 @@ export default {
     },
     max() {
       if (!this.rescaleAfterSelect) {
-        const values = this.baseData.map(b => b.value);
+        const values = this.baseData.map((b) => b.value);
         return Math.max(...values);
       } else {
-        const values = this.selectedData.map(s => s.value);
+        const values = this.selectedData.map((s) => s.value);
         return Math.max(...values);
       }
     },
@@ -189,7 +170,7 @@ export default {
         return acc;
       }, {});
 
-      baseClone.forEach(b => {
+      baseClone.forEach((b) => {
         if (selectDictionary[b.key]) {
           b.selectedValue = selectDictionary[b.key];
         } else {
@@ -198,21 +179,23 @@ export default {
       });
 
       if (this.rescaleAfterSelect) {
-        baseClone.sort((a, b) => (b.selectedValue - a.selectedValue));
+        baseClone.sort((a, b) => b.selectedValue - a.selectedValue);
       } else {
-        baseClone.sort((a, b) => (b.value - a.value));
+        baseClone.sort((a, b) => b.value - a.value);
       }
 
       return baseClone;
     },
     subSelection() {
-      return this.sortedJoinedData ? this.sortedJoinedData.map(s => s.selectedValue / this.max) : [];
-    }
+      return this.sortedJoinedData
+        ? this.sortedJoinedData.map((s) => s.selectedValue / this.max)
+        : [];
+    },
   },
   methods: {
     ...mapActions({
       setSearchClause: 'query/setSearchClause',
-      removeSearchTerm: 'query/removeSearchTerm'
+      removeSearchTerm: 'query/removeSearchTerm',
     }),
     updateSelection(event) {
       const facet = event.currentTarget;
@@ -222,7 +205,7 @@ export default {
       ) {
         if (facet.selection) {
           const selectedIndexes = Object.keys(facet.selection);
-          const values = selectedIndexes.map(s => this.sortedJoinedData[parseInt(s)].key);
+          const values = selectedIndexes.map((s) => this.sortedJoinedData[parseInt(s)].key);
           this.setSearchClause({ field: this.facet, values });
         } else {
           this.setSearchClause({ field: this.facet, values: [] });
@@ -234,18 +217,18 @@ export default {
     },
     viewLess() {
       this.moreLevel -= 1;
-    }
-  }
+    },
+  },
 };
 </script>
-
 
 <style scoped lang="scss">
 .facet-pointer {
   cursor: pointer;
 }
 .facet-font {
-  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 }
 
 .facet-label-truncated {
@@ -295,4 +278,3 @@ export default {
   }
 }
 </style>
-

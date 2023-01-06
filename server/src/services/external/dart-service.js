@@ -4,10 +4,15 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
 const auth = rootRequire('/util/auth-util');
 const Logger = rootRequire('/config/logger');
 
-const basicAuthToken = auth.getBasicAuthToken(process.env.DART_SERVICE_USERNAME, process.env.DART_SERVICE_PASSWORD);
+const basicAuthToken = auth.getBasicAuthToken(
+  process.env.DART_SERVICE_USERNAME,
+  process.env.DART_SERVICE_PASSWORD
+);
 
-const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
-const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
+const DART_SERVICE_URL =
+  'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
+const DART_READER_URL =
+  'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
 
 const TIMEOUT = 3 * 1000;
 
@@ -22,17 +27,17 @@ const TIMEOUT = 3 * 1000;
  *     "tags": {Array of String},
  *     "timestamp": {Double}
  *   }
-*/
+ */
 const getOntologyById = async (id) => {
   Logger.info(`Calling ${DART_SERVICE_URL}/ontologies`);
   const options = {
     url: `${DART_SERVICE_URL}/ontologies?id=${id}`,
     method: 'GET',
     headers: {
-      Authorization: basicAuthToken
+      Authorization: basicAuthToken,
     },
     json: {},
-    timeout: TIMEOUT
+    timeout: TIMEOUT,
   };
   const result = await requestAsPromise(options);
   return result;
@@ -47,10 +52,10 @@ const getOntologyByTenant = async (tenantId) => {
     url: `${DART_SERVICE_URL}/ontologies?tenant=${tenantId}`,
     method: 'GET',
     headers: {
-      Authorization: basicAuthToken
+      Authorization: basicAuthToken,
     },
     json: {},
-    timeout: TIMEOUT
+    timeout: TIMEOUT,
   };
   const result = await requestAsPromise(options);
   return result;
@@ -67,9 +72,9 @@ const getRawDoc = async (docId) => {
     // url: `${process.env.DART_DOCUMENT_RETRIEVAL_URL}/${docId}`,
     method: 'GET',
     headers: {
-      Authorization: basicAuthToken
+      Authorization: basicAuthToken,
     },
-    timeout: TIMEOUT
+    timeout: TIMEOUT,
   };
   return request(options);
 };
@@ -83,25 +88,24 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
       value: fileToUpload.buffer,
       options: {
         filename: fileToUpload.originalname,
-        contentType: fileToUpload.mimeType
-      }
+        contentType: fileToUpload.mimeType,
+      },
     },
-    metadata: metadata
+    metadata: metadata,
   };
 
   const options = {
     url: DART_SERVICE_URL + '/forklift/upload',
     method: 'POST',
     headers: {
-      'Authorization': basicAuthToken,
-      'Content-type': 'application/json'
+      Authorization: basicAuthToken,
+      'Content-type': 'application/json',
     },
-    formData: formData
+    formData: formData,
   };
   const result = await requestAsPromise(options);
   return result;
 };
-
 
 /**
  * List out reader status after a given timestamp
@@ -113,9 +117,9 @@ const queryReadersStatus = async (timestamp) => {
   const formData = {
     metadata: JSON.stringify({
       timestamp: {
-        after: t
-      }
-    })
+        after: t,
+      },
+    }),
   };
 
   Logger.info('Sending to DART ' + JSON.stringify(formData));
@@ -124,11 +128,11 @@ const queryReadersStatus = async (timestamp) => {
     url: `${DART_READER_URL}/query`,
     method: 'POST',
     headers: {
-      'Authorization': basicAuthToken,
-      'Content-type': 'application/json'
+      Authorization: basicAuthToken,
+      'Content-type': 'application/json',
     },
     formData: formData,
-    timeout: TIMEOUT
+    timeout: TIMEOUT,
   };
   const result = await requestAsPromise(options);
   return result;
@@ -139,5 +143,5 @@ module.exports = {
   getOntologyByTenant,
   getRawDoc,
   uploadDocument,
-  queryReadersStatus
+  queryReadersStatus,
 };

@@ -1,14 +1,6 @@
 <template>
-  <div
-    v-tooltip.top="tooltipInfo"
-    class="importance"
-    :class="{ 'not-available': !importance }"
-  >
-    <div
-      v-for="index in numBars"
-      :key="index"
-      :class="{ active: index <= numActive }"
-    />
+  <div v-tooltip.top="tooltipInfo" class="importance" :class="{ 'not-available': !importance }">
+    <div v-for="index in numBars" :key="index" :class="{ active: index <= numActive }" />
   </div>
 </template>
 
@@ -25,34 +17,33 @@ export default defineComponent({
   props: {
     importance: {
       type: Number as PropType<number>,
-      default: null
+      default: null,
     },
 
     label: {
       type: String as PropType<string>,
-      default: 'importance'
+      default: 'importance',
     },
     max: {
       type: Number as PropType<number>,
-      default: 1
+      default: 1,
     },
     // Number of bars in the display
     // Also the basis for the log range expansion exponent
     numBars: {
       type: Number as PropType<number>,
-      default: 10
+      default: 10,
     },
     // log base for quanitization to get more readable numbers
     logBase: {
       type: Number as PropType<number>,
-      default: 10
-    }
-
+      default: 10,
+    },
   },
 
   computed: {
     // importance / range = importance ratio for other computeds
-    importanceRatio(): number|null {
+    importanceRatio(): number | null {
       if (this.importance === null) return null;
       return this.importance / this.max;
     },
@@ -60,23 +51,27 @@ export default defineComponent({
     // Threshold to display a bar active
     numActive(): number {
       if (this.importanceRatio === null) return -1;
-      return Math.max(Math.ceil(rangeQuantizedLog(this.importanceRatio, this.logBase, this.numBars)), 1);
+      return Math.max(
+        Math.ceil(rangeQuantizedLog(this.importanceRatio, this.logBase, this.numBars)),
+        1
+      );
     },
 
-    tooltipInfo(): string|null {
+    tooltipInfo(): string | null {
       if (this.numActive > 0) {
-        const level = TOOLTIP_LEVELS[
-          Math.min(
-            Math.round(this.numActive / this.numBars * (TOOLTIP_LEVELS.length - 1)),
-            TOOLTIP_LEVELS.length - 1
-          )
-        ];
+        const level =
+          TOOLTIP_LEVELS[
+            Math.min(
+              Math.round((this.numActive / this.numBars) * (TOOLTIP_LEVELS.length - 1)),
+              TOOLTIP_LEVELS.length - 1
+            )
+          ];
         return `${level} estimated relative ${this.label}`;
       } else {
         return null;
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -100,7 +95,7 @@ export default defineComponent({
   .not-available::after {
     background-color: lightgray;
     border-top: 2px solid white;
-    content: "\0A";
+    content: '\0A';
     height: 4px;
     position: absolute;
     transform: rotate(45deg) translate(10%, 100%);

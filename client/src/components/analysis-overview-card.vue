@@ -2,24 +2,30 @@
   <card class="project-card-container" :is-hoverable="false">
     <div class="project-card-row" @click="openAnalysis()">
       <div class="project-card-column extra-wide">
-        <h4>{{analysis.title}}</h4>
+        <h4>{{ analysis.title }}</h4>
         <img
           v-if="analysis.previewImageSrc !== null"
           class="thumbnail-image"
           :src="analysis.previewImageSrc"
-        >
+        />
       </div>
       <div class="project-card-column">
-        <div>{{analysis.subtitle}}</div>
-        <div class="description">{{analysis.description}}</div>
+        <div>{{ analysis.subtitle }}</div>
+        <div class="description">{{ analysis.description }}</div>
       </div>
       <div class="project-card-column">
-        <span class="instance-header">{{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}</span>
-        <div>{{analysis.type === 'quantitative' ? analysis.datacubesCount : analysis.nodeCount }}</div>
+        <span class="instance-header">{{
+          analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'
+        }}</span>
+        <div>
+          {{ analysis.type === 'quantitative' ? analysis.datacubesCount : analysis.nodeCount }}
+        </div>
       </div>
       <div class="project-card-column">
-        <span class="instance-header">{{analysis.type === 'quantitative' ? '': 'Relations'}}</span>
-        <div>{{analysis.type === 'quantitative' ? '' : analysis.edgeCount }}</div>
+        <span class="instance-header">{{
+          analysis.type === 'quantitative' ? '' : 'Relations'
+        }}</span>
+        <div>{{ analysis.type === 'quantitative' ? '' : analysis.edgeCount }}</div>
       </div>
       <options-button :wider-dropdown-options="true" :dropdown-below="true">
         <template #content>
@@ -46,7 +52,10 @@
     >
       <template #title>Remove analysis</template>
       <template #message>
-        <p>Are you sure you want to remove <strong>{{ analysis.title }}</strong>?</p>
+        <p>
+          Are you sure you want to remove <strong>{{ analysis.title }}</strong
+          >?
+        </p>
         <message-display
           :message="'Warning: This action cannot be undone.'"
           :message-type="'alert-warning'"
@@ -57,7 +66,6 @@
 </template>
 
 <script lang="ts">
-
 import { defineComponent, ref, PropType } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
@@ -86,19 +94,19 @@ export default defineComponent({
     ModalConfirmation,
     MessageDisplay,
     Card,
-    OptionsButton
+    OptionsButton,
   },
   emits: ['open', 'rename', 'delete', 'duplicate'],
   props: {
     analysis: {
       type: Object as PropType<AnalysisOverviewCard>,
-      default: () => ({})
-    }
+      default: () => ({}),
+    },
   },
   computed: {
     ...mapGetters({
-      project: 'app/project'
-    })
+      project: 'app/project',
+    }),
   },
   setup() {
     const showModal = ref(false);
@@ -106,12 +114,12 @@ export default defineComponent({
 
     return {
       showModal,
-      showMore
+      showMore,
     };
   },
   methods: {
     ...mapActions({
-      clearLastQuery: 'query/clearLastQuery'
+      clearLastQuery: 'query/clearLastQuery',
     }),
     dateFormatter,
     deleteAnalysis() {
@@ -141,13 +149,13 @@ export default defineComponent({
     },
     toggleShowMore() {
       this.showMore = !this.showMore;
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style scoped lang="scss">
-@import "~styles/variables";
+@import '~styles/variables';
 .project-card-container {
   padding: 20px;
   display: flex;
@@ -176,14 +184,15 @@ h4 {
     flex: 2;
   }
 
-  .description, .thumbnail-image {
+  .description,
+  .thumbnail-image {
     margin-top: 5px;
   }
 }
 
 .thumbnail-image {
   height: 150px;
-  border: 1px solid $separator
+  border: 1px solid $separator;
 }
 
 .instance-header {
@@ -194,5 +203,4 @@ h4 {
 .destructive {
   color: $negative;
 }
-
 </style>

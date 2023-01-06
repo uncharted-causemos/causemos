@@ -1,13 +1,7 @@
 <template>
   <div class="full-screen-modal-header-container">
-    <div
-      class="navBack"
-      @click="close">
-      <i
-        v-if="icon !== null"
-        class="fa fa-fw"
-        :class="`fa-${icon}`"
-      />
+    <div class="navBack" @click="close">
+      <i v-if="icon !== null" class="fa fa-fw" :class="`fa-${icon}`" />
       <span>{{ navBackLabel }}</span>
     </div>
     <div class="centered-slot">
@@ -18,7 +12,6 @@
 </template>
 
 <script lang="ts">
-
 import { defineComponent } from 'vue';
 
 export default defineComponent({
@@ -26,28 +19,27 @@ export default defineComponent({
   props: {
     icon: {
       type: String,
-      default: null
+      default: null,
     },
     navBackLabel: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   emits: ['close'],
   methods: {
     close() {
       this.$emit('close');
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .full-screen-modal-header-container {
   background-color: $accent-dark;
-;
   display: flex;
   align-items: center;
   min-height: 48px;
@@ -70,13 +62,13 @@ export default defineComponent({
     display: flex;
     justify-content: center;
     align-items: center;
-    color: #FFFFFF;
+    color: #ffffff;
   }
 
   .navBack {
     font-weight: 600;
     font-size: $font-size-large;
-    color: #FFFFFF;
+    color: #ffffff;
     cursor: pointer;
     i {
       margin-right: 5px;
@@ -87,5 +79,4 @@ export default defineComponent({
     text-decoration: underline;
   }
 }
-
 </style>

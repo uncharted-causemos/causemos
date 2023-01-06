@@ -22,13 +22,19 @@ const getProjectsStats = async () => {
   return result.data;
 };
 
-const createProject = async (name: string, description: string, website: string, maintainer: DatacubeMaintainer[], type = ProjectType.Model) => {
+const createProject = async (
+  name: string,
+  description: string,
+  website: string,
+  maintainer: DatacubeMaintainer[],
+  type = ProjectType.Model
+) => {
   const result = await API.post('domain-projects', {
     name,
     description,
     website,
     type,
-    maintainer
+    maintainer,
   });
   const id = result.data.id;
   return id;
@@ -44,13 +50,11 @@ const deleteProject = async (projectId: string) => {
   return result.data;
 };
 
-
 export default {
   createProject,
   getProjects,
   getProject,
   getProjectsStats,
   deleteProject,
-  updateDomainProject
+  updateDomainProject,
 };
-

@@ -9,12 +9,11 @@ const DEFAULT_BATCH_SIZE = 1000;
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
 const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;
 
-
 // Type of experiment that can be performed in modeling Engine
 const EXPERIMENT_TYPE = Object.freeze({
   PROJECTION: 'PROJECTION',
   SENSITIVITY_ANALYSIS: 'SENSITIVITY_ANALYSIS',
-  GOAL_OPTIMIZATION: 'GOAL_OPTIMIZATION'
+  GOAL_OPTIMIZATION: 'GOAL_OPTIMIZATION',
 });
 
 const NUM_LEVELS = 31; // For y-scaling (1 + 6*N)
@@ -44,7 +43,7 @@ const find = (projectId, size, from, sort) => {
 const findOne = async (modelId) => {
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
   const model = modelAdapter.findOne([{ field: 'id', value: modelId }], {
-    excludes: ['thumbnail_source']
+    excludes: ['thumbnail_source'],
   });
 
   return model;
@@ -62,11 +61,11 @@ const getModelStats = async (modelIDs) => {
   const nodeResult = await nodesAdapter.getFacets('model_id', [
     {
       field: 'model_id',
-      value: modelIDs
-    }
+      value: modelIDs,
+    },
   ]);
 
-  nodeResult.forEach(pair => {
+  nodeResult.forEach((pair) => {
     dict[pair.key] = { nodeCount: pair.doc_count };
   });
 
@@ -74,17 +73,16 @@ const getModelStats = async (modelIDs) => {
   const edgeResult = await edgeAdapter.getFacets('model_id', [
     {
       field: 'model_id',
-      value: modelIDs
-    }
+      value: modelIDs,
+    },
   ]);
 
-  edgeResult.forEach(pair => {
+  edgeResult.forEach((pair) => {
     if (dict[pair.key]) dict[pair.key].edgeCount = pair.doc_count;
   });
 
   return dict;
 };
-
 
 /**
  * Converts a model edge into a stub statement
@@ -100,9 +98,9 @@ const _edge2statement = (edge, polarity) => {
           obj_polarity: polarity,
           obj_adjectives: [],
           subj_polarity: 1,
-          subj_adjectives: []
-        }
-      }
+          subj_adjectives: [],
+        },
+      },
     ],
     subj: {
       factor: 'user',
@@ -113,7 +111,7 @@ const _edge2statement = (edge, polarity) => {
       theme: 'user',
       theme_property: 'user',
       process: 'user',
-      process_property: 'user'
+      process_property: 'user',
     },
     obj: {
       factor: 'user',
@@ -124,19 +122,14 @@ const _edge2statement = (edge, polarity) => {
       theme: 'user',
       theme_property: 'user',
       process: 'user',
-      process_property: 'user'
-    }
+      process_property: 'user',
+    },
   };
 };
 
 const statementOptions = {
   size: DEFAULT_BATCH_SIZE,
-  excludes: [
-    'wm',
-    'subj.candidates',
-    'obj.candidates',
-    'evidence.document_context.ner_analytics'
-  ]
+  excludes: ['wm', 'subj.candidates', 'obj.candidates', 'evidence.document_context.ner_analytics'],
 };
 
 const buildModelStatements = async (modelId) => {
@@ -144,11 +137,9 @@ const buildModelStatements = async (modelId) => {
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
 
   // 1. Get and seperate statement edges from user defined edges
-  const edgeParameters = await edgeParameterAdapter.find([
-    { field: 'model_id', value: modelId }
-  ], {
+  const edgeParameters = await edgeParameterAdapter.find([{ field: 'model_id', value: modelId }], {
     size: SEARCH_LIMIT,
-    includes: ['id', 'source', 'target', 'user_polarity', 'reference_ids']
+    includes: ['id', 'source', 'target', 'user_polarity', 'reference_ids'],
   });
 
   const model = await findOne(modelId);
@@ -160,12 +151,17 @@ const buildModelStatements = async (modelId) => {
     const userPolarity = edgeParameters[i].user_polarity;
     const filters = {
       clauses: [
-        { field: 'id', values: edgeParameters[i].reference_ids, operand: 'OR', isNot: false }
-      ]
+        { field: 'id', values: edgeParameters[i].reference_ids, operand: 'OR', isNot: false },
+      ],
     };
 
     if (!_.isNil(userPolarity)) {
-      filters.clauses.push({ field: 'statementPolarity', values: [userPolarity], operand: 'OR', isNot: false });
+      filters.clauses.push({
+        field: 'statementPolarity',
+        values: [userPolarity],
+        operand: 'OR',
+        isNot: false,
+      });
     }
     const statements = await statementAdapter.find(filters, statementOptions);
 
@@ -173,7 +169,7 @@ const buildModelStatements = async (modelId) => {
     if (statements.length === 0) {
       results.push(_edge2statement(edgeParameters[i], userPolarity));
     } else {
-      statements.forEach(statement => {
+      statements.forEach((statement) => {
         // We need to transform the statements concept to reflect the CAG's topology,
         // we also need to sure the statement ids are unique
         statement.subj.concept = edgeParameters[i].source;
@@ -212,9 +208,9 @@ const setInitialParameters = async (modelParameters, nodeMap, edgeMap) => {
       parameter: {
         initial_value: initialParameters.initialValue,
         initial_value_parameter: {
-          func: initialParameters.initialValueFunc
-        }
-      }
+          func: initialParameters.initialValueFunc,
+        },
+      },
     });
   }
 
@@ -225,8 +221,8 @@ const setInitialParameters = async (modelParameters, nodeMap, edgeMap) => {
       edgeParameterPayload.push({
         id: edgeMap[edgeId],
         parameter: {
-          weight: parseFloat(edge.weight)
-        }
+          weight: parseFloat(edge.weight),
+        },
       });
     }
   }
@@ -237,7 +233,10 @@ const setInitialParameters = async (modelParameters, nodeMap, edgeMap) => {
   if (nodeParameterPayload.length > 0) {
     // create node payload for initial value update
     const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
-    const nodeParameterUpdateResult = await nodeParameterAdapter.update(nodeParameterPayload, keyFn);
+    const nodeParameterUpdateResult = await nodeParameterAdapter.update(
+      nodeParameterPayload,
+      keyFn
+    );
     if (nodeParameterUpdateResult.errors) {
       throw new Error(JSON.stringify(nodeParameterUpdateResult.items[0]));
     }
@@ -246,7 +245,10 @@ const setInitialParameters = async (modelParameters, nodeMap, edgeMap) => {
   if (edgeParameterPayload.length > 0) {
     // create edge payload for initial value update
     const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-    const edgeParameterUpdateResult = await edgeParameterAdapter.update(edgeParameterPayload, keyFn);
+    const edgeParameterUpdateResult = await edgeParameterAdapter.update(
+      edgeParameterPayload,
+      keyFn
+    );
     if (edgeParameterUpdateResult.errors) {
       throw new Error(JSON.stringify(edgeParameterUpdateResult.items[0]));
     }
@@ -262,7 +264,14 @@ const setInitialParameters = async (modelParameters, nodeMap, edgeMap) => {
  * @param {integer}  numTimeSteps - number of time steps
  * @param {array}   parameters - existing clamp parameters
  */
-const buildProjectionPayload = async (modelId, engine, projectionStart, projectionEnd, numTimeSteps, parameters) => {
+const buildProjectionPayload = async (
+  modelId,
+  engine,
+  projectionStart,
+  projectionEnd,
+  numTimeSteps,
+  parameters
+) => {
   const constraints = _.isEmpty(parameters) ? [] : parameters;
   const payload = {
     experimentType: EXPERIMENT_TYPE.PROJECTION,
@@ -270,8 +279,8 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, projecti
       numTimesteps: numTimeSteps,
       startTime: projectionStart,
       endTime: projectionEnd,
-      constraints
-    }
+      constraints,
+    },
   };
   return payload;
 };
@@ -288,8 +297,17 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, projecti
  * @param {object}   analysisParams - parameters for analysis
  * @param {object}   analysisMethodology - one of HYBRID or FUNCTION
  */
-const buildSensitivityPayload = async (engine, experimentStart, experimentEnd, numTimeSteps,
-  constraintParams, analysisType, analysisMode, analysisParams, analysisMethodology) => {
+const buildSensitivityPayload = async (
+  engine,
+  experimentStart,
+  experimentEnd,
+  numTimeSteps,
+  constraintParams,
+  analysisType,
+  analysisMode,
+  analysisParams,
+  analysisMethodology
+) => {
   const constraints = _.isEmpty(constraintParams) ? [] : constraintParams;
   const payload = {
     experimentType: EXPERIMENT_TYPE.SENSITIVITY_ANALYSIS,
@@ -301,8 +319,8 @@ const buildSensitivityPayload = async (engine, experimentStart, experimentEnd, n
       analysisType,
       analysisMode,
       analysisParam: analysisParams,
-      analysisMethodology
-    }
+      analysisMethodology,
+    },
   };
 
   return payload;
@@ -319,8 +337,8 @@ const buildGoalOptimizationPayload = async (modelId, engine, goals) => {
   const payload = {
     experimentType: EXPERIMENT_TYPE.GOAL_OPTIMIZATION,
     experimentParam: {
-      goals
-    }
+      goals,
+    },
   };
 
   return payload;
@@ -335,7 +353,7 @@ const clearNodeParameter = async (modelId, nodeId) => {
   const updatePayload = {
     id: nodeId,
     parameter: null,
-    modified_at: modifiedAt
+    modified_at: modifiedAt,
   };
   const nodeUpdateResult = nodeParameterAdapter.update(updatePayload, (d) => d.id);
   if (nodeUpdateResult.errors) {
@@ -347,7 +365,7 @@ const clearNodeParameter = async (modelId, nodeId) => {
     id: modelId,
     status: MODEL_STATUS.NOT_REGISTERED,
     engine_status: RESET_ALL_ENGINE_STATUS,
-    modified_at: modifiedAt
+    modified_at: modifiedAt,
   };
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
   const modelUpdateResult = await modelAdapter.update(modelPayload, (d) => d.id);
@@ -370,8 +388,7 @@ const injectDummyData = (timeseries, temporalResolution, projectionStart) => {
     return;
   }
   // Assume timeseries is sorted
-  const oldestTimestamp =
-    timeseries.length > 0 ? timeseries[0].timestamp : projectionStart;
+  const oldestTimestamp = timeseries.length > 0 ? timeseries[0].timestamp : projectionStart;
   const value = timeseries.length > 0 ? timeseries[0].value : 0.5;
   Logger.info(
     `Insufficient timeseries length. Injecting ${pointsToInject} point(s) with a value of ${value}.`
@@ -405,16 +422,12 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
       const temporalResolution = _.get(np.parameter, 'temporalResolution', 'month');
 
       // Historical data should be historical
-      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
+      indicatorTimeSeries = indicatorTimeSeries.filter((d) => d.timestamp < projectionStart);
 
       // Engines may have issues with dates before 1677 (Panda limitation), make it 1800 to be reasonable
-      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp > Date.UTC(1800));
+      indicatorTimeSeries = indicatorTimeSeries.filter((d) => d.timestamp > Date.UTC(1800));
 
-      injectDummyData(
-        indicatorTimeSeries,
-        temporalResolution,
-        projectionStart
-      );
+      injectDummyData(indicatorTimeSeries, temporalResolution, projectionStart);
 
       r.push({
         concept: np.concept,
@@ -424,27 +437,25 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
         values: indicatorTimeSeries,
         numLevels: NUM_LEVELS,
         resolution: temporalResolution,
-        period: _.get(np.parameter, 'period', 12)
+        period: _.get(np.parameter, 'period', 12),
       });
     }
   });
   return r;
 };
 
-
 const buildEdgeParametersPayload = (edgeParameters) => {
   const r = [];
-  edgeParameters.forEach(edge => {
+  edgeParameters.forEach((edge) => {
     r.push({
       source: edge.source,
       target: edge.target,
       polarity: edge.polarity,
-      weights: edge.parameter.weights
+      weights: edge.parameter.weights,
     });
   });
   return r;
 };
-
 
 // Build create-model payload
 // FIXME
@@ -464,14 +475,17 @@ const buildCreateModelPayload = async (model, nodeParameters, edgeParameters) =>
     const polarity = edge.polarity;
 
     const filters = {
-      clauses: [
-        { field: 'id', values: referenceIds, operand: 'OR', isNot: false }
-      ]
+      clauses: [{ field: 'id', values: referenceIds, operand: 'OR', isNot: false }],
     };
 
     // If not ambiguous we can apply additional filter
     if (polarity !== 0) {
-      filters.clauses.push({ field: 'statementPolarity', values: [polarity], operand: 'OR', isNot: false });
+      filters.clauses.push({
+        field: 'statementPolarity',
+        values: [polarity],
+        operand: 'OR',
+        isNot: false,
+      });
     }
     const statements = await statementAdapter.find(filters, statementOptions);
     if (statements.length === 0) {
@@ -481,14 +495,14 @@ const buildCreateModelPayload = async (model, nodeParameters, edgeParameters) =>
       source,
       target,
       polarity,
-      statements
+      statements,
     });
   }
 
   return {
     id: model.id,
     nodes: nodesPayload,
-    edges: edgesPayload
+    edges: edgesPayload,
   };
 };
 
@@ -504,5 +518,5 @@ module.exports = {
   buildNodeParametersPayload,
   buildEdgeParametersPayload,
   clearNodeParameter,
-  buildCreateModelPayload
+  buildCreateModelPayload,
 };

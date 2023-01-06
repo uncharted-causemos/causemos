@@ -10,19 +10,14 @@
           type="text"
           class="form-control"
           @keyup.enter.stop="create"
-        >
-        <div
-          v-if="hasError"
-          class="error-msg">
+        />
+        <div v-if="hasError" class="error-msg">
           {{ errorMsg }}
         </div>
       </div>
       <div class="form-group">
         <label>Description</label>
-        <textarea
-          v-model="projectDescription"
-          rows="5"
-          class="form-control" />
+        <textarea v-model="projectDescription" rows="5" class="form-control" />
       </div>
     </form>
     <label>Knowledge Base*</label>
@@ -44,17 +39,10 @@
       />
     </table>
     <div class="controls">
-      <button
-        type="button"
-        class="btn"
-        @click="cancel"
-      >Cancel
+      <button type="button" class="btn" @click="cancel">Cancel</button>
+      <button type="button" class="btn btn-call-to-action" @click="create">
+        Save &amp; Finish
       </button>
-      <button
-        type="button"
-        class="btn btn-call-to-action"
-        @click="create"
-      >Save &amp; Finish</button>
     </div>
   </div>
 </template>
@@ -69,14 +57,13 @@ import KnowledgeBaseRow from '@/components/new-project/knowledge-base-row.vue';
 import { KnowledgeBase, Project } from '@/types/Common';
 import { ProjectType } from '@/types/Enums';
 
-
 const MSG_EMPTY_PROJECT_NAME = 'Project name cannot be blank';
 const MSG_PROJECT_NAME_ALREADY_EXIST = 'Project name already exists';
 
 export default defineComponent({
   name: 'NewProjectView',
   components: {
-    KnowledgeBaseRow
+    KnowledgeBaseRow,
   },
   data: () => ({
     kbList: [] as KnowledgeBase[],
@@ -86,7 +73,7 @@ export default defineComponent({
     hasError: false,
     baseKB: '',
     isProcessing: false,
-    errorMsg: '' as string | null
+    errorMsg: '' as string | null,
   }),
   watch: {
     projectName(n) {
@@ -97,18 +84,18 @@ export default defineComponent({
         this.hasError = false;
         this.errorMsg = null;
       }
-    }
+    },
   },
   async mounted() {
     this.refresh();
 
     const existingProjects: Project[] = await projectService.getProjects();
-    this.existingProjectNames = existingProjects.map(p => p.name.toLowerCase());
+    this.existingProjectNames = existingProjects.map((p) => p.name.toLowerCase());
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay'
+      disableOverlay: 'app/disableOverlay',
     }),
     async create() {
       if (_.isEmpty(this.projectName)) {
@@ -124,11 +111,18 @@ export default defineComponent({
       this.isProcessing = true;
       this.enableOverlay('Preparing project ' + this.projectName);
 
-      const id = await projectService.createProject(this.baseKB, this.projectName, this.projectDescription);
+      const id = await projectService.createProject(
+        this.baseKB,
+        this.projectName,
+        this.projectDescription
+      );
 
       this.isProcessing = false;
       this.disableOverlay();
-      this.$router.push({ name: 'overview', params: { project: id, projectType: ProjectType.Analysis } });
+      this.$router.push({
+        name: 'overview',
+        params: { project: id, projectType: ProjectType.Analysis },
+      });
     },
     cancel() {
       this.$router.push({ name: 'home' });
@@ -142,8 +136,8 @@ export default defineComponent({
     },
     selectKB(kbId: string) {
       this.baseKB = kbId;
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -194,5 +188,4 @@ table {
 .error-msg {
   color: $negative;
 }
-
 </style>

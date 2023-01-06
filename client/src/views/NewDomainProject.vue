@@ -10,79 +10,48 @@
           type="text"
           class="form-control"
           @keyup.enter.stop="create"
-        >
-        <div
-          v-if="hasError"
-          class="error-msg">
+        />
+        <div v-if="hasError" class="error-msg">
           {{ errorMsg }}
         </div>
       </div>
       <div class="form-group">
         <label>Description</label>
-        <textarea
-          v-model="projectDescription"
-          rows="5"
-          class="form-control" />
+        <textarea v-model="projectDescription" rows="5" class="form-control" />
       </div>
       <div class="form-group">
         <label>Website:</label>
-        <input
-          v-model="projectWebsite"
-          type="text"
-          class="form-control"
-        >
+        <input v-model="projectWebsite" type="text" class="form-control" />
       </div>
       <div class="form-group">
         <label>Maintainer</label>
         <div style="display: flex">
           <div style="display: flex; flex-direction: column">
             <label style="font-weight: normal">Name</label>
-            <input
-              v-model="maintainerName"
-              type="text"
-              class="form-control"
-            >
+            <input v-model="maintainerName" type="text" class="form-control" />
           </div>
           <div style="display: flex; flex-direction: column">
             <label style="font-weight: normal">Organization</label>
-            <input
-              v-model="maintainerOrganization"
-              type="text"
-              class="form-control"
-            >
+            <input v-model="maintainerOrganization" type="text" class="form-control" />
           </div>
           <div style="display: flex; flex-direction: column">
             <label style="font-weight: normal">Email</label>
-            <input
-              v-model="maintainerEmail"
-              type="text"
-              class="form-control"
-            >
+            <input v-model="maintainerEmail" type="text" class="form-control" />
           </div>
         </div>
-        <small-text-button
-          :label="'+ Add Maintainer'"
-          @click="addMaintainer()" />
-        <div
-          v-for="maintainer in maintainers"
-          :key="maintainer.name"
-          style="display: flex">
-          {{ maintainer.name }} | {{ maintainer.organization }} | {{ maintainer.email }} <i class="fa fa-fw fa-close delete-maintainer" @click.stop="removeMaintainer(maintainer.name)" />
+        <small-text-button :label="'+ Add Maintainer'" @click="addMaintainer()" />
+        <div v-for="maintainer in maintainers" :key="maintainer.name" style="display: flex">
+          {{ maintainer.name }} | {{ maintainer.organization }} | {{ maintainer.email }}
+          <i
+            class="fa fa-fw fa-close delete-maintainer"
+            @click.stop="removeMaintainer(maintainer.name)"
+          />
         </div>
       </div>
     </form>
     <div class="controls">
-      <button
-        type="button"
-        class="btn"
-        @click="cancel"
-      >Cancel
-      </button>
-      <button
-        type="button"
-        class="btn btn-call-to-action"
-        @click="create"
-      >Create</button>
+      <button type="button" class="btn" @click="cancel">Cancel</button>
+      <button type="button" class="btn btn-call-to-action" @click="create">Create</button>
     </div>
   </div>
 </template>
@@ -103,7 +72,7 @@ const MSG_PROJECT_NAME_ALREADY_EXIST = 'Family name already exists';
 export default defineComponent({
   name: 'NewDomainProjectView',
   components: {
-    SmallTextButton
+    SmallTextButton,
   },
   data: () => ({
     existingDomainProjectNames: [] as string[],
@@ -115,7 +84,7 @@ export default defineComponent({
     maintainerEmail: '',
     maintainers: [] as DatacubeMaintainer[],
     hasError: false,
-    errorMsg: '' as string | null
+    errorMsg: '' as string | null,
   }),
   watch: {
     projectName(n) {
@@ -126,24 +95,27 @@ export default defineComponent({
         this.hasError = false;
         this.errorMsg = null;
       }
-    }
+    },
   },
   async mounted() {
-    const domainProjectSearchFields = { // DomainProjectFilterFields
-      type: 'model'
+    const domainProjectSearchFields = {
+      // DomainProjectFilterFields
+      type: 'model',
     };
-    const existingProjects: DomainProject[] = await domainProjectService.getProjects(domainProjectSearchFields);
-    this.existingDomainProjectNames = existingProjects.map(p => p.name.toLowerCase());
+    const existingProjects: DomainProject[] = await domainProjectService.getProjects(
+      domainProjectSearchFields
+    );
+    this.existingDomainProjectNames = existingProjects.map((p) => p.name.toLowerCase());
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       clearLastQuery: 'query/clearLastQuery',
-      setProjectMetadata: 'app/setProjectMetadata'
+      setProjectMetadata: 'app/setProjectMetadata',
     }),
     removeMaintainer(maintainerName: string) {
-      this.maintainers = this.maintainers.filter(m => m.name !== maintainerName);
+      this.maintainers = this.maintainers.filter((m) => m.name !== maintainerName);
     },
     addMaintainer() {
       if (this.maintainerName !== '') {
@@ -151,7 +123,7 @@ export default defineComponent({
           name: this.maintainerName,
           organization: this.maintainerOrganization,
           email: this.maintainerEmail,
-          website: ''
+          website: '',
         });
         this.maintainerName = '';
         this.maintainerOrganization = '';
@@ -176,7 +148,8 @@ export default defineComponent({
         this.projectName,
         this.projectDescription,
         this.projectWebsite,
-        this.maintainers);
+        this.maintainers
+      );
 
       // fetch the full project object so that it can be used as projectMetadata upon redirection
       const createdProject = await domainProjectService.getProject(projectId);
@@ -184,21 +157,20 @@ export default defineComponent({
 
       this.disableOverlay();
 
-
       // redirect to the family page
       this.clearLastQuery(); // Reset filters every time we create a new project
       this.$router.push({
         name: 'domainDatacubeOverview',
         params: {
           project: projectId as string,
-          projectType: ProjectType.Model
-        }
+          projectType: ProjectType.Model,
+        },
       });
     },
     cancel() {
       this.$router.push({ name: 'home' });
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -264,5 +236,4 @@ table {
     color: #850f00;
   }
 }
-
 </style>

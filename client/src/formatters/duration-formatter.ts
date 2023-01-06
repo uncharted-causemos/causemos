@@ -13,7 +13,9 @@ export default function (milliseconds: number | null, precise = true) {
   const minutes = Math.floor(sec / 60);
   const hours = Math.floor(minutes / 60);
 
-  return (hours > 0 ? `${hours} hr, ` : '') +
+  return (
+    (hours > 0 ? `${hours} hr, ` : '') +
     (minutes > 0 ? `${minutes % 60} min, ` : '') +
-    `${sec % 60} sec`;
+    `${sec % 60} sec`
+  );
 }

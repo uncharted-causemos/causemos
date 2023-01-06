@@ -18,34 +18,35 @@ module.exports = {
         logLevel: 'debug',
         changeOrigin: true,
         pathRewrite: {
-          '^/api': ''
-        }
-      }
-    }
+          '^/api': '',
+        },
+      },
+    },
   },
-  configureWebpack: config => {
+  configureWebpack: (config) => {
     // tweak webpack configurations, noting this will be merged with the final webpack configs
     if (process.env.NODE_ENV === 'development') {
       config.devtool = 'inline-source-map';
     }
   },
-  chainWebpack: config => {
-    config.plugin('provide')
-      .use(webpack.ProvidePlugin, [
-        {
-          $: 'jquery'
-        }
-      ]);
+  chainWebpack: (config) => {
+    config.plugin('provide').use(webpack.ProvidePlugin, [
+      {
+        $: 'jquery',
+      },
+    ]);
 
     // Set alias to make import styles easier and not relative to file location
     // e.g. @import '~styles/vars' instead of @import `../../../styles/vars`
     config.resolve.alias.set('styles', path.resolve('src/styles'));
 
     // ignore facets as custom elements
-    config.module.rule('vue')
-      .use('vue-loader').tap(options => {
+    config.module
+      .rule('vue')
+      .use('vue-loader')
+      .tap((options) => {
         options.compilerOptions = {
-          isCustomElement: (tag) => tag.startsWith('facet-')
+          isCustomElement: (tag) => tag.startsWith('facet-'),
         };
         return options;
       });
@@ -57,5 +58,5 @@ module.exports = {
       // So we stub this function so that tests pass.
       // window.URL.createObjectURL = () => {};
     }
-  }
+  },
 };

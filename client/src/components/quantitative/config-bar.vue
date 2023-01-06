@@ -2,16 +2,12 @@
   <div class="config-bar-container">
     Analysis of the
     <strong>{{ timeScaleLabel }}</strong>
-    <button disabled class="btn btn-sm " @click="showModalTimeScale = true">
+    <button disabled class="btn btn-sm" @click="showModalTimeScale = true">
       <i class="fa fa-fw fa-pencil" />
     </button>
     following
-    <date-dropdown
-      :data="projectionStartDate"
-      @date-updated="setProjectionStartDate"
-    />
-    &nbsp;
-    Display the last
+    <date-dropdown :data="projectionStartDate" @date-updated="setProjectionStartDate" />
+    &nbsp; Display the last
     <dropdown-button
       :items="historyOptions"
       :selected-item="selectedHistoryRange"
@@ -20,7 +16,6 @@
       @item-selected="setHistory"
     />
     <modal-time-scale
-
       v-if="showModalTimeScale"
       :initially-selected-time-scale="modelSummary?.parameter?.time_scale"
       @save-time-scale="saveTimeScale"
@@ -44,13 +39,13 @@ const historyConfigs = {
   [TimeScale.Months]: [
     { displayName: '12 months', value: 12 },
     { displayName: '24 months', value: 24 },
-    { displayName: '48 months', value: 48 }
+    { displayName: '48 months', value: 48 },
   ],
   [TimeScale.Years]: [
     { displayName: '10 years', value: 12 * 10 },
     { displayName: '20 years', value: 12 * 20 },
-    { displayName: '40 years', value: 12 * 40 }
-  ]
+    { displayName: '40 years', value: 12 * 40 },
+  ],
 };
 
 export default defineComponent({
@@ -59,20 +54,15 @@ export default defineComponent({
   props: {
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: ['model-parameter-changed'],
   setup(props) {
     const { modelSummary } = toRefs(props);
     const selectedTimeScale = ref(modelSummary.value.parameter.time_scale);
-    const projectionStartDate = ref(
-      modelSummary.value.parameter.projection_start
-    );
-    const selectedHistoryRange = ref(
-      modelSummary.value.parameter.history_range
-    );
-
+    const projectionStartDate = ref(modelSummary.value.parameter.projection_start);
+    const selectedHistoryRange = ref(modelSummary.value.parameter.history_range);
 
     watchEffect(() => {
       // Whenever modelSummary changes, update local state variables
@@ -85,12 +75,12 @@ export default defineComponent({
       projectionStartDate,
       selectedHistoryRange,
       showModalTimeScale: ref(false),
-      historyConfigs
+      historyConfigs,
     };
   },
   computed: {
     ...mapGetters({
-      currentCAG: 'app/currentCAG'
+      currentCAG: 'app/currentCAG',
     }),
     historyOptions(): DropdownItem[] {
       const timeScale = this.modelSummary.parameter.time_scale;
@@ -98,31 +88,31 @@ export default defineComponent({
     },
     timeScaleLabel(): string {
       return TIME_SCALE_OPTIONS_MAP.get(this.selectedTimeScale)?.label ?? '';
-    }
+    },
   },
   methods: {
     async setHistory(range: number) {
       const newParameter: Partial<CAGModelParameter> = {
-        history_range: range
+        history_range: range,
       };
       await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.$emit('model-parameter-changed');
     },
     async setProjectionStartDate(newStartDate: number) {
       await modelService.updateModelParameter(this.currentCAG, {
-        projection_start: newStartDate
+        projection_start: newStartDate,
       });
       this.$emit('model-parameter-changed');
     },
     async saveTimeScale(newTimeScale: TimeScale) {
       const newParameter: Partial<CAGModelParameter> = {
-        time_scale: newTimeScale
+        time_scale: newTimeScale,
       };
       this.showModalTimeScale = false;
       await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.$emit('model-parameter-changed');
-    }
-  }
+    },
+  },
 });
 </script>
 

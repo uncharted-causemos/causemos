@@ -13,27 +13,29 @@ const RETRY_DELAY_LENGTHS_IN_SECONDS = [1, 5, 10, 30, 60, 0];
 export const DEFAULT_APPLICATION_CONFIGURATION: ApplicationConfiguration = {
   CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true,
   CLIENT__DOJO_LOG_API_URL: 'https://phantom.dojo-test.com',
-  CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE: false
+  CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE: false,
 };
 
 // Parse client settings object and return parsed results.
 // If parsing fails for a field of the object, omit the field from the result object.
 const parseSettings = (clientSettings: { [key: string]: string }) => {
-  const {
-    CLIENT__DOJO_LOG_API_URL
-  } = clientSettings;
+  const { CLIENT__DOJO_LOG_API_URL } = clientSettings;
   let CLIENT__IS_ANALYST_WORKFLOW_VISIBLE;
   let CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE;
   try {
-    CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = convertStringToBoolean(clientSettings.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE);
-    CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE = convertStringToBoolean(clientSettings.CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE);
+    CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = convertStringToBoolean(
+      clientSettings.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
+    );
+    CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE = convertStringToBoolean(
+      clientSettings.CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE
+    );
   } catch (e) {
     console.error(e);
   }
   const result: Partial<ApplicationConfiguration> = {
     CLIENT__DOJO_LOG_API_URL,
     CLIENT__IS_ANALYST_WORKFLOW_VISIBLE,
-    CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE
+    CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE,
   };
   // Filter out undefined and return
   return _.omit(result, 'undefined');
@@ -61,7 +63,7 @@ export default function useApplicationConfiguration() {
         // On fail, retry after a progressively longer delay.
         console.error('Failed to fetch application configuration.', e);
         const delayInMilliseconds = delayInSeconds * 1000;
-        await new Promise(resolve => setTimeout(resolve, delayInMilliseconds));
+        await new Promise((resolve) => setTimeout(resolve, delayInMilliseconds));
       }
     }
     console.error(

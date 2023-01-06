@@ -4,8 +4,8 @@ import API from '@/api/api';
 export const uploadDocument = async (formData: FormData) => {
   const result = await API.post('dart/corpus', formData, {
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   });
   return result.data;
 };
@@ -17,5 +17,5 @@ export const getReadersStatus = async (timestamp: number) => {
 
 export default {
   uploadDocument,
-  getReadersStatus
+  getReadersStatus,
 };

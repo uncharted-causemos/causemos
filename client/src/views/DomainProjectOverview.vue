@@ -13,19 +13,11 @@
             type="text"
             class="model-attribute-desc"
           />
-          <small-icon-button
-            @click="updateDesc"
-            v-tooltip.top-center="'Edit description'"
-          >
+          <small-icon-button @click="updateDesc" v-tooltip.top-center="'Edit description'">
             <i class="fa fa-edit" />
           </small-icon-button>
         </div>
-        <a
-          :href="maintainerWebsite"
-          target="_blank"
-          rel="noopener noreferrer"
-          style="color: blue"
-        >
+        <a :href="maintainerWebsite" target="_blank" rel="noopener noreferrer" style="color: blue">
           {{ maintainerWebsite }}
         </a>
         <div>
@@ -41,10 +33,9 @@
       </div>
       <div class="instance-list-column">
         <div class="instance-list-header">
-          <div class="column-title">Instances
-            <button
-              class="btn btn-call-to-action"
-              disabled>
+          <div class="column-title">
+            Instances
+            <button class="btn btn-call-to-action" disabled>
               <i class="fa fa-plus-circle" />
               Register New
             </button>
@@ -55,12 +46,13 @@
                 v-for="filter of filterOptions"
                 :key="filter.status"
                 class="filter-label"
-                @click="filter.selected = !filter.selected">
+                @click="filter.selected = !filter.selected"
+              >
                 <i
                   class="fa fa-lg fa-fw"
                   :class="{ 'fa-check-square-o': filter.selected, 'fa-square-o': !filter.selected }"
                 />
-                {{getDatacubeStatusInfo(filter.status).label}}
+                {{ getDatacubeStatusInfo(filter.status).label }}
               </label>
             </div>
             <input
@@ -68,14 +60,11 @@
               type="text"
               placeholder="Search ..."
               class="form-control"
-            >
+            />
             <div class="sorting">
               <div>
-                <button
-                  type="button"
-                  class="btn"
-                  @click="toggleSortingDropdownDatacubeInstances"
-                ><span class="lbl">Sort by</span> - {{ selectedSortingOptionDatacubeInstances }}
+                <button type="button" class="btn" @click="toggleSortingDropdownDatacubeInstances">
+                  <span class="lbl">Sort by</span> - {{ selectedSortingOptionDatacubeInstances }}
                   <i class="fa fa-caret-down" />
                 </button>
               </div>
@@ -86,7 +75,8 @@
                       v-for="option in sortingOptionsDatacubeInstances"
                       :key="option"
                       class="dropdown-option"
-                      @click="sortDatacubeInstances(option)">
+                      @click="sortDatacubeInstances(option)"
+                    >
                       {{ option }}
                     </div>
                   </template>
@@ -137,7 +127,7 @@ export default {
     ListContextInsightPane,
     DropdownControl,
     MessageDisplay,
-    SmallIconButton
+    SmallIconButton,
   },
   data: () => ({
     datacubeInstances: [],
@@ -149,27 +139,30 @@ export default {
     filterOptions: [
       { status: DatacubeStatus.Ready, selected: true },
       { status: DatacubeStatus.Registered, selected: true },
-      { status: DatacubeStatus.Deprecated, selected: false }
-    ]
+      { status: DatacubeStatus.Deprecated, selected: false },
+    ],
   }),
   computed: {
     ...mapGetters({
       project: 'app/project',
       projectMetadata: 'app/projectMetadata',
-      refreshDatacubes: 'insightPanel/refreshDatacubes'
+      refreshDatacubes: 'insightPanel/refreshDatacubes',
     }),
     filteredDatacubeInstances() {
-      return this.datacubeInstances.filter(instance =>
-        this.filterOptions.find(filter => filter.status === instance.status)?.selected ?? true
-      ).filter(instance =>
-        instance.name.toLowerCase().includes(this.searchDatacubeInstances.toLowerCase())
-      );
+      return this.datacubeInstances
+        .filter(
+          (instance) =>
+            this.filterOptions.find((filter) => filter.status === instance.status)?.selected ?? true
+        )
+        .filter((instance) =>
+          instance.name.toLowerCase().includes(this.searchDatacubeInstances.toLowerCase())
+        );
     },
     tags() {
       if (!this.datacubeInstances || this.datacubeInstances.length === 0) {
         return [];
       }
-      return this.datacubeInstances.map(d => d.tags).flat();
+      return this.datacubeInstances.map((d) => d.tags).flat();
     },
     maintainerWebsite() {
       if (!this.datacubeInstances || this.datacubeInstances.length === 0) {
@@ -199,17 +192,17 @@ export default {
         }
       }
       return '';
-    }
+    },
   },
   watch: {
-    projectMetadata: function() {
+    projectMetadata: function () {
       this.fetchDatacubeInstances();
     },
-    refreshDatacubes: function() {
+    refreshDatacubes: function () {
       if (this.refreshDatacubes) {
         this.fetchDatacubeInstances();
       }
-    }
+    },
   },
   async mounted() {
     this.fetchDatacubeInstances();
@@ -225,13 +218,15 @@ export default {
       setContextId: 'insightPanel/setContextId',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes'
+      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
     }),
     getDatacubeStatusInfo,
     updateDesc() {
       if (this.isEditingDesc) {
         // we may have just modified the desc text, so update the server value
-        domainProjectService.updateDomainProject(this.project, { description: this.projectMetadata.description });
+        domainProjectService.updateDomainProject(this.project, {
+          description: this.projectMetadata.description,
+        });
       }
       this.isEditingDesc = !this.isEditingDesc;
     },
@@ -251,7 +246,7 @@ export default {
       // set context id as the current family name
       if (this.datacubeInstances.length > 0) {
         // context-id should be an array to fetch insights for each and every model instance
-        const contextIDs = this.datacubeInstances.map(dc => dc.id);
+        const contextIDs = this.datacubeInstances.map((dc) => dc.id);
         this.setContextId(contextIDs);
       } else {
         // no datacubes were found, do not fetch any insights/questions
@@ -274,7 +269,7 @@ export default {
       unpublishDatacubeInstance(instance);
     },
     updateDatacubeDomains(id, domains) {
-      const datacube = this.datacubeInstances.find(d => d.id === id);
+      const datacube = this.datacubeInstances.find((d) => d.id === id);
       if (datacube) {
         datacube.domains = domains;
       }
@@ -291,14 +286,18 @@ export default {
     sortDatacubeInstances(option) {
       this.selectedSortingOptionDatacubeInstances = option;
       this.showSortingDropdownDatacubeInstances = false;
-      this.datacubeInstances = sortItem(this.datacubeInstances, { date: modifiedAtSorter, name: nameSorter }, this.selectedSortingOptionDatacubeInstances);
-    }
-  }
+      this.datacubeInstances = sortItem(
+        this.datacubeInstances,
+        { date: modifiedAtSorter, name: nameSorter },
+        this.selectedSortingOptionDatacubeInstances
+      );
+    },
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-@import "@/styles/variables";
+@import '@/styles/variables';
 
 .project-overview-container {
   display: flex;
@@ -493,7 +492,7 @@ main {
 .controls {
   display: flex;
   justify-content: space-between;
-  input[type=text] {
+  input[type='text'] {
     padding: 8px;
     width: 150px;
     margin-right: 5px;
@@ -507,7 +506,7 @@ main {
         font-weight: normal;
       }
       .fa {
-        position:absolute;
+        position: absolute;
         right: 20px;
       }
     }

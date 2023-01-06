@@ -1,6 +1,5 @@
 <template>
   <div class="breakdown-pane-container">
-
     <div class="config-group">
       <label class="label-header">Data</label>
       <div class="config-sub-group">
@@ -24,7 +23,7 @@
           <dropdown-button
             v-if="!shouldShowAdvancedAggregation"
             class="dropdown-button"
-            :class="{ 'invalid-option': selectedSpatialAggregation === AggregationOption.None}"
+            :class="{ 'invalid-option': selectedSpatialAggregation === AggregationOption.None }"
             :is-dropdown-left-aligned="true"
             :inner-button-label="'Aggregated by'"
             :items="aggregationOptions"
@@ -34,7 +33,7 @@
           <dropdown-button
             v-else
             class="dropdown-button"
-            :class="{ 'invalid-option': selectedSpatialAggregation === AggregationOption.None}"
+            :class="{ 'invalid-option': selectedSpatialAggregation === AggregationOption.None }"
             :is-dropdown-left-aligned="true"
             :inner-button-label="'Spatial aggregation'"
             :items="aggregationOptions"
@@ -42,14 +41,16 @@
             @item-selected="setSpatialAggregationSelection"
           />
           <button class="btn btn-sm default-btn" @click="toggleAdvancedAggregation">
-            {{ shouldShowAdvancedAggregation ? 'Use a single function ' : 'Use advanced aggregations' }}
+            {{
+              shouldShowAdvancedAggregation ? 'Use a single function ' : 'Use advanced aggregations'
+            }}
           </button>
         </div>
         <dropdown-button
           v-if="shouldShowAdvancedAggregation"
           class="dropdown-button"
           style="margin-top: 5px"
-          :class="{ 'invalid-option': selectedTemporalAggregation === AggregationOption.None}"
+          :class="{ 'invalid-option': selectedTemporalAggregation === AggregationOption.None }"
           :is-dropdown-left-aligned="true"
           :inner-button-label="'Temporal aggregation'"
           :items="aggregationOptions"
@@ -64,7 +65,7 @@
       <div class="config-sub-group">
         <label
           class="header-secondary"
-          :class="{ 'invalid-option': selectedResolution === TemporalResolutionOption.None}"
+          :class="{ 'invalid-option': selectedResolution === TemporalResolutionOption.None }"
         >
           Aggregated up to
         </label>
@@ -73,7 +74,10 @@
           :buttons="resolutionGroupButtons"
           @button-clicked="setResolutionSelection"
         />
-        <label class="temporal-res-note" v-if="isDotMapSelected">Using raw data resolution. Timeseries data is not temporally aggregated when Dot map is used.</label>
+        <label class="temporal-res-note" v-if="isDotMapSelected"
+          >Using raw data resolution. Timeseries data is not temporally aggregated when Dot map is
+          used.</label
+        >
       </div>
     </div>
 
@@ -122,23 +126,17 @@
           :selected-item="selectedColorScaleType"
           @item-selected="setColorScaleTypeSelection"
         />
-        <button
-          type="button"
-          class="btn dropdown-button"
-          @click="reverseColorScale">
-            <i class="fa fa-arrows-h" />
-            Reverse Scale
+        <button type="button" class="btn dropdown-button" @click="reverseColorScale">
+          <i class="fa fa-arrows-h" />
+          Reverse Scale
         </button>
       </div>
 
-      <div
-        v-if="isDiscreteScale(selectedColorScaleType)"
-        class="config-sub-group"
-      >
-        <label class="header-secondary">Number of bins: {{numberOfColorBins}}</label>
+      <div v-if="isDiscreteScale(selectedColorScaleType)" class="config-sub-group">
+        <label class="header-secondary">Number of bins: {{ numberOfColorBins }}</label>
         <input
           type="range"
-          style="margin-bottom: 1rem;"
+          style="margin-bottom: 1rem"
           min="2"
           :max="maxNumberOfColorBins"
           step="1"
@@ -168,92 +166,104 @@ import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
 import { useStore } from 'vuex';
-import { COLOR_SCHEME, ColorScaleType, COLOR, COLOR_PALETTE_SIZE, isDiscreteScale } from '@/utils/colors-util';
+import {
+  COLOR_SCHEME,
+  ColorScaleType,
+  COLOR,
+  COLOR_PALETTE_SIZE,
+  isDiscreteScale,
+} from '@/utils/colors-util';
 import { getOutputs } from '@/utils/datacube-util';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
 import { capitalize } from '@/utils/string-util';
 
-const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [COLOR.DEFAULT, COLOR.VEGETATION, COLOR.WATER, COLOR.RDYLBU_7, COLOR.OTHER]);
+const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [
+  COLOR.DEFAULT,
+  COLOR.VEGETATION,
+  COLOR.WATER,
+  COLOR.RDYLBU_7,
+  COLOR.OTHER,
+]);
 const TRANSFORMS: DropdownItem[] = [
   { value: DataTransform.PerCapita, displayName: 'Per Capita' },
   { value: DataTransform.PerCapita1K, displayName: 'Per Capita (per 1K people)' },
   { value: DataTransform.PerCapita1M, displayName: 'Per Capita (per 1M people)' },
-  { value: DataTransform.Normalization, displayName: 'Normalized Regional Data' }
+  { value: DataTransform.Normalization, displayName: 'Normalized Regional Data' },
 ];
 
 export default defineComponent({
   components: {
     DropdownButton,
-    RadioButtonGroup
+    RadioButtonGroup,
   },
   name: 'VizOptionsPane',
   props: {
     selectedSpatialAggregation: {
       type: String,
-      default: AggregationOption.Mean
+      default: AggregationOption.Mean,
     },
     selectedTemporalAggregation: {
       type: String,
-      default: AggregationOption.Mean
+      default: AggregationOption.Mean,
     },
     selectedTransform: {
       type: String as PropType<DataTransform>,
-      default: DataTransform.None
+      default: DataTransform.None,
     },
     selectedResolution: {
       type: String,
-      default: TemporalResolutionOption.Month
+      default: TemporalResolutionOption.Month,
     },
     aggregationOptions: {
       type: Array as PropType<AggregationOption[]>,
-      default: []
+      default: [],
     },
     resolutionOptions: {
       type: Array as PropType<TemporalResolutionOption[] | null>,
-      default: null
+      default: null,
     },
     selectedBaseLayer: {
       type: String,
-      default: BASE_LAYER.DEFAULT
+      default: BASE_LAYER.DEFAULT,
     },
     selectedDataLayer: {
       type: String,
-      default: DATA_LAYER.ADMIN
+      default: DATA_LAYER.ADMIN,
     },
     selectedDataLayerTransparency: {
       type: String,
-      default: DATA_LAYER_TRANSPARENCY['100%']
+      default: DATA_LAYER_TRANSPARENCY['100%'],
     },
     colorSchemeReversed: {
       type: Boolean,
-      default: false
+      default: false,
     },
     selectedColorSchemeName: {
       type: String as PropType<COLOR>,
-      default: COLOR.DEFAULT
+      default: COLOR.DEFAULT,
     },
     selectedColorScaleType: {
       type: String as PropType<ColorScaleType>,
-      default: ColorScaleType.LinearDiscrete
+      default: ColorScaleType.LinearDiscrete,
     },
     numberOfColorBins: {
       type: Number,
-      default: 5
+      default: 5,
     },
     selectedColorScheme: {
       type: Array as PropType<string[]>,
-      default: COLOR_SCHEMES.DEFAULT
+      default: COLOR_SCHEMES.DEFAULT,
     },
     metadata: {
       type: Object as PropType<Model | null>,
-      default: null
+      default: null,
     },
     itemId: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: [
     'set-spatial-aggregation-selection',
@@ -266,7 +276,7 @@ export default defineComponent({
     'set-color-scheme-reversed',
     'set-color-scheme-name',
     'set-color-scale-type',
-    'set-number-color-bins'
+    'set-number-color-bins',
   ],
   setup(props, { emit }) {
     const {
@@ -275,15 +285,16 @@ export default defineComponent({
       resolutionOptions,
       selectedResolution,
       selectedTransform,
-      selectedDataLayer
+      selectedDataLayer,
     } = toRefs(props);
 
     const store = useStore();
     const route = useRoute();
 
-    const resolutionGroupButtons = ref(Object.values(TemporalResolutionOption)
-      .filter(val => val.length > 0)
-      .map(val => ({ label: capitalize(val), value: val }))
+    const resolutionGroupButtons = ref(
+      Object.values(TemporalResolutionOption)
+        .filter((val) => val.length > 0)
+        .map((val) => ({ label: capitalize(val), value: val }))
     );
 
     const setResolutionSelection = (resolution: string) => {
@@ -294,9 +305,14 @@ export default defineComponent({
       if (resolutionOptions.value !== null) {
         // requeste to restrict available temporal resolution options
         const resButtons = _.cloneDeep(resolutionGroupButtons.value);
-        resolutionGroupButtons.value = resButtons.filter(btn => resolutionOptions.value?.includes(btn.value));
+        resolutionGroupButtons.value = resButtons.filter((btn) =>
+          resolutionOptions.value?.includes(btn.value)
+        );
         // Also, set the resolution selection
-        if (resolutionGroupButtons.value.findIndex(btn => btn.value === selectedResolution.value) < 0) {
+        if (
+          resolutionGroupButtons.value.findIndex((btn) => btn.value === selectedResolution.value) <
+          0
+        ) {
           if (resolutionGroupButtons.value.length > 0) {
             setResolutionSelection(resolutionGroupButtons.value[0].value);
           }
@@ -304,19 +320,30 @@ export default defineComponent({
       }
     });
 
-    const baseLayerGroupButtons = ref(Object.values(BASE_LAYER)
-      .map(val => ({ label: capitalize(val), value: val })));
-    const dataLayerGroupButtons = ref(Object.values(DATA_LAYER)
-      .map(val => ({ label: capitalize(val), value: val })));
+    const baseLayerGroupButtons = ref(
+      Object.values(BASE_LAYER).map((val) => ({ label: capitalize(val), value: val }))
+    );
+    const dataLayerGroupButtons = ref(
+      Object.values(DATA_LAYER).map((val) => ({ label: capitalize(val), value: val }))
+    );
 
-    const dataLayerTransparencyOptions = ref(Object.keys(DATA_LAYER_TRANSPARENCY)
-      .map(key => ({ displayName: key, value: (DATA_LAYER_TRANSPARENCY as any)[key] })));
+    const dataLayerTransparencyOptions = ref(
+      Object.keys(DATA_LAYER_TRANSPARENCY).map((key) => ({
+        displayName: key,
+        value: (DATA_LAYER_TRANSPARENCY as any)[key],
+      }))
+    );
 
-    const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
-      .map(val => ({ displayName: capitalize(val), value: val })));
+    const colorScaleGroupButtons = ref(
+      Object.values(ColorScaleType).map((val) => ({ displayName: capitalize(val), value: val }))
+    );
 
-    const colorSchemes = ref(Object.keys(COLOR_SCHEMES)
-      .map(val => ({ displayName: capitalize(val.toLowerCase()), value: val })));
+    const colorSchemes = ref(
+      Object.keys(COLOR_SCHEMES).map((val) => ({
+        displayName: capitalize(val.toLowerCase()),
+        value: val,
+      }))
+    );
 
     const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
@@ -325,7 +352,7 @@ export default defineComponent({
     });
 
     const modelOutputsDisplayNames = computed(() => {
-      return modelOutputs.value.map(o => o.display_name);
+      return modelOutputs.value.map((o) => o.display_name);
     });
 
     const currentOutput = computed(() => {
@@ -369,7 +396,7 @@ export default defineComponent({
       AggregationOption,
       setResolutionSelection,
       store,
-      route
+      route,
     };
   },
   watch: {
@@ -387,19 +414,21 @@ export default defineComponent({
     },
     selectedColorScheme() {
       this.renderColorScale();
-    }
+    },
   },
   data: () => ({
-    showAdvancedAggregations: false
+    showAdvancedAggregations: false,
   }),
   computed: {
     maxNumberOfColorBins(): number {
       return (COLOR_SCHEMES as any)[this.selectedColorSchemeName].length;
     },
     shouldShowAdvancedAggregation(): boolean {
-      return this.showAdvancedAggregations ||
-        this.selectedSpatialAggregation !== this.selectedTemporalAggregation;
-    }
+      return (
+        this.showAdvancedAggregations ||
+        this.selectedSpatialAggregation !== this.selectedTemporalAggregation
+      );
+    },
   },
   mounted() {
     this.renderColorScale();
@@ -431,14 +460,16 @@ export default defineComponent({
     },
     toggleAdvancedAggregation() {
       this.showAdvancedAggregations = !this.showAdvancedAggregations;
-      if (!this.showAdvancedAggregations &&
-        this.selectedSpatialAggregation !== this.selectedTemporalAggregation) {
+      if (
+        !this.showAdvancedAggregations &&
+        this.selectedSpatialAggregation !== this.selectedTemporalAggregation
+      ) {
         this.setTemporalAggregationSelection(this.selectedSpatialAggregation);
       }
     },
     setTransformSelection(unit: string) {
-      const transform = TRANSFORMS.map(t => t.value).includes(unit)
-        ? unit as DataTransform
+      const transform = TRANSFORMS.map((t) => t.value).includes(unit)
+        ? (unit as DataTransform)
         : DataTransform.None;
       this.$emit('set-transform-selection', transform);
     },
@@ -473,13 +504,18 @@ export default defineComponent({
       refSelection
         .selectAll('rect')
         .data(colors)
-        .enter().append('rect')
-        .style('fill', function(d) { return d; })
-        .attr('x', function(d, i) { return i; })
+        .enter()
+        .append('rect')
+        .style('fill', function (d) {
+          return d;
+        })
+        .attr('x', function (d, i) {
+          return i;
+        })
         .attr('width', 1)
         .attr('height', 1);
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -541,7 +577,6 @@ export default defineComponent({
 }
 
 .temporal-res-note {
-  color: #d55e00
+  color: #d55e00;
 }
-
 </style>

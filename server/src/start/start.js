@@ -14,7 +14,9 @@ const ONTOLOGY_REINDEX_INTERVAL = 6 * 60 * 60 * 1000;
  */
 async function runStartup() {
   // Config info
-  const schedules = _.isEmpty(serverConfiguration.schedules) ? [] : serverConfiguration.schedules.split(',');
+  const schedules = _.isEmpty(serverConfiguration.schedules)
+    ? []
+    : serverConfiguration.schedules.split(',');
 
   Logger.info('Causemos configuration');
   Logger.info(`\tCache size: ${serverConfiguration.cacheSize}`);

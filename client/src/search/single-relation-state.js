@@ -1,13 +1,11 @@
 import { ValueStateValue, RelationState } from '@uncharted.software/lex/dist/lex';
-const options = [
-  ['is', 'is']
-].map(o => new ValueStateValue(o[0], {}, { displayKey: o[1] }));
+const options = [['is', 'is']].map((o) => new ValueStateValue(o[0], {}, { displayKey: o[1] }));
 // Adapted from binary relations
 export default class SingleRelationState extends RelationState {
   /**
    * The "is" option.
    */
-  static get IS () {
+  static get IS() {
     return options[0];
   }
 

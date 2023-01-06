@@ -13,7 +13,7 @@ export default {
      */
     sourceId: {
       type: String,
-      required: true
+      required: true,
     },
     /**
      * Source object or url for the layer
@@ -21,29 +21,29 @@ export default {
      */
     source: {
       type: [Object, String],
-      default: undefined
+      default: undefined,
     },
     /**
      * Layer Id
      */
     layerId: {
       type: String,
-      required: true
+      required: true,
     },
     /**
      * Layer style object excluding id and source property since they are provided by props
      */
     layer: {
       type: Object,
-      required: true
+      required: true,
     },
     /**
      * Inject the new layer before layer=beforeId
      */
     beforeId: {
       type: String,
-      default: undefined
-    }
+      default: undefined,
+    },
   },
   watch: {
     'layer.paint': function (paint) {
@@ -58,7 +58,7 @@ export default {
     },
     'layer.filter': function (filter) {
       this.map.setFilter(this.layerId, filter);
-    }
+    },
   },
   mounted() {
     this.mapComponent = this.$parent;
@@ -69,5 +69,5 @@ export default {
   },
   unmounted() {
     if (this.map.getLayer(this.layerId)) this.map.removeLayer(this.layerId);
-  }
+  },
 };

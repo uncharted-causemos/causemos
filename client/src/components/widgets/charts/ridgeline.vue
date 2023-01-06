@@ -12,18 +12,10 @@ import _ from 'lodash';
 import {
   RIDGELINE_VERTICAL_AXIS_WIDTH,
   COMPARISON_BASELINE_COLOR,
-  renderRidgelines
+  renderRidgelines,
 } from '@/charts/ridgeline-renderer';
 import { RidgelineWithMetadata } from '@/utils/ridgeline-util';
-import {
-  defineComponent,
-  onMounted,
-  PropType,
-  ref,
-  toRefs,
-  watchEffect,
-  nextTick
-} from 'vue';
+import { defineComponent, onMounted, PropType, ref, toRefs, watchEffect, nextTick } from 'vue';
 import { translate } from '@/utils/svg-util';
 
 const RESIZE_DELAY = 15;
@@ -33,28 +25,27 @@ export default defineComponent({
   props: {
     ridgelineData: {
       type: Object as PropType<RidgelineWithMetadata>,
-      required: true
+      required: true,
     },
     comparisonBaseline: {
       type: Object as PropType<RidgelineWithMetadata | null>,
-      default: null
+      default: null,
     },
     min: {
       type: Number,
-      default: 0
+      default: 0,
     },
     max: {
       type: Number,
-      default: 0
+      default: 0,
     },
     contextRange: {
       type: Object as PropType<{ min: number; max: number } | null>,
-      default: null
-    }
+      default: null,
+    },
   },
   setup(props) {
-    const { ridgelineData, comparisonBaseline, min, max, contextRange } =
-      toRefs(props);
+    const { ridgelineData, comparisonBaseline, min, max, contextRange } = toRefs(props);
 
     const renderTarget = ref<SVGElement | null>(null);
 
@@ -71,16 +62,14 @@ export default defineComponent({
       nextTick(() => {
         chartSize.value = {
           width: parentElement.clientWidth,
-          height: parentElement.clientHeight
+          height: parentElement.clientHeight,
         };
       });
     });
 
     watchEffect(() => {
       // Rerender whenever dependencies change
-      const svg = renderTarget.value
-        ? d3.selectAll<SVGElement, any>([renderTarget.value])
-        : null;
+      const svg = renderTarget.value ? d3.selectAll<SVGElement, any>([renderTarget.value]) : null;
       const { width, height } = chartSize.value;
       // `width` and `height` are 0 on the first DOM update cycle (`onMounted`),
       //  but this watcher is triggered that tick, resulting in errors from
@@ -96,8 +85,7 @@ export default defineComponent({
       // To keep it within this component's `svg` element, we
       //  - pass a smaller width to `renderRidgelines`
       //  - shift the resulting `g` element to the right
-      const widthWithoutContextRanges =
-        width - RIDGELINE_VERTICAL_AXIS_WIDTH / 2;
+      const widthWithoutContextRanges = width - RIDGELINE_VERTICAL_AXIS_WIDTH / 2;
 
       renderRidgelines(
         svg,
@@ -123,9 +111,9 @@ export default defineComponent({
 
     return {
       renderTarget,
-      resize
+      resize,
     };
-  }
+  },
 });
 </script>
 

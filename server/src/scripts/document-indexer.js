@@ -5,7 +5,6 @@ if (dotenvConfigResult.error) {
   console.log('No .env file found or has initialization errors - will use default environment');
 }
 
-
 const documentId = process.argv[2];
 
 function sleep(ms) {
@@ -21,9 +20,9 @@ const getDocument = async (documentId) => {
     size: 1,
     body: {
       query: {
-        term: { id: documentId }
-      }
-    }
+        term: { id: documentId },
+      },
+    },
   });
   const doc = response.body.hits.hits[0]._source;
   return doc;
@@ -36,11 +35,11 @@ const getElasticDocs = async (index) => {
     size: 2000,
     body: {
       query: {
-        match_all: {}
-      }
-    }
+        match_all: {},
+      },
+    },
   });
-  const docs = response.body.hits.hits.map(d => d._source);
+  const docs = response.body.hits.hits.map((d) => d._source);
   return docs;
 };
 
@@ -121,7 +120,6 @@ const getElasticDocs = async (index) => {
 //   }
 // };
 
-
 // Reindex statement.evidence.document_contenxt with respect to doc
 const reindexByScript = async (index, doc) => {
   await client.updateByQuery({
@@ -132,12 +130,10 @@ const reindexByScript = async (index, doc) => {
           path: 'evidence',
           query: {
             bool: {
-              must: [
-                { term: { 'evidence.document_context.doc_id': doc.id } }
-              ]
-            }
-          }
-        }
+              must: [{ term: { 'evidence.document_context.doc_id': doc.id } }],
+            },
+          },
+        },
       },
       script: {
         lang: 'painless',
@@ -146,7 +142,7 @@ const reindexByScript = async (index, doc) => {
           title: doc.doc_title,
           author: doc.author,
           publisher_name: doc.publisher_name,
-          publication_date: doc.publication_date
+          publication_date: doc.publication_date,
         },
         source: `
           for (int i=ctx._source.evidence.length-1; i >= 0; i--) {
@@ -157,15 +153,14 @@ const reindexByScript = async (index, doc) => {
               ctx._source.evidence[i].document_context.publication_date = params.publication_date;
             }
           }
-        `
-      }
-    }
+        `,
+      },
+    },
   });
 };
 
-
 const run = async () => {
-  const start = (new Date()).getTime();
+  const start = new Date().getTime();
 
   // 1. Get the document
   const doc = await getDocument(documentId);
@@ -183,9 +178,9 @@ const run = async () => {
       body: {
         index: {
           'blocks.write': false,
-          'blocks.read_only': false
-        }
-      }
+          'blocks.read_only': false,
+        },
+      },
     });
     await sleep(2500); // Just to ensure settings take hold
 
@@ -197,9 +192,9 @@ const run = async () => {
       body: {
         index: {
           'blocks.write': true,
-          'blocks.read_only': true
-        }
-      }
+          'blocks.read_only': true,
+        },
+      },
     });
   }
 
@@ -210,7 +205,7 @@ const run = async () => {
     await reindexByScript(project.id, doc);
   }
 
-  const end = (new Date()).getTime();
+  const end = new Date().getTime();
   console.log(`Elapsed ${end - start}`);
 };
 

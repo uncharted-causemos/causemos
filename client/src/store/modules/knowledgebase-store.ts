@@ -18,19 +18,17 @@ const state: KBState = {
   documentsCount: 0,
   evidencesCount: 0,
   curationCounter: 0,
-  isUpdatingBeliefScores: false
+  isUpdatingBeliefScores: false,
 };
-
 
 const getters: GetterTree<KBState, any> = {
-  filteredStatementCount: state => state.filteredStatementCount,
-  stagingStatementsCount: state => state.stagingStatementsCount,
-  documentsCount: state => state.documentsCount,
-  evidencesCount: state => state.evidencesCount,
-  curationCounter: state => state.curationCounter,
-  isUpdatingBeliefScores: state => state.isUpdatingBeliefScores
+  filteredStatementCount: (state) => state.filteredStatementCount,
+  stagingStatementsCount: (state) => state.stagingStatementsCount,
+  documentsCount: (state) => state.documentsCount,
+  evidencesCount: (state) => state.evidencesCount,
+  curationCounter: (state) => state.curationCounter,
+  isUpdatingBeliefScores: (state) => state.isUpdatingBeliefScores,
 };
-
 
 const actions: ActionTree<KBState, any> = {
   setFilteredStatementCount({ commit }, cnt) {
@@ -53,7 +51,7 @@ const actions: ActionTree<KBState, any> = {
   },
   setIsUpdatingBeliefScores({ commit }, isUpdating) {
     commit('setIsUpdatingBeliefScores', isUpdating);
-  }
+  },
 };
 
 const mutations: MutationTree<KBState> = {
@@ -77,7 +75,7 @@ const mutations: MutationTree<KBState> = {
   },
   setIsUpdatingBeliefScores(state, isUpdating) {
     state.isUpdatingBeliefScores = isUpdating;
-  }
+  },
 };
 
 export default {
@@ -85,6 +83,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };
-

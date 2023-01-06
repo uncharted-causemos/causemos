@@ -1,5 +1,5 @@
 <template>
-  <h5 v-if="title !== ''" class="title">{{title}}</h5>
+  <h5 v-if="title !== ''" class="title">{{ title }}</h5>
   <input
     v-model="n"
     v-focus
@@ -9,28 +9,17 @@
     class="text-field"
     @keyup.enter="save"
   />
-  <textarea
-    v-model="d"
-    type="text"
-    placeholder="description"
-    rows="5"
-    class="text-field"
-  />
+  <textarea v-model="d" type="text" placeholder="description" rows="5" class="text-field" />
   <ul class="unstyled-list">
-    <button
-      type="button"
-      class="btn"
-      style="width: 50%"
-      @click.stop="cancel">
-        Cancel
-    </button>
+    <button type="button" class="btn" style="width: 50%" @click.stop="cancel">Cancel</button>
     <button
       type="button"
       class="btn btn-call-to-action"
       style="width: 50%"
       :disabled="n.length == 0"
-      @click.stop="save">
-        Save
+      @click.stop="save"
+    >
+      Save
     </button>
   </ul>
 </template>
@@ -44,20 +33,20 @@ export default defineComponent({
   props: {
     title: {
       type: String,
-      default: ''
+      default: '',
     },
     name: {
       type: String,
-      default: ''
+      default: '',
     },
     description: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   data: () => ({
     n: '',
-    d: ''
+    d: '',
   }),
   mounted() {
     this.n = this.name;
@@ -68,26 +57,26 @@ export default defineComponent({
       // emit an event to save (e.g., create a new scenario)
       this.$emit('save', {
         name: this.n,
-        description: this.d
+        description: this.d,
       });
     },
     cancel() {
       this.$emit('cancel');
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-  @import "~styles/variables";
+@import '~styles/variables';
 
-  .text-field {
-    margin-bottom: 1rem;
-    border-color: gray;
-    border-width: thin;
-  }
+.text-field {
+  margin-bottom: 1rem;
+  border-color: gray;
+  border-width: thin;
+}
 
-  .unstyled-list {
-    display: flex;
-  }
+.unstyled-list {
+  display: flex;
+}
 </style>

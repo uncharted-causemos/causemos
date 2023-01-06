@@ -1,16 +1,11 @@
 <template>
   <div class="comments-button-widget-container">
-    <button
-      v-tooltip.top-center="'Comments'"
-      type="button"
-      class="btn"
-      @click="toggleIsOpen"
-    >
+    <button v-tooltip.top-center="'Comments'" type="button" class="btn" @click="toggleIsOpen">
       <i
         class="fa fa-fw"
         :class="{
           'fa-commenting': comments !== '',
-          'fa-commenting-o': comments === ''
+          'fa-commenting-o': comments === '',
         }"
       />
     </button>
@@ -35,8 +30,8 @@ export default defineComponent({
   props: {
     comments: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   emits: ['update-comments'],
   setup(props, { emit }) {
@@ -48,9 +43,9 @@ export default defineComponent({
       },
       updateComments: (newComments: string) => {
         emit('update-comments', newComments);
-      }
+      },
     };
-  }
+  },
 });
 </script>
 

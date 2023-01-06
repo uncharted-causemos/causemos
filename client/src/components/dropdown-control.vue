@@ -6,18 +6,17 @@
 </template>
 
 <script lang="ts">
-
 /**
  * A menu dropdown wrapper for corrections that allows the injection of one external
  * fragments into the template slot.
  *
  * - content: elements to be displayed
  *
-*/
+ */
 
 import { defineComponent } from 'vue';
 export default defineComponent({
-  name: 'DropdownControl'
+  name: 'DropdownControl',
 });
 </script>
 
@@ -32,7 +31,7 @@ export default defineComponent({
   opacity: 1;
   z-index: 51;
   border-radius: 4px;
-  box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0,0,0,.12), 0 2px 4px rgba(0,0,0,.24);
+  box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.24);
   color: $text-color-dark;
   overflow: hidden;
 }
@@ -44,7 +43,7 @@ export default defineComponent({
   user-select: none;
 
   &:hover {
-    background:#EAEBEC;
+    background: #eaebec;
   }
 }
 
@@ -54,5 +53,4 @@ export default defineComponent({
   align-items: center;
   padding-left: 10px;
 }
-
 </style>

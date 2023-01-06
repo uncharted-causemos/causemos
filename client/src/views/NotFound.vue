@@ -1,6 +1,8 @@
 <template>
   <div class="not-found">
-    <h2><i class="fa fa-fw fa-exclamation-triangle" /> Page Not Found ... <a href="#/">Go Home</a></h2>
+    <h2>
+      <i class="fa fa-fw fa-exclamation-triangle" /> Page Not Found ... <a href="#/">Go Home</a>
+    </h2>
   </div>
 </template>
 
@@ -8,7 +10,7 @@
 import { defineComponent } from 'vue';
 
 export default defineComponent({
-  name: 'NotFound'
+  name: 'NotFound',
 });
 </script>
 

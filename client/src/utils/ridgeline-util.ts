@@ -1,15 +1,9 @@
 import { TimeScale } from '@/types/Enums';
-import {
-  TimeseriesDistributionPoint,
-  TimeseriesPoint
-} from '@/types/Timeseries';
+import { TimeseriesDistributionPoint, TimeseriesPoint } from '@/types/Timeseries';
 import * as d3 from 'd3';
 import _ from 'lodash';
 import { getTimestampAfterMonths } from './date-util';
-import {
-  getMonthsPerTimestepFromTimeScale,
-  getTimeScaleOption
-} from './time-scale-util';
+import { getMonthsPerTimestepFromTimeScale, getTimeScaleOption } from './time-scale-util';
 
 // When creating a curve to estimate the density of the distribution, we group
 //  points into bins (necessary to convert the one-dimensional data into 2D).
@@ -45,17 +39,15 @@ const convertDistributionToRidgeline = (
   const binWidth = (max - min) / binCount;
   // Add a threshold at min, one at max, and `binCount - 1` others evenly
   //  spaced between them
-  const thresholds = [
-    ...Array.from({ length: binCount }, (d, i) => min + i * binWidth)
-  ];
+  const thresholds = [...Array.from({ length: binCount }, (d, i) => min + i * binWidth)];
   const bins = d3.bin().domain([min, max]).thresholds(thresholds);
-  const histogram = bins(distribution).map(bin => {
+  const histogram = bins(distribution).map((bin) => {
     const lower = bin.x0 ?? 0;
     const upper = bin.x1 ?? 1;
     const count = bin.length;
     return {
       midpoint: lower + (upper - lower) / 2,
-      normalizedCount: count / distribution.length
+      normalizedCount: count / distribution.length,
     };
   });
   // Convert to a line with a point at the middle of each bin
@@ -67,12 +59,12 @@ const convertDistributionToRidgeline = (
   const line: RidgelinePoint[] = [
     { coordinate: min, value: 0 },
     { coordinate: min, value: histogram[0].normalizedCount },
-    ...histogram.map(bin => ({
+    ...histogram.map((bin) => ({
       coordinate: bin.midpoint,
-      value: bin.normalizedCount
+      value: bin.normalizedCount,
     })),
     { coordinate: max, value: histogram[histogram.length - 1].normalizedCount },
-    { coordinate: max, value: 0 }
+    { coordinate: max, value: 0 },
   ];
   return line;
 };
@@ -105,7 +97,7 @@ export const convertDistributionTimeseriesToRidgelines = (
     //  timestepIndex.
     const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
     const monthsAfterNow = (timestepIndex + 1) * monthsPerTimestep;
-    return timeSlices.find(timeSlice => timeSlice.months === monthsAfterNow);
+    return timeSlices.find((timeSlice) => timeSlice.months === monthsAfterNow);
   };
 
   const ridgelines: RidgelineWithMetadata[] = [];
@@ -129,7 +121,7 @@ export const convertDistributionTimeseriesToRidgelines = (
       label: timeSliceAtThisTimestep?.shortLabel ?? '',
       monthsAfterNow,
       distributionMean: _.mean(values),
-      ridgeline: convertDistributionToRidgeline(values, min, max, binCount)
+      ridgeline: convertDistributionToRidgeline(values, min, max, binCount),
     });
   });
 
@@ -169,7 +161,7 @@ export const calculateTypicalChangeBracket = (
     return null;
   }
   const dataBeforeProjectionStart = historicalData.filter(
-    point => point.timestamp < projectionStart
+    (point) => point.timestamp < projectionStart
   );
   const latestHistoricalValue = _.last(dataBeforeProjectionStart)?.value ?? 0;
   return { min: latestHistoricalValue + min, max: latestHistoricalValue + max };
@@ -182,8 +174,7 @@ export const summarizeRidgelineComparison = (
   max: number
 ) => {
   const fivePercentOfRange = (max - min) / 20;
-  const meanDifference =
-    target.distributionMean - source.distributionMean;
+  const meanDifference = target.distributionMean - source.distributionMean;
   if (Math.abs(meanDifference) < fivePercentOfRange) {
     // TODO: use standard deviation to test whether target is more/less
     //  certain when means are approximately equal
@@ -191,7 +182,7 @@ export const summarizeRidgelineComparison = (
     return {
       before: 'No significant change.',
       emphasized: '',
-      after: ''
+      after: '',
     };
   }
   let magnitudeAdjective = '';
@@ -204,13 +195,10 @@ export const summarizeRidgelineComparison = (
   } else {
     magnitudeAdjective = 'extreme';
   }
-  const direction =
-    target.distributionMean > source.distributionMean
-      ? 'higher'
-      : 'lower';
+  const direction = target.distributionMean > source.distributionMean ? 'higher' : 'lower';
   return {
     before: _.capitalize(`${magnitudeAdjective} shift toward `),
     emphasized: direction,
-    after: ' values.'
+    after: ' values.',
   };
 };

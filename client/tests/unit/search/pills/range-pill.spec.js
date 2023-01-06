@@ -3,14 +3,14 @@ import RangePill from '@/search/pills/range-pill';
 import FiltersUtil from '@/utils/filters-util';
 
 const result = {
-  clauses: [{ field: 'dummy', operand: 'or', isNot: false, values: [[5, 10]] }]
+  clauses: [{ field: 'dummy', operand: 'or', isNot: false, values: [[5, 10]] }],
 };
 
 const model = {
   field: { key: 'dummy', meta: { searchKey: 'dummy' } },
   relation: { key: 'is' },
   value: { key: 5 },
-  secondaryValue: { key: 10 }
+  secondaryValue: { key: 10 },
 };
 
 describe('range-pill', () => {
@@ -22,7 +22,7 @@ describe('range-pill', () => {
       display: 'dummy',
       searchDisplay: 'dummy',
       searchable: true,
-      ranged: true
+      ranged: true,
     });
   });
 

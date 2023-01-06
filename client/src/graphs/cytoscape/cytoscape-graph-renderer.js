@@ -17,14 +17,14 @@ cytoscape.use(cola);
 cxtmenu(cytoscape);
 expandCollapse(cytoscape, $);
 
-const _epoch = () => (new Date()).getTime();
+const _epoch = () => new Date().getTime();
 
 const expandCollapseDefaults = Object.freeze({
   layoutBy: null, // to rearrange after expand/collapse. It's just layout options or whole layout function. Choose your side!
   // recommended usage: use cose-bilkent layout with randomize: false to preserve mental map upon expand/collapse
   fisheye: false, // whether to perform fisheye view after expand/collapse you can specify a function too
   animate: false, // whether to animate on drawing changes you can specify a function too
-  ready: function () { }, // callback when expand/collapse initialized
+  ready: function () {}, // callback when expand/collapse initialized
   undoable: false, // and if undoRedoExtension exists,
   cueEnabled: false, // Whether cues are enabled
   expandCollapseCuePosition: 'top-left', // default cue position is top left you can specify a function per node too
@@ -32,9 +32,8 @@ const expandCollapseDefaults = Object.freeze({
   expandCollapseCueLineSize: 8, // size of lines used for drawing plus-minus icons
   expandCueImage: undefined, // image of expand icon if undefined draw regular expand cue
   collapseCueImage: undefined, // image of collapse icon if undefined draw regular collapse cue
-  expandCollapseCueSensitivity: 1 // sensitivity of expand-collapse cues
+  expandCollapseCueSensitivity: 1, // sensitivity of expand-collapse cues
 });
-
 
 export default class CytoscapeGraphRenderer extends GraphRenderer {
   /**
@@ -73,7 +72,7 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
     const cy = cytoscape({
       container: element,
       elements: [],
-      boxSelectionEnabled: false
+      boxSelectionEnabled: false,
     });
     this.cy = cy;
     this.cy.expandCollapse(expandCollapseDefaults);
@@ -86,22 +85,26 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
         cy.userPanningEnabled(true);
       });
 
-      MouseTrap.bind('ctrl', () => {
-        cy.zoomingEnabled(false);
-        cy.userZoomingEnabled(false);
-        cy.panningEnabled(false);
-        cy.userPanningEnabled(false);
-      }, 'keyup');
+      MouseTrap.bind(
+        'ctrl',
+        () => {
+          cy.zoomingEnabled(false);
+          cy.userZoomingEnabled(false);
+          cy.panningEnabled(false);
+          cy.userPanningEnabled(false);
+        },
+        'keyup'
+      );
     }
 
     const makeContextMenu = (menuItems) => {
-      return menuItems.map(menuItem => {
+      return menuItems.map((menuItem) => {
         return {
           content: menuItem.content,
           contentStyle: menuItem.contentStyle,
           select: (element) => {
             return menuItem.select(element, this);
-          }
+          },
         };
       });
     };
@@ -141,7 +144,7 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
           menuItems = menuItems.concat(options.contextMenu.nodes);
         }
         return makeContextMenu(menuItems);
-      }
+      },
     });
 
     cy.batch(() => {
@@ -174,7 +177,6 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
         registry.edgeClick(e, this);
       }
     });
-
 
     cy.on('layoutstop', () => {
       const currentStage = this.queue[this.layoutIndex];
@@ -278,7 +280,7 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
     this.cache = {};
 
     const cache = this.cache;
-    this.strategy.forEach(s => {
+    this.strategy.forEach((s) => {
       const selection = s.extract(cache, cy);
       // cache[s.id] = selection;
 
@@ -286,7 +288,7 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
         id: s.id,
         selection: selection,
         layout: selection.layout(s.layout(selection, cache, cy)),
-        postLayout: s.postLayout
+        postLayout: s.postLayout,
       });
     });
   }
@@ -301,7 +303,6 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
     const cy = this.cy;
     cy.nodes().remove(); // removing nodes implies removing connected edges
   }
-
 
   /**
    * Toggles label visibility

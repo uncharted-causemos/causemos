@@ -5,10 +5,7 @@
     </div>
     <div class="expand-collapse">
       <small-text-button :label="'Expand All'" @click="$emit('expand-all')" />
-      <small-text-button
-        :label="'Collapse All'"
-        @click="$emit('collapse-all')"
-      />
+      <small-text-button :label="'Collapse All'" @click="$emit('collapse-all')" />
     </div>
   </div>
 </template>
@@ -19,7 +16,7 @@ import SmallTextButton from '@/components/widgets/small-text-button.vue';
 export default defineComponent({
   components: { SmallTextButton },
   name: 'CollapsibleListHeader',
-  emits: ['expand-all', 'collapse-all']
+  emits: ['expand-all', 'collapse-all'],
 });
 </script>
 

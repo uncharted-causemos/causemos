@@ -1,9 +1,5 @@
 <template>
-  <full-screen-modal-header
-    icon="angle-left"
-    :nav-back-label="navBackLabel"
-    @close="onClose"
-  >
+  <full-screen-modal-header icon="angle-left" :nav-back-label="navBackLabel" @close="onClose">
     <button
       v-tooltip.top-center="addToCagTooltip"
       type="button"
@@ -15,11 +11,9 @@
       Add to CAG
     </button>
     <span>
-      <span class="selected">
-        {{ numberFormatter(selectedSubgraphEdges.length) }} selected
-      </span>
+      <span class="selected"> {{ numberFormatter(selectedSubgraphEdges.length) }} selected </span>
       of {{ numberFormatter(filteredEdgesCount) }}
-      {{ areEdgesDrawn ? '': '(hidden) ' }} relationships
+      {{ areEdgesDrawn ? '' : '(hidden) ' }} relationships
     </span>
   </full-screen-modal-header>
 </template>
@@ -35,13 +29,13 @@ import numberFormatter from '@/formatters/number-formatter';
 export default defineComponent({
   name: 'KbExplorerModalHeader',
   components: {
-    fullScreenModalHeader
+    fullScreenModalHeader,
   },
   props: {
     navBackLabel: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   emits: ['add-to-CAG', 'close'],
   setup() {
@@ -51,14 +45,16 @@ export default defineComponent({
     const filteredEdgesCount = computed(() => store.getters['graph/filteredEdgesCount']);
     const areEdgesDrawn = computed(() => filteredEdgesCount.value <= EDGE_THRESHOLD);
     const canAddToCAG = computed(() => selectedSubgraphEdges.value.length <= ADD_TO_CAG_THRESHOLD);
-    const addToCagTooltip = computed(() => canAddToCAG.value ? 'Add to workspace' : SUBGRAPH.TOO_MANY_EDGES);
+    const addToCagTooltip = computed(() =>
+      canAddToCAG.value ? 'Add to workspace' : SUBGRAPH.TOO_MANY_EDGES
+    );
 
     return {
       selectedSubgraphEdges,
       filteredEdgesCount,
       areEdgesDrawn,
       canAddToCAG,
-      addToCagTooltip
+      addToCagTooltip,
     };
   },
   methods: {
@@ -68,14 +64,14 @@ export default defineComponent({
     },
     onClose() {
       this.$emit('close');
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-  .selected {
-    font-weight: bold;
-    margin-left: 5px;
-  }
+.selected {
+  font-weight: bold;
+  margin-left: 5px;
+}
 </style>

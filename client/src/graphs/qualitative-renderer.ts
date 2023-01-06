@@ -2,9 +2,7 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import { AbstractCAGRenderer, D3SelectionINode, D3SelectionIEdge } from './abstract-cag-renderer';
 import { NodeParameter, EdgeParameter } from '@/types/CAG';
-import {
-  INode, getAStarPath, simplifyPath, IEdge
-} from 'svg-flowgraph';
+import { INode, getAStarPath, simplifyPath, IEdge } from 'svg-flowgraph';
 
 import svgUtil, { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
@@ -28,9 +26,9 @@ const EDGE_SUGGESTION_SPACING = 10;
 
 const MAX_VISIBLE_SUGGESTIONS = 5;
 
-
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
-const distance = (a: {x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+  Math.hypot(a.x - b.x, a.y - b.y);
 
 interface EdgeSuggestionDisplayData {
   suggestion: EdgeSuggestion;
@@ -48,61 +46,73 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   constructor(options: any) {
     super(options);
 
-    this.on('node-mouse-enter', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      if (this.newEdgeSourceId === '') {
-        this.showNodeHandles(selection);
+    this.on(
+      'node-mouse-enter',
+      (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
+        if (this.newEdgeSourceId === '') {
+          this.showNodeHandles(selection);
+        }
+        if (this.handleBeingDragged === true) return;
+
+        const node = selection.datum();
+        const label = node.label;
+        if (label.length !== selection.select('.node-label').text().replace(/^\*/, '').length) {
+          svgUtil.showSvgTooltip(this.chart, label, [node.x + node.width / 2, node.y]);
+        }
+        if (selection.classed('selected')) {
+          return;
+        }
+        selection
+          .selectAll('.node-container, .node-container-outer')
+          .style('stroke', SELECTED_COLOR);
+        this.showNodeMenu(selection);
       }
-      if (this.handleBeingDragged === true) return;
+    );
 
-      const node = selection.datum();
-      const label = node.label;
-      if (label.length !== selection.select('.node-label').text().replace(/^\*/, '').length) {
-        svgUtil.showSvgTooltip(
-          this.chart,
-          label,
-          [node.x + node.width / 2, node.y]
-        );
+    this.on(
+      'node-mouse-leave',
+      (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
+        if (this.newEdgeSourceId === '') {
+          this.hideNodeHandles();
+        }
+        this.hideNodeMenu(selection);
+        svgUtil.hideSvgTooltip(this.chart);
+
+        if (selection.classed('selected')) {
+          return;
+        }
+        selection
+          .selectAll('.node-container, .node-container-outer')
+          .style('stroke', DEFAULT_STYLE.node.stroke)
+          .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
       }
-      if (selection.classed('selected')) {
-        return;
+    );
+
+    this.on(
+      'node-drag-move',
+      (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
+        this.hideNodeMenu(selection);
+        svgUtil.hideSvgTooltip(this.chart);
       }
-      selection.selectAll('.node-container, .node-container-outer').style('stroke', SELECTED_COLOR);
-      this.showNodeMenu(selection);
-    });
+    );
 
-    this.on('node-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      if (this.newEdgeSourceId === '') {
-        this.hideNodeHandles();
+    this.on(
+      'edge-mouse-enter',
+      (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
+        selection.select('.edge-path-bg-outline').style('stroke', SELECTED_COLOR);
       }
-      this.hideNodeMenu(selection);
-      svgUtil.hideSvgTooltip(this.chart);
+    );
 
-      if (selection.classed('selected')) {
-        return;
+    this.on(
+      'edge-mouse-leave',
+      (_evtName, _evt: PointerEvent, selection: D3SelectionINode<EdgeParameter>) => {
+        if (selection.classed('selected')) {
+          return;
+        }
+
+        selection.select('.edge-path-bg-outline').style('stroke', null);
       }
-      selection.selectAll('.node-container, .node-container-outer')
-        .style('stroke', DEFAULT_STYLE.node.stroke)
-        .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
-    });
-
-    this.on('node-drag-move', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      this.hideNodeMenu(selection);
-      svgUtil.hideSvgTooltip(this.chart);
-    });
-
-    this.on('edge-mouse-enter', (_evtName, evt: PointerEvent, selection: D3SelectionINode<NodeParameter>) => {
-      selection.select('.edge-path-bg-outline')
-        .style('stroke', SELECTED_COLOR);
-    });
-
-    this.on('edge-mouse-leave', (_evtName, _evt: PointerEvent, selection: D3SelectionINode<EdgeParameter>) => {
-      if (selection.classed('selected')) {
-        return;
-      }
-
-      selection.select('.edge-path-bg-outline')
-        .style('stroke', null);
-    });
+    );
   }
 
   /**
@@ -124,9 +134,10 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   ) {
     // Suggestion column starts to the left of the node if showing driver
     //  (incoming) edges, and starts to the right otherwise.
-    const suggestionColumnX = edgeDirection === EdgeDirection.Incoming
-      ? node.x - EDGE_SUGGESTION_SPACING - EDGE_SUGGESTION_WIDTH
-      : node.x + NODE_WIDTH + EDGE_SUGGESTION_SPACING;
+    const suggestionColumnX =
+      edgeDirection === EdgeDirection.Incoming
+        ? node.x - EDGE_SUGGESTION_SPACING - EDGE_SUGGESTION_WIDTH
+        : node.x + NODE_WIDTH + EDGE_SUGGESTION_SPACING;
     const { cancelButtonX, cancelButtonWidth } = this.renderStaticSuggestionUI(
       node,
       edgeDirection,
@@ -135,13 +146,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     // Show(or update if it exists) the button for adding selected edges to CAG
     const { buttonSelection: addButton } = this.createOrUpdateAddButton(selectedSuggestions.length);
     const addButtonStartX = cancelButtonX + cancelButtonWidth + EDGE_SUGGESTION_SPACING;
-    addButton.attr(
-      'transform',
-      translate(
-        addButtonStartX,
-        node.y
-      )
-    );
+    addButton.attr('transform', translate(addButtonStartX, node.y));
     this.renderSearchBox(suggestionColumnX, node.y, edgeDirection);
     this.renderSuggestionLoadingIndicator(
       loadStatus === LoadStatus.Loading,
@@ -156,20 +161,15 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       addButtonStartX,
       edgeDirection
     );
-    this.renderExploreButton(
-      suggestionType,
-      suggestions.length,
-      suggestionColumnX,
-      node.y
-    );
+    this.renderExploreButton(suggestionType, suggestions.length, suggestionColumnX, node.y);
     this.setOtherNodesAndEdgesOpacity(node.id, 0.1);
   }
 
   setOtherNodesAndEdgesOpacity(nodeId: string, opacity: number) {
-    this.chart.selectAll<any, INode<NodeParameter>>('.node-container')
-      .style('opacity', node => node.id === nodeId ? 1 : opacity);
-    this.chart.selectAll<any, IEdge<EdgeParameter>>('.edge-path')
-      .style('opacity', opacity);
+    this.chart
+      .selectAll<any, INode<NodeParameter>>('.node-container')
+      .style('opacity', (node) => (node.id === nodeId ? 1 : opacity));
+    this.chart.selectAll<any, IEdge<EdgeParameter>>('.edge-path').style('opacity', opacity);
   }
 
   renderStaticSuggestionUI(
@@ -184,10 +184,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       NODE_WIDTH +
       EDGE_SUGGESTION_SPACING +
       (edgeDirection === EdgeDirection.Incoming ? 0 : suggestionColumnWidth);
-    const {
-      buttonSelection: cancelButton,
-      dynamicWidth: cancelButtonWidth
-    } = createOrUpdateButton(
+    const { buttonSelection: cancelButton, dynamicWidth: cancelButtonWidth } = createOrUpdateButton(
       'Cancel',
       'cancel-suggestion-mode-button',
       this.chart as unknown as D3Selection,
@@ -196,58 +193,43 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     );
     cancelButton.attr('transform', translate(cancelButtonX, node.y));
     // Remove label if it already exists
-    (this.chart.node() as Element).querySelector(
-      '.suggestion-column-label'
-    )?.remove();
+    (this.chart.node() as Element).querySelector('.suggestion-column-label')?.remove();
     // Render label for suggestion column
-    this.chart.append('text')
+    this.chart
+      .append('text')
       .classed('suggestion-column-label', true)
-      .text(`Add ${
-        edgeDirection === EdgeDirection.Incoming ? 'drivers' : 'impacts'
-      }`)
+      .text(`Add ${edgeDirection === EdgeDirection.Incoming ? 'drivers' : 'impacts'}`)
       .style('fill', 'grey')
       .style('font-weight', '600')
       .style('letter-spacing', '1.05')
       .style('text-transform', 'uppercase')
-      .attr('transform', translate(
-        suggestionColumnX,
-        node.y - EDGE_SUGGESTION_SPACING
-      ));
+      .attr('transform', translate(suggestionColumnX, node.y - EDGE_SUGGESTION_SPACING));
     return { cancelButtonX, cancelButtonWidth };
   }
 
-  renderSuggestionLoadingIndicator(
-    isLoading: boolean,
-    suggestionColumnX: number,
-    nodeY: number
-  ) {
-    this.chart.selectAll<any, boolean>('.suggestion-loading-indicator')
+  renderSuggestionLoadingIndicator(isLoading: boolean, suggestionColumnX: number, nodeY: number) {
+    this.chart
+      .selectAll<any, boolean>('.suggestion-loading-indicator')
       .data(isLoading ? [true] : [])
       .join(
-        enter => enter.append('text')
-          .classed('suggestion-loading-indicator', true)
-          .attr('transform', () =>
-            translate(
-              suggestionColumnX,
-              nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING + 20
+        (enter) =>
+          enter
+            .append('text')
+            .classed('suggestion-loading-indicator', true)
+            .attr('transform', () =>
+              translate(suggestionColumnX, nodeY + NODE_HEIGHT + EDGE_SUGGESTION_SPACING + 20)
             )
-          )
-          .text('Loading suggestions...')
-          .style('opacity', 0)
-          .call(enter => enter.transition()
-            .style('opacity', 1)
-          ),
-        update => update,
-        exit => exit.remove()
+            .text('Loading suggestions...')
+            .style('opacity', 0)
+            .call((enter) => enter.transition().style('opacity', 1)),
+        (update) => update,
+        (exit) => exit.remove()
       );
   }
 
-  renderSearchBox(
-    suggestionColumnX: number,
-    nodeY: number,
-    edgeDirection: EdgeDirection
-  ) {
-    const textInput = this.chart.selectAll('.suggestion-search-box')
+  renderSearchBox(suggestionColumnX: number, nodeY: number, edgeDirection: EdgeDirection) {
+    const textInput = this.chart
+      .selectAll('.suggestion-search-box')
       .data([edgeDirection])
       .join('foreignObject')
       .classed('suggestion-search-box', true)
@@ -255,7 +237,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('height', `${NODE_HEIGHT}px`)
       .attr('transform', translate(suggestionColumnX, nodeY))
       .selectAll('input')
-      .data(edgeDirection => [edgeDirection])
+      .data((edgeDirection) => [edgeDirection])
       .join('xhtml:input')
       .attr('type', 'text')
       .style('width', `${EDGE_SUGGESTION_WIDTH}px`)
@@ -285,23 +267,18 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     const selectedSuggestionsToDisplay = selectedSuggestions.map((s, i) => ({
       suggestion: s,
       x: selectedColumnX,
-      y: suggestionStartY + i * (NODE_HEIGHT + EDGE_SUGGESTION_SPACING)
+      y: suggestionStartY + i * (NODE_HEIGHT + EDGE_SUGGESTION_SPACING),
     }));
     const otherSuggestionsToDisplay: EdgeSuggestionDisplayData[] = [];
     let i = 0;
 
-    while (
-      otherSuggestionsToDisplay.length < MAX_VISIBLE_SUGGESTIONS &&
-      i < suggestions.length
-    ) {
+    while (otherSuggestionsToDisplay.length < MAX_VISIBLE_SUGGESTIONS && i < suggestions.length) {
       const suggestion = suggestions[i];
-      const selectedSuggestionWithSameConcept = selectedSuggestions.find(
-        selectedSuggestion => {
-          return edgeDirection === EdgeDirection.Incoming
-            ? selectedSuggestion.source === suggestion.source
-            : selectedSuggestion.target === suggestion.target;
-        }
-      );
+      const selectedSuggestionWithSameConcept = selectedSuggestions.find((selectedSuggestion) => {
+        return edgeDirection === EdgeDirection.Incoming
+          ? selectedSuggestion.source === suggestion.source
+          : selectedSuggestion.target === suggestion.target;
+      });
       if (selectedSuggestionWithSameConcept === undefined) {
         // Suggestion is not already displayed in the selected column
         otherSuggestionsToDisplay.push({
@@ -309,48 +286,49 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
           x: suggestionColumnX,
           y:
             suggestionStartY +
-            otherSuggestionsToDisplay.length *
-              (NODE_HEIGHT + EDGE_SUGGESTION_SPACING)
+            otherSuggestionsToDisplay.length * (NODE_HEIGHT + EDGE_SUGGESTION_SPACING),
         });
       }
       i++;
     }
     const suggestionsToDisplay: EdgeSuggestionDisplayData[] = [
       ...selectedSuggestionsToDisplay,
-      ...otherSuggestionsToDisplay
+      ...otherSuggestionsToDisplay,
     ];
-    const accessConcept = edgeDirection === EdgeDirection.Incoming
-      ? (entry: EdgeSuggestionDisplayData) => entry.suggestion.source
-      : (entry: EdgeSuggestionDisplayData) => entry.suggestion.target;
+    const accessConcept =
+      edgeDirection === EdgeDirection.Incoming
+        ? (entry: EdgeSuggestionDisplayData) => entry.suggestion.source
+        : (entry: EdgeSuggestionDisplayData) => entry.suggestion.target;
     // Add a `g` to the dom for each suggestion, along with snazzy transitions
     const suggestionGroups = this.chart
       .selectAll<any, EdgeSuggestionDisplayData>('.node-suggestion')
       .data(suggestionsToDisplay, accessConcept)
       .join(
-        enter => enter.append('g')
-          .classed('node-suggestion', true)
-          .style('cursor', 'pointer')
-          .attr('transform', suggestion => translate(suggestion.x, suggestion.y + 10))
-          .style('opacity', 0.5),
-        update => update,
-        exit => exit
-          .call(exit => exit.transition()
-            .style('opacity', 0)
-            .remove()
-          )
+        (enter) =>
+          enter
+            .append('g')
+            .classed('node-suggestion', true)
+            .style('cursor', 'pointer')
+            .attr('transform', (suggestion) => translate(suggestion.x, suggestion.y + 10))
+            .style('opacity', 0.5),
+        (update) => update,
+        (exit) => exit.call((exit) => exit.transition().style('opacity', 0).remove())
       )
       // Apply transition to all elements (enter & update & exit) to ensure
       //  that they all end up in full opacity at the right place. This
       //  addresses an issue where elements that were fading out and then
       //  re-added would keep their half-gone position and opacity values.
-      .call(join => join.transition()
-        .duration(100)
-        .attr('transform', suggestion => translate(suggestion.x, suggestion.y))
-        .style('opacity', 1)
+      .call((join) =>
+        join
+          .transition()
+          .duration(100)
+          .attr('transform', (suggestion) => translate(suggestion.x, suggestion.y))
+          .style('opacity', 1)
       );
     // Render node background
-    suggestionGroups.selectAll('rect')
-      .data(d => [d])
+    suggestionGroups
+      .selectAll('rect')
+      .data((d) => [d])
       .join('rect')
       .attr('width', EDGE_SUGGESTION_WIDTH)
       .attr('height', NODE_HEIGHT)
@@ -360,37 +338,39 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .style('border-radius', DEFAULT_STYLE.node.borderRadius)
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
     // Render node label
-    suggestionGroups.selectAll('text')
-      .data(entry => [this.labelFormatter(accessConcept(entry))])
+    suggestionGroups
+      .selectAll('text')
+      .data((entry) => [this.labelFormatter(accessConcept(entry))])
       .join('text')
       .attr('transform', translate(10, 20))
-      .text(concept => concept)
-      .each(function() {
+      .text((concept) => concept)
+      .each(function () {
         // FIXME any
         svgUtil.truncateTextToWidth(this as any, EDGE_SUGGESTION_WIDTH - 20);
       });
     // Render incoming edge arrowhead
-    const arrowHeadX = edgeDirection === EdgeDirection.Incoming
-      ? EDGE_SUGGESTION_WIDTH - 5
-      : -5;
-    suggestionGroups.selectAll('edge-possibility-indicator')
-      .data(entry => [entry.suggestion.color])
+    const arrowHeadX = edgeDirection === EdgeDirection.Incoming ? EDGE_SUGGESTION_WIDTH - 5 : -5;
+    suggestionGroups
+      .selectAll('edge-possibility-indicator')
+      .data((entry) => [entry.suggestion.color])
       .join('svg:path')
       .classed('edge-possibility-indicator', true)
       .attr('d', svgUtil.ARROW)
       .attr('transform', translate(arrowHeadX, NODE_HEIGHT / 2) + ' scale(2.5)')
-      .attr('fill', color => color)
+      .attr('fill', (color) => color)
       .style('pointer-events', 'none');
     // On click, toggle whether the node is selected
     suggestionGroups
-      .on('mouseenter', function() {
+      .on('mouseenter', function () {
         // Expand suggestions slightly on hover
-        d3.select<any, EdgeSuggestionDisplayData>(this).transition()
+        d3.select<any, EdgeSuggestionDisplayData>(this)
+          .transition()
           .duration(50)
           .attr('transform', ({ x, y }) => translate(x, y) + ' scale(1.05)');
       })
-      .on('mouseleave', function() {
-        d3.select<any, EdgeSuggestionDisplayData>(this).transition()
+      .on('mouseleave', function () {
+        d3.select<any, EdgeSuggestionDisplayData>(this)
+          .transition()
           .duration(50)
           .attr('transform', ({ x, y }) => translate(x, y));
       })
@@ -426,15 +406,12 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     );
 
     const yPosition =
-      nodeY +
-      (MAX_VISIBLE_SUGGESTIONS + 1) * (NODE_HEIGHT + EDGE_SUGGESTION_SPACING);
+      nodeY + (MAX_VISIBLE_SUGGESTIONS + 1) * (NODE_HEIGHT + EDGE_SUGGESTION_SPACING);
     exploreButton.attr('transform', translate(suggestionColumnX, yPosition));
   }
 
   createOrUpdateAddButton(selectedCount: number) {
-    const text = `Add ${selectedCount} relationship${
-      selectedCount !== 1 ? 's' : ''
-    }`;
+    const text = `Add ${selectedCount} relationship${selectedCount !== 1 ? 's' : ''}`;
     const addRelationshipsButton = createOrUpdateButton(
       text,
       'add-relationships-button',
@@ -470,8 +447,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('x', -3)
       .attr('y', -3)
       .attr('rx', DEFAULT_STYLE.node.borderRadius + 3)
-      .attr('width', d => (d.width + 6) || 0)
-      .attr('height', d => (d.height + 6) || 0)
+      .attr('width', (d) => d.width + 6 || 0)
+      .attr('height', (d) => d.height + 6 || 0)
       .style('stroke', DEFAULT_STYLE.node.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth)
       .style('cursor', 'pointer')
@@ -479,18 +456,19 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .style('fill', DEFAULT_STYLE.node.fill);
 
     selection
-      .filter(d => d.data.components.length > 1)
+      .filter((d) => d.data.components.length > 1)
       .selectAll<any, INode<NodeParameter>>('.node-container-outer')
       .style('display', null);
 
-    selection.append('rect')
+    selection
+      .append('rect')
       .classed('node-container', true)
       .classed('node-header', true)
       .attr('x', 0)
       .attr('y', 0)
       .attr('rx', DEFAULT_STYLE.node.borderRadius)
-      .attr('width', d => d.width || 0)
-      .attr('height', d => d.height || 0)
+      .attr('width', (d) => d.width || 0)
+      .attr('height', (d) => d.height || 0)
       .style('stroke', DEFAULT_STYLE.node.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.strokeWidth)
       .style('cursor', 'pointer')
@@ -502,7 +480,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('x', 10)
       .attr('y', 20)
       .style('pointer-events', 'none')
-      .text(d => this.labelFormatter(d.label))
+      .text((d) => this.labelFormatter(d.label))
       .each(function (d) {
         if (d.width) {
           svgUtil.truncateTextToWidth(this, d.width - 20);
@@ -514,13 +492,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
   renderNodesUpdated(selection: D3SelectionINode<NodeParameter>) {
     selection
-      .filter(d => d.data.components.length > 1)
+      .filter((d) => d.data.components.length > 1)
       .selectAll<any, INode<NodeParameter>>('.node-container-outer')
       .style('display', null);
 
     selection
       .select('.node-label')
-      .text(d => this.labelFormatter(d.label))
+      .text((d) => this.labelFormatter(d.label))
       .each(function (d) {
         if (d.width) {
           svgUtil.truncateTextToWidth(this as any, d.width - 20); // FIXME any
@@ -534,7 +512,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .transition()
       .duration(REMOVE_TIMER)
       .style('opacity', 0)
-      .on('end', function() {
+      .on('end', function () {
         d3.select((this as any).parentNode).remove(); // FIXME any
       });
   }
@@ -544,7 +522,9 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     if (this.temporaryNewEdge) {
       const sourceNode = this.temporaryNewEdge.sourceNode;
       const targetNode = this.temporaryNewEdge.targetNode;
-      const edge = this.graph.edges.find(d => d.source === sourceNode.label && d.target === targetNode.label);
+      const edge = this.graph.edges.find(
+        (d) => d.source === sourceNode.label && d.target === targetNode.label
+      );
       if (edge) {
         edge.points = this.getPathBetweenNodes(sourceNode, targetNode);
       }
@@ -556,31 +536,33 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .classed('edge-path-bg-outline', true)
       .style('fill', DEFAULT_STYLE.edgeBg.fill)
       .style('stroke', null)
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data) + 7)
-      .attr('d', d => pathFn(d.points as any));
+      .style('stroke-width', (d) => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data) + 7)
+      .attr('d', (d) => pathFn(d.points as any));
 
     selection
       .append('path')
       .classed('edge-path-bg', true)
       .style('fill', DEFAULT_STYLE.edgeBg.fill)
       .style('stroke', DEFAULT_STYLE.edgeBg.stroke)
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data) + 2)
-      .attr('d', d => pathFn(d.points as any));
+      .style('stroke-width', (d) => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data) + 2)
+      .attr('d', (d) => pathFn(d.points as any));
 
     selection
       .append('path')
       .classed('edge-path', true)
       .style('fill', DEFAULT_STYLE.edge.fill)
-      .attr('d', d => pathFn(d.points as any))
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data))
-      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
-      .style('stroke', d => calcEdgeColor(d.data))
-      .attr('marker-end', d => {
+      .attr('d', (d) => pathFn(d.points as any))
+      .style('stroke-width', (d) => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data))
+      .style('stroke-dasharray', (d) =>
+        hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash
+      )
+      .style('stroke', (d) => calcEdgeColor(d.data))
+      .attr('marker-end', (d) => {
         const source = d.data.source.replace(/\s/g, '');
         const target = d.data.target.replace(/\s/g, '');
         return `url(#arrowhead-${source}-${target})`;
       })
-      .attr('marker-start', d => {
+      .attr('marker-start', (d) => {
         const source = d.data.source.replace(/\s/g, '');
         const target = d.data.target.replace(/\s/g, '');
         return `url(#start-${source}-${target})`;
@@ -590,44 +572,35 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
   renderEdgesUpdated(selection: D3SelectionIEdge<EdgeParameter>) {
     selection
       .select('.edge-path')
-      .style('stroke', d => calcEdgeColor(d.data))
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data))
-      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
-      .attr('marker-end', d => {
+      .style('stroke', (d) => calcEdgeColor(d.data))
+      .style('stroke-width', (d) => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data))
+      .style('stroke-dasharray', (d) =>
+        hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash
+      )
+      .attr('marker-end', (d) => {
         const source = d.data.source.replace(/\s/g, '');
         const target = d.data.target.replace(/\s/g, '');
         return `url(#arrowhead-${source}-${target})`;
       })
-      .attr('marker-start', d => {
+      .attr('marker-start', (d) => {
         const source = d.data.source.replace(/\s/g, '');
         const target = d.data.target.replace(/\s/g, '');
         return `url(#start-${source}-${target})`;
       });
 
-
-    selection
-      .select('.edge-path')
-      .attr('d', d => {
-        return pathFn(d.points as any);
-      });
-    selection
-      .select('.edge-path-bg')
-      .attr('d', d => {
-        return pathFn(d.points as any);
-      });
-    selection
-      .select('.edge-path-bg-outline')
-      .attr('d', d => {
-        return pathFn(d.points as any);
-      });
+    selection.select('.edge-path').attr('d', (d) => {
+      return pathFn(d.points as any);
+    });
+    selection.select('.edge-path-bg').attr('d', (d) => {
+      return pathFn(d.points as any);
+    });
+    selection.select('.edge-path-bg-outline').attr('d', (d) => {
+      return pathFn(d.points as any);
+    });
   }
 
   renderEdgesRemoved(selection: D3SelectionIEdge<EdgeParameter>) {
-    selection
-      .transition()
-      .duration(REMOVE_TIMER)
-      .style('opacity', 0)
-      .remove();
+    selection.transition().duration(REMOVE_TIMER).style('opacity', 0).remove();
   }
 
   setupDefs() {
@@ -640,13 +613,14 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     svg.select('defs').selectAll('.node-blur').remove();
 
     // Arrow defs
-    svg.select('defs')
+    svg
+      .select('defs')
       .selectAll('.edge-marker-end')
       .data(edges)
       .enter()
       .append('marker')
       .classed('edge-marker-end', true)
-      .attr('id', d => {
+      .attr('id', (d) => {
         const source = d.data.source.replace(/\s/g, '');
         const target = d.data.target.replace(/\s/g, '');
         return `arrowhead-${source}-${target}`;
@@ -661,16 +635,17 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('xoverflow', 'visible')
       .append('svg:path')
       .attr('d', svgUtil.ARROW)
-      .style('fill', d => calcEdgeColor(d.data))
+      .style('fill', (d) => calcEdgeColor(d.data))
       .style('stroke', 'none');
 
-    svg.select('defs')
+    svg
+      .select('defs')
       .selectAll('.edge-marker-start')
       .data(edges)
       .enter()
       .append('marker')
       .classed('edge-marker-start', true)
-      .attr('id', d => {
+      .attr('id', (d) => {
         const source = d.data.source.replace(/\s/g, '');
         const target = d.data.target.replace(/\s/g, '');
         return `start-${source}-${target}`;
@@ -683,12 +658,12 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('cx', 0)
       .attr('cy', 0)
       .attr('r', 4)
-      .style('fill', d => calcEdgeColor(d.data))
+      .style('fill', (d) => calcEdgeColor(d.data))
       .style('stroke', '#FFF');
 
-
     // Node defs
-    svg.select('defs')
+    svg
+      .select('defs')
       .append('marker')
       .attr('id', 'arrowhead')
       .attr('viewBox', svgUtil.MARKER_VIEWBOX)
@@ -707,19 +682,22 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
   showNodeMenu(node: D3SelectionINode<NodeParameter>) {
     const H = node.datum().height || 50;
-    const control = node.selectAll('.node-control')
+    const control = node
+      .selectAll('.node-control')
       .data([node.datum()])
       .join('g')
       .classed('node-control', true);
 
-    control.append('rect')
+    control
+      .append('rect')
       .attr('x', 0)
       .attr('y', H)
       .attr('width', 130)
       .attr('height', 30)
       .style('fill', 'transparent');
 
-    control.append('rect')
+    control
+      .append('rect')
       .attr('x', 0)
       .attr('y', H + 4)
       .attr('width', 60)
@@ -728,27 +706,29 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('ry', 2)
       .style('stroke', '#333')
       .style('fill', '#333')
-      .style('opacity', 0.80)
+      .style('opacity', 0.8)
       .style('cursor', 'pointer')
-      .on('mouseenter', function() {
+      .on('mouseenter', function () {
         d3.select(this).style('opacity', 1.0);
       })
-      .on('mouseleave', function() {
-        d3.select(this).style('opacity', 0.80);
+      .on('mouseleave', function () {
+        d3.select(this).style('opacity', 0.8);
       })
       .on('click', (evt, node) => {
         this.emit('rename-node', node.data);
         evt.stopPropagation();
       });
 
-    control.append('text')
+    control
+      .append('text')
       .attr('x', 4)
       .attr('y', H + 4 + 15)
       .style('fill', '#eee')
       .text('Rename')
       .style('pointer-events', 'none');
 
-    control.append('rect')
+    control
+      .append('rect')
       .attr('x', 70)
       .attr('y', H + 4)
       .attr('width', 60)
@@ -757,20 +737,21 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       .attr('ry', 2)
       .style('stroke', '#E11')
       .style('fill', '#E11')
-      .style('opacity', 0.80)
+      .style('opacity', 0.8)
       .style('cursor', 'pointer')
-      .on('mouseenter', function() {
+      .on('mouseenter', function () {
         d3.select(this).style('opacity', 1.0);
       })
-      .on('mouseleave', function() {
-        d3.select(this).style('opacity', 0.80);
+      .on('mouseleave', function () {
+        d3.select(this).style('opacity', 0.8);
       })
       .on('click', (evt, node) => {
         this.emit('delete-node', node.data);
         evt.stopPropagation();
       });
 
-    control.append('text')
+    control
+      .append('text')
       .attr('x', 74)
       .attr('y', H + 4 + 15)
       .style('fill', '#eee')
@@ -784,17 +765,28 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
   getNodeCollider() {
     // FIXME: this won't work with hierarchies
-    return (p: { x: number; y: number }) => this.graph.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
+    return (p: { x: number; y: number }) =>
+      this.graph.nodes.some(
+        (n) => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height
+      );
   }
 
   getPathBetweenNodes(source: INode<NodeParameter>, target: INode<NodeParameter>) {
-    const getNodeEntrance = (node: INode<NodeParameter>, offset = 0) => ({ x: node.x + offset, y: node.y + 0.5 * node.height });
-    const getNodeExit = (node: INode<NodeParameter>, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
+    const getNodeEntrance = (node: INode<NodeParameter>, offset = 0) => ({
+      x: node.x + offset,
+      y: node.y + 0.5 * node.height,
+    });
+    const getNodeExit = (node: INode<NodeParameter>, offset = 0) => ({
+      x: node.x + node.width + offset,
+      y: node.y + 0.5 * node.height,
+    });
 
     return [
       getNodeExit(source),
-      ...simplifyPath(getAStarPath(getNodeExit(source, 5), getNodeEntrance(target, -5), this.getNodeCollider())),
-      getNodeEntrance(target)
+      ...simplifyPath(
+        getAStarPath(getNodeExit(source, 5), getNodeEntrance(target, -5), this.getNodeCollider())
+      ),
+      getNodeEntrance(target),
     ];
   }
 
@@ -808,30 +800,30 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     const nodeHeight = node.datum().height || 0;
     const handleWidth = DEFAULT_STYLE.nodeHandles.width;
 
-    node.selectAll('.node-container, .node-container-outer')
+    node
+      .selectAll('.node-container, .node-container-outer')
       .style('border-radius', DEFAULT_STYLE.node.highlighted.borderRadius)
       .style('stroke', DEFAULT_STYLE.node.highlighted.stroke)
       .style('stroke-width', DEFAULT_STYLE.node.highlighted.strokeWidth);
 
-    node.select('path')
-      .attr('transform', svgUtil.translate(handleWidth * 2, handleWidth));
+    node.select('path').attr('transform', svgUtil.translate(handleWidth * 2, handleWidth));
 
     const handleWidthPlusPadding = handleWidth + 5;
-    node.select('.node-label')
+    node
+      .select('.node-label')
       .attr('x', handleWidthPlusPadding)
-      .text(d => this.labelFormatter(d.label))
-      .each(function (d) { svgUtil.truncateTextToWidth(this as any, d.width - handleWidthPlusPadding * 2); });
+      .text((d) => this.labelFormatter(d.label))
+      .each(function (d) {
+        svgUtil.truncateTextToWidth(this as any, d.width - handleWidthPlusPadding * 2);
+      });
 
     const addHandleElements = (
-      handleGroupSelection: d3.Selection<
-        SVGGElement,
-        INode<NodeParameter>,
-        null,
-        any>,
+      handleGroupSelection: d3.Selection<SVGGElement, INode<NodeParameter>, null, any>,
       xOffset: number
     ) => {
       // Add invisible rect to detect mouse events
-      handleGroupSelection.append('rect')
+      handleGroupSelection
+        .append('rect')
         .classed('handle', true)
         .attr('x', xOffset)
         .attr('y', 0)
@@ -841,7 +833,8 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
         .style('fill', 'transparent');
       // Add arrow
       const approximateArrowWidth = 10;
-      handleGroupSelection.append('text')
+      handleGroupSelection
+        .append('text')
         .attr('x', xOffset + (handleWidth - approximateArrowWidth) / 2)
         .attr('y', nodeHeight * 0.625)
         .style('font-family', 'FontAwesome')
@@ -875,19 +868,20 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     rightHandle.on('mouseover', onHandleHover);
     rightHandle.on('mouseleave', onHandleLeave);
 
-
     // FIXME need to flatten
     const getLayoutNodeById = (id: string) => {
-      const r = this.graph.nodes.find(n => n.id === id);
+      const r = this.graph.nodes.find((n) => n.id === id);
       return r as INode<NodeParameter>;
     };
     const getNodeExit = (node: INode<NodeParameter>, offset = 0) => {
       return {
-        x: node.x + node.width + offset, y: node.y + 0.5 * node.height
+        x: node.x + node.width + offset,
+        y: node.y + 0.5 * node.height,
       };
     };
 
-    const drag = d3.drag()
+    const drag = d3
+      .drag()
       .on('start', async (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
         const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
@@ -898,30 +892,46 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       })
       .on('drag', (evt) => {
         chart.selectAll('.new-edge').remove();
-        const pointerCoords = d3.zoomTransform(svg.node() as Element).invert(d3.pointer(evt, svg.node()));
-        chart.append('path')
+        const pointerCoords = d3
+          .zoomTransform(svg.node() as Element)
+          .invert(d3.pointer(evt, svg.node()));
+        chart
+          .append('path')
           .classed('new-edge', true)
           .attr('d', () => {
             const newEdgeSource = getLayoutNodeById(evt.subject.id);
             const newEdgeStart = getNodeExit(newEdgeSource);
             const mousePoint = { x: pointerCoords[0], y: pointerCoords[1] };
 
-            if (d3.select(evt.sourceEvent.target).classed('node-container') || d3.select(evt.sourceEvent.target).classed('handle')) {
-              this.newEdgeTargetId = d3.select<SVGGElement, INode<NodeParameter>>(evt.sourceEvent.target).datum().id;
+            if (
+              d3.select(evt.sourceEvent.target).classed('node-container') ||
+              d3.select(evt.sourceEvent.target).classed('handle')
+            ) {
+              this.newEdgeTargetId = d3
+                .select<SVGGElement, INode<NodeParameter>>(evt.sourceEvent.target)
+                .datum().id;
 
-              if (this.newEdgeSourceId === this.newEdgeTargetId && distance(newEdgeStart, mousePoint) < 20) {
+              if (
+                this.newEdgeSourceId === this.newEdgeTargetId &&
+                distance(newEdgeStart, mousePoint) < 20
+              ) {
                 this.newEdgeTargetId = '';
                 return pathFn([]);
               }
 
-              const pathPoints = this.getPathBetweenNodes(newEdgeSource, getLayoutNodeById(this.newEdgeTargetId));
+              const pathPoints = this.getPathBetweenNodes(
+                newEdgeSource,
+                getLayoutNodeById(this.newEdgeTargetId)
+              );
               // D3 typescript weirdness
               return pathFn(pathPoints as any);
             } else {
               this.newEdgeTargetId = '';
 
               // D3 typescript weirdness
-              return pathFn(simplifyPath(getAStarPath(newEdgeStart, mousePoint, this.getNodeCollider())) as any);
+              return pathFn(
+                simplifyPath(getAStarPath(newEdgeStart, mousePoint, this.getNodeCollider())) as any
+              );
             }
           })
           .style('pointer-events', 'none')
@@ -943,11 +953,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
         // remove edge indicators
         const indicators = d3.selectAll('.edge-possibility-indicator');
-        indicators
-          .transition()
-          .duration(300)
-          .style('opacity', 0)
-          .remove();
+        indicators.transition().duration(300).style('opacity', 0).remove();
 
         this.handleBeingDragged = false;
         if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
@@ -955,30 +961,19 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
 
         this.emit('new-edge', {
           source: sourceNode.data,
-          target: targetNode.data
+          target: targetNode.data,
         });
       });
-    rightHandle
-      .call(drag as any)
-      .on('click', (event) => {
-        this.emit(
-          'fetch-suggested-edges',
-          node.datum(),
-          EdgeDirection.Outgoing
-        );
-        // Don't open the side panel
-        event.stopPropagation();
-      });
-    leftHandle
-      .on('click', (event) => {
-        this.emit(
-          'fetch-suggested-edges',
-          node.datum(),
-          EdgeDirection.Incoming
-        );
-        // Don't open the side panel
-        event.stopPropagation();
-      });
+    rightHandle.call(drag as any).on('click', (event) => {
+      this.emit('fetch-suggested-edges', node.datum(), EdgeDirection.Outgoing);
+      // Don't open the side panel
+      event.stopPropagation();
+    });
+    leftHandle.on('click', (event) => {
+      this.emit('fetch-suggested-edges', node.datum(), EdgeDirection.Incoming);
+      // Don't open the side panel
+      event.stopPropagation();
+    });
   }
 
   // FIXME Typescript weirdness
@@ -986,17 +981,25 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     const chart = this.chart;
     const nodes = chart.selectAll<SVGGElement, INode<NodeParameter>>('.node');
 
-    nodes.select('.node-container')
+    nodes
+      .select('.node-container')
       .attr('width', (d) => d.width)
       .attr('x', 0);
 
-    nodes.select('path')
-      .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width, DEFAULT_STYLE.nodeHandles.width));
+    nodes
+      .select('path')
+      .attr(
+        'transform',
+        svgUtil.translate(DEFAULT_STYLE.nodeHandles.width, DEFAULT_STYLE.nodeHandles.width)
+      );
 
-    nodes.select('.node-label')
+    nodes
+      .select('.node-label')
       .attr('x', 10)
-      .text(d => this.labelFormatter(d.label))
-      .each(function (d) { svgUtil.truncateTextToWidth(this as any, d.width - 20); });
+      .text((d) => this.labelFormatter(d.label))
+      .each(function (d) {
+        svgUtil.truncateTextToWidth(this as any, d.width - 20);
+      });
     this.chart.selectAll('.node-handles').selectAll('*').remove();
   }
 

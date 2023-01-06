@@ -13,7 +13,7 @@ const fontColor = (r, g, b) => {
 //  value: [0.9, 0.1]
 // }
 // which represents an edge a -> b with value 0.9, and an edge a -> c with value 0.1
-export default function(
+export default function (
   svgElement,
   options,
   data,
@@ -22,19 +22,12 @@ export default function(
   selectedRowOrColumn = { isRow: false, concept: null },
   onRowOrColumnClicked = () => {}
 ) {
-  const {
-    axisLabelMargin,
-    width,
-    height,
-    rowOrder,
-    columnOrder,
-    showRankLabels = false
-  } = options;
+  const { axisLabelMargin, width, height, rowOrder, columnOrder, showRankLabels = false } = options;
   const margin = {
     top: axisLabelMargin,
     bottom: 0,
     left: axisLabelMargin,
-    right: 0
+    right: 0,
   };
 
   const cleanData = [];
@@ -42,7 +35,7 @@ export default function(
     cleanData.push({
       row: data.rows[i],
       column: data.columns[i],
-      value
+      value,
     });
   });
 
@@ -56,12 +49,9 @@ export default function(
     .domain(rowOrder || data.rows)
     .range([margin.top, height - margin.bottom]);
 
-
-  const valueDomain = [d3.min(data.value), (clampColourRange ? d3.max(data.value) : 1)];
+  const valueDomain = [d3.min(data.value), clampColourRange ? d3.max(data.value) : 1];
   let valueScale = log ? d3.scaleSequentialLog() : d3.scaleSequential();
-  valueScale = valueScale
-    .domain(valueDomain)
-    .interpolator(d3.interpolateGreys);
+  valueScale = valueScale.domain(valueDomain).interpolator(d3.interpolateGreys);
 
   const xAxis = svgElement
     .append('g')
@@ -76,7 +66,7 @@ export default function(
 
   xAxis
     .selectAll('text')
-    .attr('class', dataPoint => isColumnSelected(dataPoint) ? 'selected' : '')
+    .attr('class', (dataPoint) => (isColumnSelected(dataPoint) ? 'selected' : ''))
     .on('click', (event, label) => onRowOrColumnClicked(false, label));
 
   // If there is more horizontal space than vertical space for each label
@@ -85,7 +75,8 @@ export default function(
     //  move them up so they are the same distance from the grid
     //  as the yAxis labels are
     const DIST_FROM_GRID = 9;
-    xAxis.selectAll('text')
+    xAxis
+      .selectAll('text')
       .attr('transform', svgUtil.translate(DIST_FROM_GRID, -DIST_FROM_GRID) + ', rotate(-90)')
       .style('text-anchor', 'start');
   }
@@ -105,7 +96,7 @@ export default function(
 
   yAxis
     .selectAll('text')
-    .attr('class', dataPoint => isRowSelected(dataPoint) ? 'selected' : '')
+    .attr('class', (dataPoint) => (isRowSelected(dataPoint) ? 'selected' : ''))
     .on('click', (event, label) => onRowOrColumnClicked(true, label));
 
   yAxis.selectAll('.tick line').remove();
@@ -117,35 +108,36 @@ export default function(
     .data(cleanData)
     .join('g')
     .attr('class', 'rects')
-    .attr('transform', d => svgUtil.translate(xScale(d.column), yScale(d.row)));
+    .attr('transform', (d) => svgUtil.translate(xScale(d.column), yScale(d.row)));
 
   rectGroups
     .append('rect')
     .attr('width', xScale.bandwidth)
     .attr('height', yScale.bandwidth)
-    .attr('fill', d => valueScale(d.value));
+    .attr('fill', (d) => valueScale(d.value));
 
   if (showRankLabels && yScale.bandwidth() > 5) {
-    const rankedValues = cleanData.map(d => d.value).sort(d3.descending);
-    const getRanking = value => {
-      const index = rankedValues.findIndex(rankedValue => rankedValue === value);
+    const rankedValues = cleanData.map((d) => d.value).sort(d3.descending);
+    const getRanking = (value) => {
+      const index = rankedValues.findIndex((rankedValue) => rankedValue === value);
       return index;
     };
 
     const fontSize = Math.min(18, yScale.bandwidth() * 0.85);
 
-    rectGroups.append('text')
+    rectGroups
+      .append('text')
       .attr('transform', svgUtil.translate(xScale.bandwidth() / 2, yScale.bandwidth() / 2))
       .attr('text-anchor', 'middle')
       .attr('font-size', `${fontSize}px`)
       .attr('stroke-linejoin', 'round')
       .attr('stroke', 'none')
-      .attr('fill', d => {
+      .attr('fill', (d) => {
         const bcolor = d3.rgb(valueScale(d.value));
         return fontColor(bcolor.r, bcolor.g, bcolor.b);
       })
       .attr('dominant-baseline', 'middle')
-      .text(d => getRanking(d.value) + 1); // Display 1-indexed
+      .text((d) => getRanking(d.value) + 1); // Display 1-indexed
   }
 
   // Create x grid lines by making a new axis and extending the ticks to the
@@ -154,9 +146,11 @@ export default function(
     .append('g')
     .attr('class', 'grid-lines tour-grid-lines')
     .attr('transform', svgUtil.translate(xScale.bandwidth() / 2, height - margin.bottom))
-    .call(d3.axisTop(xScale)
-      .tickSize(height - margin.top - margin.bottom)
-      .tickFormat('') // remove labels
+    .call(
+      d3
+        .axisTop(xScale)
+        .tickSize(height - margin.top - margin.bottom)
+        .tickFormat('') // remove labels
     )
     .selectAll('.tick:last-of-type')
     .remove();
@@ -166,9 +160,11 @@ export default function(
     .append('g')
     .attr('class', 'grid-lines tour-grid-lines')
     .attr('transform', svgUtil.translate(width - margin.right, yScale.bandwidth() / 2))
-    .call(d3.axisLeft(yScale)
-      .tickSize(width - margin.right - margin.left)
-      .tickFormat('') // remove labels
+    .call(
+      d3
+        .axisLeft(yScale)
+        .tickSize(width - margin.right - margin.left)
+        .tickFormat('') // remove labels
     )
     .selectAll('.tick:last-of-type')
     .remove();

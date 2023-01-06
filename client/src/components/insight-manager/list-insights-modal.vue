@@ -40,7 +40,7 @@
             type="text"
             class="search form-control"
             placeholder="Search insights"
-          >
+          />
           <radio-button-group
             class="export-options"
             :buttons="exportOptions"
@@ -48,18 +48,8 @@
             @button-clicked="toggleExport"
           />
           as
-          <button
-            class="btn btn-sm "
-            @click="() => exportInsights('Powerpoint')"
-          >
-            PowerPoint
-          </button>
-          <button
-            class="btn btn-sm "
-            @click="() => exportInsights('Word')"
-          >
-            Word
-          </button>
+          <button class="btn btn-sm" @click="() => exportInsights('Powerpoint')">PowerPoint</button>
+          <button class="btn btn-sm" @click="() => exportInsights('Word')">Word</button>
         </div>
         <div class="cards">
           <div v-if="searchedInsights.length > 0" class="pane-content">
@@ -75,16 +65,12 @@
               @open-editor="openEditor(insight.id as string)"
               @select-insight="reviewInsight(insight)"
               @update-curation="updateCuration(insight.id as string)"
-              draggable='true'
+              draggable="true"
               @dragstart="startDrag($event, insight)"
               @dragend="dragEnd($event)"
             />
           </div>
-          <message-display
-            class="pane-content"
-            v-else
-            :message="messageNoData"
-          />
+          <message-display class="pane-content" v-else :message="messageNoData" />
         </div>
       </div>
     </div>
@@ -110,17 +96,13 @@ import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
 import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
-import {
-  AnalyticalQuestion,
-  Insight,
-  SectionWithInsights
-} from '@/types/Insight';
+import { AnalyticalQuestion, Insight, SectionWithInsights } from '@/types/Insight';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
-  questions: 'questions'
+  questions: 'questions',
 };
 
 // const NOT_READY_ERROR = 'Insights are still loading. Try again later.';
@@ -132,14 +114,14 @@ export default defineComponent({
     InsightCard,
     MessageDisplay,
     ListAnalyticalQuestionsPane,
-    RadioButtonGroup
+    RadioButtonGroup,
   },
   data: () => ({
     activeExportOption: EXPORT_OPTIONS.insights,
     activeInsightId: null as string | null,
     curatedInsightIds: [] as string[],
     messageNoData: INSIGHTS.NO_DATA,
-    search: ''
+    search: '',
   }),
   setup() {
     const store = useStore();
@@ -154,7 +136,7 @@ export default defineComponent({
       deleteSection,
       moveSectionAboveSection,
       removeInsightFromSection,
-      moveInsight
+      moveInsight,
     } = useQuestionsData();
     const insightsBySection = computed<SectionWithInsights[]>(() => {
       // FIXME: there's an edge case where insightsBySection is out of date when
@@ -162,16 +144,14 @@ export default defineComponent({
       //  recalculated as soon as questionsList is updated, but fullInsights
       //  haven't been refetched yet, or updated so the linked_insights.
       //  list is correct.
-      return questionsList.value.map(section => {
+      return questionsList.value.map((section) => {
         // FIXME: optimize by using maps
         const _insights = section.linked_insights
-          .map(insightId =>
-            insights.value.find(insight => insight.id === insightId)
-          )
-          .filter(insight => insight !== undefined);
+          .map((insightId) => insights.value.find((insight) => insight.id === insightId))
+          .filter((insight) => insight !== undefined);
         return {
           section,
-          insights: _insights
+          insights: _insights,
         } as SectionWithInsights;
       });
     });
@@ -188,25 +168,29 @@ export default defineComponent({
       insightsBySection,
       questionsList,
       store,
-      toaster
+      toaster,
     };
   },
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      projectId: 'app/project'
+      projectId: 'app/project',
     }),
     exportOptions() {
-      const insightLabel = `Export ${this.insightsToExport.length}` +
-      ` ${this.curatedInsightIds.length > 0 ? 'selected' : ''}` +
-      ` insight${this.insightsToExport.length !== 1 ? 's' : ''}`;
-      return [{
-        value: EXPORT_OPTIONS.insights,
-        label: insightLabel
-      }, {
-        value: EXPORT_OPTIONS.questions,
-        label: 'Export All Questions & Insights'
-      }];
+      const insightLabel =
+        `Export ${this.insightsToExport.length}` +
+        ` ${this.curatedInsightIds.length > 0 ? 'selected' : ''}` +
+        ` insight${this.insightsToExport.length !== 1 ? 's' : ''}`;
+      return [
+        {
+          value: EXPORT_OPTIONS.insights,
+          label: insightLabel,
+        },
+        {
+          value: EXPORT_OPTIONS.questions,
+          label: 'Export All Questions & Insights',
+        },
+      ];
     },
     searchedInsights(): Insight[] {
       if (this.search.length > 0) {
@@ -220,7 +204,9 @@ export default defineComponent({
     },
     selectedInsights(): Insight[] {
       if (this.curatedInsightIds.length > 0) {
-        const curatedSet = this.fullInsights.filter(i => this.curatedInsightIds.find(e => e === i.id));
+        const curatedSet = this.fullInsights.filter((i) =>
+          this.curatedInsightIds.find((e) => e === i.id)
+        );
         return curatedSet;
       } else {
         return this.fullInsights;
@@ -231,7 +217,7 @@ export default defineComponent({
         return this.curatedInsightIds;
       }
       return this.searchedInsights;
-    }
+    },
   },
   methods: {
     ...mapActions({
@@ -242,17 +228,14 @@ export default defineComponent({
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
       setInsightsBySection: 'insightPanel/setInsightsBySection',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
-      setPositionInReview: 'insightPanel/setPositionInReview'
+      setPositionInReview: 'insightPanel/setPositionInReview',
     }),
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsightId = null;
     },
     startDrag(evt: DragEvent, insight: Insight) {
-      if (
-        evt.dataTransfer === null ||
-        !(evt.currentTarget instanceof HTMLElement)
-      ) {
+      if (evt.dataTransfer === null || !(evt.currentTarget instanceof HTMLElement)) {
         return;
       }
       evt.currentTarget.style.border = '3px dashed black';
@@ -274,18 +257,24 @@ export default defineComponent({
       const dummySection = InsightUtil.createEmptyChecklistSection();
       this.setPositionInReview({
         sectionId: dummySection.id,
-        insightId: insight.id
+        insightId: insight.id,
       });
-      this.setInsightsBySection([{
-        section: dummySection,
-        insights: this.searchedInsights
-      }]);
+      this.setInsightsBySection([
+        {
+          section: dummySection,
+          insights: this.searchedInsights,
+        },
+      ]);
       // open the preview in the edit mode
       this.setCurrentPane('review-edit-insight');
     },
     async removeInsight(insight: Insight) {
       // are removing a public insight?
-      if (insight.visibility === 'public' && Array.isArray(insight.context_id) && insight.context_id.length > 0) {
+      if (
+        insight.visibility === 'public' &&
+        Array.isArray(insight.context_id) &&
+        insight.context_id.length > 0
+      ) {
         // is this the last public insight for the relevant dataube?
         //  if so, unpublish the model datacube
         const datacubeId = insight.context_id[0];
@@ -307,12 +296,12 @@ export default defineComponent({
       this.reFetchInsights();
     },
     async exportInsights(outputFormat: string) {
-      const questions = this.activeExportOption === EXPORT_OPTIONS.questions
-        ? this.questionsList
-        : undefined;
-      const insightIds = this.activeExportOption === EXPORT_OPTIONS.questions
-        ? this.fullInsights.map(d => d.id)
-        : this.selectedInsights.map(d => d.id);
+      const questions =
+        this.activeExportOption === EXPORT_OPTIONS.questions ? this.questionsList : undefined;
+      const insightIds =
+        this.activeExportOption === EXPORT_OPTIONS.questions
+          ? this.fullInsights.map((d) => d.id)
+          : this.selectedInsights.map((d) => d.id);
 
       this.enableOverlay('Preparing to export insights');
       const insights = await fetchFullInsights({ id: insightIds as string[] });
@@ -354,37 +343,35 @@ export default defineComponent({
       const dummySection = InsightUtil.createEmptyChecklistSection();
       this.setPositionInReview({
         sectionId: dummySection.id,
-        insightId: insight.id
+        insightId: insight.id,
       });
-      this.setInsightsBySection([{
-        section: dummySection,
-        insights: this.searchedInsights
-      }]);
+      this.setInsightsBySection([
+        {
+          section: dummySection,
+          insights: this.searchedInsights,
+        },
+      ]);
       this.setCurrentPane('review-insight');
     },
-    reviewChecklist(
-      section: AnalyticalQuestion | null,
-      insightId: string | null
-    ) {
+    reviewChecklist(section: AnalyticalQuestion | null, insightId: string | null) {
       if (this.insightsBySection.length < 1) return;
       // If `section` is `null`, go to the first item in the checklist.
       const _section = section ?? this.insightsBySection[0].section;
       const _sectionId = _section.id as string;
       // If `insightId` is `null`, goes to the first insight in `section`.
       // Else, goes to the insight with ID `insightId` within `section`.
-      const firstInsight = _section.linked_insights.length > 0
-        ? _section.linked_insights[0]
-        : null;
+      const firstInsight = _section.linked_insights.length > 0 ? _section.linked_insights[0] : null;
       const _insightId = insightId ?? firstInsight;
 
-      const insightOrSection = _insightId === null
-        ? _section
-        : this.fullInsights.find(insight => insight.id === _insightId);
+      const insightOrSection =
+        _insightId === null
+          ? _section
+          : this.fullInsights.find((insight) => insight.id === _insightId);
 
       this.setUpdatedInsight(insightOrSection);
       this.setPositionInReview({
         sectionId: _sectionId,
-        insightId: _insightId
+        insightId: _insightId,
       });
       this.setInsightsBySection(this.insightsBySection);
       this.setCurrentPane('review-insight');
@@ -398,13 +385,13 @@ export default defineComponent({
       } else {
         this.curatedInsightIds.push(id);
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .list-insights-modal-container {
   display: flex;
@@ -452,7 +439,6 @@ export default defineComponent({
   overflow: auto;
 }
 
-
 .body {
   flex: 1;
   min-height: 0;
@@ -476,5 +462,4 @@ export default defineComponent({
 .list-question-group {
   margin-bottom: 20px;
 }
-
 </style>

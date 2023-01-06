@@ -1,8 +1,5 @@
 <template>
-  <comments-button-widget
-    :comments="comments"
-    @update-comments="updateComments"
-  />
+  <comments-button-widget :comments="comments" @update-comments="updateComments" />
 </template>
 
 <script lang="ts">
@@ -17,14 +14,14 @@ import CommentsButtonWidget from '../widgets/comments-button-widget.vue';
 
 export default defineComponent({
   components: {
-    CommentsButtonWidget
+    CommentsButtonWidget,
   },
   name: 'QualitativeCommentsButton',
   props: {
     modelSummary: {
       type: Object,
-      default: null
-    }
+      default: null,
+    },
   },
   setup(props) {
     const { modelSummary } = toRefs(props);
@@ -48,8 +45,8 @@ export default defineComponent({
 
     return {
       comments,
-      updateComments
+      updateComments,
     };
-  }
+  },
 });
 </script>

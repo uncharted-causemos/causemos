@@ -18,8 +18,8 @@ const sendNewProject = async (id, name, corpusId) => {
     json: {
       project_id: id,
       project_name: name,
-      corpus_id: corpusId
-    }
+      corpus_id: corpusId,
+    },
   };
   const indraResult = await requestAsPromise(options);
   return indraResult;
@@ -38,10 +38,10 @@ const sendFeedback = async (curationLogs) => {
     url: INDRA_URL + '/assembly/submit_curations',
     method: 'POST',
     headers: {
-      'content-type': 'application/json'
+      'content-type': 'application/json',
     },
     json: curationLogs,
-    timeout: 60000 * 3 // Ben G. said it may take a few minutes to bring up INDRA project. Oct 2020
+    timeout: 60000 * 3, // Ben G. said it may take a few minutes to bring up INDRA project. Oct 2020
   };
 
   const indraResult = await requestAsPromise(options);
@@ -50,5 +50,5 @@ const sendFeedback = async (curationLogs) => {
 
 module.exports = {
   sendNewProject,
-  sendFeedback
+  sendFeedback,
 };

@@ -1,5 +1,13 @@
 import { AnalysisMapColorOptions } from '@/types/Common';
-import { COLOR, ColorScaleType, COLOR_SCHEME, getColors, isDiscreteScale, isDivergingScheme, SCALE_FUNCTION } from '@/utils/colors-util';
+import {
+  COLOR,
+  ColorScaleType,
+  COLOR_SCHEME,
+  getColors,
+  isDiscreteScale,
+  isDivergingScheme,
+  SCALE_FUNCTION,
+} from '@/utils/colors-util';
 import { DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import _ from 'lodash';
 import { computed, ref } from 'vue';
@@ -56,7 +64,7 @@ export default function useDatacubeColorScheme() {
       scaleFn: SCALE_FUNCTION[selectedColorScaleType.value],
       isContinuous: isContinuousScale.value,
       isDiverging: isDivergingScale.value,
-      opacity: Number(selectedDataLayerTransparency.value)
+      opacity: Number(selectedDataLayerTransparency.value),
     };
     return options;
   });
@@ -75,6 +83,6 @@ export default function useDatacubeColorScheme() {
     finalColorScheme,
     isContinuousScale,
     isDivergingScale,
-    mapColorOptions
+    mapColorOptions,
   };
 }

@@ -11,33 +11,29 @@ const MAX_NUMBER_PROJECTS = 100;
 /**
  * Wrapper to create a new domain project.
  */
-const createProject = async (
-  name,
-  description,
-  website,
-  maintainer,
-  type
-) => {
+const createProject = async (name, description, website, maintainer, type) => {
   const newId = uuid();
   Logger.info('Creating domain project entry: ' + newId);
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
   const keyFn = (doc) => {
     return doc.id; // prevent duplicate doc based on the id field
   };
-  await domainProjectConnection.insert({
-    id: newId,
-    name,
-    description,
-    modified_at: Date.now(),
-    website,
-    maintainer,
-    type
-  }, keyFn);
+  await domainProjectConnection.insert(
+    {
+      id: newId,
+      name,
+      description,
+      modified_at: Date.now(),
+      website,
+      maintainer,
+      type,
+    },
+    keyFn
+  );
 
   // Acknowledge success
   return { id: newId };
 };
-
 
 /**
  * Updates a project info
@@ -45,17 +41,20 @@ const createProject = async (
  * @param {string} projectId - project id
  * @param {object} projectFields - project fields
  */
-const updateProject = async(projectId, projectFields) => {
+const updateProject = async (projectId, projectFields) => {
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
 
   const keyFn = (doc) => {
     return doc.id;
   };
 
-  const results = await domainProjectConnection.update({
-    id: projectId,
-    ...projectFields
-  }, keyFn);
+  const results = await domainProjectConnection.update(
+    {
+      id: projectId,
+      ...projectFields,
+    },
+    keyFn
+  );
 
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
@@ -105,7 +104,7 @@ const updateDomainProjects = async (metadata) => {
 
   const familyName = metadata.family_name || metadata.name || uuid();
   const existingProjects = await getAllProjects({ name: familyName });
-  const modelFamilyNames = existingProjects.map(p => p.name);
+  const modelFamilyNames = existingProjects.map((p) => p.name);
 
   if (!modelFamilyNames.includes(familyName)) {
     await createProject(
@@ -113,7 +112,8 @@ const updateDomainProjects = async (metadata) => {
       metadata.description,
       '', // website
       [metadata.maintainer],
-      metadata.type);
+      metadata.type
+    );
   }
 };
 
@@ -122,22 +122,18 @@ const getFilterFields = (filterParams) => {
     return [];
   }
 
-  const supportedSearchFields = [
-    'type',
-    'name'
-  ];
+  const supportedSearchFields = ['type', 'name'];
   const searchFilters = [];
-  supportedSearchFields.forEach(key => {
+  supportedSearchFields.forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(filterParams, key)) {
       searchFilters.push({
         field: key,
-        value: filterParams[key]
+        value: filterParams[key],
       });
     }
   });
   return searchFilters;
 };
-
 
 // Returns a map of how many datacubes/indicators are registered/published per domain project
 const getDomainProjectStatistics = async () => {
@@ -149,18 +145,18 @@ const getDomainProjectStatistics = async () => {
         family: {
           terms: {
             field: 'family_name.raw',
-            size: 1000
+            size: 1000,
           },
           aggs: {
             status: {
               terms: {
-                field: 'status'
-              }
-            }
-          }
-        }
-      }
-    }
+                field: 'status',
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
   // Make lookup map
@@ -177,7 +173,6 @@ const getDomainProjectStatistics = async () => {
   return result;
 };
 
-
 module.exports = {
   createProject,
   getAllProjects,
@@ -185,5 +180,5 @@ module.exports = {
   remove,
   updateProject,
   updateDomainProjects,
-  getDomainProjectStatistics
+  getDomainProjectStatistics,
 };

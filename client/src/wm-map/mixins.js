@@ -15,7 +15,7 @@ export const eventEmitter = {
       this.$emit(name, {
         map: this.map,
         component: this,
-        ...data
+        ...data,
       });
     },
     /**
@@ -26,8 +26,8 @@ export const eventEmitter = {
     $_emitMapEvent(mapboxEvent, data = {}) {
       this.$_emitEvent(mapboxEvent.type, {
         mapboxEvent: mapboxEvent,
-        ...data
+        ...data,
       });
-    }
-  }
+    },
+  },
 };

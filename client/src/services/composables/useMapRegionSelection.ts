@@ -10,12 +10,12 @@ export default function useMapRegionSelection(
 ) {
   const isRegionSelectionEmpty = computed(() => {
     // Check if there are selected regions in the current admin level or in the levels above.
-    const level = SOURCE_LAYERS.findIndex(l => l.layerId === selectedLayerId.value);
+    const level = SOURCE_LAYERS.findIndex((l) => l.layerId === selectedLayerId.value);
     return isSelectionEmpty(selectedRegions.value, level);
   });
 
   return {
     isRegionSelectionEmpty,
-    isRegionSelected: (regionId: string) => isRegionSelected(selectedRegions.value, regionId)
+    isRegionSelected: (regionId: string) => isRegionSelected(selectedRegions.value, regionId),
   };
 }

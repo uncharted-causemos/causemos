@@ -35,10 +35,7 @@
                 </template>
               </small-text-button>
             </td>
-            <td
-              v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))"
-              :key="idx"
-            >
+            <td v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))" :key="idx">
               <label>{{ run[dimName] }}</label>
             </td>
             <td>
@@ -46,9 +43,7 @@
             </td>
             <td class="action-buttons">
               <a :href="dojoExecutionLink(run.run_id)">
-                <small-text-button
-                  :label="'View Dojo logs'"
-                >
+                <small-text-button :label="'View Dojo logs'">
                   <template #leading>
                     <i class="fa fa-align-left" />
                   </template>
@@ -79,19 +74,13 @@
     </template>
     <template #footer>
       <ul class="unstyled-list">
-        <button
-          type="button"
-          class="btn first-button"
-          @click.stop="close()">
-            Close
-        </button>
+        <button type="button" class="btn first-button" @click.stop="close()">Close</button>
       </ul>
     </template>
   </modal>
 </template>
 
 <script lang="ts">
-
 import { defineComponent, PropType } from 'vue';
 import { mapGetters } from 'vuex';
 import Modal from '@/components/modals/modal.vue';
@@ -112,75 +101,86 @@ export default defineComponent({
   name: 'ModalCheckRunsExecutionStatus',
   components: {
     Modal,
-    SmallTextButton
+    SmallTextButton,
   },
-  emits: [
-    'close',
-    'delete',
-    'retry'
-  ],
+  emits: ['close', 'delete', 'retry'],
   props: {
     potentialScenarios: {
       type: Array as PropType<ScenarioData[]>,
-      default: []
+      default: [],
     },
     metadata: {
       type: Object as PropType<Model>,
-      default: null
-    }
+      default: null,
+    },
   },
   computed: {
     ...mapGetters({
-      applicationConfiguration: 'app/applicationConfiguration'
+      applicationConfiguration: 'app/applicationConfiguration',
     }),
     potentialRunsParameters(): Array<any> {
-      return this.potentialRuns.length > 0 ? this.withoutOmittedColumns(Object.keys(this.potentialRuns[0])) : [];
+      return this.potentialRuns.length > 0
+        ? this.withoutOmittedColumns(Object.keys(this.potentialRuns[0]))
+        : [];
     },
     potentialRuns(): Array<any> {
-      const runs = this.potentialScenarios.filter(r => r.status !== ModelRunStatus.Ready);
-      const drilldownParamNames = this.metadata.parameters.filter((p: any) => p.is_drilldown).map(p => p.name);
-      const sortedRuns = _.sortBy(runs, r => r.status);
+      const runs = this.potentialScenarios.filter((r) => r.status !== ModelRunStatus.Ready);
+      const drilldownParamNames = this.metadata.parameters
+        .filter((p: any) => p.is_drilldown)
+        .map((p) => p.name);
+      const sortedRuns = _.sortBy(runs, (r) => r.status);
       const newArray = _.map(sortedRuns, function (row) {
         return _.omit(row, [...drilldownParamNames]);
       });
       return newArray;
-    }
+    },
   },
   data: () => ({
     currentTime: Date.now(),
-    ModelRunStatus
+    ModelRunStatus,
   }),
   methods: {
     canRetryDelete(run: any) {
-      return run.status === ModelRunStatus.ExecutionFailed ||
+      return (
+        run.status === ModelRunStatus.ExecutionFailed ||
         run.status === ModelRunStatus.ProcessingFailed ||
-        (run.created_at && this.timeSinceExecution(run) > 1000 * 60 * 60 * 48);
+        (run.created_at && this.timeSinceExecution(run) > 1000 * 60 * 60 * 48)
+      );
     },
     getStatusString(run: { status: ModelRunStatus }) {
       switch (run.status) {
         case ModelRunStatus.ExecutionFailed:
-        case ModelRunStatus.ProcessingFailed: return 'Failed';
+        case ModelRunStatus.ProcessingFailed:
+          return 'Failed';
         case ModelRunStatus.Submitted:
-        case ModelRunStatus.Processing: return 'Running';
-        default: return run.status;
+        case ModelRunStatus.Processing:
+          return 'Running';
+        default:
+          return run.status;
       }
     },
     getStatusColor(run: { status: ModelRunStatus }) {
       switch (run.status) {
         case ModelRunStatus.ExecutionFailed:
-        case ModelRunStatus.ProcessingFailed: return 'red';
+        case ModelRunStatus.ProcessingFailed:
+          return 'red';
         case ModelRunStatus.Submitted:
-        case ModelRunStatus.Processing: return 'blue';
-        default: return 'grey';
+        case ModelRunStatus.Processing:
+          return 'blue';
+        default:
+          return 'grey';
       }
     },
     getStatusIcon(run: { status: ModelRunStatus }) {
       switch (run.status) {
         case ModelRunStatus.ExecutionFailed:
-        case ModelRunStatus.ProcessingFailed: return 'fa-times-circle';
+        case ModelRunStatus.ProcessingFailed:
+          return 'fa-times-circle';
         case ModelRunStatus.Submitted:
-        case ModelRunStatus.Processing: return 'fa-spin fa-spinner';
-        default: return 'fa-ellipsis';
+        case ModelRunStatus.Processing:
+          return 'fa-spin fa-spinner';
+        default:
+          return 'fa-ellipsis';
       }
     },
     close() {
@@ -196,7 +196,7 @@ export default defineComponent({
       return this.currentTime - run.created_at;
     },
     withoutOmittedColumns(columns: string[]) {
-      return columns.filter(column => !_.includes(OmittedColumns, column));
+      return columns.filter((column) => !_.includes(OmittedColumns, column));
     },
     deleteRun(runId: string) {
       this.$emit('delete', runId);
@@ -208,16 +208,16 @@ export default defineComponent({
       this.$router.push({
         name: 'prefectFlowLogs',
         params: {
-          flowId: flowId as string
-        }
+          flowId: flowId as string,
+        },
       });
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 :deep(.modal-container) {
   max-width: 80vw;
@@ -263,5 +263,4 @@ td {
   gap: 5px;
   align-items: flex-start;
 }
-
 </style>

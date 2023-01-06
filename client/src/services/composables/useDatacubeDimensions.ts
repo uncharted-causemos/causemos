@@ -49,6 +49,6 @@ export default function useDatacubeDimensions(
   // ]
 
   return {
-    dimensions
+    dimensions,
   };
 }

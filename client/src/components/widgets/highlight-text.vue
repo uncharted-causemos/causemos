@@ -13,12 +13,12 @@ export default defineComponent({
   props: {
     text: {
       type: String,
-      default: null
+      default: null,
     },
     highlights: {
       type: Array,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   watch: {
     text() {
@@ -26,13 +26,13 @@ export default defineComponent({
     },
     highlight() {
       this.refresh();
-    }
+    },
   },
   setup() {
     const highlightRef = ref(null) as Ref<HTMLDivElement | null>;
 
     return {
-      highlightRef
+      highlightRef,
     };
   },
   mounted() {
@@ -67,13 +67,13 @@ export default defineComponent({
       } else {
         this.highlightRef.innerHTML = this.text;
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
-<style lang='scss' scoped>
-@import "~styles/variables";
+<style lang="scss" scoped>
+@import '~styles/variables';
 
 .highlight {
   font-weight: 800;

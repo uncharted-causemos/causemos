@@ -1,4 +1,10 @@
-import { AnalyticalQuestion, DataState, Insight, ReviewPosition, SectionWithInsights } from '@/types/Insight';
+import {
+  AnalyticalQuestion,
+  DataState,
+  Insight,
+  ReviewPosition,
+  SectionWithInsights,
+} from '@/types/Insight';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface InsightState {
@@ -10,7 +16,7 @@ interface InsightState {
   contextId: string[] | undefined;
   analysisId: string;
   snapshotUrl: string | undefined;
-  updatedInsight: (Insight|AnalyticalQuestion) | null;
+  updatedInsight: (Insight | AnalyticalQuestion) | null;
   insightsBySection: SectionWithInsights[] | null;
   refreshDatacubes: boolean;
   // We can identify which section or insight we should be showing in the review
@@ -40,26 +46,24 @@ const state: InsightState = {
   insightsBySection: null,
   refreshDatacubes: false,
   positionInReview: null,
-  shouldRefetchInsights: false
+  shouldRefetchInsights: false,
 };
-
 
 const getters: GetterTree<InsightState, any> = {
-  isPanelOpen: state => state.isPanelOpen,
-  currentPane: state => state.currentPane,
-  countInsights: state => state.countInsights,
-  viewState: state => state.viewState,
-  dataState: state => state.dataState,
-  contextId: state => state.contextId,
-  analysisId: state => state.analysisId,
-  snapshotUrl: state => state.snapshotUrl,
-  updatedInsight: state => state.updatedInsight,
-  insightsBySection: state => state.insightsBySection,
-  refreshDatacubes: state => state.refreshDatacubes,
-  positionInReview: state => state.positionInReview,
-  shouldRefetchInsights: state => state.shouldRefetchInsights
+  isPanelOpen: (state) => state.isPanelOpen,
+  currentPane: (state) => state.currentPane,
+  countInsights: (state) => state.countInsights,
+  viewState: (state) => state.viewState,
+  dataState: (state) => state.dataState,
+  contextId: (state) => state.contextId,
+  analysisId: (state) => state.analysisId,
+  snapshotUrl: (state) => state.snapshotUrl,
+  updatedInsight: (state) => state.updatedInsight,
+  insightsBySection: (state) => state.insightsBySection,
+  refreshDatacubes: (state) => state.refreshDatacubes,
+  positionInReview: (state) => state.positionInReview,
+  shouldRefetchInsights: (state) => state.shouldRefetchInsights,
 };
-
 
 const actions: ActionTree<InsightState, any> = {
   showInsightPanel: ({ commit }) => {
@@ -103,9 +107,8 @@ const actions: ActionTree<InsightState, any> = {
   },
   setShouldRefetchInsights: ({ commit }, newValue) => {
     commit('setShouldRefetchInsights', newValue);
-  }
+  },
 };
-
 
 const mutations: MutationTree<InsightState> = {
   showInsightPanel(state) {
@@ -149,7 +152,7 @@ const mutations: MutationTree<InsightState> = {
   },
   setShouldRefetchInsights(state, value) {
     state.shouldRefetchInsights = value;
-  }
+  },
 };
 
 export default {
@@ -157,5 +160,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

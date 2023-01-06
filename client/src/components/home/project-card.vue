@@ -10,8 +10,7 @@
       <template #message>
         <p>
           Are you sure you want to delete
-          <strong>{{ project.name }}</strong> and all associated
-          CAGs/Models/Scenarios?
+          <strong>{{ project.name }}</strong> and all associated CAGs/Models/Scenarios?
         </p>
         <message-display
           :message="'Warning: This action cannot be undone.'"
@@ -61,13 +60,13 @@ export default defineComponent({
   components: {
     ModalConfirmation,
     MessageDisplay,
-    SmallIconButton
+    SmallIconButton,
   },
   props: {
     project: {
       type: Object as PropType<Project>,
-      default: () => ({})
-    }
+      default: () => ({}),
+    },
   },
   setup(props) {
     const showModal = ref(false);
@@ -75,12 +74,12 @@ export default defineComponent({
     return {
       modelCount: computed(() => props.project.stat.model_count),
       dataAnalysisCount: computed(() => props.project.stat.data_analysis_count),
-      showModal
+      showModal,
     };
   },
   methods: {
     ...mapActions({
-      clearLastQuery: 'query/clearLastQuery'
+      clearLastQuery: 'query/clearLastQuery',
     }),
     dateFormatter,
     remove() {
@@ -98,10 +97,10 @@ export default defineComponent({
       this.clearLastQuery();
       this.$router.push({
         name: 'overview',
-        params: { project: id, projectType: ProjectType.Analysis }
+        params: { project: id, projectType: ProjectType.Analysis },
       });
-    }
-  }
+    },
+  },
 });
 </script>
 

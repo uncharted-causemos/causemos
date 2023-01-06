@@ -4,7 +4,7 @@ import {
   AggregationOption,
   TemporalResolutionOption,
   DataTransform,
-  DatacubeType
+  DatacubeType,
 } from '@/types/Enums';
 import { getParentSelectedRegions } from '@/utils/admin-level-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
@@ -25,10 +25,7 @@ import useSelectedTimeseriesPoints from './useSelectedTimeseriesPoints';
 import useTimeseriesData from './useTimeseriesData';
 import useAnalysisMapStats from './useAnalysisMapStats';
 import useDatacubeColorScheme from './useDatacubeColorScheme';
-import {
-  getFilteredScenariosFromIds,
-  isIndicator
-} from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, isIndicator } from '@/utils/datacube-util';
 import { Filters } from '@/types/Filters';
 import { FeatureConfig } from '@/types/Outputdata';
 
@@ -52,26 +49,18 @@ export default function useDatacube(
   const initialActiveFeatures = ref<FeatureConfig[]>([]);
   const initialActiveReferenceOptions = ref<string[]>([]);
 
-  const selectedSpatialAggregation = ref<AggregationOption>(
-    AggregationOption.Mean
-  );
+  const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
   const setSpatialAggregationSelection = (aggOption: AggregationOption) => {
     selectedSpatialAggregation.value = aggOption;
   };
 
-  const selectedTemporalAggregation = ref<AggregationOption>(
-    AggregationOption.Mean
-  );
+  const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
   const setTemporalAggregationSelection = (aggOption: AggregationOption) => {
     selectedTemporalAggregation.value = aggOption;
   };
 
-  const selectedTemporalResolution = ref<TemporalResolutionOption>(
-    TemporalResolutionOption.Month
-  );
-  const setTemporalResolutionSelection = (
-    temporalRes: TemporalResolutionOption
-  ) => {
+  const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+  const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
     selectedTemporalResolution.value = temporalRes;
   };
 
@@ -87,9 +76,8 @@ export default function useDatacube(
     () => {
       if (activeFeatureName.value && activeFeatures.value.length > 0) {
         const feature =
-          activeFeatures.value.find(
-            feature => feature.name === activeFeatureName.value
-          ) ?? activeFeatures.value[0];
+          activeFeatures.value.find((feature) => feature.name === activeFeatureName.value) ??
+          activeFeatures.value[0];
         selectedTemporalAggregation.value = feature.temporalAggregation;
         selectedTemporalResolution.value = feature.temporalResolution;
         selectedSpatialAggregation.value = feature.spatialAggregation;
@@ -103,7 +91,7 @@ export default function useDatacube(
     activeFeatures,
     selectedFeatures,
     selectedFeatureNames,
-    toggleIsFeatureSelected
+    toggleIsFeatureSelected,
   } = useDatacubeFeatures(
     metadata,
     initialSelectedOutputVariables,
@@ -135,10 +123,7 @@ export default function useDatacube(
   });
 
   const selectedScenarios = computed(() => {
-    return getFilteredScenariosFromIds(
-      selectedScenarioIds.value,
-      filteredRunData.value
-    );
+    return getFilteredScenariosFromIds(selectedScenarioIds.value, filteredRunData.value);
   });
 
   const selectedAdminLevel = ref(0);
@@ -157,7 +142,7 @@ export default function useDatacube(
     selectedRegionsString,
     selectedRegionIdsAtAllLevels,
     referenceRegions,
-    toggleIsRegionSelected
+    toggleIsRegionSelected,
   } = useDatacubeHierarchy(
     selectedScenarioIds,
     metadata,
@@ -167,10 +152,7 @@ export default function useDatacube(
   );
 
   const selectedRegionIdsAtSelectedLevel = computed(() =>
-    getParentSelectedRegions(
-      selectedRegionIdsAtAllLevels.value,
-      selectedAdminLevel.value
-    )
+    getParentSelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value)
   );
 
   const selectedTimestamp = ref<number | null>(null);
@@ -182,9 +164,7 @@ export default function useDatacube(
   const setDataLayer = (val: DATA_LAYER) => {
     selectedDataLayer.value = val;
   };
-  const isRawDataLayerSelected = computed(
-    () => selectedDataLayer.value === DATA_LAYER.RAW
-  );
+  const isRawDataLayerSelected = computed(() => selectedDataLayer.value === DATA_LAYER.RAW);
 
   const {
     qualifierBreakdownData,
@@ -192,7 +172,7 @@ export default function useDatacube(
     selectedQualifierValues,
     requestAdditionalQualifier,
     nonDefaultQualifiers,
-    qualifierFetchInfo
+    qualifierFetchInfo,
   } = useQualifiers(
     metadata,
     selectedRegionIdsAtSelectedLevel,
@@ -216,10 +196,7 @@ export default function useDatacube(
   //  activeReferenceOptions, and useReferenceSeries depends on them.
   const activeReferenceOptions = ref([] as string[]);
   watchEffect(() => {
-    if (
-      initialActiveReferenceOptions.value &&
-      initialActiveReferenceOptions.value.length > 0
-    ) {
+    if (initialActiveReferenceOptions.value && initialActiveReferenceOptions.value.length > 0) {
       activeReferenceOptions.value = initialActiveReferenceOptions.value;
     }
   });
@@ -232,7 +209,7 @@ export default function useDatacube(
     setRelativeTo,
     temporalBreakdownData,
     selectedYears,
-    toggleIsYearSelected
+    toggleIsYearSelected,
   } = useTimeseriesData(
     metadata,
     selectedScenarioIds,
@@ -262,7 +239,7 @@ export default function useDatacube(
     selectedGlobalTimestamp,
     selectedGlobalTimestampRange,
     setSelectedGlobalTimestamp,
-    setSelectedGlobalTimestampRange
+    setSelectedGlobalTimestampRange,
   } = useMultiTimeseriesData(
     metadata,
     selectedScenarioIds,
@@ -276,9 +253,7 @@ export default function useDatacube(
   //  - Color gets overridden
   //  - used to create regionRunsScenarios
   const timeseriesDataForSelection = computed(() =>
-    breakdownOption.value === SPLIT_BY_VARIABLE
-      ? globalTimeseries.value
-      : timeseriesData.value
+    breakdownOption.value === SPLIT_BY_VARIABLE ? globalTimeseries.value : timeseriesData.value
   );
   const timestampForSelection = computed(() =>
     breakdownOption.value === SPLIT_BY_VARIABLE
@@ -313,13 +288,12 @@ export default function useDatacube(
     timestampForSelection
   );
 
-  const { availableReferenceOptions, toggleReferenceOptions } =
-    useReferenceSeries(
-      activeReferenceOptions,
-      breakdownOption,
-      selectedAdminLevel,
-      regionalData
-    );
+  const { availableReferenceOptions, toggleReferenceOptions } = useReferenceSeries(
+    activeReferenceOptions,
+    breakdownOption,
+    selectedAdminLevel,
+    regionalData
+  );
 
   const { rawDataPointsList } = useRawPointsData(
     outputSpecs,
@@ -347,7 +321,7 @@ export default function useDatacube(
     finalColorScheme,
     isContinuousScale,
     isDivergingScale,
-    mapColorOptions
+    mapColorOptions,
   } = useDatacubeColorScheme();
 
   const {
@@ -356,7 +330,7 @@ export default function useDatacube(
     adminLayerStats,
     gridLayerStats,
     pointsLayerStats,
-    mapLegendData
+    mapLegendData,
   } = useAnalysisMapStats(
     outputSpecs,
     regionalData,
@@ -465,6 +439,6 @@ export default function useDatacube(
     adminLayerStats,
     gridLayerStats,
     pointsLayerStats,
-    mapLegendData
+    mapLegendData,
   };
 }

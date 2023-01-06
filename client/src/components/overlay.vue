@@ -1,14 +1,10 @@
 <template>
   <div class="overlay-container">
-    <div class="message-container">
-      <i class="fa fa-spin fa-spinner" /> {{ message }}
-    </div>
+    <div class="message-container"><i class="fa fa-spin fa-spinner" /> {{ message }}</div>
     <div v-if="messageSecondary !== ''" class="message-secondary-container">
       {{ messageSecondary }}
     </div>
-    <div
-      v-if="cancelFn"
-      style="font-size: 2rem">
+    <div v-if="cancelFn" style="font-size: 2rem">
       <button class="btn" @click="cancelFn">Cancel</button>
     </div>
   </div>
@@ -18,22 +14,22 @@
 import { defineComponent } from 'vue';
 /**
  * Simple overlay for loading things
-*/
+ */
 export default defineComponent({
   name: 'Overlay',
   props: {
     message: {
       type: String,
-      default: 'Loading...'
+      default: 'Loading...',
     },
     messageSecondary: {
       type: String,
-      default: ''
+      default: '',
     },
     cancelFn: {
-      type: Function
-    }
-  }
+      type: Function,
+    },
+  },
 });
 </script>
 

@@ -1,26 +1,23 @@
 <template>
   <div v-if="metadata" class="model-header">
     <div class="model-attribute-pair">
-      <label style="font-weight: normal;">Model</label>
-      <input
-        :value="metadata.name"
-        type="text"
-        class="disabled"
-        style="border-width: 1px;"
-      >
+      <label style="font-weight: normal">Model</label>
+      <input :value="metadata.name" type="text" class="disabled" style="border-width: 1px" />
     </div>
     <div class="model-attribute-pair">
-      <label style="font-weight: normal;">Default output variable</label>
+      <label style="font-weight: normal">Default output variable</label>
       <select name="outputs" id="outputs" @change="onOutputSelectionChange($event)">
         <option
           v-for="(selectValue, indx) in modelOutputs"
           :key="selectValue"
           :selected="indx === currentOutputIndex"
-        >{{selectValue}}</option>
+        >
+          {{ selectValue }}
+        </option>
       </select>
     </div>
     <div class="model-attribute-pair" style="flex-grow: inherit">
-      <label style="font-weight: normal;">Model description</label>
+      <label style="font-weight: normal">Model description</label>
       <textarea :value="metadata.description" @input="updateDesc" rows="2" />
     </div>
   </div>
@@ -41,12 +38,12 @@ export default defineComponent({
   props: {
     metadata: {
       type: Object as PropType<Model | null>,
-      default: null
+      default: null,
     },
     itemId: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
   setup(props) {
     const { metadata, itemId } = toRefs(props);
@@ -57,10 +54,10 @@ export default defineComponent({
 
     const modelOutputs = computed<string[]>(() => {
       const outputs = metadata.value && getOutputs(metadata.value);
-      return outputs?.map(o => o.display_name) ?? [];
+      return outputs?.map((o) => o.display_name) ?? [];
     });
 
-    function updateDesc (e: InputEvent) {
+    function updateDesc(e: InputEvent) {
       if (metadata.value) {
         const textArea = e.target as HTMLTextAreaElement;
         metadata.value.description = textArea.value;
@@ -77,7 +74,7 @@ export default defineComponent({
       modelOutputs,
       currentOutputIndex,
       store,
-      route
+      route,
     };
   },
   methods: {
@@ -85,8 +82,8 @@ export default defineComponent({
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
       updateDatacubesOutputsMap(this.itemId, this.store, this.route, selectedOutputIndex);
-    }
-  }
+    },
+  },
 });
 </script>
 
