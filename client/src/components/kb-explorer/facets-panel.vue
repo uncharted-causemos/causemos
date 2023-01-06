@@ -181,7 +181,6 @@
 </template>
 
 <script lang="ts">
-
 import _ from 'lodash';
 import { defineComponent, ref, Ref } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
@@ -209,14 +208,14 @@ const STATEMENT_FACETS = [
   CODE_TABLE.READERS.field,
   CODE_TABLE.QUALITY.field,
   CODE_TABLE.HEDGING_CATEGORY.field,
-  CODE_TABLE.SCORE.field
+  CODE_TABLE.SCORE.field,
 ];
 
 const RELATIONSHIP_FACETS = [
   CODE_TABLE.SUBJ_CONCEPT.field,
   CODE_TABLE.OBJ_CONCEPT.field,
   CODE_TABLE.TOPIC.field,
-  CODE_TABLE.STATEMENT_POLARITY.field
+  CODE_TABLE.STATEMENT_POLARITY.field,
 ];
 
 const DOCUMENT_FACETS = [
@@ -227,13 +226,13 @@ const DOCUMENT_FACETS = [
   CODE_TABLE.DOC_LOCATION.field,
   CODE_TABLE.DOC_ORGANIZATION.field,
   CODE_TABLE.DOC_STANCE.field,
-  CODE_TABLE.DOC_SENTIMENT.field
+  CODE_TABLE.DOC_SENTIMENT.field,
 ];
 
 const FACET_GROUPS: { [key: string]: string[] } = {
-  'Documents': DOCUMENT_FACETS,
-  'Relationships': RELATIONSHIP_FACETS,
-  'Evidence quality': STATEMENT_FACETS
+  Documents: DOCUMENT_FACETS,
+  Relationships: RELATIONSHIP_FACETS,
+  'Evidence quality': STATEMENT_FACETS,
 };
 
 const numEvidencesLabelFormatter = (value: string | number) => {
@@ -241,16 +240,15 @@ const numEvidencesLabelFormatter = (value: string | number) => {
   return formattedValue;
 };
 
-
 export default defineComponent({
   name: 'FacetsPanel',
   components: {
     CategoricalFacet,
     NumericalFacet,
-    SidePanel
+    SidePanel,
   },
   setup() {
-    const cachedPromises = ref({}) as Ref<{[key: string]: Promise<any>}>;
+    const cachedPromises = ref({}) as Ref<{ [key: string]: Promise<any> }>;
     const currentTab = ref('Documents');
 
     const groupBaseState = ref({}) as Ref<{ [key: string]: number }>;
@@ -280,16 +278,16 @@ export default defineComponent({
       facetTabs: [
         { name: 'Documents', icon: 'fa fa-file-text' },
         { name: 'Relationships', icon: 'fa fa-sitemap' },
-        { name: 'Evidence quality', icon: 'fa fa-long-arrow-right' }
-      ]
+        { name: 'Evidence quality', icon: 'fa fa-long-arrow-right' },
+      ],
     };
   },
   computed: {
     ...mapGetters({
       filters: 'query/filters',
       updateToken: 'app/updateToken',
-      project: 'app/project'
-    })
+      project: 'app/project',
+    }),
   },
   watch: {
     filters(n, o) {
@@ -310,7 +308,7 @@ export default defineComponent({
       this.groupFacetState = {};
       this.refreshBase();
       this.refresh();
-    }
+    },
   },
   created() {
     this.cachedPromises = {};
@@ -321,7 +319,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      disableOverlay: 'app/disableOverlay'
+      disableOverlay: 'app/disableOverlay',
     }),
     refreshBase() {
       const facetGroup = FACET_GROUPS[this.currentTab];
@@ -333,8 +331,8 @@ export default defineComponent({
       }
       const promise = projectService.getProjectFacetsPromise(this.project, facetGroup, baseFilters);
       this.cachedPromises[this.currentTab] = promise;
-      promise.then(result => {
-        Object.keys(result.data).forEach(key => {
+      promise.then((result) => {
+        Object.keys(result.data).forEach((key) => {
           // HACK for demo: filter out "" labels for stance and sentiment
           let data = result.data[key];
           if (key === CODE_TABLE.DOC_STANCE.field || key === CODE_TABLE.DOC_SENTIMENT.field) {
@@ -350,13 +348,16 @@ export default defineComponent({
       const facetGroup = FACET_GROUPS[this.currentTab];
 
       let promise = null;
-      if (filtersUtil.isEmpty(this.filters) && {}.hasOwnProperty.call(this.cachedPromises, this.currentTab)) {
+      if (
+        filtersUtil.isEmpty(this.filters) &&
+        {}.hasOwnProperty.call(this.cachedPromises, this.currentTab)
+      ) {
         promise = this.cachedPromises[this.currentTab];
       } else {
         promise = projectService.getProjectFacetsPromise(this.project, facetGroup, this.filters);
       }
-      promise.then(result => {
-        Object.keys(result.data).forEach(key => {
+      promise.then((result) => {
+        Object.keys(result.data).forEach((key) => {
           // HACK for demo: filter out "" labels for stance and sentiment
           let data = result.data[key];
           if (key === CODE_TABLE.DOC_STANCE.field || key === CODE_TABLE.DOC_SENTIMENT.field) {
@@ -379,21 +380,20 @@ export default defineComponent({
         return;
       }
 
-
       if (!this.groupBaseState[tab]) {
         this.refreshBase();
       }
       if (!this.groupFacetState[tab]) {
         this.refresh();
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-  @import "~styles/variables";
-  .facet-panel-container {
-    margin-top: 5px;
-  }
+@import '~styles/variables';
+.facet-panel-container {
+  margin-top: 5px;
+}
 </style>

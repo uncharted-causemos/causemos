@@ -25,27 +25,32 @@ router.get('/tiles', (req, res) => {
 
   // Construct the URL based on the presence of an ENTERPRISE API KEY
   const url = `${domain}/rastertiles/light_all/${z}/${x}/${y}.png${API_KEY_PARAM}`;
-  request.get(url, (error) => {
-    if (error && error.code) {
-      Logger.info('Error ' + error.code);
-      res.statusCode = 500;
-      res.json({ error: error });
-    }
-  }).pipe(res);
+  request
+    .get(url, (error) => {
+      if (error && error.code) {
+        Logger.info('Error ' + error.code);
+        res.statusCode = 500;
+        res.json({ error: error });
+      }
+    })
+    .pipe(res);
 });
 
 const getBaseTiles = async (res, url) => {
-  request.get(url, (error) => {
-    if (error && error.code) {
-      Logger.info('Error ' + error.code);
-      res.statusCode = 500;
-      res.json({ error: error });
-    }
-  }).pipe(res).on('end', () => {
-    res.removeHeader('expires');
-    res.removeHeader('pragma');
-    res.set('Cache-control', 'public, max-age=86400');
-  });
+  request
+    .get(url, (error) => {
+      if (error && error.code) {
+        Logger.info('Error ' + error.code);
+        res.statusCode = 500;
+        res.json({ error: error });
+      }
+    })
+    .pipe(res)
+    .on('end', () => {
+      res.removeHeader('expires');
+      res.removeHeader('pragma');
+      res.set('Cache-control', 'public, max-age=86400');
+    });
 
   // request.get(url, (error) => {
   //   if (error && error.code) {
@@ -79,55 +84,60 @@ router.get('/satellite-tiles/:z/:x/:y', (req, res) => {
 /**
  * Retrieve enterprise carto stylesheet for mapbox-gl-js
  */
-router.get('/styles/default', asyncHandler(async (req, res) => {
-  const stylesheet = JSON.parse(JSON.stringify(baseMapStyle)); // Deep clone json file to prevent from mutation
-  /**
-   * Notes:
-   * Mapbox tileJSON schema reference: https://github.com/mapbox/tilejson-spec/tree/master/2.0.0*
-   * This replace default enterprise carto tile service url with internal map tile proxy to hide carto tiles url
-   * that can potentially have the Carto API KEY.
-   * 'wmmap:' is custom a protocol that will be replaced with the correct domain by the map client
-   *  eg. wmmap://vector-tiles -> https://causemos.uncharted.software/api/map/vector-tiles
-   **/
-  const tileJson = await requestAsPromise({ url: stylesheet.sources.carto.url, method: 'GET' });
-  stylesheet.sources.carto = {
-    ...JSON.parse(tileJson),
-    type: 'vector',
-    tiles: ['wmmap://vector-tiles/{z}/{x}/{y}']
-  };
+router.get(
+  '/styles/default',
+  asyncHandler(async (req, res) => {
+    const stylesheet = JSON.parse(JSON.stringify(baseMapStyle)); // Deep clone json file to prevent from mutation
+    /**
+     * Notes:
+     * Mapbox tileJSON schema reference: https://github.com/mapbox/tilejson-spec/tree/master/2.0.0*
+     * This replace default enterprise carto tile service url with internal map tile proxy to hide carto tiles url
+     * that can potentially have the Carto API KEY.
+     * 'wmmap:' is custom a protocol that will be replaced with the correct domain by the map client
+     *  eg. wmmap://vector-tiles -> https://causemos.uncharted.software/api/map/vector-tiles
+     **/
+    const tileJson = await requestAsPromise({ url: stylesheet.sources.carto.url, method: 'GET' });
+    stylesheet.sources.carto = {
+      ...JSON.parse(tileJson),
+      type: 'vector',
+      tiles: ['wmmap://vector-tiles/{z}/{x}/{y}'],
+    };
 
-  res.removeHeader('expires');
-  res.removeHeader('pragma');
-  res.set('Cache-control', 'max-age=86400');
-  res.json(stylesheet);
-}));
+    res.removeHeader('expires');
+    res.removeHeader('pragma');
+    res.set('Cache-control', 'max-age=86400');
+    res.json(stylesheet);
+  })
+);
 
 /**
  * Retrieve enterprise carto stylesheet for mapbox-gl-js
  */
-router.get('/styles/satellite', asyncHandler(async (req, res) => {
-  res.json({
-    version: 8,
-    sources: {
-      'satellite-tiles': {
-        type: 'raster',
-        tiles: [
-          'wmmap://satellite-tiles/{z}/{x}/{y}'
-        ],
-        tileSize: 256,
-        attribution: 'Map tiles by <a target="_top" rel="noopener" href="http://stamen.com">Stamen Design</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'
-      }
-    },
-    layers: [
-      {
-        id: 'simple-tiles',
-        type: 'raster',
-        source: 'satellite-tiles',
-        minzoom: 0,
-        maxzoom: 22
-      }
-    ]
-  });
-}));
+router.get(
+  '/styles/satellite',
+  asyncHandler(async (req, res) => {
+    res.json({
+      version: 8,
+      sources: {
+        'satellite-tiles': {
+          type: 'raster',
+          tiles: ['wmmap://satellite-tiles/{z}/{x}/{y}'],
+          tileSize: 256,
+          attribution:
+            'Map tiles by <a target="_top" rel="noopener" href="http://stamen.com">Stamen Design</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>',
+        },
+      },
+      layers: [
+        {
+          id: 'simple-tiles',
+          type: 'raster',
+          source: 'satellite-tiles',
+          minzoom: 0,
+          maxzoom: 22,
+        },
+      ],
+    });
+  })
+);
 
 module.exports = router;

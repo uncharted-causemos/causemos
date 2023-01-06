@@ -11,14 +11,11 @@ const extractThresholds = (responses: QualifierCountsResponse[]) => {
   const thresholds: QualifierThresholds = {
     max_count: Infinity,
     regional_timeseries_count: Infinity,
-    regional_timeseries_max_level: Infinity
+    regional_timeseries_max_level: Infinity,
   };
   // The thresholds should be the same across all runs, but take the min just in case.
-  responses.forEach(response => {
-    thresholds.max_count = Math.min(
-      thresholds.max_count,
-      response.thresholds.max_count
-    );
+  responses.forEach((response) => {
+    thresholds.max_count = Math.min(thresholds.max_count, response.thresholds.max_count);
     thresholds.regional_timeseries_count = Math.min(
       thresholds.regional_timeseries_count,
       response.thresholds.regional_timeseries_count
@@ -36,7 +33,7 @@ const extractThresholds = (responses: QualifierCountsResponse[]) => {
 //  run that has the most.
 const makeMapFromQualifierToCount = (responses: QualifierCountsResponse[]) => {
   const maxCounts = new Map<string, number>();
-  responses.forEach(response => {
+  responses.forEach((response) => {
     Object.entries(response.counts).forEach(([qualifier, count]) => {
       // When combining multiple runs, take the max qualifier count
       const existingVal = maxCounts.get(qualifier);
@@ -71,7 +68,7 @@ const calculateFetchInfoMap = (
           count <= thresholds.regional_timeseries_count
             ? thresholds.regional_timeseries_max_level
             : -1,
-        thresholds
+        thresholds,
       };
       fetchInfoMap.set(qualifierName, fetchInfo);
     });
@@ -85,7 +82,7 @@ export default function useQualifierFetchInfo(
 ) {
   const qualifierFetchInfo = ref(new Map<string, QualifierFetchInfo>());
 
-  watchEffect(async onInvalidate => {
+  watchEffect(async (onInvalidate) => {
     // Fetch the counts for each value of each qualifier variable
     if (metadata.value === null) return;
     let isCancelled = false;
@@ -93,7 +90,7 @@ export default function useQualifierFetchInfo(
       isCancelled = true;
     });
     const { data_id, qualifier_outputs } = metadata.value;
-    const promises = selectedScenarioIds.value.map(runId =>
+    const promises = selectedScenarioIds.value.map((runId) =>
       getQualifierCounts(data_id, runId, activeFeature.value)
     );
     // FIXME: OPTIMIZATION: Placing a separate request for each run eats into
@@ -102,9 +99,7 @@ export default function useQualifierFetchInfo(
     //  endpoint to accept a list of run IDs so only one request is necessary.
     const responses = await Promise.all(promises);
     if (isCancelled) return;
-    const qualifierNames = (qualifier_outputs ?? []).map(
-      variable => variable.name
-    );
+    const qualifierNames = (qualifier_outputs ?? []).map((variable) => variable.name);
 
     // For each qualifier, we need to determine:
     //  - Should we fetch all of its data right away?

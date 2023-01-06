@@ -2,7 +2,7 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   SPLIT_BY_VARIABLE,
-  FeatureQualifierRoles
+  FeatureQualifierRoles,
 } from '@/types/Enums';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { FeatureQualifier } from '@/types/Datacube';
@@ -13,21 +13,24 @@ export const QUALIFIERS_TO_EXCLUDE = [
   'lat',
   'lng',
   'feature',
-  'value'
+  'value',
 ];
 
 export function isBreakdownQualifier(qualifier: FeatureQualifier) {
   const notInExcludeList = !QUALIFIERS_TO_EXCLUDE.includes(qualifier.name);
-  return notInExcludeList && (
-    !qualifier.qualifier_role || // most qualifiers will have this field missing
-    qualifier.qualifier_role === FeatureQualifierRoles.Breakdown);
+  return (
+    notInExcludeList &&
+    (!qualifier.qualifier_role || // most qualifiers will have this field missing
+      qualifier.qualifier_role === FeatureQualifierRoles.Breakdown)
+  );
 }
 
 export function getWeightQualifier(qualifiers: FeatureQualifier[] | undefined | null) {
-  return qualifiers?.find(q =>
-    !QUALIFIERS_TO_EXCLUDE.includes(q.name) &&
-    q.qualifier_role === 'weight' &&
-    q.related_features.length > 0
+  return qualifiers?.find(
+    (q) =>
+      !QUALIFIERS_TO_EXCLUDE.includes(q.name) &&
+      q.qualifier_role === 'weight' &&
+      q.related_features.length > 0
   );
 }
 
@@ -37,6 +40,7 @@ export function isSplitByQualifierActive(breakdownOption: string | null) {
     breakdownOption === SpatialAggregationLevel.Region ||
     breakdownOption === TemporalAggregationLevel.Year ||
     breakdownOption === SPLIT_BY_VARIABLE
-  ) return false;
+  )
+    return false;
   return true;
 }

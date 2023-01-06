@@ -8,7 +8,7 @@ export interface FacetBucket {
 }
 
 export interface Facets {
-  [key: string]: FacetBucket[]
+  [key: string]: FacetBucket[];
 }
 
 // Project metadata
@@ -39,11 +39,11 @@ export interface DomainProject {
 }
 
 export interface DatasetInfo {
-  data_id: string,
-  indicator_count: number,
-  name: string,
-  created_at: number,
-  source?: string
+  data_id: string;
+  indicator_count: number;
+  name: string;
+  created_at: number;
+  source?: string;
 }
 
 // Used as a common interface between DomainProject and DatasetInfo with simplified fields
@@ -82,8 +82,8 @@ interface FlowLogs {
   state: string;
   start_time: Date;
   end_time?: Date;
-  agent: { id: string; labels: string[]; }
-  logs: { timestamp: Date; message: string; }[]
+  agent: { id: string; labels: string[] };
+  logs: { timestamp: Date; message: string }[];
 }
 
 // Side panel
@@ -94,7 +94,6 @@ export interface SidePanelTab {
   isGreyscale?: string;
   badgeCount?: string;
 }
-
 
 export interface KnowledgeBase {
   id: string;

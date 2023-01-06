@@ -1,8 +1,11 @@
 import { expect } from 'chai';
 import {
-  hasBackingEvidence, findCycles, findAllAncestorPaths, findAllDescendantPaths, findPaths
+  hasBackingEvidence,
+  findCycles,
+  findAllAncestorPaths,
+  findAllDescendantPaths,
+  findPaths,
 } from '@/utils/graphs-util';
-
 
 const dummyEdge = {
   id: '',
@@ -10,9 +13,8 @@ const dummyEdge = {
   source: 'x',
   target: 'y',
   reference_ids: [],
-  user_polarity: null
+  user_polarity: null,
 };
-
 
 describe('graphs-util', () => {
   it('hasBackingEvidence - user set no evidence', () => {
@@ -45,7 +47,7 @@ describe('graphs-util', () => {
   it('cycle detction - no cycles', () => {
     const edges = [
       { source: 'A', target: 'B' },
-      { source: 'B', target: 'C' }
+      { source: 'B', target: 'C' },
     ];
     const cycles = findCycles(edges);
     expect(cycles.length).to.equal(0);
@@ -54,7 +56,7 @@ describe('graphs-util', () => {
   it('cycle detction - simple cycles', () => {
     const edges = [
       { source: 'A', target: 'B' },
-      { source: 'B', target: 'A' }
+      { source: 'B', target: 'A' },
     ];
     const cycles = findCycles(edges);
     expect(cycles.length).to.equal(1);
@@ -66,7 +68,7 @@ describe('graphs-util', () => {
       { source: 'B', target: 'A' },
       { source: 'A', target: 'C' },
       { source: 'C', target: 'D' },
-      { source: 'D', target: 'A' }
+      { source: 'D', target: 'A' },
     ];
     const cycles = findCycles(edges);
     expect(cycles.length).to.equal(2);
@@ -77,7 +79,7 @@ describe('graphs-util', () => {
       { source: 'A', target: 'B' },
       { source: 'B', target: 'A' },
       { source: 'B', target: 'C' },
-      { source: 'C', target: 'B' }
+      { source: 'C', target: 'B' },
     ];
     const cycles = findCycles(edges);
     expect(cycles.length).to.equal(2);
@@ -90,17 +92,14 @@ describe('graphs-util', () => {
       { source: 'B', target: 'C' },
       { source: 'C', target: 'B' },
       { source: 'X', target: 'Y' },
-      { source: 'Y', target: 'X' }
+      { source: 'Y', target: 'X' },
     ];
     const cycles = findCycles(edges);
     expect(cycles.length).to.equal(3);
   });
 
-
   it('trace ancestor paths - no path', () => {
-    const edges = [
-      { source: 'A', target: 'B' }
-    ];
+    const edges = [{ source: 'A', target: 'B' }];
     const paths = findAllAncestorPaths('C', edges);
     expect(paths.length).to.equal(0);
   });
@@ -109,7 +108,7 @@ describe('graphs-util', () => {
     const edges = [
       { source: 'A', target: 'B' },
       { source: 'B', target: 'C' },
-      { source: 'C', target: 'D' }
+      { source: 'C', target: 'D' },
     ];
 
     const paths = findAllAncestorPaths('C', edges);
@@ -122,7 +121,7 @@ describe('graphs-util', () => {
       { source: 'A', target: 'B' },
       { source: 'B', target: 'C' },
       { source: 'C', target: 'D' },
-      { source: 'D', target: 'A' }
+      { source: 'D', target: 'A' },
     ];
 
     const paths = findAllAncestorPaths('B', edges);
@@ -135,7 +134,7 @@ describe('graphs-util', () => {
       { source: 'A', target: 'C' },
       { source: 'B', target: 'C' },
       { source: 'C', target: 'D' },
-      { source: 'D', target: 'E' }
+      { source: 'D', target: 'E' },
     ];
 
     const paths = findAllAncestorPaths('E', edges);
@@ -147,13 +146,12 @@ describe('graphs-util', () => {
       { source: 'A', target: 'C' },
       { source: 'B', target: 'C' },
       { source: 'C', target: 'D' },
-      { source: 'D', target: 'E' }
+      { source: 'D', target: 'E' },
     ];
 
     const p1 = findAllDescendantPaths('A', edges);
     expect(p1.length).to.equal(1);
     expect(p1[0]).to.deep.equal(['A', 'C', 'D', 'E']);
-
 
     const p2 = findAllDescendantPaths('B', edges);
     expect(p2.length).to.equal(1);
@@ -165,20 +163,19 @@ describe('graphs-util', () => {
       { source: 'A', target: 'C' },
       { source: 'A', target: 'B' },
       { source: 'C', target: 'D' },
-      { source: 'B', target: 'D' }
+      { source: 'B', target: 'D' },
     ];
 
     const p1 = findAllDescendantPaths('A', edges);
     expect(p1.length).to.equal(2);
   });
 
-
   it('trace between source/target - simple', () => {
     const edges = [
       { source: 'A', target: 'B' },
       { source: 'B', target: 'C' },
       { source: 'C', target: 'D' },
-      { source: 'D', target: 'E' }
+      { source: 'D', target: 'E' },
     ];
 
     const p = findPaths('B', 'D', edges);
@@ -191,7 +188,7 @@ describe('graphs-util', () => {
       { source: 'A', target: 'B' },
       { source: 'B', target: 'C' },
       { source: 'C', target: 'D' },
-      { source: 'D', target: 'E' }
+      { source: 'D', target: 'E' },
     ];
 
     const p = findPaths('B', 'X', edges);
@@ -207,7 +204,7 @@ describe('graphs-util', () => {
       { source: 'B', target: 'X' },
       { source: 'X', target: 'Y' },
       { source: 'Y', target: 'C' },
-      { source: 'B', target: 'D' }
+      { source: 'B', target: 'D' },
     ];
 
     const p = findPaths('B', 'D', edges);
@@ -220,7 +217,7 @@ describe('graphs-util', () => {
       { source: 'B', target: 'C' },
       { source: 'C', target: 'D' },
       { source: 'D', target: 'E' },
-      { source: 'E', target: 'A' }
+      { source: 'E', target: 'A' },
     ];
 
     const p = findPaths('A', 'E', edges);

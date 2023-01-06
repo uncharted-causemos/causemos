@@ -4,7 +4,11 @@ import { AdminRegionSets } from '@/types/Datacubes';
 import _ from 'lodash';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import { getRegionLists } from '../outputdata-service';
-import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER, stringifySelectedRegions } from '@/utils/admin-level-util';
+import {
+  ADMIN_LEVEL_KEYS,
+  REGION_ID_DELIMETER,
+  stringifySelectedRegions,
+} from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
 import { validateSelectedRegions } from '@/utils/drilldown-util';
 
@@ -26,7 +30,7 @@ export default function useDatacubeHierarchy(
     () => breakdownOption.value === SpatialAggregationLevel.Region
   );
 
-  watchEffect(async onInvalidate => {
+  watchEffect(async (onInvalidate) => {
     let isCancelled = false;
     onInvalidate(() => {
       isCancelled = true;
@@ -63,19 +67,19 @@ export default function useDatacubeHierarchy(
     country: new Set(),
     admin1: new Set(),
     admin2: new Set(),
-    admin3: new Set()
+    admin3: new Set(),
   });
 
   const selectedRegionsString = computed(() =>
-    stringifySelectedRegions(
-      selectedRegionIdsAtAllLevels.value,
-      selectedAdminLevel.value
-    )
+    stringifySelectedRegions(selectedRegionIdsAtAllLevels.value, selectedAdminLevel.value)
   );
 
   // When a new hierarchy arrives validate the selected regions to ensure they exist in this datacube
   watch([datacubeHierarchy], () => {
-    const { isInvalid, validRegions } = validateSelectedRegions(selectedRegionIdsAtAllLevels.value, datacubeHierarchy.value);
+    const { isInvalid, validRegions } = validateSelectedRegions(
+      selectedRegionIdsAtAllLevels.value,
+      datacubeHierarchy.value
+    );
     if (isInvalid) {
       selectedRegionIdsAtAllLevels.value = validRegions;
     }
@@ -89,7 +93,7 @@ export default function useDatacubeHierarchy(
         const newSet = _.clone(set);
         Array.from(newSet.keys())
           .slice(1)
-          .forEach(key => newSet.delete(key));
+          .forEach((key) => newSet.delete(key));
         return newSet;
       };
       const { country, admin1, admin2, admin3 } = selectedRegionIdsAtAllLevels.value;
@@ -97,14 +101,11 @@ export default function useDatacubeHierarchy(
         country: truncateSet(country),
         admin1: truncateSet(admin1),
         admin2: truncateSet(admin2),
-        admin3: truncateSet(admin3)
+        admin3: truncateSet(admin3),
       };
     }
   });
-  const toggleIsRegionSelected = (
-    adminLevel: keyof AdminRegionSets,
-    regionId: string
-  ) => {
+  const toggleIsRegionSelected = (adminLevel: keyof AdminRegionSets, regionId: string) => {
     const currentlySelected = selectedRegionIdsAtAllLevels.value[adminLevel];
     const isRegionSelected = currentlySelected.has(regionId);
     const updatedList = _.clone(currentlySelected);
@@ -123,7 +124,7 @@ export default function useDatacubeHierarchy(
       {},
       selectedRegionIdsAtAllLevels.value,
       {
-        [adminLevel]: updatedList
+        [adminLevel]: updatedList,
       }
     );
     // The new de/selection at the current adminLevel
@@ -144,8 +145,12 @@ export default function useDatacubeHierarchy(
           // e.g., consider a previous selecction of Tanzania_Arusha at admin1
           //  followed by a selection of Kenya at the country level
           const regionsArrAtPrevLevel = Array.from(selectedAtPrevLevel);
-          const validRegionsAtCurrentLevel = Array.from(selectedAtCurrLevel).filter(region => regionsArrAtPrevLevel.some(r => region.startsWith(r)));
-          updatedSelectedRegionIdsAtAllLevels[adminKey] = new Set<string>(validRegionsAtCurrentLevel);
+          const validRegionsAtCurrentLevel = Array.from(selectedAtCurrLevel).filter((region) =>
+            regionsArrAtPrevLevel.some((r) => region.startsWith(r))
+          );
+          updatedSelectedRegionIdsAtAllLevels[adminKey] = new Set<string>(
+            validRegionsAtCurrentLevel
+          );
         }
       }
     });
@@ -170,9 +175,12 @@ export default function useDatacubeHierarchy(
   });
 
   const referenceRegions = computed(() => {
-    return new Set(selectedRegionIds.value
-      .map(regionId => regionId.split(REGION_ID_DELIMETER).slice(0, -1).join(REGION_ID_DELIMETER))
-      .filter(regionId => regionId !== '')
+    return new Set(
+      selectedRegionIds.value
+        .map((regionId) =>
+          regionId.split(REGION_ID_DELIMETER).slice(0, -1).join(REGION_ID_DELIMETER)
+        )
+        .filter((regionId) => regionId !== '')
     );
   });
 
@@ -182,6 +190,6 @@ export default function useDatacubeHierarchy(
     selectedRegionsString,
     selectedRegionIdsAtAllLevels,
     referenceRegions,
-    toggleIsRegionSelected
+    toggleIsRegionSelected,
   };
 }

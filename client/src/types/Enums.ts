@@ -19,27 +19,27 @@ export enum DatacubeStatus {
 
 export enum DatacubeType {
   Model = 'model',
-  Indicator = 'indicator'
+  Indicator = 'indicator',
 }
 
 export enum ProjectType {
   Model = 'model',
   Dataset = 'dataset',
-  Analysis = 'analysis'
+  Analysis = 'analysis',
 }
 
 export enum FeatureQualifierRoles {
   Weight = 'weight',
   Statistics = 'statistics',
   Breakdown = 'breakdown',
-  Tooltip = 'tooltip'
+  Tooltip = 'tooltip',
 }
 
 export enum DatacubeGeoAttributeVariableType {
   Country = 'country',
   Admin1 = 'admin1',
   Admin2 = 'admin2',
-  Admin3 = 'admin3'
+  Admin3 = 'admin3',
 }
 
 export enum DatacubeGenericAttributeVariableType {
@@ -49,7 +49,7 @@ export enum DatacubeGenericAttributeVariableType {
   Boolean = 'boolean',
   Date = 'date', // a model param (within a run) would only have a single date value
   DateRange = 'daterange', // a model param (within a run) would only have two date values
-  Geo = 'geo'
+  Geo = 'geo',
 }
 
 // numeric params can be converted to another numeric param type (i.e., int <--> float)
@@ -60,19 +60,21 @@ export enum DatacubeGenericAttributeVariableType {
 // a string param can have its data type converted between nominal|ordinal to freeform
 //  nominal|ordinal assumes a pre-defined list of options vs freeform
 
-export type DatacubeAttributeVariableType = DatacubeGeoAttributeVariableType | DatacubeGenericAttributeVariableType;
+export type DatacubeAttributeVariableType =
+  | DatacubeGeoAttributeVariableType
+  | DatacubeGenericAttributeVariableType;
 
 export enum GeoAttributeFormat {
   Full_GADM_PATH = 'full_gadm_path',
   GADM_Code = 'gadm_code',
-  Bounding_Box = 'bounding_box'
+  Bounding_Box = 'bounding_box',
 }
 
 export enum ModelParameterDataType {
   Nominal = 'nominal', // discrete; fixed set of choices edited only by the modeller
   Ordinal = 'ordinal', // discrete; fixed set of choices edited only by the modeller
   Numerical = 'numerical', // continuous; a numerical range is needed to render correctly
-  Freeform = 'freeform' // discrete, dynmaic choices; the user can add new choices
+  Freeform = 'freeform', // discrete, dynmaic choices; the user can add new choices
 }
 
 export enum TemporalResolution {
@@ -81,13 +83,13 @@ export enum TemporalResolution {
   Dekad = 'dekad',
   Weekly = 'weekly',
   Daily = 'daily',
-  Other = 'other'
+  Other = 'other',
 }
 
 export enum ModelPublishingStepID {
   Enrich_Description,
   Tweak_Visualization,
-  Capture_Insight
+  Capture_Insight,
 }
 
 export enum AdminLevel {
@@ -100,29 +102,29 @@ export enum AdminLevel {
 }
 
 export enum TemporalAggregationLevel {
-  Year = 'year'
+  Year = 'year',
 }
 
 export enum SpatialAggregationLevel {
-  Region = 'region'
+  Region = 'region',
 }
 
 export enum AggregationOption {
   None = '',
   Mean = 'mean',
   Sum = 'sum',
-  WeightedAverage = 'wavg'
+  WeightedAverage = 'wavg',
 }
 
 export enum TemporalResolutionOption {
   None = '',
   Year = 'year',
-  Month = 'month'
+  Month = 'month',
 }
 
 export enum TimeScale {
   Months = 'MONTHS',
-  Years = 'YEARS'
+  Years = 'YEARS',
 }
 
 export enum DataTransform {
@@ -130,37 +132,37 @@ export enum DataTransform {
   PerCapita = 'percapita',
   PerCapita1K = 'percapita1k',
   PerCapita1M = 'percapita1m',
-  Normalization = 'normalization'
+  Normalization = 'normalization',
 }
 
 export enum ReferenceSeriesOption {
   AllYears = 'allYears',
   SelectYears = 'selectYears',
   AllRegions = 'allRegions',
-  SelectRegions = 'selectRegions'
+  SelectRegions = 'selectRegions',
 }
 
 export enum ComparativeAnalysisMode {
   List = 'list',
   Overlay = 'overlay',
-  RegionRanking = 'region ranking'
+  RegionRanking = 'region ranking',
 }
 
 export enum DatacubeViewMode {
   Description = 'description',
   Data = 'data',
-  Media = 'media'
+  Media = 'media',
 }
 
 export enum RegionRankingCompositionType {
   Union = 'union',
-  Intersection = 'intersection'// ,
+  Intersection = 'intersection', // ,
   // specific-region-selection // a potential 3rd option to only consider bars for selection regions
 }
 
 export enum BinningOptions {
   Quantile = 'Quantile (equal counts)',
-  Linear = 'linear'
+  Linear = 'linear',
 }
 
 export enum IncompleteDataCorrectiveAction {
@@ -168,7 +170,7 @@ export enum IncompleteDataCorrectiveAction {
   NotRequired = 'No Changes Required',
   CompleteData = 'Complete Data (No Change)',
   DataRemoved = ' Final data point was removed',
-  DataExtrapolated = 'Final data point contains extrapolated data'
+  DataExtrapolated = 'Final data point contains extrapolated data',
 }
 
 export enum EdgeDirection {

@@ -8,57 +8,66 @@ const DEFAULT_SIZE = 50;
 const MAX_SIZE = 10000;
 
 /* GET all audits */
-router.get('/', asyncHandler(async (req, res) => {
-  const audit = Adapter.get(RESOURCE.AUDIT);
-  const from = req.query.from || 0;
-  let size = req.query.size || DEFAULT_SIZE;
-  size = Math.min(size, MAX_SIZE);
+router.get(
+  '/',
+  asyncHandler(async (req, res) => {
+    const audit = Adapter.get(RESOURCE.AUDIT);
+    const from = req.query.from || 0;
+    let size = req.query.size || DEFAULT_SIZE;
+    size = Math.min(size, MAX_SIZE);
 
-  const sort = { modified_at: 'desc' };
-  const searchFilters = [];
-  if (req.query.projectId) {
-    searchFilters.push({
-      field: 'project_id',
-      value: req.query.projectId
-    });
-  }
-  const auditEntries = await audit.find(searchFilters, { from, size, sort });
-  res.json(auditEntries);
-}));
+    const sort = { modified_at: 'desc' };
+    const searchFilters = [];
+    if (req.query.projectId) {
+      searchFilters.push({
+        field: 'project_id',
+        value: req.query.projectId,
+      });
+    }
+    const auditEntries = await audit.find(searchFilters, { from, size, sort });
+    res.json(auditEntries);
+  })
+);
 
 /* GET number of entries */
-router.get('/counts', asyncHandler(async (req, res) => {
-  const audit = Adapter.get(RESOURCE.AUDIT);
-  const searchFilters = [];
-  if (req.query.projectId) {
-    searchFilters.push({
-      field: 'project_id',
-      value: req.query.projectId
-    });
-  }
-  const count = await audit.count(searchFilters);
-  res.json(count);
-}));
+router.get(
+  '/counts',
+  asyncHandler(async (req, res) => {
+    const audit = Adapter.get(RESOURCE.AUDIT);
+    const searchFilters = [];
+    if (req.query.projectId) {
+      searchFilters.push({
+        field: 'project_id',
+        value: req.query.projectId,
+      });
+    }
+    const count = await audit.count(searchFilters);
+    res.json(count);
+  })
+);
 
 /* GET export audits */
-router.get('/download', asyncHandler(async (req, res) => {
-  const audit = Adapter.get(RESOURCE.AUDIT);
-  const searchFilters = [];
+router.get(
+  '/download',
+  asyncHandler(async (req, res) => {
+    const audit = Adapter.get(RESOURCE.AUDIT);
+    const searchFilters = [];
 
-  let fileName = 'audits.json';
-  if (req.query.projectId) {
-    fileName = `audit_${req.query.projectId}.json`;
-    searchFilters.push({
-      field: 'project_id',
-      value: req.query.projectId
-    });
-  }
+    let fileName = 'audits.json';
+    if (req.query.projectId) {
+      fileName = `audit_${req.query.projectId}.json`;
+      searchFilters.push({
+        field: 'project_id',
+        value: req.query.projectId,
+      });
+    }
 
-  // FIXME:Switch to scan in order to extract all entries
-  const auditEntries = await audit.find(searchFilters, { size: MAX_SIZE });
-  res.setHeader('Content-disposition', `attachment; filename=${fileName}`);
-  res.setHeader('Content-type', 'application/octet-stream');
-  res.send(auditEntries);
-}));
+    // FIXME:Switch to scan in order to extract all entries
+    const auditEntries = await audit.find(searchFilters, { size: MAX_SIZE });
+    res.setHeader('Content-disposition', `attachment; filename=${fileName}`);
+    res.setHeader('Content-type', 'application/octet-stream');
+    res.send(auditEntries);
+  })
+);
 
 module.exports = router;

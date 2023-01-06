@@ -10,5 +10,5 @@
 // https://vuejs.github.io/vetur/reference/
 /** @type {import('vls').VeturConfig} */
 module.exports = {
-  projects: ['./client']
+  projects: ['./client'],
 };

@@ -4,12 +4,14 @@
       <!-- Actions -->
       <li class="nav-item">
         <button
-          v-if="(applicationConfiguration.CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE === false)"
+          v-if="applicationConfiguration.CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE === false"
           v-tooltip.top-center="'Search Knowledge Base'"
           type="button"
           class="btn btn-call-to-action"
           @click="openKBExplorer"
-        > <i class="fa fa-fw fa-search" />Search Knowledge Base</button>
+        >
+          <i class="fa fa-fw fa-search" />Search Knowledge Base
+        </button>
       </li>
       <li class="nav-item">
         <button
@@ -17,7 +19,9 @@
           type="button"
           class="btn"
           @click="addConcept"
-        ><i class="fa fa-fw fa-plus" />Add Concept</button>
+        >
+          <i class="fa fa-fw fa-plus" />Add Concept
+        </button>
       </li>
       <li class="nav-item">
         <button
@@ -25,7 +29,9 @@
           type="button"
           class="btn"
           @click="importCAG"
-        ><i class="fa fa-fw fa-connectdevelop" />Import CAG</button>
+        >
+          <i class="fa fa-fw fa-connectdevelop" />Import CAG
+        </button>
       </li>
       <li class="nav-item">
         <button
@@ -33,9 +39,10 @@
           type="button"
           class="btn"
           @click="resetCAG"
-        ><i class="fa fa-fw fa-undo" />Reset Layout</button>
+        >
+          <i class="fa fa-fw fa-undo" />Reset Layout
+        </button>
       </li>
-
     </ul>
 
     <div class="run-model">
@@ -66,42 +73,40 @@ import { TYPE } from 'vue-toastification';
 export default defineComponent({
   name: 'ActionBar',
   components: {
-    ArrowButton
+    ArrowButton,
   },
   props: {
     modelSummary: {
       type: Object as PropType<CAGModelSummary | null>,
-      default: null
+      default: null,
     },
     modelComponents: {
       type: Object,
-      required: true
-    }
+      required: true,
+    },
   },
-  emits: [
-    'add-concept', 'import-cag', 'reset-cag'
-  ],
+  emits: ['add-concept', 'import-cag', 'reset-cag'],
   setup() {
     return {
       isRunningModel: ref(false),
-      toaster: useToaster()
+      toaster: useToaster(),
     };
   },
   computed: {
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
-      applicationConfiguration: 'app/applicationConfiguration'
+      applicationConfiguration: 'app/applicationConfiguration',
     }),
     numEdges(): number {
       return _.get(this.modelComponents, 'edges', []).length;
-    }
+    },
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      setAnalysisName: 'app/setAnalysisName'
+      setAnalysisName: 'app/setAnalysisName',
     }),
     openKBExplorer() {
       this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG } });
@@ -136,8 +141,8 @@ export default defineComponent({
           params: {
             project: this.project,
             currentCAG: this.currentCAG,
-            projectType: ProjectType.Analysis
-          }
+            projectType: ProjectType.Analysis,
+          },
         });
       } catch {
         this.toaster(CAG.ERRONEOUS_MODEL_RUN, TYPE.INFO, true);
@@ -146,13 +151,13 @@ export default defineComponent({
         this.isRunningModel = false;
         this.disableOverlay();
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .action-bar-container {
   height: $navbar-outer-height;
@@ -184,5 +189,4 @@ export default defineComponent({
     }
   }
 }
-
 </style>

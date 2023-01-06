@@ -1,9 +1,6 @@
 <template>
   <div class="breakdown-pane-container">
-    <p
-      v-if="selectedScenarioIds.length !== 1"
-      class="disabled-dropdown-instructions"
-    >
+    <p v-if="selectedScenarioIds.length !== 1" class="disabled-dropdown-instructions">
       Select <strong>exactly one model run</strong> to enable breakdown options.
     </p>
     <dropdown-button
@@ -28,7 +25,9 @@
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
       :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
-      :show-references="selectedBreakdownOption === SpatialAggregationLevel.Region && selectedAdminLevel > 0"
+      :show-references="
+        selectedBreakdownOption === SpatialAggregationLevel.Region && selectedAdminLevel > 0
+      "
       :allow-collapsing="false"
       :reference-options="referenceOptions"
       :checkbox-type="getRegionalBreakdownCheckboxType()"
@@ -39,17 +38,13 @@
       <template #aggregation-description>
         <p class="aggregation-description">
           Showing data for
-          <span class="highlighted">{{
-            timestampFormatter(selectedTimestamp)
-          }}</span
+          <span class="highlighted">{{ timestampFormatter(selectedTimestamp) }}</span
           >.
         </p>
         <p class="aggregation-description">
           Aggregated by
           <strong>{{
-            selectedSpatialAggregation === ''
-              ? AggregationOption.Mean
-              : selectedSpatialAggregation
+            selectedSpatialAggregation === '' ? AggregationOption.Mean : selectedSpatialAggregation
           }}</strong
           >.
         </p>
@@ -67,17 +62,17 @@
       :raw-data="qualifierVariable.data"
       :total-data-length="qualifierVariable.totalDataLength"
       :selected-timeseries-points="selectedTimeseriesPoints"
-      :should-show-deselected-bars="selectedBreakdownOption === SpatialAggregationLevel.Region || selectedBreakdownOption === TemporalAggregationLevel.Year || selectedBreakdownOption === null"
+      :should-show-deselected-bars="
+        selectedBreakdownOption === SpatialAggregationLevel.Region ||
+        selectedBreakdownOption === TemporalAggregationLevel.Year ||
+        selectedBreakdownOption === null
+      "
       :show-references="false"
       :allow-collapsing="qualifierVariable.id !== selectedBreakdownOption"
       :units="unit"
-      :checkbox-type="
-        selectedBreakdownOption === qualifierVariable.id ? 'checkbox' : null
-      "
+      :checkbox-type="selectedBreakdownOption === qualifierVariable.id ? 'checkbox' : null"
       :selected-item-ids="
-        selectedBreakdownOption === qualifierVariable.id
-          ? Array.from(selectedQualifierValues)
-          : []
+        selectedBreakdownOption === qualifierVariable.id ? Array.from(selectedQualifierValues) : []
       "
       @toggle-is-item-selected="toggleIsQualifierSelected"
       @request-data="emitRequestQualifierData(qualifierVariable.id)"
@@ -85,17 +80,13 @@
       <template #aggregation-description>
         <p class="aggregation-description">
           Showing data for
-          <span class="highlighted">{{
-            timestampFormatter(selectedTimestamp)
-          }}</span
+          <span class="highlighted">{{ timestampFormatter(selectedTimestamp) }}</span
           >.
         </p>
         <p class="aggregation-description">
           Aggregated by
           <strong>{{
-            selectedSpatialAggregation === ''
-              ? AggregationOption.Mean
-              : selectedSpatialAggregation
+            selectedSpatialAggregation === '' ? AggregationOption.Mean : selectedSpatialAggregation
           }}</strong
           >.
         </p>
@@ -116,11 +107,7 @@
       :allow-collapsing="true"
       :reference-options="referenceOptions"
       :selected-timeseries-points="selectedTimeseriesPoints"
-      :checkbox-type="
-        selectedBreakdownOption === TemporalAggregationLevel.Year
-          ? 'checkbox'
-          : null
-      "
+      :checkbox-type="selectedBreakdownOption === TemporalAggregationLevel.Year ? 'checkbox' : null"
       :selected-item-ids="Array.from(selectedYears)"
       @toggle-is-item-selected="toggleIsYearSelected"
       @toggle-reference-options="toggleReferenceOptions"
@@ -146,11 +133,7 @@
       :show-references="false"
       :allow-collapsing="false"
       :selected-timeseries-points="selectedTimeseriesPoints"
-      :checkbox-type="
-        selectedBreakdownOption === SPLIT_BY_VARIABLE
-          ? 'checkbox'
-          : null
-      "
+      :checkbox-type="selectedBreakdownOption === SPLIT_BY_VARIABLE ? 'checkbox' : null"
       :selected-item-ids="Array.from(selectedFeatureNames)"
       @toggle-is-item-selected="toggleIsFeatureSelected"
     >
@@ -163,16 +146,25 @@ import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
-import { AdminRegionSets, BreakdownData, NamedBreakdownData, QualifierFetchInfo } from '@/types/Datacubes';
+import {
+  AdminRegionSets,
+  BreakdownData,
+  NamedBreakdownData,
+  QualifierFetchInfo,
+} from '@/types/Datacubes';
 import { ModelRunReference } from '@/types/ModelRunReference';
-import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES, filterRegionalLevelData } from '@/utils/admin-level-util';
+import {
+  ADMIN_LEVEL_KEYS,
+  ADMIN_LEVEL_TITLES,
+  filterRegionalLevelData,
+} from '@/utils/admin-level-util';
 import {
   AggregationOption,
   TemporalAggregationLevel,
   SpatialAggregationLevel,
   TemporalResolutionOption,
   AdminLevel,
-  SPLIT_BY_VARIABLE
+  SPLIT_BY_VARIABLE,
 } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import _ from 'lodash';
@@ -186,84 +178,84 @@ export default defineComponent({
   props: {
     selectedAdminLevel: {
       type: Number,
-      required: true
+      required: true,
     },
     qualifierBreakdownData: {
       type: Array as PropType<NamedBreakdownData[]>,
-      default: () => []
+      default: () => [],
     },
     selectedTimestamp: {
       type: Number as PropType<number | null>,
-      default: null
+      default: null,
     },
     selectedSpatialAggregation: {
       type: String as PropType<AggregationOption | null>,
-      default: AggregationOption.Mean
+      default: AggregationOption.Mean,
     },
     selectedTemporalAggregation: {
       type: String as PropType<AggregationOption | null>,
-      default: AggregationOption.Mean
+      default: AggregationOption.Mean,
     },
     selectedTemporalResolution: {
       type: String as PropType<TemporalResolutionOption | null>,
-      default: null
+      default: null,
     },
     unit: {
       type: String as PropType<string>,
-      default: null
+      default: null,
     },
     regionalData: {
       type: Object as PropType<BreakdownData | null>,
-      default: null
+      default: null,
     },
     temporalBreakdownData: {
       type: Object as PropType<BreakdownData | null>,
-      default: null
+      default: null,
     },
     featureBreakdownData: {
       type: Object as PropType<BreakdownData | null>,
-      default: null
+      default: null,
     },
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
-      default: []
+      default: [],
     },
     selectedRegionIds: {
       type: Object as PropType<string[] | null>,
-      default: null
+      default: null,
     },
     selectedRegionIdsAtAllLevels: {
       type: Object as PropType<AdminRegionSets | null>,
-      default: null
+      default: null,
     },
     selectedQualifierValues: {
       type: Object as PropType<Set<string>>,
-      default: () => new Set()
+      default: () => new Set(),
     },
     selectedYears: {
       type: Object as PropType<Set<string>>,
-      default: () => new Set()
+      default: () => new Set(),
     },
     selectedFeatureNames: {
       type: Object as PropType<Set<string>>,
-      default: () => new Set()
+      default: () => new Set(),
     },
     selectedBreakdownOption: {
       type: String as PropType<string | null>,
-      default: null
+      default: null,
     },
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
-      required: true
+      required: true,
     },
     referenceOptions: {
       type: Array as PropType<ModelRunReference[]>,
-      default: []
+      default: [],
     },
     qualifierFetchInfo: {
       type: Map as PropType<Map<String, QualifierFetchInfo>>,
-      default: () => new Map()
-    }
+      default: () => new Map(),
+    },
   },
   emits: [
     'set-selected-admin-level',
@@ -273,7 +265,7 @@ export default defineComponent({
     'toggle-is-output-variable-selected',
     'toggle-reference-options',
     'set-breakdown-option',
-    'request-qualifier-data'
+    'request-qualifier-data',
   ],
   setup(props, { emit }) {
     const {
@@ -283,7 +275,7 @@ export default defineComponent({
       selectedTemporalResolution,
       qualifierBreakdownData,
       featureBreakdownData,
-      selectedRegionIdsAtAllLevels
+      selectedRegionIdsAtAllLevels,
     } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
@@ -293,10 +285,7 @@ export default defineComponent({
       emit('toggle-is-region-selected', adminLevel, regionId);
     };
 
-    const toggleIsQualifierSelected = (
-      variableName: string,
-      qualifierValue: string
-    ) => {
+    const toggleIsQualifierSelected = (variableName: string, qualifierValue: string) => {
       emit('toggle-is-qualifier-selected', qualifierValue);
     };
 
@@ -325,31 +314,33 @@ export default defineComponent({
       if (_regionalData === null) return [];
       return Object.values(AdminLevel)
         .filter(
-          adminLevelKey =>
-            _regionalData[adminLevelKey] !== undefined &&
-            _regionalData[adminLevelKey].length > 0
+          (adminLevelKey) =>
+            _regionalData[adminLevelKey] !== undefined && _regionalData[adminLevelKey].length > 0
         )
-        .map(adminLevel => ADMIN_LEVEL_TITLES[adminLevel]);
+        .map((adminLevel) => ADMIN_LEVEL_TITLES[adminLevel]);
     });
 
     const isRegionalDataValid = computed(
-      () =>
-        regionalData.value !== null &&
-        Object.keys(regionalData.value).length !== 0
+      () => regionalData.value !== null && Object.keys(regionalData.value).length !== 0
     );
 
     // Pull out the regions at the current level that are selected,
     //  or which have an ancestor that's selected.
     const filteredRegionalData = ref<BreakdownData | null>(null);
     watch(
-      () => [
-        regionalData.value,
-        selectedRegionIdsAtAllLevels.value
-      ],
+      () => [regionalData.value, selectedRegionIdsAtAllLevels.value],
       () => {
-        if (regionalData.value && isRegionalDataValid.value && selectedRegionIdsAtAllLevels.value !== null) {
+        if (
+          regionalData.value &&
+          isRegionalDataValid.value &&
+          selectedRegionIdsAtAllLevels.value !== null
+        ) {
           // apply filtering to all levels starting from the admin1 (i.e., adminIndx > 0)
-          const filteredRegionLevelData = filterRegionalLevelData(regionalData.value, selectedRegionIdsAtAllLevels.value, false /* apply filtering to country level */);
+          const filteredRegionLevelData = filterRegionalLevelData(
+            regionalData.value,
+            selectedRegionIdsAtAllLevels.value,
+            false /* apply filtering to country level */
+          );
           filteredRegionalData.value = filteredRegionLevelData as BreakdownData | null;
         }
       },
@@ -364,9 +355,7 @@ export default defineComponent({
 
     const isFeatureBreakdownDataValid = computed(
       () =>
-
-        featureBreakdownData.value !== null &&
-        Object.keys(featureBreakdownData.value).length !== 0
+        featureBreakdownData.value !== null && Object.keys(featureBreakdownData.value).length !== 0
     );
 
     const breakdownOptions = computed(() => {
@@ -375,20 +364,20 @@ export default defineComponent({
       if (props.selectedScenarioIds.length === 1) {
         options.push({
           value: SpatialAggregationLevel.Region,
-          displayName: 'Split by region'
+          displayName: 'Split by region',
         });
         options.push({
           value: selectedTemporalAggregationLevel,
-          displayName: 'Split by year'
+          displayName: 'Split by year',
         });
         options.push({
           value: SPLIT_BY_VARIABLE,
-          displayName: 'Split by variable'
+          displayName: 'Split by variable',
         });
         options.push(
           ...qualifierBreakdownData.value.map(({ id, name }) => ({
             value: id,
-            displayName: `Split by ${name}`
+            displayName: `Split by ${name}`,
           }))
         );
       }
@@ -429,7 +418,7 @@ export default defineComponent({
       SpatialAggregationLevel,
       TemporalAggregationLevel,
       SPLIT_BY_VARIABLE,
-      filteredRegionalData
+      filteredRegionalData,
     };
   },
   computed: {
@@ -444,20 +433,17 @@ export default defineComponent({
       if (fetchInfo === undefined) {
         console.error(
           'Unable to find qualifier fetch info for breakdown option: ' +
-          this.selectedBreakdownOption
+            this.selectedBreakdownOption
         );
         return null;
       }
-      const {
-        maxAdminLevelWithRegionalTimeseries: maxLevel,
-        thresholds
-      } = fetchInfo;
+      const { maxAdminLevelWithRegionalTimeseries: maxLevel, thresholds } = fetchInfo;
       // We're hiding regional radio buttons because either:
       // 1. The qualifier has too many values to calculate regional timeseries at any level
       if (maxLevel === -1) {
-        const displayName = this.qualifierBreakdownData.find(
-          qualifier => qualifier.id === breakdownOption
-        )?.name ?? breakdownOption;
+        const displayName =
+          this.qualifierBreakdownData.find((qualifier) => qualifier.id === breakdownOption)?.name ??
+          breakdownOption;
         return `Unable to select individual regions because ${displayName} has
           more than ${thresholds.regional_timeseries_count} possible values.`;
       }
@@ -467,15 +453,17 @@ export default defineComponent({
       }
       console.error('Regional breakdown checkbox type is unexpectedly null.');
       return null;
-    }
+    },
   },
   methods: {
     async scrollToBreakdown(newValue: string | null) {
       if (newValue) {
         const reference = newValue + '_ref';
-        setTimeout(() => { // HACK: wait for element to be mounted, year_ref gets unmounted in certain cases so we need to wait before we try and scroll to it
-          try { // in the future we should look into preventing the mount/unmount behavior
-            const ref = (this.$refs[reference] as any);
+        setTimeout(() => {
+          // HACK: wait for element to be mounted, year_ref gets unmounted in certain cases so we need to wait before we try and scroll to it
+          try {
+            // in the future we should look into preventing the mount/unmount behavior
+            const ref = this.$refs[reference] as any;
             const element = ref?.$el || ref[0]?.$el; // this will throw an error if element hasn't been rendered (it's ref wont exist)
             const container = document.getElementById('panel-content-container');
             if (container) {
@@ -488,8 +476,9 @@ export default defineComponent({
       }
     },
     breakdownOptionSelected(breakdownOption: string | null) {
-      if (breakdownOption &&
-        this.qualifierBreakdownData?.some(breakdown => breakdown.id === breakdownOption)
+      if (
+        breakdownOption &&
+        this.qualifierBreakdownData?.some((breakdown) => breakdown.id === breakdownOption)
       ) {
         // Request data for qualifiers. If the data is already available this will no-op.
         this.emitRequestQualifierData(breakdownOption);
@@ -512,16 +501,17 @@ export default defineComponent({
           // Qualifier is selected. If the selected admin level is greater than
           //  the max regional timeseries level for this qualifier, hide radio
           //  buttons.
-          const maxLevel = this.qualifierFetchInfo.get(this.selectedBreakdownOption)
-            ?.maxAdminLevelWithRegionalTimeseries;
+          const maxLevel = this.qualifierFetchInfo.get(
+            this.selectedBreakdownOption
+          )?.maxAdminLevelWithRegionalTimeseries;
           if (maxLevel !== undefined && this.selectedAdminLevel > maxLevel) {
             return null;
           }
           return 'radio';
         }
       }
-    }
-  }
+    },
+  },
 });
 </script>
 

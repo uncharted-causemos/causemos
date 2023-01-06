@@ -1,9 +1,6 @@
 <template>
   <transition :name="transitionName">
-    <div
-      v-if="isOpen === null || isOpen"
-      class="drilldown-panel-container"
-    >
+    <div v-if="isOpen === null || isOpen" class="drilldown-panel-container">
       <tab-bar
         v-if="tabs.length > 1"
         class="tab-bar"
@@ -23,18 +20,10 @@
       <div class="panel-content" id="panel-content-container">
         <slot name="content" />
       </div>
-      <div
-        class="overlay-pane"
-        :class="{ 'open': isOverlayOpen }"
-      >
+      <div class="overlay-pane" :class="{ open: isOverlayOpen }">
         <div class="panel-header">
-          <div
-            class="navigation-button back-button"
-            @click="onOverlayBack"
-          >
-            <i
-              class="fa fa-fw fa-angle-left"
-            />
+          <div class="navigation-button back-button" @click="onOverlayBack">
+            <i class="fa fa-fw fa-angle-left" />
           </div>
           <h5>{{ overlayPaneTitle }}</h5>
         </div>
@@ -61,56 +50,52 @@ export default defineComponent({
   name: 'DrilldownPanel',
   components: {
     TabBar,
-    CloseButton
+    CloseButton,
   },
   props: {
     // If isOpen isn't passed, no close button
     //  is shown.
     isOpen: {
       type: Boolean,
-      default: null
+      default: null,
     },
     tabs: {
       type: Array as PropType<DrilldownPanelTab[]>,
-      default: () => []
+      default: () => [],
     },
     activeTabId: {
       type: String,
-      default: ''
+      default: '',
     },
     overlayPaneTitle: {
       type: String,
-      default: '[Overlay Header]'
+      default: '[Overlay Header]',
     },
     isOverlayOpen: {
       type: Boolean,
-      default: false
+      default: false,
     },
     hasTransition: {
       type: Boolean,
-      default: true
+      default: true,
     },
     hideClose: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  emits: [
-    'close', 'tab-click', 'overlay-back'
-  ],
-  data: () => ({
-  }),
+  emits: ['close', 'tab-click', 'overlay-back'],
+  data: () => ({}),
   computed: {
     paneTitle(): string {
-      const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
+      const activeTab = this.tabs.find((tab) => tab.id === this.activeTabId);
       return activeTab === undefined ? '[Panel Title]' : activeTab.name;
     },
     transitionName(): string {
       return this.hasTransition ? 'slide-fade' : '';
-    }
+    },
   },
-  mounted() {
-  },
+  mounted() {},
   methods: {
     onClose() {
       this.$emit('close');
@@ -120,13 +105,13 @@ export default defineComponent({
     },
     onOverlayBack() {
       this.$emit('overlay-back');
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 $drilldown-width: 25vw;
 
@@ -193,7 +178,7 @@ $drilldown-width: 25vw;
   .panel-content,
   .panel-header,
   .tab-bar {
-    transition: opacity .1s ease;
+    transition: opacity 0.1s ease;
   }
 }
 
@@ -212,7 +197,7 @@ $drilldown-width: 25vw;
   align-items: center;
   justify-content: center;
   border-radius: 3px;
-  color: #C1C1DE;
+  color: #c1c1de;
   cursor: pointer;
 
   &:hover {

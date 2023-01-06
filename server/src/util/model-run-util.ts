@@ -9,5 +9,5 @@ const respondUsingCode = async (res, serviceFcn, arguments) => {
 };
 
 module.exports = {
-  respondUsingCode
+  respondUsingCode,
 };

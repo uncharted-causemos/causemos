@@ -9,7 +9,7 @@ const Logger = rootRequire('/config/logger');
  * @param {object} options - request option, need at a minimum url and method.
  */
 const requestAsPromise = (options) => {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     if (_.isNil(options.url) || _.isNil(options.method)) {
       reject(new Error('Insufficient information to make request'));
     }

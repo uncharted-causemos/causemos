@@ -21,7 +21,7 @@
   background-color: #f2f2f2;
   background-image: none;
   border-radius: 1px;
-  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 textarea.form-control {
@@ -32,24 +32,33 @@ textarea.form-control {
   margin-bottom: 15px;
 }
 
-
-h1, h2 {
+h1,
+h2 {
   letter-spacing: -0.015em;
 }
-h3, h4 {
+h3,
+h4 {
   letter-spacing: -0.01em;
 }
 h3 {
   font-size: 25px;
 }
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: inherit;
   font-weight: 600;
   line-height: 1.42857;
   color: inherit;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
@@ -66,7 +75,7 @@ button, input, select, textarea {
   color: $color;
   background-color: $background;
 
-  &:focus{
+  &:focus {
     color: $color;
     background-color: lighten($background, 10%);
   }
@@ -128,14 +137,14 @@ button, input, select, textarea {
   &.active {
     outline: 0;
     background-image: none;
-    box-shadow: inset 0 3px 5px rgba(0,0,0,.125);
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
   }
 
   &.disabled,
   &[disabled],
   fieldset[disabled] & {
     cursor: not-allowed;
-    opacity: .65;
+    opacity: 0.65;
     box-shadow: none;
   }
 
@@ -149,7 +158,6 @@ a.btn {
   }
 }
 
-
 // Alternate buttons
 // --------------------------------------------------
 .btn-primary {
@@ -161,7 +169,7 @@ a.btn {
 }
 
 .btn-call-to-action {
-  @include button-variant(white, $call-to-action-color)
+  @include button-variant(white, $call-to-action-color);
 }
 
 .btn-sm {
@@ -209,10 +217,11 @@ html {
 
 body {
   margin: 0;
-  font-family: Source Sans Pro,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
+  font-family: Source Sans Pro, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue,
+    Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
   font-size: 14px;
   line-height: 1.42857;
-  color: rgba(0,0,0,.89);
+  color: rgba(0, 0, 0, 0.89);
   background-color: #f2f2f2;
   -webkit-font-smoothing: antialiased; /* Chrome, Safari */
   -moz-osx-font-smoothing: grayscale; /* Firefox */
@@ -290,7 +299,7 @@ input {
   }
 }
 
-input[type=range] {
+input[type='range'] {
   display: block;
   width: 100%;
 }
@@ -303,12 +312,12 @@ input::-webkit-slider-thumb {
   height: 16px;
   border-radius: 50%;
   margin-top: -4px;
-  border: 2px solid #4E4E54;
+  border: 2px solid #4e4e54;
   cursor: pointer;
 }
 
 input::-webkit-slider-runnable-track {
-  background: #4E4E54;
+  background: #4e4e54;
   width: 100px;
   height: 8px;
   border-radius: 8px;
@@ -331,7 +340,7 @@ input[type='radio'] {
 .toasted.toasted-primary.error {
   a {
     font-size: inherit;
-    color: #EEE;
+    color: #eee;
   }
 }
 
@@ -346,9 +355,10 @@ div.lex-assistant-box {
   z-index: 99;
   max-width: 50vw !important; // lex sets this style in-line and require important flag
   border-radius: 4px; // Match dropdown-control
-  box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0,0,0,.12), 0 2px 4px rgba(0,0,0,.24);
+  box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.24);
   overflow: hidden;
-  .selectable { // this is backup just in case we have a really long identifier
+  .selectable {
+    // this is backup just in case we have a really long identifier
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -360,7 +370,7 @@ div.lex-assistant-box {
   }
 
   ul li.selectable.active {
-    background-color: #EAEBEC; // Match dropdown-control
+    background-color: #eaebec; // Match dropdown-control
     color: $text-color-dark; // Override lex styles
   }
 }

@@ -7,7 +7,7 @@ export const WM_SEPT2019 = [
   {
     selector: ':parent',
     style: {
-      'label': (node) => {
+      label: (node) => {
         const label = node.data().label;
         if (node.data().count > 0) return `${label}\n\uf111`;
         return label;
@@ -22,8 +22,8 @@ export const WM_SEPT2019 = [
       'font-family': 'FontAwesome, Helvetica Neue',
       'background-opacity': 0.333,
       'background-color': GRAPH_BACKGROUND_COLOR,
-      'color': '#808080'
-    }
+      color: '#808080',
+    },
   },
   {
     selector: ':childless',
@@ -36,33 +36,35 @@ export const WM_SEPT2019 = [
         if (_.isNil(bg)) return [];
         return bg;
       },
-      'color': 'black',
+      color: 'black',
       'background-opacity': 0.7,
-      'label': 'data(label)',
+      label: 'data(label)',
       'min-zoomed-font-size': '10px',
       'text-max-width': '80px',
       'text-wrap': 'wrap',
       'text-outline-width': '1.5px',
       'text-outline-color': 'white',
-      'width': (node) => {
+      width: (node) => {
         if (node.data().style.width) {
           return node.data().style.width;
         }
         return Math.sqrt(node.data().count) * 2.0;
       },
-      'height': (node) => {
+      height: (node) => {
         if (node.data().style.height) {
           return node.data().style.height;
         }
         return Math.sqrt(node.data().count) * 2.0;
-      }
-    }
-  }, {
+      },
+    },
+  },
+  {
     selector: '.hidden',
     style: {
-      opacity: '0.2'
-    }
-  }, {
+      opacity: '0.2',
+    },
+  },
+  {
     selector: 'edge',
     style: {
       'text-outline-width': '1.5px',
@@ -82,34 +84,33 @@ export const WM_SEPT2019 = [
       'source-endpoint': 'outside-to-line',
       'target-endpoint': 'outside-to-line',
       'target-distance-from-node': '8px',
-      'opacity': (edge) => {
+      opacity: (edge) => {
         return edge.data().style.opacity;
-      }
-    }
+      },
+    },
   },
   {
     selector: ':active',
     style: {
-      'overlay-color': SELECTED_COLOR
-    }
+      'overlay-color': SELECTED_COLOR,
+    },
   },
   {
     selector: ':selected[count > 0]',
     style: {
-      'color': 'black', // For better readability
+      color: 'black', // For better readability
       'font-weight': 'bold',
       'font-size': '20px',
       'border-color': SELECTED_COLOR,
       'border-width': '4px',
-      'opacity': 1,
-      'min-zoomed-font-size': '0px'
-    }
+      opacity: 1,
+      'min-zoomed-font-size': '0px',
+    },
   },
   {
     selector: '.hidden-label',
     style: {
-      label: ''
-    }
-  }
+      label: '',
+    },
+  },
 ];
-

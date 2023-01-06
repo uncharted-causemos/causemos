@@ -25,30 +25,30 @@ export default defineComponent({
   name: 'Search',
   components: {
     SearchBar,
-    SearchListview
+    SearchListview,
   },
   props: {
     facets: {
       type: Object,
-      default: () => {}
+      default: () => {},
     },
     filteredDatacubes: {
       type: Array as PropType<Datacube[]>,
-      default: () => []
+      default: () => [],
     },
     enableMultipleSelection: {
       type: Boolean,
-      default: false
+      default: false,
     },
     selectedSearchItems: {
       type: Array as PropType<AnalysisItem[]>,
-      required: true
-    }
+      required: true,
+    },
   },
   computed: {
     ...mapGetters({
-      filters: 'dataSearch/filters'
-    })
+      filters: 'dataSearch/filters',
+    }),
   },
   emits: ['toggle-datacube-selected', 'set-datacube-selected'],
   created() {
@@ -62,24 +62,24 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setSearchFilters: 'dataSearch/setSearchFilters'
+      setSearchFilters: 'dataSearch/setSearchFilters',
     }),
     syncStateFromRoute() {
       const filters = _.get(this.$route, 'query.filters', {});
       this.setSearchFilters(filters);
     },
-    toggleDatacubeSelected(item: { datacubeId: string; id: string; }) {
+    toggleDatacubeSelected(item: { datacubeId: string; id: string }) {
       this.$emit('toggle-datacube-selected', item);
     },
-    setDatacubeSelected(item: { datacubeId: string; id: string; }) {
+    setDatacubeSelected(item: { datacubeId: string; id: string }) {
       this.$emit('set-datacube-selected', item);
-    }
-  }
+    },
+  },
 });
 </script>
 
-<style lang='scss' scoped>
-@import "~styles/variables";
+<style lang="scss" scoped>
+@import '~styles/variables';
 .search-container {
   min-height: 0px;
   width: 100%;

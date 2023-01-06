@@ -5,9 +5,7 @@
     @click.stop="onMenuClick"
     @dblclick.stop
   >
-    <i
-      class="fa fa-fw fa-ellipsis-v"
-    />
+    <i class="fa fa-fw fa-ellipsis-v" />
     <dropdown-control
       :class="{ visible: isMenuOpen, below: dropdownBelow, wider: widerDropdownOptions }"
     >
@@ -25,26 +23,26 @@ import DropdownControl from '@/components/dropdown-control.vue';
 export default defineComponent({
   name: 'OptionsButton',
   components: {
-    DropdownControl
+    DropdownControl,
   },
   props: {
     dropdownBelow: {
       type: Boolean,
-      default: false
+      default: false,
     },
     widerDropdownOptions: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   data: () => ({
-    isMenuOpen: false
+    isMenuOpen: false,
   }),
   methods: {
     onMenuClick() {
       this.isMenuOpen = !this.isMenuOpen;
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -63,7 +61,7 @@ export default defineComponent({
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    color: #9D9E9E;
+    color: #9d9e9e;
   }
 
   .dropdown-container {
@@ -90,8 +88,9 @@ export default defineComponent({
     }
   }
 
-  &.active, &:hover {
-    background:#EAEBEC;
+  &.active,
+  &:hover {
+    background: #eaebec;
 
     i {
       color: #000000;

@@ -1,4 +1,10 @@
-import { Lex, TransitionFactory, NumericEntryState, LabelState, ValueStateValue } from '@uncharted.software/lex/dist/lex';
+import {
+  Lex,
+  TransitionFactory,
+  NumericEntryState,
+  LabelState,
+  ValueStateValue,
+} from '@uncharted.software/lex/dist/lex';
 import NumericBetweenState from '@/search/numeric-between-state';
 
 import BasePill from '@/search/pills/base-pill';
@@ -6,7 +12,11 @@ import filtersUtil from '@/utils/filters-util';
 
 export default class RangePill extends BasePill {
   makeBranch() {
-    return Lex.from('relation', NumericBetweenState, TransitionFactory.valueMetaCompare({ searchKey: this.searchKey })).branch(
+    return Lex.from(
+      'relation',
+      NumericBetweenState,
+      TransitionFactory.valueMetaCompare({ searchKey: this.searchKey })
+    ).branch(
       Lex.from('value', NumericEntryState, TransitionFactory.valueKeyIs('between'))
         .to(LabelState, { label: 'and' })
         .to('secondaryValue', NumericEntryState)
@@ -16,10 +26,16 @@ export default class RangePill extends BasePill {
   lex2Filters(lexItem, filters) {
     const relation = lexItem.relation.key;
     const operand = 'or';
-    const isNot = (relation === 'not');
+    const isNot = relation === 'not';
     const primaryValue = lexItem.value.key;
     const secondaryValue = lexItem.secondaryValue.key;
-    filtersUtil.addSearchTerm(filters, this.searchKey, [+primaryValue, +secondaryValue], operand, isNot);
+    filtersUtil.addSearchTerm(
+      filters,
+      this.searchKey,
+      [+primaryValue, +secondaryValue],
+      operand,
+      isNot
+    );
   }
 
   /**
@@ -36,7 +52,7 @@ export default class RangePill extends BasePill {
       field: selectedPill,
       relation: NumericBetweenState.BETWEEN,
       value: new ValueStateValue(values[0][0]),
-      secondaryValue: new ValueStateValue(secondaryValue)
+      secondaryValue: new ValueStateValue(secondaryValue),
     });
   }
 }

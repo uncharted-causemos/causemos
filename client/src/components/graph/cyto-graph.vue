@@ -12,13 +12,10 @@
       @addToSearch="onAddToSearch"
       @removeFromSearch="onRemoveFromSearch"
       @fit="onFit"
-
     />
     <div class="layout-message">{{ layoutMessage }}</div>
-    <div
-      ref="graph"
-      class="full" />
-    <color-legend class="legend"/>
+    <div ref="graph" class="full" />
+    <color-legend class="legend" />
   </div>
 </template>
 
@@ -48,24 +45,22 @@ export default {
   name: 'CytoGraph',
   components: {
     ColorLegend,
-    Controls
+    Controls,
   },
   props: {
     graphData: {
       type: Object,
-      default: () => ({ nodes: [], edges: [] })
+      default: () => ({ nodes: [], edges: [] }),
     },
     layout: {
       type: Object,
-      default: () => ({})
-    }
+      default: () => ({}),
+    },
   },
-  emits: [
-    'clear-selection'
-  ],
+  emits: ['clear-selection'],
   setup() {
     return {
-      ontologyFormatter: useOntologyFormatter()
+      ontologyFormatter: useOntologyFormatter(),
     };
   },
   data: () => ({
@@ -76,13 +71,13 @@ export default {
     showCollapseControls: false,
     minNodeDepth: 1,
 
-    focusedNodes: []
+    focusedNodes: [],
   }),
   computed: {
     ...mapGetters({
       nodesCount: 'graph/filteredNodesCount',
       selectedNode: 'graph/selectedNode',
-      selectedEdge: 'graph/selectedEdge'
+      selectedEdge: 'graph/selectedEdge',
     }),
     showSearchControls() {
       return !_.isEmpty(this.focusedNodes);
@@ -94,7 +89,7 @@ export default {
         return `Relationships are hidden when there are more than ${EDGE_THRESHOLD} relationships in the result.`;
       }
       return '';
-    }
+    },
   },
   watch: {
     graphData() {
@@ -125,7 +120,7 @@ export default {
       if (n.edgeOpacity !== o.edgeOpacity) {
         this.graphRenderer.setEdgeOpacity(n.edgeOpacity);
       }
-    }
+    },
   },
   created() {
     this.graphRenderer = null;
@@ -150,23 +145,23 @@ export default {
     this.edgesSelected = cy.collection();
 
     const nodeNeighborhoodHighlights = () => {
-      const nodesSelectedArray = this.nodesSelected.toArray().map(node => node.id());
-      this.focusedNodes = this.nodesSelected.toArray().map(node => node.data()); // Array of nodes to add/remove to search
+      const nodesSelectedArray = this.nodesSelected.toArray().map((node) => node.id());
+      this.focusedNodes = this.nodesSelected.toArray().map((node) => node.data()); // Array of nodes to add/remove to search
 
       // Create edges to add when edges are not shown
-      const neighborEdges = this.graphData.edges.filter(e => {
+      const neighborEdges = this.graphData.edges.filter((e) => {
         return nodesSelectedArray.includes(e.source) || nodesSelectedArray.includes(e.target);
       });
       const edges = CytoscapeData.createEdges(neighborEdges);
 
       // Outer ring around nodes for selected nodes
-      const counts = cy.nodes().map(d => d.data().count);
+      const counts = cy.nodes().map((d) => d.data().count);
       const maxCount = Math.max(...counts);
       const minCount = Math.min(...counts);
       const sizeFn = createLinearScale([minCount, maxCount], [30, 80]); // Make the size range between 30 to 80
 
       // Increases the node size to be able to draw the outer ring
-      this.nodesSelected.forEach(node => {
+      this.nodesSelected.forEach((node) => {
         const size = sizeFn(node.data().count);
         node.data().style.width = size * 1.25;
         node.data().style.height = size * 1.25;
@@ -175,17 +170,22 @@ export default {
       cy.batch(() => {
         // Get neighborhood
         const edgeIds = _.uniq([
-          ...neighborEdges.map(e => e.source),
-          ...neighborEdges.map(e => e.target)
+          ...neighborEdges.map((e) => e.source),
+          ...neighborEdges.map((e) => e.target),
         ]);
 
-        const neighborNodes = cy.nodes().filter(':childless').filter(n => {
-          return edgeIds.includes(n.id());
-        });
-        const nonNeighborNodes = cy.nodes().filter(':childless').filter(n => {
-          return !edgeIds.includes(n.id());
-        });
-
+        const neighborNodes = cy
+          .nodes()
+          .filter(':childless')
+          .filter((n) => {
+            return edgeIds.includes(n.id());
+          });
+        const nonNeighborNodes = cy
+          .nodes()
+          .filter(':childless')
+          .filter((n) => {
+            return !edgeIds.includes(n.id());
+          });
 
         // Style for nodes
         neighborNodes.style({ opacity: 1.0 });
@@ -200,16 +200,21 @@ export default {
             opacity: FADED_OPACITY,
             lineColor: FADED_COLOR,
             sourceArrowColor: FADED_COLOR,
-            targetArrowColor: FADED_COLOR
+            targetArrowColor: FADED_COLOR,
           });
-          cy.edges().filter(e => {
-            return nodesSelectedArray.includes(e.data().source) || nodesSelectedArray.includes(e.data().target);
-          }).style({
-            opacity: 1.0, // Full opacity when highlighting
-            lineColor: e => e.data().style.edgeColor,
-            sourceArrowColor: e => e.data().style.edgeColor,
-            targetArrowColor: e => e.data().style.edgeColor
-          });
+          cy.edges()
+            .filter((e) => {
+              return (
+                nodesSelectedArray.includes(e.data().source) ||
+                nodesSelectedArray.includes(e.data().target)
+              );
+            })
+            .style({
+              opacity: 1.0, // Full opacity when highlighting
+              lineColor: (e) => e.data().style.edgeColor,
+              sourceArrowColor: (e) => e.data().style.edgeColor,
+              targetArrowColor: (e) => e.data().style.edgeColor,
+            });
         }
       });
     };
@@ -224,7 +229,7 @@ export default {
         this.nodesSelected = this.nodesSelected.union(node);
         nodeNeighborhoodHighlights();
       } else {
-        this.nodesSelected = this.nodesSelected.filter(n => n.id() !== node.id());
+        this.nodesSelected = this.nodesSelected.filter((n) => n.id() !== node.id());
         if (this.nodesSelected.length >= 1) {
           nodeNeighborhoodHighlights();
         } else {
@@ -233,17 +238,17 @@ export default {
         }
       }
 
-      const nodesSelectedIds = this.nodesSelected.toArray().map(d => d.id());
-      const neighborhood = nodesSelectedIds.map(id => calculateNeighborhood(this.graphData, id)); // Calculate neighborhood for each selected node.
+      const nodesSelectedIds = this.nodesSelected.toArray().map((d) => d.id());
+      const neighborhood = nodesSelectedIds.map((id) => calculateNeighborhood(this.graphData, id)); // Calculate neighborhood for each selected node.
       const merged = { edges: [] }; // Group neighborhood by nodes and edges
-      neighborhood.forEach(n => {
+      neighborhood.forEach((n) => {
         merged.edges.push(n.edges);
       });
 
       merged.edges = _.uniqBy(_.flatten(merged.edges), (edge) => edge.source + '///' + edge.target);
 
-      const edges = this.graphData.edges.filter(edge => {
-        const ids = merged.edges.map(edge => edge.source + '///' + edge.target);
+      const edges = this.graphData.edges.filter((edge) => {
+        const ids = merged.edges.map((edge) => edge.source + '///' + edge.target);
         return ids.indexOf(edge.source + '///' + edge.target) !== -1;
       });
 
@@ -266,13 +271,13 @@ export default {
       cy.batch(() => {
         cy.nodes().style({ opacity: 1.0 });
         nodesUnselected.style({
-          opacity: FADED_OPACITY
+          opacity: FADED_OPACITY,
         });
 
         cy.edges().style({ opacity: FADED_OPACITY, lineColor: FADED_COLOR });
         this.edgesSelected.style({
           opacity: 1.0,
-          lineColor: e => e.data().style.edgeColor
+          lineColor: (e) => e.data().style.edgeColor,
         });
       });
     };
@@ -283,19 +288,19 @@ export default {
       } else {
         cy.edges().style({
           opacity: this.layout.edgeOpacity,
-          lineColor: e => e.data().style.edgeColor,
-          sourceArrowColor: e => e.data().style.edgeColor,
-          targetArrowColor: e => e.data().style.edgeColor
+          lineColor: (e) => e.data().style.edgeColor,
+          sourceArrowColor: (e) => e.data().style.edgeColor,
+          targetArrowColor: (e) => e.data().style.edgeColor,
         });
       }
       cy.nodes().style({ opacity: 1.0 });
 
       // Restore node size
-      const counts = cy.nodes().map(d => d.data().count);
+      const counts = cy.nodes().map((d) => d.data().count);
       const maxCount = Math.max(...counts);
       const minCount = Math.min(...counts);
       const sizeFn = createLinearScale([minCount, maxCount], [30, 80]); // Make the size range between 30 to 80
-      cy.nodes().forEach(node => {
+      cy.nodes().forEach((node) => {
         const size = sizeFn(node.data().count);
         node.data().style.width = size;
         node.data().style.height = size;
@@ -318,7 +323,7 @@ export default {
         this.edgesSelected = this.edgesSelected.union(edge);
         edgeNeighborhoodHighlights();
       } else {
-        this.edgesSelected = this.edgesSelected.filter(e => e.id() !== edge.id());
+        this.edgesSelected = this.edgesSelected.filter((e) => e.id() !== edge.id());
         if (this.edgesSelected.length >= 1) {
           edgeNeighborhoodHighlights();
         } else {
@@ -328,12 +333,15 @@ export default {
       }
 
       if (this.edgesSelected.length > 1) {
-        const selectedRelationships = this.edgesSelected.toArray().map(d => d.data());
+        const selectedRelationships = this.edgesSelected.toArray().map((d) => d.data());
         this.setSelectedRelationships(selectedRelationships);
       } else if (this.edgesSelected.length === 1) {
-        this.setSelectedEdge({ source: this.edgesSelected.data().source, target: this.edgesSelected.data().target });
+        this.setSelectedEdge({
+          source: this.edgesSelected.data().source,
+          target: this.edgesSelected.data().target,
+        });
       }
-      const selectedEdges = this.edgesSelected.toArray().map(d => d.data());
+      const selectedEdges = this.edgesSelected.toArray().map((d) => d.data());
       this.setSelectedSubgraphEdges(selectedEdges);
     });
 
@@ -351,7 +359,7 @@ export default {
       setLayout: 'query/setLayout',
       setFilteredEdgesCount: 'graph/setFilteredEdgesCount',
       setFilteredNodesCount: 'graph/setFilteredNodesCount',
-      setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges'
+      setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges',
     }),
     refresh() {
       if (_.isEmpty(this.graphData)) return;
@@ -369,7 +377,7 @@ export default {
 
       const optimizedData = {
         nodes: this.graphData.nodes,
-        edges: this.showEdges ? this.graphData.edges : []
+        edges: this.showEdges ? this.graphData.edges : [],
       };
 
       this.setFilteredNodesCount(optimizedData.nodes.length);
@@ -386,7 +394,7 @@ export default {
 
       this.graphRenderer.setData(optimizedData);
       this.graphRenderer.render(() => {
-      // Apply effects toggles
+        // Apply effects toggles
         this.applyToggles(layout);
       });
       this.focusedNodes = [];
@@ -407,12 +415,12 @@ export default {
       });
     },
     onAddToSearch() {
-      const ids = this.focusedNodes.map(n => n.id);
+      const ids = this.focusedNodes.map((n) => n.id);
       this.setSearchClause({ field: 'topic', operand: 'or', isNot: false, values: ids });
     },
     onRemoveFromSearch() {
-      const ids = this.focusedNodes.map(n => n.id);
-      ids.forEach(id => {
+      const ids = this.focusedNodes.map((n) => n.id);
+      ids.forEach((id) => {
         this.removeSearchTerm({ field: 'topic', operand: 'or', isNot: false, term: id });
       });
     },
@@ -431,13 +439,13 @@ export default {
         this.nodesSelected = cy.collection();
         this.edgesSelected = cy.collection();
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .full {
   height: 100%;
@@ -449,7 +457,7 @@ export default {
   }
 }
 .layout-message {
-  position:absolute;
+  position: absolute;
   left: 10px;
   pointer-events: none;
 }

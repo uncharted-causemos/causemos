@@ -1,16 +1,13 @@
 module.exports = {
-  extends: [
-    'standard',
-    'prettier'
-  ],
+  extends: ['standard', 'prettier'],
   env: {
     node: true,
-    mocha: true
+    mocha: true,
   },
   rules: {
-    'camelcase': ['error', { ignoreDestructuring: true, properties: 'never' }]
+    camelcase: ['error', { ignoreDestructuring: true, properties: 'never' }],
   },
   globals: {
-    rootRequire: true
-  }
-}
+    rootRequire: true,
+  },
+};

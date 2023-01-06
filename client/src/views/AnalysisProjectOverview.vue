@@ -27,37 +27,25 @@
           <div v-else-if="projectMetadata.description">
             {{ projectMetadata.description }}
           </div>
-          <div
-            v-else
-            class="description-hint-text">
-            Add a description
-          </div>
+          <div v-else class="description-hint-text">Add a description</div>
           <small-icon-button v-if="isEditingDesc">
-            <i
-              class="fa fa-check"
-              @click="saveDesc"
-              v-tooltip.top-center="'Save changes'"
-            />
+            <i class="fa fa-check" @click="saveDesc" v-tooltip.top-center="'Save changes'" />
           </small-icon-button>
           <small-icon-button v-if="isEditingDesc">
-            <i
-              class="fa fa-close"
-              @click="discardDesc"
-              v-tooltip.top-center="'Discard changes'"
-            />
+            <i class="fa fa-close" @click="discardDesc" v-tooltip.top-center="'Discard changes'" />
           </small-icon-button>
           <small-icon-button v-else>
-            <i
-              class="fa fa-edit"
-              @click="editDesc"
-              v-tooltip.top-center="'Edit description'"
-            />
+            <i class="fa fa-edit" @click="editDesc" v-tooltip.top-center="'Edit description'" />
           </small-icon-button>
         </div>
         <div>
           <strong>Contributors</strong>
-          <span v-for="contributor in ['Analyst 1', 'Analyst 2']"
-          :key="contributor" class="contributor">{{contributor}}</span>
+          <span
+            v-for="contributor in ['Analyst 1', 'Analyst 2']"
+            :key="contributor"
+            class="contributor"
+            >{{ contributor }}</span
+          >
         </div>
       </div>
       <div v-if="tags.length > 0" class="tags-column">
@@ -69,24 +57,24 @@
       <div class="kb-stats-column">
         <strong>Knowledge Base</strong>
         <div>{{ KBname }}</div>
-        <div><strong>{{ numberFormatter(numDocuments) }}</strong> documents</div>
-        <div><strong>{{ numberFormatter(numStatements) }}</strong> causal relationships</div>
-        <button class="button" @click="showDocumentModal=true">
-          Add Documents
-        </button>
+        <div>
+          <strong>{{ numberFormatter(numDocuments) }}</strong> documents
+        </div>
+        <div>
+          <strong>{{ numberFormatter(numStatements) }}</strong> causal relationships
+        </div>
+        <button class="button" @click="showDocumentModal = true">Add Documents</button>
         <modal-upload-document
           v-if="showDocumentModal === true"
-          @close="showDocumentModal = false" />
+          @close="showDocumentModal = false"
+        />
       </div>
     </header>
     <main>
       <div class="insights-column">
-        <button
-          type="button"
-          class="btn btn-call-to-action"
-          @click.stop="openInsightsExplorer">
-            <i class="fa fa-fw fa-star fa-lg" />
-            Review All Insights
+        <button type="button" class="btn btn-call-to-action" @click.stop="openInsightsExplorer">
+          <i class="fa fa-fw fa-star fa-lg" />
+          Review All Insights
         </button>
         <list-analytical-questions-pane
           :show-checklist-title="true"
@@ -102,12 +90,7 @@
       </div>
       <div class="analysis-list-column">
         <div class="analysis-list-header">
-          <input
-            v-model="searchText"
-            type="text"
-            placeholder="Search ..."
-            class="search-bar"
-          >
+          <input v-model="searchText" type="text" placeholder="Search ..." class="search-bar" />
           <dropdown-button
             :items="analysisSortingOptions"
             :selected-item="selectedAnalysisSortingOption"
@@ -120,16 +103,18 @@
               type="button"
               class="btn btn-call-to-action"
               @click="onCreateCAG"
-              ><i class="fa fa-plus" />
-                Create CAG
+            >
+              <i class="fa fa-plus" />
+              Create CAG
             </button>
             <button
               v-tooltip.top-center="'Create a new Quantitative Analysis'"
               type="button"
               class="btn btn-call-to-action"
               @click="onCreateDataAnalysis"
-              ><i class="fa fa-plus" />
-                Create Quantitative Analysis
+            >
+              <i class="fa fa-plus" />
+              Create Quantitative Analysis
             </button>
           </div>
         </div>
@@ -145,10 +130,7 @@
             @duplicate="onDuplicate(analysis)"
           />
         </div>
-        <div
-          v-if="analyses.length === 0"
-          class="empty-state-container"
-        >
+        <div v-if="analyses.length === 0" class="empty-state-container">
           <empty-state-instructions class="empty-state-instructions" />
         </div>
       </div>
@@ -161,7 +143,12 @@ import { defineComponent, ref } from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
-import { getAnalysesByProjectId, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
+import {
+  getAnalysesByProjectId,
+  deleteAnalysis,
+  updateAnalysis,
+  duplicateAnalysis,
+} from '@/services/analysis-service';
 import { createAnalysis, createAnalysisObject } from '@/services/analysis-service-new';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
@@ -182,24 +169,24 @@ import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { sortItem, modifiedAtSorter, titleSorter, SortOptions } from '@/utils/sort/sort-items';
 import { TYPE } from 'vue-toastification';
 
-const toQuantitative = analysis => ({
+const toQuantitative = (analysis) => ({
   analysisId: analysis.id,
   previewImageSrc: analysis.thumbnail_source || null,
   title: analysis.title,
   subtitle: dateFormatter(analysis.modified_at, 'MMM DD, YYYY'),
   description: analysis.description || '',
   type: 'quantitative',
-  modified_at: analysis.modified_at
+  modified_at: analysis.modified_at,
 });
 
-const toQualitative = cag => ({
+const toQualitative = (cag) => ({
   id: cag.id,
   previewImageSrc: cag.thumbnail_source ?? null,
   title: cag.name,
   subtitle: dateFormatter(cag.modified_at, 'MMM DD, YYYY'),
   description: cag.description || '',
   type: 'qualitative',
-  modified_at: cag.modified_at
+  modified_at: cag.modified_at,
 });
 
 export default defineComponent({
@@ -212,11 +199,15 @@ export default defineComponent({
     DuplicateModal,
     DropdownButton,
     EmptyStateInstructions,
-    SmallIconButton
+    SmallIconButton,
   },
   setup() {
-    const { insights } = useInsightsData(undefined,
-      ['id', 'name', 'visibility', 'analytical_question']);
+    const { insights } = useInsightsData(undefined, [
+      'id',
+      'name',
+      'visibility',
+      'analytical_question',
+    ]);
 
     const {
       questionsList,
@@ -225,22 +216,20 @@ export default defineComponent({
       deleteSection,
       moveSectionAboveSection,
       removeInsightFromSection,
-      moveInsight
+      moveInsight,
     } = useQuestionsData();
 
     const insightsBySection = computed(() => {
-      return questionsList.value.map(section => {
+      return questionsList.value.map((section) => {
         // FIXME: optimize by using maps
         const _insights = section.linked_insights
-          .map(insightId =>
-            insights.value.find(insight => insight.id === insightId)
-          )
-          .filter(insight => insight !== undefined);
+          .map((insightId) => insights.value.find((insight) => insight.id === insightId))
+          .filter((insight) => insight !== undefined);
         return {
           section,
           // FIXME: these might need to be FullInsights when we support jumping
           //  straight to review from this page.
-          insights: _insights
+          insights: _insights,
         };
       });
     });
@@ -254,7 +243,7 @@ export default defineComponent({
       moveSectionAboveSection,
       removeInsightFromSection,
       moveInsight,
-      showDuplicateModal
+      showDuplicateModal,
     };
   },
   data: () => ({
@@ -272,27 +261,27 @@ export default defineComponent({
     showDocumentModal: false,
     showRenameModal: false,
     selectedAnalysis: null,
-    projectDesc: ''
+    projectDesc: '',
   }),
   computed: {
     ...mapGetters({
       project: 'app/project',
-      projectMetadata: 'app/projectMetadata'
+      projectMetadata: 'app/projectMetadata',
     }),
     filteredAnalyses() {
-      return this.analyses.filter(analysis => {
+      return this.analyses.filter((analysis) => {
         return analysis.title.toLowerCase().includes(this.searchText.toLowerCase());
       });
     },
     tags() {
       return []; // FIXME
-    }
+    },
   },
   watch: {
-    projectMetadata: function() {
+    projectMetadata: function () {
       this.fetchAnalyses();
       this.fetchKbStats();
-    }
+    },
   },
   async mounted() {
     this.fetchAnalyses();
@@ -304,7 +293,7 @@ export default defineComponent({
       disableOverlay: 'app/disableOverlay',
       setContextId: 'insightPanel/setContextId',
       showInsightPanel: 'insightPanel/showInsightPanel',
-      setCurrentPane: 'insightPanel/setCurrentPane'
+      setCurrentPane: 'insightPanel/setCurrentPane',
     }),
     numberFormatter,
     openInsightsExplorer() {
@@ -321,7 +310,9 @@ export default defineComponent({
     },
     saveDesc() {
       // we may have just modified the desc text, so update the server value
-      projectService.updateProjectMetadata(this.project, { description: this.projectMetadata.description });
+      projectService.updateProjectMetadata(this.project, {
+        description: this.projectMetadata.description,
+      });
       this.isEditingDesc = false;
     },
     async fetchAnalyses() {
@@ -347,7 +338,7 @@ export default defineComponent({
         rawQuantitativeAnalyses.forEach((analysis, indx) => {
           const analysesState = analysis.state || {};
           if (analysesState.analysisItems !== undefined) {
-            const analysisContextIDs = analysesState.analysisItems.map(dc => dc.id);
+            const analysisContextIDs = analysesState.analysisItems.map((dc) => dc.id);
             contextIDs.push(...analysisContextIDs);
             // save the datacube count
             this.quantitativeAnalyses[indx].datacubesCount = analysisContextIDs.length;
@@ -359,19 +350,22 @@ export default defineComponent({
       }
 
       // knowledge and model space analyses
-      this.qualitativeAnalyses = (await modelService.getProjectModels(this.project)).models.map(toQualitative);
+      this.qualitativeAnalyses = (await modelService.getProjectModels(this.project)).models.map(
+        toQualitative
+      );
 
       if (this.qualitativeAnalyses.length) {
-        const modelIDs = this.qualitativeAnalyses.map(model => model.id);
+        const modelIDs = this.qualitativeAnalyses.map((model) => model.id);
         const stats = await modelService.getModelStats(modelIDs);
 
-        this.qualitativeAnalyses.forEach(analysis => { // merge edge and node counts into analysis objects
+        this.qualitativeAnalyses.forEach((analysis) => {
+          // merge edge and node counts into analysis objects
           analysis.nodeCount = _.get(stats[analysis.id], 'nodeCount', 0);
           analysis.edgeCount = _.get(stats[analysis.id], 'edgeCount', 0);
         });
 
         // save context-id(s) for all CAG-analyses
-        this.qualitativeAnalyses.forEach(qualitativeAnalysis => {
+        this.qualitativeAnalyses.forEach((qualitativeAnalysis) => {
           contextIDs.push(qualitativeAnalysis.id);
         });
       }
@@ -395,7 +389,7 @@ export default defineComponent({
     async fetchKbStats() {
       const KBlist = await projectService.getKBs(); // FIXME this is more expensive than it needs to be, we fetch the whole list of KBs then only use one
       const projectKB_id = this.projectMetadata.kb_id;
-      const projectKB = KBlist.find(kb => kb.id === projectKB_id);
+      const projectKB = KBlist.find((kb) => kb.id === projectKB_id);
       if (projectKB === undefined) {
         if (!_.isEmpty(this.projectMetadata)) {
           // App.vue is responsible for fetching projectMetadata.
@@ -421,12 +415,15 @@ export default defineComponent({
       // updating qualitative analysis
       const id = this.selectedAnalysis && this.selectedAnalysis.id;
       if (id && oldName !== newName) {
-        modelService.updateModelMetadata(id, { name: newName }).then(() => {
-          this.selectedAnalysis.title = newName;
-          this.toaster(CAG.SUCCESSFUL_RENAME, TYPE.SUCCESS, false);
-        }).catch(() => {
-          this.toaster(CAG.ERRONEOUS_RENAME, TYPE.INFO, true);
-        });
+        modelService
+          .updateModelMetadata(id, { name: newName })
+          .then(() => {
+            this.selectedAnalysis.title = newName;
+            this.toaster(CAG.SUCCESSFUL_RENAME, TYPE.SUCCESS, false);
+          })
+          .catch(() => {
+            this.toaster(CAG.ERRONEOUS_RENAME, TYPE.INFO, true);
+          });
       }
 
       // updating data analysis
@@ -464,15 +461,19 @@ export default defineComponent({
           this.toaster(ANALYSIS.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
         }
       }
-      if (analysis.id) { // cag-id
-        modelService.duplicateModel(analysis.id, newName).then((copy) => {
-          const duplicatedAnalysis = toQualitative(copy);
-          duplicatedAnalysis.title = newName; // FIXME @HACK since duplicateModel() does not return a full object copy
-          this.analyses.unshift(duplicatedAnalysis);
-          this.toaster(CAG.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
-        }).catch(() => {
-          this.toaster(CAG.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
-        });
+      if (analysis.id) {
+        // cag-id
+        modelService
+          .duplicateModel(analysis.id, newName)
+          .then((copy) => {
+            const duplicatedAnalysis = toQualitative(copy);
+            duplicatedAnalysis.title = newName; // FIXME @HACK since duplicateModel() does not return a full object copy
+            this.analyses.unshift(duplicatedAnalysis);
+            this.toaster(CAG.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
+          })
+          .catch(() => {
+            this.toaster(CAG.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
+          });
       }
       this.showDuplicateModal = false;
     },
@@ -480,51 +481,58 @@ export default defineComponent({
       if (analysis.analysisId) {
         try {
           await deleteAnalysis(analysis.analysisId);
-          this.analyses = this.analyses.filter(item => item.analysisId !== analysis.analysisId);
+          this.analyses = this.analyses.filter((item) => item.analysisId !== analysis.analysisId);
           this.toaster(ANALYSIS.SUCCESSFUL_DELETION, TYPE.SUCCESS, false);
         } catch (e) {
           this.toaster(ANALYSIS.ERRONEOUS_DELETION, TYPE.INFO, true);
         }
       }
-      if (analysis.id) { // cag-id
-        modelService.removeModel(analysis.id).then(() => {
-          this.analyses = this.analyses.filter(item => item.id !== analysis.id);
-          this.toaster(CAG.SUCCESSFUL_DELETION, TYPE.SUCCESS, false);
-        }).catch(() => {
-          this.toaster(CAG.ERRONEOUS_DELETION, TYPE.INFO, true);
-        });
+      if (analysis.id) {
+        // cag-id
+        modelService
+          .removeModel(analysis.id)
+          .then(() => {
+            this.analyses = this.analyses.filter((item) => item.id !== analysis.id);
+            this.toaster(CAG.SUCCESSFUL_DELETION, TYPE.SUCCESS, false);
+          })
+          .catch(() => {
+            this.toaster(CAG.ERRONEOUS_DELETION, TYPE.INFO, true);
+          });
       }
     },
     onOpen(analysis) {
       const params = {
         project: this.project,
-        projectType: ProjectType.Analysis
+        projectType: ProjectType.Analysis,
       };
       let name = '';
       if (analysis.analysisId) {
         params.analysisId = analysis.analysisId;
         name = 'dataComparative';
       }
-      if (analysis.id) { // cag-id
+      if (analysis.id) {
+        // cag-id
         params.currentCAG = analysis.id;
         name = 'qualitative';
       }
       this.$router.push({
         name,
-        params
+        params,
       });
     },
     onCreateCAG() {
-      modelService.newModel(this.project, `untitled at ${dateFormatter(Date.now())}`).then(result => {
-        this.$router.push({
-          name: 'qualitative',
-          params: {
-            project: this.project,
-            currentCAG: result.id,
-            projectType: ProjectType.Analysis
-          }
+      modelService
+        .newModel(this.project, `untitled at ${dateFormatter(Date.now())}`)
+        .then((result) => {
+          this.$router.push({
+            name: 'qualitative',
+            params: {
+              project: this.project,
+              currentCAG: result.id,
+              projectType: ProjectType.Analysis,
+            },
+          });
         });
-      });
     },
     async onCreateDataAnalysis() {
       const analysis = await createAnalysis(
@@ -538,8 +546,8 @@ export default defineComponent({
         params: {
           project: this.project,
           analysisId: analysis.id,
-          projectType: ProjectType.Analysis
-        }
+          projectType: ProjectType.Analysis,
+        },
       });
     },
     toggleSortingDropdownAnalyses() {
@@ -553,14 +561,18 @@ export default defineComponent({
     sortAnalyses(option) {
       this.selectedAnalysisSortingOption = option;
       this.showSortingDropdownAnalyses = false;
-      this.analyses = sortItem(this.analyses, { date: modifiedAtSorter, name: titleSorter }, this.selectedAnalysisSortingOption);
-    }
-  }
+      this.analyses = sortItem(
+        this.analyses,
+        { date: modifiedAtSorter, name: titleSorter },
+        this.selectedAnalysisSortingOption
+      );
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "@/styles/variables";
+@import '@/styles/variables';
 
 .project-overview-container {
   display: flex;
@@ -733,5 +745,4 @@ main {
     margin-left: 5px;
   }
 }
-
 </style>

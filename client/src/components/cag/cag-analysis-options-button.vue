@@ -25,12 +25,12 @@ export default defineComponent({
   props: {
     modelSummary: {
       type: Object,
-      default: null
+      default: null,
     },
     viewAfterDeletion: {
       type: String,
-      default: 'overview'
-    }
+      default: 'overview',
+    },
   },
   setup(props) {
     const { modelSummary, viewAfterDeletion } = toRefs(props);
@@ -44,9 +44,7 @@ export default defineComponent({
 
     const newCagName = ref<string | null>(null);
 
-    const cagNameToDisplay = computed(
-      () => newCagName.value ?? _.get(modelSummary.value, 'name')
-    );
+    const cagNameToDisplay = computed(() => newCagName.value ?? _.get(modelSummary.value, 'name'));
     const onRenameAnalysis = async (newName: string) => {
       // Optimistically set new name
       newCagName.value = newName;
@@ -72,8 +70,8 @@ export default defineComponent({
             name: viewAfterDeletion.value,
             params: {
               project: project.value,
-              projectType: ProjectType.Analysis
-            }
+              projectType: ProjectType.Analysis,
+            },
           });
         })
         .catch(() => {
@@ -81,19 +79,22 @@ export default defineComponent({
         });
     };
     const onDuplicate = (name: string) => {
-      modelService.duplicateModel(currentCAG.value, name).then((result) => {
-        toast(CAG.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
-        router.push({
-          name: 'qualitative',
-          params: {
-            project: project.value,
-            currentCAG: result.id,
-            projectType: ProjectType.Analysis
-          }
+      modelService
+        .duplicateModel(currentCAG.value, name)
+        .then((result) => {
+          toast(CAG.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
+          router.push({
+            name: 'qualitative',
+            params: {
+              project: project.value,
+              currentCAG: result.id,
+              projectType: ProjectType.Analysis,
+            },
+          });
+        })
+        .catch(() => {
+          toast(CAG.ERRONEOUS_DUPLICATE, TYPE.INFO, false);
         });
-      }).catch(() => {
-        toast(CAG.ERRONEOUS_DUPLICATE, TYPE.INFO, false);
-      });
     };
 
     return {
@@ -101,8 +102,8 @@ export default defineComponent({
       onRenameAnalysis,
       onDuplicate,
       onDeleteAnalysis,
-      currentCAG
+      currentCAG,
     };
-  }
+  },
 });
 </script>

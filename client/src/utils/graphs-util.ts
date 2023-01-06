@@ -39,7 +39,7 @@ class Graph {
   constructor(edges: Edge[]) {
     const vertices: { [key: string]: Vertex } = {};
     const adjacentVertices: { [key: string]: Set<Vertex> } = {};
-    edges.forEach(e => {
+    edges.forEach((e) => {
       const sourceVertex = vertices[e.source] ? vertices[e.source] : new Vertex(e.source);
       const targetVertex = vertices[e.target] ? vertices[e.target] : new Vertex(e.target);
 
@@ -82,13 +82,13 @@ class Graph {
    * @returns cycles - an array of arrays, where each subarray represents a cycle
    */
   findCycles() {
-    function unblock (node: Vertex, blocked: Set<Vertex>, B: { [key: string]: Set<Vertex> }) {
+    function unblock(node: Vertex, blocked: Set<Vertex>, B: { [key: string]: Set<Vertex> }) {
       const stack = [node];
       while (stack.length > 0) {
         const node = stack.pop();
         if (node && blocked.has(node)) {
           blocked.delete(node);
-          Array.from(B[node.name]).forEach(e => stack.push(e));
+          Array.from(B[node.name]).forEach((e) => stack.push(e));
           B[node.name].clear();
         }
       }
@@ -121,7 +121,7 @@ class Graph {
           const nextNode = neighbors.pop();
           if (nextNode === startNode) {
             cycles.push(_.cloneDeep(path));
-            path.forEach(e => closed.add(e));
+            path.forEach((e) => closed.add(e));
           } else if (!blocked.has(nextNode)) {
             path.push(nextNode);
             stack.push([nextNode, Array.from(this.adjacentVertices[nextNode.name])]);
@@ -238,11 +238,12 @@ class Graph {
 }
 
 export function findSCC(edges: Edge[]) {
-  if (edges.length === 0) { return; }
+  if (edges.length === 0) {
+    return;
+  }
   const g = new Graph(edges);
   return g.findSCC();
 }
-
 
 /**
  * Helper function: Trace adjacency matrix recursively
@@ -254,7 +255,13 @@ export function findSCC(edges: Edge[]) {
  * @param {array} paths - result accumulator
  */
 type TracePath = string[];
-function trace(id: string, buffer: string[], adjMap: Map<string, string[]>, visited: Set<string>, paths: TracePath[]) {
+function trace(
+  id: string,
+  buffer: string[],
+  adjMap: Map<string, string[]>,
+  visited: Set<string>,
+  paths: TracePath[]
+) {
   if (visited.has(id)) {
     paths.push(buffer);
     return;
@@ -290,7 +297,7 @@ export function findAllAncestorPaths(node: string, edges: Edge[]) {
     }
   }
   trace(node, [node], adjMap, visited, paths);
-  return paths.filter(path => path.length > 1);
+  return paths.filter((path) => path.length > 1);
 }
 
 export function findAllDescendantPaths(node: string, edges: Edge[]) {
@@ -308,11 +315,17 @@ export function findAllDescendantPaths(node: string, edges: Edge[]) {
     }
   }
   trace(node, [node], adjMap, visited, paths);
-  return paths.filter(path => path.length > 1).map(path => path.reverse());
+  return paths.filter((path) => path.length > 1).map((path) => path.reverse());
 }
 
 export function findPaths(source: string, target: string, edges: Edge[]) {
-  function traceToTarget(id: string, target: string, buffer: string[], adjMap: Map<string, string[]>, paths: TracePath[]) {
+  function traceToTarget(
+    id: string,
+    target: string,
+    buffer: string[],
+    adjMap: Map<string, string[]>,
+    paths: TracePath[]
+  ) {
     if (buffer.indexOf(id) >= 0) return;
     buffer.push(id);
 
@@ -350,7 +363,9 @@ export function findPaths(source: string, target: string, edges: Edge[]) {
  * @returns A list of lists, where the inner lists are cycles in the graph
  */
 export function findCycles(edges: Edge[]) {
-  if (!edges || edges.length === 0) { return []; }
+  if (!edges || edges.length === 0) {
+    return [];
+  }
   const g = new Graph(edges);
   return g.findCycles();
 }
@@ -421,7 +436,7 @@ export function classifyCycles(cyclePaths: Vertex[][], graphEdges: Edge[]) {
   return {
     balancing: balancing,
     reinforcing: reinforcing,
-    ambiguous: ambiguous
+    ambiguous: ambiguous,
   };
 }
 
@@ -433,20 +448,26 @@ export function classifyCycles(cyclePaths: Vertex[][], graphEdges: Edge[]) {
 
 export const highlightOptions = {
   duration: 4000,
-  color: SELECTED_COLOR
+  color: SELECTED_COLOR,
 };
 
 export function calculateNeighborhood(graph: CAGGraph, node: string) {
-  const neighborEdges = graph.edges.filter(edge => {
-    return edge.target === node || edge.source === node;
-  }).map(edge => {
-    return { source: edge.source, target: edge.target, reference_ids: edge.reference_ids };
-  });
+  const neighborEdges = graph.edges
+    .filter((edge) => {
+      return edge.target === node || edge.source === node;
+    })
+    .map((edge) => {
+      return { source: edge.source, target: edge.target, reference_ids: edge.reference_ids };
+    });
 
   // Reverse-engineer nodes from edges
-  const neighborNodes = _.uniq(_.flatten(neighborEdges.map(edge => {
-    return [edge.source, edge.target];
-  })).concat(node)).map(concept => ({ concept })); // Include the selected node (added into .uniq)
+  const neighborNodes = _.uniq(
+    _.flatten(
+      neighborEdges.map((edge) => {
+        return [edge.source, edge.target];
+      })
+    ).concat(node)
+  ).map((concept) => ({ concept })); // Include the selected node (added into .uniq)
 
   return { nodes: neighborNodes, edges: neighborEdges };
 }
@@ -462,7 +483,7 @@ export function hasBackingEvidence(edge: EdgeParameter) {
   if (edge.polarity === STATEMENT_POLARITY.SAME) return sameCount > 0;
   else if (edge.polarity === STATEMENT_POLARITY.OPPOSITE) return oppositeCount > 0;
 
-  return (oppositeCount + sameCount + unknownCount) > 0;
+  return oppositeCount + sameCount + unknownCount > 0;
   /*
   if (edge.polarity === null || edge.polarity === STATEMENT_POLARITY.UNKNOWN) return edge.opposite === 0 && edge.same === 0 && edge.unknown === 0;
   if (edge.polarity === STATEMENT_POLARITY.SAME) return edge.same === 0;
@@ -471,8 +492,6 @@ export function hasBackingEvidence(edge: EdgeParameter) {
   */
 }
 
-
-
 export default {
-  calculateNeighborhood
+  calculateNeighborhood,
 };

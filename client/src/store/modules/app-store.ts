@@ -14,7 +14,7 @@ interface AppState {
   projectMetadata: any; // domain project or analysis project
   analysisName: string;
   datacubeCurrentOutputsMap: {}; // map for datacubes' currently selected features; each key is the datacube-id and the value is the selected output's index
-  applicationConfiguration: ApplicationConfiguration,
+  applicationConfiguration: ApplicationConfiguration;
 }
 
 const state: AppState = {
@@ -28,9 +28,8 @@ const state: AppState = {
   projectMetadata: {},
   analysisName: '',
   datacubeCurrentOutputsMap: {},
-  applicationConfiguration: DEFAULT_APPLICATION_CONFIGURATION
+  applicationConfiguration: DEFAULT_APPLICATION_CONFIGURATION,
 };
-
 
 const getters: GetterTree<AppState, any> = {
   projectType: (state, getters, rootState /*, rootGetters */) => {
@@ -55,19 +54,18 @@ const getters: GetterTree<AppState, any> = {
   nodeId: (state, getters, rootState) => {
     return rootState.route.params.nodeId || null;
   },
-  overlayActivated: state => state.overlayActivated,
-  overlayMessage: state => state.overlayMessage,
-  overlayMessageSecondary: state => state.overlayMessageSecondary,
-  overlayCancelFn: state => state.overlayCancelFn,
-  updateToken: state => state.updateToken,
-  ontologyConcepts: state => state.ontologyConcepts,
-  ontologySet: state => state.ontologySet,
-  projectMetadata: state => state.projectMetadata,
-  analysisName: state => state.analysisName,
-  datacubeCurrentOutputsMap: state => state.datacubeCurrentOutputsMap,
-  applicationConfiguration: state => state.applicationConfiguration
+  overlayActivated: (state) => state.overlayActivated,
+  overlayMessage: (state) => state.overlayMessage,
+  overlayMessageSecondary: (state) => state.overlayMessageSecondary,
+  overlayCancelFn: (state) => state.overlayCancelFn,
+  updateToken: (state) => state.updateToken,
+  ontologyConcepts: (state) => state.ontologyConcepts,
+  ontologySet: (state) => state.ontologySet,
+  projectMetadata: (state) => state.projectMetadata,
+  analysisName: (state) => state.analysisName,
+  datacubeCurrentOutputsMap: (state) => state.datacubeCurrentOutputsMap,
+  applicationConfiguration: (state) => state.applicationConfiguration,
 };
-
 
 type MsgCancel = {
   message: string;
@@ -110,9 +108,8 @@ const actions: ActionTree<AppState, any> = {
   },
   setApplicationConfiguration: ({ commit }, value) => {
     commit('setApplicationConfiguration', value);
-  }
+  },
 };
-
 
 const mutations: MutationTree<AppState> = {
   enableOverlay(state, message) {
@@ -135,7 +132,7 @@ const mutations: MutationTree<AppState> = {
   setOntologyConcepts(state, concepts: string[]) {
     state.ontologyConcepts = concepts;
 
-    const shortform = concepts.map(d => _.last(d.split('/')) || '');
+    const shortform = concepts.map((d) => _.last(d.split('/')) || '');
     state.ontologySet = new Set<string>(shortform);
   },
   setProjectMetadata(state, metadata) {
@@ -153,7 +150,7 @@ const mutations: MutationTree<AppState> = {
   },
   setApplicationConfiguration(state, value) {
     state.applicationConfiguration = value;
-  }
+  },
 };
 
 export default {
@@ -161,5 +158,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

@@ -17,7 +17,7 @@ export const getTimestampAfterMonths = (timestamp: number, monthsElapsed: number
 
 const addMonths = (month: number, year: number, monthsToAdd: number) => {
   const newMonth = (month + monthsToAdd) % 12;
-  const yearsToAdd = ((month + monthsToAdd) - newMonth) / 12;
+  const yearsToAdd = (month + monthsToAdd - newMonth) / 12;
   const newYear = year + yearsToAdd;
   return getTimestampMillis(newYear, newMonth);
 };

@@ -14,7 +14,7 @@ const queryUtil = new DatacubeQueryUtil();
 const _facetQuery = (filters, fields = []) => {
   const filterQuery = queryUtil.buildQuery(filters);
   const aggregations = {};
-  fields.forEach(field => {
+  fields.forEach((field) => {
     const fieldMeta = FIELDS[field];
     if (fieldMeta.type === FIELD_TYPES.NORMAL) {
       aggregations[field] = aggUtil.termsAggregation(field);
@@ -31,30 +31,30 @@ const _facetQuery = (filters, fields = []) => {
   const result = {
     size: 0,
     query: filterQuery.query,
-    aggs: aggregations
+    aggs: aggregations,
   };
   return result;
 };
 
 const _facetPostProcess = (fields, facets) => {
   const result = {};
-  fields.forEach(field => {
+  fields.forEach((field) => {
     const fieldMeta = FIELDS[field];
     if (fieldMeta.type === FIELD_TYPES.DATE || fieldMeta.type === FIELD_TYPES.DATE_MILLIS) {
       // handle custom result from date histogram aggregation
       const dateHistogramData = facets[field].buckets;
       const dateKeys = Object.keys(dateHistogramData);
-      result[field] = dateKeys.map(key => {
+      result[field] = dateKeys.map((key) => {
         return {
           key: key,
-          value: dateHistogramData[key].doc_count
+          value: dateHistogramData[key].doc_count,
         };
       });
     } else {
-      result[field] = facets[field].buckets.map(bucket => {
+      result[field] = facets[field].buckets.map((bucket) => {
         return {
           key: bucket.key,
-          value: bucket.doc_count
+          value: bucket.doc_count,
         };
       });
     }
@@ -73,7 +73,7 @@ const _keyFn = (doc) => {
 };
 
 class Datacube {
-  constructor (index) {
+  constructor(index) {
     if (_.isNil(index) || _.isEmpty(index)) {
       throw new Error('Index is empty or undefined');
     }
@@ -81,7 +81,7 @@ class Datacube {
     this.client = ES.client;
   }
 
-  async findOne (filters, options) {
+  async findOne(filters, options) {
     options.size = 1; // return only one
 
     const result = await this._search(filters, options);
@@ -89,26 +89,25 @@ class Datacube {
     return result.hits.hits[0]._source;
   }
 
-  async find (filters, options) {
+  async find(filters, options) {
     const result = await this._search(filters, options);
     if (_.isEmpty(result.hits.hits)) return [];
-    return result.hits.hits.map(d => d._source);
+    return result.hits.hits.map((d) => d._source);
   }
 
   /**
    * Count dtacubes
    * @param {object} filters - datacube related filters
    */
-  async count (filters) {
+  async count(filters) {
     const filterQuery = queryUtil.buildQuery(filters);
     const countQuery = {
       index: this.index,
-      body: filterQuery
+      body: filterQuery,
     };
     const result = await this.client.count(countQuery);
     return result.body.count;
   }
-
 
   /**
    * Returns datacube facets
@@ -119,7 +118,7 @@ class Datacube {
   async getFacets(filters, fieldNames) {
     // Sanity check, remove invalid fields
     const filteredFieldNames = [];
-    fieldNames.forEach(f => {
+    fieldNames.forEach((f) => {
       if (FIELDS[f] && FIELDS[f].level === FIELD_LEVELS.DATACUBE) {
         filteredFieldNames.push(f);
       }
@@ -132,7 +131,7 @@ class Datacube {
     const query = _facetQuery(filters, filteredFieldNames);
     const response = await this.client.search({
       index: this.index,
-      body: query
+      body: query,
     });
     const facets = response.body.aggregations;
 
@@ -156,8 +155,8 @@ class Datacube {
     const processedQuery = decodeURI(queryString)
       // .toLowerCase() TODO: case insensitive search works for concepts but not author
       .split(' ')
-      .filter(el => el !== '')
-      .map(el => `${el}*`)
+      .filter((el) => el !== '')
+      .map((el) => `${el}*`)
       .join(' ');
 
     const searchBodies = [];
@@ -171,23 +170,23 @@ class Datacube {
               query_string: {
                 fields: [field],
                 query: processedQuery,
-                default_operator: 'AND'
-              }
+                default_operator: 'AND',
+              },
             },
             aggs: {
               fieldAgg: {
                 terms: {
                   field: aggFieldNames[idx],
-                  size: MAX_ES_SUGGESTION_BUCKET_SIZE
-                }
-              }
-            }
-          }
-        })
+                  size: MAX_ES_SUGGESTION_BUCKET_SIZE,
+                },
+              },
+            },
+          },
+        }),
       });
     });
     const { body } = await this.client.msearch({
-      body: searchBodies
+      body: searchBodies,
     });
 
     const allResults = body.responses.reduce((acc, resp) => {
@@ -198,14 +197,14 @@ class Datacube {
     // Combine duplicate results by adding doc_count and sort in descending order
     const matchedTerms = _(allResults)
       .groupBy('key')
-      .map(items => {
+      .map((items) => {
         return {
           key: items[0].key,
-          count: items.reduce((acc, item) => acc + item.doc_count, 0)
+          count: items.reduce((acc, item) => acc + item.doc_count, 0),
         };
       })
       .sort((a, b) => b.count - a.count)
-      .map(item => item.key)
+      .map((item) => item.key)
       .value();
 
     return matchedTerms;
@@ -228,39 +227,42 @@ class Datacube {
         data_id_agg: {
           terms: {
             field: aggFieldName,
-            size: limit
+            size: limit,
           },
           aggs: {
             one_doc: {
               top_hits: {
                 size: 1,
-                _source: ['data_id', 'name', 'created_at', 'maintainer.organization']
-              }
-            }
-          }
-        }
-      }
+                _source: ['data_id', 'name', 'created_at', 'maintainer.organization'],
+              },
+            },
+          },
+        },
+      },
     };
 
     const { body } = await this.client.search({
       index: this.index,
-      body: query
+      body: query,
     });
 
     const aggBuckets = body.aggregations.data_id_agg.buckets;
 
     // Return just the fields we're interested in. Sorting is done on the client
     const datasets = aggBuckets
-      .map(item => {
+      .map((item) => {
         const doc = item.one_doc.hits.hits[0];
-        return !doc ? undefined : {
-          data_id: item.key,
-          indicator_count: item.doc_count,
-          name: doc._source.name,
-          created_at: doc._source.created_at,
-          source: _.get(doc, '_source.maintainer.organization')
-        };
-      }).filter(item => item); // filter out the undefined
+        return !doc
+          ? undefined
+          : {
+              data_id: item.key,
+              indicator_count: item.doc_count,
+              name: doc._source.name,
+              created_at: doc._source.created_at,
+              source: _.get(doc, '_source.maintainer.organization'),
+            };
+      })
+      .filter((item) => item); // filter out the undefined
 
     return datasets;
   }
@@ -273,15 +275,15 @@ class Datacube {
    * @private
    */
   _createNestedQuery(field, query) {
-    const nestedPath = _.find(Object.values(NESTED_FIELD_PATHS), path => field.startsWith(path));
+    const nestedPath = _.find(Object.values(NESTED_FIELD_PATHS), (path) => field.startsWith(path));
     if (nestedPath) {
       return {
         nestedAgg: {
           nested: {
-            path: nestedPath
+            path: nestedPath,
           },
-          aggs: query
-        }
+          aggs: query,
+        },
       };
     }
 
@@ -322,14 +324,14 @@ class Datacube {
     const filterQuery = queryUtil.buildQuery(filters);
     const searchPayload = {
       index: this.index,
-      body: filterQuery
+      body: filterQuery,
     };
     searchPayload.size = !_.isNil(options.size) ? +options.size : 50;
     searchPayload.from = !_.isNil(options.from) ? +options.from : 0;
 
     if (!_.isEmpty(options.sort)) {
       const sort = {};
-      Object.keys(options.sort).forEach(key => {
+      Object.keys(options.sort).forEach((key) => {
         const esField = FIELDS[key].fields[0];
         sort[esField] = options.sort[key];
       });
@@ -337,17 +339,16 @@ class Datacube {
     }
     if (options.excludes) {
       searchPayload.body._source = {
-        excludes: options.excludes
+        excludes: options.excludes,
       };
     } else if (options.includes) {
       searchPayload.body._source = {
-        includes: options.includes
+        includes: options.includes,
       };
     }
     const response = await this.client.search(searchPayload);
     return response.body;
   }
-
 
   /**
    * Bulk ES operation
@@ -357,7 +358,7 @@ class Datacube {
    */
   async _bulk(operationType, payloadArray, refreshOption) {
     const bulk = [];
-    payloadArray.forEach(doc => {
+    payloadArray.forEach((doc) => {
       bulk.push({ [operationType]: { _index: this.index, _id: _keyFn(doc) } });
       if (operationType === 'update') {
         bulk.push({ doc: doc });
@@ -371,7 +372,7 @@ class Datacube {
     try {
       const response = await this.client.bulk({
         refresh: refreshOption,
-        body: bulk
+        body: bulk,
       });
       const body = response.body;
       if (body.errors) {

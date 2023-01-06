@@ -5,7 +5,7 @@
       :key="button.value"
       :disabled="button.value === selectedButtonValue"
       v-tooltip.top-center="button.tooltip ?? button.label"
-      class="btn btn-sm "
+      class="btn btn-sm"
       :class="{ 'button-active': button.value === selectedButtonValue }"
       @click="emitButtonClicked(button.value)"
     >
@@ -33,20 +33,20 @@ export default defineComponent({
   props: {
     selectedButtonValue: {
       type: [String, Number, Boolean] as PropType<any>,
-      default: null
+      default: null,
     },
     buttons: {
       type: Array as PropType<RadioButtonSpec[]>,
-      default: []
-    }
+      default: [],
+    },
   },
   setup(props, { emit }) {
     return {
       emitButtonClicked: (value: any) => {
         emit('button-clicked', value);
-      }
+      },
     };
-  }
+  },
 });
 </script>
 
@@ -59,8 +59,8 @@ export default defineComponent({
 
 button.button-active,
 button.button-active:hover {
-  background: #CACBCC;
-  border-color: #CACBCC;
+  background: #cacbcc;
+  border-color: #cacbcc;
   opacity: 1;
   box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.26);
   cursor: default;

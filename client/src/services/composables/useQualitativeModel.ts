@@ -10,9 +10,11 @@ export default function useQualitativeModel() {
   const currentCAG = computed(() => store.getters['app/currentCAG']);
   // Any change to refreshToken will trigger a new round of fetches
   const refreshToken = ref(0);
-  const refreshModelData = () => { refreshToken.value = Date.now(); };
+  const refreshModelData = () => {
+    refreshToken.value = Date.now();
+  };
 
-  watchEffect(onInvalidate => {
+  watchEffect((onInvalidate) => {
     // Fetch model summary and components
     // We need to access refreshToken's value so that the effect is rerun when it changes
     //  So perform some check that will always evaluate to false
@@ -22,11 +24,11 @@ export default function useQualitativeModel() {
       isCancelled = true;
     });
 
-    modelService.getSummary(currentCAG.value).then(_modelSummary => {
+    modelService.getSummary(currentCAG.value).then((_modelSummary) => {
       if (isCancelled) return;
       modelSummary.value = _modelSummary;
     });
-    modelService.getComponents(currentCAG.value).then(_modelComponents => {
+    modelService.getComponents(currentCAG.value).then((_modelComponents) => {
       if (isCancelled) return;
       modelComponents.value = _modelComponents;
     });
@@ -36,6 +38,6 @@ export default function useQualitativeModel() {
     currentCAG,
     modelSummary,
     modelComponents,
-    refreshModelData
+    refreshModelData,
   };
 }

@@ -1,8 +1,4 @@
-import {
-  AnalysisItem,
-  CachedDatacubeMetadata,
-  DataAnalysisState
-} from '@/types/Analysis';
+import { AnalysisItem, CachedDatacubeMetadata, DataAnalysisState } from '@/types/Analysis';
 import _ from 'lodash';
 import { computed, Ref, ref, watch } from 'vue';
 import { getAnalysisState, saveAnalysisState } from '../analysis-service';
@@ -11,7 +7,7 @@ import { DataSpaceDataState } from '@/types/Insight';
 import {
   calculateResetRegionRankingWeights,
   createAnalysisObject,
-  didSelectedItemsChange
+  didSelectedItemsChange,
 } from '../analysis-service-new';
 import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
 import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
@@ -43,17 +39,14 @@ export function useDataAnalysis(analysisId: Ref<string>) {
   const updateAnalysisState = (partialState: Partial<DataAnalysisState>) => {
     const newState: DataAnalysisState = {
       ...analysisState.value,
-      ...partialState
+      ...partialState,
     };
     setAnalysisState(newState);
   };
 
   const analysisItems = computed(() => analysisState.value.analysisItems);
   const setAnalysisItems = (newItems: AnalysisItem[]) => {
-    const shouldResetWeights = didSelectedItemsChange(
-      analysisItems.value,
-      newItems
-    );
+    const shouldResetWeights = didSelectedItemsChange(analysisItems.value, newItems);
     updateAnalysisState({ analysisItems: newItems });
     // If the list of selected items has changed, reset region ranking weights
     if (shouldResetWeights) {
@@ -61,14 +54,10 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     }
   };
   const removeAnalysisItem = (itemId: string) => {
-    setAnalysisItems(
-      analysisItems.value.filter(item => item.itemId !== itemId)
-    );
+    setAnalysisItems(analysisItems.value.filter((item) => item.itemId !== itemId));
   };
   const duplicateAnalysisItem = (itemId: string) => {
-    const itemToDuplicate = analysisItems.value.find(
-      item => item.itemId === itemId
-    );
+    const itemToDuplicate = analysisItems.value.find((item) => item.itemId === itemId);
     if (itemToDuplicate !== undefined) {
       const duplicatedItem = _.cloneDeep(itemToDuplicate);
       duplicatedItem.itemId = uuidv4();
@@ -80,7 +69,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
   };
   const toggleAnalysisItemSelected = (itemId: string) => {
     const items = _.cloneDeep(analysisItems.value);
-    const itemToToggle = items.find(i => i.itemId === itemId);
+    const itemToToggle = items.find((i) => i.itemId === itemId);
     if (itemToToggle) {
       itemToToggle.selected = !itemToToggle.selected;
       setAnalysisItems(items);
@@ -88,22 +77,15 @@ export function useDataAnalysis(analysisId: Ref<string>) {
   };
   const setAnalysisItemViewConfig = (itemId: string, viewConfig: any) => {
     const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-    const analysisItem = updatedAnalysisItems.find(
-      item => item.itemId === itemId
-    );
+    const analysisItem = updatedAnalysisItems.find((item) => item.itemId === itemId);
     if (analysisItem) {
       analysisItem.viewConfig = viewConfig;
       setAnalysisItems(updatedAnalysisItems);
     }
   };
-  const setAnalysisItemDataState = (
-    itemId: string,
-    dataState: DataSpaceDataState
-  ) => {
+  const setAnalysisItemDataState = (itemId: string, dataState: DataSpaceDataState) => {
     const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-    const analysisItem = updatedAnalysisItems.find(
-      item => item.itemId === itemId
-    );
+    const analysisItem = updatedAnalysisItems.find((item) => item.itemId === itemId);
     if (analysisItem) {
       analysisItem.dataConfig = dataState;
       setAnalysisItems(updatedAnalysisItems);
@@ -114,32 +96,26 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     partialMetadata: Partial<CachedDatacubeMetadata>
   ) => {
     const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-    const analysisItem = updatedAnalysisItems.find(
-      item => item.itemId === itemId
-    );
+    const analysisItem = updatedAnalysisItems.find((item) => item.itemId === itemId);
     if (analysisItem) {
       const beforeChange = _.cloneDeep(analysisItem.cachedMetadata);
       analysisItem.cachedMetadata = {
         ...analysisItem.cachedMetadata,
-        ...partialMetadata
+        ...partialMetadata,
       };
       if (!_.isEqual(beforeChange, analysisItem.cachedMetadata)) {
         setAnalysisItems(updatedAnalysisItems);
       }
     }
   };
-  const selectedAnalysisItems = computed(() =>
-    analysisItems.value.filter(item => item.selected)
-  );
+  const selectedAnalysisItems = computed(() => analysisItems.value.filter((item) => item.selected));
 
   const activeTab = computed(() => analysisState.value.activeTab);
   const setActiveTab = (newTab: string) => {
     updateAnalysisState({ activeTab: newTab });
   };
 
-  const selectedAdminLevel = computed(
-    () => analysisState.value.selectedAdminLevel
-  );
+  const selectedAdminLevel = computed(() => analysisState.value.selectedAdminLevel);
   const setSelectedAdminLevel = (newAdminLevel: number) => {
     updateAnalysisState({ selectedAdminLevel: newAdminLevel });
   };
@@ -164,9 +140,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
   const regionRankingCompositionType = computed(
     () => analysisState.value.regionRankingCompositionType
   );
-  const setRegionRankingCompositionType = (
-    newType: RegionRankingCompositionType
-  ) => {
+  const setRegionRankingCompositionType = (newType: RegionRankingCompositionType) => {
     updateAnalysisState({ regionRankingCompositionType: newType });
   };
 
@@ -174,17 +148,13 @@ export function useDataAnalysis(analysisId: Ref<string>) {
   const setBarCountLimit = (newLimit: number) => {
     updateAnalysisState({ barCountLimit: newLimit });
   };
-  const isBarCountLimitApplied = computed(
-    () => analysisState.value.isBarCountLimitApplied
-  );
+  const isBarCountLimitApplied = computed(() => analysisState.value.isBarCountLimitApplied);
   const toggleIsBarCountLimitApplied = () => {
     const currentValue = isBarCountLimitApplied.value;
     updateAnalysisState({ isBarCountLimitApplied: !currentValue });
   };
 
-  const regionRankingItemStates = computed(
-    () => analysisState.value.regionRankingItemStates
-  );
+  const regionRankingItemStates = computed(() => analysisState.value.regionRankingItemStates);
   const resetRegionRankingWeights = () => {
     const newStates = calculateResetRegionRankingWeights(
       analysisItems.value,
@@ -192,9 +162,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     );
     updateAnalysisState({ regionRankingItemStates: newStates });
   };
-  const setRegionRankingWeights = (
-    newWeights: { itemId: string; weight: number }[]
-  ) => {
+  const setRegionRankingWeights = (newWeights: { itemId: string; weight: number }[]) => {
     const newStates = _.cloneDeep(regionRankingItemStates.value);
     newWeights.forEach(({ itemId, weight }) => {
       newStates[itemId].weight = weight;
@@ -207,9 +175,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     updateAnalysisState({ regionRankingItemStates: newStates });
   };
 
-  const highlightedRegionId = computed(
-    () => analysisState.value.highlightedRegionId
-  );
+  const highlightedRegionId = computed(() => analysisState.value.highlightedRegionId);
   const setHighlightedRegionId = (newRegionId: string) => {
     updateAnalysisState({ highlightedRegionId: newRegionId });
   };
@@ -246,6 +212,6 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     setRegionRankingWeights,
     highlightedRegionId,
     setHighlightedRegionId,
-    setAnalysisState
+    setAnalysisState,
   };
 }

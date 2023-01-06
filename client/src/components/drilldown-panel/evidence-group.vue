@@ -1,10 +1,6 @@
 <template>
-  <collapsible-item
-    :override="expandAll"
-    class="statements-container">
-    <template
-      #controls
-      class="button-column">
+  <collapsible-item :override="expandAll" class="statements-container">
+    <template #controls class="button-column">
       <i
         v-if="showCurationActions"
         class="fa fa-lg fa-fw"
@@ -22,33 +18,33 @@
       >
         <i class="fa fa-long-arrow-right fa-lg" />
       </small-icon-button>
-
     </template>
     <template #title>
       <div class="factor-title-group">
-        <div
-          v-tooltip.top="item.meta.subj.factor"
-          class="overflow-ellipsis">
-          <i
-            :class="polarityClass(item.meta.subj_polarity)"
-            class="polarity-factor"
-          />
-          <span :class="{ 'highlights': item.meta.subj_factor_highlight, '': !item.meta.subj_factor_highlight }"> {{ item.meta.subj.factor }} </span>
+        <div v-tooltip.top="item.meta.subj.factor" class="overflow-ellipsis">
+          <i :class="polarityClass(item.meta.subj_polarity)" class="polarity-factor" />
+          <span
+            :class="{
+              highlights: item.meta.subj_factor_highlight,
+              '': !item.meta.subj_factor_highlight,
+            }"
+          >
+            {{ item.meta.subj.factor }}
+          </span>
         </div>
-        <div
-          v-tooltip.top="item.meta.obj.factor"
-          class="overflow-ellipsis lower-row">
-          <i
-            :class="polarityClass(item.meta.obj_polarity)"
-            class="polarity-factor"
-          />
-          <span :class="{ 'highlights': item.meta.obj_factor_highlight, '': !item.meta.obj_factor_highlight }"> {{ item.meta.obj.factor }} </span>
+        <div v-tooltip.top="item.meta.obj.factor" class="overflow-ellipsis lower-row">
+          <i :class="polarityClass(item.meta.obj_polarity)" class="polarity-factor" />
+          <span
+            :class="{
+              highlights: item.meta.obj_factor_highlight,
+              '': !item.meta.obj_factor_highlight,
+            }"
+          >
+            {{ item.meta.obj.factor }}
+          </span>
         </div>
       </div>
-      <div
-        v-if="showCurationActions"
-        class="button-column right-margin"
-      >
+      <div v-if="showCurationActions" class="button-column right-margin">
         <small-icon-button
           v-tooltip.top="'Select a different cause concept'"
           :use-white-bg="true"
@@ -69,7 +65,11 @@
       </div>
       <small-icon-button
         class="right-margin"
-        v-if="showCurationActions && item.meta.state !== CURATION_STATES.VETTED && item.meta.polarity !== STATEMENT_POLARITY.UNKNOWN"
+        v-if="
+          showCurationActions &&
+          item.meta.state !== CURATION_STATES.VETTED &&
+          item.meta.polarity !== STATEMENT_POLARITY.UNKNOWN
+        "
         v-tooltip.top="'Vet evidence'"
         :use-white-bg="true"
         @click.stop="vet(item)"
@@ -78,7 +78,11 @@
       </small-icon-button>
 
       <small-icon-button
-        v-if="showCurationActions && item.meta.state === CURATION_STATES.VETTED && item.meta.polarity !== STATEMENT_POLARITY.UNKNOWN"
+        v-if="
+          showCurationActions &&
+          item.meta.state === CURATION_STATES.VETTED &&
+          item.meta.polarity !== STATEMENT_POLARITY.UNKNOWN
+        "
         v-tooltip.top="'Vetted evidence'"
         :use-white-bg="true"
         class="vetted right-margin"
@@ -97,9 +101,7 @@
       </small-icon-button>
     </template>
     <template #content>
-      <div
-        v-for="(statement, statIdx) of item.dataArray"
-        :key="statIdx">
+      <div v-for="(statement, statIdx) of item.dataArray" :key="statIdx">
         <evidence-item
           v-for="(evidence, sentIdx) of statement.evidence"
           :key="sentIdx"
@@ -126,38 +128,36 @@ export default defineComponent({
   components: {
     CollapsibleItem,
     EvidenceItem,
-    SmallIconButton
+    SmallIconButton,
   },
   props: {
     item: {
       type: Object as PropType<StatementGroup>,
-      default: () => ({})
+      default: () => ({}),
     },
     expandAll: {
       type: Object,
-      default: () => null
+      default: () => null,
     },
     activeItem: {
       type: Object,
-      default: () => null
+      default: () => null,
     },
     activeCorrection: {
       type: Number,
-      default: () => null
+      default: () => null,
     },
     showCurationActions: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
-  emits: [
-    'toggle', 'discard-statements', 'open-editor', 'vet', 'click-evidence'
-  ],
+  emits: ['toggle', 'discard-statements', 'open-editor', 'vet', 'click-evidence'],
   setup() {
     return {
       CORRECTION_TYPES,
       CURATION_STATES,
-      STATEMENT_POLARITY
+      STATEMENT_POLARITY,
     };
   },
   computed: {
@@ -169,7 +169,7 @@ export default defineComponent({
     },
     polarityCorrectionClass(): string {
       return this.hasActiveCorrection(this.item, CORRECTION_TYPES.POLARITY) ? 'active' : '';
-    }
+    },
   },
   methods: {
     // Proxied actions
@@ -198,11 +198,9 @@ export default defineComponent({
     },
     hasActiveCorrection(item: StatementGroup, correctionType: CORRECTION_TYPES) {
       return this.activeCorrection === correctionType && this.activeItem === item;
-    }
-  }
+    },
+  },
 });
-
-
 </script>
 
 <style lang="scss" scoped>
@@ -232,7 +230,7 @@ button.white-bg.vetted {
 .statements-container button.white-bg:disabled {
   // When not hovering over a row, or when a button is disabled,
   // remove its white rounded rectangle background and fade its colour
-  color: #D4D4D4;
+  color: #d4d4d4;
   background: none;
 }
 
@@ -254,7 +252,8 @@ button.polarity-correction {
   margin-right: 5px;
 }
 
-.factor-title-group, .button-column {
+.factor-title-group,
+.button-column {
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -276,7 +275,7 @@ button.polarity-correction {
 
 .highlights {
   font-weight: 800;
-  background-color: #B6D8FC;
+  background-color: #b6d8fc;
 }
 
 .right-margin {
@@ -286,6 +285,4 @@ button.polarity-correction {
     margin-right: 2px;
   }
 }
-
-
 </style>

@@ -30,32 +30,19 @@
         :layer="borderLayer"
         :before-id="firstSymbolLayerId"
       />
-      <wm-map-popup
-        :layer-id="colorLayerId"
-        :formatter-fn="popupFormatter"
-      :cursor="'default'"
-      />
+      <wm-map-popup :layer-id="colorLayerId" :formatter-fn="popupFormatter" :cursor="'default'" />
     </wm-map>
     <div v-if="data.length === 0" class="no-data">No data</div>
   </div>
 </template>
 
 <script>
-
 import _ from 'lodash';
-import {
-  defineComponent,
-  toRefs,
-  computed
-} from 'vue';
+import { defineComponent, toRefs, computed } from 'vue';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import useMapRegionSelection from '@/services/composables/useMapRegionSelection';
 import useMapSyncBounds from '@/services/composables/useMapSyncBounds';
-import {
-  BASE_MAP_OPTIONS,
-  ETHIOPIA_BOUNDING_BOX,
-  STYLE_URL_PREFIX
-} from '@/utils/map-util';
+import { BASE_MAP_OPTIONS, ETHIOPIA_BOUNDING_BOX, STYLE_URL_PREFIX } from '@/utils/map-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { BASE_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';
 
@@ -66,17 +53,21 @@ const colorLayer = () => {
       'fill-antialias': true,
       'fill-color': [
         'case',
-        ['==', null, ['feature-state', 'color']], 'rgba(0, 0, 0, 0)',
-        ['feature-state', 'color']
+        ['==', null, ['feature-state', 'color']],
+        'rgba(0, 0, 0, 0)',
+        ['feature-state', 'color'],
       ],
       'fill-opacity': [
         'case',
-        ['==', null, ['feature-state', 'label']], 0.0,
-        ['==', null, ['feature-state', 'opacity']], 1,
-        ['==', true, ['feature-state', '_isHidden']], 0.0,
-        ['feature-state', 'opacity']
-      ]
-    }
+        ['==', null, ['feature-state', 'label']],
+        0.0,
+        ['==', null, ['feature-state', 'opacity']],
+        1,
+        ['==', true, ['feature-state', '_isHidden']],
+        0.0,
+        ['feature-state', 'opacity'],
+      ],
+    },
   });
 };
 
@@ -86,60 +77,64 @@ const borderLayer = () => {
     paint: {
       'line-color': [
         'case',
-        ['==', null, ['feature-state', 'color']], 'rgba(0, 0, 0, 0)',
-        ['==', true, ['feature-state', 'hover']], SELECTED_COLOR,
-        ['==', true, ['feature-state', 'selected']], SELECTED_COLOR,
-        'black'
+        ['==', null, ['feature-state', 'color']],
+        'rgba(0, 0, 0, 0)',
+        ['==', true, ['feature-state', 'hover']],
+        SELECTED_COLOR,
+        ['==', true, ['feature-state', 'selected']],
+        SELECTED_COLOR,
+        'black',
       ],
       'line-width': [
         'case',
-        ['==', true, ['feature-state', 'selected']], 2,
-        ['==', true, ['feature-state', 'hover']], 1,
-        0.1
+        ['==', true, ['feature-state', 'selected']],
+        2,
+        ['==', true, ['feature-state', 'hover']],
+        1,
+        0.1,
       ],
-      'line-opacity': [
-        'case',
-        ['==', null, ['feature-state', 'label']], 0.0,
-        1
-      ]
-    }
+      'line-opacity': ['case', ['==', null, ['feature-state', 'label']], 0.0, 1],
+    },
   });
 };
 
 export default defineComponent({
   name: 'RegionMap',
-  emits: [
-    'click-region',
-    'sync-bounds'
-  ],
+  emits: ['click-region', 'sync-bounds'],
   components: {
     WmMap,
     WmMapVector,
-    WmMapPopup
+    WmMapPopup,
   },
   props: {
     data: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     selectedId: {
       type: String,
-      default: ''
+      default: '',
     },
     regionFilter: {
       type: Object,
-      default: () => ({ country: new Set(), admin1: new Set(), admin2: new Set(), admin3: new Set() })
+      default: () => ({
+        country: new Set(),
+        admin1: new Set(),
+        admin2: new Set(),
+        admin3: new Set(),
+      }),
     },
     selectedAdminLevel: {
       type: Number,
-      default: 0
+      default: 0,
     },
-    mapBounds: { // initial map bounds; default bounds to the bbox of the model country/countries
+    mapBounds: {
+      // initial map bounds; default bounds to the bbox of the model country/countries
       type: [Array, Object],
       default: () => [
         [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
-      ]
+        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
+      ],
     },
     popupFormatter: {
       type: Function,
@@ -147,47 +142,42 @@ export default defineComponent({
         const { label, name, value } = feature.state || {};
         if (!label) return null;
         return `${label.split('__').pop()}<br> Rank: ${name}<br> Value: ${+value.toFixed(2)}`;
-      }
+      },
     },
     disablePanZoom: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   setup(props, { emit }) {
-    const {
-      selectedAdminLevel,
-      regionFilter
-    } = toRefs(props);
+    const { selectedAdminLevel, regionFilter } = toRefs(props);
 
     const selectedLayerId = computed(() => SOURCE_LAYERS[selectedAdminLevel.value].layerId);
-    const {
-      isRegionSelectionEmpty,
-      isRegionSelected
-    } = useMapRegionSelection(selectedLayerId, regionFilter);
+    const { isRegionSelectionEmpty, isRegionSelected } = useMapRegionSelection(
+      selectedLayerId,
+      regionFilter
+    );
 
-    const {
-      syncBounds
-    } = useMapSyncBounds(emit);
+    const { syncBounds } = useMapSyncBounds(emit);
 
     const onMapMove = (event) => syncBounds(event);
 
     return {
       isRegionSelectionEmpty,
       isRegionSelected,
-      onMapMove
+      onMapMove,
     };
   },
   data: () => ({
     colorLayer: undefined,
     map: undefined,
-    hoverId: undefined
+    hoverId: undefined,
   }),
   computed: {
     mapFixedOptions() {
       const options = {
         minZoom: 1,
-        ...BASE_MAP_OPTIONS
+        ...BASE_MAP_OPTIONS,
       };
       options.style = this.selectedBaseLayerEndpoint;
       options.mapStyle = this.selectedBaseLayerEndpoint;
@@ -207,7 +197,7 @@ export default defineComponent({
     },
     vectorSource() {
       return `${window.location.protocol}/${window.location.host}/${this.selectedLayer.sourceBaseUrl}`;
-    }
+    },
   },
   watch: {
     data() {
@@ -218,7 +208,7 @@ export default defineComponent({
     },
     regionFilter() {
       this.setFeatureStates();
-    }
+    },
   },
   created() {
     this.vectorSourceId = 'maas-vector-source';
@@ -230,7 +220,7 @@ export default defineComponent({
     // Init layer objects
     this.colorLayer = colorLayer();
     this.borderLayer = borderLayer();
-    this.debouncedRefresh = _.debounce(function() {
+    this.debouncedRefresh = _.debounce(function () {
       this.refresh();
     }, 50);
   },
@@ -245,19 +235,22 @@ export default defineComponent({
       // Remove all states of the source.
       this.map.removeFeatureState({
         source: this.vectorSourceId,
-        sourceLayer: this.vectorSourceLayer
+        sourceLayer: this.vectorSourceLayer,
       });
 
       // enable the map feature state based on the region name
       for (const d of this.data) {
-        this.map.setFeatureState({
-          id: d.label,
-          source: this.vectorSourceId,
-          sourceLayer: this.vectorSourceLayer
-        }, {
-          ...d,
-          _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(d.label)
-        });
+        this.map.setFeatureState(
+          {
+            id: d.label,
+            source: this.vectorSourceId,
+            sourceLayer: this.vectorSourceLayer,
+          },
+          {
+            ...d,
+            _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(d.label),
+          }
+        );
       }
     },
     disablePanAndZoom() {
@@ -292,11 +285,16 @@ export default defineComponent({
 
       const hoverId = this.hoverId;
       if (hoverId) {
-        map.removeFeatureState({ source: this.vectorSourceId, id: hoverId, sourceLayer: this.vectorSourceLayer }, 'hover');
+        map.removeFeatureState(
+          { source: this.vectorSourceId, id: hoverId, sourceLayer: this.vectorSourceLayer },
+          'hover'
+        );
       }
 
-      const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: [this.colorLayerId] });
-      features.forEach(feature => {
+      const features = map.queryRenderedFeatures(mapboxEvent.point, {
+        layers: [this.colorLayerId],
+      });
+      features.forEach((feature) => {
         this.hoverId = feature.id;
         map.setFeatureState(
           { source: feature.source, id: feature.id, sourceLayer: this.vectorSourceLayer },
@@ -307,21 +305,33 @@ export default defineComponent({
     onMapClick(event) {
       const { map, mapboxEvent } = event;
       if (_.isNil(map.getLayer(this.colorLayerId))) return;
-      const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: [this.colorLayerId] });
+      const features = map.queryRenderedFeatures(mapboxEvent.point, {
+        layers: [this.colorLayerId],
+      });
       const regionId = features[0]?.state?.label || '';
       this.$emit('click-region', regionId);
     },
     updateSelection() {
       if (this.map) {
-        this.data.forEach(d => {
-          this.map.removeFeatureState({ source: this.vectorSourceId, id: d.label, sourceLayer: this.vectorSourceLayer }, 'selected');
+        this.data.forEach((d) => {
+          this.map.removeFeatureState(
+            { source: this.vectorSourceId, id: d.label, sourceLayer: this.vectorSourceLayer },
+            'selected'
+          );
         });
         if (this.selectedId) {
-          this.map.setFeatureState({ source: this.vectorSourceId, id: this.selectedId, sourceLayer: this.vectorSourceLayer }, { selected: true });
+          this.map.setFeatureState(
+            {
+              source: this.vectorSourceId,
+              id: this.selectedId,
+              sourceLayer: this.vectorSourceLayer,
+            },
+            { selected: true }
+          );
         }
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -333,7 +343,6 @@ export default defineComponent({
 }
 :deep(.mapboxgl-ctrl-attrib) {
   display: none;
-
 }
 
 .no-data {

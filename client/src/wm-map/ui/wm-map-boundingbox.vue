@@ -3,7 +3,6 @@
 </template>
 
 <script>
-
 import mapboxgl from 'maplibre-gl';
 import { eventEmitter } from '../mixins';
 
@@ -17,19 +16,21 @@ export default {
   props: {
     bbox: {
       type: Array, // of two points (top-left, and bottom-right) ordered as lng/lat
-      required: true
-    }
+      required: true,
+    },
   },
   computed: {
-    geoPoint1() { // e.g. [33.346337, 14.703160]
+    geoPoint1() {
+      // e.g. [33.346337, 14.703160]
       return this.bbox[0];
     },
-    geoPoint2() { // e.g. [47.850650, 3.443253]
+    geoPoint2() {
+      // e.g. [47.850650, 3.443253]
       return this.bbox[1];
-    }
+    },
   },
   data: () => ({
-    box: null
+    box: null,
   }),
   emits: ['select-box'],
   mounted() {
@@ -49,7 +50,7 @@ export default {
   watch: {
     bbox() {
       this.render();
-    }
+    },
   },
   methods: {
     project(d) {
@@ -74,7 +75,7 @@ export default {
       this.box.style.WebkitTransform = pos;
       this.box.style.width = pixelPoint2.x - pixelPoint1.x + 'px';
       this.box.style.height = pixelPoint2.y - pixelPoint1.y + 'px';
-    }
-  }
+    },
+  },
 };
 </script>

@@ -1,9 +1,5 @@
 <template>
-  <modal-confirmation
-    :autofocus-confirm="false"
-    @confirm="onConfirm"
-    @close="onCancel"
-  >
+  <modal-confirmation :autofocus-confirm="false" @confirm="onConfirm" @close="onCancel">
     <template #title>{{ modalTitle }}</template>
     <template #message>
       <input
@@ -14,7 +10,7 @@
         @focus="$event.target.select()"
         @input="newNameInput = $event.target.value"
         @keyup.enter="onConfirm"
-      >
+      />
     </template>
   </modal-confirmation>
 </template>
@@ -30,32 +26,32 @@ const regex = RegExp('^[A-Za-z0-9/_ ]+$');
 export default defineComponent({
   name: 'RenameModal',
   components: {
-    ModalConfirmation
+    ModalConfirmation,
   },
   props: {
     modalTitle: {
       type: String,
-      default: 'Rename Model'
+      default: 'Rename Model',
     },
     currentName: {
       type: String,
-      required: true
+      required: true,
     },
     restrictedNames: {
       type: Array as PropType<string[]>,
-      default: []
+      default: [],
     },
     restrictAlphanumeric: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['confirm', 'cancel', 'reject', 'reject-alphanumeric'],
   setup(props) {
     const newNameInput = ref(props.currentName);
 
     return {
-      newNameInput
+      newNameInput,
     };
   },
   methods: {
@@ -84,7 +80,7 @@ export default defineComponent({
     onCancel() {
       this.newNameInput = '';
       this.$emit('cancel');
-    }
-  }
+    },
+  },
 });
 </script>

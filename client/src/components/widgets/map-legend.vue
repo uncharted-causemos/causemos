@@ -2,18 +2,11 @@
   <div class="map-legend-container">
     <svg ref="colorRamp"></svg>
     <div class="label-container">
-      <span
-        v-if="ramp.length > 0"
-        class="color-label"
-      >
-        {{formatter(ramp[0].minLabel)}}
+      <span v-if="ramp.length > 0" class="color-label">
+        {{ formatter(ramp[0].minLabel) }}
       </span>
-      <span
-        v-for="bin in ramp"
-        :key="bin.color"
-        class="color-label"
-      >
-        {{formatter(bin.maxLabel)}}
+      <span v-for="bin in ramp" :key="bin.color" class="color-label">
+        {{ formatter(bin.maxLabel) }}
       </span>
     </div>
   </div>
@@ -31,12 +24,12 @@ export default defineComponent({
   props: {
     ramp: {
       type: Array as PropType<MapLegendColor[]>,
-      default: []
+      default: [],
     },
     isContinuous: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
   watch: {
     ramp() {
@@ -44,7 +37,7 @@ export default defineComponent({
     },
     isContinuous() {
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -53,7 +46,7 @@ export default defineComponent({
     refresh() {
       const n = this.ramp.length;
       if (n === 0) return;
-      const colors = this.ramp.map(d => d.color);
+      const colors = this.ramp.map((d) => d.color);
       const refSelection = d3.select((this.$refs as any).colorRamp);
       refSelection.selectAll('*').remove();
       refSelection
@@ -62,7 +55,8 @@ export default defineComponent({
         .style('display', 'block');
 
       if (this.isContinuous) {
-        refSelection.append('image')
+        refSelection
+          .append('image')
           .attr('width', '100%')
           .attr('height', '100%')
           .attr('preserveAspectRatio', 'none')
@@ -72,11 +66,12 @@ export default defineComponent({
         refSelection
           .selectAll('rect')
           .data(this.ramp)
-          .enter().append('rect')
-          .style('fill', d => d.color)
+          .enter()
+          .append('rect')
+          .style('fill', (d) => d.color)
           .attr('y', (d, i) => n - 1 - i + margin)
           .attr('width', 1)
-          .attr('height', 1 - (margin * 2));
+          .attr('height', 1 - margin * 2);
       }
     },
     formatter(value: number) {
@@ -85,10 +80,9 @@ export default defineComponent({
         return exponentFormatter(value);
       }
       return result;
-    }
-  }
+    },
+  },
 });
-
 </script>
 <style lang="scss" scoped>
 $font-size: 12px;
@@ -118,5 +112,4 @@ svg {
   background: white;
   padding: 2px 0;
 }
-
 </style>

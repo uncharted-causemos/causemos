@@ -1,7 +1,11 @@
-
 // Types related to model/indicator run outputs
 
-import { AdminLevel, TemporalResolutionOption, AggregationOption, DataTransform } from '@/types/Enums';
+import {
+  AdminLevel,
+  TemporalResolutionOption,
+  AggregationOption,
+  DataTransform,
+} from '@/types/Enums';
 import { AnalysisMapRange } from './Common';
 import { PreGeneratedModelRunData } from './ModelRun';
 
@@ -25,7 +29,7 @@ export interface BaseSpec {
   temporalResolution: string;
   temporalAggregation: string;
   spatialAggregation: string;
-  transform?: string
+  transform?: string;
 }
 
 /**
@@ -68,14 +72,14 @@ export interface OutputStatsResult {
 }
 export interface RegionAgg {
   id: string; // Region id
-  values: {[key: string]: number};
+  values: { [key: string]: number };
 }
 export type RegionalAggregation = {
   [key in AdminLevel]?: { id: string; value: number }[];
-}
+};
 export type RegionalAggregations = {
   [key in AdminLevel]?: RegionAgg[];
-}
+};
 
 export interface QualifierBreakdownResponse {
   name: string;
@@ -103,12 +107,12 @@ export interface RawOutputDataPoint {
 
 export interface RawOutputGeoJsonFeature {
   type: 'Feature';
-  geometry: { type: 'Point', coordinates: [number, number] }
-  properties: RawOutputDataPoint
+  geometry: { type: 'Point'; coordinates: [number, number] };
+  properties: RawOutputDataPoint;
 }
 export interface RawOutputGeoJson {
   type: 'FeatureCollection';
-  features: RawOutputGeoJsonFeature[]
+  features: RawOutputGeoJsonFeature[];
 }
 
 export interface FeatureConfig {
@@ -121,10 +125,10 @@ export interface FeatureConfig {
 }
 
 export interface BulkRegionalAggregationData {
-  all_agg: RegionalAggregation,
-  select_agg: RegionalAggregation,
+  all_agg: RegionalAggregation;
+  select_agg: RegionalAggregation;
   regional_data: {
-    data: RegionalAggregation,
-    timestamp: string
-  }[]
+    data: RegionalAggregation;
+    timestamp: string;
+  }[];
 }

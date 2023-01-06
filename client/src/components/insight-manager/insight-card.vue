@@ -2,19 +2,20 @@
   <Card class="insight" :class="{ 'card-mode': cardMode }">
     <div class="insight-content" @click="selectInsight()">
       <div class="insight-thumbnail">
-        <img-lazy
-          :src="`/api/insights/${props.insight.id}/thumbnail`"
-          class="thumbnail" />
+        <img-lazy :src="`/api/insights/${props.insight.id}/thumbnail`" class="thumbnail" />
       </div>
       <div
         v-if="showDescription"
-        :class="{ 'private-insight-title': insight.visibility === 'private' }">
-        <span>{{ insight.name }}</span> <span class="insight-description">{{ insight.description }}</span>
+        :class="{ 'private-insight-title': insight.visibility === 'private' }"
+      >
+        <span>{{ insight.name }}</span>
+        <span class="insight-description">{{ insight.description }}</span>
       </div>
       <div
         v-else
         class="insight-title"
-        :class="{ 'private-insight-title': insight.visibility === 'private' }">
+        :class="{ 'private-insight-title': insight.visibility === 'private' }"
+      >
         <h5>{{ insight.name }}</h5>
       </div>
       <div class="insight-footer">
@@ -32,10 +33,7 @@
         </div>
         <div class="insight-action" @click.stop="openEditor()">
           <i class="fa fa-ellipsis-h insight-header-btn" />
-          <dropdown-control
-            v-if="activeInsight === insight.id"
-            class="insight-editor-dropdown"
-          >
+          <dropdown-control v-if="activeInsight === insight.id" class="insight-editor-dropdown">
             <template #content>
               <div class="dropdown-option" @click="editInsight">
                 <i class="fa fa-edit" />
@@ -63,26 +61,32 @@ import ImgLazy from '../widgets/img-lazy.vue';
 const props = defineProps({
   activeInsight: {
     type: String,
-    default: ''
+    default: '',
   },
   insight: {
     type: Object,
-    default: null
+    default: null,
   },
   cardMode: {
     type: Boolean,
-    default: false
+    default: false,
   },
   curated: {
     type: Boolean,
-    default: false
+    default: false,
   },
   showDescription: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
-const emit = defineEmits(['remove-insight', 'edit-insight', 'open-editor', 'select-insight', 'update-curation']);
+const emit = defineEmits([
+  'remove-insight',
+  'edit-insight',
+  'open-editor',
+  'select-insight',
+  'update-curation',
+]);
 
 const editInsight = () => {
   emit('edit-insight');
@@ -153,7 +157,7 @@ const updateCuration = () => {
     .insight-thumbnail {
       .thumbnail {
         margin: auto;
-        width:  100%;
+        width: 100%;
         max-width: 700px;
       }
     }

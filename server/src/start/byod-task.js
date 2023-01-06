@@ -7,11 +7,11 @@ const { Adapter, RESOURCE } = rootRequire('adapters/es/adapter');
  * Periodically check for new documents loaded at projects' level
  */
 const startBYOD = (interval) => {
-  let lastTimeRecordsWereChecked = (new Date()).getTime();
+  let lastTimeRecordsWereChecked = new Date().getTime();
   const MAX_PROJECT_EXTENSION_COUNT = 999;
   setInterval(async () => {
     try {
-      const now = (new Date()).getTime();
+      const now = new Date().getTime();
       Logger.info('=== Fetching reader status records from DART. ===', lastTimeRecordsWereChecked);
       const result = await dartService.queryReadersStatus(lastTimeRecordsWereChecked);
       // Records successfully checked. Next time, only check for records since `now`.
@@ -24,18 +24,15 @@ const startBYOD = (interval) => {
       // Grab all documents from project-extension
       Logger.info('=== Fetching project extensions records. ===');
       const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
-      const extensions = await projectExtension.find(
-        {},
-        { size: MAX_PROJECT_EXTENSION_COUNT }
-      );
+      const extensions = await projectExtension.find({}, { size: MAX_PROJECT_EXTENSION_COUNT });
       Logger.info(`${extensions.length} extensions found.`);
       // Group reader records by project
       const assemblyRequests = {};
-      readerRecords.forEach(record => {
+      readerRecords.forEach((record) => {
         const { document_id: readerDocumentId } = record;
         // Look for project-extension document with matching ID
-        const matchingExtension = extensions.find(extension => {
-          const documentIds = extension.document.map(document => document.document_id);
+        const matchingExtension = extensions.find((extension) => {
+          const documentIds = extension.document.map((document) => document.document_id);
           return documentIds.includes(readerDocumentId);
         });
         if (matchingExtension === undefined) {
@@ -54,11 +51,11 @@ const startBYOD = (interval) => {
       });
 
       // For each project, add an entry to the `assembly-request` index
-      const assemblyRequestCalls = Object.keys(assemblyRequests).map(async projectId => {
+      const assemblyRequestCalls = Object.keys(assemblyRequests).map(async (projectId) => {
         return await projectService.addReaderOutput(
           projectId,
           assemblyRequests[projectId],
-          (new Date()).getTime()
+          new Date().getTime()
         );
       });
 

@@ -1,9 +1,8 @@
 <template>
-  <img ref="image" :src="imgSrc"/>
+  <img ref="image" :src="imgSrc" />
 </template>
 
 <script setup lang="ts">
-
 import { defineProps, onMounted, watch, ref } from 'vue';
 import useVisibleElementDetector from '@/services/composables/useVisibleElementDetector';
 
@@ -20,6 +19,8 @@ const initDetector = () => {
 };
 
 onMounted(() => initDetector());
-watch(() => props.src, () => initDetector());
-
+watch(
+  () => props.src,
+  () => initDetector()
+);
 </script>

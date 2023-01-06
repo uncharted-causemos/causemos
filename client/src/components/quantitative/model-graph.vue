@@ -4,14 +4,10 @@
     @search="search"
     @search-candidates="showSearchCandidates"
   />
-  <div
-    ref="container"
-    class="model-graph-container"
-  />
+  <div ref="container" class="model-graph-container" />
 </template>
 
 <script lang="ts">
-
 import _ from 'lodash';
 import { defineComponent, ref, Ref, PropType, computed } from 'vue';
 import { useStore } from 'vuex';
@@ -26,31 +22,36 @@ import { NodeParameter, EdgeParameter, CAGModelSummary, CAGVisualState } from '@
 export default defineComponent({
   name: 'ModelGraph',
   components: {
-    GraphSearch
+    GraphSearch,
   },
   props: {
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
-      required: true
+      required: true,
     },
     data: {
       type: Object,
-      default: () => ({})
+      default: () => ({}),
     },
     scenarioData: {
       type: Object,
-      required: true
+      required: true,
     },
     visualState: {
       type: Object as PropType<CAGVisualState>,
       default: () => ({
         outline: { nodes: [], edges: [] },
-        focus: { nodes: [], edges: [] }
-      })
-    }
+        focus: { nodes: [], edges: [] },
+      }),
+    },
   },
   emits: [
-    'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-sensitivity', 'node-drilldown'
+    'node-body-click',
+    'node-header-click',
+    'edge-click',
+    'background-click',
+    'node-sensitivity',
+    'node-drilldown',
   ],
   setup(props) {
     const store = useStore();
@@ -65,7 +66,7 @@ export default defineComponent({
       ontologyFormatter: useOntologyFormatter(),
 
       selectedScenarioId,
-      scenarioProxy
+      scenarioProxy,
     };
   },
   watch: {
@@ -75,14 +76,14 @@ export default defineComponent({
     scenarioProxy() {
       // sanity check
       const nodeScenarios = Object.values(this.scenarioData)[0].scenarios;
-      if (!_.some(nodeScenarios, d => d.id === this.selectedScenarioId)) return;
+      if (!_.some(nodeScenarios, (d) => d.id === this.selectedScenarioId)) return;
       if (this.renderer) {
         this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
       }
     },
     visualState() {
       this.applyVisualState();
-    }
+    },
   },
   mounted() {
     const containerEl = this.$refs.container;
@@ -93,25 +94,45 @@ export default defineComponent({
       useStableZoomPan: true,
       runLayout: (graphData: IGraph<NodeParameter, EdgeParameter>) => {
         return runELKLayout(graphData, { width: 160, height: 80 });
-      }
+      },
     });
     this.renderer.setLabelFormatter(this.ontologyFormatter);
 
-    this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter> /*, renderer: QuantitativeRenderer */) => {
-      this.$emit('node-sensitivity', nodeSelection.datum().data);
-    });
-    this.renderer.on('node-dbl-click', (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
-      this.$emit('node-drilldown', nodeSelection.datum().data);
-    });
+    this.renderer.on(
+      'node-click',
+      (
+        _evtName,
+        _event: PointerEvent,
+        nodeSelection: D3SelectionINode<NodeParameter> /*, renderer: QuantitativeRenderer */
+      ) => {
+        this.$emit('node-sensitivity', nodeSelection.datum().data);
+      }
+    );
+    this.renderer.on(
+      'node-dbl-click',
+      (_evtName, _event: PointerEvent, nodeSelection: D3SelectionINode<NodeParameter>) => {
+        this.$emit('node-drilldown', nodeSelection.datum().data);
+      }
+    );
 
-    this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection: D3SelectionIEdge<EdgeParameter> /*, renderer: QuantitativeRenderer */) => {
-      this.$emit('edge-click', edgeSelection.datum().data);
-    });
+    this.renderer.on(
+      'edge-click',
+      (
+        _evtName,
+        event: PointerEvent,
+        edgeSelection: D3SelectionIEdge<EdgeParameter> /*, renderer: QuantitativeRenderer */
+      ) => {
+        this.$emit('edge-click', edgeSelection.datum().data);
+      }
+    );
 
-    this.renderer.on('background-click', (_evtName, _event: PointerEvent, _svgSelection, renderer: QuantitativeRenderer) => {
-      renderer.resetAnnotations();
-      this.$emit('background-click');
-    });
+    this.renderer.on(
+      'background-click',
+      (_evtName, _event: PointerEvent, _svgSelection, renderer: QuantitativeRenderer) => {
+        renderer.resetAnnotations();
+        this.$emit('background-click');
+      }
+    );
 
     this.refresh();
   },
@@ -146,14 +167,13 @@ export default defineComponent({
         this.renderer.hideSearchCandidates();
         this.renderer.showSearchCandidates(candidates);
       }
-    }
-  }
+    },
+  },
 });
-
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .model-graph-container {
   width: 100%;

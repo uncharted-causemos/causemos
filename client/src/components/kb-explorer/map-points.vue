@@ -23,7 +23,6 @@
 </template>
 
 <script>
-
 import _ from 'lodash';
 
 import { WmMap, WmMapPopup, WmMapSelectbox, WmMapGeojson } from '@/wm-map';
@@ -42,15 +41,15 @@ const createPointLayerStyle = () => {
       'circle-color': ['get', 'color'],
       'circle-stroke-color': ['get', 'color'],
       'circle-opacity': 0.6,
-      'circle-stroke-width': 1
+      'circle-stroke-width': 1,
     },
-    filter: ['all'] // no filter
+    filter: ['all'], // no filter
   };
 };
 
 const EMPTY_GEOJSON = Object.freeze({
   type: 'FeatureCollection',
-  features: []
+  features: [],
 });
 
 export default {
@@ -59,43 +58,46 @@ export default {
     WmMap,
     WmMapPopup,
     WmMapSelectbox,
-    WmMapGeojson
+    WmMapGeojson,
   },
   props: {
     mapData: {
       type: Object,
-      default: () => null
+      default: () => null,
     },
     mapBounds: {
       type: Array,
-      default: () => ([[-180, -90], [180, 90]])
+      default: () => [
+        [-180, -90],
+        [180, 90],
+      ],
     },
     /**
      * layer related props
      */
     layerId: {
       type: String,
-      default: 'point-layer'
+      default: 'point-layer',
     },
     layerSourceId: {
       type: String,
-      default: 'point-data'
+      default: 'point-data',
     },
     /**
      * tooltip related props
      */
     showTooltip: {
       type: Boolean,
-      default: false
+      default: false,
     },
     formatterFn: {
       type: Function,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: ['select-location'],
   data: () => ({
-    pointLayer: null
+    pointLayer: null,
   }),
   computed: {
     isMapDataEmpty() {
@@ -103,7 +105,7 @@ export default {
     },
     mapGeoJson() {
       return this.isMapDataEmpty ? EMPTY_GEOJSON : this.mapData;
-    }
+    },
   },
   created() {
     this.baseMapOptions = BASE_MAP_OPTIONS;
@@ -118,17 +120,18 @@ export default {
     },
     onClick(event) {
       const { map, mapboxEvent } = event;
-      if (!mapboxEvent.originalEvent.shiftKey) { // ignore select box related clicks
+      if (!mapboxEvent.originalEvent.shiftKey) {
+        // ignore select box related clicks
         const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: [this.layerId] });
-        const selectedLocations = features.map(feature => feature.properties.name);
+        const selectedLocations = features.map((feature) => feature.properties.name);
         this.$emit('select-location', selectedLocations);
       }
     },
     onSelectBox(event) {
       const { bbox, map } = event;
-      const lngLatBbox = bbox.map(point => map.unproject(point));
+      const lngLatBbox = bbox.map((point) => map.unproject(point));
       // bbox in context of the current map
-      const bboxCoords = lngLatBbox.map(coords => map.project(coords));
+      const bboxCoords = lngLatBbox.map((coords) => map.project(coords));
       const features = map.queryRenderedFeatures(bboxCoords, { layers: [this.layerId] });
       const selectedLocations = features.reduce((map, feature) => {
         map.push(feature.properties.name);
@@ -136,7 +139,7 @@ export default {
       }, []);
 
       this.$emit('select-location', selectedLocations);
-    }
-  }
+    },
+  },
 };
 </script>

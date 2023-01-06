@@ -1,24 +1,18 @@
 <template>
   <div class="prefect-logs-modal-container">
-    <full-screen-modal-header
-      icon="angle-left"
-      nav-back-label="Exit Logs"
-      @close="closeModal"
-    >
+    <full-screen-modal-header icon="angle-left" nav-back-label="Exit Logs" @close="closeModal">
     </full-screen-modal-header>
 
     <div>
       <div>
-        <h3 style="text-align: center">Status: {{flowLogs.state}}
-          | Start Time: {{flowLogs.start_time.toLocaleString()}}
-          | End Time: {{flowLogs.end_time?.toLocaleString()}}
-          | Agent ID: {{flowLogs.agent.id.toLocaleString()}}
+        <h3 style="text-align: center">
+          Status: {{ flowLogs.state }} | Start Time: {{ flowLogs.start_time.toLocaleString() }} |
+          End Time: {{ flowLogs.end_time?.toLocaleString() }} | Agent ID:
+          {{ flowLogs.agent.id.toLocaleString() }}
         </h3>
         <ul style="list-style-type: none">
-          <li
-            v-for="{timestamp, message} in flowLogs.logs"
-            :key="timestamp">
-            <span style="font-size: small">{{timestamp.toLocaleString()}}</span>
+          <li v-for="{ timestamp, message } in flowLogs.logs" :key="timestamp">
+            <span style="font-size: small">{{ timestamp.toLocaleString() }}</span>
             <multiline-description :text="message" />
           </li>
         </ul>
@@ -34,16 +28,21 @@ import { /* ref, watch, toRefs, Ref, */ defineComponent } from 'vue';
 import { FlowLogs } from '@/types/Common';
 import { fetchFlowLogs } from '@/services/new-datacube-service';
 
-const DEFAULT_LOGS: FlowLogs = { state: '', start_time: new Date(), logs: [], agent: { id: '', labels: [] } };
+const DEFAULT_LOGS: FlowLogs = {
+  state: '',
+  start_time: new Date(),
+  logs: [],
+  agent: { id: '', labels: [] },
+};
 export default defineComponent({
   name: 'PrefectFlowLogs',
   components: {
     FullScreenModalHeader,
-    MultilineDescription
+    MultilineDescription,
   },
   data: () => ({
     flowId: '',
-    flowLogs: DEFAULT_LOGS
+    flowLogs: DEFAULT_LOGS,
   }),
   watch: {
     $route: {
@@ -53,8 +52,8 @@ export default defineComponent({
           this.fetchInfo(this.flowId);
         }
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   methods: {
     closeModal() {
@@ -63,20 +62,17 @@ export default defineComponent({
     async fetchInfo(flowId: string) {
       const logs = await fetchFlowLogs(flowId);
       this.flowLogs = logs || DEFAULT_LOGS;
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .prefect-logs-modal-container {
-
 }
 
 .body {
-
 }
-
 </style>

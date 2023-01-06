@@ -1,19 +1,10 @@
 <template>
-  <div
-    class="evidence-item-container"
-    @click="onClick(evidence)"
-  >
-    <evidence-highlights
-      :evidence="evidence"
-      :resource-type="resourceType"
-    />
+  <div class="evidence-item-container" @click="onClick(evidence)">
+    <evidence-highlights :evidence="evidence" :resource-type="resourceType" />
     <div class="evidence-item-metadata">
       <span>{{ metadataDisplayString }}</span>
-      <small-icon-button
-        v-tooltip.top="'Open source document'"
-      >
-        <i class="fa fa-fw fa-lg"
-           :class="fileIcon" />
+      <small-icon-button v-tooltip.top="'Open source document'">
+        <i class="fa fa-fw fa-lg" :class="fileIcon" />
       </small-icon-button>
     </div>
   </div>
@@ -30,21 +21,19 @@ export default defineComponent({
   name: 'EvidenceItem',
   components: {
     EvidenceHighlights,
-    SmallIconButton
+    SmallIconButton,
   },
   props: {
     evidence: {
       type: Object as PropType<Evidence>,
-      default: () => ({})
+      default: () => ({}),
     },
     resourceType: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
-  emits: [
-    'click-evidence'
-  ],
+  emits: ['click-evidence'],
   computed: {
     metadataDisplayString(): string {
       return evidenceMetadataUtil.constructDisplayString(this.evidence);
@@ -55,21 +44,20 @@ export default defineComponent({
         return 'fa-file-pdf-o';
       }
       return 'fa-file-text-o';
-    }
+    },
   },
   methods: {
     onClick(evidence: Evidence) {
       this.$emit('click-evidence', evidence);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-
 .evidence-item-container {
   background: #fff;
-  color: #5A5A5A;
+  color: #5a5a5a;
   cursor: pointer;
   padding: 4px 8px;
   border-bottom: 1px solid #e5e5e5;
@@ -97,5 +85,4 @@ export default defineComponent({
     margin-left: 8px;
   }
 }
-
 </style>

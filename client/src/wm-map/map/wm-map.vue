@@ -1,8 +1,5 @@
 <template>
-  <div
-    ref="wmmap"
-    class="wm-map"
-  >
+  <div ref="wmmap" class="wm-map">
     <slot v-if="ready" />
     <resize-observer @notify="handleResize" />
   </div>
@@ -27,16 +24,15 @@ const MAPBOX_EVENTS = [
   'render',
   'sourcedata',
   'styledata',
-  'resize'
+  'resize',
   // More events can be added in the future
 ];
 
 const RESIZE_DELAY = 50;
 
 const getFitBoundsParams = (bounds) => {
-  const params = (bounds?.value && bounds?.options)
-    ? [bounds.value, bounds.options]
-    : [bounds, { duration: 0 }];
+  const params =
+    bounds?.value && bounds?.options ? [bounds.value, bounds.options] : [bounds, { duration: 0 }];
   return params;
 };
 
@@ -44,12 +40,10 @@ export default {
   name: 'WmMap',
   mixins: [eventEmitter],
   props: { ...options },
-  emits: [
-    ...MAPBOX_EVENTS
-  ],
+  emits: [...MAPBOX_EVENTS],
   data: () => ({
     ready: false,
-    handleResize: () => null
+    handleResize: () => null,
   }),
   watch: {
     center(value, oldValue) {
@@ -78,7 +72,7 @@ export default {
     },
     mapStyle(value) {
       this.map.setStyle(value);
-    }
+    },
   },
   created() {
     this.map = null;
@@ -104,7 +98,7 @@ export default {
       this.map = new mapboxgl.Map({
         container: this.$refs.wmmap,
         style,
-        ...options
+        ...options,
       });
       this.bindMapEvents();
       this.map.on('load', () => {
@@ -130,21 +124,20 @@ export default {
       this.cameraMoveEnabled = false;
     },
     bindMapEvents() {
-      MAPBOX_EVENTS.forEach(eventName => {
+      MAPBOX_EVENTS.forEach((eventName) => {
         this.map.on(eventName, this.$_emitMapEvent);
       });
     },
     unbindEvents() {
-      MAPBOX_EVENTS.forEach(eventName => {
+      MAPBOX_EVENTS.forEach((eventName) => {
         this.map.off(eventName, this.$_emitMapEvent);
       });
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-
 .wm-map {
   height: 100%;
   position: relative;
@@ -152,7 +145,7 @@ export default {
   :deep(.mapboxgl-popup-content) {
     background: black;
     border-color: black;
-    color: #FFFFFF;
+    color: #ffffff;
   }
   :deep(.mapboxgl-popup-tip) {
     border-top-color: black;

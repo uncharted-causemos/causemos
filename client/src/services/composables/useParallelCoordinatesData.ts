@@ -21,12 +21,17 @@ export default function useParallelCoordinatesData(
   const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
   const runParameterValues = computed(() => {
-    if (modelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {
+    if (
+      modelRunData.value.length === 0 ||
+      metadata.value === null ||
+      currentOutputIndex.value === undefined
+    ) {
       return [];
     }
     const outputs = getOutputs(metadata.value);
-    const outputParameterName = outputs[currentOutputIndex.value].name ?? 'Undefined output parameter';
-    return modelRunData.value.map(modelRun => {
+    const outputParameterName =
+      outputs[currentOutputIndex.value].name ?? 'Undefined output parameter';
+    return modelRunData.value.map((modelRun) => {
       const run_id = modelRun.id;
       const runStatus = modelRun.status;
       const created_at = modelRun.created_at;
@@ -37,15 +42,20 @@ export default function useParallelCoordinatesData(
         is_default_run,
         run_id,
         flow_id,
-        status: runStatus ?? ModelRunStatus.Ready
+        status: runStatus ?? ModelRunStatus.Ready,
       };
       if (run.status === ModelRunStatus.Ready) {
         const aggKey = getAggregationKey(
-          spatialAggregation.value === AggregationOption.None ? AggregationOption.Mean
+          spatialAggregation.value === AggregationOption.None
+            ? AggregationOption.Mean
             : spatialAggregation.value,
-          temporalAggregation.value === AggregationOption.None ? AggregationOption.Mean
-            : temporalAggregation.value);
-        const outputValue = modelRun.output_agg_values.find(val => val.name === outputParameterName);
+          temporalAggregation.value === AggregationOption.None
+            ? AggregationOption.Mean
+            : temporalAggregation.value
+        );
+        const outputValue = modelRun.output_agg_values.find(
+          (val) => val.name === outputParameterName
+        );
         if (outputValue && outputValue[aggKey]) {
           run[outputParameterName] = outputValue[aggKey];
         } else {
@@ -63,6 +73,6 @@ export default function useParallelCoordinatesData(
   });
 
   return {
-    runParameterValues
+    runParameterValues,
   };
 }

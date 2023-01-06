@@ -6,7 +6,11 @@
     <template #body v-if="updatedParameter">
       <label>
         <b>Parameter:</b>
-        {{updatedParameter.display_name !== '' ? updatedParameter.display_name : updatedParameter.name}}
+        {{
+          updatedParameter.display_name !== ''
+            ? updatedParameter.display_name
+            : updatedParameter.name
+        }}
       </label>
       <!-- date or date-range -->
       <div v-if="isDateParam || isDateRangeParam" class="param-choices-container">
@@ -15,32 +19,43 @@
         </label>
         <div v-if="isDateRangeParam" class="date-option-container">
           <label>Date range delimiter</label>
-          <input
-            v-model="updatedParameter.additional_options.date_range_delimiter"
-            type="text"
-          >
+          <input v-model="updatedParameter.additional_options.date_range_delimiter" type="text" />
         </div>
         <div class="date-option-container">
           <label>Minimum date:</label>
           <div ref="dateMinPickerElement" class="new-runs-date-picker-container">
-            <input class="date-picker-input" placeholder="Select date.." type="text" v-model="updatedParameter.additional_options.date_min" autocomplete="off" data-input />
+            <input
+              class="date-picker-input"
+              placeholder="Select date.."
+              type="text"
+              v-model="updatedParameter.additional_options.date_min"
+              autocomplete="off"
+              data-input
+            />
             <a class="btn date-picker-buttons" title="toggle" data-toggle>
-                <i class="fa fa-calendar"></i>
+              <i class="fa fa-calendar"></i>
             </a>
             <a class="btn date-picker-buttons" title="clear" data-clear>
-                <i class="fa fa-close"></i>
+              <i class="fa fa-close"></i>
             </a>
           </div>
         </div>
         <div class="date-option-container">
           <label>Maximum date:</label>
           <div ref="dateMaxPickerElement" class="new-runs-date-picker-container">
-            <input class="date-picker-input" placeholder="Select date.." type="text" v-model="updatedParameter.additional_options.date_max" autocomplete="off" data-input />
+            <input
+              class="date-picker-input"
+              placeholder="Select date.."
+              type="text"
+              v-model="updatedParameter.additional_options.date_max"
+              autocomplete="off"
+              data-input
+            />
             <a class="btn date-picker-buttons" title="toggle" data-toggle>
-                <i class="fa fa-calendar"></i>
+              <i class="fa fa-calendar"></i>
             </a>
             <a class="btn date-picker-buttons" title="clear" data-clear>
-                <i class="fa fa-close"></i>
+              <i class="fa fa-close"></i>
             </a>
           </div>
         </div>
@@ -50,28 +65,34 @@
         <label>
           <b>Geo Options:</b>
         </label>
-        <div class="date-option-container" style="display: flex; flex-direction: column; align-items: baseline">
+        <div
+          class="date-option-container"
+          style="display: flex; flex-direction: column; align-items: baseline"
+        >
           <label>Acceptable admin levels:</label>
           <div>
             <div class="checkbox" v-for="level in allGeoLevels" :key="level">
               <label
                 @click="updateAcceptableGeoLevels(level)"
-                style="cursor: pointer; color: black;">
+                style="cursor: pointer; color: black"
+              >
                 <i
                   class="fa fa-lg fa-fw"
-                  :class="{ 'fa-check-square-o': updatedParameter.additional_options.geo_acceptable_levels.includes(level), 'fa-square-o': !updatedParameter.additional_options.geo_acceptable_levels.includes(level) }"
+                  :class="{
+                    'fa-check-square-o':
+                      updatedParameter.additional_options.geo_acceptable_levels.includes(level),
+                    'fa-square-o':
+                      !updatedParameter.additional_options.geo_acceptable_levels.includes(level),
+                  }"
                 />
-                {{level}}
+                {{ level }}
               </label>
             </div>
           </div>
         </div>
         <div class="date-option-container">
           <label>Default value label</label>
-          <input
-            v-model="updatedParameter.additional_options.default_value_label"
-            type="text"
-          >
+          <input v-model="updatedParameter.additional_options.default_value_label" type="text" />
         </div>
         <div class="date-option-container">
           <label>Region format:</label>
@@ -81,62 +102,80 @@
             @item-selected="updateAcceptableGeoFormat"
           />
         </div>
-        <div v-if="updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.GADM_Code" class="date-option-container checkbox">
-          <label
-            @click="toggleOmitGADMCodeVersion()"
-            style="cursor: pointer; color: black;">
+        <div
+          v-if="
+            updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.GADM_Code
+          "
+          class="date-option-container checkbox"
+        >
+          <label @click="toggleOmitGADMCodeVersion()" style="cursor: pointer; color: black">
             <i
               class="fa fa-lg fa-fw"
-              :class="{ 'fa-check-square-o': updatedParameter.additional_options.geo_omit_gadm_code_version, 'fa-square-o': !updatedParameter.additional_options.geo_omit_gadm_code_version }"
+              :class="{
+                'fa-check-square-o': updatedParameter.additional_options.geo_omit_gadm_code_version,
+                'fa-square-o': !updatedParameter.additional_options.geo_omit_gadm_code_version,
+              }"
             />
             Omit GADM code version
           </label>
         </div>
-        <div v-if="updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.Bounding_Box" class="date-option-container">
+        <div
+          v-if="
+            updatedParameter.additional_options.geo_region_format ===
+            GeoAttributeFormat.Bounding_Box
+          "
+          class="date-option-container"
+        >
           <label>Bounding box format</label>
           <input
             v-model="updatedParameter.additional_options.geo_bbox_format"
-            :style="{ width: (updatedParameter.additional_options.geo_bbox_format.length * 0.75) + 'ch' }"
+            :style="{
+              width: updatedParameter.additional_options.geo_bbox_format.length * 0.75 + 'ch',
+            }"
             type="text"
-          >
+          />
           <button
             type="button"
             class="btn"
             style="margin-left: 2px; padding: 2px 4px"
-            @click.stop="resetBBoxFormat()">
-              Reset
+            @click.stop="resetBBoxFormat()"
+          >
+            Reset
           </button>
         </div>
         <div class="date-option-container">
-          <label style="font-style: italic; margin-left: 1rem;">example</label>
-          <label style="font-style: italic">{{geoFormatExample}}</label>
+          <label style="font-style: italic; margin-left: 1rem">example</label>
+          <label style="font-style: italic">{{ geoFormatExample }}</label>
         </div>
       </div>
       <!-- choices -->
-      <div style="padding: 2rem;">
+      <div style="padding: 2rem">
         <label><b>Data value/Label choices:</b></label>
         <br />
         Value:
-        <input
-          type="text"
-          :value="newChoiceInput"
-          @input="newChoiceInput = $event.target.value"
-        >
+        <input type="text" :value="newChoiceInput" @input="newChoiceInput = $event.target.value" />
         Label:
         <input
           type="text"
           :value="newChoiceLabelInput"
           @input="newChoiceLabelInput = $event.target.value"
-        >
+        />
         <button
           type="button"
           class="btn first-button"
-          style="padding: 0; margin-left: 4px;"
-          @click.stop="updatedParameter.choices.push(newChoiceInput); updatedParameter.choices_labels.push(newChoiceLabelInput)">
-            Add
+          style="padding: 0; margin-left: 4px"
+          @click.stop="
+            updatedParameter.choices.push(newChoiceInput);
+            updatedParameter.choices_labels.push(newChoiceLabelInput);
+          "
+        >
+          Add
         </button>
       </div>
-      <div v-if="updatedParameter.choices && updatedParameter.choices.length > 0" class="param-choices-container">
+      <div
+        v-if="updatedParameter.choices && updatedParameter.choices.length > 0"
+        class="param-choices-container"
+      >
         <div>
           <label style="width: 50%"><b>Value(s)</b></label>
           <label><b>Label(s)</b></label>
@@ -144,29 +183,23 @@
         <div
           v-for="(choice, indx) in updatedParameter.choices"
           :key="choice"
-          style="padding-bottom: 1rem; display: flex;">
-          <label style="width: 50%">{{choice}}</label>
-          <input
-            v-model="updatedParameter.choices_labels[indx]"
-            type="text"
-          >
+          style="padding-bottom: 1rem; display: flex"
+        >
+          <label style="width: 50%">{{ choice }}</label>
+          <input v-model="updatedParameter.choices_labels[indx]" type="text" />
           <i class="fa fa-fw fa-close delete-choice" @click="deleteChoice(choice)" />
         </div>
       </div>
     </template>
     <template #footer>
       <ul class="unstyled-list">
-        <button
-          type="button"
-          class="btn first-button"
-          @click.stop="close()">
-            Cancel
-        </button>
+        <button type="button" class="btn first-button" @click.stop="close()">Cancel</button>
         <button
           type="button"
           class="btn btn-call-to-action"
-          @click.stop="saveUpdatedParamOptions()">
-            Update
+          @click.stop="saveUpdatedParamOptions()"
+        >
+          Update
         </button>
       </ul>
     </template>
@@ -178,7 +211,11 @@ import { defineComponent, PropType, nextTick, ref } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
-import { DatacubeGenericAttributeVariableType, DatacubeGeoAttributeVariableType, GeoAttributeFormat } from '@/types/Enums';
+import {
+  DatacubeGenericAttributeVariableType,
+  DatacubeGeoAttributeVariableType,
+  GeoAttributeFormat,
+} from '@/types/Enums';
 import flatpickr from 'flatpickr';
 import { DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import DropdownButton from '@/components/dropdown-button.vue';
@@ -189,16 +226,14 @@ export default defineComponent({
   name: 'ModalEditParamChoices',
   components: {
     Modal,
-    DropdownButton
+    DropdownButton,
   },
-  emits: [
-    'close'
-  ],
+  emits: ['close'],
   props: {
     selectedParameter: {
       type: Object as PropType<ModelParameter>,
-      required: true
-    }
+      required: true,
+    },
   },
   setup() {
     const dateMinPickerElement = ref<HTMLElement | null>(null);
@@ -211,7 +246,7 @@ export default defineComponent({
       dateMinPickerElement,
       dateMaxPickerElement,
       newChoiceInput,
-      newChoiceLabelInput
+      newChoiceLabelInput,
     };
   },
   computed: {
@@ -231,31 +266,45 @@ export default defineComponent({
       return Object.values(DatacubeGeoAttributeVariableType); // TODO: consider more human-readable labels
     },
     geoFormatExample(): string {
-      if (!this.updatedParameter || this.updatedParameter.additional_options.geo_bbox_format === undefined) return '';
+      if (
+        !this.updatedParameter ||
+        this.updatedParameter.additional_options.geo_bbox_format === undefined
+      )
+        return '';
       // show some format example
       let formatStr = this.updatedParameter.additional_options.geo_bbox_format;
-      if (this.updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.Bounding_Box) {
+      if (
+        this.updatedParameter.additional_options.geo_region_format ===
+        GeoAttributeFormat.Bounding_Box
+      ) {
         formatStr = formatStr.replace('{left}', ETHIOPIA_BOUNDING_BOX.LEFT.toString());
         formatStr = formatStr.replace('{top}', ETHIOPIA_BOUNDING_BOX.TOP.toString());
         formatStr = formatStr.replace('{right}', ETHIOPIA_BOUNDING_BOX.RIGHT.toString());
         formatStr = formatStr.replace('{bottom}', ETHIOPIA_BOUNDING_BOX.BOTTOM.toString());
         return formatStr;
       }
-      if (this.updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.Full_GADM_PATH) {
+      if (
+        this.updatedParameter.additional_options.geo_region_format ===
+        GeoAttributeFormat.Full_GADM_PATH
+      ) {
         // example gadm path: country__admin1__admin2__admin3
         const allGeoLevels = Object.values(DatacubeGeoAttributeVariableType) as string[];
         return allGeoLevels.join(REGION_ID_DELIMETER);
       }
-      if (this.updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.GADM_Code) {
-        return this.updatedParameter.additional_options.geo_omit_gadm_code_version ? 'ETH.7' : 'ETH.7_1'; // example geo-code
+      if (
+        this.updatedParameter.additional_options.geo_region_format === GeoAttributeFormat.GADM_Code
+      ) {
+        return this.updatedParameter.additional_options.geo_omit_gadm_code_version
+          ? 'ETH.7'
+          : 'ETH.7_1'; // example geo-code
       }
       return '';
-    }
+    },
   },
   data: () => ({
     updatedParameter: undefined as ModelParameter | undefined,
     GeoAttributeFormat,
-    defaultBBoxFormat: '[ [{left}, {top}], [{right}, {bottom}] ]'
+    defaultBBoxFormat: '[ [{left}, {top}], [{right}, {bottom}] ]',
   }),
   mounted() {
     this.updatedParameter = _.cloneDeep(this.selectedParameter);
@@ -263,7 +312,7 @@ export default defineComponent({
     const datePickerOptions: flatpickr.Options.Options = {
       allowInput: false, // should the user be able to directly enter date value?
       wrap: true, // enable the flatpickr lib to utilize toggle/clear buttons
-      clickOpens: false // do not allow click on the input date picker to open the calendar
+      clickOpens: false, // do not allow click on the input date picker to open the calendar
     };
     nextTick(() => {
       if (this.dateMinPickerElement !== null) {
@@ -283,7 +332,8 @@ export default defineComponent({
     }
     if (this.isGeoParam) {
       if (!this.updatedParameter.additional_options.geo_region_format) {
-        this.updatedParameter.additional_options.geo_region_format = GeoAttributeFormat.Full_GADM_PATH;
+        this.updatedParameter.additional_options.geo_region_format =
+          GeoAttributeFormat.Full_GADM_PATH;
       }
       if (!this.updatedParameter.additional_options.geo_acceptable_levels) {
         this.updatedParameter.additional_options.geo_acceptable_levels = this.allGeoLevels;
@@ -297,7 +347,8 @@ export default defineComponent({
     }
     if (this.isDateRangeParam || this.isDateParam) {
       if (this.isDateRangeParam && !this.updatedParameter.additional_options.date_range_delimiter) {
-        this.updatedParameter.additional_options.date_range_delimiter = DEFAULT_DATE_RANGE_DELIMETER;
+        this.updatedParameter.additional_options.date_range_delimiter =
+          DEFAULT_DATE_RANGE_DELIMETER;
       }
       if (!this.updatedParameter.additional_options.date_min) {
         this.updatedParameter.additional_options.date_min = '';
@@ -310,14 +361,15 @@ export default defineComponent({
   methods: {
     deleteChoice(choice: string) {
       if (this.updatedParameter && this.updatedParameter.choices) {
-        const choiceIndex = this.updatedParameter?.choices?.findIndex(c => c === choice);
+        const choiceIndex = this.updatedParameter?.choices?.findIndex((c) => c === choice);
         this.updatedParameter.choices.splice(choiceIndex, 1);
         this.updatedParameter.choices_labels?.splice(choiceIndex, 1);
       }
     },
     toggleOmitGADMCodeVersion() {
       if (this.updatedParameter) {
-        this.updatedParameter.additional_options.geo_omit_gadm_code_version = !this.updatedParameter.additional_options.geo_omit_gadm_code_version;
+        this.updatedParameter.additional_options.geo_omit_gadm_code_version =
+          !this.updatedParameter.additional_options.geo_omit_gadm_code_version;
       }
     },
     resetBBoxFormat() {
@@ -335,15 +387,20 @@ export default defineComponent({
         //
         // toggle level
         //
-        const acceptableLevels = this.updatedParameter.additional_options.geo_acceptable_levels ?? [];
+        const acceptableLevels =
+          this.updatedParameter.additional_options.geo_acceptable_levels ?? [];
         if (acceptableLevels.includes(val)) {
           // only remove this level if there is at least one other acceptable level
           if (acceptableLevels.length > 1) {
-            this.updatedParameter.additional_options.geo_acceptable_levels = acceptableLevels.filter(l => l !== val);
+            this.updatedParameter.additional_options.geo_acceptable_levels =
+              acceptableLevels.filter((l) => l !== val);
           }
         } else {
           // add level
-          this.updatedParameter.additional_options.geo_acceptable_levels = [...acceptableLevels, val];
+          this.updatedParameter.additional_options.geo_acceptable_levels = [
+            ...acceptableLevels,
+            val,
+          ];
         }
       }
     },
@@ -366,13 +423,13 @@ export default defineComponent({
     },
     close(cancel = true) {
       this.$emit('close', { cancel });
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 :deep(.modal-container) {
   width: max-content;
@@ -406,8 +463,8 @@ export default defineComponent({
     cursor: auto;
   }
   .date-picker-buttons {
-      padding: 4px 8px;
-    }
+    padding: 4px 8px;
+  }
 }
 
 .date-option-container {
@@ -446,5 +503,4 @@ export default defineComponent({
     color: #850f00;
   }
 }
-
 </style>

@@ -1,11 +1,7 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
 import { RidgelinePoint, RidgelineWithMetadata } from '@/utils/ridgeline-util';
-import svgUtil, {
-  ARROW_LENGTH,
-  ARROW_WIDTH,
-  translate
-} from '@/utils/svg-util';
+import svgUtil, { ARROW_LENGTH, ARROW_WIDTH, translate } from '@/utils/svg-util';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
 import { chartValueFormatter } from '@/utils/string-util';
 
@@ -46,29 +42,21 @@ export const renderRidgelines = (
   fillColor = 'black'
 ) => {
   const gElement = selection.append('g');
-  const widthAvailableForChart = showSummary
-    ? (1 - SUMMARY_WIDTH_PERCENTAGE) * width
-    : width;
+  const widthAvailableForChart = showSummary ? (1 - SUMMARY_WIDTH_PERCENTAGE) * width : width;
   // Calculate scales
-  const xScale = d3
-    .scaleLinear()
-    .domain([0, 1])
-    .range([0, widthAvailableForChart]);
+  const xScale = d3.scaleLinear().domain([0, 1]).range([0, widthAvailableForChart]);
   // If yAxis labels are visible, leave padding of size `labelSize / 2` at the
   //  top and `labelSize` at the bottom so the labels aren't clipped
-  const yRange = showYAxisLabels
-    ? [height - labelSize, labelSize / 2]
-    : [height, 0];
+  const yRange = showYAxisLabels ? [height - labelSize, labelSize / 2] : [height, 0];
   const yScale = d3.scaleLinear().domain([min, max]).range(yRange).clamp(true);
   // Create a line generator that will be used to render the ridgeline
   const line = d3
     .line<RidgelinePoint>()
-    .x(point => xScale(point.value))
-    .y(point => yScale(point.coordinate))
+    .x((point) => xScale(point.value))
+    .y((point) => yScale(point.coordinate))
     .curve(curve);
   // Draw ridgeline itself
-  const ridgelineColor =
-    comparisonBaseline !== null ? COMPARISON_COLOR : fillColor;
+  const ridgelineColor = comparisonBaseline !== null ? COMPARISON_COLOR : fillColor;
   gElement
     .append('path')
     .attr('fill', ridgelineColor)
@@ -121,14 +109,10 @@ export const renderRidgelines = (
           .attr('fill', SUMMARY_ARROW_COLOR)
           .attr(
             'transform',
-            translate(
-              summaryXPosition + (ARROW_WIDTH - rectWidth) / 2,
-              rectYPosition
-            )
+            translate(summaryXPosition + (ARROW_WIDTH - rectWidth) / 2, rectYPosition)
           );
         // Draw arrow head
-        const arrowHeadYPosition =
-          tail < head ? head - arrowHeadOffset : head + arrowHeadOffset;
+        const arrowHeadYPosition = tail < head ? head - arrowHeadOffset : head + arrowHeadOffset;
         const rotation = tail < head ? 90 : -90;
         gElement
           .append('path')
@@ -165,14 +149,14 @@ export const renderRidgelines = (
       .data(ticks)
       .join('text')
       .classed('tick', true)
-      .attr('transform', tickValue =>
+      .attr('transform', (tickValue) =>
         // Nudge labels down a little so they're more centered on their tick
         //  value, but not so far that the bottom label's commas are cut off.
         translate(0, yScale(tickValue) + labelSize / 4)
       )
       .attr('font-size', labelSize)
       .style('fill', LABEL_COLOR)
-      .text(tickValue => formatter(tickValue));
+      .text((tickValue) => formatter(tickValue));
   }
 
   // Clamp context range to the node's min/max so it doesn't overflow
@@ -181,7 +165,7 @@ export const renderRidgelines = (
       ? { min: 0, max: 0 }
       : {
           min: _.clamp(contextRange.min, min, max),
-          max: _.clamp(contextRange.max, min, max)
+          max: _.clamp(contextRange.max, min, max),
         };
 
   if (contextRange !== null) {
@@ -202,8 +186,8 @@ export const renderRidgelines = (
     const area = d3
       .area<RidgelinePoint>()
       .x0(() => xScale(0))
-      .x1(point => xScale(point.value))
-      .y(point => yScale(point.coordinate))
+      .x1((point) => xScale(point.value))
+      .y((point) => yScale(point.coordinate))
       .curve(curve);
     gElement
       .append('path')
@@ -229,18 +213,10 @@ export const renderRidgelines = (
       .append('rect')
       .attr(
         'transform',
-        translate(
-          -CONTEXT_BRACKET_LINE_WIDTH / 2,
-          yScale(clampedContextRange.max)
-        )
+        translate(-CONTEXT_BRACKET_LINE_WIDTH / 2, yScale(clampedContextRange.max))
       )
       .attr('width', CONTEXT_BRACKET_LINE_WIDTH)
-      .attr(
-        'height',
-        Math.abs(
-          yScale(clampedContextRange.max) - yScale(clampedContextRange.min)
-        )
-      )
+      .attr('height', Math.abs(yScale(clampedContextRange.max) - yScale(clampedContextRange.min)))
       .style('fill', CONTEXT_BRACKET_COLOR);
   }
   return gElement;

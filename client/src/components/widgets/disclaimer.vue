@@ -9,19 +9,17 @@ export default defineComponent({
   props: {
     message: {
       type: String,
-      required: true
-    }
-  }
+      required: true,
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-
 .disclaimer-container {
   text-align: right;
   width: 100%;
   padding: 10px;
-  color: #9C9D9E;
+  color: #9c9d9e;
 }
-
 </style>

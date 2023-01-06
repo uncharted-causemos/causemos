@@ -1,7 +1,9 @@
 <template>
   <div class="bar-chart-container">
     <div class="chart">
-      <div v-if="barsData.length === 0" class="no-data">No data available using selected criteria!</div>
+      <div v-if="barsData.length === 0" class="no-data">
+        No data available using selected criteria!
+      </div>
       <svg ref="barChart" />
       <resize-observer @notify="resize" />
     </div>
@@ -24,22 +26,19 @@ export default defineComponent({
   props: {
     barsData: {
       type: Array as PropType<BarData[]>,
-      required: true
+      required: true,
     },
     hoverId: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   setup(props, { emit }) {
-    const {
-      barsData,
-      hoverId
-    } = toRefs(props);
+    const { barsData, hoverId } = toRefs(props);
     const barChart = ref<HTMLElement | null>(null);
     const svg = ref<D3Selection | null>(null);
     const initialHoverId = ref('');
-    const resize = _.debounce(function({ width, height }) {
+    const resize = _.debounce(function ({ width, height }) {
       if (barChart.value === null) return;
 
       svg.value = d3.select<HTMLElement, null>(barChart.value);
@@ -65,23 +64,19 @@ export default defineComponent({
       );
     }, RESIZE_DELAY);
     watch(
-      () => [
-        barsData.value
-      ],
+      () => [barsData.value],
       () => {
         // Underlying data has changed, so rerender chart
         const parentElement = barChart.value?.parentElement;
         if (parentElement === null || parentElement === undefined) return;
         resize({
           width: parentElement.clientWidth,
-          height: parentElement.clientHeight
+          height: parentElement.clientHeight,
         });
       }
     );
     watch(
-      () => [
-        hoverId.value
-      ],
+      () => [hoverId.value],
       () => {
         if (hoverId.value !== null) {
           // when applying an insight for example, hoverId may be valid but svg is not
@@ -99,14 +94,14 @@ export default defineComponent({
       if (parentElement === null || parentElement === undefined) return;
       resize({
         width: parentElement.clientWidth,
-        height: parentElement.clientHeight
+        height: parentElement.clientHeight,
       });
     });
     return {
       resize,
-      barChart
+      barChart,
     };
-  }
+  },
 });
 </script>
 

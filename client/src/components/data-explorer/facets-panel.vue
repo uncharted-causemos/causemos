@@ -30,7 +30,6 @@
 </template>
 
 <script lang="ts">
-
 import { defineComponent, PropType } from 'vue';
 import { mapGetters } from 'vuex';
 
@@ -46,29 +45,27 @@ export default defineComponent({
   components: {
     CategoricalFacet,
     NumericalFacet,
-    SidePanel
+    SidePanel,
   },
   data: () => ({
-    facetTabs: [
-      { name: 'Data Cube Facets', icon: 'fa fa-file-text' }
-    ],
-    currentTab: 'Data Cube Facets'
+    facetTabs: [{ name: 'Data Cube Facets', icon: 'fa fa-file-text' }],
+    currentTab: 'Data Cube Facets',
   }),
   props: {
     facets: {
       type: Object as PropType<Facets>,
-      default: () => {}
+      default: () => {},
     },
     filteredFacets: {
       type: Object as PropType<Facets>,
-      default: () => {}
-    }
+      default: () => {},
+    },
   },
   computed: {
     ...mapGetters({
       filters: 'query/filters',
       updateToken: 'app/updateToken',
-      project: 'app/project'
+      project: 'app/project',
     }),
     formattedFacets() {
       const keys = Object.keys(this.facets);
@@ -78,19 +75,21 @@ export default defineComponent({
         const baseData: FacetBucket[] = [];
         const filteredData: FacetBucket[] = [];
 
-        const filteredFacetDict = this.filteredFacets[key] ? this.filteredFacets[key].reduce((dict, category) => {
-          dict[category.key] = category.value;
-          return dict;
-        }, {} as { [key: string]: number }) : {};
+        const filteredFacetDict = this.filteredFacets[key]
+          ? this.filteredFacets[key].reduce((dict, category) => {
+              dict[category.key] = category.value;
+              return dict;
+            }, {} as { [key: string]: number })
+          : {};
 
-        this.facets[key].forEach(category => {
+        this.facets[key].forEach((category) => {
           baseData.push({
             key: category.key,
-            value: category.value
+            value: category.value,
           });
           filteredData.push({
             key: category.key,
-            value: filteredFacetDict[category.key] || 0
+            value: filteredFacetDict[category.key] || 0,
           });
         });
 
@@ -99,26 +98,26 @@ export default defineComponent({
           label: datacubeUtil.DISPLAY_NAMES[key] || key,
           isNumerical: datacubeUtil.NUMERICAL_FACETS.includes(key),
           baseData,
-          filteredData
+          filteredData,
         };
       });
       return facetList;
-    }
+    },
   },
   methods: {
     setActive(tab: string) {
       this.currentTab = tab;
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-  @import "~styles/variables";
-  .facet-panel-container {
-    margin-top: 5px;
-  }
-  .facet-panel-list {
-    padding-bottom: 10rem;
-  }
+@import '~styles/variables';
+.facet-panel-container {
+  margin-top: 5px;
+}
+.facet-panel-list {
+  padding-bottom: 10rem;
+}
 </style>

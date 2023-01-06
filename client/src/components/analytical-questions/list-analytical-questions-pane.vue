@@ -13,18 +13,16 @@
         class="question-text"
       />
       <ul class="unstyled-list">
-        <button
-          type="button"
-          class="btn"
-          @click.stop="showNewAnalyticalQuestion = false">
-            Cancel
+        <button type="button" class="btn" @click.stop="showNewAnalyticalQuestion = false">
+          Cancel
         </button>
         <button
           type="button"
           class="btn btn-call-to-action"
           :disabled="newQuestionText.length == 0"
-          @click.stop="onNewAnalyticalQuestion">
-            Save
+          @click.stop="onNewAnalyticalQuestion"
+        >
+          Save
         </button>
       </ul>
     </template>
@@ -34,9 +32,10 @@
           v-tooltip.top-center="'Add a new analytical question'"
           type="button"
           class="btn btn-sm new-question-button"
-          @click="addNewQuestion">
-            <i class="fa fa-plus-circle" />
-            New section
+          @click="addNewQuestion"
+        >
+          <i class="fa fa-plus-circle" />
+          New section
         </button>
         &nbsp;
         <button class="btn btn-sm" @click="questionsExpanded = true">Expand All</button>
@@ -49,12 +48,12 @@
           v-for="sectionWithInsights in insightsBySection"
           :key="sectionWithInsights.section.id"
           class="checklist-item"
-          @drop='onDrop($event, sectionWithInsights.section)'
-          @dragover='addDragOverClassToSection'
-          @dragenter='addDragOverClassToSection'
-          @dragleave='onDragLeave($event)'
-          draggable='true'
-          @dragstart='startDraggingSection($event, sectionWithInsights.section)'
+          @drop="onDrop($event, sectionWithInsights.section)"
+          @dragover="addDragOverClassToSection"
+          @dragenter="addDragOverClassToSection"
+          @dragleave="onDragLeave($event)"
+          draggable="true"
+          @dragstart="startDraggingSection($event, sectionWithInsights.section)"
         >
           <!-- first row display the question -->
           <div class="checklist-item-question">
@@ -63,7 +62,9 @@
               class="question-title"
               :class="{ clickable: canClickChecklistItems }"
               @click="$emit('item-click', sectionWithInsights.section, null)"
-            > {{ sectionWithInsights.section.question }}</span>
+            >
+              {{ sectionWithInsights.section.question }}</span
+            >
             <i
               v-if="hasTour(sectionWithInsights.section)"
               v-tooltip.top="'Tutorial available for this question'"
@@ -105,11 +106,15 @@
               v-for="insight in sectionWithInsights.insights"
               :key="insight.id"
               class="checklist-item-insight"
-              draggable='true'
-              @drop="dropInsightOnInsight($event, sectionWithInsights.section, insight.id as string)"
-              @dragstart="startDraggingInsight($event, insight, sectionWithInsights.section.id as string)"
-              @dragover='addDragOverClassToInsight'
-              @dragenter='addDragOverClassToInsight'
+              draggable="true"
+              @drop="
+                dropInsightOnInsight($event, sectionWithInsights.section, insight.id as string)
+              "
+              @dragstart="
+                startDraggingInsight($event, insight, sectionWithInsights.section.id as string)
+              "
+              @dragover="addDragOverClassToInsight"
+              @dragenter="addDragOverClassToInsight"
               @dragleave="onDragLeave"
             >
               <i class="fa fa-star" />
@@ -117,14 +122,23 @@
                 class="insight-name"
                 :class="{
                   'private-insight-name': insight.visibility === 'private',
-                  'clickable': canClickChecklistItems
+                  clickable: canClickChecklistItems,
                 }"
-                @click="$emit('item-click', sectionWithInsights.section, insight.id)">
+                @click="$emit('item-click', sectionWithInsights.section, insight.id)"
+              >
                 {{ insight.name }}
               </span>
-              <i class="fa fa-fw fa-close"
-                style="pointer-events: all; cursor: pointer; margin-left: auto;"
-                @click="removeRelationBetweenInsightAndQuestion($event, sectionWithInsights.section, insight.id as string)" />
+              <i
+                class="fa fa-fw fa-close"
+                style="pointer-events: all; cursor: pointer; margin-left: auto"
+                @click="
+                  removeRelationBetweenInsightAndQuestion(
+                    $event,
+                    sectionWithInsights.section,
+                    insight.id as string
+                  )
+                "
+              />
             </div>
           </template>
         </div>
@@ -159,11 +173,16 @@ import RenameModal from '@/components/action-bar/rename-modal.vue';
 import useToaster from '@/services/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 
-type PartialInsight = { id: string, name: string, visibility: string, analytical_question: string[] };
+type PartialInsight = {
+  id: string;
+  name: string;
+  visibility: string;
+  analytical_question: string[];
+};
 
 const HOVER_CLASS = {
   REORDERING_SECTION: 'reorder-section-hover',
-  REORDERING_INSIGHT: 'reorder-insight-hover'
+  REORDERING_INSIGHT: 'reorder-insight-hover',
 };
 
 export default defineComponent({
@@ -171,33 +190,39 @@ export default defineComponent({
   components: {
     MessageDisplay,
     OptionsButton,
-    RenameModal
+    RenameModal,
   },
   props: {
     showChecklistTitle: {
       type: Boolean,
-      default: false
+      default: false,
     },
     // TODO: eventually we'll be able to click checklist items everywhere, at
     //  which point we can remove this prop.
     canClickChecklistItems: {
       type: Boolean,
-      default: false
+      default: false,
     },
     insightsBySection: {
       type: Array as PropType<SectionWithInsights[]>,
-      default: []
-    }
+      default: [],
+    },
   },
   setup() {
     const toaster = useToaster();
     // FIXME: hoist insights to parent component so that we're not fetching and
     //  managing two copies
-    const { insights, reFetchInsights } = useInsightsData(undefined,
-      ['id', 'name', 'visibility', 'analytical_question']);
+    const { insights, reFetchInsights } = useInsightsData(undefined, [
+      'id',
+      'name',
+      'visibility',
+      'analytical_question',
+    ]);
 
     const getInsightById = (insightId: string) => {
-      return insights.value.find(insight => insight.id === insightId) as PartialInsight | undefined;
+      return insights.value.find((insight) => insight.id === insightId) as
+        | PartialInsight
+        | undefined;
     };
 
     const questionsExpanded = ref(true);
@@ -206,7 +231,7 @@ export default defineComponent({
       reFetchInsights,
       getInsightById,
       questionsExpanded,
-      toaster
+      toaster,
     };
   },
   emits: [
@@ -216,12 +241,10 @@ export default defineComponent({
     'delete-section',
     'move-section-above-section',
     'remove-insight-from-section',
-    'move-insight'
+    'move-insight',
   ],
   data: () => ({
-    AnalyticalQuestionsTabs: [
-      { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' }
-    ],
+    AnalyticalQuestionsTabs: [{ name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' }],
     currentTab: 'Analysis Checklist',
     selectedQuestion: null as AnalyticalQuestion | null,
     showNewAnalyticalQuestion: false,
@@ -230,14 +253,14 @@ export default defineComponent({
     toursMetadata: [
       {
         baseQuestion: 'What are the appropriate aggregation functions?',
-        targetView: 'data'
+        targetView: 'data',
       },
       {
         baseQuestion: 'What are the key influences causing change in a node?',
-        targetView: 'quantitative'
-      }
+        targetView: 'quantitative',
+      },
     ],
-    lastDragEnter: null
+    lastDragEnter: null,
   }),
   computed: {
     ...mapGetters({
@@ -246,20 +269,22 @@ export default defineComponent({
       project: 'app/project',
       contextId: 'insightPanel/contextId',
       isReadyForNextStep: 'tour/isReadyForNextStep',
-      isPanelOpen: 'insightPanel/isPanelOpen'
+      isPanelOpen: 'insightPanel/isPanelOpen',
     }),
     canStartTour(): boolean {
       // if the tour's target-view is compatible with currentView and no modal is shown
-      return !this.isPanelOpen &&
-            this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
-    }
+      return (
+        !this.isPanelOpen &&
+        this.toursMetadata.findIndex((t) => t.targetView === this.currentView) >= 0
+      );
+    },
   },
   methods: {
     ...mapActions({
-      setTour: 'tour/setTour'
+      setTour: 'tour/setTour',
     }),
     hasTour(questionItem: AnalyticalQuestion): boolean {
-      return this.toursMetadata.findIndex(t => t.baseQuestion === questionItem.question) >= 0;
+      return this.toursMetadata.findIndex((t) => t.baseQuestion === questionItem.question) >= 0;
     },
     questionVisibility() {
       return this.projectType === ProjectType.Analysis ? 'private' : 'public';
@@ -315,7 +340,7 @@ export default defineComponent({
       if (this.selectedQuestion) {
         // REVIEW: delete this question from any insight that references it
         const selectedQuestionLinkedInsights = this.selectedQuestion?.linked_insights as string[];
-        selectedQuestionLinkedInsights.forEach(insightId => {
+        selectedQuestionLinkedInsights.forEach((insightId) => {
           this.removeQuestionFromInsight(this.selectedQuestion as AnalyticalQuestion, insightId);
         });
 
@@ -346,10 +371,7 @@ export default defineComponent({
       // prevent default action (open as link for some elements)
       evt.preventDefault();
       evt.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
-      if (
-        evt.dataTransfer === null ||
-        !(evt.currentTarget instanceof HTMLElement)
-      ) {
+      if (evt.dataTransfer === null || !(evt.currentTarget instanceof HTMLElement)) {
         return;
       }
       const types = evt.dataTransfer.types;
@@ -360,7 +382,7 @@ export default defineComponent({
       if (types.includes('insight_id')) {
         // Move insight to the end of this section
         const position = targetSection.linked_insights.filter(
-          insightId => insightId !== droppedInsightId
+          (insightId) => insightId !== droppedInsightId
         ).length;
         this.$emit(
           'move-insight',
@@ -375,8 +397,7 @@ export default defineComponent({
         }
         // Update insight's list of the sections it's linked to
         const updatedList = insight.analytical_question.filter(
-          sectionId =>
-            sectionId !== droppedSectionId && sectionId !== targetSection.id
+          (sectionId) => sectionId !== droppedSectionId && sectionId !== targetSection.id
         );
         updatedList.push(targetSection.id as string);
         insight.analytical_question = updatedList;
@@ -384,11 +405,7 @@ export default defineComponent({
         this.reFetchInsights();
       } else if (types.includes('section_id')) {
         // Move dropped section above targetSection
-        this.$emit(
-          'move-section-above-section',
-          droppedSectionId,
-          targetSection.id
-        );
+        this.$emit('move-section-above-section', droppedSectionId, targetSection.id);
       }
     },
     addDragOverClassToSection(evt: DragEvent) {
@@ -396,10 +413,7 @@ export default defineComponent({
       //  this element as a valid drop target to the browser.
       evt.preventDefault();
       evt.stopPropagation();
-      if (
-        evt.dataTransfer === null ||
-        !(evt.currentTarget instanceof HTMLElement)
-      ) {
+      if (evt.dataTransfer === null || !(evt.currentTarget instanceof HTMLElement)) {
         return;
       }
       const types = evt.dataTransfer.types;
@@ -416,16 +430,9 @@ export default defineComponent({
         evt.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
       }
     },
-    startDraggingInsight(
-      event: DragEvent,
-      insight: FullInsight,
-      sectionId: string
-    ) {
+    startDraggingInsight(event: DragEvent, insight: FullInsight, sectionId: string) {
       event.stopPropagation();
-      if (
-        event.dataTransfer === null ||
-        !(event.currentTarget instanceof HTMLElement)
-      ) {
+      if (event.dataTransfer === null || !(event.currentTarget instanceof HTMLElement)) {
         return;
       }
       event.dataTransfer.dropEffect = 'move';
@@ -434,10 +441,7 @@ export default defineComponent({
       event.dataTransfer.setData('section_id', sectionId);
     },
     addDragOverClassToInsight(evt: DragEvent) {
-      if (
-        evt.dataTransfer === null ||
-        !(evt.currentTarget instanceof HTMLElement)
-      ) {
+      if (evt.dataTransfer === null || !(evt.currentTarget instanceof HTMLElement)) {
         return;
       }
       const types = evt.dataTransfer.types;
@@ -457,10 +461,7 @@ export default defineComponent({
     ) {
       // prevent default action (open as link for some elements)
       event.preventDefault();
-      if (
-        event.dataTransfer === null ||
-        !(event.currentTarget instanceof HTMLElement)
-      ) {
+      if (event.dataTransfer === null || !(event.currentTarget instanceof HTMLElement)) {
         return;
       }
       event.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
@@ -479,10 +480,10 @@ export default defineComponent({
       //  first filter out any existing instance of the dropped insight in the
       //  section.
       const targetInsightList = targetSection.linked_insights.filter(
-        _insightId => _insightId !== droppedInsightId
+        (_insightId) => _insightId !== droppedInsightId
       );
       const insertionPosition = targetInsightList.findIndex(
-        _insightId => _insightId === targetInsightId
+        (_insightId) => _insightId === targetInsightId
       );
       this.$emit(
         'move-insight',
@@ -498,15 +499,18 @@ export default defineComponent({
       }
       // Update insight's list of the sections it's linked to
       const updatedList = insight.analytical_question.filter(
-        sectionId =>
-          sectionId !== droppedSectionId && sectionId !== targetSection.id
+        (sectionId) => sectionId !== droppedSectionId && sectionId !== targetSection.id
       );
       updatedList.push(targetSection.id as string);
       insight.analytical_question = updatedList;
       await updateInsight(droppedInsightId, insight as Insight);
       this.reFetchInsights();
     },
-    removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string) {
+    removeRelationBetweenInsightAndQuestion(
+      evt: any,
+      questionItem: AnalyticalQuestion,
+      insightId: string
+    ) {
       evt.preventDefault();
       evt.stopPropagation();
 
@@ -548,10 +552,10 @@ export default defineComponent({
         defaultStepOptions: {
           // enable X button to cancel from any step
           cancelIcon: {
-            enabled: true
+            enabled: true,
           },
-          classes: 'my-container my-title my-text' // default CSS classes for all steps
-        }
+          classes: 'my-container my-title my-text', // default CSS classes for all steps
+        },
       });
 
       // NOTE
@@ -562,18 +566,18 @@ export default defineComponent({
         title: 'Click the Matrix tab',
         attachTo: {
           element: '.tour-matrix-tab', // this.$refs.newrunsbuttonref // also element can be referenced with id, e.g. #some-id
-          on: 'bottom'
+          on: 'bottom',
         },
         buttons: [
           {
             text: 'Skip tutorial!',
-            action: function() {
+            action: function () {
               return tour.cancel();
-            }
-          }
+            },
+          },
         ],
         modalOverlayOpeningPadding: 0, // padding applied to the highlight on the target element
-        highlightClass: 'my-highlight'
+        highlightClass: 'my-highlight',
         // classes: 'my-title my-text' // CSS classes for this step
       };
 
@@ -582,24 +586,24 @@ export default defineComponent({
         text: 'This is the sensitivity analysis matrix. <br>To see the top influencers for a node, click on its column header.',
         attachTo: {
           element: '.tour-x-axis-sensitivity-matrix', // this DOM element is dynamic and will only be available once the sensitivity-analysis-matrix is rendered
-          on: 'bottom'
+          on: 'bottom',
         },
         buttons: [
           {
             text: 'Next',
-            action: function() {
+            action: function () {
               return tour.next();
-            }
+            },
           },
           {
             text: 'Skip tutorial!',
-            action: function() {
+            action: function () {
               return tour.cancel();
-            }
-          }
+            },
+          },
         ],
         beforeShowPromise: () => {
-          return new Promise<void>(resolve => {
+          return new Promise<void>((resolve) => {
             // check every 1 second for the next step to be flagged as ready
             //  i.e., until the sensitivity matrix is visible
             //  kill the timer if the operation is taking too long!
@@ -609,7 +613,8 @@ export default defineComponent({
                 resolve();
               } else {
                 elapsedTime += 1000;
-                if (elapsedTime > 30000) { // wait 30 seconds
+                if (elapsedTime > 30000) {
+                  // wait 30 seconds
                   console.warn('operation took too long... killing the tour timer!');
                   resolve();
                 }
@@ -621,7 +626,7 @@ export default defineComponent({
             };
             wait();
           });
-        }
+        },
         // advanceOn: { selector: '', event: 'click' }
       };
 
@@ -630,16 +635,16 @@ export default defineComponent({
         text: '<b>Key influences</b> causing change in malnutrition are the darker cells ones.<br> <b>Influence score</b> is based on structure of graph and weight of relationships',
         attachTo: {
           element: '.tour-grid-lines',
-          on: 'right'
+          on: 'right',
         },
         buttons: [
           {
             text: 'Got it',
-            action: function() {
+            action: function () {
               return tour.complete();
-            }
-          }
-        ]
+            },
+          },
+        ],
       };
 
       tour.addSteps([stepOne, stepTwo, stepThree]);
@@ -655,8 +660,8 @@ export default defineComponent({
         tourName: 'aggregations-tour',
         useModalOverlay: true,
         defaultStepOptions: {
-          classes: 'my-container my-title my-text' // default CSS classes for all steps
-        }
+          classes: 'my-container my-title my-text', // default CSS classes for all steps
+        },
       });
 
       const stepOne = {
@@ -674,21 +679,21 @@ export default defineComponent({
         title: 'Review Description and Click Data tab',
         attachTo: {
           element: '.tour-datacube-desc',
-          on: 'right'
+          on: 'right',
         },
         buttons: [
           {
             text: 'Skip tutorial!',
-            action: function() {
+            action: function () {
               return tour.cancel();
-            }
-          }
+            },
+          },
         ],
         highlightClass: 'my-highlight',
         // @FIXME: temp solution to expand the highlighted-target area to include
         //  the Data/Desc buttons since they live in different components in the DOM hierarchy
         //  and won't be clickable if not within the highlighted area
-        modalOverlayOpeningPadding: 50
+        modalOverlayOpeningPadding: 50,
       };
 
       const stepTwo = {
@@ -705,24 +710,24 @@ export default defineComponent({
         title: 'Select Aggregation Function',
         attachTo: {
           element: '.tour-agg-dropdown-config',
-          on: 'right'
+          on: 'right',
         },
         buttons: [
           {
             text: 'Skip tutorial!',
-            action: function() {
+            action: function () {
               return tour.cancel();
-            }
+            },
           },
           {
             text: 'Next',
-            action: function() {
+            action: function () {
               return tour.next();
-            }
-          }
+            },
+          },
         ],
         beforeShowPromise: () => {
-          return new Promise<void>(resolve => {
+          return new Promise<void>((resolve) => {
             // check every 1 second for the next step to be flagged as ready
             //  i.e., until the map and the spatial-aggregation config are visible
             //  kill the timer if the operation is taking too long!
@@ -732,7 +737,8 @@ export default defineComponent({
                 resolve();
               } else {
                 elapsedTime += 1000;
-                if (elapsedTime > 30000) { // wait 30 seconds
+                if (elapsedTime > 30000) {
+                  // wait 30 seconds
                   console.warn('operation took too long... killing the tour timer!');
                   resolve();
                 }
@@ -748,7 +754,7 @@ export default defineComponent({
         highlightClass: 'my-highlight',
         // @FIXME: temp solution to expand the highlighted-target area to include
         //  the dropdown config options to allow the user to select one of them before advancing the tour
-        modalOverlayOpeningPadding: 100
+        modalOverlayOpeningPadding: 100,
       };
 
       const stepThree = {
@@ -757,11 +763,11 @@ export default defineComponent({
         buttons: [
           {
             text: 'Got it',
-            action: function() {
+            action: function () {
               return tour.complete();
-            }
-          }
-        ]
+            },
+          },
+        ],
       };
 
       tour.addSteps([stepOne, stepTwo, stepThree]);
@@ -769,131 +775,130 @@ export default defineComponent({
 
       // save this newly created tour in the store
       this.setTour(tour);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-  @import "~styles/variables";
+@import '~styles/variables';
 
-  .title {
-    @include header-secondary;
-  }
+.title {
+  @include header-secondary;
+}
 
-  .question-text {
-    margin-bottom: 1rem;
-    border-color: gray;
-    border-width: thin;
-  }
+.question-text {
+  margin-bottom: 1rem;
+  border-color: gray;
+  border-width: thin;
+}
 
-  .list-analytical-questions-pane-container {
-    display: flex;
-    flex-direction: column;
+.list-analytical-questions-pane-container {
+  display: flex;
+  flex-direction: column;
 
-    .analytical-questions-container {
-      overflow-y: auto;
+  .analytical-questions-container {
+    overflow-y: auto;
 
-      .checklist-item {
-        flex-direction: column;
+    .checklist-item {
+      flex-direction: column;
+      display: flex;
+      font-size: $font-size-medium;
+      padding-bottom: 25px;
+      border-top: 2px solid transparent;
+      position: relative;
+
+      &::after {
+        content: '';
+        height: 1px;
+        background: transparent;
+      }
+
+      &.reorder-section-hover {
+        border-top-color: $selected;
+      }
+
+      &.reorder-insight-hover::after {
+        background: $selected;
+      }
+
+      .checklist-item-question {
+        flex-direction: row;
         display: flex;
-        font-size: $font-size-medium;
-        padding-bottom: 25px;
-        border-top: 2px solid transparent;
-        position: relative;
+        align-items: baseline;
 
-        &::after {
-          content: '';
-          height: 1px;
-          background: transparent;
+        .checklist-item-menu {
+          cursor: move;
+          margin-right: 5px;
         }
 
-        &.reorder-section-hover {
-          border-top-color: $selected;
-        }
-
-        &.reorder-insight-hover::after {
-          background: $selected;
-        }
-
-        .checklist-item-question {
-          flex-direction: row;
-          display: flex;
-          align-items: baseline;
-
-          .checklist-item-menu {
-            cursor: move;
-            margin-right: 5px;
-          }
-
-          .question-title {
-            user-select: none;
-            flex: 1;
-            min-width: 0;
-            margin-right: 5px;
-            font-size: $font-size-large;
-
-            &.clickable {
-              cursor: pointer;
-
-              &:hover {
-                text-decoration: underline;
-              }
-
-            }
-          }
-        }
-        .checklist-item-insight {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+        .question-title {
           user-select: none;
-          // 6px visually lines up the insight's "x" with the section's menu
-          padding: 5px 6px 5px 15px;
-          border-top: 1px solid transparent;
-          .insight-name {
-            padding-left: 1rem;
-            padding-right: 1rem;
-            color: gray;
-            font-style: italic;
-            flex: 1;
-            min-width: 0;
+          flex: 1;
+          min-width: 0;
+          margin-right: 5px;
+          font-size: $font-size-large;
 
-            &.clickable {
-              cursor: pointer;
+          &.clickable {
+            cursor: pointer;
 
-              &:hover {
-                text-decoration: underline;
-              }
+            &:hover {
+              text-decoration: underline;
             }
           }
-          .private-insight-name {
-            color: black;
-            font-style: normal;
+        }
+      }
+      .checklist-item-insight {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        user-select: none;
+        // 6px visually lines up the insight's "x" with the section's menu
+        padding: 5px 6px 5px 15px;
+        border-top: 1px solid transparent;
+        .insight-name {
+          padding-left: 1rem;
+          padding-right: 1rem;
+          color: gray;
+          font-style: italic;
+          flex: 1;
+          min-width: 0;
+
+          &.clickable {
+            cursor: pointer;
+
+            &:hover {
+              text-decoration: underline;
+            }
           }
-          &.reorder-insight-hover {
-            border-top-color: $selected;
-          }
+        }
+        .private-insight-name {
+          color: black;
+          font-style: normal;
+        }
+        &.reorder-insight-hover {
+          border-top-color: $selected;
         }
       }
     }
   }
+}
 
-  .no-insight-warning {
-    margin: 5px 20px 0 15px;
-  }
+.no-insight-warning {
+  margin: 5px 20px 0 15px;
+}
 
-  .new-question-button {
-    margin: 10px 0;
-  }
+.new-question-button {
+  margin: 10px 0;
+}
 
-  .options-button {
-    align-self: flex-start;
-    position: relative;
-    bottom: 5px;
-  }
+.options-button {
+  align-self: flex-start;
+  position: relative;
+  bottom: 5px;
+}
 
-  .unstyled-list > *:not(:first-child) {
-    margin-left: 5px;
-  }
+.unstyled-list > *:not(:first-child) {
+  margin-left: 5px;
+}
 </style>

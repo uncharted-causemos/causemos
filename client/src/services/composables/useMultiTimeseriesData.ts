@@ -1,5 +1,11 @@
 import { Datacube } from '@/types/Datacube';
-import { AggregationOption, DataTransform, TemporalResolutionOption, TemporalResolution, SPLIT_BY_VARIABLE } from '@/types/Enums';
+import {
+  AggregationOption,
+  DataTransform,
+  TemporalResolutionOption,
+  TemporalResolution,
+  SPLIT_BY_VARIABLE,
+} from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import _ from 'lodash';
@@ -25,13 +31,18 @@ export default function useMultiTimeseriesData(
 ) {
   const timeseriesData = ref<Timeseries[]>([]);
   const selectedGlobalTimestamp: Ref<number | null> = ref(null);
-  const selectedGlobalTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
+  const selectedGlobalTimestampRange = ref(null) as Ref<{ start: number; end: number } | null>;
 
   // REVIEW: consider refactoring the fetchTimeseries() outside the watchEffect
   //  see https://gitlab.uncharted.software/WM/causemos/-/merge_requests/809
-  watchEffect(onInvalidate => {
+  watchEffect((onInvalidate) => {
     const datacubeMetadata = metadata.value;
-    if (modelRunIds.value.length === 0 || datacubeMetadata === null || breakdownOption.value !== SPLIT_BY_VARIABLE || activeFeatures.value.length === 0) {
+    if (
+      modelRunIds.value.length === 0 ||
+      datacubeMetadata === null ||
+      breakdownOption.value !== SPLIT_BY_VARIABLE ||
+      activeFeatures.value.length === 0
+    ) {
       // Don't have the information needed to fetch the data
       return;
     }
@@ -43,23 +54,39 @@ export default function useMultiTimeseriesData(
 
       // NOTE: we will always have one scenario selected if we breakdown by variable
       // since upon the selection on more than one run, the breakdown options are disabled
-      const allFeaturesAndRunIds: {runId: string; featureName: string; temporalResolution: TemporalResolutionOption; temporalAggregation: AggregationOption; spatialAggregation: AggregationOption; transform?: DataTransform; }[] = [];
-      modelRunIds.value.forEach(runId => {
-        activeFeatures.value.forEach(feature => {
+      const allFeaturesAndRunIds: {
+        runId: string;
+        featureName: string;
+        temporalResolution: TemporalResolutionOption;
+        temporalAggregation: AggregationOption;
+        spatialAggregation: AggregationOption;
+        transform?: DataTransform;
+      }[] = [];
+      modelRunIds.value.forEach((runId) => {
+        activeFeatures.value.forEach((feature) => {
           allFeaturesAndRunIds.push({
             runId,
             featureName: feature.name,
-            temporalAggregation: feature.temporalAggregation !== AggregationOption.None ? feature.temporalAggregation : AggregationOption.Sum,
-            spatialAggregation: feature.spatialAggregation !== AggregationOption.None ? feature.spatialAggregation : AggregationOption.Mean,
+            temporalAggregation:
+              feature.temporalAggregation !== AggregationOption.None
+                ? feature.temporalAggregation
+                : AggregationOption.Sum,
+            spatialAggregation:
+              feature.spatialAggregation !== AggregationOption.None
+                ? feature.spatialAggregation
+                : AggregationOption.Mean,
             transform: feature.transform !== DataTransform.None ? feature.transform : undefined,
-            temporalResolution: feature.temporalResolution !== TemporalResolutionOption.None ? feature.temporalResolution : TemporalResolutionOption.Month
+            temporalResolution:
+              feature.temporalResolution !== TemporalResolutionOption.None
+                ? feature.temporalResolution
+                : TemporalResolutionOption.Month,
           });
         });
       });
 
       // If no regions are selected, pass "undefined" as the region_id
       //  to get the aggregated timeseries for all regions.
-      promises = allFeaturesAndRunIds.map(runAndFeature => {
+      promises = allFeaturesAndRunIds.map((runAndFeature) => {
         return getTimeseries({
           modelId: dataId,
           runId: runAndFeature.runId,
@@ -67,11 +94,11 @@ export default function useMultiTimeseriesData(
           temporalResolution: runAndFeature.temporalResolution,
           temporalAggregation: runAndFeature.temporalAggregation,
           spatialAggregation: runAndFeature.spatialAggregation,
-          transform: runAndFeature.transform
+          transform: runAndFeature.transform,
         });
       });
       const fetchResults = (await Promise.all(promises))
-        .filter(response => response !== null)
+        .filter((response) => response !== null)
         .map((response: any) => response.data);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
@@ -86,15 +113,18 @@ export default function useMultiTimeseriesData(
         const color = colorFromIndex(indx);
         const isDefaultRun = false;
 
-        const output = metadata.value?.outputs.find(output => output.name === name);
-        const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+        const output = metadata.value?.outputs.find((output) => output.name === name);
+        const rawResolution =
+          output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
         const finalRawDate = new Date(metadata.value?.period?.lte ?? 0);
 
         const { points, action } = correctIncompleteTimeseries(
-          rawPoints, rawResolution,
+          rawPoints,
+          rawResolution,
           allFeaturesAndRunIds[indx].temporalResolution,
           allFeaturesAndRunIds[indx].temporalAggregation,
-          finalRawDate);
+          finalRawDate
+        );
 
         return { name, id, color, points, isDefaultRun, correctiveAction: action };
       });
@@ -112,9 +142,9 @@ export default function useMultiTimeseriesData(
     () => [timeseriesData.value],
     () => {
       const allTimestamps = timeseriesData.value
-        .map(timeseries => timeseries.points)
+        .map((timeseries) => timeseries.points)
         .flat()
-        .map(point => point.timestamp);
+        .map((point) => point.timestamp);
       if (allTimestamps.length === 0) {
         return;
       }
@@ -142,9 +172,11 @@ export default function useMultiTimeseriesData(
     selectedGlobalTimestamp.value = timestamp;
   };
 
-  const setSelectedGlobalTimestampRange = (newTimestampRange: {start: number; end: number}) => {
-    if (selectedGlobalTimestampRange.value?.start === newTimestampRange.start &&
-      selectedGlobalTimestampRange.value?.end === newTimestampRange.end) {
+  const setSelectedGlobalTimestampRange = (newTimestampRange: { start: number; end: number }) => {
+    if (
+      selectedGlobalTimestampRange.value?.start === newTimestampRange.start &&
+      selectedGlobalTimestampRange.value?.end === newTimestampRange.end
+    ) {
       return;
     }
     selectedGlobalTimestampRange.value = newTimestampRange;
@@ -155,6 +187,6 @@ export default function useMultiTimeseriesData(
     selectedGlobalTimestamp,
     selectedGlobalTimestampRange,
     setSelectedGlobalTimestampRange,
-    setSelectedGlobalTimestamp
+    setSelectedGlobalTimestamp,
   };
 }

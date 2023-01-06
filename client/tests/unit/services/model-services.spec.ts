@@ -5,29 +5,26 @@ import { CAGGraph } from '@/types/CAG';
 
 const A: CAGGraph = {
   nodes: [
-    { id: 'n1', concept: 'n1', label: 'n1', components: [] }, { id: 'n2', concept: 'n2', label: 'n2', components: [] }
+    { id: 'n1', concept: 'n1', label: 'n1', components: [] },
+    { id: 'n2', concept: 'n2', label: 'n2', components: [] },
   ],
-  edges: [
-    { id: 'e1', source: 'n1', target: 'n2', reference_ids: ['s1'], user_polarity: null }
-  ]
+  edges: [{ id: 'e1', source: 'n1', target: 'n2', reference_ids: ['s1'], user_polarity: null }],
 };
 
 const A_PRIME: CAGGraph = {
   nodes: [
-    { id: 'n1', concept: 'n1', label: 'n1', components: [] }, { id: 'n2', concept: 'n2', label: 'n2', components: [] }
+    { id: 'n1', concept: 'n1', label: 'n1', components: [] },
+    { id: 'n2', concept: 'n2', label: 'n2', components: [] },
   ],
-  edges: [
-    { id: 'e1', source: 'n1', target: 'n2', reference_ids: ['s3'], user_polarity: null }
-  ]
+  edges: [{ id: 'e1', source: 'n1', target: 'n2', reference_ids: ['s3'], user_polarity: null }],
 };
 
 const B: CAGGraph = {
   nodes: [
-    { id: 'c1', concept: 'c1', label: 'c1', components: [] }, { id: 'c2', concept: 'c2', label: 'c2', components: [] }
+    { id: 'c1', concept: 'c1', label: 'c1', components: [] },
+    { id: 'c2', concept: 'c2', label: 'c2', components: [] },
   ],
-  edges: [
-    { id: 'e1', source: 'c1', target: 'c2', reference_ids: ['s2'], user_polarity: null }
-  ]
+  edges: [{ id: 'e1', source: 'c1', target: 'c2', reference_ids: ['s2'], user_polarity: null }],
 };
 
 describe('model-service', () => {

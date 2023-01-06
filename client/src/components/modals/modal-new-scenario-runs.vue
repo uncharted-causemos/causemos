@@ -7,52 +7,35 @@
       <table class="table">
         <tr>
           <td>ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-          <td
-            v-for="(dim, idx) in inputParameters"
-            :key="idx">
+          <td v-for="(dim, idx) in inputParameters" :key="idx">
             <div class="params-header">{{ dim.name }}</div>
           </td>
           <td>&nbsp;</td>
         </tr>
-        <tr
-          v-for="(run, sidx) in potentialRuns"
-          :key="sidx">
+        <tr v-for="(run, sidx) in potentialRuns" :key="sidx">
           <td>{{ sidx }}</td>
-          <td v-for="(dim, idx) in inputParameters"
-            :key="idx"
-            class="params-value">
+          <td v-for="(dim, idx) in inputParameters" :key="idx" class="params-value">
             <label>{{ run[dim.name] }}</label>
           </td>
           <td>
-            <div
-              class="delete-run"
-              @click="deleteRun(sidx)"
-            >
-              <i
-                class="fa fa-fw fa-close"
-              />
+            <div class="delete-run" @click="deleteRun(sidx)">
+              <i class="fa fa-fw fa-close" />
             </div>
           </td>
         </tr>
       </table>
     </template>
     <template #footer>
-      <div class="estimated-runtime">
-        Estimated execution time: {{ estimatedRuntime }}.
-      </div>
+      <div class="estimated-runtime">Estimated execution time: {{ estimatedRuntime }}.</div>
       <ul class="unstyled-list">
-        <button
-          type="button"
-          class="btn first-button"
-          @click.stop="close()">
-            Cancel
-        </button>
+        <button type="button" class="btn first-button" @click.stop="close()">Cancel</button>
         <button
           type="button"
           class="btn btn-call-to-action"
           :disabled="potentialRuns.length == 0"
-          @click.stop="startExecution()">
-            Start Execution
+          @click.stop="startExecution()"
+        >
+          Start Execution
         </button>
       </ul>
     </template>
@@ -76,42 +59,43 @@ import { TYPE } from 'vue-toastification';
 export default defineComponent({
   name: 'ModalNewScenarioRuns',
   components: {
-    Modal
+    Modal,
   },
-  emits: [
-    'close'
-  ],
+  emits: ['close'],
   props: {
     potentialScenarios: {
       type: Array as PropType<ScenarioData[]>,
-      default: []
+      default: [],
     },
     metadata: {
       type: Object as PropType<Model>,
-      default: null
+      default: null,
     },
     selectedDimensions: {
       type: Array as PropType<DimensionInfo[]>,
-      default: null
+      default: null,
     },
     runtimeStats: {
       type: Object as PropType<BoxPlotStats>,
-      default: undefined
-    }
+      default: undefined,
+    },
   },
   computed: {
     inputParameters(): Array<ModelParameter> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
     },
     estimatedRuntime(): string {
-      return DurationFormatter(
-        (this.runtimeStats?.mean ?? NaN) * // average processing time
-        this.potentialRuns.length * // multiply by the number of runs being requested
-        2) || 'unknown'; // add on time for Dojo execution and queue time
-    }
+      return (
+        DurationFormatter(
+          (this.runtimeStats?.mean ?? NaN) * // average processing time
+            this.potentialRuns.length * // multiply by the number of runs being requested
+            2
+        ) || 'unknown'
+      ); // add on time for Dojo execution and queue time
+    },
   },
   data: () => ({
-    potentialRuns: [] as Array<ScenarioData>
+    potentialRuns: [] as Array<ScenarioData>,
   }),
   setup(props) {
     const { metadata } = toRefs(props);
@@ -124,7 +108,7 @@ export default defineComponent({
 
     return {
       currentOutputIndex,
-      toaster: useToaster()
+      toaster: useToaster(),
     };
   },
   mounted() {
@@ -132,8 +116,8 @@ export default defineComponent({
     //  so we need to add them to explicitly highlight ALL potential run values
     const potentialRuns = _.cloneDeep(this.potentialScenarios);
     // for each requested new run, review if there were any invisible input knobs
-    potentialRuns.forEach(potentialRun => {
-      this.inputParameters.forEach(input => {
+    potentialRuns.forEach((potentialRun) => {
+      this.inputParameters.forEach((input) => {
         if (input.is_visible === false) {
           potentialRun[input.name] = input.default;
         }
@@ -146,25 +130,25 @@ export default defineComponent({
   methods: {
     async startExecution() {
       const outputs = getOutputs(this.metadata);
-      const drilldownParams = this.metadata.parameters.filter(d => d.is_drilldown);
+      const drilldownParams = this.metadata.parameters.filter((d) => d.is_drilldown);
 
       //
       // ensure that any choice label is mapped back to its underlying value
       // ensure that default value label is mapped back to default value
       //
-      this.selectedDimensions.forEach(d => {
+      this.selectedDimensions.forEach((d) => {
         if (d.is_visible) {
-          this.potentialRuns.forEach(newRun => {
+          this.potentialRuns.forEach((newRun) => {
             if (d.choices_labels && d.choices !== undefined) {
-              const currLabelValue = (newRun[d.name]).toString();
-              const labelIndex = d.choices_labels?.findIndex(l => l === currLabelValue) ?? 0;
+              const currLabelValue = newRun[d.name].toString();
+              const labelIndex = d.choices_labels?.findIndex((l) => l === currLabelValue) ?? 0;
               if (d.choices !== undefined) {
                 newRun[d.name] = d.choices[labelIndex] ?? currLabelValue;
               }
             }
             if (isGeoParameter(d.type)) {
-              const currLabelValue = (newRun[d.name]).toString();
-              const dimAsModelParam = (d as ModelParameter);
+              const currLabelValue = newRun[d.name].toString();
+              const dimAsModelParam = d as ModelParameter;
               if (currLabelValue === dimAsModelParam.additional_options.default_value_label) {
                 newRun[d.name] = dimAsModelParam.default;
               }
@@ -175,25 +159,29 @@ export default defineComponent({
 
       const promises = this.potentialRuns.map(async (modelRun) => {
         const paramArray: any[] = [];
-        Object.keys(modelRun).forEach(key => {
+        Object.keys(modelRun).forEach((key) => {
           // exclude output variable values since they will be undefined for potential runs
           // also, exclude the status field since it will be populated by the server
           if (key !== outputs[this.currentOutputIndex].name && key !== 'status') {
             paramArray.push({
               name: key,
-              value: modelRun[key]
+              value: modelRun[key],
             });
           }
         });
         // add drilldown/freeform params since they are still inputs
         //  although hidden in the parallel coordinates
-        drilldownParams.forEach(p => {
+        drilldownParams.forEach((p) => {
           paramArray.push({
             name: p.name,
-            value: p.default
+            value: p.default,
           });
         });
-        return datacubeService.createModelRun(this.metadata.data_id, this.metadata?.name, paramArray);
+        return datacubeService.createModelRun(
+          this.metadata.data_id,
+          this.metadata?.name,
+          paramArray
+        );
       });
       // wait until all promises are resolved
       try {
@@ -217,13 +205,13 @@ export default defineComponent({
     },
     deleteRun(runIndex: number) {
       this.potentialRuns.splice(runIndex, 1);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 :deep(.modal-container) {
   width: max-content;

@@ -6,7 +6,8 @@
       :potential-scenarios="potentialScenarios"
       :selected-dimensions="dimensions"
       :runtime-stats="runtimeStats"
-      @close="onNewScenarioRunsModalClose" />
+      @close="onNewScenarioRunsModalClose"
+    />
     <modal-check-runs-execution-status
       v-if="isModel(metadata) && showModelRunsExecutionStatus === true"
       :metadata="metadata"
@@ -19,10 +20,13 @@
       v-if="showGeoSelectionModal === true"
       :model-param="geoModelParam"
       :metadata="metadata"
-      @close="onGeoSelectionModalClose" />
+      @close="onGeoSelectionModalClose"
+    />
     <rename-modal
       v-if="showTagNameModal"
-      :modal-title="`Add new tag to ${selectedScenarioIds.length} selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
+      :modal-title="`Add new tag to ${selectedScenarioIds.length} selected run${
+        selectedScenarioIds.length !== 1 ? 's' : ''
+      }`"
       @confirm="addNewTag"
       @cancel="showTagNameModal = false"
     />
@@ -51,7 +55,7 @@
         :class="{ 'viz-option-invalid': someVizOptionsInvalid }"
         style="margin: 0 1rem"
         title="Toggle visualization options"
-        :onClick="() => activeVizOptionsTab = (activeVizOptionsTab === null ? 'vizoptions' : null)"
+        :onClick="() => (activeVizOptionsTab = activeVizOptionsTab === null ? 'vizoptions' : null)"
       >
         <i class="fa fa-gear" /> Configure
       </button>
@@ -62,10 +66,13 @@
       <div v-if="isModel(metadata)" class="scenario-selector">
         <div class="tags-area-container">
           <span class="scenario-count" v-if="selectedScenarioIds.length === 0">
-            {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
+            {{ scenarioCount }} model run{{ scenarioCount === 1 ? '' : 's' }}.
           </span>
           <span class="scenario-count" v-if="selectedScenarioIds.length > 0">
-            {{selectedScenarioIds.length}} model run{{selectedScenarioIds.length === 1 ? '' : 's'}} selected.
+            {{ selectedScenarioIds.length }} model run{{
+              selectedScenarioIds.length === 1 ? '' : 's'
+            }}
+            selected.
           </span>
           <small-text-button
             v-if="isPublishing && selectedScenarios.length === 1"
@@ -104,16 +111,27 @@
           v-if="isModel(metadata)"
           :data="modelRunsSearchData"
           :filters="modelRunSearchFilters"
-          @filters-updated="filters => modelRunSearchFilters = filters"
+          @filters-updated="(filters) => (modelRunSearchFilters = filters)"
         />
         <div v-if="dateModelParam">
           <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
-            <input class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
+            <input
+              class="date-picker-input"
+              :placeholder="
+                dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange
+                  ? 'Select date range..'
+                  : 'Select date..'
+              "
+              type="text"
+              v-model="dateParamPickerValue"
+              autocomplete="off"
+              data-input
+            />
             <a class="btn date-picker-buttons" title="toggle" data-toggle>
-                <i class="fa fa-calendar"></i>
+              <i class="fa fa-calendar"></i>
             </a>
             <a class="btn date-picker-buttons" title="clear" data-clear>
-                <i class="fa fa-close"></i>
+              <i class="fa fa-close"></i>
             </a>
           </div>
           <temporal-facet
@@ -135,9 +153,13 @@
           @geo-selection="openGeoSelectionModal"
         />
         <message-display
-          style="margin-bottom: 10px;"
+          style="margin-bottom: 10px"
           v-if="isPublishing && !hasDefaultRun"
-          :message="runningDefaultRun ? 'The default run is currently being executed' : 'You must execute a default run by clicking the button below'"
+          :message="
+            runningDefaultRun
+              ? 'The default run is currently being executed'
+              : 'You must execute a default run by clicking the button below'
+          "
           :message-type="'warning'"
         />
         <button
@@ -153,7 +175,7 @@
           class="btn toggle-new-runs-button"
           :class="{
             'btn-call-to-action': !newRunsMode,
-            '': newRunsMode
+            '': newRunsMode,
           }"
           :disabled="metadata && metadata.status === DatacubeStatus.Deprecated"
           @click="toggleNewRunsMode()"
@@ -163,16 +185,14 @@
         <button
           v-if="newRunsMode"
           class="btn btn-call-to-action"
-          :class="{ 'disabled': potentialScenarioCount === 0}"
+          :class="{ disabled: potentialScenarioCount === 0 }"
           @click="requestNewModelRuns()"
         >
-          Review {{ potentialScenarioCount }} new scenario{{ potentialScenarioCount !== 1 ? 's' : '' }}
+          Review {{ potentialScenarioCount }} new scenario{{
+            potentialScenarioCount !== 1 ? 's' : ''
+          }}
         </button>
-        <button
-          v-else
-          class="btn"
-          @click="showModelExecutionStatus()"
-        >
+        <button v-else class="btn" @click="showModelExecutionStatus()">
           Check execution status
         </button>
       </div>
@@ -192,16 +212,23 @@
           </div>
           <div style="display: flex; gap: 5px">
             <div
-              v-if="currentTabView === DatacubeViewMode.Data && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
+              v-if="
+                currentTabView === DatacubeViewMode.Data &&
+                (visibleTimeseriesData.length > 1 || relativeTo !== null)
+              "
               class="relative-box"
             >
               <div class="checkbox" v-if="relativeTo">
                 <label
                   @click="showPercentChange = !showPercentChange"
-                  style="cursor: pointer; color: black;">
+                  style="cursor: pointer; color: black"
+                >
                   <i
                     class="fa fa-lg fa-fw"
-                    :class="{ 'fa-check-square-o': showPercentChange, 'fa-square-o': !showPercentChange }"
+                    :class="{
+                      'fa-check-square-o': showPercentChange,
+                      'fa-square-o': !showPercentChange,
+                    }"
                   />
                   Use % Change
                 </label>
@@ -212,16 +239,17 @@
                 @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
                 :style="{ color: baselineMetadata?.color ?? 'black' }"
               >
-                {{baselineMetadata?.name ?? 'none'}}</button
-              >
-              <dropdown-control
-                v-if="isRelativeDropdownOpen"
-                class="relative-dropdown">
+                {{ baselineMetadata?.name ?? 'none' }}
+              </button>
+              <dropdown-control v-if="isRelativeDropdownOpen" class="relative-dropdown">
                 <template #content>
                   <div
                     v-if="relativeTo !== null"
                     class="dropdown-option"
-                    @click="setRelativeTo(null); isRelativeDropdownOpen = false;"
+                    @click="
+                      setRelativeTo(null);
+                      isRelativeDropdownOpen = false;
+                    "
                   >
                     none
                   </div>
@@ -230,9 +258,12 @@
                     class="dropdown-option"
                     :style="{ color: timeseries.color }"
                     :key="index"
-                    @click="setRelativeTo(timeseries.id); isRelativeDropdownOpen = false;"
+                    @click="
+                      setRelativeTo(timeseries.id);
+                      isRelativeDropdownOpen = false;
+                    "
                   >
-                    {{timeseries.name}}
+                    {{ timeseries.name }}
                   </div>
                 </template>
               </dropdown-control>
@@ -240,7 +271,7 @@
             <button
               v-if="isBreakdownPaneOpen === false"
               class="btn btn-sm"
-              @click="() => isBreakdownPaneOpen = true"
+              @click="() => (isBreakdownPaneOpen = true)"
             >
               Show breakdown
             </button>
@@ -257,14 +288,14 @@
         -->
         <div
           v-if="currentTabView === DatacubeViewMode.Media && outputSpecs.length > 0"
-          style="display: flex; height: 100%; flex-direction: column">
-
+          style="display: flex; height: 100%; flex-direction: column"
+        >
           <!-- a global list of all pre-rendered-viz items from all runs.
             FIXME: enable selection by item name/id instead of index which won't
             work when different model runs have different lists of
             pre-rendered items -->
           <div v-if="preGenDataIds.length > 0">
-            <div style="display: flex; padding: 5px;">
+            <div style="display: flex; padding: 5px">
               <div style="padding-right: 10px">Selected Viz:</div>
               <select
                 name="pre-gen-outputs"
@@ -275,7 +306,7 @@
                   :key="pregenId"
                   :selected="pregenId === selectedPreGenDataId"
                 >
-                  {{pregenId}}
+                  {{ pregenId }}
                 </option>
               </select>
               <button
@@ -283,41 +314,52 @@
                 type="button"
                 class="btn btn-sm btn-call-to-action"
                 style="margin-left: 10px"
-                @click="savePreGenAsInsight">
+                @click="savePreGenAsInsight"
+              >
                 <i class="fa fa-fw fa-star fa-lg" />
                 Save As Insight
               </button>
             </div>
-            <div v-if="firstSelectedPreGenOutput && firstSelectedPreGenOutput.caption" style="padding-left: 5px; padding-right: 10px">{{firstSelectedPreGenOutput.caption}}</div>
+            <div
+              v-if="firstSelectedPreGenOutput && firstSelectedPreGenOutput.caption"
+              style="padding-left: 5px; padding-right: 10px"
+            >
+              {{ firstSelectedPreGenOutput.caption }}
+            </div>
           </div>
 
-          <div class="card-maps-container" style="flex-direction: revert;">
-            <div v-for="(spec, indx) in outputSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec.id)"
+          <div class="card-maps-container" style="flex-direction: revert">
+            <div
+              v-for="(spec, indx) in outputSpecs"
+              :key="spec.id"
+              :set="(pregenDataForSpec = getSelectedPreGenOutput(spec.id))"
               class="card-map-container"
               :style="{ borderColor: colorFromIndex(indx) }"
-              style="border-width: 2px; border-style: solid;"
+              style="border-width: 2px; border-style: solid"
               :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
             >
               <!-- spec here represents one selected model run -->
-              <template v-if="spec.preGeneratedOutput && pregenDataForSpec !== undefined" >
+              <template v-if="spec.preGeneratedOutput && pregenDataForSpec !== undefined">
                 <!-- display only a single pre-rendered-viz item for each selected run -->
                 <img
                   v-if="pregenDataForSpec.type === 'image'"
                   :src="pregenDataForSpec.embeddedSrc ?? pregenDataForSpec.file"
                   alt="Pre-rendered Visualization"
                   class="pre-rendered-content"
-                >
+                />
                 <video
                   v-if="pregenDataForSpec.type === 'video'"
-                  controls muted
+                  controls
+                  muted
                   class="pre-rendered-content"
                   :src="pregenDataForSpec.file"
-                >
-                </video>
+                ></video>
                 <iframe
                   v-if="pregenDataForSpec.type === 'web'"
                   :src="pregenDataForSpec.file"
-                  class="pre-rendered-content" style="height: 100%;">
+                  class="pre-rendered-content"
+                  style="height: 100%"
+                >
                 </iframe>
               </template>
               <template v-else>
@@ -336,28 +378,26 @@
         />
         <modal v-if="showDatasets">
           <template #header>
-            <h4 class="header"> Parquet files used to populate this datacube </h4>
+            <h4 class="header">Parquet files used to populate this datacube</h4>
           </template>
           <template #body>
             <div v-for="dataPath in dataPaths" :key="dataPath">
-              <a class="dataset-link" :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
-              <br/>
-              <br/>
+              <a class="dataset-link" :href="dataPath">{{
+                dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath
+              }}</a>
+              <br />
+              <br />
             </div>
             <p>
-              <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
+              <a href="https://github.com/uncharted-causemos/parquet-to-csv"
+                >View code used to process the parquet files.</a
+              >
             </p>
           </template>
           <template #footer>
-            <div
-              class="btn btn-call-to-action"
-              @click="showDatasets = false"
-            >
-              Close
-            </div>
+            <div class="btn btn-call-to-action" @click="showDatasets = false">Close</div>
           </template>
         </modal>
-
 
         <!-- Data tab content -->
         <div v-if="currentTabView === DatacubeViewMode.Data" class="column">
@@ -372,7 +412,11 @@
             @select-timestamp="setSelectedTimestamp"
           />
           <datacube-comparative-timeline-sync
-            v-if="breakdownOption === SPLIT_BY_VARIABLE && selectedFeatureNames.size > 0 && globalTimeseries.length > 0"
+            v-if="
+              breakdownOption === SPLIT_BY_VARIABLE &&
+              selectedFeatureNames.size > 0 &&
+              globalTimeseries.length > 0
+            "
             :timeseriesData="globalTimeseries"
             :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
             :selected-timestamp="selectedGlobalTimestamp"
@@ -385,7 +429,7 @@
             v-if="
               breakdownOption !== null &&
               ((visibleTimeseriesData.length === 0 && breakdownOption !== SPLIT_BY_VARIABLE) ||
-              (selectedFeatureNames.size === 0 && breakdownOption === SPLIT_BY_VARIABLE))
+                (selectedFeatureNames.size === 0 && breakdownOption === SPLIT_BY_VARIABLE))
             "
           >
             Please select one or more
@@ -407,13 +451,10 @@
                 :key="featureName"
                 class="card-map-container"
                 :class="[
-                  `card-count-${selectedFeatures.length < 5 ? selectedFeatures.length : 'n'}`
+                  `card-count-${selectedFeatures.length < 5 ? selectedFeatures.length : 'n'}`,
                 ]"
               >
-                <span
-                  v-if="selectedFeatures.length > 1"
-                  :style="{ color: colorFromIndex(indx)}"
-                >
+                <span v-if="selectedFeatures.length > 1" :style="{ color: colorFromIndex(indx) }">
                   {{ featureName }}
                 </span>
                 <region-map
@@ -433,7 +474,7 @@
             <map-legend
               v-if="outputSpecs.length > 0 && mapLegendData.length === 2"
               class="map-legend"
-              :class="{'top-margin right-margin' : outputSpecs.length > 1 }"
+              :class="{ 'top-margin right-margin': outputSpecs.length > 1 }"
               :ramp="mapLegendData[0]"
               :isContinuous="isContinuousScale"
             />
@@ -444,20 +485,17 @@
                 class="card-map-container"
                 :class="[
                   spec.isDefaultRun ? 'is-default-run' : '',
-                  `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
+                  `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`,
                 ]"
               >
-                <span
-                  v-if="outputSpecs.length > 1"
-                  :style="{ color: colorFromIndex(indx)}"
-                >
+                <span v-if="outputSpecs.length > 1" :style="{ color: colorFromIndex(indx) }">
                   {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
                 </span>
                 <data-analysis-map
                   class="card-map"
                   :style="{ borderColor: colorFromIndex(indx) }"
                   :output-source-specs="outputSpecs"
-                  :output-selection=spec.id
+                  :output-selection="spec.id"
                   :relative-to="relativeTo"
                   :show-tooltip="true"
                   :selected-layer-id="getSelectedLayer(spec.id)"
@@ -472,7 +510,9 @@
                   :unit="unit"
                   :color-options="mapColorOptions"
                   :show-percent-change="showPercentChange"
-                  @sync-bounds="(bounds) => isSplitByRegionMode ? () => {} : onSyncMapBounds(bounds)"
+                  @sync-bounds="
+                    (bounds) => (isSplitByRegionMode ? () => {} : onSyncMapBounds(bounds))
+                  "
                   @on-map-load="onMapLoad"
                   @zoom-change="updateMapCurSyncedZoom"
                   @map-update="recalculateGridMapDiffStats"
@@ -486,10 +526,8 @@
             <map-legend
               v-if="outputSpecs.length > 0"
               class="map-legend"
-              :class="{'top-margin left-margin' : outputSpecs.length > 1 }"
-              :ramp="mapLegendData.length === 2
-                ? mapLegendData[1]
-                : mapLegendData[0]"
+              :class="{ 'top-margin left-margin': outputSpecs.length > 1 }"
+              :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]"
               :isContinuous="isContinuousScale"
             />
           </div>
@@ -498,12 +536,7 @@
       <div v-if="isBreakdownPaneOpen" class="breakdown-pane">
         <div class="breakdown-pane-header">
           <h4>Breakdown</h4>
-          <button
-            class="btn btn-sm"
-            :onClick="() => isBreakdownPaneOpen = false"
-          >
-            Hide
-          </button>
+          <button class="btn btn-sm" :onClick="() => (isBreakdownPaneOpen = false)">Hide</button>
         </div>
         <breakdown-pane
           class="breakdown-pane-content"
@@ -539,7 +572,8 @@
       </div>
     </div>
     <!-- viz options if visible will always be on top of the breakdown panel -->
-    <div class="viz-options-modal-mask"
+    <div
+      class="viz-options-modal-mask"
       v-if="activeVizOptionsTab !== null"
       @click="activeVizOptionsTab = null"
     >
@@ -583,7 +617,16 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, nextTick, PropType, ref, toRefs, watch, watchEffect } from 'vue';
+import {
+  computed,
+  defineComponent,
+  nextTick,
+  PropType,
+  ref,
+  toRefs,
+  watch,
+  watchEffect,
+} from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 import * as d3 from 'd3';
@@ -627,30 +670,28 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption,
   SPLIT_BY_VARIABLE,
-  DatacubeViewMode, DatacubeStatus, ProjectType
+  DatacubeViewMode,
+  DatacubeStatus,
+  ProjectType,
 } from '@/types/Enums';
 import { Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataSpaceDataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 
-import {
-  colorFromIndex,
-  ColorScaleType,
-  validateColorScaleType
-} from '@/utils/colors-util';
+import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import {
   getUnitString,
   isIndicator,
   isModel,
   TAGS,
   DEFAULT_DATE_RANGE_DELIMETER,
-  convertRegionalDataToBarData
+  convertRegionalDataToBarData,
 } from '@/utils/datacube-util';
 import {
   initDataStateFromRefs,
   initViewStateFromRefs,
   fromStateSelectedRegionsAtAllLevels,
-  validateSelectedRegions
+  validateSelectedRegions,
 } from '@/utils/drilldown-util';
 import {
   BASE_LAYER,
@@ -658,7 +699,7 @@ import {
   SOURCE_LAYERS,
   getMapSourceLayer,
   popupFormatter,
-  getActiveRegions
+  getActiveRegions,
 } from '@/utils/map-util-new';
 
 import {
@@ -666,7 +707,7 @@ import {
   createModelRun,
   fetchImageAsBase64,
   removeModelRunsTag,
-  updateModelRun
+  updateModelRun,
 } from '@/services/new-datacube-service';
 
 import API from '@/api/api';
@@ -687,40 +728,36 @@ const defaultRunButtonCaption = 'Run with default parameters';
 
 export default defineComponent({
   name: 'DatacubeCard',
-  emits: [
-    'on-map-load',
-    'update-model-parameter',
-    'visible-timeseries-changed'
-  ],
+  emits: ['on-map-load', 'update-model-parameter', 'visible-timeseries-changed'],
   props: {
     isPublishing: {
       type: Boolean,
-      default: false
+      default: false,
     },
     initialDataConfig: {
       type: Object as PropType<DataSpaceDataState>,
-      default: null
+      default: null,
     },
     initialViewConfig: {
       type: Object as PropType<ViewState>,
-      default: null
+      default: null,
     },
     tabState: {
       type: String,
-      default: DatacubeViewMode.Description
+      default: DatacubeViewMode.Description,
     },
     metadata: {
       type: Object as PropType<Model | Indicator | null>,
-      default: null
+      default: null,
     },
     aggregationOptions: {
       type: Array as PropType<AggregationOption[]>,
-      default: []
+      default: [],
     },
     temporalResolutionOptions: {
       type: Array as PropType<TemporalResolutionOption[] | null>,
-      default: null
-    }
+      default: null,
+    },
   },
   components: {
     BreakdownPane,
@@ -743,7 +780,7 @@ export default defineComponent({
     TemporalFacet,
     timeseriesChart,
     DatacubeComparativeTimelineSync,
-    RegionMap
+    RegionMap,
   },
   setup(props, { emit }) {
     const store = useStore();
@@ -756,7 +793,7 @@ export default defineComponent({
       metadata,
       tabState,
       temporalResolutionOptions,
-      aggregationOptions
+      aggregationOptions,
     } = toRefs(props);
 
     const projectType = computed(() => store.getters['app/projectType']);
@@ -777,14 +814,13 @@ export default defineComponent({
     };
 
     const isPeriodicallyRefreshingModelRuns = computed(
-      () => (newRunsMode.value === false && isModel(metadata.value) === true)
+      () => newRunsMode.value === false && isModel(metadata.value) === true
     );
 
-    const {
-      currentOutputIndex,
-      activeFeature,
-      activeFeatureName
-    } = useActiveDatacubeFeature(metadata, itemId);
+    const { currentOutputIndex, activeFeature, activeFeatureName } = useActiveDatacubeFeature(
+      metadata,
+      itemId
+    );
 
     const {
       dimensions,
@@ -878,26 +914,19 @@ export default defineComponent({
       adminLayerStats,
       gridLayerStats,
       pointsLayerStats,
-      mapLegendData
-    } = useDatacube(
-      metadata,
-      itemId,
-      activeFeatureName,
-      isPeriodicallyRefreshingModelRuns
-    );
+      mapLegendData,
+    } = useDatacube(metadata, itemId, activeFeatureName, isPeriodicallyRefreshingModelRuns);
 
     const toaster = useToaster();
 
     const isBreakdownPaneOpen = ref<boolean>(true);
-    const activeVizOptionsTab = ref<string|null>(null);
+    const activeVizOptionsTab = ref<string | null>(null);
 
     const potentialScenarios = ref<ScenarioData[]>([]);
     watch([newRunsMode], () => {
       potentialScenarios.value = [];
     });
-    const potentialScenarioCount = computed(
-      () => potentialScenarios.value.length
-    );
+    const potentialScenarioCount = computed(() => potentialScenarios.value.length);
 
     const showDatasets = ref<boolean>(false);
     const isRelativeDropdownOpen = ref<boolean>(false);
@@ -924,10 +953,13 @@ export default defineComponent({
     const dateModelParam = computed(() => {
       const modelMetadata = metadata.value;
       if (modelMetadata === null || !isModel(modelMetadata)) return null;
-      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange || dim.type === DatacubeGenericAttributeVariableType.Date);
+      const dateParams = modelMetadata.parameters.filter(
+        (dim) =>
+          dim.type === DatacubeGenericAttributeVariableType.DateRange ||
+          dim.type === DatacubeGenericAttributeVariableType.Date
+      );
       return dateParams.length > 0 ? dateParams[0] : null;
     });
-
 
     const updateAndFetch = async (newDefaultRun: ModelRun) => {
       const defaultRunModified = { ...newDefaultRun, is_default_run: true };
@@ -937,33 +969,62 @@ export default defineComponent({
 
     watchEffect(() => {
       // If there are no default runs then set a run to default if it matches the default parameters
-      if (isPublishing.value && allModelRunData.value.every(run => !run.is_default_run) && metadata.value && isModel(metadata.value)) {
-        const parameterDictionary = _.mapValues(_.keyBy(metadata.value.parameters, 'name'), 'default');
-        const newDefaultRun = allModelRunData.value.find(run => {
+      if (
+        isPublishing.value &&
+        allModelRunData.value.every((run) => !run.is_default_run) &&
+        metadata.value &&
+        isModel(metadata.value)
+      ) {
+        const parameterDictionary = _.mapValues(
+          _.keyBy(metadata.value.parameters, 'name'),
+          'default'
+        );
+        const newDefaultRun = allModelRunData.value.find((run) => {
           const runParameterDictionary = _.mapValues(_.keyBy(run.parameters, 'name'), 'value');
-          return Object.keys(parameterDictionary).every(p => runParameterDictionary[p] === parameterDictionary[p]);
+          return Object.keys(parameterDictionary).every(
+            (p) => runParameterDictionary[p] === parameterDictionary[p]
+          );
         });
         if (newDefaultRun) {
           updateAndFetch(newDefaultRun);
         }
       }
     });
-    const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && run.status === ModelRunStatus.Ready));
+    const hasDefaultRun = computed(() =>
+      allModelRunData.value.some((run) => run.is_default_run && run.status === ModelRunStatus.Ready)
+    );
     const canClickDataTab = computed(() => {
-      return runFromInsight.value || !isPublishing.value || hasDefaultRun.value || (metadata.value && isIndicator(metadata.value));
+      return (
+        runFromInsight.value ||
+        !isPublishing.value ||
+        hasDefaultRun.value ||
+        (metadata.value && isIndicator(metadata.value))
+      );
     });
-    const {
-      runParameterValues
-    } = useParallelCoordinatesData(metadata, filteredRunData, selectedSpatialAggregation, selectedTemporalAggregation, itemId);
+    const { runParameterValues } = useParallelCoordinatesData(
+      metadata,
+      filteredRunData,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      itemId
+    );
 
     const scenarioCount = computed(() => runParameterValues.value.length);
 
-    const runningDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && (run.status === ModelRunStatus.Processing || run.status === ModelRunStatus.Submitted)));
+    const runningDefaultRun = computed(() =>
+      allModelRunData.value.some(
+        (run) =>
+          run.is_default_run &&
+          (run.status === ModelRunStatus.Processing || run.status === ModelRunStatus.Submitted)
+      )
+    );
 
     const runtimeStats = computed(() => {
       const runtimeMillis = allModelRunData.value
-        .filter(run => run.runtimes?.post_processing?.start_time)
-        .map(run => run.runtimes.post_processing.end_time - run.runtimes.post_processing.start_time)
+        .filter((run) => run.runtimes?.post_processing?.start_time)
+        .map(
+          (run) => run.runtimes.post_processing.end_time - run.runtimes.post_processing.start_time
+        )
         .sort((a, b) => a - b);
 
       if (runtimeMillis.length === 0) {
@@ -983,7 +1044,7 @@ export default defineComponent({
 
     const addNewTag = (tagName: string) => {
       let numAdded = 0;
-      selectedScenarios.value.forEach(s => {
+      selectedScenarios.value.forEach((s) => {
         if (!s.tags.includes(tagName)) {
           numAdded++;
           s.tags.push(tagName);
@@ -991,11 +1052,24 @@ export default defineComponent({
       });
       showTagNameModal.value = false;
       if (numAdded > 0) {
-        toaster(`Successfully added '${tagName}' to ${numAdded} run${numAdded === 1 ? '' : 's'}`, TYPE.SUCCESS, false);
+        toaster(
+          `Successfully added '${tagName}' to ${numAdded} run${numAdded === 1 ? '' : 's'}`,
+          TYPE.SUCCESS,
+          false
+        );
       } else {
-        toaster(`Selected run${selectedScenarios.value.length === 1 ? ' is' : 's are'} already tagged with '${tagName}'`, TYPE.SUCCESS, false);
+        toaster(
+          `Selected run${
+            selectedScenarios.value.length === 1 ? ' is' : 's are'
+          } already tagged with '${tagName}'`,
+          TYPE.SUCCESS,
+          false
+        );
       }
-      addModelRunsTag(selectedScenarios.value.map(run => run.id), tagName);
+      addModelRunsTag(
+        selectedScenarios.value.map((run) => run.id),
+        tagName
+      );
     };
 
     const runTags = computed<RunsTag[]>(() => {
@@ -1003,16 +1077,16 @@ export default defineComponent({
       if (filteredRunData.value.length === 0) {
         return tags;
       }
-      filteredRunData.value.forEach(run => {
-        run.tags.forEach(tag => {
-          const existingTagIndx = tags.findIndex(t => t.label === tag);
+      filteredRunData.value.forEach((run) => {
+        run.tags.forEach((tag) => {
+          const existingTagIndx = tags.findIndex((t) => t.label === tag);
           if (existingTagIndx >= 0) {
             tags[existingTagIndx].count++;
           } else {
             tags.push({
               label: tag,
               count: 1,
-              selected: false
+              selected: false,
             });
           }
         });
@@ -1040,9 +1114,13 @@ export default defineComponent({
       () => temporalResolutionOptions.value,
       () => {
         if (temporalResolutionOptions.value !== null) {
-        // ensure the initial selectedTemporalResolution is valid and respect the "temporalResolutionOptions"
-        // Also, set the resolution selection
-          if (temporalResolutionOptions.value.findIndex(option => option === selectedTemporalResolution.value) < 0) {
+          // ensure the initial selectedTemporalResolution is valid and respect the "temporalResolutionOptions"
+          // Also, set the resolution selection
+          if (
+            temporalResolutionOptions.value.findIndex(
+              (option) => option === selectedTemporalResolution.value
+            ) < 0
+          ) {
             if (temporalResolutionOptions.value.length > 0) {
               setTemporalResolutionSelection(temporalResolutionOptions.value[0]);
             }
@@ -1052,48 +1130,55 @@ export default defineComponent({
     );
 
     // apply initial view config for this datacube
-    watch([initialViewConfig], () => {
-      if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
-        if (initialViewConfig.value.spatialAggregation !== undefined) {
-          selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation as AggregationOption;
+    watch(
+      [initialViewConfig],
+      () => {
+        if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
+          if (initialViewConfig.value.spatialAggregation !== undefined) {
+            selectedSpatialAggregation.value = initialViewConfig.value
+              .spatialAggregation as AggregationOption;
+          }
+          if (initialViewConfig.value.temporalResolution !== undefined) {
+            selectedTemporalResolution.value = initialViewConfig.value
+              .temporalResolution as TemporalResolutionOption;
+          }
+          if (initialViewConfig.value.temporalAggregation !== undefined) {
+            selectedTemporalAggregation.value = initialViewConfig.value
+              .temporalAggregation as AggregationOption;
+          }
+          if (initialViewConfig.value.selectedMapBaseLayer !== undefined) {
+            selectedBaseLayer.value = initialViewConfig.value.selectedMapBaseLayer;
+          }
+          if (initialViewConfig.value.selectedMapDataLayer !== undefined) {
+            selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
+          }
+          if (initialViewConfig.value.breakdownOption !== undefined) {
+            breakdownOption.value = initialViewConfig.value.breakdownOption;
+          }
+          if (initialViewConfig.value.selectedAdminLevel !== undefined) {
+            selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
+          }
+          if (initialViewConfig.value.dataLayerTransparency !== undefined) {
+            selectedDataLayerTransparency.value = initialViewConfig.value.dataLayerTransparency;
+          }
+          if (initialViewConfig.value.colorSchemeReversed !== undefined) {
+            colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
+          }
+          if (initialViewConfig.value.colorSchemeName !== undefined) {
+            selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
+          }
+          if (validateColorScaleType(String(initialViewConfig.value.colorScaleType))) {
+            selectedColorScaleType.value = initialViewConfig.value.colorScaleType as ColorScaleType;
+          }
+          if (initialViewConfig.value.numberOfColorBins !== undefined) {
+            numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
+          }
+          // FIXME: although we have restored the color palette/scale/options,
+          //  none of those will look applied since the final color list is only generated when the viz-option is opened
         }
-        if (initialViewConfig.value.temporalResolution !== undefined) {
-          selectedTemporalResolution.value = initialViewConfig.value.temporalResolution as TemporalResolutionOption;
-        }
-        if (initialViewConfig.value.temporalAggregation !== undefined) {
-          selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation as AggregationOption;
-        }
-        if (initialViewConfig.value.selectedMapBaseLayer !== undefined) {
-          selectedBaseLayer.value = initialViewConfig.value.selectedMapBaseLayer;
-        }
-        if (initialViewConfig.value.selectedMapDataLayer !== undefined) {
-          selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
-        }
-        if (initialViewConfig.value.breakdownOption !== undefined) {
-          breakdownOption.value = initialViewConfig.value.breakdownOption;
-        }
-        if (initialViewConfig.value.selectedAdminLevel !== undefined) {
-          selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
-        }
-        if (initialViewConfig.value.dataLayerTransparency !== undefined) {
-          selectedDataLayerTransparency.value = initialViewConfig.value.dataLayerTransparency;
-        }
-        if (initialViewConfig.value.colorSchemeReversed !== undefined) {
-          colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
-        }
-        if (initialViewConfig.value.colorSchemeName !== undefined) {
-          selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
-        }
-        if (validateColorScaleType(String(initialViewConfig.value.colorScaleType))) {
-          selectedColorScaleType.value = initialViewConfig.value.colorScaleType as ColorScaleType;
-        }
-        if (initialViewConfig.value.numberOfColorBins !== undefined) {
-          numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
-        }
-        // FIXME: although we have restored the color palette/scale/options,
-        //  none of those will look applied since the final color list is only generated when the viz-option is opened
-      }
-    }, { immediate: true });
+      },
+      { immediate: true }
+    );
 
     // HACK: please delete this
     const clearRouteParam = () => {
@@ -1104,12 +1189,14 @@ export default defineComponent({
       // fix to avoid double history later
       // only set if the current route param includes insight_id
       if (route && route.query && route.query.insight_id) {
-        router.push({
-          query: {
-            insight_id: undefined,
-            datacube_id: selectedModelId.value
-          }
-        }).catch(() => {});
+        router
+          .push({
+            query: {
+              insight_id: undefined,
+              datacube_id: selectedModelId.value,
+            },
+          })
+          .catch(() => {});
       }
     };
 
@@ -1126,8 +1213,8 @@ export default defineComponent({
       selectedScenarioIds.value = newIds;
     };
     const setSelectedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
-      const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
-      setSelectedScenarioIds(selectedScenarios.map(s => s.run_id.toString()));
+      const selectedScenarios = e.scenarios.filter((s) => s.status === ModelRunStatus.Ready);
+      setSelectedScenarioIds(selectedScenarios.map((s) => s.run_id.toString()));
     };
     watch([selectedScenarioIds], clearRouteParam);
 
@@ -1140,10 +1227,7 @@ export default defineComponent({
         return;
       }
       if (selectedScenarioIds.value.length > 0) {
-        if (
-          currentTabView.value === DatacubeViewMode.Description &&
-          canClickDataTab.value
-        ) {
+        if (currentTabView.value === DatacubeViewMode.Description && canClickDataTab.value) {
           currentTabView.value = DatacubeViewMode.Data;
         }
       } else {
@@ -1168,7 +1252,7 @@ export default defineComponent({
     watch(
       () => [tabState.value],
       () => {
-        if (tabState.value as string !== '') {
+        if ((tabState.value as string) !== '') {
           onTabClick(tabState.value as DatacubeViewMode);
         }
       },
@@ -1177,7 +1261,11 @@ export default defineComponent({
 
     const clickData = () => {
       if (!canClickDataTab.value) {
-        toaster(`At least one run must match the default parameters. Click "${defaultRunButtonCaption}"`, TYPE.INFO, true);
+        toaster(
+          `At least one run must match the default parameters. Click "${defaultRunButtonCaption}"`,
+          TYPE.INFO,
+          true
+        );
         return;
       }
       // FIXME: This code to select a model run when switching to the data tab
@@ -1186,32 +1274,34 @@ export default defineComponent({
 
       if (isModel(metadata.value) && selectedScenarioIds.value.length === 0) {
         // clicking on either the 'data' or 'media' tabs when no runs is selected should always pick the baseline run
-        const readyRuns = filteredRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
+        const readyRuns = filteredRunData.value.filter(
+          (r) => r.status === ModelRunStatus.Ready && r.is_default_run
+        );
         if (readyRuns.length === 0) {
           console.warn('cannot find a baseline model run indicated by the is_default_run');
           // failed to find baseline using the 'is_default_run' flag
           // FIXME: so, try to find a model run that has values matching the default values of all inputs
         }
-        const newIds = readyRuns.map(run => run.id).slice(0, 1);
+        const newIds = readyRuns.map((run) => run.id).slice(0, 1);
         setSelectedScenarioIds(newIds);
       }
 
       currentTabView.value = DatacubeViewMode.Data;
     };
 
-    const modelRunsSearchData = ref<{[key: string]: any}>({});
+    const modelRunsSearchData = ref<{ [key: string]: any }>({});
     watchEffect(() => {
-      const result: {[key: string]: any} = {};
+      const result: { [key: string]: any } = {};
       // add a search item for searching by tags
       result[TAGS] = {
         display_name: 'Tag',
-        values: []
+        values: [],
       };
       // add a search item for each (input/output) dimesion
-      dimensions.value.forEach(dim => {
+      dimensions.value.forEach((dim) => {
         result[dim.name] = {
           display_name: dim.display_name,
-          type: dim.type
+          type: dim.type,
         };
         if (dim.choices && dim.choices.length > 0) {
           result[dim.name].values = _.uniq(Array.from(dim.choices));
@@ -1219,7 +1309,11 @@ export default defineComponent({
       });
       // since the data used to initialize the lex bar has changed,
       //  we may need to reset filters
-      if (!_.isEmpty(modelRunsSearchData.value) && Object.keys(modelRunsSearchData.value).length > 1 && dimensions.value.length > 0) {
+      if (
+        !_.isEmpty(modelRunsSearchData.value) &&
+        Object.keys(modelRunsSearchData.value).length > 1 &&
+        dimensions.value.length > 0
+      ) {
         const outputDim = dimensions.value[dimensions.value.length - 1];
         if (modelRunsSearchData.value[outputDim.name] === undefined) {
           modelRunSearchFilters.value = { clauses: [] };
@@ -1230,7 +1324,7 @@ export default defineComponent({
 
     watchEffect(() => {
       if (runTags.value) {
-        modelRunsSearchData.value[TAGS].values = runTags.value.map(tagInfo => tagInfo.label);
+        modelRunsSearchData.value[TAGS].values = runTags.value.map((tagInfo) => tagInfo.label);
       }
     });
 
@@ -1243,7 +1337,10 @@ export default defineComponent({
             setSelectedScenarioIds(_.clone(initialDataConfig.value.selectedScenarioIds));
           }
           if (initialDataConfig.value.selectedTimestamp !== undefined) {
-            if (initialViewConfig.value.breakdownOption && initialViewConfig.value.breakdownOption === SPLIT_BY_VARIABLE) {
+            if (
+              initialViewConfig.value.breakdownOption &&
+              initialViewConfig.value.breakdownOption === SPLIT_BY_VARIABLE
+            ) {
               initialSelectedGlobalTimestamp.value = initialDataConfig.value.selectedTimestamp;
             } else {
               // setSelectedTimestamp(initialDataConfig.value.selectedTimestamp); // fyi: this cannot be called since it is defined later in the document
@@ -1251,12 +1348,16 @@ export default defineComponent({
             }
           }
           if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
-            const regions = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
+            const regions = fromStateSelectedRegionsAtAllLevels(
+              initialDataConfig.value.selectedRegionIdsAtAllLevels
+            );
             const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
             selectedRegionIdsAtAllLevels.value = validRegions;
           }
           if (initialDataConfig.value.selectedOutputVariables !== undefined) {
-            initialSelectedOutputVariables.value = _.clone(initialDataConfig.value.selectedOutputVariables);
+            initialSelectedOutputVariables.value = _.clone(
+              initialDataConfig.value.selectedOutputVariables
+            );
           }
           if (initialDataConfig.value.activeFeatures !== undefined) {
             initialActiveFeatures.value = _.clone(initialDataConfig.value.activeFeatures);
@@ -1268,21 +1369,24 @@ export default defineComponent({
             selectedTransform.value = initialDataConfig.value.selectedTransform as DataTransform;
           }
           if (initialDataConfig.value.activeReferenceOptions !== undefined) {
-            initialActiveReferenceOptions.value = _.clone(initialDataConfig.value.activeReferenceOptions);
+            initialActiveReferenceOptions.value = _.clone(
+              initialDataConfig.value.activeReferenceOptions
+            );
           }
           // Don't restore non-default qualifiers from an analysis since there is no way to reset the list
           // if (initialDataConfig.value.nonDefaultQualifiers !== undefined) {
           //   initialNonDefaultQualifiers.value = _.clone(initialDataConfig.value.nonDefaultQualifiers);
           // }
           if (initialDataConfig.value.selectedQualifierValues !== undefined) {
-            initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
+            initialSelectedQualifierValues.value = _.clone(
+              initialDataConfig.value.selectedQualifierValues
+            );
           }
           modelRunSearchFilters.value = _.clone(initialDataConfig.value.searchFilters);
         }
       },
       { immediate: true }
     );
-
 
     const requestNewModelRuns = () => {
       showNewRunsModal.value = true;
@@ -1311,10 +1415,13 @@ export default defineComponent({
               // defaultDate: initial date for the date picker
               // altInput: true, // display date in a more readable, customizable, format
               // mode: "multiple" is it possible to select multiple individual date(s)
-              mode: dateModelParam.value.type === DatacubeGenericAttributeVariableType.DateRange ? 'range' : 'single', // enable date range selection
+              mode:
+                dateModelParam.value.type === DatacubeGenericAttributeVariableType.DateRange
+                  ? 'range'
+                  : 'single', // enable date range selection
               allowInput: false, // should the user be able to directly enter date value?
               wrap: true, // enable the flatpickr lib to utilize toggle/clear buttons
-              clickOpens: false // do not allow click on the input date picker to open the calendar
+              clickOpens: false, // do not allow click on the input date picker to open the calendar
             };
             // minimum allowed date
             if (dateModelParam.value.additional_options?.date_min) {
@@ -1350,28 +1457,29 @@ export default defineComponent({
     const headerGroupButtons = computed(() => {
       const hasPreGenData = _.some(
         filteredRunData.value,
-        run =>
+        (run) =>
           run.pre_gen_output_paths &&
-          _.some(run.pre_gen_output_paths, p => p.coords === undefined)
+          _.some(run.pre_gen_output_paths, (p) => p.coords === undefined)
       );
       const shouldShowMediaTab = !isIndicator(metadata.value) && hasPreGenData;
       const tabs = shouldShowMediaTab
         ? Object.values(DatacubeViewMode)
-        : Object.values(DatacubeViewMode).filter(
-          value => value !== DatacubeViewMode.Media
-        );
-      return tabs.map(tab => ({
+        : Object.values(DatacubeViewMode).filter((value) => value !== DatacubeViewMode.Media);
+      return tabs.map((tab) => ({
         label: capitalize(tab),
-        value: tab
+        value: tab,
       }));
     });
 
     // A map of all pre-generated data indexed by run-id
-    const preGenDataMap = computed<{[runId: string]: PreGeneratedModelRunData[]}>(() => {
+    const preGenDataMap = computed<{ [runId: string]: PreGeneratedModelRunData[] }>(() => {
       if (filteredRunData.value.length === 0) {
         return {};
       }
-      return Object.assign({}, ...filteredRunData.value.map((r) => ({ [r.id]: r.pre_gen_output_paths })));
+      return Object.assign(
+        {},
+        ...filteredRunData.value.map((r) => ({ [r.id]: r.pre_gen_output_paths }))
+      );
     });
     // A list of unique pre-generated ids across all runs
     const preGenDataIds = computed<string[]>(() => {
@@ -1381,13 +1489,13 @@ export default defineComponent({
       // note that some runs may not have valid pre-gen data (i.e., null)
       const allPreGenData = Object.values(preGenDataMap.value)
         .flat()
-        .filter(p => p !== null && p !== undefined);
+        .filter((p) => p !== null && p !== undefined);
       // assign each pre-gen data item (within each run) an id
-      allPreGenData.forEach(pregen => {
+      allPreGenData.forEach((pregen) => {
         pregen.id = getPreGenItemDisplayName(pregen);
       });
       // utilized to access the caption, as well as the id for the dropdown
-      return _.uniq(allPreGenData.map(pregen => pregen.id as string));
+      return _.uniq(allPreGenData.map((pregen) => pregen.id as string));
     });
 
     const selectedPreGenDataId = ref('');
@@ -1408,7 +1516,11 @@ export default defineComponent({
     }
 
     function getSelectedPreGenOutput(runId: string): PreGeneratedModelRunData | undefined {
-      return preGenDataMap.value[runId] ? preGenDataMap.value[runId].find(pregen => getPreGenItemDisplayName(pregen) === selectedPreGenDataId.value) : undefined;
+      return preGenDataMap.value[runId]
+        ? preGenDataMap.value[runId].find(
+            (pregen) => getPreGenItemDisplayName(pregen) === selectedPreGenDataId.value
+          )
+        : undefined;
     }
 
     const firstSelectedPreGenOutput = computed(() => {
@@ -1419,41 +1531,49 @@ export default defineComponent({
     });
 
     async function fetchImageData(preGenDataItem?: PreGeneratedModelRunData) {
-      if (preGenDataItem?.file && preGenDataItem?.type === 'image' && !preGenDataItem?.embeddedSrc) {
+      if (
+        preGenDataItem?.file &&
+        preGenDataItem?.type === 'image' &&
+        !preGenDataItem?.embeddedSrc
+      ) {
         const url = preGenDataItem.file;
         const b64Str = await fetchImageAsBase64(url);
         preGenDataItem.embeddedSrc = b64Str;
       }
     }
 
-    watch([selectedPreGenDataId, selectedScenarioIds],
+    watch(
+      [selectedPreGenDataId, selectedScenarioIds],
       async () => {
-        const promises = selectedScenarioIds.value.map(runId => {
+        const promises = selectedScenarioIds.value.map((runId) => {
           const preGenOutput = getSelectedPreGenOutput(runId);
           return fetchImageData(preGenOutput);
         });
         await Promise.all(promises);
       },
       {
-        immediate: true
+        immediate: true,
       }
     );
 
     const dataPaths = computed((): string[] => {
       if (!_.isNull(metadata.value)) {
         const isAModel: boolean = isModel(metadata.value);
-        return _.compact(isAModel
-          ? filteredRunData.value
-            .filter(modelRun => selectedScenarioIds.value.indexOf(modelRun.id) >= 0)
-            .flatMap(modelRun => modelRun.data_paths)
-          : isIndicator(metadata.value) ? metadata.value.data_paths : []
+        return _.compact(
+          isAModel
+            ? filteredRunData.value
+                .filter((modelRun) => selectedScenarioIds.value.indexOf(modelRun.id) >= 0)
+                .flatMap((modelRun) => modelRun.data_paths)
+            : isIndicator(metadata.value)
+            ? metadata.value.data_paths
+            : []
         );
       } else {
         return [];
       }
     });
 
-    const savePreGenAsInsight = async() => {
+    const savePreGenAsInsight = async () => {
       const url = firstSelectedPreGenOutput.value?.file;
       await store.dispatch('insightPanel/setSnapshotUrl', url);
       await store.dispatch('insightPanel/showInsightPanel');
@@ -1461,8 +1581,10 @@ export default defineComponent({
       await store.dispatch('insightPanel/setCurrentPane', 'review-new-insight');
     };
 
-    const someVizOptionsInvalid = computed(() =>
-      isPublishing.value && (selectedSpatialAggregation.value === AggregationOption.None ||
+    const someVizOptionsInvalid = computed(
+      () =>
+        isPublishing.value &&
+        (selectedSpatialAggregation.value === AggregationOption.None ||
           selectedTemporalAggregation.value === AggregationOption.None ||
           selectedTemporalResolution.value === TemporalResolutionOption.None)
     );
@@ -1477,14 +1599,19 @@ export default defineComponent({
       //  we need to ensure they are added as part of potential scenarios data
       if (dateModelParam.value !== null) {
         // FIXME: handle the case of multiple date and/or daterange params
-        const delimiter = dateModelParam.value.additional_options?.date_range_delimiter ?? DEFAULT_DATE_RANGE_DELIMETER;
+        const delimiter =
+          dateModelParam.value.additional_options?.date_range_delimiter ??
+          DEFAULT_DATE_RANGE_DELIMETER;
         let dateValue = '';
         if (dateParamPickerValue.value === null || dateParamPickerValue.value === '') {
           dateValue = dateModelParam.value.default;
         } else {
-          dateValue = dateModelParam.value.type === DatacubeGenericAttributeVariableType.Date ? dateParamPickerValue.value : dateParamPickerValue.value.replace(' to ', delimiter);
+          dateValue =
+            dateModelParam.value.type === DatacubeGenericAttributeVariableType.Date
+              ? dateParamPickerValue.value
+              : dateParamPickerValue.value.replace(' to ', delimiter);
         }
-        potentialScenarios.value.forEach(run => {
+        potentialScenarios.value.forEach((run) => {
           if (dateModelParam.value !== null) {
             run[dateModelParam.value.name] = dateValue;
           }
@@ -1526,19 +1653,27 @@ export default defineComponent({
 
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
-          selectedSpatialAggregation.value = loadedInsight.view_state?.spatialAggregation as AggregationOption;
+          selectedSpatialAggregation.value = loadedInsight.view_state
+            ?.spatialAggregation as AggregationOption;
         }
         if (loadedInsight.view_state?.temporalAggregation) {
-          selectedTemporalAggregation.value = loadedInsight.view_state?.temporalAggregation as AggregationOption;
+          selectedTemporalAggregation.value = loadedInsight.view_state
+            ?.temporalAggregation as AggregationOption;
         }
         if (loadedInsight.view_state?.temporalResolution) {
-          selectedTemporalResolution.value = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
+          selectedTemporalResolution.value = loadedInsight.view_state
+            ?.temporalResolution as TemporalResolutionOption;
         }
         if (loadedInsight.view_state?.selectedViewTab !== undefined) {
           currentTabView.value = loadedInsight.view_state?.selectedViewTab;
         }
         if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
-          updateDatacubesOutputsMap(itemId.value, store, route, loadedInsight.view_state?.selectedOutputIndex);
+          updateDatacubesOutputsMap(
+            itemId.value,
+            store,
+            route,
+            loadedInsight.view_state?.selectedOutputIndex
+          );
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
           setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
@@ -1571,7 +1706,9 @@ export default defineComponent({
         if (dataState && isDataSpaceDataState(dataState)) {
           initialNonDefaultQualifiers.value = _.clone(dataState.nonDefaultQualifiers);
 
-          const regions = fromStateSelectedRegionsAtAllLevels(dataState.selectedRegionIdsAtAllLevels);
+          const regions = fromStateSelectedRegionsAtAllLevels(
+            dataState.selectedRegionIdsAtAllLevels
+          );
           const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
           selectedRegionIdsAtAllLevels.value = validRegions;
 
@@ -1587,52 +1724,59 @@ export default defineComponent({
       }
     };
 
-
     // A map from timeseries to matching datacube (name and feature). Since
     //  globalTimeseries is used when multiple features are selected, we need
     //  to create a new ID for each timeseries that includes the feature name.
-    const timeseriesToDatacubeMap = ref<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>({});
-    watch([selectedFeatures, globalTimeseries], () => {
-      if (selectedFeatures.value.length !== globalTimeseries.value.length) {
-        return;
-      }
-      const result: {[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }} = {};
-      const features = selectedFeatures.value;
-      globalTimeseries.value.forEach((timeseries, index) => {
-        const feature = features[index];
-        // Prevent duplicate appends.
-        // FIXME: it's not clear why this is necessary. Duplicate appends
-        //  would imply we're rerunning this code multiple times for the
-        //  same globalTimeseries list, which is a bug.
-        // Though this code is being called multiple times, globalTimeseries
-        //  should be fresh each time, so no need to check for the potential
-        //  duplication. If useMultiTimeseriesData guarantees that, this code
-        //  can be removed.
-        // FIXME: the id should be constructed when globalTimeseries is. Because
-        //  we can have duplicates of the same datacube, the ID will need to be
-        //  made from item_id (unique for each analysis item) + whichever is
-        //  used to differentiate between timeseries for the current breakdown.
-        if (!timeseries.id.endsWith(feature.name)) {
-          // use a combination of timeseries id and feature name as the ultimate unique id
-          // override the timeseries id to match its owner datacube
-          timeseries.id = timeseries.id + feature.name;
+    const timeseriesToDatacubeMap = ref<{
+      [timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string };
+    }>({});
+    watch(
+      [selectedFeatures, globalTimeseries],
+      () => {
+        if (selectedFeatures.value.length !== globalTimeseries.value.length) {
+          return;
         }
-        result[timeseries.id] = {
-          datacubeName: feature.name,
-          datacubeOutputVariable: feature.display_name
-        };
-      });
-      timeseriesToDatacubeMap.value = result;
-    }, { immediate: true });
+        const result: {
+          [timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string };
+        } = {};
+        const features = selectedFeatures.value;
+        globalTimeseries.value.forEach((timeseries, index) => {
+          const feature = features[index];
+          // Prevent duplicate appends.
+          // FIXME: it's not clear why this is necessary. Duplicate appends
+          //  would imply we're rerunning this code multiple times for the
+          //  same globalTimeseries list, which is a bug.
+          // Though this code is being called multiple times, globalTimeseries
+          //  should be fresh each time, so no need to check for the potential
+          //  duplication. If useMultiTimeseriesData guarantees that, this code
+          //  can be removed.
+          // FIXME: the id should be constructed when globalTimeseries is. Because
+          //  we can have duplicates of the same datacube, the ID will need to be
+          //  made from item_id (unique for each analysis item) + whichever is
+          //  used to differentiate between timeseries for the current breakdown.
+          if (!timeseries.id.endsWith(feature.name)) {
+            // use a combination of timeseries id and feature name as the ultimate unique id
+            // override the timeseries id to match its owner datacube
+            timeseries.id = timeseries.id + feature.name;
+          }
+          result[timeseries.id] = {
+            datacubeName: feature.name,
+            datacubeOutputVariable: feature.display_name,
+          };
+        });
+        timeseriesToDatacubeMap.value = result;
+      },
+      { immediate: true }
+    );
 
     const featureBreakdownData = computed<BreakdownData | null>(() => {
       // If metadata hasn't loaded, return null.
       if (outputs.value === null) return null;
       const breakdownData = {
-        Variable: outputs.value.map(feature => ({
+        Variable: outputs.value.map((feature) => ({
           id: feature.display_name,
-          values: { [feature.name]: 0 }
-        }))
+          values: { [feature.name]: 0 },
+        })),
       };
       // If we haven't fetched the timeseries for the selected features yet,
       //  return a BreakdownData object with values of 0 for each feature.
@@ -1643,21 +1787,16 @@ export default defineComponent({
       // Append a normalizedValue property in the range 0 to 1 to each point.
       // FIXME: rather than modifiying the timeseries list in place,
       //  normalizeTimeseriesList should return a new list.
-      normalizedGlobalTimeseries.forEach(
-        timeseries => normalizeTimeseriesList([timeseries])
-      );
-      normalizedGlobalTimeseries.forEach(timeseries => {
+      normalizedGlobalTimeseries.forEach((timeseries) => normalizeTimeseriesList([timeseries]));
+      normalizedGlobalTimeseries.forEach((timeseries) => {
         // If timeseries has a point at the globally selected timestamp and
         //  timeseries.name is one of the features' names, update that value in
         //  the breakdownData.
         const pointAtGlobalTimestamp = timeseries.points.find(
-          point => point.timestamp === selectedGlobalTimestamp.value
+          (point) => point.timestamp === selectedGlobalTimestamp.value
         );
-        breakdownData.Variable.forEach(feature => {
-          if (
-            pointAtGlobalTimestamp !== undefined &&
-            timeseries.name in feature.values
-          ) {
+        breakdownData.Variable.forEach((feature) => {
+          if (pointAtGlobalTimestamp !== undefined && timeseries.name in feature.values) {
             // FIXME: We don't even use the normalized value to calculate
             //  featureBreakdownData. Seems like we should either
             //  a) use the normalized value here?
@@ -1681,11 +1820,14 @@ export default defineComponent({
     //  can use regionalData directly, we can remove this second piece of
     //  state with its confusing and similar name.
     const regionMapData = computed(() => {
-      const result: {[variableName: string]: BarData[]} = {};
+      const result: { [variableName: string]: BarData[] } = {};
       if (breakdownOption.value !== SPLIT_BY_VARIABLE || regionalData.value === null) {
         return result;
       }
-      const selectedRegionalData = getActiveRegions(regionalData.value, selectedRegionIdsAtAllLevels.value);
+      const selectedRegionalData = getActiveRegions(
+        regionalData.value,
+        selectedRegionIdsAtAllLevels.value
+      );
       selectedFeatures.value.forEach(({ name: selectedFeature }) => {
         result[selectedFeature] = convertRegionalDataToBarData(
           selectedRegionalData,
@@ -1709,14 +1851,18 @@ export default defineComponent({
         return '%';
       }
       const activeFeatureUnit = activeFeature.value?.unit;
-      if (breakdownOption.value === null ||
+      if (
+        breakdownOption.value === null ||
         breakdownOption.value === TemporalAggregationLevel.Year ||
         selectedTransform.value === DataTransform.Normalization
       ) {
         return activeFeatureUnit ?? '';
       }
       // If split by region or split by qualifier with regions selected
-      if (breakdownOption.value === SpatialAggregationLevel.Region || selectedRegionIds.value.length > 0) {
+      if (
+        breakdownOption.value === SpatialAggregationLevel.Region ||
+        selectedRegionIds.value.length > 0
+      ) {
         return getUnitString(activeFeatureUnit ?? null, selectedTransform.value);
       }
       return activeFeatureUnit ?? '';
@@ -1726,13 +1872,15 @@ export default defineComponent({
       return getMapSourceLayer(selectedDataLayer.value, selectedAdminLevel.value).layerId;
     });
 
-    const isSplitByRegionMode = computed(() => breakdownOption.value === SpatialAggregationLevel.Region);
-    const mapBoundsForEachSpec = ref<{ [key: string]: number[][]}>({});
+    const isSplitByRegionMode = computed(
+      () => breakdownOption.value === SpatialAggregationLevel.Region
+    );
+    const mapBoundsForEachSpec = ref<{ [key: string]: number[][] }>({});
     watchEffect(async () => {
       // init result
       const result: { [key: string]: number[][] } = {};
-      const ids = outputSpecs.value.map(spec => spec.id);
-      ids.forEach(id => {
+      const ids = outputSpecs.value.map((spec) => spec.id);
+      ids.forEach((id) => {
         result[id] = _.isArray(mapBounds.value) ? mapBounds.value : mapBounds.value.value;
       });
 
@@ -1779,7 +1927,6 @@ export default defineComponent({
       emit('visible-timeseries-changed', visibleTimeseriesData.value);
     });
 
-
     watchEffect(() => {
       const dataState: DataSpaceDataState = initDataStateFromRefs(
         relativeTo,
@@ -1811,7 +1958,9 @@ export default defineComponent({
 
     const filteredAggregationOptions = computed(() => {
       const hasWeight = getWeightQualifier(metadata.value?.qualifier_outputs);
-      return aggregationOptions.value?.filter(agg => agg !== AggregationOption.WeightedAverage || hasWeight);
+      return aggregationOptions.value?.filter(
+        (agg) => agg !== AggregationOption.WeightedAverage || hasWeight
+      );
     });
 
     return {
@@ -1962,44 +2111,50 @@ export default defineComponent({
       DatacubeViewMode,
       DatacubeStatus,
       itemId,
-      filteredAggregationOptions
+      filteredAggregationOptions,
     };
   },
   watch: {
     $route: {
       handler(/* newValue, oldValue */) {
         // NOTE:  this is only valid when the route is focused on the 'data' or 'modelPublisher' spaces
-        if ((this.$route.name === 'data' || this.$route.name === 'modelPublisher') && this.$route.query) {
+        if (
+          (this.$route.name === 'data' || this.$route.name === 'modelPublisher') &&
+          this.$route.query
+        ) {
           const insight_id = this.$route.query.insight_id as any;
           if (insight_id !== undefined) {
             this.updateStateFromInsight(insight_id);
           }
         }
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   data: () => ({
     idToDelete: '',
     showDelete: false,
-    DatacubeGenericAttributeVariableType
+    DatacubeGenericAttributeVariableType,
   }),
   computed: {
     tagsSharedBySelectedRuns() {
       if (this.selectedScenarios.length === 0) return [];
       let result: string[] = this.selectedScenarios[0].tags;
-      this.selectedScenarios.slice(1).forEach(scenario => {
+      this.selectedScenarios.slice(1).forEach((scenario) => {
         const tags = scenario.tags;
-        result = result.filter(tag => tags.includes(tag));
+        result = result.filter((tag) => tags.includes(tag));
       });
       return result;
-    }
+    },
   },
   methods: {
     getSelectedLayer(id: string): string {
-      const layerId = this.isReferenceSeries(id) && this.breakdownOption === SpatialAggregationLevel.Region && this.selectedDataLayer === DATA_LAYER.ADMIN
-        ? SOURCE_LAYERS[0].layerId
-        : this.mapSelectedLayerId;
+      const layerId =
+        this.isReferenceSeries(id) &&
+        this.breakdownOption === SpatialAggregationLevel.Region &&
+        this.selectedDataLayer === DATA_LAYER.ADMIN
+          ? SOURCE_LAYERS[0].layerId
+          : this.mapSelectedLayerId;
       return layerId;
     },
     isReferenceSeries(id: string): boolean {
@@ -2018,7 +2173,11 @@ export default defineComponent({
           const updatedModelParam = _.cloneDeep(this.geoModelParam) as ModelParameter;
           // ensure that both choices and labels exist
           const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
-          const updatedChoicesLabels = updatedModelParam.choices_labels === undefined || updatedModelParam.choices_labels.length === 0 ? _.clone(updatedModelParam.choices) as Array<string> : _.clone(updatedModelParam.choices_labels) as Array<string>;
+          const updatedChoicesLabels =
+            updatedModelParam.choices_labels === undefined ||
+            updatedModelParam.choices_labels.length === 0
+              ? (_.clone(updatedModelParam.choices) as Array<string>)
+              : (_.clone(updatedModelParam.choices_labels) as Array<string>);
 
           const getFormattedBBox = (bbox: any) => {
             // NOTE: bbox is coming as input string formatted as
@@ -2056,7 +2215,7 @@ export default defineComponent({
                 return getFormattedBBox(region.bbox);
             }
           };
-          selectedRegions.forEach(sr => {
+          selectedRegions.forEach((sr) => {
             const selectedRegionValue = formattedRegion(sr);
             if (!updatedChoices.includes(selectedRegionValue)) {
               updatedChoices.push(selectedRegionValue);
@@ -2071,7 +2230,7 @@ export default defineComponent({
       }
     },
     getModelRunById(runId: string) {
-      return this.allModelRunData.find(runData => runData.id === runId);
+      return this.allModelRunData.find((runData) => runData.id === runId);
     },
     prepareDelete(runId: string) {
       this.idToDelete = runId;
@@ -2100,7 +2259,12 @@ export default defineComponent({
     async retryRun(runId: string) {
       const modelRun = this.getModelRunById(runId);
       if (modelRun) {
-        const response = createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters, modelRun.is_default_run);
+        const response = createModelRun(
+          modelRun.model_id,
+          modelRun.model_name,
+          modelRun.parameters,
+          modelRun.is_default_run
+        );
         response
           .then((res: any) => {
             if (res.data && res.data.run_id && res.data.run_id.length > 0) {
@@ -2125,13 +2289,13 @@ export default defineComponent({
           await API.post('maas/model-runs', {
             model_id: metadata.data_id,
             model_name: metadata?.name,
-            parameters: metadata.parameters.map(param => {
+            parameters: metadata.parameters.map((param) => {
               return {
                 name: param.name,
-                value: param.default
+                value: param.default,
               };
             }),
-            is_default_run: true
+            is_default_run: true,
           });
         }
       } catch (e) {
@@ -2139,18 +2303,20 @@ export default defineComponent({
       }
     },
     removeTagFromSelectedRuns(tag: string) {
-      this.selectedScenarios.forEach(run => {
+      this.selectedScenarios.forEach((run) => {
         // NOTE: this will automatically refresh the rendered tags
-        run.tags = run.tags.filter(_tag => _tag !== tag);
+        run.tags = run.tags.filter((_tag) => _tag !== tag);
       });
-      removeModelRunsTag(this.selectedScenarios.map(run => run.id), tag);
-    }
-  }
+      removeModelRunsTag(
+        this.selectedScenarios.map((run) => run.id),
+        tag
+      );
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-
 @import '~styles/variables';
 @import '~flatpickr/dist/flatpickr.css';
 
@@ -2167,7 +2333,7 @@ $cardSpacing: 10px;
 
 .breakdown-button {
   margin: 0 1rem;
-};
+}
 
 .dataset-link {
   text-decoration: underline;
@@ -2255,7 +2421,6 @@ header {
   min-height: 0;
   min-width: 0;
 }
-
 
 .card-maps-container {
   min-height: 0;
@@ -2404,8 +2569,8 @@ $marginSize: 5px;
     cursor: auto;
   }
   .date-picker-buttons {
-      padding: 4px 8px;
-    }
+    padding: 4px 8px;
+  }
 }
 
 .viz-options-modal-mask {
@@ -2415,7 +2580,7 @@ $marginSize: 5px;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, .25);
+  background-color: rgba(0, 0, 0, 0.25);
   // Render above map attribution text
   z-index: 3;
 }
@@ -2464,5 +2629,4 @@ $breakdown-pane-width: 25vw;
     margin-bottom: 20px;
   }
 }
-
 </style>

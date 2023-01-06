@@ -18,7 +18,7 @@ const DOJO_ROOT_FIELDS = [
   'domains',
   'data_sensitivity',
   'data_quality',
-  'tags'
+  'tags',
 ];
 
 const DOJO_PARAMETER_FIELDS = [
@@ -30,30 +30,21 @@ const DOJO_PARAMETER_FIELDS = [
   'data_type',
   'choices',
   'min',
-  'max'
+  'max',
 ];
 
-const DOJO_OUTPUT_FIELDS = [
-  'display_name',
-  'description',
-  'unit',
-  'unit_description'
-];
+const DOJO_OUTPUT_FIELDS = ['display_name', 'description', 'unit', 'unit_description'];
 
 /**
  * Return datacubes that match the provided filter
  */
-const getDatacubes = async(filter, options) => {
+const getDatacubes = async (filter, options) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
   if (!options.size) {
     options.size = SEARCH_LIMIT;
   }
   if (!options.excludes) {
-    options.excludes = [
-      'outputs.ontologies',
-      'qualifier_outputs.ontologies',
-      'ontology_matches'
-    ];
+    options.excludes = ['outputs.ontologies', 'qualifier_outputs.ontologies', 'ontology_matches'];
   }
   return await connection.find(filter, options);
 };
@@ -61,7 +52,7 @@ const getDatacubes = async(filter, options) => {
 /**
  * Return datacubes grouped by their data_id. This represents the concept of datasets.
  */
-const getDatasets = async(type, limit) => {
+const getDatasets = async (type, limit) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
   const searchLimit = limit > 0 && limit <= SEARCH_LIMIT ? limit : SEARCH_LIMIT;
   return await connection.searchDatasets(type, searchLimit);
@@ -78,7 +69,7 @@ const countDatacubes = async (filter) => {
 /**
  * Insert a new datacube
  */
-const insertDatacube = async(metadata) => {
+const insertDatacube = async (metadata) => {
   Logger.info(`Start insert datacube ${metadata.name} ${metadata.id}`);
   // TODO: Fix all this copypasta from maas-service startIndicatorPostProcessing
 
@@ -94,9 +85,10 @@ const insertDatacube = async(metadata) => {
   metadata.status = 'REGISTERED';
 
   // Take the first numeric output, others are not currently supported
-  const validOutput = metadata.outputs.filter(o =>
-    o.type === 'int' || o.type === 'float' || o.type === 'boolean'
-  )[0] || metadata.outputs[0];
+  const validOutput =
+    metadata.outputs.filter(
+      (o) => o.type === 'int' || o.type === 'float' || o.type === 'boolean'
+    )[0] || metadata.outputs[0];
   metadata.default_feature = validOutput.name;
 
   // Combine all concept matches into one list at the root
@@ -105,20 +97,26 @@ const insertDatacube = async(metadata) => {
     fields.push(metadata.qualifier_outputs);
   }
 
-  const ontologyMatches = fields.map(field => {
-    return field.filter(variable => variable.ontologies)
-      .map(variable => [
-        ...variable.ontologies.concepts,
-        ...variable.ontologies.processes,
-        ...variable.ontologies.properties
-      ]);
-  }).flat(2);
+  const ontologyMatches = fields
+    .map((field) => {
+      return field
+        .filter((variable) => variable.ontologies)
+        .map((variable) => [
+          ...variable.ontologies.concepts,
+          ...variable.ontologies.processes,
+          ...variable.ontologies.properties,
+        ]);
+    })
+    .flat(2);
 
-  metadata.ontology_matches = _.sortedUniqBy(_.orderBy(ontologyMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+  metadata.ontology_matches = _.sortedUniqBy(
+    _.orderBy(ontologyMatches, ['name', 'score'], ['desc', 'desc']),
+    'name'
+  );
 
   // Remove section specific ontologies
-  fields.forEach(field => {
-    field.forEach(variable => {
+  fields.forEach((field) => {
+    field.forEach((variable) => {
       variable.ontologies = undefined;
     });
   });
@@ -144,7 +142,7 @@ const insertDatacube = async(metadata) => {
 /**
  * Update a datacube with the specified changes
  */
-const updateDatacube = async(metadataDelta) => {
+const updateDatacube = async (metadataDelta) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
   await updateDojoMetadata([metadataDelta]);
   return await connection.update([metadataDelta]);
@@ -153,7 +151,7 @@ const updateDatacube = async(metadataDelta) => {
 /**
  * Update datacubes with the specified changes
  */
-const updateDatacubes = async(metadataDeltas, notifyDojo = true) => {
+const updateDatacubes = async (metadataDeltas, notifyDojo = true) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
   if (notifyDojo) {
     await updateDojoMetadata(metadataDeltas);
@@ -166,7 +164,7 @@ const updateDatacubes = async(metadataDeltas, notifyDojo = true) => {
  *
  * NOTE: If Dojo ever sends updates to Causemos something will need to be added to prevent infinite loops.
  */
-const updateDojoMetadata = async(metadataDeltas) => {
+const updateDojoMetadata = async (metadataDeltas) => {
   // Don't update Dojo if the feature isn't enabled
   if (!shouldSyncDojo) {
     return;
@@ -174,20 +172,20 @@ const updateDojoMetadata = async(metadataDeltas) => {
 
   const promises = metadataDeltas
     // Filter out datacubes we know are indicators
-    .filter(delta => delta.type !== 'indicator' && (!delta.data_id || delta.data_id === delta.id))
-    .map(delta => {
+    .filter((delta) => delta.type !== 'indicator' && (!delta.data_id || delta.data_id === delta.id))
+    .map((delta) => {
       const rootChanges = {};
       let maintainer = {};
       const parameters = {};
       const outputs = {};
-      Object.keys(delta).forEach(field => {
+      Object.keys(delta).forEach((field) => {
         if (field === 'maintainer') {
           maintainer = delta.maintainer || {};
         } else if (field === 'parameters') {
           // create a param.name -> paramChanges map
-          delta.parameters.forEach(param => {
+          delta.parameters.forEach((param) => {
             const paramChanges = {};
-            Object.keys(param).forEach(paramField => {
+            Object.keys(param).forEach((paramField) => {
               if (DOJO_PARAMETER_FIELDS.includes(paramField)) {
                 paramChanges[paramField] = param[paramField];
               }
@@ -198,9 +196,9 @@ const updateDojoMetadata = async(metadataDeltas) => {
           });
         } else if (field === 'outputs') {
           // create an output.name -> outputChanges map
-          delta.outputs.forEach(output => {
+          delta.outputs.forEach((output) => {
             const outputChanges = {};
-            Object.keys(output).forEach(outputField => {
+            Object.keys(output).forEach((outputField) => {
               if (DOJO_OUTPUT_FIELDS.includes(outputField)) {
                 outputChanges[outputField] = output[outputField];
               }
@@ -219,8 +217,14 @@ const updateDojoMetadata = async(metadataDeltas) => {
   await Promise.all(promises);
 };
 
-const sendDojoUpdate = async(id, changes, maintainer, parametersMap, outputsMap) => {
-  if (!id || (_.isEmpty(changes) && _.isEmpty(maintainer) && _.isEmpty(parametersMap) && _.isEmpty(outputsMap))) {
+const sendDojoUpdate = async (id, changes, maintainer, parametersMap, outputsMap) => {
+  if (
+    !id ||
+    (_.isEmpty(changes) &&
+      _.isEmpty(maintainer) &&
+      _.isEmpty(parametersMap) &&
+      _.isEmpty(outputsMap))
+  ) {
     return;
   }
 
@@ -231,10 +235,10 @@ const sendDojoUpdate = async(id, changes, maintainer, parametersMap, outputsMap)
       method: 'GET',
       url: process.env.DOJO_URL + '/models/' + id,
       headers: {
-        'Authorization': basicAuthToken,
+        Authorization: basicAuthToken,
         'Content-type': 'application/json',
-        'Accept': 'application/json'
-      }
+        Accept: 'application/json',
+      },
     });
 
     // This is currently returning strings rather than JSON
@@ -257,17 +261,19 @@ const sendDojoUpdate = async(id, changes, maintainer, parametersMap, outputsMap)
   if (!_.isEmpty(maintainer)) {
     payload.maintainer = {
       ...dojoModel.maintainer,
-      ...maintainer
+      ...maintainer,
     };
   }
   // apply all param and output changes matching by name
   if (!_.isEmpty(parametersMap) && dojoModel.parameters) {
-    payload.parameters = dojoModel.parameters.map(param =>
-      Object.assign(param, parametersMap[param.name] || {}));
+    payload.parameters = dojoModel.parameters.map((param) =>
+      Object.assign(param, parametersMap[param.name] || {})
+    );
   }
   if (!_.isEmpty(outputsMap) && dojoModel.outputs) {
-    payload.outputs = dojoModel.outputs.map(output =>
-      Object.assign(output, outputsMap[output.name] || {}));
+    payload.outputs = dojoModel.outputs.map((output) =>
+      Object.assign(output, outputsMap[output.name] || {})
+    );
   }
 
   // send payload
@@ -277,11 +283,11 @@ const sendDojoUpdate = async(id, changes, maintainer, parametersMap, outputsMap)
       method: 'PATCH',
       url: process.env.DOJO_URL + '/models/' + id,
       headers: {
-        'Authorization': basicAuthToken,
+        Authorization: basicAuthToken,
         'Content-type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json',
       },
-      json: payload
+      json: payload,
     });
   } catch (err) {
     Logger.error('Error patching model in Dojo ');
@@ -292,9 +298,9 @@ const sendDojoUpdate = async(id, changes, maintainer, parametersMap, outputsMap)
 /**
  * Generate sparkline data for the provided datacubes
  */
-const generateSparklines = async(datacubes) => {
+const generateSparklines = async (datacubes) => {
   const datacubeMap = {};
-  datacubes.forEach(datacube => {
+  datacubes.forEach((datacube) => {
     datacubeMap[datacube.id] = {
       datacube,
       params: {
@@ -304,26 +310,28 @@ const generateSparklines = async(datacubes) => {
         feature: datacube.feature,
         resolution: datacube.resolution,
         temporal_agg: datacube.temporalAgg,
-        spatial_agg: datacube.spatialAgg
-      }
+        spatial_agg: datacube.spatialAgg,
+      },
     };
   });
-  const bulkTimeseries = await getBulkTimeseries(Object.values(datacubeMap).map(d => d.params));
+  const bulkTimeseries = await getBulkTimeseries(Object.values(datacubeMap).map((d) => d.params));
 
-  const datacubeDeltas = bulkTimeseries.map(keyedTimeseries => {
-    const {
+  const datacubeDeltas = bulkTimeseries.map((keyedTimeseries) => {
+    const { resolution, temporalAgg, rawResolution, finalRawTimestamp } =
+      datacubeMap[keyedTimeseries.key].datacube;
+
+    const points = correctIncompleteTimeseries(
+      keyedTimeseries.timeseries,
+      rawResolution,
       resolution,
       temporalAgg,
-      rawResolution,
-      finalRawTimestamp
-    } = datacubeMap[keyedTimeseries.key].datacube;
-
-    const points = correctIncompleteTimeseries(keyedTimeseries.timeseries, rawResolution, resolution, temporalAgg, new Date(finalRawTimestamp));
-    const sparkline = points.map(point => point.value);
+      new Date(finalRawTimestamp)
+    );
+    const sparkline = points.map((point) => point.value);
 
     return {
       id: keyedTimeseries.key,
-      sparkline
+      sparkline,
     };
   });
 
@@ -333,42 +341,44 @@ const generateSparklines = async(datacubes) => {
 /**
  * Deprecate datacubes and update any references to it from previously deprecated datacubes
  */
-const deprecateDatacubes = async(newDatacubeId, oldDatacubeIds) => {
+const deprecateDatacubes = async (newDatacubeId, oldDatacubeIds) => {
   if (!_.isArray(oldDatacubeIds) || oldDatacubeIds.length === 0) {
     return;
   }
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
 
   // Search by data_id so that this works for indicators as well
-  const idsToDeprecate = await getDatacubes({
-    clauses: [
-      { field: 'dataId', operand: 'or', isNot: false, values: oldDatacubeIds }
-    ]
-  }, { includes: ['id'] });
+  const idsToDeprecate = await getDatacubes(
+    {
+      clauses: [{ field: 'dataId', operand: 'or', isNot: false, values: oldDatacubeIds }],
+    },
+    { includes: ['id'] }
+  );
 
   // Search for all datacubes that reference the one we're about to deprecate
   // Ex. If we have deprecated datacubes 'v1' and 'v1.1' which are succeeded by 'v2'
   // In order to deprecate 'v2' with 'v3', we much update 'v1' and 'v1.1' as well as 'v2'
-  const deprecatedIdsToUpdate = await getDatacubes({
-    clauses: [
-      { field: 'newVersionId', operand: 'or', isNot: false, values: oldDatacubeIds }
-    ]
-  }, { includes: ['id'] });
+  const deprecatedIdsToUpdate = await getDatacubes(
+    {
+      clauses: [{ field: 'newVersionId', operand: 'or', isNot: false, values: oldDatacubeIds }],
+    },
+    { includes: ['id'] }
+  );
 
   const updateDeltas = [];
   idsToDeprecate
-    .filter(id => !deprecatedIdsToUpdate.includes(id))
-    .forEach(doc => {
+    .filter((id) => !deprecatedIdsToUpdate.includes(id))
+    .forEach((doc) => {
       updateDeltas.push({
         id: doc.id,
         status: 'DEPRECATED',
-        new_version_data_id: newDatacubeId
+        new_version_data_id: newDatacubeId,
       });
     });
-  deprecatedIdsToUpdate.forEach(doc => {
+  deprecatedIdsToUpdate.forEach((doc) => {
     updateDeltas.push({
       id: doc.id,
-      new_version_data_id: newDatacubeId
+      new_version_data_id: newDatacubeId,
     });
   });
 
@@ -397,21 +407,31 @@ const searchFields = async (searchField, queryString) => {
   return matchedTerms;
 };
 
-const getTimeseries = async (dataId, runId, feature, resolution, temporalAgg, spatialAgg, region = null) => {
+const getTimeseries = async (
+  dataId,
+  runId,
+  feature,
+  resolution,
+  temporalAgg,
+  spatialAgg,
+  region = null
+) => {
   Logger.info(`Get timeseries data from wm-go: ${dataId} ${feature}`);
 
   const options = {
     method: 'GET',
-    url: process.env.WM_GO_URL + '/maas/output/timeseries' +
+    url:
+      process.env.WM_GO_URL +
+      '/maas/output/timeseries' +
       `?data_id=${encodeURI(dataId)}&run_id=${encodeURI(runId)}&feature=${encodeURI(feature)}` +
       `&resolution=${resolution}&temporal_agg=${temporalAgg}&spatial_agg=${spatialAgg}` +
       // optional
       (region && !_.isEmpty(region) ? `&region_id=${encodeURI(region)}` : ''),
     headers: {
       'Content-type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     },
-    json: {}
+    json: {},
   };
   const response = await requestAsPromise(options);
   return response;
@@ -425,11 +445,11 @@ const getBulkTimeseries = async (timeseriesParams) => {
     url: process.env.WM_GO_URL + '/maas/output/bulk-timeseries/generic',
     headers: {
       'Content-type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     },
     json: {
-      timeseries_params: timeseriesParams
-    }
+      timeseries_params: timeseriesParams,
+    },
   };
   const response = await requestAsPromise(options);
   return response;
@@ -478,17 +498,17 @@ const getJobStatus = async (indicatorId, flowId = undefined) => {
 };
 
 const _getFlowIdForIndicator = async (indicatorId) => {
-  const indicators = await getDatacubes({
-    clauses: [
-      { field: 'id', operand: 'or', isNot: false, values: [indicatorId] }
-    ]
-  }, { size: 1, includes: ['id', 'flow_id'] });
+  const indicators = await getDatacubes(
+    {
+      clauses: [{ field: 'id', operand: 'or', isNot: false, values: [indicatorId] }],
+    },
+    { size: 1, includes: ['id', 'flow_id'] }
+  );
   if (indicators.length === 0) {
     return undefined;
   }
   return _.get(indicators[0], 'flow_id');
 };
-
 
 module.exports = {
   getDatacubes,
@@ -507,6 +527,5 @@ module.exports = {
   getJobLogs,
   getJobStatus,
 
-  getTimeseries
+  getTimeseries,
 };
-

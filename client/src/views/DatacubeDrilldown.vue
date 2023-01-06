@@ -13,11 +13,10 @@
           @update-model-parameter="onModelParamUpdated"
         >
           <template #datacube-model-header>
-            <h5
-              v-if="metadata && mainModelOutput"
-              class="datacube-header"
-            >
-              <select name="outputs" id="outputs"
+            <h5 v-if="metadata && mainModelOutput" class="datacube-header">
+              <select
+                name="outputs"
+                id="outputs"
                 v-if="outputs.length > 1"
                 :disabled="canChangeOutputVariable === false"
                 @change="onOutputSelectionChange($event)"
@@ -26,29 +25,42 @@
                   v-for="(output, indx) in outputs"
                   :key="output.name"
                   :selected="indx === currentOutputIndex"
-                >{{output.display_name !== '' ? output.display_name : output.name}}</option>
+                >
+                  {{ output.display_name !== '' ? output.display_name : output.name }}
+                </option>
               </select>
-              <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-              <span v-if="isIndicator(metadata)" v-tooltip.top-center="'Explore related indicators'" class="datacube-name indicator" @click="onClickDatacubeName">{{metadata.name}} <i class="fa fa-search"></i></span>
-              <span v-else class="datacube-name">{{metadata.name}} </span>
-              <span v-if="metadata.status === DatacubeStatus.Deprecated" v-tooltip.top-center="'Show current version of datacube'" style="margin-left: 1rem" :style="{ backgroundColor: statusColor, cursor: 'pointer' }" @click="showCurrentDatacube">{{ statusLabel }} <i class="fa fa-search"></i></span>
+              <span v-else>{{
+                mainModelOutput.display_name !== ''
+                  ? mainModelOutput.display_name
+                  : mainModelOutput.name
+              }}</span>
+              <span
+                v-if="isIndicator(metadata)"
+                v-tooltip.top-center="'Explore related indicators'"
+                class="datacube-name indicator"
+                @click="onClickDatacubeName"
+                >{{ metadata.name }} <i class="fa fa-search"></i
+              ></span>
+              <span v-else class="datacube-name">{{ metadata.name }} </span>
+              <span
+                v-if="metadata.status === DatacubeStatus.Deprecated"
+                v-tooltip.top-center="'Show current version of datacube'"
+                style="margin-left: 1rem"
+                :style="{ backgroundColor: statusColor, cursor: 'pointer' }"
+                @click="showCurrentDatacube"
+                >{{ statusLabel }} <i class="fa fa-search"></i
+              ></span>
             </h5>
           </template>
 
           <template #datacube-model-header-collapse>
-            <button
-              v-tooltip="'Collapse datacube'"
-              class="btn"
-              @click="onClose"
-            >
+            <button v-tooltip="'Collapse datacube'" class="btn" @click="onClose">
               <i class="fa fa-fw fa-compress" />
             </button>
           </template>
 
           <template #datacube-description>
-            <datacube-description
-              :metadata="metadata"
-            />
+            <datacube-description :metadata="metadata" />
           </template>
         </datacube-card>
       </div>
@@ -73,8 +85,17 @@ import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { DatacubeStatus, ProjectType, SPLIT_BY_VARIABLE } from '@/types/Enums';
 import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
 
-import { DATASET_NAME, isIndicator, getValidatedOutputs, getOutputs, getSelectedOutput } from '@/utils/datacube-util';
-import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
+import {
+  DATASET_NAME,
+  isIndicator,
+  getValidatedOutputs,
+  getOutputs,
+  getSelectedOutput,
+} from '@/utils/datacube-util';
+import {
+  aggregationOptionFiltered,
+  temporalResolutionOptionFiltered,
+} from '@/utils/drilldown-util';
 import filtersUtil from '@/utils/filters-util';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
@@ -87,14 +108,16 @@ export default defineComponent({
   components: {
     DatacubeCard,
     DatacubeDescription,
-    AnalyticalQuestionsAndInsightsPanel
+    AnalyticalQuestionsAndInsightsPanel,
   },
   setup() {
     const route = useRoute();
     const store = useStore();
 
     const projectType = computed(() => store.getters['app/projectType']);
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const datacubeCurrentOutputsMap = computed(
+      () => store.getters['app/datacubeCurrentOutputsMap']
+    );
     const analysisId = computed(() => route.params.analysisId as string);
     const datacubeId = route.query.datacube_id as any;
     const datacubeItemId = route.query.item_id as any;
@@ -102,11 +125,8 @@ export default defineComponent({
     const dataState = computed<DataState | null>(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
 
-    const {
-      analysisItems,
-      setAnalysisItemViewConfig,
-      setAnalysisItemDataState
-    } = useDataAnalysis(analysisId);
+    const { analysisItems, setAnalysisItemViewConfig, setAnalysisItemDataState } =
+      useDataAnalysis(analysisId);
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataSpaceDataState | null>(null);
@@ -114,13 +134,9 @@ export default defineComponent({
       if (initialViewConfig.value || initialDataConfig.value) {
         return;
       }
-      let item = analysisItems.value.find(
-        item => item.itemId === datacubeItemId
-      );
+      let item = analysisItems.value.find((item) => item.itemId === datacubeItemId);
       if (!item) {
-        item = analysisItems.value.find(
-          item => item.id === selectedModelId.value
-        );
+        item = analysisItems.value.find((item) => item.id === selectedModelId.value);
       }
       if (item) {
         initialViewConfig.value = item.viewConfig;
@@ -160,7 +176,12 @@ export default defineComponent({
     // apply initial view config for this datacube
     if (initialViewConfig.value) {
       if (initialViewConfig.value.selectedOutputIndex !== undefined) {
-        updateDatacubesOutputsMap(datacubeItemId, store, route, initialViewConfig.value.selectedOutputIndex);
+        updateDatacubesOutputsMap(
+          datacubeItemId,
+          store,
+          route,
+          initialViewConfig.value.selectedOutputIndex
+        );
       }
     }
 
@@ -172,10 +193,7 @@ export default defineComponent({
           _.isEmpty(initialViewConfig.value) &&
           !_.isEmpty(metadata.value.default_view)
         ) {
-          setAnalysisItemViewConfig(
-            datacubeItemId,
-            metadata.value.default_view
-          );
+          setAnalysisItemViewConfig(datacubeItemId, metadata.value.default_view);
         }
       }
     );
@@ -193,7 +211,10 @@ export default defineComponent({
           // we have a store entry for the selected output of the current model
           initialOutputIndex = currentOutputEntry;
         } else {
-          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+          initialOutputIndex =
+            metadata.value.validatedOutputs?.findIndex(
+              (o) => o.name === metadata.value?.default_feature
+            ) ?? 0;
 
           // update the store
           updateDatacubesOutputsMap(datacubeItemId, store, route, initialOutputIndex);
@@ -208,8 +229,8 @@ export default defineComponent({
         params: {
           analysisId: analysisId.value,
           project: project.value,
-          projectType: ProjectType.Analysis
-        }
+          projectType: ProjectType.Analysis,
+        },
       });
     };
 
@@ -232,7 +253,9 @@ export default defineComponent({
 
     const onModelParamUpdated = (updatedModelParam: ModelParameter) => {
       if (metadata.value !== null) {
-        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(p => p.name === updatedModelParam.name);
+        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(
+          (p) => p.name === updatedModelParam.name
+        );
         (metadata.value as Model).parameters[updatedParamIndex] = updatedModelParam;
         refreshMetadata();
       }
@@ -267,13 +290,13 @@ export default defineComponent({
       DatacubeStatus,
       statusColor,
       statusLabel,
-      canChangeOutputVariable
+      canChangeOutputVariable,
     };
   },
   data: () => ({
     // TODO: add Typescript type to replace `any`
-    analysis: undefined as (any | undefined),
-    ProjectType
+    analysis: undefined as any | undefined,
+    ProjectType,
   }),
   async mounted() {
     // ensure the insight explorer panel is closed in case the user has
@@ -292,7 +315,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setAnalysisName: 'app/setAnalysisName'
+      setAnalysisName: 'app/setAnalysisName',
     }),
     onClickDatacubeName() {
       const analysisId = this.analysisId ?? '';
@@ -301,14 +324,15 @@ export default defineComponent({
       filtersUtil.setClause(filters, DATASET_NAME, [metadataName], 'or', false);
       this.$router.push({ name: 'dataExplorer', query: { analysisId, filters } });
     },
-    showCurrentDatacube() { // direct user to update the deprecated datacube to the current version
+    showCurrentDatacube() {
+      // direct user to update the deprecated datacube to the current version
       const analysisId = this.analysisId ?? '';
       const metadataNewId = this.metadata?.new_version_data_id ?? '';
       const filters: any = filtersUtil.newFilters();
       filtersUtil.setClause(filters, 'dataId', [metadataNewId], 'or', false);
       this.$router.push({ name: 'dataExplorer', query: { analysisId, filters } });
-    }
-  }
+    },
+  },
 });
 </script>
 

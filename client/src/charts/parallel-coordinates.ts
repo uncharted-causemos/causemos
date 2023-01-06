@@ -1,11 +1,7 @@
-
 import * as d3 from 'd3';
 import svgUtil from '@/utils/svg-util';
 
-import {
-  getRandomNumberGenerator,
-  getSeededRandomNumber
-} from '@/utils/random';
+import { getRandomNumberGenerator, getSeededRandomNumber } from '@/utils/random';
 
 import { D3Selection, D3Scale, D3ScaleLinear, D3ScalePoint, D3GElementSelection } from '@/types/D3';
 import { ScenarioData } from '@/types/Common';
@@ -13,7 +9,12 @@ import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
-import { DatacubeGeoAttributeVariableType, DatacubeGenericAttributeVariableType, ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
+import {
+  DatacubeGeoAttributeVariableType,
+  DatacubeGenericAttributeVariableType,
+  ModelParameterDataType,
+  ModelRunStatus,
+} from '@/types/Enums';
 import { isCategoricalAxis, isGeoParameter } from '@/utils/datacube-util';
 import { safeD3StringId } from '@/utils/string-util';
 import { colorFromIndex, SELECTED_COLOR } from '@/utils/colors-util';
@@ -31,7 +32,7 @@ interface BrushType {
 type D3ScaleFunc = (name: string) => D3Scale;
 
 type D3LineSelection = d3.Selection<SVGPathElement, ScenarioData, null, undefined>;
-type D3AxisSelection = d3.Selection<SVGGElement, DimensionInfo, SVGGElement, any>
+type D3AxisSelection = d3.Selection<SVGGElement, DimensionInfo, SVGGElement, any>;
 
 interface MarkerInfo {
   value: string | number;
@@ -98,7 +99,7 @@ const axisOutputLabelFontSize = '10px';
 // brushing
 const brushHeight = 8;
 
-const numberIntegerFormat = (n: number | { valueOf(): number}) => {
+const numberIntegerFormat = (n: number | { valueOf(): number }) => {
   const numDigits = n.toString().length;
   if (numDigits > 4) {
     return d3.format('~s')(n); // The ~ option trims insignificant trailing zeros across all format types
@@ -111,12 +112,12 @@ const numberFloatFormat = d3.format(',.2f');
 //
 // global variables
 //
-let xScaleMap: {[key: string]: D3Scale} = {};
+let xScaleMap: { [key: string]: D3Scale } = {};
 let yScale: d3.ScalePoint<string>;
 let renderedAxes: D3AxisSelection;
 let axisRange: Array<number> = [];
-let pcTypes: {[key: string]: string} = {};
-const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
+let pcTypes: { [key: string]: string } = {};
+const axisMarkersMap: { [key: string]: Array<MarkerInfo> } = {};
 const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
 let currentLineSelection: Array<ScenarioData> = [];
@@ -172,8 +173,7 @@ function renderParallelCoordinates(
     const idealRow = _.maxBy(data, (d) => Object.keys(d).length);
     pcTypes = detectDimensionTypes(idealRow ?? data[0]);
   } else {
-    pcTypes = dimensions.reduce(
-      (obj, item) => Object.assign(obj, { [item.name]: item.type }), {});
+    pcTypes = dimensions.reduce((obj, item) => Object.assign(obj, { [item.name]: item.type }), {});
   }
 
   //
@@ -194,9 +194,7 @@ function renderParallelCoordinates(
     // register a function to cancel line selection when clicking anywhere on the svg
     .on('click', handleLineSelection)
     .append('g')
-    .attr('transform', svgUtil.translate(margin.left, margin.top))
-    ;
-
+    .attr('transform', svgUtil.translate(margin.left, margin.top));
   //
   // Draw the lines
   //
@@ -245,12 +243,13 @@ function renderParallelCoordinates(
     cancelPrevLineSelection(svgElement);
     let selectionIndex = 0;
 
-    svgElement.selectAll('.line')
+    svgElement
+      .selectAll('.line')
       .data(data)
-      .filter(function(d) {
+      .filter(function (d) {
         return options.initialDataSelection?.includes(d.run_id as string) as boolean;
       })
-      .each(function(d) {
+      .each(function (d) {
         const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
         selectedLine.attr('selection-index', selectionIndex++);
 
@@ -261,7 +260,6 @@ function renderParallelCoordinates(
   // ////////////////////////////////////////////////
   // additional context-sensitive utility functions
   // ////////////////////////////////////////////////
-
 
   function getValueInCorrectType(dimName: string, value: string) {
     if (pcTypes[dimName] === 'int') {
@@ -276,22 +274,24 @@ function renderParallelCoordinates(
   // The path function take a row of input (e.g., csv values),
   //  and return x and y coordinates of the line to draw for this raw.
   // NOTE: for ordinal axes, lines would map to any part of the line segment based on the input value
-  function pathDefinitionFunc(
-    d: ScenarioData,
-    randomNumberGenerator: () => number
-  ) {
-    const line = d3.line()
+  function pathDefinitionFunc(d: ScenarioData, randomNumberGenerator: () => number) {
+    const line = d3
+      .line()
       // curveMonotone curveCatmullRom curveLinear curveCardinal
       .curve(d3.curveCatmullRom /* .tension(0.01) */);
 
     // when drawing lines, exclude the last segment to the output variable
     //  if the drawn lines are for potentially new scenarios (i.e., within the new-runs mode)
-    const dimensionSet: Array<DimensionInfo> = options.newRunsMode ? dimensions.filter(function(d) { return !isOutputDimension(dimensions, d.name); }) : dimensions;
+    const dimensionSet: Array<DimensionInfo> = options.newRunsMode
+      ? dimensions.filter(function (d) {
+          return !isOutputDimension(dimensions, d.name);
+        })
+      : dimensions;
 
     // some data lines are missing certain dimensions, e.g., in-progress lines would not have output value yet!
-    const dataDrivenDimensionSet = dimensionSet.filter(dim => d[dim.name] !== undefined);
+    const dataDrivenDimensionSet = dimensionSet.filter((dim) => d[dim.name] !== undefined);
 
-    const fn = dataDrivenDimensionSet.map(function(p: DimensionInfo) {
+    const fn = dataDrivenDimensionSet.map(function (p: DimensionInfo) {
       const dimName = p.name;
       const scaleX = getXScaleFromMap(dimName);
       let val = d[dimName];
@@ -305,7 +305,12 @@ function renderParallelCoordinates(
         val = findLabelForValue(p, val);
         // re-evaluate the xPos since the output val may be different from the input val
         xPos = scaleX(val as any) as number;
-        const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), val.toString());
+        const { min, max } = getPositionRangeOnOrdinalAxis(
+          xPos,
+          axisRange,
+          scaleX.domain(),
+          val.toString()
+        );
         if (options.newRunsMode) {
           // special case when rendering potential scenario lines in the new-runs mode
           //  instead of distributing the lines over the segment for ordinal axes, use the segment center
@@ -330,26 +335,26 @@ function renderParallelCoordinates(
       .data(data)
       .enter()
       .append('path')
-      .attr('class', function () { return 'line'; }) // @REVIEW: this could be used to style lines externally
-      .attr('d', d => pathDefinitionFunc(d, randomNumberGenerator))
+      .attr('class', function () {
+        return 'line';
+      }) // @REVIEW: this could be used to style lines externally
+      .attr('d', (d) => pathDefinitionFunc(d, randomNumberGenerator))
       .style('fill', 'none')
       .attr('stroke-width', (d) => getLineWidth(d))
       .style('stroke', colorFunc)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden)
-      .style('stroke-dasharray', function(d) {
-        return d.status === ModelRunStatus.Ready ? 0 : ('3, 3');
-      })
-    ;
-
+      .style('stroke-dasharray', function (d) {
+        return d.status === ModelRunStatus.Ready ? 0 : '3, 3';
+      });
     // scenario lines are only interactive in the normal mode
     if (!options.newRunsMode) {
-      lines
-        .on('mouseover', highlight)
-        .on('mouseleave', doNotHighlight);
+      lines.on('mouseover', highlight).on('mouseleave', doNotHighlight);
 
       // also, in the normal mode, only lines with status READY are clickable
       lines
-        .filter(function(d) { return d.status === ModelRunStatus.Ready; })
+        .filter(function (d) {
+          return d.status === ModelRunStatus.Ready;
+        })
         .on('click', handleLineSelection);
     }
   }
@@ -358,11 +363,11 @@ function renderParallelCoordinates(
     //
     // consider dimensions one by one
     //
-    const allBrushesMap: {[key: string]: Array<string | number>} = {};
+    const allBrushesMap: { [key: string]: Array<string | number> } = {};
     let someMarkersAdded = false;
 
     // prepare a map of all markers where a baseline marker is added when no user-marker exists
-    dimensions.forEach(dim => {
+    dimensions.forEach((dim) => {
       const dimName = dim.name;
       const dimDefault: string = (dim as ModelParameter).default;
       const dimData = [];
@@ -372,7 +377,7 @@ function renderParallelCoordinates(
         const markers = axisMarkersMap[dimName];
         // do we have actual user-markers added on this dimension?
         if (markers && markers.length > 0) {
-          markers.forEach(marker => {
+          markers.forEach((marker) => {
             dimData.push(marker.value);
           });
           someMarkersAdded = true;
@@ -401,7 +406,10 @@ function renderParallelCoordinates(
       { key1: value2, key2: value3 }
       { key1: value2, key2: value4 }
     */
-    function spreadKeys(master: {[key: string]: (string | number)[]}, objects: Array<any>): Array<ScenarioData> {
+    function spreadKeys(
+      master: { [key: string]: (string | number)[] },
+      objects: Array<any>
+    ): Array<ScenarioData> {
       const masterKeys = Object.keys(master);
       const nextKey = masterKeys.pop();
       const nextValue = master[nextKey as string];
@@ -438,7 +446,7 @@ function renderParallelCoordinates(
     //  this will ensure proper coloring/rendering
     // However, this param must be explicitly removed before sending model-runs
     //  for execution since the server will create them
-    newScenarioData.forEach(newModelRun => {
+    newScenarioData.forEach((newModelRun) => {
       newModelRun.status = ModelRunStatus.Draft;
     });
 
@@ -459,29 +467,29 @@ function renderParallelCoordinates(
       .enter()
       .append('path')
       .attr('class', 'marker-line')
-      .attr('d', d => pathDefinitionFunc(d, randomNumberGenerator))
+      .attr('d', (d) => pathDefinitionFunc(d, randomNumberGenerator))
       .style('fill', 'none')
       .attr('stroke-width', lineStrokeWidthHover)
       .style('stroke', colorFunc)
       .style('opacity', lineOpacityVisible)
-      .style('stroke-dasharray', ('3, 3'))
+      .style('stroke-dasharray', '3, 3')
       .on('mouseover', highlight)
       .on('mouseleave', doNotHighlight)
-      .on('click', function() {
+      .on('click', function () {
         const currLineData = d3.select(this).datum();
         _.remove(newScenarioData, (lineData) => _.isEqual(lineData, currLineData));
         gElement
           .selectAll<SVGPathElement, ScenarioData>('.marker-line')
-          .data<ScenarioData>(newScenarioData, d => {
+          .data<ScenarioData>(newScenarioData, (d) => {
             // this key func is needed to ensure proper matching between each datum and the selected DOM element
             let id = '';
-            Object.keys(d).forEach(key => {
+            Object.keys(d).forEach((key) => {
               id += key + d[key];
             });
             return id;
           })
-          .exit().remove()
-        ;
+          .exit()
+          .remove();
         // hide tooltips
         doNotHighlight();
         // some marker-line is removed, so notify external listeners
@@ -491,8 +499,7 @@ function renderParallelCoordinates(
         onNewRuns(potentialModelRuns);
       })
       .append('title')
-      .text('Remove')
-    ;
+      .text('Remove');
   }
 
   function brushStart(event: d3.D3BrushEvent<any>) {
@@ -504,60 +511,67 @@ function renderParallelCoordinates(
     cancelPrevLineSelection(svgElement);
 
     // examine all brushes at all axes and cache their range
-    svgElement.selectAll<SVGGraphicsElement, DimensionInfo>('.pc-brush')
-      .each(function() {
-        const b = d3.select(this);
-        const dimName = b.attr('id');
-        let selection: [number | string, number | string] | undefined;
-        if (!isCategoricalAxis(dimName, dimensions)) { // different axes types (e.g., ordinal) have different brushing techniques
-          selection = d3.brushSelection(this) as [number, number];
-        } else {
-          // find any selection on this ordinal axis
-          const selectedBrush = b.select('.selection');
-          if (!selectedBrush.empty()) {
-            const s = selectedBrush.attr('start');
-            const e = selectedBrush.attr('end');
-            selection = [s, e];
-          }
+    svgElement.selectAll<SVGGraphicsElement, DimensionInfo>('.pc-brush').each(function () {
+      const b = d3.select(this);
+      const dimName = b.attr('id');
+      let selection: [number | string, number | string] | undefined;
+      if (!isCategoricalAxis(dimName, dimensions)) {
+        // different axes types (e.g., ordinal) have different brushing techniques
+        selection = d3.brushSelection(this) as [number, number];
+      } else {
+        // find any selection on this ordinal axis
+        const selectedBrush = b.select('.selection');
+        if (!selectedBrush.empty()) {
+          const s = selectedBrush.attr('start');
+          const e = selectedBrush.attr('end');
+          selection = [s, e];
         }
-        if (selection) {
-          const xScale = getXScaleFromMap(dimName);
-          let start: string | number;
-          let end;
-          let brushLabel;
-          const skip = false;
-          if (!isCategoricalAxis(dimName, dimensions)) {
-            start = (xScale as D3ScaleLinear).invert(selection[0] as number).toFixed(2);
-            end = (xScale as D3ScaleLinear).invert(selection[1] as number).toFixed(2);
-          } else {
-            start = selection[0];
-            end = selection[1];
+      }
+      if (selection) {
+        const xScale = getXScaleFromMap(dimName);
+        let start: string | number;
+        let end;
+        let brushLabel;
+        const skip = false;
+        if (!isCategoricalAxis(dimName, dimensions)) {
+          start = (xScale as D3ScaleLinear).invert(selection[0] as number).toFixed(2);
+          end = (xScale as D3ScaleLinear).invert(selection[1] as number).toFixed(2);
+        } else {
+          start = selection[0];
+          end = selection[1];
 
-            // note for categorical axes with choices labels,
-            //  this may refer to a label choice rather than an actual valid value
-            const dim = dimensions.find(d => d.name === dimName);
-            if ((dim as ModelParameter) !== undefined && (dim as ModelParameter).data_type !== ModelParameterDataType.Freeform) {
-              // ensure that any choice label is mapped back to its underlying value
-              if (dim?.choices_labels !== undefined && dim.choices_labels.length > 0) {
-                const choiceIndex = dim.choices_labels?.findIndex(c => c === start) ?? 0;
-                if (dim.choices !== undefined && choiceIndex >= 0 && choiceIndex < dim.choices_labels.length) {
-                  start = dim?.choices[choiceIndex];
-                  end = start;
-                  brushLabel = selection[0];
-                }
+          // note for categorical axes with choices labels,
+          //  this may refer to a label choice rather than an actual valid value
+          const dim = dimensions.find((d) => d.name === dimName);
+          if (
+            (dim as ModelParameter) !== undefined &&
+            (dim as ModelParameter).data_type !== ModelParameterDataType.Freeform
+          ) {
+            // ensure that any choice label is mapped back to its underlying value
+            if (dim?.choices_labels !== undefined && dim.choices_labels.length > 0) {
+              const choiceIndex = dim.choices_labels?.findIndex((c) => c === start) ?? 0;
+              if (
+                dim.choices !== undefined &&
+                choiceIndex >= 0 &&
+                choiceIndex < dim.choices_labels.length
+              ) {
+                start = dim?.choices[choiceIndex];
+                end = start;
+                brushLabel = selection[0];
               }
             }
           }
-          if (!skip) {
-            brushes.push({
-              dimName,
-              start,
-              end,
-              brushLabel
-            });
-          }
         }
-      });
+        if (!skip) {
+          brushes.push({
+            dimName,
+            start,
+            end,
+            brushLabel,
+          });
+        }
+      }
+    });
     // do not select all lines if no axis is brushed
     if (brushes.length === 0) {
       return;
@@ -566,9 +580,10 @@ function renderParallelCoordinates(
     let selectionIndex = 0;
 
     // check lines against brushes
-    svgElement.selectAll('.line')
+    svgElement
+      .selectAll('.line')
       .data(data)
-      .each(function(lineData) {
+      .each(function (lineData) {
         // initially each line is selected
         let isSelected = true;
 
@@ -627,7 +642,12 @@ function renderParallelCoordinates(
 
   // select the line clicked by the user
   // or deselect all lines when the svg element is clicked
-  function handleLineSelection(this: SVGPathElement | HTMLElement, event: PointerEvent | undefined, d: ScenarioData, notifyExternalListeners = true) {
+  function handleLineSelection(
+    this: SVGPathElement | HTMLElement,
+    event: PointerEvent | undefined,
+    d: ScenarioData,
+    notifyExternalListeners = true
+  ) {
     if (options.newRunsMode) {
       deleteFreeformInputs(svgElement);
       return;
@@ -637,21 +657,20 @@ function renderParallelCoordinates(
     //  and the newly clicked line will be ignored because it is outside the brush
     //  i.e., prevent selection outside of the brushes
     let brushesCount = 0;
-    svgElement.selectAll<SVGGraphicsElement, DimensionInfo>('.pc-brush')
-      .each(function() {
-        const b = d3.select(this);
-        const dimName = b.attr('id');
-        let validBrushSelection;
-        if (!isCategoricalAxis(dimName, dimensions)) {
-          validBrushSelection = d3.brushSelection(this) !== null;
-        } else {
-          const selectedBrush = b.select('.selection');
-          validBrushSelection = !selectedBrush.empty();
-        }
-        if (validBrushSelection) {
-          brushesCount++;
-        }
-      });
+    svgElement.selectAll<SVGGraphicsElement, DimensionInfo>('.pc-brush').each(function () {
+      const b = d3.select(this);
+      const dimName = b.attr('id');
+      let validBrushSelection;
+      if (!isCategoricalAxis(dimName, dimensions)) {
+        validBrushSelection = d3.brushSelection(this) !== null;
+      } else {
+        const selectedBrush = b.select('.selection');
+        validBrushSelection = !selectedBrush.empty();
+      }
+      if (validBrushSelection) {
+        brushesCount++;
+      }
+    });
     if (brushesCount === 0) {
       // cancel any previous selection; turn every line into grey
       if (event && !event.shiftKey) {
@@ -664,21 +683,32 @@ function renderParallelCoordinates(
 
       if (selectedLineData) {
         if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
-          currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
+          currentLineSelection = _.filter(
+            currentLineSelection,
+            (data) => data.run_id !== selectedLineData.run_id
+          );
           deselectLine(selectedLine, event, getLineWidth(selectedLineData));
-          const lineDict = currentLineSelection.reduce((acc: Map<string|number, number>, sl, i) => {
-            acc.set(sl.run_id, i);
-            return acc;
-          }, new Map());
+          const lineDict = currentLineSelection.reduce(
+            (acc: Map<string | number, number>, sl, i) => {
+              acc.set(sl.run_id, i);
+              return acc;
+            },
+            new Map()
+          );
           const lines = d3.select(this.parentElement).selectAll('.line');
-          lines.data(data).each(function(lineData) {
+          lines.data(data).each(function (lineData) {
             const index = lineDict.get(lineData.run_id);
             if (index !== undefined) {
               const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
               if (lineData.status === ModelRunStatus.Ready) {
                 // set an incremental index for this line as part of the selected line collection
                 selectedLine.attr('selection-index', index);
-                selectLine(selectedLine, undefined /* event */, lineData, getLineSelectedWidth(lineData));
+                selectLine(
+                  selectedLine,
+                  undefined /* event */,
+                  lineData,
+                  getLineSelectedWidth(lineData)
+                );
               }
             }
           });
@@ -703,36 +733,48 @@ function renderParallelCoordinates(
     const selectedLine = d3.select(this);
     const selectedLineData = selectedLine.datum() as ScenarioData;
     // first every line turns transparent (except any current selection)
-    svgElement.selectAll('.line')
-      .filter(function() { return d3.select(this).classed('selected') === false; })
-      .transition().duration(highlightDuration)
+    svgElement
+      .selectAll('.line')
+      .filter(function () {
+        return d3.select(this).classed('selected') === false;
+      })
+      .transition()
+      .duration(highlightDuration)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden);
 
     if (selectedLineData.is_default_run === 0) {
       // stroke-width will overwrite for non default runs
       selectedLine
-        .filter(function () { return d3.select(this).classed('selected') === false; })
+        .filter(function () {
+          return d3.select(this).classed('selected') === false;
+        })
         .attr('stroke-width', lineStrokeWidthHover);
     }
 
     // Use D3 to highlight the line; change its opacity
     selectedLine
-      .filter(function() { return d3.select(this).classed('selected') === false; })
-      .transition().duration(highlightDuration)
+      .filter(function () {
+        return d3.select(this).classed('selected') === false;
+      })
+      .transition()
+      .duration(highlightDuration)
       .style('stroke', colorFunc)
       .style('opacity', lineOpacityVisible);
 
     // show tooltips
     // first update their text and position based on selected line data
     // then make them visible
-    svgElement.selectAll<SVGTextElement, DimensionInfo>('.pc-hover-tooltip-text')
-      .each(function(d) {
+    svgElement
+      .selectAll<SVGTextElement, DimensionInfo>('.pc-hover-tooltip-text')
+      .each(function (d) {
         const dimName = d.name;
         const value = selectedLineData[dimName];
         let formattedValue = value;
         if (!isCategoricalAxis(dimName, dimensions)) {
           const numValue = +value as number;
-          formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
+          formattedValue = Number.isInteger(numValue)
+            ? numberIntegerFormat(numValue)
+            : numberFloatFormat(numValue);
         } else {
           formattedValue = findLabelForValue(d, formattedValue);
         }
@@ -744,7 +786,7 @@ function renderParallelCoordinates(
         renderedText
           .text(formattedValue)
           .attr('visibility', 'visible')
-          .attr('x', function() {
+          .attr('x', function () {
             const xScale = getXScaleFromMap(dimName);
             // get the corresponding label for this value if suitable
             formattedValue = findLabelForValue(d, formattedValue);
@@ -752,17 +794,16 @@ function renderParallelCoordinates(
           });
       });
 
-    svgElement.selectAll<SVGRectElement, DimensionInfo>('.pc-hover-tooltip-text-bkgnd-rect')
-      .each(function(d) {
+    svgElement
+      .selectAll<SVGRectElement, DimensionInfo>('.pc-hover-tooltip-text-bkgnd-rect')
+      .each(function (d) {
         const dimName = d.name;
         const value = selectedLineData[dimName];
         const renderedTextRect = d3.select(this);
-        renderedTextRect
-          .attr('visibility', 'visible')
-          .attr('x', function() {
-            const xScale = getXScaleFromMap(dimName);
-            return xScale(value as any) as number;
-          });
+        renderedTextRect.attr('visibility', 'visible').attr('x', function () {
+          const xScale = getXScaleFromMap(dimName);
+          return xScale(value as any) as number;
+        });
       });
 
     updateHoverToolTipsRect(renderedAxes);
@@ -771,17 +812,19 @@ function renderParallelCoordinates(
   // Unhighlight
   function doNotHighlight() {
     // reset all lines to full opacity except for selected lines
-    svgElement.selectAll<SVGPathElement, ScenarioData>('.line')
-      .filter(function() { return d3.select(this).classed('selected') === false; })
-      .transition().duration(highlightDuration)
+    svgElement
+      .selectAll<SVGPathElement, ScenarioData>('.line')
+      .filter(function () {
+        return d3.select(this).classed('selected') === false;
+      })
+      .transition()
+      .duration(highlightDuration)
       .style('stroke', colorFunc)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden);
 
     // hide tooltips
-    svgElement.selectAll('.pc-hover-tooltip-text')
-      .attr('visibility', 'hidden');
-    svgElement.selectAll('.pc-hover-tooltip-text-bkgnd-rect')
-      .attr('visibility', 'hidden');
+    svgElement.selectAll('.pc-hover-tooltip-text').attr('visibility', 'hidden');
+    svgElement.selectAll('.pc-hover-tooltip-text-bkgnd-rect').attr('visibility', 'hidden');
   }
 
   function setupAndRenderNewRunsMarkers() {
@@ -789,14 +832,16 @@ function renderParallelCoordinates(
     // special interaction to specify values of interest to generate new runs
     //
     renderedAxes
-      .filter(function(d) {
+      .filter(function (d) {
         // exclude the output variable from the ability to add markers to it
         return !isOutputDimension(dimensions, d.name);
       })
       .append('g')
       .attr('class', 'pc-marker-g')
-      .attr('id', function(d) { return d.name; })
-      .each(function(d) {
+      .attr('id', function (d) {
+        return d.name;
+      })
+      .each(function (d) {
         const gElement = d3.select(this);
         const dimName = d.name;
         axisMarkersMap[dimName] = []; // each axis starts with an empty markers array
@@ -827,7 +872,7 @@ function renderParallelCoordinates(
             .attr('y', segmentsY)
             .attr('width', axisRange[1])
             .attr('height', segmentsHeight)
-            .on('click', function(event: PointerEvent) {
+            .on('click', function (event: PointerEvent) {
               //
               // user just clicked on the axis overlay to add a new marker
               //
@@ -844,24 +889,28 @@ function renderParallelCoordinates(
               const newMarkerData = {
                 value: getValueInCorrectType(dimName, markerValue),
                 xPos: xLoc,
-                id: Date.now().toString()
+                id: Date.now().toString(),
               };
               axisMarkersMap[dimName].push(newMarkerData); // Push data to our array
 
-              const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
-                .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
+              const dataSelection = gElement
+                .selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
+                .data<MarkerInfo>(axisMarkersMap[dimName], (d) => '' + d.value);
 
               // add marker rect
               const markerRects = dataSelection
-                .enter().append('rect')
+                .enter()
+                .append('rect')
                 .attr('class', 'pc-marker')
-                .attr('id', function(d) {
+                .attr('id', function (d) {
                   // Create an id for the marker for later update/removal
                   return 'marker-' + d.id;
                 })
                 .style('stroke', baselineMarkerStroke)
                 .style('fill', baselineMarkerFill)
-                .attr('x', function(d) { return d.xPos; })
+                .attr('x', function (d) {
+                  return d.xPos;
+                })
                 .attr('y', segmentsY)
                 .attr('width', baselineMarkerSize)
                 .attr('height', segmentsHeight);
@@ -874,17 +923,19 @@ function renderParallelCoordinates(
                 const markerInputTextHeight = 24;
                 const markerInputTextWidth = axisRange[1] * 0.5;
 
-                const markerUIContainer = d3.select(parentElement)
+                const markerUIContainer = d3
+                  .select(parentElement)
                   .append('foreignObject')
                   .attr('class', 'freeform-input')
                   .attr('width', markerInputTextWidth)
                   .attr('height', markerInputTextHeight)
-                  .attr('x', markerData.xPos > markerInputTextWidth ? markerInputTextWidth : markerData.xPos) // move with the marker if enough space otherwise, place at the end
+                  .attr(
+                    'x',
+                    markerData.xPos > markerInputTextWidth ? markerInputTextWidth : markerData.xPos
+                  ) // move with the marker if enough space otherwise, place at the end
                   .attr('y', markerInputTextHeight * 0.25)
                   .append('xhtml:div')
-                  .style('display', 'flex')
-                ;
-
+                  .style('display', 'flex');
                 const inputField = markerUIContainer
                   .append('xhtml:input')
                   .attr('value', markerData.value)
@@ -892,7 +943,7 @@ function renderParallelCoordinates(
                   .style('font-size', 'small')
                   .style('border-width', 'thin')
                   .style('width', '80%') // leave the remaining space for the button
-                  .on('keyup', function(keyEvent) {
+                  .on('keyup', function (keyEvent) {
                     if (keyEvent.keyCode === 13) {
                       // Enter key pressed
                       const inputElement = this as HTMLInputElement;
@@ -903,13 +954,19 @@ function renderParallelCoordinates(
                       }
                       // clamp new input value
                       const dimExtent = getXScaleFromMap(dimName).domain();
-                      const newValidInputVal = _.clamp(+newInputValue, dimExtent[0] as number, dimExtent[1] as number);
+                      const newValidInputVal = _.clamp(
+                        +newInputValue,
+                        dimExtent[0] as number,
+                        dimExtent[1] as number
+                      );
                       // update the underlying marker data and re-render
                       const newXPos = getMarkerPosFromValue(newValidInputVal);
-                      markerData.value = getValueInCorrectType(dimName, newValidInputVal.toString());
+                      markerData.value = getValueInCorrectType(
+                        dimName,
+                        newValidInputVal.toString()
+                      );
                       markerData.xPos = newXPos;
-                      markerRects
-                        .attr('x', newXPos);
+                      markerRects.attr('x', newXPos);
                       // clear the input box
                       deleteFreeformInputs(svgElement);
 
@@ -917,7 +974,7 @@ function renderParallelCoordinates(
                       renderNewRunsLines();
                     }
                   })
-                  .on('click', function(event: PointerEvent) {
+                  .on('click', function (event: PointerEvent) {
                     event.stopPropagation();
                   });
                 (inputField.node() as any).focus();
@@ -935,15 +992,19 @@ function renderParallelCoordinates(
                   .style('line-height', 'normal')
                   .style('font-weight', 'bold')
                   .style('background-color', 'red')
-                  .on('click', function() {
+                  .on('click', function () {
                     //
                     // user just clicked on the remove button of a specific marker UI, so the marker should be removed
                     //
-                    axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== getValueInCorrectType(dimName, markerData.value as string));
-                    gElement.selectAll<SVGSVGElement, MarkerInfo>('.pc-marker') // For existing markers
-                      .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value)
-                      .exit().remove()
-                    ;
+                    axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(
+                      (el) =>
+                        el.value !== getValueInCorrectType(dimName, markerData.value as string)
+                    );
+                    gElement
+                      .selectAll<SVGSVGElement, MarkerInfo>('.pc-marker') // For existing markers
+                      .data<MarkerInfo>(axisMarkersMap[dimName], (d) => '' + d.value)
+                      .exit()
+                      .remove();
                     // remove all marker tooltips, if any
                     gElement.selectAll('text').remove();
                     // re-render all the new scenario lines
@@ -958,48 +1019,46 @@ function renderParallelCoordinates(
               //
               // marker click
               //
-              markerRects
-                .on('click', (event: PointerEvent) => {
-                  // first time the marker is added, show the UI
-                  event.stopPropagation();
-                  const markerData: MarkerInfo = d3.select(event.target as any).datum() as MarkerInfo;
-                  showMarkerUI(markerData);
-                });
+              markerRects.on('click', (event: PointerEvent) => {
+                // first time the marker is added, show the UI
+                event.stopPropagation();
+                const markerData: MarkerInfo = d3.select(event.target as any).datum() as MarkerInfo;
+                showMarkerUI(markerData);
+              });
 
               //
               // marker drag
               //
-              markerRects
-                .call(d3.drag<SVGRectElement, MarkerInfo>()
-                  .on('drag', function(event) {
+              markerRects.call(
+                d3
+                  .drag<SVGRectElement, MarkerInfo>()
+                  .on('drag', function (event) {
                     deleteFreeformInputs(svgElement); // remove current marker UI, e.g., input fields, if any
 
                     let newXPos = d3.pointer(event, this)[0];
                     // limit the movement within the axis range
                     newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
                     newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
-                    d3.select(this)
-                      .attr('x', newXPos);
+                    d3.select(this).attr('x', newXPos);
                     const mv = getMarkerValueFromPos(newXPos);
-                    gElement.selectAll('text')
+                    gElement
+                      .selectAll('text')
                       .text(getValueInCorrectType(dimName, mv))
-                      .attr('x', newXPos + markerTooltipOffsetX)
-                    ;
+                      .attr('x', newXPos + markerTooltipOffsetX);
                   })
-                  .on('end', function(event, d) {
+                  .on('end', function (event, d) {
                     let newXPos = d3.pointer(event, this)[0];
                     // limit the movement within the axis range
                     newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
                     newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
                     // update the underlying data
-                    const markerData = axisMarkersMap[dimName].find(m => m.value === d.value);
+                    const markerData = axisMarkersMap[dimName].find((m) => m.value === d.value);
                     if (markerData) {
                       markerData.xPos = newXPos;
                       const mv = getMarkerValueFromPos(newXPos);
                       markerData.value = getValueInCorrectType(dimName, mv);
                     }
-                    d3.select(this)
-                      .attr('x', newXPos);
+                    d3.select(this).attr('x', newXPos);
                     // remove all marker tooltips, if any
                     gElement.selectAll('text').remove();
 
@@ -1010,35 +1069,35 @@ function renderParallelCoordinates(
 
                     // re-render all the new scenario lines
                     renderNewRunsLines();
-                  }));
+                  })
+              );
 
               //
               // marker hover
               //
               markerRects
-                .on('mouseover', function(d, i) {
+                .on('mouseover', function (d, i) {
                   // Use D3 to select element, change color and size
-                  d3.select(this)
-                    .style('fill', 'orange');
+                  d3.select(this).style('fill', 'orange');
 
                   // const markerValue = numberFloatFormat(i.value as number);
                   const markerValue = i.value;
 
                   // Specify where to put label of text
-                  gElement.append('text')
+                  gElement
+                    .append('text')
                     .attr('x', i.xPos + markerTooltipOffsetX)
                     .attr('y', segmentsY + markerTooltipOffsetY)
                     .attr('id', 't' + '-' + Math.floor(+markerValue)) // Create an id for text so we can select it later for removing on mouseout)
                     .style('fill', 'black')
                     .style('font-size', axisLabelFontSize)
-                    .text(function() {
+                    .text(function () {
                       return markerValue; // Value of the text
                     });
                 })
-                .on('mouseout', function(d, i) {
+                .on('mouseout', function (d, i) {
                   // Use D3 to select element, change color back to normal
-                  d3.select(this)
-                    .style('fill', baselineMarkerFill);
+                  d3.select(this).style('fill', baselineMarkerFill);
 
                   const markerValue = Math.floor(i.value as number);
 
@@ -1048,8 +1107,7 @@ function renderParallelCoordinates(
 
               // re-render all the new scenario lines, once a marker is added
               renderNewRunsLines();
-            })
-          ;
+            });
         } else {
           //
           // markers on ordinal axes
@@ -1062,7 +1120,7 @@ function renderParallelCoordinates(
           const tickSize = 5;
           const ticksData = [
             { x1: 0, y1: 0, x2: 0, y2: tickSize }, // left tick
-            { x1: dashSize, y1: 0, x2: dashSize, y2: tickSize } // right tick
+            { x1: dashSize, y1: 0, x2: dashSize, y2: tickSize }, // right tick
           ];
 
           // add two tick lines for each segment
@@ -1071,18 +1129,27 @@ function renderParallelCoordinates(
             .data(segmentsData)
             .enter()
             .append('g')
-            .attr('transform', function(d) { return svgUtil.translate(d.x, 0); })
+            .attr('transform', function (d) {
+              return svgUtil.translate(d.x, 0);
+            })
             .selectAll('line')
             .data(ticksData)
             .enter()
             .append('line')
             .attr('pointer-events', 'none')
-            .attr('x1', function(d) { return d.x1; })
-            .attr('y1', function(d) { return d.y1; })
-            .attr('x2', function(d) { return d.x2; })
-            .attr('y2', function(d) { return d.y2; })
-            .attr('stroke', 'black')
-          ;
+            .attr('x1', function (d) {
+              return d.x1;
+            })
+            .attr('y1', function (d) {
+              return d.y1;
+            })
+            .attr('x2', function (d) {
+              return d.x2;
+            })
+            .attr('y2', function (d) {
+              return d.y2;
+            })
+            .attr('stroke', 'black');
 
           // add one rect for each segment to act as the marker container
           gElement
@@ -1092,15 +1159,21 @@ function renderParallelCoordinates(
             .append('rect')
             .attr('class', 'overlay')
             .attr('id', dimName)
-            .attr('start', function(d) { return d.start; })
-            .attr('end', function(d) { return d.end; })
+            .attr('start', function (d) {
+              return d.start;
+            })
+            .attr('end', function (d) {
+              return d.end;
+            })
             .attr('pointer-events', 'all')
             .attr('cursor', 'pointer')
-            .attr('x', function(d) { return d.x; })
+            .attr('x', function (d) {
+              return d.x;
+            })
             .attr('y', segmentsY)
             .attr('width', dashSize)
             .attr('height', segmentsHeight)
-            .on('click', function(event: PointerEvent) {
+            .on('click', function (event: PointerEvent) {
               // this is coming from a click on an ordinal axis segment,
               //  so prevent the global svg click
               event.stopPropagation();
@@ -1109,72 +1182,94 @@ function renderParallelCoordinates(
               const markerValue: string = segmentData.start.toString();
 
               // check if a marker already exists
-              const marker = axisMarkersMap[dimName].find(el => el.value === markerValue);
+              const marker = axisMarkersMap[dimName].find((el) => el.value === markerValue);
 
               if (!marker) {
                 const scaleX = getXScaleFromMap(dimName);
 
-                const { min, max } = getPositionRangeOnOrdinalAxis(segmentData.x, axisRange, scaleX.domain(), markerValue);
-                const xLoc = segmentData.x + ((max - min) / 2);
+                const { min, max } = getPositionRangeOnOrdinalAxis(
+                  segmentData.x,
+                  axisRange,
+                  scaleX.domain(),
+                  markerValue
+                );
+                const xLoc = segmentData.x + (max - min) / 2;
 
                 // Push data to our array
                 axisMarkersMap[dimName].push({
                   value: markerValue,
                   xPos: xLoc,
-                  id: Date.now().toString()
+                  id: Date.now().toString(),
                 });
 
-                const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
-                  .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
+                const dataSelection = gElement
+                  .selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
+                  .data<MarkerInfo>(axisMarkersMap[dimName], (d) => '' + d.value);
 
                 // add marker rect
                 const markerWidth = baselineMarkerSize * 2;
                 dataSelection
-                  .enter().append('rect')
+                  .enter()
+                  .append('rect')
                   .attr('class', 'pc-marker')
-                  .attr('id', function(d) { return 'marker_' + d.value; })
+                  .attr('id', function (d) {
+                    return 'marker_' + d.value;
+                  })
                   .style('stroke', baselineMarkerStroke)
                   .style('fill', baselineMarkerFill)
                   .attr('pointer-events', 'none')
-                  .attr('x', function(d) { return d.xPos - (markerWidth / 2); })
+                  .attr('x', function (d) {
+                    return d.xPos - markerWidth / 2;
+                  })
                   .attr('y', segmentsY)
                   .attr('width', markerWidth)
                   .attr('height', segmentsHeight);
               } else {
-                gElement.selectAll<SVGRectElement, MarkerInfo>('.pc-marker')
-                  .filter(function(d) { return d.value === markerValue; })
+                gElement
+                  .selectAll<SVGRectElement, MarkerInfo>('.pc-marker')
+                  .filter(function (d) {
+                    return d.value === markerValue;
+                  })
                   .remove();
-                axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== markerValue);
+                axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(
+                  (el) => el.value !== markerValue
+                );
               }
 
               // re-render all the new scenario lines
               renderNewRunsLines();
             })
             // @REVIEW: code is repeated to support hover over categorical segments when new-runs-mode is not active
-            .on('mouseover', function() {
+            .on('mouseover', function () {
               const segmentData: any = d3.select(this).datum();
               const hoverValue: string = segmentData.start.toString();
 
               const scaleX = getXScaleFromMap(dimName);
 
-              const { min, max } = getPositionRangeOnOrdinalAxis(segmentData.x, axisRange, scaleX.domain(), hoverValue);
-              const xLoc = segmentData.x + ((max - min) / 2);
+              const { min, max } = getPositionRangeOnOrdinalAxis(
+                segmentData.x,
+                axisRange,
+                scaleX.domain(),
+                hoverValue
+              );
+              const xLoc = segmentData.x + (max - min) / 2;
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
               const hoverId = safeD3StringId(hoverValue);
 
               // Specify where to put label of text
-              gElement.append('text')
+              gElement
+                .append('text')
                 .attr('x', xLoc + markerTooltipOffsetX)
                 .attr('y', segmentsY + markerTooltipOffsetY)
                 .attr('id', 'h' + '-' + hoverId) // Create an id for text so we can select it later for removing on mouseout
                 .style('fill', 'black')
                 .style('font-size', axisLabelFontSize)
-                .text(function() {
+                .text(function () {
                   return hoverValue; // Value of the text
                 });
             })
-            .on('mouseout', function() {
+            .on('mouseout', function () {
               const segmentData: any = d3.select(this).datum();
               const hoverValue: string = segmentData.start.toString();
 
@@ -1183,8 +1278,7 @@ function renderParallelCoordinates(
 
               // Select text by id and then remove
               gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
-            })
-          ;
+            });
         }
       });
   }
@@ -1196,14 +1290,20 @@ function renderParallelCoordinates(
     renderedAxes
       .append('g')
       .attr('class', 'pc-brush')
-      .attr('id', function(d) { return d.name; })
-      .each(function(d) {
+      .attr('id', function (d) {
+        return d.name;
+      })
+      .each(function (d) {
         const dimName = d.name;
         if (!isCategoricalAxis(dimName, dimensions)) {
           // a standard continuous brush
           d3.select(this).call(
-            d3.brushX()
-              .extent([[0, -brushHeight], [axisRange[1], brushHeight]])
+            d3
+              .brushX()
+              .extent([
+                [0, -brushHeight],
+                [axisRange[1], brushHeight],
+              ])
               .on('start', brushStart)
               .on('brush', onDataBrush)
               .on('end', brushEnd)
@@ -1217,7 +1317,7 @@ function renderParallelCoordinates(
           const tickSize = 5;
           const ticksData = [
             { x1: 0, y1: 0, x2: 0, y2: tickSize }, // left tick
-            { x1: dashSize, y1: 0, x2: dashSize, y2: tickSize } // right tick
+            { x1: dashSize, y1: 0, x2: dashSize, y2: tickSize }, // right tick
           ];
 
           // add two tick lines for each segment
@@ -1226,18 +1326,27 @@ function renderParallelCoordinates(
             .data(segmentsData)
             .enter()
             .append('g')
-            .attr('transform', function(d) { return svgUtil.translate(d.x, 0); })
+            .attr('transform', function (d) {
+              return svgUtil.translate(d.x, 0);
+            })
             .selectAll('line')
             .data(ticksData)
             .enter()
             .append('line')
             .attr('pointer-events', 'none')
-            .attr('x1', function(d) { return d.x1; })
-            .attr('y1', function(d) { return d.y1; })
-            .attr('x2', function(d) { return d.x2; })
-            .attr('y2', function(d) { return d.y2; })
-            .attr('stroke', 'black')
-          ;
+            .attr('x1', function (d) {
+              return d.x1;
+            })
+            .attr('y1', function (d) {
+              return d.y1;
+            })
+            .attr('x2', function (d) {
+              return d.x2;
+            })
+            .attr('y2', function (d) {
+              return d.y2;
+            })
+            .attr('stroke', 'black');
 
           gElement
             .selectAll('rect')
@@ -1246,15 +1355,21 @@ function renderParallelCoordinates(
             .append('rect')
             .attr('class', 'overlay')
             .attr('id', dimName)
-            .attr('start', function(d) { return d.start; })
-            .attr('end', function(d) { return d.end; })
+            .attr('start', function (d) {
+              return d.start;
+            })
+            .attr('end', function (d) {
+              return d.end;
+            })
             .attr('pointer-events', 'all')
             .attr('cursor', 'pointer')
-            .attr('x', function(d) { return d.x; })
+            .attr('x', function (d) {
+              return d.x;
+            })
             .attr('y', segmentsY)
             .attr('width', dashSize)
             .attr('height', segmentsHeight)
-            .on('click', function(event) {
+            .on('click', function (event) {
               // this is coming from a click on an ordinal axis's segment rect,
               //  so prevent the global svg click from deselecting lines
               event.stopPropagation();
@@ -1265,9 +1380,7 @@ function renderParallelCoordinates(
               // if currently selected? then toggle
               const selected = !rect.classed('selection');
 
-              brushParentElement.selectAll('*')
-                .classed('selection', false)
-              ;
+              brushParentElement.selectAll('*').classed('selection', false);
               rect.classed('selection', selected);
 
               selectedLines.length = 0; // reset before identifying selected lines
@@ -1277,31 +1390,37 @@ function renderParallelCoordinates(
               onLinesSelection(selectedLines);
             })
             // @REVIEW: code is repeated to support hover over categorical segments when new-runs-mode is active
-            .on('mouseover', function() {
+            .on('mouseover', function () {
               const rectElement = d3.select(this);
               const hoverValue: string = rectElement.attr('start').toString();
               const x = +rectElement.attr('x');
 
               const scaleX = getXScaleFromMap(dimName);
 
-              const { min, max } = getPositionRangeOnOrdinalAxis(x, axisRange, scaleX.domain(), hoverValue);
-              const xLoc = x + ((max - min) / 2);
+              const { min, max } = getPositionRangeOnOrdinalAxis(
+                x,
+                axisRange,
+                scaleX.domain(),
+                hoverValue
+              );
+              const xLoc = x + (max - min) / 2;
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
               const hoverId = safeD3StringId(hoverValue);
 
               // Specify where to put label of text
-              gElement.append('text')
+              gElement
+                .append('text')
                 .attr('x', xLoc + markerTooltipOffsetX)
                 .attr('y', segmentsY + markerTooltipOffsetY)
                 .attr('id', 'h' + '-' + hoverId) // Create an id for text so we can select it later for removing on mouseout
                 .style('fill', 'black')
                 .style('font-size', axisLabelFontSize)
-                .text(function() {
+                .text(function () {
                   return hoverValue; // Value of the text
                 });
             })
-            .on('mouseout', function() {
+            .on('mouseout', function () {
               // const segmentData: any = d3.select(this).datum(); // segmentData.start
               // unfortunately, the click event if executed before this event would cause bound data to be lost
               //  so fetch the data differently
@@ -1312,8 +1431,7 @@ function renderParallelCoordinates(
 
               // Select text by id and then remove
               gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
-            })
-          ;
+            });
         }
       });
   }
@@ -1324,7 +1442,9 @@ function renderParallelCoordinates(
 //
 function colorFunc(this: SVGPathElement) {
   const svgElementSelection = d3.select<SVGPathElement, ScenarioData>(this);
-  const status = svgElementSelection ? svgElementSelection.datum().status as string : ModelRunStatus.Ready;
+  const status = svgElementSelection
+    ? (svgElementSelection.datum().status as string)
+    : ModelRunStatus.Ready;
   switch (status) {
     case ModelRunStatus.Ready:
       if (svgElementSelection.classed('selected')) {
@@ -1346,18 +1466,22 @@ function colorFunc(this: SVGPathElement) {
 
 function renderBaselineMarkers() {
   if (!renderedAxes) {
-    console.warn('Cannot render baseline markers before rendering the actual parallel coordinates!');
+    console.warn(
+      'Cannot render baseline markers before rendering the actual parallel coordinates!'
+    );
     return;
   }
   renderedAxes.selectAll('circle').remove();
   renderedAxes
-    .filter(function(d) { return (d as ModelParameter).default !== undefined; })
+    .filter(function (d) {
+      return (d as ModelParameter).default !== undefined;
+    })
     .append('circle')
     .style('stroke', baselineMarkerStroke)
     .style('fill', baselineMarkerFill)
     .attr('pointer-events', 'none')
     .attr('r', baselineMarkerSize)
-    .attr('cx', function(d) {
+    .attr('cx', function (d) {
       const axisDefault = (d as ModelParameter).default;
       const dimName = d.name;
       const scaleX = getXScaleFromMap(dimName);
@@ -1366,7 +1490,12 @@ function renderBaselineMarkers() {
         let axisDefaultStr = axisDefault.toString();
         // get the corresponding label for this value if suitable
         axisDefaultStr = findLabelForValue(d, axisDefaultStr) as string;
-        const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
+        const { min, max } = getPositionRangeOnOrdinalAxis(
+          xPos,
+          axisRange,
+          scaleX.domain(),
+          axisDefaultStr
+        );
         xPos = min + (max - min) / 2;
       }
       return xPos;
@@ -1375,17 +1504,18 @@ function renderBaselineMarkers() {
 }
 
 function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionInfo>) {
-  const axes = gElement.selectAll('axis')
-  // For each dimension of the dataset I add a 'g' element:
+  const axes = gElement
+    .selectAll('axis')
+    // For each dimension of the dataset I add a 'g' element:
     .data(dimensions)
     .enter()
     .append('g')
     .attr('class', 'axis')
-    .attr('transform', function(d) {
+    .attr('transform', function (d) {
       // I translate this element to its correct position on the y axis
       return svgUtil.translate(0, yScale(d.name));
     })
-    .each(function(d) {
+    .each(function (d) {
       // And I build the axis with the call function
       const dimName = d.name;
       const scale = getXScaleFromMap(dimName);
@@ -1420,26 +1550,28 @@ function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionIn
         // Figure out how big each dash should be
         const axisDomain = scale.domain();
         // const gapFraction = 0.5; // The portion of the line that should be a gap
-        const totalDashesAndGaps = (axisDomain.length * 2) - 1; // each step (value) consists of a dash and a gap
-        const total = (axisRange[1] - axisRange[0]) / totalDashesAndGaps;// scale.step(); // scale(axisDomain[1]) - scale(axisDomain[0]);
+        const totalDashesAndGaps = axisDomain.length * 2 - 1; // each step (value) consists of a dash and a gap
+        const total = (axisRange[1] - axisRange[0]) / totalDashesAndGaps; // scale.step(); // scale(axisDomain[1]) - scale(axisDomain[0]);
         const dash = total; //  * (1 - gapFraction);
         const gap = total; // * gapFraction - (dash / 2);
 
-        xAxis.append('line')
+        xAxis
+          .append('line')
           .classed('domain', true)
           .attr('x1', axisRange[0])
           .attr('x2', axisRange[1])
           .attr('y1', 0)
           .attr('y2', 0)
           .attr('stroke', 'black') // standard axis color
-          .attr('stroke-dasharray', dash + ',' + gap)
-        ;
+          .attr('stroke-dasharray', dash + ',' + gap);
       }
       // shift the tick labels for the min/max values to be outside the axis line
-      xAxis.selectAll('.tick:first-of-type text')
+      xAxis
+        .selectAll('.tick:first-of-type text')
         .attr('transform', svgUtil.translate(-axisTickLabelOffset, 0))
         .attr('font-size', axisTickLabelFontSize);
-      xAxis.selectAll('.tick:last-of-type text')
+      xAxis
+        .selectAll('.tick:last-of-type text')
         .attr('transform', svgUtil.translate(axisTickLabelOffset, 0))
         .attr('font-size', axisTickLabelFontSize);
       return xAxis;
@@ -1447,7 +1579,13 @@ function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionIn
   return axes;
 }
 
-function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesOptions, dimensions: Array<DimensionInfo>, rerenderChart: () => void, onGeoSelection: (d: ModelParameter) => void) {
+function renderAxesLabels(
+  svgElement: D3Selection,
+  options: ParallelCoordinatesOptions,
+  dimensions: Array<DimensionInfo>,
+  rerenderChart: () => void,
+  onGeoSelection: (d: ModelParameter) => void
+) {
   // Add label for each axis name
   const axesLabels = renderedAxes
     .append('text')
@@ -1455,12 +1593,12 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
     .style('text-anchor', axisLabelTextAnchor)
     .attr('x', axisLabelOffsetX)
     .attr('y', axisLabelOffsetY)
-    .text(d => (d.display_name ?? d.name))
+    .text((d) => d.display_name ?? d.name)
     .style('fill', axisLabelFillColor)
     .style('font-size', axisLabelFontSize);
 
   renderedAxes
-    .filter(d => isOutputDimension(dimensions, d.name))
+    .filter((d) => isOutputDimension(dimensions, d.name))
     .append('text')
     .style('text-anchor', axisLabelTextAnchor)
     .attr('x', axisLabelOffsetX)
@@ -1471,12 +1609,8 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
 
   // add descriptive title (i.e., embedded tooltip) for each axis name
   // first start with dimension names as the desc, then update in a later step
-  const titles = axesLabels
-    .append('title')
-    .text((d) => d.name);
-  titles
-    .data(dimensions.map(d => d.description))
-    .text((d) => d);
+  const titles = axesLabels.append('title').text((d) => d.name);
+  titles.data(dimensions.map((d) => d.description)).text((d) => d);
 
   // add background rect for each axis name
   renderedAxes
@@ -1489,25 +1623,24 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
     .attr('height', 10);
 
   // calculate the bbox for each axis name and update the rect
-  renderedAxes
-    .each(function() {
-      const rect = d3.select(this).select('.pc-axis-name-text-bkgnd-rect');
-      const text = d3.select(this).select('.pc-axis-name-text');
-      const textNode = text.node() as SVGGraphicsElement;
-      const textBBox = textNode.getBBox();
-      rect
-        .attr('x', textBBox.x)
-        .attr('y', textBBox.y)
-        .attr('width', textBBox.width)
-        .attr('height', textBBox.height);
-      text.raise();
-    });
+  renderedAxes.each(function () {
+    const rect = d3.select(this).select('.pc-axis-name-text-bkgnd-rect');
+    const text = d3.select(this).select('.pc-axis-name-text');
+    const textNode = text.node() as SVGGraphicsElement;
+    const textBBox = textNode.getBBox();
+    rect
+      .attr('x', textBBox.x)
+      .attr('y', textBBox.y)
+      .attr('width', textBBox.width)
+      .attr('height', textBBox.height);
+    text.raise();
+  });
 
   // render additional UI for freeform and geo params
   renderedAxes
-    .filter(d => (d as ModelParameter).data_type === ModelParameterDataType.Freeform)
+    .filter((d) => (d as ModelParameter).data_type === ModelParameterDataType.Freeform)
     // add a button to allow adding a new freeform value or a validated geo region
-    .each(function() {
+    .each(function () {
       const text = d3.select(this).select('.pc-axis-name-text');
       const textNode = text.node() as SVGGraphicsElement;
       const textBBox = textNode.getBBox();
@@ -1530,7 +1663,7 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
         .style('line-height', 'normal')
         .style('font-weight', 'bold')
         .style('background-color', SELECTED_COLOR)
-        .on('click', function(this: any, event: PointerEvent) {
+        .on('click', function (this: any, event: PointerEvent) {
           const d3Input = d3.select(this);
           const d = d3Input.datum() as ModelParameter;
           event.stopPropagation();
@@ -1547,7 +1680,8 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
             //  note how the input-box is added as foreign object since it is added within the SVG element
             //
             const parentElement = this.parentElement.parentElement; // the axis element
-            const inputField = d3.select(parentElement)
+            const inputField = d3
+              .select(parentElement)
               .append('foreignObject')
               .attr('class', 'freeform-input')
               .attr('width', axisRange[1])
@@ -1559,7 +1693,7 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
               .attr('type', 'text')
               .style('font-size', 'small')
               .style('border-width', 'thin')
-              .on('keyup', function(keyEvent) {
+              .on('keyup', function (keyEvent) {
                 if (keyEvent.keyCode === 13) {
                   // Enter key pressed
                   const inputElement = this as HTMLInputElement;
@@ -1576,13 +1710,12 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
                   deleteFreeformInputs(svgElement);
                 }
               })
-              .on('click', function(event: PointerEvent) {
+              .on('click', function (event: PointerEvent) {
                 event.stopPropagation();
               });
             (inputField.node() as any).focus();
           }
-        })
-      ;
+        });
     });
 }
 
@@ -1595,7 +1728,9 @@ function renderHoverTooltips() {
   renderedAxes
     .append('text')
     .attr('class', 'pc-hover-tooltip-text')
-    .attr('id', function(d) { return d.name; }) // name of the dimension
+    .attr('id', function (d) {
+      return d.name;
+    }) // name of the dimension
     .style('text-anchor', 'start')
     .attr('x', 0)
     .attr('y', -10)
@@ -1604,12 +1739,13 @@ function renderHoverTooltips() {
     .attr('visibility', 'hidden')
     .style('font-size', tooltipTextFontSize);
 
-
   // add background rect for each axis tooltip
   renderedAxes
     .append('rect')
     .attr('class', 'pc-hover-tooltip-text-bkgnd-rect')
-    .attr('id', function(d) { return d.name; }) // name of the dimension
+    .attr('id', function (d) {
+      return d.name;
+    }) // name of the dimension
     .style('fill', lineHoverTooltipTextBackgroundColor)
     .attr('x', 0)
     .attr('y', 0)
@@ -1623,7 +1759,9 @@ function renderSelectionTooltips() {
   renderedAxes
     .append('text')
     .attr('class', 'pc-selection-tooltip-text')
-    .attr('id', function(d) { return d.name; }) // name of the dimension
+    .attr('id', function (d) {
+      return d.name;
+    }) // name of the dimension
     .style('text-anchor', 'start')
     .attr('x', 0)
     .attr('y', selectionTooltipNormalYOffset)
@@ -1636,7 +1774,9 @@ function renderSelectionTooltips() {
   renderedAxes
     .append('rect')
     .attr('class', 'pc-selection-tooltip-text-bkgnd-rect')
-    .attr('id', function(d) { return d.name; }) // name of the dimension
+    .attr('id', function (d) {
+      return d.name;
+    }) // name of the dimension
     .style('fill', lineSelectionTooltipTextBackgroundColor)
     .attr('x', 0)
     .attr('y', 0)
@@ -1651,8 +1791,9 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
   // show tooltips
   // first update their text and position based on selected line data
   // then make them visible
-  svgElement.selectAll<SVGTextElement, DimensionInfo>('.pc-selection-tooltip-text')
-    .each(function(d) {
+  svgElement
+    .selectAll<SVGTextElement, DimensionInfo>('.pc-selection-tooltip-text')
+    .each(function (d) {
       const dimName = d.name;
       let isTooltipVisible = 'visible';
       let value: string | number = '';
@@ -1662,9 +1803,12 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
       // override the tooltip content if there is a brush applied to this dimension
       if (brushes.length > 0) {
         isTooltipVisible = 'hidden';
-        const brushRange = brushes.find(b => b.dimName === dimName);
+        const brushRange = brushes.find((b) => b.dimName === dimName);
         if (brushRange) {
-          value = brushRange.brushLabel !== undefined ? brushRange.brushLabel : brushRange.start + ' : ' + brushRange.end;
+          value =
+            brushRange.brushLabel !== undefined
+              ? brushRange.brushLabel
+              : brushRange.start + ' : ' + brushRange.end;
 
           isTooltipVisible = 'visible';
           formattedValue = value;
@@ -1686,7 +1830,9 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
         formattedValue = value;
         if (!isCategoricalAxis(dimName, dimensions)) {
           const numValue = +value as number;
-          formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
+          formattedValue = Number.isInteger(numValue)
+            ? numberIntegerFormat(numValue)
+            : numberFloatFormat(numValue);
         }
         xPos = xScale(value as any) as number;
       }
@@ -1697,29 +1843,27 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
         .text(formattedValue)
         .attr('visibility', isTooltipVisible)
         .attr('x', xPos)
-        .attr('y', yPos)
-      ;
+        .attr('y', yPos);
     });
 
-  svgElement.selectAll<SVGRectElement, DimensionInfo>('.pc-selection-tooltip-text-bkgnd-rect')
-    .each(function(d) {
+  svgElement
+    .selectAll<SVGRectElement, DimensionInfo>('.pc-selection-tooltip-text-bkgnd-rect')
+    .each(function (d) {
       const dimName = d.name;
       let isTooltipVisible = 'visible';
       const value = selectedLineData ? selectedLineData[dimName] : 'undefined';
       if (brushes.length > 0) {
         isTooltipVisible = 'hidden';
       }
-      const brushRange = brushes.find(b => b.dimName === dimName);
+      const brushRange = brushes.find((b) => b.dimName === dimName);
       if (brushRange) {
         isTooltipVisible = 'visible';
       }
       const renderedTextRect = d3.select<SVGRectElement, ScenarioData>(this);
-      renderedTextRect
-        .attr('visibility', isTooltipVisible)
-        .attr('x', function() {
-          const xScale = getXScaleFromMap(dimName);
-          return xScale(value as any) as number;
-        });
+      renderedTextRect.attr('visibility', isTooltipVisible).attr('x', function () {
+        const xScale = getXScaleFromMap(dimName);
+        return xScale(value as any) as number;
+      });
     });
 
   updateSelectionToolTipsRect(svgElement);
@@ -1727,35 +1871,37 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
 
 // utility function to re-calculate the bbox for each axis tooltip and update the rect
 function updateSelectionToolTipsRect(svgElement: D3Selection) {
-  svgElement.selectAll('.axis')
-    .each(function() {
-      const rect = d3.select(this).select('.pc-selection-tooltip-text-bkgnd-rect');
-      const text = d3.select(this).select('.pc-selection-tooltip-text');
-      const textNode = text.node() as SVGGraphicsElement;
-      const textBBox = textNode.getBBox();
-      // if xPos + text-rect-width is beyond the svg width, then adjust
-      let xPos = textBBox.x - tooltipRectPaddingX;
-      const width = textBBox.width + tooltipRectPaddingX * 2;
-      const offset = (xPos + width) - axisRange[1];
-      if (offset > 0) {
-        xPos -= offset;
-        text.attr('x', xPos + tooltipRectPaddingX);
-      }
-      rect
-        .attr('x', xPos)
-        .attr('y', textBBox.y - tooltipRectPaddingY)
-        .attr('width', width)
-        .attr('height', textBBox.height + tooltipRectPaddingY * 2);
-      text.raise();
-    });
+  svgElement.selectAll('.axis').each(function () {
+    const rect = d3.select(this).select('.pc-selection-tooltip-text-bkgnd-rect');
+    const text = d3.select(this).select('.pc-selection-tooltip-text');
+    const textNode = text.node() as SVGGraphicsElement;
+    const textBBox = textNode.getBBox();
+    // if xPos + text-rect-width is beyond the svg width, then adjust
+    let xPos = textBBox.x - tooltipRectPaddingX;
+    const width = textBBox.width + tooltipRectPaddingX * 2;
+    const offset = xPos + width - axisRange[1];
+    if (offset > 0) {
+      xPos -= offset;
+      text.attr('x', xPos + tooltipRectPaddingX);
+    }
+    rect
+      .attr('x', xPos)
+      .attr('y', textBBox.y - tooltipRectPaddingY)
+      .attr('width', width)
+      .attr('height', textBBox.height + tooltipRectPaddingY * 2);
+    text.raise();
+  });
 }
 
 function findLabelForValue(dim: DimensionInfo, value: string | number) {
   let labelValue = value;
-  if ((dim as ModelParameter) !== undefined && (dim as ModelParameter).data_type !== ModelParameterDataType.Freeform) {
+  if (
+    (dim as ModelParameter) !== undefined &&
+    (dim as ModelParameter).data_type !== ModelParameterDataType.Freeform
+  ) {
     // check if we have label choices array
     if (dim.choices_labels !== undefined && dim.choices_labels.length > 0) {
-      const choiceIndex = dim.choices?.findIndex(c => c === value) ?? 0;
+      const choiceIndex = dim.choices?.findIndex((c) => c === value) ?? 0;
       if (choiceIndex >= 0 && choiceIndex < dim.choices_labels.length) {
         labelValue = dim.choices_labels[choiceIndex];
       }
@@ -1763,26 +1909,38 @@ function findLabelForValue(dim: DimensionInfo, value: string | number) {
   }
   // special case for geo parameters: map their defualt-value to the default-label-value
   if (isGeoParameter(dim.type)) {
-    const dimAsModelParam = (dim as ModelParameter);
-    if (value as string === dimAsModelParam.default && dimAsModelParam.additional_options && dimAsModelParam.additional_options.default_value_label) {
+    const dimAsModelParam = dim as ModelParameter;
+    if (
+      (value as string) === dimAsModelParam.default &&
+      dimAsModelParam.additional_options &&
+      dimAsModelParam.additional_options.default_value_label
+    ) {
       labelValue = dimAsModelParam.additional_options.default_value_label;
     }
   }
   return labelValue;
 }
 
-function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
+function selectLine(
+  selectedLine: D3LineSelection,
+  event: PointerEvent | undefined,
+  d: ScenarioData,
+  lineWidth: number
+) {
   const selectedLineData = selectedLine.datum();
   if (selectedLineData) {
     // Use D3 to select the line, change color and size
-    const selectedLineIndex = currentLineSelection.findIndex((sl) => sl.run_id === selectedLineData.run_id);
+    const selectedLineIndex = currentLineSelection.findIndex(
+      (sl) => sl.run_id === selectedLineData.run_id
+    );
     if (selectedLineIndex > -1) {
       selectedLine.attr('selection-index', selectedLineIndex);
     }
 
     selectedLine
       .classed('selected', true)
-      .transition().duration(highlightDuration)
+      .transition()
+      .duration(highlightDuration)
       .style('stroke', colorFunc)
       .style('opacity', lineOpacityVisible)
       .attr('stroke-width', lineWidth);
@@ -1795,14 +1953,19 @@ function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefin
 }
 
 // function deselectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
-function deselectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, lineWidth: number) {
+function deselectLine(
+  selectedLine: D3LineSelection,
+  event: PointerEvent | undefined,
+  lineWidth: number
+) {
   const selectedLineData = selectedLine.datum();
 
   if (selectedLineData) {
     // Use D3 to select the line, change color and size
     selectedLine
       .classed('selected', false)
-      .transition().duration(highlightDuration)
+      .transition()
+      .duration(highlightDuration)
       .style('stroke', colorFunc)
       .style('opacity', lineOpacityVisible)
       .attr('stroke-width', lineWidth);
@@ -1814,30 +1977,32 @@ function deselectLine(selectedLine: D3LineSelection, event: PointerEvent | undef
   }
 }
 
-
 //
 // utility functions
 //
 // exclude drilldown parameters from the input dimensions
 // @REVIEW this may better be done external to the PC component
 const filterDrilldownDimensionData = (dimensions: Array<ModelParameter>) => {
-  return dimensions
-    .filter(d => { return !d.is_drilldown; });
+  return dimensions.filter((d) => {
+    return !d.is_drilldown;
+  });
 };
 
 const filterInvisibleDimensionData = (dimensions: Array<ModelParameter>) => {
   // this should only filter input parameters
-  return dimensions
-    .filter(d => {
-      if (isOutputDimension(dimensions, d.name)) return true;
-      return d.is_visible;
-    });
+  return dimensions.filter((d) => {
+    if (isOutputDimension(dimensions, d.name)) return true;
+    return d.is_visible;
+  });
 };
 
 const filterDateDimensionData = (dimensions: Array<ModelParameter>) => {
   // this should only filter input parameters
-  return dimensions
-    .filter(d => d.type !== DatacubeGenericAttributeVariableType.Date && d.type !== DatacubeGenericAttributeVariableType.DateRange);
+  return dimensions.filter(
+    (d) =>
+      d.type !== DatacubeGenericAttributeVariableType.Date &&
+      d.type !== DatacubeGenericAttributeVariableType.DateRange
+  );
 };
 
 function isOutputDimension(dimensions: Array<DimensionInfo>, dimName: string) {
@@ -1851,70 +2016,73 @@ function getOutputDimension(dimensions: Array<DimensionInfo>) {
 
 // attempt to determine types of each dimension based on first row of data
 const toType = (v: string | number) => {
-  return (({}).toString.call(v).match(/\s([a-zA-Z]+)/) ?? [])[1].toLowerCase();
+  return ({}.toString.call(v).match(/\s([a-zA-Z]+)/) ?? [])[1].toLowerCase();
 };
 const toTypeCoerceNumbers = (v: string | number) => {
   // if the following condition is === instead of == then all numeric dimensions will be detected as ordinal
   // eslint-disable-next-line eqeqeq
-  if ((parseFloat(v as string) == v) && (v !== null)) {
+  if (parseFloat(v as string) == v && v !== null) {
     return 'number';
   }
   return toType(v);
 };
 const detectDimensionTypes = (data: ScenarioData) => {
   // populate a map where keys are the dimension names and values are the corresponding data type (e.g., 'string', 'number')
-  const types: {[key: string]: string} = {};
-  Object.keys(data)
-    .forEach(function(col) {
-      types[col] = toTypeCoerceNumbers(data[col]);
-    });
+  const types: { [key: string]: string } = {};
+  Object.keys(data).forEach(function (col) {
+    types[col] = toTypeCoerceNumbers(data[col]);
+  });
   return types;
 };
 
 const cancelPrevLineSelection = (svgElement: D3Selection) => {
-  svgElement.selectAll('.line')
+  svgElement
+    .selectAll('.line')
     .classed('selected', false)
-    .transition().duration(highlightDuration)
+    .transition()
+    .duration(highlightDuration)
     .style('opacity', lineOpacityHidden)
     .attr('stroke-width', (d) => getLineWidth(d))
     .attr('selection-index', 0);
 
   // hide tooltips
-  svgElement.selectAll('.pc-selection-tooltip-text')
-    .attr('visibility', 'hidden');
-  svgElement.selectAll('.pc-selection-tooltip-text-bkgnd-rect')
-    .attr('visibility', 'hidden');
+  svgElement.selectAll('.pc-selection-tooltip-text').attr('visibility', 'hidden');
+  svgElement.selectAll('.pc-selection-tooltip-text-bkgnd-rect').attr('visibility', 'hidden');
 };
 
 // utility function to re-calculate the bbox for each axis tooltip and update the rect
 const updateHoverToolTipsRect = (renderedAxes: D3AxisSelection) => {
-  renderedAxes
-    .each(function() {
-      const rect = d3.select(this).select('.pc-hover-tooltip-text-bkgnd-rect');
-      const text = d3.select(this).select('.pc-hover-tooltip-text');
-      const textNode = text.node() as SVGGraphicsElement;
-      const textBBox = textNode.getBBox();
-      // if xPos + text-rect-width is beyond the svg width, then adjust
-      let xPos = textBBox.x - tooltipRectPaddingX;
-      const width = textBBox.width + tooltipRectPaddingX * 2;
-      const offset = (xPos + width) - axisRange[1];
-      if (offset > 0) {
-        xPos -= offset;
-        text.attr('x', xPos + tooltipRectPaddingX);
-      }
-      rect
-        .attr('x', xPos)
-        .attr('y', textBBox.y - tooltipRectPaddingY)
-        .attr('width', width)
-        .attr('height', textBBox.height + tooltipRectPaddingY * 2);
-      text.raise();
-    });
+  renderedAxes.each(function () {
+    const rect = d3.select(this).select('.pc-hover-tooltip-text-bkgnd-rect');
+    const text = d3.select(this).select('.pc-hover-tooltip-text');
+    const textNode = text.node() as SVGGraphicsElement;
+    const textBBox = textNode.getBBox();
+    // if xPos + text-rect-width is beyond the svg width, then adjust
+    let xPos = textBBox.x - tooltipRectPaddingX;
+    const width = textBBox.width + tooltipRectPaddingX * 2;
+    const offset = xPos + width - axisRange[1];
+    if (offset > 0) {
+      xPos -= offset;
+      text.attr('x', xPos + tooltipRectPaddingX);
+    }
+    rect
+      .attr('x', xPos)
+      .attr('y', textBBox.y - tooltipRectPaddingY)
+      .attr('width', width)
+      .attr('height', textBBox.height + tooltipRectPaddingY * 2);
+    text.raise();
+  });
 };
 
 // utility function to return the pixel positions for the start/end of a specific ordinal segment
 //  which is identified by the the segment value
-const getPositionRangeOnOrdinalAxis = (xPos: number, axisRange: Array<number>, axisDomain: Array<string | number>, val: string | number) => {
-  const totalDashesAndGaps = (axisDomain.length * 2) - 1;
+const getPositionRangeOnOrdinalAxis = (
+  xPos: number,
+  axisRange: Array<number>,
+  axisDomain: Array<string | number>,
+  val: string | number
+) => {
+  const totalDashesAndGaps = axisDomain.length * 2 - 1;
   const dashSize = (axisRange[1] - axisRange[0]) / totalDashesAndGaps;
   let min;
   if (xPos === axisRange[0]) {
@@ -1926,7 +2094,9 @@ const getPositionRangeOnOrdinalAxis = (xPos: number, axisRange: Array<number>, a
       // value was not found.
       //  this is a special case where perhaps comparing
       //  numerical values as string (e.g., '1' vs '1.0') caused a not-found situation
-      valIndx = axisDomain.findIndex((v: string | number) => parseFloat(v as string) === parseFloat(val as string));
+      valIndx = axisDomain.findIndex(
+        (v: string | number) => parseFloat(v as string) === parseFloat(val as string)
+      );
     }
     min = axisRange[0] + valIndx * dashSize * 2;
   }
@@ -1938,18 +2108,19 @@ const getPositionRangeOnOrdinalAxis = (xPos: number, axisRange: Array<number>, a
 function getSegmentsInfo(dimName: string) {
   const xScale = getXScaleFromMap(dimName);
   const xScaleDomain = xScale.domain();
-  const totalDashesAndGaps = (xScaleDomain.length * 2) - 1;
+  const totalDashesAndGaps = xScaleDomain.length * 2 - 1;
   const dashSize = (axisRange[1] - axisRange[0]) / totalDashesAndGaps;
   const segmentsData = [];
   const segmentsY = -brushHeight;
   const segmentsHeight = brushHeight * 2;
   for (let segmentIndx = 0; segmentIndx < totalDashesAndGaps; segmentIndx++) {
-    if (segmentIndx % 2 === 0) { // only consider the solid segments
+    if (segmentIndx % 2 === 0) {
+      // only consider the solid segments
       const min = segmentIndx * dashSize; // do not want sub-pixel to avoid floating point issues with d3.bisect
       segmentsData.push({
         x: min,
-        start: xScaleDomain[segmentIndx - (segmentIndx / 2)],
-        end: xScaleDomain[segmentIndx - (segmentIndx / 2)]
+        start: xScaleDomain[segmentIndx - segmentIndx / 2],
+        end: xScaleDomain[segmentIndx - segmentIndx / 2],
       });
     }
   }
@@ -1961,18 +2132,19 @@ const createScales = (
   dimensions: Array<DimensionInfo>,
   pcTypes: { [key: string]: string },
   axisRange: Array<number>,
-  height: number) => {
+  height: number
+) => {
   //
-  const xScaleMap: {[key: string]: D3Scale} = {};
+  const xScaleMap: { [key: string]: D3Scale } = {};
 
   // each axis will provide min/max values that should be used as the scale domain
   //  alternatively, scan the all the data entries to find the min/max
   const useAxisRangeFromData = true;
 
-  const numberFunc = function(name: string) {
+  const numberFunc = function (name: string) {
     let dataExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
     const outputVarName = getOutputDimension(dimensions).name;
-    const dim = dimensions.find(d => d.name === name);
+    const dim = dimensions.find((d) => d.name === name);
 
     if (useAxisRangeFromData && outputVarName !== name) {
       // this is only valid for input variables
@@ -1991,14 +2163,19 @@ const createScales = (
           dataExtent = [min ?? 0, max ?? 0];
         } else {
           // derive from data if min/max are invalid
-          dataExtent = d3.extent(data.map(point => +point[name]));
+          dataExtent = d3.extent(data.map((point) => +point[name]));
         }
       }
     } else {
-      dataExtent = d3.extent(data.map(point => +point[name]));
+      dataExtent = d3.extent(data.map((point) => +point[name]));
     }
     if (dataExtent[0] === undefined || dataExtent[1] === undefined) {
-      console.warn('Unable to derive extent from data for ' + name + '. A default linear scale will be created!', data);
+      console.warn(
+        'Unable to derive extent from data for ' +
+          name +
+          '. A default linear scale will be created!',
+        data
+      );
 
       // this dimension should have an undefined scale:
       //  e.g., an output dimension where ALL runs have non-ready status
@@ -2016,21 +2193,21 @@ const createScales = (
       dataExtent[0] = leftValue;
       dataExtent[1] = rightValue;
     }
-    return d3.scaleLinear()
-      .domain(dataExtent)
-      .range(axisRange);
+    return d3.scaleLinear().domain(dataExtent).range(axisRange);
   };
 
-  const stringFunc = function(name: string) {
+  const stringFunc = function (name: string) {
     let dataExtent: Array<string | number> = [];
-    const dim = dimensions.find(d => d.name === name);
+    const dim = dimensions.find((d) => d.name === name);
 
     if (useAxisRangeFromData) {
       // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
-      dataExtent = dim?.choices_labels ? dim?.choices_labels : (dim?.choices ?? dim?.choices ?? []);
+      dataExtent = dim?.choices_labels ? dim?.choices_labels : dim?.choices ?? dim?.choices ?? [];
     }
 
-    let dataChoices = data.map(function(p) { return p[name]; }); // return an array of values for all runs
+    let dataChoices = data.map(function (p) {
+      return p[name];
+    }); // return an array of values for all runs
     if (dataExtent.length === 0) {
       dataExtent = dataChoices;
     }
@@ -2040,17 +2217,21 @@ const createScales = (
     // ensure that dataExtent and dataChoices are merged as one list (including the default value)
     const outputVarName = getOutputDimension(dimensions).name;
     if (outputVarName !== name) {
-      const dimAsModelParam = (dim as ModelParameter);
+      const dimAsModelParam = dim as ModelParameter;
       // sometimes, a geo param may have a default formatted in a less-human-readable way
-      if (isGeoParameter(dimAsModelParam.type) && dimAsModelParam.additional_options && dimAsModelParam.additional_options.default_value_label) {
+      if (
+        isGeoParameter(dimAsModelParam.type) &&
+        dimAsModelParam.additional_options &&
+        dimAsModelParam.additional_options.default_value_label
+      ) {
         // add the default value label
         dataChoices.push(dimAsModelParam.additional_options.default_value_label);
         // remove the default-value from the list of choices
         //  since the default-value-label has been just added
         //  and only do so if the default-value and label are different
         if (dimAsModelParam.default !== dimAsModelParam.additional_options.default_value_label) {
-          dataChoices = dataChoices.filter(val => val !== dimAsModelParam.default);
-          dataExtent = dataExtent.filter(val => val !== dimAsModelParam.default);
+          dataChoices = dataChoices.filter((val) => val !== dimAsModelParam.default);
+          dataExtent = dataExtent.filter((val) => val !== dimAsModelParam.default);
         }
       } else {
         dataChoices.push(dimAsModelParam.default);
@@ -2065,7 +2246,12 @@ const createScales = (
     }
 
     if (dataExtent[0] === undefined || dataExtent[1] === undefined) {
-      console.warn('Unable to derive extent from data for ' + name + '. A default point scale will be created!', data);
+      console.warn(
+        'Unable to derive extent from data for ' +
+          name +
+          '. A default point scale will be created!',
+        data
+      );
 
       // this dimension should have an undefined scale:
       //  e.g., an output dimension where ALL runs have non-ready status
@@ -2075,7 +2261,7 @@ const createScales = (
       // ensure we return a default categorical scale
       if (dataExtent.length > 0) {
         // NOTE: these are mostly string-based axes but not with valid choices, i.e., freeform axes --> should have been annotated as such
-        const dim = dimensions.find(d => d.name === name) as ModelParameter;
+        const dim = dimensions.find((d) => d.name === name) as ModelParameter;
         const defValue = dim.default;
         if (!isGeoParameter(dim.type) && !dataExtent.includes(defValue)) {
           dataExtent.push(defValue);
@@ -2091,14 +2277,11 @@ const createScales = (
       dataExtent.push('dummay-last');
       dataExtent.unshift('dummy-first');
     }
-    return d3.scalePoint<string | number>()
-      .domain(dataExtent)
-      .range(axisRange)
-      // .padding(0.25) // a percet of the axis step() (i.e., segment)
-    ;
+    return d3.scalePoint<string | number>().domain(dataExtent).range(axisRange);
+    // .padding(0.25) // a percet of the axis step() (i.e., segment)
   };
 
-  const defaultScales: {[key: string]: D3ScaleFunc} = {
+  const defaultScales: { [key: string]: D3ScaleFunc } = {
     /*
     // we may need to suppprt additional data types such as date/time later
     date: function(name: string) {
@@ -2115,10 +2298,10 @@ const createScales = (
     string: stringFunc,
     str: stringFunc,
     boolean: numberFunc,
-    geo: stringFunc
+    geo: stringFunc,
   };
   // add support for rendering geo-parameters
-  Object.values(DatacubeGeoAttributeVariableType).forEach(v => {
+  Object.values(DatacubeGeoAttributeVariableType).forEach((v) => {
     defaultScales[v] = stringFunc;
   });
 
@@ -2134,9 +2317,10 @@ const createScales = (
   }
 
   // Build the y scale -> it find the best position (vertically) for each x axis
-  const y = d3.scalePoint()
+  const y = d3
+    .scalePoint()
     .range([0, height])
-    .domain(dimensions.map(d => d.name));
+    .domain(dimensions.map((d) => d.name));
 
   return { x: xScaleMap, y };
 };
@@ -2146,6 +2330,4 @@ const getXScaleFromMap = (dimName: string) => {
   return xScaleMap[dimName];
 };
 
-export {
-  renderParallelCoordinates
-};
+export { renderParallelCoordinates };

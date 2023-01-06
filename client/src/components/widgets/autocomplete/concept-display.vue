@@ -14,13 +14,13 @@ export default defineComponent({
   props: {
     item: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
   methods: {
     conceptPrefix,
-    conceptSuffix
-  }
+    conceptSuffix,
+  },
 });
 </script>
 

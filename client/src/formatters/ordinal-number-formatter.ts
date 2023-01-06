@@ -1,4 +1,4 @@
-export default function(value: number) {
+export default function (value: number) {
   const j = value % 10;
   const k = value % 100;
   if (j === 1 && k !== 11) {

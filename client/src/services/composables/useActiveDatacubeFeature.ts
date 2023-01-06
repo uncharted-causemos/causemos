@@ -9,9 +9,7 @@ export default function useActiveDatacubeFeature(
   itemId: Ref<string>
 ) {
   const store = useStore();
-  const datacubeCurrentOutputsMap = computed(
-    () => store.getters['app/datacubeCurrentOutputsMap']
-  );
+  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
   const currentOutputIndex = computed(() => {
     if (metadata.value === null) return 0;
@@ -30,6 +28,6 @@ export default function useActiveDatacubeFeature(
   return {
     activeFeature,
     activeFeatureName: computed(() => activeFeature.value?.name ?? ''),
-    currentOutputIndex
+    currentOutputIndex,
   };
 }

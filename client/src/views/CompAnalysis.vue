@@ -21,7 +21,7 @@
           @set-active-tab="setActiveTab"
           style="flex: 1"
         />
-        <div class="shown-datacubes-count">{{shownDatacubesCountLabel}}</div>
+        <div class="shown-datacubes-count">{{ shownDatacubesCountLabel }}</div>
       </div>
 
       <!-- overlay view content -->
@@ -36,11 +36,23 @@
       <!-- region ranking view content -->
       <template v-if="activeTab === ComparativeAnalysisMode.RegionRanking">
         <div style="display: flex">
-          <h5 class="ranking-header-top">Ranking Results <i style="cursor: pointer" @click="downloadRankingResult" class="fa fa-fw fa-download"></i></h5>
+          <h5 class="ranking-header-top">
+            Ranking Results
+            <i
+              style="cursor: pointer"
+              @click="downloadRankingResult"
+              class="fa fa-fw fa-download"
+            ></i>
+          </h5>
           <i
-            :onClick="() => activeDrilldownTab = (activeDrilldownTab === null ? 'region-settings' : null)"
+            :onClick="
+              () => (activeDrilldownTab = activeDrilldownTab === null ? 'region-settings' : null)
+            "
             class="fa fa-gear region-ranking-settings-button"
-            :class="{ 'region-ranking-settings-button-invalid': activeDrilldownTab === null , 'region-ranking-settings-button-valid': activeDrilldownTab !== null }"
+            :class="{
+              'region-ranking-settings-button-invalid': activeDrilldownTab === null,
+              'region-ranking-settings-button-valid': activeDrilldownTab !== null,
+            }"
           />
         </div>
         <datacube-region-ranking-composite-card
@@ -57,16 +69,16 @@
         />
         <div class="ranking-header-bottom" v-if="selectedAnalysisItems.length > 0">
           <h5>Ranking Criteria:</h5>
-          <div>Composition Type: <b>{{regionRankingCompositionType}}</b></div>
+          <div>
+            Composition Type: <b>{{ regionRankingCompositionType }}</b>
+          </div>
           <div class="checkbox">
-            <label
-              @click="toggleRegionRankingRowsNormalized"
-              style="cursor: pointer; color: black;">
+            <label @click="toggleRegionRankingRowsNormalized" style="cursor: pointer; color: black">
               <i
                 class="fa fa-lg fa-fw"
                 :class="{
                   'fa-check-square-o': areRegionRankingRowsNormalized,
-                  'fa-square-o': !areRegionRankingRowsNormalized
+                  'fa-square-o': !areRegionRankingRowsNormalized,
                 }"
               />
               Normalized data
@@ -77,9 +89,7 @@
       <!--
         listing individual datacube cards
       -->
-      <div
-        v-if="selectedAnalysisItems.length"
-        class="column">
+      <div v-if="selectedAnalysisItems.length" class="column">
         <template v-if="activeTab === ComparativeAnalysisMode.List">
           <datacube-comparative-card
             v-for="(item, indx) in selectedAnalysisItems"
@@ -108,7 +118,9 @@
               :key="item.itemId"
               class="card-map-container"
               :class="[
-                `card-count-${selectedAnalysisItems.length < 5 ? selectedAnalysisItems.length : 'n'}`
+                `card-count-${
+                  selectedAnalysisItems.length < 5 ? selectedAnalysisItems.length : 'n'
+                }`,
               ]"
             >
               <datacube-comparative-overlay-region
@@ -165,7 +177,11 @@
       :hide-close="true"
       :is-open="activeDrilldownTab !== null"
       :tabs="drilldownTabs"
-      @close="() => { activeDrilldownTab = null }"
+      @close="
+        () => {
+          activeDrilldownTab = null;
+        }
+      "
     >
       <template #content>
         <region-ranking-options-pane
@@ -214,7 +230,12 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import RegionRankingOptionsPane from '@/components/drilldown-panel/region-ranking-options-pane.vue';
 import { COLOR, getColors, colorFromIndex } from '@/utils/colors-util';
 import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
-import { BinningOptions, ComparativeAnalysisMode, DatacubeGeoAttributeVariableType, RegionRankingCompositionType } from '@/types/Enums';
+import {
+  BinningOptions,
+  ComparativeAnalysisMode,
+  DatacubeGeoAttributeVariableType,
+  RegionRankingCompositionType,
+} from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
 import { getInsightById } from '@/services/insight-service';
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
@@ -231,8 +252,8 @@ const DRILLDOWN_TABS = [
   {
     name: 'Region Ranking Settings',
     id: 'region-settings',
-    icon: 'fa-gear'
-  }
+    icon: 'fa-gear',
+  },
 ];
 
 export default defineComponent({
@@ -249,7 +270,7 @@ export default defineComponent({
     DatacubeRegionRankingCompositeCard,
     AnalysisOptionsButton,
     DrilldownPanel,
-    RegionRankingOptionsPane
+    RegionRankingOptionsPane,
   },
   setup() {
     const store = useStore();
@@ -286,29 +307,31 @@ export default defineComponent({
       setRegionRankingWeights,
       highlightedRegionId,
       setHighlightedRegionId,
-      setAnalysisState
+      setAnalysisState,
     } = useDataAnalysis(analysisId);
 
-    const activeDrilldownTab = ref<string|null>('region-settings');
+    const activeDrilldownTab = ref<string | null>('region-settings');
 
     const globalBbox = ref<number[][] | undefined>(undefined);
 
-    const allTimeseriesMap = ref<{[key: string]: Timeseries[]}>({});
+    const allTimeseriesMap = ref<{ [key: string]: Timeseries[] }>({});
     const globalTimeseries = ref([]) as Ref<Timeseries[]>;
     const reCalculateGlobalTimeseries = ref(true);
-    const timeseriesToDatacubeMap = ref<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>({});
+    const timeseriesToDatacubeMap = ref<{
+      [timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string };
+    }>({});
 
-    const allRegionalRankingMap = ref<{[key: string]: BarData[]}>({});
+    const allRegionalRankingMap = ref<{ [key: string]: BarData[] }>({});
     const globalBarsData = ref([]) as Ref<BarData[]>;
 
     const selectedTimestamp = ref(null) as Ref<number | null>;
     // FIXME: seems like selectedTimestampRange is always set to the full range
     //  and never affects any behaviour. Investigate and remove.
-    const selectedTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
+    const selectedTimestampRange = ref(null) as Ref<{ start: number; end: number } | null>;
 
     const globalTimestamp = ref(null) as Ref<number | null>;
     const initialSelectedTimestamp = ref(null) as Ref<number | null>;
-    const initialSelectedTimestampRange = ref({}) as Ref<{start: number; end: number}>;
+    const initialSelectedTimestampRange = ref({}) as Ref<{ start: number; end: number }>;
 
     onMounted(async () => {
       store.dispatch('app/setAnalysisName', '');
@@ -320,11 +343,11 @@ export default defineComponent({
 
     watch(
       () => analysisItems.value,
-      analysisItems => {
+      (analysisItems) => {
         if (analysisItems && analysisItems.length > 0) {
           // set context-ids to fetch insights correctly for all datacubes
           //  (even the non-selected ones) in this analysis
-          const contextIDs = analysisItems.map(dc => dc.id); // FIXME is it id or datacubeId or itemId?
+          const contextIDs = analysisItems.map((dc) => dc.id); // FIXME is it id or datacubeId or itemId?
           store.dispatch('insightPanel/setContextId', contextIDs);
         } else {
           // no datacubes in this analysis, so do not fetch any insights/questions
@@ -343,7 +366,13 @@ export default defineComponent({
     );
 
     const shownDatacubesCountLabel = computed(() => {
-      return 'Selected ' + selectedAnalysisItems.value.length + ' / ' + analysisItems.value.length + ' datacubes';
+      return (
+        'Selected ' +
+        selectedAnalysisItems.value.length +
+        ' / ' +
+        analysisItems.value.length +
+        ' datacubes'
+      );
     });
 
     const setSelectedTimestamp = (value: number) => {
@@ -356,20 +385,21 @@ export default defineComponent({
       globalTimestamp.value = value;
     };
 
-    const handleTimestampRangeSelection = (newTimestampRange: {start: number; end: number} | null) => {
-      if (selectedTimestampRange.value?.start === newTimestampRange?.start &&
-        selectedTimestampRange.value?.end === newTimestampRange?.end) {
+    const handleTimestampRangeSelection = (
+      newTimestampRange: { start: number; end: number } | null
+    ) => {
+      if (
+        selectedTimestampRange.value?.start === newTimestampRange?.start &&
+        selectedTimestampRange.value?.end === newTimestampRange?.end
+      ) {
         return;
       }
       selectedTimestampRange.value = newTimestampRange;
     };
-    const cacheUpdatedMetadata = (
-      itemId: string,
-      metadata: Model | Indicator
-    ) => {
+    const cacheUpdatedMetadata = (itemId: string, metadata: Model | Indicator) => {
       updateAnalysisItemCachedMetadata(itemId, {
         datacubeName: metadata.name,
-        source: metadata.maintainer.organization
+        source: metadata.maintainer.organization,
       });
     };
     const cacheUpdatedFeatureName = (itemId: string, featureName: string) => {
@@ -377,34 +407,33 @@ export default defineComponent({
     };
 
     watch(
-      () => [
-        activeTab.value,
-        initialSelectedTimestampRange.value
-      ],
+      () => [activeTab.value, initialSelectedTimestampRange.value],
       () => {
         if (activeTab.value === ComparativeAnalysisMode.Overlay) {
           handleTimestampRangeSelection(initialSelectedTimestampRange.value);
-        } else { // reset the active selected range non-overlay views
+        } else {
+          // reset the active selected range non-overlay views
           handleTimestampRangeSelection(null);
         }
       }
     );
 
-    const availableAdminLevelTitles = ref(Object.values(DatacubeGeoAttributeVariableType)
-      .map(adminLevel => ADMIN_LEVEL_TITLES[adminLevel]));
+    const availableAdminLevelTitles = ref(
+      Object.values(DatacubeGeoAttributeVariableType).map(
+        (adminLevel) => ADMIN_LEVEL_TITLES[adminLevel]
+      )
+    );
 
     //
     // color scheme options
     //
-    const finalColorScheme = computed(
-      () => getColors(COLOR.PRIORITIZATION, colorBinCount.value)
-    );
+    const finalColorScheme = computed(() => getColors(COLOR.PRIORITIZATION, colorBinCount.value));
 
     watchEffect(async () => {
       const countries = highlightedRegionId.value
         ? [highlightedRegionId.value.split('__')[0]]
-        : [...new Set(globalBarsData.value.map(d => d.label.split('__')[0]))];
-      globalBbox.value = await computeMapBoundsForCountries(countries) || undefined;
+        : [...new Set(globalBarsData.value.map((d) => d.label.split('__')[0]))];
+      globalBbox.value = (await computeMapBoundsForCountries(countries)) || undefined;
     });
 
     const updateStateFromInsight = async (insight_id: string) => {
@@ -434,9 +463,7 @@ export default defineComponent({
       const newDataState: DataAnalysisState = _.cloneDeep(analysisState.value);
       // Only save the selected timestamp when overlap mode is active
       newDataState.selectedTimestamp =
-        activeTab.value === ComparativeAnalysisMode.Overlay
-          ? globalTimestamp.value
-          : null;
+        activeTab.value === ComparativeAnalysisMode.Overlay ? globalTimestamp.value : null;
       store.dispatch('insightPanel/setDataState', newDataState);
       // No view state for this page. Set it to an empty object so that any view
       //  state from previous pages is cleared and not associated with insights
@@ -452,7 +479,7 @@ export default defineComponent({
       return selectedAnalysisItems.value.map(({ itemId, cachedMetadata }) => ({
         itemId,
         weight: itemStates[itemId].weight,
-        name: `${cachedMetadata.featureName} - ${cachedMetadata.datacubeName}`
+        name: `${cachedMetadata.featureName} - ${cachedMetadata.datacubeName}`,
       }));
     });
 
@@ -511,7 +538,7 @@ export default defineComponent({
       toggleAnalysisItemSelected,
       toggleIsItemInverted,
       setRegionRankingWeights,
-      resetRegionRankingWeights
+      resetRegionRankingWeights,
     };
   },
   mounted() {
@@ -521,8 +548,8 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      project: 'app/project'
-    })
+      project: 'app/project',
+    }),
   },
   watch: {
     regionRankingCompositionType() {
@@ -537,27 +564,29 @@ export default defineComponent({
     $route: {
       handler(/* newValue, oldValue */) {
         // NOTE:  this is only valid when the route is focused on the 'dataComparative' space
-        if ((this.$route.name === 'dataComparative') && this.$route.query) {
+        if (this.$route.name === 'dataComparative' && this.$route.query) {
           const insight_id = this.$route.query.insight_id as any;
           if (insight_id !== undefined) {
             this.updateStateFromInsight(insight_id);
             // remove the insight_id from the url,
             //  so that (1) future insight capture is valid and (2) enable re-applying the same insight
             // FIXME: review to avoid double history later
-            router.push({
-              query: {
-                insight_id: undefined
-              }
-            }).catch(() => {});
+            router
+              .push({
+                query: {
+                  insight_id: undefined,
+                },
+              })
+              .catch(() => {});
           }
         }
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   methods: {
     ...mapActions({
-      hideInsightPanel: 'insightPanel/hideInsightPanel'
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
     }),
     getDatacubeRankingWeight(analysisItem: AnalysisItem) {
       const datacubeKey = analysisItem.itemId;
@@ -575,7 +604,7 @@ export default defineComponent({
       // re-build the transform computing the region ranking data
       this.updateGlobalRegionRankingData();
     },
-    onRegionRankingWeightsUpdated(newWeights: {itemId: string; name: string; weight: number}[]) {
+    onRegionRankingWeightsUpdated(newWeights: { itemId: string; name: string; weight: number }[]) {
       // if new weights are not different from current weights, do nothing
       if (_.isEqual(this.regionRankingWeights, newWeights)) {
         return;
@@ -588,7 +617,7 @@ export default defineComponent({
     onUpdatedBarsData(regionRankingInfo: {
       itemId: string;
       barsData: BarData[];
-      selectedTimestamp: number
+      selectedTimestamp: number;
     }) {
       // clone and save the incoming regional-ranking data in the global map object
       const datacubeKey = regionRankingInfo.itemId;
@@ -600,20 +629,20 @@ export default defineComponent({
     updateGlobalRegionRankingData() {
       // FIXME: confusing to use datacubeId here since itemId's are actually
       //  being stored in this property.
-      type RegionRankingEntry = {datacubeId: string; normalizedValue: number};
+      type RegionRankingEntry = { datacubeId: string; normalizedValue: number };
 
       // first: build a map where each key is a unique region name
       //        with a value representing the data of this region from all datacubes
-      const globalRegionsMap: {[regionName: string]: RegionRankingEntry[]} = {};
-      Object.keys(this.allRegionalRankingMap).forEach(key => {
+      const globalRegionsMap: { [regionName: string]: RegionRankingEntry[] } = {};
+      Object.keys(this.allRegionalRankingMap).forEach((key) => {
         const regionData: BarData[] = this.allRegionalRankingMap[key];
-        regionData.forEach(regionItem => {
+        regionData.forEach((regionItem) => {
           if (globalRegionsMap[regionItem.label] === undefined) {
             globalRegionsMap[regionItem.label] = [];
           }
           globalRegionsMap[regionItem.label].push({
             datacubeId: key,
-            normalizedValue: regionItem.normalizedValue
+            normalizedValue: regionItem.normalizedValue,
           });
         });
       });
@@ -621,7 +650,8 @@ export default defineComponent({
       //
       // transform/combine data from all datacubes/regions into one composite dataset
       //
-      const dotProduct = (a: number[], b: number[]) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
+      const dotProduct = (a: number[], b: number[]) =>
+        a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
       // note that each datacube can have a different list of regions
       const compositeData: BarData[] = [];
       const colors = this.finalColorScheme;
@@ -629,30 +659,35 @@ export default defineComponent({
       // we can have many bars than the available colors, so map indices
       let numBars = 0;
       // count the number of bars based on the selected composition type
-      Object.keys(globalRegionsMap).forEach(key => {
+      Object.keys(globalRegionsMap).forEach((key) => {
         // for each region, create a bar
         const regionDatacubesList = globalRegionsMap[key];
-        const regionValues = regionDatacubesList.map(item => item.normalizedValue);
-        const weights = this.regionRankingWeights
-          .map(({ weight }) => weight / 100);
-        const equalWeights = Array(regionValues.length).fill(1 / (regionValues.length)); // sometimes not all datacubes are loaded and thus the map size may not match the regions
-        const compositeValue = dotProduct(regionValues, weights.length === regionValues.length ? weights : equalWeights);
+        const regionValues = regionDatacubesList.map((item) => item.normalizedValue);
+        const weights = this.regionRankingWeights.map(({ weight }) => weight / 100);
+        const equalWeights = Array(regionValues.length).fill(1 / regionValues.length); // sometimes not all datacubes are loaded and thus the map size may not match the regions
+        const compositeValue = dotProduct(
+          regionValues,
+          weights.length === regionValues.length ? weights : equalWeights
+        );
         const scaledCompositeValue = compositeValue * this.colorBinCount;
-        const shouldAddRegionBar = this.regionRankingCompositionType === RegionRankingCompositionType.Union || (this.regionRankingCompositionType === RegionRankingCompositionType.Intersection && regionValues.length === this.selectedAnalysisItems.length);
+        const shouldAddRegionBar =
+          this.regionRankingCompositionType === RegionRankingCompositionType.Union ||
+          (this.regionRankingCompositionType === RegionRankingCompositionType.Intersection &&
+            regionValues.length === this.selectedAnalysisItems.length);
         if (shouldAddRegionBar) {
           numBars++;
           compositeData.push({
             name: (regionIndexCounter + 1).toString(),
             label: key,
             value: scaledCompositeValue,
-            normalizedValue: scaledCompositeValue
+            normalizedValue: scaledCompositeValue,
           });
           regionIndexCounter++;
         }
       });
-      const compositeDataSorted = _.sortBy(compositeData, item => item.normalizedValue);
+      const compositeDataSorted = _.sortBy(compositeData, (item) => item.normalizedValue);
       numBars = Math.max(numBars, 1); // should never be 0 to avoid invalid slope
-      const slope = 1.0 * (colors.length) / numBars;
+      const slope = (1.0 * colors.length) / numBars;
       compositeDataSorted.forEach((key, indx) => {
         let barColor = 'grey';
         let binIndex = -1;
@@ -681,9 +716,7 @@ export default defineComponent({
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
 
-      const item = this.selectedAnalysisItems.find((item) =>
-        item.itemId === itemId
-      );
+      const item = this.selectedAnalysisItems.find((item) => item.itemId === itemId);
       if (item === undefined) {
         // Incoming timeseries should no longer be included in the global
         //  timeseries because the corresponding datacube is no longer selected.
@@ -694,15 +727,12 @@ export default defineComponent({
       // This will be used when calculating global timeseries after all
       //  timeseries are loaded.
       this.allTimeseriesMap[itemId] = _.cloneDeep(timeseriesList);
-      if (
-        this.selectedAnalysisItems.length ===
-        Object.keys(this.allTimeseriesMap).length
-      ) {
+      if (this.selectedAnalysisItems.length === Object.keys(this.allTimeseriesMap).length) {
         // Timeseries data has been loaded for all datacubes so calculate the
         //  global timeseries.
         this.reCalculateGlobalTimeseries = false;
         const flatMap: Array<Timeseries[]> = [];
-        Object.keys(this.allTimeseriesMap).forEach(_itemId => {
+        Object.keys(this.allTimeseriesMap).forEach((_itemId) => {
           const timeseriesList: Timeseries[] = this.allTimeseriesMap[_itemId];
 
           // normalize the timeseries values for better y-axis scaling when multiple
@@ -715,16 +745,16 @@ export default defineComponent({
           //  the same scale/range since they all relate to a single datacube (variable)
           normalizeTimeseriesList(timeseriesList);
 
-          timeseriesList.forEach(timeseries => {
+          timeseriesList.forEach((timeseries) => {
             // override the timeseries id to match its owner datacube
             timeseries.id = _itemId;
             // build a map that links each timeseries to its owner datacube
             const info = this.selectedAnalysisItems.find(
-              item => item.itemId === _itemId
+              (item) => item.itemId === _itemId
             )?.cachedMetadata;
             this.timeseriesToDatacubeMap[_itemId] = {
               datacubeName: info?.datacubeName ?? '',
-              datacubeOutputVariable: info?.featureName ?? ''
+              datacubeOutputVariable: info?.featureName ?? '',
             };
           });
 
@@ -741,9 +771,9 @@ export default defineComponent({
         //
         if (this.globalTimeseries && this.globalTimeseries.length > 0) {
           const allTimestamps = this.globalTimeseries
-            .map(timeseries => timeseries.points)
+            .map((timeseries) => timeseries.points)
             .flat()
-            .map(point => point.timestamp);
+            .map((point) => point.timestamp);
 
           // select the last timestamp as the initial value
           const lastTimestamp = _.max(allTimestamps);
@@ -768,20 +798,37 @@ export default defineComponent({
     },
     downloadRankingResult() {
       const heading = 'rank,normalized value,region';
-      const content = this.globalBarsData.map(d => {
-        return `${d.name},${d.normalizedValue},${d.label.replace(/,/g, ' ')}`;
-      }).reverse().join('\r\n');
+      const content = this.globalBarsData
+        .map((d) => {
+          return `${d.name},${d.normalizedValue},${d.label.replace(/,/g, ' ')}`;
+        })
+        .reverse()
+        .join('\r\n');
 
-      const weightContent = this.regionRankingWeights.map(d => {
-        return `${d.name.replace(/,/g, ' ')},${d.weight}`;
-      }).join('\r\n');
+      const weightContent = this.regionRankingWeights
+        .map((d) => {
+          return `${d.name.replace(/,/g, ' ')},${d.weight}`;
+        })
+        .join('\r\n');
 
-      const file = new Blob(['Ranking Criteria and Relative Weight (%)' + '\r\n' + weightContent + '\r\n\r\n\r\n' + heading + '\r\n' + content + '\r\n'], {
-        type: 'text/plain'
-      });
+      const file = new Blob(
+        [
+          'Ranking Criteria and Relative Weight (%)' +
+            '\r\n' +
+            weightContent +
+            '\r\n\r\n\r\n' +
+            heading +
+            '\r\n' +
+            content +
+            '\r\n',
+        ],
+        {
+          type: 'text/plain',
+        }
+      );
       saveAs(file, 'region-ranking-result.csv');
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -922,5 +969,4 @@ $marginSize: 6px;
     font-style: italic;
   }
 }
-
 </style>

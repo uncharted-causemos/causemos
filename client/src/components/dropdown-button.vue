@@ -1,10 +1,6 @@
 <template>
   <div class="dropdown-button-container" ref="containerElement">
-    <button
-      type="button"
-      class="btn dropdown-btn"
-      @click="isDropdownOpen = !isDropdownOpen"
-    >
+    <button type="button" class="btn dropdown-btn" @click="isDropdownOpen = !isDropdownOpen">
       <span>
         {{ innerButtonLabel ? `${innerButtonLabel}: ` : '' }}
         <strong>{{ selectedItemDisplayName }}</strong>
@@ -16,7 +12,7 @@
       class="dropdown-control"
       :class="{
         'left-aligned': isDropdownLeftAligned,
-        'above': isDropdownAbove
+        above: isDropdownAbove,
       }"
     >
       <template #content>
@@ -25,11 +21,12 @@
           :key="item"
           class="dropdown-option"
           :class="{
-            'dropdown-option-selected': isSelectedItem(item.value)
+            'dropdown-option-selected': isSelectedItem(item.value),
           }"
           @click="emitItemSelection(item.value)"
         >
-          {{ item.displayName }} <i v-if="item.selected" style="margin-left: 1rem;" class="fa fa-check fa-lg" />
+          {{ item.displayName }}
+          <i v-if="item.selected" style="margin-left: 1rem" class="fa fa-check fa-lg" />
         </div>
       </template>
     </dropdown-control>
@@ -37,14 +34,7 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs,
-  watchEffect
-} from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import _ from 'lodash';
 
@@ -57,37 +47,37 @@ export interface DropdownItem {
 export default defineComponent({
   name: 'DropdownButton',
   components: {
-    DropdownControl
+    DropdownControl,
   },
   props: {
     items: {
       type: Array as PropType<(string | DropdownItem)[]>,
-      default: []
+      default: [],
     },
     selectedItem: {
-      default: null as any
+      default: null as any,
     },
     innerButtonLabel: {
       type: String as PropType<string | null>,
-      default: null
+      default: null,
     },
     isDropdownLeftAligned: {
       type: Boolean,
-      default: false
+      default: false,
     },
     isDropdownAbove: {
       type: Boolean,
-      default: false
+      default: false,
     },
     // the following two props are added to enable multi-select mode
     isMultiSelect: {
       type: Boolean,
-      default: false
+      default: false,
     },
     selectedItems: {
       type: Array as PropType<string[]>,
-      default: []
-    }
+      default: [],
+    },
   },
   emits: ['item-selected', 'items-selected'],
   setup(props, { emit }) {
@@ -97,10 +87,7 @@ export default defineComponent({
     const containerElement = ref<HTMLElement | null>(null);
 
     const onClickOutside = (event: MouseEvent) => {
-      if (
-        event.target instanceof Element &&
-        containerElement.value?.contains(event.target)
-      ) {
+      if (event.target instanceof Element && containerElement.value?.contains(event.target)) {
         // Click was within this element, so do nothing
         return;
       }
@@ -118,11 +105,11 @@ export default defineComponent({
     // This component can accept a list of strings or a list of DropdownItems.
     //  This computed property standardizes by converting strings to DropdownItems.
     const dropdownItems = computed<DropdownItem[]>(() => {
-      const standardizedDropdownItems = items.value.map(item =>
+      const standardizedDropdownItems = items.value.map((item) =>
         typeof item === 'string' ? { displayName: item, value: item } : item
       );
       if (isMultiSelect.value) {
-        standardizedDropdownItems.forEach(dropdownItem => {
+        standardizedDropdownItems.forEach((dropdownItem) => {
           dropdownItem.selected = selectedItems.value.includes(dropdownItem.value);
         });
       }
@@ -130,11 +117,12 @@ export default defineComponent({
     });
 
     const selectedItemDisplayName = computed(() => {
-      return (
-        isMultiSelect.value && selectedItems.value.length > 0 ? (selectedItems.value.length > 1 ? '(multiple)' : selectedItems.value[0])
-          : dropdownItems.value.find(item => item.value === selectedItem.value)
-            ?.displayName ?? selectedItem.value
-      );
+      return isMultiSelect.value && selectedItems.value.length > 0
+        ? selectedItems.value.length > 1
+          ? '(multiple)'
+          : selectedItems.value[0]
+        : dropdownItems.value.find((item) => item.value === selectedItem.value)?.displayName ??
+            selectedItem.value;
     });
 
     const emitItemSelection = (item: any) => {
@@ -144,11 +132,14 @@ export default defineComponent({
       } else {
         // keep the dropdown menu open in the mode if multi-select, and emit all selected
         const updatedDropdownItems = _.cloneDeep(dropdownItems);
-        const itemToUpdate = updatedDropdownItems.value.find(i => i.value === item);
+        const itemToUpdate = updatedDropdownItems.value.find((i) => i.value === item);
         if (itemToUpdate) {
           itemToUpdate.selected = !itemToUpdate.selected;
         }
-        emit('items-selected', updatedDropdownItems.value.filter(item => item.selected).map(item => item.value));
+        emit(
+          'items-selected',
+          updatedDropdownItems.value.filter((item) => item.selected).map((item) => item.value)
+        );
       }
     };
 
@@ -162,9 +153,9 @@ export default defineComponent({
       dropdownItems,
       selectedItemDisplayName,
       containerElement,
-      isSelectedItem
+      isSelectedItem,
     };
-  }
+  },
 });
 </script>
 

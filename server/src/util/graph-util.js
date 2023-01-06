@@ -14,7 +14,7 @@ const buildAdjacency = (edges) => {
     map.get(key).push(value);
   };
 
-  edges.forEach(edge => {
+  edges.forEach((edge) => {
     const cause = edge.source;
     const effect = edge.target;
     _addEntry(outgoing, cause, effect);
@@ -22,7 +22,6 @@ const buildAdjacency = (edges) => {
   });
   return { incoming, outgoing };
 };
-
 
 /**
  * Recursive helper to traverse the graph. It is up to the goal function to collect any data
@@ -41,7 +40,7 @@ const _crawler = (adjacencyMap, source, stack, goalFn, terminateFn) => {
     return;
   }
 
-  expansion.forEach(n => {
+  expansion.forEach((n) => {
     const newNode = n;
     const newStack = _.cloneDeep(stack);
 
@@ -79,7 +78,7 @@ const groupPath = (edges, sourceNodes, targetNodes, k) => {
 
   const adjacencyMap = buildAdjacency(edges).outgoing;
 
-  const links = sourceNodes.map(sn => [sn, targetNodes]);
+  const links = sourceNodes.map((sn) => [sn, targetNodes]);
 
   for (let i = 0; i < links.length; i++) {
     const link = links[i];
@@ -90,7 +89,9 @@ const groupPath = (edges, sourceNodes, targetNodes, k) => {
     // Generates a targetFn that checks against our targets
     const goalFnGenerator = (targets) => {
       return (newNode, stack) => {
-        const connectingPath = stack.filter(n => !sourceNodes.includes(n) && !targetNodes.includes(n)).toString();
+        const connectingPath = stack
+          .filter((n) => !sourceNodes.includes(n) && !targetNodes.includes(n))
+          .toString();
         if (targets.includes(newNode) && !visitedPaths.has(connectingPath)) {
           neighborhoodNodes.push(stack);
           visitedPaths.add(connectingPath);
@@ -109,7 +110,6 @@ const groupPath = (edges, sourceNodes, targetNodes, k) => {
   }
   return neighborhoodNodes;
 };
-
 
 /**
  * Find neighborhood among some specified nodes
@@ -161,5 +161,5 @@ const normalPath = (edges, nodes, k) => {
 module.exports = {
   buildAdjacency,
   groupPath,
-  normalPath
+  normalPath,
 };

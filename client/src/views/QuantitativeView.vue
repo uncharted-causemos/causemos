@@ -14,7 +14,10 @@
     >
       <template #title>Data analysis created/updated successfully!</template>
       <template #message>
-        <p>Are you sure you want to navigate away from the current CAG? This will redirect you to the page of the created data analysis.</p>
+        <p>
+          Are you sure you want to navigate away from the current CAG? This will redirect you to the
+          page of the created data analysis.
+        </p>
       </template>
     </modal-confirmation>
     <tab-panel
@@ -24,13 +27,13 @@
       :model-components="modelComponents"
       :scenarios="scenarios"
       :current-engine="currentEngine"
-      :reset-layout-token='resetLayoutToken'
+      :reset-layout-token="resetLayoutToken"
       @refresh-model="refreshModelAndScenarios"
       @model-parameter-changed="refresh"
-      @new-scenario='onCreateScenario'
-      @update-scenario='onUpdateScenario'
-      @delete-scenario='onDeleteScenario'
-      @delete-scenario-clamp='onDeleteScenarioClamp'
+      @new-scenario="onCreateScenario"
+      @update-scenario="onUpdateScenario"
+      @delete-scenario="onDeleteScenario"
+      @delete-scenario-clamp="onDeleteScenarioClamp"
       @duplicate-scenario="onDuplicateScenario"
     >
       <template #action-bar>
@@ -48,8 +51,10 @@
     <div v-if="isTraining === true">
       <h4 style="margin-left: 15px">
         <i class="fa fa-fw fa-spinner fa-spin"></i>
-        Model is currently training on the {{currentEngine}} engine - {{ trainingPercentage }}%. You can switch to
-        <button class="btn btn-primary btn-sm" @click="switchEngine('dyse')">DySE</button> to continue running experiments.
+        Model is currently training on the {{ currentEngine }} engine - {{ trainingPercentage }}%.
+        You can switch to
+        <button class="btn btn-primary btn-sm" @click="switchEngine('dyse')">DySE</button> to
+        continue running experiments.
       </h4>
     </div>
   </div>
@@ -67,9 +72,19 @@ import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-butt
 import modelService from '@/services/model-service';
 import useToaster from '@/services/composables/useToaster';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import { CAGGraph, CAGModelSummary, ConceptProjectionConstraints, NewScenario, Scenario } from '@/types/CAG';
+import {
+  CAGGraph,
+  CAGModelSummary,
+  ConceptProjectionConstraints,
+  NewScenario,
+  Scenario,
+} from '@/types/CAG';
 import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
-import { calculateResetRegionRankingWeights, createAnalysis, createAnalysisObject } from '@/services/analysis-service-new';
+import {
+  calculateResetRegionRankingWeights,
+  createAnalysis,
+  createAnalysisObject,
+} from '@/services/analysis-service-new';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import { ProjectType } from '@/types/Enums';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
@@ -87,12 +102,12 @@ export default defineComponent({
     TabPanel,
     ActionBar,
     CagAnalysisOptionsButton,
-    ModalConfirmation
+    ModalConfirmation,
   },
   setup() {
     return {
       toaster: useToaster(),
-      ontologyFormatter: useOntologyFormatter()
+      ontologyFormatter: useOntologyFormatter(),
     };
   },
   data: () => ({
@@ -106,7 +121,7 @@ export default defineComponent({
     trainingPercentage: 0,
     refreshTimer: 0,
     currentScenarioName: '',
-    showOpenDataAnalysisConfirmation: false
+    showOpenDataAnalysisConfirmation: false,
   }),
   computed: {
     ...mapGetters({
@@ -114,18 +129,14 @@ export default defineComponent({
       currentCAG: 'app/currentCAG',
       selectedScenarioId: 'model/selectedScenarioId',
       runImmediately: 'model/runImmediately',
-      tour: 'tour/tour'
+      tour: 'tour/tour',
     }),
     ready(): boolean {
-      return (
-        this.modelSummary !== null &&
-        this.modelComponents !== null &&
-        this.scenarios !== null
-      );
+      return this.modelSummary !== null && this.modelComponents !== null && this.scenarios !== null;
     },
     currentEngine(): string {
       return this.modelSummary?.parameter?.engine ?? 'dyse';
-    }
+    },
   },
   watch: {
     currentCAG() {
@@ -137,7 +148,7 @@ export default defineComponent({
         return;
       }
       this.refresh();
-    }
+    },
   },
   created() {
     // update insight related state
@@ -159,14 +170,14 @@ export default defineComponent({
       setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
       setContextId: 'insightPanel/setContextId',
-      setRunImmediately: 'model/setRunImmediately'
+      setRunImmediately: 'model/setRunImmediately',
     }),
     async onCreateScenario(scenarioInfo: { name: string; description: string }) {
       if (this.scenarios === null) {
         console.error('Failed to save new scenario, scenarios list is null.');
         return;
       }
-      const baselineScenario = this.scenarios.find(s => s.is_baseline);
+      const baselineScenario = this.scenarios.find((s) => s.is_baseline);
       if (baselineScenario === undefined) {
         console.error('Failed to save new scenario, baseline scenario is null.');
         return;
@@ -177,7 +188,7 @@ export default defineComponent({
         name: scenarioInfo.name,
         description: scenarioInfo.description,
         is_baseline: false,
-        parameter: _.cloneDeep(baselineScenario?.parameter)
+        parameter: _.cloneDeep(baselineScenario?.parameter),
       };
       this.enableOverlay('Creating Scenario');
       const createdScenario = await modelService.createScenario(newScenario);
@@ -193,7 +204,7 @@ export default defineComponent({
         name: 'Copy of ' + scenario.name,
         description: scenario.description,
         is_baseline: false,
-        parameter: _.cloneDeep(scenario.parameter)
+        parameter: _.cloneDeep(scenario.parameter),
       };
       this.enableOverlay('Duplicating Scenario');
       const createdScenario = await modelService.createScenario(newScenario);
@@ -207,7 +218,7 @@ export default defineComponent({
         console.error('Failed to update scenario, scenarios list is null.');
         return;
       }
-      const baselineScenario = this.scenarios.find(s => s.is_baseline);
+      const baselineScenario = this.scenarios.find((s) => s.is_baseline);
       if (baselineScenario === undefined) {
         console.error('Failed to update scenario, baseline scenario is null.');
         return;
@@ -217,7 +228,7 @@ export default defineComponent({
         id: scenarioInfo.id,
         name: scenarioInfo.name,
         description: scenarioInfo.description,
-        model_id: this.currentCAG
+        model_id: this.currentCAG,
       };
       this.enableOverlay('Saving Scenario');
       await modelService.updateScenario(existingScenario);
@@ -231,12 +242,12 @@ export default defineComponent({
         console.error('Failed to remove scenario, scenarios list is null.');
         return;
       }
-      const baselineScenario = this.scenarios.find(s => s.is_baseline);
+      const baselineScenario = this.scenarios.find((s) => s.is_baseline);
       if (baselineScenario !== undefined && id === baselineScenario.id) {
         console.error('Failed to remove scenario, baseline scenario is not removable.');
         return;
       }
-      const scenarioToRemove = this.scenarios.find(s => s.id === id);
+      const scenarioToRemove = this.scenarios.find((s) => s.id === id);
       if (scenarioToRemove === undefined) {
         console.error('Failed to remove scenario, scenario does not exist in scenario list.');
         return;
@@ -251,7 +262,10 @@ export default defineComponent({
     async reloadScenarios() {
       this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
     },
-    async onDeleteScenarioClamp(scenarioClampDetails: { scenario: Scenario; clamp: ConceptProjectionConstraints }) {
+    async onDeleteScenarioClamp(scenarioClampDetails: {
+      scenario: Scenario;
+      clamp: ConceptProjectionConstraints;
+    }) {
       if (this.scenarios === null) {
         console.error('Failed to remove scenario constraint, scenarios list is null.');
         return;
@@ -266,11 +280,11 @@ export default defineComponent({
         model_id: this.currentCAG,
         parameter: {
           constraints: selectedScenario.parameter.constraints.filter(
-            conceptConstraints => conceptConstraints.concept !== selectedConcept
+            (conceptConstraints) => conceptConstraints.concept !== selectedConcept
           ),
           num_steps: selectedScenario.parameter.num_steps,
-          projection_start: selectedScenario.parameter.projection_start
-        }
+          projection_start: selectedScenario.parameter.projection_start,
+        },
       };
       // Save and reload scenarios
       await modelService.updateScenario(updatedScenario);
@@ -300,12 +314,16 @@ export default defineComponent({
       }
       this.modelSummary = await modelService.getSummary(this.currentCAG);
 
-      let scenarios: Scenario[] = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+      let scenarios: Scenario[] = await modelService.getScenarios(
+        this.currentCAG,
+        this.currentEngine
+      );
 
       // This is used to denote either
       // - A fresh start, or
       // - A case where you may have 3 scenarios but less than 3 results, this happens with we switch engines
-      const hasEmptyScenarioResults = _.isEmpty(scenarios) || _.some(scenarios, s => _.isEmpty(s.result));
+      const hasEmptyScenarioResults =
+        _.isEmpty(scenarios) || _.some(scenarios, (s) => _.isEmpty(s.result));
 
       if (this.modelSummary === null) {
         console.error(`Failed to fetch model summary for "currentCAG" id: ${this.currentCAG}`);
@@ -367,11 +385,17 @@ export default defineComponent({
         this.enableOverlayWithCancel({ message: 'Creating baseline scenario', cancelFn: cancelFn });
         try {
           // FIXME: hack to get setOverlaySecondaryMessage, need to have experimentId extracted first
-          await modelService.createBaselineScenario(this.modelSummary, poller, this.updateProgress, this.setOverlaySecondaryMessage);
+          await modelService.createBaselineScenario(
+            this.modelSummary,
+            poller,
+            this.updateProgress,
+            this.setOverlaySecondaryMessage
+          );
           scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
         } catch (error) {
           console.error(error);
-          const errorMessage: string = error && (error as any).message ? (error as any).message : error;
+          const errorMessage: string =
+            error && (error as any).message ? (error as any).message : error;
           this.toaster(errorMessage, TYPE.INFO, true);
           this.disableOverlay();
           return;
@@ -379,17 +403,20 @@ export default defineComponent({
         this.disableOverlay();
       }
 
-
       // 4. Figure out the current selected scenario
       let scenarioId = this.selectedScenarioId;
-      if (scenarios.find(d => d.id === this.selectedScenarioId) === undefined) {
+      if (scenarios.find((d) => d.id === this.selectedScenarioId) === undefined) {
         // Default to 'historical data only' mode
         scenarioId = null;
       }
 
       // 5. Rebuild scenarios' result if necessary
       // If we had training in the previous cycle, it means most likely analysts want to rerfresh scenarios anyway.
-      if (hasEmptyScenarioResults || trainingInPreviousCycle === true || this.runImmediately === true) {
+      if (
+        hasEmptyScenarioResults ||
+        trainingInPreviousCycle === true ||
+        this.runImmediately === true
+      ) {
         scenarios = await this.runScenarios(scenarios);
       }
       this.setRunImmediately(false);
@@ -447,7 +474,11 @@ export default defineComponent({
       // topology (if concepts still exist).
       for (const scenario of scenarios) {
         if (scenario.is_valid === false) {
-          modelService.resetScenarioParameter(scenario, this.modelSummary, this.modelComponents.nodes);
+          modelService.resetScenarioParameter(
+            scenario,
+            this.modelSummary,
+            this.modelComponents.nodes
+          );
         }
       }
 
@@ -459,8 +490,19 @@ export default defineComponent({
         if (scenario.is_valid === true) continue;
 
         const constraints = modelService.cleanConstraints(scenario.parameter?.constraints ?? []);
-        const sensitivityExperimentId = await modelService.runSensitivityAnalysis(this.modelSummary, 'GLOBAL', 'DYNAMIC', constraints);
-        await modelService.createScenarioSensitivityResult(this.currentCAG, scenario.id, this.currentEngine, sensitivityExperimentId, null);
+        const sensitivityExperimentId = await modelService.runSensitivityAnalysis(
+          this.modelSummary,
+          'GLOBAL',
+          'DYNAMIC',
+          constraints
+        );
+        await modelService.createScenarioSensitivityResult(
+          this.currentCAG,
+          scenario.id,
+          this.currentEngine,
+          sensitivityExperimentId,
+          null
+        );
       }
 
       // 2.2 Process projection experiments
@@ -469,13 +511,19 @@ export default defineComponent({
         if (scenario.is_valid === true) continue;
 
         try {
-          const poller = new Poller(PROJECTION_EXPERIMENT_INTERVAL, PROJECTION_EXPERIMENT_THRESHOLD);
+          const poller = new Poller(
+            PROJECTION_EXPERIMENT_INTERVAL,
+            PROJECTION_EXPERIMENT_THRESHOLD
+          );
           const cancelFn = () => {
             poller.stop();
           };
 
           this.currentScenarioName = scenario.name;
-          this.enableOverlayWithCancel({ message: `Running ${this.currentScenarioName} on ${this.currentEngine}`, cancelFn: cancelFn });
+          this.enableOverlayWithCancel({
+            message: `Running ${this.currentScenarioName} on ${this.currentEngine}`,
+            cancelFn: cancelFn,
+          });
 
           const experimentId = await modelService.runProjectionExperiment(
             this.currentCAG,
@@ -483,7 +531,12 @@ export default defineComponent({
           );
           this.setOverlaySecondaryMessage(`CAG=${this.currentCAG} Experiment=${experimentId}`);
 
-          const experiment: any = await modelService.getExperimentResult(this.currentCAG, experimentId, poller, this.updateProgress);
+          const experiment: any = await modelService.getExperimentResult(
+            this.currentCAG,
+            experimentId,
+            poller,
+            this.updateProgress
+          );
           // DySE uses .results.data
           scenario.result = experiment.results.data;
           scenario.experiment_id = experimentId;
@@ -522,7 +575,7 @@ export default defineComponent({
       const numEdges = this.modelComponents.edges.length;
       const numNodes = this.modelComponents.nodes.length;
 
-      return 2 * numEdges / (numNodes * (numNodes - 1));
+      return (2 * numEdges) / (numNodes * (numNodes - 1));
     },
     tabClick(tab: string) {
       if (tab === 'matrix') {
@@ -536,7 +589,9 @@ export default defineComponent({
       this.resetLayoutToken = Date.now();
     },
     async openDataAnalysis() {
-      const indicators = this.modelComponents?.nodes.map(node => node.parameter).filter(indicator => indicator.id !== null && indicator.data_id);
+      const indicators = this.modelComponents?.nodes
+        .map((node) => node.parameter)
+        .filter((indicator) => indicator.id !== null && indicator.data_id);
       if (indicators !== undefined && indicators.length > 0) {
         // do we have an existing analysis that was generated from this CAG?
         const existingAnalysisId = this.modelSummary?.data_analysis_id;
@@ -549,7 +604,7 @@ export default defineComponent({
           const cachedMetadata = {
             datacubeName: indicator.name,
             featureName: '',
-            source: ''
+            source: '',
           };
           return createAnalysisItem(
             indicator.id,
@@ -562,9 +617,7 @@ export default defineComponent({
         if (existingAnalysisId) {
           // update existing data analysis
           try {
-            const existingAnalysisState = await getAnalysisState(
-              existingAnalysisId
-            );
+            const existingAnalysisState = await getAnalysisState(existingAnalysisId);
             // Update analysis items and reset region ranking weights.
             // Note that as it currently stands, we reset region ranking weights
             //  every time, regardless of whether the list of selected items
@@ -595,7 +648,7 @@ export default defineComponent({
           );
           // save the created analysis id with the CAG
           await modelService.updateModelMetadata(this.currentCAG, {
-            data_analysis_id: analysis.id
+            data_analysis_id: analysis.id,
           });
           // instead of re-fetching the model summary, just update the data analysis id locally
           if (this.modelSummary) {
@@ -606,7 +659,11 @@ export default defineComponent({
         this.showOpenDataAnalysisConfirmation = true;
         // this.toaster('Data analysis created/updated successfully', 'success', false);
       } else {
-        this.toaster('Please have at least one quantified node before opening data analysis!', TYPE.INFO, false);
+        this.toaster(
+          'Please have at least one quantified node before opening data analysis!',
+          TYPE.INFO,
+          false
+        );
       }
     },
     onConfirmRedirectionToDataAnalysis() {
@@ -617,19 +674,21 @@ export default defineComponent({
         params: {
           project: this.project,
           analysisId: this.modelSummary?.data_analysis_id,
-          projectType: ProjectType.Analysis
-        }
+          projectType: ProjectType.Analysis,
+        },
       });
     },
     updateProgress(polls: number, threshold: number, result: any) {
       if (result?.progressPercentage !== undefined) {
-        const overlayContent = `Running ${this.currentScenarioName} on ${this.currentEngine} - ${result.progressPercentage * 100}% complete.`;
+        const overlayContent = `Running ${this.currentScenarioName} on ${this.currentEngine} - ${
+          result.progressPercentage * 100
+        }% complete.`;
         this.enableOverlay(overlayContent);
       }
     },
     async switchEngine(engine: string) {
       await modelService.updateModelParameter(this.currentCAG, {
-        engine: engine
+        engine: engine,
       });
       this.refresh();
     },
@@ -637,13 +696,13 @@ export default defineComponent({
       this.refreshTimer = window.setTimeout(() => {
         this.refresh();
       }, 9000);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .quantitative-view-container {
   height: $content-full-height;

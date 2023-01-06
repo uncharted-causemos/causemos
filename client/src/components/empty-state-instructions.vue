@@ -1,27 +1,25 @@
 <template>
-  <figure
-    class="empty-state-instructions-container"
-  >
+  <figure class="empty-state-instructions-container">
     <img
       v-if="currentView === 'data' || currentView === 'dataComparative'"
       src="../assets/empty-state-instructions/data-empty-state.png"
       alt="Data search instructions"
-    >
+    />
     <img
       v-else-if="currentView === 'qualitative'"
       src="../assets/empty-state-instructions/knowledge-empty-state.png"
       alt="CAG creation instructions"
-    >
+    />
     <img
       v-else-if="currentView === 'overview'"
       src="../assets/empty-state-instructions/analysis-project-empty-state.png"
       alt="This project has no content yet."
-    >
+    />
     <img
       v-else
       src="../assets/empty-state-instructions/models-empty-state.png"
       alt="Model creation instructions"
-    >
+    />
   </figure>
 </template>
 
@@ -32,14 +30,14 @@ export default defineComponent({
   name: 'EmptyStateInstructions',
   computed: {
     ...mapGetters({
-      currentView: 'app/currentView'
-    })
-  }
+      currentView: 'app/currentView',
+    }),
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .empty-state-instructions-container {
   display: flex;

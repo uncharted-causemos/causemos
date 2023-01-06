@@ -5,30 +5,30 @@ const NODE_AGGREGATION_QUERY = {
     subjects: {
       terms: {
         size: MAX_ES_BUCKET_SIZE,
-        field: 'subj.concept.raw'
+        field: 'subj.concept.raw',
       },
       aggs: {
         grounding_score: {
           avg: {
-            field: 'subj.concept_score'
-          }
-        }
-      }
+            field: 'subj.concept_score',
+          },
+        },
+      },
     },
     objects: {
       terms: {
         size: MAX_ES_BUCKET_SIZE,
-        field: 'obj.concept.raw'
+        field: 'obj.concept.raw',
       },
       aggs: {
         grounding_score: {
           avg: {
-            field: 'obj.concept_score'
-          }
-        }
-      }
-    }
-  }
+            field: 'obj.concept_score',
+          },
+        },
+      },
+    },
+  },
 };
 
 const EDGE_AGGREGATION_QUERY = {
@@ -36,7 +36,7 @@ const EDGE_AGGREGATION_QUERY = {
     edges: {
       terms: {
         field: 'wm.edge',
-        size: MAX_ES_BUCKET_SIZE
+        size: MAX_ES_BUCKET_SIZE,
       },
       aggs: {
         same: {
@@ -44,50 +44,50 @@ const EDGE_AGGREGATION_QUERY = {
             field: 'wm.statement_polarity',
             script: {
               lang: 'painless',
-              source: 'if (_value == 1) { return 1 }  else { return 0 }'
-            }
-          }
+              source: 'if (_value == 1) { return 1 }  else { return 0 }',
+            },
+          },
         },
         opposite: {
           sum: {
             field: 'wm.statement_polarity',
             script: {
               lang: 'painless',
-              source: 'if (_value == -1) { return 1 }  else { return 0 }'
-            }
-          }
+              source: 'if (_value == -1) { return 1 }  else { return 0 }',
+            },
+          },
         },
         unknown: {
           sum: {
             field: 'wm.statement_polarity',
             script: {
               lang: 'painless',
-              source: 'if (_value == 0) { return 1 }  else { return 0 }'
-            }
-          }
+              source: 'if (_value == 0) { return 1 }  else { return 0 }',
+            },
+          },
         },
         contradictions: {
           sum: {
-            field: 'wm.num_contradictions'
-          }
+            field: 'wm.num_contradictions',
+          },
         },
         total: {
           sum: {
             field: 'wm.statement_polarity',
             script: {
               lang: 'painless',
-              source: 'return 1'
-            }
-          }
+              source: 'return 1',
+            },
+          },
         },
         belief_score: {
           avg: {
-            field: 'belief'
-          }
-        }
-      }
-    }
-  }
+            field: 'belief',
+          },
+        },
+      },
+    },
+  },
 };
 
 const _weightedMean = (values, weights) => {
@@ -109,11 +109,11 @@ const formatNodeAggregation = (resultNodes, resultEdges) => {
   const subjects = resultNodes.body.aggregations.subjects.buckets;
   const objects = resultNodes.body.aggregations.objects.buckets;
   const concepts = [].concat(subjects).concat(objects);
-  const edges = resultEdges.body.aggregations.edges.buckets.map(edge => edge.key);
+  const edges = resultEdges.body.aggregations.edges.buckets.map((edge) => edge.key);
 
   // Calculate node degree
   const degreeMap = new Map();
-  edges.forEach(edge => {
+  edges.forEach((edge) => {
     const [source, target] = edge.split('///'); // Encoded as $source///$target for ES aggregation
     if (degreeMap.has(source)) {
       degreeMap.set(source, degreeMap.get(source) + 1);
@@ -141,7 +141,7 @@ const formatNodeAggregation = (resultNodes, resultEdges) => {
     } else {
       nodeMap[id] = {
         groundingScore: groundingScore,
-        degree: degree
+        degree: degree,
       };
     }
   }
@@ -150,7 +150,7 @@ const formatNodeAggregation = (resultNodes, resultEdges) => {
     nodes.push({
       id,
       grounding_score: concept.groundingScore,
-      count: concept.degree
+      count: concept.degree,
     });
   }
   return nodes;
@@ -161,7 +161,7 @@ const formatNodeAggregation = (resultNodes, resultEdges) => {
  * @params result   output of ES `getEdgeAggregationQuery`
  * */
 const formatEdgeAggregation = (result) => {
-  const edges = result.body.aggregations.edges.buckets.map(edge => {
+  const edges = result.body.aggregations.edges.buckets.map((edge) => {
     const [source, target] = edge.key.split('///');
     return {
       source,
@@ -171,7 +171,7 @@ const formatEdgeAggregation = (result) => {
       unknown: edge.unknown.value,
       total: edge.total.value,
       contradictions: edge.contradictions.value,
-      belief_score: edge.belief_score.value
+      belief_score: edge.belief_score.value,
     };
   });
   return edges;
@@ -181,5 +181,5 @@ module.exports = {
   NODE_AGGREGATION_QUERY,
   EDGE_AGGREGATION_QUERY,
   formatNodeAggregation,
-  formatEdgeAggregation
+  formatEdgeAggregation,
 };

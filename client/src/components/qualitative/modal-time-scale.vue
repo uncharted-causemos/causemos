@@ -1,7 +1,6 @@
 <template>
   <modal @close="save" :sticky="true">
-    <template #header>
-    </template>
+    <template #header> </template>
     <template #body>
       <h2 class="header-question">Which time scale are you interested in?</h2>
       <div
@@ -19,9 +18,7 @@
           <h3>{{ timeScaleOption.label }}</h3>
           <h4>See change in value</h4>
           <p>
-            {{
-              timeScaleOption.timeSlices.map(slice => 'in ' + slice.label).join(', ')
-            }}
+            {{ timeScaleOption.timeSlices.map((slice) => 'in ' + slice.label).join(', ') }}
           </p>
           <div class="label-row">
             <h4>Example</h4>
@@ -43,13 +40,7 @@
       </div>
     </template>
     <template #footer>
-      <button
-        type="button"
-        class="btn btn-call-to-action"
-        @click.stop="save"
-      >
-        Save
-      </button>
+      <button type="button" class="btn btn-call-to-action" @click.stop="save">Save</button>
     </template>
   </modal>
 </template>
@@ -68,24 +59,22 @@ import { REGION_ID_DISPLAY_DELIMETER } from '@/utils/admin-level-util';
 export default defineComponent({
   components: {
     modal,
-    AutoComplete
+    AutoComplete,
   },
   name: 'ModalTimeScale',
   emits: ['save-cag-params'],
   props: {
     initiallySelectedTimeScale: {
       type: String as PropType<string | null>,
-      default: null
-    }
+      default: null,
+    },
   },
   setup(props) {
     const { initiallySelectedTimeScale } = toRefs(props);
     return {
       TIME_SCALE_OPTIONS,
-      selectedTimeScaleOption: ref(
-        initiallySelectedTimeScale.value ?? TimeScale.Months
-      ),
-      selectedCountry: ref<string | null>(null)
+      selectedTimeScaleOption: ref(initiallySelectedTimeScale.value ?? TimeScale.Months),
+      selectedCountry: ref<string | null>(null),
     };
   },
   methods: {
@@ -93,14 +82,17 @@ export default defineComponent({
       this.$emit('save-cag-params', {
         engine: 'dyse',
         timeScale: this.selectedTimeScaleOption,
-        geography: _.isEmpty(this.selectedCountry) ? undefined : this.selectedCountry
+        geography: _.isEmpty(this.selectedCountry) ? undefined : this.selectedCountry,
       });
     },
     getGADMName(item: RegionalGADMDetail, delimter: string) {
-      return Object.values(DatacubeGeoAttributeVariableType).filter(l => item[l] !== undefined).map(l => item[l]).join(delimter);
+      return Object.values(DatacubeGeoAttributeVariableType)
+        .filter((l) => item[l] !== undefined)
+        .map((l) => item[l])
+        .join(delimter);
     },
     searchRegions(query: string) {
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         let suggestionResults: string[] = [];
 
         if (query.length < 1) resolve(suggestionResults); // early exit
@@ -110,7 +102,7 @@ export default defineComponent({
         const fetchedResults = debouncedFetchFunction(); // NOTE: a debounced function may return undefined
         if (fetchedResults !== undefined) {
           fetchedResults.then((res) => {
-            suggestionResults = res.map(item => {
+            suggestionResults = res.map((item) => {
               const regionLabel = this.getGADMName(item, REGION_ID_DISPLAY_DELIMETER);
               return regionLabel; // this will be displayed in the autocomplete dropdown
             });
@@ -123,8 +115,8 @@ export default defineComponent({
     },
     selectCountry(v: string) {
       this.selectedCountry = v;
-    }
-  }
+    },
+  },
 });
 </script>
 

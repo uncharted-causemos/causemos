@@ -3,7 +3,6 @@
 </template>
 
 <script>
-
 import layerBase from './layerBase';
 import layerUtils from './layerUtils';
 import { eventEmitter } from '../mixins';
@@ -11,9 +10,7 @@ import { eventEmitter } from '../mixins';
 export default {
   name: 'WmMapVector',
   mixins: [layerBase, layerUtils, eventEmitter],
-  emits: [
-    'add-layer', 'update-source'
-  ],
+  emits: ['add-layer', 'update-source'],
   props: {
     /**
      * Name of the layer within the vector source.
@@ -21,7 +18,7 @@ export default {
      */
     sourceLayer: {
       type: String,
-      required: true
+      required: true,
     },
     /**
      * A property to use as a feature id (for feature state). Either a property name, or an object of the form {<sourceLayer>: <propertyName>}.
@@ -29,15 +26,15 @@ export default {
      */
     promoteId: {
       type: [String, Object],
-      default: undefined
+      default: undefined,
     },
     /**
      * Vector source max zoom
      */
     sourceMaxzoom: {
       type: Number,
-      default: 22
-    }
+      default: 22,
+    },
   },
   watch: {
     source() {
@@ -45,7 +42,7 @@ export default {
     },
     sourceLayer() {
       this._addLayer();
-    }
+    },
   },
   mounted() {
     // Add source if a source with given id doesn't exist
@@ -57,7 +54,7 @@ export default {
     _updateSource() {
       // Expects a source tile url or a list of tile urls from the source prop (this.source)
       // ie. `url` or [url]
-      const tileUrls = (typeof this.source === 'string') ? [this.source] : this.source;
+      const tileUrls = typeof this.source === 'string' ? [this.source] : this.source;
       if (!tileUrls) return; // ie. ignore if the source is not provided
 
       const layerDefs = this.$_layerDefsBySource(this.sourceId);
@@ -68,30 +65,33 @@ export default {
         type: 'vector',
         promoteId: this.promoteId,
         tiles: tileUrls,
-        maxzoom: this.sourceMaxzoom
+        maxzoom: this.sourceMaxzoom,
       };
       this.map.addSource(this.sourceId, payload);
       // Re-add the layers
-      layerDefs.forEach(layer => this.map.addLayer(layer, this.beforeId));
+      layerDefs.forEach((layer) => this.map.addLayer(layer, this.beforeId));
       this.$_emitEvent('update-source', {
         id: this.sourceId,
-        ...payload
+        ...payload,
       });
     },
     _addLayer() {
       this.$_removeLayer(this.layerId);
-      this.map.addLayer({
-        'id': this.layerId,
-        'source': this.sourceId,
-        'source-layer': this.sourceLayer,
-        ...this.layer
-      }, this.beforeId);
+      this.map.addLayer(
+        {
+          id: this.layerId,
+          source: this.sourceId,
+          'source-layer': this.sourceLayer,
+          ...this.layer,
+        },
+        this.beforeId
+      );
       this.$_emitEvent('add-layer', {
-        'id': this.layerId,
-        'source': this.sourceId,
-        'source-layer': this.sourceLayer
+        id: this.layerId,
+        source: this.sourceId,
+        'source-layer': this.sourceLayer,
       });
-    }
-  }
+    },
+  },
 };
 </script>

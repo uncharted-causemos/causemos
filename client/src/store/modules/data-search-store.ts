@@ -9,8 +9,8 @@ const updateQuery = (getters: GetterTree<any, any>, { filters }: { filters: Filt
     filters: Object.assign(
       {},
       getters.filters,
-      _.pickBy(filters, v => !_.isNil(v))
-    )
+      _.pickBy(filters, (v) => !_.isNil(v))
+    ),
   };
   return query;
 };
@@ -22,13 +22,13 @@ const getters: GetterTree<any, any> = {
   filters: (state, getters, rootState /*, rootGetters */) => {
     const filters = _.get(rootState.route, 'query.filters', {});
     return _.isEmpty(filters) ? FiltersUtil.newFilters() : filters;
-  }
+  },
 };
 const actions: ActionTree<any, any> = {
   setSearchFilters({ getters }, filters) {
     const query = updateQuery(getters, { filters });
-    router.push({ query }).catch(() => { });
-  }
+    router.push({ query }).catch(() => {});
+  },
 };
 const mutations: MutationTree<any> = {};
 export default {
@@ -36,5 +36,5 @@ export default {
   state: {},
   getters,
   actions,
-  mutations
+  mutations,
 };

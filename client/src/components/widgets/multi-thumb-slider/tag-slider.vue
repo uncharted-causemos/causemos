@@ -1,19 +1,26 @@
 <template>
   <div
     class="slider-container"
-    :style="{height: (tags.length * 10) + 'vh' }"
+    :style="{ height: tags.length * 10 + 'vh' }"
     ref="tag_slider_ref"
     @mousemove="handleEventMove"
     @mouseleave="handleEventUp"
-    @mouseup="handleEventUp">
+    @mouseup="handleEventUp"
+  >
     <tag-section
       v-for="(tag, index) in tags"
       :key="tag.name"
       :size="sizes[index] ?? 0"
       :name="tag.name"
       :color="tag.color"
-      @slider-button-down="currentSliderButtonIndex=index; handleEventDown($event)"
-      @slider-button-up="currentSliderButtonIndex=index; handleEventUp($event)"
+      @slider-button-down="
+        currentSliderButtonIndex = index;
+        handleEventDown($event);
+      "
+      @slider-button-up="
+        currentSliderButtonIndex = index;
+        handleEventUp($event);
+      "
     />
   </div>
 </template>
@@ -32,17 +39,19 @@ export default defineComponent({
   name: 'TagSlider',
   emits: ['update-sizes'],
   components: {
-    TagSection
+    TagSection,
   },
   props: {
     sections: {
-      type: Object as PropType<{
-        itemId: string;
-        name: string;
-        weight: number
-      }[]>,
-      default: () => ([])
-    }
+      type: Object as PropType<
+        {
+          itemId: string;
+          name: string;
+          weight: number;
+        }[]
+      >,
+      default: () => [],
+    },
   },
   watch: {
     sections: {
@@ -50,28 +59,26 @@ export default defineComponent({
         if (this.sections.length > 0) {
           // REVIEW: consider merging tags and sizes into one variable
           // first set weights for all tags
-          this.sizes =
-            this.sections.map(({ weight }) => this.niceFormat(weight));
+          this.sizes = this.sections.map(({ weight }) => this.niceFormat(weight));
           this.originalSizes = this.sizes;
           // then set tags to trigger vue update
-          this.tags = this.sections
-            .map(({ name }) => ({ name, color: 'gray' }));
+          this.tags = this.sections.map(({ name }) => ({ name, color: 'gray' }));
         } else {
           this.tags = [];
           this.originalSizes = [];
         }
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   data: () => ({
-    tags: [] as {name: string; color: string}[],
+    tags: [] as { name: string; color: string }[],
     startDragY: -1,
     sliderHeight: 0,
     currentSliderButtonIndex: -1,
     sizes: [] as number[],
     originalSizes: [] as number[],
-    canResize: false
+    canResize: false,
   }),
   methods: {
     niceFormat(number: number) {
@@ -116,7 +123,9 @@ export default defineComponent({
         const totalHeightBefore = _sizes.reduce((partial_sum, a) => partial_sum + a, 0); // array sum
         maxPercent = 100 - (totalHeightBefore - maxPercent);
       }
-      _sizes[this.currentSliderButtonIndex] = this.niceFormat(this.clamp(currentSectionNewPercentage, 0, maxPercent));
+      _sizes[this.currentSliderButtonIndex] = this.niceFormat(
+        this.clamp(currentSectionNewPercentage, 0, maxPercent)
+      );
 
       // calculate next section height
       /**
@@ -127,7 +136,9 @@ export default defineComponent({
        * when it’s allowed to take up the entire neighbor’s space.
        */
       const nextSectioncurrentSectionNewPercentage = _sizes[nextTagIndex] - percentageMoved;
-      _sizes[nextTagIndex] = this.niceFormat(this.clamp(nextSectioncurrentSectionNewPercentage, 0, maxPercent));
+      _sizes[nextTagIndex] = this.niceFormat(
+        this.clamp(nextSectioncurrentSectionNewPercentage, 0, maxPercent)
+      );
 
       // update
       this.sizes = _sizes;
@@ -142,13 +153,13 @@ export default defineComponent({
         section.weight = this.sizes[indx];
       });
       this.$emit('update-sizes', updatedSections);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .slider-container {
   width: 100%;
@@ -160,5 +171,4 @@ export default defineComponent({
   padding-top: 2rem;
   padding-bottom: 2rem;
 }
-
 </style>

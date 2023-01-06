@@ -15,9 +15,9 @@ export const TIME_SCALE_OPTIONS: TimeScaleOption[] = [
       { months: 3, label: '3 months', shortLabel: '3m' },
       { months: 6, label: '6 months', shortLabel: '6m' },
       { months: 9, label: '9 months', shortLabel: '9m' },
-      { months: 12, label: '12 months', shortLabel: '12m' }
+      { months: 12, label: '12 months', shortLabel: '12m' },
     ],
-    example: 'Locust outbreaks'
+    example: 'Locust outbreaks',
   },
   {
     id: TimeScale.Years,
@@ -26,10 +26,10 @@ export const TIME_SCALE_OPTIONS: TimeScaleOption[] = [
       { months: 3 * 12, label: '3 years', shortLabel: '3y' },
       { months: 6 * 12, label: '6 years', shortLabel: '6y' },
       { months: 9 * 12, label: '9 years', shortLabel: '9y' },
-      { months: 12 * 12, label: '12 years', shortLabel: '12y' }
+      { months: 12 * 12, label: '12 years', shortLabel: '12y' },
     ],
-    example: 'Malnutrition'
-  }
+    example: 'Malnutrition',
+  },
 ];
 
 // Make a map version of the time scale options for faster and simpler retrieval
@@ -51,7 +51,7 @@ export const getTimeScaleOption = (timeScale: TimeScale) => {
 };
 
 export const getSliceMonthIndicesFromTimeScale = (timeScale: TimeScale) => {
-  return getTimeScaleOption(timeScale).timeSlices.map(timeSlice => {
+  return getTimeScaleOption(timeScale).timeSlices.map((timeSlice) => {
     const monthCount = timeSlice.months;
     // Time scale timesteps are 1-indexed, so subtract 1 to get the actual number
     //  of months to add to the projection_start date
@@ -91,4 +91,3 @@ export const getStepCountFromTimeScale = (timeScale: TimeScale) => {
 export const getRangeFromTimeScale = (timeScale: TimeScale, history_range: number) => {
   return history_range / getMonthsPerTimestepFromTimeScale(timeScale);
 };
-

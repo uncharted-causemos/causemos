@@ -5,101 +5,50 @@
         <div class="dropdown">
           <h5 class="dropdown-title">Edit Relationship</h5>
           <close-button @click="close()" />
-          <h6
-            class="option-group-header"
-            :style="statementPolarityColor(1)">Same</h6>
-          <div
-            class="dropdown-option"
-            @click.stop="select(1, 1)">
-            <i
-              class="fa fa-check"
-              :style="checkedOption(item, 1, 1)"
-            />
-            <i
-              :class="polarityClass(1)"
-              class="polarity-factor"
-            />
+          <h6 class="option-group-header" :style="statementPolarityColor(1)">Same</h6>
+          <div class="dropdown-option" @click.stop="select(1, 1)">
+            <i class="fa fa-check" :style="checkedOption(item, 1, 1)" />
+            <i :class="polarityClass(1)" class="polarity-factor" />
             <i
               id="statement-polarity-arrow"
               class="fa fa-long-arrow-right"
               :style="statementPolarityColor(1)"
             />
-            <i
-              :class="polarityClass(1)"
-              class="polarity-factor"
-            />
+            <i :class="polarityClass(1)" class="polarity-factor" />
           </div>
-          <div
-            class="dropdown-option"
-            @click.stop="select(-1, -1)">
-            <i
-              class="fa fa-check"
-              :style="checkedOption(item, -1, -1)"
-            />
-            <i
-              :class="polarityClass(-1)"
-              class="polarity-factor"
-            />
+          <div class="dropdown-option" @click.stop="select(-1, -1)">
+            <i class="fa fa-check" :style="checkedOption(item, -1, -1)" />
+            <i :class="polarityClass(-1)" class="polarity-factor" />
             <i
               id="statement-polarity-arrow"
               class="fa fa-long-arrow-right"
               :style="statementPolarityColor(1)"
             />
-            <i
-              :class="polarityClass(-1)"
-              class="polarity-factor"
-            />
+            <i :class="polarityClass(-1)" class="polarity-factor" />
           </div>
-          <h6
-            :style="statementPolarityColor(-1)"
-            class="option-group-header">Opposite</h6>
-          <div
-            class="dropdown-option"
-            @click.stop="select(1, -1)">
-            <i
-              class="fa fa-check"
-              :style="checkedOption(item, 1, -1)"
-            />
-            <i
-              :class="polarityClass(1)"
-              class="polarity-factor"
-            />
+          <h6 :style="statementPolarityColor(-1)" class="option-group-header">Opposite</h6>
+          <div class="dropdown-option" @click.stop="select(1, -1)">
+            <i class="fa fa-check" :style="checkedOption(item, 1, -1)" />
+            <i :class="polarityClass(1)" class="polarity-factor" />
             <i
               id="statement-polarity-arrow"
               class="fa fa-long-arrow-right"
               :style="statementPolarityColor(-1)"
             />
-            <i
-              :class="polarityClass(-1)"
-              class="polarity-factor"
-            />
+            <i :class="polarityClass(-1)" class="polarity-factor" />
           </div>
-          <div
-            class="dropdown-option"
-            @click.stop="select(-1, 1)">
-            <i
-              class="fa fa-check"
-              :style="checkedOption(item, -1, 1)"
-            />
-            <i
-              :class="polarityClass(-1)"
-              class="polarity-factor"
-            />
+          <div class="dropdown-option" @click.stop="select(-1, 1)">
+            <i class="fa fa-check" :style="checkedOption(item, -1, 1)" />
+            <i :class="polarityClass(-1)" class="polarity-factor" />
             <i
               id="statement-polarity-arrow"
               class="fa fa-long-arrow-right"
               :style="statementPolarityColor(-1)"
             />
-            <i
-              :class="polarityClass(1)"
-              class="polarity-factor"
-            />
+            <i :class="polarityClass(1)" class="polarity-factor" />
           </div>
           <div class="reverse-relation-container">
-            <small-text-button
-              :label="'Reverse relation'"
-              @click="reverse()"
-            />
+            <small-text-button :label="'Reverse relation'" @click="reverse()" />
           </div>
         </div>
       </template>
@@ -107,9 +56,7 @@
   </div>
 </template>
 
-
 <script lang="ts">
-
 import { defineComponent } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import CloseButton from '@/components/widgets/close-button.vue';
@@ -133,26 +80,24 @@ export default defineComponent({
   components: {
     DropdownControl,
     CloseButton,
-    SmallTextButton
+    SmallTextButton,
   },
   props: {
     item: {
       type: Object,
       default: () => ({
         subj_polarity: 1,
-        obj_polarity: 1
-      })
-    }
+        obj_polarity: 1,
+      }),
+    },
   },
-  emits: [
-    'reverse-relation', 'select', 'close'
-  ],
+  emits: ['reverse-relation', 'select', 'close'],
   methods: {
     reverse() {
       this.$emit('reverse-relation');
     },
     select(subjPolarity: number, objPolarity: number) {
-      if ((this.item.subj_polarity !== subjPolarity) || (this.item.obj_polarity !== objPolarity)) {
+      if (this.item.subj_polarity !== subjPolarity || this.item.obj_polarity !== objPolarity) {
         this.$emit('select', { subjPolarity, objPolarity });
       }
     },
@@ -168,20 +113,20 @@ export default defineComponent({
     checkedOption(item: PolarityItem, subjPolarity: number, objPolarity: number) {
       if (item.subj_polarity === subjPolarity && item.obj_polarity === objPolarity) {
         return {
-          opacity: 1
+          opacity: 1,
         };
       } else {
         return {
-          opacity: 0.1
+          opacity: 0.1,
         };
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .polarity-editor-container {
   position: absolute;

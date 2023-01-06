@@ -13,9 +13,9 @@ describe('filters-util', () => {
           field: 'xyz',
           values: [1, 2, 3, 4],
           isNot: false,
-          operand: 'or'
-        }
-      ]
+          operand: 'or',
+        },
+      ],
     };
   });
 
@@ -92,20 +92,20 @@ describe('filters-util', () => {
     const A: Filters = {
       clauses: [
         { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] },
-        { field: 'abc', isNot: true, operand: 'or', values: [1, 2, 3] }
-      ]
+        { field: 'abc', isNot: true, operand: 'or', values: [1, 2, 3] },
+      ],
     };
     const B: Filters = {
       clauses: [
         { field: 'abc', isNot: true, operand: 'or', values: [1, 2, 3] },
-        { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] }
-      ]
+        { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] },
+      ],
     };
     const C: Filters = {
       clauses: [
         { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] },
-        { field: 'abc', isNot: true, operand: 'or', values: [7, 8, 9] }
-      ]
+        { field: 'abc', isNot: true, operand: 'or', values: [7, 8, 9] },
+      ],
     };
 
     expect(FiltersUtil.isEqual(A, B)).to.equal(true);
@@ -116,27 +116,27 @@ describe('filters-util', () => {
     const A: Filters = {
       clauses: [
         { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] },
-        { field: 'abc', isNot: true, operand: 'or', values: [1, 2, 3] }
-      ]
+        { field: 'abc', isNot: true, operand: 'or', values: [1, 2, 3] },
+      ],
     };
     const B: Filters = {
       clauses: [
         { field: 'abc', isNot: true, operand: 'or', values: [1, 2, 3] },
-        { field: 'xyz', isNot: false, operand: 'or', values: [2, 3, 4] }
-      ]
+        { field: 'xyz', isNot: false, operand: 'or', values: [2, 3, 4] },
+      ],
     };
     const C: Filters = {
       clauses: [
         { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] },
         { field: 'abc', isNot: false, operand: 'or', values: [1, 2, 3] },
-        { field: 'foo', isNot: false, operand: 'or', values: ['bar'] }
-      ]
+        { field: 'foo', isNot: false, operand: 'or', values: ['bar'] },
+      ],
     };
     const D: Filters = {
       clauses: [
         { field: 'xyz', isNot: true, operand: 'or', values: [1, 2, 3] },
-        { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] }
-      ]
+        { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] },
+      ],
     };
     expect(FiltersUtil.isClauseEqual(A, B, 'xyz', false)).to.equal(false);
     expect(FiltersUtil.isClauseEqual(A, C, 'xyz', false)).to.equal(true);

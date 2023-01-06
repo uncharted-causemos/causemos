@@ -7,37 +7,18 @@
     />
     <div class="document-list">
       <div class="document-list-header">
-        <div style="flex: 4;">
-          Title
-        </div>
-        <div style="flex: 2;">
-          Publication Date
-        </div>
-        <div style="flex: 3;">
-          Author
-        </div>
-        <div style="flex: 3;">
-          Publisher
+        <div style="flex: 4">Title</div>
+        <div style="flex: 2">Publication Date</div>
+        <div style="flex: 3">Author</div>
+        <div style="flex: 3">Publisher</div>
+      </div>
+      <div v-if="sortedDocuments.length > 0" class="document-list-elements">
+        <div v-for="documentMeta in sortedDocuments" :key="documentMeta.id">
+          <documents-list-item @document-click="onDocumentClick" :documentMeta="documentMeta" />
         </div>
       </div>
-        <div v-if="sortedDocuments.length > 0" class="document-list-elements">
-          <div
-            v-for="documentMeta in sortedDocuments"
-            :key="documentMeta.id">
-            <documents-list-item
-              @document-click="onDocumentClick"
-              :documentMeta="documentMeta"/>
-          </div>
-        </div>
-        <message-display
-          v-else
-          message="Sorry, no results were found"
-        />
-        <pagination
-          v-if="sortedDocuments.length > 0"
-          :label="'documents'"
-          :total="documentsCount"
-        />
+      <message-display v-else message="Sorry, no results were found" />
+      <pagination v-if="sortedDocuments.length > 0" :label="'documents'" :total="documentsCount" />
     </div>
   </div>
 </template>
@@ -57,92 +38,92 @@ export default defineComponent({
     DocumentsListItem,
     Pagination,
     ModalDocument,
-    MessageDisplay
+    MessageDisplay,
   },
   props: {
     documentData: {
       type: Array,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   data: () => ({
-    documentModalData: null as any
+    documentModalData: null as any,
   }),
   computed: {
     ...mapGetters({
       filters: 'query/filters',
       documentsQuery: 'query/documents',
       project: 'app/project',
-      documentsCount: 'kb/documentsCount'
+      documentsCount: 'kb/documentsCount',
     }),
     sortedDocuments(): any {
       return _.orderBy(this.documentData, ['publication_date.date'], ['desc']);
-    }
+    },
   },
   methods: {
     formatMeta(data: { [key: string]: any }) {
       const metaDocument = {
-        doc_id: data.id
+        doc_id: data.id,
       };
       return metaDocument;
     },
     onDocumentClick(targetData: { [key: string]: any }) {
       this.documentModalData = this.formatMeta(targetData.docmeta);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style scoped lang="scss">
-  @import '~styles/variables';
+@import '~styles/variables';
 
-  .documents-list-tableview-container {
-    width: 100%;
-    height: 100%;
+.documents-list-tableview-container {
+  width: 100%;
+  height: 100%;
+}
+
+.document-list {
+  box-sizing: border-box;
+  height: 100%;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  border-top: 1px solid #e3e3e3;
+  padding-top: 5px;
+
+  .document-list-header {
+    box-sizing: border-box;
+    border: 1px solid #bbb;
+    margin: 1px 0;
+    background: #fcfcfc;
+    font-weight: bold;
+    padding: 10px;
+    display: flex;
   }
-
-  .document-list {
+  .document-list-elements {
     box-sizing: border-box;
     height: 100%;
+    width: 100%;
     flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 20px;
-    border-top: 1px solid #e3e3e3;
-    padding-top: 5px;
-
-    .document-list-header {
-      box-sizing: border-box;
-      border: 1px solid #bbb;
-      margin: 1px 0;
-      background: #fcfcfc;
-      font-weight: bold;
-      padding: 10px;
-      display: flex;
-    }
-    .document-list-elements {
-      box-sizing: border-box;
-      height: 100%;
-      width: 100%;
-      flex: 1;
-      min-height: 0;
-      overflow-y: scroll;
-      overflow-x: hidden;
-    }
+    min-height: 0;
+    overflow-y: scroll;
+    overflow-x: hidden;
   }
+}
 
-  .controls {
-    display: flex;
-    padding-bottom: 5px;
-    margin-top: 5px;
-    input[type=text] {
-      padding: 8px;
-      width: 250px;
-      margin-right: 10px;
-    }
-    .form-control {
-      background: #fff;
-    }
+.controls {
+  display: flex;
+  padding-bottom: 5px;
+  margin-top: 5px;
+  input[type='text'] {
+    padding: 8px;
+    width: 250px;
+    margin-right: 10px;
   }
+  .form-control {
+    background: #fff;
+  }
+}
 </style>

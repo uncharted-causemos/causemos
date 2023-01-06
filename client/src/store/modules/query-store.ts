@@ -40,9 +40,21 @@ const updateQuery = (getters: GetterTree<QueryState, any>, updateObj: QueryUpdat
     filters: _filters,
     view: _view,
     layout: _layout,
-    documents: Object.assign({}, getters.documents, _.pickBy(updateObj.documents, v => !_.isNil(v))),
-    statements: Object.assign({}, getters.statements, _.pickBy(updateObj.statements, v => !_.isNil(v))),
-    audits: Object.assign({}, getters.audits, _.pickBy(updateObj.audits, v => !_.isNil(v)))
+    documents: Object.assign(
+      {},
+      getters.documents,
+      _.pickBy(updateObj.documents, (v) => !_.isNil(v))
+    ),
+    statements: Object.assign(
+      {},
+      getters.statements,
+      _.pickBy(updateObj.statements, (v) => !_.isNil(v))
+    ),
+    audits: Object.assign(
+      {},
+      getters.audits,
+      _.pickBy(updateObj.audits, (v) => !_.isNil(v))
+    ),
   };
   if (!_.isEmpty(_cag)) {
     query.cag = _cag;
@@ -53,17 +65,17 @@ const updateQuery = (getters: GetterTree<QueryState, any>, updateObj: QueryUpdat
 const defaultDocumentsQuery = Object.freeze({
   from: 0,
   size: 50,
-  sort: {}
+  sort: {},
 });
 const defaultStatementsQuery = Object.freeze({
   from: 0,
   size: 50,
-  sort: {}
+  sort: {},
 });
 const defaultAuditsQuery = Object.freeze({
   from: 0,
   size: 50,
-  sort: {}
+  sort: {},
 });
 const defaultLayout = Object.freeze({
   layoutOption: LAYOUTS.COSE_BILKENT,
@@ -72,33 +84,33 @@ const defaultLayout = Object.freeze({
   showLabels: true,
   showEdges: true,
   edgeOpacity: 0.4,
-  minimumNodeDepth: 1
+  minimumNodeDepth: 1,
 });
 
 const START_ZERO = {
   documents: { from: 0 },
   statements: { from: 0 },
-  audits: { from: 0 }
+  audits: { from: 0 },
 };
-
-
-
 
 /**
  * Handles query manipulation, the state and mutations are via
  * vuex-router-sync, as such only actions and getters are available.
  */
 const state: QueryState = {
-  lastQuery: FiltersUtil.newFilters()
+  lastQuery: FiltersUtil.newFilters(),
 };
 
 const getters: GetterTree<QueryState, any> = {
   query: (state, getters, rootState /*, rootGetters */) => {
-    return Object.assign({
-      statements: Object.assign({}, defaultStatementsQuery),
-      documents: Object.assign({}, defaultDocumentsQuery),
-      audits: Object.assign({}, defaultAuditsQuery)
-    }, rootState.route.query);
+    return Object.assign(
+      {
+        statements: Object.assign({}, defaultStatementsQuery),
+        documents: Object.assign({}, defaultDocumentsQuery),
+        audits: Object.assign({}, defaultAuditsQuery),
+      },
+      rootState.route.query
+    );
   },
   // filters is an object, if watching it either need to be deeply watched, or manually check object equivalence.
   filters: (state, getters, rootState /*, rootGetters */) => {
@@ -121,10 +133,10 @@ const getters: GetterTree<QueryState, any> = {
   layout: (state, getters, rootState /* , rootGetters */) => {
     return _.get(rootState.route, 'query.layout', defaultLayout);
   },
-  lastQuery: state => state.lastQuery,
+  lastQuery: (state) => state.lastQuery,
   cag: (state, getters, rootState /* , rootGetters */) => {
     return _.get(rootState.route, 'query.cag', null);
-  }
+  },
 };
 
 const actions: ActionTree<QueryState, any> = {
@@ -143,7 +155,12 @@ const actions: ActionTree<QueryState, any> = {
     const filters = _.cloneDeep(getters.filters);
 
     // Only allow one "score" range. This is an UI facet limitation, the backend does support disjunctions.
-    if (field === 'score' || field === 'belief' || field === 'temporal' || field === 'num_evidences') {
+    if (
+      field === 'score' ||
+      field === 'belief' ||
+      field === 'temporal' ||
+      field === 'num_evidences'
+    ) {
       FiltersUtil.removeClause(filters, field, 'or', false);
     }
 
@@ -187,7 +204,7 @@ const actions: ActionTree<QueryState, any> = {
     const viewQueryObj: QueryUpdate = {};
     viewQueryObj[paginationObj.view] = {
       from: paginationObj.from,
-      size: paginationObj.size
+      size: paginationObj.size,
     };
     const query = updateQuery(getters, viewQueryObj);
     router.push({ query }).catch(() => {});
@@ -197,8 +214,8 @@ const actions: ActionTree<QueryState, any> = {
     viewQueryObj[sortObj.view] = {
       from: 0,
       sort: {
-        [sortObj.field]: sortObj.sortOrder
-      }
+        [sortObj.field]: sortObj.sortOrder,
+      },
     };
     const query = updateQuery(getters, viewQueryObj);
     router.push({ query }).catch(() => {});
@@ -210,13 +227,13 @@ const actions: ActionTree<QueryState, any> = {
   setLayout({ getters }, layout) {
     const query = updateQuery(getters, { layout });
     router.push({ query }).catch(() => {});
-  }
+  },
 };
 
 const mutations: MutationTree<QueryState> = {
   setLastQuery(state, query) {
     state.lastQuery = query;
-  }
+  },
 };
 
 export default {
@@ -224,6 +241,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };
-

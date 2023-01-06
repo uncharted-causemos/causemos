@@ -21,11 +21,16 @@ export const createAnalysisItem = (
     dataConfig: createDataSpaceDataState(datacubeId),
     itemId: uuidv4(),
     viewConfig: {},
-    selected: isSelected
+    selected: isSelected,
   };
 };
 
-export function updateDatacubesOutputsMap(itemId: string, store: any, route: any, newOutputIndex: number) {
+export function updateDatacubesOutputsMap(
+  itemId: string,
+  store: any,
+  route: any,
+  newOutputIndex: number
+) {
   const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
   const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
   const datacubeKey = itemId;

@@ -32,11 +32,7 @@ const statementsToEdgeAttributes = (statements: Statement[]) => {
   return edgeAttributes;
 };
 
-const addToMap = (
-  map: Map<string, Statement[]>,
-  key: string,
-  val: Statement
-) => {
+const addToMap = (map: Map<string, Statement[]>, key: string, val: Statement) => {
   if (!map.has(key)) {
     map.set(key, []);
   }
@@ -57,7 +53,7 @@ export const extractEdgesFromStatements = (
 ): EdgeSuggestion[] => {
   const concepts = node.components;
   // Filter out the outgoing/incoming edges depending on edgeDirection
-  const filteredStatements = statements.filter(statement => {
+  const filteredStatements = statements.filter((statement) => {
     if (edgeDirection === EdgeDirection.Incoming) {
       // Only keep edges where the object concept is found in this node's components
       return concepts.includes(statement.obj.concept);
@@ -72,22 +68,18 @@ export const extractEdgesFromStatements = (
   //  "snow", then a statement that has "rain" as the other concept should
   //  instead be assigned to the "precipitation" concept.
   const conceptToStatementsMap = new Map<string, Statement[]>();
-  filteredStatements.forEach(statement => {
+  filteredStatements.forEach((statement) => {
     // Find any node containers in the graph that contain the other concept
     const otherConcept =
-      edgeDirection === EdgeDirection.Incoming
-        ? statement.subj.concept
-        : statement.obj.concept;
-    const nodeContainers = graphData.nodes.filter(n =>
-      n.components.includes(otherConcept)
-    );
+      edgeDirection === EdgeDirection.Incoming ? statement.subj.concept : statement.obj.concept;
+    const nodeContainers = graphData.nodes.filter((n) => n.components.includes(otherConcept));
     if (nodeContainers.length === 0) {
       // No node containers contain otherConcept, so it should be used to
       //  represent the statement
       addToMap(conceptToStatementsMap, otherConcept, statement);
     } else {
       // One or more node containers contain this concept
-      nodeContainers.forEach(nodeContainer => {
+      nodeContainers.forEach((nodeContainer) => {
         const otherConcept = nodeContainer.concept;
         // Skip if edge exists in graph and statement exists on edge
         const edgeToLookFor =
@@ -95,14 +87,9 @@ export const extractEdgesFromStatements = (
             ? { source: otherConcept, target: node.concept }
             : { source: node.concept, target: otherConcept };
         const existingEdge = graphData.edges.find(
-          edge =>
-            edge.source === edgeToLookFor.source &&
-            edge.target === edgeToLookFor.target
+          (edge) => edge.source === edgeToLookFor.source && edge.target === edgeToLookFor.target
         );
-        if (
-          existingEdge !== undefined &&
-          existingEdge.reference_ids.includes(statement.id)
-        ) {
+        if (existingEdge !== undefined && existingEdge.reference_ids.includes(statement.id)) {
           return;
         }
         addToMap(conceptToStatementsMap, otherConcept, statement);
@@ -114,8 +101,8 @@ export const extractEdgesFromStatements = (
     source: edgeDirection === EdgeDirection.Incoming ? key : node.concept,
     target: edgeDirection === EdgeDirection.Incoming ? node.concept : key,
     color: calcEdgeColor(statementsToEdgeAttributes(statements)),
-    numEvidence: _.sumBy(statements, s => s.wm.num_evidence),
-    statements
+    numEvidence: _.sumBy(statements, (s) => s.wm.num_evidence),
+    statements,
   })) as EdgeSuggestion[];
 };
 
@@ -138,8 +125,8 @@ export const getEdgesFromConcepts = (
   knownConcept: string,
   edgeDirection: EdgeDirection
 ): EdgeSuggestion[] => {
-  return concepts.map(concept => {
-    const edge = edges.find(edge => {
+  return concepts.map((concept) => {
+    const edge = edges.find((edge) => {
       return edgeDirection === EdgeDirection.Incoming
         ? edge.source === concept
         : edge.target === concept;
@@ -152,7 +139,7 @@ export const getEdgesFromConcepts = (
       target: edgeDirection === EdgeDirection.Incoming ? knownConcept : concept,
       color: 'black',
       numEvidence: 0,
-      statements: []
+      statements: [],
     };
   });
 };
@@ -176,32 +163,32 @@ export const calculateNewNodesAndEdges = (
   const newNodes: NodeParameter[] = [];
   selectedSuggestions.forEach(({ source, target }) => {
     // Check source
-    if (!_.some(graphNodes, d => d.concept === source)) {
-      if (!_.some(newNodes, d => d.concept === source)) {
+    if (!_.some(graphNodes, (d) => d.concept === source)) {
+      if (!_.some(newNodes, (d) => d.concept === source)) {
         newNodes.push({
           id: '',
           concept: source,
           label: ontologyFormatter(source),
-          components: [source]
+          components: [source],
         });
       }
     }
     // Check target
-    if (!_.some(graphNodes, d => d.concept === target)) {
-      if (!_.some(newNodes, d => d.concept === target)) {
+    if (!_.some(graphNodes, (d) => d.concept === target)) {
+      if (!_.some(newNodes, (d) => d.concept === target)) {
         newNodes.push({
           id: '',
           concept: target,
           label: ontologyFormatter(target),
-          components: [target]
+          components: [target],
         });
       }
     }
   });
   // Combine new edges with existing ones to ensure we don't create duplicates
   const graphEdges = graphData.edges;
-  const deduplicatedEdges = selectedSuggestions.map(newEdge => {
-    const existingEdge = graphEdges.find(e => {
+  const deduplicatedEdges = selectedSuggestions.map((newEdge) => {
+    const existingEdge = graphEdges.find((e) => {
       return e.source === newEdge.source && e.target === newEdge.target;
     });
     if (existingEdge) {
@@ -209,7 +196,7 @@ export const calculateNewNodesAndEdges = (
         id: existingEdge.id,
         source: existingEdge.source,
         target: existingEdge.target,
-        reference_ids: existingEdge.reference_ids.concat(newEdge.reference_ids)
+        reference_ids: existingEdge.reference_ids.concat(newEdge.reference_ids),
       };
     } else {
       return newEdge;

@@ -1,10 +1,7 @@
 <template>
   <div>
     <h5>By {{ aggregationLevelTitle }}</h5>
-    <div
-      v-if="aggregationLevelCount > 1"
-      class="aggregation-level-range-container"
-    >
+    <div v-if="aggregationLevelCount > 1" class="aggregation-level-range-container">
       <input
         type="range"
         class="aggregation-level-range"
@@ -22,10 +19,7 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
-    <div
-      v-if="message !== null"
-      class="message"
-    >
+    <div v-if="message !== null" class="message">
       {{ message }}
     </div>
     <reference-options-list
@@ -42,16 +36,12 @@
       />
     </div>
     <div v-if="hasData" class="flex-row">
-      <div
-        v-if="checkboxType === 'radio'"
-        class="all-radio-button"
-        @click="setAllChecked"
-      >
+      <div v-if="checkboxType === 'radio'" class="all-radio-button" @click="setAllChecked">
         <i
           class="fa fa-lg fa-fw icon-centered"
           :class="{
             'fa-circle': isAllSelected,
-            'fa-circle-o': !isAllSelected
+            'fa-circle-o': !isAllSelected,
           }"
         />
         <span>All</span>
@@ -62,11 +52,10 @@
       <!-- Render an empty div so the 'all-radio-button' stays left-aligned -->
       <div v-else />
     </div>
-    <div v-else >
-      <button
-        v-if="totalDataLength > 0"
-        class="btn btn-sm"
-        @click="requestData">Load {{numberFormatter(totalDataLength)}} values</button>
+    <div v-else>
+      <button v-if="totalDataLength > 0" class="btn btn-sm" @click="requestData">
+        Load {{ numberFormatter(totalDataLength) }} values
+      </button>
     </div>
     <div class="checklist-container">
       <aggregation-checklist-item
@@ -83,8 +72,9 @@
       />
       <collapsible-item
         v-if="allowCollapsing && rowsWithoutData.length"
-        :override="{value: true}">
-        <template #title>{{rowsWithoutData.length}} more without data</template>
+        :override="{ value: true }"
+      >
+        <template #title>{{ rowsWithoutData.length }} more without data</template>
         <template #content>
           <aggregation-checklist-item
             v-for="(row, rowIndex) of rowsWithoutData"
@@ -117,20 +107,13 @@ import ReferenceOptionsList from '@/components/drilldown-panel/reference-options
 import { BreakdownData } from '@/types/Datacubes';
 import { ModelRunReference } from '@/types/ModelRunReference';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import {
-  defineComponent,
-  PropType,
-  toRefs,
-  watchEffect,
-  ref,
-  computed
-} from '@vue/runtime-core';
+import { defineComponent, PropType, toRefs, watchEffect, ref, computed } from '@vue/runtime-core';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
 
 const SORT_OPTIONS = {
   Name: { label: 'Name', value: 'name' },
-  Value: { label: 'Value', value: 'value' }
+  Value: { label: 'Value', value: 'value' },
 };
 
 interface StatefulDataNode {
@@ -187,12 +170,9 @@ const extractPossibleRows = (
   orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
   // The root node is at depth level "-1" since it isn't selectable
-  const depthLevel = isStatefulDataNode(metadataNode)
-    ? metadataNode.path.length - 1
-    : -1;
+  const depthLevel = isStatefulDataNode(metadataNode) ? metadataNode.path.length - 1 : -1;
   // Parents of selected level keep track of their ancestors' names
-  const _hiddenAncestorNames =
-    depthLevel >= selectedLevel ? [] : _.clone(hiddenAncestorNames);
+  const _hiddenAncestorNames = depthLevel >= selectedLevel ? [] : _.clone(hiddenAncestorNames);
   const isHiddenAncestor = depthLevel < selectedLevel - 1;
   if (isHiddenAncestor && isStatefulDataNode(metadataNode)) {
     _hiddenAncestorNames.push(metadataNode.name);
@@ -207,17 +187,13 @@ const extractPossibleRows = (
         selectedLevel,
         selectedItemIds,
         orderedAggregationLevelKeys
-      )
+      ),
     ];
   }, [] as ChecklistRowData[]);
-  const isExpanded = isStatefulDataNode(metadataNode)
-    ? metadataNode.isExpanded
-    : true;
+  const isExpanded = isStatefulDataNode(metadataNode) ? metadataNode.isExpanded : true;
   const visibleChildren = isExpanded ? children : [];
-  const hasChildrenAtSelectedLevel =
-    depthLevel === selectedLevel - 1 && children.length > 0;
-  const isNodeVisible =
-    depthLevel >= selectedLevel || hasChildrenAtSelectedLevel;
+  const hasChildrenAtSelectedLevel = depthLevel === selectedLevel - 1 && children.length > 0;
+  const isNodeVisible = depthLevel >= selectedLevel || hasChildrenAtSelectedLevel;
   if (!isNodeVisible || !isStatefulDataNode(metadataNode)) {
     return visibleChildren;
   }
@@ -232,7 +208,7 @@ const extractPossibleRows = (
       selectedLevel,
       isChecked
     ),
-    ...visibleChildren
+    ...visibleChildren,
   ];
 };
 
@@ -246,8 +222,7 @@ const checklistRowDataFromNode = (
   const { name, bars, children, isExpanded, path } = node;
   const isSelectedAggregationLevel = depthLevel === selectedLevel;
   const showExpandToggle = children.length > 0;
-  const indentationCount =
-    depthLevel > selectedLevel ? depthLevel - selectedLevel + 1 : 0;
+  const indentationCount = depthLevel > selectedLevel ? depthLevel - selectedLevel + 1 : 0;
   return {
     name,
     bars,
@@ -257,7 +232,7 @@ const checklistRowDataFromNode = (
     isChecked,
     indentationCount,
     hiddenAncestorNames,
-    path
+    path,
   };
 };
 
@@ -270,10 +245,12 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
   };
   if (sortValue === SORT_OPTIONS.Value.value) {
     newStatefulData.children.sort((nodeA, nodeB) => {
-      const nodeAFirstValue = nodeA.bars.map(bar => bar.value)[0];
-      const nodeBFirstValue = nodeB.bars.map(bar => bar.value)[0];
-      const nodeAValue = _.isNull(nodeAFirstValue) || _.isUndefined(nodeAFirstValue) ? null : nodeAFirstValue;
-      const nodeBValue = _.isNull(nodeBFirstValue) || _.isUndefined(nodeBFirstValue) ? null : nodeBFirstValue;
+      const nodeAFirstValue = nodeA.bars.map((bar) => bar.value)[0];
+      const nodeBFirstValue = nodeB.bars.map((bar) => bar.value)[0];
+      const nodeAValue =
+        _.isNull(nodeAFirstValue) || _.isUndefined(nodeAFirstValue) ? null : nodeAFirstValue;
+      const nodeBValue =
+        _.isNull(nodeBFirstValue) || _.isUndefined(nodeBFirstValue) ? null : nodeBFirstValue;
       if (_.isNull(nodeAValue) && !_.isNull(nodeBValue)) {
         // A should be sorted after B
         return 1;
@@ -297,7 +274,7 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
       return nodeA.name > nodeB.name ? 1 : -1;
     });
   }
-  newStatefulData.children.forEach(node => {
+  newStatefulData.children.forEach((node) => {
     if (_.has(node, 'children')) {
       sortHierarchy(node, sortValue);
     }
@@ -311,78 +288,78 @@ export default defineComponent({
     AggregationChecklistItem,
     CollapsibleItem,
     RadioButtonGroup,
-    ReferenceOptionsList
+    ReferenceOptionsList,
   },
   props: {
     aggregationLevelCount: {
       type: Number,
-      default: 1
+      default: 1,
     },
     orderedAggregationLevelKeys: {
       type: Array as PropType<string[]>,
-      default: []
+      default: [],
     },
     aggregationLevel: {
       type: Number,
       default: 0,
       validator: (value: number) => {
         return value >= 0;
-      }
+      },
     },
     aggregationLevelTitle: {
       type: String,
-      default: '[Aggregation Level Title]'
+      default: '[Aggregation Level Title]',
     },
     rawData: {
       type: Object as PropType<BreakdownData | null>,
-      default: null
+      default: null,
     },
     totalDataLength: {
       type: Number,
-      default: 0
+      default: 0,
     },
     units: {
       type: String,
-      default: null
+      default: null,
     },
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
-      required: true
+      required: true,
     },
     selectedItemIds: {
       type: Object as PropType<string[]>,
-      default: []
+      default: [],
     },
     shouldShowDeselectedBars: {
       type: Boolean,
-      required: true
+      required: true,
     },
     showReferences: {
       type: Boolean,
-      required: true
+      required: true,
     },
     allowCollapsing: {
       type: Boolean,
-      required: true
+      required: true,
     },
     checkboxType: {
       type: String as PropType<'checkbox' | 'radio' | null>,
-      default: null
+      default: null,
     },
     referenceOptions: {
       type: Array as PropType<ModelRunReference[]>,
-      default: []
+      default: [],
     },
     message: {
       type: String as PropType<string | null>,
-      default: null
-    }
+      default: null,
+    },
   },
   emits: [
     'aggregation-level-change',
     'toggle-is-item-selected',
     'toggle-reference-options',
-    'request-data'
+    'request-data',
   ],
   setup(props, { emit }) {
     const {
@@ -392,7 +369,7 @@ export default defineComponent({
       shouldShowDeselectedBars,
       allowCollapsing,
       selectedTimeseriesPoints,
-      selectedItemIds
+      selectedItemIds,
     } = toRefs(props);
     const sortValue = ref<string>(SORT_OPTIONS.Name.value);
     const statefulData = ref<RootStatefulDataNode | null>(null);
@@ -401,16 +378,15 @@ export default defineComponent({
       //  out of it, augmented with a boolean 'expanded' property to keep
       //  track of the state of the component.
       const newStatefulData: RootStatefulDataNode = { children: [] as StatefulDataNode[] };
-      orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
+      orderedAggregationLevelKeys.value.forEach((aggregationLevelKey) => {
         if (rawData.value === null) return;
         // Get the list of values at this aggregation level for each selected
         //  model run
         const valuesAtThisLevel = rawData.value[aggregationLevelKey];
         if (valuesAtThisLevel === undefined) return;
         const getColorFromTimeseriesId = (timeseriesId: string) =>
-          selectedTimeseriesPoints.value.find(
-            point => point.timeseriesId === timeseriesId
-          )?.color ?? '#000';
+          selectedTimeseriesPoints.value.find((point) => point.timeseriesId === timeseriesId)
+            ?.color ?? '#000';
         valuesAtThisLevel.forEach(({ id, values }) => {
           // e.g. ['Canada', 'Ontario', 'Toronto']
           const path = id.split(REGION_ID_DELIMETER);
@@ -421,8 +397,8 @@ export default defineComponent({
           // Initialize pointer to the root of the tree
           let pointer = newStatefulData.children;
           // Find where in the tree this item should be inserted
-          ancestors.forEach(ancestor => {
-            const nextNode = pointer.find(node => node.name === ancestor);
+          ancestors.forEach((ancestor) => {
+            const nextNode = pointer.find((node) => node.name === ancestor);
             if (nextNode === undefined) {
               throw new Error(
                 `Invalid path: ${path.toString()}. Node with name "${ancestor}" not found.`
@@ -432,19 +408,21 @@ export default defineComponent({
           });
           // Convert values from { [timeseriesId]: value } to an array where
           //  the value of each timeseries is augmented with its color
-          const valueArray = Object.keys(values).filter(key => key !== '_baseline').map(timeseriesId => {
-            return {
-              color: getColorFromTimeseriesId(timeseriesId),
-              value: values[timeseriesId]
-            };
-          });
+          const valueArray = Object.keys(values)
+            .filter((key) => key !== '_baseline')
+            .map((timeseriesId) => {
+              return {
+                color: getColorFromTimeseriesId(timeseriesId),
+                value: values[timeseriesId],
+              };
+            });
           // Create stateful node and insert it into its place in the tree
           pointer.push({
             name,
             bars: valueArray,
             path,
             isExpanded: false,
-            children: []
+            children: [],
           });
         });
       });
@@ -464,7 +442,7 @@ export default defineComponent({
         if (isStatefulDataNode(metadataNode)) {
           metadataNode.isExpanded = depthLevel < aggregationLevel.value;
         }
-        metadataNode.children.forEach(child => {
+        metadataNode.children.forEach((child) => {
           computeExpanded(child, depthLevel + 1);
         });
       };
@@ -479,18 +457,17 @@ export default defineComponent({
       levelsUntilSelectedDepth: number
     ) => {
       if (levelsUntilSelectedDepth === 0) {
-        const values = isStatefulDataNode(node) &&
-          (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || shouldShowDeselectedBars.value)
-          ? node.bars.map(bar => bar.value)
-          : [];
+        const values =
+          isStatefulDataNode(node) &&
+          (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) ||
+            shouldShowDeselectedBars.value)
+            ? node.bars.map((bar) => bar.value)
+            : [];
         return _.max(values) ?? 0;
       }
       let maxValue = 0;
-      node.children.forEach(child => {
-        maxValue = Math.max(
-          maxValue,
-          findMaxVisibleBarValue(child, levelsUntilSelectedDepth - 1)
-        );
+      node.children.forEach((child) => {
+        maxValue = Math.max(maxValue, findMaxVisibleBarValue(child, levelsUntilSelectedDepth - 1));
       });
       return maxValue;
     };
@@ -501,18 +478,17 @@ export default defineComponent({
       levelsUntilSelectedDepth: number
     ) => {
       if (levelsUntilSelectedDepth === 0) {
-        const values = isStatefulDataNode(node) &&
-        (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || shouldShowDeselectedBars.value)
-          ? node.bars.map(bar => bar.value)
-          : [];
+        const values =
+          isStatefulDataNode(node) &&
+          (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) ||
+            shouldShowDeselectedBars.value)
+            ? node.bars.map((bar) => bar.value)
+            : [];
         return _.min(values) ?? 0;
       }
       let minValue = 0;
-      node.children.forEach(child => {
-        minValue = Math.min(
-          minValue,
-          findMinVisibleBarValue(child, levelsUntilSelectedDepth - 1)
-        );
+      node.children.forEach((child) => {
+        minValue = Math.min(minValue, findMinVisibleBarValue(child, levelsUntilSelectedDepth - 1));
       });
       return minValue;
     };
@@ -521,20 +497,14 @@ export default defineComponent({
       if (_.isNil(statefulData.value)) return 0;
       // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
       //  the root level.
-      return findMaxVisibleBarValue(
-        statefulData.value,
-        aggregationLevel.value + 1
-      );
+      return findMaxVisibleBarValue(statefulData.value, aggregationLevel.value + 1);
     });
 
     const minVisibleBarValue = computed(() => {
       if (_.isNil(statefulData.value)) return 0;
       // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
       //  the root level.
-      return findMinVisibleBarValue(
-        statefulData.value,
-        aggregationLevel.value + 1
-      );
+      return findMinVisibleBarValue(statefulData.value, aggregationLevel.value + 1);
     });
 
     const possibleRows = computed(() => {
@@ -549,10 +519,10 @@ export default defineComponent({
     });
 
     const rowsWithData = computed(() => {
-      return possibleRows.value.filter(row => row.bars.length);
+      return possibleRows.value.filter((row) => row.bars.length);
     });
     const rowsWithoutData = computed(() => {
-      return possibleRows.value.filter(row => !row.bars.length);
+      return possibleRows.value.filter((row) => !row.bars.length);
     });
     const displayRows = computed(() => {
       return allowCollapsing.value ? rowsWithData.value : possibleRows.value;
@@ -565,8 +535,7 @@ export default defineComponent({
     });
 
     const toggleChecked = (path: string[]) => {
-      const aggregationLevel =
-        orderedAggregationLevelKeys.value[path.length - 1];
+      const aggregationLevel = orderedAggregationLevelKeys.value[path.length - 1];
       const itemId = path.join(REGION_ID_DELIMETER);
       emit('toggle-is-item-selected', aggregationLevel, itemId);
     };
@@ -599,7 +568,7 @@ export default defineComponent({
       setAllChecked,
       SpatialAggregationLevel,
       SORT_OPTIONS,
-      sortValue
+      sortValue,
     };
   },
   methods: {
@@ -628,14 +597,9 @@ export default defineComponent({
     toggleExpanded(path: string[]) {
       if (this.statefulData === null) return;
       // Traverse the tree to find the node in question
-      let currentNode:
-        | RootStatefulDataNode
-        | StatefulDataNode
-        | undefined = this.statefulData;
+      let currentNode: RootStatefulDataNode | StatefulDataNode | undefined = this.statefulData;
       for (const itemName of path) {
-        currentNode = currentNode.children.find(
-          child => child.name === itemName
-        );
+        currentNode = currentNode.children.find((child) => child.name === itemName);
         if (currentNode === undefined) return;
       }
       if (isStatefulDataNode(currentNode)) {
@@ -647,8 +611,8 @@ export default defineComponent({
     },
     requestData() {
       this.$emit('request-data');
-    }
-  }
+    },
+  },
 });
 </script>
 

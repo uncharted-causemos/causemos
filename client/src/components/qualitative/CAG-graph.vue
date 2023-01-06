@@ -1,14 +1,7 @@
 <template>
   <div class="CAG-graph-container">
-    <div
-      ref="container"
-      class="CAG-graph"
-    />
-    <graph-search
-      :nodes="data.nodes"
-      @search="search"
-      @search-candidates="showSearchCandidates"
-    />
+    <div ref="container" class="CAG-graph" />
+    <graph-search :nodes="data.nodes" @search="search" @search-candidates="showSearchCandidates" />
     <new-node-concept-select
       v-if="showNewNode"
       ref="newNode"
@@ -20,7 +13,6 @@
       @save-custom-concept="saveCustomConcept"
     />
   </div>
-
 </template>
 
 <script lang="ts">
@@ -44,18 +36,13 @@ import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
-import {
-  EdgeDirection,
-  TimeScale,
-  LoadStatus,
-  EdgeSuggestionType
-} from '@/types/Enums';
+import { EdgeDirection, TimeScale, LoadStatus, EdgeSuggestionType } from '@/types/Enums';
 import {
   calculateNewNodesAndEdges,
   EdgeSuggestion,
   extractEdgesFromStatements,
   getEdgesFromConcepts,
-  sortSuggestionsByEvidenceCount
+  sortSuggestionsByEvidenceCount,
 } from '@/utils/relationship-suggestion-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import filtersUtil from '@/utils/filters-util';
@@ -68,36 +55,45 @@ export default defineComponent({
   name: 'CAGGraph',
   components: {
     NewNodeConceptSelect,
-    GraphSearch
+    GraphSearch,
   },
   props: {
     data: {
       type: Object as PropType<CAGGraph>,
-      default: () => ({ })
+      default: () => ({}),
     },
     showNewNode: {
       type: Boolean,
-      default: false
+      default: false,
     },
     selectedTimeScale: {
       type: String as PropType<TimeScale>,
-      required: true
+      required: true,
     },
     visualState: {
       type: Object as PropType<CAGVisualState>,
       default: () => ({
         focus: { nodes: [], edges: [] },
-        outline: { nodes: [], edges: [] }
-      })
-    }
+        outline: { nodes: [], edges: [] },
+      }),
+    },
   },
   emits: [
-    'edge-click', 'node-click', 'background-click', 'background-dbl-click',
+    'edge-click',
+    'node-click',
+    'background-click',
+    'background-dbl-click',
 
     // Custom
-    'refresh', 'new-edge', 'delete', 'rename-node', 'merge-nodes',
-    'suggestion-selected', 'suggestion-duplicated', 'datacube-selected',
-    'add-to-CAG'
+    'refresh',
+    'new-edge',
+    'delete',
+    'rename-node',
+    'merge-nodes',
+    'suggestion-selected',
+    'suggestion-duplicated',
+    'datacube-selected',
+    'add-to-CAG',
   ],
   setup(props) {
     const store = useStore();
@@ -114,7 +110,7 @@ export default defineComponent({
     const currentCAG = computed(() => store.getters['app/currentCAG']);
 
     const conceptsInCag = computed(() => {
-      return props.data.nodes.map(node => node.concept);
+      return props.data.nodes.map((node) => node.concept);
     });
 
     // The node for which we're fetching/storing suggestions, as well as a
@@ -158,7 +154,7 @@ export default defineComponent({
       project,
       currentCAG,
       selectedNode,
-      conceptsInCag
+      conceptsInCag,
     };
   },
   watch: {
@@ -167,7 +163,7 @@ export default defineComponent({
     },
     visualState() {
       this.applyVisualState();
-    }
+    },
   },
   mounted() {
     const containerEl = this.$refs.container;
@@ -178,7 +174,7 @@ export default defineComponent({
       useStableZoomPan: true,
       runLayout: (graphData: IGraph<NodeParameter, EdgeParameter>) => {
         return runELKLayout(graphData, { width: 130, height: 30 });
-      }
+      },
     });
     this.renderer.setLabelFormatter(this.ontologyFormatter);
     this.mouseTrap.bind(['backspace', 'del'], () => {
@@ -191,29 +187,41 @@ export default defineComponent({
     let mergeTargetNode: D3SelectionINode<NodeParameter> | null = null;
 
     // Native messages
-    this.renderer.on('node-click', (_evtName, _event: PointerEvent, nodeSelection, renderer: QualitativeRenderer) => {
-      this.exitSuggestionMode();
+    this.renderer.on(
+      'node-click',
+      (_evtName, _event: PointerEvent, nodeSelection, renderer: QualitativeRenderer) => {
+        this.exitSuggestionMode();
 
-      const neighborhood = calculateNeighborhood(this.data as any, nodeSelection.datum().data.concept);
-      renderer.resetAnnotations();
-      renderer.neighborhoodAnnotation(neighborhood);
-      renderer.selectNode(nodeSelection, '');
+        const neighborhood = calculateNeighborhood(
+          this.data as any,
+          nodeSelection.datum().data.concept
+        );
+        renderer.resetAnnotations();
+        renderer.neighborhoodAnnotation(neighborhood);
+        renderer.selectNode(nodeSelection, '');
 
-      this.selectedNode = nodeSelection.datum().data.concept;
-      this.$emit('node-click', nodeSelection.datum().data);
-    });
-    this.renderer.on('edge-click', (_evtName, event: PointerEvent, edgeSelection, renderer: QualitativeRenderer) => {
-      this.exitSuggestionMode();
-      const source = edgeSelection.datum().data.source;
-      const target = edgeSelection.datum().data.target;
-      const neighborhood = { nodes: [{ concept: source }, { concept: target }], edges: [{ source, target }] };
+        this.selectedNode = nodeSelection.datum().data.concept;
+        this.$emit('node-click', nodeSelection.datum().data);
+      }
+    );
+    this.renderer.on(
+      'edge-click',
+      (_evtName, event: PointerEvent, edgeSelection, renderer: QualitativeRenderer) => {
+        this.exitSuggestionMode();
+        const source = edgeSelection.datum().data.source;
+        const target = edgeSelection.datum().data.target;
+        const neighborhood = {
+          nodes: [{ concept: source }, { concept: target }],
+          edges: [{ source, target }],
+        };
 
-      renderer.resetAnnotations();
-      renderer.neighborhoodAnnotation(neighborhood);
-      renderer.selectEdge(edgeSelection);
+        renderer.resetAnnotations();
+        renderer.neighborhoodAnnotation(neighborhood);
+        renderer.selectEdge(edgeSelection);
 
-      this.$emit('edge-click', edgeSelection.datum().data);
-    });
+        this.$emit('edge-click', edgeSelection.datum().data);
+      }
+    );
 
     this.renderer.on('background-click', () => {
       rendererRef.resetAnnotations();
@@ -221,58 +229,76 @@ export default defineComponent({
       this.$emit('background-click');
     });
 
-    this.renderer.on('background-dbl-click', (_evtName, event: PointerEvent, _svgSelection, _renderer: QualitativeRenderer, coord: { x: number; y: number }) => {
-      this.newNodeX = event.offsetX;
-      this.newNodeY = event.offsetY;
-      this.svgX = coord.x;
-      this.svgY = coord.y;
-      this.$emit('background-dbl-click');
-    });
-
-    this.renderer.on('node-drag-move', (_evtName, _event, nodeSelection: D3SelectionINode<NodeParameter>, renderer: QualitativeRenderer) => {
-      const nodeUI = nodeSelection.select('.node-ui');
-      const rect = nodeUI.select('.node-container');
-      const nodeUIRect = rect.node();
-      mergeTargetNode = null;
-
-      const others = renderer.chart.selectAll('.node-ui')
-        .filter((d: any) => {
-          return !d.nodes || d.nodes.length === 0;
-        })
-        .filter((d: any) => d.id !== nodeUI.datum().id);
-
-      others.selectAll('rect')
-        .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
-        .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
-
-      nodeUI.selectAll('rect')
-        .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
-        .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
-
-
-      others.each(function () {
-        const otherNodeUI = d3.select(this);
-        const otherRect = otherNodeUI.select('.node-container');
-        const otherNodeUIRect = otherRect.node();
-
-        if (overlap(otherNodeUIRect as HTMLElement, nodeUIRect as HTMLElement, 0.5)) {
-          mergeTargetNode = otherNodeUI as D3SelectionINode<NodeParameter>;
-          otherRect
-            .style('stroke', mergeNodeColor)
-            .style('stroke-width', 6);
-          rect
-            .style('stroke', mergeNodeColor)
-            .style('stroke-width', 6);
-        }
-      });
-    });
-
-    this.renderer.on('node-drag-end', (_evtName, _event, nodeSelection: D3SelectionINode<NodeParameter>) => {
-      if (mergeTargetNode !== null) {
-        this.$emit('merge-nodes', nodeSelection.datum().data, mergeTargetNode.datum().data);
-        mergeTargetNode = null;
+    this.renderer.on(
+      'background-dbl-click',
+      (
+        _evtName,
+        event: PointerEvent,
+        _svgSelection,
+        _renderer: QualitativeRenderer,
+        coord: { x: number; y: number }
+      ) => {
+        this.newNodeX = event.offsetX;
+        this.newNodeY = event.offsetY;
+        this.svgX = coord.x;
+        this.svgY = coord.y;
+        this.$emit('background-dbl-click');
       }
-    });
+    );
+
+    this.renderer.on(
+      'node-drag-move',
+      (
+        _evtName,
+        _event,
+        nodeSelection: D3SelectionINode<NodeParameter>,
+        renderer: QualitativeRenderer
+      ) => {
+        const nodeUI = nodeSelection.select('.node-ui');
+        const rect = nodeUI.select('.node-container');
+        const nodeUIRect = rect.node();
+        mergeTargetNode = null;
+
+        const others = renderer.chart
+          .selectAll('.node-ui')
+          .filter((d: any) => {
+            return !d.nodes || d.nodes.length === 0;
+          })
+          .filter((d: any) => d.id !== nodeUI.datum().id);
+
+        others
+          .selectAll('rect')
+          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
+          .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
+
+        nodeUI
+          .selectAll('rect')
+          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
+          .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
+
+        others.each(function () {
+          const otherNodeUI = d3.select(this);
+          const otherRect = otherNodeUI.select('.node-container');
+          const otherNodeUIRect = otherRect.node();
+
+          if (overlap(otherNodeUIRect as HTMLElement, nodeUIRect as HTMLElement, 0.5)) {
+            mergeTargetNode = otherNodeUI as D3SelectionINode<NodeParameter>;
+            otherRect.style('stroke', mergeNodeColor).style('stroke-width', 6);
+            rect.style('stroke', mergeNodeColor).style('stroke-width', 6);
+          }
+        });
+      }
+    );
+
+    this.renderer.on(
+      'node-drag-end',
+      (_evtName, _event, nodeSelection: D3SelectionINode<NodeParameter>) => {
+        if (mergeTargetNode !== null) {
+          this.$emit('merge-nodes', nodeSelection.datum().data, mergeTargetNode.datum().data);
+          mergeTargetNode = null;
+        }
+      }
+    );
 
     // Custom messages
     this.renderer.on('new-edge', (_evtName, payload: any) => {
@@ -293,16 +319,20 @@ export default defineComponent({
 
       // 1. Find out the extra edges we can add
       const nodesToCheck = nodes
-        .filter(node => node.components)
-        .filter(node => {
-          return !_.some(edges, edge => edge.source === sourceNode.concept && edge.target === node.concept);
+        .filter((node) => node.components)
+        .filter((node) => {
+          return !_.some(
+            edges,
+            (edge) => edge.source === sourceNode.concept && edge.target === node.concept
+          );
         });
-      const componentsInGraph = _.uniq(_.flatten(nodesToCheck.map(node => node.components)));
+      const componentsInGraph = _.uniq(_.flatten(nodesToCheck.map((node) => node.components)));
 
       const filters = {
         clauses: [
           { field: 'subjConcept', values: sourceNode.components, isNot: false, operand: 'or' },
-          { field: 'objConcept', values: componentsInGraph, isNot: false, operand: 'or' }]
+          { field: 'objConcept', values: componentsInGraph, isNot: false, operand: 'or' },
+        ],
       };
       const projectGraph = await projectService.getProjectGraph(this.project, filters as any);
 
@@ -311,12 +341,12 @@ export default defineComponent({
       if (!foregroundLayer) return;
       const resultEdges = projectGraph.edges;
       resultEdges.forEach((edge: any) => {
-        const nodes = nodesToCheck.filter(n => n.components.includes(edge.target));
-        nodes.forEach(nodeData => {
-          const targetNode = this.renderer?.graph.nodes.find(n => n.id === nodeData.id);
+        const nodes = nodesToCheck.filter((n) => n.components.includes(edge.target));
+        nodes.forEach((nodeData) => {
+          const targetNode = this.renderer?.graph.nodes.find((n) => n.id === nodeData.id);
           if (!targetNode) return;
           const pointerX = targetNode.x;
-          const pointerY = targetNode.y + (targetNode.height * 0.5);
+          const pointerY = targetNode.y + targetNode.height * 0.5;
           foregroundLayer
             .append('svg:path')
             .attr('d', svgUtil.ARROW)
@@ -380,97 +410,91 @@ export default defineComponent({
       }
     );
 
-    this.renderer.on(
-      'toggle-suggestion-selected',
-      (eventName: any, suggestion: EdgeSuggestion) => {
-        const withoutSuggestion = this.selectedEdgeSuggestions.filter(
-          selectedSuggestion => selectedSuggestion !== suggestion
-        );
-        if (withoutSuggestion.length === this.selectedEdgeSuggestions.length) {
-          // Not previously selected, so add it
-          this.selectedEdgeSuggestions = [...withoutSuggestion, suggestion];
-        } else {
-          // Was already selected, so remove it from selected suggestions
-          this.selectedEdgeSuggestions = withoutSuggestion;
-        }
-        // Edge case: if user searches results and selects one before
-        //  `allEdgeSuggestions` is populated, UI won't update. I think this is
-        //  safe to ignore.
-        if (
-          this.allEdgeSuggestions.node === null ||
-          this.allEdgeSuggestions.suggestions === null
-        ) return;
-        // If searchSuggestions !== null, we're displaying search results
-        const suggestionType = this.searchSuggestions !== null
+    this.renderer.on('toggle-suggestion-selected', (eventName: any, suggestion: EdgeSuggestion) => {
+      const withoutSuggestion = this.selectedEdgeSuggestions.filter(
+        (selectedSuggestion) => selectedSuggestion !== suggestion
+      );
+      if (withoutSuggestion.length === this.selectedEdgeSuggestions.length) {
+        // Not previously selected, so add it
+        this.selectedEdgeSuggestions = [...withoutSuggestion, suggestion];
+      } else {
+        // Was already selected, so remove it from selected suggestions
+        this.selectedEdgeSuggestions = withoutSuggestion;
+      }
+      // Edge case: if user searches results and selects one before
+      //  `allEdgeSuggestions` is populated, UI won't update. I think this is
+      //  safe to ignore.
+      if (this.allEdgeSuggestions.node === null || this.allEdgeSuggestions.suggestions === null)
+        return;
+      // If searchSuggestions !== null, we're displaying search results
+      const suggestionType =
+        this.searchSuggestions !== null
           ? EdgeSuggestionType.ConceptSuggestion
           : EdgeSuggestionType.KBSuggestion;
-        const suggestionsToDisplay = this.searchSuggestions !== null
+      const suggestionsToDisplay =
+        this.searchSuggestions !== null
           ? this.searchSuggestions
           : this.allEdgeSuggestions.suggestions;
-        this.renderer?.setSuggestionData(
-          suggestionsToDisplay,
-          this.selectedEdgeSuggestions,
-          this.allEdgeSuggestions.node,
-          this.allEdgeSuggestions.edgeDirection,
-          LoadStatus.Loaded, // Possible race condition if toggle occurs during load
-          suggestionType
-        );
-      }
-    );
+      this.renderer?.setSuggestionData(
+        suggestionsToDisplay,
+        this.selectedEdgeSuggestions,
+        this.allEdgeSuggestions.node,
+        this.allEdgeSuggestions.edgeDirection,
+        LoadStatus.Loaded, // Possible race condition if toggle occurs during load
+        suggestionType
+      );
+    });
 
-    this.renderer.on(
-      'search-for-concepts',
-      async (eventName: any, userInput: string) => {
-        if (this.allEdgeSuggestions.node === null) return;
-        // Store latest userInput for later use detecting out-of-order results
-        this.searchQuery = userInput;
-        const suggestionNode = this.allEdgeSuggestions.node;
-        if (_.isEmpty(userInput)) {
-          // Cleared search bar
-          this.searchSuggestions = null;
-          if (this.allEdgeSuggestions.suggestions === null) {
-            // Top suggestions are still loading
-            this.renderer?.setSuggestionData(
-              [],
-              this.selectedEdgeSuggestions,
-              this.allEdgeSuggestions.node,
-              this.allEdgeSuggestions.edgeDirection,
-              LoadStatus.Loading,
-              EdgeSuggestionType.KBSuggestion
-            );
-            return;
-          }
-          // Show top suggestions from `allEdgeSuggestions`
-          this.renderer?.setSuggestionData(
-            this.allEdgeSuggestions.suggestions,
-            this.selectedEdgeSuggestions,
-            this.allEdgeSuggestions.node,
-            this.allEdgeSuggestions.edgeDirection,
-            LoadStatus.Loaded,
-            EdgeSuggestionType.KBSuggestion
-          );
-        } else {
-          // Show loading indicator
+    this.renderer.on('search-for-concepts', async (eventName: any, userInput: string) => {
+      if (this.allEdgeSuggestions.node === null) return;
+      // Store latest userInput for later use detecting out-of-order results
+      this.searchQuery = userInput;
+      const suggestionNode = this.allEdgeSuggestions.node;
+      if (_.isEmpty(userInput)) {
+        // Cleared search bar
+        this.searchSuggestions = null;
+        if (this.allEdgeSuggestions.suggestions === null) {
+          // Top suggestions are still loading
           this.renderer?.setSuggestionData(
             [],
             this.selectedEdgeSuggestions,
             this.allEdgeSuggestions.node,
             this.allEdgeSuggestions.edgeDirection,
             LoadStatus.Loading,
-            EdgeSuggestionType.ConceptSuggestion
+            EdgeSuggestionType.KBSuggestion
           );
-          // Fetch concepts based on user input
-          this.fetchSearchSuggestions(userInput, suggestionNode, this);
+          return;
         }
+        // Show top suggestions from `allEdgeSuggestions`
+        this.renderer?.setSuggestionData(
+          this.allEdgeSuggestions.suggestions,
+          this.selectedEdgeSuggestions,
+          this.allEdgeSuggestions.node,
+          this.allEdgeSuggestions.edgeDirection,
+          LoadStatus.Loaded,
+          EdgeSuggestionType.KBSuggestion
+        );
+      } else {
+        // Show loading indicator
+        this.renderer?.setSuggestionData(
+          [],
+          this.selectedEdgeSuggestions,
+          this.allEdgeSuggestions.node,
+          this.allEdgeSuggestions.edgeDirection,
+          LoadStatus.Loading,
+          EdgeSuggestionType.ConceptSuggestion
+        );
+        // Fetch concepts based on user input
+        this.fetchSearchSuggestions(userInput, suggestionNode, this);
       }
-    );
+    });
 
     this.renderer.on('add-selected-suggestions', () => {
       const simplifiedSuggestions = this.selectedEdgeSuggestions.map(
         ({ source, target, statements }) => ({
           source,
           target,
-          reference_ids: statements.map(statement => statement.id)
+          reference_ids: statements.map((statement) => statement.id),
         })
       );
       const newSubgraph = calculateNewNodesAndEdges(
@@ -491,7 +515,10 @@ export default defineComponent({
           ? 'objConcept'
           : 'subjConcept';
       filtersUtil.setClause(filters, clauseName, components, 'or', false);
-      this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs', filters: filters as any } });
+      this.$router.push({
+        name: 'kbExplorer',
+        query: { cag: this.currentCAG, view: 'graphs', filters: filters as any },
+      });
     });
 
     this.refresh();
@@ -516,49 +543,46 @@ export default defineComponent({
         renderer.applyVisualState(this.visualState);
       }
     },
-    fetchSearchSuggestions: _.debounce(async (
-      userInput: string,
-      suggestionNode: INode<NodeParameter>,
-      cagGraphThis: any
-    ) => {
-      const conceptSuggestions = await projectService.getConceptSuggestions(
-        cagGraphThis.project,
-        userInput
-      );
-      // Stop if we haven't fetched all edge suggestions yet
-      //  or we're no longer looking at suggestions for suggestionNode
-      //  or if the query has changed
-      // FIXME: Edge case here where search results return before all edge
-      //  suggestions, we currently keep showing loading indicator until user
-      //  changes their query.
-      if (
-        cagGraphThis.allEdgeSuggestions.suggestions === null ||
-        cagGraphThis.allEdgeSuggestions.node !== suggestionNode ||
-        cagGraphThis.searchQuery !== userInput
-      ) {
-        return;
-      }
-      const concepts = conceptSuggestions.map(
-        (suggestion: any) => suggestion.doc.key
-      );
-      // Convert to edge suggestions, assigning each concept to an edge
-      //  suggestion that was fetched earlier if possible
-      cagGraphThis.searchSuggestions = getEdgesFromConcepts(
-        concepts,
-        cagGraphThis.allEdgeSuggestions.suggestions,
-        cagGraphThis.allEdgeSuggestions.node.data.concept,
-        cagGraphThis.allEdgeSuggestions.edgeDirection
-      );
-      // Update the suggestions that are being rendered
-      cagGraphThis.renderer?.setSuggestionData(
-        cagGraphThis.searchSuggestions,
-        cagGraphThis.selectedEdgeSuggestions,
-        cagGraphThis.allEdgeSuggestions.node,
-        cagGraphThis.allEdgeSuggestions.edgeDirection,
-        LoadStatus.Loaded,
-        EdgeSuggestionType.ConceptSuggestion
-      );
-    }, 300),
+    fetchSearchSuggestions: _.debounce(
+      async (userInput: string, suggestionNode: INode<NodeParameter>, cagGraphThis: any) => {
+        const conceptSuggestions = await projectService.getConceptSuggestions(
+          cagGraphThis.project,
+          userInput
+        );
+        // Stop if we haven't fetched all edge suggestions yet
+        //  or we're no longer looking at suggestions for suggestionNode
+        //  or if the query has changed
+        // FIXME: Edge case here where search results return before all edge
+        //  suggestions, we currently keep showing loading indicator until user
+        //  changes their query.
+        if (
+          cagGraphThis.allEdgeSuggestions.suggestions === null ||
+          cagGraphThis.allEdgeSuggestions.node !== suggestionNode ||
+          cagGraphThis.searchQuery !== userInput
+        ) {
+          return;
+        }
+        const concepts = conceptSuggestions.map((suggestion: any) => suggestion.doc.key);
+        // Convert to edge suggestions, assigning each concept to an edge
+        //  suggestion that was fetched earlier if possible
+        cagGraphThis.searchSuggestions = getEdgesFromConcepts(
+          concepts,
+          cagGraphThis.allEdgeSuggestions.suggestions,
+          cagGraphThis.allEdgeSuggestions.node.data.concept,
+          cagGraphThis.allEdgeSuggestions.edgeDirection
+        );
+        // Update the suggestions that are being rendered
+        cagGraphThis.renderer?.setSuggestionData(
+          cagGraphThis.searchSuggestions,
+          cagGraphThis.selectedEdgeSuggestions,
+          cagGraphThis.allEdgeSuggestions.node,
+          cagGraphThis.allEdgeSuggestions.edgeDirection,
+          LoadStatus.Loaded,
+          EdgeSuggestionType.ConceptSuggestion
+        );
+      },
+      300
+    ),
     onSuggestionSelected(suggestion: any) {
       if (this.data.nodes.filter((node: any) => node.concept === suggestion.concept).length > 0) {
         this.$emit('suggestion-duplicated', suggestion);
@@ -567,7 +591,11 @@ export default defineComponent({
       this.$emit('suggestion-selected', suggestion);
     },
     exitSuggestionMode() {
-      this.allEdgeSuggestions = { node: null, edgeDirection: EdgeDirection.Outgoing, suggestions: null };
+      this.allEdgeSuggestions = {
+        node: null,
+        edgeDirection: EdgeDirection.Outgoing,
+        suggestions: null,
+      };
       this.searchSuggestions = null;
       this.searchQuery = '';
       this.selectedEdgeSuggestions = [];
@@ -576,12 +604,17 @@ export default defineComponent({
     onDatacubeSelected(datacubeParam: any) {
       this.$emit('datacube-selected', datacubeParam);
     },
-    saveCustomConcept(value: { theme: string; process: string; theme_property: string; process_property: string }) {
+    saveCustomConcept(value: {
+      theme: string;
+      process: string;
+      theme_property: string;
+      process_property: string;
+    }) {
       this.$emit('suggestion-selected', {
         concept: value.theme,
         shortName: value.theme,
         label: value.theme,
-        hasEvidence: false
+        hasEvidence: false,
       });
     },
     injectNewNode(node: NodeParameter) {
@@ -595,11 +628,13 @@ export default defineComponent({
         width: 130,
         height: 30,
         nodes: [],
-        data: node
+        data: node,
       };
 
       const chart = this.renderer?.chart;
-      const nodeSelection = chart?.select('.nodes-layer').append('g')
+      const nodeSelection = chart
+        ?.select('.nodes-layer')
+        .append('g')
         .classed('node', true)
         .attr('transform', svgUtil.translate(this.svgX, this.svgY))
         .datum(newNodeDatum);
@@ -623,8 +658,8 @@ export default defineComponent({
         this.renderer.hideSearchCandidates();
         this.renderer.showSearchCandidates(candidates);
       }
-    }
-  }
+    },
+  },
 });
 </script>
 

@@ -42,7 +42,8 @@
       />
       <template v-if="showPreRenderedViz">
         <wm-map-image
-          v-for="pregen in preRenderedData" :key="pregen.file"
+          v-for="pregen in preRenderedData"
+          :key="pregen.file"
           :source="pregen.file"
           :source-id="imageSourceId"
           :layer-id="imageLayerId"
@@ -60,13 +61,9 @@
 </template>
 
 <script>
-
 import _ from 'lodash';
 import * as d3 from 'd3';
-import {
-  defineComponent,
-  toRefs
-} from 'vue';
+import { defineComponent, toRefs } from 'vue';
 import { WmMap, WmMapVector, WmMapImage, WmMapPopup, WmMapGeojson } from '@/wm-map';
 import useMapRegionSelection from '@/services/composables/useMapRegionSelection';
 import useMapSyncBounds from '@/services/composables/useMapSyncBounds';
@@ -76,12 +73,9 @@ import {
   createHeatmapLayerStyle,
   createPointsLayerStyle,
   ETHIOPIA_BOUNDING_BOX,
-  STYLE_URL_PREFIX
+  STYLE_URL_PREFIX,
 } from '@/utils/map-util';
-import {
-  convertRawDataToGeoJson,
-  pickQualifiers
-} from '@/utils/outputdata-util';
+import { convertRawDataToGeoJson, pickQualifiers } from '@/utils/outputdata-util';
 import { BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
@@ -97,7 +91,11 @@ const createRangeFilter = ({ min, max }, prop) => {
 const baseLayer = (property, useFeatureState = false, relativeTo) => {
   const caseRelativeToMissing = [];
   const getter = useFeatureState ? 'feature-state' : 'get';
-  relativeTo && caseRelativeToMissing.push(['all', ['==', null, [getter, relativeTo]], ['==', null, [getter, '_baseline']]], 1);
+  relativeTo &&
+    caseRelativeToMissing.push(
+      ['all', ['==', null, [getter, relativeTo]], ['==', null, [getter, '_baseline']]],
+      1
+    );
   if (useFeatureState) {
     return Object.freeze({
       type: 'fill',
@@ -106,12 +104,14 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
         'fill-color': 'grey',
         'fill-opacity': [
           'case',
-          ['==', null, ['feature-state', property]], 0.0,
+          ['==', null, ['feature-state', property]],
+          0.0,
           ...caseRelativeToMissing,
-          ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
-          0.1 // default
-        ]
-      }
+          ['boolean', ['feature-state', 'hover'], false],
+          0.4, // opacity to 0.4 on hover
+          0.1, // default
+        ],
+      },
     });
   } else {
     return Object.freeze({
@@ -122,11 +122,12 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
         'fill-opacity': [
           'case',
           ...caseRelativeToMissing,
-          ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
-          0.1 // default
-        ]
+          ['boolean', ['feature-state', 'hover'], false],
+          0.4, // opacity to 0.4 on hover
+          0.1, // default
+        ],
       },
-      filter: ['all', ['has', property], ['!=', 'NaN', ['to-string', ['get', property]]]]
+      filter: ['all', ['has', property], ['!=', 'NaN', ['to-string', ['get', property]]]],
     });
   }
 };
@@ -138,7 +139,7 @@ export default defineComponent({
     WmMapVector,
     WmMapImage,
     WmMapPopup,
-    WmMapGeojson
+    WmMapGeojson,
   },
   emits: [
     'on-map-load',
@@ -146,80 +147,86 @@ export default defineComponent({
     'slide-handle-change',
     'sync-bounds',
     'zoom-change',
-    'map-update'
+    'map-update',
   ],
   props: {
     // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
     outputSourceSpecs: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     outputSelection: {
       type: String,
-      default: null
+      default: null,
     },
     relativeTo: {
       type: String,
-      default: null
+      default: null,
     },
     showTooltip: {
       type: Boolean,
-      default: false
+      default: false,
     },
     showPreRenderedViz: {
       type: Boolean,
-      default: true
+      default: true,
     },
     selectedLayerId: {
       type: String,
-      default: SOURCE_LAYERS[0].layerId
+      default: SOURCE_LAYERS[0].layerId,
     },
     filters: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     mapBounds: {
       type: [Array, Object],
-      default: () => [ // Default bounds to Ethiopia
+      default: () => [
+        // Default bounds to Ethiopia
         [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
-      ]
+        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
+      ],
     },
     regionData: {
       type: Object,
-      default: () => undefined
+      default: () => undefined,
     },
     rawData: {
       type: Object,
-      default: () => ([])
+      default: () => [],
     },
     selectedRegions: {
       type: Object,
-      default: () => ({ country: new Set(), admin1: new Set(), admin2: new Set(), admin3: new Set() })
+      default: () => ({
+        country: new Set(),
+        admin1: new Set(),
+        admin2: new Set(),
+        admin3: new Set(),
+      }),
     },
     adminLayerStats: {
       type: Object,
-      default: () => undefined
+      default: () => undefined,
     },
     gridLayerStats: {
       type: Object,
-      default: () => undefined
+      default: () => undefined,
     },
     pointsLayerStats: {
       type: Object,
-      default: () => undefined
+      default: () => undefined,
     },
     selectedBaseLayer: {
       type: String,
-      required: true
+      required: true,
     },
     unit: {
       type: String,
-      default: null
+      default: null,
     },
     showPercentChange: {
       type: Boolean,
-      default: false
+      default: false,
     },
     colorOptions: {
       type: Object,
@@ -227,28 +234,23 @@ export default defineComponent({
         scheme: COLOR_SCHEME.DEFAULT,
         scaleFn: d3.scaleLinear,
         isContinuous: false,
-        opacity: 1
-      })
-    }
+        opacity: 1,
+      }),
+    },
   },
   setup(props, { emit }) {
-    const {
+    const { selectedLayerId, selectedRegions } = toRefs(props);
+
+    const { isRegionSelectionEmpty, isRegionSelected } = useMapRegionSelection(
       selectedLayerId,
       selectedRegions
-    } = toRefs(props);
-
-    const {
-      isRegionSelectionEmpty,
-      isRegionSelected
-    } = useMapRegionSelection(selectedLayerId, selectedRegions);
-    const {
-      syncBounds
-    } = useMapSyncBounds(emit);
+    );
+    const { syncBounds } = useMapSyncBounds(emit);
 
     return {
       isRegionSelectionEmpty,
       isRegionSelected,
-      syncBounds
+      syncBounds,
     };
   },
   data: () => ({
@@ -259,31 +261,31 @@ export default defineComponent({
     hoverId: undefined,
     map: undefined,
     curZoom: 0,
-    extent: undefined
+    extent: undefined,
   }),
   computed: {
     ...mapGetters({
-      tour: 'tour/tour'
+      tour: 'tour/tour',
     }),
     mapFixedOptions() {
       const options = {
         minZoom: 1,
-        ...BASE_MAP_OPTIONS
+        ...BASE_MAP_OPTIONS,
       };
       options.style = this.selectedBaseLayerEndpoint;
       options.mapStyle = this.selectedBaseLayerEndpoint;
       return options;
     },
     selection() {
-      return this.outputSourceSpecs.find(spec => spec.id === this.outputSelection);
+      return this.outputSourceSpecs.find((spec) => spec.id === this.outputSelection);
     },
     baselineSpec() {
       return _.isNil(this.relativeTo) || this.relativeTo === this.outputSelection
         ? undefined
-        : this.outputSourceSpecs.find(spec => spec.id === this.relativeTo);
+        : this.outputSourceSpecs.find((spec) => spec.id === this.relativeTo);
     },
     selectedLayerIndex() {
-      return SOURCE_LAYERS.findIndex(l => l.layerId === this.selectedLayerId);
+      return SOURCE_LAYERS.findIndex((l) => l.layerId === this.selectedLayerId);
     },
     selectedLayer() {
       return SOURCE_LAYERS[this.selectedLayerIndex];
@@ -295,7 +297,12 @@ export default defineComponent({
       return { [`${this.selectedLayer.layerId}`]: 'id' };
     },
     isAdminMap() {
-      return [SOURCE_LAYER.COUNTRY, SOURCE_LAYER.ADMIN1, SOURCE_LAYER.ADMIN2, SOURCE_LAYER.ADMIN3].includes(this.sourceLayer);
+      return [
+        SOURCE_LAYER.COUNTRY,
+        SOURCE_LAYER.ADMIN1,
+        SOURCE_LAYER.ADMIN2,
+        SOURCE_LAYER.ADMIN3,
+      ].includes(this.sourceLayer);
     },
     isGridMap() {
       return this.sourceLayer === SOURCE_LAYER.GRID;
@@ -317,20 +324,21 @@ export default defineComponent({
     vectorSource() {
       if (this.isPointsMap) return;
       if (this.isGridMap) {
-        const outputSpecs = this.outputSourceSpecs
-          .map(spec => {
-            return {
-              modelId: spec.modelId,
-              runId: spec.runId,
-              feature: spec.outputVariable,
-              timestamp: spec.timestamp,
-              valueProp: spec.id,
-              resolution: spec.temporalResolution,
-              temporalAgg: spec.temporalAggregation,
-              spatialAgg: spec.spatialAggregation
-            };
-          });
-        return `${window.location.protocol}/${window.location.host}/${this.selectedLayer.sourceBaseUrl}?specs=${encodeURI(JSON.stringify(outputSpecs))}`;
+        const outputSpecs = this.outputSourceSpecs.map((spec) => {
+          return {
+            modelId: spec.modelId,
+            runId: spec.runId,
+            feature: spec.outputVariable,
+            timestamp: spec.timestamp,
+            valueProp: spec.id,
+            resolution: spec.temporalResolution,
+            temporalAgg: spec.temporalAggregation,
+            spatialAgg: spec.spatialAggregation,
+          };
+        });
+        return `${window.location.protocol}/${window.location.host}/${
+          this.selectedLayer.sourceBaseUrl
+        }?specs=${encodeURI(JSON.stringify(outputSpecs))}`;
       } else {
         return `${window.location.protocol}/${window.location.host}/${this.selectedLayer.sourceBaseUrl}`;
       }
@@ -338,29 +346,32 @@ export default defineComponent({
     heatMapColorOptions() {
       const options = { ...this.colorOptions };
       if (!_.isNil(this.relativeTo)) {
-        options.scheme = this.relativeTo === this.outputSelection ? this.colorOptions.relativeToSchemes[0] : this.colorOptions.relativeToSchemes[1];
+        options.scheme =
+          this.relativeTo === this.outputSelection
+            ? this.colorOptions.relativeToSchemes[0]
+            : this.colorOptions.relativeToSchemes[1];
       }
       return options;
     },
     filter() {
-      return this.filters.find(filter => filter.id === this.valueProp);
+      return this.filters.find((filter) => filter.id === this.valueProp);
     },
     isFilterGlobal() {
       return this.filter && this.filter.global;
     },
     preRenderedData() {
       // map supported overlays (received as pre-generated output) must have valid geo-coords
-      return this.selection?.preGeneratedOutput ? this.selection.preGeneratedOutput.filter(p => p.coords !== undefined) : [];
+      return this.selection?.preGeneratedOutput
+        ? this.selection.preGeneratedOutput.filter((p) => p.coords !== undefined)
+        : [];
     },
     firstSymbolLayerId() {
-      return this.selectedBaseLayer === BASE_LAYER.DEFAULT
-        ? 'watername_ocean'
-        : undefined;
+      return this.selectedBaseLayer === BASE_LAYER.DEFAULT ? 'watername_ocean' : undefined;
     },
     rawGeoJson() {
       const data = convertRawDataToGeoJson(this.rawData);
       return data;
-    }
+    },
   },
   watch: {
     filters() {
@@ -393,7 +404,7 @@ export default defineComponent({
     },
     showPercentChange() {
       this.debouncedRefresh();
-    }
+    },
   },
   created() {
     this.vectorSourceId = 'maas-vector-source';
@@ -408,7 +419,7 @@ export default defineComponent({
     this.imageSourceId = 'maas-image-source';
     this.imageLayerId = 'image-layer';
 
-    this.debouncedRefresh = _.debounce(function() {
+    this.debouncedRefresh = _.debounce(function () {
       this.refresh();
     }, 50);
 
@@ -427,7 +438,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      enableNextStep: 'tour/enableNextStep'
+      enableNextStep: 'tour/enableNextStep',
     }),
     refresh() {
       if (!this.map || !this.selection) return;
@@ -439,7 +450,7 @@ export default defineComponent({
       this.$emit('map-update', {
         outputSpecId: this.outputSelection,
         map: this.map,
-        component: this
+        component: this,
       });
     },
     getExtent() {
@@ -495,9 +506,21 @@ export default defineComponent({
       const { min, max } = this.extent;
       const relativeToProp = this.baselineSpec?.id;
       if (this.isPointsMap) {
-        this.pointsColorLayer = createPointsLayerStyle(this.valueProp, [min, max], this.colorOptions);
+        this.pointsColorLayer = createPointsLayerStyle(
+          this.valueProp,
+          [min, max],
+          this.colorOptions
+        );
       } else {
-        this.vectorColorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.heatMapColorOptions, useFeatureState, relativeToProp, this.showPercentChange);
+        this.vectorColorLayer = createHeatmapLayerStyle(
+          this.valueProp,
+          [min, max],
+          { min, max },
+          this.heatMapColorOptions,
+          useFeatureState,
+          relativeToProp,
+          this.showPercentChange
+        );
       }
     },
     setFeatureStates() {
@@ -507,7 +530,7 @@ export default defineComponent({
         // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
         this.map.removeFeatureState({
           source: this.vectorSourceId,
-          sourceLayer: this.sourceLayer
+          sourceLayer: this.sourceLayer,
         });
       } catch {
         // remove feature state throws error when source isn't loaded yet. Then exit.
@@ -519,18 +542,23 @@ export default defineComponent({
       // { id: 'Ethiopia', state: {a: 1, b:4, c:3 } where we don't want 'a' and 'c'
       // To work around above issue, explitly set undefined to each output value by default since removeFeatureState doesn't seem very reliable.
       const featureStateBase = { _baseline: undefined };
-      this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = undefined; });
+      this.outputSourceSpecs.forEach((spec) => {
+        featureStateBase[spec.id] = undefined;
+      });
 
-      this.regionData[this.selectedAdminLevel].forEach(row => {
-        this.map.setFeatureState({
-          id: row.id,
-          source: this.vectorSourceId,
-          sourceLayer: this.sourceLayer
-        }, {
-          ...featureStateBase,
-          ...row.values,
-          _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(row.id)
-        });
+      this.regionData[this.selectedAdminLevel].forEach((row) => {
+        this.map.setFeatureState(
+          {
+            id: row.id,
+            source: this.vectorSourceId,
+            sourceLayer: this.sourceLayer,
+          },
+          {
+            ...featureStateBase,
+            ...row.values,
+            _isHidden: this.isRegionSelectionEmpty ? false : !this.isRegionSelected(row.id),
+          }
+        );
       });
     },
     onAddLayer() {
@@ -552,7 +580,7 @@ export default defineComponent({
           outputSpecId: this.outputSelection,
           map: this.map,
           component: this,
-          zoom: this.curZoom
+          zoom: this.curZoom,
         });
       }
     },
@@ -608,21 +636,27 @@ export default defineComponent({
     },
     _unsetHover(map) {
       if (!this.hoverId) return;
-      map.removeFeatureState({ source: this.vectorSourceId, id: this.hoverId, sourceLayer: this.sourceLayer }, 'hover');
+      map.removeFeatureState(
+        { source: this.vectorSourceId, id: this.hoverId, sourceLayer: this.sourceLayer },
+        'hover'
+      );
       this.hoverId = undefined;
     },
     onMouseMove(event) {
       const { map, mapboxEvent } = event;
 
-      if (!this.showTooltip ||
+      if (
+        !this.showTooltip ||
         _.isNil(map.getLayer(this.baseLayerId)) ||
-        _.isNil(map.getLayer(this.colorLayerId))) return;
+        _.isNil(map.getLayer(this.colorLayerId))
+      )
+        return;
 
       this._unsetHover(map);
 
       const supportedLayers = [this.baseLayerId, this.colorLayerId];
       const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: supportedLayers });
-      features.forEach(feature => {
+      features.forEach((feature) => {
         this._setLayerHover(map, feature);
       });
     },
@@ -647,28 +681,36 @@ export default defineComponent({
     popupValueFormatter(feature) {
       const prop = this.isAdminMap ? feature?.state : feature?.properties;
       if (_.isNil(prop && prop[this.valueProp])) return null;
-      const format = v => this.numberFormatter(v);
+      const format = (v) => this.numberFormatter(v);
       const value = prop[this.valueProp];
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
-        const baselineValue = _.isFinite(prop[this.baselineSpec.id]) ? prop[this.baselineSpec.id] : prop._baseline;
+        const baselineValue = _.isFinite(prop[this.baselineSpec.id])
+          ? prop[this.baselineSpec.id]
+          : prop._baseline;
         const diff = calculateDiff(baselineValue, prop[this.valueProp], this.showPercentChange);
-        const diffString = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}${this.showPercentChange ? '%' : ' ' + this.unit}`;
-        const text = _.isNaN(diff) ? 'Diff: Baseline has no data or is zero for this area' : 'Diff: ' + diffString;
+        const diffString = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}${
+          this.showPercentChange ? '%' : ' ' + this.unit
+        }`;
+        const text = _.isNaN(diff)
+          ? 'Diff: Baseline has no data or is zero for this area'
+          : 'Diff: ' + diffString;
         rows.push(text);
       }
       if (this.isAdminMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
       if (this.isPointsMap) {
-        rows.push('Region: ' + [prop.country, prop.admin1, prop.admin2, prop.admin3].filter(v => !!v).join('/'));
+        rows.push(
+          'Region: ' +
+            [prop.country, prop.admin1, prop.admin2, prop.admin3].filter((v) => !!v).join('/')
+        );
         // Add qualifiers
-        Object.entries(pickQualifiers(prop))
-          .forEach(([key, val]) => {
-            rows.push(`${capitalize(key)}: ${val}`);
-          });
+        Object.entries(pickQualifiers(prop)).forEach(([key, val]) => {
+          rows.push(`${capitalize(key)}: ${val}`);
+        });
       }
-      return rows.filter(field => !_.isNil(field)).join('<br />');
-    }
-  }
+      return rows.filter((field) => !_.isNil(field)).join('<br />');
+    },
+  },
 });
 </script>
 

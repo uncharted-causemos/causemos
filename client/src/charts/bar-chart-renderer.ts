@@ -42,8 +42,8 @@ function renderBarChart(
   //
   // create scales
   //
-  const allBars = barsData.map(bar => bar.name);
-  const allBarsValues = barsData.map(bar => bar.value);
+  const allBars = barsData.map((bar) => bar.name);
+  const allBarsValues = barsData.map((bar) => bar.value);
   const minBarValue = _.min(allBarsValues) ?? 0;
   const xExtent = allBars;
   // ensure that axis starts at 0 if necessary
@@ -52,7 +52,8 @@ function renderBarChart(
     console.error('Unable to derive extent from data', barsData);
     return;
   }
-  const xScale = d3.scaleBand()
+  const xScale = d3
+    .scaleBand()
     .domain(xExtent)
     .range([Y_AXIS_WIDTH, width - PADDING_RIGHT])
     .padding(BAR_GAP);
@@ -78,16 +79,25 @@ function renderBarChart(
   //
   // render bars
   //
-  groupElement.selectAll<SVGSVGElement, BarData>('.bar')
+  groupElement
+    .selectAll<SVGSVGElement, BarData>('.bar')
     .data(barsData)
-    .enter().append('rect')
+    .enter()
+    .append('rect')
     .attr('class', 'bar')
-    .attr('x', function(d) { return xScale(d.name) ?? 0; })
-    .attr('y', function(d) { return yScale(d.value); })
+    .attr('x', function (d) {
+      return xScale(d.name) ?? 0;
+    })
+    .attr('y', function (d) {
+      return yScale(d.value);
+    })
     .attr('width', xScale.bandwidth())
-    .attr('height', function(d) { return height - yScale(d.value) - X_AXIS_HEIGHT; })
-    .style('fill', function(d) { return d.color ?? 'grey'; })
-  ;
+    .attr('height', function (d) {
+      return height - yScale(d.value) - X_AXIS_HEIGHT;
+    })
+    .style('fill', function (d) {
+      return d.color ?? 'grey';
+    });
 
   renderHoverTooltips(
     barsData,
@@ -97,7 +107,8 @@ function renderBarChart(
     valueFormatter,
     width,
     height,
-    onHover);
+    onHover
+  );
 
   // apply initial hover, if any
   lastSelectedBar = initialHoverId; // set this in order to not cancel the intial selection on hover
@@ -122,33 +133,29 @@ function renderHoverTooltips(
   const maxX = xScale(barsData[barsData.length - 1].name) ?? 0;
   const minX = xScale(barsData[0].name) ?? 0;
   const hitboxWidth = SELECTED_BAR_WIDTH;
-  const markerHeight = (height - PADDING_TOP - X_AXIS_HEIGHT);
-  const tooltipRectHeight = (TOOLTIP_LINE_HEIGHT * 2) + PADDING_TOP * 2;
-  barsData.forEach(bar => {
+  const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
+  const tooltipRectHeight = TOOLTIP_LINE_HEIGHT * 2 + PADDING_TOP * 2;
+  barsData.forEach((bar) => {
     const barX = xScale(bar.name) ?? 0;
     let barY = yScale(bar.value) ?? 0;
     // ensure that tooltip rect is always within the chart area
-    if ((barY + tooltipRectHeight) > markerHeight) {
+    if (barY + tooltipRectHeight > markerHeight) {
       barY -= tooltipRectHeight;
     }
-    const isRightOfCenter = barX > ((maxX - minX) / 2);
+    const isRightOfCenter = barX > (maxX - minX) / 2;
 
     const maxNameLen = 80; // max number of chars before truncating the text of each bar name
-    const barName = bar.label.length > maxNameLen ? bar.label.substring(0, maxNameLen) + '...' : bar.label;
+    const barName =
+      bar.label.length > maxNameLen ? bar.label.substring(0, maxNameLen) + '...' : bar.label;
     const adaptiveWidth = Math.max(MIN_TOOLTIP_WIDTH, TOOLTIP_FONT_SIZE * barName.length);
-
 
     const markerAndTooltip = selection
       .append('g')
-      .attr(
-        'transform',
-        translate(barX, PADDING_TOP)
-      )
+      .attr('transform', translate(barX, PADDING_TOP))
       .attr('visibility', 'hidden')
       .classed('markerAndTooltip', true)
       .style('pointer-events', 'none')
-      .attr('id', safeD3StringId(bar.label)) // assign id to control hover state externally
-    ;
+      .attr('id', safeD3StringId(bar.label)); // assign id to control hover state externally
     //
     // draw rectangle highlight on top of the hovered bar
     //
@@ -166,18 +173,17 @@ function renderHoverTooltips(
     if (isRightOfCenter) {
       tooltipX = -offset - adaptiveWidth;
       // ensure that tooltip does not go before chart left bound
-      if ((tooltipX + barX) < 0) {
+      if (tooltipX + barX < 0) {
         tooltipX += Math.abs(tooltipX + barX);
       }
     } else {
       tooltipX = offset + SELECTED_BAR_WIDTH;
       // ensure that tooltip does not go before chart right bound
-      if ((tooltipX + adaptiveWidth) > width) {
+      if (tooltipX + adaptiveWidth > width) {
         tooltipX = width - adaptiveWidth;
       }
     }
-    const tooltip = markerAndTooltip.append('g')
-      .attr('transform', translate(tooltipX, 0));
+    const tooltip = markerAndTooltip.append('g').attr('transform', translate(tooltipX, 0));
     //
     // draw the tooltip rectangle
     //
@@ -197,7 +203,8 @@ function renderHoverTooltips(
       .attr(
         'transform',
         isRightOfCenter
-          ? translate(adaptiveWidth - offset - TOOLTIP_BORDER_WIDTH, tooltipContentY) + 'rotate(-45)'
+          ? translate(adaptiveWidth - offset - TOOLTIP_BORDER_WIDTH, tooltipContentY) +
+              'rotate(-45)'
           : translate(-TOOLTIP_BORDER_WIDTH - offset, tooltipContentY) + 'rotate(-45)'
       )
       .attr('fill', TOOLTIP_BORDER_COLOUR);
@@ -253,27 +260,21 @@ function renderHoverTooltips(
       .append('rect')
       .attr('width', hitboxWidth)
       .attr('height', markerHeight)
-      .attr(
-        'transform',
-        translate(barX, PADDING_TOP)
-      )
+      .attr('transform', translate(barX, PADDING_TOP))
       .attr('fill-opacity', 0)
       .style('cursor', 'pointer')
       // only enable hover if no bar is selected
       .on('mouseenter', () => {
         if (lastSelectedBar === '') {
-          markerAndTooltip
-            .style('opacity', '1')
-            .attr('visibility', 'visible');
+          markerAndTooltip.style('opacity', '1').attr('visibility', 'visible');
         }
       })
       .on('mouseleave', () => {
         if (lastSelectedBar === '') {
-          markerAndTooltip
-            .attr('visibility', 'hidden');
+          markerAndTooltip.attr('visibility', 'hidden');
         }
       })
-      .on('click', function(event: PointerEvent) {
+      .on('click', function (event: PointerEvent) {
         // prevent the parent svg from hiding this bar
         event.stopPropagation();
 
@@ -281,8 +282,7 @@ function renderHoverTooltips(
         lastSelectedBar = bar.label;
 
         onHover(bar.label);
-      })
-    ;
+      });
   });
 }
 
@@ -312,23 +312,21 @@ function renderAxes(
     .tickSize(width - yAxisWidth - paddingRight)
     .tickFormat(valueFormatter)
     // .tickValues(yAxisTicks)
-    .ticks(Y_AXIS_MAX_TICK_COUNT)
-  ;
+    .ticks(Y_AXIS_MAX_TICK_COUNT);
   const renderedXAxis = selection
     .append('g')
     .classed('xAxis', true)
     .style('pointer-events', 'none')
     .call(xAxis)
-    .attr('transform', translate(0, height - xAxisHeight))
-  ;
-
+    .attr('transform', translate(0, height - xAxisHeight));
   // rotate axis ticks if number bars are too many
   // alternatively, should bar label on hover
   if (numBars > MAX_BAR_COUNT_BEFORE_TICK_ROTATION) {
-    renderedXAxis.selectAll('text')
+    renderedXAxis
+      .selectAll('text')
       .style('text-anchor', 'end')
       .attr('dx', '-.8em')
-      .attr('dy', (-40 / numBars) + 'em')
+      .attr('dy', -40 / numBars + 'em')
       .attr('transform', function () {
         return 'rotate(-90)';
       });
@@ -339,8 +337,7 @@ function renderAxes(
     .classed('yAxis', true)
     .style('pointer-events', 'none')
     .call(yAxis)
-    .attr('transform', translate(width - paddingRight, 0))
-  ;
+    .attr('transform', translate(width - paddingRight, 0));
 }
 
 function updateHover(selection: D3Selection, barLabel: string) {
@@ -349,13 +346,11 @@ function updateHover(selection: D3Selection, barLabel: string) {
   // special case: if empty barLabel is provided, then hide all bars
   selection.selectAll('.markerAndTooltip').attr('visibility', 'hidden');
   if (barLabel !== '') {
-    selection.select('#' + safeD3StringId(barLabel))
+    selection
+      .select('#' + safeD3StringId(barLabel))
       .attr('visibility', 'visible')
       .style('opacity', '1');
   }
 }
 
-export {
-  renderBarChart,
-  updateHover
-};
+export { renderBarChart, updateHover };

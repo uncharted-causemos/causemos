@@ -1,40 +1,39 @@
 import _ from 'lodash';
 
 /**
-* Model run object
-* @typedef {Object} Run
-* @property {string} id
-* @property {string} model
-* @property {RunParameters[]} parameters
-**/
+ * Model run object
+ * @typedef {Object} Run
+ * @property {string} id
+ * @property {string} model
+ * @property {RunParameters[]} parameters
+ **/
 
 /**
-* Model run Parameter
-* @typedef {Object} RunParameters
-* @property {string} name
-* @property {string} value
-**/
+ * Model run Parameter
+ * @typedef {Object} RunParameters
+ * @property {string} name
+ * @property {string} value
+ **/
 
 /**
-* Parameter metadata
-* @typedef {Object} Parameter
-* @property {number} default
-* @property {string} description
-* @property {string[]} [choices]
-* @property {number} [maximum]
-* @property {number} [minimum]
-* @property {string} name
-* @property {string} type
-**/
+ * Parameter metadata
+ * @typedef {Object} Parameter
+ * @property {number} default
+ * @property {string} description
+ * @property {string[]} [choices]
+ * @property {number} [maximum]
+ * @property {number} [minimum]
+ * @property {string} name
+ * @property {string} type
+ **/
 
 /**
-* Facet
-* @typedef {Object} Facet
-* @property {number[]} [range] - [min, max]
-* @property {number|string} [value]
-* @property {number} count
-**/
-
+ * Facet
+ * @typedef {Object} Facet
+ * @property {number[]} [range] - [min, max]
+ * @property {number|string} [value]
+ * @property {number} count
+ **/
 
 export const PARAMETER_TYPES = Object.freeze({
   // Legacy parameter types (old maas)
@@ -46,7 +45,7 @@ export const PARAMETER_TYPES = Object.freeze({
   // Int: 'int',
   Float: 'float',
   Date: 'date',
-  String: 'string'
+  String: 'string',
 
   // Datetime: 'datetime',
   // Time: 'time',
@@ -57,7 +56,7 @@ export const PARAMETER_TYPES = Object.freeze({
 export const FACET_TYPES = Object.freeze({
   KEYWORD: 'KEYWORD',
   BAR: 'BAR',
-  HISTOGRAM: 'HISTOGRAM'
+  HISTOGRAM: 'HISTOGRAM',
 });
 const DEFAULT_PARAMETER_FACET_MAPPING = Object.freeze({
   [PARAMETER_TYPES.ChoiceParameter]: FACET_TYPES.KEYWORD,
@@ -67,7 +66,7 @@ const DEFAULT_PARAMETER_FACET_MAPPING = Object.freeze({
   [PARAMETER_TYPES.Str]: FACET_TYPES.KEYWORD,
   [PARAMETER_TYPES.Float]: FACET_TYPES.BAR,
   [PARAMETER_TYPES.Date]: FACET_TYPES.BAR,
-  [PARAMETER_TYPES.String]: FACET_TYPES.BAR
+  [PARAMETER_TYPES.String]: FACET_TYPES.BAR,
 
   // [PARAMETER_TYPES.Int]: FACET_TYPES.BAR, // Dates (year?) are typed as int for some model and it doesn't seem to match with parameter metadata. needs more investigation.
   // [PARAMETER_TYPES.Datetime]: FACET_TYPES.BAR,
@@ -97,7 +96,7 @@ const getSafeValue = (val) => {
   // fall back to string value
   return '' + val;
 };
-const nToLabel = n => Number((n.toFixed(12))).toString();
+const nToLabel = (n) => Number(n.toFixed(12)).toString();
 
 // ParameterFacetsBuilder builds input parameter facets
 export class ParameterFacetsBuilder {
@@ -123,16 +122,22 @@ export class ParameterFacetsBuilder {
     this._originalRuns = [];
     this._runs = [];
     this._facets = {};
-    this._parameterFacetMapping = { ...DEFAULT_PARAMETER_FACET_MAPPING, ...options.paramterFacetMapping };
+    this._parameterFacetMapping = {
+      ...DEFAULT_PARAMETER_FACET_MAPPING,
+      ...options.paramterFacetMapping,
+    };
     this.parameterLookup = {}; // Parameter metadata look up
-    parameters.forEach(parameter => {
-      this.parameterLookup[parameter.name] = { ...parameter, facetType: this._parameterFacetMapping[parameter.type] };
+    parameters.forEach((parameter) => {
+      this.parameterLookup[parameter.name] = {
+        ...parameter,
+        facetType: this._parameterFacetMapping[parameter.type],
+      };
       this._facets[parameter.name] = [];
     });
-    this._runs = this._filterOutInvalidRuns(runs).map(run => {
+    this._runs = this._filterOutInvalidRuns(runs).map((run) => {
       const parameters = {};
       // Create parameters map for easy access by parameter name
-      run.parameters.forEach(param => {
+      run.parameters.forEach((param) => {
         parameters[param.name] = param;
       });
       return { id: run.id, parameters };
@@ -145,8 +150,8 @@ export class ParameterFacetsBuilder {
   _filterOutInvalidRuns(runs) {
     // Hack: Some models have runs with no parameters and output (eg. population_model). Remove those.
     // TODO: Handle invalid data and normalize data in the backend
-    return runs.filter(run => {
-      run.parameters = run.parameters.filter(param => (param.name && param.value !== undefined));
+    return runs.filter((run) => {
+      run.parameters = run.parameters.filter((param) => param.name && param.value !== undefined);
       return run.parameters.length;
     });
   }
@@ -156,7 +161,7 @@ export class ParameterFacetsBuilder {
     // Fix those issues here as a work around.
     // Fix parameter metadata stats
     const parameters = Object.values(this.parameterLookup);
-    parameters.forEach(param => {
+    parameters.forEach((param) => {
       if (param.type === PARAMETER_TYPES.ChoiceParameter) {
         // Find and add missing choice value to the choices set
         const choices = this._runs.reduce((set, run) => {
@@ -168,16 +173,18 @@ export class ParameterFacetsBuilder {
       }
       if (param.type === PARAMETER_TYPES.NumberParameter) {
         // Adjust min and max by finding and including number that is out of given bounds
-        const stats = this._runs.reduce((acc, run) => {
-          const runParam = run.parameters[param.name];
-          const value = runParam ? +runParam.value : 0;
-          return { minimum: Math.min(acc.minimum, value), maximum: Math.max(acc.maximum, value) };
-        }, { minimum: param.minimum, maximum: param.maximum });
+        const stats = this._runs.reduce(
+          (acc, run) => {
+            const runParam = run.parameters[param.name];
+            const value = runParam ? +runParam.value : 0;
+            return { minimum: Math.min(acc.minimum, value), maximum: Math.max(acc.maximum, value) };
+          },
+          { minimum: param.minimum, maximum: param.maximum }
+        );
         Object.assign(param, stats);
       }
     });
   }
-
 
   /**
    * Build facets
@@ -186,7 +193,7 @@ export class ParameterFacetsBuilder {
   build() {
     const parameters = Object.values(this.parameterLookup);
     const facets = {};
-    parameters.forEach(param => {
+    parameters.forEach((param) => {
       switch (param.facetType) {
         case FACET_TYPES.KEYWORD:
           facets[param.name] = this._buildKeywordFacets(param);
@@ -213,19 +220,22 @@ export class ParameterFacetsBuilder {
   // Build keyword facets for string values
   _buildKeywordFacets(parameter) {
     const buckets = {};
-    (parameter.choices || []).forEach(choice => (buckets[choice] = {
-      value: choice,
-      count: 0
-    }));
+    (parameter.choices || []).forEach(
+      (choice) =>
+        (buckets[choice] = {
+          value: choice,
+          count: 0,
+        })
+    );
     // Count and add to buckets
-    this._runs.forEach(run => {
+    this._runs.forEach((run) => {
       const runParam = run.parameters[parameter.name];
       if (!runParam) return;
       // Parameter types other than str doesn't have choices array, so build bucket on the fly
       if (!buckets[runParam.value]) {
         buckets[runParam.value] = {
           value: runParam.value,
-          count: 0
+          count: 0,
         };
       }
       runParam && (buckets[runParam.value].count += 1);
@@ -243,18 +253,16 @@ export class ParameterFacetsBuilder {
       const range = [i * step + min, (i + 1) * step + min];
       buckets[i] = {
         range,
-        count: 0
+        count: 0,
       };
     }
     // Count and add to buckets
-    this._runs.forEach(run => {
+    this._runs.forEach((run) => {
       const runParam = run.parameters[parameter.name];
       if (!runParam) return;
       const value = Number(runParam.value);
       // Max value is included in the last bucket(bin)
-      const bucketIndex = value === max
-        ? NUM_NUMBER_BUCKETS - 1
-        : Math.floor((value - min) / step);
+      const bucketIndex = value === max ? NUM_NUMBER_BUCKETS - 1 : Math.floor((value - min) / step);
       buckets[bucketIndex].count += 1;
     });
 
@@ -265,20 +273,20 @@ export class ParameterFacetsBuilder {
   _buildBarFacets(parameter) {
     const buckets = {};
     // Initialize buckets
-    this._originalRuns.forEach(run => {
+    this._originalRuns.forEach((run) => {
       const runParam = run.parameters[parameter.name];
       if (!runParam) return;
       const value = String(runParam.value);
       buckets[value] = { value, count: 0 };
     });
     // Count and add to buckets
-    this._runs.forEach(run => {
+    this._runs.forEach((run) => {
       const runParam = run.parameters[parameter.name];
       if (!runParam) return;
       const value = String(runParam.value);
       buckets[value].count += 1;
     });
-    return _.sortBy(Object.values(buckets), function(bucket) {
+    return _.sortBy(Object.values(buckets), function (bucket) {
       return getSafeValue(bucket.value);
     });
   }
@@ -292,8 +300,8 @@ export class ParameterFacetsBuilder {
    * @returns {ParameterFacetsBuilder}
    */
   applyFilters(filters = []) {
-    const filteredRuns = this._originalRuns.filter(run => {
-      const matchAll = filters.every(filter => {
+    const filteredRuns = this._originalRuns.filter((run) => {
+      const matchAll = filters.every((filter) => {
         const param = run.parameters[filter.paramName];
         if (!param) return false;
         if (filter.keyword !== undefined) {
@@ -304,10 +312,10 @@ export class ParameterFacetsBuilder {
           const val = getSafeValue(param.value);
           const bound = filter.range.map(getSafeValue);
           const paramData = this.parameterLookup[filter.paramName];
-          const inclusive = paramData.facetType === FACET_TYPES.BAR || Number(paramData.maximum) === filter.range[1];
-          return inclusive
-            ? val >= bound[0] && val <= bound[1]
-            : val >= bound[0] && val < bound[1];
+          const inclusive =
+            paramData.facetType === FACET_TYPES.BAR ||
+            Number(paramData.maximum) === filter.range[1];
+          return inclusive ? val >= bound[0] && val <= bound[1] : val >= bound[0] && val < bound[1];
         }
         return false;
       });
@@ -360,29 +368,38 @@ export class StoriesFacetsBuilder extends ParameterFacetsBuilder {
         });
       }
       if (type === FACET_TYPES.HISTOGRAM) {
-        facetsData = [{
-          histogram: {
-            slices: facets.map(({ range, count }) => {
-              const [label, toLabel] = range.map(nToLabel);
-              return { ...baseFacet, label, toLabel, count, metadata: { range } };
-            })
-          }
-        }];
+        facetsData = [
+          {
+            histogram: {
+              slices: facets.map(({ range, count }) => {
+                const [label, toLabel] = range.map(nToLabel);
+                return { ...baseFacet, label, toLabel, count, metadata: { range } };
+              }),
+            },
+          },
+        ];
       }
       if (type === FACET_TYPES.BAR) {
-        facetsData = [{
-          histogram: {
-            slices: facets.map(({ value, count }) => {
-              const safeVal = getSafeValue(value);
-              return { ...baseFacet, label: value, count, metadata: { range: [safeVal, safeVal] } };
-            })
-          }
-        }];
+        facetsData = [
+          {
+            histogram: {
+              slices: facets.map(({ value, count }) => {
+                const safeVal = getSafeValue(value);
+                return {
+                  ...baseFacet,
+                  label: value,
+                  count,
+                  metadata: { range: [safeVal, safeVal] },
+                };
+              }),
+            },
+          },
+        ];
       }
       return {
         label: groupLabel,
         key: name,
-        facets: facetsData
+        facets: facetsData,
       };
     });
     return groups;
@@ -397,35 +414,42 @@ export class StoriesFacetsBuilder extends ParameterFacetsBuilder {
       if (type === FACET_TYPES.KEYWORD) {
         return {
           key: name,
-          facets: facets.map(facet => ({ value: facet.value, selected: { count: String(facet.count), countLabel: String(facet.count) } }))
+          facets: facets.map((facet) => ({
+            value: facet.value,
+            selected: { count: String(facet.count), countLabel: String(facet.count) },
+          })),
         };
       }
       if (type === FACET_TYPES.HISTOGRAM) {
         return {
           key: name,
-          facets: [{
-            value: name,
-            selection: {
-              slices: facets.reduce((acc, facet) => {
-                acc[nToLabel(facet.range[0])] = facet.count;
-                return acc;
-              }, {})
-            }
-          }]
+          facets: [
+            {
+              value: name,
+              selection: {
+                slices: facets.reduce((acc, facet) => {
+                  acc[nToLabel(facet.range[0])] = facet.count;
+                  return acc;
+                }, {}),
+              },
+            },
+          ],
         };
       }
       if (type === FACET_TYPES.BAR) {
         return {
           key: name,
-          facets: [{
-            value: name,
-            selection: {
-              slices: facets.reduce((acc, facet) => {
-                acc[facet.value] = facet.count;
-                return acc;
-              }, {})
-            }
-          }]
+          facets: [
+            {
+              value: name,
+              selection: {
+                slices: facets.reduce((acc, facet) => {
+                  acc[facet.value] = facet.count;
+                  return acc;
+                }, {}),
+              },
+            },
+          ],
         };
       }
       return {}; // Shouldn't reach

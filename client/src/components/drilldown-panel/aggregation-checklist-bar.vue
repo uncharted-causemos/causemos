@@ -1,54 +1,62 @@
 <template>
-  <div class="aggregation-checklist-bar" :class="{'is-wrapped': isWrapped}" :style="histogramMarginStyle(barValue)">
-    <aggregation-checklist-rectangle v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue >= 0"/>
+  <div
+    class="aggregation-checklist-bar"
+    :class="{ 'is-wrapped': isWrapped }"
+    :style="histogramMarginStyle(barValue)"
+  >
+    <aggregation-checklist-rectangle
+      v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue >= 0"
+    />
     <div
       v-if="isSelectedAggregationLevel"
       class="histogram-bar"
       :class="{ faded: !isChecked }"
-      :style="histogramBarStyle(barValue, barColor)"/>
-    <aggregation-checklist-rectangle v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue < 0"/>
+      :style="histogramBarStyle(barValue, barColor)"
+    />
+    <aggregation-checklist-rectangle
+      v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue < 0"
+    />
   </div>
 </template>
 
 <script lang="ts">
-
 import { defineComponent } from '@vue/runtime-core';
 import AggregationChecklistRectangle from '@/components/drilldown-panel/aggregation-checklist-rectangle.vue';
 
 export default defineComponent({
   name: 'aggregation-checklist-bar',
   components: {
-    AggregationChecklistRectangle
+    AggregationChecklistRectangle,
   },
   props: {
     barColor: {
       type: String,
-      required: true
+      required: true,
     },
     barValue: {
       type: Number,
-      required: true
+      required: true,
     },
     isChecked: {
       type: Boolean,
-      required: true
+      required: true,
     },
     isSelectedAggregationLevel: {
       type: Boolean,
-      required: true
+      required: true,
     },
     maxVisibleBarValue: {
       type: Number,
-      default: 0
+      default: 0,
     },
     minVisibleBarValue: {
       type: Number,
-      default: 0
+      default: 0,
     },
     isWrapped: {
       type: Boolean,
-      required: true
-    }
+      required: true,
+    },
   },
   computed: {
     totalBarLength(): number {
@@ -56,12 +64,12 @@ export default defineComponent({
     },
     maxBarLength(): number {
       return Math.max(this.maxVisibleBarValue, -this.minVisibleBarValue);
-    }
+    },
   },
   methods: {
     calculateWidth(value: number) {
       return this.minVisibleBarValue < 0
-        ? (value / this.maxBarLength) * 100 / 2
+        ? ((value / this.maxBarLength) * 100) / 2
         : (value / this.totalBarLength) * 100;
     },
     histogramMarginStyle(value: number) {
@@ -76,10 +84,9 @@ export default defineComponent({
     histogramBarStyle(value: number, color: string) {
       const percentage = this.calculateWidth(Math.abs(value));
       return { width: `${percentage}%`, background: color };
-    }
-  }
+    },
+  },
 });
-
 </script>
 
 <style lang="scss" scoped>
@@ -108,5 +115,4 @@ $bar-height-half: 2px;
     opacity: 25%;
   }
 }
-
 </style>

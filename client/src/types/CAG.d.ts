@@ -5,13 +5,13 @@ export interface CAGVisualState {
   // Determines whether a subgraph should be faded-in (focused) or faded-out (not focused)
   focus: {
     nodes: { concept: string }[];
-    edges: { source: string; target: string } [];
-  },
+    edges: { source: string; target: string }[];
+  };
   // Determines if a subgraph should be outlined
   outline: {
-    nodes: { concept: string; color?: string } [];
-    edges: { source: string; target: string; color?: string } [];
-  }
+    nodes: { concept: string; color?: string }[];
+    edges: { source: string; target: string; color?: string }[];
+  };
 }
 
 export interface GraphPath {

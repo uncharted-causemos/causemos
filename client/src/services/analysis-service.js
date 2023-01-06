@@ -26,11 +26,15 @@ export const getAnalysisState = async (analysisId) => {
  * @param {object} state analysis state payload
  */
 export const saveAnalysisState = async (analysisId, state) => {
-  const result = await API.put(`analyses/${analysisId}`, { state }, {
-    headers: {
-      'Content-Type': 'application/json'
+  const result = await API.put(
+    `analyses/${analysisId}`,
+    { state },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
     }
-  });
+  );
   return result.data;
 };
 
@@ -41,15 +45,19 @@ export const saveAnalysisState = async (analysisId, state) => {
  * @param {string} [payload.title] Analysis title
  * @param {string} [payload.description] Analysis description
  */
-export const updateAnalysis = async(analysisId, payload) => {
+export const updateAnalysis = async (analysisId, payload) => {
   if (!payload) return console.error(new Error('payload object must be provided'));
   const analysis = await getAnalysis(analysisId);
   if (analysis) {
-    const result = await API.put(`analyses/${analysisId}`, { ...analysis, ...payload }, {
-      headers: {
-        'Content-Type': 'application/json'
+    const result = await API.put(
+      `analyses/${analysisId}`,
+      { ...analysis, ...payload },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
       }
-    });
+    );
     return result.data;
   } else {
     return console.error(new Error('payload object must be provided'));

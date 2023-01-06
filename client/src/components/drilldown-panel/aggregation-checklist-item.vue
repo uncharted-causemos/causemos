@@ -11,7 +11,7 @@
         'fa-circle': checkboxType === 'radio' && itemData.isChecked,
         'fa-circle-o': checkboxType === 'radio' && !itemData.isChecked,
         'fa-check-square-o': checkboxType === 'checkbox' && itemData.isChecked,
-        'fa-square-o': checkboxType === 'checkbox' && !itemData.isChecked
+        'fa-square-o': checkboxType === 'checkbox' && !itemData.isChecked,
       }"
       @click.stop="toggleChecked"
     />
@@ -22,7 +22,7 @@
       class="icon-centered unit-width fa fa-fw"
       :class="{
         'fa-angle-down': itemData.isExpanded,
-        'fa-angle-right': !itemData.isExpanded
+        'fa-angle-right': !itemData.isExpanded,
       }"
     />
     <div v-else class="unit-width" />
@@ -51,20 +51,12 @@
         :isWrapped="false"
       />
     </div>
-    <div
-      v-else
-      v-tooltip.top-start="ancestorTooltip"
-      class="content--multiple-rows"
-    >
+    <div v-else v-tooltip.top-start="ancestorTooltip" class="content--multiple-rows">
       <span class="title">
         <span class="faded">{{ ancestorPrefix }}</span>
         {{ itemData.name }}
       </span>
-      <div
-        v-for="(bar, index) in itemData.bars"
-        :key="index"
-        class="value-on-same-line"
-      >
+      <div v-for="(bar, index) in itemData.bars" :key="index" class="value-on-same-line">
         <div class="histogram-bar-wrapper">
           <aggregation-checklist-bar
             v-if="histogramVisible"
@@ -79,9 +71,8 @@
         </div>
         <span
           :class="{
-            'faded':
-              !itemData.isSelectedAggregationLevel || !itemData.isChecked,
-            'multiple-row-label': true
+            faded: !itemData.isSelectedAggregationLevel || !itemData.isChecked,
+            'multiple-row-label': true,
           }"
           :style="{ color: bar.color }"
         >
@@ -115,7 +106,7 @@ export default defineComponent({
   name: 'AggregationChecklistItem',
   emits: ['toggle-expanded', 'toggle-checked'],
   components: {
-    AggregationChecklistBar
+    AggregationChecklistBar,
   },
   props: {
     itemData: {
@@ -128,29 +119,29 @@ export default defineComponent({
         isExpanded: false,
         isChecked: false,
         indentationCount: 0,
-        hiddenAncestorNames: []
-      })
+        hiddenAncestorNames: [],
+      }),
     },
     histogramVisible: {
       type: Boolean,
-      default: true
+      default: true,
     },
     maxVisibleBarValue: {
       type: Number,
-      default: 0
+      default: 0,
     },
     minVisibleBarValue: {
       type: Number,
-      default: 0
+      default: 0,
     },
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
-      required: true
+      required: true,
     },
     checkboxType: {
       type: String as PropType<'checkbox' | 'radio' | null>,
-      default: null
-    }
+      default: null,
+    },
   },
   computed: {
     ancestorPrefix() {
@@ -171,12 +162,12 @@ export default defineComponent({
     ancestorTooltip() {
       const hA = this.itemData.hiddenAncestorNames;
       let tooltip = '';
-      hA.forEach(ancestor => {
+      hA.forEach((ancestor) => {
         tooltip += `${ancestor} / `;
       });
       tooltip += this.itemData.name;
       return tooltip;
-    }
+    },
   },
   methods: {
     valueFormatter,
@@ -188,8 +179,8 @@ export default defineComponent({
     },
     colorFromIndex(index: number) {
       return this.selectedTimeseriesPoints[index].color;
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -261,5 +252,4 @@ export default defineComponent({
   flex: 1;
   position: relative;
 }
-
 </style>

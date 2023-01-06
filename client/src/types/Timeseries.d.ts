@@ -1,4 +1,4 @@
-import { IncompleteDataCorrectiveAction } from "@/types/Enums";
+import { IncompleteDataCorrectiveAction } from '@/types/Enums';
 
 export interface TimeseriesPoint {
   value: number;
@@ -35,5 +35,6 @@ export interface TimeseriesPointSelection {
 }
 
 export interface QualifierTimeseriesResponse {
-  name: string; timeseries: TimeseriesPoint[];
+  name: string;
+  timeseries: TimeseriesPoint[];
 }

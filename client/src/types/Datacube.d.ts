@@ -7,7 +7,7 @@ import {
   TemporalResolution,
   ModelPublishingStepID,
   FeatureQualifierRoles,
-  GeoAttributeFormat
+  GeoAttributeFormat,
 } from '@/types/Enums';
 
 export interface DatacubeMaintainer {
@@ -75,20 +75,20 @@ export interface DatacubeFeature extends DatacubeAttribute {
 export type DimensionInfo = ModelParameter | DatacubeFeature;
 
 export interface DatasetEditable {
-  name: string,
+  name: string;
   family_name: string;
-  description: string,
-  category: string[],
-  maintainer: DatacubeMaintainer,
-  tags: string[],
-  domains: string[]
+  description: string;
+  category: string[];
+  maintainer: DatacubeMaintainer;
+  tags: string[];
+  domains: string[];
 }
 
 export interface Dataset extends DatasetEditable {
-  created_at: number,
-  geography: DatacubeGeography,
-  period: DatacubePeriod,
-  status: DatacubeStatus,
+  created_at: number;
+  geography: DatacubeGeography;
+  period: DatacubePeriod;
+  status: DatacubeStatus;
   runtimes: {
     queued: RuntimeStage;
     post_processing: RuntimeStage;

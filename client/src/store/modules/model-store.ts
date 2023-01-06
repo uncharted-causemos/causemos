@@ -7,15 +7,15 @@ interface ModelState {
 
 const state: ModelState = {
   selectedScenarioId: null,
-  runImmediately: false
+  runImmediately: false,
 };
 
 const getters: GetterTree<ModelState, any> = {
   selectedModel: (state, getters, rootState /*, rootGetters */) => {
     return rootState.route.params.selectedModel;
   },
-  selectedScenarioId: state => state.selectedScenarioId,
-  runImmediately: state => state.runImmediately
+  selectedScenarioId: (state) => state.selectedScenarioId,
+  runImmediately: (state) => state.runImmediately,
 };
 
 const actions: ActionTree<ModelState, any> = {
@@ -24,7 +24,7 @@ const actions: ActionTree<ModelState, any> = {
   },
   setRunImmediately({ commit }, val: boolean) {
     commit('setRunImmediately', val);
-  }
+  },
 };
 
 const mutations: MutationTree<ModelState> = {
@@ -33,7 +33,7 @@ const mutations: MutationTree<ModelState> = {
   },
   setRunImmediately(state, val: boolean) {
     state.runImmediately = val;
-  }
+  },
 };
 
 export default {
@@ -41,5 +41,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

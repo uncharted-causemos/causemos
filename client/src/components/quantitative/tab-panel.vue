@@ -12,11 +12,11 @@
         :scenarios="scenarios"
         @show-path="showPath"
         @download-experiment="downloadExperiment"
-        @new-scenario='$emit("new-scenario", $event)'
-        @update-scenario='$emit("update-scenario", $event)'
-        @delete-scenario='$emit("delete-scenario", $event)'
-        @delete-scenario-clamp='$emit("delete-scenario-clamp", $event)'
-        @duplicate-scenario='$emit("duplicate-scenario", $event)'
+        @new-scenario="$emit('new-scenario', $event)"
+        @update-scenario="$emit('update-scenario', $event)"
+        @delete-scenario="$emit('delete-scenario', $event)"
+        @delete-scenario-clamp="$emit('delete-scenario-clamp', $event)"
+        @duplicate-scenario="$emit('duplicate-scenario', $event)"
       >
         <template #below-tabs>
           <cag-comments-button :model-summary="modelSummary" />
@@ -26,7 +26,8 @@
         <main>
           <div
             v-if="activeTab === 'flow' && scenarioData && graphData"
-            class="model-graph-layout-container">
+            class="model-graph-layout-container"
+          >
             <model-graph
               :model-summary="modelSummary"
               :data="graphData"
@@ -65,8 +66,8 @@
           :tabs="drilldownTabs"
           :active-tab-id="activeDrilldownTab"
           @close="closeDrilldown"
-          @tab-click="onDrilldownTabClick">
-
+          @tab-click="onDrilldownTabClick"
+        >
           <template #content>
             <evidence-pane
               v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
@@ -75,7 +76,8 @@
               :statements="selectedStatements"
               :project="project"
               :is-fetching-statements="isFetchingStatements"
-              :should-confirm-curations="true">
+              :should-confirm-curations="true"
+            >
               <edge-polarity-switcher
                 :model-summary="modelSummary"
                 :selected-relationship="selectedEdge"
@@ -113,13 +115,25 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher.vue';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane.vue';
 import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane.vue';
-import modelService, { calculateProjectionEnd, Engine, supportsLevelEdges } from '@/services/model-service';
+import modelService, {
+  calculateProjectionEnd,
+  Engine,
+  supportsLevelEdges,
+} from '@/services/model-service';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagLegend from '@/components/graph/cag-legend.vue';
 import { findPaths, calculateNeighborhood } from '@/utils/graphs-util';
-import { CAGModelSummary, CAGGraph, Scenario, NodeScenarioData, EdgeParameter, NodeParameter, CAGVisualState } from '@/types/CAG';
+import {
+  CAGModelSummary,
+  CAGGraph,
+  Scenario,
+  NodeScenarioData,
+  EdgeParameter,
+  NodeParameter,
+  CAGVisualState,
+} from '@/types/CAG';
 import { Statement } from '@/types/Statement';
 import { getInsightById } from '@/services/insight-service';
 import { ModelsSpaceDataState } from '@/types/Insight';
@@ -130,27 +144,27 @@ import { TYPE } from 'vue-toastification';
 
 const PANE_ID = {
   SENSITIVITY: 'sensitivity',
-  EVIDENCE: 'evidence'
+  EVIDENCE: 'evidence',
 };
 
 const NODE_DRILLDOWN_TABS = [
   {
     name: 'Node Sensitivity',
-    id: PANE_ID.SENSITIVITY
-  }
+    id: PANE_ID.SENSITIVITY,
+  },
 ];
 
 const EDGE_DRILLDOWN_TABS = [
   {
     name: 'Relationship',
-    id: PANE_ID.EVIDENCE
-  }
+    id: PANE_ID.EVIDENCE,
+  },
 ];
 
 const blankVisualState = (): CAGVisualState => {
   return {
     focus: { nodes: [], edges: [] },
-    outline: { nodes: [], edges: [] }
+    outline: { nodes: [], edges: [] },
   };
 };
 
@@ -166,29 +180,29 @@ export default defineComponent({
     SensitivityPane,
     CagSidePanel,
     CagCommentsButton,
-    CagLegend
+    CagLegend,
   },
   props: {
     currentEngine: {
       type: String,
-      default: null
+      default: null,
     },
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
-      required: true
+      required: true,
     },
     modelComponents: {
       type: Object as PropType<CAGGraph>,
-      required: true
+      required: true,
     },
     scenarios: {
       type: Array as PropType<Scenario[]>,
-      required: true
+      required: true,
     },
     resetLayoutToken: {
       type: Number,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: [
     'refresh-model',
@@ -199,7 +213,7 @@ export default defineComponent({
     'update-scenario',
     'delete-scenario',
     'delete-scenario-clamp',
-    'duplicate-scenario'
+    'duplicate-scenario',
   ],
   setup() {
     const selectedNode = ref(null) as Ref<NodeParameter | null>;
@@ -213,7 +227,7 @@ export default defineComponent({
       selectedEdge,
       selectedStatements,
       visualState,
-      PANE_ID
+      PANE_ID,
     };
   },
   data: () => ({
@@ -224,13 +238,13 @@ export default defineComponent({
     drilldownTabs: NODE_DRILLDOWN_TABS,
     activeDrilldownTab: PANE_ID.EVIDENCE,
     isDrilldownOpen: false,
-    isFetchingStatements: false
+    isFetchingStatements: false,
   }),
   computed: {
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
-      selectedScenarioId: 'model/selectedScenarioId'
+      selectedScenarioId: 'model/selectedScenarioId',
     }),
     activeTab() {
       // if we ever need more state than this
@@ -243,7 +257,7 @@ export default defineComponent({
     doesCurrentEngineSupportLevelEdges() {
       // FIXME: currentEngine's type should be Engine, not string
       return supportsLevelEdges(this.currentEngine as Engine);
-    }
+    },
   },
   watch: {
     $route: {
@@ -256,13 +270,13 @@ export default defineComponent({
             this.$router.push({
               query: {
                 insight_id: undefined,
-                activeTab: this.$route.query.activeTab || undefined
-              }
+                activeTab: this.$route.query.activeTab || undefined,
+              },
             });
           }
         }
       },
-      immediate: true
+      immediate: true,
     },
     scenarios() {
       this.refresh();
@@ -276,7 +290,7 @@ export default defineComponent({
     selectedScenarioId() {
       // FIXME: Probably need a ligher weight function than refresh
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -284,27 +298,33 @@ export default defineComponent({
   methods: {
     ...mapActions({
       setSelectedScenarioId: 'model/setSelectedScenarioId',
-      setDataState: 'insightPanel/setDataState'
+      setDataState: 'insightPanel/setDataState',
     }),
     refresh() {
       // Get Model data
       const graph = { nodes: this.modelComponents.nodes, edges: this.modelComponents.edges };
       this.graphData = { model: this.currentCAG, graph, indicators: [] };
 
-      const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
+      const scenarioData = modelService.buildNodeChartData(
+        this.modelSummary,
+        this.modelComponents.nodes,
+        this.scenarios
+      );
       this.scenarioData = scenarioData;
 
-      modelService.getScenarioSensitivity(this.currentCAG, this.currentEngine).then(sensitivityResults => {
-        // If historical data mode is active, use sensitivity results from
-        //  the baseline scenario
-        let scenarioId = this.selectedScenarioId;
-        if (this.selectedScenarioId === null) {
-          scenarioId = this.scenarios.find(scenario => scenario.is_baseline === true)?.id;
-        }
-        this.sensitivityResult = sensitivityResults.find(
-          (d: any) => d.scenario_id === scenarioId
-        );
-      });
+      modelService
+        .getScenarioSensitivity(this.currentCAG, this.currentEngine)
+        .then((sensitivityResults) => {
+          // If historical data mode is active, use sensitivity results from
+          //  the baseline scenario
+          let scenarioId = this.selectedScenarioId;
+          if (this.selectedScenarioId === null) {
+            scenarioId = this.scenarios.find((scenario) => scenario.is_baseline === true)?.id;
+          }
+          this.sensitivityResult = sensitivityResults.find(
+            (d: any) => d.scenario_id === scenarioId
+          );
+        });
 
       this.updateDataState();
     },
@@ -317,11 +337,9 @@ export default defineComponent({
       this.visualState = {
         focus: neighborhood,
         outline: {
-          nodes: [
-            { concept: node.concept }
-          ],
-          edges: []
-        }
+          nodes: [{ concept: node.concept }],
+          edges: [],
+        },
       };
       this.updateDataState();
     },
@@ -333,8 +351,8 @@ export default defineComponent({
           project: this.project,
           currentCAG: this.currentCAG,
           projectType: ProjectType.Analysis,
-          nodeId: node.id
-        }
+          nodeId: node.id,
+        },
       });
     },
     highlightNodePaths(node: { concept: string }, type: string) {
@@ -356,7 +374,7 @@ export default defineComponent({
         for (let i = 0; i < path.length - 1; i++) {
           highlightEdges.push({
             source: path[i],
-            target: path[i + 1]
+            target: path[i + 1],
           });
           nodesSet.add(path[i]);
           nodesSet.add(path[i + 1]);
@@ -364,7 +382,7 @@ export default defineComponent({
       }
       for (const nodeStr of nodesSet.values()) {
         highlightNodes.push({
-          concept: nodeStr
+          concept: nodeStr,
         });
       }
 
@@ -372,15 +390,15 @@ export default defineComponent({
         this.visualState = {
           focus: {
             nodes: highlightNodes,
-            edges: highlightEdges
+            edges: highlightEdges,
           },
           outline: {
             nodes: [
               { concept: node.concept, color: SELECTED_COLOR_DARK },
-              { concept: this.selectedNode.concept }
+              { concept: this.selectedNode.concept },
             ],
-            edges: []
-          }
+            edges: [],
+          },
         };
         this.updateDataState();
       }
@@ -404,25 +422,27 @@ export default defineComponent({
       this.activeDrilldownTab = PANE_ID.EVIDENCE;
       this.openDrilldown();
 
-      modelService.getEdgeStatements(this.currentCAG, edgeData.source, edgeData.target).then(statements => {
-        this.selectedStatements = statements;
-        this.selectedEdge = edgeData;
-        const source = edgeData.source;
-        const target = edgeData.target;
-        this.visualState = {
-          focus: {
-            nodes: [{ concept: source }, { concept: target }],
-            edges: [{ source, target }]
-          },
-          outline: {
-            nodes: [],
-            edges: [{ source, target }]
-          }
-        };
+      modelService
+        .getEdgeStatements(this.currentCAG, edgeData.source, edgeData.target)
+        .then((statements) => {
+          this.selectedStatements = statements;
+          this.selectedEdge = edgeData;
+          const source = edgeData.source;
+          const target = edgeData.target;
+          this.visualState = {
+            focus: {
+              nodes: [{ concept: source }, { concept: target }],
+              edges: [{ source, target }],
+            },
+            outline: {
+              nodes: [],
+              edges: [{ source, target }],
+            },
+          };
 
-        this.updateDataState();
-        this.isFetchingStatements = false;
-      });
+          this.updateDataState();
+          this.isFetchingStatements = false;
+        });
     },
     onDrilldownTabClick(tab: string) {
       this.activeDrilldownTab = tab;
@@ -441,8 +461,8 @@ export default defineComponent({
         target: edgeData.target,
         polarity: edgeData.polarity,
         parameter: {
-          weights
-        }
+          weights,
+        },
       };
       await modelService.updateEdgeParameter(this.currentCAG, payload as any);
       if (this.selectedEdge?.parameter) {
@@ -464,7 +484,7 @@ export default defineComponent({
       graphOptions.useStableLayout = prevStabilitySetting;
     },
     downloadExperiment() {
-      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      const scenario = this.scenarios.find((s) => s.id === this.selectedScenarioId);
       if (!scenario) return;
 
       const startTime = scenario.parameter.projection_start;
@@ -475,38 +495,38 @@ export default defineComponent({
           numTimesteps: scenario.parameter.num_steps,
           startTime,
           endTime,
-          constraints: scenario.parameter.constraints
-        }
+          constraints: scenario.parameter.constraints,
+        },
       };
       const file = new Blob([JSON.stringify(experimentPayload)], {
-        type: 'application/json'
+        type: 'application/json',
       });
       saveAs(file, 'experiment.json');
     },
     showPath(item: any) {
       const path = item.path;
       const highlightEdges = [];
-      const highlightNode = _.uniq(path).map(d => {
+      const highlightNode = _.uniq(path).map((d) => {
         return {
-          concept: (d as string)
+          concept: d as string,
         };
       });
 
       for (let i = 0; i < path.length - 1; i++) {
         highlightEdges.push({
           source: path[i],
-          target: path[i + 1]
+          target: path[i + 1],
         });
       }
       this.visualState = {
         focus: {
           nodes: highlightNode,
-          edges: highlightEdges
+          edges: highlightEdges,
         },
         outline: {
           nodes: [],
-          edges: []
-        }
+          edges: [],
+        },
       };
       this.updateDataState();
     },
@@ -524,7 +544,9 @@ export default defineComponent({
       }
 
       if (selectedNodeStr) {
-        const nodeToSelect = this.modelComponents.nodes.find(node => node.concept === selectedNodeStr);
+        const nodeToSelect = this.modelComponents.nodes.find(
+          (node) => node.concept === selectedNodeStr
+        );
         if (nodeToSelect) {
           this.onNodeSensitivity(nodeToSelect);
           const neighborhood = calculateNeighborhood(this.modelComponents, nodeToSelect.concept);
@@ -532,28 +554,28 @@ export default defineComponent({
           newVisualState = {
             focus: neighborhood,
             outline: {
-              nodes: [
-                { concept: nodeToSelect.concept }
-              ],
-              edges: []
-            }
+              nodes: [{ concept: nodeToSelect.concept }],
+              edges: [],
+            },
           };
         }
       } else if (selectedEdge) {
         const [source, target] = selectedEdge;
-        const edgeToSelect = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
+        const edgeToSelect = this.modelComponents.edges.find(
+          (edge) => edge.source === source && edge.target === target
+        );
 
         if (edgeToSelect) {
           this.showRelation(edgeToSelect);
           newVisualState = {
             focus: {
               nodes: [{ concept: source }, { concept: target }],
-              edges: [{ source, target }]
+              edges: [{ source, target }],
             },
             outline: {
               nodes: [],
-              edges: [{ source, target }]
-            }
+              edges: [{ source, target }],
+            },
           };
         }
       }
@@ -562,12 +584,18 @@ export default defineComponent({
       if (visualState) {
         newVisualState.focus.nodes = [...newVisualState.focus.nodes, ...visualState.focus.nodes];
         newVisualState.focus.edges = [...newVisualState.focus.edges, ...visualState.focus.edges];
-        newVisualState.outline.nodes = [...newVisualState.outline.nodes, ...visualState.outline.nodes];
-        newVisualState.outline.edges = [...newVisualState.outline.edges, ...visualState.outline.edges];
+        newVisualState.outline.nodes = [
+          ...newVisualState.outline.nodes,
+          ...visualState.outline.nodes,
+        ];
+        newVisualState.outline.edges = [
+          ...newVisualState.outline.edges,
+          ...visualState.outline.edges,
+        ];
       }
       this.visualState = newVisualState;
 
-      if (scenarioId && !this.scenarios.some(sc => sc.id === scenarioId)) {
+      if (scenarioId && !this.scenarios.some((sc) => sc.id === scenarioId)) {
         this.toaster(`Cannot restore deleted scenario ${scenarioId}`, TYPE.INFO, true);
         return;
       }
@@ -580,11 +608,20 @@ export default defineComponent({
       const engineStatus = this.modelSummary.engine_status;
 
       if (engineStatus[insightEngine] === modelService.MODEL_STATUS.TRAINING) {
-        this.toaster(`Cannot restore back to ${insightEngine} because there is training in progress`, TYPE.INFO, true);
-        console.error(`Cannot restore back to ${insightEngine} because there is training in progress`);
+        this.toaster(
+          `Cannot restore back to ${insightEngine} because there is training in progress`,
+          TYPE.INFO,
+          true
+        );
+        console.error(
+          `Cannot restore back to ${insightEngine} because there is training in progress`
+        );
         return;
       }
-      if (!insightEngine || engineStatus[insightEngine] === modelService.MODEL_STATUS.NOT_REGISTERED) {
+      if (
+        !insightEngine ||
+        engineStatus[insightEngine] === modelService.MODEL_STATUS.NOT_REGISTERED
+      ) {
         this.toaster(`Cannot restore back to ${insightEngine}, bad state`, TYPE.INFO, true);
         console.error(`Cannot restore back to ${insightEngine}, bad state`);
         return;
@@ -594,9 +631,13 @@ export default defineComponent({
 
       if (insightEngine !== currentEngine) {
         await modelService.updateModelParameter(this.currentCAG, {
-          engine: insightEngine
+          engine: insightEngine,
         });
-        this.toaster(`Engine switched from ${currentEngine} to ${insightEngine}`, TYPE.SUCCESS, true);
+        this.toaster(
+          `Engine switched from ${currentEngine} to ${insightEngine}`,
+          TYPE.SUCCESS,
+          true
+        );
         this.$emit('model-parameter-changed');
       }
     },
@@ -605,16 +646,16 @@ export default defineComponent({
         selectedScenarioId: this.selectedScenarioId,
         currentEngine: this.currentEngine,
         modelName: this.modelSummary.name,
-        cagVisualState: this.visualState ?? null
+        cagVisualState: this.visualState ?? null,
       };
       this.setDataState(dataState);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .tab-panel-container {
   height: $content-full-height;

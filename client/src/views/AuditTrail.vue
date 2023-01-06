@@ -9,9 +9,7 @@
           </div>
           <div class="col-md-2">
             <div>
-              <a
-                :href="downloadLink"
-                download>
+              <a :href="downloadLink" download>
                 <i class="fa fa-fw fa-download" />
                 Export Audit
               </a>
@@ -37,9 +35,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="(item, idx) of auditTrailData"
-                :key="idx">
+              <tr v-for="(item, idx) of auditTrailData" :key="idx">
                 <td>
                   {{ item.update_type }}
                 </td>
@@ -70,27 +66,27 @@
           </table>
         </div>
         <div class="pagination">
-          <button
-            class="btn btn-sm btn-primary"
-            :disabled="pageFrom === 0"
-            @click="prev()"
-          >Previous</button>
-          <span class="pagination-label">{{ pageFrom+1 }} to {{ pageSizeCount }} of {{ numberFormatter(auditsCount) }} audits </span>
+          <button class="btn btn-sm btn-primary" :disabled="pageFrom === 0" @click="prev()">
+            Previous
+          </button>
+          <span class="pagination-label"
+            >{{ pageFrom + 1 }} to {{ pageSizeCount }} of {{ numberFormatter(auditsCount) }} audits
+          </span>
           <button
             class="btn btn-sm btn-primary"
             :disabled="auditsCount < incrementedPageSize"
             @click="next()"
-          >Next</button>
+          >
+            Next
+          </button>
         </div>
       </div>
       <div class="col-md-1" />
     </div>
-
   </div>
 </template>
 
 <script lang="ts">
-
 import { mapActions, useStore } from 'vuex';
 import { defineComponent, ref, computed } from 'vue';
 import API from '@/api/api';
@@ -101,7 +97,7 @@ import dateFormatter from '@/formatters/date-formatter';
 export default defineComponent({
   name: 'AuditTrail',
   components: {
-    AuditEntry
+    AuditEntry,
   },
   setup() {
     const auditsCount = ref(0);
@@ -126,7 +122,7 @@ export default defineComponent({
       downloadLink,
 
       auditsCount,
-      auditTrailData
+      auditTrailData,
     };
   },
   watch: {
@@ -135,27 +131,27 @@ export default defineComponent({
     },
     pageSize() {
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
   },
   methods: {
     ...mapActions({
-      setPagination: 'query/setPagination'
+      setPagination: 'query/setPagination',
     }),
     numberFormatter,
     dateFormatter,
     refresh() {
       API.get('audits', {
-        params: { projectId: this.project, from: this.pageFrom, size: this.pageSize }
+        params: { projectId: this.project, from: this.pageFrom, size: this.pageSize },
       }).then((d) => {
         this.auditTrailData = d.data;
       });
       // Get total count for audits
       API.get('audits/counts', {
-        params: { projectId: this.project }
-      }).then(d => {
+        params: { projectId: this.project },
+      }).then((d) => {
         this.auditsCount = d.data;
       });
     },
@@ -163,16 +159,16 @@ export default defineComponent({
       this.setPagination({
         view: 'audits',
         from: this.pageFrom - this.pageSize,
-        size: this.pageSize
+        size: this.pageSize,
       });
     },
     next() {
       this.setPagination({
         view: 'audits',
         from: this.pageFrom + this.pageSize,
-        size: this.pageSize
+        size: this.pageSize,
       });
-    }
-  }
+    },
+  },
 });
 </script>

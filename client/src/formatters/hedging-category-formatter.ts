@@ -8,6 +8,6 @@ import { HEDGING_MAP } from '@/utils/code-util';
  * @param {integer} value
  */
 
-export default function(value: number) {
+export default function (value: number) {
   return HEDGING_MAP[value];
 }

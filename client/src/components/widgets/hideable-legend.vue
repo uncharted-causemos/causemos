@@ -4,21 +4,11 @@
     :class="[showLegend ? '' : 'legend-hidden']"
     @click="toggleLegend"
   >
-    <h4
-      class="legend-label"
-      :class="{'visible': !showLegend}"
-    >
-      LEGEND
-    </h4>
+    <h4 class="legend-label" :class="{ visible: !showLegend }">LEGEND</h4>
     <div class="content">
       <slot />
     </div>
-    <h4
-      class="legend-label bottom"
-      :class="{'visible': showLegend}"
-    >
-      HIDE
-    </h4>
+    <h4 class="legend-label bottom" :class="{ visible: showLegend }">HIDE</h4>
   </div>
 </template>
 
@@ -28,18 +18,18 @@ import { defineComponent } from 'vue';
 export default defineComponent({
   name: 'HideableLegend',
   data: () => ({
-    showLegend: true
+    showLegend: true,
   }),
   methods: {
     toggleLegend() {
       this.showLegend = !this.showLegend;
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 $hover-nudge-height: 25px;
 $padding: 10px;
@@ -101,5 +91,4 @@ $padding: 10px;
     opacity: 1;
   }
 }
-
 </style>

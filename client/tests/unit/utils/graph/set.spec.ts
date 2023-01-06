@@ -4,14 +4,32 @@ import {
   commonNodes,
   commonEdges,
   uniqueNodes,
-  uniqueEdges
+  uniqueEdges,
 } from '../../../../src/utils/graph/set';
 
 describe('utils/graph/set', () => {
   const nonRandomGraphs = [
-    { nodes: [{ id: 1 }, { id: 2 }, { id: 3 }], edges: [{ source: 1, target: 1 }, { source: 1, target: 2 }] },
-    { nodes: [{ id: 1 }, { id: 2 }, { id: 3 }], edges: [{ source: 1, target: 1 }, { source: 1, target: 2 }] },
-    { nodes: [{ id: 1 }, { id: 2 }, { id: 3 }], edges: [{ source: 1, target: 1 }, { source: 1, target: 2 }] }
+    {
+      nodes: [{ id: 1 }, { id: 2 }, { id: 3 }],
+      edges: [
+        { source: 1, target: 1 },
+        { source: 1, target: 2 },
+      ],
+    },
+    {
+      nodes: [{ id: 1 }, { id: 2 }, { id: 3 }],
+      edges: [
+        { source: 1, target: 1 },
+        { source: 1, target: 2 },
+      ],
+    },
+    {
+      nodes: [{ id: 1 }, { id: 2 }, { id: 3 }],
+      edges: [
+        { source: 1, target: 1 },
+        { source: 1, target: 2 },
+      ],
+    },
   ];
 
   describe('commonNodes', () => {
@@ -23,15 +41,15 @@ describe('utils/graph/set', () => {
     it('no nodes common among all graphs returns empty array', () => {
       const g1 = {
         nodes: [{ id: 'a' }, { id: 'b' }],
-        edges: []
+        edges: [],
       };
       const g2 = {
         nodes: [{ id: 'a' }, { id: 'b' }],
-        edges: []
+        edges: [],
       };
       const g3 = {
         nodes: [{ id: 'c' }, { id: 'd' }],
-        edges: []
+        edges: [],
       };
       const commonNodeSet = commonNodes([g1, g2, g3]);
       expect(commonNodeSet.length).to.equal(0);
@@ -47,15 +65,15 @@ describe('utils/graph/set', () => {
     it('no edges common among all graphs returns empty array', () => {
       const g1 = {
         nodes: [],
-        edges: [{ source: 'a', target: 'b' }]
+        edges: [{ source: 'a', target: 'b' }],
       };
       const g2 = {
         nodes: [],
-        edges: [{ source: 'a', target: 'b' }]
+        edges: [{ source: 'a', target: 'b' }],
       };
       const g3 = {
         nodes: [],
-        edges: [{ source: 'c', target: 'd' }]
+        edges: [{ source: 'c', target: 'd' }],
       };
       const commonNodeSet = commonNodes([g1, g2, g3]);
       expect(commonNodeSet.length).to.equal(0);
@@ -71,15 +89,15 @@ describe('utils/graph/set', () => {
     it('all nodes common among all graphs returns empty array', () => {
       const g1 = {
         nodes: [{ id: 'a' }, { id: 'b' }],
-        edges: []
+        edges: [],
       };
       const g2 = {
         nodes: [{ id: 'a' }, { id: 'b' }],
-        edges: []
+        edges: [],
       };
       const g3 = {
         nodes: [{ id: 'a' }, { id: 'b' }],
-        edges: []
+        edges: [],
       };
       const uniqueNodeSet = uniqueNodes([g1, g2, g3]);
       expect(uniqueNodeSet.length).to.equal(0);
@@ -95,15 +113,15 @@ describe('utils/graph/set', () => {
     it('all edges common among all graphs returns empty array', () => {
       const g1 = {
         nodes: [],
-        edges: [{ source: 'a', target: 'b' }]
+        edges: [{ source: 'a', target: 'b' }],
       };
       const g2 = {
         nodes: [],
-        edges: [{ source: 'a', target: 'b' }]
+        edges: [{ source: 'a', target: 'b' }],
       };
       const g3 = {
         nodes: [],
-        edges: [{ source: 'a', target: 'b' }]
+        edges: [{ source: 'a', target: 'b' }],
       };
       const uniqueEdgeSet = uniqueEdges([g1, g2, g3]);
       expect(uniqueEdgeSet.length).to.equal(0);

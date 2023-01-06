@@ -6,7 +6,9 @@ import _ from 'lodash';
  */
 function calculateBestGraphOrder(graph) {
   const getEdgeWeight = (source, target) => {
-    const matchingEdge = graph.edges.find(edge => edge.source === source && edge.target === target);
+    const matchingEdge = graph.edges.find(
+      (edge) => edge.source === source && edge.target === target
+    );
     if (matchingEdge) {
       return matchingEdge.total;
     } else {
@@ -59,12 +61,12 @@ function calculateBestGraphOrder(graph) {
 
     while (nodesLeft.length > 0) {
       // Look for clear sinks
-      const clearSinks = nodesLeft.filter(n => sinkScore(n) === 0);
+      const clearSinks = nodesLeft.filter((n) => sinkScore(n) === 0);
       if (clearSinks.length > 0) {
         clearSinks.forEach(addToEnd);
       } else {
         // Look for clear sources
-        const clearSources = nodesLeft.filter(n => sourceScore(n) === 0);
+        const clearSources = nodesLeft.filter((n) => sourceScore(n) === 0);
         if (clearSources.length > 0) {
           clearSources.forEach(addToStart);
         } else {
@@ -72,7 +74,7 @@ function calculateBestGraphOrder(graph) {
           // and move it.
           let bestDelta = Number.MIN_VALUE;
           let bestNode = nodesLeft[0]; // Arbitrary tie-breaker
-          nodesLeft.forEach(n => {
+          nodesLeft.forEach((n) => {
             const delta = degreeDeltaLeft(n);
             if (Math.abs(delta) > Math.abs(bestDelta)) {
               bestDelta = delta;
@@ -92,7 +94,6 @@ function calculateBestGraphOrder(graph) {
   return result;
 }
 
-
 /**
  * Merge an array of graphs and perform node ordering. The nodes are merged as a
  * set of unique nodes. The edges are merged as unique source/target sets, with
@@ -102,19 +103,19 @@ function calculateBestGraphOrder(graph) {
  * @param {function} edgeAggregationFn - a function acting an array of numeric weights
  */
 function calculateBestMultiGraphsOrder(graphs, edgeAggregationFn = _.max) {
-  const rawNodes = _.flatten(graphs.map(g => g.nodes));
-  const rawEdges = _.flatten(graphs.map(g => g.edges));
+  const rawNodes = _.flatten(graphs.map((g) => g.nodes));
+  const rawEdges = _.flatten(graphs.map((g) => g.edges));
 
   // Merge nodes
-  const nodes = _.uniqBy(rawNodes, d => d.id);
+  const nodes = _.uniqBy(rawNodes, (d) => d.id);
 
   // Merge edges, and recompute total
-  const groupedEdges = _.groupBy(rawEdges, d => {
+  const groupedEdges = _.groupBy(rawEdges, (d) => {
     return d.source + '///' + d.target;
   });
-  const edges = Object.values(groupedEdges).map(v => {
+  const edges = Object.values(groupedEdges).map((v) => {
     const edge = v[0];
-    edge.total = edgeAggregationFn(v.map(d => d.total));
+    edge.total = edgeAggregationFn(v.map((d) => d.total));
     return edge;
   });
 
@@ -125,5 +126,5 @@ function calculateBestMultiGraphsOrder(graphs, edgeAggregationFn = _.max) {
 
 export default {
   calculateBestGraphOrder,
-  calculateBestMultiGraphsOrder
+  calculateBestMultiGraphsOrder,
 };

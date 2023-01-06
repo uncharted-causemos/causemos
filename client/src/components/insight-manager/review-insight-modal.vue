@@ -17,20 +17,14 @@
         class="btn btn-call-to-action"
         :disabled="!isInsight"
         @click="editInsight"
-        >
+      >
         <i class="fa fa-pencil" />
         Edit
       </button>
       <div v-else class="insight-edit-controls">
-        <button type="button" class="btn" @click="annotateImage">
-          Annotate
-        </button>
-        <button type="button" class="btn" @click="cropImage">
-          Crop
-        </button>
-        <button class="btn btn-extra-margin" @click="cancelInsightEdit">
-          Cancel
-        </button>
+        <button type="button" class="btn" @click="annotateImage">Annotate</button>
+        <button type="button" class="btn" @click="cropImage">Crop</button>
+        <button class="btn btn-extra-margin" @click="cancelInsightEdit">Cancel</button>
         <button
           :disabled="hasError"
           type="button"
@@ -58,8 +52,8 @@
             class="btn"
             v-tooltip="'Toggle metadata'"
             :disabled="!isInsight"
-            @click="showMetadataPanel=!showMetadataPanel"
-            >
+            @click="showMetadataPanel = !showMetadataPanel"
+          >
             <i class="fa fa-info" />
           </button>
           <button
@@ -69,20 +63,13 @@
             v-tooltip="'Jump to live context'"
             :disabled="!isInsight"
             @click="selectInsight"
-            >
+          >
             <i class="fa fa-level-up" />
           </button>
           <div class="export" v-if="updatedInsight !== null">
             <span>Export insight as</span>
-            <button
-              class="btn"
-              @click="() => exportInsight('Powerpoint')"
-            >
-              PowerPoint
-            </button>
-            <button class="btn" @click="() => exportInsight('Word')">
-              Word
-            </button>
+            <button class="btn" @click="() => exportInsight('Powerpoint')">PowerPoint</button>
+            <button class="btn" @click="() => exportInsight('Word')">Word</button>
           </div>
         </div>
       </template>
@@ -95,15 +82,17 @@
         class="btn"
         v-tooltip="'Previous insight'"
         @click="goToPreviousSlide"
-        >
+      >
         <i class="fa fa-chevron-left" />
       </button>
       <div class="content">
         <div class="fields">
-          <div style="display: flex; align-items: baseline;">
+          <div style="display: flex; align-items: baseline">
             <template v-if="!isEditingInsight">
-              <div class="question-title">{{insightQuestionLabel}}</div>
-              <div v-if="insightLinkedQuestionsCount" class="other-question-title">{{insightLinkedQuestionsCount}}</div>
+              <div class="question-title">{{ insightQuestionLabel }}</div>
+              <div v-if="insightLinkedQuestionsCount" class="other-question-title">
+                {{ insightLinkedQuestionsCount }}
+              </div>
             </template>
             <dropdown-button
               v-else
@@ -122,7 +111,7 @@
             />
           </div>
           <template v-if="isInsight || isNewModeActive">
-            <div v-if="!isEditingInsight" class="title">{{previewInsightTitle}}</div>
+            <div v-if="!isEditingInsight" class="title">{{ previewInsightTitle }}</div>
             <input
               v-else
               v-model="insightTitle"
@@ -131,31 +120,36 @@
               class="form-control"
               placeholder="Untitled insight name"
             />
-            <div
-              v-if="isEditingInsight && hasError"
-              class="error-msg">
+            <div v-if="isEditingInsight && hasError" class="error-msg">
               {{ errorMsg }}
             </div>
-            <div v-if="!isEditingInsight" class="desc">{{previewInsightDesc}}</div>
+            <div v-if="!isEditingInsight" class="desc">{{ previewInsightDesc }}</div>
             <textarea
               v-else
               v-model="insightDesc"
               :rows="2"
               class="form-control"
-              placeholder="Untitled insight description" />
+              placeholder="Untitled insight description"
+            />
             <div class="image-preview-and-metadata">
               <div v-if="imagePreview !== null" class="preview">
-                <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview">
-                <div v-if="showCropInfoMessage" style="align-self: center">Annotations are still there, but not shown when the image is being cropped!</div>
+                <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview" />
+                <div v-if="showCropInfoMessage" style="align-self: center">
+                  Annotations are still there, but not shown when the image is being cropped!
+                </div>
               </div>
-              <div v-else style="width: 100%;">
+              <div v-else style="width: 100%">
                 <div v-if="loadingImage" style="text-align: center; font-size: x-large">
                   <i class="fa fa-spin fa-spinner" /> Loading image ...
                 </div>
                 <disclaimer
                   v-else
                   style="text-align: center; color: black"
-                  :message="updatedInsight === null ? 'No more insights available to preview!' : 'No image preview!'"
+                  :message="
+                    updatedInsight === null
+                      ? 'No more insights available to preview!'
+                      : 'No image preview!'
+                  "
                 />
               </div>
               <drilldown-panel
@@ -164,22 +158,16 @@
                 :tabs="drilldownTabs"
                 :activeTabId="drilldownTabs[0].id"
                 only-display-icons
-                @close="showMetadataPanel=false"
+                @close="showMetadataPanel = false"
               >
                 <template #content>
-                  <insight-summary
-                    v-if="metadataDetails"
-                    :metadata-details="metadataDetails"
-                  />
+                  <insight-summary v-if="metadataDetails" :metadata-details="metadataDetails" />
                 </template>
               </drilldown-panel>
             </div>
           </template>
           <template v-else>
-            <message-display
-              class="pane-content"
-              :message="messageNoData"
-            />
+            <message-display class="pane-content" :message="messageNoData" />
           </template>
         </div>
       </div>
@@ -191,7 +179,7 @@
         class="btn"
         v-tooltip="'Next insight'"
         @click="goToNextSlide"
-        >
+      >
         <i class="fa fa-chevron-right" />
       </button>
     </div>
@@ -204,10 +192,23 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import InsightUtil from '@/utils/insight-util';
-import { Insight, InsightMetadata, FullInsight, DataState, SectionWithInsights, ReviewPosition } from '@/types/Insight';
+import {
+  Insight,
+  InsightMetadata,
+  FullInsight,
+  DataState,
+  SectionWithInsights,
+  ReviewPosition,
+} from '@/types/Insight';
 import router from '@/router';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { addInsight, updateInsight, fetchPartialInsights, extractMetadataDetails, removeInsight } from '@/services/insight-service';
+import {
+  addInsight,
+  updateInsight,
+  fetchPartialInsights,
+  extractMetadataDetails,
+  removeInsight,
+} from '@/services/insight-service';
 import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
 import useToaster from '@/services/composables/useToaster';
 import html2canvas from 'html2canvas';
@@ -234,8 +235,8 @@ const METDATA_DRILLDOWN_TABS = [
   {
     name: 'Metadata',
     id: 'metadata',
-    icon: 'fa-info-circle'
-  }
+    icon: 'fa-info-circle',
+  },
 ];
 
 export default defineComponent({
@@ -248,20 +249,14 @@ export default defineComponent({
     DropdownButton,
     SmallTextButton,
     RenameModal,
-    MessageDisplay
+    MessageDisplay,
   },
   setup() {
     const store = useStore();
     const toaster = useToaster();
-    const {
-      questionsList,
-      addSection,
-      addInsightToSection
-    } = useQuestionsData();
+    const { questionsList, addSection, addInsightToSection } = useQuestionsData();
 
-    const updatedInsight = computed(
-      () => store.getters['insightPanel/updatedInsight']
-    );
+    const updatedInsight = computed(() => store.getters['insightPanel/updatedInsight']);
     const isInsight = computed(() => InsightUtil.instanceOfInsight(updatedInsight.value));
 
     const insightCache = new Map<string, any>();
@@ -278,7 +273,11 @@ export default defineComponent({
 
         let cache = insightCache.get(updatedInsight.value.id);
         if (!cache) {
-          const extras = await fetchPartialInsights({ id: updatedInsight.value.id }, ['id', 'annotation_state', 'image']);
+          const extras = await fetchPartialInsights({ id: updatedInsight.value.id }, [
+            'id',
+            'annotation_state',
+            'image',
+          ]);
           cache = extras[0];
           insightCache.set(updatedInsight.value.id, cache);
         }
@@ -294,12 +293,12 @@ export default defineComponent({
       { immediate: true }
     );
 
-
     const insightsBySection = computed<SectionWithInsights[]>(
       () => store.getters['insightPanel/insightsBySection']
     );
-    const positionInReview = computed<ReviewPosition | null>(() => store.getters['insightPanel/positionInReview']);
-
+    const positionInReview = computed<ReviewPosition | null>(
+      () => store.getters['insightPanel/positionInReview']
+    );
 
     const selectedInsightQuestions = ref<string[]>([]);
     const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
@@ -307,11 +306,15 @@ export default defineComponent({
     const isEditingInsight = ref(false);
 
     const getQuestionById = (id: string) => {
-      return questionsList.value.find(q => q.id === id);
+      return questionsList.value.find((q) => q.id === id);
     };
 
     const insightLinkedQuestionsCount = computed<string>(() => {
-      if (updatedInsight.value && isInsight.value && updatedInsight.value.analytical_question.length > 0) {
+      if (
+        updatedInsight.value &&
+        isInsight.value &&
+        updatedInsight.value.analytical_question.length > 0
+      ) {
         const linedQuestionsCount = (updatedInsight.value as Insight).analytical_question.length;
         if (linedQuestionsCount > 1) {
           return '+ ' + (linedQuestionsCount - 1).toString();
@@ -321,10 +324,7 @@ export default defineComponent({
     });
 
     const insightQuestionLabel = computed<string>(() => {
-      if (
-        isInsight.value &&
-        updatedInsight.value.analytical_question.length === 0
-      ) {
+      if (isInsight.value && updatedInsight.value.analytical_question.length === 0) {
         // Current item is an insight that's not linked to any section.
         return '';
       }
@@ -338,18 +338,12 @@ export default defineComponent({
     });
 
     watch(
-      () => [
-        questionsList.value,
-        isEditingInsight.value
-      ],
+      () => [questionsList.value, isEditingInsight.value],
       () => {
         // if we are reviewing this insight in edit mode,
         //  it may have a current linking with some analytical question
         //  so we need to surface that
-        if (
-          updatedInsight.value &&
-          isInsight.value
-        ) {
+        if (updatedInsight.value && isInsight.value) {
           const initialSelection: string[] = [];
           updatedInsight.value.analytical_question.forEach((q: string) => {
             const questionObj = getQuestionById(q);
@@ -364,7 +358,7 @@ export default defineComponent({
         }
       },
       {
-        immediate: true // need to force updating the selected list when toggling the edit mode
+        immediate: true, // need to force updating the selected list when toggling the edit mode
       }
     );
 
@@ -387,7 +381,7 @@ export default defineComponent({
       insightsBySection,
       positionInReview,
 
-      insightCache
+      insightCache,
     };
   },
   data: () => ({
@@ -408,7 +402,7 @@ export default defineComponent({
     lastAnnotatedImage: '',
     showCropInfoMessage: false,
     showNewQuestion: false,
-    messageNoData: INSIGHTS.NO_DATA
+    messageNoData: INSIGHTS.NO_DATA,
   }),
   watch: {
     insightTitle: {
@@ -418,7 +412,7 @@ export default defineComponent({
         } else {
           this.hasError = false;
         }
-      }
+      },
     },
     isEditModeActive: {
       handler(/* newValue, oldValue */) {
@@ -426,7 +420,7 @@ export default defineComponent({
           this.editInsight();
         }
       },
-      immediate: true
+      immediate: true,
     },
     imagePreview() {
       if (this.imagePreview !== null) {
@@ -464,7 +458,7 @@ export default defineComponent({
       } else {
         this.imagePreview = null;
       }
-    }
+    },
   },
   computed: {
     ...mapGetters({
@@ -478,7 +472,7 @@ export default defineComponent({
       projectMetadata: 'app/projectMetadata',
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
-      countInsights: 'insightPanel/countInsights'
+      countInsights: 'insightPanel/countInsights',
     }),
     isEditModeActive() {
       return this.currentPane === 'review-edit-insight';
@@ -487,7 +481,7 @@ export default defineComponent({
       return this.currentPane === 'review-new-insight';
     },
     questionsDropdown() {
-      return [...this.questionsList.map(q => q.question)];
+      return [...this.questionsList.map((q) => q.question)];
     },
     nextSlide(): ReviewPosition | null {
       if (this.positionInReview === null) {
@@ -496,46 +490,42 @@ export default defineComponent({
       }
       const { sectionId, insightId } = this.positionInReview;
       const sectionWithInsights = this.insightsBySection.find(
-        _section => _section.section.id === sectionId
+        (_section) => _section.section.id === sectionId
       );
       // If there's no section currently selected, return null;
       if (sectionWithInsights === undefined) {
         return null;
       }
       const insightIndex = sectionWithInsights.insights.findIndex(
-        insight => insight.id === insightId
+        (insight) => insight.id === insightId
       );
       // If section has insights and current insight is not the last insight in
       //  the current section, go to the next insight in the current section.
-      if (
-        insightIndex !== sectionWithInsights.insights.length - 1 &&
-        insightIndex !== -1
-      ) {
+      if (insightIndex !== sectionWithInsights.insights.length - 1 && insightIndex !== -1) {
         return {
           sectionId,
-          insightId: sectionWithInsights.insights[insightIndex + 1].id as string
+          insightId: sectionWithInsights.insights[insightIndex + 1].id as string,
         };
       }
       // Otherwise, go to the next section
       const sectionIndex = this.insightsBySection.findIndex(
-        _section => _section.section.id === sectionId
+        (_section) => _section.section.id === sectionId
       );
       if (sectionIndex === this.insightsBySection.length - 1) {
         // Current section is last section
         return null;
       }
-      const nextSectionWithInsights =
-        this.insightsBySection[sectionIndex + 1];
+      const nextSectionWithInsights = this.insightsBySection[sectionIndex + 1];
       return nextSectionWithInsights.insights.length > 0
-        // Go to first insight in next section
-        ? {
+        ? // Go to first insight in next section
+          {
             sectionId: nextSectionWithInsights.section.id as string,
-            insightId: nextSectionWithInsights.insights[0].id as string
+            insightId: nextSectionWithInsights.insights[0].id as string,
           }
-        // Next section has no insights, so go to that section
-        : {
+        : // Next section has no insights, so go to that section
+          {
             sectionId: nextSectionWithInsights.section.id as string,
-            insightId: null
+            insightId: null,
           };
     },
     previousSlide(): ReviewPosition | null {
@@ -545,14 +535,14 @@ export default defineComponent({
       }
       const { sectionId, insightId } = this.positionInReview;
       const sectionWithInsights = this.insightsBySection.find(
-        _section => _section.section.id === sectionId
+        (_section) => _section.section.id === sectionId
       );
       // If there's no section currently selected, return null;
       if (sectionWithInsights === undefined) {
         return null;
       }
       const insightIndex = sectionWithInsights.insights.findIndex(
-        insight => insight.id === insightId
+        (insight) => insight.id === insightId
       );
       // If section has insights and current insight is not the first insight in
       //  the current section, go to the previous insight in the current
@@ -560,38 +550,41 @@ export default defineComponent({
       if (insightIndex !== 0 && insightIndex !== -1) {
         return {
           sectionId: sectionId,
-          insightId: sectionWithInsights.insights[insightIndex - 1].id as string
+          insightId: sectionWithInsights.insights[insightIndex - 1].id as string,
         };
       }
       // Otherwise, go to the previous section
       const sectionIndex = this.insightsBySection.findIndex(
-        _section => _section.section.id === sectionId
+        (_section) => _section.section.id === sectionId
       );
       if (sectionIndex === 0) {
         // Current section is the first section
         return null;
       }
-      const previousSectionWithInsights =
-        this.insightsBySection[sectionIndex - 1];
+      const previousSectionWithInsights = this.insightsBySection[sectionIndex - 1];
       return previousSectionWithInsights.insights.length > 0
-        // Go to last insight in next section
-        ? {
+        ? // Go to last insight in next section
+          {
             sectionId: previousSectionWithInsights.section.id as string,
-            insightId: previousSectionWithInsights.insights[previousSectionWithInsights.insights.length - 1].id as string
+            insightId: previousSectionWithInsights.insights[
+              previousSectionWithInsights.insights.length - 1
+            ].id as string,
           }
-        // Previous section has no insights, so go to that section
-        : {
+        : // Previous section has no insights, so go to that section
+          {
             sectionId: previousSectionWithInsights.section.id as string,
-            insightId: null
+            insightId: null,
           };
     },
     metadataDetails(): InsightMetadata {
-      const dState: DataState | null = this.isNewModeActive || this.updatedInsight === null
-        ? this.dataState
-        : this.updatedInsight.data_state;
-      const insightLastUpdate = this.isNewModeActive || this.updatedInsight === null
-        ? undefined
-        : this.updatedInsight.modified_at;
+      const dState: DataState | null =
+        this.isNewModeActive || this.updatedInsight === null
+          ? this.dataState
+          : this.updatedInsight.data_state;
+      const insightLastUpdate =
+        this.isNewModeActive || this.updatedInsight === null
+          ? undefined
+          : this.updatedInsight.modified_at;
       const insightSummary = extractMetadataDetails(
         dState,
         this.projectMetadata,
@@ -601,11 +594,15 @@ export default defineComponent({
     },
     previewInsightTitle(): string {
       if (this.loadingImage) return '';
-      return this.updatedInsight && this.updatedInsight.name.length > 0 ? this.updatedInsight.name : LBL_EMPTY_INSIGHT_NAME;
+      return this.updatedInsight && this.updatedInsight.name.length > 0
+        ? this.updatedInsight.name
+        : LBL_EMPTY_INSIGHT_NAME;
     },
     previewInsightDesc(): string {
       if (this.loadingImage) return '';
-      return this.updatedInsight && this.updatedInsight.description.length > 0 ? this.updatedInsight.description : '<Insight description missing...>';
+      return this.updatedInsight && this.updatedInsight.description.length > 0
+        ? this.updatedInsight.description
+        : '<Insight description missing...>';
     },
     insightVisibility(): string {
       return this.projectType === ProjectType.Analysis ? 'private' : 'public';
@@ -614,8 +611,17 @@ export default defineComponent({
       // an insight created during model publication should be listed either
       //  in the full list of insights,
       //  or as a context specific insight when opening the page of the corresponding model family instance
-      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher'];
-    }
+      return this.projectType === ProjectType.Analysis
+        ? [this.currentView, 'overview', 'dataComparative']
+        : [
+            'data',
+            'nodeDrilldown',
+            'dataComparative',
+            'overview',
+            'domainDatacubeOverview',
+            'modelPublisher',
+          ];
+    },
     /*,
     annotation(): any {
       return this.updatedInsight ? this.updatedInsight.annotation_state : undefined;
@@ -645,7 +651,7 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
       setPositionInReview: 'insightPanel/setPositionInReview',
-      setShouldRefetchInsights: 'insightPanel/setShouldRefetchInsights'
+      setShouldRefetchInsights: 'insightPanel/setShouldRefetchInsights',
     }),
     setInsightQuestions(questions: string[]) {
       this.selectedInsightQuestions = questions;
@@ -663,11 +669,7 @@ export default defineComponent({
       const handleFailedAddition = () => {
         this.toaster(QUESTIONS.ERRONEOUS_ADDITION, TYPE.INFO, true);
       };
-      this.addSection(
-        newQuestionText,
-        handleSuccessfulAddition,
-        handleFailedAddition
-      );
+      this.addSection(newQuestionText, handleSuccessfulAddition, handleFailedAddition);
     },
     async takeSnapshot() {
       const url = this.snapshotUrl;
@@ -703,22 +705,15 @@ export default defineComponent({
       // close editing before deleting insight (this will ensure annotation/crop mode is cleaned up)
       this.cancelInsightEdit();
       // remove this insight from each section that contains it in the store
-      const filteredInsightsBySection = this.insightsBySection.map(
-        ({ section, insights }) => ({
-          section,
-          insights: insights.filter(
-            insight => insight.id !== insightIdToDelete
-          )
-        })
-      );
+      const filteredInsightsBySection = this.insightsBySection.map(({ section, insights }) => ({
+        section,
+        insights: insights.filter((insight) => insight.id !== insightIdToDelete),
+      }));
       this.setInsightsBySection(filteredInsightsBySection);
       // Decide which slide to show next
       if (this.nextSlide && this.nextSlide.insightId !== insightIdToDelete) {
         this.goToNextSlide();
-      } else if (
-        this.previousSlide &&
-        this.previousSlide.insightId !== insightIdToDelete
-      ) {
+      } else if (this.previousSlide && this.previousSlide.insightId !== insightIdToDelete) {
         this.goToPreviousSlide();
       } else {
         // Either there are no more insights, or we're in an edge case where we
@@ -734,10 +729,7 @@ export default defineComponent({
         this.cancelInsightEdit();
       }
       this.setUpdatedInsight(
-        InsightUtil.getSlideFromPosition(
-          this.insightsBySection,
-          this.previousSlide
-        )
+        InsightUtil.getSlideFromPosition(this.insightsBySection, this.previousSlide)
       );
       this.setPositionInReview(this.previousSlide);
     },
@@ -746,10 +738,7 @@ export default defineComponent({
         this.cancelInsightEdit();
       }
       this.setUpdatedInsight(
-        InsightUtil.getSlideFromPosition(
-          this.insightsBySection,
-          this.nextSlide
-        )
+        InsightUtil.getSlideFromPosition(this.insightsBySection, this.nextSlide)
       );
       this.setPositionInReview(this.nextSlide);
     },
@@ -783,12 +772,14 @@ export default defineComponent({
       this.saveInsight();
     },
     getAnnotatedState(stateData: any) {
-      return !stateData ? undefined : {
-        markerAreaState: stateData.markerAreaState,
-        cropAreaState: stateData.cropState,
-        imagePreview: stateData.croppedNonAnnotatedImagePreview,
-        originalImagePreview: stateData.originalImagePreview
-      };
+      return !stateData
+        ? undefined
+        : {
+            markerAreaState: stateData.markerAreaState,
+            cropAreaState: stateData.cropState,
+            imagePreview: stateData.croppedNonAnnotatedImagePreview,
+            originalImagePreview: stateData.originalImagePreview,
+          };
     },
     saveInsight() {
       if (this.hasError || this.insightTitle.trim().length === 0) return;
@@ -797,15 +788,18 @@ export default defineComponent({
       const refFinalImage = this.$refs.finalImagePreview as HTMLImageElement;
       const annotateCropSaveObj = {
         annotatedImagePreview: refFinalImage.src,
-        croppedNonAnnotatedImagePreview: this.lastCroppedImage !== '' ? this.lastCroppedImage : this.originalImagePreview,
+        croppedNonAnnotatedImagePreview:
+          this.lastCroppedImage !== '' ? this.lastCroppedImage : this.originalImagePreview,
         originalImagePreview: this.originalImagePreview,
         markerAreaState: this.markerAreaState,
-        cropState: this.cropState
+        cropState: this.cropState,
       };
       const insightThumbnail = annotateCropSaveObj.annotatedImagePreview;
       const annotationAndCropState = this.getAnnotatedState(annotateCropSaveObj);
 
-      const linkedQuestions = this.questionsList.filter(q => this.selectedInsightQuestions.includes(q.question));
+      const linkedQuestions = this.questionsList.filter((q) =>
+        this.selectedInsightQuestions.includes(q.question)
+      );
 
       if (this.isNewModeActive) {
         // saving a new insight
@@ -822,15 +816,16 @@ export default defineComponent({
           pre_actions: null,
           post_actions: null,
           is_default: true,
-          analytical_question: linkedQuestions.map(q => q.id as string),
+          analytical_question: linkedQuestions.map((q) => q.id as string),
           image: insightThumbnail,
           annotation_state: annotationAndCropState,
           view_state: this.viewState,
-          data_state: this.dataState
+          data_state: this.dataState,
         };
         addInsight(newInsight)
           .then((result) => {
-            const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
+            const message =
+              result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
             if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
               this.toaster(message, TYPE.SUCCESS, false);
               const count = this.countInsights + 1;
@@ -839,7 +834,7 @@ export default defineComponent({
               // after the insight is created and have a valid id, we need to link that to the question
               if (linkedQuestions) {
                 const insightId = result.data.id;
-                linkedQuestions.forEach(section => {
+                linkedQuestions.forEach((section) => {
                   this.addInsightToSection(insightId, section.id as string);
                 });
               }
@@ -848,7 +843,8 @@ export default defineComponent({
             }
             this.closeInsightReview();
             this.setShouldRefetchInsights(true);
-          }).catch(() => {
+          })
+          .catch(() => {
             // just in case the call to the server fails
             this.closeInsightReview();
           });
@@ -863,24 +859,23 @@ export default defineComponent({
           updatedInsight.description = this.insightDesc;
           updatedInsight.image = insightThumbnail;
           updatedInsight.annotation_state = annotationAndCropState;
-          updatedInsight.analytical_question = linkedQuestions.map(q => q.id as string);
-          updateInsight(this.updatedInsight.id, updatedInsight)
-            .then((result) => {
-              if (result.updated === 'success') {
-                this.toaster(INSIGHTS.SUCCESSFUL_UPDATE, TYPE.SUCCESS, false);
+          updatedInsight.analytical_question = linkedQuestions.map((q) => q.id as string);
+          updateInsight(this.updatedInsight.id, updatedInsight).then((result) => {
+            if (result.updated === 'success') {
+              this.toaster(INSIGHTS.SUCCESSFUL_UPDATE, TYPE.SUCCESS, false);
 
-                // ensure when updating an insight to also update its linked questions
-                const insightId = this.updatedInsight.id;
-                linkedQuestions.forEach(q => {
-                  if (!q.linked_insights.includes(insightId)) {
-                    q.linked_insights.push(insightId);
-                    updateQuestion(q.id as string, q);
-                  }
-                });
-              } else {
-                this.toaster(INSIGHTS.ERRONEOUS_UPDATE, TYPE.INFO, true);
-              }
-            });
+              // ensure when updating an insight to also update its linked questions
+              const insightId = this.updatedInsight.id;
+              linkedQuestions.forEach((q) => {
+                if (!q.linked_insights.includes(insightId)) {
+                  q.linked_insights.push(insightId);
+                  updateQuestion(q.id as string, q);
+                }
+              });
+            } else {
+              this.toaster(INSIGHTS.ERRONEOUS_UPDATE, TYPE.INFO, true);
+            }
+          });
         }
       }
     },
@@ -891,11 +886,13 @@ export default defineComponent({
       if (finalURL) {
         this.$router.push(finalURL);
       } else {
-        router.push({
-          query: {
-            insight_id: insight.id
-          }
-        }).catch(() => {});
+        router
+          .push({
+            query: {
+              insight_id: insight.id,
+            },
+          })
+          .catch(() => {});
       }
       this.hideInsightPanel();
     },
@@ -905,7 +902,12 @@ export default defineComponent({
 
       switch (exportType) {
         case 'Word':
-          InsightUtil.exportDOCX([this.updatedInsight], this.projectMetadata, undefined, bibliographyMap);
+          InsightUtil.exportDOCX(
+            [this.updatedInsight],
+            this.projectMetadata,
+            undefined,
+            bibliographyMap
+          );
           break;
         case 'Powerpoint':
           InsightUtil.exportPPTX([this.updatedInsight], this.projectMetadata);
@@ -949,7 +951,8 @@ export default defineComponent({
       this.lastAnnotatedImage = refAnnotatedImage.src;
 
       // copy the cropped, non-annotated, image as the source of the annotation
-      refAnnotatedImage.src = this.lastCroppedImage !== '' ? this.lastCroppedImage : this.originalImagePreview;
+      refAnnotatedImage.src =
+        this.lastCroppedImage !== '' ? this.lastCroppedImage : this.originalImagePreview;
 
       // create an instance of MarkerArea and pass the target image reference as a parameter
       this.markerArea = new MarkerArea(refAnnotatedImage);
@@ -1081,13 +1084,13 @@ export default defineComponent({
         const cropAreaTemp = this.cropArea as any;
         cropAreaTemp.cropLayer.setCropRectangle(this.cropState.cropRect);
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .insight-edit-controls {
   display: flex;
@@ -1100,7 +1103,8 @@ export default defineComponent({
 
 .btn-delete {
   margin-left: 10px;
-  &, &:hover {
+  &,
+  &:hover {
     color: red;
   }
 }
@@ -1206,7 +1210,6 @@ h6 {
   font-size: $font-size-medium;
 }
 
-
 .dropdown-button {
   width: auto;
   height: auto;
@@ -1222,6 +1225,4 @@ h6 {
     width: 100%;
   }
 }
-
 </style>
-

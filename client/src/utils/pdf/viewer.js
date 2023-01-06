@@ -6,7 +6,7 @@ export async function createPDFViewer({ url }) {
   const [pdfjs, pdfjsWorker, PDFViewer] = await Promise.all([
     import('pdfjs-dist/build/pdf.js'),
     import('pdfjs-dist/build/pdf.worker.entry.js'),
-    import('pdfjs-dist/web/pdf_viewer.js')
+    import('pdfjs-dist/web/pdf_viewer.js'),
   ]);
   pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -26,7 +26,7 @@ export async function createPDFViewer({ url }) {
 
   const findController = new PDFViewer.PDFFindController({
     eventBus: eventBus,
-    linkService
+    linkService,
   });
 
   const viewer = new PDFViewer.PDFViewer({ container, eventBus, linkService, findController });
@@ -48,9 +48,9 @@ export async function createPDFViewer({ url }) {
     search(query) {
       findController.executeCommand('find', {
         query: query,
-        phraseSearch: true
+        phraseSearch: true,
       });
     },
-    element: container
+    element: container,
   };
 }

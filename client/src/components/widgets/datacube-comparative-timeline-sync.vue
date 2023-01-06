@@ -11,9 +11,13 @@
         @select-timestamp-range="emitTimestampRangeSelection"
       />
     </main>
-    <div class="timeseries-footer" >
-      <div v-if="footnotes" v-tooltip="{ content: footnoteTooltip, html: true }" style="text-align: right">
-        {{footnotes}}
+    <div class="timeseries-footer">
+      <div
+        v-if="footnotes"
+        v-tooltip="{ content: footnoteTooltip, html: true }"
+        style="text-align: right"
+      >
+        {{ footnotes }}
       </div>
     </div>
   </div>
@@ -29,25 +33,27 @@ import { getFootnotes, getFootnoteTooltip } from '@/utils/incomplete-data-detect
 export default defineComponent({
   name: 'DatacubeComparativeTimelineSync',
   components: {
-    TimelineChart
+    TimelineChart,
   },
   props: {
     timeseriesData: {
       type: Array as PropType<Timeseries[]>,
-      default: []
+      default: [],
     },
     timeseriesToDatacubeMap: {
-      type: Object as PropType<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>,
-      default: {}
+      type: Object as PropType<{
+        [timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string };
+      }>,
+      default: {},
     },
     selectedTimestamp: {
       type: Number,
-      default: 0
+      default: 0,
     },
     breakdownOption: {
       type: String as PropType<string | null>,
-      default: null
-    }
+      default: null,
+    },
   },
   emits: ['select-timestamp', 'select-timestamp-range'],
   setup(props, { emit }) {
@@ -56,14 +62,16 @@ export default defineComponent({
       emit('select-timestamp', newTimestamp);
     };
 
-    const emitTimestampRangeSelection = (newTimestampRange: {start: number; end: number}) => {
+    const emitTimestampRangeSelection = (newTimestampRange: { start: number; end: number }) => {
       emit('select-timestamp-range', newTimestampRange);
     };
     const footnotes = computed(() => {
       return getFootnotes(timeseriesData.value.map(({ correctiveAction }) => correctiveAction));
     });
     const footnoteTooltip = computed(() => {
-      return getFootnoteTooltip(timeseriesData.value.map(({ correctiveAction }) => correctiveAction));
+      return getFootnoteTooltip(
+        timeseriesData.value.map(({ correctiveAction }) => correctiveAction)
+      );
     });
 
     return {
@@ -71,11 +79,10 @@ export default defineComponent({
       footnoteTooltip,
       AggregationOption,
       emitTimestampSelection,
-      emitTimestampRangeSelection
+      emitTimestampRangeSelection,
     };
   },
-  methods: {
-  }
+  methods: {},
 });
 </script>
 
@@ -101,8 +108,7 @@ main {
 
 .timeseries-footer {
   justify-content: flex-end;
-  display:flex;
+  display: flex;
   padding-top: 5px;
 }
-
 </style>

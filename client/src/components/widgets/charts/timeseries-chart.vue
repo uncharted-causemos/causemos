@@ -14,19 +14,26 @@
             class="selected-data-row"
             :style="{ color: timeseries.color }"
           >
-            <strong v-tooltip="{ content: timeseries.tooltip, html: true }" >{{ timeseries.name }}
-              <sup>{{timeseries.superscript}}</sup>
+            <strong v-tooltip="{ content: timeseries.tooltip, html: true }"
+              >{{ timeseries.name }}
+              <sup>{{ timeseries.superscript }}</sup>
             </strong>
-            <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
+            <span>{{
+              timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data'
+            }}</span>
           </div>
         </div>
         <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
       </div>
     </div>
-    <div class="timeseries-footer" >
+    <div class="timeseries-footer">
       <slot name="timeseries-footer-contents" />
-      <div v-if="footnotes" v-tooltip="{ content: footnoteTooltip, html: true }" style="text-align: right">
-        {{footnotes}}
+      <div
+        v-if="footnotes"
+        v-tooltip="{ content: footnoteTooltip, html: true }"
+        style="text-align: right"
+      >
+        {{ footnotes }}
       </div>
     </div>
   </div>
@@ -45,7 +52,7 @@ import {
   getActionSuperscript,
   getActionTooltip,
   getFootnotes,
-  getFootnoteTooltip
+  getFootnoteTooltip,
 } from '@/utils/incomplete-data-detection';
 
 const RESIZE_DELAY = 15;
@@ -56,28 +63,28 @@ export default defineComponent({
   props: {
     timeseriesData: {
       type: Array as PropType<Timeseries[]>,
-      required: true
+      required: true,
     },
     selectedTemporalResolution: {
       type: String as PropType<TemporalResolutionOption | null>,
-      default: ''
+      default: '',
     },
     selectedTimestamp: {
       type: Number,
-      default: 0
+      default: 0,
     },
     selectedTimestampRange: {
       type: Object as PropType<{ start: number; end: number } | null>,
-      default: null
+      default: null,
     },
     breakdownOption: {
       type: String as PropType<string | null>,
-      default: null
+      default: null,
     },
     unit: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   setup(props, { emit }) {
     const {
@@ -86,23 +93,17 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTimestamp,
       selectedTimestampRange,
-      unit
+      unit,
     } = toRefs(props);
     const lineChart = ref<HTMLElement | null>(null);
     function selectTimestamp(newValue: number) {
       emit('select-timestamp', newValue);
     }
-    let updateTimestampElements:
-      | ((timestamp: number | null) => void)
-      | undefined;
+    let updateTimestampElements: ((timestamp: number | null) => void) | undefined;
     const timestampFormatter = (timestamp: number) => {
-      return formatTimestamp(
-        timestamp,
-        breakdownOption.value,
-        selectedTemporalResolution.value
-      );
+      return formatTimestamp(timestamp, breakdownOption.value, selectedTemporalResolution.value);
     };
-    const resize = _.debounce(function({ width, height }) {
+    const resize = _.debounce(function ({ width, height }) {
       if (lineChart.value === null || timeseriesData.value.length === 0) return;
       const svg = d3.select<HTMLElement, null>(lineChart.value);
       if (svg === null) return;
@@ -126,32 +127,30 @@ export default defineComponent({
     }, RESIZE_DELAY);
     watch(
       () => selectedTimestamp.value,
-      selectedTimestamp => {
+      (selectedTimestamp) => {
         if (updateTimestampElements !== undefined) {
           updateTimestampElements(selectedTimestamp);
         }
       }
     );
     watch(
-      () => [
-        timeseriesData.value,
-        breakdownOption.value,
-        selectedTimestampRange.value
-      ],
+      () => [timeseriesData.value, breakdownOption.value, selectedTimestampRange.value],
       () => {
         // Underlying data has changed, so rerender chart
         const parentElement = lineChart.value?.parentElement;
         if (parentElement === null || parentElement === undefined) return;
         resize({
           width: parentElement.clientWidth,
-          height: parentElement.clientHeight
+          height: parentElement.clientHeight,
         });
       }
     );
     const valueFormatter = computed(() => {
-      const allPoints = timeseriesData.value.map(timeseries => timeseries.points).flat();
-      const yExtent = d3.extent(allPoints.map(point => point.value));
-      if (yExtent[0] === undefined) { return chartValueFormatter(); }
+      const allPoints = timeseriesData.value.map((timeseries) => timeseries.points).flat();
+      const yExtent = d3.extent(allPoints.map((point) => point.value));
+      if (yExtent[0] === undefined) {
+        return chartValueFormatter();
+      }
       return chartValueFormatter(...yExtent);
     });
     const dataAtSelectedTimestamp = computed(() => {
@@ -162,9 +161,7 @@ export default defineComponent({
           color,
           superscript: getActionSuperscript(correctiveAction),
           tooltip: getActionTooltip(correctiveAction),
-          value: points.find(
-            point => point.timestamp === selectedTimestamp.value
-          )?.value
+          value: points.find((point) => point.timestamp === selectedTimestamp.value)?.value,
         }))
         .sort(({ value: a }, { value: b }) => {
           return (b as number) - (a as number);
@@ -174,14 +171,16 @@ export default defineComponent({
       return getFootnotes(timeseriesData.value.map(({ correctiveAction }) => correctiveAction));
     });
     const footnoteTooltip = computed(() => {
-      return getFootnoteTooltip(timeseriesData.value.map(({ correctiveAction }) => correctiveAction));
+      return getFootnoteTooltip(
+        timeseriesData.value.map(({ correctiveAction }) => correctiveAction)
+      );
     });
     onMounted(() => {
       const parentElement = lineChart.value?.parentElement;
       if (parentElement === null || parentElement === undefined) return;
       resize({
         width: parentElement.clientWidth,
-        height: parentElement.clientHeight
+        height: parentElement.clientHeight,
       });
     });
     return {
@@ -191,9 +190,9 @@ export default defineComponent({
       footnotes,
       footnoteTooltip,
       timestampFormatter,
-      valueFormatter
+      valueFormatter,
     };
-  }
+  },
 });
 </script>
 
@@ -241,7 +240,7 @@ export default defineComponent({
 
 .timeseries-footer {
   justify-content: flex-end;
-  display:flex
+  display: flex;
 }
 
 :deep(.xAxis .domain) {

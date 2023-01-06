@@ -8,17 +8,18 @@
     <message-display
       :message="`Because you corrected ${correction.factor} to ${shortConceptName}, you may need to do it for these too ...`"
       :message-type="`warning`"
-      :highlights="[correction.factor, shortConceptName]" />
+      :highlights="[correction.factor, shortConceptName]"
+    />
     <collapsible-list-header
-      @expand-all="expandAll={value: true}"
-      @collapse-all="expandAll={value: false}"
+      @expand-all="expandAll = { value: true }"
+      @collapse-all="expandAll = { value: false }"
     >
       <i
         class="fa fa-lg fa-fw"
         :class="{
           'fa-check-square-o': summaryData.meta.checked,
           'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
-          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
+          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked,
         }"
         @click="toggle(summaryData)"
       />
@@ -30,20 +31,10 @@
       >
         Fix it
       </button>
-      <button
-        type="button"
-        class="btn btn-sm"
-        @click="closePane()"
-      >
-        No thanks
-      </button>
+      <button type="button" class="btn btn-sm" @click="closePane()">No thanks</button>
     </collapsible-list-header>
     <div class="factors-recommendation-content">
-      <div
-        v-for="value in summaryData.children"
-        :key="value.key"
-      >
-
+      <div v-for="value in summaryData.children" :key="value.key">
         <evidence-group
           :expand-all="expandAll"
           :item="value"
@@ -53,10 +44,7 @@
         />
       </div>
     </div>
-    <div
-      v-if="isFetchingStatements"
-      class="pane-loading-message"
-    >
+    <div v-if="isFetchingStatements" class="pane-loading-message">
       <i class="fa fa-spin fa-spinner pane-loading-icon" /><span>{{ loadingMessage }}</span>
     </div>
   </div>
@@ -83,53 +71,53 @@ export default {
     ModalDocument,
     MessageDisplay,
     EvidenceGroup,
-    CollapsibleListHeader
+    CollapsibleListHeader,
   },
   props: {
     correction: {
       type: Object,
-      default: () => null
+      default: () => null,
     },
     recommendations: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     curationTrackingId: {
       type: String,
-      default: ''
+      default: '',
     },
     isFetchingStatements: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   data: () => ({
     loadingMessage: 'Loading factor recommendations...',
     documentModalData: null,
     expandAll: null,
-    summaryData: { children: [], meta: { checked: false } }
+    summaryData: { children: [], meta: { checked: false } },
   }),
   computed: {
     ...mapGetters({
       currentCAG: 'app/currentCAG',
-      project: 'app/project'
+      project: 'app/project',
     }),
     numSelectedItems() {
       let cnt = 0;
-      this.summaryData.children.forEach(polarityGroup => {
-        cnt += polarityGroup.children.filter(d => d.meta.checked === true).length;
+      this.summaryData.children.forEach((polarityGroup) => {
+        cnt += polarityGroup.children.filter((d) => d.meta.checked === true).length;
       });
       return cnt;
     },
     shortConceptName() {
       return this.ontologyFormatter(this.correction.newGrounding);
-    }
+    },
   },
   watch: {
     recommendations(n, o) {
       if (_.isEqual(n, o)) return;
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -140,11 +128,11 @@ export default {
     },
     refresh() {
       if (_.isEmpty(this.recommendations)) return;
-      const statements = _.flatten(this.recommendations.map(r => r.statements));
+      const statements = _.flatten(this.recommendations.map((r) => r.statements));
       this.initializeData();
       this.summaryData = {
         children: this.groupStatements(statements),
-        meta: { checked: false, isSomeChildChecked: false }
+        meta: { checked: false, isSomeChildChecked: false },
       };
     },
     groupStatements(statements) {
@@ -163,18 +151,22 @@ export default {
 
             meta.polarity = sample.statement_polarity;
             meta.subj_polarity = sample.subj.polarity;
-            meta.subj_factor_highlight = this.recommendations.map(r => r.highlights).includes(sample.subj.factor);
+            meta.subj_factor_highlight = this.recommendations
+              .map((r) => r.highlights)
+              .includes(sample.subj.factor);
             meta.subj = sample.subj;
             meta.obj_polarity = sample.obj.polarity;
-            meta.obj_factor_highlight = this.recommendations.map(r => r.highlights).includes(sample.obj.factor);
+            meta.obj_factor_highlight = this.recommendations
+              .map((r) => r.highlights)
+              .includes(sample.obj.factor);
             meta.obj = sample.obj;
 
-            meta.num_evidence = _.sumBy(s.dataArray, d => {
+            meta.num_evidence = _.sumBy(s.dataArray, (d) => {
               return d.evidence.length;
             });
             return meta;
-          }
-        }
+          },
+        },
       ]);
       return evidenceGroups;
     },
@@ -183,13 +175,13 @@ export default {
       const recursiveDown = (item, newState) => {
         item.meta.checked = newState;
         if (!item.children) return;
-        item.children.forEach(child => recursiveDown(child, newState));
+        item.children.forEach((child) => recursiveDown(child, newState));
       };
 
       const recursiveUp = (item) => {
         if (!_.isEmpty(item.children)) {
-          item.children.forEach(child => recursiveUp(child));
-          const numChecked = item.children.filter(d => d.meta.checked === true).length;
+          item.children.forEach((child) => recursiveUp(child));
+          const numChecked = item.children.filter((d) => d.meta.checked === true).length;
           item.meta.checked = numChecked === item.children.length;
           item.meta.isSomeChildChecked = numChecked > 0;
         }
@@ -213,19 +205,24 @@ export default {
       const correction = this.correction;
       const subj = {
         oldValue: correction.curGrounding,
-        newValue: correction.newGrounding
+        newValue: correction.newGrounding,
       };
       const obj = {
         oldValue: correction.curGrounding,
-        newValue: correction.newGrounding
+        newValue: correction.newGrounding,
       };
       let statementIds = [];
-      const selectedItems = this.summaryData.children.filter(d => d.meta.checked === true);
-      selectedItems.forEach(d => {
-        statementIds = statementIds.concat(d.dataArray.map(statement => statement.id));
+      const selectedItems = this.summaryData.children.filter((d) => d.meta.checked === true);
+      selectedItems.forEach((d) => {
+        statementIds = statementIds.concat(d.dataArray.map((statement) => statement.id));
       });
 
-      const updateResult = await updateStatementsFactorGrounding(this.project, statementIds, subj, obj);
+      const updateResult = await updateStatementsFactorGrounding(
+        this.project,
+        statementIds,
+        subj,
+        obj
+      );
       if (updateResult.status === 200) {
         this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, TYPE.SUCCESS, false);
       } else {
@@ -233,23 +230,23 @@ export default {
       }
 
       if (this.curationTrackingId !== null) {
-        const suggestedCurations = this.recommendations.map(r => {
+        const suggestedCurations = this.recommendations.map((r) => {
           return {
-            statementIds: r.statements.map(s => s.id),
+            statementIds: r.statements.map((s) => s.id),
             factor: r.highlights,
-            score: r.score
+            score: r.score,
           };
         });
         const payload = {
           suggestedCurations: suggestedCurations,
-          acceptedCurations: statementIds
+          acceptedCurations: statementIds,
         };
         trackCurations(this.curationTrackingId, payload);
       }
 
       this.closePane();
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -261,6 +258,4 @@ export default {
   height: 90vh;
   overflow-y: auto;
 }
-
-
 </style>

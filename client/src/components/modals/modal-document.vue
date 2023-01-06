@@ -1,10 +1,8 @@
 <template>
-  <modal
-    class="modal-document-container"
-    @close="close()">
+  <modal class="modal-document-container" @close="close()">
     <template #body>
       <div class="metadata">
-        <table style="border-bottom: 1px solid #e3e3e3;" v-if="documentData">
+        <table style="border-bottom: 1px solid #e3e3e3" v-if="documentData">
           <tr>
             <td class="doc-label">Publication Date</td>
             <td>{{ dateFormatter(documentData.publication_date.date, 'YYYY-MM-DD') }}</td>
@@ -32,42 +30,30 @@
           </tr>
         </table>
       </div>
-      <div v-if="pdfViewer"
-        class="toolbar">
+      <div v-if="pdfViewer" class="toolbar">
         Show raw text
         <i v-if="showTextViewer === false" class="fa fa-lg fa-fw fa-toggle-off" @click="toggle" />
         <i v-if="showTextViewer === true" class="fa fa-lg fa-fw fa-toggle-on" @click="toggle" />
       </div>
-      <div ref="content">
-        Loading...
-      </div>
+      <div ref="content">Loading...</div>
     </template>
     <template #footer>
-        <button
-          v-if="!editable"
-          class="btn btn-md btn-secondary"
-          @click="edit()"
-        ><i class="fa fa-fw fa-edit" /> Edit</button>
-        <button
-          v-if="editable"
-          class="btn btn-md btn-secondary"
-          @click="save()"
-        ><i class="fa fa-fw fa-save" />Save</button>
-        <div class="spacer"></div>
-        <button
-          v-if="editable"
-          class="btn btn-md btn-secondary"
-          @click="cancel()"
-        >Cancel</button>
-        <button
-          class="btn btn-md btn-primary"
-          @click="close()"
-        >Close</button>
-        <button
-          v-if="$route.name === 'kbExplorer'"
-          class="btn btn-md btn-primary"
-          @click="addToSearch()"
-        >Add to search</button>
+      <button v-if="!editable" class="btn btn-md btn-secondary" @click="edit()">
+        <i class="fa fa-fw fa-edit" /> Edit
+      </button>
+      <button v-if="editable" class="btn btn-md btn-secondary" @click="save()">
+        <i class="fa fa-fw fa-save" />Save
+      </button>
+      <div class="spacer"></div>
+      <button v-if="editable" class="btn btn-md btn-secondary" @click="cancel()">Cancel</button>
+      <button class="btn btn-md btn-primary" @click="close()">Close</button>
+      <button
+        v-if="$route.name === 'kbExplorer'"
+        class="btn btn-md btn-primary"
+        @click="addToSearch()"
+      >
+        Add to search
+      </button>
     </template>
   </modal>
 </template>
@@ -99,7 +85,7 @@ const lossySearch = (text, textFragment) => {
     [' ;', ';'],
     [' ,', ','],
     [' )', ')'],
-    ['( ', '(']
+    ['( ', '('],
   ];
 
   for (let i = 0; i < replacementElements.length; i++) {
@@ -167,24 +153,24 @@ const createTextViewer = (text) => {
 
   return {
     search,
-    element: el
+    element: el,
   };
 };
 
 export default {
   name: 'ModalDocument',
   components: {
-    Modal
+    Modal,
   },
   props: {
     documentId: {
       type: String,
-      required: true
+      required: true,
     },
     textFragment: {
       type: String,
-      default: null
-    }
+      default: null,
+    },
   },
   data: () => ({
     documentData: null,
@@ -195,14 +181,14 @@ export default {
     editable: false,
     author: '',
     publisher: '',
-    title: ''
+    title: '',
   }),
   mounted() {
     this.refresh();
   },
   methods: {
     ...mapActions({
-      addSearchTerm: 'query/addSearchTerm'
+      addSearchTerm: 'query/addSearchTerm',
     }),
     dateFormatter,
     refresh() {
@@ -252,7 +238,7 @@ export default {
     addToSearch() {
       this.addSearchTerm({
         field: 'docId',
-        term: this.documentId
+        term: this.documentId,
       });
       this.close();
     },
@@ -281,12 +267,12 @@ export default {
         id: this.documentData.id,
         author: this.author,
         docTitle: this.title,
-        publisherName: this.publisher
+        publisherName: this.publisher,
       };
       await updateDocument(updatedData);
       this.refresh();
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -320,7 +306,7 @@ export default {
     padding: 0;
     width: 800px;
 
-    .modal-header{
+    .modal-header {
       display: none;
     }
 
@@ -347,6 +333,5 @@ export default {
   :deep(.page) {
     box-sizing: content-box !important;
   }
-
 }
 </style>

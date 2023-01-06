@@ -18,11 +18,11 @@ const isEmpty = (filters) => {
 
 const findFilter = (filters, filterName) => {
   const clauses = _.get(filters, 'clauses') || [];
-  return clauses.find(clause => clause.field === filterName);
+  return clauses.find((clause) => clause.field === filterName);
 };
 
 module.exports = {
   parse,
   isEmpty,
-  findFilter
+  findFilter,
 };

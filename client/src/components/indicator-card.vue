@@ -8,7 +8,10 @@
     >
       <template #title>Apply Settings To All</template>
       <template #message>
-        <p>This will copy the visualization settings from this indicator to all indicators in this dataset.</p>
+        <p>
+          This will copy the visualization settings from this indicator to all indicators in this
+          dataset.
+        </p>
         <message-display
           :message="'Warning: Any visualization settings in the other indicators will be overwritten.'"
           :message-type="'alert-warning'"
@@ -16,7 +19,7 @@
       </template>
     </modal-confirmation>
     <div v-if="!isEditingMeta" style="margin-bottom: 10px">
-      <b>{{datacube.outputs[0].display_name}}</b>
+      <b>{{ datacube.outputs[0].display_name }}</b>
     </div>
     <div v-else>
       <textarea
@@ -28,10 +31,14 @@
       />
     </div>
     <div class="card-body">
-      <div v-if="!isEditingMeta" class="card-column card-column-wider" style="display: flex; flex-direction: column; justify-content: space-between">
+      <div
+        v-if="!isEditingMeta"
+        class="card-column card-column-wider"
+        style="display: flex; flex-direction: column; justify-content: space-between"
+      >
         <multiline-description :text="datacube.outputs[0].description" />
         <div>
-          <b>{{datacube.outputs[0].unit}}</b> {{datacube.outputs[0].unit_description}}
+          <b>{{ datacube.outputs[0].unit }}</b> {{ datacube.outputs[0].unit_description }}
         </div>
       </div>
       <div v-else class="card-column card-column-wider" style="overflow: visible">
@@ -49,29 +56,39 @@
             rows="1"
             style="font-weight: bold; width: 40%; overflow-x: hidden"
           />
-          <textarea
-            v-model="editedMeta.unit_description"
-            type="text"
-            rows="1"
-            style="width: 60%"
-          />
+          <textarea v-model="editedMeta.unit_description" type="text" rows="1" style="width: 60%" />
         </div>
       </div>
       <div class="card-column card-column-wider" style="display: flex; flex-direction: column">
         <div class="column-title">Qualifiers</div>
         <div style="display: flex; flex-direction: column; overflow-y: auto">
           <div v-for="qualifier in visibleQualifiers" :key="qualifier.name">
-            <b>{{qualifier.display_name}}</b> {{qualifier.description}}
+            <b>{{ qualifier.display_name }}</b> {{ qualifier.description }}
           </div>
         </div>
       </div>
       <div class="card-column" style="display: flex; flex-direction: column">
         <div class="column-title">Data Info</div>
-        <div><b>Raw Resolution: </b>{{datacube.outputs[0].data_resolution?.temporal_resolution}}</div>
-        <div v-if="datacube.data_info?.num_rows_per_feature"><b>Raw Points: </b>{{(datacube.data_info?.num_rows_per_feature ?? {})[datacube.default_feature] ?? 'unknown'}}</div>
-        <div><b>Aggregated by: </b>{{aggregationFunctions}}</div>
-        <div><b>Months: </b>{{(datacube.data_info?.month_timeseries_size ?? {})[datacube.default_feature] ?? 'unknown'}}  |
-        <b>  Years: </b>{{(datacube.data_info?.year_timeseries_size ?? {})[datacube.default_feature] ?? 'unknown'}}</div>
+        <div>
+          <b>Raw Resolution: </b>{{ datacube.outputs[0].data_resolution?.temporal_resolution }}
+        </div>
+        <div v-if="datacube.data_info?.num_rows_per_feature">
+          <b>Raw Points: </b
+          >{{
+            (datacube.data_info?.num_rows_per_feature ?? {})[datacube.default_feature] ?? 'unknown'
+          }}
+        </div>
+        <div><b>Aggregated by: </b>{{ aggregationFunctions }}</div>
+        <div>
+          <b>Months: </b
+          >{{
+            (datacube.data_info?.month_timeseries_size ?? {})[datacube.default_feature] ?? 'unknown'
+          }}
+          | <b> Years: </b
+          >{{
+            (datacube.data_info?.year_timeseries_size ?? {})[datacube.default_feature] ?? 'unknown'
+          }}
+        </div>
       </div>
     </div>
 
@@ -119,7 +136,6 @@
 </template>
 
 <script lang="ts">
-
 import { defineComponent, ref, PropType, Ref } from 'vue';
 import { mapGetters } from 'vuex';
 
@@ -140,31 +156,33 @@ export default defineComponent({
   components: {
     ModalConfirmation,
     MessageDisplay,
-    MultilineDescription
+    MultilineDescription,
   },
   emits: ['apply-to-all', 'toggle-hidden', 'update-meta'],
   props: {
     datacube: {
       type: Object as PropType<Indicator>,
-      default: () => ({})
+      default: () => ({}),
     },
     allowEditing: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   computed: {
     ...mapGetters({
       project: 'app/project',
-      projectType: 'app/projectType'
+      projectType: 'app/projectType',
     }),
     visibleQualifiers(): FeatureQualifier[] {
-      return this.datacube?.qualifier_outputs?.filter(q => isBreakdownQualifier(q)) ?? [];
+      return this.datacube?.qualifier_outputs?.filter((q) => isBreakdownQualifier(q)) ?? [];
     },
     aggregationFunctions(): string {
       const selections = this.datacube?.default_view;
-      return `${selections?.temporalAggregation ?? 'mean'}/${selections?.spatialAggregation ?? 'mean (default)'}`;
-    }
+      return `${selections?.temporalAggregation ?? 'mean'}/${
+        selections?.spatialAggregation ?? 'mean (default)'
+      }`;
+    },
   },
   setup() {
     const showApplyToAllModal = ref(false);
@@ -175,7 +193,7 @@ export default defineComponent({
       showApplyToAllModal,
       isEditingMeta,
       editedMeta,
-      DatacubeStatus
+      DatacubeStatus,
     };
   },
   methods: {
@@ -186,8 +204,8 @@ export default defineComponent({
         query: { datacube_id: id },
         params: {
           project: this.project,
-          projectType: this.projectType
-        }
+          projectType: this.projectType,
+        },
       });
     },
     applyToAll() {
@@ -207,13 +225,13 @@ export default defineComponent({
     saveMetaChanges() {
       this.$emit('update-meta', { id: this.datacube?.id, meta: this.editedMeta });
       this.isEditingMeta = false;
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style scoped lang="scss">
-@import "~styles/variables";
+@import '~styles/variables';
 
 .deprecated-datacube {
   color: blue;
@@ -278,7 +296,7 @@ export default defineComponent({
 }
 
 .remove-button {
-  background: #F44336;
+  background: #f44336;
   color: white;
   font-weight: 600;
   border: none;

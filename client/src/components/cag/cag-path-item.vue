@@ -1,12 +1,15 @@
 <template>
   <div class="path-container">
-    <span v-for="(node, idx) of pathItem.path" :key="node" :class="{'selected': selected === true}">
+    <span v-for="(node, idx) of pathItem.path" :key="node" :class="{ selected: selected === true }">
       {{ ontologyFormatter(node) }}
-      <i v-if="idx < pathItem.path.length - 1" class="fa fa-long-arrow-right fa-fw" style="color: #888" />
+      <i
+        v-if="idx < pathItem.path.length - 1"
+        class="fa fa-long-arrow-right fa-fw"
+        style="color: #888"
+      />
     </span>
   </div>
 </template>
-
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
@@ -17,24 +20,22 @@ export default defineComponent({
   name: 'CAGPathItem',
   props: {
     pathItem: {
-      type: Object as PropType<GraphPath>
+      type: Object as PropType<GraphPath>,
     },
     selected: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   setup() {
     return {
-      ontologyFormatter: useOntologyFormatter()
+      ontologyFormatter: useOntologyFormatter(),
     };
-  }
+  },
 });
 </script>
 
-
 <style lang="scss" scoped>
-
 $annotation-color: lighten(#8767c8, 30%);
 
 .path-container {
@@ -50,6 +51,6 @@ $annotation-color: lighten(#8767c8, 30%);
 
 .path-container:hover {
   background: $annotation-color;
-  cursor: pointer
+  cursor: pointer;
 }
 </style>

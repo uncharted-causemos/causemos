@@ -44,12 +44,11 @@ const RESOURCE = Object.freeze({
   INDICATOR_METADATA: 'indicator-metadata',
   INDICATOR_MATCH_HISTORY: 'indicator-match-history',
 
-
   // Tracking
   ASSEMBLY_REQUEST: 'assembly-request',
   PROJECT_EXTENSION: 'project-extension',
   MODEL_HISTORY: 'model-history',
-  CURATION_TRACKING: 'curation-tracking'
+  CURATION_TRACKING: 'curation-tracking',
 });
 
 class Adapter {
@@ -72,5 +71,5 @@ module.exports = {
   Adapter,
   RESOURCE,
   SEARCH_LIMIT,
-  MAX_ES_BUCKET_SIZE
+  MAX_ES_BUCKET_SIZE,
 };

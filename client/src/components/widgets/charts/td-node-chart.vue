@@ -18,7 +18,7 @@ import {
   ref,
   toRefs,
   watch,
-  watchEffect
+  watchEffect,
 } from 'vue';
 import { useStore } from 'vuex';
 import renderChart from '@/charts/td-node-renderer';
@@ -33,40 +33,40 @@ export default defineComponent({
   props: {
     historicalTimeseries: {
       type: Array as PropType<TimeseriesPoint[]>,
-      default: []
+      default: [],
     },
     projections: {
       type: Array as PropType<ScenarioProjection[]>,
-      default: []
+      default: [],
     },
     minValue: {
       type: Number,
-      required: true
+      required: true,
     },
     maxValue: {
       type: Number,
-      required: true
+      required: true,
     },
     viewingExtent: {
       type: Array as PropType<number[]>,
-      default: null
+      default: null,
     },
     constraints: {
       type: Array as PropType<ProjectionConstraint[]>,
-      required: true
+      required: true,
     },
     unit: {
       type: String,
-      default: ''
+      default: '',
     },
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
-      required: true
+      required: true,
     },
     isClampAreaHidden: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   setup(props, { emit }) {
     const store = useStore();
@@ -81,12 +81,12 @@ export default defineComponent({
       constraints,
       unit,
       modelSummary,
-      isClampAreaHidden
+      isClampAreaHidden,
     } = toRefs(props);
     const historicalTimeseriesBeforeStart = computed(() => {
       const projectionStartTimestamp = modelSummary.value.parameter.projection_start;
       return historicalTimeseries.value.filter(
-        point => point.timestamp < projectionStartTimestamp
+        (point) => point.timestamp < projectionStartTimestamp
       );
     });
     const chartRef = ref<HTMLElement | null>(null);
@@ -104,9 +104,7 @@ export default defineComponent({
     watch(
       () => [viewingExtent.value],
       () => {
-        const svg = chartRef.value
-          ? d3.select<HTMLElement, null>(chartRef.value)
-          : null;
+        const svg = chartRef.value ? d3.select<HTMLElement, null>(chartRef.value) : null;
         if (!svg) return;
         svg.select('.scrollBarGroupElement').remove();
       },
@@ -116,9 +114,7 @@ export default defineComponent({
     watchEffect(() => {
       // Rerender whenever dependencies change
       const parentElement = chartRef.value?.parentElement;
-      const svg = chartRef.value
-        ? d3.select<HTMLElement, null>(chartRef.value)
-        : null;
+      const svg = chartRef.value ? d3.select<HTMLElement, null>(chartRef.value) : null;
       const _projections = projections.value;
       const { width, height } = chartSize.value;
       const _constraints = constraints.value;
@@ -162,12 +158,12 @@ export default defineComponent({
       nextTick(() => {
         chartSize.value = {
           width: parentElement.clientWidth,
-          height: parentElement.clientHeight
+          height: parentElement.clientHeight,
         };
       });
     });
 
-    const resize = _.debounce(function({ width, height }) {
+    const resize = _.debounce(function ({ width, height }) {
       if (chartRef.value === null) return;
       chartSize.value = { width, height };
     }, RESIZE_DELAY);
@@ -210,7 +206,7 @@ export default defineComponent({
     };
 
     return { resize, chartRef };
-  }
+  },
 });
 </script>
 

@@ -5,12 +5,12 @@ const client = new Client({
   node: `${process.env.TD_DATA_URL}`,
   auth: {
     username: `${process.env.TD_DATA_USERNAME}`,
-    password: `${process.env.TD_DATA_PASSWORD}`
+    password: `${process.env.TD_DATA_PASSWORD}`,
   },
   ssl: {
     // might be required if it's a self-signed certificate
-    rejectUnauthorized: false
-  }
+    rejectUnauthorized: false,
+  },
 });
 
 class QueryStringBuilder {
@@ -52,8 +52,8 @@ class QueryStringBuilder {
   build() {
     const r = {
       query_string: {
-        query: this.searches.join(` ${this.operator} `)
-      }
+        query: this.searches.join(` ${this.operator} `),
+      },
     };
     if (!_.isEmpty(this.fields)) {
       r.query_string.fields = this.fields;
@@ -80,18 +80,18 @@ const getBulkErrors = (body, num = 2) => {
     const item = body.items[i];
     const operation = Object.keys(item)[0];
     if (item[operation].error) {
-      errors.push(JSON.stringify({
-        status: item[operation].status,
-        ...item[operation].error
-      }));
+      errors.push(
+        JSON.stringify({
+          status: item[operation].status,
+          ...item[operation].error,
+        })
+      );
       counter++;
       if (counter >= num) break;
     }
   }
   return errors;
 };
-
-
 
 /**
  * Returns elasticsearch highlights with the search results.
@@ -110,33 +110,29 @@ const searchAndHighlight = async (index, queryStringObject, filters, highlightFi
   const query = _.isEmpty(filters)
     ? queryStringObject
     : {
-      bool: {
-        must: [
-          ...filters,
-          queryStringObject
-        ]
-      }
-    };
+        bool: {
+          must: [...filters, queryStringObject],
+        },
+      };
 
   const searchBody = { query };
   if (!_.isEmpty(highlightFields)) {
     const fieldsToHighlight = {};
-    highlightFields.forEach(f => {
+    highlightFields.forEach((f) => {
       fieldsToHighlight[f] = {};
     });
     searchBody.highlight = {
       fields: fieldsToHighlight,
       pre_tags: '',
-      post_tags: ''
+      post_tags: '',
     };
   }
 
   const matches = await client.search({
     index: index,
-    body: searchBody
+    body: searchBody,
   });
   return matches.body.hits.hits;
 };
-
 
 module.exports = { client, getBulkErrors, searchAndHighlight, queryStringBuilder };

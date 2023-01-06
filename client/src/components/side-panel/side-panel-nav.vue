@@ -4,29 +4,16 @@
     :class="{ 'all-tabs-closed': allTabsAreClosed }"
     role="tablist"
   >
-    <li
-      v-for="(tab, idx) in tabs"
-      :key="idx"
-      :class="{ active: tab.name === currentTabName }"
-    >
+    <li v-for="(tab, idx) in tabs" :key="idx" :class="{ active: tab.name === currentTabName }">
       <button
         v-tooltip.right="tab.name"
         role="tab"
-        :class="{'is-greyscale': tab.isGreyscale}"
+        :class="{ 'is-greyscale': tab.isGreyscale }"
         @click="toggleActive(tab.name)"
       >
-        <img
-          v-if="tab.imgSrc !== undefined && tab.imgSrc !== null"
-          :src="getImgUrl(tab.imgSrc)"
-        >
-        <i
-          v-else
-          :class="tab.icon"
-        />
-        <span
-          v-if="tab.badgeCount && tab.badgeCount > 0"
-          class="counter-badge"
-        >
+        <img v-if="tab.imgSrc !== undefined && tab.imgSrc !== null" :src="getImgUrl(tab.imgSrc)" />
+        <i v-else :class="tab.icon" />
+        <span v-if="tab.badgeCount && tab.badgeCount > 0" class="counter-badge">
           {{ tab.badgeCount }}
         </span>
       </button>
@@ -35,7 +22,6 @@
 </template>
 
 <script lang="ts">
-
 import { defineComponent, PropType } from 'vue';
 import { SidePanelTab } from '@/types/Common';
 
@@ -44,20 +30,18 @@ export default defineComponent({
   props: {
     tabs: {
       type: Array as PropType<SidePanelTab[]>,
-      default: () => []
+      default: () => [],
     },
     currentTabName: {
       type: String,
-      default: () => ''
-    }
+      default: () => '',
+    },
   },
-  emits: [
-    'set-active'
-  ],
+  emits: ['set-active'],
   computed: {
     allTabsAreClosed(): boolean {
-      return this.tabs.find(tab => tab.name === this.currentTabName) === undefined;
-    }
+      return this.tabs.find((tab) => tab.name === this.currentTabName) === undefined;
+    },
   },
   methods: {
     toggleActive(tabName: string) {
@@ -68,13 +52,13 @@ export default defineComponent({
     getImgUrl(imgSrc: string) {
       const assetFolder = require.context('@/assets/');
       return assetFolder('./' + imgSrc);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .side-panel-nav-container {
   margin: 0;
@@ -124,7 +108,8 @@ li {
     border: none;
 
     &.is-greyscale {
-      img, i {
+      img,
+      i {
         filter: grayscale(100%);
       }
     }
@@ -145,7 +130,6 @@ li {
       top: auto;
     }
   }
-
 
   img {
     position: absolute;

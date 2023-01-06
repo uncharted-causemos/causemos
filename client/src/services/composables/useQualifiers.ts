@@ -5,7 +5,7 @@ import {
   AggregationOption,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
-  TemporalResolutionOption
+  TemporalResolutionOption,
 } from '@/types/Enums';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
@@ -26,23 +26,23 @@ const convertResponsesToBreakdownData = (
 
   responses.forEach((breakdownVariables, index) => {
     const runId = modelRunIds[index];
-    breakdownVariables.forEach(breakdownVariable => {
+    breakdownVariables.forEach((breakdownVariable) => {
       const { name: breakdownVariableId, options } = breakdownVariable;
       if (options !== undefined && breakdownVariableId !== undefined) {
         const metadataForVariable = qualifierOutputMetadata.find(
-          metadata => metadata.name === breakdownVariableId
+          (metadata) => metadata.name === breakdownVariableId
         );
         const breakdownVariableDisplayName =
           metadataForVariable?.display_name ?? breakdownVariableId;
         let potentiallyExistingEntry = breakdownDataList.find(
-          breakdownData => breakdownData.id === breakdownVariableId
+          (breakdownData) => breakdownData.id === breakdownVariableId
         );
         if (potentiallyExistingEntry === undefined) {
           potentiallyExistingEntry = {
             id: breakdownVariableId,
             name: breakdownVariableDisplayName,
             totalDataLength: qualifierInfoMap.get(breakdownVariableId)?.count ?? 0,
-            data: {}
+            data: {},
           };
           breakdownDataList.push(potentiallyExistingEntry);
         }
@@ -52,16 +52,14 @@ const convertResponsesToBreakdownData = (
         if (existingEntry.data[breakdownVariableId] === undefined) {
           existingEntry.data[breakdownVariableId] = [];
         }
-        options.forEach(option => {
+        options.forEach((option) => {
           const { name: optionId, value } = option;
-          let potentiallyExistingOption = existingEntry.data[
-            breakdownVariableId
-          ].find(option => option.id === optionId);
+          let potentiallyExistingOption = existingEntry.data[breakdownVariableId].find(
+            (option) => option.id === optionId
+          );
           if (potentiallyExistingOption === undefined) {
             potentiallyExistingOption = { id: optionId, values: {} };
-            existingEntry.data[breakdownVariableId].push(
-              potentiallyExistingOption
-            );
+            existingEntry.data[breakdownVariableId].push(potentiallyExistingOption);
           }
           // Value is null if a qualifier option doesn't have a value at the
           //  selected timestamp. We still include an entry in the breakdown
@@ -83,16 +81,16 @@ const convertResponsesToBreakdownData = (
   // Fill in any qualifiers from the map that don't have data
   for (const [qualifierId, qualifierInfo] of qualifierInfoMap) {
     let potentiallyExistingEntry = breakdownDataList.find(
-      breakdownData => breakdownData.id === qualifierId
+      (breakdownData) => breakdownData.id === qualifierId
     );
     if (potentiallyExistingEntry === undefined) {
-      const displayName = qualifierOutputMetadata
-        .find(metadata => metadata.name === qualifierId)?.name ?? '';
+      const displayName =
+        qualifierOutputMetadata.find((metadata) => metadata.name === qualifierId)?.name ?? '';
       potentiallyExistingEntry = {
         id: qualifierId,
         name: displayName,
         totalDataLength: qualifierInfo.count,
-        data: {}
+        data: {},
       };
       breakdownDataList.push(potentiallyExistingEntry);
     }
@@ -130,7 +128,7 @@ export default function useQualifiers(
 
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
 
-  const requestedQualifier = ref<string|null>(null);
+  const requestedQualifier = ref<string | null>(null);
   const qualifierFetchInfo = useQualifierFetchInfo(metadata, selectedScenarioIds, activeFeature);
   const additionalQualifiersRequested = ref<Set<string>>(new Set());
   watch([qualifierFetchInfo], () => {
@@ -161,16 +159,14 @@ export default function useQualifiers(
     }
     // Reset the selected qualifier value list when there is an initial list of selected qualifier values
     const initialQualifierList = new Set<string>();
-    initialSelectedQualifierValues.value.forEach(qualifierValue => {
+    initialSelectedQualifierValues.value.forEach((qualifierValue) => {
       initialQualifierList.add(qualifierValue);
     });
     selectedQualifierValues.value = initialQualifierList;
   });
 
   const toggleIsQualifierSelected = (qualifierValue: string) => {
-    const isQualifierValueSelected = selectedQualifierValues.value.has(
-      qualifierValue
-    );
+    const isQualifierValueSelected = selectedQualifierValues.value.has(qualifierValue);
     const updatedList = _.clone(selectedQualifierValues.value);
     if (isQualifierValueSelected) {
       // If qualifier value is currently selected, remove it from the list of
@@ -185,7 +181,7 @@ export default function useQualifiers(
     selectedQualifierValues.value = updatedList;
   };
 
-  watchEffect(async onInvalidate => {
+  watchEffect(async (onInvalidate) => {
     const timestamp = selectedTimestamp.value;
     const _breakdownOption = breakdownOption.value;
     const desiredNonDefaultQualifiers = initialNonDefaultQualifiers.value;
@@ -204,8 +200,10 @@ export default function useQualifiers(
     // If there are non-default qualifiers that should have data,
     // add them to the default list, and the set of non-default qualifier that had data requested
     const additionalQualifiers = [_breakdownOption, ...desiredNonDefaultQualifiers];
-    additionalQualifiers.forEach(qualifier => {
-      if (qualifier && !defaultQualifierIds.includes(qualifier) &&
+    additionalQualifiers.forEach((qualifier) => {
+      if (
+        qualifier &&
+        !defaultQualifierIds.includes(qualifier) &&
         !additionalQualifiersRequested.value.has(qualifier)
       ) {
         defaultQualifierIds.push(qualifier);
@@ -216,27 +214,27 @@ export default function useQualifiers(
     const qualifiersToRequest = appendQualifier
       ? [requestedQualifier.value ?? '']
       : defaultQualifierIds;
-    const promises = selectedScenarioIds.value.map(runId =>
+    const promises = selectedScenarioIds.value.map((runId) =>
       isRawDataResolution?.value
         ? getRawQualifierBreakdown(
-          data_id,
-          runId,
-          activeFeature.value,
-          qualifiersToRequest,
-          spatialAggregation.value,
-          timestamp
-        )
+            data_id,
+            runId,
+            activeFeature.value,
+            qualifiersToRequest,
+            spatialAggregation.value,
+            timestamp
+          )
         : getQualifierBreakdown(
-          data_id,
-          runId,
-          activeFeature.value,
-          qualifiersToRequest,
-          temporalResolution.value,
-          temporalAggregation.value,
-          spatialAggregation.value,
-          timestamp,
-          selectedRegionId.value
-        )
+            data_id,
+            runId,
+            activeFeature.value,
+            qualifiersToRequest,
+            temporalResolution.value,
+            temporalAggregation.value,
+            spatialAggregation.value,
+            timestamp,
+            selectedRegionId.value
+          )
     );
     // FIXME: OPTIMIZATION: Placing a separate request for each run eats into
     //  the maximum number of concurrent requests, resulting in closer to
@@ -261,6 +259,6 @@ export default function useQualifiers(
     toggleIsQualifierSelected,
     requestAdditionalQualifier,
     nonDefaultQualifiers: additionalQualifiersRequested,
-    qualifierFetchInfo
+    qualifierFetchInfo,
   };
 }

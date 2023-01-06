@@ -41,7 +41,7 @@ describe('string-util', () => {
 
     it('throws an error for any other string', () => {
       const invalidStrings = ['', 'truefalse', 'true ', ' false'];
-      invalidStrings.forEach(invalidString => {
+      invalidStrings.forEach((invalidString) => {
         expect(convertStringToBoolean.bind(this, invalidString)).to.throw(
           `Unable to convert string "${invalidString}" to boolean.`
         );

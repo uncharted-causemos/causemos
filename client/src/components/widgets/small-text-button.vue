@@ -14,19 +14,19 @@ export default defineComponent({
   props: {
     label: {
       type: String,
-      default: 'Label'
+      default: 'Label',
     },
     disabled: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['click'],
   methods: {
     onClick(e: Event) {
       this.$emit('click', e);
-    }
-  }
+    },
+  },
 });
 </script>
 

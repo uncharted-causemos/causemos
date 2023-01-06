@@ -1,15 +1,43 @@
 import _ from 'lodash';
 import { Bibliography } from '@/services/bibliography-service';
 
-import { AnalyticalQuestion, Insight, FullInsight, QualitativeDataState, DataState, ModelsSpaceDataState, DataSpaceDataState, ReviewPosition, SectionWithInsights } from '@/types/Insight';
+import {
+  AnalyticalQuestion,
+  Insight,
+  FullInsight,
+  QualitativeDataState,
+  DataState,
+  ModelsSpaceDataState,
+  DataSpaceDataState,
+  ReviewPosition,
+  SectionWithInsights,
+} from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
-import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType, ISectionOptions, convertInchesToTwip } from 'docx';
+import {
+  Packer,
+  Document,
+  SectionType,
+  Footer,
+  Paragraph,
+  AlignmentType,
+  ImageRun,
+  TextRun,
+  HeadingLevel,
+  ExternalHyperlink,
+  UnderlineType,
+  ISectionOptions,
+  convertInchesToTwip,
+} from 'docx';
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
 import { DataTransform } from '@/types/Enums';
 import { DataAnalysisState } from '@/types/Analysis';
 
-function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId: string | undefined) {
+function getSourceUrlForExport(
+  insightURL: string,
+  insightId: string,
+  datacubeId: string | undefined
+) {
   const separator = '?';
   const insightUrlSeparated = insightURL.split(separator);
   const urlPrefix = _.first(insightUrlSeparated);
@@ -30,10 +58,7 @@ function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId
   return urlPrefix + separator + searchParams.toString();
 }
 
-
-export const createDataSpaceDataState = (
-  datacubeId: string
-): DataSpaceDataState => {
+export const createDataSpaceDataState = (datacubeId: string): DataSpaceDataState => {
   return {
     activeFeatures: [],
     activeReferenceOptions: [],
@@ -49,18 +74,16 @@ export const createDataSpaceDataState = (
       country: [],
       admin1: [],
       admin2: [],
-      admin3: []
+      admin3: [],
     },
     selectedScenarioIds: [],
     selectedTimestamp: null,
     selectedTransform: DataTransform.None,
-    selectedYears: []
+    selectedYears: [],
   };
 };
 
-export function isDataSpaceDataState(
-  dataState: DataState
-): dataState is DataSpaceDataState {
+export function isDataSpaceDataState(dataState: DataState): dataState is DataSpaceDataState {
   return (dataState as DataSpaceDataState).selectedModelId !== undefined;
 }
 
@@ -76,12 +99,9 @@ export function isModelsSpaceDataState(
   return (dataState as ModelsSpaceDataState).selectedScenarioId !== undefined;
 }
 
-export function isDataAnalysisState(
-  dataState: DataState
-): dataState is DataAnalysisState {
+export function isDataAnalysisState(dataState: DataState): dataState is DataAnalysisState {
   return (dataState as DataAnalysisState).analysisItems !== undefined;
 }
-
 
 function jumpToInsightContext(insight: Insight, currentURL: string) {
   const savedURL = insight.url;
@@ -90,7 +110,9 @@ function jumpToInsightContext(insight: Insight, currentURL: string) {
   //  because, for example, the comparative analysis (region-ranking) page does not
   //  need/understand a specific datacube_id,
   //  and setting it regardless may have a negative side effect
-  const datacubeId = savedURL.includes('/dataComparative/') ? undefined : _.first(insight.context_id);
+  const datacubeId = savedURL.includes('/dataComparative/')
+    ? undefined
+    : _.first(insight.context_id);
 
   if (savedURL !== currentURL) {
     // FIXME: applying (private) insights that belong to analyses that no longer exist
@@ -105,7 +127,7 @@ function jumpToInsightContext(insight: Insight, currentURL: string) {
 
 function getPngDimensionsInPixels(base64png: string) {
   const header = atob(base64png.slice(22, 72)).slice(16, 24);
-  const uint8 = Uint8Array.from(header, c => c.charCodeAt(0));
+  const uint8 = Uint8Array.from(header, (c) => c.charCodeAt(0));
   const dataView = new DataView(uint8.buffer);
   const width = dataView.getInt32(0);
   const height = dataView.getInt32(4);
@@ -115,16 +137,16 @@ function getPngDimensionsInPixels(base64png: string) {
 function scaleImage(base64png: string, widthLimit: number, heightLimit: number) {
   const imageSize = getPngDimensionsInPixels(base64png);
   let scaledWidth = widthLimit;
-  let scaledHeight = imageSize.height * scaledWidth / imageSize.width;
+  let scaledHeight = (imageSize.height * scaledWidth) / imageSize.width;
 
   if (scaledHeight > heightLimit) {
     scaledHeight = heightLimit;
-    scaledWidth = imageSize.width * scaledHeight / imageSize.height;
+    scaledWidth = (imageSize.width * scaledHeight) / imageSize.height;
   }
 
   return {
     width: scaledWidth,
-    height: scaledHeight
+    height: scaledHeight,
   };
 }
 
@@ -142,10 +164,11 @@ function getFileName(projectMetadata: any) {
 function getMetadataSummary(projectMetadata: any) {
   const projectCreatedDate = new Date(projectMetadata.created_at);
   const projectModifiedDate = new Date(projectMetadata.modified_at);
-  return `Project: ${projectMetadata.name} - Created: ${projectCreatedDate.toLocaleString()} - ` +
-    `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${projectMetadata.corpus_id}`;
+  return (
+    `Project: ${projectMetadata.name} - Created: ${projectCreatedDate.toLocaleString()} - ` +
+    `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${projectMetadata.corpus_id}`
+  );
 }
-
 
 // creates a new array of insights out of the questions and insights passed to
 // the function that can be used to export something in the order expected from
@@ -153,16 +176,16 @@ function getMetadataSummary(projectMetadata: any) {
 function parseReportFromQuestionsAndInsights(
   insights: Insight[],
   questions: AnalyticalQuestion[]
-): (AnalyticalQuestion|Insight)[] {
+): (AnalyticalQuestion | Insight)[] {
   if (questions.length === 0) return insights;
 
-  const report: (Insight|AnalyticalQuestion)[] = [];
+  const report: (Insight | AnalyticalQuestion)[] = [];
   const insightMap = new Map<string, Insight>();
-  insights.forEach(i => insightMap.set(i.id ?? '', i));
+  insights.forEach((i) => insightMap.set(i.id ?? '', i));
 
   questions.forEach((question) => {
     report.push(question);
-    question.linked_insights.forEach(li => {
+    question.linked_insights.forEach((li) => {
       const i = insightMap.get(li);
       i && report.push(i);
     });
@@ -179,7 +202,7 @@ function createEmptyChecklistSection(): AnalyticalQuestion {
     view_state: {},
     target_view: [],
     visibility: '',
-    url: ''
+    url: '',
   };
 }
 
@@ -190,18 +213,14 @@ function getSlideFromPosition(
   if (position === null) {
     return null;
   }
-  const section = sections.find(
-    section => section.section.id === position.sectionId
-  );
+  const section = sections.find((section) => section.section.id === position.sectionId);
   if (section === undefined) {
     return null;
   }
   if (position.insightId === null) {
     return section.section;
   }
-  return section.insights.find(
-    insight => insight.id === position.insightId
-  ) ?? null;
+  return section.insights.find((insight) => insight.id === position.insightId) ?? null;
 }
 
 function instanceOfInsight(data: any): data is Insight {
@@ -216,7 +235,7 @@ function instanceOfQuestion(data: any): data is AnalyticalQuestion {
   return data !== null && 'question' in data;
 }
 
-function generateFooterDOCX (metadataSummary: string) {
+function generateFooterDOCX(metadataSummary: string) {
   return {
     default: new Footer({
       children: [
@@ -225,16 +244,16 @@ function generateFooterDOCX (metadataSummary: string) {
           children: [
             new TextRun({
               size: 14,
-              text: metadataSummary
-            })
-          ]
-        })
-      ]
-    })
+              text: metadataSummary,
+            }),
+          ],
+        }),
+      ],
+    }),
   };
 }
 
-function generateInsightDOCX (
+function generateInsightDOCX(
   insight: FullInsight,
   metadataSummary: string,
   newPage: boolean
@@ -250,7 +269,7 @@ function generateInsightDOCX (
     new Paragraph({
       alignment: AlignmentType.CENTER,
       heading: HeadingLevel.HEADING_2,
-      text: `${insight.name}`
+      text: `${insight.name}`,
     }),
     new Paragraph({
       // break: 1, // REVIEW
@@ -260,10 +279,10 @@ function generateInsightDOCX (
           data: insight.image,
           transformation: {
             height: imageSize.height,
-            width: imageSize.width
-          }
-        })
-      ]
+            width: imageSize.width,
+          },
+        }),
+      ],
     }),
     new Paragraph({
       alignment: AlignmentType.LEFT,
@@ -272,49 +291,53 @@ function generateInsightDOCX (
           break: 1,
           bold: true,
           size: 24,
-          text: 'Description: '
+          text: 'Description: ',
         }),
         new TextRun({
           size: 24,
-          text: `${insight.description}`
+          text: `${insight.description}`,
         }),
         new TextRun({
           bold: true,
           break: 1,
           size: 24,
-          text: 'Metadata: '
+          text: 'Metadata: ',
         }),
         new TextRun({
           size: 24,
-          text: `Captured on: ${insightDate} - ${metadataSummary} - `
+          text: `Captured on: ${insightDate} - ${metadataSummary} - `,
         }),
         new ExternalHyperlink({
           child: new TextRun({
             size: 24,
             text: '(View Source on Causemos)',
             underline: {
-              type: UnderlineType.SINGLE
-            }
+              type: UnderlineType.SINGLE,
+            },
           }),
-          link: slideURL(getSourceUrlForExport(insight.url, insight.id as string, datacubeId as string))
-        })
-      ]
-    })
+          link: slideURL(
+            getSourceUrlForExport(insight.url, insight.id as string, datacubeId as string)
+          ),
+        }),
+      ],
+    }),
   ];
   const properties = {
-    type: newPage ? SectionType.NEXT_PAGE : SectionType.CONTINUOUS
+    type: newPage ? SectionType.NEXT_PAGE : SectionType.CONTINUOUS,
   };
-  return newPage ? {
-    footers,
-    children,
-    properties
-  } : {
-    children,
-    properties
-  };
+  return newPage
+    ? {
+        footers,
+        children,
+        properties,
+      }
+    : {
+        children,
+        properties,
+      };
 }
 
-function generateQuestionDOCX (
+function generateQuestionDOCX(
   question: AnalyticalQuestion,
   metadataSummary: string
 ): ISectionOptions {
@@ -322,54 +345,62 @@ function generateQuestionDOCX (
     new Paragraph({
       alignment: AlignmentType.CENTER,
       heading: HeadingLevel.HEADING_1,
-      text: `${question.question}`
-    })
+      text: `${question.question}`,
+    }),
   ];
   const properties = {
-    type: SectionType.NEXT_PAGE
+    type: SectionType.NEXT_PAGE,
   };
   const footers = generateFooterDOCX(metadataSummary);
   return {
     children,
     properties,
-    footers
+    footers,
   };
 }
 
 function targetViewsContainCAG(targetViews: string[]): boolean {
   const validBibiographyTypes = ['quantitative', 'qualitative'];
-  return targetViews.some(v => validBibiographyTypes.includes(v));
+  return targetViews.some((v) => validBibiographyTypes.includes(v));
 }
 
 function generateAPACiteDOCX(b: Bibliography): TextRun[] {
   const cite = <TextRun[]>[];
   // line break, author
-  cite.push(new TextRun({
-    break: 1,
-    size: 24,
-    text: (b.author && b.author.length) > 0 ? `${b.author}. ` : ''
-  }));
+  cite.push(
+    new TextRun({
+      break: 1,
+      size: 24,
+      text: (b.author && b.author.length) > 0 ? `${b.author}. ` : '',
+    })
+  );
 
   // date
-  cite.push(new TextRun({
-    size: 24,
-    text: `(${b.publication_date ? b.publication_date.year : 'n/a'}). `
-  }));
+  cite.push(
+    new TextRun({
+      size: 24,
+      text: `(${b.publication_date ? b.publication_date.year : 'n/a'}). `,
+    })
+  );
 
   // title
-  const title = (b.title && b.title.length > 0) ? b.title : `Document: ${b.doc_id}`;
-  cite.push(new TextRun({
-    size: 24,
-    text: `${title}. `
-  }));
+  const title = b.title && b.title.length > 0 ? b.title : `Document: ${b.doc_id}`;
+  cite.push(
+    new TextRun({
+      size: 24,
+      text: `${title}. `,
+    })
+  );
 
   // publisher name
   if (b.publisher_name && b.publisher_name.length > 0) {
-    cite.push(new TextRun({
-      italics: true,
-      size: 24,
-      text: `${b.publisher_name}.`
-    }));
+    cite.push(
+      new TextRun({
+        italics: true,
+        size: 24,
+        text: `${b.publisher_name}.`,
+      })
+    );
   }
 
   return cite;
@@ -386,65 +417,62 @@ async function generateAppendixDOCX(
   // const result = await getBibiographyFromCagIds(cagIds);
   const children = <Paragraph[]>[];
 
-  cagIds.forEach(id => {
+  cagIds.forEach((id) => {
     const cagInfo = cags.get(id);
 
-    children.push(new Paragraph({
-      alignment: AlignmentType.LEFT,
-      heading: HeadingLevel.HEADING_2,
-      children: [
-        new TextRun({
-          break: 1,
-          text: cagInfo?.modelName
-        })
-      ]
-    }));
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.LEFT,
+        heading: HeadingLevel.HEADING_2,
+        children: [
+          new TextRun({
+            break: 1,
+            text: cagInfo?.modelName,
+          }),
+        ],
+      })
+    );
 
     bibliography.data[id].forEach((b: Bibliography) => {
-      children.push(new Paragraph({
-        indent: {
-          start: convertInchesToTwip(0.5)
-        },
-        alignment: AlignmentType.LEFT,
-        children: generateAPACiteDOCX(b)
-      }));
+      children.push(
+        new Paragraph({
+          indent: {
+            start: convertInchesToTwip(0.5),
+          },
+          alignment: AlignmentType.LEFT,
+          children: generateAPACiteDOCX(b),
+        })
+      );
     });
   });
 
   const bibliographyHeader = new Paragraph({
     alignment: AlignmentType.LEFT,
     heading: HeadingLevel.HEADING_1,
-    text: 'References'
+    text: 'References',
   });
   children.unshift(bibliographyHeader);
 
   const properties = {
-    type: SectionType.NEXT_PAGE
+    type: SectionType.NEXT_PAGE,
   };
   const footers = generateFooterDOCX(metadataSummary);
   return {
     children,
     properties,
-    footers
+    footers,
   };
 }
 
-export function getCagMapFromInsights (insights: Insight[]) {
+export function getCagMapFromInsights(insights: Insight[]) {
   const cags = insights.reduce((acc, item) => {
-    if (
-      item.context_id &&
-      item.context_id.length > 0 &&
-      targetViewsContainCAG(item.target_view)
-    ) {
+    if (item.context_id && item.context_id.length > 0 && targetViewsContainCAG(item.target_view)) {
       if (
         !acc.has(item.context_id[0]) &&
         item.data_state &&
         isQualitativeViewDataState(item.data_state)
       ) {
-        acc.set(
-          item.context_id[0],
-          item.data_state
-        );
+        acc.set(item.context_id[0], item.data_state);
       }
     }
     return acc;
@@ -458,9 +486,7 @@ async function exportDOCX(
   questions?: AnalyticalQuestion[],
   bibliography?: any
 ) {
-  const allData = questions
-    ? parseReportFromQuestionsAndInsights(insights, questions)
-    : insights;
+  const allData = questions ? parseReportFromQuestionsAndInsights(insights, questions) : insights;
 
   const metadataSummary = getMetadataSummary(projectMetadata);
   const sections = allData.reduce((acc, item, index) => {
@@ -473,26 +499,21 @@ async function exportDOCX(
     return acc;
   }, <ISectionOptions[]>[]);
 
-
   const bibliographyPages = await generateAppendixDOCX(insights, metadataSummary, bibliography);
   sections.push(bibliographyPages);
 
   const doc = new Document({
     sections,
     title: projectMetadata.name,
-    description: metadataSummary
+    description: metadataSummary,
   });
 
-  Packer.toBlob(doc).then(blob => {
+  Packer.toBlob(doc).then((blob) => {
     saveAs(blob, `${getFileName(projectMetadata)}.docx`);
   });
 }
 
-function generateInsightPPTX (
-  insight: FullInsight,
-  pres: pptxgen,
-  metadataSummary: string
-) {
+function generateInsightPPTX(insight: FullInsight, pres: pptxgen, metadataSummary: string) {
   // some PPTX consts as powerpoint does everything in inches & has hard boundaries
   const widthLimitImage = 10;
   const heightLimitImage = 4.75;
@@ -511,7 +532,7 @@ function generateInsightPPTX (
   */
   (slide as any)._slideObjects.push({
     _type: 'notes',
-    text: notes
+    text: notes,
   });
   slide.addImage({
     data: insight.image,
@@ -520,59 +541,66 @@ function generateInsightPPTX (
     x: (widthLimitImage - imageSize.width) / 2,
     y: (heightLimitImage - imageSize.height) / 2,
     w: imageSize.width,
-    h: imageSize.height
+    h: imageSize.height,
   });
-  slide.addText([
+  slide.addText(
+    [
+      {
+        text: `${insight.name}: `,
+        options: {
+          bold: true,
+          color: '000088',
+          hyperlink: {
+            url: slideURL(
+              getSourceUrlForExport(insight.url, insight.id as string, datacubeId as string)
+            ),
+          },
+        },
+      },
+      {
+        text: `${insight.description} `,
+        options: {
+          // break: false
+        },
+      },
+      {
+        text: `\n(Captured on: ${insightDate} - ${metadataSummary} `,
+        options: {
+          // break: false // REVIEW
+        },
+      },
+      {
+        text: 'View On Causemos',
+        options: {
+          // break: false, // REVIEW
+          color: '000088',
+          hyperlink: {
+            url: slideURL(
+              getSourceUrlForExport(insight.url, insight.id as string, datacubeId as string)
+            ),
+          },
+        },
+      },
+      {
+        text: '.)',
+        options: {
+          // break: false // REVIEW
+        },
+      },
+    ],
     {
-      text: `${insight.name}: `,
-      options: {
-        bold: true,
-        color: '000088',
-        hyperlink: {
-          url: slideURL(getSourceUrlForExport(insight.url, insight.id as string, datacubeId as string))
-        }
-      }
-    },
-    {
-      text: `${insight.description} `,
-      options: {
-        // break: false
-      }
-    },
-    {
-      text: `\n(Captured on: ${insightDate} - ${metadataSummary} `,
-      options: {
-        // break: false // REVIEW
-      }
-    },
-    {
-      text: 'View On Causemos',
-      options: {
-        // break: false, // REVIEW
-        color: '000088',
-        hyperlink: {
-          url: slideURL(getSourceUrlForExport(insight.url, insight.id as string, datacubeId as string))
-        }
-      }
-    },
-    {
-      text: '.)',
-      options: {
-        // break: false // REVIEW
-      }
+      x: 0,
+      y: 4.75,
+      w: 10,
+      h: 0.75,
+      color: '363636',
+      fontSize: 10,
+      align: pres.AlignH.left,
     }
-  ], {
-    x: 0,
-    y: 4.75,
-    w: 10,
-    h: 0.75,
-    color: '363636',
-    fontSize: 10,
-    align: pres.AlignH.left
-  });
+  );
 }
 
-function generateQuestionPPTX (question: AnalyticalQuestion, pres: pptxgen) {
+function generateQuestionPPTX(question: AnalyticalQuestion, pres: pptxgen) {
   const slide = pres.addSlide();
   slide.addText(question.question, {
     x: 0,
@@ -581,7 +609,7 @@ function generateQuestionPPTX (question: AnalyticalQuestion, pres: pptxgen) {
     h: 0.75,
     color: '363636',
     fontSize: 30,
-    align: pres.AlignH.center
+    align: pres.AlignH.center,
   });
 }
 
@@ -590,9 +618,7 @@ function exportPPTX(
   projectMetadata: any,
   questions?: AnalyticalQuestion[]
 ) {
-  const allData = questions
-    ? parseReportFromQuestionsAndInsights(insights, questions)
-    : insights;
+  const allData = questions ? parseReportFromQuestionsAndInsights(insights, questions) : insights;
 
   const Pptxgen = pptxgen;
   const pres = new Pptxgen();
@@ -602,9 +628,9 @@ function exportPPTX(
   // so we can add the project metadata in the footer with basic numbering while we're at it.
   pres.defineSlideMaster({
     title: 'MASTER_SLIDE',
-    margin: [0.5, 0.25, 1.00, 0.25],
+    margin: [0.5, 0.25, 1.0, 0.25],
     background: { fill: 'FFFFFF' },
-    slideNumber: { x: 9.75, y: 5.375, color: '000000', fontSize: 8, align: pres.AlignH.right }
+    slideNumber: { x: 9.75, y: 5.375, color: '000000', fontSize: 8, align: pres.AlignH.right },
   });
 
   allData.forEach((item) => {
@@ -616,10 +642,9 @@ function exportPPTX(
   });
 
   pres.writeFile({
-    fileName: getFileName(projectMetadata)
+    fileName: getFileName(projectMetadata),
   });
 }
-
 
 export default {
   instanceOfInsight,
@@ -631,5 +656,5 @@ export default {
   jumpToInsightContext,
   getCagMapFromInsights,
   exportDOCX,
-  exportPPTX
+  exportPPTX,
 };

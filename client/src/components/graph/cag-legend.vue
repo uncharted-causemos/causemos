@@ -49,36 +49,34 @@ export default defineComponent({
   props: {
     timeScale: {
       type: String as PropType<TimeScale>,
-      default: TimeScale.Months
+      default: TimeScale.Months,
     },
     showDataWarnings: {
       type: Boolean,
-      default: false
+      default: false,
     },
     showEdgeTypeExplanation: {
       type: Boolean,
-      default: false
+      default: false,
     },
     areRidgelinesVisible: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   setup(props) {
     const { timeScale } = toRefs(props);
     const ridgelineFilepath = computed(() => {
       // NodeRequire type doesn't have `.context()`
       return (require as any).context('@/assets/')(
-        `./ridgeline-legend-${
-          timeScale.value === TimeScale.Years ? 'years' : 'months'
-        }.svg`
+        `./ridgeline-legend-${timeScale.value === TimeScale.Years ? 'years' : 'months'}.svg`
       );
     });
     return {
       ArrowType,
-      ridgelineFilepath
+      ridgelineFilepath,
     };
-  }
+  },
 });
 </script>
 

@@ -7,7 +7,6 @@ const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detec
 const { client } = rootRequire('/adapters/es/client');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 
-
 const _buildQueryStringFilter = (text) => {
   let cleanedStr = _.last(text.split('/'));
   cleanedStr = cleanedStr.replaceAll('_', ' ');
@@ -27,8 +26,20 @@ const _buildQueryStringFilter = (text) => {
   return {
     query_string: {
       query: query,
-      fields: ['name', 'family_name', 'description', 'category', 'outputs.name', 'outputs.display_name', 'outputs.description', 'tags', 'geography.*', 'ontology_matches', 'data_info']
-    }
+      fields: [
+        'name',
+        'family_name',
+        'description',
+        'category',
+        'outputs.name',
+        'outputs.display_name',
+        'outputs.description',
+        'tags',
+        'geography.*',
+        'ontology_matches',
+        'data_info',
+      ],
+    },
   };
 };
 
@@ -42,26 +53,27 @@ const textSearch = async (text) => {
           must: [
             _buildQueryStringFilter(text),
             { match: { type: 'indicator' } },
-            { match: { status: 'READY' } }
-          ]
-        }
+            { match: { status: 'READY' } },
+          ],
+        },
       },
-      sort: [
-        { _score: 'desc' }
-      ]
-    }
+      sort: [{ _score: 'desc' }],
+    },
   };
   const results = await client.search(searchPayload);
-  return results.body.hits.hits.map(d => d._source);
+  return results.body.hits.hits.map((d) => d._source);
 };
 
 const getDefaultModelRun = async (dataId) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  const defaultRun = await connection.findOne([
-    { field: 'model_id', value: dataId },
-    { field: 'status', value: 'READY' },
-    { field: 'is_default_run', value: true }
-  ], {});
+  const defaultRun = await connection.findOne(
+    [
+      { field: 'model_id', value: dataId },
+      { field: 'status', value: 'READY' },
+      { field: 'is_default_run', value: true },
+    ],
+    {}
+  );
   return defaultRun;
 };
 
@@ -76,30 +88,29 @@ const _findUnquantifiedNodes = async (modelId) => {
     bool: {
       filter: {
         term: {
-          model_id: modelId
-        }
+          model_id: modelId,
+        },
       },
       must_not: {
         exists: {
           // field: 'parameter.id'
-          field: 'parameter.name'
-        }
-      }
-    }
+          field: 'parameter.name',
+        },
+      },
+    },
   };
   const searchPayload = {
     index: RESOURCE.NODE_PARAMETER,
     size: SEARCH_LIMIT,
-    body: { query }
+    body: { query },
   };
 
   const response = await esClient.search(searchPayload);
   if (response.errors) {
     throw new Error(JSON.stringify(response.items[0]));
   }
-  return response.body.hits.hits.map(d => d._source);
+  return response.body.hits.hits.map((d) => d._source);
 };
-
 
 // Returns top concept->datacube mappings
 const getConceptIndicatorMap = async (model, nodeParameters) => {
@@ -113,26 +124,28 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
     let topUsedIndicator = await historyAdapter.findOne(
       [
         { field: 'project_id', value: model.project_id },
-        { field: 'concept', value: node.concept }
+        { field: 'concept', value: node.concept },
       ],
       {
-        sort: [
-          { frequency: { order: 'desc' } },
-          { modified_at: { order: 'desc' } }
-        ]
+        sort: [{ frequency: { order: 'desc' } }, { modified_at: { order: 'desc' } }],
       }
     );
 
     if (!_.isNil(topUsedIndicator)) {
-      Logger.info(`Using previous selection (project specific) ${node.concept} => ${topUsedIndicator.indicator_id}`);
-      const cube = await datacubeAdapter.findOne({
-        clauses: [
-          {
-            field: 'id',
-            values: [topUsedIndicator.indicator_id]
-          }
-        ]
-      }, {});
+      Logger.info(
+        `Using previous selection (project specific) ${node.concept} => ${topUsedIndicator.indicator_id}`
+      );
+      const cube = await datacubeAdapter.findOne(
+        {
+          clauses: [
+            {
+              field: 'id',
+              values: [topUsedIndicator.indicator_id],
+            },
+          ],
+        },
+        {}
+      );
       if (cube) {
         result.set(node.concept, [cube]);
       }
@@ -140,20 +153,25 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
     }
 
     // 1.2 If project specific history doesn't exist, fall back to global history
-    topUsedIndicator = await historyAdapter.findOne([
-      { field: 'concept', value: node.concept }
-    ], { sort: [{ frequency: { order: 'desc' } }] });
+    topUsedIndicator = await historyAdapter.findOne([{ field: 'concept', value: node.concept }], {
+      sort: [{ frequency: { order: 'desc' } }],
+    });
 
     if (!_.isNil(topUsedIndicator)) {
-      Logger.info(`Using previous selection (not project specific) ${node.concept} => ${topUsedIndicator.indicator_id}`);
-      const cube = await datacubeAdapter.findOne({
-        clauses: [
-          {
-            field: 'id',
-            values: [topUsedIndicator.indicator_id]
-          }
-        ]
-      }, {});
+      Logger.info(
+        `Using previous selection (not project specific) ${node.concept} => ${topUsedIndicator.indicator_id}`
+      );
+      const cube = await datacubeAdapter.findOne(
+        {
+          clauses: [
+            {
+              field: 'id',
+              values: [topUsedIndicator.indicator_id],
+            },
+          ],
+        },
+        {}
+      );
       if (cube) {
         result.set(node.concept, [cube]);
       }
@@ -166,7 +184,12 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
   // 2. Check against concept aligner matches
   // Note: this assumes that order of results returned by the searchService is the same as nodes provided
   const geography = model.parameter.geography;
-  const indicators = await searchService.indicatorSearchConceptAlignerBulk(model.project_id, nodeParameters, numMatches, geography);
+  const indicators = await searchService.indicatorSearchConceptAlignerBulk(
+    model.project_id,
+    nodeParameters,
+    numMatches,
+    geography
+  );
 
   for (let i = 0; i < indicators.length; i++) {
     if (indicators[i].length === 0) {
@@ -214,10 +237,10 @@ const abstractIndicator = (resolution) => {
     timeseries: [
       { value: 0.5, timestamp: Date.UTC(2017, 0) },
       { value: 0.5, timestamp: Date.UTC(2017, 1) },
-      { value: 0.5, timestamp: Date.UTC(2017, 2) }
+      { value: 0.5, timestamp: Date.UTC(2017, 2) },
     ],
     min: 0,
-    max: 1
+    max: 1,
   };
 
   if (resolution === 'year') {
@@ -225,7 +248,7 @@ const abstractIndicator = (resolution) => {
     base.timeseries = [
       { value: 0.5, timestamp: Date.UTC(2017, 0) },
       { value: 0.5, timestamp: Date.UTC(2018, 0) },
-      { value: 0.5, timestamp: Date.UTC(2019, 0) }
+      { value: 0.5, timestamp: Date.UTC(2019, 0) },
     ];
   }
   return base;
@@ -254,7 +277,7 @@ const setDefaultIndicators = async (modelId, resolution) => {
 
     const matches = conceptIndicatorMap.get(node.concept);
     const updatePayload = {
-      id: node.id
+      id: node.id,
     };
     if (conceptIndicatorMap.has(node.concept)) {
       const cube = matches[0];
@@ -269,7 +292,7 @@ const setDefaultIndicators = async (modelId, resolution) => {
         }
       }
 
-      const defaultFeature = cube.outputs.find(output => output.name === cube.default_feature);
+      const defaultFeature = cube.outputs.find((output) => output.name === cube.default_feature);
 
       let runId = 'indicator';
       if (cube.type === 'model') {
@@ -278,9 +301,13 @@ const setDefaultIndicators = async (modelId, resolution) => {
         runId = run?.id ?? 'no-default-run';
       }
 
-      updatePayload.match_candidates = matches.map(match => {
-        const output = match.outputs.find(output => output.name === match.default_feature);
-        return { id: match.id, dataId: match.data_id, displayName: output.display_name || output.name };
+      updatePayload.match_candidates = matches.map((match) => {
+        const output = match.outputs.find((output) => output.name === match.default_feature);
+        return {
+          id: match.id,
+          dataId: match.data_id,
+          displayName: output.display_name || output.name,
+        };
       });
       updatePayload.parameter = {
         id: cube.id,
@@ -295,7 +322,7 @@ const setDefaultIndicators = async (modelId, resolution) => {
         spatialAggregation,
         temporalAggregation,
         temporalResolution: resolution,
-        period: resolution === 'month' ? 12 : 1
+        period: resolution === 'month' ? 12 : 1,
       };
 
       // Set time series, min, max
@@ -304,16 +331,30 @@ const setDefaultIndicators = async (modelId, resolution) => {
         const dataId = cube.data_id;
         const parameter = updatePayload.parameter;
 
-        const timeseries = await getTimeseries(dataId, runId, feature, resolution, temporalAggregation, spatialAggregation, country);
+        const timeseries = await getTimeseries(
+          dataId,
+          runId,
+          feature,
+          resolution,
+          temporalAggregation,
+          spatialAggregation,
+          country
+        );
         if (_.isEmpty(timeseries)) {
           Logger.warn(`Data ${feature} is empty, reset ${node.concept} to abstract`);
           updatePayload.parameter = abstractIndicator(resolution);
         } else {
           const rawResolution = defaultFeature.data_resolution?.temporal_resolution ?? 'other';
           const finalRawDate = new Date(cube.period?.lte ?? 0);
-          const points = correctIncompleteTimeseries(timeseries, rawResolution, resolution, temporalAggregation, finalRawDate);
+          const points = correctIncompleteTimeseries(
+            timeseries,
+            rawResolution,
+            resolution,
+            temporalAggregation,
+            finalRawDate
+          );
           parameter.timeseries = points;
-          const values = timeseries.map(d => d.value);
+          const values = timeseries.map((d) => d.value);
           const { max, min } = modelUtil.projectionValueRange(values);
           parameter.min = min;
           parameter.max = max;
@@ -331,7 +372,9 @@ const setDefaultIndicators = async (modelId, resolution) => {
 
   if (!_.isEmpty(updates)) {
     Logger.info(`Updating ${updates.length} node-parameters`);
-    const keyFn = (doc) => { return doc.id; };
+    const keyFn = (doc) => {
+      return doc.id;
+    };
     const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
     const result = await nodeParameterAdapter.update(updates, keyFn);
     if (result.errors) {
@@ -341,5 +384,5 @@ const setDefaultIndicators = async (modelId, resolution) => {
 };
 
 module.exports = {
-  setDefaultIndicators
+  setDefaultIndicators,
 };

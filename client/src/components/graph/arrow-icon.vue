@@ -33,7 +33,7 @@ export enum ArrowType {
   Positive = 'POSITIVE',
   Negative = 'NEGATIVE',
   Ambiguous = 'AMBIGUOUS',
-  NoEvidence = 'NO_EVIDENCE'
+  NoEvidence = 'NO_EVIDENCE',
 }
 
 export default defineComponent({
@@ -41,24 +41,28 @@ export default defineComponent({
   props: {
     type: {
       type: String as PropType<string | null>,
-      default: null
-    }
+      default: null,
+    },
   },
   setup(props) {
     const { type } = toRefs(props);
     const edgeColor = computed(() => {
       switch (type.value) {
-        case ArrowType.Positive: return POSITIVE_COLOR;
-        case ArrowType.Negative: return NEGATIVE_COLOR;
-        case ArrowType.Ambiguous: return 'grey';
-        default: return '#000';
+        case ArrowType.Positive:
+          return POSITIVE_COLOR;
+        case ArrowType.Negative:
+          return NEGATIVE_COLOR;
+        case ArrowType.Ambiguous:
+          return 'grey';
+        default:
+          return '#000';
       }
     });
     return {
       edgeColor,
-      dashArray: computed(() => type.value === ArrowType.NoEvidence ? '2' : '')
+      dashArray: computed(() => (type.value === ArrowType.NoEvidence ? '2' : '')),
     };
-  }
+  },
 });
 </script>
 

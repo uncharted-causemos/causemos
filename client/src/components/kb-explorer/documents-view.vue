@@ -1,13 +1,10 @@
 <template>
   <div class="document-view-container h-100 flex flex-col">
-    <documents-list-tableview
-      :documentData="documentData"
-    />
+    <documents-list-tableview :documentData="documentData" />
   </div>
 </template>
 
 <script lang="ts">
-
 import _ from 'lodash';
 import { defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
@@ -18,17 +15,17 @@ import DocumentsListTableview from '@/components/kb-explorer/documents-list-tabl
 export default defineComponent({
   name: 'DocumentsView',
   components: {
-    DocumentsListTableview
+    DocumentsListTableview,
   },
   data: () => ({
-    documentData: []
+    documentData: [],
   }),
   computed: {
     ...mapGetters({
       filters: 'query/filters',
       documentsQuery: 'query/documents',
       project: 'app/project',
-      documentsCount: 'kb/documentsCount'
+      documentsCount: 'kb/documentsCount',
     }),
     pageFrom(): number {
       return this.documentsQuery.from;
@@ -38,7 +35,7 @@ export default defineComponent({
     },
     sort(): { [key: string]: string } {
       return this.documentsQuery.sort;
-    }
+    },
   },
   watch: {
     filters(n, o) {
@@ -48,15 +45,15 @@ export default defineComponent({
     documentsQuery(n, o) {
       if (_.isEqual(n, o)) return;
       this.refresh();
-    }
+    },
   },
-  mounted () {
+  mounted() {
     this.refresh();
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay'
+      disableOverlay: 'app/disableOverlay',
     }),
     refresh() {
       this.refreshData();
@@ -68,22 +65,19 @@ export default defineComponent({
         filters: this.filters,
         from: this.pageFrom,
         size: this.pageSize,
-        sort: this.sort
+        sort: this.sort,
       };
-      API.get(url, { params }).then(d => {
+      API.get(url, { params }).then((d) => {
         this.documentData = d.data;
         this.disableOverlay();
       });
-    }
-  }
+    },
+  },
 });
 </script>
 
-
 <style scoped lang="scss">
-
 .document-view-container {
   padding: 8px;
 }
-
 </style>

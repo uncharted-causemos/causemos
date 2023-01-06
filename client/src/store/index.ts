@@ -22,6 +22,6 @@ export default new Vuex.Store({
     model: ModelStore,
     dataSearch: DataSearchStore,
     insightPanel: InsightPanelStore,
-    modelPublishStore: ModelPublishStore
-  }
+    modelPublishStore: ModelPublishStore,
+  },
 });

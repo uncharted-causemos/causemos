@@ -1,14 +1,12 @@
 <template>
   <div @click="closeAll()">
-    <div
-      class="warning-message"
-      v-if="typeInconsistency === true && isEdgeWeightEditable">
-      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship type is different than selected type.
+    <div class="warning-message" v-if="typeInconsistency === true && isEdgeWeightEditable">
+      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship type is different than
+      selected type.
     </div>
-    <div
-      class="warning-message"
-      v-if="valueInconsistency=== true && isEdgeWeightEditable">
-      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship strength is different than selected strength.
+    <div class="warning-message" v-if="valueInconsistency === true && isEdgeWeightEditable">
+      <i class="fa fa-fw fa-exclamation-triangle"></i>Inferred relationship strength is different
+      than selected strength.
     </div>
 
     <message-display
@@ -19,19 +17,21 @@
 
     <!-- TODO: can we remove the second clause? I think parameter will always
       be defined if we're in the quantitative space -->
-    <div v-if="isEdgeWeightEditable && selectedRelationship.parameter" style="display: inline-block">
+    <div
+      v-if="isEdgeWeightEditable && selectedRelationship.parameter"
+      style="display: inline-block"
+    >
       <span
         v-if="supportsLevelEdges(currentEngine)"
         class="clickable-dropdown"
-        :class="{'warning-message': typeInconsistency}"
-        @click.stop="openEdgeTypeDropdown()">
+        :class="{ 'warning-message': typeInconsistency }"
+        @click.stop="openEdgeTypeDropdown()"
+      >
         <i v-if="currentEdgeType === 'level'" class="fa fa-fw fa-bolt" />
         {{ weightTypeString(currentEdgeType) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
-      <dropdown-control
-        v-if="isEdgeTypeOpen"
-        class="edge-type-dropdown">
+      <dropdown-control v-if="isEdgeTypeOpen" class="edge-type-dropdown">
         <template #content>
           <edge-weight-dropdown-option
             :value="'level'"
@@ -64,19 +64,19 @@
         selectedRelationship.parameter.weights &&
         !isEdgeWeightStale
       "
-      style="display: inline-block">
+      style="display: inline-block"
+    >
       <span
         v-if="isEdgeWeightEditable"
         class="clickable-dropdown"
         :class="{ 'warning-message': valueInconsistency }"
-        @click.stop="openEdgeWeightDropdown()">
+        @click.stop="openEdgeWeightDropdown()"
+      >
         {{ currentWeightValueString(currentEdgeWeight, inferredWeightValue) }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
       <span v-else class="clickable-dropdown">
-        {{
-          currentWeightValueString(currentEdgeWeight, inferredWeightValue)
-        }} &nbsp;
+        {{ currentWeightValueString(currentEdgeWeight, inferredWeightValue) }} &nbsp;
       </span>
 
       <dropdown-control v-if="isEdgeWeightOpen" class="edge-type-dropdown">
@@ -117,24 +117,21 @@
       <span
         class="clickable-dropdown"
         :class="{
-          'warning-message': isEdgeWeightEditable
+          'warning-message': isEdgeWeightEditable,
         }"
-        @click.stop="openEdgePolarityDropdown()">
+        @click.stop="openEdgePolarityDropdown()"
+      >
         {{ polarityLabel }}
         <i class="fa fa-fw fa-caret-down" />
       </span>
-      <dropdown-control
-        v-if="isEdgePolarityOpen"
-        class="edge-type-dropdown">
+      <dropdown-control v-if="isEdgePolarityOpen" class="edge-type-dropdown">
         <template #content>
           <div class="dropdown-option polarity-same" @click="setPolarity(1)">increase</div>
           <div class="dropdown-option polarity-opposite" @click="setPolarity(-1)">decrease</div>
         </template>
       </dropdown-control>
     </div>
-    <div style="display: inline-block">
-      in {{ ontologyFormatter(selectedRelationship.target) }}
-    </div>
+    <div style="display: inline-block">in {{ ontologyFormatter(selectedRelationship.target) }}</div>
   </div>
   <div v-if="currentEdgeType === 'trend'" style="color: #888">
     A decrease of&nbsp;
@@ -145,8 +142,7 @@
   </div>
   <div v-if="currentEdgeType === 'level'" style="color: #888">
     A low amount of&nbsp;
-    {{ ontologyFormatter(selectedRelationship.source) }} leads to
-    a smaller
+    {{ ontologyFormatter(selectedRelationship.source) }} leads to a smaller
     {{ polarityLabel }}
     in {{ ontologyFormatter(selectedRelationship.target) }}
   </div>
@@ -155,7 +151,7 @@
     v-if="polarity !== 0"
     style="padding-bottom: 15px; height: 85px"
     :src="explainerGlyphFilepath"
-  >
+  />
 </template>
 
 <script lang="ts">
@@ -179,7 +175,6 @@ const getEdgeTypeString = (edge: EdgeParameter): string => {
   }
   return '';
 };
-
 
 const getEdgeWeight = (edge: EdgeParameter): number => {
   const type = getEdgeTypeString(edge);
@@ -207,24 +202,23 @@ enum DROPDOWN {
   NONE = 'none',
 }
 
-
 export default defineComponent({
   name: 'EdgePolaritySwitcher',
   components: {
     DropdownControl,
     EdgeWeightDropdownOption,
-    MessageDisplay
+    MessageDisplay,
   },
   emits: ['edge-set-user-polarity', 'edge-set-weights'],
   props: {
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
-      required: true
+      required: true,
     },
     selectedRelationship: {
       type: Object as PropType<EdgeParameter>,
-      required: true
-    }
+      required: true,
+    },
   },
   setup(props) {
     const ontologyFormatter = useOntologyFormatter();
@@ -233,9 +227,7 @@ export default defineComponent({
 
     const { selectedRelationship, modelSummary } = toRefs(props);
     // FIXME: the type of CAGModelParameter.engine should be `Engine` instead of `string`
-    const currentEngine = computed(
-      () => modelSummary.value.parameter.engine as Engine
-    );
+    const currentEngine = computed(() => modelSummary.value.parameter.engine as Engine);
 
     const dropDown = ref(DROPDOWN.NONE);
     const isEdgeTypeOpen = computed(() => {
@@ -249,17 +241,25 @@ export default defineComponent({
     });
 
     const currentEdgeType = ref('');
-    watch(selectedRelationship, (_selectedRelationship) => {
-      currentEdgeType.value = getEdgeTypeString(_selectedRelationship);
-    }, { immediate: true });
+    watch(
+      selectedRelationship,
+      (_selectedRelationship) => {
+        currentEdgeType.value = getEdgeTypeString(_selectedRelationship);
+      },
+      { immediate: true }
+    );
 
     const currentEdgeWeight = ref(0);
-    watch(selectedRelationship, (_selectedRelationship) => {
-      currentEdgeWeight.value = getEdgeWeight(_selectedRelationship);
-    }, { immediate: true });
+    watch(
+      selectedRelationship,
+      (_selectedRelationship) => {
+        currentEdgeWeight.value = getEdgeWeight(_selectedRelationship);
+      },
+      { immediate: true }
+    );
     const isEdgeWeightStale = computed(() => currentEdgeWeight.value === -1);
-    const currentQualitativeWeight = computed(
-      () => snapEdgeWeightToLowMedHigh(currentEdgeWeight.value)
+    const currentQualitativeWeight = computed(() =>
+      snapEdgeWeightToLowMedHigh(currentEdgeWeight.value)
     );
 
     const engineWeights = computed(() => selectedRelationship.value.parameter?.engine_weights);
@@ -313,7 +313,7 @@ export default defineComponent({
       valueInconsistency,
 
       STATEMENT_POLARITY,
-      supportsLevelEdges
+      supportsLevelEdges,
     };
   },
   computed: {
@@ -336,13 +336,15 @@ export default defineComponent({
       return 'unknown';
     },
     explainerGlyphFilepath(): string {
-      return this.buildExplainerGlyphFilepath(this.polarity, this.currentQualitativeWeight, this.currentEdgeType);
+      return this.buildExplainerGlyphFilepath(
+        this.polarity,
+        this.currentQualitativeWeight,
+        this.currentEdgeType
+      );
     },
     isEdgeWeightEditable(): boolean {
-      return (
-        this.currentView === 'quantitative' && this.isEdgeWeightStale === false
-      );
-    }
+      return this.currentView === 'quantitative' && this.isEdgeWeightStale === false;
+    },
   },
   methods: {
     closeAll() {
@@ -369,8 +371,7 @@ export default defineComponent({
       //  assuming the inferred value is also 0.5. Assume it's inferred for now.
       const prefix = currentWeight === inferredWeight ? 'an inferred ' : 'a ';
       // Remove the leading "a "
-      const magnitudeString =
-        this.weightValueString(currentWeight).split(' ')[1];
+      const magnitudeString = this.weightValueString(currentWeight).split(' ')[1];
       return prefix + magnitudeString;
     },
     weightTypeString(v: string): string {
@@ -417,19 +418,23 @@ export default defineComponent({
       if (edgeWeight === 0.9) weightStr = 'l';
       else if (edgeWeight === 0.5) weightStr = 'm';
 
-      const fileName = 'explainerGlyphs/explainerGlyph_' + polarityStr + '_' + weightStr + '_' + typeStr + '.svg';
+      const fileName =
+        'explainerGlyphs/explainerGlyph_' + polarityStr + '_' + weightStr + '_' + typeStr + '.svg';
 
       const assetFolder = require.context('@/assets/');
       return assetFolder('./' + fileName);
     },
     isInferredValue(dropdownVariable: string, value: string | number) {
       switch (dropdownVariable) {
-        case 'edgeType': return value === this.inferredWeightType;
-        case 'edgeWeight': return value === this.inferredWeightValue;
-        default: return false;
+        case 'edgeType':
+          return value === this.inferredWeightType;
+        case 'edgeWeight':
+          return value === this.inferredWeightValue;
+        default:
+          return false;
       }
-    }
-  }
+    },
+  },
 });
 </script>
 

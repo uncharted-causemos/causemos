@@ -7,15 +7,14 @@
     :is-large="false"
     @set-active="setActive"
   >
-
     <cag-scenarios-pane
       v-if="currentTab === 'Scenarios'"
       :scenarios="scenarios"
-      @new-scenario='$emit("new-scenario", $event)'
-      @update-scenario='$emit("update-scenario", $event)'
-      @delete-scenario='$emit("delete-scenario", $event)'
-      @delete-scenario-clamp='$emit("delete-scenario-clamp", $event)'
-      @duplicate-scenario='$emit("duplicate-scenario", $event)'
+      @new-scenario="$emit('new-scenario', $event)"
+      @update-scenario="$emit('update-scenario', $event)"
+      @delete-scenario="$emit('delete-scenario', $event)"
+      @delete-scenario-clamp="$emit('delete-scenario-clamp', $event)"
+      @duplicate-scenario="$emit('duplicate-scenario', $event)"
     />
 
     <cag-analytics-pane
@@ -30,17 +29,11 @@
 
     <div v-if="currentTab === 'Details'" class="details-pane">
       <p v-if="modelComponents !== null">
-        This CAG contains <strong>{{ nodeCount }}</strong> node{{ nodeCount !== 1 ? 's' : '' }}
-        and <strong>{{ edgeCount }}</strong> edge{{ edgeCount !== 1 ? 's' : '' }}.
+        This CAG contains <strong>{{ nodeCount }}</strong> node{{ nodeCount !== 1 ? 's' : '' }} and
+        <strong>{{ edgeCount }}</strong> edge{{ edgeCount !== 1 ? 's' : '' }}.
       </p>
-      <button class="btn" @click="onDownload">
-        Download CAG as JSON
-      </button>
-      <button
-        v-if="isExperimentDownloadVisible"
-        class="btn"
-        @click="onDownloadExperiment"
-      >
+      <button class="btn" @click="onDownload">Download CAG as JSON</button>
+      <button v-if="isExperimentDownloadVisible" class="btn" @click="onDownloadExperiment">
         Download experiment as JSON
       </button>
     </div>
@@ -67,26 +60,34 @@ export default defineComponent({
     ListContextInsightPane,
     // ListAnalyticalQuestionsPane,
     CagScenariosPane,
-    CagAnalyticsPane
+    CagAnalyticsPane,
   },
-  emits: ['new-scenario', 'update-scenario', 'delete-scenario', 'delete-scenario-clamp', 'download-experiment', 'show-path', 'duplicate-scenario'],
+  emits: [
+    'new-scenario',
+    'update-scenario',
+    'delete-scenario',
+    'delete-scenario-clamp',
+    'download-experiment',
+    'show-path',
+    'duplicate-scenario',
+  ],
   props: {
     isExperimentDownloadVisible: {
       type: Boolean,
-      default: false
+      default: false,
     },
     modelSummary: {
       type: Object as PropType<CAGModelSummary>,
-      default: null
+      default: null,
     },
     modelComponents: {
       type: Object as PropType<CAGGraph>,
-      default: null
+      default: null,
     },
     scenarios: {
       type: Array as PropType<Scenario[]>,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   setup() {
     const store = useStore();
@@ -96,12 +97,12 @@ export default defineComponent({
       { name: 'Scenarios', icon: 'fa fa-circle-o fa-lg' },
       { name: 'Analytics', icon: 'fa fa-fw fa-flask fa-lg' },
       { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' },
-      { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' }
+      { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' },
     ];
 
     const tabsQualitative = [
       { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' },
-      { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' }
+      { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' },
     ];
 
     const tabs = ref(tabsQuantitative);
@@ -112,15 +113,15 @@ export default defineComponent({
       }
     });
     return {
-      tabs
+      tabs,
     };
   },
   data: () => ({
-    currentTab: ''
+    currentTab: '',
   }),
   computed: {
     ...mapGetters({
-      currentCAG: 'app/currentCAG'
+      currentCAG: 'app/currentCAG',
     }),
     downloadURL() {
       return `/api/models/${this.currentCAG}/register-payload`;
@@ -130,7 +131,7 @@ export default defineComponent({
     },
     edgeCount(): number {
       return this.modelComponents?.edges?.length ?? 0;
-    }
+    },
   },
   methods: {
     setActive(tab: string) {
@@ -144,8 +145,8 @@ export default defineComponent({
     },
     showPath(item: GraphPath) {
       this.$emit('show-path', item);
-    }
-  }
+    },
+  },
 });
 </script>
 

@@ -16,8 +16,11 @@ export default class DynamicKeyValuePill extends BasePill {
   }
 
   makeBranch() {
-    return Lex.from('relation', SingleRelationState, TransitionFactory.valueMetaCompare({ searchKey: this.searchKey }))
-      .to('value', MappedOptionState, this.branchConfig);
+    return Lex.from(
+      'relation',
+      SingleRelationState,
+      TransitionFactory.valueMetaCompare({ searchKey: this.searchKey })
+    ).to('value', MappedOptionState, this.branchConfig);
   }
 
   /**
@@ -30,7 +33,9 @@ export default class DynamicKeyValuePill extends BasePill {
     lexQuery.push({
       field: selectedPill,
       relation: SingleRelationState.IS,
-      value: clause.values.map((v) => new ValueStateValue(v, {}, { displayKey: this.displayFormatter(this.keyMap[v]) }))
+      value: clause.values.map(
+        (v) => new ValueStateValue(v, {}, { displayKey: this.displayFormatter(this.keyMap[v]) })
+      ),
     });
   }
 }

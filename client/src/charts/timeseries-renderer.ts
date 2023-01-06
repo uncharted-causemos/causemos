@@ -25,14 +25,14 @@ const TOOLTIP_OFFSET = 10;
 const DASHED_LINE = {
   length: 4,
   gap: 2,
-  opacity: 0.5
+  opacity: 0.5,
 };
 
 const SELECTED_TIMESTAMP_COLOR = '#9C9D9E';
 const SELECTED_TIMESTAMP_WIDTH = 1;
 const SELECTABLE_TIMESTAMP_OPACITY = 1;
 
-export default function(
+export default function (
   selection: D3Selection,
   timeseriesList: Timeseries[],
   width: number,
@@ -40,7 +40,7 @@ export default function(
   selectedTimestamp: number,
   onTimestampSelected: (timestamp: number) => void,
   breakdownOption: string | null,
-  selectedTimestampRange: {start: number; end: number} | null,
+  selectedTimestampRange: { start: number; end: number } | null,
   unit: string,
   timestampFormatter: (timestamp: number) => string,
   temporalResolution: TemporalResolutionOption
@@ -56,13 +56,7 @@ export default function(
   }
 
   const valueFormatter = chartValueFormatter(...yExtent);
-  const [xScale, yScale] = calculateScales(
-    width,
-    height,
-    xExtent,
-    yExtent,
-    breakdownOption
-  );
+  const [xScale, yScale] = calculateScales(width, height, xExtent, yExtent, breakdownOption);
   renderAxes(
     groupElement,
     xScale,
@@ -76,8 +70,9 @@ export default function(
     X_AXIS_HEIGHT,
     temporalResolution
   );
-  timeseriesList.forEach(timeseries => {
-    if (timeseries.points.length > 1) { // draw a line for time series longer than 1
+  timeseriesList.forEach((timeseries) => {
+    if (timeseries.points.length > 1) {
+      // draw a line for time series longer than 1
       if (timeseries.isDefaultRun) {
         renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color, 4);
       } else {
@@ -85,15 +80,13 @@ export default function(
       }
       // also, draw dots for all the timeseries points
       renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
-    } else { // draw a spot for timeseries that are only 1 long
+    } else {
+      // draw a spot for timeseries that are only 1 long
       renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
     }
   });
 
-  const timestampLineElement = generateSelectedTimestampLine(
-    groupElement,
-    height
-  );
+  const timestampLineElement = generateSelectedTimestampLine(groupElement, height);
 
   generateSelectableTimestamps(
     groupElement,
@@ -128,9 +121,12 @@ export default function(
   };
 }
 
-function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: {start: number; end: number} | null) {
-  const allPoints = timeseriesList.map(timeseries => timeseries.points).flat();
-  const allTimestampDataPoints = allPoints.map(point => point.timestamp);
+function calculateExtents(
+  timeseriesList: Timeseries[],
+  selectedTimestampRange: { start: number; end: number } | null
+) {
+  const allPoints = timeseriesList.map((timeseries) => timeseries.points).flat();
+  const allTimestampDataPoints = allPoints.map((point) => point.timestamp);
   let xExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
   if (selectedTimestampRange !== null) {
     // the user requested to render the timeseries chart within a specific range
@@ -141,7 +137,7 @@ function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: 
     xExtent = d3.extent(allTimestampDataPoints);
   }
 
-  const yExtent = d3.extent(allPoints.map(point => point.value));
+  const yExtent = d3.extent(allPoints.map((point) => point.value));
   return [xExtent, yExtent];
 }
 
@@ -174,9 +170,7 @@ function generateMarkerAndTooltip(
   timestampFormatter: (timestamp: number) => string,
   valueFormatter: (value: number) => string
 ) {
-  const markerAndTooltip = timestampGroup
-    .append('g')
-    .attr('visibility', 'hidden');
+  const markerAndTooltip = timestampGroup.append('g').attr('visibility', 'hidden');
 
   markerAndTooltip
     .append('rect')
@@ -186,8 +180,7 @@ function generateMarkerAndTooltip(
     .attr('fill-opacity', SELECTABLE_TIMESTAMP_OPACITY);
 
   const notchSideLength = Math.sqrt(
-    TOOLTIP_OFFSET * TOOLTIP_OFFSET +
-    TOOLTIP_OFFSET * TOOLTIP_OFFSET
+    TOOLTIP_OFFSET * TOOLTIP_OFFSET + TOOLTIP_OFFSET * TOOLTIP_OFFSET
   );
   const tooltip = markerAndTooltip.append('g');
   tooltip
@@ -227,49 +220,42 @@ function generateMarkerAndTooltip(
   const updateMarkerAndTooltip = (
     timestamp: number,
     isRightOfCenter: boolean,
-    valuesAtThisTimestamp: { color: string, name: string, value: string | number}[],
+    valuesAtThisTimestamp: { color: string; name: string; value: string | number }[],
     xScale: d3.ScaleLinear<number, number>
   ) => {
     markerAndTooltip.attr('visibility', 'visible');
     // Move marker
-    markerAndTooltip.attr('transform', translate(xScale(timestamp) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP));
+    markerAndTooltip.attr(
+      'transform',
+      translate(xScale(timestamp) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
+    );
     // Move tooltip
-    tooltip.attr('transform', translate(
-      isRightOfCenter
-        ? -TOOLTIP_OFFSET - TOOLTIP_WIDTH
-        : TOOLTIP_OFFSET
-      , 0)
+    tooltip.attr(
+      'transform',
+      translate(isRightOfCenter ? -TOOLTIP_OFFSET - TOOLTIP_WIDTH : TOOLTIP_OFFSET, 0)
     );
     notchBorder.attr(
       'transform',
       isRightOfCenter
-        ? translate(
-          TOOLTIP_WIDTH - TOOLTIP_OFFSET - TOOLTIP_BORDER_WIDTH,
-          markerHeight / 2
-        ) + 'rotate(-45)'
-        : translate(
-          -TOOLTIP_BORDER_WIDTH - TOOLTIP_OFFSET,
-          markerHeight / 2
-        ) + 'rotate(-45)'
+        ? translate(TOOLTIP_WIDTH - TOOLTIP_OFFSET - TOOLTIP_BORDER_WIDTH, markerHeight / 2) +
+            'rotate(-45)'
+        : translate(-TOOLTIP_BORDER_WIDTH - TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
     );
-    notchBackground
-      .attr(
-        'transform',
-        isRightOfCenter
-          ? translate(
-            TOOLTIP_WIDTH - 3 * TOOLTIP_OFFSET,
-            markerHeight / 2
-          ) + 'rotate(-45)'
-          : translate(-TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
-      );
+    notchBackground.attr(
+      'transform',
+      isRightOfCenter
+        ? translate(TOOLTIP_WIDTH - 3 * TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
+        : translate(-TOOLTIP_OFFSET, markerHeight / 2) + 'rotate(-45)'
+    );
     // Update tooltip text
     timestampText.text(timestampFormatter(timestamp));
     // Display a line for each value at this timestamp.
     tooltip.selectAll('.tooltip-row').remove();
-    valuesAtThisTimestamp.sort(({ value: valueA }, { value: valueB }) => {
-      // strings should always be sorted at the bottom
-      return (typeof valueA === 'number' && typeof valueB === 'number') ? (valueB - valueA) : 1;
-    })
+    valuesAtThisTimestamp
+      .sort(({ value: valueA }, { value: valueB }) => {
+        // strings should always be sorted at the bottom
+        return typeof valueA === 'number' && typeof valueB === 'number' ? valueB - valueA : 1;
+      })
       .forEach(({ color, name, value }, index) => {
         // +1 line because the origin point for text elements is the bottom left corner
         // +1 line because the units are displayed above
@@ -283,11 +269,7 @@ function generateMarkerAndTooltip(
           .attr('transform', translate(TOOLTIP_PADDING, yPosition))
           .style('fill', color)
           .style('font-weight', 'bold')
-          .text(
-            name.length > maxNameLength
-              ? name.substring(0, maxNameLength) + '...'
-              : name
-          );
+          .text(name.length > maxNameLength ? name.substring(0, maxNameLength) + '...' : name);
         tooltip
           .append('text')
           .classed('tooltip-row', true)
@@ -299,13 +281,16 @@ function generateMarkerAndTooltip(
   };
   return {
     updateMarkerAndTooltip,
-    hideMarkerAndTooltip: () => markerAndTooltip.attr('visibility', 'hidden')
+    hideMarkerAndTooltip: () => markerAndTooltip.attr('visibility', 'hidden'),
   };
 }
 
 function getValuesAtEachTimestamp(timeseriesList: Timeseries[]) {
-  const valuesAtEachTimestamp = new Map<number, { color: string; name: string; value: number | string}[]>();
-  timeseriesList.forEach(timeseries => {
+  const valuesAtEachTimestamp = new Map<
+    number,
+    { color: string; name: string; value: number | string }[]
+  >();
+  timeseriesList.forEach((timeseries) => {
     const { color, name, points } = timeseries;
     points.forEach(({ value, timestamp }) => {
       if (!valuesAtEachTimestamp.has(timestamp)) {
@@ -328,7 +313,7 @@ function getClosestSelectableTimestamp(sortedTimestamps: number[], targetTimesta
   let closestTimestamp = 0;
   for (const timestamp of sortedTimestamps) {
     if (timestamp > targetTimestamp) {
-      if ((timestamp - targetTimestamp) < (targetTimestamp - closestTimestamp)) {
+      if (timestamp - targetTimestamp < targetTimestamp - closestTimestamp) {
         closestTimestamp = timestamp;
       }
       return closestTimestamp;
@@ -350,18 +335,16 @@ function generateSelectableTimestamps(
 ) {
   const timestampGroup = selection.append('g');
   const valuesAtEachTimestamp = getValuesAtEachTimestamp(timeseriesList);
-  const sortedUniqueTimestamps = Array.from(
-    valuesAtEachTimestamp.keys()
-  ).sort((a, b) => a - b);
+  const sortedUniqueTimestamps = Array.from(valuesAtEachTimestamp.keys()).sort((a, b) => a - b);
 
   // The timeseries in the list may have timestamps that don't overlap. Fill in
   //  `n/a` for each timeseries that doesn't have a value at a given timestep.
-  sortedUniqueTimestamps.forEach(timestamp => {
+  sortedUniqueTimestamps.forEach((timestamp) => {
     const valuesAtThisTimestamp = valuesAtEachTimestamp.get(timestamp) ?? [];
     if (valuesAtThisTimestamp.length !== timeseriesList.length) {
       // We're missing one or more values at this timestamp
       timeseriesList.forEach(({ color, name }) => {
-        if (valuesAtThisTimestamp.findIndex(e => e.name === name) < 0) {
+        if (valuesAtThisTimestamp.findIndex((e) => e.name === name) < 0) {
           // This timeseries is missing a value at this timestamp
           valuesAtThisTimestamp.push({ color, name, value: 'n/a' });
         }
@@ -373,10 +356,7 @@ function generateSelectableTimestamps(
   const centerPoint = xRange[0] + (xRange[1] - xRange[0]) / 2;
   const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
 
-  const {
-    hideMarkerAndTooltip,
-    updateMarkerAndTooltip
-  } = generateMarkerAndTooltip(
+  const { hideMarkerAndTooltip, updateMarkerAndTooltip } = generateMarkerAndTooltip(
     timestampGroup,
     markerHeight,
     unit,
@@ -394,32 +374,20 @@ function generateSelectableTimestamps(
     //  is on the right side of the chart to avoid the tooltip overflowing
     //  or being clipped.
     const isRightOfCenter = offsetX > centerPoint;
-    const valuesAtThisTimestamp =
-      valuesAtEachTimestamp.get(closestTimestamp) ?? [];
-    updateMarkerAndTooltip(
-      closestTimestamp,
-      isRightOfCenter,
-      valuesAtThisTimestamp,
-      xScale
-    );
+    const valuesAtThisTimestamp = valuesAtEachTimestamp.get(closestTimestamp) ?? [];
+    updateMarkerAndTooltip(closestTimestamp, isRightOfCenter, valuesAtThisTimestamp, xScale);
   };
 
   const onMouseDown = ({ offsetX }: MouseEvent) => {
     const targetTimestamp = xScale.invert(offsetX);
-    const closestTimestamp = getClosestSelectableTimestamp(
-      sortedUniqueTimestamps,
-      targetTimestamp
-    );
+    const closestTimestamp = getClosestSelectableTimestamp(sortedUniqueTimestamps, targetTimestamp);
     onTimestampSelected(closestTimestamp);
   };
 
   // Create hitbox to capture mouse events
   timestampGroup
     .append('rect')
-    .attr(
-      'transform',
-      translate(xRange[0], PADDING_TOP)
-    )
+    .attr('transform', translate(xRange[0], PADDING_TOP))
     .attr('width', xRange[1] - xRange[0])
     .attr('height', markerHeight)
     .attr('fill-opacity', 0)
@@ -430,13 +398,8 @@ function generateSelectableTimestamps(
     .on('mousedown', onMouseDown);
 }
 
-function generateSelectedTimestampLine(
-  selection: D3GElementSelection,
-  height: number
-) {
-  const selectedTimestampGroup = selection
-    .append('g')
-    .attr('visibility', 'hidden');
+function generateSelectedTimestampLine(selection: D3GElementSelection, height: number) {
+  const selectedTimestampGroup = selection.append('g').attr('visibility', 'hidden');
   const selectedTimestampHeight = height - X_AXIS_HEIGHT - PADDING_TOP;
 
   selectedTimestampGroup
@@ -458,7 +421,7 @@ function updateTimestampElements(
   selectedTimestampGroup: D3GElementSelection,
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
-  selectedTimestampRange: {start: number; end: number} | null
+  selectedTimestampRange: { start: number; end: number } | null
 ) {
   if (timestamp === null) {
     // Hide everything

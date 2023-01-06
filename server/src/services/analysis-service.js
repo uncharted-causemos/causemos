@@ -12,17 +12,20 @@ const find = async (simpleFilters, size, from, sort) => {
 const createAnalysis = async (payload) => {
   const connection = Adapter.get(RESOURCE.ANALYSIS);
   const newId = uuid();
-  const ts = (new Date()).getTime();
+  const ts = new Date().getTime();
 
-  const result = await connection.insert({
-    id: newId,
-    title: payload.title,
-    description: payload.description,
-    project_id: payload.project_id,
-    created_at: ts,
-    modified_at: ts,
-    state: payload.state
-  }, d => d.id);
+  const result = await connection.insert(
+    {
+      id: newId,
+      title: payload.title,
+      description: payload.description,
+      project_id: payload.project_id,
+      created_at: ts,
+      modified_at: ts,
+      state: payload.state,
+    },
+    (d) => d.id
+  );
 
   if (result.errors) {
     throw new Error(JSON.stringify(result.items[0]));
@@ -33,18 +36,20 @@ const createAnalysis = async (payload) => {
 
 const updateAnalysis = async (id, payload) => {
   const connection = Adapter.get(RESOURCE.ANALYSIS);
-  const ts = (new Date()).getTime();
+  const ts = new Date().getTime();
 
-  const result = await connection.update({
-    id: id,
-    modified_at: ts,
-    ...payload
-  }, d => d.id);
+  const result = await connection.update(
+    {
+      id: id,
+      modified_at: ts,
+      ...payload,
+    },
+    (d) => d.id
+  );
   if (result.errors) {
     throw new Error(JSON.stringify(result.items[0]));
   }
 };
-
 
 const deleteAnalysis = async (id) => {
   const connection = Adapter.get(RESOURCE.ANALYSIS);
@@ -60,5 +65,5 @@ module.exports = {
   find,
   createAnalysis,
   updateAnalysis,
-  deleteAnalysis
+  deleteAnalysis,
 };

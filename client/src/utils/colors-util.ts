@@ -9,18 +9,27 @@ export enum COLOR {
   WATER = 'WATER',
   PRIORITIZATION = 'PRIORITIZATION',
 
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }
 
-export const COLOR_SCHEME: { [key in COLOR ]: string[] } = Object.freeze({
+export const COLOR_SCHEME: { [key in COLOR]: string[] } = Object.freeze({
   [COLOR.GREYS_7]: ['#f7f7f7', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525'], // https://colorbrewer2.org/?type=sequential&scheme=Greys&n=7
   [COLOR.PIYG_7]: ['#c51b7d', '#e9a3c9', '#fde0ef', '#f7f7f7', '#e6f5d0', '#a1d76a', '#4d9221'], // https://colorbrewer2.org/#type=diverging&scheme=PiYG&n=7
   [COLOR.RDYLBU_7]: ['#d73027', '#fc8d59', '#fee090', '#ffffbf', '#e0f3f8', '#91bfdb', '#4575b4'], // https://colorbrewer2.org/#type=diverging&scheme=RdYlBu&n=7
   [COLOR.DEFAULT]: ['#f2f0f7', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#4a1486'],
   [COLOR.VEGETATION]: ['#edf8e9', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#005a32'],
   [COLOR.WATER]: ['#eff3ff', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#084594'],
-  [COLOR.PRIORITIZATION]: ['#ffeda0', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#bd0026', '#800026'],
-  [COLOR.OTHER]: ['#feedde', '#fdd0a2', '#fdae6b', '#fd8d3c', '#f16913', '#d94801', '#8c2d04']
+  [COLOR.PRIORITIZATION]: [
+    '#ffeda0',
+    '#fed976',
+    '#feb24c',
+    '#fd8d3c',
+    '#fc4e2a',
+    '#e31a1c',
+    '#bd0026',
+    '#800026',
+  ],
+  [COLOR.OTHER]: ['#feedde', '#fdd0a2', '#fdae6b', '#fd8d3c', '#f16913', '#d94801', '#8c2d04'],
 });
 
 export const COLOR_PALETTE_SIZE = 256;
@@ -34,7 +43,6 @@ export const BORDER_COLOR = '#ccc';
 export const DEFAULT_COLOR = '#4C7079';
 export const FADED_COLOR = '#D6DBDF';
 export const MARKER_COLOR = '#d55c00';
-
 
 export const POSITIVE_COLOR = '#0072b2';
 export const NEGATIVE_COLOR = '#d55e00';
@@ -70,13 +78,7 @@ export function ramp(color: (t: number) => string, n = COLOR_PALETTE_SIZE) {
   return canvas;
 }
 
-const COLORS = [
-  '#8767C8',
-  '#1b9e77',
-  '#d95f02',
-  '#e7298a',
-  '#66a61e'
-];
+const COLORS = ['#8767C8', '#1b9e77', '#d95f02', '#e7298a', '#66a61e'];
 
 export function colorFromIndex(index: number) {
   return COLORS[index % COLORS.length];
@@ -92,25 +94,19 @@ export function validateColorScaleType(val: string) {
   return Object.values(ColorScaleType).includes(val as ColorScaleType);
 }
 
-export const DISCRETE_SCALES = [
-  ColorScaleType.LinearDiscrete,
-  ColorScaleType.LogDiscrete
-];
+export const DISCRETE_SCALES = [ColorScaleType.LinearDiscrete, ColorScaleType.LogDiscrete];
 
-export const DIVERGING_SCALES = [
-  COLOR.PIYG_7,
-  COLOR.RDYLBU_7
-];
+export const DIVERGING_SCALES = [COLOR.PIYG_7, COLOR.RDYLBU_7];
 
 export const SCALE_FUNCTION = {
   [ColorScaleType.Linear]: d3.scaleLinear,
   [ColorScaleType.Log]: d3.scaleSymlog,
   [ColorScaleType.LinearDiscrete]: d3.scaleLinear,
-  [ColorScaleType.LogDiscrete]: d3.scaleSymlog
+  [ColorScaleType.LogDiscrete]: d3.scaleSymlog,
 };
 
 export function isDiscreteScale(scaleType: ColorScaleType) {
-  return Boolean(DISCRETE_SCALES.find(v => v === scaleType));
+  return Boolean(DISCRETE_SCALES.find((v) => v === scaleType));
 }
 
 export function isDivergingScheme(schemeName: COLOR) {
@@ -125,5 +121,5 @@ export default {
   DEFAULT_COLOR,
   FADED_COLOR,
   MARKER_COLOR,
-  UNDEFINED_COLOR
+  UNDEFINED_COLOR,
 };

@@ -34,55 +34,52 @@ const applySplitByRegion = (
   if (valuesAtSelectedLevel === undefined) return regionalData;
   // Since "split by region" is active, each output spec's ID is the ID of a
   //  timeseries, and there is one timeseries for each selected region.
-  const timeseriesIds = specs.map(spec => spec.id);
+  const timeseriesIds = specs.map((spec) => spec.id);
   // Assign the value for each selected region to the the corresponding
   //  timeseries ID (eventually this will be used to color it)
-  selectedAdminLevels.forEach(
-    selectedAdminLevel => {
-      clonedData[selectedAdminLevel] = clonedData[selectedAdminLevel]?.map(
-        ({ id: regionId, values }) => {
-          const filteredValues = {} as any;
-          // ASSUMPTION: this processing step only occurs when a single outputSpec
-          //  was fed into getRegionAggregations, so there is at most one key-value
-          //  pair in `values`
-          Object.values(values).forEach(value => {
-            if (timeseriesIds.includes(regionId)) {
-              filteredValues[regionId] = value;
-            }
-          });
-          return {
-            id: regionId,
-            values: filteredValues
-          };
-        }
-      );
-    }
-  );
+  selectedAdminLevels.forEach((selectedAdminLevel) => {
+    clonedData[selectedAdminLevel] = clonedData[selectedAdminLevel]?.map(
+      ({ id: regionId, values }) => {
+        const filteredValues = {} as any;
+        // ASSUMPTION: this processing step only occurs when a single outputSpec
+        //  was fed into getRegionAggregations, so there is at most one key-value
+        //  pair in `values`
+        Object.values(values).forEach((value) => {
+          if (timeseriesIds.includes(regionId)) {
+            filteredValues[regionId] = value;
+          }
+        });
+        return {
+          id: regionId,
+          values: filteredValues,
+        };
+      }
+    );
+  });
   // When relativeTo mode is on, add baseline value to each region
   // '_baseline' property is special private property to store the baseline value
   if (!relativeTo) return clonedData;
   // Find baseline value
-  const baselineValue = selectedAdminLevels.reduce((baseVal: number|undefined, selectedAdminLevel) => {
-    const relativeData = clonedData[selectedAdminLevel]?.find(({ id }) => {
-      return id === relativeTo;
-    });
-    if (relativeData && timeseriesIds.includes(relativeData.id)) {
-      baseVal = relativeData.values[relativeData.id];
-    }
-    return baseVal;
-  }, undefined);
-
-  selectedAdminLevels.forEach(
-    selectedAdminLevel => {
-      (clonedData[selectedAdminLevel] || []).forEach(
-        ({ id: regionId, values }) => {
-          if (baselineValue && timeseriesIds.includes(regionId)) {
-            values._baseline = baselineValue;
-          }
-        }
-      );
-    }
+  const baselineValue = selectedAdminLevels.reduce(
+    (baseVal: number | undefined, selectedAdminLevel) => {
+      const relativeData = clonedData[selectedAdminLevel]?.find(({ id }) => {
+        return id === relativeTo;
+      });
+      if (relativeData && timeseriesIds.includes(relativeData.id)) {
+        baseVal = relativeData.values[relativeData.id];
+      }
+      return baseVal;
+    },
+    undefined
   );
+
+  selectedAdminLevels.forEach((selectedAdminLevel) => {
+    (clonedData[selectedAdminLevel] || []).forEach(({ id: regionId, values }) => {
+      if (baselineValue && timeseriesIds.includes(regionId)) {
+        values._baseline = baselineValue;
+      }
+    });
+  });
 
   return clonedData;
 };
@@ -99,7 +96,7 @@ export default function useRegionalData(
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
 
-  watchEffect(async onInvalidate => {
+  watchEffect(async (onInvalidate) => {
     // FIXME: OPTIMIZATION: with some careful refactoring, we can adjust things
     //  so that the getRegionAggregations call doesn't have to wait until the
     //  datacubeHierarchy is ready
@@ -116,8 +113,10 @@ export default function useRegionalData(
       typeof timestampForSelection?.value === 'number' &&
       temporalBreakdownData?.value
     ) {
-      const years = temporalBreakdownData.value.Year.map(tbd => parseInt(tbd.id));
-      allYearlyTimestampsForSelection = years.map(year => getTimestampMillis(year, timestampForSelection.value as number).toString());
+      const years = temporalBreakdownData.value.Year.map((tbd) => parseInt(tbd.id));
+      allYearlyTimestampsForSelection = years.map((year) =>
+        getTimestampMillis(year, timestampForSelection.value as number).toString()
+      );
     }
 
     // all output specs are sent to the getRegionAggregations where it will optimize
@@ -131,17 +130,19 @@ export default function useRegionalData(
     );
     if (isCancelled) return;
 
-    regionalData.value = breakdownOption.value === SpatialAggregationLevel.Region
-      ? applySplitByRegion(
-        result,
-        outputSpecs.value,
-        (relativeTo && relativeTo.value),
-        (referenceOptions && referenceOptions.value)
-      ) : result;
+    regionalData.value =
+      breakdownOption.value === SpatialAggregationLevel.Region
+        ? applySplitByRegion(
+            result,
+            outputSpecs.value,
+            relativeTo && relativeTo.value,
+            referenceOptions && referenceOptions.value
+          )
+        : result;
   });
 
   return {
     outputSpecs,
-    regionalData
+    regionalData,
   };
 }

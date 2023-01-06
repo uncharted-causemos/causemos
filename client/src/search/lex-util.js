@@ -11,21 +11,21 @@ const SUGGESTIONS_LIMIT = 15;
  * @param {object} map - key/value map
  */
 function mappedSuggestionBuilder(message, isMultiValue, map) {
-  const states = Object.keys(map).map(key => {
+  const states = Object.keys(map).map((key) => {
     return new ValueStateValue(key, { key: key, searchKey: map[key] });
   });
 
   return {
     name: message,
     suggestionLimit: SUGGESTIONS_LIMIT,
-    fetchSuggestions: function(hint = '') {
-      return states.filter(d => {
+    fetchSuggestions: function (hint = '') {
+      return states.filter((d) => {
         return d.meta.searchKey.includes(hint);
       });
     },
     multivalue: isMultiValue,
     allowUnknown: false,
-    map: map
+    map: map,
   };
 }
 
@@ -38,7 +38,7 @@ function mappedSuggestionBuilder(message, isMultiValue, map) {
  */
 function dynamicMappedSuggestionBuilder(message, isMultiValue, mapFn) {
   const createStates = (map) => {
-    const list = Object.keys(map).map(key => {
+    const list = Object.keys(map).map((key) => {
       return new ValueStateValue(key, { key: key, searchKey: map[key] });
     });
     return list;
@@ -47,16 +47,16 @@ function dynamicMappedSuggestionBuilder(message, isMultiValue, mapFn) {
   return {
     name: message,
     suggestionLimit: SUGGESTIONS_LIMIT,
-    fetchSuggestions: async function(hint = '') {
+    fetchSuggestions: async function (hint = '') {
       const map = await mapFn();
       const states = createStates(map);
       this.keyMap = map;
-      return states.filter(d => {
+      return states.filter((d) => {
         return d.meta.searchKey.includes(hint);
       });
     },
     multivalue: isMultiValue,
-    allowUnknown: false
+    allowUnknown: false,
   };
 }
 
@@ -71,15 +71,15 @@ function dynamicSimpleSuggestionBuilder(message, isMultiValue, suggestionFn) {
   return {
     name: message,
     suggestionLimit: SUGGESTIONS_LIMIT,
-    fetchSuggestions: async function(hint = '') {
+    fetchSuggestions: async function (hint = '') {
       const suggestions = await suggestionFn(hint);
-      const states = suggestions.map(suggestion => {
+      const states = suggestions.map((suggestion) => {
         return new ValueStateValue(suggestion);
       });
       return states;
     },
     multivalue: isMultiValue,
-    allowUnknown: false
+    allowUnknown: false,
   };
 }
 
@@ -88,17 +88,17 @@ const convertToLex = (values, lexType) => {
 };
 
 const convertFromLex = (values, baseType) => {
-  const flattened = _.isArray(values) ? values.map(v => v.key) : [values.key];
+  const flattened = _.isArray(values) ? values.map((v) => v.key) : [values.key];
   return _convertTo(flattened, baseType);
 };
 
-function _convertTo (values, convertType) {
+function _convertTo(values, convertType) {
   let result = values;
 
   if (convertType === 'integer') {
-    result = values.map(r => +r);
+    result = values.map((r) => +r);
   } else if (convertType === 'string') {
-    result = values.map(r => '' + r);
+    result = values.map((r) => '' + r);
   }
   return result;
 }
@@ -108,5 +108,5 @@ export default {
   dynamicMappedSuggestionBuilder,
   dynamicSimpleSuggestionBuilder,
   convertToLex,
-  convertFromLex
+  convertFromLex,
 };

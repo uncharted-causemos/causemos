@@ -7,5 +7,5 @@ const getBasicAuthToken = (user, pass) => {
 };
 
 module.exports = {
-  getBasicAuthToken
+  getBasicAuthToken,
 };

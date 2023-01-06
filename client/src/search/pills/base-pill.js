@@ -1,12 +1,9 @@
-import {
-  ValueStateValue
-} from '@uncharted.software/lex/dist/lex';
+import { ValueStateValue } from '@uncharted.software/lex/dist/lex';
 
 import BinaryRelationState from '@/search/binary-relation-state';
 
 import filtersUtil from '@/utils/filters-util';
 import lexUtil from '@/search/lex-util';
-
 
 export default class BasePill {
   /**
@@ -25,7 +22,7 @@ export default class BasePill {
 
   makeOption() {
     return new ValueStateValue(this.searchDisplay, {
-      searchKey: this.searchKey
+      searchKey: this.searchKey,
     });
   }
 
@@ -52,9 +49,9 @@ export default class BasePill {
     const searchKey = lexItem.field.meta.searchKey;
     const relation = lexItem.relation.key;
     const operand = 'or';
-    const isNot = (relation === 'not');
+    const isNot = relation === 'not';
     const values = lexUtil.convertFromLex(lexItem.value, this.baseType);
-    values.forEach(v => {
+    values.forEach((v) => {
       filtersUtil.addSearchTerm(filters, searchKey, v, operand, isNot);
     });
   }
@@ -71,8 +68,9 @@ export default class BasePill {
     lexQuery.push({
       field: selectedPill,
       relation: isNot === true ? BinaryRelationState.IS_NOT : BinaryRelationState.IS,
-      value: values.map((v) => new ValueStateValue(v, {}, { displayKey: this.displayFormatter(v) }))
+      value: values.map(
+        (v) => new ValueStateValue(v, {}, { displayKey: this.displayFormatter(v) })
+      ),
     });
   }
 }
-

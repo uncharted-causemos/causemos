@@ -9,12 +9,12 @@ interface TourState {
 
 const state: TourState = {
   tour: null,
-  isReadyForNextStep: false
+  isReadyForNextStep: false,
 };
 
 const getters: GetterTree<TourState, any> = {
-  tour: state => state.tour,
-  isReadyForNextStep: state => state.isReadyForNextStep
+  tour: (state) => state.tour,
+  isReadyForNextStep: (state) => state.isReadyForNextStep,
 };
 
 const actions: ActionTree<TourState, any> = {
@@ -23,7 +23,7 @@ const actions: ActionTree<TourState, any> = {
   },
   enableNextStep: ({ commit }) => {
     commit('enableNextStep');
-  }
+  },
 };
 
 const mutations: MutationTree<TourState> = {
@@ -32,7 +32,7 @@ const mutations: MutationTree<TourState> = {
   },
   setTour(state, value) {
     state.tour = value;
-  }
+  },
 };
 
 export default {
@@ -40,5 +40,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

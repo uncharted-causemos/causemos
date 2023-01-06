@@ -8,10 +8,7 @@
         <div class="dropdown-option" @click="showRenameModal">
           <i class="fa fa-fw fa-edit" /> Rename
         </div>
-        <div
-          class="dropdown-option"
-          @click="showDuplicateModal"
-        >
+        <div class="dropdown-option" @click="showDuplicateModal">
           <i class="fa fa-fw fa-copy" /> Duplicate
         </div>
         <div class="dropdown-option destructive" @click="onDelete">
@@ -48,8 +45,8 @@ export default defineComponent({
   props: {
     initialName: {
       type: String as PropType<string | null>,
-      default: null
-    }
+      default: null,
+    },
   },
   emits: ['rename', 'duplicate', 'delete'],
   setup(props, { emit }) {
@@ -85,9 +82,9 @@ export default defineComponent({
       isDuplicateModalOpen,
       showDuplicateModal,
       onDuplicate,
-      onDelete
+      onDelete,
     };
-  }
+  },
 });
 </script>
 

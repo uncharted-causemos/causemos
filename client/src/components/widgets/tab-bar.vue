@@ -4,7 +4,7 @@
       v-for="tab in tabs"
       :key="tab.id"
       v-tooltip.top-center="tab.name"
-      :class="{active: activeTabId === tab.id}"
+      :class="{ active: activeTabId === tab.id }"
       @click="onClick(tab.id)"
     >
       <i
@@ -25,32 +25,30 @@ export default defineComponent({
   props: {
     tabs: {
       type: Array,
-      required: true
+      required: true,
     },
     activeTabId: {
       type: String,
-      default: ''
+      default: '',
     },
     onlyDisplayIcons: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['tab-click'],
   methods: {
     onClick(tabId: string) {
       this.$emit('tab-click', tabId);
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 $spaceBetweenTabs: 5px;
-
-
 
 ul {
   height: $navbar-outer-height;
@@ -101,5 +99,4 @@ li.active {
 i.right-margin {
   margin-right: 5px;
 }
-
 </style>

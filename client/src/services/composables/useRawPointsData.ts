@@ -1,14 +1,8 @@
 import _ from 'lodash';
-import {
-  computed,
-  watchEffect
-} from 'vue';
+import { computed, watchEffect } from 'vue';
 import { Ref, ref } from '@vue/reactivity';
 import { SpatialAggregationLevel } from '@/types/Enums';
-import {
-  OutputSpecWithId,
-  RawOutputDataPoint
-} from '@/types/Outputdata';
+import { OutputSpecWithId, RawOutputDataPoint } from '@/types/Outputdata';
 import { getRawOutputDataByTimestamp } from '@/services/outputdata-service';
 import { filterRawDataByRegionIds } from '@/utils/outputdata-util';
 import { isSplitByQualifierActive } from '@/utils/qualifier-util';
@@ -22,14 +16,18 @@ export default function useRawPointsData(
   selectedDataLayer: Ref<DATA_LAYER>
 ) {
   // Fetch raw data points for each output spec
-  const rawDataPointsListOrigin = ref<{ id: string, points: RawOutputDataPoint[] }[]>([]);
+  const rawDataPointsListOrigin = ref<{ id: string; points: RawOutputDataPoint[] }[]>([]);
   watchEffect(async () => {
     if (selectedDataLayer.value !== DATA_LAYER.RAW) return;
     // Fetch raw output data for each output spec
-    const rawDataPromises = outputSpecs.value.map(spec => {
+    const rawDataPromises = outputSpecs.value.map((spec) => {
       const { modelId, runId, outputVariable, timestamp } = spec;
-      return getRawOutputDataByTimestamp({ dataId: modelId, runId, outputVariable, timestamp })
-        .then(points => ({ points, id: spec.id }));
+      return getRawOutputDataByTimestamp({
+        dataId: modelId,
+        runId,
+        outputVariable,
+        timestamp,
+      }).then((points) => ({ points, id: spec.id }));
     });
     try {
       rawDataPointsListOrigin.value = await Promise.all(rawDataPromises);
@@ -39,22 +37,23 @@ export default function useRawPointsData(
   });
   const rawDataPointsList = computed(() => {
     // Apply region filter for each raw output data
-    return rawDataPointsListOrigin.value.map(data => {
+    return rawDataPointsListOrigin.value.map((data) => {
       // If split by region, use output spec id which is region id as region filter.
-      const regionFilter = breakdownOption.value === SpatialAggregationLevel.Region
-        ? [data.id].filter(d => !!d)
-        : selectedRegionIds.value;
+      const regionFilter =
+        breakdownOption.value === SpatialAggregationLevel.Region
+          ? [data.id].filter((d) => !!d)
+          : selectedRegionIds.value;
       let result = filterRawDataByRegionIds(data.points, regionFilter);
 
       // If Split by qualifier, filter data again by qualifier option which is output spec id
       if (isSplitByQualifierActive(breakdownOption.value)) {
-        result = result.filter(d => d[breakdownOption.value as string] === data.id);
+        result = result.filter((d) => d[breakdownOption.value as string] === data.id);
       }
       return result;
     });
   });
 
   return {
-    rawDataPointsList
+    rawDataPointsList,
   };
 }

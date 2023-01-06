@@ -38,7 +38,7 @@ const MONTHS: DropdownItem[] = [
   { value: 8, displayName: 'Sep' },
   { value: 9, displayName: 'Oct' },
   { value: 10, displayName: 'Nov' },
-  { value: 11, displayName: 'Dec' }
+  { value: 11, displayName: 'Dec' },
 ];
 
 const MIN_YEAR = 1990;
@@ -50,22 +50,22 @@ export default defineComponent({
   props: {
     data: {
       type: Number,
-      default: () => 0 // timestamp in millis
-    }
+      default: () => 0, // timestamp in millis
+    },
   },
   emits: ['date-updated'],
   data: () => ({
     selectedMonth: 0, // January by default
     selectedYear: MAX_YEAR,
-    MONTHS
+    MONTHS,
   }),
   computed: {
     years(): DropdownItem[] {
-      return _.range(MAX_YEAR, MIN_YEAR).map(year => ({
+      return _.range(MAX_YEAR, MIN_YEAR).map((year) => ({
         displayName: year.toString(),
-        value: year
+        value: year,
       }));
-    }
+    },
   },
   mounted() {
     const m = moment.utc(this.data);
@@ -82,12 +82,10 @@ export default defineComponent({
       this.update();
     },
     update() {
-      const timestamp = moment
-        .utc({ y: this.selectedYear, M: this.selectedMonth })
-        .valueOf();
+      const timestamp = moment.utc({ y: this.selectedYear, M: this.selectedMonth }).valueOf();
       this.$emit('date-updated', timestamp);
-    }
-  }
+    },
+  },
 });
 </script>
 

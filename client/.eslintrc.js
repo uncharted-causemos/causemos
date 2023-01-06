@@ -2,14 +2,14 @@ module.exports = {
   root: true,
 
   env: {
-    node: true
+    node: true,
   },
 
   extends: [
     'plugin:vue/vue3-essential',
     '@vue/standard',
     '@vue/typescript/recommended',
-    'prettier'
+    'prettier',
   ],
 
   rules: {
@@ -32,16 +32,16 @@ module.exports = {
     '@typescript-eslint/ban-types': 'off', // FIXME: might want to address
 
     camelcase: 'off',
-    'prefer-regex-literals': 'off'
+    'prefer-regex-literals': 'off',
   },
 
   globals: {
-    d3: true
+    d3: true,
   },
 
   parser: 'vue-eslint-parser',
   parserOptions: {
     parser: '@typescript-eslint/parser',
-    sourceType: 'module'
-  }
+    sourceType: 'module',
+  },
 };

@@ -24,9 +24,11 @@
                   ? timeseries.name.substring(0, MAX_TIMESERIES_LABEL_CHAR_LENGTH) + '...'
                   : timeseries.name
               }}
-              <sup>{{timeseries.superscript}}</sup>
+              <sup>{{ timeseries.superscript }}</sup>
             </strong>
-            <span>{{ timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data' }}</span>
+            <span>{{
+              timeseries.value !== undefined ? valueFormatter(timeseries.value) : 'no data'
+            }}</span>
           </div>
         </div>
       </div>
@@ -55,29 +57,35 @@ export default defineComponent({
   props: {
     timeseriesData: {
       type: Array as PropType<Timeseries[]>,
-      required: true
+      required: true,
     },
     timeseriesToDatacubeMap: {
-      type: Object as PropType<{[timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string }}>,
-      default: {}
+      type: Object as PropType<{
+        [timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string };
+      }>,
+      default: {},
     },
     selectedTimestamp: {
       type: Number,
-      default: 0
+      default: 0,
     },
     breakdownOption: {
       type: String as PropType<string | null>,
-      default: null
+      default: null,
     },
     selectedTemporalResolution: {
       type: String as PropType<TemporalResolutionOption | null>,
-      default: ''
-    }
+      default: '',
+    },
   },
   setup(props, { emit }) {
-    const { timeseriesData, breakdownOption, selectedTimestamp, selectedTemporalResolution, timeseriesToDatacubeMap } = toRefs(
-      props
-    );
+    const {
+      timeseriesData,
+      breakdownOption,
+      selectedTimestamp,
+      selectedTemporalResolution,
+      timeseriesToDatacubeMap,
+    } = toRefs(props);
     const lineChart = ref<HTMLElement | null>(null);
     function selectTimestamp(newValue: number) {
       emit('select-timestamp', newValue);
@@ -85,20 +93,16 @@ export default defineComponent({
     function selectTimestampRange(start: number, end: number) {
       emit('select-timestamp-range', { start, end });
     }
-    let updateTimestampElements:
-      | ((timestamp: number | null) => void)
-      | undefined;
+    let updateTimestampElements: ((timestamp: number | null) => void) | undefined;
     const timestampFormatter = (timestamp: number) => {
-      return formatTimestamp(
-        timestamp,
-        breakdownOption.value,
-        selectedTemporalResolution.value
-      );
+      return formatTimestamp(timestamp, breakdownOption.value, selectedTemporalResolution.value);
     };
     const valueFormatter = computed(() => {
-      const allPoints = timeseriesData.value.map(timeseries => timeseries.points).flat();
-      const yExtent = d3.extent(allPoints.map(point => point.value));
-      if (yExtent[0] === undefined) { return chartValueFormatter(); }
+      const allPoints = timeseriesData.value.map((timeseries) => timeseries.points).flat();
+      const yExtent = d3.extent(allPoints.map((point) => point.value));
+      if (yExtent[0] === undefined) {
+        return chartValueFormatter();
+      }
       return chartValueFormatter(...yExtent);
     });
     const dataAtSelectedTimestamp = computed(() => {
@@ -114,15 +118,12 @@ export default defineComponent({
         }[];
       }[] = [];
       const _timeseriesToDatacubeMap = timeseriesToDatacubeMap.value;
-      timeseriesData.value.forEach(timeseries => {
+      timeseriesData.value.forEach((timeseries) => {
         const timeseriesId = timeseries.id;
-        const {
-          datacubeName,
-          datacubeOutputVariable
-        } = _timeseriesToDatacubeMap[timeseriesId];
+        const { datacubeName, datacubeOutputVariable } = _timeseriesToDatacubeMap[timeseriesId];
         // Uniquely identify legend entries by constructing a legendId.
         const legendId = datacubeName + TIMESERIES_HEADER_SEPARATOR + datacubeOutputVariable;
-        const existingDatacubeSection = legendData.find(item => item.legendId === legendId);
+        const existingDatacubeSection = legendData.find((item) => item.legendId === legendId);
         // `name` is what's actually displayed in the legend. On this screen we
         //  compare across datacubes, so it's more helpful to display the
         //  output name than something like "indicator" or "Run 9".
@@ -137,9 +138,8 @@ export default defineComponent({
             name,
             color: timeseries.color,
             superscript: getActionSuperscript(timeseries.correctiveAction),
-            value: timeseries.points.find(
-              point => point.timestamp === selectedTimestamp.value
-            )?.value
+            value: timeseries.points.find((point) => point.timestamp === selectedTimestamp.value)
+              ?.value,
           });
         } else {
           const datacubeSection = {
@@ -152,10 +152,10 @@ export default defineComponent({
                 color: timeseries.color,
                 superscript: getActionSuperscript(timeseries.correctiveAction),
                 value: timeseries.points.find(
-                  point => point.timestamp === selectedTimestamp.value
-                )?.value
-              }
-            ]
+                  (point) => point.timestamp === selectedTimestamp.value
+                )?.value,
+              },
+            ],
           };
           legendData.push(datacubeSection);
         }
@@ -163,7 +163,7 @@ export default defineComponent({
 
       return legendData;
     });
-    const resize = _.debounce(function({ width, height }) {
+    const resize = _.debounce(function ({ width, height }) {
       if (lineChart.value === null || timeseriesData.value.length === 0) return;
       const svg = d3.select<HTMLElement, null>(lineChart.value);
       if (svg === null) return;
@@ -185,7 +185,7 @@ export default defineComponent({
     }, RESIZE_DELAY);
     watch(
       () => selectedTimestamp.value,
-      selectedTimestamp => {
+      (selectedTimestamp) => {
         if (updateTimestampElements !== undefined) {
           updateTimestampElements(selectedTimestamp);
         }
@@ -199,7 +199,7 @@ export default defineComponent({
         if (parentElement === null || parentElement === undefined) return;
         resize({
           width: parentElement.clientWidth,
-          height: parentElement.clientHeight
+          height: parentElement.clientHeight,
         });
       }
     );
@@ -208,7 +208,7 @@ export default defineComponent({
       if (parentElement === null || parentElement === undefined) return;
       resize({
         width: parentElement.clientWidth,
-        height: parentElement.clientHeight
+        height: parentElement.clientHeight,
       });
     });
     return {
@@ -217,9 +217,9 @@ export default defineComponent({
       timestampFormatter,
       dataAtSelectedTimestamp,
       valueFormatter,
-      MAX_TIMESERIES_LABEL_CHAR_LENGTH
+      MAX_TIMESERIES_LABEL_CHAR_LENGTH,
     };
-  }
+  },
 });
 </script>
 
@@ -277,7 +277,7 @@ export default defineComponent({
 }
 
 .timestamp {
-  color: $selected-dark
+  color: $selected-dark;
 }
 
 :deep(.xAxis .domain) {

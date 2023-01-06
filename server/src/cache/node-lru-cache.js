@@ -6,7 +6,7 @@ const cache = new LRU(argv.cacheSize);
 
 const transLock = new LRU(1000);
 
-const ts = () => (new Date().getTime());
+const ts = () => new Date().getTime();
 
 const hasCache = (key) => {
   return cache.has(key);
@@ -25,7 +25,7 @@ const delCache = (key) => {
 const LOCK_TIMEOUT = 1000 * 60; // 1 min
 const setLock = (key) => {
   const t = ts();
-  if (transLock.has(key) === false || (t - transLock.get(key)) >= LOCK_TIMEOUT) {
+  if (transLock.has(key) === false || t - transLock.get(key) >= LOCK_TIMEOUT) {
     transLock.set(key, t);
     return true;
   }
@@ -43,5 +43,5 @@ module.exports = {
 
   setLock,
   releaseLock,
-  LOCK_TIMEOUT
+  LOCK_TIMEOUT,
 };

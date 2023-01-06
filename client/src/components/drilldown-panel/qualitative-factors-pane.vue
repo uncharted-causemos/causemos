@@ -8,20 +8,17 @@
     />
     <div class="pane-summary">
       {{ ontologyFormatter(selectedItem.concept) }}
-      <i
-        class="fa fa-fw fa-pencil"
-        @click="renameNode"
-      ></i>
+      <i class="fa fa-fw fa-pencil" @click="renameNode"></i>
     </div>
 
     <div v-if="selectedItem.components.length > 0">
       <div class="qual-pane-summary">
-        Concepts & Datacubes ({{selectedItem.components.length}})
+        Concepts & Datacubes ({{ selectedItem.components.length }})
         <i
           class="icon-centered unit-width fa fa-fw"
           :class="{
             'fa-angle-down': showComponents,
-            'fa-angle-right': !showComponents
+            'fa-angle-right': !showComponents,
           }"
           :onClick="toggleComponents"
         />
@@ -35,12 +32,12 @@
 
     <div v-if="similarConcepts.length > 0">
       <div class="qual-pane-summary">
-        Similar Concepts ({{similarConcepts.length}})
+        Similar Concepts ({{ similarConcepts.length }})
         <i
           class="icon-centered unit-width fa fa-fw"
           :class="{
             'fa-angle-down': showSimilarConcepts,
-            'fa-angle-right': !showSimilarConcepts
+            'fa-angle-right': !showSimilarConcepts,
           }"
           :onClick="toggleSimilarConcepts"
         />
@@ -48,30 +45,24 @@
       <div v-if="showSimilarConcepts">
         <div v-for="sc in similarConcepts" :key="sc.concept" class="inline-group-justified">
           {{ ontologyFormatter(sc.concept) }}
-          <div
-            v-tooltip.top="'Add ' + sc.concept"
-            @click="addToCag(sc.concept)"
-          >
-            <i
-              class="fa fa-plus concept-examples-icon" />
+          <div v-tooltip.top="'Add ' + sc.concept" @click="addToCag(sc.concept)">
+            <i class="fa fa-plus concept-examples-icon" />
           </div>
         </div>
       </div>
     </div>
 
-    <div class="qual-pane-summary">
-      Documents Grouped by {{ factorCount }} Factor(s)
-    </div>
+    <div class="qual-pane-summary">Documents Grouped by {{ factorCount }} Factor(s)</div>
     <collapsible-list-header
-      @expand-all="expandAll={value: true}"
-      @collapse-all="expandAll={value: false}"
+      @expand-all="expandAll = { value: true }"
+      @collapse-all="expandAll = { value: false }"
     >
       <i
         class="fa fa-lg fa-fw"
         :class="{
           'fa-check-square-o': summaryData.meta.checked,
           'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
-          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
+          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked,
         }"
         @click="toggle(summaryData)"
       />
@@ -96,26 +87,23 @@
       :concept="selectedItem.concept"
       :suggestions="suggestions"
       @select="confirmUpdateGrounding(null, selectedItem.concept, $event)"
-      @close="closeEditor" />
+      @close="closeEditor"
+    />
     <div v-if="factorCount > 0">
-      <div
-        v-for="value in summaryData.children"
-        :key="value.key">
-        <collapsible-item
-          :override="expandAll"
-          class="factors-container-content"
-        >
+      <div v-for="value in summaryData.children" :key="value.key">
+        <collapsible-item :override="expandAll" class="factors-container-content">
           <template #controls>
             <i
               class="fa fa-lg fa-fw"
-              :class="{ 'fa-check-square-o': value.meta.checked, 'fa-square-o': !value.meta.checked }"
+              :class="{
+                'fa-check-square-o': value.meta.checked,
+                'fa-square-o': !value.meta.checked,
+              }"
               @click="toggle(value)"
             />
           </template>
           <template #title>
-            <div
-              v-tooltip.top="value.key"
-              class="factor-title overflow-ellipsis">
+            <div v-tooltip.top="value.key" class="factor-title overflow-ellipsis">
               {{ value.key }}
             </div>
             <small-icon-button
@@ -136,9 +124,7 @@
             </small-icon-button>
           </template>
           <template #content>
-            <div
-              v-for="(statement, statementIdx) of value.dataArray"
-              :key="statementIdx">
+            <div v-for="(statement, statementIdx) of value.dataArray" :key="statementIdx">
               <evidence-item
                 v-for="(evidence, sentIdx) of statement.evidence"
                 :key="sentIdx"
@@ -155,24 +141,23 @@
           :concept="selectedItem.concept"
           :suggestions="suggestions"
           @select="confirmUpdateGrounding(value, selectedItem.concept, $event)"
-          @close="closeEditor" />
+          @close="closeEditor"
+        />
       </div>
     </div>
     <div v-else-if="numberRelationships === 0">
       <message-display :message="messageNoData" />
     </div>
 
-    <div
-      v-if="isFetchingStatements"
-      class="pane-loading-message"
-    >
+    <div v-if="isFetchingStatements" class="pane-loading-message">
       <i class="fa fa-spin fa-spinner pane-loading-icon" /><span>{{ loadingMessage }}</span>
     </div>
     <modal-confirmation
       v-if="showConfirmCurationModal"
       :autofocus-confirm="false"
       @confirm="curationConfirmedCallback"
-      @close="closeConfirmCurationModal">
+      @close="closeConfirmCurationModal"
+    >
       <template #title>Confirm Curation Action</template>
       <template #message>
         <p>This action will affect the entire Knowledge Base and other CAGs that use it.</p>
@@ -191,7 +176,7 @@ import {
   updateStatementsFactorGrounding,
   getFactorGroundingRecommendations,
   getSimilarConcepts,
-  CORRECTION_TYPES
+  CORRECTION_TYPES,
 } from '@/services/curation-service';
 import ModalDocument from '@/components/modals/modal-document';
 import EvidenceItem from '@/components/evidence-item';
@@ -218,33 +203,33 @@ export default {
     MessageDisplay,
     SmallIconButton,
     ModalConfirmation,
-    CollapsibleListHeader
+    CollapsibleListHeader,
   },
   props: {
     selectedItem: {
       type: Object,
-      default: null
+      default: null,
     },
     numberRelationships: {
       type: Number,
-      default: 0
+      default: 0,
     },
     statements: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     project: {
       type: String,
-      default: null
+      default: null,
     },
     isFetchingStatements: {
       type: Boolean,
-      default: false
+      default: false,
     },
     shouldConfirmCurations: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   data: () => ({
     currentItem: null,
@@ -261,15 +246,15 @@ export default {
     suggestions: [],
     similarConcepts: [],
     showComponents: true,
-    showSimilarConcepts: true
+    showSimilarConcepts: true,
   }),
   computed: {
-    numSelectedItems: function() {
-      return this.summaryData.children.filter(d => d.meta.checked === true).length;
+    numSelectedItems: function () {
+      return this.summaryData.children.filter((d) => d.meta.checked === true).length;
     },
     factorCount() {
       return this.summaryData.children.length;
-    }
+    },
   },
   emits: ['updated-relations', 'add-to-CAG', 'rename-node'],
   watch: {
@@ -280,7 +265,7 @@ export default {
     selectedItem() {
       if (!this.selectedItem) return;
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -297,15 +282,19 @@ export default {
       this.initializeData();
       this.summaryData = {
         children: groupByConceptFactor(this.statements, this.selectedItem.concept),
-        meta: { checked: false, isSomeChildChecked: false }
+        meta: { checked: false, isSomeChildChecked: false },
       };
 
       // for each component concept get similar concepts
-      const allSimilarConcepts = this.selectedItem.components.map(concept => getSimilarConcepts(this.project, concept));
+      const allSimilarConcepts = this.selectedItem.components.map((concept) =>
+        getSimilarConcepts(this.project, concept)
+      );
       Promise.all(allSimilarConcepts).then((values) => {
         const allSc = values.reduce((acc, val) => acc.concat(val.similar_concepts), []);
         // filter those that match the existing concepts
-        this.similarConcepts = allSc.filter(sc => !this.selectedItem.components.includes(sc.concept));
+        this.similarConcepts = allSc.filter(
+          (sc) => !this.selectedItem.components.includes(sc.concept)
+        );
       });
     },
     openDocumentModal(evidence) {
@@ -326,7 +315,7 @@ export default {
       this.currentItem = null;
       this.activeCorrection = null;
     },
-    highlightClickedIcon: function(item) {
+    highlightClickedIcon: function (item) {
       return this.currentItem === item;
     },
     toggle(item) {
@@ -334,13 +323,13 @@ export default {
       const recursiveDown = (item, newState) => {
         item.meta.checked = newState;
         if (!item.children) return;
-        item.children.forEach(child => recursiveDown(child, newState));
+        item.children.forEach((child) => recursiveDown(child, newState));
       };
 
       const recursiveUp = (item) => {
         if (!_.isEmpty(item.children)) {
-          item.children.forEach(child => recursiveUp(child));
-          const numChecked = item.children.filter(d => d.meta.checked === true).length;
+          item.children.forEach((child) => recursiveUp(child));
+          const numChecked = item.children.filter((d) => d.meta.checked === true).length;
           item.meta.checked = numChecked === item.children.length;
           item.meta.isSomeChildChecked = numChecked > 0;
         }
@@ -359,12 +348,14 @@ export default {
       let ids = [];
       const factors = [];
       if (item === null) {
-        this.summaryData.children.filter(d => d.meta.checked === true).forEach(child => {
-          ids = ids.concat(child.dataArray.map(d => d.id));
-          factors.push(child.key);
-        });
+        this.summaryData.children
+          .filter((d) => d.meta.checked === true)
+          .forEach((child) => {
+            ids = ids.concat(child.dataArray.map((d) => d.id));
+            factors.push(child.key);
+          });
       } else {
-        ids = item.dataArray.map(d => d.id);
+        ids = item.dataArray.map((d) => d.id);
         factors.push(item.key);
       }
 
@@ -376,7 +367,9 @@ export default {
         this.discardStatements(item);
         return;
       }
-      this.openConfirmCurationModal(() => { this.discardStatements(item); });
+      this.openConfirmCurationModal(() => {
+        this.discardStatements(item);
+      });
     },
     async discardStatements(item) {
       let selectedItems = [];
@@ -384,10 +377,10 @@ export default {
       if (!_.isNil(item)) {
         selectedItems = [item];
       } else {
-        selectedItems = this.summaryData.children.filter(item => item.meta.checked === true);
+        selectedItems = this.summaryData.children.filter((item) => item.meta.checked === true);
       }
-      selectedItems.forEach(item => {
-        statementIds = statementIds.concat(item.dataArray.map(statement => statement.id));
+      selectedItems.forEach((item) => {
+        statementIds = statementIds.concat(item.dataArray.map((statement) => statement.id));
       });
       statementIds = _.uniq(statementIds);
       const updateResult = await discardStatements(this.project, statementIds);
@@ -403,7 +396,9 @@ export default {
         this.updateGrounding(item, curGrounding, newGrounding);
         return;
       }
-      this.openConfirmCurationModal(() => { this.updateGrounding(item, curGrounding, newGrounding); });
+      this.openConfirmCurationModal(() => {
+        this.updateGrounding(item, curGrounding, newGrounding);
+      });
     },
     async updateGrounding(item, curGrounding, newGrounding) {
       let recommendations = [];
@@ -411,17 +406,17 @@ export default {
 
       const subj = {
         oldValue: curGrounding,
-        newValue: newGrounding
+        newValue: newGrounding,
       };
       const obj = {
         oldValue: curGrounding,
-        newValue: newGrounding
+        newValue: newGrounding,
       };
 
       const edgeMap = new Map();
       const keyFn = (s, t) => `${s}///${t}`;
       const process = (statements) => {
-        statements.forEach(statement => {
+        statements.forEach((statement) => {
           let key = '';
           if (statement.subj.concept === curGrounding) {
             key = keyFn(newGrounding, statement.obj.concept);
@@ -436,12 +431,12 @@ export default {
       };
 
       if (item !== null) {
-        statementIds = item.dataArray.map(statement => statement.id);
+        statementIds = item.dataArray.map((statement) => statement.id);
         process(item.dataArray);
       } else {
-        const selectedItems = this.summaryData.children.filter(d => d.meta.checked === true);
-        selectedItems.forEach(d => {
-          statementIds = statementIds.concat(d.dataArray.map(statement => statement.id));
+        const selectedItems = this.summaryData.children.filter((d) => d.meta.checked === true);
+        selectedItems.forEach((d) => {
+          statementIds = statementIds.concat(d.dataArray.map((statement) => statement.id));
           process(d.dataArray);
         });
       }
@@ -452,14 +447,19 @@ export default {
         updatedRelations.push({
           source,
           target,
-          reference_ids: v
+          reference_ids: v,
         });
       }
       this.$emit('updated-relations', updatedRelations);
 
       // Get factor recommendations first
-      if (item !== null) { // FIXME: Just show factor recommendations for a single factor regrounding for now.
-        const result = await getFactorGroundingRecommendations(this.project, curGrounding, item.key);
+      if (item !== null) {
+        // FIXME: Just show factor recommendations for a single factor regrounding for now.
+        const result = await getFactorGroundingRecommendations(
+          this.project,
+          curGrounding,
+          item.key
+        );
         if (result.status === 200) {
           recommendations = result.data.recommendations;
         } else {
@@ -477,7 +477,14 @@ export default {
       }
 
       if (item !== null && !_.isEmpty(recommendations)) {
-        this.$emit('show-factor-recommendations', item.key, curGrounding, newGrounding, recommendations, batchId);
+        this.$emit(
+          'show-factor-recommendations',
+          item.key,
+          curGrounding,
+          newGrounding,
+          recommendations,
+          batchId
+        );
       }
     },
     openConfirmCurationModal(confirmedCallback) {
@@ -499,10 +506,10 @@ export default {
             concept,
             id: '',
             label: this.ontologyFormatter(concept),
-            components: [concept]
-          }
+            components: [concept],
+          },
         ],
-        edges: []
+        edges: [],
       };
       this.$emit('add-to-CAG', payload);
     },
@@ -514,8 +521,8 @@ export default {
     },
     toggleSimilarConcepts() {
       this.showSimilarConcepts = !this.showSimilarConcepts;
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -548,7 +555,7 @@ export default {
   }
 
   &:not(:hover) button.white-bg {
-    color: #D4D4D4;
+    color: #d4d4d4;
     background: none;
   }
 }

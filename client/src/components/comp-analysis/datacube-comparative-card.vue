@@ -1,38 +1,36 @@
 <template>
   <div class="datacube-card-container">
-    <header class="datacube-header" >
-      <h5
-        v-if="metadata && activeFeature"
-        class="datacube-title-area"
-        @click="openDrilldown"
-      >
-        <span>{{activeFeature.display_name !== '' ? activeFeature.display_name : activeFeature.name}} - {{ selectedRegionsString }}</span>
-        <span class="datacube-name">{{metadata.name}}</span>
-        <span v-if="metadata.status === DatacubeStatus.Deprecated" style="margin-left: 1rem" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+    <header class="datacube-header">
+      <h5 v-if="metadata && activeFeature" class="datacube-title-area" @click="openDrilldown">
+        <span
+          >{{
+            activeFeature.display_name !== '' ? activeFeature.display_name : activeFeature.name
+          }}
+          - {{ selectedRegionsString }}</span
+        >
+        <span class="datacube-name">{{ metadata.name }}</span>
+        <span
+          v-if="metadata.status === DatacubeStatus.Deprecated"
+          style="margin-left: 1rem"
+          :style="{ backgroundColor: statusColor }"
+          >{{ statusLabel }}</span
+        >
         <i class="fa fa-fw fa-expand drilldown-btn" />
       </h5>
 
       <options-button :dropdown-below="true">
         <template #content>
-          <div
-            class="dropdown-option"
-            @click="clickRemove"
-          >
-            Remove
-          </div>
-          <div
-            class="dropdown-option"
-            @click="clickDuplicate"
-          >
-            Duplicate
-          </div>
+          <div class="dropdown-option" @click="clickRemove">Remove</div>
+          <div class="dropdown-option" @click="clickDuplicate">Duplicate</div>
         </template>
       </options-button>
     </header>
     <main>
       <div class="chart-and-footer">
         <timeseries-chart
-          v-if="timeseriesDataForSelection.length > 0 && timeseriesDataForSelection[0].points.length > 0"
+          v-if="
+            timeseriesDataForSelection.length > 0 && timeseriesDataForSelection[0].points.length > 0
+          "
           class="timeseries-chart"
           :timeseries-data="timeseriesDataForSelection"
           :selected-temporal-resolution="selectedTemporalResolution"
@@ -46,20 +44,29 @@
               <div>Aggregated by: {{ selectedSpatialAggregation }}</div>
               <!-- legend of selected runs here, with a dropdown that indicates which run is selected -->
               <div style="display: flex; align-items: center">
-                <div style="margin-right: 1rem">Total Timeseries: {{regionRunsScenarios.length}}</div>
+                <div style="margin-right: 1rem">
+                  Total Timeseries: {{ regionRunsScenarios.length }}
+                </div>
                 <div style="display: flex; align-items: center">
                   <div style="margin-right: 4px">Selected:</div>
-                  <select name="selectedRegionRankingRun" id="selectedRegionRankingRun"
-                          @change="selectedScenarioIndex = $event.target.selectedIndex"
-                          :disabled="regionRunsScenarios.length === 1"
-                          :style="{ color: regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex ? regionRunsScenarios[selectedScenarioIndex].color : 'black' }"
+                  <select
+                    name="selectedRegionRankingRun"
+                    id="selectedRegionRankingRun"
+                    @change="selectedScenarioIndex = $event.target.selectedIndex"
+                    :disabled="regionRunsScenarios.length === 1"
+                    :style="{
+                      color:
+                        regionRunsScenarios && regionRunsScenarios.length > selectedScenarioIndex
+                          ? regionRunsScenarios[selectedScenarioIndex].color
+                          : 'black',
+                    }"
                   >
                     <option
                       v-for="(selectedRun, indx) in regionRunsScenarios"
                       :key="selectedRun.name"
                       :selected="indx === selectedScenarioIndex"
                     >
-                      {{selectedRun.name}}
+                      {{ selectedRun.name }}
                     </option>
                   </select>
                 </div>
@@ -86,7 +93,12 @@
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
 import { convertRegionalDataToBarData, getSelectedOutput, isModel } from '@/utils/datacube-util';
-import { AggregationOption, TemporalResolutionOption, DatacubeStatus, SPLIT_BY_VARIABLE } from '@/types/Enums';
+import {
+  AggregationOption,
+  TemporalResolutionOption,
+  DatacubeStatus,
+  SPLIT_BY_VARIABLE,
+} from '@/types/Enums';
 import { computed, defineComponent, PropType, ref, toRefs, watch, watchEffect } from 'vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -97,7 +109,10 @@ import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
 import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
-import { fromStateSelectedRegionsAtAllLevels, validateSelectedRegions } from '@/utils/drilldown-util';
+import {
+  fromStateSelectedRegionsAtAllLevels,
+  validateSelectedRegions,
+} from '@/utils/drilldown-util';
 import { getActiveRegions, popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
 import { openDatacubeDrilldown } from '@/services/analysis-service-new';
@@ -110,37 +125,37 @@ export default defineComponent({
   components: {
     OptionsButton,
     TimeseriesChart,
-    RegionMap
+    RegionMap,
   },
   props: {
     id: {
       type: String,
-      required: true
+      required: true,
     },
     itemId: {
       type: String,
-      required: true
+      required: true,
     },
     selectedTimestamp: {
       type: Number,
-      default: 0
+      default: 0,
     },
     datacubeIndex: {
       type: Number,
-      default: 0
+      default: 0,
     },
     selectedTimestampRange: {
-      type: Object as PropType<{start: number; end: number} | null>,
-      default: null
+      type: Object as PropType<{ start: number; end: number } | null>,
+      default: null,
     },
     analysisItem: {
       type: Object as PropType<AnalysisItem>,
-      required: true
+      required: true,
     },
     analysisId: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: [
     'select-timestamp',
@@ -149,16 +164,10 @@ export default defineComponent({
     'updated-feature-display-name',
     'set-analysis-item-view-config',
     'remove-analysis-item',
-    'duplicate-analysis-item'
+    'duplicate-analysis-item',
   ],
   setup(props, { emit }) {
-    const {
-      itemId,
-      id,
-      selectedTimestamp,
-      datacubeIndex,
-      analysisItem
-    } = toRefs(props);
+    const { itemId, id, selectedTimestamp, datacubeIndex, analysisItem } = toRefs(props);
 
     const metadata = useModelMetadata(id);
     watchEffect(() => {
@@ -177,11 +186,7 @@ export default defineComponent({
     const activeFeature = ref<DatacubeFeature | null>(null);
     watchEffect(() => {
       if (activeFeature.value !== null) {
-        emit(
-          'updated-feature-display-name',
-          itemId.value,
-          activeFeature.value.display_name
-        );
+        emit('updated-feature-display-name', itemId.value, activeFeature.value.display_name);
       }
     });
     const activeFeatureName = computed(() => activeFeature.value?.name ?? '');
@@ -197,7 +202,10 @@ export default defineComponent({
         // we have a store entry for the default output of the current model
         initialOutputIndex = currentOutputEntry;
       } else {
-        initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+        initialOutputIndex =
+          metadata.value.validatedOutputs?.findIndex(
+            (o) => o.name === metadata.value?.default_feature
+          ) ?? 0;
 
         // update the store
         const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
@@ -205,13 +213,14 @@ export default defineComponent({
         store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
       }
       // override (to correctly fetch the output selection for each datacube duplication)
-      if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value) && initialViewConfig.value.selectedOutputIndex !== undefined) {
+      if (
+        initialViewConfig.value &&
+        !_.isEmpty(initialViewConfig.value) &&
+        initialViewConfig.value.selectedOutputIndex !== undefined
+      ) {
         initialOutputIndex = initialViewConfig.value.selectedOutputIndex;
       }
-      activeFeature.value = getSelectedOutput(
-        metadata.value,
-        initialOutputIndex
-      );
+      activeFeature.value = getSelectedOutput(metadata.value, initialOutputIndex);
     });
 
     const {
@@ -246,18 +255,15 @@ export default defineComponent({
       timeseriesDataForSelection,
       visibleTimeseriesData,
       regionalData,
-      mapBounds
-    } = useDatacube(
-      metadata,
-      itemId,
-      activeFeatureName,
-      ref(false)
-    );
+      mapBounds,
+    } = useDatacube(metadata, itemId, activeFeatureName, ref(false));
 
     const store = useStore();
 
     const project = computed(() => store.getters['app/project']);
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const datacubeCurrentOutputsMap = computed(
+      () => store.getters['app/datacubeCurrentOutputsMap']
+    );
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataSpaceDataState | null>(null);
@@ -280,11 +286,7 @@ export default defineComponent({
           _.isEmpty(initialViewConfig.value) &&
           !_.isEmpty(metadata.value.default_view)
         ) {
-          emit(
-            'set-analysis-item-view-config',
-            itemId.value,
-            metadata.value.default_view
-          );
+          emit('set-analysis-item-view-config', itemId.value, metadata.value.default_view);
           initialViewConfig.value = metadata.value.default_view;
         }
       }
@@ -304,17 +306,18 @@ export default defineComponent({
         return;
       }
       const baselineRunIds = allModelRunData.value
-        .filter(run => run.is_default_run)
-        .map(run => run.id);
+        .filter((run) => run.is_default_run)
+        .map((run) => run.id);
       if (baselineRunIds.length > 0) {
         selectedScenarioIds.value = [baselineRunIds[0]];
       }
     });
 
-
     // FIXME: See note in datacube-card
     const regionMapData = computed<BarData[]>(() => {
-      if (regionalData.value === null) { return []; }
+      if (regionalData.value === null) {
+        return [];
+      }
       const timeseriesToGetRegionDataFrom =
         timeseriesDataForSelection.value[selectedScenarioIndex.value];
       let timeseriesKey = '';
@@ -346,23 +349,23 @@ export default defineComponent({
 
     // apply the view-config for this datacube
     watch(
-      () => [
-        initialViewConfig.value,
-        initialDataConfig.value
-      ],
+      () => [initialViewConfig.value, initialDataConfig.value],
       () => {
         if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
           if (initialViewConfig.value?.breakdownOption !== undefined) {
             setBreakdownOption(initialViewConfig.value?.breakdownOption);
           }
           if (initialViewConfig.value.temporalResolution !== undefined) {
-            selectedTemporalResolution.value = initialViewConfig.value.temporalResolution as TemporalResolutionOption;
+            selectedTemporalResolution.value = initialViewConfig.value
+              .temporalResolution as TemporalResolutionOption;
           }
           if (initialViewConfig.value.temporalAggregation !== undefined) {
-            selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation as AggregationOption;
+            selectedTemporalAggregation.value = initialViewConfig.value
+              .temporalAggregation as AggregationOption;
           }
           if (initialViewConfig.value.spatialAggregation !== undefined) {
-            selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation as AggregationOption;
+            selectedSpatialAggregation.value = initialViewConfig.value
+              .spatialAggregation as AggregationOption;
           }
           if (initialViewConfig.value.selectedOutputIndex !== undefined) {
             const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
@@ -398,14 +401,19 @@ export default defineComponent({
             initialSelectedScenarioIds.value = initialDataConfig.value.selectedScenarioIds;
           }
           if (initialDataConfig.value.selectedTimestamp !== undefined) {
-            if (initialViewConfig.value?.breakdownOption && initialViewConfig.value?.breakdownOption === SPLIT_BY_VARIABLE) {
+            if (
+              initialViewConfig.value?.breakdownOption &&
+              initialViewConfig.value?.breakdownOption === SPLIT_BY_VARIABLE
+            ) {
               initialSelectedGlobalTimestamp.value = initialDataConfig.value.selectedTimestamp;
             } else {
               setSelectedTimestamp(initialDataConfig.value?.selectedTimestamp as number);
             }
           }
           if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
-            const regions = fromStateSelectedRegionsAtAllLevels(initialDataConfig.value.selectedRegionIdsAtAllLevels);
+            const regions = fromStateSelectedRegionsAtAllLevels(
+              initialDataConfig.value.selectedRegionIdsAtAllLevels
+            );
             const { validRegions } = validateSelectedRegions(regions, datacubeHierarchy.value);
             selectedRegionIdsAtAllLevels.value = validRegions;
           }
@@ -413,7 +421,9 @@ export default defineComponent({
             selectedTransform.value = initialDataConfig.value.selectedTransform;
           }
           if (initialDataConfig.value.selectedQualifierValues !== undefined) {
-            initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
+            initialSelectedQualifierValues.value = _.clone(
+              initialDataConfig.value.selectedQualifierValues
+            );
           }
           modelRunSearchFilters.value = _.clone(initialDataConfig.value.searchFilters);
 
@@ -433,14 +443,14 @@ export default defineComponent({
         }
       },
       {
-        immediate: true
+        immediate: true,
       }
     );
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
     const selectedScenarioIndex = ref(0);
-    const regionRunsScenarios = ref([] as {name: string; color: string}[]);
+    const regionRunsScenarios = ref([] as { name: string; color: string }[]);
 
     watchEffect(() => {
       if (metadata.value) {
@@ -448,11 +458,14 @@ export default defineComponent({
 
         if (timeseriesList.length > 0) {
           // override the color of all loaded timeseries
-          timeseriesList.forEach(timeseries => {
+          timeseriesList.forEach((timeseries) => {
             timeseries.color = colorFromIndex(datacubeIndex.value);
           });
 
-          regionRunsScenarios.value = timeseriesList.map(timeseries => ({ name: timeseries.name, color: timeseries.color }));
+          regionRunsScenarios.value = timeseriesList.map((timeseries) => ({
+            name: timeseries.name,
+            color: timeseries.color,
+          }));
 
           emit('loaded-timeseries', itemId.value, timeseriesList);
         }
@@ -485,26 +498,20 @@ export default defineComponent({
       selectedAdminLevel,
       popupFormatter: (feature: any) => popupFormatter(feature, false),
       selectedScenarioIndex,
-      regionRunsScenarios
+      regionRunsScenarios,
     };
   },
   methods: {
     openDrilldown() {
-      openDatacubeDrilldown(
-        this.id,
-        this.itemId,
-        router,
-        this.project,
-        this.analysisId
-      );
+      openDatacubeDrilldown(this.id, this.itemId, router, this.project, this.analysisId);
     },
     clickRemove() {
       this.$emit('remove-analysis-item', this.itemId);
     },
     clickDuplicate() {
       this.$emit('duplicate-analysis-item', this.itemId);
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -595,5 +602,4 @@ main {
   justify-content: space-around;
   flex: 1;
 }
-
 </style>

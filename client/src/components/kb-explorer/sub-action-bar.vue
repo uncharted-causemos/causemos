@@ -2,14 +2,8 @@
   <div class="action-bar">
     <!-- Actions for the table-->
     <div class="table-actions">
-      <div
-        v-if="view === 'statements'"
-      >
-        <button
-          type="button"
-          class="btn btn-primary-outline"
-          @click="toggleColumnSelector()"
-        >
+      <div v-if="view === 'statements'">
+        <button type="button" class="btn btn-primary-outline" @click="toggleColumnSelector()">
           <i class="fa fa-columns" />
           <i class="fa fa-caret-down" />
           Columns
@@ -25,7 +19,9 @@
           type="button"
           class="btn btn-normal-outline"
           @click="showDocumentModal = true"
-        >Add Document</button>
+        >
+          Add Document
+        </button>
       </div>
       <div>
         <button
@@ -42,9 +38,7 @@
         </button>
       </div>
     </div>
-    <modal-upload-document
-      v-if="showDocumentModal === true"
-      @close="showDocumentModal = false" />
+    <modal-upload-document v-if="showDocumentModal === true" @close="showDocumentModal = false" />
   </div>
 </template>
 
@@ -56,32 +50,31 @@ import StatementsColumnsSelector from '@/components/kb-explorer/statements-colum
 import filtersUtil from '@/utils/filters-util';
 import ModalUploadDocument from '@/components/modals/modal-upload-document.vue';
 
-
 export default defineComponent({
   name: 'ActionBar',
   components: {
     StatementsColumnsSelector,
-    ModalUploadDocument
+    ModalUploadDocument,
   },
   data: () => ({
     // Display toggles
     showModelDialog: false,
     showColumnSelector: false,
-    showDocumentModal: false
+    showDocumentModal: false,
   }),
   computed: {
     ...mapGetters({
       // KB based states
       filters: 'query/filters',
-      view: 'query/view'
+      view: 'query/view',
     }),
-    showSelfLoop: function() {
+    showSelfLoop: function () {
       const enable = filtersUtil.findPositiveFacetClause(this.filters, 'enable');
       if (_.isNil(enable) || enable.values.indexOf('self-loop') === -1) {
         return false;
       }
       return true;
-    }
+    },
   },
   watch: {
     filters(n, o) {
@@ -91,7 +84,7 @@ export default defineComponent({
     updateToken(n, o) {
       if (_.isEqual(n, o)) return;
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -103,7 +96,7 @@ export default defineComponent({
       setUpdateToken: 'app/setUpdateToken',
       setStagingStatementsCount: 'kb/setStagingStatementsCount',
       enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay'
+      disableOverlay: 'app/disableOverlay',
     }),
     initializeData() {
       this.showColumnSelector = false;
@@ -120,13 +113,12 @@ export default defineComponent({
       } else {
         this.removeSearchTerm({ field: 'enable', term: 'self-loop' });
       }
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-
 .action-bar {
   display: flex;
   width: 80%;
@@ -135,7 +127,7 @@ export default defineComponent({
     display: flex;
     cursor: pointer;
     i {
-        margin: 2px;
+      margin: 2px;
     }
   }
   .shared-actions {
@@ -157,5 +149,4 @@ export default defineComponent({
 .btn-primary-outline {
   background-color: transparent;
 }
-
 </style>

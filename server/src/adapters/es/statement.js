@@ -15,7 +15,7 @@ const queryUtil = new StatementQueryUtil();
 const _facetQuery = (filters, fields = []) => {
   const filterQuery = queryUtil.buildQuery(filters);
   const aggregations = {};
-  fields.forEach(field => {
+  fields.forEach((field) => {
     const fieldMeta = FIELDS[field];
     if (fieldMeta.type === FIELD_TYPES.NORMAL) {
       aggregations[field] = aggUtil.termsAggregation(field);
@@ -32,30 +32,30 @@ const _facetQuery = (filters, fields = []) => {
   const result = {
     size: 0,
     query: filterQuery.query,
-    aggs: aggregations
+    aggs: aggregations,
   };
   return result;
 };
 
 const _facetPostProcess = (fields, facets) => {
   const result = {};
-  fields.forEach(field => {
+  fields.forEach((field) => {
     const fieldMeta = FIELDS[field];
     if (fieldMeta.type === FIELD_TYPES.DATE || fieldMeta.type === FIELD_TYPES.DATE_MILLIS) {
       // handle custom result from date histogram aggregation
       const dateHistogramData = facets[field].buckets;
       const dateKeys = Object.keys(dateHistogramData);
-      result[field] = dateKeys.map(key => {
+      result[field] = dateKeys.map((key) => {
         return {
           key: key,
-          value: dateHistogramData[key].doc_count
+          value: dateHistogramData[key].doc_count,
         };
       });
     } else {
-      result[field] = facets[field].buckets.map(bucket => {
+      result[field] = facets[field].buckets.map((bucket) => {
         return {
           key: bucket.key,
-          value: bucket.doc_count
+          value: bucket.doc_count,
         };
       });
     }
@@ -92,7 +92,7 @@ class Statement {
   async find(statementFilters, options) {
     const result = await this._search(statementFilters, options);
     if (_.isEmpty(result.hits.hits)) return [];
-    return result.hits.hits.map(d => d._source);
+    return result.hits.hits.map((d) => d._source);
   }
 
   /**
@@ -106,7 +106,9 @@ class Statement {
   async stats(statementFilters) {
     const filterQuery = queryUtil.buildQuery(statementFilters);
     const clauses = statementFilters.clauses || [];
-    const nestedFilters = queryUtil.buildFilters(queryUtil.levelFilter(clauses, FIELD_LEVELS.EVIDENCE));
+    const nestedFilters = queryUtil.buildFilters(
+      queryUtil.levelFilter(clauses, FIELD_LEVELS.EVIDENCE)
+    );
 
     const response = await this.client.search({
       index: this.index,
@@ -116,7 +118,7 @@ class Statement {
         aggs: {
           docs: {
             nested: {
-              path: 'evidence'
+              path: 'evidence',
             },
             aggs: {
               filtered: {
@@ -124,25 +126,25 @@ class Statement {
                 aggs: {
                   documentsCount: {
                     cardinality: {
-                      field: 'evidence.document_context.doc_id'
-                    }
+                      field: 'evidence.document_context.doc_id',
+                    },
                   },
                   evidenceCount: {
                     cardinality: {
-                      field: 'evidence.evidence_context.source_hash'
-                    }
-                  }
-                }
-              }
-            }
+                      field: 'evidence.evidence_context.source_hash',
+                    },
+                  },
+                },
+              },
+            },
           },
           relationshipsCount: {
             cardinality: {
-              field: 'wm.edge'
-            }
-          }
-        }
-      }
+              field: 'wm.edge',
+            },
+          },
+        },
+      },
     });
 
     const statementsCount = await this.count(statementFilters);
@@ -151,7 +153,7 @@ class Statement {
       statementsCount,
       documentsCount: filteredAggResult.documentsCount.value,
       evidenceCount: filteredAggResult.evidenceCount.value,
-      relationshipsCount: response.body.aggregations.relationshipsCount.value
+      relationshipsCount: response.body.aggregations.relationshipsCount.value,
     };
   }
 
@@ -164,7 +166,7 @@ class Statement {
     const filterQuery = queryUtil.buildQuery(statementFilters);
     const countQuery = {
       index: this.index,
-      body: filterQuery
+      body: filterQuery,
     };
     const result = await this.client.count(countQuery);
     return result.body.count;
@@ -186,11 +188,11 @@ class Statement {
      **/
     // Sum counts of selected readers
     const aggsQuery = {};
-    selectedReaders.forEach(reader => {
+    selectedReaders.forEach((reader) => {
       aggsQuery[reader] = {
         sum: {
-          field: `wm.readers_evidence_count.${reader}`
-        }
+          field: `wm.readers_evidence_count.${reader}`,
+        },
       };
     });
     const searchQuery = {
@@ -198,8 +200,8 @@ class Statement {
       body: {
         size: 0,
         query: filterQuery.query,
-        aggs: aggsQuery
-      }
+        aggs: aggsQuery,
+      },
     };
     const response = await this.client.search(searchQuery);
     const aggregations = response.body.aggregations;
@@ -208,7 +210,6 @@ class Statement {
     }, 0);
     return evidenceCount;
   }
-
 
   /**
    * Returns statement facets
@@ -219,7 +220,7 @@ class Statement {
   async getFacets(statementFilters, fieldNames) {
     // Sanity check, remove invalid fields
     const filteredFieldNames = [];
-    fieldNames.forEach(f => {
+    fieldNames.forEach((f) => {
       if (FIELDS[f] && FIELDS[f].level === FIELD_LEVELS.STATEMENT) {
         filteredFieldNames.push(f);
       }
@@ -232,7 +233,7 @@ class Statement {
     const query = _facetQuery(statementFilters, filteredFieldNames);
     const response = await this.client.search({
       index: this.index,
-      body: query
+      body: query,
     });
     const facets = response.body.aggregations;
 
@@ -257,8 +258,8 @@ class Statement {
     const processedQuery = decodeURI(queryString)
       // .toLowerCase() TODO: case insensitive search works for concepts but not author
       .split(' ')
-      .filter(el => el !== '')
-      .map(el => `${el}*`)
+      .filter((el) => el !== '')
+      .map((el) => `${el}*`)
       .join(' ');
 
     const searchBodies = [];
@@ -272,25 +273,24 @@ class Statement {
               query_string: {
                 fields: [field],
                 query: processedQuery,
-                default_operator: defaultOperator
-              }
+                default_operator: defaultOperator,
+              },
             },
             aggs: {
               fieldAgg: {
                 terms: {
                   field: aggFieldNames[idx],
-                  size: MAX_ES_SUGGESTION_BUCKET_SIZE
-                }
-              }
-            }
-          }
-        })
+                  size: MAX_ES_SUGGESTION_BUCKET_SIZE,
+                },
+              },
+            },
+          },
+        }),
       });
     });
     const { body } = await this.client.msearch({
-      body: searchBodies
+      body: searchBodies,
     });
-
 
     const allResults = body.responses.reduce((acc, resp) => {
       const aggs = resp.aggregations.nestedAgg || resp.aggregations;
@@ -300,14 +300,14 @@ class Statement {
     // Combine duplicate results by adding doc_count and sort in descending order
     const matchedTerms = _(allResults)
       .groupBy('key')
-      .map(items => {
+      .map((items) => {
         return {
           key: items[0].key,
-          count: items.reduce((acc, item) => acc + item.doc_count, 0)
+          count: items.reduce((acc, item) => acc + item.doc_count, 0),
         };
       })
       .sort((a, b) => b.count - a.count)
-      .map(item => item.key)
+      .map((item) => item.key)
       .value();
 
     return matchedTerms;
@@ -321,15 +321,15 @@ class Statement {
    * @private
    */
   _createNestedQuery(field, query) {
-    const nestedPath = _.find(Object.values(NESTED_FIELD_PATHS), path => field.startsWith(path));
+    const nestedPath = _.find(Object.values(NESTED_FIELD_PATHS), (path) => field.startsWith(path));
     if (nestedPath) {
       return {
         nestedAgg: {
           nested: {
-            path: nestedPath
+            path: nestedPath,
           },
-          aggs: query
-        }
+          aggs: query,
+        },
       };
     }
 
@@ -360,14 +360,14 @@ class Statement {
     const filterQuery = queryUtil.buildQuery(filters);
     const searchPayload = {
       index: this.index,
-      body: filterQuery
+      body: filterQuery,
     };
     searchPayload.size = !_.isNil(options.size) ? +options.size : 50;
     searchPayload.from = !_.isNil(options.from) ? +options.from : 0;
 
     if (!_.isEmpty(options.sort)) {
       const sort = {};
-      Object.keys(options.sort).forEach(key => {
+      Object.keys(options.sort).forEach((key) => {
         const esField = FIELDS[key].fields[0];
         sort[esField] = options.sort[key];
       });
@@ -375,17 +375,16 @@ class Statement {
     }
     if (options.excludes) {
       searchPayload.body._source = {
-        excludes: options.excludes
+        excludes: options.excludes,
       };
     } else if (options.includes) {
       searchPayload.body._source = {
-        includes: options.includes
+        includes: options.includes,
       };
     }
     const response = await this.client.search(searchPayload);
     return response.body;
   }
-
 
   /**
    * Bulk ES operation
@@ -395,7 +394,7 @@ class Statement {
    */
   async _bulk(operationType, payloadArray, refreshOption) {
     const bulk = [];
-    payloadArray.forEach(doc => {
+    payloadArray.forEach((doc) => {
       bulk.push({ [operationType]: { _index: this.index, _id: _keyFn(doc) } });
       if (operationType === 'update') {
         bulk.push({ doc: doc });
@@ -407,7 +406,7 @@ class Statement {
     try {
       const response = await this.client.bulk({
         refresh: refreshOption,
-        body: bulk
+        body: bulk,
       });
       const body = response.body;
       if (body.errors) {

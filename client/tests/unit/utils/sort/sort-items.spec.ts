@@ -6,7 +6,7 @@ describe('sort-items by Most Recent', () => {
     const collection = [
       { name: 'a', date: '2020-01-01' },
       { name: 'b', date: '2020-01-02' },
-      { name: 'c', date: '2020-01-03' }
+      { name: 'c', date: '2020-01-03' },
     ];
     const sortBy = { date: 'date', name: 'name' };
     const sortOption = 'Most recent';
@@ -14,7 +14,7 @@ describe('sort-items by Most Recent', () => {
     expect(result).to.deep.equal([
       { name: 'c', date: '2020-01-03' },
       { name: 'b', date: '2020-01-02' },
-      { name: 'a', date: '2020-01-01' }
+      { name: 'a', date: '2020-01-01' },
     ]);
   });
 });
@@ -24,7 +24,7 @@ describe('sort-items by Oldest', () => {
     const collection = [
       { name: 'a', date: '2020-01-01' },
       { name: 'b', date: '2020-01-02' },
-      { name: 'c', date: '2020-01-03' }
+      { name: 'c', date: '2020-01-03' },
     ];
     const sortBy = { date: 'date', name: 'name' };
     const sortOption = 'Oldest';
@@ -32,7 +32,7 @@ describe('sort-items by Oldest', () => {
     expect(result).to.deep.equal([
       { name: 'a', date: '2020-01-01' },
       { name: 'b', date: '2020-01-02' },
-      { name: 'c', date: '2020-01-03' }
+      { name: 'c', date: '2020-01-03' },
     ]);
   });
 });
@@ -42,7 +42,7 @@ describe('sort-items by A-Z', () => {
     const collection = [
       { name: 'a', date: '2020-01-01' },
       { name: 'b', date: '2020-01-02' },
-      { name: 'c', date: '2020-01-03' }
+      { name: 'c', date: '2020-01-03' },
     ];
     const sortBy = { date: 'date', name: 'name' };
     const sortOption = 'A-Z';
@@ -50,7 +50,7 @@ describe('sort-items by A-Z', () => {
     expect(result).to.deep.equal([
       { name: 'a', date: '2020-01-01' },
       { name: 'b', date: '2020-01-02' },
-      { name: 'c', date: '2020-01-03' }
+      { name: 'c', date: '2020-01-03' },
     ]);
   });
 });
@@ -60,7 +60,7 @@ describe('sort-items by Z-A', () => {
     const collection = [
       { name: 'a', date: '2020-01-01' },
       { name: 'b', date: '2020-01-02' },
-      { name: 'c', date: '2020-01-03' }
+      { name: 'c', date: '2020-01-03' },
     ];
     const sortBy = { date: 'date', name: 'name' };
     const sortOption = 'Z-A';
@@ -68,7 +68,7 @@ describe('sort-items by Z-A', () => {
     expect(result).to.deep.equal([
       { name: 'c', date: '2020-01-03' },
       { name: 'b', date: '2020-01-02' },
-      { name: 'a', date: '2020-01-01' }
+      { name: 'a', date: '2020-01-01' },
     ]);
   });
 });

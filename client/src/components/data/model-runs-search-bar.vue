@@ -27,12 +27,12 @@ export default {
   props: {
     data: {
       type: Object,
-      default: () => {}
+      default: () => {},
     },
     filters: {
       type: Object,
-      default: () => {}
-    }
+      default: () => {},
+    },
   },
   emits: ['filters-updated'],
   created() {
@@ -48,7 +48,7 @@ export default {
     data: function dataChanged() {
       this.clearSearch();
       this.initLexBar();
-    }
+    },
   },
   mounted() {
     this.initLexBar();
@@ -57,12 +57,12 @@ export default {
     initLexBar() {
       // Generates lex pills from select datacube columns
       const keys = Object.keys(this.data);
-      const basicPills = keys.map(k => {
+      const basicPills = keys.map((k) => {
         const keyData = this.data[k];
         const dcField = {
           field: k,
           searchDisplay: keyData.display_name,
-          searchable: true
+          searchable: true,
         };
         if (k === TAGS) {
           return new DynamicValuePill(
@@ -72,28 +72,31 @@ export default {
             },
             'Select one or more tags to filter model runs',
             true,
-            SingleRelationState);
+            SingleRelationState
+          );
         }
         if (keyData.values && keyData.values.length > 0) {
           // suggestions are provided for this field
           const dcOptions = keyData.values;
           return new ValuePill(dcField, dcOptions);
         } else {
-          return (keyData.type === DatacubeGenericAttributeVariableType.Int || keyData.type === DatacubeGenericAttributeVariableType.Float)
-            ? new RangePill(dcField) : new TextPill(dcField);
+          return keyData.type === DatacubeGenericAttributeVariableType.Int ||
+            keyData.type === DatacubeGenericAttributeVariableType.Float
+            ? new RangePill(dcField)
+            : new TextPill(dcField);
         }
       });
 
       // Defines a list of searchable fields for LEX
       this.pills = [
-        ...basicPills // searchable fields such as country, each would provide list of suggested values
+        ...basicPills, // searchable fields such as country, each would provide list of suggested values
       ];
 
       const filtersClauses = this.filters ? this.filters.clauses : undefined;
-      const filteredPills = _.reject(this.pills, (pill) => _.find(filtersClauses, { field: pill.searchKey }));
-      const suggestions = filteredPills.map(pill =>
-        pill.makeOption()
+      const filteredPills = _.reject(this.pills, (pill) =>
+        _.find(filtersClauses, { field: pill.searchKey })
       );
+      const suggestions = filteredPills.map((pill) => pill.makeOption());
 
       const language = Lex.from('field', ValueState, {
         name: 'Choose a field to search',
@@ -101,29 +104,25 @@ export default {
         suggestionLimit: suggestions.length,
         autoAdvanceDefault: true,
         defaultValue: filteredPills[0].makeOption(),
-        icon: v => {
+        icon: (v) => {
           if (_.isNil(v)) return '<i class="fa fa-search"></i>';
-          const pill = this.pills.find(
-            pill => pill.searchKey === v.meta.searchKey
-          );
+          const pill = this.pills.find((pill) => pill.searchKey === v.meta.searchKey);
           return pill.makeIcon();
-        }
-      }).branch(...this.pills.map(pill => pill.makeBranch()));
+        },
+      }).branch(...this.pills.map((pill) => pill.makeBranch()));
 
       this.lexRef = new Lex({
         language: language,
         placeholder: 'Filter runs',
-        tokenXIcon: '<i class="fa fa-remove"></i>'
+        tokenXIcon: '<i class="fa fa-remove"></i>',
       });
 
       this.lexRef.on('query changed', (...args) => {
         const model = args[0];
         const newFilters = filtersUtil.newFilters();
 
-        model.forEach(item => {
-          const pill = this.pills.find(
-            pill => pill.searchKey === item.field.meta.searchKey
-          );
+        model.forEach((item) => {
+          const pill = this.pills.find((pill) => pill.searchKey === item.field.meta.searchKey);
           if (!_.isNil(pill)) {
             pill.lex2Filters(item, newFilters);
           }
@@ -142,8 +141,8 @@ export default {
       if (!this.lexRef) return;
       const lexQuery = [];
       if (!_.isEmpty(this.filters)) {
-        this.filters.clauses.forEach(clause => {
-          const pill = this.pills.find(pill => pill.searchKey === clause.field);
+        this.filters.clauses.forEach((clause) => {
+          const pill = this.pills.find((pill) => pill.searchKey === clause.field);
           if (!_.isNil(pill)) {
             const selectedPill = pill.makeOption();
             pill.filters2Lex(clause, selectedPill, lexQuery);
@@ -154,16 +153,14 @@ export default {
     },
     clearSearch() {
       this.lexRef.reset();
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-
 .search-bar-container :deep {
   @import '@/styles/lex-overrides';
   @include lex-wrapper;
 }
-
 </style>

@@ -8,35 +8,43 @@ import {
   TemporalResolutionOption,
   TemporalResolution,
   ReferenceSeriesOption,
-  SPLIT_BY_VARIABLE
+  SPLIT_BY_VARIABLE,
 } from '@/types/Enums';
 import { ModelRun } from '@/types/ModelRun';
 import { QualifierTimeseriesResponse, Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getYearFromTimestamp } from '@/utils/date-util';
-import { applyReference, applyRelativeTo, breakdownByYear, mapToBreakdownDomain } from '@/utils/timeseries-util';
+import {
+  applyReference,
+  applyRelativeTo,
+  breakdownByYear,
+  mapToBreakdownDomain,
+} from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
-import { getQualifierTimeseries, getBulkTimeseries, getRawQualifierTimeseries, getRawTimeseriesData, getRawTimeseriesDataBulk, getTimeseries } from '../outputdata-service';
+import {
+  getQualifierTimeseries,
+  getBulkTimeseries,
+  getRawQualifierTimeseries,
+  getRawTimeseriesData,
+  getRawTimeseriesDataBulk,
+  getTimeseries,
+} from '../outputdata-service';
 import { correctIncompleteTimeseriesLists } from '@/utils/incomplete-data-detection';
-
 
 const applyBreakdown = (
   timeseriesData: Timeseries[],
   breakdownOption: string | null,
   selectedYears: Set<string>
 ): Timeseries[] => {
-  if (
-    breakdownOption !== TemporalAggregationLevel.Year ||
-    timeseriesData.length !== 1
-  ) {
+  if (breakdownOption !== TemporalAggregationLevel.Year || timeseriesData.length !== 1) {
     return timeseriesData;
   }
   const brokenDownByYear = breakdownByYear(timeseriesData);
 
   return Object.keys(brokenDownByYear)
-    .filter(year => selectedYears.has(year))
+    .filter((year) => selectedYears.has(year))
     .map((year, index) => {
       const points = brokenDownByYear[year];
       // Depending on the selected breakdown option, timestamp values may need to be mapped
@@ -48,7 +56,7 @@ const applyBreakdown = (
         id: year,
         color: colorFromIndex(index),
         points: mappedToBreakdownDomain,
-        isDefaultRun: timeseriesData[0].isDefaultRun
+        isDefaultRun: timeseriesData[0].isDefaultRun,
       };
     });
 };
@@ -86,14 +94,10 @@ export default function useTimeseriesData(
     relativeTo.value = newValue;
   };
 
-  const timeseriesData = computed(
-    () => processedTimeseriesData.value.timeseriesData
-  );
+  const timeseriesData = computed(() => processedTimeseriesData.value.timeseriesData);
 
   const visibleTimeseriesData = computed(() =>
-    timeseriesData.value.filter(
-      timeseries => timeseries.id !== relativeTo.value
-    )
+    timeseriesData.value.filter((timeseries) => timeseries.id !== relativeTo.value)
   );
 
   const temporalRes = computed(() =>
@@ -123,19 +127,15 @@ export default function useTimeseriesData(
         : timeseriesData.value;
     timeseriesListToUse.forEach(({ id: timeseriesId, points }) => {
       // Group points by year
-      const brokenDownByYear = _.groupBy(points, point =>
-        getYearFromTimestamp(point.timestamp)
-      );
+      const brokenDownByYear = _.groupBy(points, (point) => getYearFromTimestamp(point.timestamp));
       // Aggregate points to get one value for each year
       const reduced = Object.entries(brokenDownByYear).map(([year, values]) => {
         const sum = _.sumBy(values, 'value');
         const aggregateValue =
-          selectedTemporalAggregation.value === AggregationOption.Mean
-            ? sum / values.length
-            : sum;
+          selectedTemporalAggregation.value === AggregationOption.Mean ? sum / values.length : sum;
         return {
           year,
-          value: aggregateValue
+          value: aggregateValue,
         };
       });
       // Restructure into the BreakdownData format
@@ -145,15 +145,13 @@ export default function useTimeseriesData(
         //  they all come from the same timeseries and would otherwise have non
         //  unique IDs.
         const idToUse =
-          breakdownOption.value === TemporalAggregationLevel.Year
-            ? year
-            : timeseriesId;
-        const entryForThisYear = result.find(entry => entry.id === year);
+          breakdownOption.value === TemporalAggregationLevel.Year ? year : timeseriesId;
+        const entryForThisYear = result.find((entry) => entry.id === year);
         if (entryForThisYear === undefined) {
           // Add an entry for this year
           result.push({
             id: year,
-            values: { [idToUse]: value }
+            values: { [idToUse]: value },
           });
         } else {
           // Add a value to this year's entry
@@ -169,7 +167,7 @@ export default function useTimeseriesData(
     });
 
     return {
-      Year: sortedByDescendingYear
+      Year: sortedByDescendingYear,
     };
   });
 
@@ -194,7 +192,7 @@ export default function useTimeseriesData(
     if (rawTimeseriesData.value.length === 0) {
       return {
         baselineMetadata: null,
-        timeseriesData: []
+        timeseriesData: [],
       };
     }
 
@@ -204,25 +202,41 @@ export default function useTimeseriesData(
       selectedYears.value
     );
 
-    const output = metadata.value?.outputs.find(output => output.name === activeFeature.value);
+    const output = metadata.value?.outputs.find((output) => output.name === activeFeature.value);
     const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
     const finalRawDate = new Date(metadata.value?.period?.lte ?? 0);
 
     // Breakdown by year modifies timestamps and makes them unreliable to apply corrections
-    const correctedTimeseriesData = breakdownOption.value === TemporalAggregationLevel.Year
-      ? breakdownTimeseriesData
-      : correctIncompleteTimeseriesLists(breakdownTimeseriesData, rawResolution,
-        temporalRes.value as TemporalResolutionOption, temporalAgg.value as AggregationOption, finalRawDate);
+    const correctedTimeseriesData =
+      breakdownOption.value === TemporalAggregationLevel.Year
+        ? breakdownTimeseriesData
+        : correctIncompleteTimeseriesLists(
+            breakdownTimeseriesData,
+            rawResolution,
+            temporalRes.value as TemporalResolutionOption,
+            temporalAgg.value as AggregationOption,
+            finalRawDate
+          );
 
-    const referencedTimeseriesData = referenceOptions && referenceOptions.value && referenceOptions.value.length > 0
-      ? applyReference(correctedTimeseriesData, rawTimeseriesData.value, breakdownOption.value, referenceOptions.value)
-      : correctedTimeseriesData;
+    const referencedTimeseriesData =
+      referenceOptions && referenceOptions.value && referenceOptions.value.length > 0
+        ? applyReference(
+            correctedTimeseriesData,
+            rawTimeseriesData.value,
+            breakdownOption.value,
+            referenceOptions.value
+          )
+        : correctedTimeseriesData;
 
-    const relativeTimeseriesData = applyRelativeTo(referencedTimeseriesData, relativeTo.value, showPercentChange.value);
+    const relativeTimeseriesData = applyRelativeTo(
+      referencedTimeseriesData,
+      relativeTo.value,
+      showPercentChange.value
+    );
     return relativeTimeseriesData;
   });
 
-  watchEffect(onInvalidate => {
+  watchEffect((onInvalidate) => {
     const datacubeMetadata = metadata.value;
     if (modelRunIds.value.length === 0 || datacubeMetadata === null) {
       // Don't have the information needed to fetch the data
@@ -237,40 +251,54 @@ export default function useTimeseriesData(
           ? selectedSpatialAggregation.value
           : AggregationOption.Mean;
       const transform =
-        selectedTransform.value !== DataTransform.None
-          ? selectedTransform.value
-          : undefined;
+        selectedTransform.value !== DataTransform.None ? selectedTransform.value : undefined;
 
       let promises: Promise<{ data: any } | null>[] = [];
 
       const allRegionIds = [...regionIds.value];
 
-      if (referenceOptions !== undefined && breakdownOption.value === SpatialAggregationLevel.Region) {
+      if (
+        referenceOptions !== undefined &&
+        breakdownOption.value === SpatialAggregationLevel.Region
+      ) {
         // 1. filter out aggregated types
         // 2. push the non-aggregated reference regions.
         referenceOptions.value
-          .filter(region => !Object.values(ReferenceSeriesOption).includes(region as ReferenceSeriesOption))
-          .forEach(region => allRegionIds.push(region));
+          .filter(
+            (region) =>
+              !Object.values(ReferenceSeriesOption).includes(region as ReferenceSeriesOption)
+          )
+          .forEach((region) => allRegionIds.push(region));
       }
 
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
         const runId = modelRunIds.value[0];
         promises = isRawDataResolution?.value
-          ? [getRawTimeseriesDataBulk({
-              dataId,
-              runId,
-              outputVariable: activeFeature.value,
-              spatialAgg
-            }, allRegionIds).then(result => ({ data: result }))]
-          : [getBulkTimeseries({
-              modelId: dataId,
-              runId,
-              outputVariable: activeFeature.value,
-              temporalResolution: temporalRes.value,
-              temporalAggregation: temporalAgg.value,
-              spatialAggregation: spatialAgg,
-              transform: transform
-            }, allRegionIds)];
+          ? [
+              getRawTimeseriesDataBulk(
+                {
+                  dataId,
+                  runId,
+                  outputVariable: activeFeature.value,
+                  spatialAgg,
+                },
+                allRegionIds
+              ).then((result) => ({ data: result })),
+            ]
+          : [
+              getBulkTimeseries(
+                {
+                  modelId: dataId,
+                  runId,
+                  outputVariable: activeFeature.value,
+                  temporalResolution: temporalRes.value,
+                  temporalAggregation: temporalAgg.value,
+                  spatialAggregation: spatialAgg,
+                  transform: transform,
+                },
+                allRegionIds
+              ),
+            ];
       } else if (
         breakdownOption.value === null ||
         breakdownOption.value === TemporalAggregationLevel.Year
@@ -280,65 +308,61 @@ export default function useTimeseriesData(
         //  fetch the timeseries for the selected region
         // ASSUMPTION: when split by region is not active, only one
         //  region is selected at a time
-        const regionId =
-          regionIds.value.length > 0 ? regionIds.value[0] : undefined;
-        promises = modelRunIds.value.map(runId => {
+        const regionId = regionIds.value.length > 0 ? regionIds.value[0] : undefined;
+        promises = modelRunIds.value.map((runId) => {
           return isRawDataResolution?.value
             ? getRawTimeseriesData({
-              dataId,
-              runId,
-              regionId: (regionId || ''),
-              outputVariable: activeFeature.value,
-              spatialAgg
-            }).then(result => ({ data: result }))
+                dataId,
+                runId,
+                regionId: regionId || '',
+                outputVariable: activeFeature.value,
+                spatialAgg,
+              }).then((result) => ({ data: result }))
             : getTimeseries({
-              modelId: dataId,
-              runId,
-              outputVariable: activeFeature.value,
-              temporalResolution: temporalRes.value,
-              temporalAggregation: temporalAgg.value,
-              spatialAggregation: spatialAgg,
-              transform: transform,
-              regionId: regionId
-            });
+                modelId: dataId,
+                runId,
+                outputVariable: activeFeature.value,
+                temporalResolution: temporalRes.value,
+                temporalAggregation: temporalAgg.value,
+                spatialAggregation: spatialAgg,
+                transform: transform,
+                regionId: regionId,
+              });
         });
-      } else if (
-        breakdownOption.value === SPLIT_BY_VARIABLE
-      ) {
+      } else if (breakdownOption.value === SPLIT_BY_VARIABLE) {
         return;
       } else {
         // Breakdown by qualifier
         // ASSUMPTION: we'll only need to fetch the qualifier timeseries when
         //  exactly one model run is selected
-        const regionId =
-          regionIds.value.length > 0 ? regionIds.value[0] : undefined;
+        const regionId = regionIds.value.length > 0 ? regionIds.value[0] : undefined;
         const qualifierOptions = Array.from(selectedQualifierValues.value);
         const promise = isRawDataResolution?.value
           ? getRawQualifierTimeseries({
-            dataId,
-            runId: modelRunIds.value[0],
-            aggregation: spatialAgg,
-            outputVariable: activeFeature.value,
-            qualifierOptions,
-            qualifierVariableId: breakdownOption.value,
-            regionId
-          }).then(res => ({ data: res }))
+              dataId,
+              runId: modelRunIds.value[0],
+              aggregation: spatialAgg,
+              outputVariable: activeFeature.value,
+              qualifierOptions,
+              qualifierVariableId: breakdownOption.value,
+              regionId,
+            }).then((res) => ({ data: res }))
           : getQualifierTimeseries(
-            dataId,
-            modelRunIds.value[0],
-            activeFeature.value,
-            temporalRes.value,
-            temporalAgg.value,
-            spatialAgg,
-            breakdownOption.value,
-            qualifierOptions,
-            transform,
-            regionId
-          );
+              dataId,
+              modelRunIds.value[0],
+              activeFeature.value,
+              temporalRes.value,
+              temporalAgg.value,
+              spatialAgg,
+              breakdownOption.value,
+              qualifierOptions,
+              transform,
+              regionId
+            );
         promises = [promise];
       }
       const fetchResults = (await Promise.all(promises))
-        .filter(response => response !== null)
+        .filter((response) => response !== null)
         .map((response: any) => response.data);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
@@ -348,25 +372,35 @@ export default function useTimeseriesData(
       // Assign a name, id, and colour to each timeseries and store it in the
       //  `rawTimeseriesData` ref
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        rawTimeseriesData.value = fetchResults[0].map((regionalTimeseries: {region_id: string; timeseries: TimeseriesPoint[]}, index: number) => {
-          // Take the last segment of the region ID to get its display name
-          const name =
-            allRegionIds[index]?.split(REGION_ID_DELIMETER).pop() ??
-            allRegionIds[index];
-          const isDefaultRun = modelRuns && modelRuns.value[index] ? modelRuns.value[index].is_default_run : false;
-          const id = allRegionIds[index];
-          const color = colorFromIndex(index);
-          const points: TimeseriesPoint[] = regionalTimeseries.timeseries;
-          return { name, id, color, points, isDefaultRun };
-        });
+        rawTimeseriesData.value = fetchResults[0].map(
+          (
+            regionalTimeseries: { region_id: string; timeseries: TimeseriesPoint[] },
+            index: number
+          ) => {
+            // Take the last segment of the region ID to get its display name
+            const name =
+              allRegionIds[index]?.split(REGION_ID_DELIMETER).pop() ?? allRegionIds[index];
+            const isDefaultRun =
+              modelRuns && modelRuns.value[index] ? modelRuns.value[index].is_default_run : false;
+            const id = allRegionIds[index];
+            const color = colorFromIndex(index);
+            const points: TimeseriesPoint[] = regionalTimeseries.timeseries;
+            return { name, id, color, points, isDefaultRun };
+          }
+        );
       } else if (
         breakdownOption.value === TemporalAggregationLevel.Year ||
         breakdownOption.value === null
       ) {
         // use run names if available
-        const modeRunNames = modelRuns && modelRuns.value && modelRuns.value.length > 0 ? modelRuns?.value.map(r => r.name) : modelRunIds.value;
-        const defaultRunData = modelRuns && modelRuns.value && modelRuns.value.length > 0
-          ? modelRuns?.value.map(r => r.is_default_run) : new Array(modelRunIds.value.length).fill(false);
+        const modeRunNames =
+          modelRuns && modelRuns.value && modelRuns.value.length > 0
+            ? modelRuns?.value.map((r) => r.name)
+            : modelRunIds.value;
+        const defaultRunData =
+          modelRuns && modelRuns.value && modelRuns.value.length > 0
+            ? modelRuns?.value.map((r) => r.is_default_run)
+            : new Array(modelRunIds.value.length).fill(false);
 
         rawTimeseriesData.value = fetchResults.map((points, index) => {
           const name = modeRunNames[index] ?? 'no name: ' + index;
@@ -384,7 +418,7 @@ export default function useTimeseriesData(
             id: name,
             color: colorFromIndex(index),
             points: timeseries,
-            isDefaultRun: false
+            isDefaultRun: false,
           };
         });
       }
@@ -400,8 +434,7 @@ export default function useTimeseriesData(
     // Don't reset selected year list until data has loaded, in case it gets
     //  loaded from an insight and will be valid once timeseriesData has been
     //  populated.
-    const dataHasLoaded =
-      rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
+    const dataHasLoaded = rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
     if (!dataHasLoaded) return;
 
     // If no timeseries has an ID of `year`, then remove it from the list of
@@ -414,7 +447,7 @@ export default function useTimeseriesData(
     const filteredSelectedYears = new Set<string>();
     Array.from(selectedYears.value.values())
       .filter(doesYearExistInData)
-      .forEach(year => {
+      .forEach((year) => {
         filteredSelectedYears.add(year);
       });
     selectedYears.value = filteredSelectedYears;
@@ -424,7 +457,7 @@ export default function useTimeseriesData(
     const filteredSelectedYears = new Set<string>();
 
     if (initialSelectedYears.value && initialSelectedYears.value.length > 0) {
-      initialSelectedYears.value.forEach(year => {
+      initialSelectedYears.value.forEach((year) => {
         filteredSelectedYears.add(year);
       });
     }
@@ -438,15 +471,12 @@ export default function useTimeseriesData(
     () => [breakdownOption.value, processedTimeseriesData.value],
     () => {
       const allTimestamps = processedTimeseriesData.value.timeseriesData
-        .map(timeseries => timeseries.points)
+        .map((timeseries) => timeseries.points)
         .flat()
-        .map(point => point.timestamp);
+        .map((point) => point.timestamp);
       // Don't call "onNewLastTimestamp" callback if the previously selected timestamp
       //  still exists within the new timeseries's range.
-      if (
-        selectedTimestamp.value !== null &&
-        allTimestamps.includes(selectedTimestamp.value)
-      ) {
+      if (selectedTimestamp.value !== null && allTimestamps.includes(selectedTimestamp.value)) {
         return;
       }
       const lastTimestamp = _.max(allTimestamps);
@@ -462,8 +492,7 @@ export default function useTimeseriesData(
     // Don't reset relativeTo until data has loaded, in case relativeTo is
     //  loaded from an insight and will be valid once timeseriesData has been
     //  populated.
-    const dataHasLoaded =
-      rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
+    const dataHasLoaded = rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
     // If no timeseries has an ID of `relativeTo`, then `relativeTo` cannot
     //   be used to select a valid baseline and shouldbe reset to `null`.
     const doesRelativeToExistInData = timeseriesData.value.some(
@@ -478,13 +507,11 @@ export default function useTimeseriesData(
   return {
     timeseriesData,
     visibleTimeseriesData,
-    baselineMetadata: computed(
-      () => processedTimeseriesData.value.baselineMetadata
-    ),
+    baselineMetadata: computed(() => processedTimeseriesData.value.baselineMetadata),
     relativeTo,
     setRelativeTo,
     temporalBreakdownData,
     selectedYears,
-    toggleIsYearSelected
+    toggleIsYearSelected,
   };
 }

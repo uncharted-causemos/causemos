@@ -1,14 +1,9 @@
 import API from '@/api/api';
-import {
-  FullInsight,
-  Insight,
-  InsightMetadata,
-  DataState
-} from '@/types/Insight';
+import { FullInsight, Insight, InsightMetadata, DataState } from '@/types/Insight';
 import {
   isDataAnalysisState,
   isModelsSpaceDataState,
-  isQualitativeViewDataState
+  isQualitativeViewDataState,
 } from '@/utils/insight-util';
 
 import { INSIGHTS } from '@/utils//messages-util';
@@ -39,8 +34,8 @@ export const addInsight = async (insight: Insight) => {
 export const updateInsight = async (insight_id: string, insight: Insight) => {
   const result = await API.put(`insights/${insight_id}`, insight, {
     headers: {
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   });
   return result.data;
 };
@@ -50,13 +45,13 @@ export const deleteInsight = async (id: string) => {
   return result;
 };
 
-
 // ==================================================================
-
 
 export const countInsights = async (fetchParams: InsightFilterFields): Promise<number> => {
   const filters = _fetchParamsToFilters(fetchParams);
-  const { data } = await API.get('insights/count', { params: { filters: JSON.stringify(filters) } });
+  const { data } = await API.get('insights/count', {
+    params: { filters: JSON.stringify(filters) },
+  });
   return data;
 };
 
@@ -66,14 +61,8 @@ export const countInsights = async (fetchParams: InsightFilterFields): Promise<n
  */
 export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<Insight[]> => {
   const options = {
-    excludes: [
-      'thumbnail',
-      'image',
-      'annotation_state'
-    ],
-    sort: [
-      { modified_at: { order: 'desc' } }
-    ]
+    excludes: ['thumbnail', 'image', 'annotation_state'],
+    sort: [{ modified_at: { order: 'desc' } }],
   };
   return await _fetchInsights(fetchParams, options);
 };
@@ -82,21 +71,18 @@ export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<I
  * Fetch full insights using the specified filter parameters
  * @param fetchParams an object of field-value pairs to filter by
  */
-export const fetchFullInsights = async (fetchParams: InsightFilterFields, includeAnnotationState = false): Promise<FullInsight[]> => {
-  const excludes = [
-    'thumbnail'
-  ];
+export const fetchFullInsights = async (
+  fetchParams: InsightFilterFields,
+  includeAnnotationState = false
+): Promise<FullInsight[]> => {
+  const excludes = ['thumbnail'];
   if (!includeAnnotationState) excludes.push('annotation_state');
   const options = {
     excludes,
-    sort: [
-      { modified_at: { order: 'desc' } }
-    ]
+    sort: [{ modified_at: { order: 'desc' } }],
   };
   return await _fetchInsights(fetchParams, options);
 };
-
-
 
 /**
  * Fetch insights using the specified filter parameters, only the fields
@@ -104,12 +90,13 @@ export const fetchFullInsights = async (fetchParams: InsightFilterFields, includ
  * @param fetchParams an object of field-value pairs to filter by
  * @param allowList a list of fields to return
  */
-export const fetchPartialInsights = async (fetchParams: InsightFilterFields, allowList: string[]): Promise<any[]> => {
+export const fetchPartialInsights = async (
+  fetchParams: InsightFilterFields,
+  allowList: string[]
+): Promise<any[]> => {
   const options = {
     includes: allowList,
-    sort: [
-      { modified_at: { order: 'desc' } }
-    ]
+    sort: [{ modified_at: { order: 'desc' } }],
   };
   return await _fetchInsights(fetchParams, options);
 };
@@ -118,18 +105,16 @@ export const fetchPartialInsights = async (fetchParams: InsightFilterFields, all
  * Fetch the first insight using the specified filter parameters
  * @param fetchParams an object of field-value pairs to filter by
  */
-export const getFirstInsight = async (fetchParams: InsightFilterFields): Promise<Insight | undefined> => {
+export const getFirstInsight = async (
+  fetchParams: InsightFilterFields
+): Promise<Insight | undefined> => {
   const options = {
-    excludes: [
-      'image',
-      'annotation_state'
-    ],
-    size: 1
+    excludes: ['image', 'annotation_state'],
+    size: 1,
   };
   const insights = await _fetchInsights(fetchParams, options);
   return insights.length > 0 ? insights[0] : undefined;
 };
-
 
 const _fetchInsights = async (fetchParams: InsightFilterFields, options: any) => {
   const filters = _fetchParamsToFilters(fetchParams);
@@ -138,15 +123,15 @@ const _fetchInsights = async (fetchParams: InsightFilterFields, options: any) =>
   if (filters && JSON.stringify(filters).length > 1000) {
     const { data } = await API.post('insights/search', {
       filters: filters,
-      options
+      options,
     });
     return data;
   } else {
     const { data } = await API.get('insights', {
       params: {
         filters: JSON.stringify(filters),
-        options
-      }
+        options,
+      },
     });
     return data;
   }
@@ -154,10 +139,9 @@ const _fetchInsights = async (fetchParams: InsightFilterFields, options: any) =>
 
 const _fetchParamsToFilters = (fetchParams: InsightFilterFields) => {
   return Object.keys(fetchParams)
-    .map(field => ({ field: field, value: (fetchParams as any)[field] }))
-    .filter(f => f.value !== undefined && f.value !== null);
+    .map((field) => ({ field: field, value: (fetchParams as any)[field] }))
+    .filter((f) => f.value !== undefined && f.value !== null);
 };
-
 
 export const extractMetadataDetails = (
   dataState: DataState | null,
@@ -165,7 +149,7 @@ export const extractMetadataDetails = (
   insightLastUpdate?: number
 ): InsightMetadata => {
   const summary: InsightMetadata = {
-    insightLastUpdate: insightLastUpdate ?? Date.now()
+    insightLastUpdate: insightLastUpdate ?? Date.now(),
   };
   if (!dataState || !projectMetadata) return summary;
 
@@ -193,22 +177,21 @@ export const extractMetadataDetails = (
     }
   } else if (isDataAnalysisState(dataState)) {
     const datacubes: {
-      datasetName: string,
-      outputName: string,
-      source: string
+      datasetName: string;
+      outputName: string;
+      source: string;
     }[] = [];
     dataState.analysisItems.forEach(({ cachedMetadata }) => {
       datacubes.push({
         datasetName: cachedMetadata.datacubeName,
         outputName: cachedMetadata.featureName,
-        source: cachedMetadata.source
+        source: cachedMetadata.source,
       });
     });
     summary.datacubes = datacubes;
   }
   return summary;
 };
-
 
 export const countPublicInsights = async (datacubeId: string, projectId: string) => {
   const publicInsightsSearchFields: InsightFilterFields = {};
@@ -218,7 +201,6 @@ export const countPublicInsights = async (datacubeId: string, projectId: string)
   const count = await countInsights(publicInsightsSearchFields);
   return count as number;
 };
-
 
 export const removeInsight = async (id: string, store?: any) => {
   const result = await deleteInsight(id);

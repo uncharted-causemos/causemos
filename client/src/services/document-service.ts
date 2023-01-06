@@ -1,10 +1,10 @@
 import API from '@/api/api';
 
 interface DocumentMetadata {
-  id: string,
-  author: string,
-  docTitle: string,
-  publisherName: string
+  id: string;
+  author: string;
+  docTitle: string;
+  publisherName: string;
 }
 
 export const getDocument = async (documentId: string) => {
@@ -13,17 +13,12 @@ export const getDocument = async (documentId: string) => {
 };
 
 export const updateDocument = async (updatedDocumentInfo: DocumentMetadata) => {
-  const {
-    id,
-    author,
-    docTitle,
-    publisherName
-  } = updatedDocumentInfo;
+  const { id, author, docTitle, publisherName } = updatedDocumentInfo;
   const params = {
     id,
     author,
     doc_title: docTitle,
-    publisher_name: publisherName
+    publisher_name: publisherName,
   };
   const result = await API.post(`documents/${id}`, params);
   return result;

@@ -1,8 +1,5 @@
 <template>
-  <comments-button-widget
-    :comments="description"
-    @update-comments="updateDescription"
-  />
+  <comments-button-widget :comments="description" @update-comments="updateDescription" />
 </template>
 
 <script lang="ts">
@@ -18,13 +15,11 @@ export default defineComponent({
   props: {
     analysisId: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
   setup(props) {
-    const {
-      analysisId
-    } = toRefs(props);
+    const { analysisId } = toRefs(props);
     const description = ref<null | string>(null);
     const toast = useToaster();
     onMounted(async () => {
@@ -45,8 +40,8 @@ export default defineComponent({
 
     return {
       description,
-      updateDescription
+      updateDescription,
     };
-  }
+  },
 });
 </script>

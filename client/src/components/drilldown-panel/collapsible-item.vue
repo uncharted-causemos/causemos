@@ -8,7 +8,7 @@
         <i
           :class="{
             'fa fa-angle-down fa-fw': isExpanded,
-            'fa fa-angle-right fa-fw': !isExpanded
+            'fa fa-angle-right fa-fw': !isExpanded,
           }"
         />
         <slot name="title" />
@@ -46,12 +46,12 @@ export default defineComponent({
   props: {
     override: {
       type: Object as PropType<{ value: boolean }>,
-      default: null
+      default: null,
     },
     defaultExpand: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   setup(props) {
     const { override, defaultExpand } = toRefs(props);
@@ -83,9 +83,9 @@ export default defineComponent({
 
     return {
       isExpanded,
-      toggleIsExpanded
+      toggleIsExpanded,
     };
-  }
+  },
 });
 </script>
 

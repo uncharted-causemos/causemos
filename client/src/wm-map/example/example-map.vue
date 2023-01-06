@@ -1,11 +1,7 @@
 <template>
-  <div style="display: flex; flex-wrap: wrap;">
+  <div style="display: flex; flex-wrap: wrap">
     <!-- Smal multiple maps -->
-    <div
-      v-for="data in mapData"
-      :key="data.sourceId"
-      style="height: 250px; width: 250px"
-    >
+    <div v-for="data in mapData" :key="data.sourceId" style="height: 250px; width: 250px">
       <wm-map
         ref="mapComponents"
         :center="center"
@@ -46,10 +42,7 @@
         @move="syncMove"
       >
         <wm-map-selectbox @select-box="onSelectBox" />
-        <template
-          v-for="data in mapData"
-          :key="data.sourceId"
-        >
+        <template v-for="data in mapData" :key="data.sourceId">
           <wm-map-geojson
             :source-id="data.sourceId"
             :source="data.source"
@@ -70,7 +63,6 @@
 </template>
 
 <script>
-
 /**
  * This example map deomnstrates the synchronization between multiple maps and selection sharing
  */
@@ -89,16 +81,18 @@ const transformGeojson = (geojson) => {
   let max = -Infinity;
 
   // HACK: remove no data value
-  geojson.features = geojson.features.filter(feature => feature.properties.value !== 0);
+  geojson.features = geojson.features.filter((feature) => feature.properties.value !== 0);
 
-  geojson.features.forEach(feature => {
+  geojson.features.forEach((feature) => {
     const properties = feature.properties;
     const value = properties.value;
     min = Math.min(min, value);
     max = Math.max(max, value);
   });
   return {
-    min, max, geojson
+    min,
+    max,
+    geojson,
   };
 };
 
@@ -107,9 +101,9 @@ const highlightsLayer = Object.freeze({
   type: 'fill',
   paint: {
     'fill-color': SELECTED_COLOR,
-    'fill-opacity': 0.75
+    'fill-opacity': 0.75,
   },
-  filter: ['in', 'id', '']
+  filter: ['in', 'id', ''],
 });
 
 // mapbox style utility functions
@@ -121,7 +115,7 @@ const linearColorInterpolate = (property, domain, colorRange) => {
     domain[0],
     ['to-color', colorRange[0]],
     domain[1],
-    ['to-color', colorRange[1]]
+    ['to-color', colorRange[1]],
   ];
 };
 const createPolygonLayerStyle = (property, dataDomain, colorRange) => {
@@ -129,8 +123,8 @@ const createPolygonLayerStyle = (property, dataDomain, colorRange) => {
     type: 'fill',
     paint: {
       'fill-color': linearColorInterpolate(property, dataDomain, colorRange),
-      'fill-opacity': 0.7
-    }
+      'fill-opacity': 0.7,
+    },
   };
 };
 
@@ -140,7 +134,7 @@ export default {
     WmMap,
     WmMapGeojson,
     WmMapSelectbox,
-    FilterExample
+    FilterExample,
   },
   data() {
     return {
@@ -149,7 +143,7 @@ export default {
       zoom: 0,
       pitch: 0,
       bounds: null,
-      mapData: []
+      mapData: [],
     };
   },
   mounted() {
@@ -161,21 +155,29 @@ export default {
       const pointsLayer = {
         type: 'circle',
         paint: {
-          'circle-color': linearColorInterpolate('value', [data.min, data.max], ['#deebf7', '#3182bd'])
-        }
+          'circle-color': linearColorInterpolate(
+            'value',
+            [data.min, data.max],
+            ['#deebf7', '#3182bd']
+          ),
+        },
       };
       const pointsHighlihgtLayer = {
         type: 'circle',
         paint: {
           'circle-color': SELECTED_COLOR,
-          'circle-opacity': 0.75
+          'circle-opacity': 0.75,
         },
-        filter: ['in', 'id', '']
+        filter: ['in', 'id', ''],
       };
 
       const [managementData, povertylevelData] = await Promise.all([
-        API.get('maas/output/164c9686338a08c78b9efde2ab186d89f70540e024f4fd25c7ae1466834bc480?feature=management_practice&precision=4'),
-        API.get('maas/output/6715e20386756222c965646aa38004cf63140f5fc8ff50c7b39e5bcd287fda47?feature=poverty level&precision=4')
+        API.get(
+          'maas/output/164c9686338a08c78b9efde2ab186d89f70540e024f4fd25c7ae1466834bc480?feature=management_practice&precision=4'
+        ),
+        API.get(
+          'maas/output/6715e20386756222c965646aa38004cf63140f5fc8ff50c7b39e5bcd287fda47?feature=poverty level&precision=4'
+        ),
       ]);
       const management = transformGeojson(managementData.data.geojson);
       const poverty = transformGeojson(povertylevelData.data.geojson);
@@ -186,40 +188,51 @@ export default {
           source: data.geojson,
           layers: {
             data: pointsLayer,
-            highlights: { ...pointsHighlihgtLayer }
-          }
+            highlights: { ...pointsHighlihgtLayer },
+          },
         },
         {
           sourceId: 'management',
           source: management.geojson,
           layers: {
-            data: createPolygonLayerStyle('value', [management.min, management.max], ['#fee8c8', '#e34a33']),
-            highlights: { ...highlightsLayer }
-          }
+            data: createPolygonLayerStyle(
+              'value',
+              [management.min, management.max],
+              ['#fee8c8', '#e34a33']
+            ),
+            highlights: { ...highlightsLayer },
+          },
         },
         {
           sourceId: 'poverty',
           source: poverty.geojson,
           layers: {
-            data: createPolygonLayerStyle('value', [poverty.min, poverty.max], getColors(COLOR.WM_GREEN, 2)),
-            highlights: { ...highlightsLayer }
-          }
-        }
+            data: createPolygonLayerStyle(
+              'value',
+              [poverty.min, poverty.max],
+              getColors(COLOR.WM_GREEN, 2)
+            ),
+            highlights: { ...highlightsLayer },
+          },
+        },
       ];
     },
     onSelectBox(event) {
-      const lngLatBbox = event.bbox.map(point => event.map.unproject(point));
+      const lngLatBbox = event.bbox.map((point) => event.map.unproject(point));
       // update filter for highlight layer for all maps
       this.mapData.forEach((d, index) => {
         const map = this.$refs.mapComponents[index].map;
         // bbox in context of the current map
-        const bbox = lngLatBbox.map(coords => map.project(coords));
+        const bbox = lngLatBbox.map((coords) => map.project(coords));
         const features = map.queryRenderedFeatures(bbox, { layers: [d.sourceId + '-base'] });
         // construct layer filter for highlight layer
-        const filter = features.reduce((memo, feature) => {
-          memo.push(feature.properties.id);
-          return memo;
-        }, ['in', 'id']);
+        const filter = features.reduce(
+          (memo, feature) => {
+            memo.push(feature.properties.id);
+            return memo;
+          },
+          ['in', 'id']
+        );
         // update the filter
         d.layers.highlights.filter = filter;
       });
@@ -240,9 +253,7 @@ export default {
       component.disableCamera();
 
       // get properties of the map and update vue props
-      SYNC_BOUNDS
-        ? this.syncBounds(map)
-        : this.syncCamera(map);
+      SYNC_BOUNDS ? this.syncBounds(map) : this.syncCamera(map);
 
       this.$nextTick(() => {
         component.enableCamera();
@@ -260,7 +271,7 @@ export default {
     },
     onClick(event) {
       console.log(event);
-    }
-  }
+    },
+  },
 };
 </script>

@@ -25,29 +25,33 @@ const createQuestion = async (
   preActions,
   postActions,
   linkedInsights,
-  viewState) => {
+  viewState
+) => {
   const newId = uuid();
   Logger.info('Creating question entry: ' + newId);
   const questionsConnection = Adapter.get(RESOURCE.QUESTION);
   const keyFn = (doc) => {
     return doc.id;
   };
-  await questionsConnection.insert({
-    id: newId,
-    question,
-    description,
-    modified_at: Date.now(),
-    visibility,
-    project_id: projectId,
-    analysis_id: analysisId,
-    context_id: contextId,
-    url,
-    target_view: targetView,
-    pre_actions: preActions,
-    post_actions: postActions,
-    linked_insights: linkedInsights,
-    view_state: viewState
-  }, keyFn);
+  await questionsConnection.insert(
+    {
+      id: newId,
+      question,
+      description,
+      modified_at: Date.now(),
+      visibility,
+      project_id: projectId,
+      analysis_id: analysisId,
+      context_id: contextId,
+      url,
+      target_view: targetView,
+      pre_actions: preActions,
+      post_actions: postActions,
+      linked_insights: linkedInsights,
+      view_state: viewState,
+    },
+    keyFn
+  );
 
   // Acknowledge success
   return { id: newId };
@@ -56,7 +60,7 @@ const createQuestion = async (
 /**
  * Insert an question object as a whole
  */
-const insertQuestion = async(question) => {
+const insertQuestion = async (question) => {
   const connection = Adapter.get(RESOURCE.QUESTION);
   return await connection.insert(question);
 };
@@ -64,12 +68,15 @@ const insertQuestion = async(question) => {
 /**
  * Update an question with the specified changes
  */
-const updateQuestion = async(id, question) => {
+const updateQuestion = async (id, question) => {
   const connection = Adapter.get(RESOURCE.QUESTION);
-  const result = await connection.update({
-    id: id,
-    ...question
-  }, d => d.id);
+  const result = await connection.update(
+    {
+      id: id,
+      ...question,
+    },
+    (d) => d.id
+  );
   if (result.errors) {
     throw new Error(JSON.stringify(result.items[0]));
   }
@@ -85,25 +92,25 @@ const getAllQuestions = async (projectId, contextId, targetView, visibility) => 
   if (projectId) {
     searchFilters.push({
       field: 'project_id',
-      value: projectId
+      value: projectId,
     });
   }
   if (contextId !== undefined) {
     searchFilters.push({
       field: 'context_id',
-      value: contextId
+      value: contextId,
     });
   }
   if (targetView) {
     searchFilters.push({
       field: 'target_view',
-      value: targetView
+      value: targetView,
     });
   }
   if (visibility) {
     searchFilters.push({
       field: 'visibility',
-      value: visibility
+      value: visibility,
     });
   }
   const results = await questionsConnection.find(searchFilters, { size: 50 });
@@ -130,25 +137,25 @@ const counts = async (projectId, contextId, targetView, visibility) => {
   if (projectId) {
     searchFilters.push({
       field: 'project_id',
-      value: projectId
+      value: projectId,
     });
   }
   if (contextId !== undefined) {
     searchFilters.push({
       field: 'context_id',
-      value: contextId
+      value: contextId,
     });
   }
   if (targetView) {
     searchFilters.push({
       field: 'target_view',
-      value: targetView
+      value: targetView,
     });
   }
   if (visibility) {
     searchFilters.push({
       field: 'visibility',
-      value: visibility
+      value: visibility,
     });
   }
   const count = await questionsConnection.count(searchFilters);
@@ -168,7 +175,6 @@ const remove = async (questionId) => {
   return stats;
 };
 
-
 module.exports = {
   createQuestion,
   getAllQuestions,
@@ -176,5 +182,5 @@ module.exports = {
   counts,
   remove,
   insertQuestion,
-  updateQuestion
+  updateQuestion,
 };

@@ -5,6 +5,6 @@ import _ from 'lodash';
  */
 export default function (locations: { [key: string]: string }[]) {
   if (_.isEmpty(locations)) return 'n/a';
-  const locationNames = locations.map(l => l.name);
+  const locationNames = locations.map((l) => l.name);
   return locationNames.join(', ');
 }

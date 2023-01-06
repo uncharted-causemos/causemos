@@ -47,7 +47,8 @@ export const flatten = (root) => {
     }
   });
   return {
-    nodes, edges
+    nodes,
+    edges,
   };
 };
 
@@ -60,7 +61,7 @@ export const makeEdgeMaps = (root) => {
 
   traverse(root, (node) => {
     if (node.edges) {
-      node.edges.forEach(edge => {
+      node.edges.forEach((edge) => {
         const source = edge.source;
         const target = edge.target;
 
@@ -81,10 +82,9 @@ export const makeEdgeMaps = (root) => {
 
   return {
     incoming,
-    outgoing
+    outgoing,
   };
 };
-
 
 /**
  * Convert graph data structure to a basic graph structure that can be used by the renderer
@@ -100,7 +100,7 @@ const build = (root) => {
       depth: depth,
       type: 'normal',
       parent: parent,
-      data: node
+      data: node,
     };
 
     // Build edges
@@ -114,20 +114,19 @@ const build = (root) => {
           id: source + ':' + target,
           source: source,
           target: target,
-          data: edge
+          data: edge,
         });
       }
     }
 
     // Recurse children nodes
     if (node.nodes && node.nodes.length > 0) {
-      nodeSpec.nodes = node.nodes.map(n => _walk(n, depth + 1, nodeSpec));
+      nodeSpec.nodes = node.nodes.map((n) => _walk(n, depth + 1, nodeSpec));
     }
     return nodeSpec;
   };
   return _walk(root, 0, null);
 };
-
 
 /**
  * Add ELK engine specific data so we can run layout
@@ -167,7 +166,7 @@ const injectELKOptions = (renderGraph, options) => {
     }
 
     if (!node.edges || node.edges.length === 0) return;
-    node.edges.forEach(edge => {
+    node.edges.forEach((edge) => {
       const source = edge.source;
       const target = edge.target;
       if (!outgoingMap.has(source)) {
@@ -194,7 +193,7 @@ const injectELKOptions = (renderGraph, options) => {
     } else {
       node.layoutOptions = layout.nodesLayoutOptions(node);
       if (node.ports && node.ports.length > 0) {
-        node.ports.forEach(p => {
+        node.ports.forEach((p) => {
           p.layoutOptions = layout.portsLayoutOptions(node, p);
         });
       }
@@ -240,7 +239,9 @@ const postProcess = (layout) => {
     }
 
     if (ELK_DEBUG === true) {
-      console.log(`${sourceNode.id}-${targetNode.id} Source in target ${sourceInTarget}, Target in source ${targetInSource}`);
+      console.log(
+        `${sourceNode.id}-${targetNode.id} Source in target ${sourceInTarget}, Target in source ${targetInSource}`
+      );
       console.log('\tsource-chaing', sourceChain);
       console.log('\ttarget-chaing', targetChain);
     }
@@ -266,10 +267,10 @@ const postProcess = (layout) => {
       }
     }
 
-    edge.points = [startPoint, ...bendPoints, endPoint].map(p => {
+    edge.points = [startPoint, ...bendPoints, endPoint].map((p) => {
       return {
         x: p.x + tx,
-        y: p.y + ty
+        y: p.y + ty,
       };
     });
   };
@@ -282,7 +283,7 @@ const postProcess = (layout) => {
     for (let i = 1; i < t.length - 1; i++) {
       edge.points.push({
         x: 0.5 * (p.x + t[i].x),
-        y: 0.5 * (p.y + t[i].y)
+        y: 0.5 * (p.y + t[i].y),
       });
       edge.points.push(t[i]);
       p = t[i];
@@ -293,7 +294,7 @@ const postProcess = (layout) => {
   // Precompute nodes global positions
   traverse(layout, (node) => {
     if (node.nodes) {
-      node.nodes.forEach(n => {
+      node.nodes.forEach((n) => {
         parentMap.set(n.id, node);
       });
     }
@@ -304,13 +305,13 @@ const postProcess = (layout) => {
     if (!parentMap.has(node.id)) {
       nodeGlobalPosition.set(node.id, {
         x: node.x,
-        y: node.y
+        y: node.y,
       });
     } else {
       const parentNode = parentMap.get(node.id);
       nodeGlobalPosition.set(node.id, {
         x: node.x + nodeGlobalPosition.get(parentNode.id).x,
-        y: node.y + nodeGlobalPosition.get(parentNode.id).y
+        y: node.y + nodeGlobalPosition.get(parentNode.id).y,
       });
     }
   });
@@ -337,12 +338,11 @@ const changeKey = (obj, before, after) => {
   if ({}.hasOwnProperty.call(obj, before)) {
     obj[after] = obj[before];
     delete obj[before];
-    obj[after].forEach(child => {
+    obj[after].forEach((child) => {
       changeKey(child, before, after);
     });
   }
 };
-
 
 // Reshuffle edges into the right compound nodes for layout
 const reshuffle = (renderGraph) => {
@@ -364,11 +364,10 @@ const reshuffle = (renderGraph) => {
   return renderGraph;
 };
 
-
 /**
  * Handles and transforms ELK layout engine
  * https://www.eclipse.org/elk/
-*/
+ */
 export default class ELKAdapter {
   constructor(options) {
     this.options = options;

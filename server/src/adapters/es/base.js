@@ -13,32 +13,32 @@ const parseSimpleFilters = (simpleFilters) => {
   if (_.isEmpty(simpleFilters)) {
     return {
       query: {
-        match_all: {}
-      }
+        match_all: {},
+      },
     };
   }
 
-  simpleFilters.forEach(clause => {
+  simpleFilters.forEach((clause) => {
     if (_.isArray(clause.value)) {
       boolFilters.push({
         terms: {
-          [clause.field]: clause.value
-        }
+          [clause.field]: clause.value,
+        },
       });
     } else {
       boolFilters.push({
         term: {
-          [clause.field]: clause.value
-        }
+          [clause.field]: clause.value,
+        },
       });
     }
   });
   return {
     query: {
       bool: {
-        filter: boolFilters
-      }
-    }
+        filter: boolFilters,
+      },
+    },
   };
 };
 
@@ -73,7 +73,7 @@ class Base {
    */
   async find(simpleFilters, options) {
     const result = await this._search(simpleFilters, options);
-    return result.hits.hits.map(d => d._source);
+    return result.hits.hits.map((d) => d._source);
   }
 
   /**
@@ -93,12 +93,11 @@ class Base {
   async count(simpleFilters) {
     const countQuery = {
       index: this.index,
-      body: parseSimpleFilters(simpleFilters)
+      body: parseSimpleFilters(simpleFilters),
     };
     const result = await this.client.count(countQuery);
     return result.body.count;
   }
-
 
   /**
    * Remove by filter
@@ -109,7 +108,7 @@ class Base {
       const response = await this.client.deleteByQuery({
         index: this.index,
         refresh: 'true',
-        body: parseSimpleFilters(simpleFilters)
+        body: parseSimpleFilters(simpleFilters),
       });
       return response.body;
     } catch (err) {
@@ -117,7 +116,6 @@ class Base {
       return null;
     }
   }
-
 
   /**
    * Remove by terms
@@ -132,11 +130,11 @@ class Base {
           query: {
             bool: {
               must: {
-                terms: simpleTerms
-              }
-            }
-          }
-        }
+                terms: simpleTerms,
+              },
+            },
+          },
+        },
       });
       return response.body;
     } catch (err) {
@@ -144,7 +142,6 @@ class Base {
       return null;
     }
   }
-
 
   /**
    * Insert a single doc or many docs. Note technically this also
@@ -161,7 +158,7 @@ class Base {
     }
 
     const bulk = [];
-    p.forEach(d => {
+    p.forEach((d) => {
       bulk.push({ index: { _index: this.index, _id: keyFn(d) } });
       bulk.push(d);
     });
@@ -184,7 +181,7 @@ class Base {
     }
 
     const bulk = [];
-    p.forEach(d => {
+    p.forEach((d) => {
       bulk.push({ update: { _index: this.index, _id: keyFn(d), retry_on_conflict: numRetries } });
       bulk.push({ doc: d }); // Allow partial
     });
@@ -205,8 +202,8 @@ class Base {
       refresh: refreshOption,
       body: {
         ...parseSimpleFilters(simpleFilters), // query
-        script: script
-      }
+        script: script,
+      },
     };
 
     try {
@@ -228,7 +225,7 @@ class Base {
     try {
       const response = await this.client.bulk({
         refresh: refreshOption,
-        body: requestBody
+        body: requestBody,
       });
       const body = response.body;
       if (body.errors) {
@@ -253,18 +250,18 @@ class Base {
   async _search(simpleFilters, options) {
     const searchPayload = {
       index: this.index,
-      body: parseSimpleFilters(simpleFilters)
+      body: parseSimpleFilters(simpleFilters),
     };
     if (!_.isNil(options.size)) searchPayload.size = +options.size;
     if (!_.isNil(options.from)) searchPayload.from = +options.from;
     if (options.sort) searchPayload.body.sort = options.sort;
     if (options.includes) {
       searchPayload.body._source = {
-        includes: options.includes
+        includes: options.includes,
       };
     } else if (options.excludes) {
       searchPayload.body._source = {
-        excludes: options.excludes
+        excludes: options.excludes,
       };
     }
     if (options.version) {
@@ -273,7 +270,7 @@ class Base {
 
     const response = await this.client.search(searchPayload);
     if (options.version) {
-      response.body.hits.hits.forEach(hit => {
+      response.body.hits.hits.forEach((hit) => {
         hit._source._version = hit._version;
       });
     }
@@ -297,11 +294,11 @@ class Base {
           [fieldName]: {
             terms: {
               field: fieldName,
-              size: 10000
-            }
-          }
-        }
-      }
+              size: 10000,
+            },
+          },
+        },
+      },
     });
 
     const counts = response.body.aggregations[fieldName].buckets;

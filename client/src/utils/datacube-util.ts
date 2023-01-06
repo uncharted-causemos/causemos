@@ -1,4 +1,11 @@
-import { DatacubeFeature, Model, Indicator, Datacube, ModelParameter, DimensionInfo } from '@/types/Datacube';
+import {
+  DatacubeFeature,
+  Model,
+  Indicator,
+  Datacube,
+  ModelParameter,
+  DimensionInfo,
+} from '@/types/Datacube';
 import {
   AggregationOption,
   DatacubeGenericAttributeVariableType,
@@ -6,7 +13,7 @@ import {
   DatacubeStatus,
   DatacubeType,
   DataTransform,
-  ModelParameterDataType
+  ModelParameterDataType,
 } from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
 import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service';
@@ -26,15 +33,17 @@ export interface SuggestionField extends Field {
   filterFunc?: Function;
 }
 
-export interface SuggestionFieldMap { [key: string]: SuggestionField }
+export interface SuggestionFieldMap {
+  [key: string]: SuggestionField;
+}
 
 // FIXME: Shouldn't need to do this filtering. ES should only return the relevant entries.
 const filterArray = (result: string[], hint: string) => {
   const hints = hint
     .toLowerCase()
     .split(' ')
-    .filter(el => el !== '');
-  return result.filter(res => hints.every(h => res.toLowerCase().includes(h)));
+    .filter((el) => el !== '');
+  return result.filter((res) => hints.every((h) => res.toLowerCase().includes(h)));
 };
 
 /**
@@ -42,25 +51,25 @@ const filterArray = (result: string[], hint: string) => {
  *
  * Note lexType and baseType defines the value translation needed to go to/from LEX. LEX by default
  * uses string-types while fields can have heterogeneous types.
-*/
+ */
 export const CODE_TABLE: FieldMap = {
   ID: {
     ...field('id', 'Id'),
-    ...searchable('Id', false)
+    ...searchable('Id', false),
   },
   ONTOLOGY_MATCH: {
     ...field('conceptName', 'Concept'),
-    ...searchable('Concept', false)
+    ...searchable('Concept', false),
   },
   PERIOD: {
     ...field('period', 'Period'),
-    ...searchable('Included Years', true)
+    ...searchable('Included Years', true),
   },
   SEARCH: {
     // _search is hidden special datacube field that combines text/keyword field values. It's used for text searching.
     ...field('keyword', 'Keyword'),
-    ...searchable('Keyword', false)
-  }
+    ...searchable('Keyword', false),
+  },
 };
 
 export const SUGGESTION_CODE_TABLE: SuggestionFieldMap = {
@@ -68,47 +77,47 @@ export const SUGGESTION_CODE_TABLE: SuggestionFieldMap = {
     ...field('country', 'Country'),
     ...searchable('Country', false),
     searchMessage: 'Select a country',
-    filterFunc: filterArray
+    filterFunc: filterArray,
   },
   ADMIN1: {
     ...field('admin1', 'Administrative Area 1'),
     ...searchable('Administrative Area 1', false),
     searchMessage: 'Select an administrative area',
-    filterFunc: filterArray
+    filterFunc: filterArray,
   },
   ADMIN2: {
     ...field('admin2', 'Administrative Area 2'),
     ...searchable('Administrative Area 2', false),
     searchMessage: 'Select an administrative area',
-    filterFunc: filterArray
+    filterFunc: filterArray,
   },
   ADMIN3: {
     ...field('admin3', 'Administrative Area 3'),
     ...searchable('Administrative Area 3', false),
     searchMessage: 'Select an administrative area',
-    filterFunc: filterArray
+    filterFunc: filterArray,
   },
   GEO_GRANULARITY: {
     ...field('geoGranularity', 'Geo Granularity'),
     ...searchable('Geo Granularity', false),
     searchMessage: 'Select a level',
-    filterFunc: filterArray
+    filterFunc: filterArray,
   },
   OUTPUT_NAME: {
     ...field('variableName', 'Output Name'),
     ...searchable('Output Name', false),
-    searchMessage: 'Select an output name'
+    searchMessage: 'Select an output name',
   },
   DATASET_NAME: {
     ...field('name', 'Dataset Name'),
     ...searchable('Dataset Name', false),
-    searchMessage: 'Select a dataset name'
+    searchMessage: 'Select a dataset name',
   },
   FAMILY_NAME: {
     ...field('familyName', 'Family Name'),
     ...searchable('Family Name', false),
-    searchMessage: 'Select a family name'
-  }
+    searchMessage: 'Select a family name',
+  },
 };
 
 export const CATEGORY = 'category';
@@ -130,9 +139,7 @@ export const MAINTAINER_ORG = 'maintainerOrg';
 export const TYPE = 'type';
 export const STATUS = 'status';
 
-
-
-export const DISPLAY_NAMES: {[ key: string ]: string } = {
+export const DISPLAY_NAMES: { [key: string]: string } = {
   admin1: 'Administrative Area 1',
   admin2: 'Administrative Area 2',
   admin3: 'Administrative Area 3',
@@ -149,10 +156,10 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
   status: 'Datacube Status',
   name: 'Dataset Name',
   variableUnit: 'Variable Unit',
-  familyName: 'Family Name'
+  familyName: 'Family Name',
 };
 
-export const FACET_FIELDS: string [] = [
+export const FACET_FIELDS: string[] = [
   TYPE,
   DOMAIN,
   COUNTRY,
@@ -161,12 +168,10 @@ export const FACET_FIELDS: string [] = [
   TEMPORAL_RESOLUTION,
   MAINTAINER_ORG,
   VARIABLE_UNIT,
-  STATUS
+  STATUS,
 ];
 
-export const NUMERICAL_FACETS: string [] = [
-  PERIOD
-];
+export const NUMERICAL_FACETS: string[] = [PERIOD];
 
 export const getDatacubeStatusInfo = (status: DatacubeStatus) => {
   switch (status) {
@@ -187,15 +192,17 @@ export const getDatacubeStatusInfo = (status: DatacubeStatus) => {
 
 export const getValidatedOutputs = (outputs: DatacubeFeature[]) => {
   // FIXME: only numeric outputs are currently supported
-  const validOutputs = outputs.filter(o => o.type === 'int' || o.type === 'float' || o.type === 'boolean');
+  const validOutputs = outputs.filter(
+    (o) => o.type === 'int' || o.type === 'float' || o.type === 'boolean'
+  );
   // some datacubes do not have this flag being set initially (i.e., out of date metadata)
   // so ensure it is initialized first
-  validOutputs.forEach(o => {
+  validOutputs.forEach((o) => {
     if (o.is_visible === undefined) {
       o.is_visible = true;
     }
   });
-  return validOutputs.filter(o => o.is_visible);
+  return validOutputs.filter((o) => o.is_visible);
 };
 
 export function isModel(datacube: Datacube | null): datacube is Model {
@@ -221,7 +228,7 @@ export function getSelectedOutput(metadata: Datacube, index: number) {
   return outputs.find((o: DatacubeFeature) => o.name === metadata.default_feature) ?? outputs[0];
 }
 
-export function getUnitString(unit: string|null, transform: DataTransform) {
+export function getUnitString(unit: string | null, transform: DataTransform) {
   if (!unit) {
     unit = '???';
   }
@@ -273,15 +280,35 @@ export function getImageMime(url: string) {
 // supported pre-rendered datacube images
 export function isImage(url: string) {
   url = url.toLowerCase();
-  return url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.gif') || url.endsWith('.apng') ||
-    url.endsWith('.avif') || url.endsWith('.jpeg') || url.endsWith('.jfif') || url.endsWith('.pjpeg') ||
-    url.endsWith('.pjp') || url.endsWith('.svg') || url.endsWith('.webp') || url.endsWith('.bmp');
+  return (
+    url.endsWith('.png') ||
+    url.endsWith('.jpg') ||
+    url.endsWith('.gif') ||
+    url.endsWith('.apng') ||
+    url.endsWith('.avif') ||
+    url.endsWith('.jpeg') ||
+    url.endsWith('.jfif') ||
+    url.endsWith('.pjpeg') ||
+    url.endsWith('.pjp') ||
+    url.endsWith('.svg') ||
+    url.endsWith('.webp') ||
+    url.endsWith('.bmp')
+  );
 }
 export function isVideo(url: string) {
   url = url.toLowerCase();
-  return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') ||
-    url.endsWith('.ogv') || url.endsWith('.ogg') || url.endsWith('.m4v') || url.endsWith('.m4p') ||
-    url.endsWith('.mpg') || url.endsWith('.mpeg') || url.endsWith('.3gp');
+  return (
+    url.endsWith('.mp4') ||
+    url.endsWith('.webm') ||
+    url.endsWith('.mov') ||
+    url.endsWith('.ogv') ||
+    url.endsWith('.ogg') ||
+    url.endsWith('.m4v') ||
+    url.endsWith('.m4p') ||
+    url.endsWith('.mpg') ||
+    url.endsWith('.mpeg') ||
+    url.endsWith('.3gp')
+  );
 }
 
 export function isWebContent(url: string) {
@@ -294,11 +321,19 @@ export function getAggregationKey(spatial: AggregationOption, temporal: Aggregat
 }
 
 export const isGeoParameter = (type: string) => {
-  return type === DatacubeGenericAttributeVariableType.Geo || (Object.values(DatacubeGeoAttributeVariableType) as Array<string>).includes(type);
+  return (
+    type === DatacubeGenericAttributeVariableType.Geo ||
+    (Object.values(DatacubeGeoAttributeVariableType) as Array<string>).includes(type)
+  );
 };
 export const isCategoricalAxis = (name: string, dimensions: DimensionInfo[]) => {
-  const dim = dimensions.find(d => d.name === name) as ModelParameter;
-  return dim.type.startsWith('str') || isGeoParameter(dim.type) || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
+  const dim = dimensions.find((d) => d.name === name) as ModelParameter;
+  return (
+    dim.type.startsWith('str') ||
+    isGeoParameter(dim.type) ||
+    dim.data_type === ModelParameterDataType.Ordinal ||
+    dim.data_type === ModelParameterDataType.Nominal
+  );
 };
 
 export const unpublishDatacube = async (datacubeId: string) => {
@@ -317,7 +352,7 @@ export const unpublishDatacubeInstance = async (instance: Model) => {
 
 export const getFilteredScenariosFromIds = (scenarioIds: string[], allModelRunData: ModelRun[]) => {
   const filteredScenarios = scenarioIds.reduce((filteredRuns: ModelRun[], runId) => {
-    allModelRunData.some(run => {
+    allModelRunData.some((run) => {
       return runId === run.id && filteredRuns.push(run);
     });
     return filteredRuns;
@@ -326,10 +361,12 @@ export const getFilteredScenariosFromIds = (scenarioIds: string[], allModelRunDa
   return filteredScenarios;
 };
 
-export const hasRegionLevelData = (regionLevelData: RegionAgg[]|undefined): boolean => {
-  return regionLevelData?.reduce((acc: boolean, region: RegionAgg) => {
-    return acc || Object.keys(region.values).length > 0;
-  }, false) ?? false;
+export const hasRegionLevelData = (regionLevelData: RegionAgg[] | undefined): boolean => {
+  return (
+    regionLevelData?.reduce((acc: boolean, region: RegionAgg) => {
+      return acc || Object.keys(region.values).length > 0;
+    }, false) ?? false
+  );
 };
 
 export const AVAILABLE_DOMAINS = [
@@ -356,7 +393,7 @@ export const AVAILABLE_DOMAINS = [
   'Science of Arts and Letters',
   'Sociology',
   'Ethics',
-  'Philosophy'
+  'Philosophy',
 ];
 
 export const convertRegionalDataToBarData = (
@@ -383,33 +420,22 @@ export const convertRegionalDataToBarData = (
   const data = regionLevelData.map(({ id, values }) => {
     return {
       name: id,
-      value: values[timeseriesKey] ?? 0
+      value: values[timeseriesKey] ?? 0,
     };
   });
   // Calculate normalized value and color based on supplied color scheme
   const extent = d3.extent(data.map(({ value }) => value));
-  const scale = d3
-    .scaleLinear()
-    .domain(extent[0] === undefined ? [0, 0] : extent);
+  const scale = d3.scaleLinear().domain(extent[0] === undefined ? [0, 0] : extent);
   const dataExtent = scale.domain();
   // @REVIEW
   // Normalization is a transform performed by wm-go: https://gitlab.uncharted.software/WM/wm-go/-/merge_requests/64
   // To receive normalized data, send transform=normalization when fetching regional data
   return data.map((dataItem, index) => {
-    const normalizedValue = normalize(
-      dataItem.value,
-      dataExtent[0],
-      dataExtent[1]
-    );
+    const normalizedValue = normalize(dataItem.value, dataExtent[0], dataExtent[1]);
     // Linear binning
-    const colorIndex =
-      Math.trunc(normalizedValue * numberOfColorBins);
+    const colorIndex = Math.trunc(normalizedValue * numberOfColorBins);
     // REVIEW: is the calculation of map colors consistent with how the datacube-card map is calculating colors?
-    const clampedColorIndex = _.clamp(
-      colorIndex,
-      0,
-      colorScheme.length - 1
-    );
+    const clampedColorIndex = _.clamp(colorIndex, 0, colorScheme.length - 1);
     const regionColor = colorScheme[clampedColorIndex];
     return {
       // adjust the ranking so that the highest value will be ranked 1st
@@ -419,7 +445,7 @@ export const convertRegionalDataToBarData = (
       value: dataItem.value,
       normalizedValue: normalizedValue,
       color: regionColor,
-      opacity: Number(selectedDataLayerTransparency)
+      opacity: Number(selectedDataLayerTransparency),
     };
   });
 };
@@ -433,5 +459,5 @@ export default {
   getValidatedOutputs,
   hasRegionLevelData,
   unpublishDatacube,
-  unpublishDatacubeInstance
+  unpublishDatacubeInstance,
 };

@@ -2,15 +2,12 @@
   <button
     :class="{
       'has-dropdown': hasDropdown,
-      'white-bg': useWhiteBg
+      'white-bg': useWhiteBg,
     }"
     @click="onClick"
   >
     <slot />
-    <i
-      v-if="hasDropdown"
-      class="fa fa-fw fa-caret-down"
-    />
+    <i v-if="hasDropdown" class="fa fa-fw fa-caret-down" />
   </button>
 </template>
 
@@ -22,29 +19,28 @@ export default defineComponent({
   props: {
     useWhiteBg: {
       type: Boolean,
-      default: false
+      default: false,
     },
     hasDropdown: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['click'],
   methods: {
     onClick(e: Event) {
       this.$emit('click', e);
-    }
-  }
+    },
+  },
 });
 </script>
 
-
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 button {
-  background: #F0F0F0;
-  color: #5A5A5A;
+  background: #f0f0f0;
+  color: #5a5a5a;
   border: none;
   padding: 0;
   border-radius: 2px;
@@ -64,7 +60,7 @@ button {
 
   &:disabled {
     background: none;
-    color: #D4D4D4;
+    color: #d4d4d4;
   }
 
   &:not(:disabled):hover {
@@ -77,7 +73,7 @@ button {
   }
 
   &.white-bg {
-    background: #FFF;
+    background: #fff;
   }
 }
 </style>

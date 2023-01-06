@@ -9,10 +9,7 @@
     />
     <div class="flex h-100" v-if="facets !== null && filteredFacets !== null">
       <div class="flex h-100">
-        <facets-panel
-          :facets="facets"
-          :filtered-facets="filteredFacets"
-        />
+        <facets-panel :facets="facets" :filtered-facets="filteredFacets" />
       </div>
       <div class="flex-grow-1 h-100">
         <search
@@ -45,7 +42,6 @@ import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '../components/data-explorer/search.vue';
 import SimplePagination from '../components/data-explorer/simple-pagination.vue';
 
-
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
 import modelService from '@/services/model-service';
 import { ProjectType } from '@/types/Enums';
@@ -63,7 +59,7 @@ export default defineComponent({
     Search,
     FacetsPanel,
     ModalHeader,
-    SimplePagination
+    SimplePagination,
   },
   setup() {
     const modelComponents = ref(null) as Ref<CAGGraph | null>;
@@ -71,7 +67,7 @@ export default defineComponent({
 
     return {
       modelComponents,
-      selectLabel
+      selectLabel,
     };
   },
   data: () => ({
@@ -80,33 +76,33 @@ export default defineComponent({
     filteredFacets: null,
     pageCount: 0,
     pageSize: 100,
-    selectedDatacubes: [] as AnalysisItem[]
+    selectedDatacubes: [] as AnalysisItem[],
   }),
   computed: {
     ...mapGetters({
       filters: 'dataSearch/filters',
       currentCAG: 'app/currentCAG',
       nodeId: 'app/nodeId',
-      project: 'app/project'
+      project: 'app/project',
     }),
     selectedNode() {
       if (this.nodeId === undefined || this.modelComponents === null) {
         return null;
       }
-      return this.modelComponents.nodes.find(node => node.id === this.nodeId);
+      return this.modelComponents.nodes.find((node) => node.id === this.nodeId);
     },
     nodeConceptName() {
       return this.selectedNode?.label;
     },
     navBackLabel() {
       return `Back to ${this.nodeConceptName} Node`;
-    }
+    },
   },
   watch: {
     filters(n, o) {
       if (filtersUtil.isEqual(n, o)) return;
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -115,7 +111,7 @@ export default defineComponent({
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      setSearchResultsCount: 'dataSearch/setSearchResultsCount'
+      setSearchResultsCount: 'dataSearch/setSearchResultsCount',
     }),
 
     prevPage() {
@@ -133,13 +129,13 @@ export default defineComponent({
     },
 
     // retrieves filtered datacube list
-    async fetchDatacubeList () {
+    async fetchDatacubeList() {
       // get the filtered data
       this.enableOverlay();
       const searchFilters = this.getSearchFilters();
       const options = {
         from: this.pageCount * this.pageSize,
-        size: this.pageSize
+        size: this.pageSize,
       };
       this.filteredDatacubes = await getDatacubes(searchFilters, options);
       this.disableOverlay();
@@ -160,7 +156,7 @@ export default defineComponent({
 
     async refresh() {
       this.pageCount = 0;
-      modelService.getComponents(this.currentCAG).then(_modelComponents => {
+      modelService.getComponents(this.currentCAG).then((_modelComponents) => {
         this.modelComponents = _modelComponents;
       });
       await this.fetchAllDatacubeData();
@@ -173,21 +169,19 @@ export default defineComponent({
           currentCAG: this.currentCAG,
           nodeId: this.nodeId,
           project: this.project,
-          projectType: ProjectType.Analysis
-        }
+          projectType: ProjectType.Analysis,
+        },
       });
     },
 
-    setDatacubeSelected (item: { datacubeId: string; id: string; }) {
+    setDatacubeSelected(item: { datacubeId: string; id: string }) {
       // Pass '' for analysis item metadata because the title is only visible
       //  from the CompAnalysis page.
       const cachedMetadata = { featureName: '', datacubeName: '', source: '' };
-      this.selectedDatacubes = [
-        createAnalysisItem(item.id, item.datacubeId, cachedMetadata, true)
-      ];
+      this.selectedDatacubes = [createAnalysisItem(item.id, item.datacubeId, cachedMetadata, true)];
     },
 
-    selectData () {
+    selectData() {
       this.$router.push({
         name: 'nodeDataDrilldown',
         params: {
@@ -195,16 +189,16 @@ export default defineComponent({
           indicatorId: this.selectedDatacubes[0].id,
           nodeId: this.nodeId,
           project: this.project,
-          projectType: ProjectType.Analysis
-        }
+          projectType: ProjectType.Analysis,
+        },
       });
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .data-explorer-container {
   height: 100vh;
@@ -215,5 +209,4 @@ export default defineComponent({
     height: calc(100% - 100px);
   }
 }
-
 </style>

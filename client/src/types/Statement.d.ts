@@ -100,4 +100,3 @@ interface StatementGroup {
   meta?: any;
   children?: StatementGroup[];
 }
-

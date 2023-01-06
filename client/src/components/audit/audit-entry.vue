@@ -27,38 +27,36 @@ import { defineComponent } from 'vue';
 import { COMPACT_POLARITY } from '@/utils/polarity-util';
 import HighlightValue from '@/components/audit/highlight-value.vue';
 
-const POLARITY_CORRECTION_TYPES = [
-  'factor_polarity'
-];
+const POLARITY_CORRECTION_TYPES = ['factor_polarity'];
 
 export default defineComponent({
   name: 'AuditEntry',
   components: {
-    HighlightValue
+    HighlightValue,
   },
   setup() {
     return {
-      COMPACT_POLARITY
+      COMPACT_POLARITY,
     };
   },
   props: {
     displayValues: {
       type: Object,
-      default: () => ({})
+      default: () => ({}),
     },
     compareValues: {
       type: Object,
-      default: () => ({})
+      default: () => ({}),
     },
     updateType: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
   computed: {
     isPolarityUpdate(): boolean {
       return POLARITY_CORRECTION_TYPES.includes(this.updateType);
-    }
-  }
+    },
+  },
 });
 </script>

@@ -9,10 +9,7 @@
     />
     <div class="flex h-100" v-if="facets !== null && filteredFacets !== null">
       <div class="flex h-100">
-        <facets-panel
-          :facets="facets"
-          :filtered-facets="filteredFacets"
-        />
+        <facets-panel :facets="facets" :filtered-facets="filteredFacets" />
       </div>
       <div class="flex-grow-1 h-100">
         <search
@@ -36,7 +33,6 @@
 </template>
 
 <script lang="ts">
-
 import { computed, defineComponent, ref, watch } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
@@ -46,7 +42,11 @@ import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '../components/data-explorer/search.vue';
 import SimplePagination from '../components/data-explorer/simple-pagination.vue';
 
-import { getDatacubes, getDatacubeFacets, getDatacubeMetadataToCache } from '@/services/new-datacube-service';
+import {
+  getDatacubes,
+  getDatacubeFacets,
+  getDatacubeMetadataToCache,
+} from '@/services/new-datacube-service';
 import { getAnalysis, saveAnalysisState } from '@/services/analysis-service';
 
 import filtersUtil from '@/utils/filters-util';
@@ -59,7 +59,10 @@ import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
 import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 import { Datacube } from '@/types/Datacube';
-import { calculateResetRegionRankingWeights, didSelectedItemsChange } from '@/services/analysis-service-new';
+import {
+  calculateResetRegionRankingWeights,
+  didSelectedItemsChange,
+} from '@/services/analysis-service-new';
 import { TYPE } from 'vue-toastification';
 
 export default defineComponent({
@@ -68,15 +71,12 @@ export default defineComponent({
     Search,
     FacetsPanel,
     ModalHeader,
-    SimplePagination
+    SimplePagination,
   },
   setup() {
     const route = useRoute();
     const analysisId = computed(() => route.params.analysisId as string);
-    const {
-      analysisState,
-      analysisItems
-    } = useDataAnalysis(analysisId);
+    const { analysisState, analysisItems } = useDataAnalysis(analysisId);
 
     const filteredDatacubes = ref<Datacube[]>([]);
 
@@ -85,32 +85,26 @@ export default defineComponent({
       selectedSearchItems.value = analysisItems.value;
     });
     const isDatacubeSelected = (id: string) => {
-      return selectedSearchItems.value.find(i => i.id === id) !== undefined;
+      return selectedSearchItems.value.find((i) => i.id === id) !== undefined;
     };
-    const toggleDatacubeSelected = (item: { datacubeId: string; id: string; }) => {
+    const toggleDatacubeSelected = (item: { datacubeId: string; id: string }) => {
       if (isDatacubeSelected(item.id)) {
-        selectedSearchItems.value = selectedSearchItems.value
-          .filter(sd => sd.id !== item.id);
+        selectedSearchItems.value = selectedSearchItems.value.filter((sd) => sd.id !== item.id);
       } else {
-        const datacube = filteredDatacubes.value.find(datacube =>
-          datacube.data_id === item.datacubeId && datacube.id === item.id
+        const datacube = filteredDatacubes.value.find(
+          (datacube) => datacube.data_id === item.datacubeId && datacube.id === item.id
         );
         if (datacube === undefined) {
           return;
         }
         const cachedMetadata = getDatacubeMetadataToCache(datacube);
-        const visibleDatacubeCount = selectedSearchItems.value
-          .filter(item => item.selected)
-          .length;
+        const visibleDatacubeCount = selectedSearchItems.value.filter(
+          (item) => item.selected
+        ).length;
         const isSelected = visibleDatacubeCount < MAX_ANALYSIS_DATACUBES_COUNT;
         selectedSearchItems.value = [
           ...selectedSearchItems.value,
-          createAnalysisItem(
-            item.id,
-            item.datacubeId,
-            cachedMetadata,
-            isSelected
-          )
+          createAnalysisItem(item.id, item.datacubeId, cachedMetadata, isSelected),
         ];
       }
     };
@@ -122,7 +116,7 @@ export default defineComponent({
       toaster: useToaster(),
       analysisItems,
       selectedSearchItems,
-      toggleDatacubeSelected
+      toggleDatacubeSelected,
     };
   },
   data: () => ({
@@ -131,22 +125,22 @@ export default defineComponent({
     selectLabel: 'Add To Analysis',
     analysis: undefined,
     pageCount: 0,
-    pageSize: 50
+    pageSize: 50,
   }),
   computed: {
     ...mapGetters({
       filters: 'dataSearch/filters',
-      project: 'app/project'
+      project: 'app/project',
     }),
     navBackLabel() {
       return 'Back to ' + (this.analysis ? (this.analysis as any).title : 'analysis');
-    }
+    },
   },
   watch: {
     filters(n, o) {
       if (filtersUtil.isEqual(n, o)) return;
       this.refresh();
-    }
+    },
   },
   mounted() {
     this.refresh();
@@ -155,7 +149,7 @@ export default defineComponent({
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      setSearchResultsCount: 'dataSearch/setSearchResultsCount'
+      setSearchResultsCount: 'dataSearch/setSearchResultsCount',
     }),
 
     prevPage() {
@@ -169,12 +163,12 @@ export default defineComponent({
     },
 
     // retrieves filtered datacube list
-    async fetchDatacubeList () {
+    async fetchDatacubeList() {
       this.enableOverlay();
       // get the filtered data
       const options = {
         from: this.pageCount * this.pageSize,
-        size: this.pageSize
+        size: this.pageSize,
       };
       this.filteredDatacubes = await getDatacubes(this.filters, options);
       this.disableOverlay();
@@ -202,7 +196,7 @@ export default defineComponent({
         // Save updated list of analysisItems to the backend
         const newState: DataAnalysisState = {
           ...this.analysisState,
-          analysisItems: this.selectedSearchItems
+          analysisItems: this.selectedSearchItems,
         };
         // If the list of selected datacubes changed, reset region ranking
         //  weights.
@@ -222,8 +216,8 @@ export default defineComponent({
           params: {
             project: this.project,
             analysisId: this.analysisId,
-            projectType: ProjectType.Analysis
-          }
+            projectType: ProjectType.Analysis,
+          },
         });
       } catch (e) {
         this.toaster(ANALYSIS.ERRONEOUS_RENAME, TYPE.INFO, true);
@@ -235,16 +229,16 @@ export default defineComponent({
         params: {
           project: this.project,
           analysisId: this.analysisId,
-          projectType: ProjectType.Analysis
-        }
+          projectType: ProjectType.Analysis,
+        },
       });
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .data-explorer-container {
   height: 100vh;
@@ -255,5 +249,4 @@ export default defineComponent({
     height: calc(100% - 100px);
   }
 }
-
 </style>

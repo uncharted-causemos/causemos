@@ -8,7 +8,9 @@
     >
       <template #title>Apply Settings To All</template>
       <template #message>
-        <p>Did you want to apply the saved visualization settings to all indicators in this dataset?</p>
+        <p>
+          Did you want to apply the saved visualization settings to all indicators in this dataset?
+        </p>
         <message-display
           :message="'Warning: Any visualization settings in the other indicators will be overwritten.'"
           :message-type="'alert-warning'"
@@ -25,14 +27,11 @@
             rows="1"
             style="font-size: 1.17em; font-weight: bold; width: 95%; overflow-x: hidden"
           />
-          <span style="padding: 4px; margin-left: 5px" :style="{ backgroundColor: statusColor }"><b>{{ statusLabel }}</b></span>
+          <span style="padding: 4px; margin-left: 5px" :style="{ backgroundColor: statusColor }"
+            ><b>{{ statusLabel }}</b></span
+          >
         </div>
-        <textarea
-          v-model="editedDataset.description"
-          type="text"
-          rows="4"
-          class="edit-desc"
-        />
+        <textarea v-model="editedDataset.description" type="text" rows="4" class="edit-desc" />
         <div style="display: flex">
           <strong>Dataset Source:</strong>
           <textarea
@@ -68,42 +67,51 @@
             rows="1"
             style="flex-grow: 1; overflow-x: hidden"
           />
-          <button
-            :disabled="!isDirty"
-            @click="saveChanges"
-            class="btn btn-sm btn-primary"
-          >SAVE</button>
+          <button :disabled="!isDirty" @click="saveChanges" class="btn btn-sm btn-primary">
+            SAVE
+          </button>
         </div>
       </div>
-<!--      <div v-if="dataset.tags?.length > 0" class="tags-column">-->
-<!--        <strong>Tags</strong>-->
-<!--        <span v-for="tag in dataset.tags" :key="tag" class="tag">-->
-<!--          {{ tag }}-->
-<!--        </span>-->
-<!--      </div>-->
+      <!--      <div v-if="dataset.tags?.length > 0" class="tags-column">-->
+      <!--        <strong>Tags</strong>-->
+      <!--        <span v-for="tag in dataset.tags" :key="tag" class="tag">-->
+      <!--          {{ tag }}-->
+      <!--        </span>-->
+      <!--      </div>-->
       <div class="info-column">
         <div style="display: flex; align-items: center">
           <b>Domain(s): </b>
-          <select name="domains" id="domains" @change="selectedDomain=AVAILABLE_DOMAINS[$event.target.selectedIndex]">
+          <select
+            name="domains"
+            id="domains"
+            @change="selectedDomain = AVAILABLE_DOMAINS[$event.target.selectedIndex]"
+          >
             <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
-              {{domain}}
+              {{ domain }}
             </option>
           </select>
           <button type="button" class="btn" style="padding: 2px 4px" @click="addDomain">Add</button>
         </div>
         <div v-if="editedDataset.domains" style="display: flex; flex-wrap: wrap">
           <div v-for="domain in editedDataset.domains" :key="domain">
-            <span style="margin: 2px; background-color: white;">{{domain}} <i @click="removeDomain(domain)" class="fa fa-remove" /></span>
+            <span style="margin: 2px; background-color: white"
+              >{{ domain }} <i @click="removeDomain(domain)" class="fa fa-remove"
+            /></span>
           </div>
         </div>
-        <div><b>Region: </b>{{countries}}</div>
-        <div><b>Period: </b> {{period}}</div>
-        <div><b>Runtime: </b> Queue: {{runtimeFormatter(dataset.runtimes?.queued)}}, Ingestion: {{runtimeFormatter(dataset.runtimes?.post_processing)}}
-        <button
-          type="button"
-          class="btn btn-xs btn-primary"
-          :disabled="!dataset.flow_id"
-          @click="viewCausemosLogs(dataset.flow_id)">View Logs</button>
+        <div><b>Region: </b>{{ countries }}</div>
+        <div><b>Period: </b> {{ period }}</div>
+        <div>
+          <b>Runtime: </b> Queue: {{ runtimeFormatter(dataset.runtimes?.queued) }}, Ingestion:
+          {{ runtimeFormatter(dataset.runtimes?.post_processing) }}
+          <button
+            type="button"
+            class="btn btn-xs btn-primary"
+            :disabled="!dataset.flow_id"
+            @click="viewCausemosLogs(dataset.flow_id)"
+          >
+            View Logs
+          </button>
         </div>
       </div>
     </header>
@@ -114,34 +122,26 @@
       </div>
       <div class="instance-list-column">
         <div class="instance-list-header">
-          <div class="column-title">Indicators ({{indicatorCount}})</div>
+          <div class="column-title">Indicators ({{ indicatorCount }})</div>
           <div class="controls">
-<!--            <div class="filter-options">-->
-<!--              <label-->
-<!--                v-for="filter of filterOptions"-->
-<!--                :key="filter.status"-->
-<!--                class="filter-label"-->
-<!--                @click="filter.selected = !filter.selected">-->
-<!--                <i-->
-<!--                  class="fa fa-lg fa-fw"-->
-<!--                  :class="{ 'fa-check-square-o': filter.selected, 'fa-square-o': !filter.selected }"-->
-<!--                />-->
-<!--                {{getDatacubeStatusInfo(filter.status).label}}-->
-<!--              </label>-->
-<!--            </div>-->
-            <input
-              v-model="searchTerm"
-              type="text"
-              placeholder="Search ..."
-              class="form-control"
-            >
+            <!--            <div class="filter-options">-->
+            <!--              <label-->
+            <!--                v-for="filter of filterOptions"-->
+            <!--                :key="filter.status"-->
+            <!--                class="filter-label"-->
+            <!--                @click="filter.selected = !filter.selected">-->
+            <!--                <i-->
+            <!--                  class="fa fa-lg fa-fw"-->
+            <!--                  :class="{ 'fa-check-square-o': filter.selected, 'fa-square-o': !filter.selected }"-->
+            <!--                />-->
+            <!--                {{getDatacubeStatusInfo(filter.status).label}}-->
+            <!--              </label>-->
+            <!--            </div>-->
+            <input v-model="searchTerm" type="text" placeholder="Search ..." class="form-control" />
             <div class="sorting">
               <div>
-                <button
-                  type="button"
-                  class="btn"
-                  @click="toggleSortingDropdown"
-                ><span class="lbl">Sort by</span> - {{ selectedSortingOption }}
+                <button type="button" class="btn" @click="toggleSortingDropdown">
+                  <span class="lbl">Sort by</span> - {{ selectedSortingOption }}
                   <i class="fa fa-caret-down" />
                 </button>
               </div>
@@ -152,7 +152,8 @@
                       v-for="option in sortingOptions"
                       :key="option"
                       class="dropdown-option"
-                      @click="setDatacubeSort(option)">
+                      @click="setDatacubeSort(option)"
+                    >
                       {{ option }}
                     </div>
                   </template>
@@ -186,7 +187,12 @@
 import { mapActions, mapGetters } from 'vuex';
 import IndicatorCard from '@/components/indicator-card.vue';
 import filtersUtil from '@/utils/filters-util';
-import { generateSparklines, getDatacubes, SparklineParams, updateIndicatorsBulk } from '@/services/new-datacube-service';
+import {
+  generateSparklines,
+  getDatacubes,
+  SparklineParams,
+  updateIndicatorsBulk,
+} from '@/services/new-datacube-service';
 import _ from 'lodash';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
@@ -213,19 +219,24 @@ export default defineComponent({
     ListContextInsightPane,
     DropdownControl,
     MessageDisplay,
-    ModalConfirmation
+    ModalConfirmation,
   },
   data: () => ({
     indicators: [] as Indicator[],
     dataset: {} as Dataset,
-    editedDataset: { name: '', description: '', maintainer: {}, domains: [] as string[] } as DatasetEditable,
+    editedDataset: {
+      name: '',
+      description: '',
+      maintainer: {},
+      domains: [] as string[],
+    } as DatasetEditable,
     searchTerm: '',
     showSortingDropdown: false,
     sortingOptions: Object.values(SortOptions),
     selectedSortingOption: SortOptions.MostRecent,
     showApplyToAllModal: false,
     AVAILABLE_DOMAINS,
-    selectedDomain: AVAILABLE_DOMAINS[0]
+    selectedDomain: AVAILABLE_DOMAINS[0],
     // filterOptions: [
     //   { status: DatacubeStatus.Ready, selected: true },
     //   { status: DatacubeStatus.Deprecated, selected: false }
@@ -233,14 +244,18 @@ export default defineComponent({
   }),
   computed: {
     ...mapGetters({
-      dataId: 'app/project'
+      dataId: 'app/project',
     }),
     filteredIndicators(): Indicator[] {
-      const filtered = this.indicators.filter(indicator =>
+      const filtered = this.indicators.filter((indicator) =>
         indicator.outputs[0].display_name.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
 
-      return sortItem(filtered, { date: createdAtSorter, name: 'outputs[0].display_name' }, this.selectedSortingOption);
+      return sortItem(
+        filtered,
+        { date: createdAtSorter, name: 'outputs[0].display_name' },
+        this.selectedSortingOption
+      );
     },
     isReady() {
       return this.dataset.status === DatacubeStatus.Ready;
@@ -259,17 +274,21 @@ export default defineComponent({
       }
     },
     isDirty() {
-      return this.editedDataset.name !== this.dataset.name ||
+      return (
+        this.editedDataset.name !== this.dataset.name ||
         this.editedDataset.description !== this.dataset.description ||
         !_.isEqual(this.editedDataset.maintainer, this.dataset.maintainer) ||
-        !_.isEqual(this.editedDataset.domains, this.dataset.domains);
+        !_.isEqual(this.editedDataset.domains, this.dataset.domains)
+      );
     },
     countries() {
       const country = this.dataset?.geography?.country;
       if (!country || country.length === 0) return '';
       return country.length < MAX_COUNTRIES
         ? country.join(', ')
-        : `${country.slice(0, MAX_COUNTRIES - 1).join(', ')} and ${country.length - MAX_COUNTRIES} more.`;
+        : `${country.slice(0, MAX_COUNTRIES - 1).join(', ')} and ${
+            country.length - MAX_COUNTRIES
+          } more.`;
     },
     period() {
       if (!this.dataset?.period) {
@@ -277,9 +296,9 @@ export default defineComponent({
       }
       const min = Number(this.dataset.period.gte);
       const max = Number(this.dataset.period.lte);
-      const period = [min, max].map(t => moment(t).format('MMM YYYY'));
+      const period = [min, max].map((t) => moment(t).format('MMM YYYY'));
       return min === max ? period[0] : `${period[0]} - ${period[1]}`;
-    }
+    },
   },
   async mounted() {
     await this.fetchIndicators();
@@ -297,7 +316,7 @@ export default defineComponent({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds'
+      setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds',
     }),
     addDomain() {
       if (!this.editedDataset.domains) {
@@ -308,7 +327,7 @@ export default defineComponent({
       }
     },
     removeDomain(domain: string) {
-      this.editedDataset.domains = this.editedDataset.domains.filter(d => d !== domain);
+      this.editedDataset.domains = this.editedDataset.domains.filter((d) => d !== domain);
     },
     async fetchIndicators() {
       this.enableOverlay('Loading indicators');
@@ -321,13 +340,13 @@ export default defineComponent({
           'ontology_matches',
           'geography.admin1',
           'geography.admin2',
-          'geography.admin3'
-        ]
+          'geography.admin3',
+        ],
       };
       const newFilters = filtersUtil.newFilters();
       filtersUtil.addSearchTerm(newFilters, 'dataId', this.dataId, 'and', false);
       filtersUtil.addSearchTerm(newFilters, 'type', 'indicator', 'and', false);
-      this.indicators = await getDatacubes(newFilters, options) as Indicator[];
+      this.indicators = (await getDatacubes(newFilters, options)) as Indicator[];
 
       // reset to avoid invalid data fetch when a given indicator is loaded
       // while the info of a previous indicator is cached in the store
@@ -349,12 +368,12 @@ export default defineComponent({
       this.dataset.description = this.editedDataset.description;
       this.dataset.maintainer = this.editedDataset.maintainer;
       this.dataset.domains = this.editedDataset.domains;
-      const deltas = this.indicators.map(indicator => ({
+      const deltas = this.indicators.map((indicator) => ({
         id: indicator.id,
         name: this.editedDataset.name,
         description: this.editedDataset.description,
         maintainer: this.editedDataset.maintainer,
-        domains: this.editedDataset.domains
+        domains: this.editedDataset.domains,
       }));
       try {
         await updateIndicatorsBulk(deltas);
@@ -371,7 +390,6 @@ export default defineComponent({
       // Alternatively, we could use the `is_visible` flag on each indicator's output, this however
       // makes updating the indicator slightly more difficult as we have to send the entire `outputs`
       // array and more importantly make filtering in the data explorer much more difficult.
-
       // if (indicator.status === DatacubeStatus.Ready) {
       //   indicator.status = DatacubeStatus.Deprecated;
       // } else if (indicator.status === DatacubeStatus.Deprecated) {
@@ -383,18 +401,20 @@ export default defineComponent({
       this.showApplyToAllModal = false;
       await router.push({
         query: {
-          template_id: undefined
-        }
+          template_id: undefined,
+        },
       });
-      const source = this.indicators.find(indicator => indicator.id === indicatorId);
+      const source = this.indicators.find((indicator) => indicator.id === indicatorId);
       if (source) {
         this.enableOverlay('Applying settings');
-        const targets = this.indicators.filter(indicator => indicator.id !== indicatorId);
-        const deltas = targets.map(indicator => ({
+        const targets = this.indicators.filter((indicator) => indicator.id !== indicatorId);
+        const deltas = targets.map((indicator) => ({
           id: indicator.id,
-          default_view: source.default_view
+          default_view: source.default_view,
         }));
-        const sparklineList = targets.map(indicator => this.getSparklineParams(indicator, source.default_view));
+        const sparklineList = targets.map((indicator) =>
+          this.getSparklineParams(indicator, source.default_view)
+        );
         try {
           this.enableOverlay(`Generating ${sparklineList.length} previews`);
           await generateSparklines(sparklineList);
@@ -414,7 +434,8 @@ export default defineComponent({
     getSparklineParams(meta: Datacube, selections?: ViewState) {
       const output = meta.outputs[0];
       const feature = output.name;
-      const rawResolution = output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
+      const rawResolution =
+        output?.data_resolution?.temporal_resolution ?? TemporalResolution.Other;
       const finalRawTimestamp = meta.period?.lte ?? 0;
       return {
         id: meta.id,
@@ -425,24 +446,28 @@ export default defineComponent({
         temporalAgg: selections?.temporalAggregation ?? 'mean',
         spatialAgg: selections?.spatialAggregation ?? 'mean',
         rawResolution: rawResolution,
-        finalRawTimestamp: finalRawTimestamp
+        finalRawTimestamp: finalRawTimestamp,
       } as SparklineParams;
     },
     closeApplyVizModal() {
       this.showApplyToAllModal = false;
-      router.push({
-        query: {
-          template_id: undefined
-        }
-      }).catch(() => {});
+      router
+        .push({
+          query: {
+            template_id: undefined,
+          },
+        })
+        .catch(() => {});
     },
-    async updateIndicator({ id, meta }: { id: string, meta: DatacubeFeature}) {
+    async updateIndicator({ id, meta }: { id: string; meta: DatacubeFeature }) {
       const toaster = useToaster();
       try {
-        await updateIndicatorsBulk([{
-          id: id,
-          outputs: [meta]
-        }]);
+        await updateIndicatorsBulk([
+          {
+            id: id,
+            outputs: [meta],
+          },
+        ]);
         toaster('Indicator updated successfully', TYPE.SUCCESS);
       } catch {
         toaster('There was an issue with saving the changes', TYPE.INFO);
@@ -453,8 +478,8 @@ export default defineComponent({
       this.$router.push({
         name: 'prefectFlowLogs',
         params: {
-          flowId: flowId as string
-        }
+          flowId: flowId as string,
+        },
       });
     },
     toggleSortingDropdown() {
@@ -463,13 +488,13 @@ export default defineComponent({
     setDatacubeSort(option: SortOptions) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "@/styles/variables";
+@import '@/styles/variables';
 
 .dataset-overview-container {
   display: flex;
@@ -664,7 +689,7 @@ main {
 .controls {
   display: flex;
   justify-content: space-between;
-  input[type=text] {
+  input[type='text'] {
     padding: 8px;
     width: 150px;
     margin-right: 5px;
@@ -678,7 +703,7 @@ main {
         font-weight: normal;
       }
       .fa {
-        position:absolute;
+        position: absolute;
         right: 20px;
       }
     }

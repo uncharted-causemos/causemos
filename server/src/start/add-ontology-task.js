@@ -3,7 +3,7 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
 const projectService = rootRequire('/services/project-service');
 
 const addUAzOntology = async () => {
-  Logger.info('Calling UAz\'s addOntology');
+  Logger.info("Calling UAz's addOntology");
   const projects = await projectService.listProjects();
   const addedOntologies = {};
 
@@ -14,9 +14,9 @@ const addUAzOntology = async () => {
         method: 'PUT',
         url: `http://linking.cs.arizona.edu/v2/addOntology?secret=${process.env.CONCEPT_ALIGNER_SECRET}&ontologyId=${project.ontology}`,
         headers: {
-          'Content-type': 'application/json'
+          'Content-type': 'application/json',
         },
-        json: {}
+        json: {},
       };
       try {
         await requestAsPromise(options);

@@ -1,6 +1,6 @@
 <template>
   <svg class="svg">
-    <rect width="100%" height="100%"/>
+    <rect width="100%" height="100%" />
   </svg>
 </template>
 
@@ -8,12 +8,11 @@
 import { defineComponent } from 'vue';
 
 export default defineComponent({
-  name: 'aggregation-checklist-rectangle'
+  name: 'aggregation-checklist-rectangle',
 });
 </script>
 
 <style lang="scss" scoped>
-
 .svg {
   width: 2px;
   height: 8px;
@@ -24,5 +23,4 @@ export default defineComponent({
     opacity: 100%;
   }
 }
-
 </style>

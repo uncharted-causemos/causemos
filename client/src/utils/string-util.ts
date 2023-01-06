@@ -3,17 +3,19 @@ import * as d3 from 'd3';
 import { RuntimeStage } from '@/types/Common';
 
 const cleanTextFragment = (text: string) => {
-  return text
-    // New lines
-    .replace(/\n/g, ' ')
-    // Space before commas
-    .replace(/\s,/g, ',')
-    // Space before periods
-    .replace(/\s,/g, '.')
-    // Multiple spaces
-    .replace(/\s\s+/g, ' ')
-    // Avoid issues with opening/closing missing parenthesis
-    .replace(/[()]+/g, '');
+  return (
+    text
+      // New lines
+      .replace(/\n/g, ' ')
+      // Space before commas
+      .replace(/\s,/g, ',')
+      // Space before periods
+      .replace(/\s,/g, '.')
+      // Multiple spaces
+      .replace(/\s\s+/g, ' ')
+      // Avoid issues with opening/closing missing parenthesis
+      .replace(/[()]+/g, '')
+  );
 };
 
 const truncateString = (text: string, n: number) => {
@@ -25,7 +27,7 @@ const truncateString = (text: string, n: number) => {
 };
 
 const containsInternalVowel = (text: string) => {
-  return (/[A-Za-z][aeiou][A-Za-z]/i).test(text);
+  return /[A-Za-z][aeiou][A-Za-z]/i.test(text);
 };
 
 const dropOneInternalVowel = (text: string) => {
@@ -77,7 +79,11 @@ export const chartValueFormatter = (...range: number[]) => {
   }
 
   // Guard against skewed ranges. e.g. [0.103, 888888]
-  if (Math.abs(range[1]) > 0.00001 && Math.abs(range[1]) < 1000000 && (range[0] === 0 || Math.abs(range[0]) > 0.00001)) {
+  if (
+    Math.abs(range[1]) > 0.00001 &&
+    Math.abs(range[1]) < 1000000 &&
+    (range[0] === 0 || Math.abs(range[0]) > 0.00001)
+  ) {
     return rangedFormatter;
   }
   return exponentFormatter;
@@ -88,7 +94,12 @@ export const capitalize = (str: string) => {
 };
 
 export const runtimeFormatter = (runtime: RuntimeStage) => {
-  if (!runtime || !runtime.start_time || !runtime.end_time || runtime.start_time > runtime.end_time) {
+  if (
+    !runtime ||
+    !runtime.start_time ||
+    !runtime.end_time ||
+    runtime.start_time > runtime.end_time
+  ) {
     return 'unknown';
   }
 
@@ -114,7 +125,7 @@ export const safeD3StringId = (hoverValue: string) => {
   hoverValueNoDots = hoverValueNoDots.split('[').join('');
   hoverValueNoDots = hoverValueNoDots.split(']').join('');
   hoverValueNoDots = hoverValueNoDots.split('-').join('');
-  hoverValueNoDots = hoverValueNoDots.split('\'').join('');
+  hoverValueNoDots = hoverValueNoDots.split("'").join('');
   return hoverValueNoDots.split(' ').join('');
 };
 
@@ -137,6 +148,5 @@ export default {
   exponentFormatter,
   capitalize,
   runtimeFormatter,
-  isValidUrl
+  isValidUrl,
 };
-

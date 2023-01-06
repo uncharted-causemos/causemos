@@ -90,11 +90,7 @@ export class Poller {
 
 export default Poller;
 
-export function startPolling(
-  poller: Poller,
-  taskFn: Function,
-  progressFn: Function | null
-) {
+export function startPolling(poller: Poller, taskFn: Function, progressFn: Function | null) {
   const taskFunction = () => Promise.resolve(taskFn());
   const promise = new Promise((resolve, reject) => {
     if (progressFn) {

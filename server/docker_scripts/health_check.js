@@ -3,7 +3,7 @@ const http = require('http');
 const OPTIONS = {
   port: '3000',
   path: '/health',
-  timeout: 2000
+  timeout: 2000,
 };
 
 const request = http.request(OPTIONS, (res) => {

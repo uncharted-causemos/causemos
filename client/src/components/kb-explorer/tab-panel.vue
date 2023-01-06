@@ -1,14 +1,7 @@
 <template>
-  <div
-    id="tabPanel"
-    class="tab-panel-container h-100 flex flex-col"
-  >
+  <div id="tabPanel" class="tab-panel-container h-100 flex flex-col">
     <div class="tab-bar-row flex">
-      <tab-bar
-        :tabs="tabs"
-        :active-tab-id="view"
-        @tab-click="setActive"
-      />
+      <tab-bar :tabs="tabs" :active-tab-id="view" @tab-click="setActive" />
       <sub-action-bar />
     </div>
     <div class="data-awareness-bar">
@@ -31,20 +24,14 @@
           :layout="layout"
           @clear-selection="setSubGraphByFilters"
         />
-        <map-view
-          v-if="view === 'maps'"
-          :map-data="mapData"
-        />
-        <documents-view
-          v-if="view === 'documents'"
-        />
+        <map-view v-if="view === 'maps'" :map-data="mapData" />
+        <documents-view v-if="view === 'documents'" />
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 import { defineComponent, ref, Ref } from 'vue';
@@ -60,7 +47,6 @@ import filtersUtil from '@/utils/filters-util';
 import { transformMapData } from '@/utils/map-util';
 import TabBar from '../widgets/tab-bar.vue';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-
 
 interface GEOPoint {
   geometry: {
@@ -85,24 +71,22 @@ const UNSELECTED_REGION_STYLE = Object.freeze({
   color: '#808080',
   weight: 1,
   fillColor: '#808080',
-  fillOpacity: 0.6
+  fillOpacity: 0.6,
 });
 
 const SELECTED_REGION_STYLE = Object.freeze({
   color: SELECTED_COLOR,
   borderWidth: 1,
   fillColor: SELECTED_COLOR,
-  fillOpacity: 0.6
+  fillOpacity: 0.6,
 });
 
 const SELECTABLE_REGION_STYLE = Object.freeze({
   color: '#ffae19',
   borderWidth: 1,
   fillColor: '#e69f00',
-  fillOpacity: 0.6
+  fillOpacity: 0.6,
 });
-
-
 
 export default defineComponent({
   name: 'TabPanel',
@@ -113,30 +97,30 @@ export default defineComponent({
     MapView,
     StatementsView,
     SubActionBar,
-    TabBar
+    TabBar,
   },
   setup() {
     const tabs = [
       {
         name: 'Docs',
         icon: 'fa fa-file-text',
-        id: 'documents'
+        id: 'documents',
       },
       {
         name: 'Table',
         icon: 'fa fa-table',
-        id: 'statements'
+        id: 'statements',
       },
       {
         name: 'Graph',
         icon: 'fa fa-connectdevelop',
-        id: 'graphs'
+        id: 'graphs',
       },
       {
         name: 'Map',
         icon: 'fa fa-map',
-        id: 'maps'
-      }
+        id: 'maps',
+      },
     ];
 
     const setMapDataPromise: any = null;
@@ -149,7 +133,7 @@ export default defineComponent({
       graphData,
       mapData,
       documentsData,
-      setMapDataPromise
+      setMapDataPromise,
     };
   },
   computed: {
@@ -164,8 +148,8 @@ export default defineComponent({
       documentsCount: 'kb/documentsCount',
       evidencesCount: 'kb/evidencesCount',
       filters: 'query/filters',
-      layout: 'query/layout'
-    })
+      layout: 'query/layout',
+    }),
   },
   watch: {
     filters(n, o) {
@@ -185,7 +169,7 @@ export default defineComponent({
       } else if (this.view === 'maps') {
         this.refreshMapData();
       }
-    }
+    },
   },
   mounted() {
     this.setMapData();
@@ -198,7 +182,7 @@ export default defineComponent({
       setSearchClause: 'query/setSearchClause',
       removeSearchTerm: 'query/removeSearchTerm',
       setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges',
-      setFilteredEdgesCount: 'graph/setFilteredEdgesCount'
+      setFilteredEdgesCount: 'graph/setFilteredEdgesCount',
     }),
     refresh() {
       if (this.view === 'graphs') {
@@ -208,18 +192,23 @@ export default defineComponent({
       }
     },
     refreshGraphData() {
-      projectService.getProjectGraph(this.project, this.filters).then(graph => {
+      projectService.getProjectGraph(this.project, this.filters).then((graph) => {
         this.graphData = graph;
       });
     },
-    setActive (tabId: string) {
+    setActive(tabId: string) {
       this.setView(tabId);
     },
     setMapData() {
-      this.setMapDataPromise = projectService.getProjectLocationsPromise(this.project, filtersUtil.newFilters()).then(d => {
-        const transformedData = transformMapData(d.data);
-        this.mapData = Object.assign({}, this.mapData, { type: 'FeatureCollection', features: transformedData });
-      });
+      this.setMapDataPromise = projectService
+        .getProjectLocationsPromise(this.project, filtersUtil.newFilters())
+        .then((d) => {
+          const transformedData = transformMapData(d.data);
+          this.mapData = Object.assign({}, this.mapData, {
+            type: 'FeatureCollection',
+            features: transformedData,
+          });
+        });
     },
     refreshMapData() {
       /*
@@ -227,18 +216,21 @@ export default defineComponent({
        *  - selected (colour scheme: teal)
        *  - related (filtered but not selected, colour scheme: orange)
        *  - unrelated (not in filtered, colour scheme: grey)
-      */
+       */
       Promise.all([
         projectService.getProjectLocationsPromise(this.project, this.filters),
-        this.setMapDataPromise
-      ]).then(results => {
+        this.setMapDataPromise,
+      ]).then((results) => {
         const geoJSON = results[0].data.geoJSON;
         const locationNames = geoJSON.features.map((d: GEOPoint) => d.properties.name);
-        const geoLocationNameFacet = filtersUtil.findPositiveFacetClause(this.filters, 'factorLocationName');
+        const geoLocationNameFacet = filtersUtil.findPositiveFacetClause(
+          this.filters,
+          'factorLocationName'
+        );
         const relatedLocations = new Set(locationNames);
         const selectedLocations = new Set();
         if (geoLocationNameFacet && !_.isEmpty(geoLocationNameFacet)) {
-          geoLocationNameFacet.values.forEach(v => {
+          geoLocationNameFacet.values.forEach((v) => {
             selectedLocations.add(v);
           });
         }
@@ -255,22 +247,22 @@ export default defineComponent({
       });
     },
     setSubGraphByFilters() {
-      projectService.getProjectEdges(this.project, this.filters).then(edges => {
+      projectService.getProjectEdges(this.project, this.filters).then((edges) => {
         this.setSelectedSubgraphEdges(edges);
         this.setFilteredEdgesCount(edges.length);
       });
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 .tab-panel-container {
   position: relative;
 }
 
-.tab-bar-row  {
+.tab-bar-row {
   padding: 0 10px;
 }
 

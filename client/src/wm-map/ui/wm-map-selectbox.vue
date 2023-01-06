@@ -3,7 +3,6 @@
 </template>
 
 <script>
-
 import mapboxgl from 'maplibre-gl';
 import { eventEmitter } from '../mixins';
 
@@ -25,7 +24,7 @@ export default {
   data: () => ({
     start: null,
     current: null,
-    box: null
+    box: null,
   }),
   emits: ['select-box'],
   mounted() {
@@ -107,7 +106,7 @@ export default {
       }
       this.map.dragPan.enable();
       this.map.boxZoom.enable();
-    }
-  }
+    },
+  },
 };
 </script>

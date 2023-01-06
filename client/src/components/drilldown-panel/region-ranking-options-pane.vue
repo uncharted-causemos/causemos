@@ -1,10 +1,7 @@
 <template>
   <div class="breakdown-pane-container">
     <h5>By {{ aggregationLevelTitle }}</h5>
-    <div
-      v-if="aggregationLevelCount > 1"
-      class="aggregation-level-range-container"
-    >
+    <div v-if="aggregationLevelCount > 1" class="aggregation-level-range-container">
       <input
         type="range"
         class="aggregation-level-range"
@@ -24,10 +21,10 @@
     </div>
     <div class="config-sub-group">
       <label class="header-secondary">Color Options</label>
-      <label >Number of Color bins: {{numberOfColorBins}}</label>
+      <label>Number of Color bins: {{ numberOfColorBins }}</label>
       <input
         type="range"
-        style="margin-bottom: 1rem;"
+        style="margin-bottom: 1rem"
         min="2"
         :max="7"
         step="1"
@@ -59,22 +56,24 @@
       />
     </div>
     <div class="config-sub-group">
-    <label class="header-secondary">Ranking Criteria Relative Weight:</label>
-      <button
-        type="button"
-        class="btn dropdown-button"
-        @click="setEqualWeights">
-          Equal Weights
+      <label class="header-secondary">Ranking Criteria Relative Weight:</label>
+      <button type="button" class="btn dropdown-button" @click="setEqualWeights">
+        Equal Weights
       </button>
-      <tag-slider :sections="regionRankingWeights" @update-sizes="$emit('region-ranking-weights-updated', $event)" />
+      <tag-slider
+        :sections="regionRankingWeights"
+        @update-sizes="$emit('region-ranking-weights-updated', $event)"
+      />
     </div>
     <div class="config-sub-group">
       <div class="checkbox">
-        <label
-          @click="updateLimitNumberOfChartBars">
+        <label @click="updateLimitNumberOfChartBars">
           <i
             class="fa fa-lg fa-fw"
-            :class="{ 'fa-check-square-o': limitNumberOfChartBars, 'fa-square-o': !limitNumberOfChartBars }"
+            :class="{
+              'fa-check-square-o': limitNumberOfChartBars,
+              'fa-square-o': !limitNumberOfChartBars,
+            }"
           />
           <span class="header-secondary limit-number-of-bars">Limit number of bars</span>
         </label>
@@ -83,7 +82,7 @@
         <label class="header-secondary">Max Number:</label>
         <input
           type="number"
-          style="margin-bottom: 1rem; margin-left: 5px;"
+          style="margin-bottom: 1rem; margin-left: 5px"
           min="1"
           max="50"
           :value="maxNumberOfChartBars"
@@ -106,53 +105,53 @@ import { capitalize } from '@/utils/string-util';
 export default defineComponent({
   components: {
     DropdownButton,
-    TagSlider
+    TagSlider,
   },
   name: 'RegionRankingOptionsPane',
   props: {
     aggregationLevelTitle: {
       type: String,
-      default: '[Aggregation Level Title]'
+      default: '[Aggregation Level Title]',
     },
     aggregationLevelCount: {
       type: Number,
-      default: 1
+      default: 1,
     },
     aggregationLevel: {
       type: Number,
       default: 0,
       validator: (value: number) => {
         return value >= 0;
-      }
+      },
     },
     numberOfColorBins: {
       type: Number,
-      default: 5
+      default: 5,
     },
     selectedColorScheme: {
       type: Array as PropType<string[]>,
-      default: COLOR_SCHEME.PRIORITIZATION
+      default: COLOR_SCHEME.PRIORITIZATION,
     },
     regionRankingCompositionType: {
       type: String,
-      default: RegionRankingCompositionType.Union
+      default: RegionRankingCompositionType.Union,
     },
     regionRankingBinningType: {
       type: String,
-      default: BinningOptions.Linear
+      default: BinningOptions.Linear,
     },
     maxNumberOfChartBars: {
       type: Number,
-      default: 20
+      default: 20,
     },
     limitNumberOfChartBars: {
       type: Boolean,
-      default: false
+      default: false,
     },
     regionRankingWeights: {
-      type: Array as PropType<{itemId: string, name: string; weight: number}[]>,
-      default: () => ({})
-    }
+      type: Array as PropType<{ itemId: string; name: string; weight: number }[]>,
+      default: () => ({}),
+    },
   },
   emits: [
     'set-selected-admin-level',
@@ -162,19 +161,24 @@ export default defineComponent({
     'set-max-number-of-chart-bars',
     'set-limit-number-of-chart-bars',
     'set-region-ranking-binning-type',
-    'region-ranking-weights-updated'
+    'region-ranking-weights-updated',
   ],
   setup() {
-    const regionRankingCompositionTypeGroupButtons = ref(Object.values(RegionRankingCompositionType)
-      .map(val => ({ displayName: capitalize(val), value: val })));
-    const binningOptionsGroupButtons = ref(Object.values(BinningOptions)
-      .map(val => ({ displayName: capitalize(val), value: val })));
+    const regionRankingCompositionTypeGroupButtons = ref(
+      Object.values(RegionRankingCompositionType).map((val) => ({
+        displayName: capitalize(val),
+        value: val,
+      }))
+    );
+    const binningOptionsGroupButtons = ref(
+      Object.values(BinningOptions).map((val) => ({ displayName: capitalize(val), value: val }))
+    );
 
     return {
       binningOptionsGroupButtons,
       regionRankingCompositionTypeGroupButtons,
       isDiscreteScale,
-      RegionRankingCompositionType
+      RegionRankingCompositionType,
     };
   },
   watch: {
@@ -183,7 +187,7 @@ export default defineComponent({
     },
     selectedColorScheme() {
       this.renderColorScale();
-    }
+    },
   },
   mounted() {
     this.renderColorScale();
@@ -227,15 +231,18 @@ export default defineComponent({
       refSelection
         .selectAll('rect')
         .data(colors)
-        .enter().append('rect')
-        .style('fill', function(d) { return d; })
-        .attr('x', function(d, i) { return i; })
+        .enter()
+        .append('rect')
+        .style('fill', function (d) {
+          return d;
+        })
+        .attr('x', function (d, i) {
+          return i;
+        })
         .attr('width', 1)
         .attr('height', 1);
     },
-    setRegionRankingCompositionType(
-      regionRankingCompositionType: RegionRankingCompositionType
-    ) {
+    setRegionRankingCompositionType(regionRankingCompositionType: RegionRankingCompositionType) {
       this.$emit('set-region-ranking-composition-type', regionRankingCompositionType);
     },
     setRegionRankingBinningType(regionRankingBinningType: string) {
@@ -251,8 +258,8 @@ export default defineComponent({
     },
     updateLimitNumberOfChartBars() {
       this.$emit('set-limit-number-of-chart-bars');
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -341,5 +348,4 @@ h5 {
   cursor: pointer;
   font-weight: bold;
 }
-
 </style>

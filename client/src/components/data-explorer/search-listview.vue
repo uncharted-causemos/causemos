@@ -1,6 +1,5 @@
 <template>
   <div class="search-listview-container h-100">
-
     <div class="table-fixed-head h-100">
       <table>
         <thead>
@@ -13,79 +12,65 @@
           </tr>
         </thead>
         <tbody>
-            <tr
-              class="tr-item"
-              v-for="d in datacubes"
-              :key="d.id"
-              :class="{ selected: isSelected(d) }"
-              @click="updateExpandedRow(d)"
-            >
-              <td class="output-col">
-                <div class="output-layout">
-                  <!-- in case of requesting multiple selection -->
-                  <div @click.stop="updateSelection(d)" class="radio">
-                    <template v-if="enableMultipleSelection">
-                      <i
-                        class="fa fa-lg fa-fw"
-                        :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d), 'disabled': isDisabled(d)}"
-                      />
-                    </template>
-                    <template v-else>
-                      <i
-                        class="fa fa-lg fa-fw"
-                        :class="{ 'fa-circle': isSelected(d), 'fa-circle-o': !isSelected(d) }"
-                      />
-                    </template>
+          <tr
+            class="tr-item"
+            v-for="d in datacubes"
+            :key="d.id"
+            :class="{ selected: isSelected(d) }"
+            @click="updateExpandedRow(d)"
+          >
+            <td class="output-col">
+              <div class="output-layout">
+                <!-- in case of requesting multiple selection -->
+                <div @click.stop="updateSelection(d)" class="radio">
+                  <template v-if="enableMultipleSelection">
                     <i
                       class="fa fa-lg fa-fw"
-                      :class="getTypeIcon(d)"
+                      :class="{
+                        'fa-check-square-o': isSelected(d),
+                        'fa-square-o': !isSelected(d),
+                        disabled: isDisabled(d),
+                      }"
                     />
-                  </div>
-                  <div class="content">
-                      <button
-                        v-if="isNotPublished(d)"
-                        class="not-ready-label"
-                      >
-                        Not Published
-                      </button>
-                      <button
-                        v-if="isDeprecated(d)"
-                        class="not-ready-label"
-                      >
-                        Deprecated
-                      </button>
-                      <button
-                        v-if="isProcessing(d)"
-                        class="not-ready-label"
-                      >
-                        Processing
-                      </button>
-                      <div class="text-bold">{{ formatOutputName(d) }}</div>
-                      <multiline-description :text="formatOutputDescription(d)" />
-                      <div v-if="isExpanded(d) && (d as any).parameters?.length > 0" class="knobs">
-                        Input Knobs:<br/>
-                        {{ formatParameters(d as any) }}
-                      </div>
+                  </template>
+                  <template v-else>
+                    <i
+                      class="fa fa-lg fa-fw"
+                      :class="{ 'fa-circle': isSelected(d), 'fa-circle-o': !isSelected(d) }"
+                    />
+                  </template>
+                  <i class="fa fa-lg fa-fw" :class="getTypeIcon(d)" />
+                </div>
+                <div class="content">
+                  <button v-if="isNotPublished(d)" class="not-ready-label">Not Published</button>
+                  <button v-if="isDeprecated(d)" class="not-ready-label">Deprecated</button>
+                  <button v-if="isProcessing(d)" class="not-ready-label">Processing</button>
+                  <div class="text-bold">{{ formatOutputName(d) }}</div>
+                  <multiline-description :text="formatOutputDescription(d)" />
+                  <div v-if="isExpanded(d) && (d as any).parameters?.length > 0" class="knobs">
+                    Input Knobs:<br />
+                    {{ formatParameters(d as any) }}
                   </div>
                 </div>
-              </td>
-              <td class="desc-col">
-                <div class="text-bold">{{ d.name }}</div>
-                <multiline-description :text="formatDescription(d)" />
-              </td>
-              <td class="period-col">
-                <div class="text-bold">{{ formatPeriod(d) }}</div>
-                <div> {{ formatTimeStep(d) }} </div>
-              </td>
-              <td class="region-col">
-                <div> {{ formatCountry(d) }} </div>
-              </td>
-              <td class="timeseries-col">
-                <div class="timeseries-container">
-                  <sparkline :data="formatTimeSeries(d)" />
-                </div>
-              </td>
-            </tr>
+              </div>
+            </td>
+            <td class="desc-col">
+              <div class="text-bold">{{ d.name }}</div>
+              <multiline-description :text="formatDescription(d)" />
+            </td>
+            <td class="period-col">
+              <div class="text-bold">{{ formatPeriod(d) }}</div>
+              <div>{{ formatTimeStep(d) }}</div>
+            </td>
+            <td class="region-col">
+              <div>{{ formatCountry(d) }}</div>
+            </td>
+            <td class="timeseries-col">
+              <div class="timeseries-container">
+                <sparkline :data="formatTimeSeries(d)" />
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -93,7 +78,6 @@
 </template>
 
 <script lang="ts">
-
 import moment from 'moment';
 import { defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
@@ -107,21 +91,21 @@ export default defineComponent({
   name: 'SearchListview',
   components: {
     Sparkline,
-    MultilineDescription
+    MultilineDescription,
   },
   props: {
     datacubes: {
       type: Array as PropType<Datacube[]>,
-      default: () => []
+      default: () => [],
     },
     selectedSearchItems: {
       type: Array as PropType<AnalysisItem[]>,
-      required: true
+      required: true,
     },
     enableMultipleSelection: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['toggle-datacube-selected', 'set-datacube-selected'],
   setup(props) {
@@ -132,7 +116,7 @@ export default defineComponent({
     watch(
       datacubes,
       () => {
-        const elem:any = document.getElementsByClassName('table-fixed-head');
+        const elem: any = document.getElementsByClassName('table-fixed-head');
         if (elem.length === 0) return;
         elem[0].scrollTop = 0;
       },
@@ -140,12 +124,15 @@ export default defineComponent({
     );
 
     return {
-      expandedRowId
+      expandedRowId,
     };
   },
   methods: {
     isDisabled(datacube: Datacube) {
-      return datacube.status === DatacubeStatus.Deprecated || (isModel(datacube) && datacube.status !== DatacubeStatus.Ready);
+      return (
+        datacube.status === DatacubeStatus.Deprecated ||
+        (isModel(datacube) && datacube.status !== DatacubeStatus.Ready)
+      );
     },
     isProcessing(datacube: Datacube) {
       return datacube.status === DatacubeStatus.Processing && isIndicator(datacube);
@@ -160,16 +147,19 @@ export default defineComponent({
       return this.expandedRowId === datacube.id;
     },
     updateExpandedRow(datacube: Datacube) {
-      this.expandedRowId === datacube.id ? this.expandedRowId = '' : this.expandedRowId = datacube.id;
+      this.expandedRowId === datacube.id
+        ? (this.expandedRowId = '')
+        : (this.expandedRowId = datacube.id);
     },
     isSelected(datacube: Datacube) {
-      return this.selectedSearchItems.find(sd => sd.id === datacube.id) !== undefined;
+      return this.selectedSearchItems.find((sd) => sd.id === datacube.id) !== undefined;
     },
     updateSelection(datacube: Datacube) {
       if (!this.isDisabled(datacube)) {
-        const item = { // Partial analysisItem
+        const item = {
+          // Partial analysisItem
           datacubeId: datacube.data_id,
-          id: datacube.id
+          id: datacube.id,
         };
         if (this.enableMultipleSelection) {
           // if the datacube is not in the list add it, otherwise remove it
@@ -183,9 +173,9 @@ export default defineComponent({
     formatOutputName(d: Datacube) {
       return this.getDefaultOutput(d)?.display_name ?? d.default_feature;
     },
-    formatParameters({ parameters } : { parameters?: ModelParameter[] }) {
+    formatParameters({ parameters }: { parameters?: ModelParameter[] }) {
       const params = parameters || [];
-      return params.map(p => p.name).join(', ');
+      return params.map((p) => p.name).join(', ');
     },
     formatTimeStep(d: Datacube) {
       const originalResolution = this.getDefaultOutput(d)?.data_resolution?.temporal_resolution;
@@ -193,11 +183,15 @@ export default defineComponent({
       return originalResolution === TemporalResolution.Annual ? 'annual' : 'monthly';
     },
     formatTimeSeries(d: Datacube) {
-      return d.sparkline ? [{
-        name: 'datacube',
-        color: '',
-        series: d.sparkline
-      }] : [];
+      return d.sparkline
+        ? [
+            {
+              name: 'datacube',
+              color: '',
+              series: d.sparkline,
+            },
+          ]
+        : [];
     },
     formatPeriod(d: Datacube) {
       if (!d.period) {
@@ -205,7 +199,7 @@ export default defineComponent({
       }
       const min = Number(d.period.gte);
       const max = Number(d.period.lte);
-      const period = [min, max].map(t => moment(t).format('MMM YYYY'));
+      const period = [min, max].map((t) => moment(t).format('MMM YYYY'));
       return min === max ? period[0] : `${period[0]} - ${period[1]}`;
     },
     formatCountry(d: Datacube) {
@@ -228,26 +222,27 @@ export default defineComponent({
         : `${defaultOutputDescription.substring(0, 100)}...`;
     },
     getDefaultOutput(d: Datacube) {
-      return d.outputs.find(output => output.name === d.default_feature);
+      return d.outputs.find((output) => output.name === d.default_feature);
     },
     getTypeIcon(d: Datacube) {
       return 'fa ' + (d.type === 'model' ? 'fa-connectdevelop' : 'fa-table');
-    }
-  }
+    },
+  },
 });
 </script>
 
-<style lang='scss' scoped>
-@import "~styles/variables";
+<style lang="scss" scoped>
+@import '~styles/variables';
 .search-listview-container {
   background: $background-light-2;
   width: 100%;
-  table  {
+  table {
     border-collapse: collapse;
     width: 100%;
     vertical-align: top;
   }
-  th, td {
+  th,
+  td {
     padding: 8px 16px;
   }
   tr {
@@ -282,7 +277,8 @@ export default defineComponent({
     top: -1px;
     z-index: 1;
   }
-  .left-cover, .right-cover {
+  .left-cover,
+  .right-cover {
     // Cover left and right gap in the fixed table header
     position: absolute;
     height: 100%;

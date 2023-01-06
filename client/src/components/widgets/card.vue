@@ -1,9 +1,5 @@
 <template>
-  <div
-    class="card-container"
-    :class="{ 'hoverable': isHoverable }"
-    @click="onClick"
-  >
+  <div class="card-container" :class="{ hoverable: isHoverable }" @click="onClick">
     <slot />
   </div>
 </template>
@@ -16,22 +12,20 @@ export default defineComponent({
   props: {
     isHoverable: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
-  emits: [
-    'click'
-  ],
+  emits: ['click'],
   methods: {
     onClick() {
       this.$emit('click');
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables.scss";
+@import '~styles/variables.scss';
 
 .card-container {
   background-color: white;
@@ -48,7 +42,7 @@ export default defineComponent({
   &::after {
     content: '';
     position: absolute;
-    opacity: .66;
+    opacity: 0.66;
     top: 0;
     left: 0;
     right: 0;

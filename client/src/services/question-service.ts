@@ -10,8 +10,8 @@ export const getQuestionById = async (question_id: string) => {
 export const updateQuestion = async (question_id: string, question: AnalyticalQuestion) => {
   const result = await API.put(`questions/${question_id}`, question, {
     headers: {
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   });
   return result;
 };
@@ -52,7 +52,7 @@ export const fetchQuestions = async (fetchParamsArray: any[]) => {
   });
   // wait until all promises are resolved
   const allRawResponses = await Promise.all(promises);
-  const allFlatResults = allRawResponses.flatMap(res => res.data);
+  const allFlatResults = allRawResponses.flatMap((res) => res.data);
 
   return _.uniqBy(allFlatResults, 'id');
 };
@@ -61,5 +61,5 @@ export default {
   getQuestionById,
   addQuestion,
   updateQuestion,
-  fetchQuestions
+  fetchQuestions,
 };

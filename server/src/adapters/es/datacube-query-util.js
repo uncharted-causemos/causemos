@@ -61,38 +61,38 @@ class DatacubeQueryUtil extends QueryUtil {
             'domains',
             'maintainer.name',
             'maintainer.organization',
-            'tags'
-          ]
-        }
+            'tags',
+          ],
+        },
       });
     }
     return {
       bool: {
-        should: queries
-      }
+        should: queries,
+      },
     };
   }
 
-  buildQuery (filters) {
+  buildQuery(filters) {
     const clauses = _.get(filters, 'clauses') || [];
-    const enableClause = clauses.find(clause => clause && clause.field === 'enable');
+    const enableClause = clauses.find((clause) => clause && clause.field === 'enable');
     const filterClauses = this.levelFilter(clauses, FIELD_LEVELS.DATACUBE);
     const nestedConceptClauses = this.levelFilter(clauses, FIELD_LEVELS.CONCEPTS);
     const enableFilters = this.buildEnableFilters(enableClause);
     const generalFilters = this.buildFilters(filterClauses);
-    const nestedConceptFilters = this.buildNestedFilters(nestedConceptClauses, NESTED_FIELD_PATHS.CONCEPTS);
+    const nestedConceptFilters = this.buildNestedFilters(
+      nestedConceptClauses,
+      NESTED_FIELD_PATHS.CONCEPTS
+    );
 
-    const allFilters = [
-      enableFilters,
-      generalFilters
-    ];
+    const allFilters = [enableFilters, generalFilters];
     if (nestedConceptFilters != null) allFilters.push(nestedConceptFilters);
     return {
       query: {
         bool: {
-          must: allFilters
-        }
-      }
+          must: allFilters,
+        },
+      },
     };
   }
 
@@ -112,25 +112,25 @@ class DatacubeQueryUtil extends QueryUtil {
         bool: {
           should: [
             {
-              term: { is_hidden: false }
+              term: { is_hidden: false },
             },
             {
               bool: {
                 must_not: {
                   exists: {
-                    field: 'is_hidden'
-                  }
-                }
-              }
-            }
-          ]
-        }
+                    field: 'is_hidden',
+                  },
+                },
+              },
+            },
+          ],
+        },
       });
     }
     const result = {
       bool: {
-        filter: queries
-      }
+        filter: queries,
+      },
     };
     return result;
   }

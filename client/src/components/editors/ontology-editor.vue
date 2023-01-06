@@ -3,13 +3,10 @@
     <dropdown-control>
       <template #content>
         <div class="dropdown-title">
-          <h5>Select a Different Concept
-            <span v-if="selectedOption === 'pick'">
-              - Search
-            </span>
-            <span v-if="selectedOption === 'new'">
-              - Add New Concept
-            </span>
+          <h5>
+            Select a Different Concept
+            <span v-if="selectedOption === 'pick'"> - Search </span>
+            <span v-if="selectedOption === 'new'"> - Add New Concept </span>
           </h5>
         </div>
         <close-button @click="close()" />
@@ -18,12 +15,11 @@
             v-for="(suggestion, idx) in suggestions"
             :key="idx"
             class="dropdown-option"
-            @click="select(suggestion.name)">
+            @click="select(suggestion.name)"
+          >
             <div class="flex">
-              <i
-                class="fa fa-check"
-                :style="suggestionStyle(suggestion.name)" />
-              <div class="suggestion-score"> {{ precisionFormatter(suggestion.score) }} </div>
+              <i class="fa fa-check" :style="suggestionStyle(suggestion.name)" />
+              <div class="suggestion-score">{{ precisionFormatter(suggestion.score) }}</div>
               <concept-display :item="suggestion.name" />
             </div>
           </div>
@@ -31,32 +27,21 @@
 
         <div v-if="selectedOption === 'pick'">
           <div class="back-to-suggestion-container">
-            <small-text-button
-              :label="'Back'"
-              @click="backToSuggestions"
-            />
+            <small-text-button :label="'Back'" @click="backToSuggestions" />
           </div>
           <auto-complete
             :search-fn="searchConcept"
             :display-type="'ConceptDisplay'"
             :placeholder-message="'Search concepts...'"
-            @item-selected="select" />
+            @item-selected="select"
+          />
         </div>
       </template>
 
-      <template
-        v-if="selectedOption === 'suggestions'"
-        #footer
-        class="ontology-options">
+      <template v-if="selectedOption === 'suggestions'" #footer class="ontology-options">
         <div class="ontology-footer-options-container">
-          <small-text-button
-            :label="'Search'"
-            @click="selectOption('pick')"
-          />
-          <small-text-button
-            :label="'Create Concept'"
-            @click="showCustomConcept = true"
-          />
+          <small-text-button :label="'Search'" @click="selectOption('pick')" />
+          <small-text-button :label="'Create Concept'" @click="showCustomConcept = true" />
         </div>
       </template>
     </dropdown-control>
@@ -97,21 +82,19 @@ export default defineComponent({
     DropdownControl,
     CloseButton,
     SmallTextButton,
-    ModalCustomConcept
+    ModalCustomConcept,
   },
   props: {
     concept: {
       type: String,
-      default: ''
+      default: '',
     },
     suggestions: {
       type: Array,
-      default: () => ([])
-    }
+      default: () => [],
+    },
   },
-  emits: [
-    'select', 'close'
-  ],
+  emits: ['select', 'close'],
   setup() {
     const store = useStore();
     const selectedOption = ref('suggestions');
@@ -121,13 +104,13 @@ export default defineComponent({
     return {
       selectedOption,
       ontologyConcepts,
-      showCustomConcept
+      showCustomConcept,
     };
   },
   computed: {
     ...mapGetters({
-      project: 'app/project'
-    })
+      project: 'app/project',
+    }),
   },
   methods: {
     precisionFormatter,
@@ -136,10 +119,12 @@ export default defineComponent({
         return this.ontologyConcepts;
       }
       const suggestions = await projectService.getConceptSuggestions(this.project, searchTerm);
-      return suggestions.slice(0, CONCEPT_SUGGESTION_COUNT).map((suggestion: any) => suggestion.doc.key);
+      return suggestions
+        .slice(0, CONCEPT_SUGGESTION_COUNT)
+        .map((suggestion: any) => suggestion.doc.key);
     },
     select(suggestion: string) {
-      if (!_.isEmpty(suggestion) && (this.concept !== suggestion)) {
+      if (!_.isEmpty(suggestion) && this.concept !== suggestion) {
         this.$emit('select', suggestion);
       }
     },
@@ -152,11 +137,11 @@ export default defineComponent({
     suggestionStyle(concept: string) {
       if (this.concept === concept) {
         return {
-          opacity: 1
+          opacity: 1,
         };
       } else {
         return {
-          opacity: 0.1
+          opacity: 0.1,
         };
       }
     },
@@ -165,13 +150,13 @@ export default defineComponent({
     },
     backToSuggestions() {
       this.selectedOption = 'suggestions';
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .ontology-editor-container {
   position: absolute;
@@ -188,7 +173,7 @@ export default defineComponent({
     margin-right: 5px;
   }
   .ontology-options {
-    display:inline-block;
+    display: inline-block;
   }
   .autocomplete-results {
     position: relative;

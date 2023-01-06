@@ -1,5 +1,5 @@
 <template>
-  <div class="insight-manager-container" :class="{'panel-hidden': !isOpen}">
+  <div class="insight-manager-container" :class="{ 'panel-hidden': !isOpen }">
     <review-insight-modal v-if="isReviewInsightModalOpen" />
     <list-insights-modal v-if="isOpen && currentPane === 'list-insights'" />
   </div>
@@ -11,12 +11,11 @@ import { defineComponent, computed } from 'vue';
 import ListInsightsModal from '@/components/insight-manager/list-insights-modal.vue';
 import ReviewInsightModal from '@/components/insight-manager/review-insight-modal.vue';
 
-
 export default defineComponent({
   name: 'InsightManager',
   components: {
     ListInsightsModal,
-    ReviewInsightModal
+    ReviewInsightModal,
   },
   setup() {
     const store = useStore();
@@ -24,11 +23,9 @@ export default defineComponent({
     const currentPane = computed(() => store.getters['insightPanel/currentPane']);
 
     const isReviewInsightModalOpen = computed(() => {
-      return [
-        'review-insight',
-        'review-edit-insight',
-        'review-new-insight'
-      ].includes(currentPane.value);
+      return ['review-insight', 'review-edit-insight', 'review-new-insight'].includes(
+        currentPane.value
+      );
     });
 
     const isOpen = computed(() => {
@@ -39,14 +36,14 @@ export default defineComponent({
       isPanelOpen,
       currentPane,
       isReviewInsightModalOpen,
-      isOpen
+      isOpen,
     };
-  }
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
 .insight-manager-container {
   position: absolute;
@@ -60,7 +57,7 @@ export default defineComponent({
   transition: all 0.5s ease;
   padding: 0;
   background-color: $background-light-3;
-  box-shadow: 0 2px 2px rgba(0,0,0,.12), 0 4px 4px rgba(0,0,0,.24);
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.12), 0 4px 4px rgba(0, 0, 0, 0.24);
   overflow-y: auto;
   overflow-x: hidden;
   word-wrap: break-word;
@@ -71,4 +68,3 @@ export default defineComponent({
   display: none;
 }
 </style>
-

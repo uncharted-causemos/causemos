@@ -8,7 +8,7 @@ const {
   updateFactorGrounding,
   discardStatement,
   vetStatement,
-  reverseRelation
+  reverseRelation,
 } = require('./update-service-helper');
 
 const indraService = rootRequire('/services/external/indra-service');
@@ -22,16 +22,18 @@ const projectService = rootRequire('/services/project-service');
  * @param {array} audits
  */
 const _buildCurationLogs = async (projectId, audits) => {
-  const empty2null = (v) => { return v === '' ? null : v; };
+  const empty2null = (v) => {
+    return v === '' ? null : v;
+  };
 
   const curations = {};
   for (let i = 0; i < audits.length; i++) {
     const audit = audits[i];
 
-    [audit.before.subj, audit.before.obj, audit.after.subj, audit.after.obj].forEach(item => {
-      item.concept = [
-        item.theme, item.theme_property, item.process, item.process_property
-      ].map(empty2null);
+    [audit.before.subj, audit.before.obj, audit.after.subj, audit.after.obj].forEach((item) => {
+      item.concept = [item.theme, item.theme_property, item.process, item.process_property].map(
+        empty2null
+      );
       delete item.theme;
       delete item.theme_property;
       delete item.process;
@@ -43,13 +45,13 @@ const _buildCurationLogs = async (projectId, audits) => {
       statement_id: audit.statement_id,
       update_type: audit.update_type,
       before: audit.before,
-      after: audit.after
+      after: audit.after,
     };
   }
 
   return {
     project_id: projectId,
-    curations: curations
+    curations: curations,
   };
 };
 
@@ -66,7 +68,10 @@ const updateStatements = async (projectId, updateConfig, statementIds) => {
   // We need to maintain compositional concepts behind the scenes, while using flattened concepts in the UI
   if (updateType === 'factor_grounding') {
     if (updateConfig.subj && updateConfig.subj.newValue) {
-      const result = await projectService.ontologyComposition(projectId, updateConfig.subj.newValue);
+      const result = await projectService.ontologyComposition(
+        projectId,
+        updateConfig.subj.newValue
+      );
       updateConfig.subj.theme = result.theme;
       updateConfig.subj.theme_property = result.theme_property;
       updateConfig.subj.process = result.process;
@@ -89,10 +94,18 @@ const updateStatements = async (projectId, updateConfig, statementIds) => {
         updateConfig.obj.theme = updateConfig.obj.newValue;
       }
     }
-    Logger.info(`Injecting compositional ontology concepts for factor regrounding ${JSON.stringify(updateConfig)}`);
+    Logger.info(
+      `Injecting compositional ontology concepts for factor regrounding ${JSON.stringify(
+        updateConfig
+      )}`
+    );
   }
 
-  const batchId = await batchUpdate(projectId, _.clone(statementIds), updateFnGenerator(projectId, updateConfig));
+  const batchId = await batchUpdate(
+    projectId,
+    _.clone(statementIds),
+    updateFnGenerator(projectId, updateConfig)
+  );
   return batchId;
 };
 
@@ -105,17 +118,17 @@ const batchUpdate = async (projectId, statementIds, updateFn) => {
     const batchedIds = statementIds.splice(0, BATCH_SIZE);
     if (_.isEmpty(batchedIds)) break;
 
-    const statements = await statement.find({
-      clauses: [
-        { field: 'id', values: batchedIds, operand: 'OR', isNot: false }
-      ]
-    }, { size: 1000 });
+    const statements = await statement.find(
+      {
+        clauses: [{ field: 'id', values: batchedIds, operand: 'OR', isNot: false }],
+      },
+      { size: 1000 }
+    );
 
     await updateFn(statements, batchId);
   }
   return batchId;
 };
-
 
 /**
  * A function generator for batched update
@@ -146,14 +159,32 @@ const updateFnGenerator = (projectId, updateConfig) => {
   const logEntry = (statement) => {
     return {
       wm: _.pick(statement.wm, ['state', 'readers']),
-      subj: _.pick(statement.subj, ['factor', 'concept', 'polarity', 'concept_score', 'theme', 'theme_property', 'process', 'process_property']),
-      obj: _.pick(statement.obj, ['factor', 'concept', 'polarity', 'concept_score', 'theme', 'theme_property', 'process', 'process_property'])
+      subj: _.pick(statement.subj, [
+        'factor',
+        'concept',
+        'polarity',
+        'concept_score',
+        'theme',
+        'theme_property',
+        'process',
+        'process_property',
+      ]),
+      obj: _.pick(statement.obj, [
+        'factor',
+        'concept',
+        'polarity',
+        'concept_score',
+        'theme',
+        'theme_property',
+        'process',
+        'process_property',
+      ]),
     };
   };
 
   return async (statements, batchId) => {
     const audits = [];
-    statements.forEach(statement => {
+    statements.forEach((statement) => {
       const auditEntry = {
         modified_at: Date.now(),
         project_id: projectId,
@@ -162,7 +193,7 @@ const updateFnGenerator = (projectId, updateConfig) => {
         matches_hash: statement.matches_hash,
         update_type: updateType,
         before: {},
-        after: {}
+        after: {},
       };
       audits.push(auditEntry);
       // Log before
@@ -175,7 +206,6 @@ const updateFnGenerator = (projectId, updateConfig) => {
     });
     // build and send feedbackToIndra
     const curationLogs = await _buildCurationLogs(projectId, audits);
-
 
     indraService.sendFeedback(curationLogs).catch(function handleError(err) {
       Logger.warn(`Sending feedback to INDRA failed bactchId=${batchId} ` + err);
@@ -200,11 +230,11 @@ const updateAllBeliefScores = async (projectId, statementBeliefScores) => {
   while (true) {
     if (_.isEmpty(statementIds)) break;
     const batchIds = statementIds.splice(0, BATCH_SIZE);
-    const statementPayloads = batchIds.map(d => {
+    const statementPayloads = batchIds.map((d) => {
       return {
         id: d,
         belief_score: statementBeliefScores[d],
-        modified_at: modifiedAt
+        modified_at: modifiedAt,
       };
     });
     await statementConnection.update(statementPayloads);
@@ -213,5 +243,5 @@ const updateAllBeliefScores = async (projectId, statementBeliefScores) => {
 
 module.exports = {
   updateStatements,
-  updateAllBeliefScores
+  updateAllBeliefScores,
 };

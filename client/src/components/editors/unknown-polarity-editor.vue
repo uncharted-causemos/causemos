@@ -1,63 +1,41 @@
 <template>
   <dropdown-control
     class="unknown-bulk-dropdown"
-    :class="{ 'confirmation-mode': showConfirmationMode, 'non-confirmation-mode': !showConfirmationMode}"
+    :class="{
+      'confirmation-mode': showConfirmationMode,
+      'non-confirmation-mode': !showConfirmationMode,
+    }"
   >
     <template #content>
-      <span class="dropdown-title">Fix unknown polarities</span><br>
-      <div
-        class="dropdown-option"
-        @click.stop="select('ALL')">
-        <i
-          class="fa fa-check"
-          :style="selectedOption('ALL')" />
+      <span class="dropdown-title">Fix unknown polarities</span><br />
+      <div class="dropdown-option" @click.stop="select('ALL')">
+        <i class="fa fa-check" :style="selectedOption('ALL')" />
         Set all
         <i class="fa fa-question" />
         to
         <i class="fa fa-arrow-up" />
       </div>
-      <div
-        class="dropdown-option"
-        @click.stop="select('SUBJ')">
-        <i
-          class="fa fa-check"
-          :style="selectedOption('SUBJ')" />
+      <div class="dropdown-option" @click.stop="select('SUBJ')">
+        <i class="fa fa-check" :style="selectedOption('SUBJ')" />
         Set subject
         <i class="fa fa-question" />
         to
         <i class="fa fa-arrow-up" />
       </div>
     </template>
-    <template
-      v-if="showConfirmationMode"
-      #footer>
-      <div
-        class="alert alert-info"
-        role="alert">
+    <template v-if="showConfirmationMode" #footer>
+      <div class="alert alert-info" role="alert">
         {{ UNKNOWN_POLARITY_BULK_MESSAGE.NOTE }}
       </div>
-      <div
-        class="alert alert-warning"
-        role="alert">
+      <div class="alert alert-warning" role="alert">
         {{ UNKNOWN_POLARITY_BULK_MESSAGE.WARNING }}
       </div>
-      <div
-        v-if="noSelectionMessage"
-        class="selection-message">
-        *No option selected
-      </div>
+      <div v-if="noSelectionMessage" class="selection-message">*No option selected</div>
       <div>
-        <button
-          type="button"
-          class="btn btn-light"
-          @click="cancelUpdate"
-        >
-          Cancel</button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          @click.stop.prevent="confirmUpdate(selected)"
-        >Confirm</button>
+        <button type="button" class="btn btn-light" @click="cancelUpdate">Cancel</button>
+        <button type="button" class="btn btn-primary" @click.stop.prevent="confirmUpdate(selected)">
+          Confirm
+        </button>
       </div>
     </template>
   </dropdown-control>
@@ -73,19 +51,19 @@ import { defineComponent } from 'vue';
 export default defineComponent({
   name: 'UnknownPolarityEditor',
   components: {
-    DropdownControl
+    DropdownControl,
   },
   props: {
     showConfirmationMode: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['select', 'close', 'confirmUpdate', 'cancelUpdate'],
   data: () => ({
     selected: '',
     noSelectionMessage: false,
-    UNKNOWN_POLARITY_BULK_MESSAGE: messagesUtil.UNKNOWN_POLARITY_BULK_MESSAGE
+    UNKNOWN_POLARITY_BULK_MESSAGE: messagesUtil.UNKNOWN_POLARITY_BULK_MESSAGE,
   }),
   methods: {
     select(type: string) {
@@ -99,11 +77,11 @@ export default defineComponent({
     selectedOption(index: string) {
       if (index === this.selected) {
         return {
-          opacity: '1'
+          opacity: '1',
         };
       } else {
         return {
-          opacity: '0.1'
+          opacity: '0.1',
         };
       }
     },
@@ -115,16 +93,16 @@ export default defineComponent({
     },
     cancelUpdate() {
       this.$emit('cancelUpdate');
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
-.unknown-bulk-dropdown{
-  position:absolute;
+.unknown-bulk-dropdown {
+  position: absolute;
 }
 .confirmation-mode {
   width: 30%;
@@ -143,7 +121,7 @@ export default defineComponent({
 }
 
 .alert-info {
-  background-color: #F0F0F0;
+  background-color: #f0f0f0;
   font-style: italic;
   margin-top: 10px;
 }

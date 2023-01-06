@@ -3,7 +3,6 @@
 </template>
 
 <script>
-
 import layerBase from './layerBase';
 export default {
   name: 'WmMapGeojson',
@@ -12,15 +11,18 @@ export default {
     source(sourceData) {
       const source = this.map.getSource(this.sourceId);
       source && source.setData(sourceData);
-    }
+    },
   },
   mounted() {
     this._addSource();
-    this.map.addLayer({
-      id: this.layerId,
-      source: this.sourceId,
-      ...this.layer
-    }, this.beforeId);
+    this.map.addLayer(
+      {
+        id: this.layerId,
+        source: this.sourceId,
+        ...this.layer,
+      },
+      this.beforeId
+    );
   },
   methods: {
     _addSource() {
@@ -32,10 +34,10 @@ export default {
         generateId: true, // Requires a unique integer feature id to create hover higlight effect. See https://docs.mapbox.com/mapbox-gl-js/style-spec/sources/#geojson-generateId
         data: this.source || {
           type: 'FeatureCollection',
-          features: []
-        }
+          features: [],
+        },
       });
-    }
-  }
+    },
+  },
 };
 </script>

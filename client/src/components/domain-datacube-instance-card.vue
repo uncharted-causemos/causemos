@@ -1,25 +1,49 @@
 <template>
   <div class="project-card-container">
-    <modal-confirmation v-if="showUnpublishModal" :autofocus-confirm="false" @confirm="unpublish"
-      @close="showUnpublishModal = false">
+    <modal-confirmation
+      v-if="showUnpublishModal"
+      :autofocus-confirm="false"
+      @confirm="unpublish"
+      @close="showUnpublishModal = false"
+    >
       <template #title>Unpublish Datacube Instance</template>
       <template #message>
-        <p>Are you sure you want to unpublish<strong>{{ datacube.name }}</strong>?</p>
-        <message-display :message="'Warning: This action cannot be undone.'" :message-type="'alert-warning'" />
+        <p>
+          Are you sure you want to unpublish<strong>{{ datacube.name }}</strong
+          >?
+        </p>
+        <message-display
+          :message="'Warning: This action cannot be undone.'"
+          :message-type="'alert-warning'"
+        />
       </template>
     </modal-confirmation>
-    <modal-confirmation v-if="showEditInDojoModal" :autofocus-confirm="false" @confirm="requestEditInDojo"
-      @close="showEditInDojoModal = false">
+    <modal-confirmation
+      v-if="showEditInDojoModal"
+      :autofocus-confirm="false"
+      @confirm="requestEditInDojo"
+      @close="showEditInDojoModal = false"
+    >
       <template #title>Update Datacube Instance in DOJO</template>
       <template #message>
-        <p>Are you sure you want to update the <strong>{{ datacube.name }}</strong> model instance? This will deprecate
-          the current model instance and create a new version.</p>
+        <p>
+          Are you sure you want to update the <strong>{{ datacube.name }}</strong> model instance?
+          This will deprecate the current model instance and create a new version.
+        </p>
       </template>
     </modal-confirmation>
     <div>
       <b>
-        {{ datacube.name }}: <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
-        <span v-if="newVersionLink" @click="edit(newVersionLink)" rel="noopener noreferrer" class="deprecated-datacube">
+        {{ datacube.name }}:
+        <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{
+          statusLabel
+        }}</span>
+        <span
+          v-if="newVersionLink"
+          @click="edit(newVersionLink)"
+          rel="noopener noreferrer"
+          class="deprecated-datacube"
+        >
           Link to new version
         </span>
       </b>
@@ -47,19 +71,32 @@
       <div class="card-column">
         <div class="column-title">Domains</div>
         <div style="display: flex; align-items: center; flex-wrap: wrap">
-          <select name="domains" style="margin-right: 7px;" id="domains"
-            @change="selectedDomain = AVAILABLE_DOMAINS[$event.target.selectedIndex - 1]">
+          <select
+            name="domains"
+            style="margin-right: 7px"
+            id="domains"
+            @change="selectedDomain = AVAILABLE_DOMAINS[$event.target.selectedIndex - 1]"
+          >
             <option disabled selected value="''">Select a domain</option>
             <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
               {{ domain }}
             </option>
           </select>
-          <button type="button" class="btn" style="padding: 2px 4px" @click="addDomain" :disabled="selectedDomain === ''">Add</button>
+          <button
+            type="button"
+            class="btn"
+            style="padding: 2px 4px"
+            @click="addDomain"
+            :disabled="selectedDomain === ''"
+          >
+            Add
+          </button>
         </div>
         <div v-if="datacubeDomains" style="display: flex; flex-wrap: wrap">
           <div v-for="domain in datacubeDomains" :key="domain">
-            <span style="margin: 2px; background-color: white;">{{ domain }} <i @click="removeDomain(domain)"
-                class="fa fa-remove" /></span>
+            <span style="margin: 2px; background-color: white"
+              >{{ domain }} <i @click="removeDomain(domain)" class="fa fa-remove"
+            /></span>
           </div>
         </div>
       </div>
@@ -72,20 +109,39 @@
     </div>
 
     <div class="button-row">
-      <button v-tooltip.top-center="'Update the model instance in Dojo'" type="button" class="btn btn-primary"
-        @click="showEditInDojoModal = true">
+      <button
+        v-tooltip.top-center="'Update the model instance in Dojo'"
+        type="button"
+        class="btn btn-primary"
+        @click="showEditInDojoModal = true"
+      >
         Update model
       </button>
-      <button v-tooltip.top-center="'Edit the metadata and visualization'" type="button" class="btn btn-call-to-action"
-        @click="edit(datacube.data_id)">
+      <button
+        v-tooltip.top-center="'Edit the metadata and visualization'"
+        type="button"
+        class="btn btn-call-to-action"
+        @click="edit(datacube.data_id)"
+      >
         <i v-if="datacube.status !== DatacubeStatus.Deprecated" class="fa fa-edit" />
         {{ datacube.status === DatacubeStatus.Deprecated ? 'View' : 'Edit' }}
       </button>
-      <button v-if="datacube.status !== DatacubeStatus.Deprecated"
-        v-tooltip.top-center="'Unpublish the datacube instance'" type="button" class="remove-button"
-        :class="{ 'disabled': datacube.status === DatacubeStatus.Registered || datacube.status === DatacubeStatus.Deprecated }"
-        :disabled="datacube.status === DatacubeStatus.Registered || datacube.status === DatacubeStatus.Deprecated"
-        @click.stop="showUnpublishModal = true">
+      <button
+        v-if="datacube.status !== DatacubeStatus.Deprecated"
+        v-tooltip.top-center="'Unpublish the datacube instance'"
+        type="button"
+        class="remove-button"
+        :class="{
+          disabled:
+            datacube.status === DatacubeStatus.Registered ||
+            datacube.status === DatacubeStatus.Deprecated,
+        }"
+        :disabled="
+          datacube.status === DatacubeStatus.Registered ||
+          datacube.status === DatacubeStatus.Deprecated
+        "
+        @click.stop="showUnpublishModal = true"
+      >
         <i class="fa fa-trash" />
         Unpublish
       </button>
@@ -118,51 +174,62 @@ export default defineComponent({
   components: {
     ModalConfirmation,
     Sparkline,
-    MessageDisplay
+    MessageDisplay,
   },
   emits: ['unpublish', 'update-domains'],
   props: {
     datacube: {
       type: Object as PropType<Model | Indicator>,
-      default: () => ({})
-    }
+      default: () => ({}),
+    },
   },
   computed: {
     ...mapGetters({
       project: 'app/project',
       projectMetadata: 'app/projectMetadata',
-      applicationConfiguration: 'app/applicationConfiguration'
+      applicationConfiguration: 'app/applicationConfiguration',
     }),
     breakdownParameters(): any[] {
       if (isIndicator(this.datacube)) return [];
-      return (this.datacube as Model).parameters.filter(p => p.is_drilldown);
+      return (this.datacube as Model).parameters.filter((p) => p.is_drilldown);
     },
     inputKnobs(): any[] {
       if (isIndicator(this.datacube)) return [];
-      return (this.datacube as Model).parameters.filter(p => !p.is_drilldown);
+      return (this.datacube as Model).parameters.filter((p) => !p.is_drilldown);
     },
     validatedOutputs(): any[] {
       return getValidatedOutputs(this.datacube.outputs);
     },
     displayedQualifiers(): FeatureQualifier[] {
-      return this.datacube?.qualifier_outputs?.filter((q: FeatureQualifier) => isBreakdownQualifier(q)) ?? [];
+      return (
+        this.datacube?.qualifier_outputs?.filter((q: FeatureQualifier) =>
+          isBreakdownQualifier(q)
+        ) ?? []
+      );
     },
     newVersionLink(): string | null {
-      if (this.datacube.status === DatacubeStatus.Deprecated && this.datacube.new_version_data_id !== undefined) {
+      if (
+        this.datacube.status === DatacubeStatus.Deprecated &&
+        this.datacube.new_version_data_id !== undefined
+      ) {
         return this.datacube.new_version_data_id;
       }
       return null;
     },
     timeseries() {
-      return this.datacube?.sparkline ? [{
-        name: 'datacube',
-        color: '',
-        series: this.datacube.sparkline
-      }] : [];
+      return this.datacube?.sparkline
+        ? [
+            {
+              name: 'datacube',
+              color: '',
+              series: this.datacube.sparkline,
+            },
+          ]
+        : [];
     },
     datacubeDomains() {
       return this.datacube?.domains ?? [];
-    }
+    },
   },
   setup(props) {
     const { datacube } = toRefs(props);
@@ -173,7 +240,6 @@ export default defineComponent({
 
     const { statusColor, statusLabel } = useDatacubeVersioning(datacube);
 
-
     return {
       showUnpublishModal,
       showEditInDojoModal,
@@ -181,12 +247,12 @@ export default defineComponent({
       statusColor,
       statusLabel,
       selectedDomain,
-      AVAILABLE_DOMAINS
+      AVAILABLE_DOMAINS,
     };
   },
   methods: {
     ...mapActions({
-      clearLastQuery: 'query/clearLastQuery'
+      clearLastQuery: 'query/clearLastQuery',
     }),
     dateFormatter,
     addDomain() {
@@ -197,13 +263,13 @@ export default defineComponent({
       }
     },
     removeDomain(domain: string) {
-      const newDomains = this.datacubeDomains.filter(d => d !== domain);
+      const newDomains = this.datacubeDomains.filter((d) => d !== domain);
       this.saveDomains(newDomains);
     },
     async saveDomains(newDomains: string[]) {
       const delta = {
         id: this.datacube?.id,
-        domains: newDomains
+        domains: newDomains,
       };
       try {
         await updateDatacube(delta.id, delta);
@@ -219,7 +285,8 @@ export default defineComponent({
     requestEditInDojo() {
       this.showEditInDojoModal = false;
       // redirect to DOJO to update the datacube
-      const BASE_DOJO_URL = this.applicationConfiguration.CLIENT__DOJO_LOG_API_URL + '/summary?model=';
+      const BASE_DOJO_URL =
+        this.applicationConfiguration.CLIENT__DOJO_LOG_API_URL + '/summary?model=';
       const redirectURL = BASE_DOJO_URL + this.datacube.data_id;
       window.location.href = redirectURL;
     },
@@ -232,16 +299,16 @@ export default defineComponent({
         query: { datacube_id: id },
         params: {
           project: this.project,
-          projectType: this.projectMetadata.type
-        }
+          projectType: this.projectMetadata.type,
+        },
       });
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style scoped lang="scss">
-@import "~styles/variables";
+@import '~styles/variables';
 
 .deprecated-datacube {
   color: blue;
@@ -314,7 +381,7 @@ export default defineComponent({
 }
 
 .remove-button {
-  background: #F44336;
+  background: #f44336;
   color: white;
   font-weight: 600;
   border: none;

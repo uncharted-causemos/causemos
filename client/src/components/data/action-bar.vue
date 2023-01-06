@@ -23,7 +23,6 @@
 </template>
 
 <script lang="ts">
-
 import { mapGetters } from 'vuex';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { getAnalysis } from '@/services/analysis-service';
@@ -36,32 +35,33 @@ import { defineComponent } from 'vue';
 export default defineComponent({
   name: 'ActionBar',
   components: {
-    RadioButtonGroup
+    RadioButtonGroup,
   },
   props: {
     activeTab: {
       type: String,
-      required: true
+      required: true,
     },
     analysisId: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
   setup() {
     return {
-      tabs: Object
-        .values(ComparativeAnalysisMode)
-        .map(val => ({ label: capitalize(val), value: val }))
+      tabs: Object.values(ComparativeAnalysisMode).map((val) => ({
+        label: capitalize(val),
+        value: val,
+      })),
     };
   },
   data: () => ({
-    analysisName: ''
+    analysisName: '',
   }),
   computed: {
     ...mapGetters({
-      project: 'app/project'
-    })
+      project: 'app/project',
+    }),
   },
   async mounted() {
     const result = await getAnalysis(this.analysisId);
@@ -73,12 +73,15 @@ export default defineComponent({
     openDataExplorer() {
       const filters = filtersUtil.newFilters();
       filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
-      this.$router.push({ name: 'dataExplorer', query: { analysisId: this.analysisId, filters: filters as any } });
+      this.$router.push({
+        name: 'dataExplorer',
+        query: { analysisId: this.analysisId, filters: filters as any },
+      });
     },
     setActiveTab(newActiveTab: string) {
       this.$emit('set-active-tab', newActiveTab);
-    }
-  }
+    },
+  },
 });
 </script>
 

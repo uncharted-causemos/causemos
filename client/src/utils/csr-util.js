@@ -10,7 +10,8 @@ function getSortedOrder(rowsOrColumns, values) {
     values === undefined ||
     rowsOrColumns.length !== values.length ||
     rowsOrColumns.length === 0
-  ) return [];
+  )
+    return [];
   const sums = {};
   values.forEach((value, index) => {
     const entry = rowsOrColumns[index];
@@ -52,13 +53,11 @@ function getSortedOrderBySelection(matrixData, isRowSelected, selectedConcept) {
     }
   });
   const conceptsInSelection = Object.keys(valuesInSelection);
-  conceptsInSelection.sort(
-    (a, b) => valuesInSelection[b] - valuesInSelection[a]
-  );
+  conceptsInSelection.sort((a, b) => valuesInSelection[b] - valuesInSelection[a]);
   // Fill in the rows that don't have values in the selected column from the
   //  fallback, maintaining their order
   const conceptsNotInSelection = fallbackOrder.filter(
-    concept => !conceptsInSelection.includes(concept)
+    (concept) => !conceptsInSelection.includes(concept)
   );
   return [...conceptsInSelection, ...conceptsNotInSelection];
 }
@@ -72,8 +71,8 @@ const resultsToCsrFormat = (experimentResults) => {
   const rows = [];
   const columns = [];
   const value = [];
-  Object.keys(experimentResults).forEach(sourceConcept => {
-    Object.keys(experimentResults[sourceConcept]).forEach(targetConcept => {
+  Object.keys(experimentResults).forEach((sourceConcept) => {
+    Object.keys(experimentResults[sourceConcept]).forEach((targetConcept) => {
       const _value = experimentResults[sourceConcept][targetConcept];
       // Don't add entries where the value is 0
       if (_value !== 0) {
@@ -89,5 +88,5 @@ const resultsToCsrFormat = (experimentResults) => {
 export default {
   getSortedOrder,
   getSortedOrderBySelection,
-  resultsToCsrFormat
+  resultsToCsrFormat,
 };

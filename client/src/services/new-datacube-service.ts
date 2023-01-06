@@ -31,8 +31,8 @@ export const getDatacubes = async (filters: Filters, options = {}) => {
   const { data } = await API.get('maas/datacubes', {
     params: {
       filters: filters,
-      options: options
-    }
+      options: options,
+    },
   });
   return data;
 };
@@ -44,9 +44,7 @@ export const getDatacubes = async (filters: Filters, options = {}) => {
  */
 export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
   const { data } = await API.get(
-    `maas/datacubes/facets?facets=${JSON.stringify(
-      facets
-    )}&filters=${JSON.stringify(filters)}`
+    `maas/datacubes/facets?facets=${JSON.stringify(facets)}&filters=${JSON.stringify(filters)}`
   );
   return data;
 };
@@ -69,7 +67,7 @@ export const getDatacubeById = async (datacubeId: string) => {
  */
 export const getDatacubesCount = async (filters: Filters) => {
   const { data } = await API.get('maas/datacubes/count', {
-    params: { filters: filters }
+    params: { filters: filters },
   });
   return data || 0;
 };
@@ -126,7 +124,9 @@ export const updateIndicatorsBulk = async (metaDeltas: { id: string; [key: strin
  * @returns success or error on failure
  */
 export const generateSparklines = async (sparklineParamsList: SparklineParams[]) => {
-  const result = await API.post('maas/datacubes/add-sparklines', { datacubes: sparklineParamsList });
+  const result = await API.post('maas/datacubes/add-sparklines', {
+    datacubes: sparklineParamsList,
+  });
   return result.data;
 };
 
@@ -145,9 +145,9 @@ export const getDataset = async (dataId: string) => {
       'ontology_matches',
       'geography.admin1',
       'geography.admin2',
-      'geography.admin3'
+      'geography.admin3',
     ],
-    size: 1
+    size: 1,
   };
   const cubes = await getDatacubes(filters, options);
   return cubes && cubes.length > 0 && cubes[0];
@@ -156,7 +156,7 @@ export const getDataset = async (dataId: string) => {
 export const getModelRunMetadata = async (dataId: string) => {
   const filter = JSON.stringify([{ field: 'model_id', value: dataId }]);
   const { data } = await API.get<ModelRun[]>('/maas/model-runs', {
-    params: { filter }
+    params: { filter },
   });
   return data;
 };
@@ -165,11 +165,11 @@ export const getDefaultModelRunMetadata = async (dataId: string) => {
   const simpleFilter = [
     { field: 'model_id', value: dataId },
     { field: 'status', value: 'READY' },
-    { field: 'is_default_run', value: true }
+    { field: 'is_default_run', value: true },
   ];
   const filter = JSON.stringify(simpleFilter);
   const { data } = await API.get<ModelRun[]>('/maas/model-runs', {
-    params: { filter }
+    params: { filter },
   });
   return data[0];
 };
@@ -184,12 +184,11 @@ export const getSuggestions = async (field: string, queryString: string) => {
   const { data } = await API.get('maas/datacubes/suggestions', {
     params: {
       field,
-      q: queryString
-    }
+      q: queryString,
+    },
   });
   return data;
 };
-
 
 /**
  * Find datacubes by a query strings, returns a summaried datacube object
@@ -197,8 +196,8 @@ export const getSuggestions = async (field: string, queryString: string) => {
 export const getDatacubeSuggestions = async (queryString: string) => {
   const { data } = await API.get('maas/datacubes/datacube-suggestions', {
     params: {
-      q: queryString
-    }
+      q: queryString,
+    },
   });
   return data;
 };
@@ -208,13 +207,18 @@ export const updateModelRun = async (modelRun: Partial<ModelRun>) => {
   return result.data;
 };
 
-export const createModelRun = (model_id: string, model_name: string, parameters: any[], is_default_run: boolean | undefined = undefined) => {
+export const createModelRun = (
+  model_id: string,
+  model_name: string,
+  parameters: any[],
+  is_default_run: boolean | undefined = undefined
+) => {
   // send the request to the server
   return API.post('maas/model-runs', {
     model_id,
     model_name,
     parameters,
-    is_default_run
+    is_default_run,
   });
 };
 
@@ -245,7 +249,7 @@ export const renameModelRunsTag = async (runIds: string[], oldTag: string, newTa
   return result.data;
 };
 
-export const fetchImageAsBase64 = async (url: string): Promise<string|undefined> => {
+export const fetchImageAsBase64 = async (url: string): Promise<string | undefined> => {
   try {
     const { data } = await API.get('url-to-b64', { params: { url } });
     const mime = getImageMime(url);
@@ -256,7 +260,7 @@ export const fetchImageAsBase64 = async (url: string): Promise<string|undefined>
   }
 };
 
-export const fetchFlowLogs = async (flowId: string): Promise<FlowLogs|undefined> => {
+export const fetchFlowLogs = async (flowId: string): Promise<FlowLogs | undefined> => {
   try {
     const { data } = await API.get('prefect-flow-logs', { params: { flowId } });
     return _parseFlowLogs(data);
@@ -274,30 +278,28 @@ const _parseFlowLogs = (data: any): FlowLogs | undefined => {
     state: data.state as string,
     start_time: new Date(data.start_time),
     end_time: data.end_time ? new Date(data.end_time) : undefined,
-    logs: data.logs.map((log: any) => ({ timestamp: new Date(log.timestamp), message: log.message })),
-    agent: data.agent
+    logs: data.logs.map((log: any) => ({
+      timestamp: new Date(log.timestamp),
+      message: log.message,
+    })),
+    agent: data.agent,
   } as FlowLogs;
 };
 
 export const getDefaultFeature = (datacube: Datacube) => {
-  return datacube.outputs.find(
-    output => output.name === datacube.default_feature
-  );
+  return datacube.outputs.find((output) => output.name === datacube.default_feature);
 };
 
 // Extract some useful metadata to summarize a datacube.
 // Used when adding a datacube to an analysis from the data explorer so that the
 //  full metadata doesn't need to be fetched before the datacube can be
 //  displayed in the side panel list.
-export const getDatacubeMetadataToCache = (
-  datacube: Datacube
-): CachedDatacubeMetadata => {
-  const featureName =
-    getDefaultFeature(datacube)?.display_name ?? datacube.default_feature;
+export const getDatacubeMetadataToCache = (datacube: Datacube): CachedDatacubeMetadata => {
+  const featureName = getDefaultFeature(datacube)?.display_name ?? datacube.default_feature;
   return {
     featureName,
     datacubeName: datacube.name,
-    source: datacube.maintainer.organization
+    source: datacube.maintainer.organization,
   };
 };
 
@@ -318,5 +320,5 @@ export default {
   removeModelRunsTag,
   renameModelRunsTag,
   getDatacubeSuggestions,
-  fetchFlowLogs
+  fetchFlowLogs,
 };

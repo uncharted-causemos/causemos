@@ -4,24 +4,25 @@ import FiltersUtil from '@/utils/filters-util';
 
 // example filter objects
 const ONE_EDGE = {
-  clauses: [{
-    field: 'dummy',
-    operand: 'or',
-    isNot: false,
-    values: ['abc///def']
-  }]
+  clauses: [
+    {
+      field: 'dummy',
+      operand: 'or',
+      isNot: false,
+      values: ['abc///def'],
+    },
+  ],
 };
 
 const MULTI_EDGES = {
-  clauses: [{
-    field: 'dummy',
-    operand: 'or',
-    isNot: false,
-    values: [
-      'abc///def',
-      'xyz///efg'
-    ]
-  }]
+  clauses: [
+    {
+      field: 'dummy',
+      operand: 'or',
+      isNot: false,
+      values: ['abc///def', 'xyz///efg'],
+    },
+  ],
 };
 
 // example lex query objects
@@ -29,27 +30,31 @@ const LEX_EDGE_ONE = {
   field: { key: 'dummy', meta: { searchKey: 'dummy' } },
   relation: { key: 'from' },
   value: { key: 'abc' },
-  secondaryValue: { key: 'def' }
+  secondaryValue: { key: 'def' },
 };
 
 const LEX_EDGE_TWO = {
   field: { key: 'dummy', meta: { searchKey: 'dummy' } },
   relation: { key: 'from' },
   value: { key: 'xyz' },
-  secondaryValue: { key: 'efg' }
+  secondaryValue: { key: 'efg' },
 };
 
 describe('edge-pill', () => {
   let pill = null;
 
   beforeEach(() => {
-    pill = new EdgePill({
-      field: 'dummy',
-      display: 'dummy',
-      searchDisplay: 'dummy',
-      searchable: true,
-      ranged: false
-    }, [], 'test');
+    pill = new EdgePill(
+      {
+        field: 'dummy',
+        display: 'dummy',
+        searchDisplay: 'dummy',
+        searchable: true,
+        ranged: false,
+      },
+      [],
+      'test'
+    );
   });
 
   it('transform lex to filters: single edge', () => {

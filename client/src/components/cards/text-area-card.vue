@@ -1,20 +1,10 @@
 <template>
-  <card
-    class="text-area-card-container"
-    :is-hoverable="false"
-  >
+  <card class="text-area-card-container" :is-hoverable="false">
     <h4>
       {{ title + (hasUnsavedText ? '*' : '') }}
-      <close-button
-        @click="close()"
-      />
+      <close-button @click="close()" />
     </h4>
-    <textarea
-      v-model="enteredText"
-      rows="10"
-      class="form-control"
-      @focusout="lostFocus"
-    />
+    <textarea v-model="enteredText" rows="10" class="form-control" @focusout="lostFocus" />
   </card>
 </template>
 
@@ -28,24 +18,22 @@ export default defineComponent({
   name: 'TextAreaCard',
   components: {
     Card,
-    CloseButton
+    CloseButton,
   },
   props: {
     title: {
       type: String,
-      default: '[Card Title]'
+      default: '[Card Title]',
     },
     initialText: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
-  emits: [
-    'saveText', 'close'
-  ],
+  emits: ['saveText', 'close'],
   data: () => ({
     enteredText: '',
-    hasUnsavedText: false
+    hasUnsavedText: false,
   }),
   watch: {
     enteredText(newText, oldText) {
@@ -53,7 +41,7 @@ export default defineComponent({
         this.hasUnsavedText = true;
         this.scheduleTextSave();
       }
-    }
+    },
   },
   mounted() {
     this.enteredText = this.initialText;
@@ -61,7 +49,9 @@ export default defineComponent({
   methods: {
     scheduleTextSave() {
       const saveText = this.saveText;
-      return _.debounce(function() { saveText(); }, 3000)();
+      return _.debounce(function () {
+        saveText();
+      }, 3000)();
     },
     saveText() {
       if (this.hasUnsavedText) {
@@ -75,13 +65,13 @@ export default defineComponent({
     close() {
       this.saveText();
       this.$emit('close');
-    }
-  }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables.scss";
+@import '~styles/variables.scss';
 .text-area-card-container {
   width: 25%;
   z-index: 9998;
@@ -95,7 +85,7 @@ export default defineComponent({
   right: auto;
 
   &:hover {
-    color: #E0E0E0;
+    color: #e0e0e0;
   }
 }
 
@@ -120,5 +110,4 @@ h4 {
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;
 }
-
 </style>

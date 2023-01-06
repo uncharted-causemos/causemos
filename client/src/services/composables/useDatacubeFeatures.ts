@@ -3,11 +3,7 @@ import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import { getOutputs } from '@/utils/datacube-util';
 import _ from 'lodash';
 import { FeatureConfig } from '@/types/Outputdata';
-import {
-  AggregationOption,
-  DataTransform,
-  TemporalResolutionOption
-} from '@/types/Enums';
+import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/types/Enums';
 
 export default function useDatacubeFeatures(
   metadata: Ref<Datacube | null>,
@@ -40,13 +36,13 @@ export default function useDatacubeFeatures(
         activeFeatures.value = _.cloneDeep(initialActiveFeatures.value);
       } else if (outputs.value !== null) {
         // create the initial list of activeFeatures if datacube outputs have been loaded
-        activeFeatures.value = outputs.value.map(output => ({
+        activeFeatures.value = outputs.value.map((output) => ({
           name: output.name,
           display_name: output.display_name,
           temporalResolution: selectedTemporalResolution.value,
           temporalAggregation: selectedTemporalAggregation.value,
           spatialAggregation: selectedSpatialAggregation.value,
-          transform: selectedTransform.value
+          transform: selectedTransform.value,
         }));
       }
     }
@@ -60,13 +56,13 @@ export default function useDatacubeFeatures(
       selectedTemporalAggregation.value,
       selectedTemporalResolution.value,
       selectedSpatialAggregation.value,
-      selectedTransform.value
+      selectedTransform.value,
     ],
     () => {
       // re-build activeFeatures since it hosts the config options for each variable
       const updatedActiveFeatures = _.cloneDeep(activeFeatures.value);
       const feature = updatedActiveFeatures.find(
-        feature => feature.name === activeFeatureName.value
+        (feature) => feature.name === activeFeatureName.value
       );
       if (feature !== undefined) {
         feature.temporalAggregation = selectedTemporalAggregation.value;
@@ -98,7 +94,7 @@ export default function useDatacubeFeatures(
 
   // FIXME: rename to `selectedFeatureConfigs` when activeFeatures is renamed.
   const selectedFeatures = computed(() => {
-    return activeFeatures.value.filter(feature =>
+    return activeFeatures.value.filter((feature) =>
       selectedFeatureNames.value.has(feature.display_name)
     );
   });
@@ -108,6 +104,6 @@ export default function useDatacubeFeatures(
     activeFeatures,
     selectedFeatures,
     selectedFeatureNames,
-    toggleIsFeatureSelected
+    toggleIsFeatureSelected,
   };
 }
