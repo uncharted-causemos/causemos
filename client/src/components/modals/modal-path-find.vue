@@ -58,7 +58,7 @@
 <script>
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
-import Modal from '@/components/modals/modal';
+import Modal from '@/components/modals/modal.vue';
 import suggestionService from '@/services/suggestion-service';
 
 export default {

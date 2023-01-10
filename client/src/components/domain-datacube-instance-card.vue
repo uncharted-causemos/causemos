@@ -216,7 +216,7 @@ export default defineComponent({
       }
       return null;
     },
-    timeseries() {
+    timeseries(): any {
       return this.datacube?.sparkline
         ? [
             {
@@ -227,7 +227,7 @@ export default defineComponent({
           ]
         : [];
     },
-    datacubeDomains() {
+    datacubeDomains(): any {
       return this.datacube?.domains ?? [];
     },
   },
@@ -263,7 +263,7 @@ export default defineComponent({
       }
     },
     removeDomain(domain: string) {
-      const newDomains = this.datacubeDomains.filter((d) => d !== domain);
+      const newDomains = this.datacubeDomains.filter((d: any) => d !== domain);
       this.saveDomains(newDomains);
     },
     async saveDomains(newDomains: string[]) {

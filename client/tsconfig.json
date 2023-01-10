@@ -1,32 +1,36 @@
 {
   "compilerOptions": {
     "allowJs": true, // FIXME: Temporary
-    "target": "esnext",
-    "module": "esnext",
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "strict": true,
     "jsx": "preserve",
-    "importHelpers": true,
-    "moduleResolution": "node",
-    "experimentalDecorators": true,
-    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "sourceMap": true,
+    "lib": ["ESNext", "DOM"],
+    "skipLibCheck": true,
+    "noEmit": true,
     "baseUrl": ".",
-    "types": ["webpack-env", "mocha", "chai"],
     "paths": {
       "@/*": ["src/*"]
     },
-    "lib": ["esnext", "dom", "dom.iterable", "scripthost"]
+    "sourceMap": true,
+    "types": ["vite/client", "mocha", "chai"]
+  },
+  "vueCompilerOptions": {
+    "skipTemplateCodegen": true
   },
   "include": [
-    "src/shims-vue.d.ts",
     "src/**/*.ts",
+    "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
     "tests/**/*.ts",
     "tests/**/*.tsx"
   ],
   "exclude": ["node_modules"],
-  "files": ["src/shims-vue.d.ts"]
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

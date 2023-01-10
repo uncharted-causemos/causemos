@@ -114,7 +114,7 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import ToggleButton from '@/components/widgets/toggle-button';
+import ToggleButton from '@/components/widgets/toggle-button.vue';
 import { LAYOUTS, LAYOUT_LABELS, COLA_FLOWS } from '@/graphs/cytoscape/cytoscape-layouts';
 
 export default {

@@ -24,6 +24,7 @@
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
 import { SidePanelTab } from '@/types/Common';
+import { resolveAssetUrl } from '@/utils/url-util';
 
 export default defineComponent({
   name: 'SidePanelNav',
@@ -50,8 +51,7 @@ export default defineComponent({
       this.$emit('set-active', tabName === this.currentTabName ? '' : tabName);
     },
     getImgUrl(imgSrc: string) {
-      const assetFolder = require.context('@/assets/');
-      return assetFolder('./' + imgSrc);
+      return resolveAssetUrl(imgSrc);
     },
   },
 });

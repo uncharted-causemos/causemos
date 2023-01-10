@@ -52,7 +52,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue';
 import Card from '@/components/widgets/card.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import DropdownControl from '../dropdown-control.vue';

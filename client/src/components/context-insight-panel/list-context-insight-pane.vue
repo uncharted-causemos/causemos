@@ -93,7 +93,7 @@ import router from '@/router';
 import useInsightsData from '@/services/composables/useInsightsData';
 import { countPublicInsights, fetchFullInsights } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
-import MessageDisplay from '@/components/widgets/message-display';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';

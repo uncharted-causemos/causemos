@@ -77,7 +77,7 @@ export const getAnalysesByProjectId = async (projectId) => {
  * Create a copy of the analysis with given Id
  * @param {string} analysisId Analysis Id
  */
-export const duplicateAnalysis = async (analysisId, newName = undefined) => {
+export const duplicateAnalysis = async (analysisId, newName = '') => {
   const original = await getAnalysis(analysisId);
   const { id } = await createAnalysis(
     newName || `Copy of ${original.title}`,

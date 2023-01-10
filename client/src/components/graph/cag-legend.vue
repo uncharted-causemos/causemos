@@ -42,6 +42,7 @@ import { computed, defineComponent, PropType, toRefs } from 'vue';
 import HideableLegend from '@/components/widgets/hideable-legend.vue';
 import ArrowIcon, { ArrowType } from '@/components/graph/arrow-icon.vue';
 import { TimeScale } from '@/types/Enums';
+import { resolveAssetUrl } from '@/utils/url-util';
 
 export default defineComponent({
   name: 'CagLegend',
@@ -67,9 +68,8 @@ export default defineComponent({
   setup(props) {
     const { timeScale } = toRefs(props);
     const ridgelineFilepath = computed(() => {
-      // NodeRequire type doesn't have `.context()`
-      return (require as any).context('@/assets/')(
-        `./ridgeline-legend-${timeScale.value === TimeScale.Years ? 'years' : 'months'}.svg`
+      return resolveAssetUrl(
+        `ridgeline-legend-${timeScale.value === TimeScale.Years ? 'years' : 'months'}.svg`
       );
     });
     return {

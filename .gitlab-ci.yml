@@ -22,6 +22,7 @@ lint:
   extends: .test_common
   script:
     - yarn run lint:ci
+    - yarn run prettier:ci
 
 test:
   extends: .test_common
