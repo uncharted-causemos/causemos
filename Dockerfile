@@ -13,8 +13,8 @@ WORKDIR /client
 RUN yarn install
 # Add client files
 ADD ./client /client
-# Build client
-RUN yarn run build
+# Build client (Give node.js process enough memory since the default memory limit doesn't seem to be enough to run vite build)
+RUN NODE_OPTIONS=--max_old_space_size=4096 yarn run build
 
 FROM  docker-hub.uncharted.software/node:16.18-alpine
 ADD ./yarn.lock /server/yarn.lock

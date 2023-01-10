@@ -1,4 +1,4 @@
-import * as $ from 'jquery';
+import $ from 'jquery';
 import _ from 'lodash';
 import cytoscape from 'cytoscape';
 import MouseTrap from 'mousetrap';

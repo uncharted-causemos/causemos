@@ -152,10 +152,10 @@ import {
 import { createAnalysis, createAnalysisObject } from '@/services/analysis-service-new';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
-import ModalUploadDocument from '@/components/modals/modal-upload-document';
+import ModalUploadDocument from '@/components/modals/modal-upload-document.vue';
 import { ProjectType } from '@/types/Enums';
 import { ANALYSIS, CAG } from '@/utils/messages-util';
-import RenameModal from '@/components/action-bar/rename-modal';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 import projectService from '@/services/project-service';
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
 import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';

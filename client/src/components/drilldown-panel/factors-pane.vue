@@ -133,13 +133,13 @@ import {
   getFactorGroundingRecommendations,
   CORRECTION_TYPES,
 } from '@/services/curation-service';
-import ModalDocument from '@/components/modals/modal-document';
-import EvidenceItem from '@/components/evidence-item';
-import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
-import OntologyEditor from '@/components/editors/ontology-editor';
-import MessageDisplay from '@/components/widgets/message-display';
-import SmallIconButton from '@/components/widgets/small-icon-button';
-import ModalConfirmation from '@/components/modals/modal-confirmation';
+import ModalDocument from '@/components/modals/modal-document.vue';
+import EvidenceItem from '@/components/evidence-item.vue';
+import CollapsibleItem from '@/components/drilldown-panel/collapsible-item.vue';
+import OntologyEditor from '@/components/editors/ontology-editor.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import numberFormatter from '@/formatters/number-formatter';
 import messagesUtil from '@/utils/messages-util';
 import { TYPE } from 'vue-toastification';

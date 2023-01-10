@@ -164,6 +164,7 @@ import { decodeWeights, Engine, supportsLevelEdges } from '@/services/model-serv
 import { CAGModelSummary, EdgeParameter } from '@/types/CAG';
 import EdgeWeightDropdownOption from '@/components/drilldown-panel/edge-weight-dropdown-option.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
+import { resolveAssetUrl } from '@/utils/url-util';
 
 const EDGE_TYPE_LEVEL = 'level';
 const EDGE_TYPE_TREND = 'trend';
@@ -421,8 +422,7 @@ export default defineComponent({
       const fileName =
         'explainerGlyphs/explainerGlyph_' + polarityStr + '_' + weightStr + '_' + typeStr + '.svg';
 
-      const assetFolder = require.context('@/assets/');
-      return assetFolder('./' + fileName);
+      return resolveAssetUrl(fileName);
     },
     isInferredValue(dropdownVariable: string, value: string | number) {
       switch (dropdownVariable) {

@@ -113,10 +113,10 @@
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
-import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
+import CollapsibleItem from '@/components/drilldown-panel/collapsible-item.vue';
 import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header.vue';
-import MessageDisplay from '@/components/widgets/message-display';
-import SmallIconButton from '@/components/widgets/small-icon-button';
+import MessageDisplay from '@/components/widgets/message-display.vue';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 
 import aggregationsUtil from '@/utils/aggregations-util';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';

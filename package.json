@@ -9,10 +9,10 @@
     "server"
   ],
   "scripts": {
-    "start-client": "yarn workspace client run serve",
+    "start-client": "yarn workspace client run dev",
     "start-server": "yarn workspace server run start --morgan-format dev",
     "start-server-debug": "yarn workspace server run start --morgan-format dev --log-level debug",
-    "start-dev": "concurrently \"yarn workspace server run dev\" \"yarn workspace client run serve\"",
+    "start-dev": "concurrently \"yarn workspace server run dev\" \"yarn workspace client run dev\"",
     "lint": "yarn workspaces run lint",
     "lint:ci": "yarn workspaces run lint:ci",
     "prettier": "prettier --write .",

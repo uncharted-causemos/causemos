@@ -73,8 +73,6 @@ export default defineComponent({
     },
   },
   mounted() {
-    console.log(process.env.VUE_APP_GIT_HASH); // print out current git commit SHA
-
     // Enable global map cache
     enableConcurrentTileRequestsCaching();
 
@@ -156,7 +154,7 @@ export default defineComponent({
 
 <style lang="scss">
 /* Shepherd site tour (i.e., onboarding) */
-@import '~shepherd.js/dist/css/shepherd.css';
+@import 'shepherd.js/dist/css/shepherd.css';
 // override default CSS from shepherd
 /*
 .shepherd-element {
@@ -194,11 +192,11 @@ export default defineComponent({
 }
 
 /* Font awesome */
-$fa-font-path: '~font-awesome/fonts';
-@import '~font-awesome/scss/font-awesome';
+$fa-font-path: 'font-awesome/fonts';
+@import 'font-awesome/scss/font-awesome';
 
 /* Sass entrypoint */
 @import './styles/wm';
 
-@import '~pdfjs-dist/legacy/web/pdf_viewer.css';
+@import 'pdfjs-dist/legacy/web/pdf_viewer.css';
 </style>

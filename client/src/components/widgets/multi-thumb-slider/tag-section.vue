@@ -20,6 +20,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import { resolveAssetUrl } from '@/utils/url-util';
 
 export default defineComponent({
   name: 'TagSection',
@@ -40,9 +41,7 @@ export default defineComponent({
   },
   computed: {
     getImgUrl() {
-      const imgSrc = 'slider-arrows.svg';
-      const assetFolder = require.context('@/assets/');
-      return assetFolder('./' + imgSrc);
+      return resolveAssetUrl('slider-arrows.svg');
     },
   },
 });

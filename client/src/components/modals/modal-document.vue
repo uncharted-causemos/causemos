@@ -59,7 +59,7 @@
 </template>
 
 <script>
-import Modal from '@/components/modals/modal';
+import Modal from '@/components/modals/modal.vue';
 import { mapActions } from 'vuex';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';

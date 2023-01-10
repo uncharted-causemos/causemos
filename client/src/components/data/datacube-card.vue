@@ -2318,7 +2318,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import '~styles/variables';
-@import '~flatpickr/dist/flatpickr.css';
+@import 'flatpickr/dist/flatpickr.css';
 
 $cardSpacing: 10px;
 

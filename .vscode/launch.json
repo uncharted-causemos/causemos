@@ -1,16 +1,35 @@
 {
+  // For more information, see: https://code.visualstudio.com/docs/editor/debugging#_launch-configurations
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "chrome",
+      "type": "node",
       "request": "launch",
-      "name": "vuejs: chrome",
-      "url": "http://localhost:8080",
-      "webRoot": "${workspaceFolder}/client/src",
-      "breakOnLoad": true,
-      "sourceMapPathOverrides": {
-        "webpack:///src/*": "${webRoot}/*"
+      "name": "Client",
+      "runtimeExecutable": "yarn",
+      "cwd": "${workspaceFolder}/client",
+      "runtimeArgs": ["dev"],
+      // Run vite dev server using `yarn dev` and then luanch chrome for debugging
+      "serverReadyAction": {
+        "action": "debugWithChrome",
+        "pattern": "Local:[ ]+http://127.0.0.1:([0-9]+)",
+        "uriFormat": "http://localhost:%s"
       }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Server",
+      "runtimeExecutable": "yarn",
+      "cwd": "${workspaceFolder}/server",
+      "runtimeArgs": ["dev"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Server/Client",
+      "configurations": ["Server", "Client"]
     }
   ]
 }

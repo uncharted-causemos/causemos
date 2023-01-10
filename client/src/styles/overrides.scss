@@ -347,7 +347,7 @@ input[type='radio'] {
 // Lex overrides
 //  These need to be global because lex-assistant-box is created directly as a
 //  child of the <body> element, so :deep scoped styles can't access it.
-@import '~@uncharted.software/lex/dist/lex.scss';
+@import '@uncharted.software/lex/dist/lex.scss';
 
 // Need `div.lex-assistant-box` instead of just `.lex-assistant-box` to have
 //  higher specificity than the default lex styles.

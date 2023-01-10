@@ -12,12 +12,12 @@ import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
-import DatacubeDrilldown from '@/views/DatacubeDrilldown';
-import CompAnalysis from '@/views/CompAnalysis';
-import ModelPublisher from '@/views/ModelPublisher';
-import IndicatorPublisher from '@/views/IndicatorPublisher';
-import NodeDataDrilldown from '@/views/NodeDataDrilldown';
-import NodeDrilldown from '@/views/NodeDrilldown';
+import DatacubeDrilldown from '@/views/DatacubeDrilldown.vue';
+import CompAnalysis from '@/views/CompAnalysis.vue';
+import ModelPublisher from '@/views/ModelPublisher.vue';
+import IndicatorPublisher from '@/views/IndicatorPublisher.vue';
+import NodeDataDrilldown from '@/views/NodeDataDrilldown.vue';
+import NodeDrilldown from '@/views/NodeDrilldown.vue';
 import NodeDataExplorer from '@/views/NodeDataExplorer.vue';
 import PrefectFlowLogs from '@/views/PrefectFlowLogs.vue';
 import qs from 'qs';
@@ -161,6 +161,6 @@ export default createRouter({
     const result = qs.stringify(query);
     return result ? `${result}` : '';
   },
-  history: createWebHashHistory(process.env.BASE_URL),
+  history: createWebHashHistory(),
   routes: routes,
 });

@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, onMounted, watch, ref } from 'vue';
+import { onMounted, watch, ref } from 'vue';
 import useVisibleElementDetector from '@/services/composables/useVisibleElementDetector';
 
 const props = defineProps<{ src: string }>();

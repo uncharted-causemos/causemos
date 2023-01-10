@@ -56,9 +56,9 @@ import { mapGetters } from 'vuex';
 import { TYPE } from 'vue-toastification';
 
 import { updateStatementsFactorGrounding, trackCurations } from '@/services/curation-service';
-import ModalDocument from '@/components/modals/modal-document';
-import MessageDisplay from '@/components/widgets/message-display';
-import EvidenceGroup from '@/components/drilldown-panel/evidence-group';
+import ModalDocument from '@/components/modals/modal-document.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
+import EvidenceGroup from '@/components/drilldown-panel/evidence-group.vue';
 import aggregationsUtil from '@/utils/aggregations-util';
 import messagesUtil from '@/utils/messages-util';
 import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header.vue';

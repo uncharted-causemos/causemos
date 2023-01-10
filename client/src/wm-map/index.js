@@ -1,10 +1,10 @@
-import MapMain from './map/wm-map';
-import MapGeojson from './layer/wm-map-geojson';
-import MapVector from './layer/wm-map-vector';
-import MapImage from './layer/wm-map-image';
-import MapSelectbox from './ui/wm-map-selectbox';
-import MapBoundingBox from './ui/wm-map-boundingbox';
-import MapPopup from './ui/wm-map-popup';
+import MapMain from './map/wm-map.vue';
+import MapGeojson from './layer/wm-map-geojson.vue';
+import MapVector from './layer/wm-map-vector.vue';
+import MapImage from './layer/wm-map-image.vue';
+import MapSelectbox from './ui/wm-map-selectbox.vue';
+import MapBoundingBox from './ui/wm-map-boundingbox.vue';
+import MapPopup from './ui/wm-map-popup.vue';
 
 export const WmMap = MapMain;
 export const WmMapGeojson = MapGeojson;
