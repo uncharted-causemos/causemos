@@ -1,5 +1,10 @@
 import API from '@/api/api';
-import { AnalysisItem, DataAnalysisState, RegionRankingItemStates } from '@/types/Analysis';
+import {
+  AnalysisItem,
+  DataAnalysisState,
+  RegionRankingItemStates,
+  IndexState as IndexAnalysisState,
+} from '@/types/Analysis';
 import {
   BinningOptions,
   ComparativeAnalysisMode,
@@ -12,7 +17,7 @@ import _ from 'lodash';
  * Create a new DataAnalysisState object with each of its fields initialized to
  * a sensible default.
  */
-export const createAnalysisObject = (analysisItems?: AnalysisItem[]): DataAnalysisState => {
+export const createDataAnalysisObject = (analysisItems?: AnalysisItem[]): DataAnalysisState => {
   return {
     analysisItems: analysisItems ?? [],
     activeTab: ComparativeAnalysisMode.List,
@@ -26,6 +31,16 @@ export const createAnalysisObject = (analysisItems?: AnalysisItem[]): DataAnalys
     areRegionRankingRowsNormalized: false,
     selectedTimestamp: null,
     highlightedRegionId: '',
+  };
+};
+
+export const createIndexAnalysisObject = (): IndexAnalysisState => {
+  return {
+    index: {
+      type: 'OutputIndex',
+      name: 'Overall priority',
+      inputs: [],
+    },
   };
 };
 
@@ -69,7 +84,7 @@ export const createAnalysis = async (
   title: string,
   description: string,
   projectId: string,
-  state: DataAnalysisState
+  state: DataAnalysisState | IndexAnalysisState
 ) => {
   const result = await API.post(
     'analyses',

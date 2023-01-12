@@ -75,14 +75,14 @@ export default defineComponent({
 
     const onDuplicate = (newName: string) => {
       duplicateAnalysis(analysisId.value, newName)
-        .then((newId) => {
+        .then(({ id }) => {
           toast(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
           store.dispatch('app/setAnalysisName', newName);
           router.push({
             name: 'dataComparative',
             params: {
               project: project.value,
-              analysisId: newId,
+              analysisId: id,
               projectType: ProjectType.Analysis,
             },
           });

@@ -55,7 +55,7 @@ export default defineComponent({
     const project = computed(() => store.getters['app/project']);
     const projectMetadata = computed(() => store.getters['app/projectMetadata']);
     const route = useRoute();
-    const quantitativeAnalysisId = computed(() => route.params.analysisId as string);
+    const analysisId = computed(() => route.params.analysisId as string);
     const analysisName = computed(() => store.getters['app/analysisName']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
 
@@ -84,7 +84,7 @@ export default defineComponent({
         name: 'dataComparative',
         params: {
           project: project.value,
-          analysisId: quantitativeAnalysisId.value,
+          analysisId: analysisId.value,
           projectType: ProjectType.Analysis,
         },
       },
@@ -97,6 +97,18 @@ export default defineComponent({
         params: {
           project: project.value,
           currentCAG: currentCAG.value,
+          projectType: ProjectType.Analysis,
+        },
+      },
+    }));
+    const indexStructureItem = computed(() => ({
+      text: analysisName.value,
+      icon: 'fa-book',
+      route: {
+        name: 'indexStructure',
+        params: {
+          project: project.value,
+          analysisId: analysisId.value,
           projectType: ProjectType.Analysis,
         },
       },
@@ -124,6 +136,7 @@ export default defineComponent({
       ],
       qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
+      indexStructure: [analysisProjectItem.value, indexStructureItem.value],
       nodeDrilldown: [
         analysisProjectItem.value,
         qualitativeAnalysisItem.value,

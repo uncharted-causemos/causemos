@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { DataSpaceDataState } from '@/types/Insight';
 import {
   calculateResetRegionRankingWeights,
-  createAnalysisObject,
+  createDataAnalysisObject,
   didSelectedItemsChange,
 } from '../analysis-service-new';
 import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
@@ -21,7 +21,7 @@ const saveState = _.debounce((analysisId, state: DataAnalysisState) => {
 }, SYNC_DELAY_MS);
 
 export function useDataAnalysis(analysisId: Ref<string>) {
-  const analysisState = ref<DataAnalysisState>(createAnalysisObject());
+  const analysisState = ref<DataAnalysisState>(createDataAnalysisObject());
   // Whenever analysisId changes, fetch the state for that analysis
   watch(
     [analysisId],
