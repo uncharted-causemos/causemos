@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed, watch, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
@@ -30,10 +30,18 @@ const {
   analysisName,
   // analysisState,
   indexTree,
+  refresh,
 } = useIndexAnalysis(analysisId);
 
 // Set analysis name on the navbar
-watch([analysisName], () => store.dispatch('app/setAnalysisName', analysisName.value));
+const analysisNameOnNavbar = computed(() => store.getters.analysisName);
+const setAnalysisNameOnNavbar = () => {
+  // If analysis name on navbar and the name from analysis state doesn't match, refetch analysis state to sync up
+  if (analysisNameOnNavbar.value !== analysisName.value) refresh();
+  store.dispatch('app/setAnalysisName', analysisName.value);
+};
+onMounted(setAnalysisNameOnNavbar);
+watch([analysisName], setAnalysisNameOnNavbar);
 
 const handleAddDropdownChange = (option: DropdownOptions) => {
   switch (option) {

@@ -100,13 +100,14 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
   const analysisName = ref('');
   const analysisState = ref<IndexAnalysisState>(createIndexAnalysisObject());
 
-  // Whenever analysisId changes, fetch the state for that analysis
-  watch(analysisId, async () => {
+  const fetchAnalysis = async () => {
     if (!analysisId.value) return;
     const analysis = await getAnalysis(analysisId.value);
     analysisName.value = analysis.title;
     analysisState.value = analysis.state || {};
-  });
+  };
+  // Whenever component is mounted or analysisId changes, fetch the state for that analysis
+  watch(analysisId, fetchAnalysis);
 
   // const indexTree = computed(() => analysisState.value.index)
   const indexTree = computed(() => mockData);
@@ -115,5 +116,6 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     analysisName,
     analysisState,
     indexTree,
+    refresh: fetchAnalysis,
   };
 }
