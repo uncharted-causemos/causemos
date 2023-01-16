@@ -35,9 +35,9 @@ const {
 
 // Set analysis name on the navbar
 const analysisNameOnNavbar = computed(() => store.getters.analysisName);
-const setAnalysisNameOnNavbar = () => {
+const setAnalysisNameOnNavbar = async () => {
   // If analysis name on navbar and the name from analysis state doesn't match, refetch analysis state to sync up
-  if (analysisNameOnNavbar.value !== analysisName.value) refresh();
+  if (analysisNameOnNavbar.value !== analysisName.value) await refresh();
   store.dispatch('app/setAnalysisName', analysisName.value);
 };
 onMounted(setAnalysisNameOnNavbar);
