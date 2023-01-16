@@ -4,9 +4,9 @@
     <div>{{ nameText }}</div>
     <div>{{ inputText }}</div>
 
-    <div style="color: grey">
+    <!-- <div style="color: grey">
       {{ JSON.stringify(props.data) }}
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -42,7 +42,7 @@ const inputText = computed(() => {
   const child = childNodes.value[0];
   switch (numInputs) {
     case 0:
-      return 'No inputs.';
+      return props.data.type === 'Dataset' ? (props.data as Dataset).datasetName : 'No inputs.';
     case 1:
       return (child as IndexNode).type === 'Dataset' ? (child as Dataset).datasetName : '1 input.';
     default:
@@ -59,7 +59,6 @@ const inputText = computed(() => {
   align-items: flex-start;
   padding: 0px;
 
-  position: absolute;
   background: #ffffff;
   width: 240px;
   height: 67px;

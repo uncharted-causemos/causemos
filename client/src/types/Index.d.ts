@@ -28,8 +28,8 @@ export interface OutputIndex extends IndexNode {
   inputs: (Dataset | Index)[];
 }
 
-// Mock data
-export const mockData: OutputIndex = {
+// Example data
+const _mockData: OutputIndex = {
   type: 'OutputIndex',
   name: 'Overall Priority',
   inputs: [

@@ -38,7 +38,7 @@ export const createIndexAnalysisObject = (): IndexAnalysisState => {
   return {
     index: {
       type: 'OutputIndex',
-      name: 'Overall priority',
+      name: '',
       inputs: [],
     },
   };
