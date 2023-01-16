@@ -181,10 +181,10 @@ import { computed } from '@vue/reactivity';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { sortItem, modifiedAtSorter, titleSorter, SortOptions } from '@/utils/sort/sort-items';
 import { TYPE } from 'vue-toastification';
+import { isIndexAnalysisState } from '@/utils/insight-util';
 
 const toAnalysisObject = (analysis) => {
-  const isIndexAnalysis = !!analysis.state.index;
-  const type = isIndexAnalysis ? 'index' : 'quantitative';
+  const type = isIndexAnalysisState(analysis.state) ? 'index' : 'quantitative';
   const item = {
     analysisId: analysis.id,
     previewImageSrc: analysis.thumbnail_source || null,

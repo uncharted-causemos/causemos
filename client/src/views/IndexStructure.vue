@@ -1,5 +1,5 @@
 <template>
-  <!-- Note with teleport, HMR doesn't work -->
+  <!-- Note with teleport, Vite's HMR doesn't work. As a work around, try commenting out the teleport usage temporally-->
   <teleport to="#navbar-trailing-teleport-destination">
     <analysis-options-button :analysis-id="analysisId" />
   </teleport>

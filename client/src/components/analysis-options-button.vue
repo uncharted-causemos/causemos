@@ -17,6 +17,7 @@ import { ANALYSIS } from '@/utils/messages-util';
 import router from '@/router';
 import { ProjectType } from '@/types/Enums';
 import AnalysisOptionsButtonWidget from '@/components/widgets/analysis-options-button-widget.vue';
+import { isIndexAnalysisState } from '@/utils/insight-util';
 
 export default defineComponent({
   components: { AnalysisOptionsButtonWidget },
@@ -76,11 +77,10 @@ export default defineComponent({
     const onDuplicate = (newName: string) => {
       duplicateAnalysis(analysisId.value, newName)
         .then((analysis) => {
-          const isIndexAnalysis = !!analysis.state?.index;
           toast(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
           store.dispatch('app/setAnalysisName', newName);
           router.push({
-            name: isIndexAnalysis ? 'indexStructure' : 'dataComparative',
+            name: isIndexAnalysisState(analysis.state) ? 'indexStructure' : 'dataComparative',
             params: {
               project: project.value,
               analysisId: analysis.id,
