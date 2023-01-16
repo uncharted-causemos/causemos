@@ -1,7 +1,59 @@
 <template>
-  <div class="index-structure-view-container">test view</div>
+  <!-- Note with teleport, HMR doesn't work -->
+  <teleport to="#navbar-trailing-teleport-destination">
+    <analysis-options-button :analysis-id="analysisId" />
+  </teleport>
+  <div class="index-structure-view-container content-full">
+    <div class="flex-col h-100">
+      <IndexActionBar @addDropdownChange="handleAddDropdownChange" />
+      <IndexTreePane class="flex-grow" :index-tree="indexTree" />
+    </div>
+    <IndexDrilldownPanel />
+  </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { computed, watch } from 'vue';
+import { useStore } from 'vuex';
+import { useRoute } from 'vue-router';
+import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
+import IndexActionBar, { DropdownOptions } from '@/components/index-structure/index-action-bar.vue';
+import IndexDrilldownPanel from '@/components/index-structure/index-drilldown-panel.vue';
+import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
+import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 
-<style lang="scss" scoped></style>
+const store = useStore();
+const route = useRoute();
+
+const analysisId = computed(() => route.params.analysisId as string);
+const {
+  analysisName,
+  // analysisState,
+  indexTree,
+} = useIndexAnalysis(analysisId);
+
+// Set analysis name on the navbar
+watch([analysisName], () => store.dispatch('app/setAnalysisName', analysisName.value));
+
+const handleAddDropdownChange = (option: DropdownOptions) => {
+  switch (option) {
+    case 'Dataset':
+      // Not yet implemented
+      break;
+    case 'Index':
+      // Not yet implemented
+      break;
+    default:
+      break;
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import '~styles/variables';
+
+.index-structure-view-container {
+  display: flex;
+  flex-direction: column;
+}
+</style>

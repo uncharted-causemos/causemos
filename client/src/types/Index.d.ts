@@ -1,7 +1,14 @@
+export type IndexNodeType = 'Index' | 'OutputIndex' | 'Dataset';
 // Dataset is leaf node
-export interface Dataset {
-  type: 'Dataset';
+
+export interface IndexNode {
+  type: IndexNodeType;
   name: string;
+  weight?: number;
+  inputs?: IndexNode[];
+}
+export interface Dataset extends IndexNode {
+  type: 'Dataset';
   weight: number;
   datasetId: string; // or datacubeId
   datasetName: string;
@@ -10,16 +17,14 @@ export interface Dataset {
   // And other metadata properties as needed
 }
 
-export interface Index {
+export interface Index extends IndexNode {
   type: 'Index';
-  name: string;
   weight: number;
   inputs: Dataset[];
 }
 
-export interface OutputIndex {
+export interface OutputIndex extends IndexNode {
   type: 'OutputIndex';
-  name: string;
   inputs: (Dataset | Index)[];
 }
 

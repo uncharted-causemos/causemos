@@ -3,7 +3,7 @@ import {
   AnalysisItem,
   DataAnalysisState,
   RegionRankingItemStates,
-  IndexState as IndexAnalysisState,
+  IndexAnalysisState,
 } from '@/types/Analysis';
 import {
   BinningOptions,

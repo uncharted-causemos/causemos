@@ -56,6 +56,6 @@ export interface DataAnalysisState {
   regionRankingItemStates: RegionRankingItemStates;
 }
 
-export interface IndexState {
+export interface IndexAnalysisState {
   index: OutputIndex;
 }
