@@ -5,11 +5,13 @@ export interface IndexNode {
   type: IndexNodeType;
   name: string;
   weight?: number;
+  weightAuto?: boolean;
   inputs?: IndexNode[];
 }
 export interface Dataset extends IndexNode {
   type: 'Dataset';
   weight: number;
+  weightAuto?: boolean;
   datasetId: string; // or datacubeId
   datasetName: string;
   isInverted: boolean;
@@ -20,7 +22,8 @@ export interface Dataset extends IndexNode {
 export interface Index extends IndexNode {
   type: 'Index';
   weight: number;
-  inputs: Dataset[];
+  weightAuto?: boolean;
+  inputs: (Dataset | Index)[];
 }
 
 export interface OutputIndex extends IndexNode {
