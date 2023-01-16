@@ -6,19 +6,23 @@ import { createIndexAnalysisObject } from '../analysis-service-new';
 
 // Mock data
 import { OutputIndex } from '@/types/Index';
+import { IndexNodeType } from '@/types/Enums';
+
 export const mockData: OutputIndex = {
-  type: 'OutputIndex',
+  type: IndexNodeType.OutputIndex,
   name: 'Overall Priority',
   inputs: [
     {
-      type: 'Index',
+      type: IndexNodeType.Index,
       name: 'Highest risk of drought',
       weight: 20,
+      isWeightUserSpecified: true,
       inputs: [
         {
-          type: 'Dataset',
+          type: IndexNodeType.Dataset,
           name: 'Greatest Recent Temperature Increase',
           weight: 100,
+          isWeightUserSpecified: true,
           datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
           datasetName: 'Palmer Drought Severity Index (PDSI)',
           isInverted: false,
@@ -27,23 +31,26 @@ export const mockData: OutputIndex = {
       ],
     },
     {
-      type: 'Index',
+      type: IndexNodeType.Index,
       name: 'Highest risk of conflict',
       weight: 10,
+      isWeightUserSpecified: true,
       inputs: [
         {
-          type: 'Dataset',
+          type: IndexNodeType.Dataset,
           name: 'Greatest Recent Temperature Increase',
           weight: 90,
+          isWeightUserSpecified: true,
           datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
           datasetName: 'Palmer Drought Severity Index (PDSI)',
           isInverted: false,
           source: 'TerraClimate',
         },
         {
-          type: 'Dataset',
+          type: IndexNodeType.Dataset,
           name: 'Displaced Persons Index',
           weight: 10,
+          isWeightUserSpecified: true,
           datasetId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
           datasetName: 'Displaced Persons Index',
           isInverted: false,
@@ -52,32 +59,36 @@ export const mockData: OutputIndex = {
       ],
     },
     {
-      type: 'Dataset',
+      type: IndexNodeType.Dataset,
       name: 'Highest Risk of Flooding',
       weight: 10,
+      isWeightUserSpecified: true,
       datasetId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
       datasetName: 'flooding dataset',
       isInverted: true,
       source: 'XY University',
     },
     {
-      type: 'Index',
+      type: IndexNodeType.Index,
       name: 'Largest vulnerable population',
       weight: 60,
+      isWeightUserSpecified: true,
       inputs: [
         {
-          type: 'Dataset',
+          type: IndexNodeType.Dataset,
           name: 'Highest poverty index ranking',
           weight: 80,
+          isWeightUserSpecified: true,
           datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
           datasetName: 'Poverty indicator index',
           isInverted: false,
           source: 'UN',
         },
         {
-          type: 'Dataset',
+          type: IndexNodeType.Dataset,
           name: 'World Population By Country',
           weight: 20,
+          isWeightUserSpecified: true,
           datasetId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
           datasetName: 'World Population By Country',
           isInverted: false,

@@ -3,12 +3,12 @@
   <teleport to="#navbar-trailing-teleport-destination">
     <analysis-options-button :analysis-id="analysisId" />
   </teleport>
-  <div class="index-structure-view-container content-full">
-    <div class="flex-col h-100">
+  <div class="index-structure-view-container content-full flex">
+    <div class="flex-col h-100 flex-grow w-0">
       <IndexActionBar @addDropdownChange="handleAddDropdownChange" />
       <IndexTreePane class="flex-grow" :index-tree="indexTree" />
     </div>
-    <IndexDrilldownPanel />
+    <IndexDrilldownPanel class="index-drilldown-panel" />
   </div>
 </template>
 
@@ -45,10 +45,10 @@ watch([analysisName], setAnalysisNameOnNavbar);
 
 const handleAddDropdownChange = (option: DropdownOptions) => {
   switch (option) {
-    case 'Dataset':
+    case DropdownOptions.Dataset:
       // Not yet implemented
       break;
-    case 'Index':
+    case DropdownOptions.Index:
       // Not yet implemented
       break;
     default:
@@ -61,7 +61,9 @@ const handleAddDropdownChange = (option: DropdownOptions) => {
 @import '~styles/variables';
 
 .index-structure-view-container {
-  display: flex;
-  flex-direction: column;
+  .index-drilldown-panel {
+    width: 30%;
+    max-width: 767px;
+  }
 }
 </style>

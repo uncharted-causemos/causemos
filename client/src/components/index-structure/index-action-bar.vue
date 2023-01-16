@@ -1,5 +1,5 @@
 <template>
-  <div class="index-action-bar">
+  <div class="index-action-bar-container">
     <DropdownButton
       :is-dropdown-left-aligned="true"
       :items="DROPDOWN_OPTIONS"
@@ -11,8 +11,10 @@
 
 <script lang="ts">
 import DropdownButton from '@/components/dropdown-button.vue';
-const DROPDOWN_OPTIONS = ['Dataset', 'Index'] as const;
-export type DropdownOptions = typeof DROPDOWN_OPTIONS[number];
+export enum DropdownOptions {
+  Dataset = 'Dataset',
+  Index = 'Index',
+}
 </script>
 <script setup lang="ts">
 const emit = defineEmits<{
@@ -25,7 +27,7 @@ const handleDropdownSelection = (option: DropdownOptions) => {
 </script>
 
 <style scoped lang="scss">
-.index-action-bar {
+.index-action-bar-container {
   display: flex;
   flex-direction: row;
   align-items: center;

@@ -1,5 +1,5 @@
 <template>
-  <div class="index-tree-pane">
+  <div class="index-tree-pane-container">
     <div class="flex h-100">
       <div class="node-col">
         <IndexTreeNode v-for="(node, index) in datasetNodes" :key="index" :data="node" />
@@ -16,7 +16,8 @@
 
 <script setup lang="ts">
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
-import { OutputIndex, Dataset } from '@/types/Index';
+import { IndexNodeType } from '@/types/Enums';
+import { OutputIndex } from '@/types/Index';
 import { computed } from 'vue';
 
 // This component is being implemented
@@ -33,8 +34,8 @@ const outputChildren = computed(() => {
 const datasetNodes = computed(() => {
   const nodes = [];
   for (const node of outputChildren.value) {
-    if (node.type === 'Index') {
-      nodes.push(...(node.inputs as Dataset[]));
+    if (node.type === IndexNodeType.Index) {
+      nodes.push(...node.inputs);
     }
   }
   return nodes;
@@ -42,7 +43,7 @@ const datasetNodes = computed(() => {
 </script>
 
 <style scoped lang="scss">
-.index-tree-pane {
+.index-tree-pane-container {
   padding: 40px 88px;
   .node-col {
     width: 400px;

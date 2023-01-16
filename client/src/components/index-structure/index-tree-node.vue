@@ -1,5 +1,5 @@
 <template>
-  <div class="index-tree-node">
+  <div class="index-tree-node-container">
     <div>{{ typeText }}</div>
     <div>{{ nameText }}</div>
     <div>{{ inputText }}</div>
@@ -13,20 +13,23 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Dataset, IndexNode } from '@/types/Index';
+import { IndexNodeType } from '@/types/Enums';
 
 interface Props {
   data: IndexNode;
 }
 const props = defineProps<Props>();
-const childNodes = computed(() => props.data.inputs || []);
+const childNodes = computed(() =>
+  props.data.type === IndexNodeType.Dataset ? [] : props.data.inputs
+);
 
 const typeText = computed(() => {
   switch (props.data.type) {
-    case 'OutputIndex':
+    case IndexNodeType.OutputIndex:
       return 'Output Index';
-    case 'Index':
+    case IndexNodeType.Index:
       return 'Index';
-    case 'Dataset':
+    case IndexNodeType.Dataset:
       return 'Dataset';
     default:
       return '';
@@ -42,9 +45,13 @@ const inputText = computed(() => {
   const child = childNodes.value[0];
   switch (numInputs) {
     case 0:
-      return props.data.type === 'Dataset' ? (props.data as Dataset).datasetName : 'No inputs.';
+      return props.data.type === IndexNodeType.Dataset
+        ? (props.data as Dataset).datasetName
+        : 'No inputs.';
     case 1:
-      return (child as IndexNode).type === 'Dataset' ? (child as Dataset).datasetName : '1 input.';
+      return (child as IndexNode).type === IndexNodeType.Dataset
+        ? (child as Dataset).datasetName
+        : '1 input.';
     default:
       return `Combination of ${numInputs} inputs.`;
   }
@@ -53,7 +60,7 @@ const inputText = computed(() => {
 
 <style scoped lang="scss">
 @import '~styles/variables';
-.index-tree-node {
+.index-tree-node-container {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
