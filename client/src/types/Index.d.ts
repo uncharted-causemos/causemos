@@ -20,7 +20,7 @@ export interface Index extends WeightedNode {
   inputs: (Dataset | Index)[];
 }
 
-export interface OutputIndex extends Node {
+export interface OutputIndex {
   type: IndexNodeType.OutputIndex;
   name: string;
   inputs: (Dataset | Index)[];

@@ -8,6 +8,7 @@ import {
 import {
   BinningOptions,
   ComparativeAnalysisMode,
+  IndexNodeType,
   ProjectType,
   RegionRankingCompositionType,
 } from '@/types/Enums';
@@ -37,7 +38,7 @@ export const createDataAnalysisObject = (analysisItems?: AnalysisItem[]): DataAn
 export const createIndexAnalysisObject = (): IndexAnalysisState => {
   return {
     index: {
-      type: 'OutputIndex',
+      type: IndexNodeType.OutputIndex,
       name: '',
       inputs: [],
     },
