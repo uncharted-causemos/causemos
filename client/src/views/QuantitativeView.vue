@@ -83,7 +83,7 @@ import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service
 import {
   calculateResetRegionRankingWeights,
   createAnalysis,
-  createAnalysisObject,
+  createDataAnalysisObject,
 } from '@/services/analysis-service-new';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import { ProjectType } from '@/types/Enums';
@@ -644,7 +644,7 @@ export default defineComponent({
             'analysis from CAG: ' + this.modelSummary?.name,
             '',
             this.project,
-            createAnalysisObject(analysisItems)
+            createDataAnalysisObject(analysisItems)
           );
           // save the created analysis id with the CAG
           await modelService.updateModelMetadata(this.currentCAG, {

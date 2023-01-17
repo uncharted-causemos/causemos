@@ -13,19 +13,9 @@
         <div>{{ analysis.subtitle }}</div>
         <div class="description">{{ analysis.description }}</div>
       </div>
-      <div class="project-card-column">
-        <span class="instance-header">{{
-          analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'
-        }}</span>
-        <div>
-          {{ analysis.type === 'quantitative' ? analysis.datacubesCount : analysis.nodeCount }}
-        </div>
-      </div>
-      <div class="project-card-column">
-        <span class="instance-header">{{
-          analysis.type === 'quantitative' ? '' : 'Relations'
-        }}</span>
-        <div>{{ analysis.type === 'quantitative' ? '' : analysis.edgeCount }}</div>
+      <div v-for="c in countColumns" :key="c.header" class="project-card-column">
+        <span class="instance-header">{{ c.header }}</span>
+        <div>{{ c.value }}</div>
       </div>
       <options-button :wider-dropdown-options="true" :dropdown-below="true">
         <template #content>
@@ -66,7 +56,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, PropType } from 'vue';
+import { defineComponent, ref, PropType, computed } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
@@ -83,6 +73,9 @@ interface AnalysisOverviewCard {
   subtitle: string;
   description: string;
   type: string; // e.g., qualitative, quantitative
+  datacubesCount?: number;
+  edgeCount?: number;
+  nodeCount?: number;
 }
 
 /**
@@ -108,13 +101,36 @@ export default defineComponent({
       project: 'app/project',
     }),
   },
-  setup() {
+  setup(props) {
     const showModal = ref(false);
     const showMore = ref(false);
+
+    const countColumns = computed(() => {
+      switch (props.analysis.type) {
+        case 'quantitative':
+          return [
+            { header: 'Datacubes', value: props.analysis.datacubesCount },
+            { header: '', value: '' },
+          ];
+        case 'qualitative':
+          return [
+            { header: 'Concepts', value: props.analysis.nodeCount },
+            { header: 'Relations', value: props.analysis.edgeCount },
+          ];
+        case 'index':
+          return [
+            { header: '', value: '' },
+            { header: '', value: '' },
+          ];
+        default:
+          return [];
+      }
+    });
 
     return {
       showModal,
       showMore,
+      countColumns,
     };
   },
   methods: {

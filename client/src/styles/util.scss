@@ -63,6 +63,11 @@
   flex-direction: column;
 }
 
+.flex-grow,
 .flex-grow-1 {
   flex-grow: 1;
+}
+
+.content-full {
+  height: $content-full-height;
 }

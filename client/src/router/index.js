@@ -8,6 +8,7 @@ import NewDomainProject from '@/views/NewDomainProject.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
 import GraphExperiment from '@/views/GraphExperiment.vue';
 import QualitativeView from '@/views/QualitativeView.vue';
+import IndexStructure from '@/views/IndexStructure.vue';
 import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
@@ -84,6 +85,11 @@ const routes = [
     path: '/:projectType/:project/data/:analysisId/explorer',
     name: 'dataExplorer',
     component: DataExplorer,
+  },
+  {
+    path: '/:projectType/:project/index-structure/:analysisId',
+    name: 'indexStructure',
+    component: IndexStructure,
   },
   {
     path: '/:projectType/:project/model-publishing-experiment',

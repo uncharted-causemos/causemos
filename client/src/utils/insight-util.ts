@@ -31,7 +31,7 @@ import {
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
 import { DataTransform } from '@/types/Enums';
-import { DataAnalysisState } from '@/types/Analysis';
+import { DataAnalysisState, IndexAnalysisState } from '@/types/Analysis';
 
 function getSourceUrlForExport(
   insightURL: string,
@@ -101,6 +101,12 @@ export function isModelsSpaceDataState(
 
 export function isDataAnalysisState(dataState: DataState): dataState is DataAnalysisState {
   return (dataState as DataAnalysisState).analysisItems !== undefined;
+}
+
+export function isIndexAnalysisState(
+  dataState: DataState | undefined
+): dataState is IndexAnalysisState {
+  return (dataState as IndexAnalysisState | undefined)?.index !== undefined;
 }
 
 function jumpToInsightContext(insight: Insight, currentURL: string) {

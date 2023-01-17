@@ -85,7 +85,8 @@ export const duplicateAnalysis = async (analysisId, newName = '') => {
     original.project_id,
     original.state
   );
-  return id;
+  const duplicate = await getAnalysis(id);
+  return duplicate;
 };
 
 /**

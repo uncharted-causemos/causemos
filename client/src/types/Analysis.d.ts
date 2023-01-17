@@ -1,5 +1,6 @@
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import { BinningOptions, RegionRankingCompositionType } from './Enums';
+import { OutputIndex } from './Index';
 
 export interface CachedDatacubeMetadata {
   featureName: string;
@@ -53,4 +54,8 @@ export interface DataAnalysisState {
   selectedTimestamp: number | null;
   highlightedRegionId: string;
   regionRankingItemStates: RegionRankingItemStates;
+}
+
+export interface IndexAnalysisState {
+  index: OutputIndex;
 }

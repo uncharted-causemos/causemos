@@ -223,7 +223,7 @@ import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-compa
 import DatacubeRegionRankingCompositeCard from '@/components/region-ranking/datacube-region-ranking-composite-card.vue';
 import _ from 'lodash';
 import { Insight } from '@/types/Insight';
-import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
+import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';

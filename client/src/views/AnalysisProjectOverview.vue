@@ -99,6 +99,15 @@
           />
           <div class="button-container">
             <button
+              v-tooltip.top-center="'Create a new Index'"
+              type="button"
+              class="btn btn-call-to-action"
+              @click="onCreateIndexAnalysis"
+            >
+              <i class="fa fa-plus" />
+              Create Index
+            </button>
+            <button
               v-tooltip.top-center="'Create a new Qualitative Model'"
               type="button"
               class="btn btn-call-to-action"
@@ -149,7 +158,11 @@ import {
   updateAnalysis,
   duplicateAnalysis,
 } from '@/services/analysis-service';
-import { createAnalysis, createAnalysisObject } from '@/services/analysis-service-new';
+import {
+  createAnalysis,
+  createDataAnalysisObject,
+  createIndexAnalysisObject,
+} from '@/services/analysis-service-new';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
 import ModalUploadDocument from '@/components/modals/modal-upload-document.vue';
@@ -168,16 +181,25 @@ import { computed } from '@vue/reactivity';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { sortItem, modifiedAtSorter, titleSorter, SortOptions } from '@/utils/sort/sort-items';
 import { TYPE } from 'vue-toastification';
+import { isIndexAnalysisState } from '@/utils/insight-util';
 
-const toQuantitative = (analysis) => ({
-  analysisId: analysis.id,
-  previewImageSrc: analysis.thumbnail_source || null,
-  title: analysis.title,
-  subtitle: dateFormatter(analysis.modified_at, 'MMM DD, YYYY'),
-  description: analysis.description || '',
-  type: 'quantitative',
-  modified_at: analysis.modified_at,
-});
+const toAnalysisObject = (analysis) => {
+  const type = isIndexAnalysisState(analysis.state) ? 'index' : 'quantitative';
+  const item = {
+    analysisId: analysis.id,
+    previewImageSrc: analysis.thumbnail_source || null,
+    title: analysis.title,
+    subtitle: dateFormatter(analysis.modified_at, 'MMM DD, YYYY'),
+    description: analysis.description || '',
+    type,
+    modified_at: analysis.modified_at,
+  };
+  if (analysis.state?.analysisItems) {
+    item.analysisItemIds = analysis.state.analysisItems.map((dc) => dc.id);
+    item.datacubesCount = item.analysisItemIds.length;
+  }
+  return item;
+};
 
 const toQualitative = (cag) => ({
   id: cag.id,
@@ -250,6 +272,7 @@ export default defineComponent({
     analyses: [],
     qualitativeAnalyses: [],
     quantitativeAnalyses: [],
+    indexAnalyses: [],
     numDocuments: '-',
     numStatements: '-',
     KBname: '-',
@@ -326,28 +349,16 @@ export default defineComponent({
       const contextIDs = [];
 
       // fetch data space analyses
-      const rawQuantitativeAnalyses = await getAnalysesByProjectId(this.project);
-      this.quantitativeAnalyses = rawQuantitativeAnalyses.map(toQuantitative);
+      const analyses = (await getAnalysesByProjectId(this.project)).map(toAnalysisObject);
 
-      if (this.quantitativeAnalyses.length) {
-        // save context-id(s) for all data-analyses
+      this.indexAnalyses = analyses.filter((a) => a.type === 'index');
 
-        // @REVIEW
-        // the assumption here is that each response in the allRawResponses refers to a specific quantitativeAnalyses
-        // so we could utilize that to update the stats count
-        rawQuantitativeAnalyses.forEach((analysis, indx) => {
-          const analysesState = analysis.state || {};
-          if (analysesState.analysisItems !== undefined) {
-            const analysisContextIDs = analysesState.analysisItems.map((dc) => dc.id);
-            contextIDs.push(...analysisContextIDs);
-            // save the datacube count
-            this.quantitativeAnalyses[indx].datacubesCount = analysisContextIDs.length;
-          } else {
-            // save the datacube count
-            this.quantitativeAnalyses[indx].datacubesCount = 0;
-          }
-        });
-      }
+      this.quantitativeAnalyses = analyses.filter((a) => a.type === 'quantitative');
+
+      // save context-id(s) for all data-analyses
+      this.quantitativeAnalyses.forEach((analysis) => {
+        contextIDs.push(...(analysis.analysisItemsIds || []));
+      });
 
       // knowledge and model space analyses
       this.qualitativeAnalyses = (await modelService.getProjectModels(this.project)).models.map(
@@ -370,7 +381,11 @@ export default defineComponent({
         });
       }
 
-      this.analyses = [...this.quantitativeAnalyses, ...this.qualitativeAnalyses];
+      this.analyses = [
+        ...this.indexAnalyses,
+        ...this.quantitativeAnalyses,
+        ...this.qualitativeAnalyses,
+      ];
 
       // FIXME: setContextId would fetch insights/questions for all datacubes and CAGs in all analyses
       //
@@ -452,10 +467,8 @@ export default defineComponent({
 
       if (analysis.analysisId) {
         try {
-          const newId = await duplicateAnalysis(analysis.analysisId, newName);
-          // FIXME @HACK since duplicateAnalysis() does not return a full object copy
-          const duplicatedAnalysis = toQuantitative({ id: newId, title: newName });
-          this.analyses.unshift(duplicatedAnalysis);
+          const duplicatedAnalysis = await duplicateAnalysis(analysis.analysisId, newName);
+          this.analyses.unshift(toAnalysisObject(duplicatedAnalysis));
           this.toaster(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
         } catch (e) {
           this.toaster(ANALYSIS.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
@@ -506,14 +519,21 @@ export default defineComponent({
         projectType: ProjectType.Analysis,
       };
       let name = '';
-      if (analysis.analysisId) {
-        params.analysisId = analysis.analysisId;
-        name = 'dataComparative';
-      }
-      if (analysis.id) {
-        // cag-id
-        params.currentCAG = analysis.id;
-        name = 'qualitative';
+      switch (analysis.type) {
+        case 'qualitative':
+          params.currentCAG = analysis.id;
+          name = 'qualitative';
+          break;
+        case 'quantitative':
+          params.analysisId = analysis.analysisId;
+          name = 'dataComparative';
+          break;
+        case 'index':
+          params.analysisId = analysis.analysisId;
+          name = 'indexStructure';
+          break;
+        default:
+          break;
       }
       this.$router.push({
         name,
@@ -534,12 +554,28 @@ export default defineComponent({
           });
         });
     },
+    async onCreateIndexAnalysis() {
+      const analysis = await createAnalysis(
+        `untitled at ${dateFormatter(Date.now())}`,
+        '',
+        this.project,
+        createIndexAnalysisObject()
+      );
+      this.$router.push({
+        name: 'indexStructure',
+        params: {
+          project: this.project,
+          analysisId: analysis.id,
+          projectType: ProjectType.Analysis,
+        },
+      });
+    },
     async onCreateDataAnalysis() {
       const analysis = await createAnalysis(
         `untitled at ${dateFormatter(Date.now())}`,
         '',
         this.project,
-        createAnalysisObject()
+        createDataAnalysisObject()
       );
       this.$router.push({
         name: 'dataComparative',
