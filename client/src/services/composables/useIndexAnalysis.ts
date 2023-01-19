@@ -9,16 +9,19 @@ import { OutputIndex } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
 
 export const mockData: OutputIndex = {
+  id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
   type: IndexNodeType.OutputIndex,
   name: 'Overall Priority',
   inputs: [
     {
+      id: '5ad78cb0-b923-48ef-9c1a-31219987ca16',
       type: IndexNodeType.Index,
       name: 'Highest risk of drought',
       weight: 20,
       isWeightUserSpecified: true,
       inputs: [
         {
+          id: 'e547b59f-9287-4991-a817-08ba54a0353c',
           type: IndexNodeType.Dataset,
           name: 'Greatest Recent Temperature Increase',
           weight: 100,
@@ -31,12 +34,14 @@ export const mockData: OutputIndex = {
       ],
     },
     {
+      id: 'd25a7418-3b86-4b2d-bdac-4f6ecb61563c',
       type: IndexNodeType.Index,
       name: 'Highest risk of conflict',
       weight: 10,
       isWeightUserSpecified: true,
       inputs: [
         {
+          id: '0265ae5a-6bec-4335-b879-1ed2f58e9235',
           type: IndexNodeType.Dataset,
           name: 'Greatest Recent Temperature Increase',
           weight: 90,
@@ -47,6 +52,7 @@ export const mockData: OutputIndex = {
           source: 'TerraClimate',
         },
         {
+          id: '05f63ec3-240c-4d6e-b641-b7d2321f8b2e',
           type: IndexNodeType.Dataset,
           name: 'Displaced Persons Index',
           weight: 10,
@@ -59,6 +65,7 @@ export const mockData: OutputIndex = {
       ],
     },
     {
+      id: '761fa7aa-05ea-4e51-bba7-49c37f8d8728',
       type: IndexNodeType.Dataset,
       name: 'Highest Risk of Flooding',
       weight: 10,
@@ -69,12 +76,14 @@ export const mockData: OutputIndex = {
       source: 'XY University',
     },
     {
+      id: '6db6284d-7879-4735-a460-5f2b273c0bf9',
       type: IndexNodeType.Index,
       name: 'Largest vulnerable population',
       weight: 60,
       isWeightUserSpecified: true,
       inputs: [
         {
+          id: '16caf563-548f-4e11-a488-a900f0d01c3b',
           type: IndexNodeType.Dataset,
           name: 'Highest poverty index ranking',
           weight: 80,
@@ -85,6 +94,7 @@ export const mockData: OutputIndex = {
           source: 'UN',
         },
         {
+          id: 'cd24e111-b186-4eaa-8885-94bc44920cb1',
           type: IndexNodeType.Dataset,
           name: 'World Population By Country',
           weight: 20,
@@ -95,12 +105,14 @@ export const mockData: OutputIndex = {
           source: 'UN',
         },
         {
+          id: '2f624d92-efa0-431a-a3a1-5521871420ad',
           type: IndexNodeType.Index,
           name: 'Population Health',
           weight: 0,
           isWeightUserSpecified: true,
           inputs: [
             {
+              id: 'd851ac5d-2de2-475d-8ef7-5bd46a1a9016',
               type: IndexNodeType.Dataset,
               name: 'Malnutrition',
               weight: 80,
@@ -111,6 +123,7 @@ export const mockData: OutputIndex = {
               source: 'UN',
             },
             {
+              id: 'ac56ea0f-3ca9-4aee-9c06-f98768b7bd2a',
               type: IndexNodeType.Dataset,
               name: 'Life expectancy by country',
               weight: 20,

@@ -1,12 +1,15 @@
 import { IndexNodeType } from './Enums';
 
+export interface BaseNode {
+  id: string;
+  name: string;
+}
 export interface WeightedNode {
   weight: number;
   isWeightUserSpecified: boolean;
 }
-export interface Dataset extends WeightedNode {
+export interface Dataset extends BaseNode, WeightedNode {
   type: IndexNodeType.Dataset;
-  name: string;
   datasetId: string; // or datacubeId
   datasetName: string;
   isInverted: boolean;
@@ -14,16 +17,15 @@ export interface Dataset extends WeightedNode {
   // And other metadata properties as needed
 }
 
-export interface Index extends WeightedNode {
+export interface Index extends BaseNode, WeightedNode {
   type: IndexNodeType.Index;
-  name: string;
   inputs: (Dataset | Index)[];
 }
 
-export interface OutputIndex {
+export interface OutputIndex extends BaseNode {
   type: IndexNodeType.OutputIndex;
-  name: string;
   inputs: (Dataset | Index)[];
 }
 
 export type IndexNode = OutputIndex | Index | Dataset;
+export type ParentNode = OutputIndex | Index;

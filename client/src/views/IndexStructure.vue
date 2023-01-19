@@ -62,8 +62,14 @@ const handleAddDropdownChange = (option: DropdownOptions) => {
 
 .index-structure-view-container {
   .index-drilldown-panel {
-    width: 25%;
+    $width: 25%;
+    position: absolute;
+    width: $width;
     max-width: 767px;
+    right: 0;
+    &.close {
+      right: calc(-1 * $width);
+    }
   }
 }
 </style>
