@@ -195,4 +195,5 @@ export enum IndexNodeType {
   Index = 'Index',
   OutputIndex = 'OutputIndex',
   Dataset = 'Dataset',
+  Placeholder = 'Placeholder',
 }

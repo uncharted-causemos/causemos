@@ -19,7 +19,11 @@
         <IndexTreeNode class="node-item" v-if="item.data" :data="item.data" />
         <div
           class="out-line"
-          :class="{ visible: item.style.outputLine, 'last-child': item.style.isLastChild }"
+          :class="{
+            visible: item.style.outputLine,
+            dashed: item.type === IndexNodeType.Placeholder,
+            'last-child': item.style.isLastChild,
+          }"
         />
       </div>
     </div>
@@ -41,7 +45,7 @@ const props = defineProps<Props>();
 
 // IndexNodeItem contains indexNode data along with metadata needed for rendering and layout
 interface IndexTreeNodeItem {
-  type: IndexNodeType | 'Placeholder';
+  type: IndexNodeType;
   children: IndexTreeNodeItem[];
   data: IndexNode;
   width: number; // tree (or subtree) width
@@ -50,7 +54,7 @@ interface IndexTreeNodeItem {
     inputLine: boolean;
     outputLine: boolean;
     isLastChild: boolean;
-    grid: any;
+    grid: { [key: string]: string };
   };
 }
 
@@ -109,6 +113,7 @@ const nodeItems = computed(() => getAllNodeItems(indexNodeItemTree.value));
 
 <style scoped lang="scss">
 .index-tree-pane-container {
+  $node-margin: 6px;
   padding: 40px 30px;
   overflow: auto;
   .index-tree {
@@ -121,14 +126,17 @@ const nodeItems = computed(() => getAllNodeItems(indexNodeItemTree.value));
     display: flex;
   }
   .node-item {
-    margin: 6px 0;
+    margin: $node-margin 0;
   }
   .out-line,
   .in-line {
     position: relative;
-    top: 18px;
+    top: $node-margin + 13px;
     &.visible {
       border-top: 2px solid #cacbcc;
+    }
+    &.visible.dashed {
+      border-top: 2px dashed #cacbcc;
     }
   }
   .in-line {

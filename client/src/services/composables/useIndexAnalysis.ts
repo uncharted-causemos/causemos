@@ -21,6 +21,11 @@ export const mockData: OutputIndex = {
       isWeightUserSpecified: true,
       inputs: [
         {
+          id: 'a547b59f-9287-4991-a817-08ba54a0353f',
+          type: IndexNodeType.Placeholder,
+          name: 'Greatest reliance on fragile crops',
+        },
+        {
           id: 'e547b59f-9287-4991-a817-08ba54a0353c',
           type: IndexNodeType.Dataset,
           name: 'Greatest Recent Temperature Increase',
@@ -129,7 +134,7 @@ export const mockData: OutputIndex = {
               weight: 20,
               isWeightUserSpecified: true,
               datasetId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
-              datasetName: '',
+              datasetName: 'Life expectancy by country',
               isInverted: false,
               source: 'UN',
             },
