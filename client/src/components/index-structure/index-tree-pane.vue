@@ -43,7 +43,7 @@ interface Props {
 }
 const props = defineProps<Props>();
 
-// IndexNodeItem contains indexNode data along with metadata needed for rendering and layout
+// IndexNodeItem contains indexNode data along with metadata needed for rendering and layout of the tree
 interface IndexTreeNodeItem {
   type: IndexNodeType;
   children: IndexTreeNodeItem[];

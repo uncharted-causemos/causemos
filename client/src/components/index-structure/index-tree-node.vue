@@ -60,8 +60,9 @@ const nameText = computed(() => {
 });
 
 const footerText = computed(() => {
-  const numInputs = childNodes.value.length;
-  const child = childNodes.value[0];
+  const dataNodes = childNodes.value.filter((node) => node.type !== IndexNodeType.Placeholder);
+  const numInputs = dataNodes.length;
+  const child = dataNodes[0];
   switch (numInputs) {
     case 0:
       return isDatasetNode(props.data)
