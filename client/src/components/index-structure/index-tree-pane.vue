@@ -15,12 +15,12 @@
           ...item.style.grid,
         }"
       >
-        <div class="in-line" :class="{ visible: item.style.inputLine }" />
+        <div class="in-line" :class="{ visible: item.style.hasInputLine }" />
         <IndexTreeNode class="node-item" v-if="item.data" :data="item.data" />
         <div
           class="out-line"
           :class="{
-            visible: item.style.outputLine,
+            visible: item.style.hasOutputLine,
             dashed: item.type === IndexNodeType.Placeholder,
             'last-child': item.style.isLastChild,
           }"
@@ -48,13 +48,20 @@ interface IndexTreeNodeItem {
   type: IndexNodeType;
   children: IndexTreeNodeItem[];
   data: IndexNode;
-  width: number; // tree (or subtree) width
-  height: number; // tree(or subtree) height
+  /** width of the node represented by the total number of leaf nodes it has */
+  width: number;
+  /** number of edges on the longest path from the node to a leaf */
+  height: number;
   style: {
-    inputLine: boolean;
-    outputLine: boolean;
+    hasInputLine: boolean;
+    hasOutputLine: boolean;
     isLastChild: boolean;
-    grid: { [key: string]: string };
+    grid: {
+      /** grid-row css property */
+      'grid-row'?: string;
+      /** grid-column css property */
+      'grid-column'?: string;
+    };
   };
 }
 
@@ -68,8 +75,8 @@ const toIndexNodeItemTree = (node: IndexNode): IndexTreeNodeItem => {
     width: 1,
     style: {
       grid: {},
-      inputLine: false,
-      outputLine: false,
+      hasInputLine: false,
+      hasOutputLine: false,
       isLastChild: false,
     },
   };
@@ -78,11 +85,10 @@ const toIndexNodeItemTree = (node: IndexNode): IndexTreeNodeItem => {
     item.height = Math.max(...item.children.map((c) => c.height)) + 1;
     item.width = item.children.reduce((prev, item) => prev + item.width, 0);
     // Add style properties to self and each child node
-    item.style.inputLine = true;
-    item.children.forEach((item) => (item.style.outputLine = true));
+    item.style.hasInputLine = true;
+    item.children.forEach((item) => (item.style.hasOutputLine = true));
     item.children[item.children.length - 1].style.isLastChild = true;
   }
-  calculateLayout(item);
   return item;
 };
 
@@ -107,7 +113,11 @@ const calculateLayout = (nodeItem: IndexTreeNodeItem) => {
 const getAllNodeItems = (nodeItem: IndexTreeNodeItem): IndexTreeNodeItem[] =>
   nodeItem.children.reduce((prev, child) => [...prev, ...getAllNodeItems(child)], [nodeItem]);
 
-const indexNodeItemTree = computed(() => toIndexNodeItemTree(props.indexTree));
+const indexNodeItemTree = computed(() => {
+  const tree = toIndexNodeItemTree(props.indexTree);
+  calculateLayout(tree);
+  return tree;
+});
 const nodeItems = computed(() => getAllNodeItems(indexNodeItemTree.value));
 </script>
 

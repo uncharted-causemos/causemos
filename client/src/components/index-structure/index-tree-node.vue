@@ -62,16 +62,12 @@ const nameText = computed(() => {
 const footerText = computed(() => {
   const dataNodes = childNodes.value.filter((node) => node.type !== IndexNodeType.Placeholder);
   const numInputs = dataNodes.length;
-  const child = dataNodes[0];
   switch (numInputs) {
     case 0:
-      return isDatasetNode(props.data)
-        ? getDatasetFooterText(props.data)
-        : isParentNode(props.data)
-        ? 'No inputs.'
-        : '';
+      if (isDatasetNode(props.data)) return getDatasetFooterText(props.data);
+      return isParentNode(props.data) ? 'No inputs.' : '';
     case 1:
-      return isDatasetNode(child) ? child.datasetName : '1 input.';
+      return '1 input.';
     default:
       return `Combination of ${numInputs} inputs.`;
   }
