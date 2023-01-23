@@ -6,14 +6,14 @@
   <div class="index-structure-view-container content-full flex">
     <div class="flex-col h-100 flex-grow w-0">
       <IndexActionBar @addDropdownChange="handleAddDropdownChange" />
-      <IndexTreePane class="flex-grow" :index-tree="indexTree" />
+      <IndexTreePane class="flex-grow" :index-tree="indexTree" :work-bench="tmpNodes" />
     </div>
     <IndexDrilldownPanel class="index-drilldown-panel" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted } from 'vue';
+import { computed, watch, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
@@ -21,6 +21,8 @@ import IndexActionBar, { DropdownOptions } from '@/components/index-structure/in
 import IndexDrilldownPanel from '@/components/index-structure/index-drilldown-panel.vue';
 import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
+import { createNewIndex } from '@/utils/indextree-util';
+import { IndexNode } from '@/types/Index';
 
 const store = useStore();
 const route = useRoute();
@@ -32,6 +34,9 @@ const {
   indexTree,
   refresh,
 } = useIndexAnalysis(analysisId);
+
+// Temporary index nodes that are being created and not attached to the index tree yet
+const tmpNodes = ref<IndexNode[]>([]);
 
 // Set analysis name on the navbar
 const analysisNameOnNavbar = computed(() => store.getters.analysisName);
@@ -49,7 +54,7 @@ const handleAddDropdownChange = (option: DropdownOptions) => {
       // Not yet implemented
       break;
     case DropdownOptions.Index:
-      // Not yet implemented
+      tmpNodes.value.unshift(createNewIndex());
       break;
     default:
       break;

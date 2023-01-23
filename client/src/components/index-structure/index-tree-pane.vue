@@ -35,11 +35,12 @@ import _ from 'lodash';
 import { computed } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
-import { OutputIndex, IndexNode } from '@/types/Index';
+import { OutputIndex, IndexNode, Dataset, Index } from '@/types/Index';
 import { isParentNode } from '@/utils/indextree-util';
 
 interface Props {
   indexTree: OutputIndex;
+  workBench: (Dataset | Index)[];
 }
 const props = defineProps<Props>();
 
@@ -92,8 +93,8 @@ const toIndexNodeItemTree = (node: IndexNode): IndexTreeNodeItem => {
   return item;
 };
 
-const calculateLayout = (nodeItem: IndexTreeNodeItem) => {
-  const FIRST_ROW = 1;
+const calculateLayout = (nodeItem: IndexTreeNodeItem, rowOffset = 0) => {
+  const FIRST_ROW = 1 + rowOffset;
   const maxCol = nodeItem.height + 1;
   const _calculateLayout = (item: IndexTreeNodeItem, rowNumber: number, level = 0) => {
     item.style.grid['grid-row'] = `${rowNumber} / span ${item.width}`;
@@ -115,10 +116,25 @@ const getAllNodeItems = (nodeItem: IndexTreeNodeItem): IndexTreeNodeItem[] =>
 
 const indexNodeItemTree = computed(() => {
   const tree = toIndexNodeItemTree(props.indexTree);
-  calculateLayout(tree);
+  calculateLayout(tree, props.workBench.length);
   return tree;
 });
-const nodeItems = computed(() => getAllNodeItems(indexNodeItemTree.value));
+
+// Temporary nodes/sub-tree that are being created and detached from the main tree
+const workBenchNodeItemTrees = computed(() => {
+  const trees = props.workBench.map((node, index) => {
+    const tree = toIndexNodeItemTree(node);
+    calculateLayout(tree, index);
+    return tree;
+  });
+  return trees;
+});
+
+const nodeItems = computed(() => {
+  const mainTreeNodes = getAllNodeItems(indexNodeItemTree.value);
+  const otherNodes = _.flatten(workBenchNodeItemTrees.value.map(getAllNodeItems));
+  return [...otherNodes, ...mainTreeNodes];
+});
 </script>
 
 <style scoped lang="scss">
