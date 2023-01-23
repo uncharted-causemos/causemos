@@ -1,0 +1,45 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "start-server",
+      "problemMatcher": [],
+      "label": "start-server",
+      "detail": "yarn run start-server",
+      "group": "build"
+    },
+    {
+      "type": "npm",
+      "script": "start-client",
+      "problemMatcher": [],
+      "label": "start-client",
+      "detail": "yarn run start-client",
+      "group": "build"
+    },
+    {
+      "label": "Start developing locally",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "dependsOn": ["start-server", "start-client"]
+    },
+    {
+      "type": "shell",
+      "command": "yarn workspace client run prep",
+      "problemMatcher": [],
+      "label": "prep",
+      "detail": "yarn workspace client run prep",
+      "group": "none"
+    },
+    {
+      "label": "Run unit tests",
+      "type": "shell",
+      "command": "yarn workspace client run test:unit",
+      "problemMatcher": [],
+      "detail": "yarn workspace client run test:unit",
+      "group": "none"
+    }
+  ]
+}
