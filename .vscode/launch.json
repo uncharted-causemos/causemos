@@ -12,7 +12,7 @@
       // Run vite dev server using `yarn dev` and then luanch chrome for debugging
       "serverReadyAction": {
         "action": "debugWithChrome",
-        "pattern": "Local:[ ]+http://127.0.0.1:([0-9]+)",
+        "pattern": "Local:[ ]+http://localhost:([0-9]+)",
         "uriFormat": "http://localhost:%s"
       }
     },
