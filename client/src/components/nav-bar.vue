@@ -222,13 +222,13 @@ export default defineComponent({
 $logo-size: 28px;
 
 .nav-item--logo {
-  padding: ($navbar-outer-height - $logo-size) / 2;
+  padding: calc(#{$navbar-outer-height - $logo-size} / 2);
 }
 
 .logo {
   height: $logo-size;
   position: relative;
   // Nudge the logo up a little bit so it's more visually centered
-  bottom: $logo-size / 10;
+  bottom: calc(#{$logo-size} / 10);
 }
 </style>

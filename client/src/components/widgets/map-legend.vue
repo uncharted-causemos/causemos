@@ -95,7 +95,7 @@ $font-size: 12px;
 svg {
   position: absolute;
   right: 0;
-  top: $font-size / 2;
+  top: calc($font-size / 2);
   width: 50%;
   height: calc(100% - #{$font-size});
 }

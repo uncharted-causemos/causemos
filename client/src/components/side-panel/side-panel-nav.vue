@@ -125,8 +125,8 @@ li {
       background-color: #545353;
       border-radius: 10px;
       position: absolute;
-      left: $navbar-outer-height / 2;
-      bottom: $navbar-outer-height / 2;
+      left: calc($navbar-outer-height / 2);
+      bottom: calc($navbar-outer-height / 2);
       top: auto;
     }
   }

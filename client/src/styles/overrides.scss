@@ -165,7 +165,7 @@ a.btn {
 }
 // Danger and error appear as red
 .btn-danger {
-  @include button-variant(rgba(0, 0, 0, 0.89), hsl(4.11, 89.62, 58.43));
+  @include button-variant(rgba(0, 0, 0, 0.89), hsl(4.11, 89.62%, 58.43%));
 }
 
 .btn-call-to-action {

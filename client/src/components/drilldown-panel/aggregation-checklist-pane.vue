@@ -650,7 +650,7 @@ h5 {
   }
 
   &::-webkit-slider-thumb {
-    margin-top: -1 * ($thumb-size - $track-height) / 2;
+    margin-top: -1 * calc(($thumb-size - $track-height) / 2);
   }
 }
 
@@ -666,7 +666,7 @@ h5 {
   background-color: $background-light-1;
   border-radius: 50%;
   position: absolute;
-  top: -1 * ($tick-size - $track-height) / 2;
+  top: -1 * calc(($tick-size - $track-height) / 2);
   cursor: pointer;
 }
 
