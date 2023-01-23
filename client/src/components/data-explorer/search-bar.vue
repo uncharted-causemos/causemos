@@ -164,8 +164,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.search-bar-container) {
-  @import '@/styles/lex-overrides';
+// Need to import this file at the top level to be able to @include lex-wrapper.
+@import '@/styles/lex-overrides';
+// .search-bar-container can't be inside the :deep() selector since it's at
+//  the top level of this component.
+.search-bar-container {
   @include lex-wrapper;
+}
+:deep(*) {
+  // Import these styles within the deep wildcard selector to apply them to all
+  //  the elements created by lex within this component.
+  @import '@/styles/lex-overrides';
 }
 </style>
