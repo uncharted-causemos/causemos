@@ -84,7 +84,7 @@ header {
 
 .dataset-label {
   border: 1px solid $un-color-black-40;
-  padding: 2px 5px;
+  padding: 0 3px;
   color: $un-color-black-40;
   font-size: 1.2rem;
   line-height: 1.6rem;
