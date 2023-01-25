@@ -3,10 +3,14 @@
     <div class="header">
       {{ headerText }}
     </div>
-    <div class="content">
-      {{ nameText }}
+    <div v-if="showEditName" class="content input flex">
+      <input type="text" v-model="newNodeName" />
+      <button @click="handleRename()">Done</button>
     </div>
-    <div class="footer" v-if="footerText">
+    <div v-else class="content">
+      {{ props.data.name }}
+    </div>
+    <div v-if="footerText" class="footer">
       {{ footerText }}
     </div>
     <div v-if="classObject.placeholder" class="placeholder-btn">
@@ -16,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Dataset, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
 import { isDatasetNode, isParentNode } from '@/utils/indextree-util';
@@ -25,11 +29,20 @@ interface Props {
   data: IndexNode;
 }
 const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  (e: 'update', updated: IndexNode): void;
+  (e: 'delete', deleted: IndexNode): void;
+}>();
+
 const childNodes = computed(() => (isParentNode(props.data) ? props.data.inputs : []));
 
 const getDatasetFooterText = (data: Dataset) => {
   return data.name === data.datasetName ? '' : data.datasetName;
 };
+
+const isRenaming = ref(false);
+const newNodeName = ref('');
 
 const classObject = computed(() => {
   return {
@@ -55,8 +68,8 @@ const headerText = computed(() => {
   }
 });
 
-const nameText = computed(() => {
-  return props.data.name;
+const showEditName = computed(() => {
+  return props.data.name === '' || isRenaming.value;
 });
 
 const footerText = computed(() => {
@@ -65,13 +78,20 @@ const footerText = computed(() => {
   switch (numInputs) {
     case 0:
       if (isDatasetNode(props.data)) return getDatasetFooterText(props.data);
-      return isParentNode(props.data) ? 'No inputs.' : '';
+      return isParentNode(props.data) && props.data.name ? 'No inputs.' : '';
     case 1:
       return '1 input.';
     default:
       return `Combination of ${numInputs} inputs.`;
   }
 });
+
+const handleRename = () => {
+  const updated = { ...props.data, name: newNodeName.value };
+  emit('update', updated);
+  isRenaming.value = false;
+  newNodeName.value = '';
+};
 </script>
 
 <style scoped lang="scss">

@@ -7,6 +7,7 @@ import { createIndexAnalysisObject } from '../analysis-service-new';
 // Mock data
 import { OutputIndex } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
+import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 
 export const mockData: OutputIndex = {
   id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
@@ -154,15 +155,21 @@ const _saveState = _.debounce((analysisId, state: IndexAnalysisState) => {
 }, SYNC_DELAY_MS);
 
 export default function useIndexAnalysis(analysisId: Ref<string>) {
+  const workbench = useIndexWorkBench();
+
   const analysisName = ref('');
   const analysisState = ref<IndexAnalysisState>(createIndexAnalysisObject());
 
   const fetchAnalysis = async () => {
     if (!analysisId.value) return;
+    workbench.setItems([]);
     const analysis = await getAnalysis(analysisId.value);
     analysisName.value = analysis.title;
-    analysisState.value = analysis.state || {};
+    analysisState.value = analysis.state || createIndexAnalysisObject();
+    // Set workbench items
+    workbench.setItems(analysisState.value.workBench);
   };
+
   // Whenever component is mounted or analysisId changes, fetch the state for that analysis
   watch(analysisId, fetchAnalysis);
 

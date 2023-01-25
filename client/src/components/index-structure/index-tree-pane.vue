@@ -16,7 +16,12 @@
         }"
       >
         <div class="in-line" :class="{ visible: item.style.hasInputLine }" />
-        <IndexTreeNode class="node-item" v-if="item.data" :data="item.data" />
+        <IndexTreeNode
+          class="node-item"
+          v-if="item.data"
+          :data="item.data"
+          @update="handleUpdateNode"
+        />
         <div
           class="out-line"
           :class="{
@@ -35,14 +40,17 @@ import _ from 'lodash';
 import { computed } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
-import { OutputIndex, IndexNode, Dataset, Index } from '@/types/Index';
+import { OutputIndex, IndexNode } from '@/types/Index';
 import { isParentNode } from '@/utils/indextree-util';
+import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 
 interface Props {
+  indexAnalysisId: string;
   indexTree: OutputIndex;
-  workBench: (Dataset | Index)[];
 }
 const props = defineProps<Props>();
+
+const workBench = useIndexWorkBench();
 
 // IndexNodeItem contains indexNode data along with metadata needed for rendering and layout of the tree
 interface IndexTreeNodeItem {
@@ -116,13 +124,13 @@ const getAllNodeItems = (nodeItem: IndexTreeNodeItem): IndexTreeNodeItem[] =>
 
 const indexNodeItemTree = computed(() => {
   const tree = toIndexNodeItemTree(props.indexTree);
-  calculateLayout(tree, props.workBench.length);
+  calculateLayout(tree, workBench.items.value.length);
   return tree;
 });
 
 // Temporary nodes/sub-tree that are being created and detached from the main tree
 const workBenchNodeItemTrees = computed(() => {
-  const trees = props.workBench.map((node, index) => {
+  const trees = workBench.items.value.map((node, index) => {
     const tree = toIndexNodeItemTree(node);
     calculateLayout(tree, index);
     return tree;
@@ -135,6 +143,12 @@ const nodeItems = computed(() => {
   const otherNodes = _.flatten(workBenchNodeItemTrees.value.map(getAllNodeItems));
   return [...otherNodes, ...mainTreeNodes];
 });
+
+const handleUpdateNode = (updated: IndexNode) => {
+  // try update from main tree too
+  // if update not found
+  if (updated.type !== IndexNodeType.OutputIndex) workBench.findAndUpdate(updated);
+};
 </script>
 
 <style scoped lang="scss">

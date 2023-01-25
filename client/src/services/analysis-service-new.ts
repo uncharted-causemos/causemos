@@ -44,6 +44,7 @@ export const createIndexAnalysisObject = (): IndexAnalysisState => {
       name: '',
       inputs: [],
     },
+    workBench: [],
   };
 };
 

@@ -41,14 +41,60 @@ export const addFirst = (
   return { ...indexNodeTree };
 };
 
-// Remove the node with given nodeId from provided index node tree
-export const removeNode = (indexNodeTree: IndexNode /* nodeId: string */): IndexNode => {
-  // Not Yet Implemented
-  return { ...indexNodeTree };
+/**
+ * Removes the node with given nodeId from provided index node tree children
+ * Returns boolean indicating if the node was found and removed successfully.
+ * @param indexNodeTree An index node
+ */
+export const findAndRemoveChild = (indexNodeTree: IndexNode, nodeId: string): boolean => {
+  const result = findNode(indexNodeTree, nodeId);
+  if (result?.parent && isParentNode(result.parent)) {
+    const beforeLength = result.parent.inputs.length;
+    result.parent.inputs = result.parent.inputs.filter((node) => node.id !== nodeId);
+    return result.parent.inputs.length === beforeLength - 1;
+  }
+  return false;
 };
 
-// Find and updated the node with provide nodeId in the index node tree.
-export const updateNode = (indexNodeTree: IndexNode /* nodeId: string */): IndexNode => {
-  // Not Yet Implemented
-  return { ...indexNodeTree };
+/**
+ * Finds a node from given index node tree and returns found node and its parent.
+ * Returns undefined if no node with given node id is found in the tree.
+ * @param indexNodeTree An index node
+ * @param nodeId An index node id
+ */
+export const findNode = (
+  indexNodeTree: IndexNode,
+  nodeId: string
+): { parent: IndexNode | null; found: IndexNode } | undefined => {
+  const _findNode = (
+    node: IndexNode,
+    parentNode: IndexNode | null
+  ): { parent: IndexNode | null; found: IndexNode } | undefined => {
+    if (node.id === nodeId) {
+      return { parent: parentNode, found: node };
+    }
+    // If this node is a leaf node at this point, not found
+    if (!isParentNode(node)) return;
+
+    for (const child of node.inputs) {
+      const found = _findNode(child, node);
+      if (found) return found;
+    }
+  };
+  return _findNode(indexNodeTree, null);
+};
+
+/**
+ * Finds and updates the node with matching node id with updated payload in the index node tree.
+ * Returns boolean indicating if the node was found and updated successfully.
+ * @param indexNodeTree An index node
+ * @param updated An update node payload
+ */
+export const findAndUpdateNode = (indexNodeTree: IndexNode, updated: IndexNode): boolean => {
+  const result = findNode(indexNodeTree, updated.id);
+  if (result) {
+    Object.assign(result.found, updated);
+    return true;
+  }
+  return false;
 };

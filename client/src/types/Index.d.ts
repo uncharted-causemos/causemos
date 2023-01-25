@@ -31,4 +31,5 @@ export interface OutputIndex extends BaseNode {
 }
 
 export type IndexNode = OutputIndex | Index | Dataset | Placeholder;
+export type IndexWorkBenchItem = Index | Dataset | Placeholder;
 export type ParentNode = OutputIndex | Index;
