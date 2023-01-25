@@ -2,6 +2,8 @@ import { IndexNodeType } from '@/types/Enums';
 import { IndexNode, Dataset, ParentNode, Index } from '@/types/Index';
 import { v4 as uuidv4 } from 'uuid';
 
+type findNodeReturn = { parent: IndexNode | null; found: IndexNode } | undefined;
+
 export const isDatasetNode = (indexNode: IndexNode): indexNode is Dataset => {
   return indexNode.type === IndexNodeType.Dataset;
 };
@@ -62,14 +64,8 @@ export const findAndRemoveChild = (indexNodeTree: IndexNode, nodeId: string): bo
  * @param indexNodeTree An index node
  * @param nodeId An index node id
  */
-export const findNode = (
-  indexNodeTree: IndexNode,
-  nodeId: string
-): { parent: IndexNode | null; found: IndexNode } | undefined => {
-  const _findNode = (
-    node: IndexNode,
-    parentNode: IndexNode | null
-  ): { parent: IndexNode | null; found: IndexNode } | undefined => {
+export const findNode = (indexNodeTree: IndexNode, nodeId: string): findNodeReturn => {
+  const _findNode = (node: IndexNode, parentNode: IndexNode | null): findNodeReturn => {
     if (node.id === nodeId) {
       return { parent: parentNode, found: node };
     }
