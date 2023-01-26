@@ -157,28 +157,34 @@ const _saveState = _.debounce((analysisId, state: IndexAnalysisState) => {
 export default function useIndexAnalysis(analysisId: Ref<string>) {
   const workbench = useIndexWorkBench();
 
-  const analysisName = ref('');
-  const analysisState = ref<IndexAnalysisState>(createIndexAnalysisObject());
+  const _analysisState = ref<IndexAnalysisState>(createIndexAnalysisObject());
+  const _analysisName = ref('');
 
   const fetchAnalysis = async () => {
     if (!analysisId.value) return;
-    workbench.setItems([]);
     const analysis = await getAnalysis(analysisId.value);
-    analysisName.value = analysis.title;
-    analysisState.value = analysis.state || createIndexAnalysisObject();
+    _analysisName.value = analysis.title;
+    _analysisState.value = { ...analysis.state, ...createIndexAnalysisObject() }; // ensure default values
     // Set workbench items
-    workbench.setItems(analysisState.value.workBench);
+    workbench.init(analysisId.value, _analysisState.value.workBench);
   };
-
-  // Whenever component is mounted or analysisId changes, fetch the state for that analysis
+  // Whenever analysisId changes, fetch the state for that analysis
   watch(analysisId, fetchAnalysis);
 
+  const analysisName = computed(() => _analysisName.value);
   // const indexTree = computed(() => analysisState.value.index)
   const indexTree = computed(() => mockData);
 
+  watch(workbench.items, () => {
+    const aid = workbench.getAnalysisId();
+    if (aid !== analysisId.value) return;
+    console.log('updated');
+    console.log(workbench.items.value);
+    // Save the state
+  });
+
   return {
     analysisName,
-    analysisState,
     indexTree,
     refresh: fetchAnalysis,
   };

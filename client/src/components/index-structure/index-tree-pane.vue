@@ -3,13 +3,13 @@
     <div
       class="index-tree"
       :style="{
-        'grid-template-columns': `repeat(${indexNodeItemTree.height + 1}, 340px)`,
-        'grid-template-rows': `repeat(${indexNodeItemTree.width}, auto)`,
+        'grid-template-columns': `repeat(${gridDimension.numCols + WORKBENCH_LEFT_OFFSET}, 340px)`,
+        'grid-template-rows': `repeat(${gridDimension.numRows}, auto)`,
       }"
     >
       <div
         class="node-box"
-        v-for="item in nodeItems"
+        v-for="(item, index) in nodeItems"
         :key="item.data.id"
         :style="{
           ...item.style.grid,
@@ -20,6 +20,7 @@
           class="node-item"
           v-if="item.data"
           :data="item.data"
+          :show-index-add-button="!isMainTreeNodeItem(index)"
           @update="handleUpdateNode"
         />
         <div
@@ -43,6 +44,10 @@ import { IndexNodeType } from '@/types/Enums';
 import { OutputIndex, IndexNode } from '@/types/Index';
 import { isParentNode } from '@/utils/indextree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+/**
+ *  work bench items are positioned at least {WORKBENCH_LEFT_OFFSET} column(s) left to the main output index node
+ */
+const WORKBENCH_LEFT_OFFSET = 1;
 
 interface Props {
   indexAnalysisId: string;
@@ -101,9 +106,9 @@ const toIndexNodeItemTree = (node: IndexNode): IndexTreeNodeItem => {
   return item;
 };
 
-const calculateLayout = (nodeItem: IndexTreeNodeItem, rowOffset = 0) => {
+const calculateLayout = (nodeItem: IndexTreeNodeItem, rowOffset = 0, colOffset = 0) => {
   const FIRST_ROW = 1 + rowOffset;
-  const maxCol = nodeItem.height + 1;
+  const maxCol = nodeItem.height + 1 + colOffset;
   const _calculateLayout = (item: IndexTreeNodeItem, rowNumber: number, level = 0) => {
     item.style.grid['grid-row'] = `${rowNumber} / span ${item.width}`;
     item.style.grid['grid-column'] = `${maxCol - level}`;
@@ -122,32 +127,62 @@ const calculateLayout = (nodeItem: IndexTreeNodeItem, rowOffset = 0) => {
 const getAllNodeItems = (nodeItem: IndexTreeNodeItem): IndexTreeNodeItem[] =>
   nodeItem.children.reduce((prev, child) => [...prev, ...getAllNodeItems(child)], [nodeItem]);
 
-const indexNodeItemTree = computed(() => {
-  const tree = toIndexNodeItemTree(props.indexTree);
-  calculateLayout(tree, workBench.items.value.length);
-  return tree;
-});
+/**
+ * Calculate the dimension of the grid in terms of number of grid columns and grid rows to place the provided trees
+ * @param trees Root index node items
+ */
+const getGridDimension = (trees: IndexTreeNodeItem[]) => {
+  // height of the rendered grid is driven by the node width since the tree is lying side way
+  const sumWidth = trees.reduce((prev, cur) => prev + cur.width, 0);
+  const maxHeight = trees.reduce((prev, cur) => Math.max(prev, cur.height), 0);
+  return {
+    numCols: maxHeight + 1,
+    numRows: sumWidth,
+  };
+};
 
 // Temporary nodes/sub-tree that are being created and detached from the main tree
 const workBenchNodeItemTrees = computed(() => {
-  const trees = workBench.items.value.map((node, index) => {
+  let rowOffset = 0;
+  const trees = workBench.items.value.map((node) => {
     const tree = toIndexNodeItemTree(node);
-    calculateLayout(tree, index);
+    calculateLayout(tree, rowOffset);
+    rowOffset += tree.width;
     return tree;
   });
   return trees;
 });
 
-const nodeItems = computed(() => {
-  const mainTreeNodes = getAllNodeItems(indexNodeItemTree.value);
-  const otherNodes = _.flatten(workBenchNodeItemTrees.value.map(getAllNodeItems));
-  return [...otherNodes, ...mainTreeNodes];
+const indexNodeItemTree = computed(() => {
+  const workbenchDimension = getGridDimension(workBenchNodeItemTrees.value);
+  const tree = toIndexNodeItemTree(props.indexTree);
+  const mainTreeNumCols = getGridDimension([tree]).numCols;
+  const maxNumCols = Math.max(workbenchDimension.numCols + WORKBENCH_LEFT_OFFSET, mainTreeNumCols);
+  calculateLayout(tree, workbenchDimension.numRows, maxNumCols - mainTreeNumCols);
+  return tree;
 });
+
+const gridDimension = computed(() =>
+  getGridDimension([indexNodeItemTree.value, ...workBenchNodeItemTrees.value])
+);
+
+const workBenchNodeItems = computed(() =>
+  _.flatten(workBenchNodeItemTrees.value.map(getAllNodeItems))
+);
+const mainTreeNodeItems = computed(() => getAllNodeItems(indexNodeItemTree.value));
+const nodeItems = computed(() => {
+  return [...workBenchNodeItems.value, ...mainTreeNodeItems.value];
+});
+
+const isMainTreeNodeItem = (nodeItemIndex: number) => {
+  const mainTreeNodeItemStartIndex = workBenchNodeItems.value.length;
+  return nodeItemIndex >= mainTreeNodeItemStartIndex;
+};
 
 const handleUpdateNode = (updated: IndexNode) => {
   // try update from main tree too
   // if update not found
-  if (updated.type !== IndexNodeType.OutputIndex) workBench.findAndUpdate(updated);
+  if (updated.type !== IndexNodeType.OutputIndex) workBench.findAndUpdateItem(updated);
 };
 </script>
 

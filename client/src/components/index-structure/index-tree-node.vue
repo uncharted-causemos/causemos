@@ -1,32 +1,56 @@
 <template>
   <div class="index-tree-node-container" :class="classObject">
-    <div class="header">
+    <div class="header content">
       {{ headerText }}
     </div>
     <div v-if="showEditName" class="content input flex">
       <input type="text" v-model="newNodeName" />
       <button @click="handleRename()">Done</button>
     </div>
-    <div v-else class="content">
+    <div v-else class="name content">
       {{ props.data.name }}
     </div>
-    <div v-if="footerText" class="footer">
+    <div v-if="footerText" class="footer content">
       {{ footerText }}
     </div>
-    <div v-if="classObject.placeholder" class="placeholder-btn">
+    <!-- footer buttons -->
+    <div v-if="classObject.placeholder" class="placeholder-btn content">
       <button>Replace with dataset</button>
+    </div>
+    <div
+      v-if="classObject.index && props.showIndexAddButton && !showEditName"
+      class="add-component-btn footer content"
+    >
+      <DropdownButton
+        :is-dropdown-left-aligned="true"
+        :items="Object.values(AddInputDropdownOptions)"
+        :selected-item="'Add Component'"
+        @item-selected="handleAddInput"
+      />
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
+<script lang="ts">
 import { computed, ref } from 'vue';
 import { Dataset, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
-import { isDatasetNode, isParentNode } from '@/utils/indextree-util';
+import { createNewIndex, isDatasetNode, isParentNode } from '@/utils/indextree-util';
+import DropdownButton from '@/components/dropdown-button.vue';
 
+export enum AddInputDropdownOptions {
+  Dataset = 'Dataset',
+  Index = 'Index',
+}
+export enum NodeActionDropDownOptions {
+  Rename = 'Rename',
+  Duplicate = 'Duplicate',
+  Delete = 'Delete',
+}
+</script>
+<script setup lang="ts">
 interface Props {
   data: IndexNode;
+  showIndexAddButton: boolean;
 }
 const props = defineProps<Props>();
 
@@ -50,6 +74,7 @@ const classObject = computed(() => {
     index: props.data.type === IndexNodeType.Index,
     dataset: props.data.type === IndexNodeType.Dataset,
     placeholder: props.data.type === IndexNodeType.Placeholder,
+    editable: props.showIndexAddButton,
   };
 });
 
@@ -92,6 +117,22 @@ const handleRename = () => {
   isRenaming.value = false;
   newNodeName.value = '';
 };
+
+const handleAddInput = (option: AddInputDropdownOptions) => {
+  const node = props.data;
+  if (!isParentNode(node)) return;
+  switch (option) {
+    case AddInputDropdownOptions.Index:
+      node.inputs.unshift(createNewIndex());
+      emit('update', node);
+      break;
+    case AddInputDropdownOptions.Dataset:
+      // Not Yet Implemented
+      break;
+    default:
+      break;
+  }
+};
 </script>
 
 <style scoped lang="scss">
@@ -101,7 +142,6 @@ const handleRename = () => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 0px;
 
   background: #ffffff;
   width: 240px;
@@ -109,18 +149,17 @@ const handleRename = () => {
   border: 1px solid $border-color;
   border-radius: 3px;
 
+  .content {
+    width: 100%;
+    padding: 5px;
+  }
+
   .header,
   .footer {
     font-size: $font-size-small;
     color: $text-color-medium;
   }
-  .header,
-  .content,
-  .footer,
-  .placeholder-btn {
-    width: 100%;
-    padding: 5px;
-  }
+
   .footer {
     padding-top: 0;
   }
@@ -140,7 +179,7 @@ const handleRename = () => {
     .header {
       padding-bottom: 0px;
     }
-    .content {
+    .name {
       padding-top: 0px;
     }
   }
@@ -161,6 +200,27 @@ const handleRename = () => {
     .header {
       height: 26px;
       border-bottom: 1px dashed $border-color;
+    }
+  }
+  &.editable {
+    .content {
+      padding-left: 10px;
+    }
+    .name {
+      padding-bottom: 0px;
+    }
+  }
+  .add-component-btn :deep(button) {
+    width: 126px;
+    height: 24px;
+    background: #f0f1f2;
+    border: 1px solid #cacbcc;
+    box-shadow: 0px 1px 0px rgba(54, 55, 56, 0.1), inset 0px -8px 10px -8px rgba(54, 55, 56, 0.1);
+    border-radius: 3px;
+    strong {
+      padding: 0 8px;
+      font-weight: 600;
+      font-size: $font-size-small;
     }
   }
 }
