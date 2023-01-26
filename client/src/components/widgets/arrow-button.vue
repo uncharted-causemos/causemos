@@ -58,7 +58,7 @@ $diamondSideLength: 0.70710678118 * $buttonHeight;
 .arrow-button-container {
   isolation: isolate;
   position: relative;
-  padding-right: $diamondSideLength / 2;
+  padding-right: calc($diamondSideLength / 2);
 
   // Apply disabled styles to the whole element (including the diamond)
   //  not just the button
@@ -87,7 +87,7 @@ $diamondSideLength: 0.70710678118 * $buttonHeight;
     cursor: pointer;
     // Rotate square into a diamond
     transform: rotate(45deg);
-    top: ($buttonHeight - $diamondSideLength) / 2;
+    top: calc(($buttonHeight - $diamondSideLength) / 2);
     // Attach it to the right side
     right: 0;
   }
@@ -98,7 +98,7 @@ $diamondSideLength: 0.70710678118 * $buttonHeight;
 
   &.pointing-left {
     padding-right: 0;
-    padding-left: $diamondSideLength / 2;
+    padding-left: calc($diamondSideLength / 2);
 
     &::before {
       right: auto;

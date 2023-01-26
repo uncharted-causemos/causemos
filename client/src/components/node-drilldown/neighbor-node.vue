@@ -116,7 +116,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 $arrow-width: 20px;
-$overlap: $arrow-width / 4;
+$overlap: calc($arrow-width / 4);
 $border-width: 1px;
 
 // TODO: copy graph styles more exactly

@@ -335,20 +335,20 @@ $padding-size: 12.5vh;
 
 .logo-container {
   width: 100%;
-  margin-top: calc(#{$padding-size / 2} - 10px);
+  margin-top: calc(calc(#{$padding-size} / 2) - 10px);
   text-align: center;
 
   .logo {
     height: $padding-size;
     position: relative;
     // Nudge the logo left a little to look more visually centered
-    left: -$padding-size / 6;
+    left: calc(-#{$padding-size} / 6);
   }
 
   .descriptions {
     font-size: x-large;
     text-align: center;
-    margin-bottom: calc(#{$padding-size / 2} - 10px);
+    margin-bottom: calc(calc(#{$padding-size} / 2) - 10px);
   }
 }
 

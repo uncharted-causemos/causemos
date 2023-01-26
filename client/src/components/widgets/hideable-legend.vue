@@ -84,7 +84,7 @@ $padding: 10px;
 
   &.bottom {
     top: auto;
-    bottom: ($hover-nudge-height + $padding - $font-size) / 2;
+    bottom: calc(($hover-nudge-height + $padding - $font-size) / 2);
   }
 
   &.visible {
