@@ -130,10 +130,6 @@ section {
   gap: 5px;
 }
 
-.placeholder {
-  background: $un-color-black-5;
-}
-
 .edge-source-and-target {
   display: flex;
   flex-direction: column;
