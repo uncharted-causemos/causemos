@@ -1,8 +1,8 @@
 <template>
   <!-- Note with teleport, Vite's HMR doesn't work. As a work around, try commenting out the teleport usage temporally-->
-  <!-- <teleport to="#navbar-trailing-teleport-destination">
+  <teleport to="#navbar-trailing-teleport-destination">
     <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
-  </teleport> -->
+  </teleport>
   <div class="index-structure-view-container content-full flex">
     <div class="flex-col h-100 flex-grow w-0">
       <IndexActionBar @addDropdownChange="handleAddDropdownChange" />
@@ -16,7 +16,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
-// import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
+import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import IndexActionBar, { DropdownOptions } from '@/components/index-structure/index-action-bar.vue';
 import IndexDrilldownPanel from '@/components/index-structure/index-drilldown-panel.vue';
 import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
