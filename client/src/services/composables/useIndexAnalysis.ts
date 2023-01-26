@@ -182,10 +182,10 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
 
   watch(workbench.items, () => {
     const aid = workbench.getAnalysisId();
-    if (aid !== analysisId.value) return;
-    console.log('updated');
-    console.log(workbench.items.value);
-    // Save the state
+    if (aid === analysisId.value) {
+      // Update and save the state whenever items are updated
+      // Not Yet Implemented
+    }
   });
 
   return {
