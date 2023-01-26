@@ -1,29 +1,46 @@
 <template>
   <div class="index-drilldown-panel-container">
-    <header>
-      <span v-if="type === IndexNodeType.OutputIndex" class="type-label"> Output Index </span>
-      <div class="title-row" :class="{ 'space-between': canDeleteSelectedNode }">
-        <h3>{{ panelTitle }}</h3>
-        <div class="button-group">
-          <button class="btn btn-sm" disabled>Rename</button>
-          <button v-if="canDeleteSelectedNode" class="btn btn-sm" disabled>
-            <i class="fa fa-ellipsis-v" />
-          </button>
-        </div>
-      </div>
-    </header>
     <template v-if="type === IndexNodeType.OutputIndex">
+      <header>
+        <span class="type-label"> Output Index </span>
+        <div class="title-row">
+          <h3>{{ panelTitle }}</h3>
+          <button class="btn btn-sm" disabled>Rename</button>
+        </div>
+      </header>
       <IndexComponentWeights />
       <IndexResultsPreview />
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
     <template v-if="type === IndexNodeType.Index">
+      <header>
+        <div class="title-row space-between">
+          <h3>{{ panelTitle }}</h3>
+          <div class="button-group">
+            <button class="btn btn-sm" disabled>Rename</button>
+            <button class="btn btn-sm" disabled>
+              <i class="fa fa-ellipsis-v" />
+            </button>
+          </div>
+        </div>
+      </header>
       <IndexComponentWeights />
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
     <template v-if="type === IndexNodeType.Dataset">
+      <header>
+        <div class="title-row space-between">
+          <h3>{{ panelTitle }}</h3>
+          <div class="button-group">
+            <button class="btn btn-sm" disabled>Rename</button>
+            <button class="btn btn-sm" disabled>
+              <i class="fa fa-ellipsis-v" />
+            </button>
+          </div>
+        </div>
+      </header>
       <section>
         <IndexSpatialCoveragePreview />
       </section>
@@ -36,11 +53,27 @@
       </section>
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
+
+    <template v-if="type === IndexEdgeType.Edge">
+      <header>
+        <div class="title-row space-between">
+          <div class="edge-source-and-target">
+            <h3>{{ 'Highest risk of drought' }}</h3>
+            <h3 class="edge-target">{{ panelTitle }}</h3>
+          </div>
+          <button class="btn btn-sm" disabled>
+            <i class="fa fa-ellipsis-v" />
+          </button>
+        </div>
+      </header>
+      <IndexComponentWeights />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { IndexNodeType } from '@/types/Enums';
+import { IndexNodeType, IndexElementType, IndexEdgeType } from '@/types/Enums';
 import IndexComponentWeights from './index-component-weights.vue';
 import IndexDocumentSnippets from './index-document-snippets.vue';
 import IndexResultsPreview from './index-results-preview.vue';
@@ -48,12 +81,10 @@ import IndexSpatialCoveragePreview from './index-spatial-coverage-preview.vue';
 import IndexDatasetMetadata from './index-dataset-metadata.vue';
 import IndexDatasetSelectedDate from './index-dataset-selected-date.vue';
 import IndexInvertData from './index-invert-data.vue';
-import { computed } from 'vue';
 
 // TODO: populate from props
-const type = IndexNodeType.Dataset;
+const type: IndexElementType = IndexEdgeType.Edge;
 const panelTitle = 'Overall priority';
-const canDeleteSelectedNode = computed(() => type !== IndexNodeType.OutputIndex);
 </script>
 
 <style scoped lang="scss">
@@ -101,5 +132,15 @@ section {
 
 .placeholder {
   background: $un-color-black-5;
+}
+
+.edge-source-and-target {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.edge-target {
+  border-top: 1px solid $separator;
 }
 </style>
