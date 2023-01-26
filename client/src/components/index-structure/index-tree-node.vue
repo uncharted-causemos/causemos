@@ -4,7 +4,11 @@
       <span>
         {{ headerText }}
       </span>
-      <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
+      <OptionsButton
+        v-if="props.data.type !== IndexNodeType.OutputIndex"
+        :dropdown-below="true"
+        :wider-dropdown-options="true"
+      >
         <template #content>
           <div
             v-for="item in optionsButtonMenu"
