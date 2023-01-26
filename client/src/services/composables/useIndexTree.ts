@@ -20,7 +20,6 @@ export default function useIndexWorkBench() {
   const init = (analysisId: string, indexTree: OutputIndex) => {
     targetAnalysisId.value = analysisId;
     outputIndexTree.value = indexTree;
-    console.log('init index tree');
   };
 
   const getAnalysisId = (): string => {
@@ -31,7 +30,6 @@ export default function useIndexWorkBench() {
     const isUpdated = findAndUpdateNode(outputIndexTree.value, updateNode);
     if (isUpdated) {
       triggerUpdate();
-      console.log('index tree: find and update');
     }
   };
 
@@ -39,12 +37,10 @@ export default function useIndexWorkBench() {
     if (nodeId === outputIndexTree.value.id) {
       // Reset root node
       outputIndexTree.value = createNewOutputIndex();
-      console.log('index tree: find and delete');
       return;
     }
     const isDeleted = findAndRemoveChild(outputIndexTree.value, nodeId);
     if (isDeleted) triggerUpdate();
-    console.log('index tree: find and delete');
   };
 
   return {

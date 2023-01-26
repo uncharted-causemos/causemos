@@ -50,7 +50,7 @@
 import { computed, ref } from 'vue';
 import { Dataset, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
-import { createNewIndex, duplicate, isDatasetNode, isParentNode } from '@/utils/indextree-util';
+import { createNewIndex, duplicateNode, isDatasetNode, isParentNode } from '@/utils/indextree-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 
@@ -177,7 +177,7 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
       isRenaming.value = true;
       break;
     case OptionButtonMenu.Duplicate:
-      emit('duplicate', duplicate(props.data));
+      emit('duplicate', duplicateNode(props.data));
       break;
     case OptionButtonMenu.Delete:
       emit('delete', props.data);

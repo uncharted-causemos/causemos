@@ -14,24 +14,26 @@ export default function useIndexWorkBench() {
   const init = (analysisId: string, items: IndexWorkBenchItem[]) => {
     targetAnalysisId.value = analysisId;
     workBenchItems.value = [...items];
-    console.log('init workbench');
   };
+
   const getAnalysisId = (): string => {
     return targetAnalysisId.value;
   };
+
   const addItem = (item: IndexWorkBenchItem) => {
     workBenchItems.value = [item, ...workBenchItems.value];
-    console.log('add item ');
   };
+
   const findAndUpdateItem = (updateItem: IndexWorkBenchItem) => {
     const isUpdated = workBenchItems.value.some((tree) => findAndUpdateNode(tree, updateItem));
     if (isUpdated) {
       workBenchItems.value = [...workBenchItems.value];
-      console.log('find and update');
     }
   };
+
   const findAndDeleteItem = (nodeId: string) => {
     let isDeleted = false;
+    // Search among root nodes first
     const newItems = workBenchItems.value.filter((item) => item.id !== nodeId);
     isDeleted = newItems.length < workBenchItems.value.length;
     if (isDeleted) {

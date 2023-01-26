@@ -1,5 +1,10 @@
 import { expect } from 'chai';
-import { findNode, findAndRemoveChild, findAndUpdateNode } from '@/utils/indextree-util';
+import {
+  findNode,
+  findAndRemoveChild,
+  findAndUpdateNode,
+  duplicateNode,
+} from '@/utils/indextree-util';
 import { IndexNodeType } from '@/types/Enums';
 import { OutputIndex, Index } from '@/types/Index';
 
@@ -222,6 +227,24 @@ describe('indextree-util', () => {
 
       isRemoved = findAndRemoveChild(tree, 'non-existent-id');
       expect(isRemoved).equal(false);
+    });
+  });
+
+  describe('duplicateNode', () => {
+    it('should deep copy the node', () => {
+      const tree = newTestTree();
+      const duplicated = duplicateNode(tree);
+
+      // check root
+      expect(tree.id).not.equal(duplicated.id);
+      expect(tree.name).equal(duplicated.name);
+
+      // check grandchild
+      const node = (tree.inputs[1] as Index).inputs[0];
+      const dNode = ((duplicated as OutputIndex).inputs[1] as Index).inputs[0];
+
+      expect(node.id).not.equal(dNode.id);
+      expect(node.name).equal(dNode.name);
     });
   });
 });

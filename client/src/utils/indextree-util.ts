@@ -56,16 +56,21 @@ export const addFirst = (
   return { ...indexNodeTree };
 };
 
-export const duplicate = (indexNodeTree: IndexNode): indexNode => {
-  const newTree = JSON.parse(JSON.stringify(indexNodeTree));
+/**
+ * Duplicate the node and returns newly duplicated node.
+ * The new node and its children are assigned with newly generated id.
+ * @param indexNode An index node
+ */
+export const duplicateNode = (indexNode: IndexNode): IndexNode => {
+  const duplicated = JSON.parse(JSON.stringify(indexNode));
   // Update ids
   const _assignId = (node: IndexNode) => {
     node.id = uuidv4();
     if (!isParentNode(node)) return;
     node.inputs.forEach(_assignId);
   };
-  _assignId(newTree);
-  return newTree;
+  _assignId(duplicated);
+  return duplicated;
 };
 
 /**
