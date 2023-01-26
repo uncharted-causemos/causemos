@@ -1,11 +1,26 @@
 <template>
   <div class="index-tree-node-container" :class="classObject">
     <div class="header content">
-      {{ headerText }}
+      <span>
+        {{ headerText }}
+      </span>
+      <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
+        <template #content>
+          <div
+            v-for="item in optionsButtonMenu"
+            class="dropdown-option"
+            :key="item.type"
+            @click="handleOptionsButtonClick(item.type)"
+          >
+            <i class="fa fa-fw" :class="item.icon" />
+            {{ item.text }}
+          </div>
+        </template>
+      </OptionsButton>
     </div>
     <div v-if="showEditName" class="content input flex">
-      <input type="text" v-model="newNodeName" />
-      <button @click="handleRename()">Done</button>
+      <input type="text" v-model="newNodeName" v-on:keyup.enter="handleRenameDone" />
+      <button @click="handleRenameDone()">Done</button>
     </div>
     <div v-else class="name content">
       {{ props.data.name }}
@@ -34,14 +49,15 @@
 import { computed, ref } from 'vue';
 import { Dataset, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
-import { createNewIndex, isDatasetNode, isParentNode } from '@/utils/indextree-util';
+import { createNewIndex, duplicate, isDatasetNode, isParentNode } from '@/utils/indextree-util';
 import DropdownButton from '@/components/dropdown-button.vue';
+import OptionsButton from '@/components/widgets/options-button.vue';
 
 export enum AddInputDropdownOptions {
   Dataset = 'Dataset',
   Index = 'Index',
 }
-export enum NodeActionDropDownOptions {
+export enum OptionButtonMenu {
   Rename = 'Rename',
   Duplicate = 'Duplicate',
   Delete = 'Delete',
@@ -57,6 +73,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'update', updated: IndexNode): void;
   (e: 'delete', deleted: IndexNode): void;
+  (e: 'duplicate', deleted: IndexNode): void;
 }>();
 
 const childNodes = computed(() => (isParentNode(props.data) ? props.data.inputs : []));
@@ -77,6 +94,24 @@ const classObject = computed(() => {
     editable: props.showIndexAddButton,
   };
 });
+
+const optionsButtonMenu = [
+  {
+    type: OptionButtonMenu.Rename,
+    text: 'Rename',
+    icon: 'fa-pencil',
+  },
+  {
+    type: OptionButtonMenu.Duplicate,
+    text: 'Duplicate',
+    icon: 'fa-copy',
+  },
+  {
+    type: OptionButtonMenu.Delete,
+    text: 'Delete',
+    icon: 'fa-trash',
+  },
+];
 
 const headerText = computed(() => {
   switch (props.data.type) {
@@ -111,7 +146,8 @@ const footerText = computed(() => {
   }
 });
 
-const handleRename = () => {
+const handleRenameDone = () => {
+  if (!newNodeName.value) return;
   const updated = { ...props.data, name: newNodeName.value };
   emit('update', updated);
   isRenaming.value = false;
@@ -128,6 +164,24 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
       break;
     case AddInputDropdownOptions.Dataset:
       // Not Yet Implemented
+      break;
+    default:
+      break;
+  }
+};
+
+const handleOptionsButtonClick = (option: OptionButtonMenu) => {
+  const node = props.data;
+  switch (option) {
+    case OptionButtonMenu.Rename:
+      newNodeName.value = props.data.name;
+      isRenaming.value = true;
+      break;
+    case OptionButtonMenu.Duplicate:
+      emit('duplicate', duplicate(props.data));
+      break;
+    case OptionButtonMenu.Delete:
+      emit('delete', props.data);
       break;
     default:
       break;
@@ -152,6 +206,28 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
   .content {
     width: 100%;
     padding: 5px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .options-button-container {
+    width: 16px;
+    height: 16px;
+    :deep(i) {
+      font-size: 12px;
+    }
+    display: none;
+    :deep(.dropdown-container) {
+      top: 16px;
+      right: 16px;
+    }
+  }
+  .header:hover .options-button-container,
+  .options-button-container.active {
+    display: block;
   }
 
   .header,

@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { ref, computed } from 'vue';
 import { IndexWorkBenchItem } from '@/types/Index';
-import { findAndUpdateNode } from '@/utils/indextree-util';
+import { findAndUpdateNode, findAndRemoveChild } from '@/utils/indextree-util';
 
 // Temporary index nodes that are being created and not yet attached to the main index tree yet
 const workBenchItems = ref<IndexWorkBenchItem[]>([]);
@@ -30,12 +30,26 @@ export default function useIndexWorkBench() {
       console.log('find and update');
     }
   };
+  const findAndDeleteItem = (nodeId: string) => {
+    let isDeleted = false;
+    const newItems = workBenchItems.value.filter((item) => item.id !== nodeId);
+    isDeleted = newItems.length < workBenchItems.value.length;
+    if (isDeleted) {
+      workBenchItems.value = newItems;
+      return;
+    }
+    isDeleted = workBenchItems.value.some((tree) => findAndRemoveChild(tree, nodeId));
+    if (isDeleted) {
+      workBenchItems.value = newItems;
+    }
+  };
 
   return {
     items,
     init,
     addItem,
     findAndUpdateItem,
+    findAndDeleteItem,
     getAnalysisId,
   };
 }

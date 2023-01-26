@@ -22,6 +22,8 @@
           :data="item.data"
           :show-index-add-button="!isMainTreeNodeItem(index)"
           @update="handleUpdateNode"
+          @delete="handleDeleteNode"
+          @duplicate="handleDuplicateNode"
         />
         <div
           class="out-line"
@@ -44,6 +46,7 @@ import { IndexNodeType } from '@/types/Enums';
 import { OutputIndex, IndexNode } from '@/types/Index';
 import { isParentNode } from '@/utils/indextree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+
 /**
  *  work bench items are positioned at least {WORKBENCH_LEFT_OFFSET} column(s) left to the main output index node
  */
@@ -180,9 +183,15 @@ const isMainTreeNodeItem = (nodeItemIndex: number) => {
 };
 
 const handleUpdateNode = (updated: IndexNode) => {
-  // try update from main tree too
-  // if update not found
   if (updated.type !== IndexNodeType.OutputIndex) workBench.findAndUpdateItem(updated);
+  // TODO: handle updated node from upstream index tree
+};
+const handleDeleteNode = (deleteNode: IndexNode) => {
+  workBench.findAndDeleteItem(deleteNode.id);
+  // TODO: handle delete node from upstream index tree
+};
+const handleDuplicateNode = (duplicated: IndexNode) => {
+  if (duplicated.type !== IndexNodeType.OutputIndex) workBench.addItem(duplicated);
 };
 </script>
 

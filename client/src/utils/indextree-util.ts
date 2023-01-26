@@ -43,6 +43,18 @@ export const addFirst = (
   return { ...indexNodeTree };
 };
 
+export const duplicate = (indexNodeTree: IndexNode): indexNode => {
+  const newTree = JSON.parse(JSON.stringify(indexNodeTree));
+  // Update ids
+  const _assignId = (node: IndexNode) => {
+    node.id = uuidv4();
+    if (!isParentNode(node)) return;
+    node.inputs.forEach(_assignId);
+  };
+  _assignId(newTree);
+  return newTree;
+};
+
 /**
  * Removes the node with given nodeId from provided index node tree children
  * Returns boolean indicating if the node was found and removed successfully.
