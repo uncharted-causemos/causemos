@@ -30,7 +30,7 @@
         v-model="newNodeName"
         v-on:keyup.enter="handleRenameDone"
       />
-      <button class="btn btn-default" @click="handleRenameDone()">Done</button>
+      <button class="btn btn-default" @click="handleRenameDone">Done</button>
     </div>
     <div v-else class="name content">
       {{ props.data.name }}
