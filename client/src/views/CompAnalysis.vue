@@ -944,12 +944,12 @@ $marginSize: 6px;
   &.card-count-2,
   &.card-count-3,
   &.card-count-4 {
-    min-width: calc(50% - #{$marginSize / 2});
-    max-width: calc(50% - #{$marginSize / 2});
+    min-width: calc(50% - calc($marginSize / 2));
+    max-width: calc(50% - calc($marginSize / 2));
   }
   &.card-count-n {
-    min-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
-    max-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
+    min-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
+    max-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
   }
 }
 

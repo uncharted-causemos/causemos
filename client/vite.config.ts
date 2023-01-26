@@ -39,4 +39,14 @@ export default defineConfig({
       },
     }),
   ],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        // Silence deprecation warnings for node_modules
+        // Particularly relevant for the / Division Operator breaking change:
+        //  https://sass-lang.com/documentation/breaking-changes/slash-div
+        quietDeps: true,
+      },
+    },
+  },
 });
