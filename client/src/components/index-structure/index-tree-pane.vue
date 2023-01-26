@@ -140,7 +140,7 @@ const getGridDimension = (trees: IndexTreeNodeItem[]) => {
   };
 };
 
-// Temporary nodes/sub-tree that are being created and detached from the main tree
+// Temporary nodes/sub-trees that are being created and detached from the main tree
 const workBenchNodeItemTrees = computed(() => {
   let rowOffset = 0;
   const trees = workBench.items.value.map((node) => {

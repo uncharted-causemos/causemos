@@ -1,5 +1,6 @@
 <template>
   <div class="index-tree-node-container" :class="classObject">
+    <div v-if="isParentNode(props.data)" class="input-arrow" />
     <div class="header content">
       <span>
         {{ headerText }}
@@ -22,9 +23,14 @@
         </template>
       </OptionsButton>
     </div>
-    <div v-if="showEditName" class="content input flex">
-      <input type="text" v-model="newNodeName" v-on:keyup.enter="handleRenameDone" />
-      <button @click="handleRenameDone()">Done</button>
+    <div v-if="showEditName" class="rename content flex">
+      <input
+        class="form-control"
+        type="text"
+        v-model="newNodeName"
+        v-on:keyup.enter="handleRenameDone"
+      />
+      <button class="btn btn-default" @click="handleRenameDone()">Done</button>
     </div>
     <div v-else class="name content">
       {{ props.data.name }}
@@ -33,10 +39,13 @@
       {{ footerText }}
     </div>
     <!-- footer buttons -->
-    <div v-if="classObject.placeholder" class="placeholder-btn content">
-      <button>Replace with dataset</button>
+    <div v-if="classObject.placeholder" class="content">
+      <button class="btn btn-default w-100">Replace with dataset</button>
     </div>
-    <div v-if="isParentNode(props.data) && !showEditName" class="add-component-btn footer content">
+    <div
+      v-if="isParentNode(props.data) && !showEditName"
+      class="add-component-btn-container footer content"
+    >
       <DropdownButton
         :is-dropdown-left-aligned="true"
         :items="Object.values(AddInputDropdownOptions)"
@@ -202,14 +211,24 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   border: 1px solid $border-color;
   border-radius: 3px;
 
-  .content {
-    width: 100%;
-    padding: 5px 10px;
+  .btn-default {
+    background: #f0f1f2;
+    border: 1px solid #cacbcc;
+    box-shadow: 0px 1px 0px rgb(54 55 56 / 10%), inset 0px -8px 10px -8px rgb(54 55 56 / 10%);
+    border-radius: 3px;
+    font-size: $font-size-small;
+    font-weight: 600;
+    padding: 3px 8px;
   }
 
-  .header {
-    display: flex;
-    justify-content: space-between;
+  .input-arrow {
+    position: absolute;
+    top: 15px;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 5px solid #b3b4b5;
   }
 
   .options-button-container {
@@ -224,9 +243,29 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
       right: 16px;
     }
   }
+
+  .add-component-btn-container :deep(button) {
+    @extend .btn-default;
+    strong {
+      padding-right: 5px;
+      font-weight: 600;
+      font-size: $font-size-small;
+    }
+  }
+
   .header:hover .options-button-container,
   .options-button-container.active {
     display: block;
+  }
+
+  .content {
+    width: 100%;
+    padding: 5px 10px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
   }
 
   .header,
@@ -239,14 +278,21 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
     padding-bottom: 0px;
   }
 
-  .footer {
-    padding-top: 0px;
+  .rename {
+    input {
+      height: 32px;
+    }
+    button {
+      width: 100%;
+      max-width: 59px;
+      margin-left: 5px;
+      color: #fff;
+      background-color: $call-to-action-color;
+    }
   }
 
-  .placeholder-btn button {
-    width: 100%;
-    font-size: $font-size-small;
-    font-weight: 600;
+  .footer {
+    padding-top: 0px;
   }
 
   &.selected {
@@ -276,19 +322,6 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
     .header {
       height: 26px;
       border-bottom: 1px dashed $border-color;
-    }
-  }
-  .add-component-btn :deep(button) {
-    width: 126px;
-    height: 24px;
-    background: #f0f1f2;
-    border: 1px solid #cacbcc;
-    box-shadow: 0px 1px 0px rgba(54, 55, 56, 0.1), inset 0px -8px 10px -8px rgba(54, 55, 56, 0.1);
-    border-radius: 3px;
-    strong {
-      padding: 0 8px;
-      font-weight: 600;
-      font-size: $font-size-small;
     }
   }
 }
