@@ -21,9 +21,9 @@
           v-if="item.data"
           :data="item.data"
           :show-index-add-button="!isMainTreeNodeItem(index)"
-          @update="handleUpdateNode"
-          @delete="handleDeleteNode"
-          @duplicate="handleDuplicateNode"
+          @update="updateNode"
+          @delete="deleteNode"
+          @duplicate="duplicateNode"
         />
         <div
           class="out-line"
@@ -43,22 +43,18 @@ import _ from 'lodash';
 import { computed } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
-import { OutputIndex, IndexNode } from '@/types/Index';
+import { IndexNode } from '@/types/Index';
 import { isParentNode } from '@/utils/indextree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+import useIndexTree from '@/services/composables/useIndexTree';
 
 /**
  *  work bench items are positioned at least {WORKBENCH_LEFT_OFFSET} column(s) left to the main output index node
  */
 const WORKBENCH_LEFT_OFFSET = 1;
 
-interface Props {
-  indexAnalysisId: string;
-  indexTree: OutputIndex;
-}
-const props = defineProps<Props>();
-
 const workBench = useIndexWorkBench();
+const indexTree = useIndexTree();
 
 // IndexNodeItem contains indexNode data along with metadata needed for rendering and layout of the tree
 interface IndexTreeNodeItem {
@@ -158,7 +154,7 @@ const workBenchNodeItemTrees = computed(() => {
 
 const indexNodeItemTree = computed(() => {
   const workbenchDimension = getGridDimension(workBenchNodeItemTrees.value);
-  const tree = toIndexNodeItemTree(props.indexTree);
+  const tree = toIndexNodeItemTree(indexTree.tree.value);
   const mainTreeNumCols = getGridDimension([tree]).numCols;
   const maxNumCols = Math.max(workbenchDimension.numCols + WORKBENCH_LEFT_OFFSET, mainTreeNumCols);
   calculateLayout(tree, workbenchDimension.numRows, maxNumCols - mainTreeNumCols);
@@ -182,16 +178,20 @@ const isMainTreeNodeItem = (nodeItemIndex: number) => {
   return nodeItemIndex >= mainTreeNodeItemStartIndex;
 };
 
-const handleUpdateNode = (updated: IndexNode) => {
+const updateNode = (updated: IndexNode) => {
   if (updated.type !== IndexNodeType.OutputIndex) workBench.findAndUpdateItem(updated);
-  // TODO: handle updated node from upstream index tree
+  indexTree.findAndUpdate(updated);
 };
-const handleDeleteNode = (deleteNode: IndexNode) => {
+
+const deleteNode = (deleteNode: IndexNode) => {
+  // Find from both places and delete the node.
   workBench.findAndDeleteItem(deleteNode.id);
-  // TODO: handle delete node from upstream index tree
+  indexTree.findAndDelete(deleteNode.id);
 };
-const handleDuplicateNode = (duplicated: IndexNode) => {
-  if (duplicated.type !== IndexNodeType.OutputIndex) workBench.addItem(duplicated);
+
+const duplicateNode = (duplicated: IndexNode) => {
+  if (duplicated.type === IndexNodeType.OutputIndex) return;
+  workBench.addItem(duplicated);
 };
 </script>
 

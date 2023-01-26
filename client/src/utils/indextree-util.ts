@@ -1,6 +1,6 @@
-import { IndexNodeType } from '@/types/Enums';
-import { IndexNode, Dataset, ParentNode, Index } from '@/types/Index';
 import { v4 as uuidv4 } from 'uuid';
+import { IndexNodeType } from '@/types/Enums';
+import { IndexNode, Dataset, ParentNode, Index, OutputIndex } from '@/types/Index';
 
 type findNodeReturn = { parent: IndexNode | null; found: IndexNode } | undefined;
 
@@ -13,18 +13,31 @@ export const isParentNode = (indexNode: IndexNode): indexNode is ParentNode => {
 };
 
 export const createNewIndex = (): Index => {
-  return {
+  const node: Index = {
     id: uuidv4(),
     type: IndexNodeType.Index,
     name: '',
     weight: 0,
     isWeightUserSpecified: false,
     inputs: [],
-  } as Index;
+  };
+  return node;
+};
+
+export const createNewOutputIndex = () => {
+  const node: OutputIndex = {
+    id: uuidv4(),
+    type: IndexNodeType.OutputIndex,
+    name: '',
+    inputs: [],
+  };
+  return node;
 };
 
 export const createNewNode = (type: IndexNodeType) => {
   switch (type) {
+    case IndexNodeType.OutputIndex:
+      return createNewOutputIndex();
     case IndexNodeType.Dataset:
       // Not yet implemented
       break;

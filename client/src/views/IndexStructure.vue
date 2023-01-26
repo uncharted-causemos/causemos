@@ -6,12 +6,7 @@
   <div class="index-structure-view-container content-full flex">
     <div class="flex-col h-100 flex-grow w-0">
       <IndexActionBar @addDropdownChange="handleAddDropdownChange" />
-      <IndexTreePane
-        v-if="isStateLoaded"
-        class="flex-grow"
-        :index-analysis-id="analysisId"
-        :index-tree="indexTree"
-      />
+      <IndexTreePane v-if="isStateLoaded" class="flex-grow" />
     </div>
     <IndexDrilldownPanel class="index-drilldown-panel" />
   </div>
@@ -33,7 +28,7 @@ const store = useStore();
 const route = useRoute();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, indexTree, refresh } = useIndexAnalysis(analysisId);
+const { analysisName, refresh } = useIndexAnalysis(analysisId);
 
 const indexWorkBench = useIndexWorkBench();
 

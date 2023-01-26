@@ -36,10 +36,7 @@
     <div v-if="classObject.placeholder" class="placeholder-btn content">
       <button>Replace with dataset</button>
     </div>
-    <div
-      v-if="classObject.index && props.showIndexAddButton && !showEditName"
-      class="add-component-btn footer content"
-    >
+    <div v-if="isParentNode(props.data) && !showEditName" class="add-component-btn footer content">
       <DropdownButton
         :is-dropdown-left-aligned="true"
         :items="Object.values(AddInputDropdownOptions)"
@@ -70,7 +67,6 @@ export enum OptionButtonMenu {
 <script setup lang="ts">
 interface Props {
   data: IndexNode;
-  showIndexAddButton: boolean;
 }
 const props = defineProps<Props>();
 
@@ -95,7 +91,6 @@ const classObject = computed(() => {
     index: props.data.type === IndexNodeType.Index,
     dataset: props.data.type === IndexNodeType.Dataset,
     placeholder: props.data.type === IndexNodeType.Placeholder,
-    editable: props.showIndexAddButton,
   };
 });
 
@@ -209,7 +204,7 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
 
   .content {
     width: 100%;
-    padding: 5px;
+    padding: 5px 10px;
   }
 
   .header {
@@ -240,8 +235,12 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
     color: $text-color-medium;
   }
 
+  .name {
+    padding-bottom: 0px;
+  }
+
   .footer {
-    padding-top: 0;
+    padding-top: 0px;
   }
 
   .placeholder-btn button {
@@ -258,9 +257,6 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   &.index {
     .header {
       padding-bottom: 0px;
-    }
-    .name {
-      padding-top: 0px;
     }
   }
   &.output-index {
@@ -280,14 +276,6 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
     .header {
       height: 26px;
       border-bottom: 1px dashed $border-color;
-    }
-  }
-  &.editable {
-    .content {
-      padding-left: 10px;
-    }
-    .name {
-      padding-bottom: 0px;
     }
   }
   .add-component-btn :deep(button) {
