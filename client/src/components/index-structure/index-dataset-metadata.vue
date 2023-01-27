@@ -14,7 +14,7 @@
       drought) to +4 (extremely moist).
     </p>
   </section>
-  <section>
+  <section v-bind="$attrs">
     <h4>Source: {{ 'TerraClimate PDSI' }}</h4>
     <p class="de-emphasized">
       TerraClimate is a dataset of monthly climate and climatic water balance for global terrestrial
