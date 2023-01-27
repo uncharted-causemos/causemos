@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref, readonly } from 'vue';
 import { IndexNode, OutputIndex } from '@/types/Index';
 import {
   findAndUpdateNode,
@@ -9,9 +9,8 @@ import {
 const outputIndexTree = ref<OutputIndex>(createNewOutputIndex());
 const targetAnalysisId = ref('');
 
-export default function useIndexWorkBench() {
-  // read-only index tree
-  const tree = computed(() => outputIndexTree.value);
+export default function useIndexTree() {
+  const tree = readonly(outputIndexTree);
 
   const triggerUpdate = () => {
     outputIndexTree.value = { ...outputIndexTree.value };

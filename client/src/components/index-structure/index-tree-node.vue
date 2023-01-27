@@ -163,8 +163,11 @@ const handleRenameDone = () => {
 };
 
 const handleAddInput = (option: AddInputDropdownOptions) => {
-  const node = props.data;
-  if (!isParentNode(node)) return;
+  if (!isParentNode(props.data)) return;
+  // Clone node since props.data is read only
+  // TODO: instead of using 'update', emit an add node event with this node id as parent id and new node as child payload.
+  // Then handle adding new node to the tree inside useIndexTree/useIndexWorkbench
+  const node = JSON.parse(JSON.stringify(props.data));
   switch (option) {
     case AddInputDropdownOptions.Index:
       node.inputs.unshift(createNewIndex());

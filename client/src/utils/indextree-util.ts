@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { IndexNodeType } from '@/types/Enums';
 import { IndexNode, Dataset, ParentNode, Index, OutputIndex } from '@/types/Index';
+import { DeepReadonly } from 'vue';
 
 type findNodeReturn = { parent: IndexNode | null; found: IndexNode } | undefined;
 
@@ -10,6 +11,12 @@ export const isDatasetNode = (indexNode: IndexNode): indexNode is Dataset => {
 
 export const isParentNode = (indexNode: IndexNode): indexNode is ParentNode => {
   return (indexNode as ParentNode).inputs !== undefined;
+};
+
+export const isDeepReadOnlyParentNode = (
+  indexNode: DeepReadonly<IndexNode>
+): indexNode is DeepReadonly<ParentNode> => {
+  return (indexNode as DeepReadonly<ParentNode>).inputs !== undefined;
 };
 
 export const createNewIndex = (): Index => {

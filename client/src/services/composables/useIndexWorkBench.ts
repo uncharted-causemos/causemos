@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { ref, computed } from 'vue';
+import { ref, readonly } from 'vue';
 import { IndexWorkBenchItem } from '@/types/Index';
 import { findAndUpdateNode, findAndRemoveChild } from '@/utils/indextree-util';
 
@@ -8,8 +8,7 @@ const workBenchItems = ref<IndexWorkBenchItem[]>([]);
 const targetAnalysisId = ref('');
 
 export default function useIndexWorkBench() {
-  // read-only items
-  const items = computed(() => workBenchItems.value);
+  const items = readonly(workBenchItems);
 
   const init = (analysisId: string, items: IndexWorkBenchItem[]) => {
     targetAnalysisId.value = analysisId;

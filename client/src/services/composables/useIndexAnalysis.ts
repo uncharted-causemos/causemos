@@ -10,7 +10,7 @@ import { IndexNodeType } from '@/types/Enums';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 
-export const mockData = (): OutputIndex => ({
+const mockData = (): OutputIndex => ({
   id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
   type: IndexNodeType.OutputIndex,
   name: 'Overall Priority',

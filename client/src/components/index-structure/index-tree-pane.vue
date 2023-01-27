@@ -15,7 +15,6 @@
           ...item.style.grid,
         }"
       >
-        <div class="in-line" :class="{ visible: item.style.hasInputLine }" />
         <IndexTreeNode
           class="node-item"
           v-if="item.data"
@@ -26,13 +25,17 @@
           @duplicate="duplicateNode"
         />
         <div
-          class="out-line"
+          class="edge"
           :class="{
             visible: item.style.hasOutputLine,
             dashed: item.type === IndexNodeType.Placeholder,
             'last-child': item.style.isLastChild,
+            'first-child': item.style.isFirstChild,
           }"
-        />
+        >
+          <div class="top"><div></div></div>
+          <div class="side" />
+        </div>
       </div>
     </div>
   </div>
@@ -40,11 +43,11 @@
 
 <script setup lang="ts">
 import _ from 'lodash';
-import { computed } from 'vue';
+import { computed, DeepReadonly } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
 import { IndexNode } from '@/types/Index';
-import { isParentNode } from '@/utils/indextree-util';
+import { isDeepReadOnlyParentNode } from '@/utils/indextree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 
@@ -60,15 +63,15 @@ const indexTree = useIndexTree();
 interface IndexTreeNodeItem {
   type: IndexNodeType;
   children: IndexTreeNodeItem[];
-  data: IndexNode;
+  data: DeepReadonly<IndexNode>;
   /** width of the node represented by the total number of leaf nodes it has */
   width: number;
   /** number of edges on the longest path from the node to a leaf */
   height: number;
   style: {
-    hasInputLine: boolean;
     hasOutputLine: boolean;
     isLastChild: boolean;
+    isFirstChild: boolean;
     grid: {
       /** grid-row css property */
       'grid-row'?: string;
@@ -79,7 +82,7 @@ interface IndexTreeNodeItem {
 }
 
 // Convert given index node tree to index node item tree
-const toIndexNodeItemTree = (node: IndexNode): IndexTreeNodeItem => {
+const toIndexNodeItemTree = (node: DeepReadonly<IndexNode>): IndexTreeNodeItem => {
   const item: IndexTreeNodeItem = {
     type: node.type,
     data: node,
@@ -88,19 +91,19 @@ const toIndexNodeItemTree = (node: IndexNode): IndexTreeNodeItem => {
     width: 1,
     style: {
       grid: {},
-      hasInputLine: false,
       hasOutputLine: false,
+      isFirstChild: false,
       isLastChild: false,
     },
   };
-  if (isParentNode(node) && node.inputs.length > 0) {
+  if (isDeepReadOnlyParentNode(node) && node.inputs.length > 0) {
     item.children = node.inputs.map(toIndexNodeItemTree);
     item.height = Math.max(...item.children.map((c) => c.height)) + 1;
     item.width = item.children.reduce((prev, item) => prev + item.width, 0);
     // Add style properties to self and each child node
-    item.style.hasInputLine = true;
     item.children.forEach((item) => (item.style.hasOutputLine = true));
     item.children[item.children.length - 1].style.isLastChild = true;
+    item.children[0].style.isFirstChild = true;
   }
   return item;
 };
@@ -212,27 +215,42 @@ const duplicateNode = (duplicated: IndexNode) => {
   .node-item {
     margin: $node-margin 0;
   }
-  .out-line,
-  .in-line {
+  .edge {
     position: relative;
     top: $node-margin + 13px;
+    width: 100px;
     &.visible {
-      border-top: 2px solid #cacbcc;
+      .top {
+        width: 80%;
+        border-top: 2px solid #cacbcc;
+      }
+      .side {
+        width: 80%;
+        height: 100%;
+        border-right: 2px solid #cacbcc;
+      }
     }
-    &.visible.dashed {
-      border-top: 2px dashed #cacbcc;
-    }
-  }
-  .in-line {
-    width: 20px;
-  }
-  .out-line {
-    width: 80px;
-    &.visible {
-      border-right: 2px solid #cacbcc;
+    &.first-child {
+      .top {
+        width: 100%;
+        div {
+          position: absolute;
+          top: 0px;
+          border-top: 2px solid #cacbcc;
+          right: 0px;
+          width: 20%;
+        }
+      }
     }
     &.last-child {
-      border-right: none;
+      .side {
+        border: none;
+      }
+    }
+    &.visible.dashed {
+      .top {
+        border-top: 2px dashed #cacbcc;
+      }
     }
   }
 }
