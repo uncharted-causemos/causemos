@@ -2,8 +2,8 @@
   <div class="index-action-bar-container">
     <DropdownButton
       :is-dropdown-left-aligned="true"
-      :items="DROPDOWN_OPTIONS"
-      :selected-item="'Add'"
+      :items="Object.values(DropdownOptions)"
+      :selected-item="'Add Component'"
       @item-selected="handleDropdownSelection"
     />
   </div>

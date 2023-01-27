@@ -1,35 +1,89 @@
 <template>
   <div class="index-tree-node-container" :class="classObject">
-    <div class="header">
-      {{ headerText }}
+    <div v-if="isParentNode(props.data)" class="input-arrow" />
+    <div class="header content">
+      <span>
+        {{ headerText }}
+      </span>
+      <OptionsButton
+        v-if="props.data.type !== IndexNodeType.OutputIndex"
+        :dropdown-below="true"
+        :wider-dropdown-options="true"
+      >
+        <template #content>
+          <div
+            v-for="item in optionsButtonMenu"
+            class="dropdown-option"
+            :key="item.type"
+            @click="handleOptionsButtonClick(item.type)"
+          >
+            <i class="fa fa-fw" :class="item.icon" />
+            {{ item.text }}
+          </div>
+        </template>
+      </OptionsButton>
     </div>
-    <div class="content">
-      {{ nameText }}
+    <div v-if="showEditName" class="rename content flex">
+      <input
+        class="form-control"
+        type="text"
+        v-model="newNodeName"
+        v-on:keyup.enter="handleRenameDone"
+      />
+      <button class="btn btn-default" @click="handleRenameDone">Done</button>
     </div>
-    <div class="footer" v-if="footerText">
+    <div v-else class="name content">
+      {{ props.data.name }}
+    </div>
+    <div v-if="footerText" class="footer content">
       {{ footerText }}
     </div>
-    <div v-if="classObject.placeholder" class="placeholder-btn">
-      <button>Replace with dataset</button>
+    <!-- footer buttons -->
+    <div v-if="classObject.placeholder" class="content">
+      <button class="btn btn-default w-100">Replace with dataset</button>
+    </div>
+    <div
+      v-if="isParentNode(props.data) && !showEditName"
+      class="add-component-btn-container footer content"
+    >
+      <DropdownButton
+        :is-dropdown-left-aligned="true"
+        :items="Object.values(AddInputDropdownOptions)"
+        :selected-item="'Add Component'"
+        @item-selected="handleAddInput"
+      />
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { computed } from 'vue';
+<script lang="ts">
+import { computed, ref } from 'vue';
 import { Dataset, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
-import { isDatasetNode, isParentNode } from '@/utils/indextree-util';
+import { createNewIndex, duplicateNode, isDatasetNode, isParentNode } from '@/utils/indextree-util';
+import DropdownButton from '@/components/dropdown-button.vue';
+import OptionsButton from '@/components/widgets/options-button.vue';
 
+export enum AddInputDropdownOptions {
+  Dataset = 'Dataset',
+  Index = 'Index',
+}
+export enum OptionButtonMenu {
+  Rename = 'Rename',
+  Duplicate = 'Duplicate',
+  Delete = 'Delete',
+}
+</script>
+<script setup lang="ts">
 interface Props {
   data: IndexNode;
 }
 const props = defineProps<Props>();
-const childNodes = computed(() => (isParentNode(props.data) ? props.data.inputs : []));
 
-const getDatasetFooterText = (data: Dataset) => {
-  return data.name === data.datasetName ? '' : data.datasetName;
-};
+const emit = defineEmits<{
+  (e: 'update', updated: IndexNode): void;
+  (e: 'delete', deleted: IndexNode): void;
+  (e: 'duplicate', deleted: IndexNode): void;
+}>();
 
 const classObject = computed(() => {
   return {
@@ -39,6 +93,25 @@ const classObject = computed(() => {
     placeholder: props.data.type === IndexNodeType.Placeholder,
   };
 });
+
+// Rename
+
+const isRenaming = ref(false);
+const newNodeName = ref('');
+
+const showEditName = computed(() => {
+  return props.data.name === '' || isRenaming.value;
+});
+
+const handleRenameDone = () => {
+  if (!newNodeName.value) return;
+  const updated = { ...props.data, name: newNodeName.value };
+  emit('update', updated);
+  isRenaming.value = false;
+  newNodeName.value = '';
+};
+
+// Header
 
 const headerText = computed(() => {
   switch (props.data.type) {
@@ -55,23 +128,88 @@ const headerText = computed(() => {
   }
 });
 
-const nameText = computed(() => {
-  return props.data.name;
+// Options button
+
+const optionsButtonMenu = computed(() => {
+  const menu = [
+    {
+      type: OptionButtonMenu.Rename,
+      text: 'Rename',
+      icon: 'fa-pencil',
+    },
+    {
+      type: OptionButtonMenu.Duplicate,
+      text: 'Duplicate',
+      icon: 'fa-copy',
+    },
+    {
+      type: OptionButtonMenu.Delete,
+      text: 'Delete',
+      icon: 'fa-trash',
+    },
+  ];
+  return showEditName.value ? [menu[2]] : menu;
 });
 
+const handleOptionsButtonClick = (option: OptionButtonMenu) => {
+  const node = props.data;
+  switch (option) {
+    case OptionButtonMenu.Rename:
+      newNodeName.value = props.data.name;
+      isRenaming.value = true;
+      break;
+    case OptionButtonMenu.Duplicate:
+      emit('duplicate', duplicateNode(props.data));
+      break;
+    case OptionButtonMenu.Delete:
+      emit('delete', props.data);
+      break;
+    default:
+      break;
+  }
+};
+
+// Footer
+
+const childNodes = computed(() => (isParentNode(props.data) ? props.data.inputs : []));
 const footerText = computed(() => {
   const dataNodes = childNodes.value.filter((node) => node.type !== IndexNodeType.Placeholder);
   const numInputs = dataNodes.length;
   switch (numInputs) {
     case 0:
       if (isDatasetNode(props.data)) return getDatasetFooterText(props.data);
-      return isParentNode(props.data) ? 'No inputs.' : '';
+      return isParentNode(props.data) && props.data.name ? 'No inputs.' : '';
     case 1:
       return '1 input.';
     default:
       return `Combination of ${numInputs} inputs.`;
   }
 });
+
+const getDatasetFooterText = (data: Dataset) => {
+  return data.name === data.datasetName ? '' : data.datasetName;
+};
+
+// Footer button - add component
+
+const handleAddInput = (option: AddInputDropdownOptions) => {
+  if (!isParentNode(props.data)) return;
+  // Clone node since props.data is read only
+  // TODO: instead of using 'update', emit an add node event with this node id as parent id and new node as child payload.
+  // Then handle adding new node to the tree inside useIndexTree/useIndexWorkbench
+  const node = JSON.parse(JSON.stringify(props.data));
+  switch (option) {
+    case AddInputDropdownOptions.Index:
+      node.inputs.unshift(createNewIndex());
+      emit('update', node);
+      break;
+    case AddInputDropdownOptions.Dataset:
+      // Not Yet Implemented
+      break;
+    default:
+      break;
+  }
+};
 </script>
 
 <style scoped lang="scss">
@@ -81,7 +219,6 @@ const footerText = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 0px;
 
   background: #ffffff;
   width: 240px;
@@ -89,26 +226,89 @@ const footerText = computed(() => {
   border: 1px solid $border-color;
   border-radius: 3px;
 
+  .btn-default {
+    background: #f0f1f2;
+    border: 1px solid #cacbcc;
+    box-shadow: 0px 1px 0px rgb(54 55 56 / 10%), inset 0px -8px 10px -8px rgb(54 55 56 / 10%);
+    border-radius: 3px;
+    font-size: $font-size-small;
+    font-weight: 600;
+    padding: 3px 8px;
+  }
+
+  .input-arrow {
+    position: absolute;
+    top: 15px;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 5px solid #b3b4b5;
+  }
+
+  .options-button-container {
+    width: 16px;
+    height: 16px;
+    :deep(i) {
+      font-size: 12px;
+    }
+    display: none;
+    :deep(.dropdown-container) {
+      top: 16px;
+      right: 16px;
+    }
+  }
+
+  .add-component-btn-container :deep(button) {
+    @extend .btn-default;
+    strong {
+      padding-right: 5px;
+      font-weight: 600;
+      font-size: $font-size-small;
+    }
+  }
+
+  &:hover .options-button-container,
+  .options-button-container.active {
+    display: block;
+  }
+
+  .content {
+    width: 100%;
+    padding: 5px 10px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+  }
+
   .header,
   .footer {
     font-size: $font-size-small;
     color: $text-color-medium;
   }
-  .header,
-  .content,
-  .footer,
-  .placeholder-btn {
-    width: 100%;
-    padding: 5px;
-  }
-  .footer {
-    padding-top: 0;
+
+  .name {
+    padding-bottom: 0px;
   }
 
-  .placeholder-btn button {
-    width: 100%;
-    font-size: $font-size-small;
-    font-weight: 600;
+  .rename {
+    .form-control {
+      height: 32px;
+      padding: 8px 8px;
+    }
+    button {
+      width: 100%;
+      max-width: 59px;
+      margin-left: 5px;
+      color: #fff;
+      background-color: $call-to-action-color;
+    }
+  }
+
+  .footer {
+    padding-top: 0px;
   }
 
   &.selected {
@@ -119,9 +319,6 @@ const footerText = computed(() => {
   &.index {
     .header {
       padding-bottom: 0px;
-    }
-    .content {
-      padding-top: 0px;
     }
   }
   &.output-index {

@@ -3,8 +3,8 @@
     <div
       class="index-tree"
       :style="{
-        'grid-template-columns': `repeat(${indexNodeItemTree.height + 1}, 340px)`,
-        'grid-template-rows': `repeat(${indexNodeItemTree.width}, auto)`,
+        'grid-template-columns': `repeat(${gridDimensions.numCols + WORKBENCH_LEFT_OFFSET}, 340px)`,
+        'grid-template-rows': `repeat(${gridDimensions.numRows}, auto)`,
       }"
     >
       <div
@@ -15,16 +15,26 @@
           ...item.style.grid,
         }"
       >
-        <div class="in-line" :class="{ visible: item.style.hasInputLine }" />
-        <IndexTreeNode class="node-item" v-if="item.data" :data="item.data" />
+        <IndexTreeNode
+          class="node-item"
+          v-if="item.data"
+          :data="item.data"
+          @update="updateNode"
+          @delete="deleteNode"
+          @duplicate="duplicateNode"
+        />
         <div
-          class="out-line"
+          class="edge"
           :class="{
             visible: item.style.hasOutputLine,
             dashed: item.type === IndexNodeType.Placeholder,
             'last-child': item.style.isLastChild,
+            'first-child': item.style.isFirstChild,
           }"
-        />
+        >
+          <div class="top"><div></div></div>
+          <div class="side" />
+        </div>
       </div>
     </div>
   </div>
@@ -32,30 +42,35 @@
 
 <script setup lang="ts">
 import _ from 'lodash';
-import { computed } from 'vue';
+import { computed, DeepReadonly } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
-import { OutputIndex, IndexNode } from '@/types/Index';
-import { isParentNode } from '@/utils/indextree-util';
+import { IndexNode } from '@/types/Index';
+import { isDeepReadOnlyParentNode } from '@/utils/indextree-util';
+import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+import useIndexTree from '@/services/composables/useIndexTree';
 
-interface Props {
-  indexTree: OutputIndex;
-}
-const props = defineProps<Props>();
+/**
+ *  work bench items are positioned at least {WORKBENCH_LEFT_OFFSET} column(s) left to the main output index node
+ */
+const WORKBENCH_LEFT_OFFSET = 1;
+
+const workBench = useIndexWorkBench();
+const indexTree = useIndexTree();
 
 // IndexNodeItem contains indexNode data along with metadata needed for rendering and layout of the tree
 interface IndexTreeNodeItem {
   type: IndexNodeType;
   children: IndexTreeNodeItem[];
-  data: IndexNode;
+  data: DeepReadonly<IndexNode>;
   /** width of the node represented by the total number of leaf nodes it has */
   width: number;
   /** number of edges on the longest path from the node to a leaf */
   height: number;
   style: {
-    hasInputLine: boolean;
     hasOutputLine: boolean;
     isLastChild: boolean;
+    isFirstChild: boolean;
     grid: {
       /** grid-row css property */
       'grid-row'?: string;
@@ -66,7 +81,7 @@ interface IndexTreeNodeItem {
 }
 
 // Convert given index node tree to index node item tree
-const toIndexNodeItemTree = (node: IndexNode): IndexTreeNodeItem => {
+const toIndexNodeItemTree = (node: DeepReadonly<IndexNode>): IndexTreeNodeItem => {
   const item: IndexTreeNodeItem = {
     type: node.type,
     data: node,
@@ -75,26 +90,26 @@ const toIndexNodeItemTree = (node: IndexNode): IndexTreeNodeItem => {
     width: 1,
     style: {
       grid: {},
-      hasInputLine: false,
       hasOutputLine: false,
+      isFirstChild: false,
       isLastChild: false,
     },
   };
-  if (isParentNode(node) && node.inputs.length > 0) {
+  if (isDeepReadOnlyParentNode(node) && node.inputs.length > 0) {
     item.children = node.inputs.map(toIndexNodeItemTree);
     item.height = Math.max(...item.children.map((c) => c.height)) + 1;
     item.width = item.children.reduce((prev, item) => prev + item.width, 0);
     // Add style properties to self and each child node
-    item.style.hasInputLine = true;
     item.children.forEach((item) => (item.style.hasOutputLine = true));
     item.children[item.children.length - 1].style.isLastChild = true;
+    item.children[0].style.isFirstChild = true;
   }
   return item;
 };
 
-const calculateLayout = (nodeItem: IndexTreeNodeItem) => {
-  const FIRST_ROW = 1;
-  const maxCol = nodeItem.height + 1;
+const calculateLayout = (nodeItem: IndexTreeNodeItem, rowOffset = 0, colOffset = 0) => {
+  const firstRow = 1 + rowOffset;
+  const maxCol = nodeItem.height + 1 + colOffset;
   const _calculateLayout = (item: IndexTreeNodeItem, rowNumber: number, level = 0) => {
     item.style.grid['grid-row'] = `${rowNumber} / span ${item.width}`;
     item.style.grid['grid-column'] = `${maxCol - level}`;
@@ -107,18 +122,74 @@ const calculateLayout = (nodeItem: IndexTreeNodeItem) => {
       item.children.forEach((child, i) => _calculateLayout(child, startRows[i], level + 1));
     }
   };
-  _calculateLayout(nodeItem, FIRST_ROW);
+  _calculateLayout(nodeItem, firstRow);
 };
 
 const getAllNodeItems = (nodeItem: IndexTreeNodeItem): IndexTreeNodeItem[] =>
   nodeItem.children.reduce((prev, child) => [...prev, ...getAllNodeItems(child)], [nodeItem]);
 
+/**
+ * Calculate the dimension of the grid in terms of number of grid columns and grid rows to place the provided trees
+ * @param trees Root index node items
+ */
+const getGridDimensions = (trees: IndexTreeNodeItem[]) => {
+  // height of the rendered grid is driven by the node width since the tree is lying side way
+  const sumWidth = trees.reduce((prev, cur) => prev + cur.width, 0);
+  const maxHeight = trees.reduce((prev, cur) => Math.max(prev, cur.height), 0);
+  return {
+    numCols: maxHeight + 1,
+    numRows: sumWidth,
+  };
+};
+
+// Temporary nodes/sub-trees that are being created and detached from the main tree
+const workBenchNodeItemTrees = computed(() => {
+  let rowOffset = 0;
+  const trees = workBench.items.value.map((node) => {
+    const tree = toIndexNodeItemTree(node);
+    calculateLayout(tree, rowOffset);
+    rowOffset += tree.width;
+    return tree;
+  });
+  return trees;
+});
+
 const indexNodeItemTree = computed(() => {
-  const tree = toIndexNodeItemTree(props.indexTree);
-  calculateLayout(tree);
+  const workbenchDimension = getGridDimensions(workBenchNodeItemTrees.value);
+  const tree = toIndexNodeItemTree(indexTree.tree.value);
+  const mainTreeNumCols = getGridDimensions([tree]).numCols;
+  const maxNumCols = Math.max(workbenchDimension.numCols + WORKBENCH_LEFT_OFFSET, mainTreeNumCols);
+  calculateLayout(tree, workbenchDimension.numRows, maxNumCols - mainTreeNumCols);
   return tree;
 });
-const nodeItems = computed(() => getAllNodeItems(indexNodeItemTree.value));
+
+const gridDimensions = computed(() =>
+  getGridDimensions([indexNodeItemTree.value, ...workBenchNodeItemTrees.value])
+);
+
+const workBenchNodeItems = computed(() =>
+  _.flatten(workBenchNodeItemTrees.value.map(getAllNodeItems))
+);
+const mainTreeNodeItems = computed(() => getAllNodeItems(indexNodeItemTree.value));
+const nodeItems = computed(() => {
+  return [...workBenchNodeItems.value, ...mainTreeNodeItems.value];
+});
+
+const updateNode = (updated: IndexNode) => {
+  if (updated.type !== IndexNodeType.OutputIndex) workBench.findAndUpdateItem(updated);
+  indexTree.findAndUpdate(updated);
+};
+
+const deleteNode = (deleteNode: IndexNode) => {
+  // Find from both places and delete the node.
+  workBench.findAndDeleteItem(deleteNode.id);
+  indexTree.findAndDelete(deleteNode.id);
+};
+
+const duplicateNode = (duplicated: IndexNode) => {
+  if (duplicated.type === IndexNodeType.OutputIndex) return;
+  workBench.addItem(duplicated);
+};
 </script>
 
 <style scoped lang="scss">
@@ -138,27 +209,42 @@ const nodeItems = computed(() => getAllNodeItems(indexNodeItemTree.value));
   .node-item {
     margin: $node-margin 0;
   }
-  .out-line,
-  .in-line {
+  .edge {
     position: relative;
     top: $node-margin + 13px;
+    width: 100px;
     &.visible {
-      border-top: 2px solid #cacbcc;
+      .top {
+        width: 80%;
+        border-top: 2px solid #cacbcc;
+      }
+      .side {
+        width: 80%;
+        height: 100%;
+        border-right: 2px solid #cacbcc;
+      }
     }
-    &.visible.dashed {
-      border-top: 2px dashed #cacbcc;
-    }
-  }
-  .in-line {
-    width: 20px;
-  }
-  .out-line {
-    width: 80px;
-    &.visible {
-      border-right: 2px solid #cacbcc;
+    &.first-child {
+      .top {
+        width: 100%;
+        div {
+          position: absolute;
+          top: 0px;
+          border-top: 2px solid #cacbcc;
+          right: 0px;
+          width: 20%;
+        }
+      }
     }
     &.last-child {
-      border-right: none;
+      .side {
+        border: none;
+      }
+    }
+    &.visible.dashed {
+      .top {
+        border-top: 2px dashed #cacbcc;
+      }
     }
   }
 }

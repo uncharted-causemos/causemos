@@ -1,6 +1,6 @@
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import { BinningOptions, RegionRankingCompositionType } from './Enums';
-import { OutputIndex } from './Index';
+import { IndexWorkBenchItem, OutputIndex } from './Index';
 
 export interface CachedDatacubeMetadata {
   featureName: string;
@@ -57,5 +57,8 @@ export interface DataAnalysisState {
 }
 
 export interface IndexAnalysisState {
+  /** Primary index tree */
   index: OutputIndex;
+  /** Temporary index nodes or sub trees that are being edited and detached from the main index tree */
+  workBench: IndexWorkBenchItem[];
 }
