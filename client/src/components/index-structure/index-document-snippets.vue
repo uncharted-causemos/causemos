@@ -65,7 +65,7 @@ const MOCK_SNIPPET: Snippet = {
 
 const props = defineProps<{
   selectedNodeName: string;
-  componentNames: string[];
+  // componentNames: string[];
 }>();
 
 // TODO: use real document count
