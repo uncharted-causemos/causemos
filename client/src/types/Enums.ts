@@ -197,3 +197,9 @@ export enum IndexNodeType {
   Dataset = 'Dataset',
   Placeholder = 'Placeholder',
 }
+
+export enum IndexEdgeType {
+  Edge = 'Edge',
+}
+
+export type IndexElementType = IndexNodeType | IndexEdgeType;
