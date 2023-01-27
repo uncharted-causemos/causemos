@@ -27,13 +27,16 @@ const handleDropdownSelection = (option: DropdownOptions) => {
 </script>
 
 <style scoped lang="scss">
+@import '~styles/uncharted-design-tokens';
+
 .index-action-bar-container {
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 5px 88px;
+  padding: 5px 20px;
 
   height: 51px;
-  background: #ffffff;
+  background: white;
+  border: 1px solid $un-color-black-10;
 }
 </style>

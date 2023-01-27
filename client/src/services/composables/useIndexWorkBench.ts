@@ -1,7 +1,11 @@
 import _ from 'lodash';
 import { ref, readonly } from 'vue';
 import { IndexWorkBenchItem } from '@/types/Index';
-import { findAndUpdateNode, findAndRemoveChild } from '@/utils/indextree-util';
+import {
+  findAndUpdateNode,
+  findAndRemoveChild,
+  findNode as indexTreeUtilFindNode,
+} from '@/utils/indextree-util';
 
 // States
 
@@ -27,6 +31,16 @@ export default function useIndexWorkBench() {
 
   const addItem = (item: IndexWorkBenchItem) => {
     workBenchItems.value = [item, ...workBenchItems.value];
+  };
+
+  const findNode = (nodeId: string) => {
+    for (const tree of workBenchItems.value) {
+      const found = indexTreeUtilFindNode(tree, nodeId);
+      if (found !== undefined) {
+        return found;
+      }
+    }
+    return undefined;
   };
 
   const findAndUpdateItem = (updateItem: IndexWorkBenchItem) => {
@@ -55,6 +69,7 @@ export default function useIndexWorkBench() {
     items,
     initialize,
     addItem,
+    findNode,
     findAndUpdateItem,
     findAndDeleteItem,
     getAnalysisId,

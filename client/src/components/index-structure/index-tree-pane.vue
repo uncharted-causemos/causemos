@@ -1,5 +1,5 @@
 <template>
-  <div class="index-tree-pane-container">
+  <div class="index-tree-pane-container" @click="emit('deselect-all')">
     <div
       class="index-tree"
       :style="{
@@ -19,9 +19,12 @@
           class="node-item"
           v-if="item.data"
           :data="item.data"
+          :selected-element-id="props.selectedElementId"
           @update="updateNode"
           @delete="deleteNode"
           @duplicate="duplicateNode"
+          @select="(id) => emit('select-element', id)"
+          @click.stop=""
         />
         <div
           class="edge"
@@ -49,6 +52,16 @@ import { IndexNode } from '@/types/Index';
 import { isDeepReadOnlyParentNode } from '@/utils/indextree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
+import { SelectableElementId } from '@/views/IndexStructure.vue';
+
+const props = defineProps<{
+  selectedElementId: SelectableElementId | null;
+}>();
+
+const emit = defineEmits<{
+  (e: 'select-element', selectedElement: SelectableElementId): void;
+  (e: 'deselect-all'): void;
+}>();
 
 /**
  *  work bench items are positioned at least {WORKBENCH_LEFT_OFFSET} column(s) left to the main output index node

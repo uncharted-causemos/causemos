@@ -1,5 +1,9 @@
 <template>
-  <div class="index-tree-node-container" :class="classObject">
+  <div
+    class="index-tree-node-container"
+    :class="classObject"
+    @click="emit('select', props.data.id)"
+  >
     <div v-if="isParentNode(props.data)" class="input-arrow" />
     <div class="header content">
       <span>
@@ -15,7 +19,7 @@
             v-for="item in optionsButtonMenu"
             class="dropdown-option"
             :key="item.type"
-            @click="handleOptionsButtonClick(item.type)"
+            @click.stop="handleOptionsButtonClick(item.type)"
           >
             <i class="fa fa-fw" :class="item.icon" />
             {{ item.text }}
@@ -62,6 +66,7 @@ import { IndexNodeType } from '@/types/Enums';
 import { createNewIndex, duplicateNode, isDatasetNode, isParentNode } from '@/utils/indextree-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
+import { SelectableElementId } from '@/views/IndexStructure.vue';
 
 export enum AddInputDropdownOptions {
   Dataset = 'Dataset',
@@ -76,6 +81,7 @@ export enum OptionButtonMenu {
 <script setup lang="ts">
 interface Props {
   data: IndexNode;
+  selectedElementId: SelectableElementId | null;
 }
 const props = defineProps<Props>();
 
@@ -83,6 +89,7 @@ const emit = defineEmits<{
   (e: 'update', updated: IndexNode): void;
   (e: 'delete', deleted: IndexNode): void;
   (e: 'duplicate', deleted: IndexNode): void;
+  (e: 'select', nodeId: string): void;
 }>();
 
 const classObject = computed(() => {
@@ -91,6 +98,7 @@ const classObject = computed(() => {
     index: props.data.type === IndexNodeType.Index,
     dataset: props.data.type === IndexNodeType.Dataset,
     placeholder: props.data.type === IndexNodeType.Placeholder,
+    selected: props.selectedElementId === props.data.id,
   };
 });
 
@@ -214,17 +222,40 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
 
 <style scoped lang="scss">
 @import '~styles/variables';
+
 .index-tree-node-container {
   $border-color: #b3b4b5;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  position: relative;
 
   background: #ffffff;
   width: 240px;
   height: fit-content;
   border: 1px solid $border-color;
   border-radius: 3px;
+
+  cursor: pointer;
+  &:hover {
+    border-color: $accent-main;
+  }
+
+  // When node is selected, we want to show a 2px accent color border outside.
+  // To avoid adjusting the size of the node element, use ::before to make a
+  //  slightly larger pseudoelement within it.
+  &.selected::before {
+    --border-width: 2px;
+    content: '';
+    display: block;
+    position: absolute;
+    width: calc(100% + calc(2 * var(--border-width)));
+    height: calc(100% + calc(2 * var(--border-width)));
+    top: calc(-1 * var(--border-width));
+    left: calc(-1 * var(--border-width));
+    border-radius: 3px;
+    border: var(--border-width) solid $accent-main;
+  }
 
   .btn-default {
     background: #f0f1f2;
@@ -238,7 +269,7 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
 
   .input-arrow {
     position: absolute;
-    top: 15px;
+    top: 8px;
     width: 0;
     height: 0;
     border-top: 5px solid transparent;
@@ -311,10 +342,6 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
     padding-top: 0px;
   }
 
-  &.selected {
-    border: 2px solid $selected;
-  }
-
   &.output-index,
   &.index {
     .header {
@@ -323,7 +350,7 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
   }
   &.output-index {
     .header {
-      color: $selected;
+      color: $accent-main;
     }
   }
   &.dataset {

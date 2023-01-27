@@ -1,5 +1,5 @@
 <template>
-  <div class="index-drilldown-panel-container">
+  <div class="index-drilldown-panel-container" :class="{ hidden: type === null }">
     <template v-if="type === IndexNodeType.OutputIndex">
       <header>
         <span class="type-label"> Output Index </span>
@@ -81,23 +81,65 @@ import IndexSpatialCoveragePreview from './index-spatial-coverage-preview.vue';
 import IndexDatasetMetadata from './index-dataset-metadata.vue';
 import IndexDatasetSelectedDate from './index-dataset-selected-date.vue';
 import IndexInvertData from './index-invert-data.vue';
+import { SelectableElementId } from '@/views/IndexStructure.vue';
+import { computed } from 'vue';
+import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+import useIndexTree from '@/services/composables/useIndexTree';
+import { IndexNode } from '@/types/Index';
 
-// TODO: populate from props
-const type: IndexElementType = IndexEdgeType.Edge;
-const panelTitle = 'Overall priority';
+const props = defineProps<{
+  selectedElementId: SelectableElementId | null;
+}>();
+
+const { findNode } = useIndexTree();
+const { findNode: findNodeInWorkbench } = useIndexWorkBench();
+const selectedNode = computed<IndexNode | null>(() => {
+  if (!(typeof props.selectedElementId === 'string')) {
+    return null;
+  }
+  // Check for node in main tree
+  const foundInTree = findNode(props.selectedElementId);
+  // If not found in main tree, check in the list of disconnected nodes and trees
+  const found = foundInTree ?? findNodeInWorkbench(props.selectedElementId);
+  // TODO: we'll want to keep the parent around when searching for edges
+  return found?.found ?? null;
+});
+
+const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode } | null>(() => {
+  return null;
+});
+
+const type = computed<IndexElementType | null>(() => {
+  if (selectedNode.value !== null) {
+    return selectedNode.value.type;
+  }
+  if (selectedEdgeComponents.value !== null) {
+    return IndexEdgeType.Edge;
+  }
+  return null;
+});
+
+const panelTitle = computed(() => {
+  return selectedNode?.value?.name ?? '';
+});
 </script>
 
 <style scoped lang="scss">
 @import '~styles/variables';
 @import '~styles/uncharted-design-tokens';
+
 .index-drilldown-panel-container {
-  padding: 40px 88px;
+  padding: 20px;
   background: white;
-  border-left: 1px solid #f0f1f2;
+  border-left: 1px solid $un-color-black-10;
   display: flex;
   flex-direction: column;
   gap: 30px;
   overflow-y: auto;
+
+  &.hidden {
+    display: none;
+  }
 }
 
 header {
