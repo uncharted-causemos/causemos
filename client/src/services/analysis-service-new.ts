@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { v4 as uuidv4 } from 'uuid';
 import API from '@/api/api';
 import {
   AnalysisItem,
@@ -10,10 +9,10 @@ import {
 import {
   BinningOptions,
   ComparativeAnalysisMode,
-  IndexNodeType,
   ProjectType,
   RegionRankingCompositionType,
 } from '@/types/Enums';
+import { createNewOutputIndex } from '@/utils/indextree-util';
 
 /**
  * Create a new DataAnalysisState object with each of its fields initialized to
@@ -38,12 +37,8 @@ export const createDataAnalysisObject = (analysisItems?: AnalysisItem[]): DataAn
 
 export const createIndexAnalysisObject = (): IndexAnalysisState => {
   return {
-    index: {
-      id: uuidv4(),
-      type: IndexNodeType.OutputIndex,
-      name: '',
-      inputs: [],
-    },
+    index: createNewOutputIndex(),
+    workBench: [],
   };
 };
 

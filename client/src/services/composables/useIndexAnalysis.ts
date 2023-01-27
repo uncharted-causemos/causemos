@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { Ref, ref, watch, computed } from 'vue';
+import { Ref, ref, watch, readonly } from 'vue';
 import { IndexAnalysisState } from '@/types/Analysis';
 import { getAnalysis, saveAnalysisState } from '../analysis-service';
 import { createIndexAnalysisObject } from '../analysis-service-new';
@@ -7,8 +7,10 @@ import { createIndexAnalysisObject } from '../analysis-service-new';
 // Mock data
 import { OutputIndex } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
+import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+import useIndexTree from '@/services/composables/useIndexTree';
 
-export const mockData: OutputIndex = {
+const mockData = (): OutputIndex => ({
   id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
   type: IndexNodeType.OutputIndex,
   name: 'Overall Priority',
@@ -143,7 +145,7 @@ export const mockData: OutputIndex = {
       ],
     },
   ],
-};
+});
 
 // Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to
 //  group requests together.
@@ -154,25 +156,40 @@ const _saveState = _.debounce((analysisId, state: IndexAnalysisState) => {
 }, SYNC_DELAY_MS);
 
 export default function useIndexAnalysis(analysisId: Ref<string>) {
-  const analysisName = ref('');
-  const analysisState = ref<IndexAnalysisState>(createIndexAnalysisObject());
+  // place for temporally storing detached tree/nodes that are being worked on
+  const workbench = useIndexWorkBench();
+  // primary upstream index tree
+  const indexTree = useIndexTree();
+
+  const _analysisState = ref<IndexAnalysisState>(createIndexAnalysisObject());
+  const _analysisName = ref('');
 
   const fetchAnalysis = async () => {
     if (!analysisId.value) return;
     const analysis = await getAnalysis(analysisId.value);
-    analysisName.value = analysis.title;
-    analysisState.value = analysis.state || {};
+    _analysisName.value = analysis.title;
+    _analysisState.value = { ...analysis.state, ...createIndexAnalysisObject() }; // ensure default values
+    // Init workbench items and the index tree
+    workbench.initialize(analysisId.value, _analysisState.value.workBench);
+    // indexTree.init(analysisId.value, _analysisState.value.index);
+    // FIXME: remove mock data when ready
+    indexTree.initialize(analysisId.value, mockData());
   };
-  // Whenever component is mounted or analysisId changes, fetch the state for that analysis
+  // Whenever analysisId changes, fetch the state for that analysis
   watch(analysisId, fetchAnalysis);
 
-  // const indexTree = computed(() => analysisState.value.index)
-  const indexTree = computed(() => mockData);
+  const analysisName = readonly(_analysisName);
+
+  watch(workbench.items, () => {
+    const aid = workbench.getAnalysisId();
+    if (aid === analysisId.value) {
+      // Update and save the state whenever items are updated
+      // Not Yet Implemented
+    }
+  });
 
   return {
     analysisName,
-    analysisState,
-    indexTree,
     refresh: fetchAnalysis,
   };
 }
