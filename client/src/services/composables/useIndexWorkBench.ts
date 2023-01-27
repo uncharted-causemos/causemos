@@ -3,14 +3,20 @@ import { ref, readonly } from 'vue';
 import { IndexWorkBenchItem } from '@/types/Index';
 import { findAndUpdateNode, findAndRemoveChild } from '@/utils/indextree-util';
 
+// States
+
 // Temporary index nodes that are being created and not yet attached to the main index tree yet
 const workBenchItems = ref<IndexWorkBenchItem[]>([]);
 const targetAnalysisId = ref('');
 
 export default function useIndexWorkBench() {
+  // Getters
+
   const items = readonly(workBenchItems);
 
-  const init = (analysisId: string, items: IndexWorkBenchItem[]) => {
+  // Actions
+
+  const initialize = (analysisId: string, items: IndexWorkBenchItem[]) => {
     targetAnalysisId.value = analysisId;
     workBenchItems.value = [...items];
   };
@@ -47,7 +53,7 @@ export default function useIndexWorkBench() {
 
   return {
     items,
-    init,
+    initialize,
     addItem,
     findAndUpdateItem,
     findAndDeleteItem,

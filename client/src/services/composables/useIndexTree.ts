@@ -6,17 +6,24 @@ import {
   createNewOutputIndex,
 } from '@/utils/indextree-util';
 
-const outputIndexTree = ref<OutputIndex>(createNewOutputIndex());
+// States
+
 const targetAnalysisId = ref('');
 
+const outputIndexTree = ref<OutputIndex>(createNewOutputIndex());
+
+const triggerUpdate = () => {
+  outputIndexTree.value = { ...outputIndexTree.value };
+};
+
 export default function useIndexTree() {
+  // Getters
+
   const tree = readonly(outputIndexTree);
 
-  const triggerUpdate = () => {
-    outputIndexTree.value = { ...outputIndexTree.value };
-  };
+  // Actions
 
-  const init = (analysisId: string, indexTree: OutputIndex) => {
+  const initialize = (analysisId: string, indexTree: OutputIndex) => {
     targetAnalysisId.value = analysisId;
     outputIndexTree.value = indexTree;
   };
@@ -44,7 +51,7 @@ export default function useIndexTree() {
 
   return {
     tree,
-    init,
+    initialize,
     findAndUpdate,
     findAndDelete,
     getAnalysisId,

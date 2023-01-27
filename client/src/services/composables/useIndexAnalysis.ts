@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { Ref, ref, watch, computed } from 'vue';
+import { Ref, ref, watch, readonly } from 'vue';
 import { IndexAnalysisState } from '@/types/Analysis';
 import { getAnalysis, saveAnalysisState } from '../analysis-service';
 import { createIndexAnalysisObject } from '../analysis-service-new';
@@ -170,15 +170,15 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     _analysisName.value = analysis.title;
     _analysisState.value = { ...analysis.state, ...createIndexAnalysisObject() }; // ensure default values
     // Init workbench items and the index tree
-    workbench.init(analysisId.value, _analysisState.value.workBench);
+    workbench.initialize(analysisId.value, _analysisState.value.workBench);
     // indexTree.init(analysisId.value, _analysisState.value.index);
     // FIXME: remove mock data when ready
-    indexTree.init(analysisId.value, mockData());
+    indexTree.initialize(analysisId.value, mockData());
   };
   // Whenever analysisId changes, fetch the state for that analysis
   watch(analysisId, fetchAnalysis);
 
-  const analysisName = computed(() => _analysisName.value);
+  const analysisName = readonly(_analysisName);
 
   watch(workbench.items, () => {
     const aid = workbench.getAnalysisId();

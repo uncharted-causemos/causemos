@@ -85,15 +85,6 @@ const emit = defineEmits<{
   (e: 'duplicate', deleted: IndexNode): void;
 }>();
 
-const childNodes = computed(() => (isParentNode(props.data) ? props.data.inputs : []));
-
-const getDatasetFooterText = (data: Dataset) => {
-  return data.name === data.datasetName ? '' : data.datasetName;
-};
-
-const isRenaming = ref(false);
-const newNodeName = ref('');
-
 const classObject = computed(() => {
   return {
     'output-index': props.data.type === IndexNodeType.OutputIndex,
@@ -103,23 +94,24 @@ const classObject = computed(() => {
   };
 });
 
-const optionsButtonMenu = [
-  {
-    type: OptionButtonMenu.Rename,
-    text: 'Rename',
-    icon: 'fa-pencil',
-  },
-  {
-    type: OptionButtonMenu.Duplicate,
-    text: 'Duplicate',
-    icon: 'fa-copy',
-  },
-  {
-    type: OptionButtonMenu.Delete,
-    text: 'Delete',
-    icon: 'fa-trash',
-  },
-];
+// Rename
+
+const isRenaming = ref(false);
+const newNodeName = ref('');
+
+const showEditName = computed(() => {
+  return props.data.name === '' || isRenaming.value;
+});
+
+const handleRenameDone = () => {
+  if (!newNodeName.value) return;
+  const updated = { ...props.data, name: newNodeName.value };
+  emit('update', updated);
+  isRenaming.value = false;
+  newNodeName.value = '';
+};
+
+// Header
 
 const headerText = computed(() => {
   switch (props.data.type) {
@@ -136,10 +128,50 @@ const headerText = computed(() => {
   }
 });
 
-const showEditName = computed(() => {
-  return props.data.name === '' || isRenaming.value;
+// Options button
+
+const optionsButtonMenu = computed(() => {
+  const menu = [
+    {
+      type: OptionButtonMenu.Rename,
+      text: 'Rename',
+      icon: 'fa-pencil',
+    },
+    {
+      type: OptionButtonMenu.Duplicate,
+      text: 'Duplicate',
+      icon: 'fa-copy',
+    },
+    {
+      type: OptionButtonMenu.Delete,
+      text: 'Delete',
+      icon: 'fa-trash',
+    },
+  ];
+  return showEditName.value ? [menu[2]] : menu;
 });
 
+const handleOptionsButtonClick = (option: OptionButtonMenu) => {
+  const node = props.data;
+  switch (option) {
+    case OptionButtonMenu.Rename:
+      newNodeName.value = props.data.name;
+      isRenaming.value = true;
+      break;
+    case OptionButtonMenu.Duplicate:
+      emit('duplicate', duplicateNode(props.data));
+      break;
+    case OptionButtonMenu.Delete:
+      emit('delete', props.data);
+      break;
+    default:
+      break;
+  }
+};
+
+// Footer
+
+const childNodes = computed(() => (isParentNode(props.data) ? props.data.inputs : []));
 const footerText = computed(() => {
   const dataNodes = childNodes.value.filter((node) => node.type !== IndexNodeType.Placeholder);
   const numInputs = dataNodes.length;
@@ -154,13 +186,11 @@ const footerText = computed(() => {
   }
 });
 
-const handleRenameDone = () => {
-  if (!newNodeName.value) return;
-  const updated = { ...props.data, name: newNodeName.value };
-  emit('update', updated);
-  isRenaming.value = false;
-  newNodeName.value = '';
+const getDatasetFooterText = (data: Dataset) => {
+  return data.name === data.datasetName ? '' : data.datasetName;
 };
+
+// Footer button - add component
 
 const handleAddInput = (option: AddInputDropdownOptions) => {
   if (!isParentNode(props.data)) return;
@@ -175,24 +205,6 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
       break;
     case AddInputDropdownOptions.Dataset:
       // Not Yet Implemented
-      break;
-    default:
-      break;
-  }
-};
-
-const handleOptionsButtonClick = (option: OptionButtonMenu) => {
-  const node = props.data;
-  switch (option) {
-    case OptionButtonMenu.Rename:
-      newNodeName.value = props.data.name;
-      isRenaming.value = true;
-      break;
-    case OptionButtonMenu.Duplicate:
-      emit('duplicate', duplicateNode(props.data));
-      break;
-    case OptionButtonMenu.Delete:
-      emit('delete', props.data);
       break;
     default:
       break;
@@ -256,7 +268,7 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
     }
   }
 
-  .header:hover .options-button-container,
+  &:hover .options-button-container,
   .options-button-container.active {
     display: block;
   }
@@ -282,8 +294,9 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   }
 
   .rename {
-    input {
+    .form-control {
       height: 32px;
+      padding: 8px 8px;
     }
     button {
       width: 100%;

@@ -3,13 +3,13 @@
     <div
       class="index-tree"
       :style="{
-        'grid-template-columns': `repeat(${gridDimension.numCols + WORKBENCH_LEFT_OFFSET}, 340px)`,
-        'grid-template-rows': `repeat(${gridDimension.numRows}, auto)`,
+        'grid-template-columns': `repeat(${gridDimensions.numCols + WORKBENCH_LEFT_OFFSET}, 340px)`,
+        'grid-template-rows': `repeat(${gridDimensions.numRows}, auto)`,
       }"
     >
       <div
         class="node-box"
-        v-for="(item, index) in nodeItems"
+        v-for="item in nodeItems"
         :key="item.data.id"
         :style="{
           ...item.style.grid,
@@ -19,7 +19,6 @@
           class="node-item"
           v-if="item.data"
           :data="item.data"
-          :show-index-add-button="!isMainTreeNodeItem(index)"
           @update="updateNode"
           @delete="deleteNode"
           @duplicate="duplicateNode"
@@ -109,7 +108,7 @@ const toIndexNodeItemTree = (node: DeepReadonly<IndexNode>): IndexTreeNodeItem =
 };
 
 const calculateLayout = (nodeItem: IndexTreeNodeItem, rowOffset = 0, colOffset = 0) => {
-  const FIRST_ROW = 1 + rowOffset;
+  const firstRow = 1 + rowOffset;
   const maxCol = nodeItem.height + 1 + colOffset;
   const _calculateLayout = (item: IndexTreeNodeItem, rowNumber: number, level = 0) => {
     item.style.grid['grid-row'] = `${rowNumber} / span ${item.width}`;
@@ -123,7 +122,7 @@ const calculateLayout = (nodeItem: IndexTreeNodeItem, rowOffset = 0, colOffset =
       item.children.forEach((child, i) => _calculateLayout(child, startRows[i], level + 1));
     }
   };
-  _calculateLayout(nodeItem, FIRST_ROW);
+  _calculateLayout(nodeItem, firstRow);
 };
 
 const getAllNodeItems = (nodeItem: IndexTreeNodeItem): IndexTreeNodeItem[] =>
@@ -133,7 +132,7 @@ const getAllNodeItems = (nodeItem: IndexTreeNodeItem): IndexTreeNodeItem[] =>
  * Calculate the dimension of the grid in terms of number of grid columns and grid rows to place the provided trees
  * @param trees Root index node items
  */
-const getGridDimension = (trees: IndexTreeNodeItem[]) => {
+const getGridDimensions = (trees: IndexTreeNodeItem[]) => {
   // height of the rendered grid is driven by the node width since the tree is lying side way
   const sumWidth = trees.reduce((prev, cur) => prev + cur.width, 0);
   const maxHeight = trees.reduce((prev, cur) => Math.max(prev, cur.height), 0);
@@ -156,16 +155,16 @@ const workBenchNodeItemTrees = computed(() => {
 });
 
 const indexNodeItemTree = computed(() => {
-  const workbenchDimension = getGridDimension(workBenchNodeItemTrees.value);
+  const workbenchDimension = getGridDimensions(workBenchNodeItemTrees.value);
   const tree = toIndexNodeItemTree(indexTree.tree.value);
-  const mainTreeNumCols = getGridDimension([tree]).numCols;
+  const mainTreeNumCols = getGridDimensions([tree]).numCols;
   const maxNumCols = Math.max(workbenchDimension.numCols + WORKBENCH_LEFT_OFFSET, mainTreeNumCols);
   calculateLayout(tree, workbenchDimension.numRows, maxNumCols - mainTreeNumCols);
   return tree;
 });
 
-const gridDimension = computed(() =>
-  getGridDimension([indexNodeItemTree.value, ...workBenchNodeItemTrees.value])
+const gridDimensions = computed(() =>
+  getGridDimensions([indexNodeItemTree.value, ...workBenchNodeItemTrees.value])
 );
 
 const workBenchNodeItems = computed(() =>
@@ -175,11 +174,6 @@ const mainTreeNodeItems = computed(() => getAllNodeItems(indexNodeItemTree.value
 const nodeItems = computed(() => {
   return [...workBenchNodeItems.value, ...mainTreeNodeItems.value];
 });
-
-const isMainTreeNodeItem = (nodeItemIndex: number) => {
-  const mainTreeNodeItemStartIndex = workBenchNodeItems.value.length;
-  return nodeItemIndex >= mainTreeNodeItemStartIndex;
-};
 
 const updateNode = (updated: IndexNode) => {
   if (updated.type !== IndexNodeType.OutputIndex) workBench.findAndUpdateItem(updated);
