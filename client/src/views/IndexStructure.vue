@@ -3,12 +3,18 @@
   <teleport to="#navbar-trailing-teleport-destination">
     <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
   </teleport>
-  <div class="index-structure-view-container content-full flex">
-    <div class="flex-col h-100 flex-grow w-0">
-      <IndexActionBar @addDropdownChange="handleAddDropdownChange" />
-      <IndexTreePane v-if="isStateLoaded" class="flex-grow" />
+  <div class="index-structure-view-container content-full flex-col">
+    <IndexActionBar @addDropdownChange="handleAddDropdownChange" />
+    <div class="flex flex-grow h-0">
+      <IndexTreePane
+        v-if="isStateLoaded"
+        class="flex-grow w-0"
+        @deselect-all="deselectAllElements"
+        @select-element="selectElement"
+        :selected-element-id="selectedElementId"
+      />
+      <IndexDrilldownPanel class="index-drilldown-panel" :selected-element-id="selectedElementId" />
     </div>
-    <IndexDrilldownPanel class="index-drilldown-panel" />
   </div>
 </template>
 
@@ -23,6 +29,7 @@ import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { createNewIndex } from '@/utils/indextree-util';
+import { SelectableIndexElementId } from '@/types/Index';
 
 const store = useStore();
 const route = useRoute();
@@ -33,6 +40,14 @@ const { analysisName, refresh } = useIndexAnalysis(analysisId);
 const indexWorkBench = useIndexWorkBench();
 
 const isStateLoaded = ref(false);
+
+const selectedElementId = ref<SelectableIndexElementId | null>(null);
+const selectElement = (id: SelectableIndexElementId) => {
+  selectedElementId.value = id;
+};
+const deselectAllElements = () => {
+  selectedElementId.value = null;
+};
 
 // Set analysis name on the navbar
 onMounted(async () => {
@@ -61,8 +76,7 @@ const handleAddDropdownChange = (option: DropdownOptions) => {
 
 .index-structure-view-container {
   .index-drilldown-panel {
-    width: 30%;
-    max-width: 767px;
+    width: 400px;
   }
 }
 </style>

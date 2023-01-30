@@ -1,9 +1,10 @@
-import { ref, readonly } from 'vue';
+import { ref, computed } from 'vue';
 import { IndexNode, OutputIndex } from '@/types/Index';
 import {
   findAndUpdateNode,
   findAndRemoveChild,
   createNewOutputIndex,
+  findNode as indexTreeUtilFindNode,
 } from '@/utils/indextree-util';
 
 // States
@@ -19,7 +20,8 @@ const triggerUpdate = () => {
 export default function useIndexTree() {
   // Getters
 
-  const tree = readonly(outputIndexTree);
+  // Export a readonly copy of the tree
+  const tree = computed(() => outputIndexTree.value);
 
   // Actions
 
@@ -30,6 +32,10 @@ export default function useIndexTree() {
 
   const getAnalysisId = (): string => {
     return targetAnalysisId.value;
+  };
+
+  const findNode = (nodeId: string) => {
+    return indexTreeUtilFindNode(outputIndexTree.value, nodeId);
   };
 
   const findAndUpdate = (updateNode: IndexNode) => {
@@ -52,6 +58,7 @@ export default function useIndexTree() {
   return {
     tree,
     initialize,
+    findNode,
     findAndUpdate,
     findAndDelete,
     getAnalysisId,

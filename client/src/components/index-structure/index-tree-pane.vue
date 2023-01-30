@@ -1,5 +1,5 @@
 <template>
-  <div class="index-tree-pane-container">
+  <div class="index-tree-pane-container" @click="emit('deselect-all')">
     <div
       class="index-tree"
       :style="{
@@ -19,9 +19,12 @@
           class="node-item"
           v-if="item.data"
           :data="item.data"
+          :is-selected="item.data.id === props.selectedElementId"
           @update="updateNode"
           @delete="deleteNode"
           @duplicate="duplicateNode"
+          @select="(id) => emit('select-element', id)"
+          @click.stop=""
         />
         <div
           class="edge"
@@ -45,10 +48,19 @@ import _ from 'lodash';
 import { computed, DeepReadonly } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
-import { IndexNode } from '@/types/Index';
+import { IndexNode, SelectableIndexElementId } from '@/types/Index';
 import { isDeepReadOnlyParentNode } from '@/utils/indextree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
+
+const props = defineProps<{
+  selectedElementId: SelectableIndexElementId | null;
+}>();
+
+const emit = defineEmits<{
+  (e: 'select-element', selectedElement: SelectableIndexElementId): void;
+  (e: 'deselect-all'): void;
+}>();
 
 /**
  *  work bench items are positioned at least {WORKBENCH_LEFT_OFFSET} column(s) left to the main output index node
