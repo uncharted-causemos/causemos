@@ -28,7 +28,7 @@ import IndexDrilldownPanel from '@/components/index-structure/index-drilldown-pa
 import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import { createNewIndex } from '@/utils/indextree-util';
+import { createNewIndex, createNewPlaceholderDataset } from '@/utils/indextree-util';
 import { SelectableIndexElementId } from '@/types/Index';
 
 const store = useStore();
@@ -60,7 +60,7 @@ onMounted(async () => {
 const handleAddDropdownChange = (option: DropdownOptions) => {
   switch (option) {
     case DropdownOptions.Dataset:
-      // Not yet implemented
+      indexWorkBench.addItem(createNewPlaceholderDataset());
       break;
     case DropdownOptions.Index:
       indexWorkBench.addItem(createNewIndex());

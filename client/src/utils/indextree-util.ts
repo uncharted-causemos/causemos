@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { IndexNodeType } from '@/types/Enums';
-import { IndexNode, Dataset, ParentNode, Index, OutputIndex } from '@/types/Index';
+import { IndexNode, Dataset, ParentNode, Index, OutputIndex, Placeholder } from '@/types/Index';
 import { DeepReadonly } from 'vue';
 
 type findNodeReturn = { parent: IndexNode | null; found: IndexNode } | undefined;
@@ -11,6 +11,10 @@ export const isDatasetNode = (indexNode: IndexNode): indexNode is Dataset => {
 
 export const isParentNode = (indexNode: IndexNode): indexNode is ParentNode => {
   return (indexNode as ParentNode).inputs !== undefined;
+};
+
+export const isPlaceholderNode = (indexNode: IndexNode): indexNode is Placeholder => {
+  return indexNode.type === IndexNodeType.Placeholder;
 };
 
 export const isDeepReadOnlyParentNode = (
@@ -41,18 +45,13 @@ export const createNewOutputIndex = () => {
   return node;
 };
 
-export const createNewNode = (type: IndexNodeType) => {
-  switch (type) {
-    case IndexNodeType.OutputIndex:
-      return createNewOutputIndex();
-    case IndexNodeType.Dataset:
-      // Not yet implemented
-      break;
-    case IndexNodeType.Index:
-      return createNewIndex();
-    default:
-      break;
-  }
+export const createNewPlaceholderDataset = () => {
+  const node: Placeholder = {
+    id: uuidv4(),
+    type: IndexNodeType.Placeholder,
+    name: '',
+  };
+  return node;
 };
 
 // Traverse the provided index node tree, find the parent node with the given parentId and add new node as a first child of the parent

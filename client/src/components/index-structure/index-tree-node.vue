@@ -27,7 +27,29 @@
         </template>
       </OptionsButton>
     </div>
-    <div v-if="showEditName" class="rename content flex">
+    <div v-if="showDatasetSearch">
+      <div class="search-bar-container flex content">
+        <input
+          class="form-control"
+          type="text"
+          v-model="datasetSearchText"
+          placeholder="Search for a dataset"
+        />
+        <button
+          class="btn btn-default"
+          @click="
+            () => {
+              // TODO
+              console.log('TODO');
+            }
+          "
+        >
+          Cancel
+        </button>
+      </div>
+      <IndexTreeNodeSearchResults :searchText="datasetSearchText" />
+    </div>
+    <div v-else-if="showEditName" class="rename content flex">
       <input
         class="form-control"
         type="text"
@@ -43,9 +65,12 @@
       {{ footerText }}
     </div>
     <!-- footer buttons -->
-    <div v-if="classObject.placeholder" class="content">
-      <button class="btn btn-default w-100">Replace with dataset</button>
-    </div>
+    <button
+      v-if="classObject.placeholder && !showDatasetSearch && !showEditName"
+      class="btn btn-default content replace-dataset-button"
+    >
+      Replace with dataset
+    </button>
     <div
       v-if="isParentNode(props.data) && !showEditName"
       class="add-component-btn-container footer content"
@@ -63,9 +88,16 @@
 import { computed, ref } from 'vue';
 import { Dataset, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
-import { createNewIndex, duplicateNode, isDatasetNode, isParentNode } from '@/utils/indextree-util';
+import {
+  createNewIndex,
+  duplicateNode,
+  isDatasetNode,
+  isParentNode,
+  isPlaceholderNode,
+} from '@/utils/indextree-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
+import IndexTreeNodeSearchResults from '@/components/index-structure/index-tree-node-search-results.vue';
 
 export enum AddInputDropdownOptions {
   Dataset = 'Dataset',
@@ -98,6 +130,7 @@ const classObject = computed(() => {
     dataset: props.data.type === IndexNodeType.Dataset,
     placeholder: props.data.type === IndexNodeType.Placeholder,
     selected: props.isSelected,
+    'flexible-width': showDatasetSearch.value,
   };
 });
 
@@ -159,7 +192,6 @@ const optionsButtonMenu = computed(() => {
 });
 
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
-  const node = props.data;
   switch (option) {
     case OptionButtonMenu.Rename:
       newNodeName.value = props.data.name;
@@ -175,6 +207,12 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
       break;
   }
 };
+
+// Dataset search
+
+// TODO: and is in search data mode
+const showDatasetSearch = computed(() => isPlaceholderNode(props.data));
+const datasetSearchText = ref('');
 
 // Footer
 
@@ -226,11 +264,13 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
   $border-color: #b3b4b5;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   position: relative;
 
   background: #ffffff;
   width: 240px;
+  &.flexible-width {
+    width: auto;
+  }
   height: fit-content;
   border: 1px solid $border-color;
   border-radius: 3px;
@@ -304,8 +344,10 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
   }
 
   .content {
-    width: 100%;
     padding: 5px 10px;
+  }
+  .replace-dataset-button {
+    margin: 5px 10px;
   }
 
   .header {
@@ -323,7 +365,8 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
     padding-bottom: 0px;
   }
 
-  .rename {
+  .rename,
+  .search-bar-container {
     .form-control {
       height: 32px;
       padding: 8px 8px;
@@ -332,9 +375,11 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
       width: 100%;
       max-width: 59px;
       margin-left: 5px;
-      color: #fff;
-      background-color: $call-to-action-color;
     }
+  }
+  .rename button {
+    color: white;
+    background-color: $call-to-action-color;
   }
 
   .footer {
