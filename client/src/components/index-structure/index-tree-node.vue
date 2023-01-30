@@ -1,9 +1,5 @@
 <template>
-  <div
-    class="index-tree-node-container"
-    :class="classObject"
-    @click="emit('select', props.data.id)"
-  >
+  <div class="index-tree-node-container" :class="classObject" @click="selectNode">
     <div v-if="isParentNode(props.data)" class="input-arrow" />
     <div class="header content">
       <span>
@@ -124,6 +120,13 @@ const classObject = computed(() => {
     'flexible-width': showDatasetSearch.value,
   };
 });
+
+const selectNode = () => {
+  // Can't select Placeholder nodes
+  if (props.data.type !== IndexNodeType.Placeholder) {
+    emit('select', props.data.id);
+  }
+};
 
 // Rename
 
@@ -280,7 +283,7 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
   border: 1px solid $border-color;
   border-radius: 3px;
 
-  &:hover {
+  &:not(.placeholder):hover {
     border-color: $accent-main;
   }
 
