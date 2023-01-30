@@ -197,7 +197,7 @@ li {
   padding: 0 10px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 10px;
   // Stop pane from stretching(/squashing) itself to be exactly the height of the .results element
   // This allows the pane to grow and scroll if the dataset or source has a very long name.
   overflow-y: auto;
