@@ -9,13 +9,14 @@
         v-if="props.data.type !== IndexNodeType.OutputIndex"
         :dropdown-below="true"
         :wider-dropdown-options="true"
+        @click.stop=""
       >
         <template #content>
           <div
             v-for="item in optionsButtonMenu"
             class="dropdown-option"
             :key="item.type"
-            @click.stop="handleOptionsButtonClick(item.type)"
+            @click="handleOptionsButtonClick(item.type)"
           >
             <i class="fa fa-fw" :class="item.icon" />
             {{ item.text }}

@@ -24,7 +24,6 @@
         </ul>
         <div class="details-pane" v-if="activeResult !== null">
           <h5>{{ activeResult.datasetName }}</h5>
-          <!-- TODO: use real data -->
           <div class="timeseries placeholder" />
           <div>
             <h5 class="de-emphasized">Source</h5>
@@ -38,30 +37,11 @@
               <span class="de-emphasized">to</span> {{ 'January 2021' }}
             </p>
           </div>
-          <button
-            class="btn btn-sm add-dataset"
-            @click="
-              () => {
-                console.log('TODO');
-              }
-            "
-          >
-            Add
-          </button>
+          <button class="btn btn-sm add-dataset" disabled>Add</button>
         </div>
       </div>
     </ul>
-    <button
-      class="btn btn-sm advanced-search"
-      disabled
-      @click="
-        () => {
-          console.log('TODO');
-        }
-      "
-    >
-      Use advanced search
-    </button>
+    <button class="btn btn-sm advanced-search" disabled>Use advanced search</button>
   </div>
 </template>
 
