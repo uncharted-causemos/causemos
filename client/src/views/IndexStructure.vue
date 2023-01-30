@@ -29,10 +29,7 @@ import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { createNewIndex } from '@/utils/indextree-util';
-
-// If a node is selected, this is the node's ID
-// If an edge is selected, this contains the IDs of the edge's source and target nodes.
-export type SelectableElementId = string | { sourceId: string; targetId: string };
+import { SelectableIndexElementId } from '@/types/Index';
 
 const store = useStore();
 const route = useRoute();
@@ -44,8 +41,8 @@ const indexWorkBench = useIndexWorkBench();
 
 const isStateLoaded = ref(false);
 
-const selectedElementId = ref<SelectableElementId | null>(null);
-const selectElement = (id: SelectableElementId) => {
+const selectedElementId = ref<SelectableIndexElementId | null>(null);
+const selectElement = (id: SelectableIndexElementId) => {
   selectedElementId.value = id;
 };
 const deselectAllElements = () => {

@@ -66,7 +66,6 @@ import { IndexNodeType } from '@/types/Enums';
 import { createNewIndex, duplicateNode, isDatasetNode, isParentNode } from '@/utils/indextree-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
-import { SelectableElementId } from '@/views/IndexStructure.vue';
 
 export enum AddInputDropdownOptions {
   Dataset = 'Dataset',
@@ -81,7 +80,7 @@ export enum OptionButtonMenu {
 <script setup lang="ts">
 interface Props {
   data: IndexNode;
-  selectedElementId: SelectableElementId | null;
+  isSelected: boolean;
 }
 const props = defineProps<Props>();
 
@@ -98,7 +97,7 @@ const classObject = computed(() => {
     index: props.data.type === IndexNodeType.Index,
     dataset: props.data.type === IndexNodeType.Dataset,
     placeholder: props.data.type === IndexNodeType.Placeholder,
-    selected: props.selectedElementId === props.data.id,
+    selected: props.isSelected,
   };
 });
 

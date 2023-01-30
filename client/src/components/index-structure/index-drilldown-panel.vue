@@ -81,14 +81,13 @@ import IndexSpatialCoveragePreview from './index-spatial-coverage-preview.vue';
 import IndexDatasetMetadata from './index-dataset-metadata.vue';
 import IndexDatasetSelectedDate from './index-dataset-selected-date.vue';
 import IndexInvertData from './index-invert-data.vue';
-import { SelectableElementId } from '@/views/IndexStructure.vue';
 import { computed } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { IndexNode } from '@/types/Index';
+import { IndexNode, SelectableIndexElementId } from '@/types/Index';
 
 const props = defineProps<{
-  selectedElementId: SelectableElementId | null;
+  selectedElementId: SelectableIndexElementId | null;
 }>();
 
 const { findNode } = useIndexTree();

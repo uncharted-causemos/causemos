@@ -19,7 +19,7 @@
           class="node-item"
           v-if="item.data"
           :data="item.data"
-          :selected-element-id="props.selectedElementId"
+          :is-selected="item.data.id === props.selectedElementId"
           @update="updateNode"
           @delete="deleteNode"
           @duplicate="duplicateNode"
@@ -48,18 +48,17 @@ import _ from 'lodash';
 import { computed, DeepReadonly } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
-import { IndexNode } from '@/types/Index';
+import { IndexNode, SelectableIndexElementId } from '@/types/Index';
 import { isDeepReadOnlyParentNode } from '@/utils/indextree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { SelectableElementId } from '@/views/IndexStructure.vue';
 
 const props = defineProps<{
-  selectedElementId: SelectableElementId | null;
+  selectedElementId: SelectableIndexElementId | null;
 }>();
 
 const emit = defineEmits<{
-  (e: 'select-element', selectedElement: SelectableElementId): void;
+  (e: 'select-element', selectedElement: SelectableIndexElementId): void;
   (e: 'deselect-all'): void;
 }>();
 
