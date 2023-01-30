@@ -161,6 +161,7 @@ li {
       content: '';
       display: block;
       position: absolute;
+      pointer-events: none;
       left: 0;
       width: 2px;
       top: 0;

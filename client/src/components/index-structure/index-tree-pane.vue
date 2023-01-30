@@ -1,11 +1,12 @@
 <template>
-  <div class="index-tree-pane-container" @click="emit('deselect-all')">
+  <div class="index-tree-pane-container">
     <div
       class="index-tree"
       :style="{
         'grid-template-columns': `repeat(${gridDimensions.numCols + WORKBENCH_LEFT_OFFSET}, 340px)`,
         'grid-template-rows': `repeat(${gridDimensions.numRows}, auto)`,
       }"
+      @click.self="emit('deselect-all')"
     >
       <div
         class="node-box"
@@ -24,7 +25,6 @@
           @delete="deleteNode"
           @duplicate="duplicateNode"
           @select="(id) => emit('select-element', id)"
-          @click.stop=""
         />
         <div
           class="edge"

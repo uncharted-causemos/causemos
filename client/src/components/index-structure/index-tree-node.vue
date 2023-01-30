@@ -35,17 +35,7 @@
           v-model="datasetSearchText"
           placeholder="Search for a dataset"
         />
-        <button
-          class="btn btn-default"
-          @click="
-            () => {
-              // TODO
-              console.log('TODO');
-            }
-          "
-        >
-          Cancel
-        </button>
+        <button class="btn btn-default" @click="cancelDatasetSearch">Cancel</button>
       </div>
       <IndexTreeNodeSearchResults :searchText="datasetSearchText" />
     </div>
@@ -68,6 +58,7 @@
     <button
       v-if="classObject.placeholder && !showDatasetSearch && !showEditName"
       class="btn btn-default content replace-dataset-button"
+      @click="isSearchingForDataset = true"
     >
       Replace with dataset
     </button>
@@ -140,6 +131,7 @@ const isRenaming = ref(false);
 const newNodeName = ref('');
 
 const showEditName = computed(() => {
+  // props.data.name === '' means that the node has never been given a name
   return props.data.name === '' || isRenaming.value;
 });
 
@@ -210,9 +202,22 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
 
 // Dataset search
 
-// TODO: and is in search data mode
-const showDatasetSearch = computed(() => isPlaceholderNode(props.data));
+const showDatasetSearch = computed(
+  () =>
+    isPlaceholderNode(props.data) &&
+    // props.data.name === '' means that the "create dataset node" flow has never been completed.
+    (isSearchingForDataset.value === true || props.data.name === '')
+);
+const isSearchingForDataset = ref(false);
 const datasetSearchText = ref('');
+const cancelDatasetSearch = () => {
+  if (props.data.name === '') {
+    // the "create dataset node" flow has never been completed, so delete node.
+    emit('delete', props.data);
+  } else {
+    isSearchingForDataset.value = false;
+  }
+};
 
 // Footer
 
@@ -275,7 +280,6 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
   border: 1px solid $border-color;
   border-radius: 3px;
 
-  cursor: pointer;
   &:hover {
     border-color: $accent-main;
   }
@@ -288,6 +292,7 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
     content: '';
     display: block;
     position: absolute;
+    pointer-events: none;
     width: calc(100% + calc(2 * var(--border-width)));
     height: calc(100% + calc(2 * var(--border-width)));
     top: calc(-1 * var(--border-width));
