@@ -37,6 +37,6 @@ const handleDropdownSelection = (option: DropdownOptions) => {
 
   height: 51px;
   background: white;
-  border: 1px solid $un-color-black-10;
+  border-bottom: 1px solid $un-color-black-10;
 }
 </style>
