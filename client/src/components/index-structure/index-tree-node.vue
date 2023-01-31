@@ -1,9 +1,5 @@
 <template>
-  <div
-    class="index-tree-node-container"
-    :class="classObject"
-    @click="emit('select', props.data.id)"
-  >
+  <div class="index-tree-node-container" :class="classObject" @click="selectNode">
     <div v-if="isParentNode(props.data)" class="input-arrow" />
     <div class="header content">
       <span>
@@ -13,13 +9,14 @@
         v-if="props.data.type !== IndexNodeType.OutputIndex"
         :dropdown-below="true"
         :wider-dropdown-options="true"
+        @click.stop=""
       >
         <template #content>
           <div
             v-for="item in optionsButtonMenu"
             class="dropdown-option"
             :key="item.type"
-            @click.stop="handleOptionsButtonClick(item.type)"
+            @click="handleOptionsButtonClick(item.type)"
           >
             <i class="fa fa-fw" :class="item.icon" />
             {{ item.text }}
@@ -27,7 +24,19 @@
         </template>
       </OptionsButton>
     </div>
-    <div v-if="showEditName" class="rename content flex">
+    <div v-if="showDatasetSearch">
+      <div class="search-bar-container flex content">
+        <input
+          class="form-control"
+          type="text"
+          v-model="datasetSearchText"
+          placeholder="Search for a dataset"
+        />
+        <button class="btn btn-default" @click="cancelDatasetSearch">Cancel</button>
+      </div>
+      <IndexTreeNodeSearchResults :searchText="datasetSearchText" />
+    </div>
+    <div v-else-if="showEditName" class="rename content flex">
       <input
         class="form-control"
         type="text"
@@ -43,18 +52,22 @@
       {{ footerText }}
     </div>
     <!-- footer buttons -->
-    <div v-if="classObject.placeholder" class="content">
-      <button class="btn btn-default w-100">Replace with dataset</button>
-    </div>
+    <button
+      v-if="classObject.placeholder && !showDatasetSearch && !showEditName"
+      class="btn btn-default content replace-dataset-button"
+      @click="isSearchingForDataset = true"
+    >
+      Replace with dataset
+    </button>
     <div
       v-if="isParentNode(props.data) && !showEditName"
       class="add-component-btn-container footer content"
     >
       <DropdownButton
         :is-dropdown-left-aligned="true"
-        :items="Object.values(AddInputDropdownOptions)"
+        :items="addInputDropdownOptions"
         :selected-item="'Add Component'"
-        @item-selected="handleAddInput"
+        @item-selected="(option) => emit('create-child', props.data.id, option)"
       />
     </div>
   </div>
@@ -63,14 +76,18 @@
 import { computed, ref } from 'vue';
 import { Dataset, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
-import { createNewIndex, duplicateNode, isDatasetNode, isParentNode } from '@/utils/indextree-util';
+import {
+  duplicateNode,
+  isDatasetNode,
+  isParentNode,
+  isPlaceholderNode,
+} from '@/utils/indextree-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
+import IndexTreeNodeSearchResults from '@/components/index-structure/index-tree-node-search-results.vue';
 
-export enum AddInputDropdownOptions {
-  Dataset = 'Dataset',
-  Index = 'Index',
-}
+const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
+
 export enum OptionButtonMenu {
   Rename = 'Rename',
   Duplicate = 'Duplicate',
@@ -85,10 +102,15 @@ interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'update', updated: IndexNode): void;
+  (e: 'rename', nodeId: string, newName: string): void;
   (e: 'delete', deleted: IndexNode): void;
   (e: 'duplicate', deleted: IndexNode): void;
   (e: 'select', nodeId: string): void;
+  (
+    e: 'create-child',
+    parentNodeId: string,
+    childType: IndexNodeType.Index | IndexNodeType.Dataset
+  ): void;
 }>();
 
 const classObject = computed(() => {
@@ -98,8 +120,16 @@ const classObject = computed(() => {
     dataset: props.data.type === IndexNodeType.Dataset,
     placeholder: props.data.type === IndexNodeType.Placeholder,
     selected: props.isSelected,
+    'flexible-width': showDatasetSearch.value,
   };
 });
+
+const selectNode = () => {
+  // Can't select Placeholder nodes
+  if (props.data.type !== IndexNodeType.Placeholder) {
+    emit('select', props.data.id);
+  }
+};
 
 // Rename
 
@@ -107,13 +137,13 @@ const isRenaming = ref(false);
 const newNodeName = ref('');
 
 const showEditName = computed(() => {
+  // props.data.name === '' means that the node has never been given a name
   return props.data.name === '' || isRenaming.value;
 });
 
 const handleRenameDone = () => {
   if (!newNodeName.value) return;
-  const updated = { ...props.data, name: newNodeName.value };
-  emit('update', updated);
+  emit('rename', props.data.id, newNodeName.value);
   isRenaming.value = false;
   newNodeName.value = '';
 };
@@ -159,7 +189,6 @@ const optionsButtonMenu = computed(() => {
 });
 
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
-  const node = props.data;
   switch (option) {
     case OptionButtonMenu.Rename:
       newNodeName.value = props.data.name;
@@ -173,6 +202,25 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
       break;
     default:
       break;
+  }
+};
+
+// Dataset search
+
+const showDatasetSearch = computed(
+  () =>
+    isPlaceholderNode(props.data) &&
+    // props.data.name === '' means that the "create dataset node" flow has never been completed.
+    (isSearchingForDataset.value === true || props.data.name === '')
+);
+const isSearchingForDataset = ref(false);
+const datasetSearchText = ref('');
+const cancelDatasetSearch = () => {
+  if (props.data.name === '') {
+    // the "create dataset node" flow has never been completed, so delete node.
+    emit('delete', props.data);
+  } else {
+    isSearchingForDataset.value = false;
   }
 };
 
@@ -196,27 +244,6 @@ const footerText = computed(() => {
 const getDatasetFooterText = (data: Dataset) => {
   return data.name === data.datasetName ? '' : data.datasetName;
 };
-
-// Footer button - add component
-
-const handleAddInput = (option: AddInputDropdownOptions) => {
-  if (!isParentNode(props.data)) return;
-  // Clone node since props.data is read only
-  // TODO: instead of using 'update', emit an add node event with this node id as parent id and new node as child payload.
-  // Then handle adding new node to the tree inside useIndexTree/useIndexWorkbench
-  const node = JSON.parse(JSON.stringify(props.data));
-  switch (option) {
-    case AddInputDropdownOptions.Index:
-      node.inputs.unshift(createNewIndex());
-      emit('update', node);
-      break;
-    case AddInputDropdownOptions.Dataset:
-      // Not Yet Implemented
-      break;
-    default:
-      break;
-  }
-};
 </script>
 
 <style scoped lang="scss">
@@ -226,17 +253,18 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
   $border-color: #b3b4b5;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   position: relative;
 
   background: #ffffff;
   width: 240px;
+  &.flexible-width {
+    width: auto;
+  }
   height: fit-content;
   border: 1px solid $border-color;
   border-radius: 3px;
 
-  cursor: pointer;
-  &:hover {
+  &:not(.placeholder):hover {
     border-color: $accent-main;
   }
 
@@ -248,6 +276,7 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
     content: '';
     display: block;
     position: absolute;
+    pointer-events: none;
     width: calc(100% + calc(2 * var(--border-width)));
     height: calc(100% + calc(2 * var(--border-width)));
     top: calc(-1 * var(--border-width));
@@ -304,8 +333,10 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
   }
 
   .content {
-    width: 100%;
     padding: 5px 10px;
+  }
+  .replace-dataset-button {
+    margin: 5px 10px;
   }
 
   .header {
@@ -323,7 +354,8 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
     padding-bottom: 0px;
   }
 
-  .rename {
+  .rename,
+  .search-bar-container {
     .form-control {
       height: 32px;
       padding: 8px 8px;
@@ -332,9 +364,11 @@ const handleAddInput = (option: AddInputDropdownOptions) => {
       width: 100%;
       max-width: 59px;
       margin-left: 5px;
-      color: #fff;
-      background-color: $call-to-action-color;
     }
+  }
+  .rename button {
+    color: white;
+    background-color: $call-to-action-color;
   }
 
   .footer {

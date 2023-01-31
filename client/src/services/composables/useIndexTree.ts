@@ -1,11 +1,14 @@
 import { ref, computed } from 'vue';
-import { IndexNode, OutputIndex } from '@/types/Index';
+import { OutputIndex } from '@/types/Index';
 import {
-  findAndUpdateNode,
   findAndRemoveChild,
   createNewOutputIndex,
   findNode as indexTreeUtilFindNode,
+  isParentNode,
+  createNewPlaceholderDataset,
+  createNewIndex,
 } from '@/utils/indextree-util';
+import { IndexNodeType } from '@/types/Enums';
 
 // States
 
@@ -38,9 +41,10 @@ export default function useIndexTree() {
     return indexTreeUtilFindNode(outputIndexTree.value, nodeId);
   };
 
-  const findAndUpdate = (updateNode: IndexNode) => {
-    const isUpdated = findAndUpdateNode(outputIndexTree.value, updateNode);
-    if (isUpdated) {
+  const findAndRenameNode = (nodeId: string, newName: string) => {
+    const node = findNode(nodeId)?.found;
+    if (node !== undefined) {
+      node.name = newName;
       triggerUpdate();
     }
   };
@@ -55,12 +59,27 @@ export default function useIndexTree() {
     if (isDeleted) triggerUpdate();
   };
 
+  const findAndAddChild = (
+    parentNodeId: string,
+    childType: IndexNodeType.Index | IndexNodeType.Dataset
+  ) => {
+    const parentNode = findNode(parentNodeId)?.found;
+    if (parentNode === undefined || !isParentNode(parentNode)) {
+      return;
+    }
+    const newNode =
+      childType === IndexNodeType.Dataset ? createNewPlaceholderDataset() : createNewIndex();
+    parentNode.inputs.unshift(newNode);
+    triggerUpdate();
+  };
+
   return {
     tree,
     initialize,
     findNode,
-    findAndUpdate,
+    findAndRenameNode,
     findAndDelete,
+    findAndAddChild,
     getAnalysisId,
   };
 }
