@@ -3,21 +3,26 @@
     <div
       class="index-tree"
       :style="{
-        'grid-template-columns': `repeat(${gridDimensions.numCols + WORKBENCH_LEFT_OFFSET}, 340px)`,
+        'grid-template-columns': `repeat(${gridDimensions.numCols + WORKBENCH_LEFT_OFFSET}, auto)`,
         'grid-template-rows': `repeat(${gridDimensions.numRows}, auto)`,
       }"
       @click.self="emit('deselect-all')"
     >
       <div
-        class="node-box"
+        class="grid-cell"
         v-for="item in nodeItems"
         :key="item.data.id"
         :style="{
           ...item.style.grid,
         }"
       >
+        <div
+          class="edge incoming"
+          :class="{
+            visible: item.children.length > 0,
+          }"
+        ></div>
         <IndexTreeNode
-          class="node-item"
           v-if="item.data"
           :data="item.data"
           :is-selected="item.data.id === props.selectedElementId"
@@ -27,15 +32,14 @@
           @select="(id) => emit('select-element', id)"
         />
         <div
-          class="edge"
+          class="edge outgoing"
           :class="{
             visible: item.style.hasOutputLine,
             dashed: item.type === IndexNodeType.Placeholder,
             'last-child': item.style.isLastChild,
-            'first-child': item.style.isFirstChild,
           }"
         >
-          <div class="top"><div></div></div>
+          <div class="top" />
           <div class="side" />
         </div>
       </div>
@@ -82,7 +86,6 @@ interface IndexTreeNodeItem {
   style: {
     hasOutputLine: boolean;
     isLastChild: boolean;
-    isFirstChild: boolean;
     grid: {
       /** grid-row css property */
       'grid-row'?: string;
@@ -103,7 +106,6 @@ const toIndexNodeItemTree = (node: DeepReadonly<IndexNode>): IndexTreeNodeItem =
     style: {
       grid: {},
       hasOutputLine: false,
-      isFirstChild: false,
       isLastChild: false,
     },
   };
@@ -114,24 +116,29 @@ const toIndexNodeItemTree = (node: DeepReadonly<IndexNode>): IndexTreeNodeItem =
     // Add style properties to self and each child node
     item.children.forEach((item) => (item.style.hasOutputLine = true));
     item.children[item.children.length - 1].style.isLastChild = true;
-    item.children[0].style.isFirstChild = true;
   }
   return item;
 };
 
 const calculateLayout = (nodeItem: IndexTreeNodeItem, rowOffset = 0, colOffset = 0) => {
   const firstRow = 1 + rowOffset;
-  const maxCol = nodeItem.height + 1 + colOffset;
+  const furthestRightColumn = nodeItem.height + 1 + colOffset;
   const _calculateLayout = (item: IndexTreeNodeItem, rowNumber: number, level = 0) => {
+    // Start in row `rowNumber` and span `item.width` rows
     item.style.grid['grid-row'] = `${rowNumber} / span ${item.width}`;
-    item.style.grid['grid-column'] = `${maxCol - level}`;
+    // Start in the column that is `level` columns to the left of `furthestRightColumn`.
+    //  Spans one column.
+    item.style.grid['grid-column'] = `${furthestRightColumn - level}`;
     if (item.children.length > 0) {
-      // Calculate row # for each child. First child is placed in the same row as its parent
-      const startRows = [rowNumber];
-      for (let i = 1; i < item.children.length; i++) {
-        startRows.push(startRows[i - 1] + item.children[i - 1].width);
-      }
-      item.children.forEach((child, i) => _calculateLayout(child, startRows[i], level + 1));
+      // Calculate row # for each child.
+      //  First child is placed in the same row as its parent.
+      //  Each child after that is placed below its previous sibling
+      // All children are one column to the left of their parent. (level + 1)
+      let startingRow = rowNumber;
+      item.children.forEach((child) => {
+        _calculateLayout(child, startingRow, level + 1);
+        startingRow += child.width;
+      });
     }
   };
   _calculateLayout(nodeItem, firstRow);
@@ -156,22 +163,24 @@ const getGridDimensions = (trees: IndexTreeNodeItem[]) => {
 
 // Temporary nodes/sub-trees that are being created and detached from the main tree
 const workBenchNodeItemTrees = computed(() => {
-  let rowOffset = 0;
+  let startingRowOfCurrentTree = 0;
   const trees = workBench.items.value.map((node) => {
     const tree = toIndexNodeItemTree(node);
-    calculateLayout(tree, rowOffset);
-    rowOffset += tree.width;
+    calculateLayout(tree, startingRowOfCurrentTree);
+    // Start the next tree below this one by adding the number of leaf nodes in the current tree to
+    //  the startingRowIndex
+    startingRowOfCurrentTree += tree.width;
     return tree;
   });
   return trees;
 });
 
 const indexNodeItemTree = computed(() => {
-  const workbenchDimension = getGridDimensions(workBenchNodeItemTrees.value);
+  const workbenchDimensions = getGridDimensions(workBenchNodeItemTrees.value);
   const tree = toIndexNodeItemTree(indexTree.tree.value);
   const mainTreeNumCols = getGridDimensions([tree]).numCols;
-  const maxNumCols = Math.max(workbenchDimension.numCols + WORKBENCH_LEFT_OFFSET, mainTreeNumCols);
-  calculateLayout(tree, workbenchDimension.numRows, maxNumCols - mainTreeNumCols);
+  const maxNumCols = Math.max(workbenchDimensions.numCols + WORKBENCH_LEFT_OFFSET, mainTreeNumCols);
+  calculateLayout(tree, workbenchDimensions.numRows, maxNumCols - mainTreeNumCols);
   return tree;
 });
 
@@ -205,57 +214,71 @@ const duplicateNode = (duplicated: IndexNode) => {
 </script>
 
 <style scoped lang="scss">
+@import '~styles/uncharted-design-tokens';
+
+$space-between-columns: 40px;
+$space-between-rows: 10px;
+
+$incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
+$outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
+$edge-top-offset-from-node: 13px;
+$edge-styles: 2px solid $un-color-black-20;
+
 .index-tree-pane-container {
-  $node-margin: 6px;
-  padding: 40px 30px;
+  // The farthest left column will never have incoming edges, so it will have an empty space of
+  //  size `$incoming-edge-minimum-length` to the left of it. Remove that width from the padding.
+  padding: 40px 30px 40px calc(30px - #{$incoming-edge-minimum-length});
   overflow: auto;
   .index-tree {
     display: grid;
-    grid-template-columns: repeat(4, 340px);
-    grid-template-rows: repeat(8, auto);
+    row-gap: $space-between-rows;
+    // Grid template properties are set dynamically using the :style attribute depending on the
+    //  size of the graph.
+
+    // When the graph is too small to take up the full available screen width, don't expand columns
+    //  to fill the empty space.
+    justify-content: flex-start;
   }
-  .node-box {
+  .grid-cell {
     position: relative;
     display: flex;
   }
-  .node-item {
-    margin: $node-margin 0;
-  }
   .edge {
     position: relative;
-    top: $node-margin + 13px;
-    width: 100px;
-    &.visible {
-      .top {
-        width: 80%;
-        border-top: 2px solid #cacbcc;
-      }
-      .side {
-        width: 80%;
-        height: 100%;
-        border-right: 2px solid #cacbcc;
+    top: $edge-top-offset-from-node;
+
+    &.incoming {
+      min-width: $incoming-edge-minimum-length;
+      // If one node in the column is wider than this one (e.g. placeholder in search mode), expand
+      //  the incoming edge to stay connected to children, and push the node to stay right-aligned.
+      flex: 1;
+      &.visible {
+        border-top: $edge-styles;
       }
     }
-    &.first-child {
-      .top {
-        width: 100%;
-        div {
-          position: absolute;
-          top: 0px;
-          border-top: 2px solid #cacbcc;
-          right: 0px;
-          width: 20%;
+
+    &.outgoing {
+      width: $outgoing-edge-length;
+      &.visible {
+        .top {
+          width: 100%;
+          border-top: $edge-styles;
+        }
+        .side {
+          width: 100%;
+          // Extend edge down to the sibling below this one
+          height: calc(100% + #{$space-between-rows});
+          border-right: $edge-styles;
+        }
+
+        &.dashed .top {
+          border-top-style: dashed;
         }
       }
-    }
-    &.last-child {
-      .side {
-        border: none;
-      }
-    }
-    &.visible.dashed {
-      .top {
-        border-top: 2px dashed #cacbcc;
+      &.last-child {
+        .side {
+          border: none;
+        }
       }
     }
   }
