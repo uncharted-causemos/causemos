@@ -2,10 +2,13 @@ import _ from 'lodash';
 import { ref, readonly } from 'vue';
 import { IndexWorkBenchItem } from '@/types/Index';
 import {
-  findAndUpdateNode,
   findAndRemoveChild,
   findNode as indexTreeUtilFindNode,
+  isParentNode,
+  createNewPlaceholderDataset,
+  createNewIndex,
 } from '@/utils/indextree-util';
+import { IndexNodeType } from '@/types/Enums';
 
 // States
 
@@ -20,9 +23,13 @@ export default function useIndexWorkBench() {
 
   // Actions
 
-  const initialize = (analysisId: string, items: IndexWorkBenchItem[]) => {
+  const initialize = (analysisId: string, initialItems: IndexWorkBenchItem[]) => {
     targetAnalysisId.value = analysisId;
-    workBenchItems.value = [...items];
+    workBenchItems.value = [...initialItems];
+  };
+
+  const triggerUpdate = () => {
+    workBenchItems.value = [...workBenchItems.value];
   };
 
   const getAnalysisId = (): string => {
@@ -43,10 +50,11 @@ export default function useIndexWorkBench() {
     return undefined;
   };
 
-  const findAndUpdateItem = (updateItem: IndexWorkBenchItem) => {
-    const isUpdated = workBenchItems.value.some((tree) => findAndUpdateNode(tree, updateItem));
-    if (isUpdated) {
-      workBenchItems.value = [...workBenchItems.value];
+  const findAndRenameNode = (nodeId: string, newName: string) => {
+    const node = findNode(nodeId)?.found;
+    if (node !== undefined) {
+      node.name = newName;
+      triggerUpdate();
     }
   };
 
@@ -65,13 +73,28 @@ export default function useIndexWorkBench() {
     }
   };
 
+  const findAndAddChild = (
+    parentNodeId: string,
+    childType: IndexNodeType.Index | IndexNodeType.Dataset
+  ) => {
+    const parentNode = findNode(parentNodeId)?.found;
+    if (parentNode === undefined || !isParentNode(parentNode)) {
+      return;
+    }
+    const newNode =
+      childType === IndexNodeType.Dataset ? createNewPlaceholderDataset() : createNewIndex();
+    parentNode.inputs.unshift(newNode);
+    triggerUpdate();
+  };
+
   return {
     items,
     initialize,
     addItem,
     findNode,
-    findAndUpdateItem,
+    findAndRenameNode,
     findAndDeleteItem,
+    findAndAddChild,
     getAnalysisId,
   };
 }

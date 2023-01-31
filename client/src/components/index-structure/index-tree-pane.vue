@@ -26,10 +26,11 @@
           v-if="item.data"
           :data="item.data"
           :is-selected="item.data.id === props.selectedElementId"
-          @update="updateNode"
+          @rename="renameNode"
           @delete="deleteNode"
           @duplicate="duplicateNode"
           @select="(id) => emit('select-element', id)"
+          @create-child="createChild"
         />
         <div
           class="edge outgoing"
@@ -196,9 +197,9 @@ const nodeItems = computed(() => {
   return [...workBenchNodeItems.value, ...mainTreeNodeItems.value];
 });
 
-const updateNode = (updated: IndexNode) => {
-  if (updated.type !== IndexNodeType.OutputIndex) workBench.findAndUpdateItem(updated);
-  indexTree.findAndUpdate(updated);
+const renameNode = (nodeId: string, newName: string) => {
+  workBench.findAndRenameNode(nodeId, newName);
+  indexTree.findAndRenameNode(nodeId, newName);
 };
 
 const deleteNode = (deleteNode: IndexNode) => {
@@ -210,6 +211,14 @@ const deleteNode = (deleteNode: IndexNode) => {
 const duplicateNode = (duplicated: IndexNode) => {
   if (duplicated.type === IndexNodeType.OutputIndex) return;
   workBench.addItem(duplicated);
+};
+
+const createChild = (
+  parentNodeId: string,
+  childType: IndexNodeType.Index | IndexNodeType.Dataset
+) => {
+  workBench.findAndAddChild(parentNodeId, childType);
+  indexTree.findAndAddChild(parentNodeId, childType);
 };
 </script>
 

@@ -65,9 +65,9 @@
     >
       <DropdownButton
         :is-dropdown-left-aligned="true"
-        :items="Object.values(AddInputDropdownOptions)"
+        :items="addInputDropdownOptions"
         :selected-item="'Add Component'"
-        @item-selected="handleAddInput"
+        @item-selected="(option) => emit('create-child', props.data.id, option)"
       />
     </div>
   </div>
@@ -77,7 +77,6 @@ import { computed, ref } from 'vue';
 import { Dataset, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
 import {
-  createNewIndex,
   duplicateNode,
   isDatasetNode,
   isParentNode,
@@ -87,10 +86,8 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchResults from '@/components/index-structure/index-tree-node-search-results.vue';
 
-export enum AddInputDropdownOptions {
-  Dataset = 'Dataset',
-  Index = 'Index',
-}
+const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
+
 export enum OptionButtonMenu {
   Rename = 'Rename',
   Duplicate = 'Duplicate',
@@ -105,10 +102,15 @@ interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'update', updated: IndexNode): void;
+  (e: 'rename', nodeId: string, newName: string): void;
   (e: 'delete', deleted: IndexNode): void;
   (e: 'duplicate', deleted: IndexNode): void;
   (e: 'select', nodeId: string): void;
+  (
+    e: 'create-child',
+    parentNodeId: string,
+    childType: IndexNodeType.Index | IndexNodeType.Dataset
+  ): void;
 }>();
 
 const classObject = computed(() => {
@@ -141,8 +143,7 @@ const showEditName = computed(() => {
 
 const handleRenameDone = () => {
   if (!newNodeName.value) return;
-  const updated = { ...props.data, name: newNodeName.value };
-  emit('update', updated);
+  emit('rename', props.data.id, newNodeName.value);
   isRenaming.value = false;
   newNodeName.value = '';
 };
@@ -242,27 +243,6 @@ const footerText = computed(() => {
 
 const getDatasetFooterText = (data: Dataset) => {
   return data.name === data.datasetName ? '' : data.datasetName;
-};
-
-// Footer button - add component
-
-const handleAddInput = (option: AddInputDropdownOptions) => {
-  if (!isParentNode(props.data)) return;
-  // Clone node since props.data is read only
-  // TODO: instead of using 'update', emit an add node event with this node id as parent id and new node as child payload.
-  // Then handle adding new node to the tree inside useIndexTree/useIndexWorkbench
-  const node = JSON.parse(JSON.stringify(props.data));
-  switch (option) {
-    case AddInputDropdownOptions.Index:
-      node.inputs.unshift(createNewIndex());
-      emit('update', node);
-      break;
-    case AddInputDropdownOptions.Dataset:
-      // Not Yet Implemented
-      break;
-    default:
-      break;
-  }
 };
 </script>
 
