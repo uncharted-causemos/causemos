@@ -6,7 +6,9 @@
         >" as a placeholder
       </li>
       <!-- If results haven't returned, show a spinner -->
-      <i v-if="isFetchingResults" class="fa fa-spin fa-spinner" />
+      <div v-if="isFetchingResults" class="loading">
+        <i class="fa fa-spin fa-spinner" />
+      </div>
       <div v-else class="results">
         <p v-if="results.length === 0" class="no-results-message de-emphasized">
           No datasets matching "{{ props.searchText }}" were found.
@@ -16,26 +18,33 @@
           <li
             v-for="(result, index) of results"
             :key="result.id"
-            :class="{ active: activeResultIndex === index }"
+            :class="{
+              active: activeResultIndex === index,
+              'de-emphasized': result.displayName === '',
+            }"
             @mouseenter="activeResultIndex = index"
           >
-            {{ result.datasetName }}
+            {{ result.displayName === '' ? '(missing name)' : result.displayName }}
           </li>
         </ul>
         <div class="details-pane" v-if="activeResult !== null">
-          <h5>{{ activeResult.datasetName }}</h5>
-          <div class="timeseries placeholder" />
-          <div>
-            <h5 class="de-emphasized">Source</h5>
-            <p>{{ 'WDI - share_income' }}</p>
-          </div>
+          <h5>{{ activeResult.displayName }}</h5>
           <div>
             <h5 class="de-emphasized">Coverage</h5>
             <p>{{ '216 countries' }}</p>
+            <div class="timeseries placeholder" />
             <p>
               <span class="de-emphasized">from</span> {{ 'January 1960' }}
               <span class="de-emphasized">to</span> {{ 'January 2021' }}
             </p>
+          </div>
+          <div>
+            <h5 class="de-emphasized">Description</h5>
+            <p>{{ activeResult.description }}</p>
+          </div>
+          <div>
+            <h5 class="de-emphasized">Source</h5>
+            <p>{{ activeResult.familyName }}</p>
           </div>
           <button class="btn btn-sm add-dataset" disabled>Add</button>
         </div>
@@ -46,7 +55,26 @@
 </template>
 
 <script setup lang="ts">
+import newDatacubeService from '@/services/new-datacube-service';
 import { ref, computed, watch, toRefs } from 'vue';
+
+interface DatasetSearchResult {
+  displayName: string;
+  dataId: string;
+  description: string;
+  period: { gte: number; lte: number };
+  familyName: string;
+}
+
+const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult => {
+  return {
+    displayName: doc.display_name,
+    dataId: doc.data_id,
+    description: doc.description,
+    familyName: doc.family_name,
+    period: doc.period,
+  };
+};
 
 const props = defineProps<{
   searchText: string;
@@ -55,37 +83,30 @@ const { searchText } = toRefs(props);
 
 const isFetchingResults = ref(false);
 watch([searchText], async () => {
+  // Save a copy of the current search text value in case it changes before results are fetched
+  const queryString = searchText.value;
+  if (queryString === '') {
+    results.value = [];
+    isFetchingResults.value = false;
+    return;
+  }
   isFetchingResults.value = true;
   try {
-    // Mock fetching results
-    results.value = await new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          { datasetName: 'dataset A', id: '1' },
-          { datasetName: 'dataset B', id: '2' },
-          { datasetName: 'dataset C', id: '3' },
-          { datasetName: 'dataset D', id: '4' },
-          { datasetName: 'dataset E', id: '5' },
-          {
-            datasetName:
-              'dataset F that happens to have a very long name for style testing purposes',
-            id: '6',
-          },
-          { datasetName: 'dataset G', id: '7' },
-          { datasetName: 'dataset H', id: '8' },
-          { datasetName: 'dataset I', id: '9' },
-        ]);
-      }, 1000);
-    });
+    const esDocResults = await newDatacubeService.getDatacubeSuggestions(queryString);
+    if (queryString !== searchText.value) {
+      // Search text has changed since we started fetching results, so let the more recent call
+      //  modify state.
+      return;
+    }
+    results.value = esDocResults.map(convertESDocToDatasetSearchResult);
+    isFetchingResults.value = false;
   } catch (e) {
     console.error('Unable to fetch search results for query', searchText);
     console.error(e);
-  } finally {
-    isFetchingResults.value = false;
   }
 });
 
-const results = ref<{ datasetName: string; id: string }[]>([]);
+const results = ref<DatasetSearchResult[]>([]);
 
 /**
  * The currently highlighted result.
@@ -152,6 +173,7 @@ li {
 }
 
 .no-results-message {
+  margin-top: 10px;
   margin-left: 10px;
 }
 
@@ -160,10 +182,14 @@ li {
   margin-left: 10px;
 }
 
+.loading,
 .results {
-  display: flex;
   height: 250px;
   margin-top: 5px;
+}
+
+.results {
+  display: flex;
 
   ul {
     flex: 1;
