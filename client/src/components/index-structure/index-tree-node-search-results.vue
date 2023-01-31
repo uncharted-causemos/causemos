@@ -1,7 +1,11 @@
 <template>
   <div class="index-tree-node-search-results-container">
     <ul v-if="props.searchText !== ''">
-      <li :class="{ active: activeResultIndex === -1 }" @mouseenter="activeResultIndex = -1">
+      <li
+        :class="{ active: activeResultIndex === -1 }"
+        @mouseenter="activeResultIndex = -1"
+        @click="emit('keep-as-placeholder')"
+      >
         Add "<strong>{{ props.searchText }}</strong
         >" as a placeholder
       </li>
@@ -14,7 +18,7 @@
           No datasets matching "{{ props.searchText }}" were found.
         </p>
         <ul v-else>
-          <h5 class="results-header">Results</h5>
+          <h5 class="results-header">Choose a dataset</h5>
           <li
             v-for="(result, index) of results"
             :key="result.id"
@@ -46,7 +50,6 @@
             <h5 class="de-emphasized">Source</h5>
             <p>{{ activeResult.familyName }}</p>
           </div>
-          <button class="btn btn-sm add-dataset" disabled>Add</button>
         </div>
       </div>
     </ul>
@@ -80,6 +83,10 @@ const props = defineProps<{
   searchText: string;
 }>();
 const { searchText } = toRefs(props);
+
+const emit = defineEmits<{
+  'keep-as-placeholder': () => void;
+}>();
 
 const isFetchingResults = ref(false);
 watch([searchText], async () => {
@@ -152,6 +159,7 @@ li {
   overflow-x: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
 
   &.active {
     background: $un-color-black-5;

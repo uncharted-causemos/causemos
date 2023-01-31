@@ -34,7 +34,10 @@
         />
         <button class="btn btn-default" @click="cancelDatasetSearch">Cancel</button>
       </div>
-      <IndexTreeNodeSearchResults :searchText="datasetSearchText" />
+      <IndexTreeNodeSearchResults
+        :searchText="datasetSearchText"
+        @keep-as-placeholder="keepAsPlaceholder"
+      />
     </div>
     <div v-else-if="showEditName" class="rename content flex">
       <input
@@ -222,6 +225,10 @@ const cancelDatasetSearch = () => {
   } else {
     isSearchingForDataset.value = false;
   }
+};
+const keepAsPlaceholder = () => {
+  emit('rename', props.data.id, datasetSearchText.value);
+  isSearchingForDataset.value = false;
 };
 
 // Footer
