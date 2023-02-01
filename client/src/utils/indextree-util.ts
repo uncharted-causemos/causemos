@@ -1,6 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { IndexNodeType } from '@/types/Enums';
-import { IndexNode, Dataset, ParentNode, Index, OutputIndex, Placeholder } from '@/types/Index';
+import {
+  IndexNode,
+  Dataset,
+  ParentNode,
+  Index,
+  OutputIndex,
+  Placeholder,
+  DatasetSearchResult,
+} from '@/types/Index';
 import { DeepReadonly } from 'vue';
 
 type findNodeReturn = { parent: IndexNode | null; found: IndexNode } | undefined;
@@ -50,6 +58,26 @@ export const createNewPlaceholderDataset = () => {
     id: uuidv4(),
     type: IndexNodeType.Placeholder,
     name: '',
+  };
+  return node;
+};
+
+export const convertPlaceholderToDataset = (
+  placeholder: Placeholder,
+  dataset: DatasetSearchResult,
+  initialWeight: number
+) => {
+  const node: Dataset = {
+    id: uuidv4(),
+    type: IndexNodeType.Dataset,
+    name: placeholder.name === '' ? dataset.displayName : placeholder.name,
+    datasetId: dataset.dataId,
+    datasetName: dataset.displayName,
+    isInverted: false,
+    isWeightUserSpecified: false,
+    source: dataset.familyName,
+    weight: initialWeight,
+    selectedTimestamp: dataset.period.lte, // select the last timestamp we have data for
   };
   return node;
 };

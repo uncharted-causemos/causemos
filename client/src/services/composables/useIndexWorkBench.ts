@@ -1,12 +1,14 @@
 import _ from 'lodash';
 import { ref, readonly } from 'vue';
-import { IndexWorkBenchItem } from '@/types/Index';
+import { DatasetSearchResult, IndexWorkBenchItem } from '@/types/Index';
 import {
   findAndRemoveChild,
   findNode as indexTreeUtilFindNode,
   isParentNode,
   createNewPlaceholderDataset,
   createNewIndex,
+  isPlaceholderNode,
+  convertPlaceholderToDataset,
 } from '@/utils/indextree-util';
 import { IndexNodeType } from '@/types/Enums';
 
@@ -87,6 +89,21 @@ export default function useIndexWorkBench() {
     triggerUpdate();
   };
 
+  const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult) => {
+    const foundResult = findNode(nodeId);
+    if (foundResult === undefined || !isPlaceholderNode(foundResult.found)) {
+      return;
+    }
+    const { found: placeholderNode, parent } = foundResult;
+    // TODO: add up user-set sibling weights, subtract from 100, divide between unset siblings
+    // Parent should never be null unless we found a disconnected placeholder node.
+    const initialWeight = parent === null ? 0 : 25;
+    const datasetNode = convertPlaceholderToDataset(placeholderNode, dataset, initialWeight);
+    Object.assign(placeholderNode, datasetNode);
+    // TODO: update unset siblings with their new auto-balanced weight
+    triggerUpdate();
+  };
+
   return {
     items,
     initialize,
@@ -95,6 +112,7 @@ export default function useIndexWorkBench() {
     findAndRenameNode,
     findAndDeleteItem,
     findAndAddChild,
+    attachDatasetToPlaceholder,
     getAnalysisId,
   };
 }

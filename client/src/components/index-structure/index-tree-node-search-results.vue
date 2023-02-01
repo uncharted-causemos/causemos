@@ -27,6 +27,7 @@
               'de-emphasized': result.displayName === '',
             }"
             @mouseenter="activeResultIndex = index"
+            @click="emit('select-dataset', result)"
           >
             {{ result.displayName === '' ? '(missing name)' : result.displayName }}
           </li>
@@ -60,14 +61,7 @@
 <script setup lang="ts">
 import newDatacubeService from '@/services/new-datacube-service';
 import { ref, computed, watch, toRefs } from 'vue';
-
-interface DatasetSearchResult {
-  displayName: string;
-  dataId: string;
-  description: string;
-  period: { gte: number; lte: number };
-  familyName: string;
-}
+import { DatasetSearchResult } from '@/types/Index';
 
 const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult => {
   return {
