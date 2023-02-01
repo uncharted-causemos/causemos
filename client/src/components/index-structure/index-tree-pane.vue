@@ -24,13 +24,14 @@
         ></div>
         <IndexTreeNode
           v-if="item.data"
-          :data="item.data"
+          :node-data="item.data"
           :is-selected="item.data.id === props.selectedElementId"
           @rename="renameNode"
           @delete="deleteNode"
           @duplicate="duplicateNode"
           @select="(id) => emit('select-element', id)"
           @create-child="createChild"
+          @attach-dataset="attachDatasetToPlaceholder"
         />
         <div
           class="edge outgoing"
@@ -53,7 +54,7 @@ import _ from 'lodash';
 import { computed, DeepReadonly } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
-import { IndexNode, SelectableIndexElementId } from '@/types/Index';
+import { DatasetSearchResult, IndexNode, SelectableIndexElementId } from '@/types/Index';
 import { isDeepReadOnlyParentNode } from '@/utils/indextree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
@@ -219,6 +220,11 @@ const createChild = (
 ) => {
   workBench.findAndAddChild(parentNodeId, childType);
   indexTree.findAndAddChild(parentNodeId, childType);
+};
+
+const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult) => {
+  workBench.attachDatasetToPlaceholder(nodeId, dataset);
+  indexTree.attachDatasetToPlaceholder(nodeId, dataset);
 };
 </script>
 

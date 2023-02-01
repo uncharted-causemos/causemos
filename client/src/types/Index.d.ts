@@ -13,11 +13,19 @@ export interface Placeholder extends BaseNode {
 }
 export interface Dataset extends BaseNode, WeightedNode {
   type: IndexNodeType.Dataset;
-  datasetId: string; // or datacubeId
+  datasetId: string; // should be the datacube's `data_id` (see `Datacube.d.ts`)
   datasetName: string;
   isInverted: boolean;
   source: string;
-  // And other metadata properties as needed
+  selectedTimestamp: number;
+}
+
+export interface DatasetSearchResult {
+  displayName: string;
+  dataId: string;
+  description: string;
+  period: { gte: number; lte: number };
+  familyName: string;
 }
 
 export interface Index extends BaseNode, WeightedNode {

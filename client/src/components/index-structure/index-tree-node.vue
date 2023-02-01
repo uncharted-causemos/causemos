@@ -1,12 +1,12 @@
 <template>
   <div class="index-tree-node-container" :class="classObject" @click="selectNode">
-    <div v-if="isParentNode(props.data)" class="input-arrow" />
+    <div v-if="isParentNode(props.nodeData)" class="input-arrow" />
     <div class="header content">
       <span>
         {{ headerText }}
       </span>
       <OptionsButton
-        v-if="props.data.type !== IndexNodeType.OutputIndex"
+        v-if="props.nodeData.type !== IndexNodeType.OutputIndex"
         :dropdown-below="true"
         :wider-dropdown-options="true"
         @click.stop=""
@@ -34,7 +34,11 @@
         />
         <button class="btn btn-default" @click="cancelDatasetSearch">Cancel</button>
       </div>
-      <IndexTreeNodeSearchResults :searchText="datasetSearchText" />
+      <IndexTreeNodeSearchResults
+        :searchText="datasetSearchText"
+        @keep-as-placeholder="keepAsPlaceholder"
+        @select-dataset="attachDataset"
+      />
     </div>
     <div v-else-if="showEditName" class="rename content flex">
       <input
@@ -46,7 +50,7 @@
       <button class="btn btn-default" @click="handleRenameDone">Done</button>
     </div>
     <div v-else class="name content">
-      {{ props.data.name }}
+      {{ props.nodeData.name }}
     </div>
     <div v-if="footerText" class="footer content">
       {{ footerText }}
@@ -60,21 +64,21 @@
       Replace with dataset
     </button>
     <div
-      v-if="isParentNode(props.data) && !showEditName"
+      v-if="isParentNode(props.nodeData) && !showEditName"
       class="add-component-btn-container footer content"
     >
       <DropdownButton
         :is-dropdown-left-aligned="true"
         :items="addInputDropdownOptions"
         :selected-item="'Add Component'"
-        @item-selected="(option) => emit('create-child', props.data.id, option)"
+        @item-selected="(option) => emit('create-child', props.nodeData.id, option)"
       />
     </div>
   </div>
 </template>
 <script lang="ts">
 import { computed, ref } from 'vue';
-import { Dataset, IndexNode } from '@/types/Index';
+import { Dataset, DatasetSearchResult, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
 import {
   duplicateNode,
@@ -96,7 +100,7 @@ export enum OptionButtonMenu {
 </script>
 <script setup lang="ts">
 interface Props {
-  data: IndexNode;
+  nodeData: IndexNode;
   isSelected: boolean;
 }
 const props = defineProps<Props>();
@@ -111,14 +115,15 @@ const emit = defineEmits<{
     parentNodeId: string,
     childType: IndexNodeType.Index | IndexNodeType.Dataset
   ): void;
+  (e: 'attach-dataset', nodeId: string, dataset: DatasetSearchResult): void;
 }>();
 
 const classObject = computed(() => {
   return {
-    'output-index': props.data.type === IndexNodeType.OutputIndex,
-    index: props.data.type === IndexNodeType.Index,
-    dataset: props.data.type === IndexNodeType.Dataset,
-    placeholder: props.data.type === IndexNodeType.Placeholder,
+    'output-index': props.nodeData.type === IndexNodeType.OutputIndex,
+    index: props.nodeData.type === IndexNodeType.Index,
+    dataset: props.nodeData.type === IndexNodeType.Dataset,
+    placeholder: props.nodeData.type === IndexNodeType.Placeholder,
     selected: props.isSelected,
     'flexible-width': showDatasetSearch.value,
   };
@@ -126,8 +131,8 @@ const classObject = computed(() => {
 
 const selectNode = () => {
   // Can't select Placeholder nodes
-  if (props.data.type !== IndexNodeType.Placeholder) {
-    emit('select', props.data.id);
+  if (props.nodeData.type !== IndexNodeType.Placeholder) {
+    emit('select', props.nodeData.id);
   }
 };
 
@@ -137,13 +142,13 @@ const isRenaming = ref(false);
 const newNodeName = ref('');
 
 const showEditName = computed(() => {
-  // props.data.name === '' means that the node has never been given a name
-  return props.data.name === '' || isRenaming.value;
+  // props.nodeData.name === '' means that the node has never been given a name
+  return props.nodeData.name === '' || isRenaming.value;
 });
 
 const handleRenameDone = () => {
   if (!newNodeName.value) return;
-  emit('rename', props.data.id, newNodeName.value);
+  emit('rename', props.nodeData.id, newNodeName.value);
   isRenaming.value = false;
   newNodeName.value = '';
 };
@@ -151,7 +156,7 @@ const handleRenameDone = () => {
 // Header
 
 const headerText = computed(() => {
-  switch (props.data.type) {
+  switch (props.nodeData.type) {
     case IndexNodeType.OutputIndex:
       return 'Output Index';
     case IndexNodeType.Index:
@@ -191,14 +196,14 @@ const optionsButtonMenu = computed(() => {
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   switch (option) {
     case OptionButtonMenu.Rename:
-      newNodeName.value = props.data.name;
+      newNodeName.value = props.nodeData.name;
       isRenaming.value = true;
       break;
     case OptionButtonMenu.Duplicate:
-      emit('duplicate', duplicateNode(props.data));
+      emit('duplicate', duplicateNode(props.nodeData));
       break;
     case OptionButtonMenu.Delete:
-      emit('delete', props.data);
+      emit('delete', props.nodeData);
       break;
     default:
       break;
@@ -209,31 +214,40 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
 
 const showDatasetSearch = computed(
   () =>
-    isPlaceholderNode(props.data) &&
-    // props.data.name === '' means that the "create dataset node" flow has never been completed.
-    (isSearchingForDataset.value === true || props.data.name === '')
+    isPlaceholderNode(props.nodeData) &&
+    // props.nodeData.name === '' means that the "create dataset node" flow has never been completed.
+    (isSearchingForDataset.value === true || props.nodeData.name === '')
 );
 const isSearchingForDataset = ref(false);
 const datasetSearchText = ref('');
 const cancelDatasetSearch = () => {
-  if (props.data.name === '') {
+  if (props.nodeData.name === '') {
     // the "create dataset node" flow has never been completed, so delete node.
-    emit('delete', props.data);
+    emit('delete', props.nodeData);
   } else {
+    datasetSearchText.value = '';
     isSearchingForDataset.value = false;
   }
+};
+const keepAsPlaceholder = () => {
+  emit('rename', props.nodeData.id, datasetSearchText.value);
+  isSearchingForDataset.value = false;
+};
+const attachDataset = (dataset: DatasetSearchResult) => {
+  emit('attach-dataset', props.nodeData.id, dataset);
+  isSearchingForDataset.value = false;
 };
 
 // Footer
 
-const childNodes = computed(() => (isParentNode(props.data) ? props.data.inputs : []));
+const childNodes = computed(() => (isParentNode(props.nodeData) ? props.nodeData.inputs : []));
 const footerText = computed(() => {
   const dataNodes = childNodes.value.filter((node) => node.type !== IndexNodeType.Placeholder);
   const numInputs = dataNodes.length;
   switch (numInputs) {
     case 0:
-      if (isDatasetNode(props.data)) return getDatasetFooterText(props.data);
-      return isParentNode(props.data) && props.data.name ? 'No inputs.' : '';
+      if (isDatasetNode(props.nodeData)) return getDatasetFooterText(props.nodeData);
+      return isParentNode(props.nodeData) && props.nodeData.name ? 'No inputs.' : '';
     case 1:
       return '1 input.';
     default:
