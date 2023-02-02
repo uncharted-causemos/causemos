@@ -5,6 +5,7 @@
   -->
   <section v-bind="$attrs">
     <h4 v-if="hasBeenRenamed">Original name: {{ props.node.datasetName }}</h4>
+    <h4 v-else>Description</h4>
     <p class="de-emphasized">
       {{ datasetMetadata?.outputs[0].description ?? '' }}
     </p>

@@ -42,7 +42,7 @@
         </div>
       </header>
       <section>
-        <IndexSpatialCoveragePreview />
+        <IndexSpatialCoveragePreview :countries="datasetMetadata?.geography.country ?? null" />
       </section>
       <IndexDatasetMetadata :node="selectedNode" :dataset-metadata="datasetMetadata" />
       <section>
