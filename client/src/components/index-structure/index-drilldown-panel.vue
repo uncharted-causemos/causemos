@@ -5,12 +5,17 @@
         <span class="type-label"> Output Index </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
+            v-focus
             class="form-control"
             type="text"
-            v-model="newNodeName"
+            v-model="renameInputText"
             v-on:keyup.enter="handleRenameDone"
           />
-          <button class="btn btn-default" @click="handleRenameDone" :disabled="newNodeName === ''">
+          <button
+            class="btn btn-default"
+            @click="handleRenameDone"
+            :disabled="renameInputText === ''"
+          >
             Done
           </button>
         </div>
@@ -28,12 +33,17 @@
       <header>
         <div v-if="isRenaming" class="rename-controls">
           <input
+            v-focus
             class="form-control"
             type="text"
-            v-model="newNodeName"
+            v-model="renameInputText"
             v-on:keyup.enter="handleRenameDone"
           />
-          <button class="btn btn-default" @click="handleRenameDone" :disabled="newNodeName === ''">
+          <button
+            class="btn btn-default"
+            @click="handleRenameDone"
+            :disabled="renameInputText === ''"
+          >
             Done
           </button>
         </div>
@@ -55,14 +65,14 @@
       <header>
         <div v-if="isRenaming" class="rename-controls">
           <input
+            v-focus
             class="form-control"
             type="text"
-            v-model="newNodeName"
+            v-model="renameInputText"
             v-on:keyup.enter="handleRenameDone"
+            :placeholder="selectedNode.datasetName"
           />
-          <button class="btn btn-default" @click="handleRenameDone" :disabled="newNodeName === ''">
-            Done
-          </button>
+          <button class="btn btn-default" @click="handleRenameDone">Done</button>
         </div>
         <div v-else class="title-row space-between">
           <h3>{{ panelTitle }}</h3>
@@ -211,16 +221,27 @@ const isRenaming = ref(false);
 watch([selectedNode], () => {
   isRenaming.value = false;
 });
-const newNodeName = ref('');
+const renameInputText = ref('');
 const startRenaming = () => {
-  newNodeName.value = selectedNode.value?.name ?? '';
+  renameInputText.value = selectedNode.value?.name ?? '';
   isRenaming.value = true;
 };
 const handleRenameDone = () => {
-  if (newNodeName.value === '') return;
-  renameNode(newNodeName.value);
+  if (
+    selectedNode.value === null ||
+    // Can't exit the flow with an empty rename bar unless this is a dataset node
+    (renameInputText.value === '' && !isDatasetNode(selectedNode.value))
+  ) {
+    return;
+  }
+  const shouldRevertToDatasetName =
+    renameInputText.value === '' && isDatasetNode(selectedNode.value);
+  const newNodeName = shouldRevertToDatasetName
+    ? selectedNode.value.datasetName
+    : renameInputText.value;
+  renameNode(newNodeName);
   isRenaming.value = false;
-  newNodeName.value = '';
+  renameInputText.value = '';
 };
 </script>
 
