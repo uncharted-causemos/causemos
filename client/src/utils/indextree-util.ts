@@ -72,6 +72,7 @@ export const convertPlaceholderToDataset = (
     type: IndexNodeType.Dataset,
     name: placeholder.name === '' ? dataset.displayName : placeholder.name,
     datasetId: dataset.dataId,
+    datasetMetadataDocId: dataset.datasetMetadataDocId,
     datasetName: dataset.displayName,
     isInverted: false,
     isWeightUserSpecified: false,

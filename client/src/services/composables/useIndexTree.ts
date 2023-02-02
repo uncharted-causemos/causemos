@@ -9,6 +9,7 @@ import {
   createNewIndex,
   isPlaceholderNode,
   convertPlaceholderToDataset,
+  isDatasetNode,
 } from '@/utils/indextree-util';
 import { IndexNodeType } from '@/types/Enums';
 
@@ -90,6 +91,15 @@ export default function useIndexTree() {
     triggerUpdate();
   };
 
+  const toggleDatasetIsInverted = (nodeId: string) => {
+    const dataset = findNode(nodeId)?.found;
+    if (dataset === undefined || !isDatasetNode(dataset)) {
+      return;
+    }
+    dataset.isInverted = !dataset.isInverted;
+    triggerUpdate();
+  };
+
   return {
     tree,
     initialize,
@@ -99,5 +109,6 @@ export default function useIndexTree() {
     findAndAddChild,
     attachDatasetToPlaceholder,
     getAnalysisId,
+    toggleDatasetIsInverted,
   };
 }

@@ -42,14 +42,23 @@
         </div>
       </header>
       <section>
-        <IndexSpatialCoveragePreview />
+        <IndexSpatialCoveragePreview :countries="datasetMetadata?.geography.country ?? null" />
       </section>
-      <IndexDatasetMetadata />
+      <IndexDatasetMetadata :node="selectedNode" :dataset-metadata="datasetMetadata" />
       <section>
-        <IndexDatasetSelectedDate />
+        <IndexDatasetSelectedDate
+          :dataset-id="selectedNode.datasetId"
+          :selected-timestamp="selectedNode.selectedTimestamp"
+          :metadata="datasetMetadata"
+        />
       </section>
       <section>
-        <IndexInvertData />
+        <IndexInvertData
+          :selected-node-name="panelTitle"
+          :output-index-name="tree.name"
+          :is-inverted="selectedNode.isInverted"
+          @toggle-inverted="() => toggleDatasetIsInverted(selectedNode.id)"
+        />
       </section>
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
@@ -81,17 +90,27 @@ import IndexSpatialCoveragePreview from './index-spatial-coverage-preview.vue';
 import IndexDatasetMetadata from './index-dataset-metadata.vue';
 import IndexDatasetSelectedDate from './index-dataset-selected-date.vue';
 import IndexInvertData from './index-invert-data.vue';
-import { computed } from 'vue';
+import { computed, watch, ref } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { IndexNode, SelectableIndexElementId } from '@/types/Index';
+import { isDatasetNode } from '@/utils/indextree-util';
+import { getDatacubeById } from '@/services/new-datacube-service';
+import { Indicator } from '@/types/Datacube';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
 }>();
 
-const { findNode } = useIndexTree();
-const { findNode: findNodeInWorkbench } = useIndexWorkBench();
+const indexTree = useIndexTree();
+const { findNode, tree } = indexTree;
+const workbench = useIndexWorkBench();
+
+const toggleDatasetIsInverted = (nodeId: string) => {
+  workbench.toggleDatasetIsInverted(nodeId);
+  indexTree.toggleDatasetIsInverted(nodeId);
+};
+
 const selectedNode = computed<IndexNode | null>(() => {
   if (!(typeof props.selectedElementId === 'string')) {
     return null;
@@ -99,9 +118,15 @@ const selectedNode = computed<IndexNode | null>(() => {
   // Check for node in main tree
   const foundInTree = findNode(props.selectedElementId);
   // If not found in main tree, check in the list of disconnected nodes and trees
-  const found = foundInTree ?? findNodeInWorkbench(props.selectedElementId);
+  const found = foundInTree ?? workbench.findNode(props.selectedElementId);
   // TODO: we'll want to keep the parent around when searching for edges
   return found?.found ?? null;
+});
+const selectedDatasetMetadataId = computed(() => {
+  if (selectedNode.value === null || !isDatasetNode(selectedNode.value)) {
+    return null;
+  }
+  return selectedNode.value.datasetMetadataDocId;
 });
 
 const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode } | null>(() => {
@@ -120,6 +145,24 @@ const type = computed<IndexElementType | null>(() => {
 
 const panelTitle = computed(() => {
   return selectedNode?.value?.name ?? '';
+});
+
+const datasetMetadata = ref<Indicator | null>(null);
+watch([selectedDatasetMetadataId], async () => {
+  if (selectedDatasetMetadataId.value === null) {
+    return;
+  }
+  const cachedDatasetMetadataId = selectedDatasetMetadataId.value;
+  const rawMetadata: Indicator | false = await getDatacubeById(cachedDatasetMetadataId);
+  if (selectedDatasetMetadataId.value !== cachedDatasetMetadataId) {
+    // No longer looking at this dataset, don't bother saving the result
+    return;
+  }
+  if (rawMetadata === false) {
+    // Unable to find results
+    return;
+  }
+  datasetMetadata.value = rawMetadata ?? null;
 });
 </script>
 

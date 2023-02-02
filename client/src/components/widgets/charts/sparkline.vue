@@ -12,7 +12,7 @@ import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 
 const DEFAULT_LINE_COLOR = SELECTED_COLOR_DARK;
 
-interface SparklineData {
+export interface SparklineData {
   series: number[];
   name: string;
   color: string;
