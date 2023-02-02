@@ -153,9 +153,13 @@ watch([selectedDatasetMetadataId], async () => {
     return;
   }
   const cachedDatasetMetadataId = selectedDatasetMetadataId.value;
-  const rawMetadata: Indicator = await getDatacubeById(cachedDatasetMetadataId);
+  const rawMetadata: Indicator | false = await getDatacubeById(cachedDatasetMetadataId);
   if (selectedDatasetMetadataId.value !== cachedDatasetMetadataId) {
     // No longer looking at this dataset, don't bother saving the result
+    return;
+  }
+  if (rawMetadata === false) {
+    // Unable to find results
     return;
   }
   datasetMetadata.value = rawMetadata ?? null;

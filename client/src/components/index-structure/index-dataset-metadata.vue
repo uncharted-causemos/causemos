@@ -7,13 +7,13 @@
     <h4 v-if="hasBeenRenamed">Original name: {{ props.node.datasetName }}</h4>
     <h4 v-else>Description</h4>
     <p class="de-emphasized">
-      {{ datasetMetadata?.outputs[0].description ?? '' }}
+      {{ description }}
     </p>
   </section>
   <section v-bind="$attrs">
     <h4>Source: {{ props.node.source }}</h4>
     <p class="de-emphasized">
-      {{ datasetMetadata?.description ?? '' }}
+      {{ props.datasetMetadata?.description ?? '' }}
     </p>
   </section>
 </template>
@@ -29,6 +29,13 @@ const props = defineProps<{
 }>();
 
 const hasBeenRenamed = computed(() => props.node.datasetName !== props.node.name);
+
+const description = computed(() => {
+  if (props.datasetMetadata === null) {
+    return '';
+  }
+  return props.datasetMetadata.outputs[0].description;
+});
 </script>
 
 <style lang="scss" scoped>
