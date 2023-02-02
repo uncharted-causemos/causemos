@@ -3,9 +3,25 @@
     <template v-if="type === IndexNodeType.OutputIndex">
       <header>
         <span class="type-label"> Output Index </span>
-        <div class="title-row">
+        <div v-if="isRenaming" class="rename-controls">
+          <input
+            v-focus
+            class="form-control"
+            type="text"
+            v-model="renameInputText"
+            v-on:keyup.enter="handleRenameDone"
+          />
+          <button
+            class="btn btn-default"
+            @click="handleRenameDone"
+            :disabled="renameInputText === ''"
+          >
+            Done
+          </button>
+        </div>
+        <div v-else class="title-row space-between">
           <h3>{{ panelTitle }}</h3>
-          <button class="btn btn-sm" disabled>Rename</button>
+          <button class="btn btn-sm" @click="startRenaming">Rename</button>
         </div>
       </header>
       <IndexComponentWeights />
@@ -15,10 +31,26 @@
 
     <template v-if="type === IndexNodeType.Index">
       <header>
-        <div class="title-row space-between">
+        <div v-if="isRenaming" class="rename-controls">
+          <input
+            v-focus
+            class="form-control"
+            type="text"
+            v-model="renameInputText"
+            v-on:keyup.enter="handleRenameDone"
+          />
+          <button
+            class="btn btn-default"
+            @click="handleRenameDone"
+            :disabled="renameInputText === ''"
+          >
+            Done
+          </button>
+        </div>
+        <div v-else class="title-row space-between">
           <h3>{{ panelTitle }}</h3>
           <div class="button-group">
-            <button class="btn btn-sm" disabled>Rename</button>
+            <button class="btn btn-sm" @click="startRenaming">Rename</button>
             <button class="btn btn-sm" disabled>
               <i class="fa fa-ellipsis-v" />
             </button>
@@ -31,10 +63,21 @@
 
     <template v-if="type === IndexNodeType.Dataset">
       <header>
-        <div class="title-row space-between">
+        <div v-if="isRenaming" class="rename-controls">
+          <input
+            v-focus
+            class="form-control"
+            type="text"
+            v-model="renameInputText"
+            v-on:keyup.enter="handleRenameDone"
+            :placeholder="selectedNode.datasetName"
+          />
+          <button class="btn btn-default" @click="handleRenameDone">Done</button>
+        </div>
+        <div v-else class="title-row space-between">
           <h3>{{ panelTitle }}</h3>
           <div class="button-group">
-            <button class="btn btn-sm" disabled>Rename</button>
+            <button class="btn btn-sm" @click="startRenaming">Rename</button>
             <button class="btn btn-sm" disabled>
               <i class="fa fa-ellipsis-v" />
             </button>
@@ -111,6 +154,14 @@ const toggleDatasetIsInverted = (nodeId: string) => {
   indexTree.toggleDatasetIsInverted(nodeId);
 };
 
+const renameNode = (newName: string) => {
+  if (selectedNode.value === null) {
+    return;
+  }
+  workbench.findAndRenameNode(selectedNode.value.id, newName);
+  indexTree.findAndRenameNode(selectedNode.value.id, newName);
+};
+
 const selectedNode = computed<IndexNode | null>(() => {
   if (!(typeof props.selectedElementId === 'string')) {
     return null;
@@ -164,6 +215,34 @@ watch([selectedDatasetMetadataId], async () => {
   }
   datasetMetadata.value = rawMetadata ?? null;
 });
+
+const isRenaming = ref(false);
+// Exit rename flow if another node is selected before it completes
+watch([selectedNode], () => {
+  isRenaming.value = false;
+});
+const renameInputText = ref('');
+const startRenaming = () => {
+  renameInputText.value = selectedNode.value?.name ?? '';
+  isRenaming.value = true;
+};
+const handleRenameDone = () => {
+  if (
+    selectedNode.value === null ||
+    // Can't exit the flow with an empty rename bar unless this is a dataset node
+    (renameInputText.value === '' && !isDatasetNode(selectedNode.value))
+  ) {
+    return;
+  }
+  const shouldRevertToDatasetName =
+    renameInputText.value === '' && isDatasetNode(selectedNode.value);
+  const newNodeName = shouldRevertToDatasetName
+    ? selectedNode.value.datasetName
+    : renameInputText.value;
+  renameNode(newNodeName);
+  isRenaming.value = false;
+  renameInputText.value = '';
+};
 </script>
 
 <style scoped lang="scss">
@@ -201,6 +280,15 @@ header {
 
   &.space-between {
     justify-content: space-between;
+  }
+}
+
+.rename-controls {
+  display: flex;
+  gap: 5px;
+  input {
+    flex: 1;
+    min-width: 0;
   }
 }
 

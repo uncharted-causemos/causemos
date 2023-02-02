@@ -42,12 +42,20 @@
     </div>
     <div v-else-if="showEditName" class="rename content flex">
       <input
+        v-focus
         class="form-control"
         type="text"
-        v-model="newNodeName"
+        :placeholder="renameInputTextPlaceholder"
+        v-model="renameInputText"
         v-on:keyup.enter="handleRenameDone"
       />
-      <button class="btn btn-default" @click="handleRenameDone">Done</button>
+      <button
+        class="btn btn-default"
+        @click="handleRenameDone"
+        :disabled="renameInputText === '' && renameInputTextPlaceholder === ''"
+      >
+        Done
+      </button>
     </div>
     <div v-else class="name content">
       {{ props.nodeData.name }}
@@ -139,18 +147,31 @@ const selectNode = () => {
 // Rename
 
 const isRenaming = ref(false);
-const newNodeName = ref('');
+const renameInputText = ref('');
 
 const showEditName = computed(() => {
   // props.nodeData.name === '' means that the node has never been given a name
   return props.nodeData.name === '' || isRenaming.value;
 });
+const renameInputTextPlaceholder = computed(() => {
+  return isDatasetNode(props.nodeData) ? props.nodeData.datasetName : '';
+});
 
 const handleRenameDone = () => {
-  if (!newNodeName.value) return;
-  emit('rename', props.nodeData.id, newNodeName.value);
+  if (
+    // Can't exit the flow with an empty rename bar unless this is a dataset node
+    renameInputText.value === '' &&
+    !isDatasetNode(props.nodeData)
+  ) {
+    return;
+  }
+  const shouldRevertToDatasetName = renameInputText.value === '' && isDatasetNode(props.nodeData);
+  const newNodeName = shouldRevertToDatasetName
+    ? props.nodeData.datasetName
+    : renameInputText.value;
+  emit('rename', props.nodeData.id, newNodeName);
   isRenaming.value = false;
-  newNodeName.value = '';
+  renameInputText.value = '';
 };
 
 // Header
@@ -196,7 +217,7 @@ const optionsButtonMenu = computed(() => {
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   switch (option) {
     case OptionButtonMenu.Rename:
-      newNodeName.value = props.nodeData.name;
+      renameInputText.value = props.nodeData.name;
       isRenaming.value = true;
       break;
     case OptionButtonMenu.Duplicate:
