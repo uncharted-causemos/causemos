@@ -17,6 +17,10 @@ export const isDatasetNode = (indexNode: IndexNode): indexNode is Dataset => {
   return indexNode.type === IndexNodeType.Dataset;
 };
 
+export const isOutputIndexNode = (indexNode: IndexNode): indexNode is OutputIndex => {
+  return indexNode.type === IndexNodeType.OutputIndex;
+};
+
 export const isParentNode = (indexNode: IndexNode): indexNode is ParentNode => {
   return (indexNode as ParentNode).inputs !== undefined;
 };
