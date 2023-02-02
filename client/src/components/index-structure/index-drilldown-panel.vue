@@ -329,7 +329,7 @@ header {
 .title-row {
   display: flex;
   gap: 10px;
-  align-items: center;
+  align-items: flex-start;
 
   &.space-between {
     justify-content: space-between;
