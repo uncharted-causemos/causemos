@@ -51,9 +51,19 @@
           <h3>{{ panelTitle }}</h3>
           <div class="button-group">
             <button class="btn btn-sm" @click="startRenaming">Rename</button>
-            <button class="btn btn-sm" disabled>
-              <i class="fa fa-ellipsis-v" />
-            </button>
+            <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
+              <template #content>
+                <div
+                  v-for="item in optionsButtonMenu"
+                  :key="item.type"
+                  class="dropdown-option"
+                  @click="handleOptionsButtonClick(item.type)"
+                >
+                  <i class="fa fa-fw" :class="item.icon" />
+                  {{ item.text }}
+                </div>
+              </template>
+            </OptionsButton>
           </div>
         </div>
       </header>
@@ -78,9 +88,19 @@
           <h3>{{ panelTitle }}</h3>
           <div class="button-group">
             <button class="btn btn-sm" @click="startRenaming">Rename</button>
-            <button class="btn btn-sm" disabled>
-              <i class="fa fa-ellipsis-v" />
-            </button>
+            <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
+              <template #content>
+                <div
+                  v-for="item in optionsButtonMenu"
+                  :key="item.type"
+                  class="dropdown-option"
+                  @click="handleOptionsButtonClick(item.type)"
+                >
+                  <i class="fa fa-fw" :class="item.icon" />
+                  {{ item.text }}
+                </div>
+              </template>
+            </OptionsButton>
           </div>
         </div>
       </header>
@@ -126,6 +146,7 @@
 
 <script setup lang="ts">
 import { IndexNodeType, IndexElementType, IndexEdgeType } from '@/types/Enums';
+import OptionsButton from '../widgets/options-button.vue';
 import IndexComponentWeights from './index-component-weights.vue';
 import IndexDocumentSnippets from './index-document-snippets.vue';
 import IndexResultsPreview from './index-results-preview.vue';
@@ -136,10 +157,11 @@ import IndexInvertData from './index-invert-data.vue';
 import { computed, watch, ref } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { IndexNode, SelectableIndexElementId } from '@/types/Index';
-import { isDatasetNode } from '@/utils/indextree-util';
+import { IndexNode, IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
+import { duplicateNode, isDatasetNode, isOutputIndexNode } from '@/utils/indextree-util';
 import { getDatacubeById } from '@/services/new-datacube-service';
 import { Indicator } from '@/types/Datacube';
+import { OptionButtonMenu } from './index-tree-node.vue';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -160,6 +182,37 @@ const renameNode = (newName: string) => {
   }
   workbench.findAndRenameNode(selectedNode.value.id, newName);
   indexTree.findAndRenameNode(selectedNode.value.id, newName);
+};
+
+// Options button
+
+const optionsButtonMenu = [
+  {
+    type: OptionButtonMenu.Duplicate,
+    text: 'Duplicate',
+    icon: 'fa-copy',
+  },
+  {
+    type: OptionButtonMenu.Delete,
+    text: 'Delete',
+    icon: 'fa-trash',
+  },
+];
+
+const handleOptionsButtonClick = (option: OptionButtonMenu) => {
+  const node = selectedNode.value;
+  if (node === null || isOutputIndexNode(node)) {
+    return;
+  }
+  switch (option) {
+    case OptionButtonMenu.Duplicate:
+      workbench.addItem(duplicateNode(node) as IndexWorkBenchItem);
+      break;
+    case OptionButtonMenu.Delete:
+      workbench.findAndDeleteItem(node.id);
+      indexTree.findAndDelete(node.id);
+      break;
+  }
 };
 
 const selectedNode = computed<IndexNode | null>(() => {
@@ -276,7 +329,7 @@ header {
 .title-row {
   display: flex;
   gap: 10px;
-  align-items: center;
+  align-items: flex-start;
 
   &.space-between {
     justify-content: space-between;

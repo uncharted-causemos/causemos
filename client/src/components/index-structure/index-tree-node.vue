@@ -116,7 +116,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'rename', nodeId: string, newName: string): void;
   (e: 'delete', deleted: IndexNode): void;
-  (e: 'duplicate', deleted: IndexNode): void;
+  (e: 'duplicate', duplicated: IndexNode): void;
   (e: 'select', nodeId: string): void;
   (
     e: 'create-child',
