@@ -1,26 +1,37 @@
 <template>
-  <h4 @click="isInverted = !isInverted" class="clickable">
+  <h4 @click="emit('toggle-inverted')" class="clickable">
     <i
       class="fa fa-fw"
       :class="{
-        'fa-check-square-o': isInverted,
-        'fa-square-o': !isInverted,
+        'fa-check-square-o': props.isInverted,
+        'fa-square-o': !props.isInverted,
       }"
     />
     Invert data
   </h4>
-  <!-- TODO: replace with real data -->
-  <p class="de-emphasized">
-    Higher <strong>{{ 'Palmer Drought Severity Index (PDSI)' }}</strong> values indicate
-    {{ isInverted ? 'lower' : 'higher' }}
-    <strong>{{ 'Greatest recent temperature increase' }}</strong> values.
+  <p>
+    <span class="de-emphasized">
+      Higher <strong>{{ props.selectedNodeName }}</strong> values indicate
+    </span>
+    <strong>
+      {{ props.isInverted ? 'lower ' : 'higher ' }}
+    </strong>
+    <span class="de-emphasized">
+      <strong>{{ props.outputIndexName }}</strong> values.
+    </span>
   </p>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+const props = defineProps<{
+  selectedNodeName: string;
+  outputIndexName: string;
+  isInverted: boolean;
+}>();
 
-const isInverted = ref(false);
+const emit = defineEmits<{
+  (e: 'toggle-inverted'): void;
+}>();
 </script>
 
 <style lang="scss" scoped>

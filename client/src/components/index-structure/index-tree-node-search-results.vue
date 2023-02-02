@@ -66,6 +66,7 @@ import { DatasetSearchResult } from '@/types/Index';
 const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult => {
   return {
     displayName: doc.display_name,
+    datasetMetadataDocId: doc.id,
     dataId: doc.data_id,
     description: doc.description,
     familyName: doc.family_name,

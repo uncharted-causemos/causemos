@@ -13,7 +13,11 @@ export interface Placeholder extends BaseNode {
 }
 export interface Dataset extends BaseNode, WeightedNode {
   type: IndexNodeType.Dataset;
-  datasetId: string; // should be the datacube's `data_id` (see `Datacube.d.ts`)
+  // equivalent to `data_id` (see `Datacube.d.ts`) or `datacubeId` (see
+  //  `Analysis.d.ts/AnalysisItem`)
+  datasetId: string;
+  // equivalent to `id` (see `Analysis.d.ts/AnalysisItem`)
+  datasetMetadataDocId: string;
   datasetName: string;
   isInverted: boolean;
   source: string;
@@ -22,6 +26,7 @@ export interface Dataset extends BaseNode, WeightedNode {
 
 export interface DatasetSearchResult {
   displayName: string;
+  datasetMetadataDocId: string;
   dataId: string;
   description: string;
   period: { gte: number; lte: number };
