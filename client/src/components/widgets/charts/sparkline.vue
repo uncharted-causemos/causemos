@@ -9,14 +9,9 @@ import _ from 'lodash';
 import * as d3 from 'd3';
 import { defineComponent, PropType } from 'vue';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
+import { SparklineData } from '@/types/Timeseries';
 
 const DEFAULT_LINE_COLOR = SELECTED_COLOR_DARK;
-
-export interface SparklineData {
-  series: number[];
-  name: string;
-  color: string;
-}
 
 export default defineComponent({
   name: 'SparkLine',
@@ -135,7 +130,6 @@ export default defineComponent({
 .spark-container {
   display: flex;
   flex-direction: column;
-  padding: 1px;
   justify-content: center;
 }
 </style>

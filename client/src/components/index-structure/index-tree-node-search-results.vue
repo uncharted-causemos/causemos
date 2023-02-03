@@ -36,11 +36,12 @@
           <h5>{{ activeResult.displayName }}</h5>
           <div>
             <h5 class="de-emphasized">Coverage</h5>
-            <p>{{ '216 countries' }}</p>
-            <div class="timeseries placeholder" />
+            <p>{{ spatialCoverageDisplayString }}</p>
+            <div v-if="sparklineData === null" class="timeseries timeseries-loading" />
+            <Sparkline v-else :data="[sparklineData]" :size="[215, 30]" />
             <p>
-              <span class="de-emphasized">from</span> {{ 'January 1960' }}
-              <span class="de-emphasized">to</span> {{ 'January 2021' }}
+              <span class="de-emphasized">from</span> {{ temporalCoverage.from }}
+              <span class="de-emphasized">to</span> {{ temporalCoverage.to }}
             </p>
           </div>
           <div>
@@ -62,6 +63,9 @@
 import newDatacubeService from '@/services/new-datacube-service';
 import { ref, computed, watch, toRefs } from 'vue';
 import { DatasetSearchResult } from '@/types/Index';
+import useModelMetadata from '@/services/composables/useModelMetadata';
+import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
+import Sparkline from '@/components/widgets/charts/sparkline.vue';
 
 const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult => {
   return {
@@ -127,6 +131,18 @@ const activeResult = computed(() => {
     return null;
   }
   return results.value[activeResultIndex.value];
+});
+
+const activeResultMetadataId = computed(() => activeResult.value?.datasetMetadataDocId ?? null);
+const activeResultMetadata = useModelMetadata(activeResultMetadataId);
+const { sparklineData, temporalCoverage } = useModelMetadataCoverage(activeResultMetadata);
+
+const spatialCoverageDisplayString = computed(() => {
+  if (activeResultMetadata.value === null) {
+    return '...';
+  }
+  const count = activeResultMetadata.value.geography.country.length;
+  return `${count} countr${count === 1 ? 'y' : 'ies'}.`;
 });
 </script>
 
@@ -229,8 +245,8 @@ li {
   color: $un-color-black-40;
 }
 
-.placeholder {
-  background: $un-color-black-10;
+.timeseries-loading {
+  background: $un-color-black-5;
 }
 
 .advanced-search {

@@ -159,9 +159,8 @@ import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { IndexNode, IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
 import { duplicateNode, isDatasetNode, isOutputIndexNode } from '@/utils/indextree-util';
-import { getDatacubeById } from '@/services/new-datacube-service';
-import { Indicator } from '@/types/Datacube';
 import { OptionButtonMenu } from './index-tree-node.vue';
+import useModelMetadata from '@/services/composables/useModelMetadata';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -251,23 +250,7 @@ const panelTitle = computed(() => {
   return selectedNode?.value?.name ?? '';
 });
 
-const datasetMetadata = ref<Indicator | null>(null);
-watch([selectedDatasetMetadataId], async () => {
-  if (selectedDatasetMetadataId.value === null) {
-    return;
-  }
-  const cachedDatasetMetadataId = selectedDatasetMetadataId.value;
-  const rawMetadata: Indicator | false = await getDatacubeById(cachedDatasetMetadataId);
-  if (selectedDatasetMetadataId.value !== cachedDatasetMetadataId) {
-    // No longer looking at this dataset, don't bother saving the result
-    return;
-  }
-  if (rawMetadata === false) {
-    // Unable to find results
-    return;
-  }
-  datasetMetadata.value = rawMetadata ?? null;
-});
+const datasetMetadata = useModelMetadata(selectedDatasetMetadataId);
 
 const isRenaming = ref(false);
 // Exit rename flow if another node is selected before it completes
