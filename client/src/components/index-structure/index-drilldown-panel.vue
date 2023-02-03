@@ -24,7 +24,7 @@
           <button class="btn btn-sm" @click="startRenaming">Rename</button>
         </div>
       </header>
-      <IndexComponentWeights />
+      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
       <IndexResultsPreview />
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
@@ -67,7 +67,7 @@
           </div>
         </div>
       </header>
-      <IndexComponentWeights />
+      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 

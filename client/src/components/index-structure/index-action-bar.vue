@@ -3,7 +3,7 @@
     <DropdownButton
       :is-dropdown-left-aligned="true"
       :items="Object.values(DropdownOptions)"
-      :selected-item="'Add Component'"
+      :selected-item="'Add component'"
       @item-selected="handleDropdownSelection"
     />
   </div>

@@ -1,18 +1,26 @@
 <template>
   <div class="index-component-weights-container">
-    <header>
+    <!-- Empty state (when node has no children) -->
+    <header v-if="props.inputs.length === 0">
+      <h4 class="de-emphasized">No components.</h4>
+    </header>
+    <p v-if="props.inputs.length === 0" class="de-emphasized">
+      Click "Add component" to start building.
+    </p>
+
+    <header v-if="props.inputs.length !== 0">
       <h4>Component weights</h4>
-      <!-- TODO: empty state (when node has no children) -->
       <!-- TODO: modify weights -->
       <button class="btn btn-sm" disabled>Modify</button>
     </header>
-    <div class="table-rows">
-      <div class="table-row" v-for="component in componentWeights" :key="component.id">
+    <div class="table-rows" v-if="props.inputs.length !== 0">
+      <div class="table-row" v-for="component in props.inputs" :key="component.id">
         <p>
           {{ component.name }}
           <span v-if="component.type === IndexNodeType.Dataset" class="dataset-label">DATASET</span>
         </p>
-        <p>{{ component.weight }}%</p>
+        <p v-if="isPlaceholderNode(component)" class="de-emphasized">Placeholder</p>
+        <p v-else>{{ component.weight }}%</p>
       </div>
     </div>
   </div>
@@ -20,37 +28,12 @@
 
 <script setup lang="ts">
 import { IndexNodeType } from '@/types/Enums';
+import { IndexWorkBenchItem } from '@/types/Index';
+import { isPlaceholderNode } from '@/utils/indextree-util';
 
-const componentWeights = [
-  {
-    id: '1',
-    name: 'Highest risk of conflict',
-    type: IndexNodeType.Index,
-    weight: 25,
-    isWeightUserSpecified: false,
-  },
-  {
-    id: '2',
-    name: 'Highest risk of drought',
-    type: IndexNodeType.Index,
-    weight: 25,
-    isWeightUserSpecified: false,
-  },
-  {
-    id: '3',
-    name: 'Highest risk of flooding',
-    type: IndexNodeType.Dataset,
-    weight: 25,
-    isWeightUserSpecified: false,
-  },
-  {
-    id: '4',
-    name: 'Largest vulnerable population',
-    type: IndexNodeType.Index,
-    weight: 25,
-    isWeightUserSpecified: false,
-  },
-];
+const props = defineProps<{
+  inputs: IndexWorkBenchItem[];
+}>();
 </script>
 
 <style lang="scss" scoped>
@@ -89,5 +72,9 @@ header {
   font-size: 1.2rem;
   line-height: 1.6rem;
   margin-left: 5px;
+}
+
+.de-emphasized {
+  color: $un-color-black-40;
 }
 </style>
