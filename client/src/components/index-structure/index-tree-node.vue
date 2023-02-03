@@ -78,7 +78,7 @@
       <DropdownButton
         :is-dropdown-left-aligned="true"
         :items="addInputDropdownOptions"
-        :selected-item="'Add Component'"
+        :selected-item="'Add component'"
         @item-selected="(option) => emit('create-child', props.nodeData.id, option)"
       />
     </div>
