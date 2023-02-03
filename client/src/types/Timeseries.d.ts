@@ -38,3 +38,9 @@ export interface QualifierTimeseriesResponse {
   name: string;
   timeseries: TimeseriesPoint[];
 }
+
+export interface SparklineData {
+  series: number[];
+  name: string;
+  color: string;
+}

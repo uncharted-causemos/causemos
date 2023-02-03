@@ -23,9 +23,10 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import timestampFormatter from '@/formatters/timestamp-formatter';
-import Sparkline, { SparklineData } from '@/components/widgets/charts/sparkline.vue';
-import { computed } from 'vue';
+import Sparkline from '@/components/widgets/charts/sparkline.vue';
+import { computed, toRefs } from 'vue';
 import { Indicator } from '@/types/Datacube';
+import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
 
 const props = defineProps<{
   datasetId: string;
@@ -33,28 +34,13 @@ const props = defineProps<{
   metadata: Indicator | null;
 }>();
 
+const { selectedTimestamp, metadata } = toRefs(props);
+
 const timestampDisplayString = computed(() =>
-  timestampFormatter(props.selectedTimestamp, null, null)
+  timestampFormatter(selectedTimestamp.value, null, null)
 );
 
-const sparklineData = computed<SparklineData | null>(() => {
-  if (props.metadata?.sparkline === undefined) {
-    return null;
-  }
-  return {
-    name: '', // unused
-    color: 'grey',
-    series: props.metadata.sparkline,
-  };
-});
-const temporalCoverage = computed(() => ({
-  from: timestampFormatter(props.metadata?.period.gte ?? 0, null, null),
-  to: timestampFormatter(props.metadata?.period.lte ?? 0, null, null),
-}));
-const range = computed(() => ({
-  minimum: _.min(props.metadata?.sparkline),
-  maximum: _.max(props.metadata?.sparkline),
-}));
+const { range, sparklineData, temporalCoverage } = useModelMetadataCoverage(metadata);
 </script>
 
 <style lang="scss" scoped>
