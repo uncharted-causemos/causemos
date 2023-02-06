@@ -25,7 +25,7 @@
         </div>
       </header>
       <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
-      <IndexResultsPreview />
+      <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 

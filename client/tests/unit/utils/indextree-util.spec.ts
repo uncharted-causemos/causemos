@@ -4,6 +4,8 @@ import {
   findAndRemoveChild,
   findAndUpdateNode,
   duplicateNode,
+  createNewOutputIndex,
+  indexNodeTreeContainsDataset,
 } from '@/utils/indextree-util';
 import { IndexNodeType } from '@/types/Enums';
 import { OutputIndex, Index } from '@/types/Index';
@@ -251,6 +253,43 @@ describe('indextree-util', () => {
 
       expect(node.id).not.equal(dNode.id);
       expect(node.name).equal(dNode.name);
+    });
+  });
+
+  describe('indexNodeTreeContainsDataset', () => {
+    it('should return false for a tree with one node that is an output index', () => {
+      const tree = createNewOutputIndex();
+      const containsDataset = indexNodeTreeContainsDataset(tree);
+      expect(containsDataset).to.equal(false);
+    });
+    it('should return true for a tree with a height of 1 that includes a dataset', () => {
+      const tree: OutputIndex = {
+        id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
+        type: IndexNodeType.OutputIndex,
+        name: 'Overall Priority',
+        inputs: [
+          {
+            id: '16caf563-548f-4e11-a488-a900f0d01c3b',
+            type: IndexNodeType.Dataset,
+            name: 'Highest poverty index ranking',
+            weight: 100,
+            isWeightUserSpecified: true,
+            datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
+            datasetMetadataDocId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
+            datasetName: 'Poverty indicator index',
+            selectedTimestamp: 0,
+            isInverted: false,
+            source: 'UN',
+          },
+        ],
+      };
+      const containsDataset = indexNodeTreeContainsDataset(tree);
+      expect(containsDataset).to.equal(true);
+    });
+    it('should return true for a multi-layered tree that includes datasets', () => {
+      const tree = newTestTree();
+      const containsDataset = indexNodeTreeContainsDataset(tree);
+      expect(containsDataset).to.equal(true);
     });
   });
 });

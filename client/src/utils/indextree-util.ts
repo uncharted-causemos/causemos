@@ -156,3 +156,26 @@ export const findAndUpdateNode = (indexNodeTree: IndexNode, updated: IndexNode):
   }
   return false;
 };
+
+/**
+ * Recursively checks whether any nodes in the tree are grounded with datasets.
+ * Returns true if at least one dataset is found, and false otherwise.
+ * @param indexNodeTree An index node
+ */
+export const indexNodeTreeContainsDataset = (indexNodeTree: IndexNode): boolean => {
+  const _checkSubtree = (node: IndexNode): boolean => {
+    if (isDatasetNode(node)) {
+      return true;
+    }
+    // If this node is a leaf node that's not a dataset, return false
+    if (!isParentNode(node)) return false;
+    // Check if children subtrees contain datasets
+    for (const child of node.inputs) {
+      const containsDataset = _checkSubtree(child);
+      if (containsDataset) return true;
+    }
+    // No children contain a dataset node, so return false
+    return false;
+  };
+  return _checkSubtree(indexNodeTree);
+};
