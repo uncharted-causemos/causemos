@@ -2,7 +2,14 @@
   <div class="index-tree-node-container" :class="classObject" @click="selectNode">
     <div v-if="isParentNode(props.nodeData)" class="input-arrow" />
     <div class="header content">
-      <span>
+      <i
+        class="fa fa-fw un-font-small"
+        :class="{
+          'fa-sitemap': classObject['output-index'] || classObject.index,
+          'fa-th': classObject.placeholder || classObject.dataset,
+        }"
+      />
+      <span class="un-font-small">
         {{ headerText }}
       </span>
       <OptionsButton
@@ -60,7 +67,7 @@
     <div v-else class="name content">
       {{ props.nodeData.name }}
     </div>
-    <div v-if="footerText" class="footer content">
+    <div v-if="footerText" class="footer content un-font-small">
       {{ footerText }}
     </div>
     <!-- footer buttons -->
@@ -185,7 +192,7 @@ const headerText = computed(() => {
     case IndexNodeType.Dataset:
       return 'Dataset';
     case IndexNodeType.Placeholder:
-      return 'Placeholder';
+      return 'Placeholder Dataset';
     default:
       return '';
   }
@@ -283,20 +290,20 @@ const getDatasetFooterText = (data: Dataset) => {
 
 <style scoped lang="scss">
 @import '~styles/variables';
+@import '~styles/uncharted-design-tokens';
 
 .index-tree-node-container {
-  $border-color: #b3b4b5;
   display: flex;
   flex-direction: column;
   position: relative;
 
-  background: #ffffff;
+  background: white;
   width: 240px;
   &.flexible-width {
     width: auto;
   }
   height: fit-content;
-  border: 1px solid $border-color;
+  border: 1px solid $un-color-black-30;
   border-radius: 3px;
 
   &:not(.placeholder):hover {
@@ -321,8 +328,8 @@ const getDatasetFooterText = (data: Dataset) => {
   }
 
   .btn-default {
-    background: #f0f1f2;
-    border: 1px solid #cacbcc;
+    background: $un-color-black-5;
+    border: 1px solid $un-color-black-20;
     box-shadow: 0px 1px 0px rgb(54 55 56 / 10%), inset 0px -8px 10px -8px rgb(54 55 56 / 10%);
     border-radius: 3px;
     font-size: $font-size-small;
@@ -376,17 +383,17 @@ const getDatasetFooterText = (data: Dataset) => {
 
   .header {
     display: flex;
-    justify-content: space-between;
-  }
 
-  .header,
-  .footer {
-    font-size: $font-size-small;
-    color: $text-color-medium;
-  }
+    i {
+      display: grid;
+      align-items: center;
+      margin-right: 5px;
+    }
 
-  .name {
-    padding-bottom: 0px;
+    span {
+      flex: 1;
+      min-width: 0;
+    }
   }
 
   .rename,
@@ -406,33 +413,34 @@ const getDatasetFooterText = (data: Dataset) => {
     background-color: $call-to-action-color;
   }
 
-  .footer {
+  .name {
     padding-top: 0px;
   }
 
-  &.output-index,
-  &.index {
-    .header {
-      padding-bottom: 0px;
-    }
+  .footer {
+    color: $un-color-black-40;
+    padding-top: 0px;
   }
+
   &.output-index {
     .header {
-      color: $accent-main;
+      color: $node-type-output-index;
+    }
+  }
+  &.index {
+    .header {
+      color: $node-type-index;
     }
   }
   &.dataset {
     .header {
-      height: 26px;
-      background: #e3e4e6;
-      color: $label-color;
+      color: $node-type-dataset;
     }
   }
   &.placeholder {
     border-style: dashed;
     .header {
-      height: 26px;
-      border-bottom: 1px dashed $border-color;
+      color: $node-type-placeholder-dataset;
     }
   }
 }
