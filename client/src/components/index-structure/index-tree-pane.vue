@@ -26,6 +26,7 @@
           v-if="item.data"
           :node-data="item.data"
           :is-selected="item.data.id === props.selectedElementId"
+          class="index-tree-node"
           @rename="renameNode"
           @delete="deleteNode"
           @duplicate="duplicateNode"
@@ -257,10 +258,15 @@ $edge-styles: 2px solid $un-color-black-20;
   .grid-cell {
     position: relative;
     display: flex;
+    pointer-events: none;
+  }
+  .index-tree-node {
+    pointer-events: auto;
   }
   .edge {
     position: relative;
     top: $edge-top-offset-from-node;
+    pointer-events: auto;
 
     &.incoming {
       min-width: $incoming-edge-minimum-length;
