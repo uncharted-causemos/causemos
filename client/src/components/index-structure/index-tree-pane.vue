@@ -51,13 +51,13 @@
 
 <script setup lang="ts">
 import _ from 'lodash';
-import { computed, DeepReadonly } from 'vue';
+import { computed } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
 import { DatasetSearchResult, IndexNode, SelectableIndexElementId } from '@/types/Index';
-import { isDeepReadOnlyParentNode } from '@/utils/indextree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
+import { isParentNode } from '@/utils/indextree-util';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -80,7 +80,7 @@ const indexTree = useIndexTree();
 interface IndexTreeNodeItem {
   type: IndexNodeType;
   children: IndexTreeNodeItem[];
-  data: DeepReadonly<IndexNode>;
+  data: IndexNode;
   /** width of the node represented by the total number of leaf nodes it has */
   width: number;
   /** number of edges on the longest path from the node to a leaf */
@@ -98,7 +98,7 @@ interface IndexTreeNodeItem {
 }
 
 // Convert given index node tree to index node item tree
-const toIndexNodeItemTree = (node: DeepReadonly<IndexNode>): IndexTreeNodeItem => {
+const toIndexNodeItemTree = (node: IndexNode): IndexTreeNodeItem => {
   const item: IndexTreeNodeItem = {
     type: node.type,
     data: node,
@@ -111,7 +111,7 @@ const toIndexNodeItemTree = (node: DeepReadonly<IndexNode>): IndexTreeNodeItem =
       isLastChild: false,
     },
   };
-  if (isDeepReadOnlyParentNode(node) && node.inputs.length > 0) {
+  if (isParentNode(node) && node.inputs.length > 0) {
     item.children = node.inputs.map(toIndexNodeItemTree);
     item.height = Math.max(...item.children.map((c) => c.height)) + 1;
     item.width = item.children.reduce((prev, item) => prev + item.width, 0);

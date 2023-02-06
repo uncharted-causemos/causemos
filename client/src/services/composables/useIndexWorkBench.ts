@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { ref, readonly } from 'vue';
+import { ref, computed } from 'vue';
 import { DatasetSearchResult, IndexWorkBenchItem } from '@/types/Index';
 import {
   findAndRemoveChild,
@@ -22,7 +22,7 @@ const targetAnalysisId = ref('');
 export default function useIndexWorkBench() {
   // Getters
 
-  const items = readonly(workBenchItems);
+  const items = computed<IndexWorkBenchItem[]>(() => workBenchItems.value);
 
   // Actions
 
