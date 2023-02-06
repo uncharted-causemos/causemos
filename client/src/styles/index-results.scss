@@ -1,0 +1,30 @@
+// This file includes shared styles between IndexResults.vue and index-results-bar-chart-row.vue.
+// Extracting the styles to this file allows IndexResults to render the header of the table and
+//  index-results-bar-chart to render the rows of the table with the same column widths.
+
+$index-result-table-column-gap: 20px;
+
+.index-result-table-output-value-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.index-result-table-key-datasets-column {
+  flex: 2;
+  min-width: 0;
+}
+
+.index-result-table-dataset-name-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.index-result-table-dataset-weight-column {
+  // Based on the width of 'Dataset weight' using un-design-tokens body font styles
+  width: 96px;
+}
+
+.index-result-table-dataset-value-column {
+  // Needs to be larger than the width of 'Value' using un-design-tokens body font styles
+  width: 70px;
+}

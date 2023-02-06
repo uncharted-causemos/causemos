@@ -9,6 +9,7 @@ import DataExplorer from '@/views/DataExplorer.vue';
 import GraphExperiment from '@/views/GraphExperiment.vue';
 import QualitativeView from '@/views/QualitativeView.vue';
 import IndexStructure from '@/views/IndexStructure.vue';
+import IndexResults from '@/views/IndexResults.vue';
 import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
@@ -90,6 +91,11 @@ const routes = [
     path: '/:projectType/:project/index-structure/:analysisId',
     name: 'indexStructure',
     component: IndexStructure,
+  },
+  {
+    path: '/:projectType/:project/index-results/:analysisId',
+    name: 'indexResults',
+    component: IndexResults,
   },
   {
     path: '/:projectType/:project/model-publishing-experiment',
