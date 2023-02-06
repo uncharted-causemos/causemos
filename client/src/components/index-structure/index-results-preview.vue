@@ -2,6 +2,9 @@
   <div class="index-results-preview-container">
     <h4>Index results</h4>
     <button :disabled="!canViewResults" class="btn" @click="seeResults">See results</button>
+    <p v-if="!canViewResults" class="de-emphasized">
+      There are no datasets with a path to this index.
+    </p>
   </div>
 </template>
 
@@ -40,7 +43,11 @@ const seeResults = () => {
 .index-results-preview-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 5px;
   align-items: flex-start;
+}
+
+.de-emphasized {
+  color: $un-color-black-40;
 }
 </style>
