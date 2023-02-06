@@ -9,7 +9,6 @@ import {
   Placeholder,
   DatasetSearchResult,
 } from '@/types/Index';
-import { DeepReadonly } from 'vue';
 
 type findNodeReturn = { parent: IndexNode | null; found: IndexNode } | undefined;
 
@@ -29,12 +28,6 @@ export const isPlaceholderNode = (indexNode: IndexNode): indexNode is Placeholde
   return indexNode.type === IndexNodeType.Placeholder;
 };
 
-export const isDeepReadOnlyParentNode = (
-  indexNode: DeepReadonly<IndexNode>
-): indexNode is DeepReadonly<ParentNode> => {
-  return (indexNode as DeepReadonly<ParentNode>).inputs !== undefined;
-};
-
 export const createNewIndex = (): Index => {
   const node: Index = {
     id: uuidv4(),
@@ -51,7 +44,7 @@ export const createNewOutputIndex = () => {
   const node: OutputIndex = {
     id: uuidv4(),
     type: IndexNodeType.OutputIndex,
-    name: '',
+    name: 'Overall priority',
     inputs: [],
   };
   return node;
