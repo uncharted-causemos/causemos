@@ -20,13 +20,14 @@
           <span v-if="component.type === IndexNodeType.Dataset" class="dataset-label">DATASET</span>
         </p>
         <p v-if="isPlaceholderNode(component)" class="de-emphasized">Placeholder</p>
-        <p v-else>{{ component.weight }}%</p>
+        <p v-else>{{ precisionFormatter(component.weight) }}%</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import precisionFormatter from '@/formatters/precision-formatter';
 import { IndexNodeType } from '@/types/Enums';
 import { IndexWorkBenchItem } from '@/types/Index';
 import { isPlaceholderNode } from '@/utils/indextree-util';
