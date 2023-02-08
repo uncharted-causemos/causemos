@@ -384,13 +384,13 @@ const getDatasetFooterText = (data: Dataset) => {
   .header {
     display: flex;
 
-    i {
+    > i {
       display: grid;
       align-items: center;
       margin-right: 5px;
     }
 
-    span {
+    > span {
       flex: 1;
       min-width: 0;
     }
