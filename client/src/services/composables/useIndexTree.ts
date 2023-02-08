@@ -10,6 +10,7 @@ import {
   isPlaceholderNode,
   convertPlaceholderToDataset,
   isDatasetNode,
+  rebalanceInputWeights,
 } from '@/utils/indextree-util';
 import { IndexNodeType } from '@/types/Enums';
 
@@ -73,6 +74,7 @@ export default function useIndexTree() {
     const newNode =
       childType === IndexNodeType.Dataset ? createNewPlaceholderDataset() : createNewIndex();
     parentNode.inputs.unshift(newNode);
+    parentNode.inputs = rebalanceInputWeights(parentNode.inputs);
     triggerUpdate();
   };
 
@@ -82,12 +84,13 @@ export default function useIndexTree() {
       return;
     }
     const { found: placeholderNode, parent } = foundResult;
-    // TODO: add up user-set sibling weights, subtract from 100, divide between unset siblings
-    // Parent should never be null unless we found a disconnected placeholder node.
-    const initialWeight = parent === null ? 0 : 25;
-    const datasetNode = convertPlaceholderToDataset(placeholderNode, dataset, initialWeight);
+    const datasetNode = convertPlaceholderToDataset(placeholderNode, dataset, 0);
     Object.assign(placeholderNode, datasetNode);
-    // TODO: update unset siblings with their new auto-balanced weight
+    // Parent should never be null unless we found a disconnected placeholder node.
+    if (parent !== null) {
+      // Update unset siblings with their new auto-balanced weight
+      parent.inputs = rebalanceInputWeights(parent.inputs);
+    }
     triggerUpdate();
   };
 
