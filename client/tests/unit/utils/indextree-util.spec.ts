@@ -6,9 +6,12 @@ import {
   duplicateNode,
   createNewOutputIndex,
   indexNodeTreeContainsDataset,
+  rebalanceInputWeights,
+  createNewIndex,
+  createNewPlaceholderDataset,
 } from '@/utils/indextree-util';
 import { IndexNodeType } from '@/types/Enums';
-import { OutputIndex, Index } from '@/types/Index';
+import { OutputIndex, Index, Dataset } from '@/types/Index';
 
 const newTestTree = (): OutputIndex => ({
   id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
@@ -290,6 +293,78 @@ describe('indextree-util', () => {
       const tree = newTestTree();
       const containsDataset = indexNodeTreeContainsDataset(tree);
       expect(containsDataset).to.equal(true);
+    });
+  });
+
+  describe('rebalanceInputWeights', () => {
+    const mock_dataset: Dataset = {
+      id: '16caf563-548f-4e11-a488-a900f0d01c3b',
+      type: IndexNodeType.Dataset,
+      name: 'Highest poverty index ranking',
+      weight: 0,
+      isWeightUserSpecified: false,
+      datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
+      datasetMetadataDocId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
+      datasetName: 'Poverty indicator index',
+      selectedTimestamp: 0,
+      isInverted: false,
+      source: 'UN',
+    };
+    const mock_placeholder_dataset = createNewPlaceholderDataset();
+    it('should return [] when passed an outputIndex with no inputs', () => {
+      const tree = createNewOutputIndex();
+      const inputs = rebalanceInputWeights(tree.inputs);
+      expect(inputs.length).to.equal(0);
+    });
+    it('should return [] when passed an index with no inputs', () => {
+      const tree = createNewIndex();
+      const inputs = rebalanceInputWeights(tree.inputs);
+      expect(inputs.length).to.equal(0);
+    });
+    it("should set the index's weight to 100% when passed a list of one index", () => {
+      const index = createNewIndex();
+      const inputs = rebalanceInputWeights([index]);
+      expect((inputs[0] as Index).weight).to.equal(100);
+    });
+    it('should set all weights to 50% when passed two indices as children', () => {
+      const index1 = createNewIndex();
+      const index2 = createNewIndex();
+      const inputs = rebalanceInputWeights([index1, index2]);
+      expect((inputs[0] as Index).weight).to.equal(50);
+      expect((inputs[1] as Index).weight).to.equal(50);
+    });
+    it('should set all weights to 25% when passed 4 datasets as children', () => {
+      const unbalanced_inputs = [
+        { ...mock_dataset },
+        { ...mock_dataset },
+        { ...mock_dataset },
+        { ...mock_dataset },
+      ];
+      const inputs = rebalanceInputWeights(unbalanced_inputs);
+      expect((inputs[0] as Dataset).weight).to.equal(25);
+      expect((inputs[1] as Dataset).weight).to.equal(25);
+      expect((inputs[2] as Dataset).weight).to.equal(25);
+      expect((inputs[3] as Dataset).weight).to.equal(25);
+    });
+    it('should correctly handle placeholder nodes', () => {
+      const unbalanced_inputs = [
+        { ...mock_dataset },
+        { ...mock_placeholder_dataset },
+        { ...mock_dataset },
+        { ...mock_placeholder_dataset },
+      ];
+      const inputs = rebalanceInputWeights(unbalanced_inputs);
+      expect((inputs[0] as Dataset).weight).to.equal(50);
+      expect((inputs[2] as Dataset).weight).to.equal(50);
+    });
+    it('should correctly handle user-specified weights', () => {
+      const weightedDataset = { ...mock_dataset };
+      weightedDataset.isWeightUserSpecified = true;
+      weightedDataset.weight = 40;
+      const unbalanced_inputs = [{ ...mock_dataset }, weightedDataset, { ...mock_dataset }];
+      const inputs = rebalanceInputWeights(unbalanced_inputs);
+      expect((inputs[0] as Dataset).weight).to.equal(30);
+      expect((inputs[2] as Dataset).weight).to.equal(30);
     });
   });
 });
