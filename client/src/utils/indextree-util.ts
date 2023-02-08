@@ -9,8 +9,9 @@ import {
   Placeholder,
   DatasetSearchResult,
 } from '@/types/Index';
+import _ from 'lodash';
 
-type findNodeReturn = { parent: IndexNode | null; found: IndexNode } | undefined;
+type findNodeReturn = { parent: ParentNode | null; found: IndexNode } | undefined;
 
 export const isDatasetNode = (indexNode: IndexNode): indexNode is Dataset => {
   return indexNode.type === IndexNodeType.Dataset;
@@ -115,6 +116,7 @@ export const findAndRemoveChild = (indexNodeTree: IndexNode, nodeId: string): bo
   if (result?.parent && isParentNode(result.parent)) {
     const beforeLength = result.parent.inputs.length;
     result.parent.inputs = result.parent.inputs.filter((node) => node.id !== nodeId);
+    result.parent.inputs = rebalanceInputWeights(result.parent.inputs);
     return result.parent.inputs.length === beforeLength - 1;
   }
   return false;
@@ -127,7 +129,7 @@ export const findAndRemoveChild = (indexNodeTree: IndexNode, nodeId: string): bo
  * @param nodeId An index node id
  */
 export const findNode = (indexNodeTree: IndexNode, nodeId: string): findNodeReturn => {
-  const _findNode = (node: IndexNode, parentNode: IndexNode | null): findNodeReturn => {
+  const _findNode = (node: IndexNode, parentNode: ParentNode | null): findNodeReturn => {
     if (node.id === nodeId) {
       return { parent: parentNode, found: node };
     }
@@ -178,4 +180,24 @@ export const indexNodeTreeContainsDataset = (indexNodeTree: IndexNode): boolean 
     return false;
   };
   return _checkSubtree(indexNodeTree);
+};
+
+export const rebalanceInputWeights = (inputs: (Dataset | Index | Placeholder)[]) => {
+  const updatedInputsList = _.cloneDeep(inputs);
+  let specifiedWeightTotal = 0;
+  updatedInputsList.forEach((input) => {
+    if (!isPlaceholderNode(input) && input.isWeightUserSpecified === true) {
+      specifiedWeightTotal += input.weight;
+    }
+  });
+  const isUnspecifiedWeightedInput = (input: Dataset | Index | Placeholder) =>
+    !isPlaceholderNode(input) && !input.isWeightUserSpecified;
+  const unspecifiedWeightedInputs = updatedInputsList.filter(isUnspecifiedWeightedInput);
+  const newWeight = (100 - specifiedWeightTotal) / unspecifiedWeightedInputs.length;
+  updatedInputsList.forEach((input) => {
+    if (isUnspecifiedWeightedInput(input)) {
+      (input as Dataset | Index).weight = newWeight;
+    }
+  });
+  return updatedInputsList;
 };
