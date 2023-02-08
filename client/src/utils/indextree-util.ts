@@ -182,18 +182,27 @@ export const indexNodeTreeContainsDataset = (indexNodeTree: IndexNode): boolean 
   return _checkSubtree(indexNodeTree);
 };
 
+/**
+ * Ensures that the weights of all nodes in a list add up to 100%.
+ * - Placeholder nodes don't have a weight property
+ * - Doesn't modify nodes with `isWeightUserSpecified === true`
+ * @param inputs A list of nodes that are direct children of a given Index or Output Index node.
+ */
 export const rebalanceInputWeights = (inputs: (Dataset | Index | Placeholder)[]) => {
   const updatedInputsList = _.cloneDeep(inputs);
+  // Determine how much of the 100% is taken up by nodes with user-specified weights
   let specifiedWeightTotal = 0;
   updatedInputsList.forEach((input) => {
     if (!isPlaceholderNode(input) && input.isWeightUserSpecified === true) {
       specifiedWeightTotal += input.weight;
     }
   });
+  // Determine the new weight that will be assigned to nodes without user-specified weights.
   const isUnspecifiedWeightedInput = (input: Dataset | Index | Placeholder) =>
     !isPlaceholderNode(input) && !input.isWeightUserSpecified;
   const unspecifiedWeightedInputs = updatedInputsList.filter(isUnspecifiedWeightedInput);
   const newWeight = (100 - specifiedWeightTotal) / unspecifiedWeightedInputs.length;
+  // Set `weight = newWeight` for each node without a user-specified weight.
   updatedInputsList.forEach((input) => {
     if (isUnspecifiedWeightedInput(input)) {
       (input as Dataset | Index).weight = newWeight;
