@@ -10,9 +10,11 @@ import {
   createNewIndex,
   createNewPlaceholderDataset,
   calculateCoverage,
+  findAllDatasets,
+  calculateOverallWeight,
 } from '@/utils/indextree-util';
 import { IndexNodeType } from '@/types/Enums';
-import { OutputIndex, Index, Dataset } from '@/types/Index';
+import { OutputIndex, Index, Dataset, ParentNode } from '@/types/Index';
 import { RegionalAggregation } from '@/types/Outputdata';
 
 const newTestTree = (): OutputIndex => ({
@@ -367,6 +369,44 @@ describe('indextree-util', () => {
       const inputs = rebalanceInputWeights(unbalanced_inputs);
       expect((inputs[0] as Dataset).weight).to.equal(30);
       expect((inputs[2] as Dataset).weight).to.equal(30);
+    });
+  });
+
+  describe('findAllDatasets', () => {
+    it('should return an empty list if the tree contains no datasets', () => {
+      const result = findAllDatasets(createNewOutputIndex());
+      expect(result.length).to.equal(0);
+    });
+    it('should correctly find all datasets', () => {
+      const tree = newTestTree();
+      const allDatasets = [
+        (tree.inputs[1] as ParentNode).inputs[0],
+        ((tree.inputs[1] as ParentNode).inputs[1] as ParentNode).inputs[0],
+        ((tree.inputs[1] as ParentNode).inputs[1] as ParentNode).inputs[1],
+      ];
+      const result = findAllDatasets(tree);
+      expect(result).to.include.all.members(allDatasets);
+    });
+  });
+
+  describe('calculateOverallWeight', () => {
+    const tree = newTestTree();
+    it('should return 0 if the target node is a Placeholder Dataset', () => {
+      const placeholderNode = createNewPlaceholderDataset();
+      const tree = createNewOutputIndex();
+      tree.inputs.push(placeholderNode);
+      const result = calculateOverallWeight(placeholderNode, tree);
+      expect(result).to.equal(0);
+    });
+    it('should return 0 if the target node is not found in the tree', () => {
+      const result = calculateOverallWeight(createNewIndex(), tree);
+      expect(result).to.equal(0);
+    });
+    it('should correctly multiply ancestor weights', () => {
+      const targetNode = (tree.inputs[1] as Index).inputs[0] as Dataset;
+      const expectedWeight = ((tree.inputs[1] as Index).weight * targetNode.weight) / 100;
+      const result = calculateOverallWeight(targetNode, tree);
+      expect(result).to.equal(expectedWeight);
     });
   });
 
