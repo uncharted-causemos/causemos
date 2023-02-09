@@ -22,41 +22,80 @@
       </section>
     </div>
     <div class="flex-col bars-column" :class="{ expanded: isShowingKeyDatasets }">
-      <header class="flex">
-        <h5>
-          Countries ranked by <strong>{{ 'Overall Priority' }}</strong>
-        </h5>
-        <button class="btn btn-sm" @click="isShowingKeyDatasets = !isShowingKeyDatasets">
-          {{ isShowingKeyDatasets ? 'Hide' : 'Show' }} key datasets for each country
-        </button>
-      </header>
-      <div v-if="isShowingKeyDatasets" class="table-header">
-        <p class="index-result-table-output-value-column" />
-        <div class="key-datasets-labels index-result-table-key-datasets-column">
-          <p class="index-result-table-dataset-name-column">Key datasets</p>
-          <p class="index-result-table-dataset-weight-column">Dataset weight</p>
-          <p class="index-result-table-dataset-value-column">Value</p>
+      <header class="flex-col">
+        <div class="flex">
+          <h5>
+            Countries ranked by <strong>{{ 'Overall Priority' }}</strong>
+          </h5>
+          <button class="btn btn-sm" @click="isShowingKeyDatasets = !isShowingKeyDatasets">
+            {{ isShowingKeyDatasets ? 'Hide' : 'Show' }} key datasets for each country
+          </button>
         </div>
+        <div v-if="isShowingKeyDatasets" class="table-header">
+          <p class="index-result-table-output-value-column" />
+          <div class="key-datasets-labels index-result-table-key-datasets-column">
+            <p class="index-result-table-dataset-name-column">Key datasets</p>
+            <p class="index-result-table-dataset-weight-column">Dataset weight</p>
+            <p class="index-result-table-dataset-value-column">Country's value</p>
+          </div>
+        </div>
+      </header>
+      <div class="flex-col results-rows">
+        <IndexResultsBarChartRow
+          v-for="(country, index) of indexResultsData"
+          :key="index"
+          :rank="index + 1"
+          :row-data="country"
+          :is-expanded="isShowingKeyDatasets"
+        />
       </div>
-      <IndexResultsBarChartRow
-        v-for="(country, index) of mockData"
-        :key="index"
-        :rank="index + 1"
-        :row-data="country"
-        :is-expanded="isShowingKeyDatasets"
-      />
     </div>
     <div class="map map-loading"></div>
   </div>
 </template>
 
 <script setup lang="ts">
+import _ from 'lodash';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import IndexResultsBarChartRow from '@/components/index-results/index-results-bar-chart-row.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
+import useIndexTree from '@/services/composables/useIndexTree';
+import {
+  calculateIndexResults,
+  calculateOverallWeight,
+  findAllDatasets,
+} from '@/utils/indextree-util';
+import { IndexResultsData } from '@/types/Index';
+import { getRegionAggregation } from '@/services/outputdata-service';
+import { OutputSpec, RegionalAggregation } from '@/types/Outputdata';
+import { normalize } from '@/utils/value-util';
+import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/types/Enums';
+
+// TODO: temporary!
+// We probably want to
+//  - pre-normalize the data on the backend.
+//  - normalize it with respect to the min and max of the dataset across timestamps
+//  - Keep original value as well, instead of overriding it with the normalized version
+const normalizeCountryData = (regionData: RegionalAggregation) => {
+  const clonedRegionData = _.cloneDeep(regionData);
+  if (clonedRegionData.country === undefined || clonedRegionData.country.length === 0) {
+    return clonedRegionData;
+  }
+  const countries = clonedRegionData.country;
+  const values = countries.map(({ value }) => value);
+  const min = _.min(values) ?? 0;
+  const max = _.max(values) ?? 0;
+  clonedRegionData.country = countries.map((country) => {
+    return {
+      ...country,
+      value: normalize(country.value, min, max),
+    };
+  });
+  return clonedRegionData;
+};
 
 const store = useStore();
 const route = useRoute();
@@ -71,20 +110,98 @@ onMounted(async () => {
   store.dispatch('app/setAnalysisName', analysisName.value);
 });
 
-// TODO: use real data and calculate colour here using colour scale
-const mockData = [
-  { name: 'India', value: 100 },
-  { name: 'Kazakhstan', value: 39 },
-  { name: 'United States of America', value: 25 },
-  { name: 'Indonesia', value: 18 },
-  { name: 'Pakistan', value: 16 },
-  { name: 'Brazil', value: 13 },
-  { name: 'Nigeria', value: 8 },
-  { name: 'Bangladesh', value: 4 },
-  { name: 'Russia', value: 3 },
-  { name: 'Russia', value: 3 },
-  { name: 'Russia', value: 3 },
-];
+const { tree } = useIndexTree();
+
+/**
+ * Sort high values to the front of the list, then low values, then null values.
+ * NOTE: Sorts the list in place.
+ * @param list A list of items to be sorted
+ * @param accessor A function to indicate which property of the item to sort by
+ */
+function sortForDisplay<T>(list: T[], accessor: (item: T) => number | null) {
+  list.sort((a, b) => {
+    const aValue = accessor(a);
+    const bValue = accessor(b);
+    if (aValue === bValue) {
+      return 0;
+    }
+    if (aValue === null) {
+      return 1;
+    }
+    if (bValue === null) {
+      return -1;
+    }
+    return bValue - aValue;
+  });
+}
+
+/**
+ * Sorts countries and their contributing datasets.
+ * Removes any countributing datasets that don't have a value for the current country.
+ * @param results Unsorted index results, that may contain contributing datasets with null values.
+ */
+const prepareResultsForDisplay = (results: IndexResultsData[]): IndexResultsData[] => {
+  const preparedResults = _.cloneDeep(results);
+  // Remove datasets that don't include the current country
+  preparedResults.forEach((countryWithData) => {
+    const filteredDatasets = countryWithData.contributingDatasets.filter(
+      (value) => value.datasetValue !== null
+    );
+    // Sort datasets by how much they contributed to the overall value
+    sortForDisplay(filteredDatasets, (dataset) => dataset.weightedDatasetValue);
+    countryWithData.contributingDatasets = filteredDatasets;
+  });
+  // Sort countries by overall value
+  sortForDisplay(preparedResults, (result) => result.value);
+  return preparedResults;
+};
+
+const indexResultsData = ref<IndexResultsData[]>([]);
+// Whenever the tree changes, fetch data and calculate `indexResultsData`.
+watch([tree], async () => {
+  // Save a reference to the current version of the tree so that if it changes before all of the
+  //  fetch requests return, we only perform calculations and update the state with the most up-to-
+  //  date tree structure.
+  const frozenTreeState = tree.value;
+  // Go through tree and pull out all the datasets.
+  //  Multiply each dataset's weight by the weight of each of its ancestor to get the dataset's
+  //  overall weight.
+  const datasets = findAllDatasets(tree.value);
+  // Prepare an "output spec" for each dataset to fetch its regional data
+  const promises = datasets.map((dataset) => {
+    const outputSpec: OutputSpec = {
+      modelId: dataset.datasetId,
+      runId: 'indicator', // ASSUME all datasets are indicators for now (Feb 2023)
+      outputVariable: 'Event Count', // FIXME: save this during dataset search
+      timestamp: 1640995200000, // FIXME: dataset.selectedTimestamp has incorrect values
+      transform: DataTransform.None,
+      temporalResolution: TemporalResolutionOption.Month, // FIXME: support other resolution / agg options
+      temporalAggregation: AggregationOption.Sum,
+      spatialAggregation: AggregationOption.Sum,
+      preGeneratedOutput: undefined,
+    };
+    return getRegionAggregation(outputSpec);
+  });
+  // Wait for all fetches to complete.
+  const unnormalizedRegionDataForEachDataset = await Promise.all(promises);
+  if (tree.value !== frozenTreeState) {
+    // Tree has changed since the fetches began, so ignore these results.
+    return;
+  }
+  // Normalize data
+  const regionDataForEachDataset = unnormalizedRegionDataForEachDataset.map(normalizeCountryData);
+  // Calculate each dataset's overall weight
+  const overallWeightForEachDataset = datasets.map((dataset) =>
+    calculateOverallWeight(dataset, frozenTreeState)
+  );
+  // All the data has been fetched and normalized, perform the actual result calculations.
+  const unsortedResults = calculateIndexResults(
+    datasets,
+    overallWeightForEachDataset,
+    regionDataForEachDataset
+  );
+  indexResultsData.value = prepareResultsForDisplay(unsortedResults);
+});
 
 const isShowingKeyDatasets = ref(false);
 </script>
@@ -124,8 +241,12 @@ $column-padding: 20px;
   padding: $column-padding;
 
   &.expanded {
-    width: 800px;
+    width: 700px;
   }
+}
+
+.results-rows {
+  gap: 40px;
 }
 
 .table-header {
@@ -134,7 +255,8 @@ $column-padding: 20px;
   .key-datasets-labels {
     display: flex;
     border-bottom: 1px solid $un-color-black-10;
-    gap: $index-result-table-column-gap;
+    gap: $index-result-table-key-datasets-column-gap;
+    align-items: flex-end;
   }
 }
 
@@ -145,7 +267,7 @@ section {
 }
 
 header {
-  align-items: flex-start;
+  gap: 10px;
   h5 {
     flex: 1;
     min-width: 0;

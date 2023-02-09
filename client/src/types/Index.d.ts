@@ -50,3 +50,33 @@ export type ParentNode = OutputIndex | Index;
 // If a node is selected, this is the node's ID
 // If an edge is selected, this contains the IDs of the edge's source and target nodes.
 export type SelectableIndexElementId = string | { sourceId: string; targetId: string };
+
+/**
+ * Used to summarize a given dataset's contribution to a specific country.
+ */
+export interface IndexResultsContributingDataset {
+  /**
+   * A number in the range [0, 100].
+   *  The percentage of the country's result value that comes from this dataset.
+   */
+  overallWeight: number;
+  /** The dataset node in question. */
+  dataset: Dataset;
+  /**
+   * The normalized value of the country within the dataset.
+   *  A value of null means the country was not found in the dataset.
+   */
+  datasetValue: number | null;
+  /** `datasetValue` multiplied by `overallWeight` */
+  weightedDatasetValue: number | null;
+}
+
+export interface IndexResultsData {
+  countryName: string;
+  /**
+   * The country's overall value.
+   *  A value of null means the country was not found in one or more datasets.
+   */
+  value: number | null;
+  contributingDatasets: IndexResultsContributingDataset[];
+}
