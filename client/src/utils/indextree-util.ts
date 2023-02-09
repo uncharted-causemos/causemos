@@ -321,11 +321,11 @@ export const calculateCoverage = (
  * ASSUMES that the relevant data for dataset[i] can be found at overallWeightForEachDataset[i] and
  *  regionDataForEachDataset[i].
  * NOTE: does not sort or filter the results.
- * @param country the name string of the country that indicates which values to look for
+ * @param country the name string of the country that indicates which values to look for.
  * @param datasets All dataset nodes in the index.
  * @param overallWeightForEachDataset The overall weight for each node.
  * @param regionDataForEachDataset The regional data for each node.
- * @returns
+ * @returns a list of IndexResultsContributingDataset objects.
  */
 export const calculateContributingDatasets = (
   country: string,
