@@ -21,35 +21,13 @@
         <!-- TODO: list view of structure -->
       </section>
     </div>
-    <div class="flex-col bars-column" :class="{ expanded: isShowingKeyDatasets }">
-      <header class="flex-col">
-        <div class="flex">
-          <h5>
-            Countries ranked by <strong>{{ 'Overall Priority' }}</strong>
-          </h5>
-          <button class="btn btn-sm" @click="isShowingKeyDatasets = !isShowingKeyDatasets">
-            {{ isShowingKeyDatasets ? 'Hide' : 'Show' }} key datasets for each country
-          </button>
-        </div>
-        <div v-if="isShowingKeyDatasets" class="table-header">
-          <p class="index-result-table-output-value-column" />
-          <div class="key-datasets-labels index-result-table-key-datasets-column">
-            <p class="index-result-table-dataset-name-column">Key datasets</p>
-            <p class="index-result-table-dataset-weight-column">Dataset weight</p>
-            <p class="index-result-table-dataset-value-column">Country's value</p>
-          </div>
-        </div>
-      </header>
-      <div class="flex-col results-rows">
-        <IndexResultsBarChartRow
-          v-for="(country, index) of indexResultsData"
-          :key="index"
-          :rank="index + 1"
-          :row-data="country"
-          :is-expanded="isShowingKeyDatasets"
-        />
-      </div>
-    </div>
+    <IndexResultsBarChartColumn
+      class="bars-column"
+      :class="{ expanded: isShowingKeyDatasets }"
+      :is-showing-key-datasets="isShowingKeyDatasets"
+      :index-results-data="indexResultsData"
+      @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
+    />
     <div class="map map-loading"></div>
   </div>
 </template>
@@ -58,7 +36,6 @@
 import _ from 'lodash';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
-import IndexResultsBarChartRow from '@/components/index-results/index-results-bar-chart-row.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
@@ -73,6 +50,7 @@ import { getRegionAggregation } from '@/services/outputdata-service';
 import { OutputSpec, RegionalAggregation } from '@/types/Outputdata';
 import { normalize } from '@/utils/value-util';
 import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/types/Enums';
+import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
 
 // TODO: temporary!
 // We probably want to
@@ -220,13 +198,13 @@ $column-padding: 20px;
 .structure-column,
 .bars-column {
   width: 400px;
-  overflow-y: auto;
-  border-right: 1px solid $un-color-black-10;
-  gap: 20px;
 }
 
 .structure-column {
   padding: $column-padding 0;
+  overflow-y: auto;
+  border-right: 1px solid $un-color-black-10;
+  gap: 20px;
 }
 
 .horizontal-padding {
@@ -238,25 +216,8 @@ $column-padding: 20px;
 }
 
 .bars-column {
-  padding: $column-padding;
-
   &.expanded {
     width: 700px;
-  }
-}
-
-.results-rows {
-  gap: 40px;
-}
-
-.table-header {
-  display: flex;
-  gap: $index-result-table-column-gap;
-  .key-datasets-labels {
-    display: flex;
-    border-bottom: 1px solid $un-color-black-10;
-    gap: $index-result-table-key-datasets-column-gap;
-    align-items: flex-end;
   }
 }
 
