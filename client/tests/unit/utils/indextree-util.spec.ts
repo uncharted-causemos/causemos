@@ -395,17 +395,17 @@ describe('indextree-util', () => {
       const placeholderNode = createNewPlaceholderDataset();
       const tree = createNewOutputIndex();
       tree.inputs.push(placeholderNode);
-      const result = calculateOverallWeight(placeholderNode, tree);
+      const result = calculateOverallWeight(tree, placeholderNode);
       expect(result).to.equal(0);
     });
     it('should return 0 if the target node is not found in the tree', () => {
-      const result = calculateOverallWeight(createNewIndex(), tree);
+      const result = calculateOverallWeight(tree, createNewIndex());
       expect(result).to.equal(0);
     });
     it('should correctly multiply ancestor weights', () => {
       const targetNode = (tree.inputs[1] as Index).inputs[0] as Dataset;
       const expectedWeight = ((tree.inputs[1] as Index).weight * targetNode.weight) / 100;
-      const result = calculateOverallWeight(targetNode, tree);
+      const result = calculateOverallWeight(tree, targetNode);
       expect(result).to.equal(expectedWeight);
     });
   });

@@ -246,12 +246,12 @@ export const findAllDatasets = (node: IndexNode): Dataset[] => {
  *  In the future we may want to modify this to look for a all instances of a given dataset,
  *  or all instances with the same aggregation and resolution options,
  *  to add up all duplicate nodes.
- * @param targetNode The node whose overall weight should be calculated.
  * @param tree The root of the tree.
+ * @param targetNode The node whose overall weight should be calculated.
  * @returns A number in the range [0, 100] that represents `targetNode`'s weight with respect to
  *  `tree`.
  */
-export const calculateOverallWeight = (targetNode: IndexNode, tree: IndexNode) => {
+export const calculateOverallWeight = (tree: IndexNode, targetNode: IndexNode) => {
   if (isPlaceholderNode(targetNode)) {
     return 0;
   }

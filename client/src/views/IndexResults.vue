@@ -170,7 +170,7 @@ watch([tree], async () => {
   const regionDataForEachDataset = unnormalizedRegionDataForEachDataset.map(normalizeCountryData);
   // Calculate each dataset's overall weight
   const overallWeightForEachDataset = datasets.map((dataset) =>
-    calculateOverallWeight(dataset, frozenTreeState)
+    calculateOverallWeight(frozenTreeState, dataset)
   );
   // All the data has been fetched and normalized, perform the actual result calculations.
   const unsortedResults = calculateIndexResults(
