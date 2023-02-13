@@ -1,29 +1,26 @@
 <template>
   <div class="index-results-bar-chart-row-container">
     <div class="flex-col index-result-table-output-value-column">
-      <div class="flex">
+      <div class="flex country-name-and-value">
         <p class="country-name">
-          {{ `${props.rank}. ${props.rowData.name}` }}
+          {{ `${props.rank}. ${props.rowData.countryName}` }}
         </p>
-        <p>{{ props.rowData.value }}</p>
+        <p>{{ precisionFormatter(props.rowData.value) }}</p>
       </div>
       <div class="bar-background">
-        <div class="bar" :style="{ width: `${props.rowData.value}%` }" />
+        <div class="bar" :style="{ width: `${props.rowData.value ?? 0}%` }" />
       </div>
     </div>
     <div v-if="props.isExpanded" class="flex-col index-result-table-key-datasets-column">
-      <div v-for="dataset of keyDatasets" :key="dataset.id" class="flex key-dataset-row">
+      <div v-for="dataset of keyDatasets" :key="dataset.datasetId" class="flex key-dataset-row">
         <p class="index-result-table-dataset-name-column un-font-small">
           {{ dataset.datasetName }}
         </p>
         <p class="de-emphasized index-result-table-dataset-weight-column un-font-small">
-          {{ dataset.weight }}%
+          {{ precisionFormatter(dataset.weight) }}%
         </p>
         <div class="index-result-table-dataset-value-column">
-          <p class="de-emphasized un-font-small">{{ dataset.value }}</p>
-          <div class="bar-background-small">
-            <div class="bar" :style="{ width: `${dataset.value}%` }" />
-          </div>
+          <p class="de-emphasized un-font-small">{{ precisionFormatter(dataset.value) }}</p>
         </div>
       </div>
       <button class="btn btn-sm" @click="isShowingAllDatasets = !isShowingAllDatasets">
@@ -34,13 +31,14 @@
 </template>
 
 <script setup lang="ts">
+import precisionFormatter from '@/formatters/precision-formatter';
 import { ref } from 'vue';
 
 const props = defineProps<{
   rank: number;
   rowData: {
-    name: string;
-    value: number;
+    countryName: string;
+    value: number | null;
   };
   isExpanded: boolean;
 }>();
@@ -78,9 +76,16 @@ const keyDatasets = [
   gap: $index-result-table-column-gap;
 }
 
+.country-name-and-value {
+  gap: 10px;
+}
+
 .country-name {
   flex: 1;
   min-width: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .bar-background {
@@ -98,7 +103,9 @@ const keyDatasets = [
 }
 
 .index-result-table-key-datasets-column {
-  gap: 3px;
+  // Align the top of the key datasets list with the top of the overall value bar.
+  margin-top: 17px;
+  gap: 10px;
 
   button {
     align-self: flex-start;
@@ -107,7 +114,7 @@ const keyDatasets = [
 }
 
 .key-dataset-row {
-  gap: $index-result-table-column-gap;
+  gap: $index-result-table-key-datasets-column-gap;
 }
 
 .index-result-table-dataset-name-column {
@@ -118,15 +125,5 @@ const keyDatasets = [
 
 .de-emphasized {
   color: $un-color-black-40;
-}
-
-.bar-background-small {
-  position: relative;
-  height: 2px;
-  background: $un-color-black-5;
-
-  .bar {
-    background: $un-color-black-40;
-  }
 }
 </style>

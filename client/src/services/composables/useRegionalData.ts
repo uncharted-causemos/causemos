@@ -142,7 +142,6 @@ export default function useRegionalData(
   });
 
   return {
-    outputSpecs,
     regionalData,
   };
 }

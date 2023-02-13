@@ -8,8 +8,11 @@ import {
   OutputIndex,
   Placeholder,
   DatasetSearchResult,
+  IndexResultsData,
+  IndexResultsContributingDataset,
 } from '@/types/Index';
 import _ from 'lodash';
+import { RegionalAggregation } from '@/types/Outputdata';
 
 type findNodeReturn = { parent: ParentNode | null; found: IndexNode } | undefined;
 
@@ -209,4 +212,173 @@ export const rebalanceInputWeights = (inputs: (Dataset | Index | Placeholder)[])
     }
   });
   return updatedInputsList;
+};
+
+/**
+ * Searches through an index node tree and pulls out the datasets.
+ * NOTE: this function doesn't guarantee any particular result order.
+ * @param node The root node of the tree that this function will explore.
+ * @returns A list of dataset nodes.
+ */
+export const findAllDatasets = (node: IndexNode): Dataset[] => {
+  const datasets: Dataset[] = [];
+  const _findAllDatasets = (node: IndexNode) => {
+    if (isDatasetNode(node)) {
+      // Found a dataset. Add it to the growing list and return.
+      datasets.push(node);
+      return;
+    }
+    if (!isParentNode(node) || node.inputs.length === 0) {
+      // Reached a leaf node.
+      return;
+    }
+    // Keep searching through children.
+    node.inputs.forEach(_findAllDatasets);
+  };
+  _findAllDatasets(node);
+  return datasets;
+};
+
+/**
+ * Calculates the overall weight of a node in a given tree.
+ * Returns 0 if the node is not found in the tree.
+ * NOTE: Currently just looks for the first instance of this node.
+ *  In the future we may want to modify this to look for a all instances of a given dataset,
+ *  or all instances with the same aggregation and resolution options,
+ *  to add up all duplicate nodes.
+ * @param tree The root of the tree.
+ * @param targetNode The node whose overall weight should be calculated.
+ * @returns A number in the range [0, 100] that represents `targetNode`'s weight with respect to
+ *  `tree`.
+ */
+export const calculateOverallWeight = (tree: IndexNode, targetNode: IndexNode) => {
+  if (isPlaceholderNode(targetNode)) {
+    return 0;
+  }
+  const _search = (currentNode: IndexNode, overallWeight: number): number => {
+    if (currentNode === targetNode) {
+      // Found it, return the weight that we've been calculating up until this point.
+      return overallWeight;
+    }
+    if (!isParentNode(currentNode) || currentNode.inputs.length === 0) {
+      // Reached a leaf node without finding the target node.
+      return 0;
+    }
+    // Keep searching through children.
+    const results = currentNode.inputs.map((child) =>
+      // Child's overall weight = child's weight * parent's overall weight / 100
+      isPlaceholderNode(child) ? 0 : _search(child, (overallWeight * child.weight) / 100)
+    );
+    return _.max(results) ?? 0;
+  };
+  return _search(tree, 100);
+};
+
+/**
+ * Summarizes the countries that are found across multiple datasets.
+ * Returns the summary as sets to quickly determine whether a given country is in either.
+ * @param regionData a list of RegionalAggregation objects, one for each dataset.
+ * @returns two sets representing the country names that are found in all or just some datasets.
+ */
+export const calculateCoverage = (
+  regionData: RegionalAggregation[]
+): {
+  countriesInAllDatasets: Set<string>;
+  countriesInSomeDatasets: Set<string>;
+} => {
+  if (regionData.length === 0) {
+    return {
+      countriesInAllDatasets: new Set(),
+      countriesInSomeDatasets: new Set(),
+    };
+  }
+  // Pull out a list of just country names (no values) for each dataset
+  const countryLists = regionData.map(
+    (regionDataForOneDataset) => regionDataForOneDataset.country?.map(({ id }) => id) ?? []
+  );
+  // Identify countries found in all datasets and those found in only some
+  let countriesInAllDatasets = new Set(countryLists[0]);
+  const countriesInSomeDatasets = new Set(countryLists[0]);
+  countryLists.slice(1).forEach((countryList) => {
+    countryList.forEach((country) => {
+      // Add all countries to countriesInSomeDatasets
+      countriesInSomeDatasets.add(country);
+    });
+    // Remove all countries in countriesInAllDatasets that aren't found in this one
+    //  (take the intersection)
+    countriesInAllDatasets = new Set(
+      countryList.filter((country) => countriesInAllDatasets.has(country))
+    );
+  });
+  return {
+    countriesInAllDatasets,
+    countriesInSomeDatasets,
+  };
+};
+
+/**
+ * Multiplies each dataset's overall weight by the value of the country in the dataset.
+ * ASSUMES that the relevant data for dataset[i] can be found at overallWeightForEachDataset[i] and
+ *  regionDataForEachDataset[i].
+ * NOTE: does not sort or filter the results.
+ * @param country the name string of the country that indicates which values to look for.
+ * @param datasets All dataset nodes in the index.
+ * @param overallWeightForEachDataset The overall weight for each node.
+ * @param regionDataForEachDataset The regional data for each node.
+ * @returns a list of IndexResultsContributingDataset objects.
+ */
+export const calculateContributingDatasets = (
+  country: string,
+  datasets: Dataset[],
+  overallWeightForEachDataset: number[],
+  regionDataForEachDataset: RegionalAggregation[]
+): IndexResultsContributingDataset[] => {
+  return datasets.map((dataset, i) => {
+    const overallWeight = overallWeightForEachDataset[i];
+    const countriesWithValues = regionDataForEachDataset[i].country;
+    const datasetValue = countriesWithValues?.find((entry) => entry.id === country)?.value ?? null;
+    const weightedDatasetValue = datasetValue !== null ? datasetValue * overallWeight : null;
+    return {
+      overallWeight,
+      dataset,
+      datasetValue,
+      weightedDatasetValue,
+    };
+  });
+};
+
+/**
+ * Calculates the overall value for each country by
+ *  - multiplying each dataset's overall weight by the value of the country in the dataset
+ *  - adding up all the products
+ * While doing so, keeps track of
+ *  - how much each dataset contributes to each country's overall value
+ *  - whether each country is found in all datasets
+ * ASSUMES that the relevant data for dataset[i] can be found at overallWeightForEachDataset[i] and
+ *  regionDataForEachDataset[i].
+ * NOTE: does not sort or filter the results.
+ * @param datasetsWithOverallWeight All dataset nodes in the index.
+ * @param overallWeightForEachDataset The overall weight for each node.
+ * @param regionDataForEachDataset The regional data for each node.
+ */
+export const calculateIndexResults = (
+  datasets: Dataset[],
+  overallWeightForEachDataset: number[],
+  regionDataForEachDataset: RegionalAggregation[]
+): IndexResultsData[] => {
+  const { countriesInSomeDatasets } = calculateCoverage(regionDataForEachDataset);
+  return [...countriesInSomeDatasets].map((country) => {
+    const contributingDatasets = calculateContributingDatasets(
+      country,
+      datasets,
+      overallWeightForEachDataset,
+      regionDataForEachDataset
+    );
+    const overallValue = _.sum(contributingDatasets.map((entry) => entry.weightedDatasetValue));
+    return {
+      countryName: country,
+      value: overallValue,
+      contributingDatasets,
+    };
+  });
 };

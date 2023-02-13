@@ -3,14 +3,15 @@
 //  index-results-bar-chart to render the rows of the table with the same column widths.
 
 $index-result-table-column-gap: 20px;
+$index-result-table-key-datasets-column-gap: 10px;
 
 .index-result-table-output-value-column {
-  flex: 1;
+  flex: 2;
   min-width: 0;
 }
 
 .index-result-table-key-datasets-column {
-  flex: 2;
+  flex: 3;
   min-width: 0;
 }
 
@@ -22,9 +23,11 @@ $index-result-table-column-gap: 20px;
 .index-result-table-dataset-weight-column {
   // Based on the width of 'Dataset weight' using un-design-tokens body font styles
   width: 96px;
+  text-align: right;
 }
 
 .index-result-table-dataset-value-column {
   // Needs to be larger than the width of 'Value' using un-design-tokens body font styles
-  width: 70px;
+  width: 96px;
+  text-align: right;
 }

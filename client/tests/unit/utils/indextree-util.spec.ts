@@ -9,9 +9,13 @@ import {
   rebalanceInputWeights,
   createNewIndex,
   createNewPlaceholderDataset,
+  calculateCoverage,
+  findAllDatasets,
+  calculateOverallWeight,
 } from '@/utils/indextree-util';
 import { IndexNodeType } from '@/types/Enums';
-import { OutputIndex, Index, Dataset } from '@/types/Index';
+import { OutputIndex, Index, Dataset, ParentNode } from '@/types/Index';
+import { RegionalAggregation } from '@/types/Outputdata';
 
 const newTestTree = (): OutputIndex => ({
   id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
@@ -365,6 +369,103 @@ describe('indextree-util', () => {
       const inputs = rebalanceInputWeights(unbalanced_inputs);
       expect((inputs[0] as Dataset).weight).to.equal(30);
       expect((inputs[2] as Dataset).weight).to.equal(30);
+    });
+  });
+
+  describe('findAllDatasets', () => {
+    it('should return an empty list if the tree contains no datasets', () => {
+      const result = findAllDatasets(createNewOutputIndex());
+      expect(result.length).to.equal(0);
+    });
+    it('should correctly find all datasets', () => {
+      const tree = newTestTree();
+      const allDatasets = [
+        (tree.inputs[1] as ParentNode).inputs[0],
+        ((tree.inputs[1] as ParentNode).inputs[1] as ParentNode).inputs[0],
+        ((tree.inputs[1] as ParentNode).inputs[1] as ParentNode).inputs[1],
+      ];
+      const result = findAllDatasets(tree);
+      expect(result).to.include.all.members(allDatasets);
+    });
+  });
+
+  describe('calculateOverallWeight', () => {
+    const tree = newTestTree();
+    it('should return 0 if the target node is a Placeholder Dataset', () => {
+      const placeholderNode = createNewPlaceholderDataset();
+      const tree = createNewOutputIndex();
+      tree.inputs.push(placeholderNode);
+      const result = calculateOverallWeight(tree, placeholderNode);
+      expect(result).to.equal(0);
+    });
+    it('should return 0 if the target node is not found in the tree', () => {
+      const result = calculateOverallWeight(tree, createNewIndex());
+      expect(result).to.equal(0);
+    });
+    it('should correctly multiply ancestor weights', () => {
+      const targetNode = (tree.inputs[1] as Index).inputs[0] as Dataset;
+      const expectedWeight = ((tree.inputs[1] as Index).weight * targetNode.weight) / 100;
+      const result = calculateOverallWeight(tree, targetNode);
+      expect(result).to.equal(expectedWeight);
+    });
+  });
+
+  describe('calculateCoverage', () => {
+    const mockData: RegionalAggregation = {
+      country: [
+        { id: 'Country A', value: 0 },
+        { id: 'Country B', value: 0 },
+        { id: 'Country C', value: 0 },
+      ],
+    };
+    const disjointDataset: RegionalAggregation = {
+      country: [
+        { id: 'Country D', value: 0 },
+        { id: 'Country E', value: 0 },
+        { id: 'Country F', value: 0 },
+      ],
+    };
+    it('should return empty sets when passed an empty array', () => {
+      const { countriesInAllDatasets, countriesInSomeDatasets } = calculateCoverage([]);
+      expect(countriesInAllDatasets.size).to.equal(0);
+      expect(countriesInSomeDatasets.size).to.equal(0);
+    });
+    it('should return sets with all countries when passed an array with one item', () => {
+      const { countriesInAllDatasets, countriesInSomeDatasets } = calculateCoverage([mockData]);
+      const mockCountryList = mockData.country?.map(({ id }) => id) ?? [];
+      expect(countriesInAllDatasets).to.have.all.keys(...mockCountryList);
+      expect(countriesInSomeDatasets).to.have.all.keys(...mockCountryList);
+    });
+    describe('countriesInAllDatasets', () => {
+      it('should be an empty set when two datasets have no overlap', () => {
+        const { countriesInAllDatasets } = calculateCoverage([mockData, disjointDataset]);
+        expect(countriesInAllDatasets.size).to.equal(0);
+      });
+      it('should correctly return the intersection when two datasets have some overlap', () => {
+        const overlappingDataset: RegionalAggregation = {
+          country: [
+            { id: 'Country C', value: 0 },
+            { id: 'Country D', value: 0 },
+            { id: 'Country E', value: 0 },
+          ],
+        };
+        const { countriesInAllDatasets } = calculateCoverage([mockData, overlappingDataset]);
+        expect(countriesInAllDatasets).to.have.key('Country C');
+      });
+    });
+    describe('countriesInSomeDatasets', () => {
+      const { countriesInSomeDatasets } = calculateCoverage([mockData, disjointDataset]);
+      it('should have a size equal to the size of the union when passed two datasets', () => {
+        const expectedSize =
+          (mockData.country?.length ?? 0) + (disjointDataset.country?.length ?? 0);
+        expect(countriesInSomeDatasets.size).to.equal(expectedSize);
+      });
+      it('should contain all countries found in both input datasets', () => {
+        const mockCountryList = mockData.country?.map(({ id }) => id) ?? [];
+        expect(countriesInSomeDatasets).to.include.all.keys(...mockCountryList);
+        const disjointCountryList = mockData.country?.map(({ id }) => id) ?? [];
+        expect(countriesInSomeDatasets).to.include.all.keys(...disjointCountryList);
+      });
     });
   });
 });
