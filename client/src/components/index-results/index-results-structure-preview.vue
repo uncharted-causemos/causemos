@@ -32,65 +32,19 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { IndexNode, OutputIndex, GridCell } from '@/types/Index';
-import { isParentNode, getIndexNodeTypeColor, getIndexNodeTypeIcon } from '@/utils/indextree-util';
+import { IndexNode } from '@/types/Index';
+import {
+  isParentNode,
+  getIndexNodeTypeColor,
+  getIndexNodeTypeIcon,
+  convertTreeToGridCells,
+} from '@/utils/indextree-util';
 import { computed } from 'vue';
 import { IndexNodeType } from '@/types/Enums';
 
 const { tree } = useIndexTree();
 
-const hasChildren = (node: IndexNode) => {
-  return isParentNode(node) && node.inputs.length > 0;
-};
-
-const convertTreeToGridCells = (tree: OutputIndex): GridCell[] => {
-  // The first row of a CSS grid can be accessed with `grid-row-start: 1`
-  let currentRow = 1;
-  const _convertTreeToGridCells = (
-    currentNode: IndexNode,
-    depth: number,
-    isRootNode: boolean,
-    isLastChild: boolean
-  ) => {
-    const currentCell: GridCell = {
-      node: currentNode,
-      // The last column in a CSS grid can be accessed with `grid-column: -1`
-      startColumn: -depth - 1,
-      startRow: currentRow,
-      // Assume this node and its descendents take up one row. Increase this later as we go through
-      //  any children this node has
-      rowCount: 1,
-      hasOutputLine: !isRootNode,
-      isLastChild,
-    };
-    // If this is a leaf node:
-    if (!isParentNode(currentNode) || currentNode.inputs.length === 0) {
-      // The only time we start a new row is when we reach a leaf node.
-      currentRow++;
-      // There are no children to traverse, so we return.
-      return [currentCell];
-    }
-    // This is a parent node so we recursively build a list of cells including this one and all of
-    //  its descendents.
-    const descendentCells: GridCell[] = [];
-    const directChildCells: GridCell[] = [];
-    // We need to label the last child for when we render the edges between nodes.
-    const lastChildArrayPosition = currentNode.inputs.length - 1;
-    currentNode.inputs.forEach((input, i) => {
-      const isLastChild = i === lastChildArrayPosition;
-      // Call the helper function with the same depth for each child, one greater than the parent.
-      const cells = _convertTreeToGridCells(input, depth + 1, false, isLastChild);
-      directChildCells.push(cells[0]);
-      cells.forEach((cell) => {
-        descendentCells.push(cell);
-      });
-    });
-    // This parent node needs to span a number of rows equal to the sum of its children's row spans.
-    currentCell.rowCount = _.sumBy(directChildCells, (child) => child.rowCount);
-    return [currentCell, ...descendentCells];
-  };
-  return _convertTreeToGridCells(tree, 0, true, false);
-};
+const hasChildren = (node: IndexNode) => isParentNode(node) && node.inputs.length > 0;
 const gridCells = computed(() => convertTreeToGridCells(tree.value));
 </script>
 
