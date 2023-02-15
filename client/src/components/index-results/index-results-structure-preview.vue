@@ -32,9 +32,8 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { IndexNode } from '@/types/Index';
 import {
-  isParentNode,
+  hasChildren,
   getIndexNodeTypeColor,
   getIndexNodeTypeIcon,
   convertTreeToGridCells,
@@ -44,7 +43,6 @@ import { IndexNodeType } from '@/types/Enums';
 
 const { tree } = useIndexTree();
 
-const hasChildren = (node: IndexNode) => isParentNode(node) && node.inputs.length > 0;
 const gridCells = computed(() => convertTreeToGridCells(tree.value));
 </script>
 

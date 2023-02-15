@@ -33,6 +33,10 @@ export const isPlaceholderNode = (indexNode: IndexNode): indexNode is Placeholde
   return indexNode.type === IndexNodeType.Placeholder;
 };
 
+export const hasChildren = (indexNode: IndexNode) => {
+  return isParentNode(indexNode) && indexNode.inputs.length > 0;
+};
+
 export const getIndexNodeTypeIcon = (type: IndexNodeType): string => {
   switch (type) {
     case IndexNodeType.OutputIndex:

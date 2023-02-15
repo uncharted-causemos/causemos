@@ -46,7 +46,7 @@ import {
   leftAlignTreeGrids,
   offsetGridCells,
   getGridRowCount,
-  isParentNode,
+  hasChildren,
 } from '@/utils/indextree-util';
 
 const props = defineProps<{
@@ -57,8 +57,6 @@ const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
   (e: 'deselect-all'): void;
 }>();
-
-const hasChildren = (node: IndexNode) => isParentNode(node) && node.inputs.length > 0;
 
 const workBench = useIndexWorkBench();
 const indexTree = useIndexTree();
