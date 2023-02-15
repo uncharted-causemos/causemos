@@ -86,8 +86,14 @@ export interface IndexResultsData {
  */
 export interface GridCell {
   node: IndexNode;
+  /** 1-indexed integer, since the first row of CSS-grid can be accessed with `grid-row-start: 1` */
   startRow: number;
+  /** An integer, greater than 0, that indicates how many rows this cell spans vertically. */
   rowCount: number;
+  /**
+   * In all usages (as of Feb 15, 2023), startColumn is a negative number and cells are laid out
+   * right to left.
+   */
   startColumn: number;
   hasOutputLine: boolean;
   isLastChild: boolean;
