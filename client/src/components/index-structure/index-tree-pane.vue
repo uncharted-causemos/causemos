@@ -1,13 +1,6 @@
 <template>
   <div class="index-tree-pane-container">
-    <div
-      class="index-tree"
-      :style="{
-        'grid-template-columns': `repeat(${gridDimensions.numCols + WORKBENCH_LEFT_OFFSET}, auto)`,
-        'grid-template-rows': `repeat(${gridDimensions.numRows}, auto)`,
-      }"
-      @click.self="emit('deselect-all')"
-    >
+    <div class="index-tree" @click.self="emit('deselect-all')">
       <div
         class="grid-cell"
         v-for="item in nodeItems"
@@ -41,10 +34,7 @@
             dashed: item.type === IndexNodeType.Placeholder,
             'last-child': item.style.isLastChild,
           }"
-        >
-          <div class="top" />
-          <div class="side" />
-        </div>
+        />
       </div>
     </div>
   </div>
@@ -187,10 +177,6 @@ const indexNodeItemTree = computed(() => {
   return tree;
 });
 
-const gridDimensions = computed(() =>
-  getGridDimensions([indexNodeItemTree.value, ...workBenchNodeItemTrees.value])
-);
-
 const workBenchNodeItems = computed(() =>
   _.flatten(workBenchNodeItemTrees.value.map(getAllNodeItems))
 );
@@ -281,25 +267,17 @@ $edge-styles: 2px solid $un-color-black-20;
     &.outgoing {
       width: $outgoing-edge-length;
       &.visible {
-        .top {
-          width: 100%;
-          border-top: $edge-styles;
-        }
-        .side {
-          width: 100%;
-          // Extend edge down to the sibling below this one
-          height: calc(100% + #{$space-between-rows});
-          border-right: $edge-styles;
-        }
+        border-top: $edge-styles;
+        // Extend edge down to the sibling below this one
+        height: calc(100% + #{$space-between-rows});
+        border-right: $edge-styles;
 
-        &.dashed .top {
+        &.dashed {
           border-top-style: dashed;
         }
       }
       &.last-child {
-        .side {
-          border: none;
-        }
+        border-right: none;
       }
     }
   }

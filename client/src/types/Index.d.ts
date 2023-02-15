@@ -80,3 +80,15 @@ export interface IndexResultsData {
   value: number | null;
   contributingDatasets: IndexResultsContributingDataset[];
 }
+
+/**
+ * Contains enough information to render index nodes in a CSS grid
+ */
+export interface GridCell {
+  node: IndexNode;
+  startRow: number;
+  rowCount: number;
+  startColumn: number;
+  hasOutputLine: boolean;
+  isLastChild: boolean;
+}

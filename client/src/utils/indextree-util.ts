@@ -32,6 +32,29 @@ export const isPlaceholderNode = (indexNode: IndexNode): indexNode is Placeholde
   return indexNode.type === IndexNodeType.Placeholder;
 };
 
+export const getIndexNodeTypeIcon = (type: IndexNodeType): string => {
+  switch (type) {
+    case IndexNodeType.OutputIndex:
+    case IndexNodeType.Index:
+      return 'fa-sitemap fa-rotate-90';
+    default:
+      return 'fa-th';
+  }
+};
+
+export const getIndexNodeTypeColor = (type: IndexNodeType): string => {
+  switch (type) {
+    case IndexNodeType.OutputIndex:
+      return '#7570b3';
+    case IndexNodeType.Index:
+      return '#e7298a';
+    case IndexNodeType.Placeholder:
+      return '#66a61e';
+    default:
+      return '#1b9e77';
+  }
+};
+
 export const createNewIndex = (): Index => {
   const node: Index = {
     id: uuidv4(),
