@@ -460,3 +460,68 @@ export const convertTreeToGridCells = (tree: IndexNode): GridCell[] => {
   };
   return _convertTreeToGridCells(tree, 0, true, false);
 };
+
+/**
+ * ASSUMES the first cell in the list represents the root node of the tree.
+ * @param cells A list of cells representing an index tree
+ */
+export const getGridRowCount = (cells: GridCell[]) => {
+  const root = cells[0];
+  return root.rowCount;
+};
+
+/**
+ * ASSUMES that all cells have a negative startColumn value.
+ * @param cells A list of cells representing an index tree.
+ * @returns a number (>= 0) representing the number of columns in the resulting grid.
+ */
+export const getGridColumnCount = (cells: GridCell[]) => {
+  const farthestLeftCell = _.minBy(cells, (cell) => cell.startColumn);
+  const farthestLeftColumn = farthestLeftCell?.startColumn ?? 0;
+  // Flip the negative column position into a positive column count
+  return farthestLeftColumn * -1;
+};
+
+/**
+ * Translates an array of grid cells up or down and left or right.
+ * Does not modify the original array or any of the cells in it.
+ * @param cells an array of grid cells to translate.
+ * @param verticalOffset the number of rows to translate the cells by. Positive numbers move the cells down.
+ * @param horizontalOffset the number of columns to translate the cells by. Positive numbers move the cells right.
+ * @returns a new array of new cells with modified `startRow` and ` properties.
+ */
+export const offsetGridCells = (
+  cells: GridCell[],
+  verticalOffset: number,
+  horizontalOffset: number
+): GridCell[] => {
+  return cells.map((cell) => ({
+    ...cell,
+    startRow: cell.startRow + verticalOffset,
+    startColumn: cell.startColumn + horizontalOffset,
+  }));
+};
+
+/**
+ * Aligns the left edges of multiple grids.
+ * After alignment, the leftmost cells in each grid will all be in the same column.
+ * Does not modify any of the original arrays or any of their cells.
+ * @param grids An array of grid cell arrays.
+ * @returns A new array of grids.
+ */
+export const leftAlignTreeGrids = (grids: GridCell[][]): GridCell[][] => {
+  // Find the grid with the most columns
+  let greatestColumnCount = 0;
+  grids.forEach((grid) => {
+    const columnCount = getGridColumnCount(grid);
+    if (columnCount > greatestColumnCount) {
+      greatestColumnCount = columnCount;
+    }
+  });
+  // Move each grid left until it's aligned with the widest grid
+  return grids.map((grid) => {
+    const columnCount = getGridColumnCount(grid);
+    const moveLeftBy = greatestColumnCount - columnCount;
+    return offsetGridCells(grid, 0, -moveLeftBy);
+  });
+};
