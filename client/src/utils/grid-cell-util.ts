@@ -3,6 +3,11 @@ import _ from 'lodash';
 import { isParentNode } from './indextree-util';
 
 /**
+ * This file contains helper functions to support the GridCell data structure, which is used when
+ * rendering index structure trees using CSS-grid.
+ */
+
+/**
  * Flattens an index structure tree for rendering with CSS-grid.
  * @param tree The root node of the tree.
  * @returns A list of cells with enough information to render directly with CSS-grid.
