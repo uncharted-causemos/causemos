@@ -43,9 +43,9 @@ import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { hasChildren } from '@/utils/indextree-util';
 import {
-  leftAlignTreeGrids,
   offsetGridCells,
   getGridRowCount,
+  getGridColumnCount,
   convertTreeToGridCells,
 } from '@/utils/grid-cell-util';
 
@@ -81,10 +81,13 @@ const gridCells = computed<GridCell[]>(() => {
   const overlappingMainTreeCellList = convertTreeToGridCells(indexTree.tree.value);
   // Move main tree grid below the workbench tree grids.
   const mainTreeCellList = offsetGridCells(overlappingMainTreeCellList, currentRow, 0);
-  // Left align all grids.
-  const leftAlignedGrids = leftAlignTreeGrids([...workbenchTreeCellLists, mainTreeCellList]);
+  // Extra requirement: Shift all workbench trees to the left of the main tree.
+  const mainTreeColumnCount = getGridColumnCount(mainTreeCellList);
+  const shiftedWorkbenchTreeCellLists = workbenchTreeCellLists.map((cellList) =>
+    offsetGridCells(cellList, 0, -mainTreeColumnCount)
+  );
   // Flatten list of grids into one list of grid cells.
-  return _.flatten(leftAlignedGrids);
+  return _.flatten([...shiftedWorkbenchTreeCellLists, mainTreeCellList]);
 });
 
 const renameNode = (nodeId: string, newName: string) => {

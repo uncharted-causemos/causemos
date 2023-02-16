@@ -101,27 +101,3 @@ export const offsetGridCells = (
     startColumn: cell.startColumn + horizontalOffset,
   }));
 };
-
-/**
- * Aligns the left edges of multiple grids.
- * After alignment, the leftmost cells in each grid will all be in the same column.
- * Does not modify any of the original arrays or any of their cells.
- * @param grids An array of grid cell arrays.
- * @returns A new array of grids.
- */
-export const leftAlignTreeGrids = (grids: GridCell[][]): GridCell[][] => {
-  // Find the grid with the most columns
-  let greatestColumnCount = 0;
-  grids.forEach((grid) => {
-    const columnCount = getGridColumnCount(grid);
-    if (columnCount > greatestColumnCount) {
-      greatestColumnCount = columnCount;
-    }
-  });
-  // Move each grid left until it's aligned with the widest grid
-  return grids.map((grid) => {
-    const columnCount = getGridColumnCount(grid);
-    const moveLeftBy = greatestColumnCount - columnCount;
-    return offsetGridCells(grid, 0, -moveLeftBy);
-  });
-};
