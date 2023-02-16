@@ -9,6 +9,7 @@ import { isParentNode } from './indextree-util';
 
 /**
  * Flattens an index structure tree for rendering with CSS-grid.
+ * Note that the first cell in the resulting list represents the root node of `tree`.
  * @param tree The root node of the tree.
  * @returns A list of cells with enough information to render directly with CSS-grid.
  */
@@ -66,6 +67,7 @@ export const convertTreeToGridCells = (tree: IndexNode): GridCell[] => {
  * @param cells A list of cells representing an index tree
  */
 export const getGridRowCount = (cells: GridCell[]) => {
+  if (cells.length === 0) return 0;
   const root = cells[0];
   return root.rowCount;
 };
