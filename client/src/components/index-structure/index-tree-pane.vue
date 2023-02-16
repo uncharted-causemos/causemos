@@ -41,13 +41,13 @@ import { IndexNodeType } from '@/types/Enums';
 import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
+import { hasChildren } from '@/utils/indextree-util';
 import {
-  convertTreeToGridCells,
   leftAlignTreeGrids,
   offsetGridCells,
   getGridRowCount,
-  hasChildren,
-} from '@/utils/indextree-util';
+  convertTreeToGridCells,
+} from '@/utils/grid-cell-util';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
