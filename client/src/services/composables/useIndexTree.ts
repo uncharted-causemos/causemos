@@ -1,5 +1,8 @@
 import { ref, computed } from 'vue';
-import { DatasetSearchResult, OutputIndex } from '@/types/Index';
+import { DataConfig, DatasetSearchResult, OutputIndex } from '@/types/Index';
+import { getDatacubeById } from '@/services/new-datacube-service';
+import { getTimeseries } from '@/services/outputdata-service';
+import { Datacube } from '@/types/Datacube';
 import {
   findAndRemoveChild,
   createNewOutputIndex,
@@ -12,7 +15,7 @@ import {
   isDatasetNode,
   rebalanceInputWeights,
 } from '@/utils/indextree-util';
-import { IndexNodeType } from '@/types/Enums';
+import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
 
 // States
 
@@ -78,13 +81,38 @@ export default function useIndexTree() {
     triggerUpdate();
   };
 
-  const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult) => {
+  const getDefaultConfig = async (datasetMetadataDocId: string) => {
+    const metadata: Datacube = await getDatacubeById(datasetMetadataDocId);
+    const config: DataConfig = {
+      datasetId: metadata.data_id,
+      runId: 'indicator',
+      outputVariable: metadata.default_feature,
+      selectedTimestamp: 0,
+      spatialAggregation: metadata.default_view?.spatialAggregation || AggregationOption.Mean,
+      temporalAggregation: metadata.default_view?.temporalAggregation || AggregationOption.Mean,
+      temporalResolution:
+        metadata.default_view?.temporalResolution || TemporalResolutionOption.Month,
+    };
+    const { data } = await getTimeseries({
+      modelId: config.datasetId,
+      outputVariable: config.outputVariable,
+      runId: config.runId,
+      spatialAggregation: config.spatialAggregation,
+      temporalAggregation: config.temporalAggregation,
+      temporalResolution: config.temporalResolution,
+    });
+    config.selectedTimestamp = data[0].timestamp;
+    return config;
+  };
+
+  const attachDatasetToPlaceholder = async (nodeId: string, dataset: DatasetSearchResult) => {
     const foundResult = findNode(nodeId);
     if (foundResult === undefined || !isPlaceholderNode(foundResult.found)) {
       return;
     }
     const { found: placeholderNode, parent } = foundResult;
-    const datasetNode = convertPlaceholderToDataset(placeholderNode, dataset, 0);
+    const dataConfig = await getDefaultConfig(dataset.datasetMetadataDocId);
+    const datasetNode = convertPlaceholderToDataset(placeholderNode, dataset, 0, dataConfig);
     Object.assign(placeholderNode, datasetNode);
     // Parent should never be null unless we found a disconnected placeholder node.
     if (parent !== null) {

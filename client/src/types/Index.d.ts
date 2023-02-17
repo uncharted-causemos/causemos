@@ -1,4 +1,4 @@
-import { IndexNodeType } from './Enums';
+import { AggregationOption, IndexNodeType, TemporalResolutionOption } from './Enums';
 
 export interface BaseNode {
   id: string;
@@ -11,17 +11,24 @@ export interface WeightedNode {
 export interface Placeholder extends BaseNode {
   type: IndexNodeType.Placeholder;
 }
-export interface Dataset extends BaseNode, WeightedNode {
+
+export interface DataConfig {
+  /** equivalent to `data_id` (see `Datacube.d.ts`) */
+  datasetId: string; // TODO: Rename it to dataId
+  runId: string;
+  selectedTimestamp: number;
+  outputVariable: string;
+  temporalResolution: TemporalResolutionOption;
+  temporalAggregation: AggregationOption;
+  spatialAggregation: AggregationOption;
+}
+export interface Dataset extends BaseNode, WeightedNode, DataConfig {
   type: IndexNodeType.Dataset;
-  // equivalent to `data_id` (see `Datacube.d.ts`) or `datacubeId` (see
-  //  `Analysis.d.ts/AnalysisItem`)
-  datasetId: string;
-  // equivalent to `id` (see `Analysis.d.ts/AnalysisItem`)
+  /* equivalent to `id` of Datacube (see `Datacube.d.ts`) **/
   datasetMetadataDocId: string;
   datasetName: string;
   isInverted: boolean;
   source: string;
-  selectedTimestamp: number;
 }
 
 export interface DatasetSearchResult {

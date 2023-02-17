@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { IndexNodeType } from '@/types/Enums';
+import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
 import {
   IndexNode,
   Dataset,
@@ -10,6 +10,7 @@ import {
   DatasetSearchResult,
   IndexResultsData,
   IndexResultsContributingDataset,
+  DataConfig,
 } from '@/types/Index';
 import _ from 'lodash';
 import { RegionalAggregation } from '@/types/Outputdata';
@@ -63,24 +64,45 @@ export const createNewPlaceholderDataset = () => {
   return node;
 };
 
+export const createNewDatasetNode = (spec?: Partial<Dataset>) => {
+  const node: Dataset = {
+    ...{
+      id: uuidv4(),
+      type: IndexNodeType.Dataset,
+      name: '',
+      datasetId: '',
+      datasetMetadataDocId: '',
+      datasetName: '',
+      isInverted: false,
+      isWeightUserSpecified: false,
+      outputVariable: '',
+      runId: 'indicators',
+      selectedTimestamp: 0,
+      source: '',
+      weight: 0,
+      temporalResolution: TemporalResolutionOption.Month,
+      temporalAggregation: AggregationOption.Mean,
+      spatialAggregation: AggregationOption.Mean,
+    },
+    ...spec,
+  };
+  return node;
+};
+
 export const convertPlaceholderToDataset = (
   placeholder: Placeholder,
   dataset: DatasetSearchResult,
-  initialWeight: number
+  initialWeight: number,
+  config: DataConfig
 ) => {
-  const node: Dataset = {
-    id: uuidv4(),
-    type: IndexNodeType.Dataset,
+  const node = createNewDatasetNode({
     name: placeholder.name === '' ? dataset.displayName : placeholder.name,
-    datasetId: dataset.dataId,
     datasetMetadataDocId: dataset.datasetMetadataDocId,
     datasetName: dataset.displayName,
-    isInverted: false,
-    isWeightUserSpecified: false,
     source: dataset.familyName,
     weight: initialWeight,
-    selectedTimestamp: dataset.period.lte, // select the last timestamp we have data for
-  };
+    ...config,
+  });
   return node;
 };
 
