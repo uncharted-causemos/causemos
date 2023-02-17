@@ -1,5 +1,6 @@
 <template>
   <div class="index-tree-node-container" :class="classObject" @click="selectNode">
+    <div class="disable-overlay" />
     <div v-if="isParentNode(props.nodeData)" class="input-arrow" />
     <div class="header content">
       <i
@@ -141,6 +142,7 @@ const classObject = computed(() => {
     placeholder: props.nodeData.type === IndexNodeType.Placeholder,
     selected: props.isSelected,
     'flexible-width': showDatasetSearch.value,
+    disabled: disableInteraction.value,
   };
 });
 
@@ -246,6 +248,7 @@ const showDatasetSearch = computed(
     // props.nodeData.name === '' means that the "create dataset node" flow has never been completed.
     (isSearchingForDataset.value === true || props.nodeData.name === '')
 );
+const disableInteraction = ref(false);
 const isSearchingForDataset = ref(false);
 const datasetSearchText = ref('');
 const cancelDatasetSearch = () => {
@@ -264,6 +267,9 @@ const keepAsPlaceholder = () => {
 const attachDataset = (dataset: DatasetSearchResult) => {
   emit('attach-dataset', props.nodeData.id, dataset);
   isSearchingForDataset.value = false;
+  // Once attach-dataset event is fired, we are finished with interacting with the placeholder node and expecting the node to be converted to a dataset node.
+  // Further interaction with data search or selection should not be done until the node is changed and re-rendered as a dataset node.
+  disableInteraction.value = true;
 };
 
 // Footer
@@ -325,6 +331,23 @@ const getDatasetFooterText = (data: Dataset) => {
     left: calc(-1 * var(--border-width));
     border-radius: 3px;
     border: var(--border-width) solid $accent-main;
+  }
+
+  &.disabled {
+    pointer-events: none;
+    .disable-overlay {
+      display: block;
+    }
+  }
+
+  .disable-overlay {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+    opacity: 0.4;
+    background: white;
   }
 
   .btn-default {

@@ -38,7 +38,7 @@ const getDefaultDataConfig = async (datasetMetadataDocId: string) => {
     temporalAggregation: config.temporalAggregation,
     temporalResolution: config.temporalResolution,
   });
-  config.selectedTimestamp = data[0].timestamp;
+  config.selectedTimestamp = data[data.length - 1].timestamp;
   return config;
 };
 
