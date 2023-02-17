@@ -15,7 +15,7 @@ import {
 import _ from 'lodash';
 import { RegionalAggregation } from '@/types/Outputdata';
 
-type findNodeReturn = { parent: ParentNode | null; found: IndexNode } | undefined;
+export type FindNodeResult = { parent: ParentNode | null; found: IndexNode } | undefined;
 
 export const isDatasetNode = (indexNode: IndexNode): indexNode is Dataset => {
   return indexNode.type === IndexNodeType.Dataset;
@@ -153,8 +153,8 @@ export const findAndRemoveChild = (indexNodeTree: IndexNode, nodeId: string): bo
  * @param indexNodeTree An index node
  * @param nodeId An index node id
  */
-export const findNode = (indexNodeTree: IndexNode, nodeId: string): findNodeReturn => {
-  const _findNode = (node: IndexNode, parentNode: ParentNode | null): findNodeReturn => {
+export const findNode = (indexNodeTree: IndexNode, nodeId: string): FindNodeResult => {
+  const _findNode = (node: IndexNode, parentNode: ParentNode | null): FindNodeResult => {
     if (node.id === nodeId) {
       return { parent: parentNode, found: node };
     }
