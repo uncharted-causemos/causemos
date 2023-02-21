@@ -1,14 +1,8 @@
 <template>
   <div class="index-tree-node-container" :class="classObject" @click="selectNode">
     <div v-if="isParentNode(props.nodeData)" class="input-arrow" />
-    <div class="header content">
-      <i
-        class="fa fa-fw un-font-small"
-        :class="{
-          'fa-sitemap': classObject['output-index'] || classObject.index,
-          'fa-th': classObject.placeholder || classObject.dataset,
-        }"
-      />
+    <div class="header content" :style="{ color: getIndexNodeTypeColor(props.nodeData.type) }">
+      <i class="fa fa-fw un-font-small" :class="[getIndexNodeTypeIcon(props.nodeData.type)]" />
       <span class="un-font-small">
         {{ headerText }}
       </span>
@@ -97,6 +91,8 @@ import { Dataset, DatasetSearchResult, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
 import {
   duplicateNode,
+  getIndexNodeTypeColor,
+  getIndexNodeTypeIcon,
   isDatasetNode,
   isParentNode,
   isPlaceholderNode,
@@ -135,9 +131,6 @@ const emit = defineEmits<{
 
 const classObject = computed(() => {
   return {
-    'output-index': props.nodeData.type === IndexNodeType.OutputIndex,
-    index: props.nodeData.type === IndexNodeType.Index,
-    dataset: props.nodeData.type === IndexNodeType.Dataset,
     placeholder: props.nodeData.type === IndexNodeType.Placeholder,
     selected: props.isSelected,
     'flexible-width': showDatasetSearch.value,
@@ -421,27 +414,8 @@ const getDatasetFooterText = (data: Dataset) => {
     color: $un-color-black-40;
     padding-top: 0px;
   }
-
-  &.output-index {
-    .header {
-      color: $node-type-output-index;
-    }
-  }
-  &.index {
-    .header {
-      color: $node-type-index;
-    }
-  }
-  &.dataset {
-    .header {
-      color: $node-type-dataset;
-    }
-  }
   &.placeholder {
     border-style: dashed;
-    .header {
-      color: $node-type-placeholder-dataset;
-    }
   }
 }
 </style>

@@ -1,51 +1,34 @@
 <template>
-  <div class="index-tree-pane-container">
+  <div class="index-tree-pane-container" @click.self="emit('deselect-all')">
     <div
-      class="index-tree"
+      v-for="cell in gridCells"
+      :key="cell.node.id"
       :style="{
-        'grid-template-columns': `repeat(${gridDimensions.numCols + WORKBENCH_LEFT_OFFSET}, auto)`,
-        'grid-template-rows': `repeat(${gridDimensions.numRows}, auto)`,
+        'grid-row': `${cell.startRow} / span ${cell.rowCount}`,
+        'grid-column': cell.startColumn,
       }"
-      @click.self="emit('deselect-all')"
+      class="grid-cell"
     >
+      <div class="edge incoming" :class="{ visible: hasChildren(cell.node) }"></div>
+      <IndexTreeNode
+        :node-data="cell.node"
+        :is-selected="cell.node.id === props.selectedElementId"
+        class="index-tree-node"
+        @rename="renameNode"
+        @delete="deleteNode"
+        @duplicate="duplicateNode"
+        @select="(id) => emit('select-element', id)"
+        @create-child="createChild"
+        @attach-dataset="attachDatasetToPlaceholder"
+      />
       <div
-        class="grid-cell"
-        v-for="item in nodeItems"
-        :key="item.data.id"
-        :style="{
-          ...item.style.grid,
+        class="edge outgoing"
+        :class="{
+          visible: cell.hasOutputLine,
+          dashed: cell.node.type === IndexNodeType.Placeholder,
+          'last-child': cell.isLastChild,
         }"
-      >
-        <div
-          class="edge incoming"
-          :class="{
-            visible: item.children.length > 0,
-          }"
-        ></div>
-        <IndexTreeNode
-          v-if="item.data"
-          :node-data="item.data"
-          :is-selected="item.data.id === props.selectedElementId"
-          class="index-tree-node"
-          @rename="renameNode"
-          @delete="deleteNode"
-          @duplicate="duplicateNode"
-          @select="(id) => emit('select-element', id)"
-          @create-child="createChild"
-          @attach-dataset="attachDatasetToPlaceholder"
-        />
-        <div
-          class="edge outgoing"
-          :class="{
-            visible: item.style.hasOutputLine,
-            dashed: item.type === IndexNodeType.Placeholder,
-            'last-child': item.style.isLastChild,
-          }"
-        >
-          <div class="top" />
-          <div class="side" />
-        </div>
-      </div>
+      />
     </div>
   </div>
 </template>
@@ -55,10 +38,16 @@ import _ from 'lodash';
 import { computed } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
-import { DatasetSearchResult, IndexNode, SelectableIndexElementId } from '@/types/Index';
+import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { isParentNode } from '@/utils/indextree-util';
+import { hasChildren } from '@/utils/indextree-util';
+import {
+  offsetGridCells,
+  getGridRowCount,
+  getGridColumnCount,
+  convertTreeToGridCells,
+} from '@/utils/grid-cell-util';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -69,134 +58,36 @@ const emit = defineEmits<{
   (e: 'deselect-all'): void;
 }>();
 
-/**
- *  work bench items are positioned at least {WORKBENCH_LEFT_OFFSET} column(s) left to the main output index node
- */
-const WORKBENCH_LEFT_OFFSET = 1;
-
 const workBench = useIndexWorkBench();
 const indexTree = useIndexTree();
 
-// IndexNodeItem contains indexNode data along with metadata needed for rendering and layout of the tree
-interface IndexTreeNodeItem {
-  type: IndexNodeType;
-  children: IndexTreeNodeItem[];
-  data: IndexNode;
-  /** width of the node represented by the total number of leaf nodes it has */
-  width: number;
-  /** number of edges on the longest path from the node to a leaf */
-  height: number;
-  style: {
-    hasOutputLine: boolean;
-    isLastChild: boolean;
-    grid: {
-      /** grid-row css property */
-      'grid-row'?: string;
-      /** grid-column css property */
-      'grid-column'?: string;
-    };
-  };
-}
-
-// Convert given index node tree to index node item tree
-const toIndexNodeItemTree = (node: IndexNode): IndexTreeNodeItem => {
-  const item: IndexTreeNodeItem = {
-    type: node.type,
-    data: node,
-    children: [] as IndexTreeNodeItem[],
-    height: 0,
-    width: 1,
-    style: {
-      grid: {},
-      hasOutputLine: false,
-      isLastChild: false,
-    },
-  };
-  if (isParentNode(node) && node.inputs.length > 0) {
-    item.children = node.inputs.map(toIndexNodeItemTree);
-    item.height = Math.max(...item.children.map((c) => c.height)) + 1;
-    item.width = item.children.reduce((prev, item) => prev + item.width, 0);
-    // Add style properties to self and each child node
-    item.children.forEach((item) => (item.style.hasOutputLine = true));
-    item.children[item.children.length - 1].style.isLastChild = true;
-  }
-  return item;
-};
-
-const calculateLayout = (nodeItem: IndexTreeNodeItem, rowOffset = 0, colOffset = 0) => {
-  const firstRow = 1 + rowOffset;
-  const furthestRightColumn = nodeItem.height + 1 + colOffset;
-  const _calculateLayout = (item: IndexTreeNodeItem, rowNumber: number, level = 0) => {
-    // Start in row `rowNumber` and span `item.width` rows
-    item.style.grid['grid-row'] = `${rowNumber} / span ${item.width}`;
-    // Start in the column that is `level` columns to the left of `furthestRightColumn`.
-    //  Spans one column.
-    item.style.grid['grid-column'] = `${furthestRightColumn - level}`;
-    if (item.children.length > 0) {
-      // Calculate row # for each child.
-      //  First child is placed in the same row as its parent.
-      //  Each child after that is placed below its previous sibling
-      // All children are one column to the left of their parent. (level + 1)
-      let startingRow = rowNumber;
-      item.children.forEach((child) => {
-        _calculateLayout(child, startingRow, level + 1);
-        startingRow += child.width;
-      });
-    }
-  };
-  _calculateLayout(nodeItem, firstRow);
-};
-
-const getAllNodeItems = (nodeItem: IndexTreeNodeItem): IndexTreeNodeItem[] =>
-  nodeItem.children.reduce((prev, child) => [...prev, ...getAllNodeItems(child)], [nodeItem]);
-
-/**
- * Calculate the dimension of the grid in terms of number of grid columns and grid rows to place the provided trees
- * @param trees Root index node items
- */
-const getGridDimensions = (trees: IndexTreeNodeItem[]) => {
-  // height of the rendered grid is driven by the node width since the tree is lying side way
-  const sumWidth = trees.reduce((prev, cur) => prev + cur.width, 0);
-  const maxHeight = trees.reduce((prev, cur) => Math.max(prev, cur.height), 0);
-  return {
-    numCols: maxHeight + 1,
-    numRows: sumWidth,
-  };
-};
-
-// Temporary nodes/sub-trees that are being created and detached from the main tree
-const workBenchNodeItemTrees = computed(() => {
-  let startingRowOfCurrentTree = 0;
-  const trees = workBench.items.value.map((node) => {
-    const tree = toIndexNodeItemTree(node);
-    calculateLayout(tree, startingRowOfCurrentTree);
-    // Start the next tree below this one by adding the number of leaf nodes in the current tree to
-    //  the startingRowIndex
-    startingRowOfCurrentTree += tree.width;
-    return tree;
+// A list of grid cells with enough information to render with CSS-grid.
+//  Represents a combination of all workbench trees and the main index tree.
+const gridCells = computed<GridCell[]>(() => {
+  // Convert each workbench tree to grid cells.
+  const overlappingWorkbenchTreeCellLists = workBench.items.value.map(convertTreeToGridCells);
+  // Move each grid down so that they're not overlapping
+  let currentRow = 0;
+  const workbenchTreeCellLists: GridCell[][] = [];
+  overlappingWorkbenchTreeCellLists.forEach((cellList) => {
+    // Translate down by "currentRow"
+    const translatedList = offsetGridCells(cellList, currentRow, 0);
+    // Append to workbenchTreeCellLists
+    workbenchTreeCellLists.push(translatedList);
+    // Increase currentRow by the current tree's rowCount
+    currentRow += getGridRowCount(translatedList);
   });
-  return trees;
-});
-
-const indexNodeItemTree = computed(() => {
-  const workbenchDimensions = getGridDimensions(workBenchNodeItemTrees.value);
-  const tree = toIndexNodeItemTree(indexTree.tree.value);
-  const mainTreeNumCols = getGridDimensions([tree]).numCols;
-  const maxNumCols = Math.max(workbenchDimensions.numCols + WORKBENCH_LEFT_OFFSET, mainTreeNumCols);
-  calculateLayout(tree, workbenchDimensions.numRows, maxNumCols - mainTreeNumCols);
-  return tree;
-});
-
-const gridDimensions = computed(() =>
-  getGridDimensions([indexNodeItemTree.value, ...workBenchNodeItemTrees.value])
-);
-
-const workBenchNodeItems = computed(() =>
-  _.flatten(workBenchNodeItemTrees.value.map(getAllNodeItems))
-);
-const mainTreeNodeItems = computed(() => getAllNodeItems(indexNodeItemTree.value));
-const nodeItems = computed(() => {
-  return [...workBenchNodeItems.value, ...mainTreeNodeItems.value];
+  // Convert main tree to grid cells.
+  const overlappingMainTreeCellList = convertTreeToGridCells(indexTree.tree.value);
+  // Move main tree grid below the workbench tree grids.
+  const mainTreeCellList = offsetGridCells(overlappingMainTreeCellList, currentRow, 0);
+  // Extra requirement: Shift all workbench trees to the left of the main tree.
+  const mainTreeColumnCount = getGridColumnCount(mainTreeCellList);
+  const shiftedWorkbenchTreeCellLists = workbenchTreeCellLists.map((cellList) =>
+    offsetGridCells(cellList, 0, -mainTreeColumnCount)
+  );
+  // Flatten list of grids into one list of grid cells.
+  return _.flatten([...shiftedWorkbenchTreeCellLists, mainTreeCellList]);
 });
 
 const renameNode = (nodeId: string, newName: string) => {
@@ -245,16 +136,13 @@ $edge-styles: 2px solid $un-color-black-20;
   //  size `$incoming-edge-minimum-length` to the left of it. Remove that width from the padding.
   padding: 40px 30px 40px calc(30px - #{$incoming-edge-minimum-length});
   overflow: auto;
-  .index-tree {
-    display: grid;
-    row-gap: $space-between-rows;
-    // Grid template properties are set dynamically using the :style attribute depending on the
-    //  size of the graph.
+  display: grid;
+  row-gap: $space-between-rows;
 
-    // When the graph is too small to take up the full available screen width, don't expand columns
-    //  to fill the empty space.
-    justify-content: flex-start;
-  }
+  // When the graph is too small to take up the full available screen width, don't expand columns
+  //  to fill the empty space.
+  justify-content: flex-start;
+  align-content: flex-start;
   .grid-cell {
     position: relative;
     display: flex;
@@ -281,25 +169,16 @@ $edge-styles: 2px solid $un-color-black-20;
     &.outgoing {
       width: $outgoing-edge-length;
       &.visible {
-        .top {
-          width: 100%;
-          border-top: $edge-styles;
-        }
-        .side {
-          width: 100%;
-          // Extend edge down to the sibling below this one
-          height: calc(100% + #{$space-between-rows});
-          border-right: $edge-styles;
-        }
-
-        &.dashed .top {
-          border-top-style: dashed;
-        }
+        border-top: $edge-styles;
+        // Extend edge down to the sibling below this one
+        height: calc(100% + #{$space-between-rows});
+        border-right: $edge-styles;
+      }
+      &.dashed {
+        border-top-style: dashed;
       }
       &.last-child {
-        .side {
-          border: none;
-        }
+        border-right: none;
       }
     }
   }

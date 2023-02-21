@@ -10,7 +10,7 @@
           <!-- TODO: hook up modify button -->
           <button disabled class="btn btn-sm">Modify</button>
         </header>
-        <div class="index-structure-preview index-structure-preview-loading" />
+        <IndexResultsStructurePreview class="index-structure-preview" />
       </section>
       <section>
         <header class="horizontal-padding">
@@ -51,6 +51,7 @@ import { OutputSpec, RegionalAggregation } from '@/types/Outputdata';
 import { normalize } from '@/utils/value-util';
 import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/types/Enums';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
+import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 
 // TODO: temporary!
 // We probably want to
@@ -211,10 +212,6 @@ $column-padding: 20px;
   padding: 0 $column-padding;
 }
 
-.index-structure-preview {
-  height: 150px;
-}
-
 .bars-column {
   &.expanded {
     width: 700px;
@@ -239,8 +236,7 @@ header {
   min-width: 0;
 }
 
-.map-loading,
-.index-structure-preview-loading {
+.map-loading {
   background: $un-color-black-5;
 }
 </style>
