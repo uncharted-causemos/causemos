@@ -14,7 +14,7 @@ import {
 } from '@/utils/indextree-util';
 import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
 
-interface baseActions {
+interface BaseActions {
   findNode: (nodeId: string) => FindNodeResult;
   triggerUpdate: () => void;
 }
@@ -46,7 +46,7 @@ const getDefaultDataConfig = async (datasetMetadataDocId: string) => {
  * useIndexTreeActions composes and creates more complex action functions using given functions provided by the base
  * @param base object containing base action functions
  */
-export default function useIndexTreeActions(base: baseActions) {
+export default function useIndexTreeActions(base: BaseActions) {
   const { findNode, triggerUpdate } = base;
 
   const findAndRenameNode = (nodeId: string, newName: string) => {
