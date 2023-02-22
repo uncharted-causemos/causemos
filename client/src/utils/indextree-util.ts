@@ -423,7 +423,7 @@ export interface IndexTreeActionsBase {
   onSuccess: () => void;
 }
 /**
- * composeIndexTreeActions composes and creates more complex action functions used by useIndexTree and useIndexWorkBench using given base functions provided by the base
+ * createIndexTreeActions composes and creates more complex action functions used by useIndexTree and useIndexWorkBench using given base functions provided by the base
  * @param base object containing base action functions
  */
 export function createIndexTreeActions(base: IndexTreeActionsBase) {
