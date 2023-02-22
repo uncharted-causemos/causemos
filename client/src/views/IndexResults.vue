@@ -49,7 +49,7 @@ import { IndexResultsData } from '@/types/Index';
 import { getRegionAggregation } from '@/services/outputdata-service';
 import { OutputSpec, RegionalAggregation } from '@/types/Outputdata';
 import { normalize } from '@/utils/value-util';
-import { AggregationOption, DataTransform, TemporalResolutionOption } from '@/types/Enums';
+import { DataTransform } from '@/types/Enums';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 
@@ -150,14 +150,13 @@ watch([tree], async () => {
   const promises = datasets.map((dataset) => {
     const outputSpec: OutputSpec = {
       modelId: dataset.datasetId,
-      runId: 'indicator', // ASSUME all datasets are indicators for now (Feb 2023)
-      outputVariable: 'Event Count', // FIXME: save this during dataset search
-      timestamp: 1640995200000, // FIXME: dataset.selectedTimestamp has incorrect values
+      runId: dataset.runId,
+      outputVariable: dataset.outputVariable,
+      timestamp: dataset.selectedTimestamp,
       transform: DataTransform.None,
-      temporalResolution: TemporalResolutionOption.Month, // FIXME: support other resolution / agg options
-      temporalAggregation: AggregationOption.Sum,
-      spatialAggregation: AggregationOption.Sum,
-      preGeneratedOutput: undefined,
+      temporalResolution: dataset.temporalResolution,
+      temporalAggregation: dataset.temporalAggregation,
+      spatialAggregation: dataset.spatialAggregation,
     };
     return getRegionAggregation(outputSpec);
   });

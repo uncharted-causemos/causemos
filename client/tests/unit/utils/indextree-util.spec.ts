@@ -13,7 +13,7 @@ import {
   findAllDatasets,
   calculateOverallWeight,
 } from '@/utils/indextree-util';
-import { IndexNodeType } from '@/types/Enums';
+import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
 import { OutputIndex, Index, Dataset, ParentNode } from '@/types/Index';
 import { RegionalAggregation } from '@/types/Outputdata';
 
@@ -55,6 +55,11 @@ const newTestTree = (): OutputIndex => ({
           selectedTimestamp: 0,
           isInverted: false,
           source: 'UN',
+          outputVariable: 'test',
+          runId: 'indicators',
+          temporalResolution: TemporalResolutionOption.Month,
+          temporalAggregation: AggregationOption.Mean,
+          spatialAggregation: AggregationOption.Mean,
         },
         {
           id: '2f624d92-efa0-431a-a3a1-5521871420ad',
@@ -75,6 +80,11 @@ const newTestTree = (): OutputIndex => ({
               selectedTimestamp: 0,
               isInverted: false,
               source: 'UN',
+              outputVariable: 'test',
+              runId: 'indicators',
+              temporalResolution: TemporalResolutionOption.Month,
+              temporalAggregation: AggregationOption.Mean,
+              spatialAggregation: AggregationOption.Mean,
             },
             {
               id: 'ac56ea0f-3ca9-4aee-9c06-f98768b7bd2a',
@@ -88,6 +98,11 @@ const newTestTree = (): OutputIndex => ({
               selectedTimestamp: 0,
               isInverted: false,
               source: 'UN',
+              outputVariable: 'test',
+              runId: 'indicators',
+              temporalResolution: TemporalResolutionOption.Month,
+              temporalAggregation: AggregationOption.Mean,
+              spatialAggregation: AggregationOption.Mean,
             },
           ],
         },
@@ -287,6 +302,11 @@ describe('indextree-util', () => {
             selectedTimestamp: 0,
             isInverted: false,
             source: 'UN',
+            outputVariable: 'test',
+            runId: 'indicators',
+            temporalResolution: TemporalResolutionOption.Month,
+            temporalAggregation: AggregationOption.Mean,
+            spatialAggregation: AggregationOption.Mean,
           },
         ],
       };
@@ -313,6 +333,11 @@ describe('indextree-util', () => {
       selectedTimestamp: 0,
       isInverted: false,
       source: 'UN',
+      outputVariable: 'test',
+      runId: 'indicators',
+      temporalResolution: TemporalResolutionOption.Month,
+      temporalAggregation: AggregationOption.Mean,
+      spatialAggregation: AggregationOption.Mean,
     };
     const mock_placeholder_dataset = createNewPlaceholderDataset();
     it('should return [] when passed an outputIndex with no inputs', () => {

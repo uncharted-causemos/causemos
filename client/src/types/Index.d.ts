@@ -1,3 +1,4 @@
+import { DataConfig } from './Datacube';
 import { IndexNodeType } from './Enums';
 
 export interface BaseNode {
@@ -11,17 +12,14 @@ export interface WeightedNode {
 export interface Placeholder extends BaseNode {
   type: IndexNodeType.Placeholder;
 }
-export interface Dataset extends BaseNode, WeightedNode {
+
+export interface Dataset extends BaseNode, WeightedNode, DataConfig {
   type: IndexNodeType.Dataset;
-  // equivalent to `data_id` (see `Datacube.d.ts`) or `datacubeId` (see
-  //  `Analysis.d.ts/AnalysisItem`)
-  datasetId: string;
-  // equivalent to `id` (see `Analysis.d.ts/AnalysisItem`)
+  /* equivalent to `id` of Datacube (see `Datacube.d.ts`) **/
   datasetMetadataDocId: string;
   datasetName: string;
   isInverted: boolean;
   source: string;
-  selectedTimestamp: number;
 }
 
 export interface DatasetSearchResult {
