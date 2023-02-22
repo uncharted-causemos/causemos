@@ -10,10 +10,10 @@ import {
   DatasetSearchResult,
   IndexResultsData,
   IndexResultsContributingDataset,
-  DataConfig,
 } from '@/types/Index';
 import _ from 'lodash';
 import { RegionalAggregation } from '@/types/Outputdata';
+import { getDefaultDataConfig } from '@/services/new-datacube-service';
 
 export type FindNodeResult = { parent: ParentNode | null; found: IndexNode } | undefined;
 
@@ -402,3 +402,84 @@ export const calculateIndexResults = (
     };
   });
 };
+
+/** ====== Operations on a node ====== */
+
+export const rename = (node: IndexNode, newName: string) => {
+  node.name = newName;
+};
+
+export const toggleIsInverted = (datasetNode: Dataset) => {
+  datasetNode.isInverted = !datasetNode.isInverted;
+};
+
+export const addChild = (parentNode: ParentNode, child: Index | Dataset | Placeholder) => {
+  parentNode.inputs.unshift(child);
+  parentNode.inputs = rebalanceInputWeights(parentNode.inputs);
+};
+
+export interface IndexTreeActionsBase {
+  findNode: (nodeId: string) => FindNodeResult;
+  onSuccess: () => void;
+}
+/**
+ * composeIndexTreeActions composes and creates more complex action functions used by useIndexTree and useIndexWorkBench using given base functions provided by the base
+ * @param base object containing base action functions
+ */
+export function createIndexTreeActions(base: IndexTreeActionsBase) {
+  const { findNode, onSuccess } = base;
+
+  const findAndRenameNode = (nodeId: string, newName: string) => {
+    const node = findNode(nodeId)?.found;
+    if (node === undefined) return;
+    rename(node, newName);
+    onSuccess();
+  };
+
+  const findAndAddChild = (
+    parentNodeId: string,
+    childType: IndexNodeType.Index | IndexNodeType.Dataset
+  ) => {
+    const parentNode = findNode(parentNodeId)?.found;
+    if (parentNode === undefined || !isParentNode(parentNode)) {
+      return;
+    }
+    const newNode =
+      childType === IndexNodeType.Dataset ? createNewPlaceholderDataset() : createNewIndex();
+    addChild(parentNode, newNode);
+    onSuccess();
+  };
+
+  const attachDatasetToPlaceholder = async (nodeId: string, dataset: DatasetSearchResult) => {
+    const foundResult = findNode(nodeId);
+    if (foundResult === undefined || !isPlaceholderNode(foundResult.found)) {
+      return;
+    }
+    const { found: placeholderNode, parent } = foundResult;
+    const dataConfig = await getDefaultDataConfig(dataset.datasetMetadataDocId);
+    const datasetNode = convertPlaceholderToDataset(placeholderNode, dataset, 0, dataConfig);
+    Object.assign(placeholderNode, datasetNode);
+    // Parent should never be null unless we found a disconnected placeholder node.
+    if (parent !== null) {
+      // Update unset siblings with their new auto-balanced weight
+      parent.inputs = rebalanceInputWeights(parent.inputs);
+    }
+    onSuccess();
+  };
+
+  const toggleDatasetIsInverted = (nodeId: string) => {
+    const dataset = findNode(nodeId)?.found;
+    if (dataset === undefined || !isDatasetNode(dataset)) {
+      return;
+    }
+    toggleIsInverted(dataset);
+    onSuccess();
+  };
+
+  return {
+    findAndRenameNode,
+    findAndAddChild,
+    attachDatasetToPlaceholder,
+    toggleDatasetIsInverted,
+  };
+}

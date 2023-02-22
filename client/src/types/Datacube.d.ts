@@ -5,6 +5,8 @@ import {
   DatacubeType,
   ModelParameterDataType,
   TemporalResolution,
+  TemporalResolutionOption,
+  AggregationOption,
   ModelPublishingStepID,
   FeatureQualifierRoles,
   GeoAttributeFormat,
@@ -148,4 +150,15 @@ export interface QualifierThresholds {
   regional_timeseries_count: number;
   // No regional timeseries at admin levels greater than this number
   regional_timeseries_max_level: number;
+}
+
+export interface DataConfig {
+  /** equivalent to `data_id` (see `Datacube.d.ts`) */
+  datasetId: string; // TODO: Rename it to dataId
+  runId: string;
+  selectedTimestamp: number;
+  outputVariable: string;
+  temporalResolution: TemporalResolutionOption;
+  temporalAggregation: AggregationOption;
+  spatialAggregation: AggregationOption;
 }

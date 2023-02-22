@@ -1,8 +1,11 @@
 import _ from 'lodash';
 import { ref, computed } from 'vue';
 import { IndexWorkBenchItem } from '@/types/Index';
-import { findAndRemoveChild, findNode as indexTreeUtilFindNode } from '@/utils/indextree-util';
-import useIndexTreeActions from '@/services/composables/useIndexTreeActions';
+import {
+  findAndRemoveChild,
+  findNode as indexTreeUtilFindNode,
+  createIndexTreeActions,
+} from '@/utils/indextree-util';
 
 // States
 
@@ -64,7 +67,7 @@ export default function useIndexWorkBench() {
     findAndAddChild,
     attachDatasetToPlaceholder,
     toggleDatasetIsInverted,
-  } = useIndexTreeActions({ findNode, triggerUpdate });
+  } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
 
   return {
     items,

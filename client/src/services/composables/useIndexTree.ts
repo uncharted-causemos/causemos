@@ -4,8 +4,8 @@ import {
   findAndRemoveChild,
   createNewOutputIndex,
   findNode as indexTreeUtilFindNode,
+  createIndexTreeActions,
 } from '@/utils/indextree-util';
-import useIndexTreeActions from '@/services/composables/useIndexTreeActions';
 
 // States
 
@@ -53,7 +53,7 @@ export default function useIndexTree() {
     findAndAddChild,
     attachDatasetToPlaceholder,
     toggleDatasetIsInverted,
-  } = useIndexTreeActions({ findNode, triggerUpdate });
+  } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
 
   return {
     tree,

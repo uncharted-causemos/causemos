@@ -1,11 +1,13 @@
 import API from '@/api/api';
-import { Datacube, Model } from '@/types/Datacube';
+import { DataConfig, Datacube, Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
+import { getTimeseries } from '@/services/outputdata-service';
 import fu from '@/utils/filters-util';
 import { getImageMime } from '@/utils/datacube-util';
 import { FlowLogs } from '@/types/Common';
 import { CachedDatacubeMetadata } from '@/types/Analysis';
+import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 
 /**
  * The parameters required to fetch a timeseries for a datacube and generate the sparkline data.
@@ -301,6 +303,29 @@ export const getDatacubeMetadataToCache = (datacube: Datacube): CachedDatacubeMe
     datacubeName: datacube.name,
     source: datacube.maintainer.organization,
   };
+};
+
+export const getDefaultDataConfig = async (datacubeId: string) => {
+  const metadata: Datacube = await getDatacubeById(datacubeId);
+  const config: DataConfig = {
+    datasetId: metadata.data_id,
+    runId: 'indicator',
+    outputVariable: metadata.default_feature,
+    selectedTimestamp: 0,
+    spatialAggregation: metadata.default_view?.spatialAggregation || AggregationOption.Mean,
+    temporalAggregation: metadata.default_view?.temporalAggregation || AggregationOption.Mean,
+    temporalResolution: metadata.default_view?.temporalResolution || TemporalResolutionOption.Month,
+  };
+  const { data } = await getTimeseries({
+    modelId: config.datasetId,
+    outputVariable: config.outputVariable,
+    runId: config.runId,
+    spatialAggregation: config.spatialAggregation,
+    temporalAggregation: config.temporalAggregation,
+    temporalResolution: config.temporalResolution,
+  });
+  config.selectedTimestamp = data[data.length - 1].timestamp;
+  return config;
 };
 
 export default {
