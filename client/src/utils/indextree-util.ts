@@ -13,6 +13,7 @@ import {
 } from '@/types/Index';
 import _ from 'lodash';
 import { RegionalAggregation } from '@/types/Outputdata';
+import { DataConfig } from '@/types/Datacube';
 import { getDefaultDataConfig } from '@/services/new-datacube-service';
 
 export type FindNodeResult = { parent: ParentNode | null; found: IndexNode } | undefined;
