@@ -1,5 +1,6 @@
+import * as d3 from 'd3';
 import { v4 as uuidv4 } from 'uuid';
-import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
+import { AggregationOption, IndexNodeType, SCALE, TemporalResolutionOption } from '@/types/Enums';
 import {
   IndexNode,
   Dataset,
@@ -15,6 +16,7 @@ import _ from 'lodash';
 import { RegionalAggregation } from '@/types/Outputdata';
 import { DataConfig } from '@/types/Datacube';
 import { getDefaultDataConfig } from '@/services/new-datacube-service';
+import { RegionMapData } from '@/types/Common';
 
 export type FindNodeResult = { parent: ParentNode | null; found: IndexNode } | undefined;
 
@@ -429,6 +431,32 @@ export const calculateIndexResults = (
       contributingDatasets,
     };
   });
+};
+
+export const buildRegionMapData = (
+  data: IndexResultsData[],
+  domain: number[],
+  colors: string[],
+  scale: SCALE = SCALE.Quantize
+): RegionMapData[] => {
+  let sc: d3.ScaleQuantize<string, never> | d3.ScaleQuantile<string, never> = d3.scaleQuantize(
+    domain,
+    colors
+  );
+  if (scale === SCALE.Quantile) {
+    sc = d3.scaleQuantile(domain, colors);
+  }
+  return data
+    .filter((d) => d.value !== null)
+    .map(
+      (d, index) =>
+        ({
+          label: d.countryName,
+          name: '' + (index + 1),
+          color: sc(d.value as number),
+          value: d.value,
+        } as RegionMapData)
+    );
 };
 
 /** ====== Operations on a node ====== */

@@ -203,3 +203,8 @@ export enum IndexEdgeType {
 }
 
 export type IndexElementType = IndexNodeType | IndexEdgeType;
+
+export enum SCALE {
+  Quantize = 'Quantize',
+  Quantile = 'Quantile',
+}

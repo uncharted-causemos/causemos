@@ -28,7 +28,9 @@
       :index-results-data="indexResultsData"
       @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
     />
-    <div class="map map-loading"></div>
+    <div class="map map-loading">
+      <IndexResultsMap :index-results-data="indexResultsData" />
+    </div>
   </div>
 </template>
 
@@ -52,6 +54,7 @@ import { normalize } from '@/utils/value-util';
 import { DataTransform } from '@/types/Enums';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
+import IndexResultsMap from '@/components/index-results/index-results-map.vue';
 
 // TODO: temporary!
 // We probably want to

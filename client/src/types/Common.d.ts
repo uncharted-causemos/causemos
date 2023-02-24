@@ -172,6 +172,16 @@ export interface AnalysisMapStats {
   difference: MapLayerStats;
 }
 
+/** RegionMapData[] is the type of the required data prop of region-map.vue */
+export interface RegionMapData {
+  /** Region Id */
+  label: string;
+  /** name or description of this data point */
+  name: string;
+  value: number;
+  color: string;
+}
+
 export interface BoxPlotStats {
   min: number;
   max: number;

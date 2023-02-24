@@ -108,7 +108,7 @@ export default defineComponent({
   },
   props: {
     data: {
-      type: Array,
+      type: Object,
       default: () => [],
     },
     selectedId: {
