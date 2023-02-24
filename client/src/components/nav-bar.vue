@@ -21,18 +21,18 @@
       </template>
       <div id="navbar-trailing-teleport-destination" class="trailing"></div>
     </div>
-
-    <!-- Help button -->
-    <!-- Old resources
-      Up until Mar 2022: https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing
-    -->
-    <a
-      href="https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing"
-      target="_blank"
-      class="nav-item clickable"
-    >
-      <i class="fa fa-question" />
-    </a>
+    <div class="tool-menu">
+      <a
+        href="https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing"
+        target="_blank"
+        class="nav-item clickable"
+      >
+        <i class="fa fa-question" />
+      </a>
+      <div class="nav-item clickable" @click="logout">
+        <i class="fa fa-sign-out" />
+      </div>
+    </div>
   </nav>
 </template>
 
@@ -40,7 +40,7 @@
 import { ProjectType } from '@/types/Enums';
 import { computed, defineComponent } from 'vue';
 import { useRoute } from 'vue-router';
-import { useStore } from 'vuex';
+import { mapActions, useStore } from 'vuex';
 
 interface NavBarItem {
   route: { name: string; params: any } | null;
@@ -170,6 +170,11 @@ export default defineComponent({
       isNavbarVisible,
     };
   },
+  methods: {
+    ...mapActions({
+      logout: 'auth/logout',
+    }),
+  },
 });
 </script>
 
@@ -243,5 +248,10 @@ $logo-size: 28px;
   position: relative;
   // Nudge the logo up a little bit so it's more visually centered
   bottom: calc(#{$logo-size} / 10);
+}
+
+.tool-menu {
+  display: flex;
+  flex-flow: row;
 }
 </style>
