@@ -3,11 +3,16 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const analysisService = rootRequire('/services/analysis-service');
 
+/* Keycloak Authentication */
+const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
+const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+
 /**
  * GET find analysis by project
  */
 router.get(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const { project_id: projectId, size } = req.query;
     const results = await analysisService.find(
@@ -24,6 +29,7 @@ router.get(
  */
 router.get(
   '/:analysisId',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const analysisId = req.params.analysisId;
     const results = await analysisService.find([{ field: 'id', value: analysisId }], 1, 0);
@@ -39,6 +45,7 @@ router.get(
  */
 router.post(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const payload = req.body;
     const r = await analysisService.createAnalysis(payload);
@@ -51,6 +58,7 @@ router.post(
  */
 router.put(
   '/:analysisId',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const analysisId = req.params.analysisId;
     const payload = req.body;
@@ -64,6 +72,7 @@ router.put(
  */
 router.delete(
   '/:analysisId/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const analysisId = req.params.analysisId;
     await analysisService.deleteAnalysis(analysisId);

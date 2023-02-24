@@ -52,6 +52,9 @@ const mapProxyRouter = rootRequire('/routes/map-proxy');
 
 const compression = require('compression');
 const requestAsPromise = require('./util/request-as-promise');
+
+const keycloak = require('./config/keycloak-config.js').getKeycloak();
+
 const app = express();
 
 // This code block is for handling issues with setting up the .env file for environment variables.
@@ -62,6 +65,7 @@ if (dotenvConfigResult.error) {
 // TODO: selectively add cache busting header for performance
 app.use(nocache());
 app.use(compression());
+app.use(keycloak.middleware());
 
 const prodFormat = ':method :url :status :response-time ms - :res[content-length]';
 const morganFormat = argv.morganFormat || prodFormat;

@@ -3,6 +3,7 @@ import Vuex from 'vuex';
 import QueryStore from './modules/query-store';
 import StatementsStore from './modules/statements-store';
 import AppStore from './modules/app-store';
+import AuthStore from './modules/auth-store';
 import TourStore from './modules/tour-store';
 import KnowledgebaseStore from './modules/knowledgebase-store';
 import GraphStore from './modules/graph-store';
@@ -16,6 +17,7 @@ export default new Vuex.Store({
     query: QueryStore,
     statements: StatementsStore,
     app: AppStore,
+    auth: AuthStore,
     tour: TourStore,
     kb: KnowledgebaseStore,
     graph: GraphStore,

@@ -4,11 +4,16 @@ const router = express.Router();
 
 const insightService = rootRequire('/services/insight-service');
 
+/* Keycloak Authentication */
+const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
+const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+
 /**
  * POST commit for an insight
  */
 router.post(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     // FIXME: add support for analysisId field
     const {
@@ -55,6 +60,7 @@ router.post(
  */
 router.put(
   '/:id',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
     const insight = req.body;
@@ -69,6 +75,7 @@ router.put(
  */
 router.get(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const filterParams = JSON.parse(req.query.filters);
     const options = JSON.parse(req.query.options) || {};
@@ -79,6 +86,7 @@ router.get(
 // POST version
 router.post(
   '/search',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const filterParams = req.body.filters;
     const options = req.body.options || {};
@@ -92,6 +100,7 @@ router.post(
  **/
 router.get(
   '/count',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const filterParams = JSON.parse(req.query.filters);
     const result = await insightService.count(filterParams);
@@ -104,6 +113,7 @@ router.get(
  */
 router.get(
   '/:id',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
     const allowList = req.params.allowList;
@@ -118,6 +128,7 @@ router.get(
  */
 router.get(
   '/:id/thumbnail',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
     const thumbnail = await insightService.getInsightThumbnail(insightId);
@@ -134,6 +145,7 @@ router.get(
  */
 router.delete(
   '/:id',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
     const result = await insightService.remove(insightId);

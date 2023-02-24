@@ -6,11 +6,16 @@ const searchService = rootRequire('/services/search-service');
 const filtersUtil = rootRequire('/util/filters-util');
 const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
 
+/* Keycloak Authentication */
+const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
+const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+
 /**
  * Insert a new model or indicator metadata doc
  */
 router.post(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, datacubeService.insertDatacube, [req.body]);
   })
@@ -21,6 +26,7 @@ router.post(
  */
 router.put(
   '/:datacubeId',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const datacubeId = req.params.datacubeId;
     const metadata = req.body;
@@ -35,6 +41,7 @@ router.put(
  */
 router.put(
   '/:datacubeId/deprecate',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const oldDatacubeId = req.params.datacubeId;
     const newVersionId = req.body.new_version_id;
@@ -48,6 +55,7 @@ router.put(
  */
 router.get(
   '/:indicatorId/status',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const indicatorId = req.params.indicatorId;
     const flowId = req.query.flow_id;
@@ -67,6 +75,7 @@ router.get(
  */
 router.get(
   '/:indicatorId/logs',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const indicatorId = req.params.indicatorId;
     const flowId = req.query.flow_id;
@@ -88,6 +97,7 @@ router.get(
  */
 router.post(
   '/bulk-update-indicator',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const deltas = req.body.deltas;
     const result = await datacubeService.updateDatacubes(deltas, false);
@@ -100,6 +110,7 @@ router.post(
  */
 router.post(
   '/add-sparklines',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const datacubes = req.body.datacubes;
     const result = await datacubeService.generateSparklines(datacubes);
@@ -112,6 +123,7 @@ router.post(
  */
 router.get(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const filters = filtersUtil.parse(req.query.filters);
     const options = JSON.parse(req.query.options) || {};
@@ -125,6 +137,7 @@ router.get(
  */
 router.get(
   '/count',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const filters = filtersUtil.parse(req.query.filters);
     const result = await datacubeService.countDatacubes(filters);
@@ -137,6 +150,7 @@ router.get(
  */
 router.get(
   '/facets',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     let facetList = [];
     if (typeof req.query.facets === 'string') {
@@ -154,6 +168,7 @@ router.get(
  **/
 router.get(
   '/suggestions',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const field = req.query.field;
     const queryString = req.query.q;
@@ -167,6 +182,7 @@ router.get(
  */
 router.get(
   '/datacube-suggestions',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const q = req.query.q;
     const result = await searchService.rawDatacubeSearch(q);
@@ -179,6 +195,7 @@ router.get(
  */
 router.get(
   '/datasets',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const type = req.query.type || 'indicator';
     const limit = req.query.limit || 0;

@@ -9,6 +9,10 @@ const projectService = rootRequire('/services/project-service');
 
 const dartService = rootRequire('/services/external/dart-service');
 
+/* Keycloak Authentication */
+const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
+const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+
 /**
  * GET DART document from the docker service used for managing dart documents
  *
@@ -17,6 +21,7 @@ const dartService = rootRequire('/services/external/dart-service');
  */
 router.get(
   '/:docId/raw',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res, next) => {
     const docId = req.params.docId;
     const docStream = await dartService.getRawDoc(docId);
@@ -33,6 +38,7 @@ router.get(
  */
 router.post(
   '/corpus',
+  keycloak.enforcer([PERMISSIONS.USER]),
   upload.array('file'),
   [],
   asyncHandler(async (req, res) => {
@@ -89,6 +95,7 @@ router.post(
 
 router.get(
   '/readers-status',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res, next) => {
     const timestamp = req.query.timestamp || 0;
 

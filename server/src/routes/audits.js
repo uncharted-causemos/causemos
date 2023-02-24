@@ -4,12 +4,17 @@ const router = express.Router();
 
 const { Adapter, RESOURCE } = rootRequire('adapters/es/adapter');
 
+/* Keycloak Authentication */
+const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
+const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+
 const DEFAULT_SIZE = 50;
 const MAX_SIZE = 10000;
 
 /* GET all audits */
 router.get(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const audit = Adapter.get(RESOURCE.AUDIT);
     const from = req.query.from || 0;
@@ -32,6 +37,7 @@ router.get(
 /* GET number of entries */
 router.get(
   '/counts',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const audit = Adapter.get(RESOURCE.AUDIT);
     const searchFilters = [];
@@ -49,6 +55,7 @@ router.get(
 /* GET export audits */
 router.get(
   '/download',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const audit = Adapter.get(RESOURCE.AUDIT);
     const searchFilters = [];

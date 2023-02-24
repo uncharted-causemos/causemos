@@ -5,9 +5,14 @@ const asyncHandler = require('express-async-handler');
 const { RESOURCE } = rootRequire('adapters/es/adapter');
 const { client } = rootRequire('adapters/es/client');
 
+/* Keycloak Authentication */
+const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
+const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+
 /* GET server settings */
 router.get(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const now = Date.now();
     const cutoff = now - 2 * 24 * 60 * 60 * 1000;

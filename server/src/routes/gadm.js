@@ -5,6 +5,10 @@ const router = express.Router();
 const { RESOURCE } = rootRequire('adapters/es/adapter');
 const { client, searchAndHighlight, queryStringBuilder } = rootRequire('adapters/es/client');
 
+/* Keycloak Authentication */
+const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
+const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+
 const MAX_REGIONS = 10000;
 
 /**
@@ -12,6 +16,7 @@ const MAX_REGIONS = 10000;
  **/
 router.get(
   '/suggestions',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const field = req.query.field;
     const unmodifiedQueryString = req.query.q;
@@ -43,6 +48,7 @@ router.get(
  **/
 router.post(
   '/spanning-bbox',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const regionIds = req.body.region_ids;
     if (!_.isArray(regionIds) || regionIds.length === 0) {

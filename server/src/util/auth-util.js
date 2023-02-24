@@ -6,6 +6,18 @@ const getBasicAuthToken = (user, pass) => {
   return basicAuth(user, pass);
 };
 
+const ROLES = Object.freeze({
+  USER: 'user',
+  ADMIN: 'admin',
+});
+
+const PERMISSIONS = Object.freeze({
+  USER: 'api:user',
+  ADMIN: 'api:admin',
+});
+
 module.exports = {
   getBasicAuthToken,
+  ROLES,
+  PERMISSIONS,
 };

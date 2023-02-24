@@ -14,9 +14,14 @@ const updateService = rootRequire('/services/update-service');
 const cagService = rootRequire('/services/cag-service');
 const searchService = rootRequire('/services/search-service');
 
+/* Keycloak Authentication */
+const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
+const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+
 /* GET Retrieve projects */
 router.get(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projects = await projectService.listProjects();
 
@@ -49,6 +54,7 @@ router.get(
 /* POST Create new project */
 router.post(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const baseId = req.body.baseId;
     const projectName = req.body.projectName;
@@ -62,6 +68,7 @@ router.post(
 /* GET Retrieve single project summary */
 router.get(
   '/:projectId',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const result = await projectService.findProject(projectId);
@@ -87,6 +94,7 @@ router.get(
 
 router.put(
   '/:projectId/metadata',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const payload = req.body.metadata;
@@ -100,6 +108,7 @@ router.put(
 
 router.put(
   '/:projectId',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const ids = req.body.ids;
@@ -141,6 +150,7 @@ router.put(
 /* DELETE project */
 router.delete(
   '/:projectId',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const timestamp = Date.now();
@@ -151,6 +161,7 @@ router.delete(
 
 router.get(
   '/:projectId/health',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const result = await projectService.checkIndexStatus(req.params.projectId);
     res.json({
@@ -162,6 +173,7 @@ router.get(
 /* GET INDRA statements */
 router.get(
   '/:projectId/statements',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -181,6 +193,7 @@ router.get(
 /* GET Documents (summary) */
 router.get(
   '/:projectId/documents',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -199,6 +212,7 @@ router.get(
 /* GET Map locations */
 router.get(
   '/:projectId/locations',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -212,6 +226,7 @@ router.get(
 /* GET Graph */
 router.get(
   '/:projectId/graphs',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -230,6 +245,7 @@ router.get(
 /* GET project's edges */
 router.get(
   '/:projectId/edges',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const filters = filtersUtil.parse(req.query.filters);
@@ -241,6 +257,7 @@ router.get(
 /* POST Retrieve statement ids given a set of edges and filters */
 router.post(
   '/:projectId/edge-data',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const edges = req.body.edges; // Format: [{ source: "wm/concept/causal_factor/social_and_political/government/tax_duty", target:"wm/concept/causal_factor/economic_and_commerce/economic_activity/market/assets" }, { source: "..", target: ".." }]
@@ -254,6 +271,7 @@ router.post(
 /* GET stats for evidence, documents, statements */
 router.get(
   '/:projectId/count-stats',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -275,6 +293,7 @@ const _parseFacetList = (req) => {
 /* GET facet aggregations */
 router.get(
   '/:projectId/facets',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -289,6 +308,7 @@ router.get(
 /* GET Ontology definitions */
 router.get(
   '/:projectId/ontology-definitions',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const definitions = await projectService.getOntologyDefinitions(projectId);
@@ -302,6 +322,7 @@ router.get(
  **/
 router.post(
   '/:projectId/statements-scores',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const ids = req.body.ids;
@@ -317,6 +338,7 @@ router.post(
  */
 router.get(
   '/:projectId/concept-suggestions',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const queryString = req.query.q;
@@ -335,6 +357,7 @@ router.get(
  **/
 router.get(
   '/:projectId/suggestions',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const field = req.query.field;
@@ -370,6 +393,7 @@ router.get(
  */
 router.get(
   '/:projectId/path-suggestions',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const source = req.query.source;
@@ -385,6 +409,7 @@ router.get(
  */
 router.post(
   '/:projectId/group-path-suggestions',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const sources = req.body.sources;
@@ -400,6 +425,7 @@ router.post(
  */
 router.get(
   '/:projectId/ontology-composition',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const concept = req.query.concept;
@@ -414,6 +440,7 @@ router.get(
  */
 router.post(
   '/:projectId/assembly',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const records = req.body.records;
@@ -431,6 +458,7 @@ router.post(
  */
 router.post(
   '/:projectId/ontology-concept',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const { definition, examples, label } = req.body;

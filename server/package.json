@@ -37,6 +37,7 @@
     "http-errors": "~1.6.2",
     "js-combinatorics": "^0.5.3",
     "js-yaml": "^4.1.0",
+    "keycloak-connect": "20.0.5",
     "lodash": "^4.17.21",
     "lru-cache": "^5.1.1",
     "moment": "^2.22.2",
@@ -44,7 +45,7 @@
     "multer": "^1.4.2",
     "nocache": "^2.0.0",
     "request": "^2.88.0",
-    "sharp": "^0.30.3",
+    "sharp": "0.31.3",
     "uuid": "^8.3.2",
     "winston": "^3.1.0",
     "yargs": "^17.1.1"

@@ -3,8 +3,13 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const scenarioService = rootRequire('/services/scenario-service');
 
+/* Keycloak Authentication */
+const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
+const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+
 router.get(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const engine = req.query.engine;
     const modelId = req.query.model_id;
@@ -15,6 +20,7 @@ router.get(
 
 router.post(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const { result, scenario_id, model_id, experiment_id, engine } = req.body;
     await scenarioService.createScenarioResult(
@@ -30,6 +36,7 @@ router.post(
 
 router.get(
   '/sensitivity',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const engine = req.query.engine;
     const modelId = req.query.model_id;
@@ -40,6 +47,7 @@ router.get(
 
 router.put(
   '/sensitivity',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const { result, scenario_id, model_id, experiment_id, engine } = req.body;
     await scenarioService.createSensitivityResult(
@@ -55,6 +63,7 @@ router.put(
 
 router.post(
   '/sensitivity',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const { id, experiment_id, result } = req.body;
 
