@@ -8,8 +8,8 @@
   </p>
   <div v-if="sparklineData !== null" class="sparkline-and-labels">
     <div class="y-labels flex-col space-between">
-      <p>{{ range.maximum }}</p>
-      <p>{{ range.minimum }}</p>
+      <p>{{ precisionFormatter(range.maximum) }}</p>
+      <p>{{ precisionFormatter(range.minimum) }}</p>
     </div>
     <Sparkline v-bind="$attrs" :data="[sparklineData]" :size="[300, 100]" />
     <div class="x-labels flex space-between">
@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import timestampFormatter from '@/formatters/timestamp-formatter';
+import precisionFormatter from '@/formatters/precision-formatter';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import { computed, toRefs } from 'vue';
 import { Indicator } from '@/types/Datacube';
