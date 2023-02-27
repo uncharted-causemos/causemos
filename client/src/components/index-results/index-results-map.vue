@@ -1,17 +1,26 @@
 <template>
   <div class="index-results-map-container">
-    <RegionMap :data="regionMapData" :selected-admin-level="0" :disable-pan-zoom="false" />
-    <mapLegend :ramp="mapLegendData" :isContinuous="false" />
+    <RegionMap
+      :data="regionMapData"
+      :map-bounds="mapBounds"
+      :selected-admin-level="0"
+      :disable-pan-zoom="false"
+    />
+    <MapLegend :ramp="mapLegendData" :isContinuous="false" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import RegionMap from '@/components/widgets/region-map.vue';
-import mapLegend from '../widgets/map-legend.vue';
+import MapLegend from '../widgets/map-legend.vue';
 import { getIndexResultsColorConfig } from '@/utils/indextree-util';
 import { IndexResultsData, IndexResultsSettings } from '@/types/Index';
-import { createMapLegendDataWithDiscreteOutputScale } from '@/utils/map-util-new';
+import {
+  BOUNDS_GLOBAL,
+  createMapLegendDataWithDiscreteOutputScale,
+  computeMapBoundsForCountries,
+} from '@/utils/map-util-new';
 import { RegionMapData } from '@/types/Common';
 
 interface Props {
@@ -19,6 +28,16 @@ interface Props {
   settings: IndexResultsSettings;
 }
 const props = defineProps<Props>();
+
+const mapBounds = ref<[[number, number], [number, number]]>(BOUNDS_GLOBAL);
+watch(
+  () => props.indexResultsData,
+  async () => {
+    mapBounds.value =
+      (await computeMapBoundsForCountries(props.indexResultsData.map((v) => v.countryName))) ||
+      BOUNDS_GLOBAL;
+  }
+);
 
 const colorConfig = computed(() =>
   getIndexResultsColorConfig(props.indexResultsData, props.settings)

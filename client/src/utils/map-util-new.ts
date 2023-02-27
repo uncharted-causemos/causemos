@@ -13,6 +13,11 @@ import { getBboxFromRegionIds } from '@/services/geo-service';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { DiscreteOuputScale } from '@/types/Enums';
 
+export const BOUNDS_GLOBAL: [[number, number], [number, number]] = [
+  [-180, -90],
+  [180, 90],
+]; // [[minLng, minLat], [maxLng, maxLat]]
+
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
   DEFAULT = 'default',
