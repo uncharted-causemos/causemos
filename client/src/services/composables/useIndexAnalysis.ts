@@ -1,11 +1,12 @@
 import _ from 'lodash';
-import { Ref, ref, watch, readonly } from 'vue';
+import { Ref, ref, watch, readonly, computed } from 'vue';
 import { IndexAnalysisState } from '@/types/Analysis';
 import { getAnalysis, saveAnalysisState } from '../analysis-service';
 import { createIndexAnalysisObject } from '../analysis-service-new';
 
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
+import { IndexResultsSettings } from '@/types/Index';
 
 // Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to
 //  group requests together.
@@ -44,16 +45,31 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     const workbenchAnalysisId = workbench.getAnalysisId();
     const indexTreeAnalysisId = indexTree.getAnalysisId();
     if (workbenchAnalysisId === analysisId.value && workbenchAnalysisId === indexTreeAnalysisId) {
-      const state: IndexAnalysisState = {
+      _analysisState.value = {
+        ..._analysisState.value,
         index: indexTree.tree.value,
         workBench: workbench.items.value,
       };
-      _saveState(workbenchAnalysisId, state);
+      _saveState(workbenchAnalysisId, _analysisState.value);
     }
   });
 
+  // Index results settings
+
+  const indexResultsSettings = computed(() => _analysisState.value.resultsSettings);
+
+  const saveIndexResultsSettings = (config: IndexResultsSettings) => {
+    _analysisState.value = {
+      ..._analysisState.value,
+      resultsSettings: config,
+    };
+    _saveState(analysisId, _analysisState.value);
+  };
+
   return {
     analysisName,
+    indexResultsSettings,
+    saveIndexResultsSettings,
     refresh: fetchAnalysis,
   };
 }

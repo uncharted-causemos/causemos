@@ -12,7 +12,7 @@ import {
   ProjectType,
   RegionRankingCompositionType,
 } from '@/types/Enums';
-import { createNewOutputIndex } from '@/utils/indextree-util';
+import { createNewOutputIndex, createNewIndexResultsSettings } from '@/utils/indextree-util';
 
 /**
  * Create a new DataAnalysisState object with each of its fields initialized to
@@ -39,6 +39,7 @@ export const createIndexAnalysisObject = (): IndexAnalysisState => {
   return {
     index: createNewOutputIndex(),
     workBench: [],
+    resultsSettings: createNewIndexResultsSettings(),
   };
 };
 

@@ -29,7 +29,7 @@
       @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
     />
     <div class="map map-loading">
-      <IndexResultsMap :index-results-data="indexResultsData" />
+      <IndexResultsMap :index-results-data="indexResultsData" :settings="indexResultsSettings" />
     </div>
   </div>
 </template>
@@ -83,7 +83,7 @@ const store = useStore();
 const route = useRoute();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, refresh } = useIndexAnalysis(analysisId);
+const { analysisName, indexResultsSettings, refresh } = useIndexAnalysis(analysisId);
 
 // Set analysis name on the navbar
 onMounted(async () => {

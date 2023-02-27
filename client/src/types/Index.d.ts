@@ -1,5 +1,6 @@
+import { COLOR } from '@/utils/colors-util';
 import { DataConfig } from './Datacube';
-import { IndexNodeType } from './Enums';
+import { DiscreteOuputScale, IndexNodeType } from './Enums';
 
 export interface BaseNode {
   id: string;
@@ -77,6 +78,15 @@ export interface IndexResultsData {
    */
   value: number | null;
   contributingDatasets: IndexResultsContributingDataset[];
+}
+
+/**
+ * Index results settings object
+ */
+export interface IndexResultsSettings {
+  color: COLOR;
+  colorScale: DiscreteOuputScale;
+  numberOfColorBins: number;
 }
 
 /**

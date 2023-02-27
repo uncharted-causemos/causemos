@@ -12,9 +12,23 @@ import {
   calculateCoverage,
   findAllDatasets,
   calculateOverallWeight,
+  getIndexResultsColorConfig,
 } from '@/utils/indextree-util';
-import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
-import { OutputIndex, Index, Dataset, ParentNode } from '@/types/Index';
+import { COLOR } from '@/utils/colors-util';
+import {
+  AggregationOption,
+  DiscreteOuputScale,
+  IndexNodeType,
+  TemporalResolutionOption,
+} from '@/types/Enums';
+import {
+  OutputIndex,
+  Index,
+  Dataset,
+  ParentNode,
+  IndexResultsSettings,
+  IndexResultsData,
+} from '@/types/Index';
 import { RegionalAggregation } from '@/types/Outputdata';
 
 const newTestTree = (): OutputIndex => ({
@@ -491,6 +505,64 @@ describe('indextree-util', () => {
         const disjointCountryList = mockData.country?.map(({ id }) => id) ?? [];
         expect(countriesInSomeDatasets).to.include.all.keys(...disjointCountryList);
       });
+    });
+  });
+  describe('getIndexResultsColorConfig', () => {
+    it('should return a configuration with quantize scale', () => {
+      const indexResultsData: IndexResultsData[] = [
+        { countryName: 'C1', value: 0, contributingDatasets: [] },
+        { countryName: 'C2', value: 10, contributingDatasets: [] },
+        { countryName: 'C3', value: 20, contributingDatasets: [] },
+        { countryName: 'C4', value: 50, contributingDatasets: [] },
+        { countryName: 'C5', value: 100, contributingDatasets: [] },
+      ];
+      const settings: IndexResultsSettings = {
+        color: COLOR.PRIORITIZATION,
+        colorScale: DiscreteOuputScale.Quantize,
+        numberOfColorBins: 4,
+      };
+      const { domain, colors, scale, scaleFn } = getIndexResultsColorConfig(
+        indexResultsData,
+        settings
+      );
+
+      expect(domain).to.deep.equal([0, 100]);
+      expect(scale).to.equal(DiscreteOuputScale.Quantize);
+
+      const colorValues = indexResultsData.map((v) => scaleFn(v.value as number));
+      expect(colorValues).to.deep.equal([colors[0], colors[0], colors[0], colors[2], colors[3]]);
+    });
+    it('should return a configuration with quantile scale', () => {
+      const indexResultsData: IndexResultsData[] = [
+        { countryName: 'C1', value: 0, contributingDatasets: [] },
+        { countryName: 'C2', value: 5, contributingDatasets: [] },
+        { countryName: 'C3', value: 10, contributingDatasets: [] },
+        { countryName: 'C4', value: 20, contributingDatasets: [] },
+        { countryName: 'C5', value: 50, contributingDatasets: [] },
+        { countryName: 'C6', value: 100, contributingDatasets: [] },
+      ];
+      const settings: IndexResultsSettings = {
+        color: COLOR.PRIORITIZATION,
+        colorScale: DiscreteOuputScale.Quantile,
+        numberOfColorBins: 3,
+      };
+      const { domain, colors, scale, scaleFn } = getIndexResultsColorConfig(
+        indexResultsData,
+        settings
+      );
+
+      expect(domain).to.deep.equal([0, 5, 10, 20, 50, 100]);
+      expect(scale).to.equal(DiscreteOuputScale.Quantile);
+
+      const colorValues = indexResultsData.map((v) => scaleFn(v.value as number));
+      expect(colorValues).to.deep.equal([
+        colors[0],
+        colors[0],
+        colors[1],
+        colors[1],
+        colors[2],
+        colors[2],
+      ]);
     });
   });
 });

@@ -11,7 +11,7 @@ import {
 } from '@/utils/admin-level-util';
 import { getBboxFromRegionIds } from '@/services/geo-service';
 import { AdminRegionSets } from '@/types/Datacubes';
-import { SCALE } from '@/types/Enums';
+import { DiscreteOuputScale } from '@/types/Enums';
 
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
@@ -326,14 +326,13 @@ export const createMapLegendData = (
 export const createMapLegendDataWithDiscreteOutputScale = (
   domain: number[],
   colors: string[],
-  scale: SCALE = SCALE.Quantize
+  scale: DiscreteOuputScale = DiscreteOuputScale.Quantize
 ): MapLegendColor[] => {
   let sc: d3.ScaleQuantize<string, never> | d3.ScaleQuantile<string, never> = d3.scaleQuantize(
     domain,
     colors
   );
-  console.log(domain, colors);
-  if (scale === SCALE.Quantile) {
+  if (scale === DiscreteOuputScale.Quantile) {
     sc = d3.scaleQuantile(domain, colors);
   }
   return colors.map((c) => {

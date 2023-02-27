@@ -1,6 +1,11 @@
 import * as d3 from 'd3';
 import { v4 as uuidv4 } from 'uuid';
-import { AggregationOption, IndexNodeType, SCALE, TemporalResolutionOption } from '@/types/Enums';
+import {
+  AggregationOption,
+  IndexNodeType,
+  DiscreteOuputScale,
+  TemporalResolutionOption,
+} from '@/types/Enums';
 import {
   IndexNode,
   Dataset,
@@ -11,12 +16,13 @@ import {
   DatasetSearchResult,
   IndexResultsData,
   IndexResultsContributingDataset,
+  IndexResultsSettings,
 } from '@/types/Index';
 import _ from 'lodash';
 import { RegionalAggregation } from '@/types/Outputdata';
 import { DataConfig } from '@/types/Datacube';
 import { getDefaultDataConfig } from '@/services/new-datacube-service';
-import { RegionMapData } from '@/types/Common';
+import { COLOR, getColors } from './colors-util';
 
 export type FindNodeResult = { parent: ParentNode | null; found: IndexNode } | undefined;
 
@@ -397,6 +403,8 @@ export const calculateContributingDatasets = (
   });
 };
 
+/** ====================  Index results utils ==================== */
+
 /**
  * Calculates the overall value for each country by
  *  - multiplying each dataset's overall weight by the value of the country in the dataset
@@ -433,30 +441,55 @@ export const calculateIndexResults = (
   });
 };
 
-export const buildRegionMapData = (
+/**
+ * Create a new index results settings with default values
+ */
+export const createNewIndexResultsSettings = (): IndexResultsSettings => {
+  return {
+    color: COLOR.PRIORITIZATION,
+    colorScale: DiscreteOuputScale.Quantize,
+    numberOfColorBins: 7,
+  };
+};
+
+/**
+ * Get data domain for index results data based on the provided scale
+ * @param data An index results data
+ * @param scale Discrete output scale. e.g. `Quantize` | `Quantile`
+ */
+export const getIndexResultsDataDomain = (data: IndexResultsData[], scale: DiscreteOuputScale) => {
+  const DEFAULT_DOMAIN = [0, 100];
+  const domain =
+    scale === DiscreteOuputScale.Quantile
+      ? data.map((item) => item.value as number)
+      : DEFAULT_DOMAIN;
+  return domain;
+};
+
+/**
+ * Get the color scale configuration for the given index results data based on the provided index results settings
+ * @param data An index results data
+ * @param settings An index results settings
+ */
+export const getIndexResultsColorConfig = (
   data: IndexResultsData[],
-  domain: number[],
-  colors: string[],
-  scale: SCALE = SCALE.Quantize
-): RegionMapData[] => {
-  let sc: d3.ScaleQuantize<string, never> | d3.ScaleQuantile<string, never> = d3.scaleQuantize(
+  settings: IndexResultsSettings
+) => {
+  const domain = getIndexResultsDataDomain(data, settings.colorScale);
+  const colors = getColors(settings.color, settings.numberOfColorBins);
+  let scaleFn: d3.ScaleQuantize<string, never> | d3.ScaleQuantile<string, never> = d3.scaleQuantize(
     domain,
     colors
   );
-  if (scale === SCALE.Quantile) {
-    sc = d3.scaleQuantile(domain, colors);
+  if (settings.colorScale === DiscreteOuputScale.Quantile) {
+    scaleFn = d3.scaleQuantile(domain, colors);
   }
-  return data
-    .filter((d) => d.value !== null)
-    .map(
-      (d, index) =>
-        ({
-          label: d.countryName,
-          name: '' + (index + 1),
-          color: sc(d.value as number),
-          value: d.value,
-        } as RegionMapData)
-    );
+  return {
+    domain,
+    colors: getColors(settings.color, settings.numberOfColorBins),
+    scale: settings.colorScale,
+    scaleFn,
+  };
 };
 
 /** ====== Operations on a node ====== */
