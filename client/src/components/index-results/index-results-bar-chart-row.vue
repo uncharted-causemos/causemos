@@ -95,8 +95,7 @@ const keyDatasets = [
 .bar-background {
   position: relative;
   height: 20px;
-  // TODO: move border inside
-  border: 1px solid $un-color-black-10;
+  box-shadow: 0px 0px 0px 1px $un-color-black-10 inset;
 }
 .bar {
   position: absolute;
