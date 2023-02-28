@@ -12,7 +12,8 @@ import {
   ProjectType,
   RegionRankingCompositionType,
 } from '@/types/Enums';
-import { createNewOutputIndex, createNewIndexResultsSettings } from '@/utils/indextree-util';
+import { createNewOutputIndex } from '@/utils/indextree-util';
+import { createNewIndexResultsSettings } from '@/utils/indexresults-util';
 
 /**
  * Create a new DataAnalysisState object with each of its fields initialized to

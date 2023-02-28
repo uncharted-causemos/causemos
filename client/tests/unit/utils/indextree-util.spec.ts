@@ -9,11 +9,10 @@ import {
   rebalanceInputWeights,
   createNewIndex,
   createNewPlaceholderDataset,
-  calculateCoverage,
   findAllDatasets,
   calculateOverallWeight,
-  getIndexResultsColorConfig,
 } from '@/utils/indextree-util';
+import { calculateCoverage, getIndexResultsColorConfig } from '@/utils/indexresults-util';
 import { COLOR } from '@/utils/colors-util';
 import {
   AggregationOption,

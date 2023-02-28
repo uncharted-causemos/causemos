@@ -28,7 +28,7 @@
       :index-results-data="indexResultsData"
       @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
     />
-    <div class="map map-loading">
+    <div class="map">
       <IndexResultsMap :index-results-data="indexResultsData" :settings="indexResultsSettings" />
     </div>
   </div>
@@ -42,11 +42,8 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import useIndexTree from '@/services/composables/useIndexTree';
-import {
-  calculateIndexResults,
-  calculateOverallWeight,
-  findAllDatasets,
-} from '@/utils/indextree-util';
+import { calculateOverallWeight, findAllDatasets } from '@/utils/indextree-util';
+import { calculateIndexResults } from '@/utils/indexresults-util';
 import { IndexResultsData } from '@/types/Index';
 import { getRegionAggregation } from '@/services/outputdata-service';
 import { OutputSpec, RegionalAggregation } from '@/types/Outputdata';
@@ -236,9 +233,6 @@ header {
 .map {
   flex: 1;
   min-width: 0;
-}
-
-.map-loading {
   background: $un-color-black-5;
 }
 </style>
