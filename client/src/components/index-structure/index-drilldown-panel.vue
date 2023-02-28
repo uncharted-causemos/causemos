@@ -158,7 +158,7 @@ import { computed, watch, ref } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { IndexNode, IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
-import { duplicateNode, isDatasetNode, isOutputIndexNode } from '@/utils/indextree-util';
+import { duplicateNode, isDatasetNode, isOutputIndexNode } from '@/utils/index-tree-util';
 import { OptionButtonMenu } from './index-tree-node.vue';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 

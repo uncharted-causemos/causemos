@@ -28,7 +28,7 @@ import IndexDrilldownPanel from '@/components/index-structure/index-drilldown-pa
 import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import { createNewIndex, createNewPlaceholderDataset } from '@/utils/indextree-util';
+import { createNewIndex, createNewPlaceholderDataset } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
 
 const store = useStore();

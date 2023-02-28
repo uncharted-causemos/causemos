@@ -14,7 +14,7 @@
 import { computed, ref, watch } from 'vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import MapLegend from '../widgets/map-legend.vue';
-import { getIndexResultsColorConfig } from '@/utils/indexresults-util';
+import { getIndexResultsColorConfig } from '@/utils/index-results-util';
 import { IndexResultsData, IndexResultsSettings } from '@/types/Index';
 import {
   BOUNDS_GLOBAL,

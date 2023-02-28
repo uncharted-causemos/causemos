@@ -97,7 +97,7 @@ import {
   isDatasetNode,
   isParentNode,
   isPlaceholderNode,
-} from '@/utils/indextree-util';
+} from '@/utils/index-tree-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchResults from '@/components/index-structure/index-tree-node-search-results.vue';

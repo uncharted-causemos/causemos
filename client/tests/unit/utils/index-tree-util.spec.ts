@@ -11,7 +11,7 @@ import {
   createNewPlaceholderDataset,
   findAllDatasets,
   calculateOverallWeight,
-} from '@/utils/indextree-util';
+} from '@/utils/index-tree-util';
 import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
 import { OutputIndex, Index, Dataset, ParentNode } from '@/types/Index';
 
@@ -109,7 +109,7 @@ const newTestTree = (): OutputIndex => ({
   ],
 });
 
-describe('indextree-util', () => {
+describe('index-tree-util', () => {
   describe('findNode', () => {
     it('should find a root node', () => {
       const tree = newTestTree();

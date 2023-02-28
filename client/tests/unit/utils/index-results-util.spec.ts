@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { calculateCoverage, getIndexResultsColorConfig } from '@/utils/indexresults-util';
+import { calculateCoverage, getIndexResultsColorConfig } from '@/utils/index-results-util';
 import { COLOR } from '@/utils/colors-util';
 import { DiscreteOuputScale } from '@/types/Enums';
 import { IndexResultsSettings, IndexResultsData } from '@/types/Index';
 import { RegionalAggregation } from '@/types/Outputdata';
 
-describe('indexresults-util', () => {
+describe('index-results-util', () => {
   describe('calculateCoverage', () => {
     const mockData: RegionalAggregation = {
       country: [
