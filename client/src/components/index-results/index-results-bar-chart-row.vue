@@ -8,7 +8,10 @@
         <p>{{ precisionFormatter(props.rowData.value) }}</p>
       </div>
       <div class="bar-background">
-        <div class="bar" :style="{ width: `${props.rowData.value ?? 0}%` }" />
+        <div
+          class="bar"
+          :style="{ width: `${props.rowData.value ?? 0}%`, background: props.rowData.color }"
+        />
       </div>
     </div>
     <div v-if="props.isExpanded" class="flex-col index-result-table-key-datasets-column">
@@ -39,6 +42,7 @@ const props = defineProps<{
   rowData: {
     countryName: string;
     value: number | null;
+    color: string;
   };
   isExpanded: boolean;
 }>();
@@ -99,7 +103,6 @@ const keyDatasets = [
   top: 0;
   left: 0;
   height: 100%;
-  background: $accent-main;
 }
 
 .index-result-table-key-datasets-column {

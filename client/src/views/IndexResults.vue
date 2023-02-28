@@ -26,6 +26,7 @@
       :class="{ expanded: isShowingKeyDatasets }"
       :is-showing-key-datasets="isShowingKeyDatasets"
       :index-results-data="indexResultsData"
+      :index-results-settings="indexResultsSettings"
       @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
     />
     <div class="map">

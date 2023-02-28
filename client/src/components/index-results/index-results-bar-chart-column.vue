@@ -20,10 +20,10 @@
     </header>
     <div class="flex-col results-rows">
       <IndexResultsBarChartRow
-        v-for="(country, index) of indexResultsData"
+        v-for="(data, index) of barChartRowData"
         :key="index"
         :rank="index + 1"
-        :row-data="country"
+        :row-data="data"
         :is-expanded="isShowingKeyDatasets"
       />
     </div>
@@ -31,17 +31,30 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import IndexResultsBarChartRow from '@/components/index-results/index-results-bar-chart-row.vue';
-import { IndexResultsData } from '@/types/Index';
+import { IndexResultsData, IndexResultsSettings } from '@/types/Index';
+import { getIndexResultsColorConfig } from '@/utils/index-results-util';
 
-defineProps<{
+const props = defineProps<{
   isShowingKeyDatasets: boolean;
   indexResultsData: IndexResultsData[];
+  indexResultsSettings: IndexResultsSettings;
 }>();
 
 const emit = defineEmits<{
   (e: 'toggle-is-showing-key-datasets'): void;
 }>();
+
+const colorConfig = computed(() =>
+  getIndexResultsColorConfig(props.indexResultsData, props.indexResultsSettings)
+);
+const barChartRowData = computed(() =>
+  props.indexResultsData.map((d) => ({
+    ...d,
+    color: colorConfig.value.scaleFn(d.value || 0),
+  }))
+);
 </script>
 
 <style lang="scss" scoped>
