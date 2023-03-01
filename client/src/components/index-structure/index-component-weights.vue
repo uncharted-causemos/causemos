@@ -30,7 +30,7 @@
 import precisionFormatter from '@/formatters/precision-formatter';
 import { IndexNodeType } from '@/types/Enums';
 import { IndexWorkBenchItem } from '@/types/Index';
-import { isPlaceholderNode } from '@/utils/indextree-util';
+import { isPlaceholderNode } from '@/utils/index-tree-util';
 
 const props = defineProps<{
   inputs: IndexWorkBenchItem[];

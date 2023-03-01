@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import * as d3 from 'd3';
 import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
 import { AnalysisMapStats, MapLayerStats, MapLegendColor } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
@@ -10,6 +11,12 @@ import {
 } from '@/utils/admin-level-util';
 import { getBboxFromRegionIds } from '@/services/geo-service';
 import { AdminRegionSets } from '@/types/Datacubes';
+import { DiscreteOuputScale } from '@/types/Enums';
+
+export const BOUNDS_GLOBAL: [[number, number], [number, number]] = [
+  [-180, -90],
+  [180, 90],
+]; // [[minLng, minLat], [maxLng, maxLat]]
 
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
@@ -318,5 +325,27 @@ export const createMapLegendData = (
     : createColorStops(domain, colors, scaleFn);
   return colors.map((color, index) => {
     return { color, minLabel: stops[index], maxLabel: stops[index + 1] };
+  });
+};
+
+export const createMapLegendDataWithDiscreteOutputScale = (
+  domain: number[],
+  colors: string[],
+  scale: DiscreteOuputScale = DiscreteOuputScale.Quantize
+): MapLegendColor[] => {
+  let sc: d3.ScaleQuantize<string, never> | d3.ScaleQuantile<string, never> = d3.scaleQuantize(
+    domain,
+    colors
+  );
+  if (scale === DiscreteOuputScale.Quantile) {
+    sc = d3.scaleQuantile(domain, colors);
+  }
+  return colors.map((c) => {
+    const [min, max] = sc.invertExtent(c);
+    return {
+      color: c,
+      minLabel: min,
+      maxLabel: max,
+    };
   });
 };

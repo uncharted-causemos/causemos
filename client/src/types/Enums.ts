@@ -203,3 +203,9 @@ export enum IndexEdgeType {
 }
 
 export type IndexElementType = IndexNodeType | IndexEdgeType;
+
+/** Scales with continuous input and discrete output */
+export enum DiscreteOuputScale {
+  Quantize = 'Quantize',
+  Quantile = 'Quantile',
+}

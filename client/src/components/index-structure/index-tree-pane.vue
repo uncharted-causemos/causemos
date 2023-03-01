@@ -41,7 +41,7 @@ import { IndexNodeType } from '@/types/Enums';
 import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren } from '@/utils/indextree-util';
+import { hasChildren } from '@/utils/index-tree-util';
 import {
   offsetGridCells,
   getGridRowCount,

@@ -32,7 +32,7 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, getIndexNodeTypeColor, getIndexNodeTypeIcon } from '@/utils/indextree-util';
+import { hasChildren, getIndexNodeTypeColor, getIndexNodeTypeIcon } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import { IndexNodeType } from '@/types/Enums';
 import { convertTreeToGridCells } from '@/utils/grid-cell-util';

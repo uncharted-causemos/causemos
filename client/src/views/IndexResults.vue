@@ -28,7 +28,9 @@
       :index-results-data="indexResultsData"
       @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
     />
-    <div class="map map-loading"></div>
+    <div class="map">
+      <IndexResultsMap :index-results-data="indexResultsData" :settings="indexResultsSettings" />
+    </div>
   </div>
 </template>
 
@@ -40,11 +42,8 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import useIndexTree from '@/services/composables/useIndexTree';
-import {
-  calculateIndexResults,
-  calculateOverallWeight,
-  findAllDatasets,
-} from '@/utils/indextree-util';
+import { calculateOverallWeight, findAllDatasets } from '@/utils/index-tree-util';
+import { calculateIndexResults } from '@/utils/index-results-util';
 import { IndexResultsData } from '@/types/Index';
 import { getRegionAggregation } from '@/services/outputdata-service';
 import { OutputSpec, RegionalAggregation } from '@/types/Outputdata';
@@ -52,6 +51,7 @@ import { normalize } from '@/utils/value-util';
 import { DataTransform } from '@/types/Enums';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
+import IndexResultsMap from '@/components/index-results/index-results-map.vue';
 
 // TODO: temporary!
 // We probably want to
@@ -80,7 +80,7 @@ const store = useStore();
 const route = useRoute();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, refresh } = useIndexAnalysis(analysisId);
+const { analysisName, indexResultsSettings, refresh } = useIndexAnalysis(analysisId);
 
 // Set analysis name on the navbar
 onMounted(async () => {
@@ -233,9 +233,6 @@ header {
 .map {
   flex: 1;
   min-width: 0;
-}
-
-.map-loading {
   background: $un-color-black-5;
 }
 </style>

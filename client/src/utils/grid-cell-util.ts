@@ -1,6 +1,6 @@
 import { GridCell, IndexNode } from '@/types/Index';
 import _ from 'lodash';
-import { isParentNode } from './indextree-util';
+import { isParentNode } from './index-tree-util';
 
 /**
  * This file contains helper functions to support the GridCell data structure, which is used when

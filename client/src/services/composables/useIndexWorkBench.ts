@@ -5,7 +5,7 @@ import {
   findAndRemoveChild,
   findNode as indexTreeUtilFindNode,
   createIndexTreeActions,
-} from '@/utils/indextree-util';
+} from '@/utils/index-tree-util';
 
 // States
 
