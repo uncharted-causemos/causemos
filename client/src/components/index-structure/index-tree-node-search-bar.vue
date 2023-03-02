@@ -1,67 +1,80 @@
 <template>
-  <div class="index-tree-node-search-results-container">
-    <ul v-if="props.searchText !== ''">
-      <li
-        :class="{ active: activeResultIndex === -1 }"
-        @mouseenter="activeResultIndex = -1"
-        @click="emit('keep-as-placeholder')"
-      >
-        Add "<strong>{{ props.searchText }}</strong
-        >" as a placeholder
-      </li>
-      <!-- If results haven't returned, show a spinner -->
-      <div v-if="isFetchingResults" class="loading">
-        <i class="fa fa-spin fa-spinner" />
-      </div>
-      <div v-else class="results">
-        <p v-if="results.length === 0" class="no-results-message de-emphasized">
-          No datasets matching "{{ props.searchText }}" were found.
-        </p>
-        <ul v-else>
-          <h5 class="results-header">Choose a dataset</h5>
-          <li
-            v-for="(result, index) of results"
-            :key="result.id"
-            :class="{
-              active: activeResultIndex === index,
-              'de-emphasized': result.displayName === '',
-            }"
-            @mouseenter="activeResultIndex = index"
-            @click="emit('select-dataset', result)"
-          >
-            {{ result.displayName === '' ? '(missing name)' : result.displayName }}
-          </li>
-        </ul>
-        <div class="details-pane" v-if="activeResult !== null">
-          <h5>{{ activeResult.displayName }}</h5>
-          <div>
-            <h5 class="de-emphasized">Coverage</h5>
-            <p>{{ spatialCoverageDisplayString }}</p>
-            <div v-if="sparklineData === null" class="timeseries timeseries-loading" />
-            <Sparkline v-else :data="[sparklineData]" :size="[215, 30]" />
-            <p>
-              <span class="de-emphasized">from</span> {{ temporalCoverage.from }}
-              <span class="de-emphasized">to</span> {{ temporalCoverage.to }}
-            </p>
-          </div>
-          <div>
-            <h5 class="de-emphasized">Description</h5>
-            <p>{{ activeResult.description }}</p>
-          </div>
-          <div>
-            <h5 class="de-emphasized">Source</h5>
-            <p>{{ activeResult.familyName }}</p>
+  <div class="index-tree-node-search-bar-container">
+    <div class="search-bar-container flex">
+      <input
+        @keydown="handleKeyDown"
+        ref="searchInput"
+        class="form-control"
+        type="text"
+        v-model="searchText"
+        placeholder="Search for a dataset"
+      />
+      <button class="btn btn-default" @click="emit('cancel')">Cancel</button>
+    </div>
+    <div class="search-results-container">
+      <ul v-if="searchText !== ''">
+        <li
+          :class="{ active: activeResultIndex === -1 }"
+          @mouseenter="activeResultIndex = -1"
+          @click="emit('keep-as-placeholder', searchText)"
+        >
+          Add "<strong>{{ searchText }}</strong
+          >" as a placeholder
+        </li>
+        <!-- If results haven't returned, show a spinner -->
+        <div v-if="isFetchingResults" class="loading">
+          <i class="fa fa-spin fa-spinner" />
+        </div>
+        <div v-else class="results">
+          <p v-if="results.length === 0" class="no-results-message de-emphasized">
+            No datasets matching "{{ searchText }}" were found.
+          </p>
+          <ul v-else>
+            <h5 class="results-header">Choose a dataset</h5>
+            <li
+              v-for="(result, index) of results"
+              :key="result.id"
+              :class="{
+                active: activeResultIndex === index,
+                'de-emphasized': result.displayName === '',
+              }"
+              @mouseenter="activeResultIndex = index"
+              @click="emit('select-dataset', result)"
+            >
+              {{ result.displayName === '' ? '(missing name)' : result.displayName }}
+            </li>
+          </ul>
+          <div class="details-pane" v-if="activeResult !== null">
+            <h5>{{ activeResult.displayName }}</h5>
+            <div>
+              <h5 class="de-emphasized">Coverage</h5>
+              <p>{{ spatialCoverageDisplayString }}</p>
+              <div v-if="sparklineData === null" class="timeseries timeseries-loading" />
+              <Sparkline v-else :data="[sparklineData]" :size="[215, 30]" />
+              <p>
+                <span class="de-emphasized">from</span> {{ temporalCoverage.from }}
+                <span class="de-emphasized">to</span> {{ temporalCoverage.to }}
+              </p>
+            </div>
+            <div>
+              <h5 class="de-emphasized">Description</h5>
+              <p>{{ activeResult.description }}</p>
+            </div>
+            <div>
+              <h5 class="de-emphasized">Source</h5>
+              <p>{{ activeResult.familyName }}</p>
+            </div>
           </div>
         </div>
-      </div>
-    </ul>
-    <button class="btn btn-sm advanced-search" disabled>Use advanced search</button>
+      </ul>
+      <button class="btn btn-sm advanced-search" disabled>Use advanced search</button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue';
 import newDatacubeService from '@/services/new-datacube-service';
-import { ref, computed, watch, toRefs } from 'vue';
 import { DatasetSearchResult } from '@/types/Index';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
@@ -78,16 +91,23 @@ const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult =>
   };
 };
 
-const props = defineProps<{
-  searchText: string;
-}>();
-const { searchText } = toRefs(props);
-
 const emit = defineEmits<{
-  'keep-as-placeholder': () => void;
+  (e: 'select-dataset', dataset: DatasetSearchResult): void;
+  (e: 'keep-as-placeholder', value: string): void;
+  (e: 'cancel'): void;
 }>();
 
+// Input box
+
+const searchInput = ref();
+onMounted(() => searchInput.value?.focus());
+
+// Search
+
+const searchText = ref('');
+const results = ref<DatasetSearchResult[]>([]);
 const isFetchingResults = ref(false);
+
 watch([searchText], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
   const queryString = searchText.value;
@@ -112,15 +132,12 @@ watch([searchText], async () => {
   }
 });
 
-const results = ref<DatasetSearchResult[]>([]);
-
 /**
  * The currently highlighted result.
- * - `null` means no result is active.
  * - `-1` means the option to add a new placeholder is active.
  * - Any number >=0 is an index into the results array.
  */
-const activeResultIndex = ref<number | null>(-1);
+const activeResultIndex = ref<number>(-1);
 // Reset active result to "create placeholder" option whenever search text changes
 watch([searchText], () => {
   activeResultIndex.value = -1;
@@ -144,13 +161,59 @@ const spatialCoverageDisplayString = computed(() => {
   const count = activeResultMetadata.value.geography.country.length;
   return `${count} countr${count === 1 ? 'y' : 'ies'}.`;
 });
+
+// Handling keyboard interaction
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  switch (e.key) {
+    case 'Escape':
+      e.preventDefault();
+      return emit('cancel');
+    case 'Enter':
+      e.preventDefault();
+      if (activeResultIndex.value === -1) return emit('keep-as-placeholder', searchText.value);
+      if (activeResult.value !== null) return emit('select-dataset', activeResult.value);
+      return;
+    case 'ArrowUp':
+      e.preventDefault();
+      return shiftIndex(-1);
+    case 'ArrowDown':
+      e.preventDefault();
+      return shiftIndex(1);
+  }
+};
+
+const shiftIndex = (direction: -1 | 1) => {
+  if (direction === -1) {
+    activeResultIndex.value = Math.max(-1, activeResultIndex.value - 1);
+  } else if (direction === 1) {
+    activeResultIndex.value = Math.min(results.value.length - 1, activeResultIndex.value + 1);
+  }
+};
 </script>
 
 <style lang="scss" scoped>
 @import '~styles/variables';
 @import '~styles/uncharted-design-tokens';
+@import '~styles/common';
 
-.index-tree-node-search-results-container {
+/* .index-tree-node-search-bar-container {
+} */
+
+.search-bar-container {
+  padding: 5px 10px;
+  .form-control {
+    height: 32px;
+    padding: 8px 8px;
+  }
+  button {
+    width: 100%;
+    max-width: 59px;
+    margin-left: 5px;
+  }
+}
+
+.search-results-container {
   width: 600px;
   margin: 5px 0 10px 0;
   display: flex;
