@@ -212,9 +212,6 @@ const shiftIndex = (direction: -1 | 1) => {
 @import '~styles/uncharted-design-tokens';
 @import '~styles/common';
 
-/* .index-tree-node-search-bar-container {
-} */
-
 .search-bar-container {
   padding: 5px 10px;
   .form-control {
