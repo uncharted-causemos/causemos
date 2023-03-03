@@ -28,6 +28,7 @@
     </div>
     <IndexTreeNodeSearchBar
       v-if="showDatasetSearch"
+      :init-value="props.nodeData.name"
       @select-dataset="attachDataset"
       @keep-as-placeholder="keepAsPlaceholder"
       @cancel="cancelDatasetSearch"

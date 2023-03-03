@@ -18,8 +18,15 @@
           @mouseenter="activeResultIndex = -1"
           @click="emit('keep-as-placeholder', searchText)"
         >
-          Add "<strong>{{ searchText }}</strong
-          >" as a placeholder
+          <span v-if="initValue === ''">
+            Add "<strong>{{ searchText }}</strong
+            >" as a placeholder
+          </span>
+          <span v-else-if="initValue === searchText.trim()"> Leave as placeholder </span>
+          <span v-else>
+            Rename placeholder to "<strong>{{ searchText }}</strong
+            >"
+          </span>
         </li>
         <!-- If results haven't returned, show a spinner -->
         <div v-if="isFetchingResults" class="loading">
@@ -91,6 +98,11 @@ const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult =>
   };
 };
 
+interface Props {
+  initValue: string;
+}
+const props = defineProps<Props>();
+
 const emit = defineEmits<{
   (e: 'select-dataset', dataset: DatasetSearchResult): void;
   (e: 'keep-as-placeholder', value: string): void;
@@ -102,9 +114,11 @@ const emit = defineEmits<{
 const searchInput = ref();
 onMounted(() => searchInput.value?.focus());
 
+const searchText = ref('');
+onMounted(() => props.initValue && (searchText.value = props.initValue));
+
 // Search
 
-const searchText = ref('');
 const results = ref<DatasetSearchResult[]>([]);
 const isFetchingResults = ref(false);
 
@@ -171,7 +185,8 @@ const handleKeyDown = (e: KeyboardEvent) => {
       return emit('cancel');
     case 'Enter':
       e.preventDefault();
-      if (activeResultIndex.value === -1) return emit('keep-as-placeholder', searchText.value);
+      if (activeResultIndex.value === -1)
+        return emit('keep-as-placeholder', searchText.value.trim());
       if (activeResult.value !== null) return emit('select-dataset', activeResult.value);
       return;
     case 'ArrowUp':
