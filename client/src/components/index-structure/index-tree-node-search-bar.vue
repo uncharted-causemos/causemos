@@ -15,7 +15,7 @@
       <ul v-if="searchText !== ''">
         <li
           :class="{ active: activeResultIndex === -1 }"
-          @mousemove="setActiveResultsIndexOnHover(-1)"
+          @mousemove="setActiveResultIndexOnHover(-1)"
           @click="emit('keep-as-placeholder', searchText)"
         >
           <span v-if="initialSearchText === ''">
@@ -45,7 +45,7 @@
                 active: activeResultIndex === index,
                 'de-emphasized': result.displayName === '',
               }"
-              @mousemove="setActiveResultsIndexOnHover(index)"
+              @mousemove="setActiveResultIndexOnHover(index)"
               @click="emit('select-dataset', result)"
             >
               {{ result.displayName === '' ? '(missing name)' : result.displayName }}
@@ -180,7 +180,7 @@ const spatialCoverageDisplayString = computed(() => {
   return `${count} countr${count === 1 ? 'y' : 'ies'}.`;
 });
 
-const setActiveResultsIndexOnHover = (targetIndex: number) => {
+const setActiveResultIndexOnHover = (targetIndex: number) => {
   if (activeResultIndex.value !== targetIndex) {
     activeResultIndex.value = targetIndex;
   }
