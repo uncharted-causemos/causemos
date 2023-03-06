@@ -103,3 +103,116 @@ export const offsetGridCells = (
     startColumn: cell.startColumn + horizontalOffset,
   }));
 };
+
+/**
+ * Edge selection class information
+ */
+const EDGE_CLASS = {
+  SELECTED: 'selected-edge',
+  SELECTED_X: 'highlighted-x',
+  SELECTED_Y: 'highlighted-y',
+  HIGHLIGHTED: 'highlighted',
+  HIGHLIGHTED_X: 'highlighted-x',
+  HIGHLIGHTED_Y: 'highlighted-y',
+  OUTGOING: 'outgoing',
+  INCOMING: 'incoming',
+};
+
+/**
+ * Parse grid location information for ease of reference in edge selection/highlight.
+ * @param gridArea String
+ */
+const getGridLocation = (gridArea: String) => {
+  // parse: 2 / -2 / span 1 / auto
+  //        row order / col (-1 furthest right, top) -2, -3, etc... moving to the left
+  if (gridArea) {
+    const clean = gridArea.replace(' ', '').trim().split('/');
+    const data = {
+      order: clean[0],
+      column: clean[1],
+    };
+    return data;
+  }
+  return null;
+};
+
+/**
+ * Colours an edge between grid cells.  May be a highlighting action or a selection action.
+ *
+ * @param evt MouseEvent
+ */
+export const edgeInteraction = (target: any, isHighlightAction = false) => {
+  const selectedNodes = [];
+  const current = target as HTMLElement;
+  const parent = current?.parentElement;
+  const treeContainer = parent?.parentElement;
+
+  if (current && parent && treeContainer) {
+    const parentGrid = getGridLocation(parent.style.gridArea);
+    if (parentGrid) {
+      if (current.classList.contains(EDGE_CLASS.OUTGOING)) {
+        current.classList.add(isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED);
+        selectedNodes.push(current);
+        treeContainer.childNodes.forEach((node) => {
+          const gridInfo = getGridLocation(node?.style?.gridArea);
+          if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column) + 1) {
+            node.childNodes.forEach((cellNode) => {
+              if (cellNode.classList.contains(EDGE_CLASS.INCOMING)) {
+                cellNode.classList.add(
+                  isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED
+                );
+                selectedNodes.push(cellNode);
+              }
+            });
+          } else if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column)) {
+            node.childNodes.forEach((cellNode) => {
+              if (cellNode.classList.contains(EDGE_CLASS.OUTGOING)) {
+                if (gridInfo.order < parentGrid.order) {
+                  if (isHighlightAction) {
+                    cellNode.classList.add(EDGE_CLASS.HIGHLIGHTED, EDGE_CLASS.HIGHLIGHTED_Y);
+                  } else {
+                    cellNode.classList.add(EDGE_CLASS.SELECTED, EDGE_CLASS.SELECTED_Y);
+                  }
+
+                  selectedNodes.push(cellNode);
+                } else if (gridInfo.order === parentGrid.order) {
+                  if (isHighlightAction) {
+                    cellNode.classList.add(EDGE_CLASS.HIGHLIGHTED, EDGE_CLASS.HIGHLIGHTED_X);
+                  } else {
+                    cellNode.classList.add(EDGE_CLASS.SELECTED, EDGE_CLASS.SELECTED_X);
+                  }
+                  selectedNodes.push(cellNode);
+                }
+              }
+            });
+          }
+        });
+      }
+      if (current.classList.contains(EDGE_CLASS.INCOMING)) {
+        current.classList.add(EDGE_CLASS.HIGHLIGHTED);
+        selectedNodes.push(current);
+        treeContainer.childNodes.forEach((node) => {
+          const gridInfo = getGridLocation(node?.style?.gridArea);
+          if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column) - 1) {
+            node.childNodes.forEach((cellNode) => {
+              if (cellNode.classList.contains(EDGE_CLASS.OUTGOING)) {
+                cellNode.classList.add(EDGE_CLASS.HIGHLIGHTED);
+                selectedNodes.push(cellNode);
+              }
+            });
+          }
+        });
+      }
+    }
+  }
+
+  return selectedNodes;
+};
+
+export const edgeInteractionClear = (selectedNodes: HTMLElement[]) => {
+  selectedNodes.forEach((e) =>
+    e.classList.remove(EDGE_CLASS.HIGHLIGHTED, EDGE_CLASS.HIGHLIGHTED_X, EDGE_CLASS.HIGHLIGHTED_Y)
+  );
+  selectedNodes = [];
+  return selectedNodes;
+};

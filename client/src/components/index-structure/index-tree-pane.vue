@@ -10,6 +10,7 @@
       class="grid-cell"
       @mouseover="highLight"
       @mouseleave="highLightClear"
+      @click="selectEdge"
     >
       <div class="edge incoming" :class="{ visible: hasChildren(cell.node) }"></div>
       <IndexTreeNode
@@ -32,6 +33,7 @@
         }"
         @mouseover="highLight"
         @mouseleave="highLightClear"
+        @click="selectEdge"
       />
     </div>
   </div>
@@ -51,6 +53,8 @@ import {
   getGridRowCount,
   getGridColumnCount,
   convertTreeToGridCells,
+  edgeInteraction,
+  edgeInteractionClear,
 } from '@/utils/grid-cell-util';
 
 const props = defineProps<{
@@ -64,12 +68,6 @@ const emit = defineEmits<{
 
 const workBench = useIndexWorkBench();
 const indexTree = useIndexTree();
-
-const CSSHIGHLIGHTED = 'highlighted';
-const CSSHIGHLIGHTED_X = 'highlighted-x';
-const CSSHIGHLIGHTED_Y = 'highlighted-y';
-const EDGECLASS_OUT = 'outgoing';
-const EDGECLASS_IN = 'incoming';
 
 // A list of grid cells with enough information to render with CSS-grid.
 //  Represents a combination of all workbench trees and the main index tree.
@@ -129,80 +127,25 @@ const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult
   indexTree.attachDatasetToPlaceholder(nodeId, dataset);
 };
 
-const getGridLocation = (gridArea: String) => {
-  // parse: 2 / -2 / span 1 / auto
-  //        row order / col (-1 furthest right, top) -2, -3, etc... moving to the left
-  if (gridArea) {
-    const clean = gridArea.replace(' ', '').trim().split('/');
-    const data = {
-      order: clean[0],
-      column: clean[1],
-    };
-    return data;
-  }
-  return null;
-};
+// select element
+
 // edge highlight
 let hoverElements: HTMLElement[] = [];
-
 const highLight = (evt: MouseEvent) => {
-  const current = evt.target as HTMLElement;
-  const parent = current?.parentElement;
-  const treeContainer = parent?.parentElement;
-
-  if (current && parent && treeContainer) {
-    const parentGrid = getGridLocation(parent.style.gridArea);
-    if (parentGrid) {
-      if (current.classList.contains(EDGECLASS_OUT)) {
-        current.classList.add(CSSHIGHLIGHTED);
-        hoverElements.push(current);
-        treeContainer.childNodes.forEach((node) => {
-          const gridInfo = getGridLocation(node?.style?.gridArea);
-          if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column) + 1) {
-            node.childNodes.forEach((cellNode) => {
-              if (cellNode.classList.contains(EDGECLASS_IN)) {
-                cellNode.classList.add(CSSHIGHLIGHTED);
-                hoverElements.push(cellNode);
-              }
-            });
-          } else if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column)) {
-            node.childNodes.forEach((cellNode) => {
-              if (cellNode.classList.contains(EDGECLASS_OUT)) {
-                if (gridInfo.order < parentGrid.order) {
-                  cellNode.classList.add(CSSHIGHLIGHTED, CSSHIGHLIGHTED_Y);
-                  hoverElements.push(cellNode);
-                } else if (gridInfo.order === parentGrid.order) {
-                  cellNode.classList.add(CSSHIGHLIGHTED, CSSHIGHLIGHTED_X);
-                  hoverElements.push(cellNode);
-                }
-              }
-            });
-          }
-        });
-      }
-      if (current.classList.contains(EDGECLASS_IN)) {
-        current.classList.add(CSSHIGHLIGHTED);
-        hoverElements.push(current);
-        treeContainer.childNodes.forEach((node) => {
-          const gridInfo = getGridLocation(node?.style?.gridArea);
-          if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column) - 1) {
-            node.childNodes.forEach((cellNode) => {
-              if (cellNode.classList.contains(EDGECLASS_OUT)) {
-                cellNode.classList.add(CSSHIGHLIGHTED);
-                hoverElements.push(cellNode);
-              }
-            });
-          }
-        });
-      }
-    }
-  }
+  hoverElements = edgeInteraction(evt.target, true);
 };
+
 const highLightClear = () => {
-  hoverElements.forEach((e) =>
-    e.classList.remove(CSSHIGHLIGHTED, CSSHIGHLIGHTED_X, CSSHIGHLIGHTED_Y)
-  );
-  hoverElements = [];
+  edgeInteractionClear(hoverElements);
+};
+
+let edgeSelection: HTMLElement[] = [];
+const selectEdge = (evt: MouseEvent) => {
+  if (edgeSelection.includes(evt.target as HTMLElement)) {
+    edgeInteractionClear(edgeSelection);
+  } else {
+    edgeSelection = edgeInteraction(evt.target, false);
+  }
 };
 </script>
 
