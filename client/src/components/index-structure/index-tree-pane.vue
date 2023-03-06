@@ -1,5 +1,5 @@
 <template>
-  <div class="index-tree-pane-container" @click.self="emit('deselect-all')">
+  <div ref="tree-container" class="index-tree-pane-container" @click.self="emit('deselect-all')">
     <div
       v-for="cell in gridCells"
       :key="cell.node.id"
@@ -8,6 +8,8 @@
         'grid-column': cell.startColumn,
       }"
       class="grid-cell"
+      @mouseover="highLight"
+      @mouseleave="highLightClear"
     >
       <div class="edge incoming" :class="{ visible: hasChildren(cell.node) }"></div>
       <IndexTreeNode
@@ -28,6 +30,8 @@
           dashed: cell.node.type === IndexNodeType.Placeholder,
           'last-child': cell.isLastChild,
         }"
+        @mouseover="highLight"
+        @mouseleave="highLightClear"
       />
     </div>
   </div>
@@ -60,6 +64,12 @@ const emit = defineEmits<{
 
 const workBench = useIndexWorkBench();
 const indexTree = useIndexTree();
+
+const CSSHIGHLIGHTED = 'highlighted';
+const CSSHIGHLIGHTED_X = 'highlighted-x';
+const CSSHIGHLIGHTED_Y = 'highlighted-y';
+const EDGECLASS_OUT = 'outgoing';
+const EDGECLASS_IN = 'incoming';
 
 // A list of grid cells with enough information to render with CSS-grid.
 //  Represents a combination of all workbench trees and the main index tree.
@@ -118,10 +128,87 @@ const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult
   workBench.attachDatasetToPlaceholder(nodeId, dataset);
   indexTree.attachDatasetToPlaceholder(nodeId, dataset);
 };
+
+const getGridLocation = (gridArea: String) => {
+  // parse: 2 / -2 / span 1 / auto
+  //        row order / col (-1 furthest right, top) -2, -3, etc... moving to the left
+  if (gridArea) {
+    const clean = gridArea.replace(' ', '').trim().split('/');
+    const data = {
+      order: clean[0],
+      column: clean[1],
+    };
+    return data;
+  }
+  return null;
+};
+// edge highlight
+let hoverElements: HTMLElement[] = [];
+
+const highLight = (evt: MouseEvent) => {
+  const current = evt.target as HTMLElement;
+  const parent = current?.parentElement;
+  const treeContainer = parent?.parentElement;
+
+  if (current && parent && treeContainer) {
+    const parentGrid = getGridLocation(parent.style.gridArea);
+    if (parentGrid) {
+      if (current.classList.contains(EDGECLASS_OUT)) {
+        current.classList.add(CSSHIGHLIGHTED);
+        hoverElements.push(current);
+        treeContainer.childNodes.forEach((node) => {
+          const gridInfo = getGridLocation(node?.style?.gridArea);
+          if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column) + 1) {
+            node.childNodes.forEach((cellNode) => {
+              if (cellNode.classList.contains(EDGECLASS_IN)) {
+                cellNode.classList.add(CSSHIGHLIGHTED);
+                hoverElements.push(cellNode);
+              }
+            });
+          } else if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column)) {
+            node.childNodes.forEach((cellNode) => {
+              if (cellNode.classList.contains(EDGECLASS_OUT)) {
+                if (gridInfo.order < parentGrid.order) {
+                  cellNode.classList.add(CSSHIGHLIGHTED, CSSHIGHLIGHTED_Y);
+                  hoverElements.push(cellNode);
+                } else if (gridInfo.order === parentGrid.order) {
+                  cellNode.classList.add(CSSHIGHLIGHTED, CSSHIGHLIGHTED_X);
+                  hoverElements.push(cellNode);
+                }
+              }
+            });
+          }
+        });
+      }
+      if (current.classList.contains(EDGECLASS_IN)) {
+        current.classList.add(CSSHIGHLIGHTED);
+        hoverElements.push(current);
+        treeContainer.childNodes.forEach((node) => {
+          const gridInfo = getGridLocation(node?.style?.gridArea);
+          if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column) - 1) {
+            node.childNodes.forEach((cellNode) => {
+              if (cellNode.classList.contains(EDGECLASS_OUT)) {
+                cellNode.classList.add(CSSHIGHLIGHTED);
+                hoverElements.push(cellNode);
+              }
+            });
+          }
+        });
+      }
+    }
+  }
+};
+const highLightClear = () => {
+  hoverElements.forEach((e) =>
+    e.classList.remove(CSSHIGHLIGHTED, CSSHIGHLIGHTED_X, CSSHIGHLIGHTED_Y)
+  );
+  hoverElements = [];
+};
 </script>
 
 <style scoped lang="scss">
 @import '~styles/uncharted-design-tokens';
+@import '~styles/variables';
 
 $space-between-columns: 40px;
 $space-between-rows: 10px;
@@ -130,6 +217,8 @@ $incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
 $outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
 $edge-top-offset-from-node: 13px;
 $edge-styles: 2px solid $un-color-black-20;
+$edge-selected: $accent-main;
+$edge-highlighted: $negative;
 
 .index-tree-pane-container {
   // The farthest left column will never have incoming edges, so it will have an empty space of
@@ -163,6 +252,9 @@ $edge-styles: 2px solid $un-color-black-20;
       flex: 1;
       &.visible {
         border-top: $edge-styles;
+        &.highlighted {
+          border-color: $edge-highlighted;
+        }
       }
     }
 
@@ -173,9 +265,27 @@ $edge-styles: 2px solid $un-color-black-20;
         // Extend edge down to the sibling below this one
         height: calc(100% + #{$space-between-rows});
         border-right: $edge-styles;
+        &.highlighted {
+          border-color: $edge-highlighted;
+          &.highlighted-x {
+            border-right-color: $un-color-black-20;
+          }
+          &.highlighted-y {
+            border-top-color: $un-color-black-20;
+          }
+        }
       }
       &.dashed {
         border-top-style: dashed;
+        &.highlighted {
+          border-color: $edge-highlighted;
+          &.highlighted-x {
+            border-right-color: $un-color-black-20;
+          }
+          &.highlighted-y {
+            border-top-color: $un-color-black-20;
+          }
+        }
       }
       &.last-child {
         border-right: none;
