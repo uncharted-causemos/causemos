@@ -15,14 +15,14 @@
       <ul v-if="searchText !== ''">
         <li
           :class="{ active: activeResultIndex === -1 }"
-          @mouseenter="activeResultIndex = -1"
+          @mousemove="setActiveResultsIndexOnHover(-1)"
           @click="emit('keep-as-placeholder', searchText)"
         >
-          <span v-if="initValue === ''">
+          <span v-if="initialSearchText === ''">
             Add "<strong>{{ searchText }}</strong
             >" as a placeholder
           </span>
-          <span v-else-if="initValue === searchText.trim()"> Leave as placeholder </span>
+          <span v-else-if="initialSearchText === searchText.trim()"> Leave as placeholder </span>
           <span v-else>
             Rename placeholder to "<strong>{{ searchText }}</strong
             >"
@@ -45,7 +45,7 @@
                 active: activeResultIndex === index,
                 'de-emphasized': result.displayName === '',
               }"
-              @mouseenter="activeResultIndex = index"
+              @mousemove="setActiveResultsIndexOnHover(index)"
               @click="emit('select-dataset', result)"
             >
               {{ result.displayName === '' ? '(missing name)' : result.displayName }}
@@ -99,7 +99,7 @@ const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult =>
 };
 
 interface Props {
-  initValue: string;
+  initialSearchText: string;
 }
 const props = defineProps<Props>();
 
@@ -115,7 +115,11 @@ const searchInput = ref();
 onMounted(() => searchInput.value?.focus());
 
 const searchText = ref('');
-onMounted(() => props.initValue && (searchText.value = props.initValue));
+onMounted(() => {
+  if (props.initialSearchText) {
+    searchText.value = props.initialSearchText;
+  }
+});
 
 // Search
 
@@ -176,6 +180,12 @@ const spatialCoverageDisplayString = computed(() => {
   return `${count} countr${count === 1 ? 'y' : 'ies'}.`;
 });
 
+const setActiveResultsIndexOnHover = (targetIndex: number) => {
+  if (activeResultIndex.value !== targetIndex) {
+    activeResultIndex.value = targetIndex;
+  }
+};
+
 // Handling keyboard interaction
 
 const handleKeyDown = (e: KeyboardEvent) => {
@@ -219,8 +229,6 @@ const shiftIndex = (direction: -1 | 1) => {
     padding: 8px 8px;
   }
   button {
-    width: 100%;
-    max-width: 59px;
     margin-left: 5px;
   }
 }
