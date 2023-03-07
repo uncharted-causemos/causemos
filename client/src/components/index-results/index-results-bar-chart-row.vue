@@ -10,24 +10,32 @@
       <div class="bar-background">
         <div
           class="bar"
-          :style="{ width: `${props.rowData.value ?? 0}%`, background: props.rowData.color }"
+          :style="{ width: `${props.rowData.value ?? 0}%`, background: props.color }"
         />
       </div>
     </div>
     <div v-if="props.isExpanded" class="flex-col index-result-table-key-datasets-column">
-      <div v-for="dataset of keyDatasets" :key="dataset.datasetId" class="flex key-dataset-row">
+      <div
+        v-for="dataset of visibleKeyDatasets"
+        :key="dataset.dataset.id"
+        class="flex key-dataset-row"
+      >
         <p class="index-result-table-dataset-name-column un-font-small">
-          {{ dataset.datasetName }}
+          {{ dataset.dataset.name }}
         </p>
         <p class="de-emphasized index-result-table-dataset-weight-column un-font-small">
-          {{ precisionFormatter(dataset.weight) }}%
+          {{ precisionFormatter(dataset.overallWeight) }}%
         </p>
         <div class="index-result-table-dataset-value-column">
-          <p class="de-emphasized un-font-small">{{ precisionFormatter(dataset.value) }}</p>
+          <p class="de-emphasized un-font-small">{{ precisionFormatter(dataset.datasetValue) }}</p>
         </div>
       </div>
-      <button class="btn btn-sm" @click="isShowingAllDatasets = !isShowingAllDatasets">
-        {{ isShowingAllDatasets ? 'Hide' : 'Show' }} other {{ '11' }} datasets
+      <button
+        v-if="props.rowData.contributingDatasets.length > SHOW_TOP_N_DATASETS_BY_DEFAULT"
+        class="btn btn-sm"
+        @click="isShowingAllDatasets = !isShowingAllDatasets"
+      >
+        {{ showMoreToggleButtonLabel }}
       </button>
     </div>
   </div>
@@ -35,40 +43,33 @@
 
 <script setup lang="ts">
 import precisionFormatter from '@/formatters/precision-formatter';
-import { ref } from 'vue';
+import { IndexResultsData } from '@/types/Index';
+import { ref, computed } from 'vue';
+
+const SHOW_TOP_N_DATASETS_BY_DEFAULT = 3;
 
 const props = defineProps<{
   rank: number;
-  rowData: {
-    countryName: string;
-    value: number | null;
-    color: string;
-  };
+  rowData: IndexResultsData;
+  color: string;
   isExpanded: boolean;
 }>();
 
 const isShowingAllDatasets = ref(false);
-// TODO: replace with real data
-const keyDatasets = [
-  {
-    datasetId: '1',
-    datasetName: 'World population by country',
-    weight: 12,
-    value: 100,
-  },
-  {
-    datasetId: '2',
-    datasetName: 'Highest poverty index ranking',
-    weight: 36,
-    value: 80,
-  },
-  {
-    datasetId: '3',
-    datasetName: 'Greatest recent temperature increase',
-    weight: 9,
-    value: 28,
-  },
-];
+
+const visibleKeyDatasets = computed(() => {
+  const keyDatasets = props.rowData.contributingDatasets;
+  if (isShowingAllDatasets.value || keyDatasets.length <= SHOW_TOP_N_DATASETS_BY_DEFAULT) {
+    return keyDatasets;
+  }
+  return keyDatasets.slice(0, SHOW_TOP_N_DATASETS_BY_DEFAULT);
+});
+
+const showMoreToggleButtonLabel = computed(() =>
+  isShowingAllDatasets.value
+    ? 'Show less'
+    : `Show all ${props.rowData.contributingDatasets.length} datasets`
+);
 </script>
 
 <style lang="scss" scoped>

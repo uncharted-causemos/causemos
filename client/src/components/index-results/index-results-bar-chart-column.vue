@@ -20,10 +20,11 @@
     </header>
     <div class="flex-col results-rows">
       <IndexResultsBarChartRow
-        v-for="(data, index) of barChartRowData"
+        v-for="(data, index) of indexResultsData"
         :key="index"
         :rank="index + 1"
         :row-data="data"
+        :color="colorConfig.scaleFn(data.value || 0)"
         :is-expanded="isShowingKeyDatasets"
       />
     </div>
@@ -48,12 +49,6 @@ const emit = defineEmits<{
 
 const colorConfig = computed(() =>
   getIndexResultsColorConfig(props.indexResultsData, props.indexResultsSettings)
-);
-const barChartRowData = computed(() =>
-  props.indexResultsData.map((d) => ({
-    ...d,
-    color: colorConfig.value.scaleFn(d.value || 0),
-  }))
 );
 </script>
 
