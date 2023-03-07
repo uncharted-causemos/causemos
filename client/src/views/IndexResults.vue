@@ -4,22 +4,28 @@
   </teleport>
   <div class="index-results-container flex">
     <div class="flex-col structure-column">
+      <header>
+        <h3>Index results</h3>
+        <p class="subtitle">{{ 'Overall Priority' }}</p>
+      </header>
       <section>
-        <header class="flex horizontal-padding">
-          <h5>Index structure</h5>
+        <header class="flex index-structure-header">
+          <h4>Index structure</h4>
           <!-- TODO: hook up modify button -->
           <button disabled class="btn btn-sm">Modify</button>
         </header>
         <IndexResultsStructurePreview class="index-structure-preview" />
+        <IndexResultsComponentList />
       </section>
       <section>
-        <header class="horizontal-padding">
-          <h5>
-            Datasets and their percentage of <strong>{{ 'Overall Priority' }}</strong>
-          </h5>
+        <header>
+          <h4>Datasets weights</h4>
+          <p class="subtitle">with respect to {{ 'Overall Priority' }}</p>
         </header>
-        <!-- TODO: list view of structure -->
       </section>
+    </div>
+    <div class="map">
+      <IndexResultsMap :index-results-data="indexResultsData" :settings="indexResultsSettings" />
     </div>
     <IndexResultsBarChartColumn
       class="bars-column"
@@ -29,9 +35,6 @@
       :index-results-settings="indexResultsSettings"
       @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
     />
-    <div class="map">
-      <IndexResultsMap :index-results-data="indexResultsData" :settings="indexResultsSettings" />
-    </div>
   </div>
 </template>
 
@@ -53,6 +56,7 @@ import { DataTransform } from '@/types/Enums';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import IndexResultsMap from '@/components/index-results/index-results-map.vue';
+import IndexResultsComponentList from '@/components/index-results/index-results-component-list.vue';
 
 // TODO: temporary!
 // We probably want to
@@ -196,25 +200,19 @@ const isShowingKeyDatasets = ref(false);
 
 $column-padding: 20px;
 
-.structure-column,
-.bars-column {
-  width: 400px;
-}
-
 .structure-column {
-  padding: $column-padding 0;
+  width: 400px;
+  padding: $column-padding;
   overflow-y: auto;
   border-right: 1px solid $un-color-black-10;
   gap: 20px;
 }
 
-.horizontal-padding {
-  padding: 0 $column-padding;
-}
-
 .bars-column {
+  width: 300px;
+  border-left: 1px solid $un-color-black-10;
   &.expanded {
-    width: 700px;
+    width: 600px;
   }
 }
 
@@ -230,6 +228,14 @@ header {
     flex: 1;
     min-width: 0;
   }
+}
+
+.subtitle {
+  color: $un-color-black-40;
+}
+
+.index-structure-header {
+  justify-content: space-between;
 }
 .map {
   flex: 1;
