@@ -5,7 +5,7 @@
       :key="item.node.id"
       class="list-item"
       :class="{ selected: item.node.type === IndexNodeType.OutputIndex }"
-      :style="{ 'padding-left': BASE_LEFT_PADDING + item.depth * INDENT_AMOUNT_PX + 'px' }"
+      :style="{ 'padding-left': BASE_LEFT_PADDING_PX + item.depth * INDENT_AMOUNT_PX + 'px' }"
     >
       <i
         class="fa fa-fw"
@@ -25,7 +25,7 @@ import { getIndexNodeTypeColor, getIndexNodeTypeIcon, isParentNode } from '@/uti
 import { computed } from 'vue';
 
 const INDENT_AMOUNT_PX = 20;
-const BASE_LEFT_PADDING = 5;
+const BASE_LEFT_PADDING_PX = 5;
 
 const { tree } = useIndexTree();
 
