@@ -8,11 +8,14 @@
         'grid-column': cell.startColumn,
       }"
       class="grid-cell"
-      @mouseover="highLight"
-      @mouseleave="highLightClear"
-      @click="selectEdge"
     >
-      <div class="edge incoming" :class="{ visible: hasChildren(cell.node) }"></div>
+      <div
+        class="edge incoming"
+        :class="{ visible: hasChildren(cell.node) }"
+        @mouseenter="highLight"
+        @mouseleave="highLightClear"
+        @click="selectEdge"
+      ></div>
       <IndexTreeNode
         :node-data="cell.node"
         :is-selected="cell.node.id === props.selectedElementId"
@@ -23,6 +26,7 @@
         @select="(id) => emit('select-element', id)"
         @create-child="createChild"
         @attach-dataset="attachDatasetToPlaceholder"
+        @mouseenter="highLightClear"
       />
       <div
         class="edge outgoing"
@@ -31,7 +35,7 @@
           dashed: cell.node.type === IndexNodeType.Placeholder,
           'last-child': cell.isLastChild,
         }"
-        @mouseover="highLight"
+        @mouseenter="highLight"
         @mouseleave="highLightClear"
         @click="selectEdge"
       />
@@ -55,6 +59,7 @@ import {
   convertTreeToGridCells,
   edgeInteraction,
   edgeInteractionClear,
+  EDGE_CLASS,
 } from '@/utils/grid-cell-util';
 
 const props = defineProps<{
@@ -136,14 +141,25 @@ const highLight = (evt: MouseEvent) => {
 };
 
 const highLightClear = () => {
-  edgeInteractionClear(hoverElements);
+  edgeInteractionClear(hoverElements, true);
+  hoverElements = [];
+};
+
+const edgeSelectionClear = () => {
+  edgeInteractionClear(edgeSelection, false);
+  edgeSelection = [];
 };
 
 let edgeSelection: HTMLElement[] = [];
 const selectEdge = (evt: MouseEvent) => {
-  if (edgeSelection.includes(evt.target as HTMLElement)) {
-    edgeInteractionClear(edgeSelection);
-  } else {
+  const current = evt.target as HTMLElement;
+  highLightClear();
+  const classList = current?.classList;
+  if (
+    (classList && classList.contains(EDGE_CLASS.INCOMING)) ||
+    classList.contains(EDGE_CLASS.OUTGOING)
+  ) {
+    edgeSelectionClear();
     edgeSelection = edgeInteraction(evt.target, false);
   }
 };
@@ -198,6 +214,9 @@ $edge-highlighted: $negative;
         &.highlighted {
           border-color: $edge-highlighted;
         }
+        &.selected-edge {
+          border-color: $edge-selected;
+        }
       }
     }
 
@@ -217,6 +236,15 @@ $edge-highlighted: $negative;
             border-top-color: $un-color-black-20;
           }
         }
+        &.selected-edge {
+          border-color: $edge-selected;
+          &.selected-x {
+            border-right-color: $un-color-black-20;
+          }
+          &.selected-y {
+            border-top-color: $un-color-black-20;
+          }
+        }
       }
       &.dashed {
         border-top-style: dashed;
@@ -226,6 +254,15 @@ $edge-highlighted: $negative;
             border-right-color: $un-color-black-20;
           }
           &.highlighted-y {
+            border-top-color: $un-color-black-20;
+          }
+        }
+        &.selected-edge {
+          border-color: $edge-selected;
+          &.selected-x {
+            border-right-color: $un-color-black-20;
+          }
+          &.selected-y {
             border-top-color: $un-color-black-20;
           }
         }

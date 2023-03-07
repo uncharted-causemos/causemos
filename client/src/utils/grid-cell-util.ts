@@ -107,10 +107,10 @@ export const offsetGridCells = (
 /**
  * Edge selection class information
  */
-const EDGE_CLASS = {
+export const EDGE_CLASS = {
   SELECTED: 'selected-edge',
-  SELECTED_X: 'highlighted-x',
-  SELECTED_Y: 'highlighted-y',
+  SELECTED_X: 'selected-x',
+  SELECTED_Y: 'selected-y',
   HIGHLIGHTED: 'highlighted',
   HIGHLIGHTED_X: 'highlighted-x',
   HIGHLIGHTED_Y: 'highlighted-y',
@@ -128,8 +128,8 @@ const getGridLocation = (gridArea: String) => {
   if (gridArea) {
     const clean = gridArea.replace(' ', '').trim().split('/');
     const data = {
-      order: clean[0],
-      column: clean[1],
+      order: parseInt(clean[0]),
+      column: parseInt(clean[1]),
     };
     return data;
   }
@@ -155,7 +155,7 @@ export const edgeInteraction = (target: any, isHighlightAction = false) => {
         selectedNodes.push(current);
         treeContainer.childNodes.forEach((node) => {
           const gridInfo = getGridLocation(node?.style?.gridArea);
-          if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column) + 1) {
+          if (gridInfo && gridInfo.column === parentGrid.column + 1) {
             node.childNodes.forEach((cellNode) => {
               if (cellNode.classList.contains(EDGE_CLASS.INCOMING)) {
                 cellNode.classList.add(
@@ -164,7 +164,7 @@ export const edgeInteraction = (target: any, isHighlightAction = false) => {
                 selectedNodes.push(cellNode);
               }
             });
-          } else if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column)) {
+          } else if (gridInfo && gridInfo.column === parentGrid.column) {
             node.childNodes.forEach((cellNode) => {
               if (cellNode.classList.contains(EDGE_CLASS.OUTGOING)) {
                 if (gridInfo.order < parentGrid.order) {
@@ -173,7 +173,6 @@ export const edgeInteraction = (target: any, isHighlightAction = false) => {
                   } else {
                     cellNode.classList.add(EDGE_CLASS.SELECTED, EDGE_CLASS.SELECTED_Y);
                   }
-
                   selectedNodes.push(cellNode);
                 } else if (gridInfo.order === parentGrid.order) {
                   if (isHighlightAction) {
@@ -188,15 +187,18 @@ export const edgeInteraction = (target: any, isHighlightAction = false) => {
           }
         });
       }
+
       if (current.classList.contains(EDGE_CLASS.INCOMING)) {
-        current.classList.add(EDGE_CLASS.HIGHLIGHTED);
+        current.classList.add(isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED);
         selectedNodes.push(current);
         treeContainer.childNodes.forEach((node) => {
           const gridInfo = getGridLocation(node?.style?.gridArea);
-          if (gridInfo && parseInt(gridInfo.column) === parseInt(parentGrid.column) - 1) {
+          if (gridInfo && gridInfo.column === parentGrid.column - 1) {
             node.childNodes.forEach((cellNode) => {
               if (cellNode.classList.contains(EDGE_CLASS.OUTGOING)) {
-                cellNode.classList.add(EDGE_CLASS.HIGHLIGHTED);
+                cellNode.classList.add(
+                  isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED
+                );
                 selectedNodes.push(cellNode);
               }
             });
@@ -209,10 +211,15 @@ export const edgeInteraction = (target: any, isHighlightAction = false) => {
   return selectedNodes;
 };
 
-export const edgeInteractionClear = (selectedNodes: HTMLElement[]) => {
-  selectedNodes.forEach((e) =>
-    e.classList.remove(EDGE_CLASS.HIGHLIGHTED, EDGE_CLASS.HIGHLIGHTED_X, EDGE_CLASS.HIGHLIGHTED_Y)
-  );
-  selectedNodes = [];
-  return selectedNodes;
+/**
+ * Clear all possible edge selection class information
+ * @param selectedNodes
+ */
+export const edgeInteractionClear = (selectedNodes: HTMLElement[], clearHighlightOnly = true) => {
+  selectedNodes.forEach((e) => {
+    e.classList.remove(EDGE_CLASS.HIGHLIGHTED, EDGE_CLASS.HIGHLIGHTED_X, EDGE_CLASS.HIGHLIGHTED_Y);
+    if (!clearHighlightOnly) {
+      e.classList.remove(EDGE_CLASS.SELECTED, EDGE_CLASS.SELECTED_X, EDGE_CLASS.SELECTED_Y);
+    }
+  });
 };
