@@ -26,22 +26,13 @@
         </template>
       </OptionsButton>
     </div>
-    <div v-if="showDatasetSearch">
-      <div class="search-bar-container flex content">
-        <input
-          class="form-control"
-          type="text"
-          v-model="datasetSearchText"
-          placeholder="Search for a dataset"
-        />
-        <button class="btn btn-default" @click="cancelDatasetSearch">Cancel</button>
-      </div>
-      <IndexTreeNodeSearchResults
-        :searchText="datasetSearchText"
-        @keep-as-placeholder="keepAsPlaceholder"
-        @select-dataset="attachDataset"
-      />
-    </div>
+    <IndexTreeNodeSearchBar
+      v-if="showDatasetSearch"
+      :initial-search-text="props.nodeData.name"
+      @select-dataset="attachDataset"
+      @keep-as-placeholder="keepAsPlaceholder"
+      @cancel="cancelDatasetSearch"
+    />
     <div v-else-if="showEditName" class="rename content flex">
       <input
         v-focus
@@ -100,7 +91,7 @@ import {
 } from '@/utils/index-tree-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
-import IndexTreeNodeSearchResults from '@/components/index-structure/index-tree-node-search-results.vue';
+import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
 
 const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
 
@@ -235,26 +226,26 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
 
 // Dataset search
 
+const disableInteraction = ref(false);
+const isSearchingForDataset = ref(false);
+
 const showDatasetSearch = computed(
   () =>
     isPlaceholderNode(props.nodeData) &&
     // props.nodeData.name === '' means that the "create dataset node" flow has never been completed.
     (isSearchingForDataset.value === true || props.nodeData.name === '')
 );
-const disableInteraction = ref(false);
-const isSearchingForDataset = ref(false);
-const datasetSearchText = ref('');
+
 const cancelDatasetSearch = () => {
   if (props.nodeData.name === '') {
     // the "create dataset node" flow has never been completed, so delete node.
     emit('delete', props.nodeData);
   } else {
-    datasetSearchText.value = '';
     isSearchingForDataset.value = false;
   }
 };
-const keepAsPlaceholder = () => {
-  emit('rename', props.nodeData.id, datasetSearchText.value);
+const keepAsPlaceholder = (value: string) => {
+  emit('rename', props.nodeData.id, value);
   isSearchingForDataset.value = false;
 };
 const attachDataset = (dataset: DatasetSearchResult) => {
@@ -290,6 +281,7 @@ const getDatasetFooterText = (data: Dataset) => {
 <style scoped lang="scss">
 @import '~styles/variables';
 @import '~styles/uncharted-design-tokens';
+@import '~styles/common';
 
 .index-tree-node-container {
   display: flex;
@@ -341,16 +333,6 @@ const getDatasetFooterText = (data: Dataset) => {
     z-index: 999;
     opacity: 0.4;
     background: white;
-  }
-
-  .btn-default {
-    background: $un-color-black-5;
-    border: 1px solid $un-color-black-20;
-    box-shadow: 0px 1px 0px rgb(54 55 56 / 10%), inset 0px -8px 10px -8px rgb(54 55 56 / 10%);
-    border-radius: 3px;
-    font-size: $font-size-small;
-    font-weight: 600;
-    padding: 3px 8px;
   }
 
   .input-arrow {
@@ -412,8 +394,7 @@ const getDatasetFooterText = (data: Dataset) => {
     }
   }
 
-  .rename,
-  .search-bar-container {
+  .rename {
     .form-control {
       height: 32px;
       padding: 8px 8px;
