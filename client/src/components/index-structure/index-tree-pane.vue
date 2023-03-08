@@ -27,6 +27,7 @@
         @create-child="createChild"
         @attach-dataset="attachDatasetToPlaceholder"
         @mouseenter="highLightClear"
+        @click="edgeSelectionClear"
       />
       <div
         class="edge outgoing"
@@ -60,6 +61,7 @@ import {
   edgeInteraction,
   edgeInteractionClear,
   EDGE_CLASS,
+  edgeInteractionInput,
 } from '@/utils/grid-cell-util';
 
 const props = defineProps<{
@@ -137,7 +139,17 @@ const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult
 // edge highlight
 let hoverElements: HTMLElement[] = [];
 const highLight = (evt: MouseEvent) => {
-  hoverElements = edgeInteraction(evt.target, true);
+  highLightClear();
+  const current = evt.target;
+  if (current) {
+    const targetEl = current as HTMLElement;
+    if (targetEl.classList.contains(EDGE_CLASS.INCOMING)) {
+      const { interactedNodes } = edgeInteractionInput(targetEl, gridCells.value, true);
+      hoverElements = interactedNodes;
+    } else {
+      hoverElements = edgeInteraction(current, true);
+    }
+  }
 };
 
 const highLightClear = () => {
@@ -152,15 +164,25 @@ const edgeSelectionClear = () => {
 
 let edgeSelection: HTMLElement[] = [];
 const selectEdge = (evt: MouseEvent) => {
-  const current = evt.target as HTMLElement;
   highLightClear();
-  const classList = current?.classList;
-  if (
-    (classList && classList.contains(EDGE_CLASS.INCOMING)) ||
-    classList.contains(EDGE_CLASS.OUTGOING)
-  ) {
-    edgeSelectionClear();
-    edgeSelection = edgeInteraction(evt.target, false);
+  const targetEl = evt.target as HTMLElement;
+
+  if (targetEl) {
+    const classList = targetEl.classList;
+
+    if (classList.contains(EDGE_CLASS.INCOMING)) {
+      edgeSelectionClear();
+      const { interactedId, interactedNodes } = edgeInteractionInput(
+        targetEl,
+        gridCells.value,
+        false
+      );
+      edgeSelection = interactedNodes;
+      emit('select-element', interactedId);
+    } else if (classList.contains(EDGE_CLASS.OUTGOING)) {
+      edgeSelectionClear();
+      edgeSelection = edgeInteraction(evt.target, false);
+    }
   }
 };
 </script>
