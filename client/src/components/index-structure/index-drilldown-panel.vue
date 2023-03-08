@@ -2,7 +2,10 @@
   <div class="index-drilldown-panel-container" :class="{ hidden: type === null }">
     <template v-if="type === IndexNodeType.OutputIndex">
       <header>
-        <span class="type-label"> Output Index </span>
+        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
+          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
+          Output Index
+        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -31,6 +34,10 @@
 
     <template v-if="type === IndexNodeType.Index">
       <header>
+        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
+          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
+          Index
+        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -73,6 +80,10 @@
 
     <template v-if="type === IndexNodeType.Dataset">
       <header>
+        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
+          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
+          Dataset
+        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -158,7 +169,13 @@ import { computed, watch, ref } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { IndexNode, IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
-import { duplicateNode, isDatasetNode, isOutputIndexNode } from '@/utils/index-tree-util';
+import {
+  duplicateNode,
+  getIndexNodeTypeColor,
+  getIndexNodeTypeIcon,
+  isDatasetNode,
+  isOutputIndexNode,
+} from '@/utils/index-tree-util';
 import { OptionButtonMenu } from './index-tree-node.vue';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 
