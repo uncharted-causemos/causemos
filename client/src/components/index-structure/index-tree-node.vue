@@ -7,12 +7,7 @@
       <span class="un-font-small">
         {{ headerText }}
       </span>
-      <OptionsButton
-        v-if="props.nodeData.type !== IndexNodeType.OutputIndex"
-        :dropdown-below="true"
-        :wider-dropdown-options="true"
-        @click.stop=""
-      >
+      <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
         <template #content>
           <div
             v-for="item in optionsButtonMenu"
@@ -40,6 +35,7 @@
         type="text"
         :placeholder="renameInputTextPlaceholder"
         v-model="renameInputText"
+        v-on:keyup.escape="cancelRename"
         v-on:keyup.enter="handleRenameDone"
       />
       <button
@@ -150,6 +146,14 @@ const renameInputTextPlaceholder = computed(() => {
   return isDatasetNode(props.nodeData) ? props.nodeData.datasetName : '';
 });
 
+const cancelRename = () => {
+  if (props.nodeData.name === '') {
+    // the "create dataset node" flow has never been completed, so delete node.
+    emit('delete', props.nodeData);
+  } else {
+    isRenaming.value = false;
+  }
+};
 const handleRenameDone = () => {
   if (
     // Can't exit the flow with an empty rename bar unless this is a dataset node
@@ -186,25 +190,32 @@ const headerText = computed(() => {
 
 // Options button
 
+const MENU_OPTION_RENAME = {
+  type: OptionButtonMenu.Rename,
+  text: 'Rename',
+  icon: 'fa-pencil',
+};
+
+const MENU_OPTION_DUPLICATE = {
+  type: OptionButtonMenu.Duplicate,
+  text: 'Duplicate',
+  icon: 'fa-copy',
+};
+
+const MENU_OPTION_DELETE = {
+  type: OptionButtonMenu.Delete,
+  text: 'Delete',
+  icon: 'fa-trash',
+};
+
 const optionsButtonMenu = computed(() => {
-  const menu = [
-    {
-      type: OptionButtonMenu.Rename,
-      text: 'Rename',
-      icon: 'fa-pencil',
-    },
-    {
-      type: OptionButtonMenu.Duplicate,
-      text: 'Duplicate',
-      icon: 'fa-copy',
-    },
-    {
-      type: OptionButtonMenu.Delete,
-      text: 'Delete',
-      icon: 'fa-trash',
-    },
-  ];
-  return showEditName.value ? [menu[2]] : menu;
+  if (props.nodeData.type === IndexNodeType.OutputIndex) {
+    return [MENU_OPTION_RENAME];
+  }
+  if (showEditName.value) {
+    return [MENU_OPTION_DELETE];
+  }
+  return [MENU_OPTION_RENAME, MENU_OPTION_DUPLICATE, MENU_OPTION_DELETE];
 });
 
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
