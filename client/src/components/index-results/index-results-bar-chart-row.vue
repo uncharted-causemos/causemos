@@ -2,7 +2,7 @@
   <div class="index-results-bar-chart-row-container">
     <div class="flex-col index-result-table-output-value-column">
       <div class="flex country-name-and-value">
-        <p class="country-name">
+        <p class="index-result-table-dataset-country-column">
           {{ `${props.rank}. ${props.rowData.countryName}` }}
         </p>
         <p>{{ precisionFormatter(props.rowData.value) }}</p>
@@ -85,9 +85,7 @@ const showMoreToggleButtonLabel = computed(() =>
   gap: 10px;
 }
 
-.country-name {
-  flex: 1;
-  min-width: 0;
+.index-result-table-dataset-country-column {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
@@ -106,9 +104,7 @@ const showMoreToggleButtonLabel = computed(() =>
 }
 
 .index-result-table-key-datasets-column {
-  // Align the top of the key datasets list with the top of the overall value bar.
-  margin-top: 17px;
-  gap: 10px;
+  gap: 5px;
 
   button {
     align-self: flex-start;

@@ -2,16 +2,22 @@
   <div class="index-results-bar-chart-column-container flex-col">
     <header class="flex-col">
       <div class="flex">
-        <h5>
-          Countries ranked by <strong>{{ 'Overall Priority' }}</strong>
-        </h5>
-        <button class="btn btn-sm" @click="emit('toggle-is-showing-key-datasets')">
+        <button
+          class="btn btn-sm toggle-key-datasets-button"
+          @click="emit('toggle-is-showing-key-datasets')"
+        >
           {{ isShowingKeyDatasets ? 'Hide' : 'Show' }} key datasets for each country
         </button>
       </div>
-      <div v-if="isShowingKeyDatasets" class="table-header">
-        <p class="index-result-table-output-value-column" />
-        <div class="key-datasets-labels index-result-table-key-datasets-column">
+      <div class="table-header">
+        <div class="index-result-table-output-value-column flex">
+          <p class="index-result-table-dataset-country-column">Country</p>
+          <p v-if="!isShowingKeyDatasets">Overall priority</p>
+        </div>
+        <div
+          v-if="isShowingKeyDatasets"
+          class="key-datasets-labels index-result-table-key-datasets-column"
+        >
           <p class="index-result-table-dataset-name-column">Key datasets</p>
           <p class="index-result-table-dataset-weight-column">Dataset weight</p>
           <p class="index-result-table-dataset-value-column">Country's value</p>
@@ -62,6 +68,10 @@ const colorConfig = computed(() =>
   padding: 20px;
 }
 
+.toggle-key-datasets-button {
+  width: 100%;
+}
+
 header {
   gap: 10px;
   h5 {
@@ -76,9 +86,10 @@ header {
 .table-header {
   display: flex;
   gap: $index-result-table-column-gap;
+  border-bottom: 1px solid $un-color-black-10;
+  color: $un-color-black-40;
   .key-datasets-labels {
     display: flex;
-    border-bottom: 1px solid $un-color-black-10;
     gap: $index-result-table-key-datasets-column-gap;
     align-items: flex-end;
   }
