@@ -148,7 +148,7 @@ const renameInputTextPlaceholder = computed(() => {
 
 const cancelRename = () => {
   if (props.nodeData.name === '') {
-    // the "create dataset node" flow has never been completed, so delete node.
+    // the "create index node" flow has never been completed, so delete node.
     emit('delete', props.nodeData);
   } else {
     isRenaming.value = false;
