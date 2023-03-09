@@ -139,106 +139,10 @@ const getGridLocation = (gridArea: String) => {
 };
 
 /**
- * Colours an edge between grid cells.  May be a highlighting action or a selection action.
- *
- * @param evt MouseEvent
- */
-export const edgeInteraction = (target: any, isHighlightAction = false) => {
-  const selectedNodes = [];
-  const current = target as HTMLElement;
-  const parent = current?.parentElement;
-  const treeContainer = parent?.parentElement;
-
-  if (current && parent && treeContainer) {
-    const parentGrid = getGridLocation(parent.style.gridArea);
-    if (parentGrid) {
-      // user action on an outgoing cell
-      if (current.classList.contains(EDGE_CLASS.OUTGOING)) {
-        current.classList.add(isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED);
-        selectedNodes.push(current);
-        // iterate though all grid cells, find by grid position comparison those that need highlighting
-        treeContainer.childNodes.forEach((node) => {
-          const n = node as HTMLElement;
-          const gridInfo = getGridLocation(n?.style?.gridArea);
-          if (
-            gridInfo &&
-            gridInfo.column === parentGrid.column + 1 &&
-            gridInfo.order >= parentGrid.order
-          ) {
-            node.childNodes.forEach((cellNode) => {
-              const cn = cellNode as HTMLElement;
-              if (cn.classList.contains(EDGE_CLASS.INCOMING)) {
-                cn.classList.add(isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED);
-                selectedNodes.push(cellNode);
-              }
-            });
-          } else if (
-            gridInfo &&
-            gridInfo.column === parentGrid.column &&
-            parentGrid.order >= gridInfo.order
-          ) {
-            node.childNodes.forEach((cellNode) => {
-              const cn = cellNode as HTMLElement;
-              if (cn.classList.contains(EDGE_CLASS.OUTGOING)) {
-                if (gridInfo.order < parentGrid.order) {
-                  if (isHighlightAction) {
-                    cn.classList.add(EDGE_CLASS.HIGHLIGHTED, EDGE_CLASS.HIGHLIGHTED_Y);
-                  } else {
-                    cn.classList.add(EDGE_CLASS.SELECTED, EDGE_CLASS.SELECTED_Y);
-                  }
-                  selectedNodes.push(cellNode);
-                } else if (gridInfo.order === parentGrid.order) {
-                  if (isHighlightAction) {
-                    cn.classList.add(EDGE_CLASS.HIGHLIGHTED, EDGE_CLASS.HIGHLIGHTED_X);
-                  } else {
-                    cn.classList.add(EDGE_CLASS.SELECTED, EDGE_CLASS.SELECTED_X);
-                  }
-                  selectedNodes.push(cellNode);
-                }
-              }
-            });
-          }
-        });
-      }
-      // user action on an incoming cell
-      if (current.classList.contains(EDGE_CLASS.INCOMING)) {
-        current.classList.add(isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED);
-        selectedNodes.push(current);
-        treeContainer.childNodes.forEach((node) => {
-          const n = node as HTMLElement;
-          const gridInfo = getGridLocation(n?.style?.gridArea);
-          if (
-            gridInfo &&
-            gridInfo.column === parentGrid.column - 1 &&
-            parentGrid.order >= gridInfo.order
-          ) {
-            console.log(
-              `INCOMING : gridInfo=${JSON.stringify(gridInfo)}, parentGrid=${JSON.stringify(
-                gridInfo
-              )}`
-            );
-            node.childNodes.forEach((cellNode) => {
-              const cn = cellNode as HTMLElement;
-              if (cn.classList.contains(EDGE_CLASS.OUTGOING)) {
-                cn.classList.add(isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED);
-                selectedNodes.push(cellNode);
-              }
-            });
-          }
-        });
-      }
-    }
-  }
-
-  return selectedNodes;
-};
-
-/**
  * Clear all possible edge selection class information
  * @param selectedNodes
  */
 export const edgeInteractionClear = (selectedNodes: HTMLElement[], clearHighlightOnly = true) => {
-  console.log(`Clearing ${selectedNodes.length} nodes.`);
   selectedNodes.forEach((e) => {
     e.classList.remove(EDGE_CLASS.HIGHLIGHTED, EDGE_CLASS.HIGHLIGHTED_X, EDGE_CLASS.HIGHLIGHTED_Y);
     if (!clearHighlightOnly) {
@@ -258,19 +162,47 @@ export const edgeInteractionClear = (selectedNodes: HTMLElement[], clearHighligh
  */
 const findOutboundConnectedGridpoints = (location: any, data: any[]) => {
   const found: any = [];
+  if (location && location.order && location.column) {
+    const n = data.find((d) => d.startRow === location.order && d.startColumn === location.column);
+    if (n && n.node && n.node.inputs) {
+      n.node.inputs.forEach((input: any) => {
+        const foundItem = data.find((item) => item.node.id === input.id);
+        if (foundItem) {
+          found.push({
+            id: foundItem.node.id,
+            column: parseInt(foundItem.startColumn),
+            order: parseInt(foundItem.startRow),
+          });
+        }
+      });
+    }
+  }
+
+  return found;
+};
+
+const findInboundConnectedGridpoint = (location: any, data: any[]) => {
+  let found: any = null;
 
   const n = data.find((d) => d.startRow === location.order && d.startColumn === location.column);
-  if (n && n.node && n.node.inputs) {
-    n.node.inputs.forEach((input: any) => {
-      const foundItem = data.find((item) => item.node.id === input.id);
-      if (foundItem) {
-        found.push({
-          id: foundItem.node.id,
-          column: parseInt(foundItem.startColumn),
-          order: parseInt(foundItem.startRow),
-        });
-      }
-    });
+  if (n && n.node) {
+    const sourceId = n.node.id;
+
+    if (sourceId) {
+      data.forEach((d) => {
+        if (
+          d.node &&
+          d.node.inputs &&
+          d.node.inputs.findIndex((e: any) => e.id === sourceId) > -1
+        ) {
+          found = {
+            id: d.node.id,
+            column: parseInt(d.startColumn),
+            order: parseInt(d.startRow),
+          };
+        }
+      });
+    }
   }
   return found;
 };
@@ -286,7 +218,7 @@ const getIdByGridpoints = (location: any, data: any[]) => {
 
 /**
  * Edge Interaction code that uses the source data to identify structural connections between nodes.
- * Edges have two search structures and results.  This is an interaction on an input edge.
+ * Edges have two search structures and results.  This is an interaction on an INPUT edge.
  *
  * Input edge highlight or selection will highlight all inbound paths.
  *
@@ -315,7 +247,6 @@ export const edgeInteractionInput = (
       if (gridString && treeContainer) {
         const targetGrid = getGridLocation(gridString);
         if (targetGrid) {
-          // const node = target.nextElementSibling;
           interactedId = getIdByGridpoints(targetGrid, data);
           const outEdges = findOutboundConnectedGridpoints(targetGrid, data);
 
@@ -358,6 +289,113 @@ export const edgeInteractionInput = (
 
   return {
     interactedId,
+    interactedNodes,
+  };
+};
+
+const isGridMatch = (g1: any, g2: any) => {
+  if (g1.column === g2.column && g1.order === g2.order) {
+    return true;
+  }
+  return false;
+};
+
+/**
+ * Edge Interaction code that uses the source data to identify structural connections between nodes.
+ * Edges have two search structures and results.  This is an interaction on an OUTPUT edge.
+ *
+ * OUTPUT edge interaction will only highlight a single path.
+ *
+ * Return the selected DOM elements and the ID of the destination tree (to be set as selected).
+ *
+ * @param target Source element that triggers this action
+ * @param data Source data for the tree
+ * @param isHighlightAction Actions may be highlight or select
+ */
+export const edgeInteractionOutput = (
+  target: HTMLElement,
+  data: any[],
+  isHighlightAction = true
+) => {
+  const interactedNodes: HTMLElement[] = [];
+  let interactedId = null;
+  let inEdgeId = null;
+
+  if (target.classList.contains(EDGE_CLASS.OUTGOING)) {
+    // ensure this is an incoming edge target
+    const targetParent = target.parentElement;
+
+    if (targetParent) {
+      const treeContainer = targetParent.parentElement;
+      const gridString = targetParent?.style?.gridArea;
+
+      if (gridString && treeContainer) {
+        const targetGrid = getGridLocation(gridString);
+        if (targetGrid) {
+          const inEdgeGrid = findInboundConnectedGridpoint(targetGrid, data);
+          const outEdges = findOutboundConnectedGridpoints(inEdgeGrid, data);
+          interactedId = getIdByGridpoints(targetGrid, data);
+          inEdgeId = getIdByGridpoints(inEdgeGrid, data); // needs to be the inbound edge container (used to select)
+
+          if (outEdges.length > 0) {
+            // highlight and add the elements that are connected to the target using grid position from data
+            treeContainer.childNodes.forEach((node) => {
+              const treeNodeEl = node as HTMLElement;
+              const gridAreaString = treeNodeEl?.style?.gridArea;
+              if (gridAreaString) {
+                const gloc = getGridLocation(treeNodeEl.style.gridArea);
+                if (gloc) {
+                  // check if the treeNodeElement currently being inspected matches one of the desired grid references
+                  if ([inEdgeGrid, ...outEdges].findIndex((e: any) => isGridMatch(e, gloc)) > -1) {
+                    const lastOut = targetGrid.order;
+                    treeNodeEl.childNodes.forEach((tne) => {
+                      const anElement = tne as HTMLElement;
+
+                      if (
+                        isGridMatch(inEdgeGrid, gloc) &&
+                        anElement.classList.contains(EDGE_CLASS.INCOMING)
+                      ) {
+                        // matching incoming edge is a simple selection
+                        anElement.classList.add(
+                          isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED
+                        );
+                        interactedNodes.push(anElement); // save the highlighted element reference (output edges)
+                      } else if (anElement.classList.contains(EDGE_CLASS.OUTGOING)) {
+                        // find all outgoing edge matches
+                        if (isGridMatch(gloc, targetGrid)) {
+                          // matches the element that was target, only highlight the X edge
+                          anElement.classList.add(
+                            isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED
+                          );
+                          anElement.classList.add(
+                            isHighlightAction ? EDGE_CLASS.HIGHLIGHTED_X : EDGE_CLASS.SELECTED_X
+                          );
+                          interactedNodes.push(anElement); // save the highlighted element reference (output edges)
+                        } else if (gloc.order < lastOut) {
+                          // found edges that are above the target, highlight X and Y edges.
+                          anElement.classList.add(
+                            isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED
+                          );
+                          anElement.classList.add(
+                            isHighlightAction ? EDGE_CLASS.HIGHLIGHTED_Y : EDGE_CLASS.SELECTED_Y
+                          );
+                          interactedNodes.push(anElement); // save the highlighted element reference (output edges)
+                        }
+                      }
+                    });
+                  }
+                }
+              }
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    interactedId,
+    inEdgeId,
     interactedNodes,
   };
 };

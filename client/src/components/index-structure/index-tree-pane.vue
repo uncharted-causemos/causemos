@@ -1,5 +1,5 @@
 <template>
-  <div ref="tree-container" class="index-tree-pane-container" @click.self="emit('deselect-all')">
+  <div ref="tree-container" class="index-tree-pane-container" @click.self="clearAll">
     <div
       v-for="cell in gridCells"
       :key="cell.node.id"
@@ -58,11 +58,14 @@ import {
   getGridRowCount,
   getGridColumnCount,
   convertTreeToGridCells,
-  edgeInteraction,
   edgeInteractionClear,
   EDGE_CLASS,
   edgeInteractionInput,
+  edgeInteractionOutput,
 } from '@/utils/grid-cell-util';
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let selectedOutEdgeId = null; // to be used when the edge needs to be deleted (muted error for now)
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -134,6 +137,14 @@ const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult
   indexTree.attachDatasetToPlaceholder(nodeId, dataset);
 };
 
+/**
+ * Clear all selected/highlighted edges and clear selected node
+ */
+const clearAll = () => {
+  highLightClear();
+  edgeSelectionClear();
+  emit('deselect-all');
+};
 // select element
 
 // edge highlight
@@ -147,7 +158,8 @@ const highLight = (evt: MouseEvent) => {
       const { interactedNodes } = edgeInteractionInput(targetEl, gridCells.value, true);
       hoverElements = interactedNodes;
     } else {
-      hoverElements = edgeInteraction(current, true);
+      const { interactedNodes } = edgeInteractionOutput(targetEl, gridCells.value, true);
+      hoverElements = interactedNodes;
     }
   }
 };
@@ -158,6 +170,7 @@ const highLightClear = () => {
 };
 
 const edgeSelectionClear = () => {
+  selectedOutEdgeId = null;
   edgeInteractionClear(edgeSelection, false);
   edgeSelection = [];
 };
@@ -181,7 +194,18 @@ const selectEdge = (evt: MouseEvent) => {
       emit('select-element', interactedId);
     } else if (classList.contains(EDGE_CLASS.OUTGOING)) {
       edgeSelectionClear();
-      edgeSelection = edgeInteraction(evt.target, false);
+      const { interactedId, inEdgeId, interactedNodes } = edgeInteractionOutput(
+        // NOTE: inEdgeId and
+        targetEl,
+        gridCells.value,
+        false
+      );
+
+      // only interactions on out edges give a distinct path.  Use this pair for deleting edges with escape key (future).
+      selectedOutEdgeId = interactedId;
+
+      edgeSelection = interactedNodes;
+      emit('select-element', inEdgeId);
     }
   }
 };
