@@ -35,8 +35,8 @@
         type="text"
         :placeholder="renameInputTextPlaceholder"
         v-model="renameInputText"
-        v-on:keyup.escape="cancelRename"
-        v-on:keyup.enter="handleRenameDone"
+        @keyup.escape="cancelRename"
+        @keyup.enter="handleRenameDone"
       />
       <button
         class="btn btn-default"
