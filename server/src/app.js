@@ -50,6 +50,8 @@ const { getFlowLogs } = rootRequire('services/external/prefect-queue-service');
 // Proxy to serve carto tiles with Uncharted license key
 const mapProxyRouter = rootRequire('/routes/map-proxy');
 
+const paragraphsRouter = rootRequire('/routes/paragraphs');
+
 const compression = require('compression');
 const requestAsPromise = require('./util/request-as-promise');
 const app = express();
@@ -209,6 +211,8 @@ app.use('/api/kbs', kbsRouter);
 app.use('/api/domain-projects', DomainProjectsRouter);
 
 app.use('/api/bibliography', bibliographyRouter);
+
+app.use('/api/paragraphs', paragraphsRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

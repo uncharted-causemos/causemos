@@ -26,6 +26,7 @@ router.get('/settings', function (req, res, next) {
     pipelineTargetS3IndicatorsBucket: env.S3_INDICATORS_BUCKET,
     pipelineTargetS3ModelsBucket: env.S3_MODELS_BUCKET,
     requestQueueURL: env.WM_QUEUE_SERVICE_URL,
+    dojoSemanticSearch: env.JATAWARE_DOJO_URL,
     schedules,
   });
 });
