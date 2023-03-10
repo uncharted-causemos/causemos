@@ -88,9 +88,11 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
 
+const toDisplayName = (v: string) => _.words(v).map(_.capitalize).join(' ');
+
 const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult => {
   return {
-    displayName: doc.display_name || _.capitalize(_.words(doc.feature).join(' ')),
+    displayName: doc.display_name || toDisplayName(doc.feature),
     datasetMetadataDocId: doc.id,
     dataId: doc.data_id,
     description: doc.description,
