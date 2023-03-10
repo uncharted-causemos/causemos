@@ -12,12 +12,7 @@
           :class="[getIndexNodeTypeIcon(IndexNodeType.Dataset)]"
         />
         <span class="name">{{ item.dataset.name }}</span>
-        <span class="de-emphasized">{{ precisionFormatter(item.overallWeight) }}%</span>
-        <BatteryIndicator
-          :total-bar-count="TOTAL_BATTERY_INDICATOR_BAR_COUNT"
-          :active-bar-count="getBarCount(item.overallWeight)"
-          class="battery-indicator"
-        />
+        <IndexResultsDatasetWeight :weight="item.overallWeight" />
       </div>
     </div>
   </div>
@@ -34,22 +29,9 @@ import {
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import { IndexNodeType } from '@/types/Enums';
-import BatteryIndicator from '../widgets/battery-indicator.vue';
-import precisionFormatter from '@/formatters/precision-formatter';
+import IndexResultsDatasetWeight from './index results-dataset-weight.vue';
 
 const { tree } = useIndexTree();
-
-const TOTAL_BATTERY_INDICATOR_BAR_COUNT = 5;
-/**
- * Scales the provided weight to the range [0, TOTAL_BATTERY_INDICATOR_BAR_COUNT]
- * @param weight A number from 0 to 100.
- */
-const getBarCount = (weight: number) => {
-  // Determine what percentage each bar represents
-  const increment = 100 / TOTAL_BATTERY_INDICATOR_BAR_COUNT;
-  // Round weight to the nearest bar
-  return Math.round(weight / increment);
-};
 
 const listItems = computed(() => {
   const datasets = findAllDatasets(tree.value);
@@ -87,10 +69,5 @@ const listItems = computed(() => {
   overflow-x: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.battery-indicator {
-  width: 28px;
-  height: 10px;
 }
 </style>
