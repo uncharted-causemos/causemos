@@ -18,10 +18,7 @@
         <IndexResultsComponentList />
       </section>
       <section>
-        <header>
-          <h4>Datasets weights</h4>
-          <p class="subtitle">with respect to {{ 'Overall Priority' }}</p>
-        </header>
+        <IndexResultsDatasetWeights />
       </section>
     </div>
     <div class="map">
@@ -57,6 +54,7 @@ import IndexResultsBarChartColumn from '@/components/index-results/index-results
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import IndexResultsMap from '@/components/index-results/index-results-map.vue';
 import IndexResultsComponentList from '@/components/index-results/index-results-component-list.vue';
+import IndexResultsDatasetWeights from '@/components/index-results/index-results-dataset-weights.vue';
 
 // TODO: temporary!
 // We probably want to
