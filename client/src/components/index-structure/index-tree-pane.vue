@@ -69,10 +69,12 @@ let selectedOutEdgeId = null; // to be used when the edge needs to be deleted (m
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
+  selectedUpstreamElementId: SelectableIndexElementId | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
+  (e: 'select-upstream-element', selectedUpstreamElement: SelectableIndexElementId): void;
   (e: 'deselect-all'): void;
 }>();
 
@@ -206,6 +208,7 @@ const selectEdge = (evt: MouseEvent) => {
 
       edgeSelection = interactedNodes;
       emit('select-element', inEdgeId);
+      emit('select-upstream-element', selectedOutEdgeId);
     }
   }
 };

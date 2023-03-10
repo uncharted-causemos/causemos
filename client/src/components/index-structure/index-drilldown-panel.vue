@@ -164,6 +164,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
+  selectedUpstreamElementId: SelectableIndexElementId | null;
 }>();
 
 const indexTree = useIndexTree();
