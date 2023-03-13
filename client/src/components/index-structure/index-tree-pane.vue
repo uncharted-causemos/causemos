@@ -229,7 +229,6 @@ $outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-leng
 $edge-top-offset-from-node: 13px;
 $edge-styles: 2px solid $un-color-black-20;
 $edge-selected: $accent-main;
-$edge-highlighted: $negative;
 
 .index-tree-pane-container {
   // The farthest left column will never have incoming edges, so it will have an empty space of
@@ -264,7 +263,7 @@ $edge-highlighted: $negative;
       &.visible {
         border-top: $edge-styles;
         &.highlighted {
-          border-color: $edge-highlighted;
+          border-color: $accent-light;
         }
         &.selected-edge {
           border-color: $edge-selected;
@@ -280,7 +279,7 @@ $edge-highlighted: $negative;
         height: calc(100% + #{$space-between-rows});
         border-right: $edge-styles;
         &.highlighted {
-          border-color: $edge-highlighted;
+          border-color: $accent-light;
           &.highlighted-x {
             border-right-color: $un-color-black-20;
           }
@@ -301,7 +300,7 @@ $edge-highlighted: $negative;
       &.dashed {
         border-top-style: dashed;
         &.highlighted {
-          border-color: $edge-highlighted;
+          border-color: $accent-light;
           &.highlighted-x {
             border-right-color: $un-color-black-20;
           }
