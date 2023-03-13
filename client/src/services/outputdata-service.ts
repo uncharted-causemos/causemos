@@ -204,6 +204,24 @@ export const getBulkTimeseries = async (spec: OutputSpec, regionIds: string[]): 
   }
 };
 
+export const getSparkline = async (spec: OutputSpec): Promise<any> => {
+  try {
+    const { data } = await API.get('maas/output/sparkline', {
+      params: {
+        data_id: spec.modelId,
+        run_id: spec.runId,
+        feature: spec.outputVariable,
+        resolution: spec.temporalResolution,
+        temporal_agg: spec.temporalAggregation,
+        spatial_agg: spec.spatialAggregation,
+      },
+    });
+    return data || [];
+  } catch (e) {
+    return [];
+  }
+};
+
 export const getRawQualifierBreakdown = async (
   dataId: string,
   runId: string,
