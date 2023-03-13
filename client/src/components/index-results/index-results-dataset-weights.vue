@@ -30,7 +30,7 @@ import {
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import { IndexNodeType } from '@/types/Enums';
-import IndexResultsDatasetWeight from './index results-dataset-weight.vue';
+import IndexResultsDatasetWeight from './index-results-dataset-weight.vue';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
 
 const { tree } = useIndexTree();
