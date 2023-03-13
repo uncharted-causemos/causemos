@@ -61,7 +61,7 @@ import IndexResultsDatasetWeights from '@/components/index-results/index-results
 //  - pre-normalize the data on the backend.
 //  - normalize it with respect to the min and max of the dataset across timestamps
 //  - Keep original value as well, instead of overriding it with the normalized version
-const normalizeCountryData = (regionData: RegionalAggregation) => {
+const normalizeCountryData = (regionData: RegionalAggregation, isInverted: boolean) => {
   const clonedRegionData = _.cloneDeep(regionData);
   if (clonedRegionData.country === undefined || clonedRegionData.country.length === 0) {
     return clonedRegionData;
@@ -71,9 +71,13 @@ const normalizeCountryData = (regionData: RegionalAggregation) => {
   const min = _.min(values) ?? 0;
   const max = _.max(values) ?? 0;
   clonedRegionData.country = countries.map((country) => {
+    const normalizedValue = normalize(country.value, min, max);
+    // If this dataset is inverted, higher original values should map closer to 0 and lower
+    //  original values should map closer to 1.
+    const countryValue = isInverted ? 1 - normalizedValue : normalizedValue;
     return {
       ...country,
-      value: normalize(country.value, min, max),
+      value: countryValue,
     };
   });
   return clonedRegionData;
@@ -170,7 +174,12 @@ watch([tree], async () => {
     return;
   }
   // Normalize data
-  const regionDataForEachDataset = unnormalizedRegionDataForEachDataset.map(normalizeCountryData);
+  const regionDataForEachDataset = unnormalizedRegionDataForEachDataset.map(
+    (unnormalizedRegionData, i) => {
+      const isInverted = datasets[i].isInverted;
+      return normalizeCountryData(unnormalizedRegionData, isInverted);
+    }
+  );
   // Calculate each dataset's overall weight
   const overallWeightForEachDataset = datasets.map((dataset) =>
     calculateOverallWeight(frozenTreeState, dataset)

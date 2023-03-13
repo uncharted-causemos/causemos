@@ -12,7 +12,8 @@
           :class="[getIndexNodeTypeIcon(IndexNodeType.Dataset)]"
         />
         <span class="name">{{ item.dataset.name }}</span>
-        <IndexResultsDatasetWeight :weight="item.overallWeight" />
+        <InvertedDatasetLabel v-if="item.dataset.isInverted" />
+        <IndexResultsDatasetWeight class="dataset-weight" :weight="item.overallWeight" />
       </div>
     </div>
   </div>
@@ -29,7 +30,8 @@ import {
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import { IndexNodeType } from '@/types/Enums';
-import IndexResultsDatasetWeight from './index results-dataset-weight.vue';
+import IndexResultsDatasetWeight from './index-results-dataset-weight.vue';
+import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
 
 const { tree } = useIndexTree();
 
@@ -69,5 +71,11 @@ const listItems = computed(() => {
   overflow-x: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dataset-weight {
+  // Nudge dataset weight upward to override text line-height and align weight with "inverted" label
+  position: relative;
+  bottom: 2px;
 }
 </style>
