@@ -1,6 +1,58 @@
 <template>
   <div class="index-drilldown-panel-container" :class="{ hidden: type === null }">
-    <template v-if="type === IndexNodeType.OutputIndex">
+    <template v-if="edgeSelected">
+      <div>
+        <div>
+          <div class="header content" :style="{ color: getIndexNodeTypeColor(indexUpstreamType) }">
+            <i class="fa fa-fw un-font-small" :class="[getIndexNodeTypeIcon(indexUpstreamType)]" />
+            <span class="un-font-small">
+              {{ typeUpstream }}
+            </span>
+          </div>
+          <div>
+            <h4>{{ nodeUpstreamName }}</h4>
+          </div>
+        </div>
+        <div class="title-row space-between centered">
+          <i class="fa fa-long-arrow-right" />
+          <div class="button-group">
+            <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
+              <template #content>
+                <div
+                  v-for="item in edgeOptionsButtonMenu"
+                  :key="item.type"
+                  class="dropdown-option"
+                  @click="handleEdgeOptionsButtonClick(item.type)"
+                >
+                  <i class="fa fa-fw" :class="item.icon" />
+                  {{ item.text }}
+                </div>
+              </template>
+            </OptionsButton>
+          </div>
+        </div>
+
+        <div>
+          <div class="header content" :style="{ color: getIndexNodeTypeColor(indexType) }">
+            <i class="fa fa-fw un-font-small" :class="[getIndexNodeTypeIcon(indexType)]" />
+            <span class="un-font-small">
+              {{ type }}
+            </span>
+          </div>
+          <div>
+            <h4>{{ nodeName }}</h4>
+          </div>
+        </div>
+      </div>
+      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
+      <IndexResultsPreview
+        v-if="type === IndexNodeType.OutputIndex"
+        :analysis-id="indexTree.getAnalysisId()"
+      />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+    </template>
+
+    <template v-if="!edgeSelected && type === IndexNodeType.OutputIndex">
       <header>
         <span class="type-label"> Output Index </span>
         <div v-if="isRenaming" class="rename-controls">
@@ -29,7 +81,7 @@
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
-    <template v-if="type === IndexNodeType.Index">
+    <template v-if="!edgeSelected && type === IndexNodeType.Index">
       <header>
         <div v-if="isRenaming" class="rename-controls">
           <input
@@ -71,7 +123,7 @@
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
-    <template v-if="type === IndexNodeType.Dataset">
+    <template v-if="!edgeSelected && type === IndexNodeType.Dataset">
       <header>
         <div v-if="isRenaming" class="rename-controls">
           <input
@@ -126,7 +178,7 @@
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
-    <template v-if="type === IndexEdgeType.Edge">
+    <template v-if="!edgeSelected && type === IndexEdgeType.Edge">
       <header>
         <div class="title-row space-between">
           <div class="edge-source-and-target">
@@ -158,7 +210,13 @@ import { computed, watch, ref } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { IndexNode, IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
-import { duplicateNode, isDatasetNode, isOutputIndexNode } from '@/utils/index-tree-util';
+import {
+  duplicateNode,
+  isDatasetNode,
+  isOutputIndexNode,
+  getIndexNodeTypeColor,
+  getIndexNodeTypeIcon,
+} from '@/utils/index-tree-util';
 import { OptionButtonMenu } from './index-tree-node.vue';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 
@@ -199,6 +257,14 @@ const optionsButtonMenu = [
   },
 ];
 
+const edgeOptionsButtonMenu = [
+  {
+    type: OptionButtonMenu.DeleteEdge,
+    text: 'Delete Edge',
+    icon: 'fa-trash',
+  },
+];
+
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   const node = selectedNode.value;
   if (node === null || isOutputIndexNode(node)) {
@@ -215,6 +281,56 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   }
 };
 
+const handleEdgeOptionsButtonClick = (option: OptionButtonMenu) => {
+  console.log(`WIP: do the edge delete here. ${JSON.stringify(option)}`);
+};
+
+const indexType = computed<IndexNodeType | null>(() => {
+  if (type.value === IndexNodeType.OutputIndex) {
+    return IndexNodeType.OutputIndex;
+  } else if (type.value === IndexNodeType.Index) {
+    return IndexNodeType.Index;
+  } else if (type.value === IndexNodeType.Dataset) {
+    return IndexNodeType.Dataset;
+  } else if (type.value === IndexNodeType.Placeholder) {
+    return IndexNodeType.Placeholder;
+  }
+  return null;
+});
+
+const indexUpstreamType = computed<IndexNodeType | null>(() => {
+  if (typeUpstream.value === IndexNodeType.OutputIndex) {
+    return IndexNodeType.OutputIndex;
+  } else if (typeUpstream.value === IndexNodeType.Index) {
+    return IndexNodeType.Index;
+  } else if (typeUpstream.value === IndexNodeType.Dataset) {
+    return IndexNodeType.Dataset;
+  } else if (typeUpstream.value === IndexNodeType.Placeholder) {
+    return IndexNodeType.Placeholder;
+  }
+  return null;
+});
+
+const nodeName = computed<String | null>(() => {
+  if (props.selectedElementId) {
+    const node = findNode(props.selectedElementId.toString());
+    if (node) {
+      return node.found.name;
+    }
+  }
+  return null;
+});
+
+const nodeUpstreamName = computed<String | null>(() => {
+  if (props.selectedUpstreamElementId) {
+    const node = findNode(props.selectedUpstreamElementId.toString());
+    if (node) {
+      return node.found.name;
+    }
+  }
+  return null;
+});
+
 const selectedNode = computed<IndexNode | null>(() => {
   if (!(typeof props.selectedElementId === 'string')) {
     return null;
@@ -226,6 +342,19 @@ const selectedNode = computed<IndexNode | null>(() => {
   // TODO: we'll want to keep the parent around when searching for edges
   return found?.found ?? null;
 });
+
+const selectedUpstreamNode = computed<IndexNode | null>(() => {
+  if (!(typeof props.selectedUpstreamElementId === 'string')) {
+    return null;
+  }
+  // Check for node in main tree
+  const foundInTree = findNode(props.selectedUpstreamElementId);
+  // If not found in main tree, check in the list of disconnected nodes and trees
+  const found = foundInTree ?? workbench.findNode(props.selectedUpstreamElementId);
+  // TODO: we'll want to keep the parent around when searching for edges
+  return found?.found ?? null;
+});
+
 const selectedDatasetMetadataId = computed(() => {
   if (selectedNode.value === null || !isDatasetNode(selectedNode.value)) {
     return null;
@@ -237,9 +366,23 @@ const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode }
   return null;
 });
 
+const edgeSelected = computed(() => {
+  return props.selectedUpstreamElementId !== null;
+});
+
 const type = computed<IndexElementType | null>(() => {
   if (selectedNode.value !== null) {
     return selectedNode.value.type;
+  }
+  if (selectedEdgeComponents.value !== null) {
+    return IndexEdgeType.Edge;
+  }
+  return null;
+});
+
+const typeUpstream = computed<IndexElementType | null>(() => {
+  if (selectedUpstreamNode.value !== null) {
+    return selectedUpstreamNode.value.type;
   }
   if (selectedEdgeComponents.value !== null) {
     return IndexEdgeType.Edge;
@@ -286,6 +429,10 @@ const handleRenameDone = () => {
 @import '~styles/variables';
 @import '~styles/uncharted-design-tokens';
 
+.fa-long-arrow-right {
+  color: $un-color-black-20;
+}
+
 .index-drilldown-panel-container {
   padding: 20px;
   background: white;
@@ -317,6 +464,9 @@ header {
 
   &.space-between {
     justify-content: space-between;
+    &.centered {
+      align-items: center;
+    }
   }
 }
 
