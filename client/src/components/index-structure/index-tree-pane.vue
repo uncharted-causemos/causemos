@@ -18,7 +18,10 @@
       ></div>
       <IndexTreeNode
         :node-data="cell.node"
-        :is-selected="cell.node.id === props.selectedElementId"
+        :is-selected="
+          cell.node.id === props.selectedElementId ||
+          cell.node.id === props.selectedUpstreamElementId
+        "
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
