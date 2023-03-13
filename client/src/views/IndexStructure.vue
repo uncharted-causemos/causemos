@@ -13,6 +13,7 @@
         @select-element="selectElement"
         @select-upstream-element="selectUpstreamElement"
         :selected-element-id="selectedElementId"
+        :selected-upstream-element-id="selectedUpstreamElementId"
       />
       <IndexDrilldownPanel
         class="index-drilldown-panel"
@@ -49,6 +50,7 @@ const isStateLoaded = ref(false);
 const selectedElementId = ref<SelectableIndexElementId | null>(null);
 const selectedUpstreamElementId = ref<SelectableIndexElementId | null>(null);
 const selectElement = (id: SelectableIndexElementId) => {
+  deselectAllElements();
   selectedElementId.value = id;
 };
 const selectUpstreamElement = (id: SelectableIndexElementId) => {
