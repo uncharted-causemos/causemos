@@ -299,7 +299,13 @@ const getDatasetFooterText = (data: Dataset) => {
 @import '~styles/uncharted-design-tokens';
 @import '~styles/common';
 
+// The space between the edges of the node and the content within it.
+//  This would be applied to .index-tree-node-container directly, but some elements (namely the
+//  search results) need to expand to take the full width of the node.
 $horizontal-padding: 10px;
+// Standard padding that's applied to each element within the node by default
+$vertical-padding: 5px;
+
 $option-button-width: 16px;
 
 .index-tree-node-container {
@@ -396,10 +402,10 @@ $option-button-width: 16px;
   }
 
   .content {
-    padding: 5px $horizontal-padding;
+    padding: $vertical-padding $horizontal-padding;
   }
   .replace-dataset-button {
-    margin: 5px $horizontal-padding;
+    margin: $vertical-padding $horizontal-padding;
   }
 
   .header {
@@ -408,7 +414,7 @@ $option-button-width: 16px;
     > i {
       display: grid;
       align-items: center;
-      margin-right: 5px;
+      margin-right: $horizontal-padding;
     }
 
     > span {
@@ -426,11 +432,9 @@ $option-button-width: 16px;
       width: 100%;
       max-width: 59px;
       margin-left: 5px;
+      color: white;
+      background-color: $call-to-action-color;
     }
-  }
-  .rename button {
-    color: white;
-    background-color: $call-to-action-color;
   }
 
   .name {
