@@ -6,6 +6,10 @@
       <i class="fa fa-fw un-font-small" :class="[getIndexNodeTypeIcon(props.nodeData.type)]" />
       <span class="un-font-small">
         {{ headerText }}
+        <InvertedDatasetLabel
+          v-if="isDatasetNode(props.nodeData) && props.nodeData.isInverted"
+          class="inverted-label"
+        />
       </span>
       <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
         <template #content>
@@ -87,6 +91,7 @@ import {
 } from '@/utils/index-tree-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
+import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
 
 const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
@@ -294,6 +299,9 @@ const getDatasetFooterText = (data: Dataset) => {
 @import '~styles/uncharted-design-tokens';
 @import '~styles/common';
 
+$horizontal-padding: 10px;
+$option-button-width: 16px;
+
 .index-tree-node-container {
   display: flex;
   flex-direction: column;
@@ -356,16 +364,20 @@ const getDatasetFooterText = (data: Dataset) => {
     border-left: 5px solid #b3b4b5;
   }
 
+  .inverted-label {
+    margin-left: 5px;
+  }
+
   .options-button-container {
-    width: 16px;
-    height: 16px;
+    width: $option-button-width;
+    height: $option-button-width;
     :deep(i) {
       font-size: 12px;
     }
     display: none;
     :deep(.dropdown-container) {
-      top: 16px;
-      right: 16px;
+      top: $option-button-width;
+      right: $option-button-width;
     }
   }
 
@@ -384,10 +396,10 @@ const getDatasetFooterText = (data: Dataset) => {
   }
 
   .content {
-    padding: 5px 10px;
+    padding: 5px $horizontal-padding;
   }
   .replace-dataset-button {
-    margin: 5px 10px;
+    margin: 5px $horizontal-padding;
   }
 
   .header {
