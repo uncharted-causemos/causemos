@@ -209,10 +209,13 @@ const findInboundConnectedGridpoint = (location: any, data: any[]) => {
 
 const getIdByGridpoints = (location: any, data: any[]) => {
   let id = null;
-  const n = data.find((d) => d.startRow === location.order && d.startColumn === location.column);
-  if (n && n.node) {
-    id = n.node.id;
+  if (location) {
+    const n = data.find((d) => d.startRow === location.order && d.startColumn === location.column);
+    if (n && n.node) {
+      id = n.node.id;
+    }
   }
+
   return id;
 };
 
