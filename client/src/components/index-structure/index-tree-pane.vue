@@ -161,7 +161,7 @@ const highLight = (evt: MouseEvent) => {
     const targetEl = current as HTMLElement;
     if (targetEl.classList.contains(EDGE_CLASS.INCOMING)) {
       const { interactedNodes } = edgeInteractionInput(targetEl, gridCells.value, true);
-      hoverElements = interactedNodes;
+      hoverElements = [interactedNodes[0], interactedNodes[1]];
     } else {
       const { interactedNodes } = edgeInteractionOutput(targetEl, gridCells.value, true);
       hoverElements = interactedNodes;
@@ -186,33 +186,34 @@ const selectEdge = (evt: MouseEvent) => {
   const targetEl = evt.target as HTMLElement;
 
   if (targetEl) {
-    const classList = targetEl.classList;
+    //  const classList = targetEl.classList;
 
-    if (classList.contains(EDGE_CLASS.INCOMING)) {
-      edgeSelectionClear();
-      const { interactedId, interactedNodes } = edgeInteractionInput(
-        targetEl,
-        gridCells.value,
-        false
-      );
-      edgeSelection = interactedNodes;
-      emit('select-element', interactedId);
-    } else if (classList.contains(EDGE_CLASS.OUTGOING)) {
-      edgeSelectionClear();
-      const { interactedId, inEdgeId, interactedNodes } = edgeInteractionOutput(
-        // NOTE: inEdgeId and
-        targetEl,
-        gridCells.value,
-        false
-      );
+    //  if (classList.contains(EDGE_CLASS.INCOMING)) {
+    //    edgeSelectionClear();
+    //    const { interactedId, interactedNodes } = edgeInteractionInput(
+    //      targetEl,
+    //      gridCells.value,
+    //      false
+    //    );
+    //    edgeSelection = [interactedNodes[0], interactedNodes[1]];
+    //    emit('select-element', interactedId);
+    //  } else if (classList.contains(EDGE_CLASS.OUTGOING)) {
+    edgeSelectionClear();
+    const { interactedId, inEdgeId, interactedNodes } = edgeInteractionOutput(
+      // NOTE: inEdgeId and
+      targetEl,
+      gridCells.value,
+      false
+    );
 
-      // only interactions on out edges give a distinct path.  Use this pair for deleting edges with escape key (future).
-      selectedOutEdgeId = interactedId;
+    // only interactions on out edges give a distinct path.  Use this pair for deleting edges with escape key (future).
+    selectedOutEdgeId = interactedId;
 
-      edgeSelection = interactedNodes;
-      emit('select-element', inEdgeId);
-      emit('select-upstream-element', selectedOutEdgeId);
-    }
+    edgeSelection = interactedNodes;
+    console.log(`indEdge: ${inEdgeId}, outEdge: ${selectedOutEdgeId}`);
+    emit('select-element', inEdgeId);
+    emit('select-upstream-element', selectedOutEdgeId);
+    //  }
   }
 };
 </script>
@@ -256,6 +257,7 @@ $edge-selected: $accent-main;
     pointer-events: auto;
 
     &.incoming {
+      max-height: 5px;
       min-width: $incoming-edge-minimum-length;
       // If one node in the column is wider than this one (e.g. placeholder in search mode), expand
       //  the incoming edge to stay connected to children, and push the node to stay right-aligned.
