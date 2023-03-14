@@ -294,6 +294,9 @@ $edge-selected: $accent-main;
           border-color: $edge-selected;
           &.selected-x {
             border-right-color: $un-color-black-20;
+            &.highlighted-y {
+              border-right-color: $accent-light;
+            }
           }
           &.selected-y {
             border-top-color: $un-color-black-20;
