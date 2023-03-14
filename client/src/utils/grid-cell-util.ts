@@ -239,6 +239,7 @@ export const edgeInteractionInput = (
   const SINGLE_PATH_ONLY = true; // if true, only return the input edge and first adjacent output edge (single path)
   const interactedNodes: HTMLElement[] = [];
   let interactedId = null;
+  let firstOutEdgeId = null;
 
   if (target.classList.contains(EDGE_CLASS.INCOMING)) {
     // ensure this is an incoming edge target
@@ -261,8 +262,13 @@ export const edgeInteractionInput = (
 
           if (outEdges.length > 0) {
             // highlight and add the element that started this interaction
-            target.classList.add(isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED);
-            interactedNodes.push(target); // save the highlighted element reference (input edge)
+            if (isHighlightAction && !target.classList.contains(EDGE_CLASS.SELECTED)) {
+              target.classList.add(EDGE_CLASS.HIGHLIGHTED);
+              interactedNodes.push(target);
+            } else if (!isHighlightAction) {
+              target.classList.add(EDGE_CLASS.SELECTED);
+              interactedNodes.push(target);
+            }
 
             // highlight and add the elements that are connected to the target using grid position from data
             treeContainer.childNodes.forEach((node) => {
@@ -280,13 +286,26 @@ export const edgeInteractionInput = (
                     treeNodeEl.childNodes.forEach((tne) => {
                       const anElement = tne as HTMLElement;
                       if (anElement.classList.contains(EDGE_CLASS.OUTGOING)) {
-                        anElement.classList.add(
-                          isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED
-                        );
+                        if (anElement)
+                          if (
+                            isHighlightAction &&
+                            !target.classList.contains(EDGE_CLASS.SELECTED)
+                          ) {
+                            anElement.classList.add(EDGE_CLASS.HIGHLIGHTED);
+                          } else if (!isHighlightAction) {
+                            anElement.classList.add(EDGE_CLASS.SELECTED);
+                          }
+
                         if (SINGLE_PATH_ONLY) {
-                          anElement.classList.add(
-                            isHighlightAction ? EDGE_CLASS.HIGHLIGHTED_X : EDGE_CLASS.SELECTED_X
-                          );
+                          if (
+                            isHighlightAction &&
+                            !target.classList.contains(EDGE_CLASS.SELECTED)
+                          ) {
+                            anElement.classList.add(EDGE_CLASS.HIGHLIGHTED_X);
+                          } else if (!isHighlightAction) {
+                            anElement.classList.add(EDGE_CLASS.SELECTED_X);
+                          }
+                          firstOutEdgeId = getIdByGridpoints(gloc, data);
                         }
                         interactedNodes.push(anElement); // save the highlighted element reference (output edges)
                       }
@@ -303,6 +322,7 @@ export const edgeInteractionInput = (
 
   return {
     interactedId,
+    firstOutEdgeId,
     interactedNodes,
   };
 };
@@ -386,30 +406,45 @@ export const edgeInteractionOutput = (
                         anElement.classList.contains(EDGE_CLASS.INCOMING)
                       ) {
                         // matching incoming edge is a simple selection
-                        anElement.classList.add(
-                          isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED
-                        );
+                        if (
+                          isHighlightAction &&
+                          !anElement.classList.contains(EDGE_CLASS.SELECTED)
+                        ) {
+                          anElement.classList.add(EDGE_CLASS.HIGHLIGHTED);
+                        } else if (!isHighlightAction) {
+                          anElement.classList.add(EDGE_CLASS.SELECTED);
+                        }
                         interactedNodes.push(anElement); // save the highlighted element reference (output edges)
                       } else if (anElement.classList.contains(EDGE_CLASS.OUTGOING)) {
                         // find all outgoing edge matches
                         if (isGridMatch(gloc, targetGrid)) {
                           // matches the element that was target, only highlight the X edge
-                          anElement.classList.add(
-                            isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED
-                          );
-                          anElement.classList.add(
-                            isHighlightAction ? EDGE_CLASS.HIGHLIGHTED_X : EDGE_CLASS.SELECTED_X
-                          );
-                          interactedNodes.push(anElement); // save the highlighted element reference (output edges)
-                        } else if (gloc.order < lastOut) {
+                          if (
+                            isHighlightAction &&
+                            !anElement.classList.contains(EDGE_CLASS.SELECTED)
+                          ) {
+                            anElement.classList.add(EDGE_CLASS.HIGHLIGHTED);
+                            anElement.classList.add(EDGE_CLASS.HIGHLIGHTED_X);
+                            interactedNodes.push(anElement);
+                          } else if (!isHighlightAction) {
+                            anElement.classList.add(EDGE_CLASS.SELECTED);
+                            anElement.classList.add(EDGE_CLASS.SELECTED_X);
+                            interactedNodes.push(anElement);
+                          }
+                        } else if (gloc.order < lastOut && gloc.column === targetGrid.column) {
                           // found edges that are above the target, highlight X and Y edges.
-                          anElement.classList.add(
-                            isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED
-                          );
-                          anElement.classList.add(
-                            isHighlightAction ? EDGE_CLASS.HIGHLIGHTED_Y : EDGE_CLASS.SELECTED_Y
-                          );
-                          interactedNodes.push(anElement); // save the highlighted element reference (output edges)
+                          if (
+                            isHighlightAction &&
+                            !anElement.classList.contains(EDGE_CLASS.SELECTED)
+                          ) {
+                            anElement.classList.add(EDGE_CLASS.HIGHLIGHTED);
+                            anElement.classList.add(EDGE_CLASS.HIGHLIGHTED_Y);
+                            interactedNodes.push(anElement);
+                          } else if (!isHighlightAction) {
+                            anElement.classList.add(EDGE_CLASS.SELECTED);
+                            anElement.classList.add(EDGE_CLASS.SELECTED_Y);
+                            interactedNodes.push(anElement);
+                          }
                         }
                       }
                     });
