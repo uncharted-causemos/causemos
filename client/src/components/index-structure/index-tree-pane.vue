@@ -150,10 +150,15 @@ const clearAll = () => {
   edgeSelectionClear();
   emit('deselect-all');
 };
-// select element
 
 // edge highlight
 let hoverElements: HTMLElement[] = [];
+
+/**
+ * Handle highlight requests from user interaction with incoming or outgoing edges.
+ *
+ * @param evt
+ */
 const highLight = (evt: MouseEvent) => {
   highLightClear();
   const current = evt.target;
