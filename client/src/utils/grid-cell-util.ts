@@ -430,6 +430,12 @@ export const edgeInteractionOutput = (
                             anElement.classList.add(EDGE_CLASS.HIGHLIGHTED);
                             anElement.classList.add(EDGE_CLASS.HIGHLIGHTED_X);
                             interactedNodes.push(anElement);
+                          } else if (
+                            isHighlightAction &&
+                            anElement.classList.contains(EDGE_CLASS.SELECTED)
+                          ) {
+                            anElement.classList.add(EDGE_CLASS.HIGHLIGHTED_X);
+                            interactedNodes.push(anElement);
                           } else if (!isHighlightAction) {
                             anElement.classList.add(EDGE_CLASS.SELECTED);
                             anElement.classList.add(EDGE_CLASS.SELECTED_X);

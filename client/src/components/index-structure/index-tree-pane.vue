@@ -302,6 +302,9 @@ $edge-selected: $accent-main;
           }
           &.selected-y {
             border-top-color: $un-color-black-20;
+            &.highlight-x {
+              border-top-color: $accent-light;
+            }
           }
         }
       }
@@ -320,9 +323,15 @@ $edge-selected: $accent-main;
           border-color: $edge-selected;
           &.selected-x {
             border-right-color: $un-color-black-20;
+            &.highlighted-y {
+              border-right-color: $accent-light;
+            }
           }
           &.selected-y {
             border-top-color: $un-color-black-20;
+            &.highlight-x {
+              border-top-color: $accent-light;
+            }
           }
         }
       }
