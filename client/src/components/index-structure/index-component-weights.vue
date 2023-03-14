@@ -16,8 +16,12 @@
     <div class="table-rows" v-if="props.inputs.length !== 0">
       <div class="table-row" v-for="component in props.inputs" :key="component.id">
         <p>
+          <i
+            class="fa fa-fw"
+            :style="{ color: getIndexNodeTypeColor(component.type) }"
+            :class="[getIndexNodeTypeIcon(component.type)]"
+          />
           {{ component.name }}
-          <span v-if="component.type === IndexNodeType.Dataset" class="dataset-label">DATASET</span>
         </p>
         <p v-if="isPlaceholderNode(component)" class="de-emphasized">Placeholder</p>
         <p v-else>{{ precisionFormatter(component.weight) }}%</p>
@@ -28,9 +32,12 @@
 
 <script setup lang="ts">
 import precisionFormatter from '@/formatters/precision-formatter';
-import { IndexNodeType } from '@/types/Enums';
 import { IndexWorkBenchItem } from '@/types/Index';
-import { isPlaceholderNode } from '@/utils/index-tree-util';
+import {
+  getIndexNodeTypeColor,
+  getIndexNodeTypeIcon,
+  isPlaceholderNode,
+} from '@/utils/index-tree-util';
 
 const props = defineProps<{
   inputs: IndexWorkBenchItem[];
@@ -64,15 +71,6 @@ header {
   &:not(:first-child) {
     border-top: 1px solid $un-color-black-5;
   }
-}
-
-.dataset-label {
-  border: 1px solid $un-color-black-40;
-  padding: 0 3px;
-  color: $un-color-black-40;
-  font-size: 1.2rem;
-  line-height: 1.6rem;
-  margin-left: 5px;
 }
 
 .de-emphasized {
