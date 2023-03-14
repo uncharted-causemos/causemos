@@ -237,9 +237,16 @@ export const edgeInteractionInput = (
   isHighlightAction = true
 ) => {
   const SINGLE_PATH_ONLY = true; // if true, only return the input edge and first adjacent output edge (single path)
-  const interactedNodes: HTMLElement[] = [];
-  let interactedId = null;
-  let firstOutEdgeId = null;
+
+  const emptyNodes: HTMLElement[] = [];
+  // let interactedId = null;
+  // let firstOutEdgeId = null;
+
+  const edgeInfo = {
+    interactedId: null,
+    firstOutEdgeId: null,
+    interactedNodes: emptyNodes,
+  };
 
   if (target.classList.contains(EDGE_CLASS.INCOMING)) {
     // ensure this is an incoming edge target
@@ -252,7 +259,7 @@ export const edgeInteractionInput = (
       if (gridString && treeContainer) {
         const targetGrid = getGridLocation(gridString);
         if (targetGrid) {
-          interactedId = getIdByGridpoints(targetGrid, data);
+          edgeInfo.interactedId = getIdByGridpoints(targetGrid, data);
           let outEdges: any = [];
           if (SINGLE_PATH_ONLY) {
             outEdges = [findOutboundConnectedGridpoints(targetGrid, data)[0]];
@@ -264,10 +271,10 @@ export const edgeInteractionInput = (
             // highlight and add the element that started this interaction
             if (isHighlightAction && !target.classList.contains(EDGE_CLASS.SELECTED)) {
               target.classList.add(EDGE_CLASS.HIGHLIGHTED);
-              interactedNodes.push(target);
+              edgeInfo.interactedNodes.push(target);
             } else if (!isHighlightAction) {
               target.classList.add(EDGE_CLASS.SELECTED);
-              interactedNodes.push(target);
+              edgeInfo.interactedNodes.push(target);
             }
 
             // highlight and add the elements that are connected to the target using grid position from data
@@ -292,6 +299,7 @@ export const edgeInteractionInput = (
                             !target.classList.contains(EDGE_CLASS.SELECTED)
                           ) {
                             anElement.classList.add(EDGE_CLASS.HIGHLIGHTED);
+                            edgeInfo.interactedNodes.push(anElement); // save the highlighted element reference (output edges)
                           } else if (!isHighlightAction) {
                             anElement.classList.add(EDGE_CLASS.SELECTED);
                           }
@@ -305,9 +313,9 @@ export const edgeInteractionInput = (
                           } else if (!isHighlightAction) {
                             anElement.classList.add(EDGE_CLASS.SELECTED_X);
                           }
-                          firstOutEdgeId = getIdByGridpoints(gloc, data);
+                          edgeInfo.firstOutEdgeId = getIdByGridpoints(gloc, data);
                         }
-                        interactedNodes.push(anElement); // save the highlighted element reference (output edges)
+                        edgeInfo.interactedNodes.push(anElement); // save the highlighted element reference (output edges)
                       }
                     });
                   }
@@ -320,11 +328,7 @@ export const edgeInteractionInput = (
     }
   }
 
-  return {
-    interactedId,
-    firstOutEdgeId,
-    interactedNodes,
-  };
+  return edgeInfo;
 };
 
 const isGridMatch = (g1: any, g2: any) => {
