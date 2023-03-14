@@ -302,7 +302,7 @@ $edge-selected: $accent-main;
           }
           &.selected-y {
             border-top-color: $un-color-black-20;
-            &.highlight-x {
+            &.highlighted-x {
               border-top-color: $accent-light;
             }
           }
